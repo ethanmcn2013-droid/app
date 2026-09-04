@@ -1033,6 +1033,15 @@ describe("§2.9 · a finalize verifies, it does not believe", () => {
     if (finalizers.length === 0) return; // WP-6 has not landed.
     for (const path of finalizers) {
       const code = codeOf(path);
+      if (/^[\s]*["']use client["'];/.test(code)) {
+        // WP-7 adds a browser caller, not a browser verifier. It must delegate
+        // to the audited action; copying proof-field strings here would only
+        // make this source contract pass while weakening the actual boundary.
+        assert.match(code, /import\(["']@\/server\/actions\/drive-resource-uploads["']\)/);
+        assert.match(code, /\.finalizeDriveUploadAction\(/);
+        assert.doesNotMatch(code, /signalResourceId|refreshToken|accessToken|Authorization:/);
+        continue;
+      }
       assert.match(
         code,
         /signalResourceId/,

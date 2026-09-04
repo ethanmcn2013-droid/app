@@ -37,6 +37,11 @@ import {
   type ResourceRow,
 } from "@/server/actions/resources";
 import { Popover } from "./popover";
+import { isDemoMode } from "@/lib/access-mode";
+import { projectDriveUiEnabled } from "@/lib/project-drive-ui";
+import { useDriveUploads } from "./use-drive-uploads";
+import { DriveUploadRow } from "./drive-upload-row";
+import { DriveUploadReview } from "./drive-upload-review";
 
 // Client-side hint only; the server is the authority on size limits, and
 // it re-checks this against the board's tier and remaining quota before it
@@ -168,10 +173,16 @@ function finalizeMessage(reason: string): string {
  * on local disk for local-disk deployments.
  */
 export function ResourcesSection({ task }: { task: Task }) {
+  return <TaskResources key={task.id} task={task} />;
+}
+
+function TaskResources({ task }: { task: Task }) {
   const reduceMotion = useReducedMotion();
   const me = useCurrentUser();
   const { toast } = useToast();
   const [items, setItems] = useState<DisplayRow[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [reload, setReload] = useState(0);
   const [, startTransition] = useTransition();
   const [dragDepth, setDragDepth] = useState(0);
   const [linkInput, setLinkInput] = useState("");
@@ -179,6 +190,8 @@ export function ResourcesSection({ task }: { task: Task }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const linkInputRef = useRef<HTMLInputElement>(null);
   const inputId = useId();
+  const driveEnabled = projectDriveUiEnabled();
+  const { entries: driveEntries, add: addDriveUpload } = useDriveUploads(task.id, sendFile, () => setReload((value) => value + 1));
 
   const refreshKey = task.updatedAt?.getTime();
 
@@ -186,18 +199,17 @@ export function ResourcesSection({ task }: { task: Task }) {
     let ignore = false;
     listTaskResourcesAction(task.id)
       .then((rows) => {
-        if (!ignore) setItems(rows.map(toDisplayRow));
+        if (!ignore) { setItems(rows.map(toDisplayRow)); setLoadFailed(false); }
       })
-      .catch((err) => {
+      .catch(() => {
         if (!ignore) {
-          console.warn("resources: fetch failed", err);
-          setItems([]);
+          setLoadFailed(true);
         }
       });
     return () => {
       ignore = true;
     };
-  }, [task.id, refreshKey]);
+  }, [task.id, refreshKey, reload]);
 
   // ── Upload handler (unchanged path) ──────────────────────────────────
 
@@ -205,6 +217,10 @@ export function ResourcesSection({ task }: { task: Task }) {
     (files: FileList | File[]) => {
       const list = Array.from(files);
       if (list.length === 0) return;
+      if (driveEnabled && isDemoMode()) {
+        toast("Review only", { body: "No file was uploaded. Review fixtures never contact Google or storage." });
+        return;
+      }
 
       for (const file of list) {
         if (file.size > MAX_BYTES) {
@@ -214,6 +230,8 @@ export function ResourcesSection({ task }: { task: Task }) {
           });
           continue;
         }
+
+        if (driveEnabled) { void addDriveUpload(file); continue; }
 
         const tempId = `temp-${Math.random().toString(36).slice(2, 8)}`;
         const placeholder: PendingUploadRow = {
@@ -268,7 +286,7 @@ export function ResourcesSection({ task }: { task: Task }) {
         });
       }
     },
-    [me, task.id, toast],
+    [me, task.id, toast, driveEnabled, addDriveUpload],
   );
 
   // ── Link add handler ──────────────────────────────────────────────────
@@ -355,14 +373,12 @@ export function ResourcesSection({ task }: { task: Task }) {
     [handleFiles],
   );
 
-  if (items === null) return null;
-
   const dragging = dragDepth > 0;
-  const realItems = items.filter((r): r is RealRow => r.kind === "real");
-  const pendingItems = items.filter(
+  const realItems = (items ?? []).filter((r): r is RealRow => r.kind === "real");
+  const pendingItems = (items ?? []).filter(
     (r): r is PendingUploadRow => r.kind === "pending-upload",
   );
-  const total = items.length;
+  const total = (items ?? []).length;
 
   return (
     <div
@@ -389,7 +405,7 @@ export function ResourcesSection({ task }: { task: Task }) {
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="inline-flex items-center gap-1 rounded-md text-[12px] font-medium text-ink-quiet transition-colors hover:text-ink-soft"
+            className="inline-flex min-h-[44px] items-center gap-1 rounded-md px-2 text-[12px] font-medium text-ink-quiet transition-colors hover:text-ink-soft"
             aria-label="Attach a file"
           >
             <PaperclipGlyph />
@@ -397,6 +413,11 @@ export function ResourcesSection({ task }: { task: Task }) {
           </button>
         </div>
       </div>
+
+      {loadFailed ? <p role="alert" className="mb-3 text-[12px] text-ink-soft">Resources could not be refreshed. <button className="min-h-[44px] px-2 underline" onClick={() => setReload((value) => value + 1)}>Try again</button></p> : items === null ? <p role="status" className="mb-3 text-[12px] text-ink-soft">Loading Resources…</p> : total === 0 ? <p className="mb-3 text-[12px] text-ink-soft">No resources attached yet.</p> : null}
+      {driveEnabled ? <p className="mb-3 text-[12px] leading-relaxed text-ink-soft">The destination is checked when you attach. If Drive is unavailable before sending, you can choose Signal Studio.</p> : null}
+      {driveEnabled && isDemoMode() ? <DriveUploadReview /> : null}
+      {driveEntries.length ? <ul aria-label="File upload status" className="mb-3 space-y-2">{driveEntries.map((entry) => <DriveUploadRow key={entry.id} name={entry.name} size={entry.size} state={entry.state} onRetry={() => void entry.attempt.run()} onNative={() => void entry.attempt.useNative()} onCancel={entry.attempt.cancel} />)}</ul> : null}
 
       {/* Hidden file input */}
       <input
@@ -510,6 +531,7 @@ type RealRow = {
   addedByUserId: string | null;
   addedAt: number;
   accessState: string;
+  storage: "signal" | "google_drive";
 };
 
 type PendingUploadRow = {
@@ -537,6 +559,7 @@ function toDisplayRow(r: ResourceRow): RealRow {
     addedByUserId: r.addedByUserId,
     addedAt: r.addedAt,
     accessState: r.accessState,
+    storage: r.storage,
   };
 }
 
@@ -551,13 +574,15 @@ function RealResourceRow({
 }) {
   const reduceMotion = useReducedMotion();
   const isUpload = row.resourceKind === "upload";
+  const isDrive = row.storage === "google_drive";
+  const isPending = row.accessState === "pending";
   // Upload rows link to the authenticated download route using the
   // attachment id derived from the resource id ('res-' prefix stripped).
-  const downloadUrl = isUpload
+  const downloadUrl = isUpload && !isDrive && !isPending
     ? `/api/attachments/${row.id.startsWith("res-") ? row.id.slice(4) : row.id}`
     : null;
-  const href = isUpload ? (downloadUrl ?? "#") : (row.url ?? "#");
-  const isExternal = !isUpload;
+  const href = isDrive ? safeDriveFileUrl(row.url) : isUpload ? downloadUrl : row.url;
+  const isExternal = !isUpload || isDrive;
 
   return (
     <motion.li
@@ -570,7 +595,8 @@ function RealResourceRow({
     >
       <ResourceGlyph row={row} downloadUrl={downloadUrl} />
       <a
-        href={href}
+        href={isPending ? undefined : href ?? undefined}
+        aria-disabled={isPending || !href || undefined}
         {...(isExternal
           ? { target: "_blank", rel: "noreferrer" }
           : { download: row.title })}
@@ -579,6 +605,7 @@ function RealResourceRow({
         <div className="truncate text-[13px] font-medium leading-[var(--x-lead-tight)] text-ink">
           {row.title}
         </div>
+        {isDrive ? <p className="mt-0.5 text-[11px] text-ink-soft">{isPending ? "Drive upload not confirmed. Check the existing upload before attaching again." : "Stored in Google Drive · opens in a new tab"}</p> : null}
         <div className="mt-0.5 flex items-center gap-1.5 text-[11px] tabular-nums text-ink-quiet">
           <span className="rounded px-1 py-px text-[11px] font-medium uppercase tracking-[0.12em] text-ink-faint ring-1 ring-line leading-[var(--x-lead-tight)]">
             {providerLabel(row.provider)}
@@ -600,7 +627,7 @@ function RealResourceRow({
           </span>
         </div>
       </a>
-      <Popover
+      {!isPending ? <Popover
         align="end"
         width={200}
         aria-label="Confirm remove resource"
@@ -620,7 +647,7 @@ function RealResourceRow({
         {(close) => (
           <div className="flex flex-col gap-1.5 p-1.5">
             <p className="px-1.5 pt-1 text-[12px] leading-[var(--x-lead-ui)] text-ink-soft">
-              Remove this resource?
+              {isDrive ? "Remove from Resources? The file stays in Google Drive." : "Remove this resource?"}
             </p>
             <div className="flex items-center justify-end gap-1.5">
               <button
@@ -643,7 +670,7 @@ function RealResourceRow({
             </div>
           </div>
         )}
-      </Popover>
+      </Popover> : null}
     </motion.li>
   );
 }
@@ -909,6 +936,14 @@ function providerLabel(provider: string): string {
     case "url": return "Link";
     default: return provider;
   }
+}
+
+function safeDriveFileUrl(value: string | null): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && ["drive.google.com", "docs.google.com"].includes(url.hostname) && !url.username && !url.password && !url.port ? url.href : null;
+  } catch { return null; }
 }
 
 function hasFiles(e: DragEvent<HTMLDivElement>): boolean {

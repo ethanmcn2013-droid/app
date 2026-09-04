@@ -66,6 +66,7 @@ export type ResourceRow = {
   addedAt: number;
   accessState: string;
   countsAgainstStorage: number;
+  storage: "signal" | "google_drive";
 };
 
 // ── listTaskResourcesAction ───────────────────────────────────────────
@@ -90,14 +91,14 @@ export async function listTaskResourcesAction(
   // genuinely read returned an empty list whenever the two disagreed —
   // indistinguishable from a task with no resources.
   const scope = await scopeForTask(taskId, me, "open");
-  if (!scope.ok) return [];
+  if (!scope.ok) throw new Error("Resources are unavailable.");
   const ws = scope.ws;
 
   const [parent] = await db
     .select({ workspaceId: tasks.workspaceId })
     .from(tasks)
     .where(eq(tasks.id, taskId));
-  if (!parent || parent.workspaceId !== ws) return [];
+  if (!parent || parent.workspaceId !== ws) throw new Error("Resources are unavailable.");
 
   // Fetch all resources rows for this task.
   const resourceRows = await db
@@ -130,6 +131,7 @@ export async function listTaskResourcesAction(
     addedAt: r.addedAt,
     accessState: r.accessState,
     countsAgainstStorage: r.countsAgainstStorage,
+    storage: r.storage === "drive" ? "google_drive" : "signal",
   }));
 
   const fromAttachments: ResourceRow[] = unmirroredAttachments.map((a) => ({
@@ -146,6 +148,7 @@ export async function listTaskResourcesAction(
     addedAt: Math.floor((a.createdAt?.getTime() ?? Date.now()) / 1000),
     accessState: "legacy",
     countsAgainstStorage: 1,
+    storage: "signal",
   }));
 
   return [...fromResources, ...fromAttachments].sort(

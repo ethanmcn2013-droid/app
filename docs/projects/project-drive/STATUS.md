@@ -1,5 +1,29 @@
 # Status — Project Drive
 
+## UI slice update · 2026-09-04
+
+`feat/january-drive-ui` starts at `7d4040cbd59f4611ca69a60967b34bd58181d4c5`.
+The current user delegation supersedes the historical "awaiting founder choice"
+implementation stop below: A · Custodian is the delegated proposed thesis,
+not a founder selection/lock. The default-off Connections/Resources slice is
+implemented for internal review; WP-7 acceptance is still incomplete.
+
+Read `UI-SLICE.md`, `UI-MATERIALITY.md` and `ui-evidence/README.md` for the
+changed scope, preview/test pointers, implementation evidence and gaps.
+Handover candidates, full setup/repair visibility, killed-browser recovery and
+real provider acceptance remain open. The lead independently reviews browser
+and security behavior. No production state, schema, provider credentials,
+billing/invite implementation or launch flags were changed.
+
+The lead reports Linux base lint/typecheck/full tests/Drive lifecycle/build
+passing. Shared perf 247.3 KB against 247 KB remains a separate agent's work.
+Settings registry carries pending billing visual acceptance; after integration
+consult `docs/execution/january-2027/BILLING-REHEARSAL.md`. No score or formal
+materiality approval is asserted by these mechanical registry updates.
+
+The older package log below is preserved as historical backend evidence and
+must not override this dated UI update.
+
 The durable execution record for a later Codex or Claude Code session. Read it
 with `PROJECT.md` and `DECISIONS.md`; code, receipts and test output remain the
 evidence behind every claim. Update it at the end of every work package and

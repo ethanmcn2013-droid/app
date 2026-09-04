@@ -1,5 +1,20 @@
 # Decisions — Project Drive
 
+## D17 · Delegated Custodian implementation slice (2026-09-04)
+
+The user approved the full January programme and delegated design decisions.
+Under that delegation, A · Custodian is selected as the proposed implementation
+thesis for the default-off Connections/Resources UI. This is not a
+founder-selected direction or a completed founder design lock. Reuse the
+existing three-direction exploration; do not start a new programme.
+
+The materiality assessment, implementation evidence and exact incomplete
+boundaries are in `UI-SLICE.md` and `UI-MATERIALITY.md`. Internal review only:
+no provider/production changes, publication, design gate or human usability
+claim. Handover selection and killed-browser upload recovery remain incomplete.
+The feature flag is `NEXT_PUBLIC_PROJECT_DRIVE_UI`, literal `true` only;
+flag-off retains native uploads. Formal review and launch gates remain open.
+
 Decisions already taken. A session executing `PROJECT.md` should treat these as
 settled and get on with building. If one turns out to be wrong, change it here
 with a dated note rather than quietly diverging in code.
