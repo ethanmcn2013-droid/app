@@ -3,10 +3,12 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import { processedWebhooks } from "@/server/db/schema";
 import { stripe, WEBHOOK_SECRET } from "@/server/stripe";
+import { eventAccessExpiresAt, isPaidTier } from "@/server/checkout-policy";
+import { isDemoMode } from "@/lib/access-mode";
 import {
   expireEntitlementByNotes,
   grantEntitlement,
-} from "@/server/actions/billing";
+} from "@/server/billing-entitlements";
 import type { EntitlementTier } from "@/lib/data";
 import { entitlementsDb } from "@/lib/entitlements-shared/client";
 import { processedWebhooks as sharedProcessedWebhooks } from "@/lib/entitlements-shared/schema";
@@ -69,6 +71,7 @@ async function recordProcessed(
  * row without a separate Stripe-customer-id mapping table.
  */
 export async function POST(req: Request) {
+  if (isDemoMode()) return NextResponse.json({ ok: false, error: "unavailable" }, { status: 503 });
   if (!stripe || !WEBHOOK_SECRET) {
     return NextResponse.json(
       { ok: false, error: "stripe not configured" },
@@ -110,12 +113,15 @@ export async function POST(req: Request) {
   };
 
   switch (event.type) {
-    case "checkout.session.completed": {
+    case "checkout.session.completed":
+    case "checkout.session.async_payment_succeeded": {
       const s = event.data.object;
+      // Completion can precede settlement for delayed payment methods.
+      if (s.payment_status !== "paid") break;
       const userId = s.metadata?.userId;
       const rawWorkspaceId = s.metadata?.workspaceId;
-      const tier = s.metadata?.tier as EntitlementTier | undefined;
-      if (!userId || !rawWorkspaceId || !tier) break;
+      const tier = s.metadata?.tier;
+      if (!userId || !rawWorkspaceId || !isPaidTier(tier)) break;
       const workspaceId = decodeWorkspaceId(rawWorkspaceId);
       // Studio is the only tier where workspaceId may be null;
       // every other tier needs a real workspace.
@@ -127,6 +133,7 @@ export async function POST(req: Request) {
         tier,
         source: "purchase",
         durationDays: tier === "wedding" ? null : 30,
+        ...(tier === "event" ? { expiresAt: eventAccessExpiresAt(new Date(event.created * 1000)) } : {}),
         notes: `stripe:${s.id}`,
       });
       break;

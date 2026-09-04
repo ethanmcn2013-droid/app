@@ -10,7 +10,7 @@ import {
   beginAccountDeletion,
   hasAccountDeletionStartedWith,
 } from "@/server/account-deletion-lifecycle";
-import { grantEntitlement } from "@/server/actions/billing";
+import { grantEntitlement } from "@/server/billing-entitlements";
 import { trackOnboardingEventServer } from "@/lib/onboarding/analytics-server";
 import type { WebhookEvent } from "@clerk/nextjs/server";
 

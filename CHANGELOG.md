@@ -4,6 +4,18 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-09-04 · January candidate · billing follows payment evidence
+
+Event checkout uses a one-time payment and a twelve-month access term. Missing
+billing configuration cannot grant paid access. Repeated provider events resume
+unfinished fulfilment without duplicating access or extending its term. Billing
+settings directs subscription changes to Manage billing and no longer reports a
+cancellation that Stripe has not made.
+
+Internal candidate only. Local database tests, typecheck, lint and build passed;
+provider lifecycle and final suite acceptance remain open. See
+`docs/execution/january-2027/BILLING-REHEARSAL.md` for evidence and limitations.
+
 ## 2026-08-27 · T·153 · fixes · settings stopped telling every customer that uploads do not work
 
 **Settings has been saying "File uploads are not yet active on this workspace"

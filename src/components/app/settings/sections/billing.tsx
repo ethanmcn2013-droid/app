@@ -2,11 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useToast } from "@/components/primitives/toast";
-import { Dialog } from "@/components/primitives/dialog";
-import {
-  createCheckoutSessionAction,
-  expireEntitlementByNotes,
-} from "@/server/actions/billing";
+import { createCheckoutSessionAction } from "@/server/actions/billing";
 import { createBillingPortalSessionAction } from "@/server/actions/plan";
 import { redeemCompCodeAction } from "@/server/actions/comp";
 import type { EntitlementTier } from "@/lib/data";
@@ -128,7 +124,6 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
   const { toast } = useToast();
   const [pending, startTransition] = useTransition();
   const [code, setCode] = useState("");
-  const [cancelOpen, setCancelOpen] = useState(false);
   const isPaid = tier !== "free";
   const current = TIER_META.find((t) => t.id === tier) ?? TIER_META[0];
 
@@ -153,27 +148,6 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
         window.location.href = url;
       } catch (e) {
         toast("Couldn’t open billing portal", {
-          tone: "error",
-          body: (e as Error).message,
-        });
-      }
-    });
-  }
-
-  function cancelSubscription() {
-    setCancelOpen(false);
-    startTransition(async () => {
-      try {
-        // Match by tier-prefixed notes pattern. The Stripe webhook
-        // writes notes like `stripe-sub:sub_…`; the dev path writes
-        // `dev:no-stripe`. Both expire on cancel.
-        await expireEntitlementByNotes("dev:no-stripe");
-        toast("Subscription cancelled", {
-          tone: "success",
-          body: "You’ll keep paid features until the period ends.",
-        });
-      } catch (e) {
-        toast("Cancel failed", {
           tone: "error",
           body: (e as Error).message,
         });
@@ -250,14 +224,6 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
                   className="rounded-full border border-line bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink-soft hover:border-ink-soft/30 hover:text-ink disabled:opacity-60"
                 >
                   Manage billing
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCancelOpen(true)}
-                  disabled={pending}
-                  className="rounded-full border border-line bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink-soft hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
-                >
-                  Cancel subscription
                 </button>
               </div>
             ) : null}
@@ -390,47 +356,6 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
           </button>
         </div>
       </form>
-
-      <Dialog
-        open={cancelOpen}
-        onClose={() => setCancelOpen(false)}
-        labelledBy="cancel-sub-title"
-        width={440}
-      >
-        <div className="px-5 py-5">
-          <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-rose-700">
-            Confirm
-          </div>
-          <h3
-            id="cancel-sub-title"
-            className="mt-1 text-[17px] font-semibold tracking-tight"
-          >
-            Cancel your subscription?
-          </h3>
-          <p className="mt-2 text-[13px] leading-[1.55] text-ink-soft">
-            You&apos;ll keep paid features through the end of the current
-            billing period, then drop back to Free. Your tasks stay where
-            they are.
-          </p>
-          <div className="mt-5 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setCancelOpen(false)}
-              className="rounded-full border border-line bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink-soft hover:border-ink-soft/30 hover:text-ink"
-            >
-              Keep it
-            </button>
-            <button
-              type="button"
-              onClick={cancelSubscription}
-              disabled={pending}
-              className="rounded-full bg-rose-600 px-3 py-1.5 text-[12.5px] font-medium text-white shadow-sm hover:bg-rose-700 disabled:opacity-60"
-            >
-              {pending ? "Canceling…" : "Yes, cancel"}
-            </button>
-          </div>
-        </div>
-      </Dialog>
     </div>
   );
 }

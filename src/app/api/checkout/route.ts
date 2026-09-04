@@ -63,13 +63,8 @@ export async function GET(req: Request) {
     );
   }
 
-  // SAFETY: in production, if Stripe isn't configured,
-  // createCheckoutSessionAction silently grants the tier locally via
-  // the dev-fallback path. That would let any clicker walk away with
-  // a paid tier without paying. Fail loudly instead, redirect to
-  // /pricing with a state marker the umbrella can render as
-  // "Checkout temporarily offline". Dev environments keep the
-  // fallback path so local testing is unblocked.
+  // Give the public route a recoverable destination when billing is offline.
+  // The Server Action independently refuses missing Stripe configuration.
   if (process.env.NODE_ENV === "production" && !stripeConfigured) {
     return NextResponse.redirect(
       new URL("/pricing?status=checkout-offline", req.url),

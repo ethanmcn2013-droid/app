@@ -412,7 +412,6 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   for (const boundary of [
     "getCurrentUser",
     "getActiveWorkspace",
-    "grantEntitlement",
     "stripe.checkout.sessions.create",
   ]) {
     assertDemoGuardBefore(
