@@ -3,7 +3,7 @@ name: Verify Tasks
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, release/january-2027]
 
 concurrency:
   group: tasks-verify-${{ github.ref }}
@@ -24,6 +24,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:contract
+      - name: Isolated January migration rehearsal
+        run: node scripts/db/verify-january-rehearsal.mjs
       - run: pnpm lint
       - run: pnpm typecheck
       # The D-022 access-term differential test (venue-access-term.test.ts)
@@ -34,6 +36,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ethanmcn2013-droid/studio
+          ref: ${{ (github.base_ref == 'release/january-2027' || github.ref_name == 'release/january-2027') && 'release/january-2027' || 'main' }}
           path: studio-parity
       - name: Test (includes calendar, Signal, Timeline, and suite truth gates)
         run: pnpm test
@@ -43,6 +46,8 @@ jobs:
       # removed so the build and later gates never see a second repository.
       - name: Remove parity checkout
         run: rm -rf studio-parity
+      - name: Project Drive lifecycle and recovery
+        run: pnpm test:project-drive
       - run: pnpm build
       # E08.10 — performance budgets, measured from the build above so this
       # costs no extra build time. The check ratchets: it fails when a

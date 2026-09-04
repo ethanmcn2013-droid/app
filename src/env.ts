@@ -41,6 +41,33 @@ const RECOMMENDED_IN_PRODUCTION: ReadonlyArray<readonly [string, string]> = [
   // routes remain isolated (dev fallback file:signal.db).
   ["SIGNAL_DATABASE_URL", "Home briefing database (legacy name; briefing engine + preferences)"],
   ["SIGNAL_AUTH_TOKEN", "Home briefing database auth token (legacy name)"],
+  // WP-0. Without this on a Vercel deployment `chooseBackend()` returns
+  // "vercel-no-token" and every attachment upload throws at the moment a
+  // customer tries one — the least useful place to learn it is missing.
+  // It warns here instead, at boot, where an operator is looking.
+  ["BLOB_READ_WRITE_TOKEN", "attachment storage (Vercel Blob); uploads fail without it"],
+  // WP-2. The key that encrypts a customer's Google refresh token before
+  // it touches the database. Its absence does not stop the app booting —
+  // nothing reads it until a Drive connection exists — but it must be
+  // present and unchanged before the first one is made, because rotating
+  // it later forces every connected customer to reconnect.
+  [
+    "PROVIDER_TOKEN_KEY",
+    "encrypts stored provider refresh tokens (Project Drive)",
+  ],
+  // WP-4. Drive remains an optional capability, but a half-configured OAuth
+  // client cannot start or finish consent. The redirect URI is deliberately
+  // deployment-specific so Preview returns to Preview rather than production.
+  ["GOOGLE_OAUTH_CLIENT_ID", "Google Drive OAuth client id"],
+  ["GOOGLE_OAUTH_CLIENT_SECRET", "Google Drive OAuth client secret"],
+  [
+    "GOOGLE_OAUTH_REDIRECT_URI",
+    "exact Google Drive OAuth callback for this deployment",
+  ],
+  [
+    "OAUTH_STATE_SECRET",
+    "signs session- and Project-bound Google OAuth state",
+  ],
 ];
 
 let validated = false;

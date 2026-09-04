@@ -146,7 +146,8 @@ export async function exportForUser(clerkId: string): Promise<
  * which is not reliably enforced over Turso's stateless HTTP.
  *
  * Returns `{ ok: true }` on success, `{ ok: false, error }` on failure so
- * the orchestrator can log and continue.
+ * the orchestrator can attempt every product eraser and then fail closed
+ * before identity deletion.
  *
  * Idempotent: retrying after partial failure is safe.
  */

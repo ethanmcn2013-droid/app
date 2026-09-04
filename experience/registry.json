@@ -119,7 +119,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "8c32e8f546fe5dc5"
+      "materialityHash": "e1fd36ea48684fdf"
     },
     {
       "id": "tasks.page.app-tasks-calendar",
@@ -160,14 +160,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-17",
+      "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "3f5163cb86596bd8",
       "materialityReview": {
         "materialityHash": "3f5163cb86596bd8",
-        "reviewedAt": "2026-08-17",
-        "evidence": "experience/reviews/tasks.page.app-tasks-calendar-2026-08-17-wp6-d022.json"
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-ca95830e-tasks.page.app-tasks-calendar.json"
       }
     },
     {
@@ -317,14 +317,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-17",
+      "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "32d002ae4ca8c95c",
       "materialityReview": {
         "materialityHash": "32d002ae4ca8c95c",
-        "reviewedAt": "2026-08-17",
-        "evidence": "experience/reviews/tasks.page.app-tasks-list-2026-08-17-wp6-d022.json"
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-ca95830e-tasks.page.app-tasks-list.json"
       }
     },
     {
@@ -373,14 +373,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-17",
+      "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "ba2e03f3b33cb1d1",
       "materialityReview": {
         "materialityHash": "ba2e03f3b33cb1d1",
-        "reviewedAt": "2026-08-17",
-        "evidence": "experience/reviews/tasks.page.app-my-tasks-2026-08-17-wp6-d022.json"
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-ca95830e-tasks.page.app-my-tasks.json"
       }
     },
     {
@@ -417,19 +417,21 @@
       "implementationStatus": "legacy",
       "auditStatus": "registered",
       "auditScore": null,
-      "openFindingIds": [],
+      "openFindingIds": [
+        "JAN-BILLING-VISUAL-ACCEPTANCE-PENDING"
+      ],
       "automatedTestCoverage": "none",
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-17",
+      "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "973bce313aea5f46",
       "materialityReview": {
         "materialityHash": "973bce313aea5f46",
-        "reviewedAt": "2026-08-17",
-        "evidence": "experience/reviews/tasks.page.app-settings-2026-08-17-wp6-d022.json"
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-ca95830e-tasks.page.app-settings.json"
       }
     },
     {
@@ -471,14 +473,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-17",
+      "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "919d7874ace4d91f",
       "materialityReview": {
         "materialityHash": "919d7874ace4d91f",
-        "reviewedAt": "2026-08-17",
-        "evidence": "experience/reviews/tasks.page.app-tasks-timeline-2026-08-17-wp6-d022.json"
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-ca95830e-tasks.page.app-tasks-timeline.json"
       }
     },
     {
@@ -527,14 +529,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-17",
+      "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "4951bf1c82945c78",
       "materialityReview": {
         "materialityHash": "4951bf1c82945c78",
-        "reviewedAt": "2026-08-17",
-        "evidence": "experience/reviews/tasks.page.app-your-work-2026-08-17-wp6-d022.json"
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-ca95830e-tasks.page.app-your-work.json"
       }
     },
     {
@@ -578,14 +580,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-17",
+      "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "ff4a649e2d42307f",
       "materialityReview": {
         "materialityHash": "ff4a649e2d42307f",
-        "reviewedAt": "2026-08-17",
-        "evidence": "experience/reviews/tasks.page.app-archived-2026-08-17-wp6-d022.json"
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-ca95830e-tasks.page.app-archived.json"
       }
     },
     {
@@ -628,14 +630,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-13",
+      "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "d226ac71e96df95f",
       "materialityReview": {
         "materialityHash": "d226ac71e96df95f",
-        "reviewedAt": "2026-08-13",
-        "evidence": "experience/reviews/tasks.page.embed-by-slug-2026-08-13-wp4-analytics.json"
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-ca95830e-tasks.page.embed-by-slug.json"
       }
     },
     {
@@ -681,7 +683,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "304646b7eb51fa55"
+      "materialityHash": "be59ad3c4caf2218"
     },
     {
       "id": "tasks.page.p-by-slug",
@@ -772,14 +774,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-13",
+      "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "d1e0b9b359012e20",
       "materialityReview": {
         "materialityHash": "d1e0b9b359012e20",
-        "reviewedAt": "2026-08-13",
-        "evidence": "experience/reviews/tasks.page.print-board-2026-08-13-wp4-analytics.json"
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-ca95830e-tasks.page.print-board.json"
       }
     },
     {
@@ -820,14 +822,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-13",
+      "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "3b3fa77295c447eb",
       "materialityReview": {
         "materialityHash": "3b3fa77295c447eb",
-        "reviewedAt": "2026-08-13",
-        "evidence": "experience/reviews/tasks.page.print-calendar-2026-08-13-wp4-analytics.json"
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-ca95830e-tasks.page.print-calendar.json"
       }
     },
     {
@@ -875,14 +877,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-13",
+      "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "4eadbfb50010b0b7",
       "materialityReview": {
         "materialityHash": "4eadbfb50010b0b7",
-        "reviewedAt": "2026-08-13",
-        "evidence": "experience/reviews/tasks.page.print-list-2026-08-13-wp4-analytics.json"
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-ca95830e-tasks.page.print-list.json"
       }
     },
     {
@@ -923,14 +925,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-13",
+      "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "2a81a33e08771fe3",
       "materialityReview": {
         "materialityHash": "2a81a33e08771fe3",
-        "reviewedAt": "2026-08-13",
-        "evidence": "experience/reviews/tasks.page.print-timeline-2026-08-13-wp4-analytics.json"
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-ca95830e-tasks.page.print-timeline.json"
       }
     },
     {
@@ -1104,14 +1106,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-13",
+      "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "ee2b4660f7b40532",
       "materialityReview": {
         "materialityHash": "ee2b4660f7b40532",
-        "reviewedAt": "2026-08-13",
-        "evidence": "experience/reviews/tasks.page.settings-notifications-2026-08-13-wp4-analytics.json"
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-ca95830e-tasks.page.settings-notifications.json"
       }
     },
     {
@@ -1153,14 +1155,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-13",
+      "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "0b8e551245bd1e38",
       "materialityReview": {
         "materialityHash": "0b8e551245bd1e38",
-        "reviewedAt": "2026-08-13",
-        "evidence": "experience/reviews/tasks.page.settings-plan-2026-08-13-wp4-analytics.json"
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-ca95830e-tasks.page.settings-plan.json"
       }
     },
     {
@@ -1202,14 +1204,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-13",
+      "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "a24a1b85fe91dad0",
       "materialityReview": {
         "materialityHash": "a24a1b85fe91dad0",
-        "reviewedAt": "2026-08-13",
-        "evidence": "experience/reviews/tasks.page.settings-profile-2026-08-13-wp4-analytics.json"
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-ca95830e-tasks.page.settings-profile.json"
       }
     },
     {
@@ -1346,7 +1348,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "bcef1d2f0a1926e6"
+      "materialityHash": "09fd1082f9dc2621"
     },
     {
       "id": "tasks.page.sign-up-by-sign-up",
@@ -1391,7 +1393,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "ec6806da27043be0"
+      "materialityHash": "3d52f37b549d99ea"
     },
     {
       "id": "tasks.page.waitlist",
@@ -1475,22 +1477,22 @@
       "reviewTier": "supporting",
       "designOwner": "product-taste-design-integrity",
       "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "legacy",
-      "auditStatus": "registered",
+      "implementationStatus": "preview",
+      "auditStatus": "under-remediation",
       "auditScore": null,
       "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-13",
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "partial",
+      "accessibilityCoverage": "partial",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "11d00f9a07f33588",
+      "materialityHash": "3e8c53f3e10301f8",
       "materialityReview": {
-        "materialityHash": "11d00f9a07f33588",
-        "reviewedAt": "2026-08-13",
-        "evidence": "experience/reviews/tasks.page.welcome-2026-08-13-wp4-analytics.json"
+        "materialityHash": "3e8c53f3e10301f8",
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-ca95830e-tasks.page.welcome.json"
       }
     },
     {
@@ -1534,14 +1536,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-13",
+      "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "f532c7ecbb8ab980",
+      "materialityHash": "ea945dc53ea6ab60",
       "materialityReview": {
-        "materialityHash": "f532c7ecbb8ab980",
-        "reviewedAt": "2026-08-13",
-        "evidence": "experience/reviews/tasks.page.welcome-plan-2026-08-13-wp4-analytics.json"
+        "materialityHash": "ea945dc53ea6ab60",
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-ca95830e-tasks.page.welcome-plan.json"
       }
     },
     {
@@ -1981,14 +1983,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-17",
+      "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "9da9dcfb53810ea7",
       "materialityReview": {
         "materialityHash": "9da9dcfb53810ea7",
-        "reviewedAt": "2026-08-17",
-        "evidence": "experience/reviews/tasks.page.app-task-by-id-2026-08-17-wp6-d022.json"
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-ca95830e-tasks.page.app-task-by-id.json"
       }
     },
     {
@@ -2207,14 +2209,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-17",
+      "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "9643e60183b5aa11",
       "materialityReview": {
         "materialityHash": "9643e60183b5aa11",
-        "reviewedAt": "2026-08-17",
-        "evidence": "experience/reviews/tasks.page.app-project-2026-08-17-wp6-d022.json"
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-ca95830e-tasks.page.app-project.json"
       }
     },
     {
@@ -3559,14 +3561,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-22",
+      "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "3b115a4fbf764125",
       "materialityReview": {
         "materialityHash": "3b115a4fbf764125",
-        "reviewedAt": "2026-08-22",
-        "evidence": "experience/reviews/tasks.state.app-tasks-loading-2026-08-22-floor-air.json"
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-ca95830e-tasks.state.app-tasks-loading.json"
       }
     },
     {
@@ -3653,6 +3655,276 @@
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "219d26d1d17daf20"
+    },
+    {
+      "id": "tasks.connections.storage",
+      "product": "tasks",
+      "surfaceType": "nested-view",
+      "source": "tasks/src/components/app/settings/sections/connections-view.tsx",
+      "trigger": "Settings > Connections with NEXT_PUBLIC_PROJECT_DRIVE_UI=true",
+      "parentJourney": "signed-in-work",
+      "archetype": "settings-and-administration",
+      "primaryJob": "Identify the storage owner and distinguish live Google access from board membership.",
+      "primaryAction": "Check access or connect your own Google Drive.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "first-use",
+        "empty",
+        "populated",
+        "loading",
+        "partial-failure",
+        "error",
+        "success",
+        "disabled",
+        "read-only",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "core",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "under-remediation",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "partial",
+      "accessibilityCoverage": "partial",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "778ef47b2a7cb691"
+    },
+    {
+      "id": "tasks.resources.drive-upload",
+      "product": "tasks",
+      "surfaceType": "nested-view",
+      "source": "tasks/src/components/app/detail-panel/resources-section.tsx",
+      "trigger": "Task > Resources > Attach with NEXT_PUBLIC_PROJECT_DRIVE_UI=true",
+      "parentJourney": "signed-in-work",
+      "archetype": "detail-or-record-view",
+      "primaryJob": "Attach once, understand the destination and recover an uncertain Drive upload safely.",
+      "primaryAction": "Attach a file or retry the same upload.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "first-use",
+        "empty",
+        "populated",
+        "loading",
+        "partial-failure",
+        "error",
+        "success",
+        "disabled",
+        "read-only",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "core",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "under-remediation",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "partial",
+      "accessibilityCoverage": "partial",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": "2026-09-04",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "1db50c9a5126230a",
+      "materialityReview": {
+        "materialityHash": "1db50c9a5126230a",
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-ca95830e-tasks.resources.drive-upload.json"
+      }
+    },
+    {
+      "id": "tasks.resources.drive-upload-status",
+      "product": "tasks",
+      "surfaceType": "nested-view",
+      "source": "tasks/src/components/app/detail-panel/drive-upload-row.tsx",
+      "trigger": "An attachment is checking, uploading, paused or awaiting a fallback choice.",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Distinguish sent bytes from a confirmed attachment and make safe recovery choices.",
+      "primaryAction": "Retry the same claim or explicitly choose Signal Studio before Drive delegation.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "first-use",
+        "empty",
+        "populated",
+        "loading",
+        "partial-failure",
+        "error",
+        "success",
+        "disabled",
+        "read-only",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "core",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "under-remediation",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "partial",
+      "accessibilityCoverage": "partial",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "c33c4ff82c841368"
+    },
+    {
+      "id": "tasks.connections.storage-owner-change",
+      "product": "tasks",
+      "surfaceType": "nested-view",
+      "source": "tasks/src/components/app/settings/sections/drive-handover-view.tsx",
+      "trigger": "Connections > Change storage owner with NEXT_PUBLIC_PROJECT_DRIVE_UI=true",
+      "parentJourney": "signed-in-work",
+      "archetype": "settings-and-administration",
+      "primaryJob": "Confirm custody consequences and continue only the server-checked saved owner change.",
+      "primaryAction": "Review and confirm the storage owner change.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "first-use",
+        "empty",
+        "populated",
+        "loading",
+        "partial-failure",
+        "error",
+        "success",
+        "disabled",
+        "read-only",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "core",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "under-remediation",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": "2026-09-04",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "52aa27dae6dafc3b",
+      "materialityReview": {
+        "materialityHash": "52aa27dae6dafc3b",
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-ca95830e-tasks.connections.storage-owner-change.json"
+      }
+    },
+    {
+      "id": "tasks.resources.drive-reload-recovery",
+      "product": "tasks",
+      "surfaceType": "nested-view",
+      "source": "tasks/src/components/app/detail-panel/drive-reload-notice.tsx",
+      "trigger": "Resources has an earlier pending Drive claim after reload with the UI flag enabled.",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Check whether an earlier upload finished while keeping its existing entry intact.",
+      "primaryAction": "Check for completed files without sending another file.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "first-use",
+        "empty",
+        "populated",
+        "loading",
+        "partial-failure",
+        "error",
+        "success",
+        "disabled",
+        "read-only",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "core",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "under-remediation",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": "2026-09-04",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "7f4300daa34c292b",
+      "materialityReview": {
+        "materialityHash": "7f4300daa34c292b",
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-ca95830e-tasks.resources.drive-reload-recovery.json"
+      }
     }
   ]
 }

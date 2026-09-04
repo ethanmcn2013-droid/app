@@ -80,16 +80,15 @@ import "server-only";
  */
 
 import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
 import { nextTaskSeq } from "@/server/db/task-seq";
 import {
-  shareLinkVisits,
-  shareLinks,
   tasks,
   workspaceMembers,
   workspaces,
+  workspaceStorage,
 } from "@/server/db/schema";
 import { emitTasksChanged } from "@/server/events";
 import {
@@ -107,6 +106,9 @@ import {
 import { cleanPlainText, normalizeWorkspaceContext } from "@/lib/planning/input";
 import { planDuplicatedTasks } from "@/lib/planning/duplication";
 import { readWorkspaceColumnConfig } from "@/server/db/board-config-read";
+import { executeProjectDriveFolderOperation } from "@/server/connections/project-drive-folder-operation-executor";
+import { prepareAccountFencedProjectDriveOperationInTransaction } from "@/server/connections/project-drive-operation-orchestrator";
+import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
 
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -306,16 +308,64 @@ export async function renameProject(input: {
   if (!trimmed) {
     throw new Error("Workspace name can’t be empty.");
   }
-  const updated = await db
-    .update(workspaces)
-    .set({
-      name: trimmed,
-      revision: sql`${workspaces.revision} + 1`,
-      updatedAt: new Date(),
-    })
-    .where(eq(workspaces.id, grant.projectId))
-    .returning({ id: workspaces.id });
-  if (!updated[0]) throw new Error(RECEIPT_MISSING);
+  const result = await db.transaction(
+    async (transaction) => {
+      await assertProjectNotDeleting(transaction, grant.projectId);
+      const updated = await transaction
+        .update(workspaces)
+        .set({
+          name: trimmed,
+          revision: sql`${workspaces.revision} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(eq(workspaces.id, grant.projectId))
+        .returning({ id: workspaces.id, revision: workspaces.revision });
+      if (!updated[0]) throw new Error(RECEIPT_MISSING);
+
+      const currentStorage = await transaction
+        .select({ id: workspaceStorage.id })
+        .from(workspaceStorage)
+        .where(
+          and(
+            eq(workspaceStorage.workspaceId, grant.projectId),
+            eq(workspaceStorage.isCurrent, true),
+          ),
+        )
+        .limit(2);
+      if (currentStorage.length > 1) throw new Error(RECEIPT_MISSING);
+      if (currentStorage.length === 0) {
+        return Object.freeze({ id: updated[0].id, renameOperation: null });
+      }
+
+      const prepared =
+        await prepareAccountFencedProjectDriveOperationInTransaction(
+          transaction,
+          {
+            operationKind: "folder_rename",
+            workspaceId: grant.projectId,
+            storageGenerationId: currentStorage[0].id,
+            workspaceRevision: updated[0].revision,
+          },
+        );
+      if (prepared.outcome === "conflict") throw new Error(refusal);
+      return Object.freeze({
+        id: updated[0].id,
+        renameOperation: Object.freeze({
+          workspaceId: grant.projectId,
+          operationId: prepared.operation.operationId,
+          operationKind: "folder_rename" as const,
+        }),
+      });
+    },
+    { behavior: "immediate" },
+  );
+
+  // Drive is an external side effect, so it starts only after the Project
+  // name/revision and exact-generation intent have committed together. The
+  // executor records retry/manual state without undoing the local rename.
+  if (result.renameOperation) {
+    await executeProjectDriveFolderOperation(result.renameOperation);
+  }
   revalidatePath("/app", "layout");
   return { id: grant.projectId };
 }
@@ -337,15 +387,21 @@ export async function reorderProject(input: {
     "manageProject",
     refusal,
   );
-  const updated = await db
-    .update(workspaces)
-    .set({
-      position: safePosition(input.position),
-      revision: sql`${workspaces.revision} + 1`,
-      updatedAt: new Date(),
-    })
-    .where(eq(workspaces.id, grant.projectId))
-    .returning({ id: workspaces.id });
+  const updated = await db.transaction(
+    async (transaction) => {
+      await assertProjectNotDeleting(transaction, grant.projectId);
+      return transaction
+        .update(workspaces)
+        .set({
+          position: safePosition(input.position),
+          revision: sql`${workspaces.revision} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(eq(workspaces.id, grant.projectId))
+        .returning({ id: workspaces.id });
+    },
+    { behavior: "immediate" },
+  );
   if (!updated[0]) throw new Error(RECEIPT_MISSING);
   revalidatePath("/app", "layout");
   return { id: grant.projectId };
@@ -374,15 +430,21 @@ export async function setProjectArchived(input: {
     "manageProject",
     refusal,
   );
-  const updated = await db
-    .update(workspaces)
-    .set({
-      archivedAt: input.archived ? new Date() : null,
-      revision: sql`${workspaces.revision} + 1`,
-      updatedAt: new Date(),
-    })
-    .where(eq(workspaces.id, grant.projectId))
-    .returning({ id: workspaces.id, contextType: workspaces.contextType });
+  const updated = await db.transaction(
+    async (transaction) => {
+      await assertProjectNotDeleting(transaction, grant.projectId);
+      return transaction
+        .update(workspaces)
+        .set({
+          archivedAt: input.archived ? new Date() : null,
+          revision: sql`${workspaces.revision} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(eq(workspaces.id, grant.projectId))
+        .returning({ id: workspaces.id, contextType: workspaces.contextType });
+    },
+    { behavior: "immediate" },
+  );
   if (!updated[0]) throw new Error(RECEIPT_MISSING);
   revalidatePath("/app", "layout");
   return { id: grant.projectId, contextType: updated[0].contextType };
@@ -419,24 +481,31 @@ export async function moveProjectToPeriod(input: {
     requirePlanningPeriodOwner(input.actorUserId, input.targetPlanningPeriodId),
   ]);
   if (target.archivedAt) throw new Error("Restore the target period first.");
-  const [current] = await db
-    .select({ contextType: workspaces.contextType })
-    .from(workspaces)
-    .where(eq(workspaces.id, grant.projectId));
-  if (!current) throw new Error(RECEIPT_MISSING);
-  if (!isCompatibleWorkspaceContext(target.contextType, current.contextType)) {
-    throw new Error("This workspace type does not match the target period.");
-  }
-  const updated = await db
-    .update(workspaces)
-    .set({
-      planningPeriodId: target.id,
-      position: safePosition(input.position),
-      revision: sql`${workspaces.revision} + 1`,
-      updatedAt: new Date(),
-    })
-    .where(eq(workspaces.id, grant.projectId))
-    .returning({ id: workspaces.id });
+  const { current, updated } = await db.transaction(
+    async (transaction) => {
+      await assertProjectNotDeleting(transaction, grant.projectId);
+      const [current] = await transaction
+        .select({ contextType: workspaces.contextType })
+        .from(workspaces)
+        .where(eq(workspaces.id, grant.projectId));
+      if (!current) throw new Error(RECEIPT_MISSING);
+      if (!isCompatibleWorkspaceContext(target.contextType, current.contextType)) {
+        throw new Error("This workspace type does not match the target period.");
+      }
+      const updated = await transaction
+        .update(workspaces)
+        .set({
+          planningPeriodId: target.id,
+          position: safePosition(input.position),
+          revision: sql`${workspaces.revision} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(eq(workspaces.id, grant.projectId))
+        .returning({ id: workspaces.id });
+      return Object.freeze({ current, updated });
+    },
+    { behavior: "immediate" },
+  );
   if (!updated[0]) throw new Error(RECEIPT_MISSING);
   revalidatePath("/app", "layout");
   return {
@@ -568,6 +637,7 @@ export async function duplicateProjectIntoPeriodTx(
     choices: ProjectDuplicationChoices;
   },
 ): Promise<{ id: string; slug: string; sourceContextType: string }> {
+  await assertProjectNotDeleting(tx, input.source.id);
   const id = `ws-${randomUUID()}`;
   const slug = `${slugifyProjectName(input.name)}-${randomUUID().slice(0, 8)}`;
   const now = new Date();
@@ -699,32 +769,20 @@ export async function deleteProject(input: {
     "deleteOrTransferOwnership",
     refusal,
   );
-  const removed = await db.transaction(async (tx) => {
-    const [published] = await tx
-      .select({ slug: workspaces.slug, publishedAt: workspaces.publishedAt })
-      .from(workspaces)
-      .where(eq(workspaces.id, grant.projectId));
-    if (!published) throw new Error(RECEIPT_MISSING);
-    const linkRows = await tx
-      .select({ token: shareLinks.token })
-      .from(shareLinks)
-      .where(eq(shareLinks.workspaceId, grant.projectId));
-    const tokens = linkRows.map((row) => row.token);
-    if (tokens.length > 0) {
-      await tx
-        .delete(shareLinkVisits)
-        .where(inArray(shareLinkVisits.token, tokens));
-    }
-    await tx
-      .delete(shareLinks)
-      .where(eq(shareLinks.workspaceId, grant.projectId));
-    await tx.delete(tasks).where(eq(tasks.workspaceId, grant.projectId));
-    const gone = await tx
-      .delete(workspaces)
-      .where(eq(workspaces.id, grant.projectId))
-      .returning({ id: workspaces.id });
-    if (!gone[0]) throw new Error(RECEIPT_MISSING);
-    return published;
+  // Keep the established boundary proof for an early neutral refusal. The
+  // lifecycle below re-proves the same primary-owner capability inside the
+  // immediate transaction that commits its durable deletion intent, then
+  // preserves exact Drive receipts across the provider/database split.
+  const [projectDeletion, driveErasureGrants] = await Promise.all([
+    import("@/server/connections/project-drive-project-deletion"),
+    import("@/server/connections/project-drive-erasure-grants"),
+  ]);
+  const removed = await projectDeletion.createProjectDriveProjectDeletionService({
+    database: db,
+    revokeExactGrant: driveErasureGrants.revokeExactDriveFolderGrant,
+  }).delete({
+    workspaceId: grant.projectId,
+    actorUserId: input.actorUserId,
   });
   // Drop the public page immediately rather than at the end of the ISR
   // window (E06.12).
@@ -734,6 +792,6 @@ export async function deleteProject(input: {
   return {
     id: grant.projectId,
     slug: removed.slug,
-    wasPublished: removed.publishedAt !== null,
+    wasPublished: removed.wasPublished,
   };
 }

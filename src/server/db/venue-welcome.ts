@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq, gt, isNull, like, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, like, lte, or, sql } from "drizzle-orm";
 import { db } from "./index";
 import { compCodes, entitlements } from "./schema";
 
@@ -34,14 +34,28 @@ type CompNotes = {
  */
 export async function detectVenueWelcome(
   userId: string,
+  projectId: string,
+  database = db,
 ): Promise<VenueWelcome | null> {
+  if (!projectId) return null;
+  return findVenueWelcome(userId, projectId, database);
+}
+
+/** Legacy experimental new-project planning flow; never use for an existing project. */
+export async function detectVenueWelcomeForLegacyPlanning(userId: string): Promise<VenueWelcome | null> {
+  return findVenueWelcome(userId, null, db);
+}
+
+async function findVenueWelcome(userId: string, projectId: string | null, database: typeof db): Promise<VenueWelcome | null> {
   const now = new Date();
-  const [entitlementRow] = await db
+  const [entitlementRow] = await database
     .select({ notes: entitlements.notes })
     .from(entitlements)
     .where(
       and(
         eq(entitlements.userId, userId),
+        projectId === null ? undefined : eq(entitlements.workspaceId, projectId),
+        lte(entitlements.startedAt, now),
         eq(entitlements.tier, "wedding"),
         eq(entitlements.source, "comp"),
         or(
@@ -58,7 +72,7 @@ export async function detectVenueWelcome(
   const code = entitlementRow.notes.replace(/^comp:/, "");
   if (!code) return null;
 
-  const [compRow] = await db
+  const [compRow] = await database
     .select({ notes: compCodes.notes })
     .from(compCodes)
     .where(eq(compCodes.code, code))
@@ -99,21 +113,29 @@ export async function detectVenueWelcome(
  */
 export async function markVenueEntitlementReached(
   userId: string,
+  projectId: string,
+  code: string,
+  database = db,
 ): Promise<void> {
+  if (!projectId || !code) return;
   try {
-    await db.run(sql`
+    await database.run(sql`
       UPDATE entitlements
       SET reached_board_at = unixepoch()
       WHERE user_id = ${userId}
+        AND workspace_id = ${projectId}
+        AND notes = ${`comp:${code}`}
         AND tier = 'wedding'
         AND source = 'comp'
+        AND started_at <= unixepoch()
+        AND (expires_at IS NULL OR expires_at > unixepoch())
         AND reached_board_at IS NULL
     `);
-  } catch (err) {
+  } catch {
     // Don't crash the board on a measurement-helper failure. Most
     // likely cause: drizzle/0001_add_reached_board_at.sql hasn't
     // been applied to prod Turso yet.
-    console.warn("[venue-welcome] markVenueEntitlementReached failed", err);
+    console.warn("[venue-welcome] first project view could not be recorded");
   }
 }
 

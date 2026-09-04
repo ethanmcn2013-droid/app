@@ -1,0 +1,1514 @@
+{
+  "base": "4e4a356284c2fb028bb33000502b7e43327c7c61",
+  "recordedAt": "2026-09-04T20:52:22.8590409Z",
+  "buildId": "cZBwfYm0PzYkBDBdJiVqh",
+  "server": "http://127.0.0.1:3132",
+  "mode": "next start, review",
+  "browser": "Fresh Playwright-managed Chrome contexts, extensions disabled",
+  "stats": {
+    "startTime": "2026-09-04T20:51:05.9Z",
+    "duration": 21722.292,
+    "expected": 8,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "records": [
+    {
+      "title": "Tasks view labels retain readable contrast on Board and List",
+      "project": "mobile-light",
+      "status": "passed",
+      "durationMs": 1842,
+      "errors": [],
+      "observations": {
+        "list-contrast": {
+          "theme": "light",
+          "width": 390,
+          "documentWidth": 390,
+          "measurements": [
+            {
+              "label": "Board",
+              "href": "/app/tasks",
+              "active": false,
+              "color": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.72)",
+              "foreground": [
+                80.97440612000001,
+                80.97440612000001,
+                80.97440612000001,
+                1
+              ],
+              "background": [
+                245.48,
+                245.48,
+                245.48,
+                1
+              ],
+              "contrast": 7.314288184852179,
+              "fontSize": "13px",
+              "rect": {
+                "x": 37,
+                "y": 145.515625,
+                "width": 77.5,
+                "height": 32,
+                "top": 145.515625,
+                "right": 114.5,
+                "bottom": 177.515625,
+                "left": 37
+              }
+            },
+            {
+              "label": "List",
+              "href": "/app/tasks/list",
+              "active": true,
+              "color": "rgb(17, 17, 17)",
+              "foreground": [
+                17,
+                17,
+                17,
+                1
+              ],
+              "background": [
+                255,
+                255,
+                255,
+                1
+              ],
+              "contrast": 18.883060964594996,
+              "fontSize": "13px",
+              "rect": {
+                "x": 116.5,
+                "y": 145.515625,
+                "width": 77.5,
+                "height": 32,
+                "top": 145.515625,
+                "right": 194,
+                "bottom": 177.515625,
+                "left": 116.5
+              }
+            },
+            {
+              "label": "Schedule",
+              "href": "/app/tasks/timeline",
+              "active": false,
+              "color": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.72)",
+              "foreground": [
+                80.97440612000001,
+                80.97440612000001,
+                80.97440612000001,
+                1
+              ],
+              "background": [
+                245.48,
+                245.48,
+                245.48,
+                1
+              ],
+              "contrast": 7.314288184852179,
+              "fontSize": "13px",
+              "rect": {
+                "x": 196,
+                "y": 145.515625,
+                "width": 77.5,
+                "height": 32,
+                "top": 145.515625,
+                "right": 273.5,
+                "bottom": 177.515625,
+                "left": 196
+              }
+            },
+            {
+              "label": "Calendar",
+              "href": "/app/tasks/calendar",
+              "active": false,
+              "color": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.72)",
+              "foreground": [
+                80.97440612000001,
+                80.97440612000001,
+                80.97440612000001,
+                1
+              ],
+              "background": [
+                245.48,
+                245.48,
+                245.48,
+                1
+              ],
+              "contrast": 7.314288184852179,
+              "fontSize": "13px",
+              "rect": {
+                "x": 275.5,
+                "y": 145.515625,
+                "width": 77.5,
+                "height": 32,
+                "top": 145.515625,
+                "right": 353,
+                "bottom": 177.515625,
+                "left": 275.5
+              }
+            }
+          ]
+        },
+        "board-contrast": {
+          "theme": "light",
+          "width": 390,
+          "documentWidth": 390,
+          "measurements": [
+            {
+              "label": "Board",
+              "href": "/app/tasks",
+              "active": true,
+              "color": "rgb(17, 17, 17)",
+              "foreground": [
+                17,
+                17,
+                17,
+                1
+              ],
+              "background": [
+                255,
+                255,
+                255,
+                1
+              ],
+              "contrast": 18.883060964594996,
+              "fontSize": "13px",
+              "rect": {
+                "x": 37,
+                "y": 145.515625,
+                "width": 77.5,
+                "height": 32,
+                "top": 145.515625,
+                "right": 114.5,
+                "bottom": 177.515625,
+                "left": 37
+              }
+            },
+            {
+              "label": "List",
+              "href": "/app/tasks/list",
+              "active": false,
+              "color": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.72)",
+              "foreground": [
+                80.97440612000001,
+                80.97440612000001,
+                80.97440612000001,
+                1
+              ],
+              "background": [
+                245.48,
+                245.48,
+                245.48,
+                1
+              ],
+              "contrast": 7.314288184852179,
+              "fontSize": "13px",
+              "rect": {
+                "x": 116.5,
+                "y": 145.515625,
+                "width": 77.5,
+                "height": 32,
+                "top": 145.515625,
+                "right": 194,
+                "bottom": 177.515625,
+                "left": 116.5
+              }
+            },
+            {
+              "label": "Schedule",
+              "href": "/app/tasks/timeline",
+              "active": false,
+              "color": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.72)",
+              "foreground": [
+                80.97440612000001,
+                80.97440612000001,
+                80.97440612000001,
+                1
+              ],
+              "background": [
+                245.48,
+                245.48,
+                245.48,
+                1
+              ],
+              "contrast": 7.314288184852179,
+              "fontSize": "13px",
+              "rect": {
+                "x": 196,
+                "y": 145.515625,
+                "width": 77.5,
+                "height": 32,
+                "top": 145.515625,
+                "right": 273.5,
+                "bottom": 177.515625,
+                "left": 196
+              }
+            },
+            {
+              "label": "Calendar",
+              "href": "/app/tasks/calendar",
+              "active": false,
+              "color": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.72)",
+              "foreground": [
+                80.97440612000001,
+                80.97440612000001,
+                80.97440612000001,
+                1
+              ],
+              "background": [
+                245.48,
+                245.48,
+                245.48,
+                1
+              ],
+              "contrast": 7.314288184852179,
+              "fontSize": "13px",
+              "rect": {
+                "x": 275.5,
+                "y": 145.515625,
+                "width": 77.5,
+                "height": 32,
+                "top": 145.515625,
+                "right": 353,
+                "bottom": 177.515625,
+                "left": 275.5
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "title": "isolated Board to List navigation reports all console and request faults",
+      "project": "mobile-light",
+      "status": "passed",
+      "durationMs": 2401,
+      "errors": [],
+      "observations": {
+        "console-and-requests": {
+          "consoleFaults": [],
+          "requestFailures": [
+            {
+              "url": "http://127.0.0.1:3132/app/timeline?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period&_rsc=pS52AksSizEhNi-v",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/home?_rsc=pS52AksSizEhNi-v",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period&_rsc=lmbJkMX8FuXHABT8",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/timeline?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period&_rsc=VHBGPMZsg9L8484-",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks/calendar?_rsc=lmbJkMX8FuXHABT8",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks/timeline?_rsc=lmbJkMX8FuXHABT8",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/notes?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period&_rsc=BE6Mq0B7OD0VOySY",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/settings?_rsc=lmbJkMX8FuXHABT8",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks?_rsc=lmbJkMX8FuXHABT8",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/home?_rsc=fRF26JycibF9jd0c",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/timeline?_rsc=pS52AksSizEhNi-v",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/notes?_rsc=pS52AksSizEhNi-v",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            }
+          ],
+          "failedResponses": [],
+          "listResponses": [
+            {
+              "url": "http://127.0.0.1:3132/app/tasks/list?_rsc=pS52AksSizEhNi-v",
+              "status": 200
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks/list?_rsc=rMALafnXc3VuJ_6L",
+              "status": 200
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks/list?_rsc=lmbJkMX8FuXHABT8",
+              "status": 200
+            }
+          ],
+          "delayedListResponses": 3,
+          "url": "http://127.0.0.1:3132/app/tasks/list"
+        }
+      }
+    },
+    {
+      "title": "Tasks view labels retain readable contrast on Board and List",
+      "project": "mobile-dark",
+      "status": "passed",
+      "durationMs": 1718,
+      "errors": [],
+      "observations": {
+        "list-contrast": {
+          "theme": "dark",
+          "width": 390,
+          "documentWidth": 390,
+          "measurements": [
+            {
+              "label": "Board",
+              "href": "/app/tasks",
+              "active": false,
+              "color": "color(srgb 0.956863 0.956863 0.960784 / 0.72)",
+              "foreground": [
+                179.90244679999998,
+                179.90244679999998,
+                180.89114239999998,
+                1
+              ],
+              "background": [
+                15.079999999999998,
+                15.079999999999998,
+                16.04,
+                1
+              ],
+              "contrast": 9.232216903492166,
+              "fontSize": "13px",
+              "rect": {
+                "x": 37,
+                "y": 145.515625,
+                "width": 77.5,
+                "height": 32,
+                "top": 145.515625,
+                "right": 114.5,
+                "bottom": 177.515625,
+                "left": 37
+              }
+            },
+            {
+              "label": "List",
+              "href": "/app/tasks/list",
+              "active": true,
+              "color": "rgb(244, 244, 245)",
+              "foreground": [
+                244,
+                244,
+                245,
+                1
+              ],
+              "background": [
+                15,
+                15,
+                16,
+                1
+              ],
+              "contrast": 17.42998066135509,
+              "fontSize": "13px",
+              "rect": {
+                "x": 116.5,
+                "y": 145.515625,
+                "width": 77.5,
+                "height": 32,
+                "top": 145.515625,
+                "right": 194,
+                "bottom": 177.515625,
+                "left": 116.5
+              }
+            },
+            {
+              "label": "Schedule",
+              "href": "/app/tasks/timeline",
+              "active": false,
+              "color": "color(srgb 0.956863 0.956863 0.960784 / 0.72)",
+              "foreground": [
+                179.90244679999998,
+                179.90244679999998,
+                180.89114239999998,
+                1
+              ],
+              "background": [
+                15.079999999999998,
+                15.079999999999998,
+                16.04,
+                1
+              ],
+              "contrast": 9.232216903492166,
+              "fontSize": "13px",
+              "rect": {
+                "x": 196,
+                "y": 145.515625,
+                "width": 77.5,
+                "height": 32,
+                "top": 145.515625,
+                "right": 273.5,
+                "bottom": 177.515625,
+                "left": 196
+              }
+            },
+            {
+              "label": "Calendar",
+              "href": "/app/tasks/calendar",
+              "active": false,
+              "color": "color(srgb 0.956863 0.956863 0.960784 / 0.72)",
+              "foreground": [
+                179.90244679999998,
+                179.90244679999998,
+                180.89114239999998,
+                1
+              ],
+              "background": [
+                15.079999999999998,
+                15.079999999999998,
+                16.04,
+                1
+              ],
+              "contrast": 9.232216903492166,
+              "fontSize": "13px",
+              "rect": {
+                "x": 275.5,
+                "y": 145.515625,
+                "width": 77.5,
+                "height": 32,
+                "top": 145.515625,
+                "right": 353,
+                "bottom": 177.515625,
+                "left": 275.5
+              }
+            }
+          ]
+        },
+        "board-contrast": {
+          "theme": "dark",
+          "width": 390,
+          "documentWidth": 390,
+          "measurements": [
+            {
+              "label": "Board",
+              "href": "/app/tasks",
+              "active": true,
+              "color": "rgb(244, 244, 245)",
+              "foreground": [
+                244,
+                244,
+                245,
+                1
+              ],
+              "background": [
+                15,
+                15,
+                16,
+                1
+              ],
+              "contrast": 17.42998066135509,
+              "fontSize": "13px",
+              "rect": {
+                "x": 37,
+                "y": 145.515625,
+                "width": 77.5,
+                "height": 32,
+                "top": 145.515625,
+                "right": 114.5,
+                "bottom": 177.515625,
+                "left": 37
+              }
+            },
+            {
+              "label": "List",
+              "href": "/app/tasks/list",
+              "active": false,
+              "color": "color(srgb 0.956863 0.956863 0.960784 / 0.72)",
+              "foreground": [
+                179.90244679999998,
+                179.90244679999998,
+                180.89114239999998,
+                1
+              ],
+              "background": [
+                15.079999999999998,
+                15.079999999999998,
+                16.04,
+                1
+              ],
+              "contrast": 9.232216903492166,
+              "fontSize": "13px",
+              "rect": {
+                "x": 116.5,
+                "y": 145.515625,
+                "width": 77.5,
+                "height": 32,
+                "top": 145.515625,
+                "right": 194,
+                "bottom": 177.515625,
+                "left": 116.5
+              }
+            },
+            {
+              "label": "Schedule",
+              "href": "/app/tasks/timeline",
+              "active": false,
+              "color": "color(srgb 0.956863 0.956863 0.960784 / 0.72)",
+              "foreground": [
+                179.90244679999998,
+                179.90244679999998,
+                180.89114239999998,
+                1
+              ],
+              "background": [
+                15.079999999999998,
+                15.079999999999998,
+                16.04,
+                1
+              ],
+              "contrast": 9.232216903492166,
+              "fontSize": "13px",
+              "rect": {
+                "x": 196,
+                "y": 145.515625,
+                "width": 77.5,
+                "height": 32,
+                "top": 145.515625,
+                "right": 273.5,
+                "bottom": 177.515625,
+                "left": 196
+              }
+            },
+            {
+              "label": "Calendar",
+              "href": "/app/tasks/calendar",
+              "active": false,
+              "color": "color(srgb 0.956863 0.956863 0.960784 / 0.72)",
+              "foreground": [
+                179.90244679999998,
+                179.90244679999998,
+                180.89114239999998,
+                1
+              ],
+              "background": [
+                15.079999999999998,
+                15.079999999999998,
+                16.04,
+                1
+              ],
+              "contrast": 9.232216903492166,
+              "fontSize": "13px",
+              "rect": {
+                "x": 275.5,
+                "y": 145.515625,
+                "width": 77.5,
+                "height": 32,
+                "top": 145.515625,
+                "right": 353,
+                "bottom": 177.515625,
+                "left": 275.5
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "title": "isolated Board to List navigation reports all console and request faults",
+      "project": "mobile-dark",
+      "status": "passed",
+      "durationMs": 2255,
+      "errors": [],
+      "observations": {
+        "console-and-requests": {
+          "consoleFaults": [],
+          "requestFailures": [
+            {
+              "url": "http://127.0.0.1:3132/app/timeline?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period&_rsc=pS52AksSizEhNi-v",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period&_rsc=pS52AksSizEhNi-v",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/notes?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period&_rsc=pS52AksSizEhNi-v",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks/calendar?_rsc=pS52AksSizEhNi-v",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks/timeline?_rsc=pS52AksSizEhNi-v",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/home?_rsc=pS52AksSizEhNi-v",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/settings?_rsc=pS52AksSizEhNi-v",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/timeline?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period&_rsc=VHBGPMZsg9L8484-",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period&_rsc=lmbJkMX8FuXHABT8",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks/calendar?_rsc=lmbJkMX8FuXHABT8",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/notes?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period&_rsc=BE6Mq0B7OD0VOySY",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks?_rsc=lmbJkMX8FuXHABT8",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/settings?_rsc=lmbJkMX8FuXHABT8",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks/timeline?_rsc=lmbJkMX8FuXHABT8",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/home?_rsc=fRF26JycibF9jd0c",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/timeline?_rsc=pS52AksSizEhNi-v",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            }
+          ],
+          "failedResponses": [],
+          "listResponses": [
+            {
+              "url": "http://127.0.0.1:3132/app/tasks/list?_rsc=rMALafnXc3VuJ_6L",
+              "status": 200
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks/list?_rsc=pS52AksSizEhNi-v",
+              "status": 200
+            }
+          ],
+          "delayedListResponses": 2,
+          "url": "http://127.0.0.1:3132/app/tasks/list"
+        }
+      }
+    },
+    {
+      "title": "Tasks view labels retain readable contrast on Board and List",
+      "project": "desktop-light",
+      "status": "passed",
+      "durationMs": 1785,
+      "errors": [],
+      "observations": {
+        "list-contrast": {
+          "theme": "light",
+          "width": 1280,
+          "documentWidth": 1280,
+          "measurements": [
+            {
+              "label": "Board",
+              "href": "/app/tasks",
+              "active": false,
+              "color": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.72)",
+              "foreground": [
+                80.97440612000001,
+                80.97440612000001,
+                80.97440612000001,
+                1
+              ],
+              "background": [
+                245.48,
+                245.48,
+                245.48,
+                1
+              ],
+              "contrast": 7.314288184852179,
+              "fontSize": "13px",
+              "rect": {
+                "x": 128,
+                "y": 73,
+                "width": 84.921875,
+                "height": 32,
+                "top": 73,
+                "right": 212.921875,
+                "bottom": 105,
+                "left": 128
+              }
+            },
+            {
+              "label": "List",
+              "href": "/app/tasks/list",
+              "active": true,
+              "color": "rgb(17, 17, 17)",
+              "foreground": [
+                17,
+                17,
+                17,
+                1
+              ],
+              "background": [
+                255,
+                255,
+                255,
+                1
+              ],
+              "contrast": 18.883060964594996,
+              "fontSize": "13px",
+              "rect": {
+                "x": 214.921875,
+                "y": 73,
+                "width": 72.359375,
+                "height": 32,
+                "top": 73,
+                "right": 287.28125,
+                "bottom": 105,
+                "left": 214.921875
+              }
+            },
+            {
+              "label": "Schedule",
+              "href": "/app/tasks/timeline",
+              "active": false,
+              "color": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.72)",
+              "foreground": [
+                80.97440612000001,
+                80.97440612000001,
+                80.97440612000001,
+                1
+              ],
+              "background": [
+                245.48,
+                245.48,
+                245.48,
+                1
+              ],
+              "contrast": 7.314288184852179,
+              "fontSize": "13px",
+              "rect": {
+                "x": 289.28125,
+                "y": 73,
+                "width": 104.640625,
+                "height": 32,
+                "top": 73,
+                "right": 393.921875,
+                "bottom": 105,
+                "left": 289.28125
+              }
+            },
+            {
+              "label": "Calendar",
+              "href": "/app/tasks/calendar",
+              "active": false,
+              "color": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.72)",
+              "foreground": [
+                80.97440612000001,
+                80.97440612000001,
+                80.97440612000001,
+                1
+              ],
+              "background": [
+                245.48,
+                245.48,
+                245.48,
+                1
+              ],
+              "contrast": 7.314288184852179,
+              "fontSize": "13px",
+              "rect": {
+                "x": 395.921875,
+                "y": 73,
+                "width": 102.6875,
+                "height": 32,
+                "top": 73,
+                "right": 498.609375,
+                "bottom": 105,
+                "left": 395.921875
+              }
+            }
+          ]
+        },
+        "board-contrast": {
+          "theme": "light",
+          "width": 1280,
+          "documentWidth": 1280,
+          "measurements": [
+            {
+              "label": "Board",
+              "href": "/app/tasks",
+              "active": true,
+              "color": "rgb(17, 17, 17)",
+              "foreground": [
+                17,
+                17,
+                17,
+                1
+              ],
+              "background": [
+                255,
+                255,
+                255,
+                1
+              ],
+              "contrast": 18.883060964594996,
+              "fontSize": "13px",
+              "rect": {
+                "x": 128,
+                "y": 73,
+                "width": 86.53125,
+                "height": 32,
+                "top": 73,
+                "right": 214.53125,
+                "bottom": 105,
+                "left": 128
+              }
+            },
+            {
+              "label": "List",
+              "href": "/app/tasks/list",
+              "active": false,
+              "color": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.72)",
+              "foreground": [
+                80.97440612000001,
+                80.97440612000001,
+                80.97440612000001,
+                1
+              ],
+              "background": [
+                245.48,
+                245.48,
+                245.48,
+                1
+              ],
+              "contrast": 7.314288184852179,
+              "fontSize": "13px",
+              "rect": {
+                "x": 216.53125,
+                "y": 73,
+                "width": 70.890625,
+                "height": 32,
+                "top": 73,
+                "right": 287.421875,
+                "bottom": 105,
+                "left": 216.53125
+              }
+            },
+            {
+              "label": "Schedule",
+              "href": "/app/tasks/timeline",
+              "active": false,
+              "color": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.72)",
+              "foreground": [
+                80.97440612000001,
+                80.97440612000001,
+                80.97440612000001,
+                1
+              ],
+              "background": [
+                245.48,
+                245.48,
+                245.48,
+                1
+              ],
+              "contrast": 7.314288184852179,
+              "fontSize": "13px",
+              "rect": {
+                "x": 289.421875,
+                "y": 73,
+                "width": 104.640625,
+                "height": 32,
+                "top": 73,
+                "right": 394.0625,
+                "bottom": 105,
+                "left": 289.421875
+              }
+            },
+            {
+              "label": "Calendar",
+              "href": "/app/tasks/calendar",
+              "active": false,
+              "color": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.72)",
+              "foreground": [
+                80.97440612000001,
+                80.97440612000001,
+                80.97440612000001,
+                1
+              ],
+              "background": [
+                245.48,
+                245.48,
+                245.48,
+                1
+              ],
+              "contrast": 7.314288184852179,
+              "fontSize": "13px",
+              "rect": {
+                "x": 396.0625,
+                "y": 73,
+                "width": 102.6875,
+                "height": 32,
+                "top": 73,
+                "right": 498.75,
+                "bottom": 105,
+                "left": 396.0625
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "title": "isolated Board to List navigation reports all console and request faults",
+      "project": "desktop-light",
+      "status": "passed",
+      "durationMs": 2399,
+      "errors": [],
+      "observations": {
+        "console-and-requests": {
+          "consoleFaults": [],
+          "requestFailures": [
+            {
+              "url": "http://127.0.0.1:3132/app/inbox?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period&_rsc=pS52AksSizEhNi-v",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/notes?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period&_rsc=pS52AksSizEhNi-v",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/home?_rsc=pS52AksSizEhNi-v",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/inbox?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period&_rsc=lmbJkMX8FuXHABT8",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/timeline?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period&_rsc=VHBGPMZsg9L8484-",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period&_rsc=lmbJkMX8FuXHABT8",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/settings?_rsc=lmbJkMX8FuXHABT8",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks/calendar?_rsc=lmbJkMX8FuXHABT8",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks/timeline?_rsc=lmbJkMX8FuXHABT8",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks?_rsc=lmbJkMX8FuXHABT8",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/home?_rsc=fRF26JycibF9jd0c",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/inbox?_rsc=pS52AksSizEhNi-v",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/timeline?_rsc=pS52AksSizEhNi-v",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            }
+          ],
+          "failedResponses": [],
+          "listResponses": [
+            {
+              "url": "http://127.0.0.1:3132/app/tasks/list?_rsc=pS52AksSizEhNi-v",
+              "status": 200
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks/list?_rsc=rMALafnXc3VuJ_6L",
+              "status": 200
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks/list?_rsc=lmbJkMX8FuXHABT8",
+              "status": 200
+            }
+          ],
+          "delayedListResponses": 3,
+          "url": "http://127.0.0.1:3132/app/tasks/list"
+        }
+      }
+    },
+    {
+      "title": "Tasks view labels retain readable contrast on Board and List",
+      "project": "desktop-dark",
+      "status": "passed",
+      "durationMs": 1862,
+      "errors": [],
+      "observations": {
+        "list-contrast": {
+          "theme": "dark",
+          "width": 1280,
+          "documentWidth": 1280,
+          "measurements": [
+            {
+              "label": "Board",
+              "href": "/app/tasks",
+              "active": false,
+              "color": "color(srgb 0.956863 0.956863 0.960784 / 0.72)",
+              "foreground": [
+                179.90244679999998,
+                179.90244679999998,
+                180.89114239999998,
+                1
+              ],
+              "background": [
+                15.079999999999998,
+                15.079999999999998,
+                16.04,
+                1
+              ],
+              "contrast": 9.232216903492166,
+              "fontSize": "13px",
+              "rect": {
+                "x": 128,
+                "y": 73,
+                "width": 84.921875,
+                "height": 32,
+                "top": 73,
+                "right": 212.921875,
+                "bottom": 105,
+                "left": 128
+              }
+            },
+            {
+              "label": "List",
+              "href": "/app/tasks/list",
+              "active": true,
+              "color": "rgb(244, 244, 245)",
+              "foreground": [
+                244,
+                244,
+                245,
+                1
+              ],
+              "background": [
+                15,
+                15,
+                16,
+                1
+              ],
+              "contrast": 17.42998066135509,
+              "fontSize": "13px",
+              "rect": {
+                "x": 214.921875,
+                "y": 73,
+                "width": 72.359375,
+                "height": 32,
+                "top": 73,
+                "right": 287.28125,
+                "bottom": 105,
+                "left": 214.921875
+              }
+            },
+            {
+              "label": "Schedule",
+              "href": "/app/tasks/timeline",
+              "active": false,
+              "color": "color(srgb 0.956863 0.956863 0.960784 / 0.72)",
+              "foreground": [
+                179.90244679999998,
+                179.90244679999998,
+                180.89114239999998,
+                1
+              ],
+              "background": [
+                15.079999999999998,
+                15.079999999999998,
+                16.04,
+                1
+              ],
+              "contrast": 9.232216903492166,
+              "fontSize": "13px",
+              "rect": {
+                "x": 289.28125,
+                "y": 73,
+                "width": 104.640625,
+                "height": 32,
+                "top": 73,
+                "right": 393.921875,
+                "bottom": 105,
+                "left": 289.28125
+              }
+            },
+            {
+              "label": "Calendar",
+              "href": "/app/tasks/calendar",
+              "active": false,
+              "color": "color(srgb 0.956863 0.956863 0.960784 / 0.72)",
+              "foreground": [
+                179.90244679999998,
+                179.90244679999998,
+                180.89114239999998,
+                1
+              ],
+              "background": [
+                15.079999999999998,
+                15.079999999999998,
+                16.04,
+                1
+              ],
+              "contrast": 9.232216903492166,
+              "fontSize": "13px",
+              "rect": {
+                "x": 395.921875,
+                "y": 73,
+                "width": 102.6875,
+                "height": 32,
+                "top": 73,
+                "right": 498.609375,
+                "bottom": 105,
+                "left": 395.921875
+              }
+            }
+          ]
+        },
+        "board-contrast": {
+          "theme": "dark",
+          "width": 1280,
+          "documentWidth": 1280,
+          "measurements": [
+            {
+              "label": "Board",
+              "href": "/app/tasks",
+              "active": true,
+              "color": "rgb(244, 244, 245)",
+              "foreground": [
+                244,
+                244,
+                245,
+                1
+              ],
+              "background": [
+                15,
+                15,
+                16,
+                1
+              ],
+              "contrast": 17.42998066135509,
+              "fontSize": "13px",
+              "rect": {
+                "x": 128,
+                "y": 73,
+                "width": 86.53125,
+                "height": 32,
+                "top": 73,
+                "right": 214.53125,
+                "bottom": 105,
+                "left": 128
+              }
+            },
+            {
+              "label": "List",
+              "href": "/app/tasks/list",
+              "active": false,
+              "color": "color(srgb 0.956863 0.956863 0.960784 / 0.72)",
+              "foreground": [
+                179.90244679999998,
+                179.90244679999998,
+                180.89114239999998,
+                1
+              ],
+              "background": [
+                15.079999999999998,
+                15.079999999999998,
+                16.04,
+                1
+              ],
+              "contrast": 9.232216903492166,
+              "fontSize": "13px",
+              "rect": {
+                "x": 216.53125,
+                "y": 73,
+                "width": 70.890625,
+                "height": 32,
+                "top": 73,
+                "right": 287.421875,
+                "bottom": 105,
+                "left": 216.53125
+              }
+            },
+            {
+              "label": "Schedule",
+              "href": "/app/tasks/timeline",
+              "active": false,
+              "color": "color(srgb 0.956863 0.956863 0.960784 / 0.72)",
+              "foreground": [
+                179.90244679999998,
+                179.90244679999998,
+                180.89114239999998,
+                1
+              ],
+              "background": [
+                15.079999999999998,
+                15.079999999999998,
+                16.04,
+                1
+              ],
+              "contrast": 9.232216903492166,
+              "fontSize": "13px",
+              "rect": {
+                "x": 289.421875,
+                "y": 73,
+                "width": 104.640625,
+                "height": 32,
+                "top": 73,
+                "right": 394.0625,
+                "bottom": 105,
+                "left": 289.421875
+              }
+            },
+            {
+              "label": "Calendar",
+              "href": "/app/tasks/calendar",
+              "active": false,
+              "color": "color(srgb 0.956863 0.956863 0.960784 / 0.72)",
+              "foreground": [
+                179.90244679999998,
+                179.90244679999998,
+                180.89114239999998,
+                1
+              ],
+              "background": [
+                15.079999999999998,
+                15.079999999999998,
+                16.04,
+                1
+              ],
+              "contrast": 9.232216903492166,
+              "fontSize": "13px",
+              "rect": {
+                "x": 396.0625,
+                "y": 73,
+                "width": 102.6875,
+                "height": 32,
+                "top": 73,
+                "right": 498.75,
+                "bottom": 105,
+                "left": 396.0625
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "title": "isolated Board to List navigation reports all console and request faults",
+      "project": "desktop-dark",
+      "status": "passed",
+      "durationMs": 2463,
+      "errors": [],
+      "observations": {
+        "console-and-requests": {
+          "consoleFaults": [],
+          "requestFailures": [
+            {
+              "url": "http://127.0.0.1:3132/app/inbox?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period&_rsc=pS52AksSizEhNi-v",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/timeline?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period&_rsc=pS52AksSizEhNi-v",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period&_rsc=pS52AksSizEhNi-v",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period&_rsc=lmbJkMX8FuXHABT8",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/timeline?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period&_rsc=VHBGPMZsg9L8484-",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/notes?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period&_rsc=BE6Mq0B7OD0VOySY",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/settings?_rsc=lmbJkMX8FuXHABT8",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks/calendar?_rsc=lmbJkMX8FuXHABT8",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks/timeline?_rsc=lmbJkMX8FuXHABT8",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/home?_rsc=fRF26JycibF9jd0c",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks?_rsc=lmbJkMX8FuXHABT8",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/inbox?_rsc=pS52AksSizEhNi-v",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/timeline?_rsc=pS52AksSizEhNi-v",
+              "error": "net::ERR_ABORTED",
+              "method": "GET",
+              "prefetch": "1"
+            }
+          ],
+          "failedResponses": [],
+          "listResponses": [
+            {
+              "url": "http://127.0.0.1:3132/app/tasks/list?_rsc=pS52AksSizEhNi-v",
+              "status": 200
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks/list?_rsc=rMALafnXc3VuJ_6L",
+              "status": 200
+            },
+            {
+              "url": "http://127.0.0.1:3132/app/tasks/list?_rsc=lmbJkMX8FuXHABT8",
+              "status": 200
+            }
+          ],
+          "delayedListResponses": 3,
+          "url": "http://127.0.0.1:3132/app/tasks/list"
+        }
+      }
+    }
+  ]
+}

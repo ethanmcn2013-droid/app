@@ -1,0 +1,276 @@
+import assert from "node:assert/strict";
+import { afterEach, test } from "node:test";
+import { createProjectDriveGrantRepairRoute } from "./route";
+
+const originalSecret = process.env.CRON_SECRET;
+const originalRevokeFlag =
+  process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED;
+const originalGrantCreateFlag =
+  process.env.SIGNAL_PROJECT_DRIVE_GRANT_CREATE_REPAIR_ENABLED;
+const originalFolderFlag =
+  process.env.SIGNAL_PROJECT_DRIVE_FOLDER_REPAIR_ENABLED;
+const originalNativeByteFlag =
+  process.env.SIGNAL_PROJECT_DRIVE_NATIVE_BYTE_REPAIR_ENABLED;
+
+afterEach(() => {
+  if (originalSecret === undefined) delete process.env.CRON_SECRET;
+  else process.env.CRON_SECRET = originalSecret;
+  if (originalRevokeFlag === undefined) {
+    delete process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED;
+  } else {
+    process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED =
+      originalRevokeFlag;
+  }
+  if (originalGrantCreateFlag === undefined) {
+    delete process.env.SIGNAL_PROJECT_DRIVE_GRANT_CREATE_REPAIR_ENABLED;
+  } else {
+    process.env.SIGNAL_PROJECT_DRIVE_GRANT_CREATE_REPAIR_ENABLED =
+      originalGrantCreateFlag;
+  }
+  if (originalFolderFlag === undefined) {
+    delete process.env.SIGNAL_PROJECT_DRIVE_FOLDER_REPAIR_ENABLED;
+  } else {
+    process.env.SIGNAL_PROJECT_DRIVE_FOLDER_REPAIR_ENABLED =
+      originalFolderFlag;
+  }
+  if (originalNativeByteFlag === undefined) {
+    delete process.env.SIGNAL_PROJECT_DRIVE_NATIVE_BYTE_REPAIR_ENABLED;
+  } else {
+    process.env.SIGNAL_PROJECT_DRIVE_NATIVE_BYTE_REPAIR_ENABLED =
+      originalNativeByteFlag;
+  }
+});
+
+function emptyResult() {
+  return {
+    revocations: {
+      scanned: 0,
+      attempted: 0,
+      repaired: 0,
+      skipped: 0,
+      failed: 0,
+    },
+    grantCreates: {
+      scanned: 0,
+      attempted: 0,
+      completed: 0,
+      repairPending: 0,
+      retryScheduled: 0,
+      manualAttention: 0,
+      skipped: 0,
+      failed: 0,
+    },
+    folderOperations: {
+      scanned: 0,
+      attempted: 0,
+      completed: 0,
+      retryScheduled: 0,
+      manualAttention: 0,
+      skipped: 0,
+      failed: 0,
+    },
+    nativeBytes: {
+      scanned: 0,
+      attempted: 0,
+      cleaned: 0,
+      retryScheduled: 0,
+      skipped: 0,
+      failed: 0,
+    },
+  };
+}
+
+function request(authorization?: string): Request {
+  return new Request(
+    "http://localhost/api/cron/project-drive-grant-repair",
+    authorization ? { headers: { authorization } } : undefined,
+  );
+}
+
+test("requires the configured cron bearer before any repair work", async () => {
+  process.env.CRON_SECRET = "real-secret";
+  process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED = "true";
+  let calls = 0;
+  const route = createProjectDriveGrantRepairRoute(async () => {
+    calls += 1;
+    return emptyResult();
+  });
+
+  for (const input of [request(), request("Bearer wrong")]) {
+    const response = await route(input);
+    assert.equal(response.status, 401);
+    assert.deepEqual(await response.json(), {
+      ok: false,
+      error: "unauthorized",
+    });
+  }
+  assert.equal(calls, 0);
+});
+
+test("fails closed when CRON_SECRET is missing", async () => {
+  delete process.env.CRON_SECRET;
+  process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED = "true";
+  const route = createProjectDriveGrantRepairRoute(async () => {
+    throw new Error("must not run");
+  });
+
+  assert.equal((await route(request("Bearer anything"))).status, 401);
+});
+
+test("the four literal enable flags independently gate repair", async () => {
+  process.env.CRON_SECRET = "secret";
+  let calls = 0;
+  const selections: unknown[] = [];
+  const route = createProjectDriveGrantRepairRoute(async (selection) => {
+    calls += 1;
+    selections.push(selection);
+    return emptyResult();
+  });
+
+  for (const flag of [undefined, "1", "TRUE", "yes"]) {
+    delete process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED;
+    delete process.env.SIGNAL_PROJECT_DRIVE_GRANT_CREATE_REPAIR_ENABLED;
+    delete process.env.SIGNAL_PROJECT_DRIVE_NATIVE_BYTE_REPAIR_ENABLED;
+    if (flag === undefined) {
+      delete process.env.SIGNAL_PROJECT_DRIVE_FOLDER_REPAIR_ENABLED;
+    } else {
+      process.env.SIGNAL_PROJECT_DRIVE_FOLDER_REPAIR_ENABLED = flag;
+    }
+    const response = await route(request("Bearer secret"));
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { ok: true, skipped: "flag-off" });
+  }
+  assert.equal(calls, 0);
+
+  process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED = "true";
+  await route(request("Bearer secret"));
+  delete process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED;
+  process.env.SIGNAL_PROJECT_DRIVE_GRANT_CREATE_REPAIR_ENABLED = "true";
+  await route(request("Bearer secret"));
+  delete process.env.SIGNAL_PROJECT_DRIVE_GRANT_CREATE_REPAIR_ENABLED;
+  process.env.SIGNAL_PROJECT_DRIVE_FOLDER_REPAIR_ENABLED = "true";
+  await route(request("Bearer secret"));
+  delete process.env.SIGNAL_PROJECT_DRIVE_FOLDER_REPAIR_ENABLED;
+  process.env.SIGNAL_PROJECT_DRIVE_NATIVE_BYTE_REPAIR_ENABLED = "true";
+  await route(request("Bearer secret"));
+  assert.deepEqual(selections, [
+    {
+      revocations: true,
+      grantCreates: false,
+      folderOperations: false,
+      nativeBytes: false,
+    },
+    {
+      revocations: false,
+      grantCreates: true,
+      folderOperations: false,
+      nativeBytes: false,
+    },
+    {
+      revocations: false,
+      grantCreates: false,
+      folderOperations: true,
+      nativeBytes: false,
+    },
+    {
+      revocations: false,
+      grantCreates: false,
+      folderOperations: false,
+      nativeBytes: true,
+    },
+  ]);
+});
+
+test("returns a count-only repair receipt without provider detail", async () => {
+  process.env.CRON_SECRET = "secret";
+  process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED = "true";
+  process.env.SIGNAL_PROJECT_DRIVE_GRANT_CREATE_REPAIR_ENABLED = "true";
+  process.env.SIGNAL_PROJECT_DRIVE_FOLDER_REPAIR_ENABLED = "true";
+  process.env.SIGNAL_PROJECT_DRIVE_NATIVE_BYTE_REPAIR_ENABLED = "true";
+  const route = createProjectDriveGrantRepairRoute(async () => ({
+    revocations: {
+      scanned: 4,
+      attempted: 3,
+      repaired: 2,
+      skipped: 1,
+      failed: 1,
+    },
+    grantCreates: {
+      scanned: 5,
+      attempted: 4,
+      completed: 2,
+      repairPending: 1,
+      retryScheduled: 1,
+      manualAttention: 0,
+      skipped: 0,
+      failed: 0,
+    },
+    folderOperations: Object.assign(
+      {
+        scanned: 6,
+        attempted: 5,
+        completed: 3,
+        retryScheduled: 1,
+        manualAttention: 1,
+        skipped: 0,
+        failed: 0,
+      },
+      {
+        operationId: "must-not-leak",
+        providerFolderId: "must-not-leak",
+      },
+    ),
+    nativeBytes: Object.assign(
+      {
+        scanned: 7,
+        attempted: 6,
+        cleaned: 4,
+        retryScheduled: 1,
+        skipped: 1,
+        failed: 1,
+      },
+      {
+        storedPath: "must-not-leak",
+        workspaceId: "must-not-leak",
+      },
+    ),
+  }));
+
+  const response = await route(request("Bearer secret"));
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    ok: false,
+    scanned: 4,
+    attempted: 3,
+    repaired: 2,
+    skipped: 1,
+    failed: 1,
+    grantCreates: {
+      scanned: 5,
+      attempted: 4,
+      completed: 2,
+      repairPending: 1,
+      retryScheduled: 1,
+      manualAttention: 0,
+      skipped: 0,
+      failed: 0,
+    },
+    folderOperations: {
+      scanned: 6,
+      attempted: 5,
+      completed: 3,
+      retryScheduled: 1,
+      manualAttention: 1,
+      skipped: 0,
+      failed: 0,
+    },
+    nativeBytes: {
+      scanned: 7,
+      attempted: 6,
+      cleaned: 4,
+      retryScheduled: 1,
+      skipped: 1,
+      failed: 1,
+    },
+  });
+});

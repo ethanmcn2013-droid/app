@@ -3,9 +3,9 @@
 /**
  * The one guarded Project transition — plan §3.5.
  *
- * This is the only place in the app that may write the last-active Project
- * cookie. Following a contextual link does not; resolving a route does not;
- * rendering a page does not. Only an explicit selection.
+ * This action and successful invite acceptance may write the last-active
+ * Project cookie. Following a contextual link does not; resolving a route
+ * does not; rendering a page does not. Only an explicit selection.
  *
  * The eight required behaviours from plan §3.5, and where each lives:
  *

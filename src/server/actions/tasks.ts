@@ -1,19 +1,26 @@
 "use server";
 
-import { unlink } from "node:fs/promises";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
 import { readWorkspaceColumnConfig } from "@/server/db/board-config-read";
 import { isDoneColumnKey, isTaskDone } from "@/lib/board-columns";
 import { nextTaskSeq } from "@/server/db/task-seq";
-import { activities, attachments, comments, resources, tasks } from "@/server/db/schema";
+import {
+  activities,
+  attachments,
+  comments,
+  notifications,
+  resources,
+  tasks,
+} from "@/server/db/schema";
 import { getSubtasks, getTasks } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
 import { getActiveWorkspaceOrNull, getCurrentUser } from "@/server/auth";
 import {
   authorizeProjectCandidate,
+  authorizeStoredProject,
   readableProjectOrNull,
   scopeForTask,
 } from "@/server/actions/project-authz";
@@ -33,6 +40,10 @@ import {
   classifyLaneTransition,
   recordSponsoredUse,
 } from "@/lib/account/instrumentation/call-site";
+import { deleteNativeByteCleanupTargetConfirmed } from "@/server/attachments/native-byte-cleanup";
+import { repairExactNativeByteCleanupReceipts } from "@/server/attachments/native-upload-cleanup";
+import { deleteNativeAttachmentRowsInTransaction } from "@/server/attachments/native-upload-custody";
+import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
 
 /**
  * Pure read pass-through used by the realtime sync hook to refetch
@@ -742,63 +753,77 @@ export async function removeTaskAction(id: string): Promise<Task[]> {
   if (!scope.ok) return neutralTaskList(ambient);
   const ws = scope.ws;
 
-  // Re-read under the proved Project: confirm the parent is still there.
-  const [parent] = await db
-    .select({ id: tasks.id })
-    .from(tasks)
-    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
-  if (!parent) return getTasks(ws);
+  // FK cascade does NOT fire over Turso stateless HTTP, so delete the full
+  // subtree explicitly. Native byte receipts, attachment rows, child rows and
+  // the parent commit under one writer lock: no upload can enter between the
+  // attachment snapshot and task deletion.
+  const deletion = await db.transaction(
+    async (transaction) => {
+      const grant = await authorizeStoredProject({
+        storedProjectId: ws,
+        capability: "createOrEditTasks",
+        actorUserId: me,
+        executor: transaction,
+      });
+      if (!grant.ok) {
+        return { deleted: false, cleanupReceiptKeys: [] as string[] };
+      }
+      await assertProjectNotDeleting(transaction, ws);
+      const [parent] = await transaction
+        .select({ id: tasks.id })
+        .from(tasks)
+        .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)))
+        .limit(1);
+      if (!parent) {
+        return { deleted: false, cleanupReceiptKeys: [] as string[] };
+      }
+      const childRows = await transaction
+        .select({ id: tasks.id })
+        .from(tasks)
+        .where(and(eq(tasks.parentTaskId, id), eq(tasks.workspaceId, ws)));
+      const childIds = childRows.map((row) => row.id);
+      const taskIds = [id, ...childIds];
+      const attachmentRows = await transaction
+        .select({ id: attachments.id })
+        .from(attachments)
+        .where(inArray(attachments.taskId, taskIds));
+      const { cleanupReceiptKeys } =
+        await deleteNativeAttachmentRowsInTransaction(transaction, {
+          workspaceId: ws,
+          attachmentIds: attachmentRows.map((row) => row.id),
+        });
 
-  // FK cascade does NOT fire over Turso stateless HTTP, so we hand-roll
-  // the full subtree delete (mirrors account-erasure.ts pattern).
-  // 1. Collect child ids so we can delete their rows explicitly.
-  const childRows = await db
-    .select({ id: tasks.id, storedPath: attachments.storedPath })
-    .from(tasks)
-    .leftJoin(attachments, eq(attachments.taskId, tasks.id))
-    .where(and(eq(tasks.parentTaskId, id), eq(tasks.workspaceId, ws)));
-
-  const childIds = [...new Set(childRows.map((r) => r.id))];
-
-  // Collect attachment paths for best-effort unlink after row deletion.
-  const childAttachmentPaths = childRows
-    .map((r) => r.storedPath)
-    .filter((p): p is string => p !== null);
-
-  // 2. Also collect attachment paths on the parent itself.
-  const parentAttachmentRows = await db
-    .select({ storedPath: attachments.storedPath })
-    .from(attachments)
-    .where(eq(attachments.taskId, id));
-  const parentAttachmentPaths = parentAttachmentRows.map((r) => r.storedPath);
-
-  // 3. Delete children's child rows (activities, comments, attachments,
-  //    resources). No runtime FK cascade — hand-rolled explicitly.
-  if (childIds.length > 0) {
-    await db.delete(activities).where(inArray(activities.taskId, childIds));
-    await db.delete(comments).where(inArray(comments.taskId, childIds));
-    await db.delete(attachments).where(inArray(attachments.taskId, childIds));
-    await db.delete(resources).where(inArray(resources.taskId, childIds));
-    await db.delete(tasks).where(inArray(tasks.id, childIds));
-  }
-
-  // 4. Delete the parent's own child rows, then the parent itself.
-  await db.delete(activities).where(eq(activities.taskId, id));
-  await db.delete(comments).where(eq(comments.taskId, id));
-  await db.delete(attachments).where(eq(attachments.taskId, id));
-  await db.delete(resources).where(eq(resources.taskId, id));
-  await db
-    .delete(tasks)
-    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
-
-  // 5. Best-effort unlink of orphaned attachment binaries.
-  for (const storedPath of [...childAttachmentPaths, ...parentAttachmentPaths]) {
-    try {
-      await unlink(storedPath);
-    } catch {
-      // ENOENT or serverless: nothing left to remove.
-    }
-  }
+      await transaction
+        .delete(activities)
+        .where(inArray(activities.taskId, taskIds));
+      await transaction
+        .delete(comments)
+        .where(inArray(comments.taskId, taskIds));
+      await transaction
+        .delete(notifications)
+        .where(inArray(notifications.taskId, taskIds));
+      await transaction
+        .delete(resources)
+        .where(inArray(resources.taskId, taskIds));
+      if (childIds.length > 0) {
+        await transaction.delete(tasks).where(inArray(tasks.id, childIds));
+      }
+      const deletedParent = await transaction
+        .delete(tasks)
+        .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)))
+        .returning({ id: tasks.id });
+      if (deletedParent.length !== 1) {
+        throw new Error("task deletion conflicted");
+      }
+      return { deleted: true, cleanupReceiptKeys };
+    },
+    { behavior: "immediate" },
+  );
+  if (!deletion.deleted) return getTasks(ws);
+  await repairExactNativeByteCleanupReceipts(
+    { database: db, deleteTarget: deleteNativeByteCleanupTargetConfirmed },
+    deletion.cleanupReceiptKeys,
+  );
 
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });

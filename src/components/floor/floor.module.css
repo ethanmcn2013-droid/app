@@ -307,7 +307,8 @@
   height: 32px; padding: 0 14px;
   cursor: pointer;
   border-radius: var(--r-pill);
-  font-size: 13px; font-weight: 400; color: var(--ink-2); letter-spacing: var(--tr-13);
+  /* Keep the secondary 72% step tied to theme ink, including dark mode. */
+  font-size: 13px; font-weight: 400; color: color-mix(in srgb, var(--ink) 72%, transparent); letter-spacing: var(--tr-13);
   transition: color var(--dur) var(--curve);
 }
 .segItem svg { width: 15px; height: 15px; }

@@ -343,9 +343,11 @@ describe("source contract: src/server/actions/comp.ts", () => {
   );
 
   it("computes redemption expiry through the shared decision, not inline", () => {
-    assert.match(comp, /compRedemptionExpiresAtMs\(/);
-    assert.match(comp, /weddingDateMsForWorkspace\(/);
-    assert.match(comp, /@\/server\/db\/couple-access-term/);
+    assert.match(comp, /await claimCompEntitlement\(db/);
+    const claim = readFileSync(new URL("./comp-redemption.ts", import.meta.url), "utf8");
+    assert.match(claim, /compRedemptionExpiresAtMs\(/);
+    assert.match(claim, /weddingDateMsForWorkspace\(/);
+    assert.match(claim, /from "\.\/couple-access-term"/);
   });
 
   it("has no flat duration multiply left on the redeem path", () => {
@@ -357,7 +359,8 @@ describe("source contract: src/server/actions/comp.ts", () => {
     // Comments are stripped first. The header comment in comp.ts quotes the
     // defect verbatim on purpose, and a reader who deletes that explanation to
     // make a grep pass has removed the wrong thing.
-    const impl = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+    const claim = readFileSync(new URL("./comp-redemption.ts", import.meta.url), "utf8");
+    const impl = (raw + claim).replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
     // The exact shape that shipped, and the general shape of any revival.
     assert.doesNotMatch(
       impl,

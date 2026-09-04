@@ -42,6 +42,61 @@ test("export captures owned content + footprint, scoped to the caller", async ()
         ('c-b1','ws-b','task-b1','u-bystander','theirs');
       INSERT INTO attachments (id, workspace_id, task_id, uploader_user_id, filename, stored_path, mime_type, size_bytes) VALUES
         ('att-a1','ws-a','task-a1','u-target','f.png','.data/uploads/SECRET-PATH.png','image/png',3);
+      INSERT INTO provider_connections (
+        id, user_id, provider, provider_account_id, provider_account_email,
+        root_folder_id, refresh_token_cipher, key_version, scopes, status,
+        is_current, connected_at
+      ) VALUES
+        ('conn-target','u-target','google_drive','perm-target','target@example.test',
+         'root-target','SECRET-TARGET-CIPHER',1,'["https://www.googleapis.com/auth/drive.file"]','active',1,1756800000),
+        ('conn-bystander','u-bystander','google_drive','perm-bystander','bystander@example.test',
+         'root-bystander','SECRET-BYSTANDER-CIPHER',1,'["https://www.googleapis.com/auth/drive.file"]','active',1,1756800001);
+      INSERT INTO workspace_storage (
+        id, workspace_id, connection_id, folder_id, folder_web_view_link, state, is_current
+      ) VALUES
+        ('storage-a','ws-a','conn-target','folder-a','https://drive.test/folder-a','active',1),
+        ('storage-b','ws-b','conn-bystander','folder-b','https://drive.test/folder-b','active',1),
+        ('storage-target-in-b','ws-b','conn-target','folder-target-in-b','https://drive.test/folder-target-in-b','active',0);
+      INSERT INTO project_drive_operations (
+        id, workspace_id, operation_kind, status, dedupe_key, connection_id,
+        storage_generation_id, target_storage_generation_id, subject_user_id,
+        grantee_email, grant_role, workspace_revision, provider_folder_id,
+        provider_folder_web_view_link, provider_permission_id, attempt_count,
+        last_attempt_at, created_at, updated_at, completed_at
+      ) VALUES
+        ('op-owned-project','ws-a','project_delete','pending','${"a".repeat(64)}',
+         NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,1756800000,1756800000,NULL),
+        ('op-account-connection','ws-b','folder_provision','succeeded','${"b".repeat(64)}',
+         'conn-target',NULL,'storage-reserved-in-b',NULL,NULL,NULL,NULL,
+         'folder-from-operation','https://drive.test/SECRET-OPERATION-URL',NULL,
+         1,1756800001,1756800000,1756800001,1756800001),
+        ('op-account-storage','ws-b','folder_rename','pending','${"c".repeat(64)}',
+         NULL,'storage-target-in-b',NULL,NULL,NULL,NULL,2,NULL,NULL,NULL,
+         0,NULL,1756800000,1756800000,NULL),
+        ('op-account-subject','ws-b','grant_create','succeeded','${"d".repeat(64)}',
+         NULL,'storage-b',NULL,'u-target','target@example.test','writer',NULL,
+         NULL,NULL,'permission-from-operation',1,1756800001,1756800000,1756800001,1756800001),
+        ('op-bystander-only','ws-b','folder_rename','pending','${"e".repeat(64)}',
+         NULL,'storage-b',NULL,NULL,NULL,NULL,3,NULL,NULL,NULL,
+         0,NULL,1756800000,1756800000,NULL);
+      INSERT INTO drive_folder_grants (
+        storage_generation_id, workspace_id, user_id, permission_id,
+        granted_email, role, granted_at, revoke_pending
+      ) VALUES
+        ('storage-a','ws-a','u-target','grant-target-a','target@example.test','writer',1756800000,0),
+        ('storage-a','ws-a','u-bystander','grant-bystander-a','bystander@example.test','writer',1756800000,0),
+        ('storage-b','ws-b','u-target','grant-target-b','target@example.test','writer',1756800000,0);
+      INSERT INTO resources (
+        id, workspace_id, task_id, kind, provider, storage,
+        storage_generation_id, stored_path, title, added_by_user_id,
+        added_at, access_state, counts_against_storage
+      ) VALUES
+        ('res-drive-a','ws-a','task-a1','upload','drive','drive',
+         'storage-a','SECRET-DRIVE-PATH-A','Owned Drive file','u-target',1756800000,'ok',0),
+        ('res-drive-b','ws-b','task-b1','upload','drive','drive',
+         'storage-b','SECRET-DRIVE-PATH-B','Target-added Drive file','u-target',1756800000,'ok',0),
+        ('res-bystander-b','ws-b','task-b1','link','url','signal',
+         NULL,NULL,'Bystander link','u-bystander',1756800000,'ok',0);
       INSERT INTO notification_prefs (user_id) VALUES ('u-target');
       INSERT INTO user_preferences (user_id) VALUES ('u-target');
       INSERT INTO meta (key, value) VALUES ('board:ws-a:name','A board'), ('board:ws-b:name','B board');
@@ -58,6 +113,25 @@ test("export captures owned content + footprint, scoped to the caller", async ()
     assert.equal(data.ownedWorkspaces!.tasks.length, 1);
     assert.equal(data.ownedWorkspaces!.tasks[0]!.id, "task-a1");
     assert.equal(data.ownedWorkspaces!.attachments.length, 1);
+    assert.equal(data.ownedWorkspaces!.resources.length, 1);
+    assert.equal(data.ownedWorkspaces!.resources[0]!.id, "res-drive-a");
+    assert.equal(data.ownedWorkspaces!.workspaceStorage.length, 1);
+    assert.equal(data.ownedWorkspaces!.workspaceStorage[0]!.id, "storage-a");
+    assert.equal(data.ownedWorkspaces!.driveFolderGrants.length, 2);
+    assert.deepEqual(
+      data.ownedWorkspaces!.googleDriveActivity.map((activity) => ({
+        id: activity.id,
+        action: activity.action,
+        progress: activity.progress,
+      })),
+      [
+        {
+          id: "op-owned-project",
+          action: "Remove the Google Drive setup",
+          progress: "Waiting",
+        },
+      ],
+    );
     assert.equal(data.ownedWorkspaces!.boardMeta.length, 1); // board:ws-a:* only
 
     // Footprint elsewhere: the comment the target authored in ws-b.
@@ -94,6 +168,69 @@ test("export captures owned content + footprint, scoped to the caller", async ()
       false,
       "private contact data from another workspace leaked into the export",
     );
+    assert.equal(data.footprintElsewhere!.providerConnections.length, 1);
+    assert.equal(
+      data.footprintElsewhere!.providerConnections[0]!.id,
+      "conn-target",
+    );
+    assert.ok(
+      data.footprintElsewhere!.driveFolderGrants.some(
+        (grant) => grant.permissionId === "grant-target-b",
+      ),
+      "the target's grant in another Project is missing",
+    );
+    assert.deepEqual(
+      data.footprintElsewhere!.addedResources
+        .map((resource) => resource.id)
+        .sort(),
+      ["res-drive-a", "res-drive-b"],
+    );
+    assert.deepEqual(
+      data.footprintElsewhere!.googleDriveActivity
+        .map((activity) => activity.id)
+        .sort(),
+      [
+        "op-account-connection",
+        "op-account-storage",
+        "op-account-subject",
+      ],
+      "account subject, credential, and storage lineages must cross Project scope without leaking unrelated activity",
+    );
+    const connectionActivity =
+      data.footprintElsewhere!.googleDriveActivity.find(
+        (activity) => activity.id === "op-account-connection",
+      );
+    assert.equal(connectionActivity?.action, "Set up the Google Drive folder");
+    assert.equal(connectionActivity?.progress, "Complete");
+    assert.equal(connectionActivity?.driveFolderId, "folder-from-operation");
+    const subjectActivity = data.footprintElsewhere!.googleDriveActivity.find(
+      (activity) => activity.id === "op-account-subject",
+    );
+    assert.equal(subjectActivity?.personEmail, "target@example.test");
+    assert.equal(subjectActivity?.accessLevel, "writer");
+    assert.equal(
+      subjectActivity?.drivePermissionId,
+      "permission-from-operation",
+    );
+    const exportedGoogleDriveActivity = JSON.stringify({
+      owned: data.ownedWorkspaces!.googleDriveActivity,
+      elsewhere: data.footprintElsewhere!.googleDriveActivity,
+    });
+    for (const forbidden of [
+      "SECRET-OPERATION-URL",
+      "providerFolderWebViewLink",
+      "connectionId",
+      "storageGenerationId",
+      "targetStorageGenerationId",
+      "dedupeKey",
+      "leaseExpiresAt",
+    ]) {
+      assert.equal(
+        exportedGoogleDriveActivity.includes(forbidden),
+        false,
+        `Google Drive activity leaked internal field ${forbidden}`,
+      );
+    }
 
     // The bystander's owned task must NOT be in owned content.
     assert.ok(
@@ -105,6 +242,22 @@ test("export captures owned content + footprint, scoped to the caller", async ()
     assert.ok(
       !JSON.stringify(data).includes("SECRET-PATH"),
       "attachment storedPath leaked into the export",
+    );
+    const serialized = JSON.stringify(data);
+    assert.equal(serialized.includes("projectDriveActivity"), false);
+    assert.equal(serialized.includes("Project Drive"), false);
+    assert.equal(serialized.includes("googleDriveActivity"), true);
+    assert.equal(serialized.includes("SECRET-DRIVE-PATH"), false);
+    assert.equal(serialized.includes("SECRET-TARGET-CIPHER"), false);
+    assert.equal(serialized.includes("SECRET-BYSTANDER-CIPHER"), false);
+    assert.equal(serialized.includes("refreshTokenCipher"), false);
+    assert.equal(serialized.includes("keyVersion"), false);
+    assert.equal(
+      data.footprintElsewhere!.providerConnections.some(
+        (connection) => connection.id === "conn-bystander",
+      ),
+      false,
+      "another user's credential metadata leaked into the export",
     );
   } finally {
     client.close();

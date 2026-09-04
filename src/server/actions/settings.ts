@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { isProjectCurrency } from "@/lib/money";
 import { cookies } from "next/headers";
@@ -33,6 +33,16 @@ import { inviteEmailHtml, sendEmail } from "@/server/email";
 import { seedDomainAction } from "@/server/actions/seed";
 import type { DomainId } from "@/lib/domains";
 import type { ActivityPayload } from "@/lib/data";
+import { executeProjectDriveGrantOperation } from "@/server/connections/project-drive-grant-operation-executor";
+import { prepareCurrentMemberDriveGrantIntent } from "@/server/connections/project-drive-membership-lifecycle";
+import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
+import { revokeExactDriveFolderGrant } from "@/server/connections/project-drive-erasure-grants";
+import { createProjectDriveMemberRemovalService } from "@/server/connections/project-drive-member-removal";
+import { setProjectDriveMemberRole } from "@/server/connections/project-drive-member-role";
+import { MY_WORK_APP_PATH } from "@/lib/product-urls";
+import { parseProjectId, type ProjectId } from "@/lib/projects/project-ref";
+import { withActiveProject } from "@/lib/projects/project-url";
+import { writeActiveProjectCookie } from "@/server/projects/active-project-cookie";
 
 /**
  * Settings-page mutations — WP3-C, the last file of the mutation-safety wave.
@@ -263,10 +273,16 @@ export async function setProjectDescriptionAction(
       `Keep the description under ${PROJECT_DESCRIPTION_MAX} characters.`,
     );
   }
-  await db
-    .update(workspaces)
-    .set({ description: trimmed.length > 0 ? trimmed : null })
-    .where(eq(workspaces.id, ws));
+  await db.transaction(
+    async (tx) => {
+      await assertProjectNotDeleting(tx, ws);
+      await tx
+        .update(workspaces)
+        .set({ description: trimmed.length > 0 ? trimmed : null })
+        .where(eq(workspaces.id, ws));
+    },
+    { behavior: "immediate" },
+  );
   revalidatePath("/app", "layout");
   return { ok: true };
 }
@@ -291,10 +307,13 @@ export async function setProjectCurrencyAction(
   if (currency !== null && !isProjectCurrency(currency)) {
     throw new Error("Choose one of the supported currencies.");
   }
-  await db
-    .update(workspaces)
-    .set({ currency })
-    .where(eq(workspaces.id, ws));
+  await db.transaction(
+    async (tx) => {
+      await assertProjectNotDeleting(tx, ws);
+      await tx.update(workspaces).set({ currency }).where(eq(workspaces.id, ws));
+    },
+    { behavior: "immediate" },
+  );
   revalidatePath("/app", "layout");
   return { ok: true };
 }
@@ -319,10 +338,16 @@ export async function setProjectBudgetAction(
       throw new Error("Budget must be a whole amount in range.");
     }
   }
-  await db
-    .update(workspaces)
-    .set({ budgetCents: budgetCents === 0 ? null : budgetCents })
-    .where(eq(workspaces.id, ws));
+  await db.transaction(
+    async (tx) => {
+      await assertProjectNotDeleting(tx, ws);
+      await tx
+        .update(workspaces)
+        .set({ budgetCents: budgetCents === 0 ? null : budgetCents })
+        .where(eq(workspaces.id, ws));
+    },
+    { behavior: "immediate" },
+  );
   revalidatePath("/app", "layout");
   return { ok: true };
 }
@@ -343,34 +368,15 @@ export async function removeMemberAction(
     "manageProject",
     "Only the owner can remove members.",
   );
-  // Refuse to remove the only owner. Counted on the role column.
-  //
-  // This count gates a delete, which is the D-018 shape — but it can no longer
-  // be empty for an authorization reason. `manageProject` is only granted to a
-  // caller whose own membership row reads `owner`, so a proved caller
-  // guarantees at least one row here. An empty result now means what it says.
-  const owners = await db
-    .select({ userId: workspaceMembers.userId })
-    .from(workspaceMembers)
-    .where(
-      and(
-        eq(workspaceMembers.workspaceId, ws),
-        eq(workspaceMembers.role, "owner"),
-      ),
-    );
-  const targetIsOnlyOwner =
-    owners.length === 1 && owners[0]?.userId === userId;
-  if (targetIsOnlyOwner) {
-    throw new Error("A workspace must keep at least one owner.");
-  }
-  await db
-    .delete(workspaceMembers)
-    .where(
-      and(
-        eq(workspaceMembers.workspaceId, ws),
-        eq(workspaceMembers.userId, userId),
-      ),
-    );
+  // A Drive-backed member is a two-system removal. The service first freezes
+  // new grant work and persists exact revoke-pending receipts, revokes only
+  // those exact provider permissions outside a DB writer transaction, then
+  // rechecks the whole membership/grant snapshot before deleting anything.
+  // Provider failure or a concurrent grant leaves the membership in place.
+  await createProjectDriveMemberRemovalService({
+    database: db,
+    revokeExactGrant: revokeExactDriveFolderGrant,
+  }).remove({ workspaceId: ws, memberUserId: userId });
   revalidatePath("/app", "layout");
   return { ok: true };
 }
@@ -391,30 +397,11 @@ export async function setMemberRoleAction(
     "manageProject",
     "Only the owner can change member roles.",
   );
-  if (role === "member") {
-    // Demoting an owner, refuse if it would empty the owner list.
-    const owners = await db
-      .select({ userId: workspaceMembers.userId })
-      .from(workspaceMembers)
-      .where(
-        and(
-          eq(workspaceMembers.workspaceId, ws),
-          eq(workspaceMembers.role, "owner"),
-        ),
-      );
-    if (owners.length === 1 && owners[0]?.userId === userId) {
-      throw new Error("Demote a different owner first, one must remain.");
-    }
-  }
-  await db
-    .update(workspaceMembers)
-    .set({ role })
-    .where(
-      and(
-        eq(workspaceMembers.workspaceId, ws),
-        eq(workspaceMembers.userId, userId),
-      ),
-    );
+  await setProjectDriveMemberRole(db, {
+    workspaceId: ws,
+    memberUserId: userId,
+    role,
+  });
   revalidatePath("/app", "layout");
   return { ok: true };
 }
@@ -448,14 +435,21 @@ export async function publishWorkspaceAction(projectId?: string): Promise<{
     "publishTimeline",
     "Only the owner can publish this workspace.",
   );
-  await db
-    .update(workspaces)
-    .set({ publishedAt: new Date() })
-    .where(eq(workspaces.id, ws));
-  const [row] = await db
-    .select({ slug: workspaces.slug })
-    .from(workspaces)
-    .where(eq(workspaces.id, ws));
+  const row = await db.transaction(
+    async (tx) => {
+      await assertProjectNotDeleting(tx, ws);
+      await tx
+        .update(workspaces)
+        .set({ publishedAt: new Date() })
+        .where(eq(workspaces.id, ws));
+      const [row] = await tx
+        .select({ slug: workspaces.slug })
+        .from(workspaces)
+        .where(eq(workspaces.id, ws));
+      return row ?? null;
+    },
+    { behavior: "immediate" },
+  );
   if (!row) throw new Error("Workspace vanished mid-publish.");
   revalidatePath(`/p/${row.slug}`);
   revalidatePath("/app", "layout");
@@ -476,14 +470,21 @@ export async function unpublishWorkspaceAction(projectId?: string): Promise<{
     "revokeTimeline",
     "Only the owner can unpublish this workspace.",
   );
-  const [row] = await db
-    .select({ slug: workspaces.slug })
-    .from(workspaces)
-    .where(eq(workspaces.id, ws));
-  await db
-    .update(workspaces)
-    .set({ publishedAt: null })
-    .where(eq(workspaces.id, ws));
+  const row = await db.transaction(
+    async (tx) => {
+      await assertProjectNotDeleting(tx, ws);
+      const [row] = await tx
+        .select({ slug: workspaces.slug })
+        .from(workspaces)
+        .where(eq(workspaces.id, ws));
+      await tx
+        .update(workspaces)
+        .set({ publishedAt: null })
+        .where(eq(workspaces.id, ws));
+      return row ?? null;
+    },
+    { behavior: "immediate" },
+  );
   if (row) revalidatePath(`/p/${row.slug}`);
   revalidatePath("/app", "layout");
   return { ok: true };
@@ -613,14 +614,20 @@ export async function inviteMemberByEmailAction(
   } else {
     token = mintInviteToken();
     expiresAt = new Date(now + INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
-    await db.insert(pendingInvites).values({
-      token,
-      workspaceId: ws,
-      email: trimmed,
-      invitedByUserId: me,
-      role,
-      expiresAt,
-    });
+    await db.transaction(
+      async (tx) => {
+        await assertProjectNotDeleting(tx, ws);
+        await tx.insert(pendingInvites).values({
+          token,
+          workspaceId: ws,
+          email: trimmed,
+          invitedByUserId: me,
+          role,
+          expiresAt,
+        });
+      },
+      { behavior: "immediate" },
+    );
   }
 
   // Send. Dev path (no Resend key) logs and returns ok.
@@ -645,21 +652,29 @@ export async function inviteMemberByEmailAction(
     throw new Error(result.error ?? "Couldn’t send the invite email.");
   }
 
-  // Update last_sent_at on the pending_invites row (covers both new and resend).
-  await db
-    .update(pendingInvites)
-    .set({ lastSentAt: now })
-    .where(eq(pendingInvites.token, token));
+  // Update delivery evidence atomically unless deletion already owns the
+  // Project. The email may have crossed the provider boundary just before a
+  // concurrent delete; in that case the invite cannot be made live again.
+  await db.transaction(
+    async (tx) => {
+      await assertProjectNotDeleting(tx, ws);
+      await tx
+        .update(pendingInvites)
+        .set({ lastSentAt: now })
+        .where(eq(pendingInvites.token, token));
 
-  // Record workspace event. No email address in payload (audit trail only).
-  await db.insert(workspaceEvents).values({
-    id: mintEventId(),
-    workspaceId: ws,
-    userId: me,
-    kind: "inviteSent",
-    payload: JSON.stringify({ role }),
-    createdAt: Math.floor(now / 1000),
-  });
+      // Record workspace event. No email address in payload (audit trail only).
+      await tx.insert(workspaceEvents).values({
+        id: mintEventId(),
+        workspaceId: ws,
+        userId: me,
+        kind: "inviteSent",
+        payload: JSON.stringify({ role }),
+        createdAt: Math.floor(now / 1000),
+      });
+    },
+    { behavior: "immediate" },
+  );
 
   return { ok: true, email: trimmed, sent: true };
 }
@@ -692,17 +707,19 @@ function mintEventId(): string {
  *  Phase 2 hardening changes:
  *  - G8: validates email against the Clerk VERIFIED primary email
  *    (via clerkCurrentUser()) rather than the lagging users.email mirror.
- *  - Ordering: ALL validation runs BEFORE any membership write or token burn.
+ *  - A live token claim, membership and audit event commit together; failed
+ *    validation or persistence rolls back all three.
  *  - Writes the invite's role (not hardcoded 'member') into workspace_members.
  *  - Records workspace_events {kind:'inviteAccepted', payload:{userId, role}}.
  *
- *  Returns the workspace slug so the page can redirect to
- *  `/app/tasks` with the right active context. */
+ *  Acceptance explicitly selects the joined Project. Returns its canonical
+ *  My work URL; the destination independently authorizes the Project. */
 export async function acceptInviteAction(token: string): Promise<{
   ok: true;
-  workspaceId: string;
+  workspaceId: ProjectId;
   workspaceSlug: string;
   workspaceName: string;
+  redirectTo: string;
 }> {
   // ── 1. Load and validate the invite row ──────────────────────────────────
   const [invite] = await db
@@ -723,7 +740,7 @@ export async function acceptInviteAction(token: string): Promise<{
   if (invite.acceptedAt) {
     throw new Error("This invite has already been accepted.");
   }
-  if (invite.expiresAt < new Date()) {
+  if (invite.expiresAt <= new Date()) {
     throw new Error("This invite has expired. Ask the owner for a fresh one.");
   }
 
@@ -734,11 +751,11 @@ export async function acceptInviteAction(token: string): Promise<{
   if (!clerkUser) {
     throw new Error("You need to be signed in to accept an invite.");
   }
-  const clerkEmail =
-    clerkUser.emailAddresses.find(
-      (e) => e.id === clerkUser.primaryEmailAddressId,
-    )?.emailAddress ?? null;
-  if (!clerkEmail) {
+  const primaryEmail = clerkUser.emailAddresses.find(
+    (e) => e.id === clerkUser.primaryEmailAddressId,
+  );
+  const clerkEmail = primaryEmail?.emailAddress;
+  if (!clerkEmail || primaryEmail?.verification?.status !== "verified") {
     throw new Error(
       "Your account doesn’t have a verified email. Complete email verification and try again.",
     );
@@ -757,16 +774,13 @@ export async function acceptInviteAction(token: string): Promise<{
     );
   }
 
-  // ── 4. Resolve workspace ────────────────────────────────────────────────
-  const [workspace] = await db
-    .select({ slug: workspaces.slug, name: workspaces.name })
-    .from(workspaces)
-    .where(eq(workspaces.id, invite.workspaceId));
-  if (!workspace) {
-    throw new Error("This workspace no longer exists.");
+  const projectId = parseProjectId(invite.workspaceId);
+  if (!projectId) {
+    throw new Error("This project is unavailable.");
   }
+  const redirectTo = withActiveProject(MY_WORK_APP_PATH, projectId);
 
-  // ── 5. All validation passed — now write ─────────────────────────────────
+  // ── 4. Resolve identity, then claim and revalidate inside the transaction ─
   const me = await getCurrentUser();
 
   // Clamp the stored role defensively (belt-and-braces against pre-migration
@@ -774,43 +788,105 @@ export async function acceptInviteAction(token: string): Promise<{
   const grantedRole: "member" | "owner" =
     invite.role === "owner" ? "owner" : "member";
 
-  // INSERT or IGNORE: already-a-member is a no-op success. Write the
-  // invite's role, not a hardcoded 'member' (D-018).
-  await db.run(sql`
-    INSERT OR IGNORE INTO workspace_members (workspace_id, user_id, role)
-    VALUES (${invite.workspaceId}, ${me}, ${grantedRole})
-  `);
+  const acceptedAt = new Date();
+  const driveGrantIntent = await db.transaction(
+    async (tx) => {
+      await assertProjectNotDeleting(tx, projectId);
+      const [project] = await tx.select({ slug: workspaces.slug, name: workspaces.name })
+        .from(workspaces)
+        .where(and(eq(workspaces.id, projectId), isNull(workspaces.archivedAt)));
+      if (!project) throw new Error("This project is unavailable or archived.");
+      // Burn exactly the still-live invite validated above. This closes the
+      // double-accept/expiry race while keeping membership, grant intent,
+      // audit event and token consumption atomic.
+      const accepted = await tx
+        .update(pendingInvites)
+        .set({ acceptedAt: acceptedAt, acceptedByUserId: me })
+        .where(
+          and(
+            eq(pendingInvites.token, token),
+            eq(pendingInvites.workspaceId, invite.workspaceId),
+            eq(pendingInvites.email, invite.email),
+            eq(pendingInvites.role, invite.role),
+            isNull(pendingInvites.acceptedAt),
+            gt(pendingInvites.expiresAt, new Date()),
+          ),
+        )
+        .returning({ token: pendingInvites.token });
+      if (!accepted[0]) {
+        throw new Error("This invite is unavailable or has expired. Ask the owner for a fresh one.");
+      }
 
-  // Mark the invite accepted (audit trail). Burns the token so it
-  // cannot be reused (INSERT OR IGNORE above makes double-accept safe).
-  await db
-    .update(pendingInvites)
-    .set({ acceptedAt: new Date(), acceptedByUserId: me })
-    .where(eq(pendingInvites.token, token));
+      // Clerk's verified primary address is the authority used for both the
+      // membership and its named-user Drive grant. Keep the local mirror in
+      // the same transaction so the executor's fresh email recheck cannot see
+      // an accepted member paired with a stale address.
+      await tx
+        .update(users)
+        .set({ email: clerkEmail.toLowerCase() })
+        .where(eq(users.id, me));
 
-  // Record workspace audit event (D-019). No email address in payload.
-  await db.insert(workspaceEvents).values({
-    id: mintEventId(),
-    workspaceId: invite.workspaceId,
-    userId: me,
-    kind: "inviteAccepted",
-    payload: JSON.stringify({ userId: me, role: grantedRole }),
-    createdAt: Math.floor(Date.now() / 1000),
-  });
+      // INSERT or IGNORE: already-a-member is a no-op success. Write the
+      // invite's role, not a hardcoded 'member' (D-018).
+      await tx.run(sql`
+        INSERT OR IGNORE INTO workspace_members (workspace_id, user_id, role)
+        VALUES (${invite.workspaceId}, ${me}, ${grantedRole})
+      `);
 
-  // Flip the active-workspace cookie so /app/tasks lands the user
-  // in the freshly-joined workspace.
-  //
-  // Attribute parity with the cookie's four sibling writers (D-021 writer #4,
-  // the last one WP3 left open). This was the only writer with neither
-  // `httpOnly` nor `secure`, so accepting an invite downgraded the last-active
-  // preference to a script-readable cookie sendable over plain HTTP until the
-  // next writer ran. Nothing on the client reads it — it exists so the *next*
-  // server request resolves into the joined workspace — so there was never a
-  // reason for it to be exposed. Pinned, with its siblings, by
-  // `src/server/projects/active-project-contract.test.mjs`.
+      const [membership] = await tx.select({ role: workspaceMembers.role })
+        .from(workspaceMembers)
+        .where(and(eq(workspaceMembers.workspaceId, projectId), eq(workspaceMembers.userId, me)));
+      if (!membership) throw new Error("This project is unavailable.");
+
+      // A configured board must never commit a membership without the exact
+      // generation/email/role grant intent that will make its coverage true.
+      // Provider work happens only after this transaction commits; a Google
+      // refusal therefore keeps membership valid and puts uploads on the
+      // Signal-native fallback rather than rolling the person back out.
+      const preparedDriveGrant = await prepareCurrentMemberDriveGrantIntent(tx, {
+        workspaceId: invite.workspaceId,
+        memberUserId: me,
+        verifiedEmail: clerkEmail,
+      });
+
+      // Record workspace audit event (D-019). No email address in payload.
+      await tx.insert(workspaceEvents).values({
+        id: mintEventId(),
+        workspaceId: invite.workspaceId,
+        userId: me,
+        kind: "inviteAccepted",
+        payload: JSON.stringify({ userId: me, role: membership.role }),
+        createdAt: Math.floor(acceptedAt.getTime() / 1000),
+      });
+      return { ...preparedDriveGrant, workspace: project };
+    },
+    { behavior: "immediate" },
+  );
+
+  // The membership, invite burn, audit event, and exact Drive intent are now
+  // committed. A Google refusal becomes visible manual attention and leaves
+  // the valid membership intact; incomplete coverage keeps uploads on Signal.
+  if (driveGrantIntent.kind === "grant-intent") {
+    try {
+      await executeProjectDriveGrantOperation({
+        workspaceId: driveGrantIntent.operation.workspaceId,
+        operationId: driveGrantIntent.operation.operationId,
+      });
+    } catch {
+      // The exact intent is durable and incomplete coverage already forces
+      // Signal-native uploads. Never report invite failure after its token,
+      // membership, and audit event have committed.
+    }
+  }
+
+  const workspace = driveGrantIntent.workspace;
+
+  // Both resolver generations must agree after this explicit selection. The
+  // unified cookie outranks the legacy cookie; updating only legacy left A
+  // active after accepting B. Neither preference is an authorization grant.
+  await writeActiveProjectCookie(projectId);
   const c = await cookies();
-  c.set(ACTIVE_WORKSPACE_COOKIE_NAME, invite.workspaceId, {
+  c.set(ACTIVE_WORKSPACE_COOKIE_NAME, projectId, {
     path: "/",
     sameSite: "lax",
     httpOnly: true,
@@ -821,9 +897,10 @@ export async function acceptInviteAction(token: string): Promise<{
   revalidatePath("/app", "layout");
   return {
     ok: true,
-    workspaceId: invite.workspaceId,
+    workspaceId: projectId,
     workspaceSlug: workspace.slug,
     workspaceName: workspace.name,
+    redirectTo,
   };
 }
 
@@ -897,11 +974,22 @@ export async function revokePendingInviteAction(
     "manageProject",
     "Only the workspace owner can revoke invites.",
   );
-  const result = await db
-    .update(pendingInvites)
-    .set({ expiresAt: new Date() })
-    .where(and(eq(pendingInvites.token, token), eq(pendingInvites.workspaceId, ws)))
-    .returning({ token: pendingInvites.token });
+  const result = await db.transaction(
+    async (tx) => {
+      await assertProjectNotDeleting(tx, ws);
+      return tx
+        .update(pendingInvites)
+        .set({ expiresAt: new Date() })
+        .where(
+          and(
+            eq(pendingInvites.token, token),
+            eq(pendingInvites.workspaceId, ws),
+          ),
+        )
+        .returning({ token: pendingInvites.token });
+    },
+    { behavior: "immediate" },
+  );
   if (result.length === 0) {
     throw new Error("That invite was already accepted or has been revoked.");
   }

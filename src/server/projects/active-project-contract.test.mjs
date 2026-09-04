@@ -48,7 +48,7 @@ test("one cookie constant, one writer, one set of attributes", () => {
   assert.doesNotMatch(cookieModule, /createHmac|createCipher|sign\(/);
 });
 
-test("only switchActiveProjectAction writes the last-active Project cookie", () => {
+test("only explicit switching and invite acceptance write the last-active Project cookie", () => {
   const writers = walk(path.join(root, "src"))
     .filter((file) => /writeActiveProjectCookie\s*\(/.test(readFileSync(file, "utf8")))
     .map((file) => path.relative(root, file).replaceAll(path.sep, "/"))
@@ -58,6 +58,7 @@ test("only switchActiveProjectAction writes the last-active Project cookie", () 
     writers,
     [
       "src/server/actions/active-project.ts",
+      "src/server/actions/settings.ts",
       "src/server/projects/active-project-cookie.ts",
       "src/server/projects/active-project-contract.test.mjs",
     ].sort(),

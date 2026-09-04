@@ -15,16 +15,20 @@ import {
   formatTasksAsMarkdown,
 } from "@/lib/exports";
 import type { ShareView } from "@/server/actions/share";
+import { TASKS_VIEW_PATHS } from "@/lib/product-urls";
+import { parseProjectId } from "@/lib/projects/project-ref";
+import { withActiveProject } from "@/lib/projects/project-url";
+import { pageHeaderTaskView, pageHeaderTitle } from "./page-header-context";
 
 // "Schedule", never "Timeline": inside Tasks the view is named Schedule —
 // "Timeline" without the Tasks namespace always means the Timeline product
 // one rail-stop below (SUITE_URL_AND_NAMING_CONTRACT). The route slug is
 // the one place the old name legitimately survives.
 const TABS = [
-  { href: "/app/tasks", label: "Board" },
-  { href: "/app/tasks/list", label: "List" },
-  { href: "/app/tasks/timeline", label: "Schedule" },
-  { href: "/app/tasks/calendar", label: "Calendar" },
+  { href: TASKS_VIEW_PATHS.board, label: "Board" },
+  { href: TASKS_VIEW_PATHS.list, label: "List" },
+  { href: TASKS_VIEW_PATHS.timeline, label: "Schedule" },
+  { href: TASKS_VIEW_PATHS.calendar, label: "Calendar" },
 ];
 
 /** Pull the part of the workspace title before " · " for the H1.
@@ -34,55 +38,19 @@ function shortenTitle(t: string): string {
   return idx > 0 ? t.slice(0, idx) : t;
 }
 
-function inferShareView(pathname: string): ShareView {
-  if (pathname.startsWith("/app/tasks/list")) return "list";
-  if (pathname.startsWith("/app/tasks/timeline")) return "timeline";
-  if (pathname.startsWith("/app/tasks/calendar")) return "calendar";
-  return "board";
-}
-
-/** Map the current lens path to its /print equivalent. */
-function inferPrintPath(pathname: string): string {
-  if (pathname.startsWith("/app/tasks/list")) return "/print/list";
-  if (pathname.startsWith("/app/tasks/timeline")) return "/print/timeline";
-  if (pathname.startsWith("/app/tasks/calendar")) return "/print/calendar";
-  return "/print/board";
-}
-
 export function AppPageHeader({ active: activeProp }: { active?: string }) {
   const pathname = usePathname();
   const active = activeProp ?? pathname ?? "";
   const { openPalette } = usePalette();
   const pack = useDomain();
-
-  const isMyTasks = pathname === "/app/my-tasks";
-  const isInbox = pathname === "/app/inbox";
-  const isArchived = pathname === "/app/archived";
-  // Breadcrumb mini-row removed 2026-05-18: SuiteChrome already establishes
-  // the "signal studio. / tasks" context one row up, so lead › trail here
-  // was a redundant second context line that made this read as a stacked
-  // bar. Workspace identity now lives only in the title.
-  // "My work" — the same name the sidebar gives this destination. It was
-  // "My week" here, "My work" in the nav, and /app/my-tasks in the URL:
-  // three names for one page.
-  // Workspace pages show the owner's real board name (the brief and the
-  // Settings NAME field both edit it); the personalization pack title is
-  // only the fallback before a board is named.
-  const title = isMyTasks
-    ? "My work"
-    : isInbox
-      ? "Inbox"
-      : isArchived
-        ? "Archived"
-        : (pack.boardName ?? shortenTitle(pack.workspaceTitle));
-  // Inbox + My Tasks aren't workspace views, hide Share + lane tabs.
-  // My Tasks is a personal filtered view; sharing it is meaningless.
-  // "New task" becomes the sole primary CTA on My Tasks (M2).
-  const showWorkspaceTabs = !isInbox && !isMyTasks && !isArchived;
-  const showShare = !isInbox && !isMyTasks && !isArchived;
-
-  const shareView = inferShareView(pathname ?? "/app/tasks");
-  const printPath = inferPrintPath(pathname ?? "/app/tasks");
+  const workspace = useActiveWorkspace();
+  const projectId = parseProjectId(workspace?.id);
+  const projectName = pack.boardName ?? shortenTitle(pack.workspaceTitle);
+  const title = pageHeaderTitle(pathname, projectName);
+  // Route ownership is explicit. A tab-highlight override cannot turn a
+  // utility page into a shareable board or expose task export actions.
+  const taskView = pageHeaderTaskView(pathname);
+  const contextualPath = (path: string) => projectId ? withActiveProject(path, projectId) : path;
 
   return (
     <header className="px-4 pb-3 pt-2.5 md:px-8 md:pt-3">
@@ -91,32 +59,32 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
           <h1 className="text-[20px] font-semibold tracking-tight md:text-[24px]">
             <span className="block truncate">{title}</span>
           </h1>
+          {title === "Settings" ? <p className="mt-1 truncate text-[12px] text-ink-soft" title={projectName}>Project · {projectName}</p> : null}
         </div>
-        <div className="flex flex-shrink-0 items-center gap-2">
+        {taskView ? <div className="flex flex-shrink-0 items-center gap-2">
           {/* T·94: Search + New task live in the Studio Bar. The page
               header keeps only view-local actions. */}
-          {showShare ? (
-            <span className="hidden lg:inline-flex">
-              <ShareButton view={shareView} />
-            </span>
-          ) : null}
+          <span className="hidden lg:inline-flex">
+            <ShareButton view={taskView} />
+          </span>
           <PageActionsOverflow
             onSearch={openPalette}
-            showShare={showShare}
-            shareView={shareView}
-            printPath={printPath}
+            showShare
+            shareView={taskView}
+            printPath={contextualPath(`/print/${taskView}`)}
           />
-        </div>
+        </div> : null}
       </div>
 
-      <div className={"mt-4 items-center justify-between " + (showWorkspaceTabs ? "flex" : "hidden")}>
-        <nav className="flex items-center gap-1 overflow-x-auto rounded-lg bg-bg-sunken/70 p-0.5 thin-scroll">
+      {taskView ? <div className="mt-4 flex min-w-0 items-center justify-between">
+        <nav aria-label="Task views" className="flex min-w-0 items-center gap-1 overflow-x-auto rounded-lg bg-bg-sunken/70 p-0.5 thin-scroll">
           {TABS.map((t) => (
             <Link
               key={t.href}
-              href={t.href}
+              href={contextualPath(t.href)}
+              aria-current={active === t.href ? "page" : undefined}
               className={
-                "rounded-md px-3 py-1 text-[12.5px] font-medium transition-colors " +
+                "shrink-0 rounded-md px-3 py-1 text-[12.5px] font-medium transition-colors " +
                 (active === t.href
                   ? "bg-white text-ink shadow-sm"
                   : "text-ink-quiet hover:text-ink-soft")
@@ -126,7 +94,7 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
             </Link>
           ))}
         </nav>
-      </div>
+      </div> : null}
     </header>
   );
 }

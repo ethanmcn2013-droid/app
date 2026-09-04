@@ -199,6 +199,8 @@ export async function TasksRuntimeShell({
   ]);
 
   const workspaceSlug = workspace?.slug ?? workspaceId;
+  // Account edition badge only (Venue/School), never the current project's
+  // plan or an upgrade gate. Project billing uses getEffectiveTier(me, ws).
   const edition = isDemoMode()
     ? null
     : editionLabel(

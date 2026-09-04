@@ -6,7 +6,7 @@ import { acceptInviteAction } from "@/server/actions/settings";
 import { useToast } from "@/components/primitives/toast";
 
 /** The accept-invite client island. Calls the server action, routes
- *  to the joined workspace's board on success, surfaces the action's
+ *  to the joined project's My work on success, surfaces the action's
  *  error message on failure. */
 export function AcceptInviteButton({ token }: { token: string }) {
   const router = useRouter();
@@ -21,9 +21,9 @@ export function AcceptInviteButton({ token }: { token: string }) {
         const result = await acceptInviteAction(token);
         toast(`Joined ${result.workspaceName}`, {
           tone: "success",
-          body: "Open the board, you're in.",
+          body: "Your assigned tasks are in My work.",
         });
-        router.push("/app/tasks?invite=accepted");
+        router.replace(result.redirectTo);
       } catch (e) {
         setError((e as Error).message);
       }

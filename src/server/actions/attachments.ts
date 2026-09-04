@@ -8,21 +8,58 @@ import { getAttachmentsForTask } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
 import { getCurrentUser } from "@/server/auth";
-import { scopeForTask } from "@/server/actions/project-authz";
+import {
+  authorizeStoredProject,
+  scopeForTask,
+} from "@/server/actions/project-authz";
 import type { Attachment } from "@/lib/data";
 import { isDemoMode } from "@/lib/access-mode";
 import { getEffectiveTier } from "@/server/db/entitlements";
+import { getQuota, WARN_THRESHOLDS } from "@/lib/storage-config";
+import { SERVER_ACTION_FILE_LIMIT_BYTES } from "@/lib/upload-limit";
 import {
-  getQuota,
-  SERVER_UPLOAD_LIMIT_BYTES,
-  WARN_THRESHOLDS,
-} from "@/lib/storage-config";
-import { putBytes, deleteBytes } from "@/server/storage";
+  chooseBackend,
+  putBytes,
+} from "@/server/storage";
 import {
   SNIFF_BYTES,
   uploadRejectionMessage,
   validateUpload,
 } from "@/lib/upload-validation";
+import {
+  claimPathname,
+  newAttachmentId,
+  safeFilename,
+} from "@/lib/attachment-claim";
+import {
+  deleteNativeAttachmentAndMirrorInTransaction,
+  finalizeNativeUploadClaimInTransaction,
+  recordNativeUploadClaimInTransaction,
+  releaseNativeUploadClaimInTransaction,
+} from "@/server/attachments/native-upload-custody";
+import {
+  cleanupAbandonedNativeUploadClaim,
+  repairExactNativeByteCleanupReceipts,
+  takeNativeUploadCleanupCustody,
+} from "@/server/attachments/native-upload-cleanup";
+import { deleteNativeByteCleanupTargetConfirmed } from "@/server/attachments/native-byte-cleanup";
+import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
+
+const SERVER_ACTION_UPLOAD_AUTHORITY_MS = 30 * 60_000;
+
+async function releaseServerActionUploadClaim(
+  attachmentId: string,
+  workspaceId: string,
+): Promise<void> {
+  await db.transaction(
+    (transaction) =>
+      releaseNativeUploadClaimInTransaction(transaction, {
+        attachmentId,
+        workspaceId,
+      }),
+    { behavior: "immediate" },
+  );
+}
 
 /**
  * File attachment server actions.
@@ -30,8 +67,8 @@ import {
  * Storage substrate is abstracted behind src/server/storage.ts; the
  * upload action uses claim-then-verify (Opus §1.4): the metadata row
  * is inserted BEFORE bytes are written so the usage SUM is atomic.
- * If quota is exceeded or the byte write fails, the claim row is
- * deleted and no orphan bytes or rows survive.
+ * If quota is exceeded the claim is released atomically. An ambiguous byte
+ * write is transferred into durable cleanup custody before its row is removed.
  *
  * stored_path holds either a disk path (legacy / dev) or a blob URL
  * (https://...). The download route distinguishes by prefix.
@@ -48,34 +85,12 @@ import {
  * See the E08.07 evidence for what a scanner costs and why it is deferred.
  */
 
-function newAttachmentId(): string {
-  const raw =
-    globalThis.crypto?.randomUUID?.() ??
-    Math.random().toString(36).slice(2);
-  return `att-${raw.replace(/-/g, "").slice(0, 8)}`;
-}
-
-/** Strip path separators and anything outside [a-zA-Z0-9._-]. */
-function safeFilename(name: string): string {
-  const base = name.split(/[\\/]/).pop() ?? "";
-  const cleaned = base.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const trimmed = cleaned.replace(/^\.+/, "");
-  return trimmed.length > 0 ? trimmed : "file.bin";
-}
-
 /**
- * Compute the workspace-prefixed blob key (also used as the sub-path
- * under uploadsRoot() for disk). Format:
- *   <workspaceId>/<taskId>/<attachmentId>-<safeFilename>
+ * The blob key and the disk sub-path are the same string, and it is now
+ * composed in one place: `claimPathname` in `@/lib/attachment-claim`. It
+ * used to be composed here AND in the client-direct path, which is exactly
+ * how two upload routes end up filing the same board's files differently.
  */
-function buildStorageKey(
-  workspaceId: string,
-  taskId: string,
-  attachmentId: string,
-  filename: string,
-): string {
-  return `${workspaceId}/${taskId}/${attachmentId}-${filename}`;
-}
 
 // ── Workspace storage usage ───────────────────────────────────────────
 
@@ -176,12 +191,25 @@ export async function uploadAttachmentAction(
   // Resolve tier and quota before touching the DB.
   const tier = await getEffectiveTier(me, ws);
   const quota = getQuota(tier);
-  const effectiveCap = Math.min(quota.maxFileBytes, SERVER_UPLOAD_LIMIT_BYTES);
+  // WP-0. This cap is now the SERVER-ACTION one, not the product's. The
+  // whole file crosses a Vercel Function here and Vercel refuses a request
+  // body over 4.5 MB before the framework sees it, so the old
+  // min(maxFileBytes, 50 MB) promised roughly ten times what this path
+  // could deliver and failed with an opaque platform 413.
+  //
+  // The product's real ceiling lives on the client-direct path, where the
+  // bytes go browser → Vercel Blob and never enter a function. This
+  // remains the fallback for a deployment with no blob store — local disk
+  // in development — and it is now honest about what it can carry.
+  const effectiveCap = Math.min(
+    quota.maxFileBytes,
+    SERVER_ACTION_FILE_LIMIT_BYTES,
+  );
 
   if (file.size > effectiveCap) {
     throw new Error(
       `uploadAttachmentAction: file exceeds ${effectiveCap}-byte cap ` +
-        `(tier ${tier}, effective cap = min(${quota.maxFileBytes}, ${SERVER_UPLOAD_LIMIT_BYTES}))`,
+        `(tier ${tier}, effective cap = min(${quota.maxFileBytes}, ${SERVER_ACTION_FILE_LIMIT_BYTES}))`,
     );
   }
 
@@ -216,23 +244,51 @@ export async function uploadAttachmentAction(
 
   const attachmentId = newAttachmentId();
   const filename = safeFilename(file.name);
-  const storageKey = buildStorageKey(ws, taskId, attachmentId, filename);
+  const storageKey = claimPathname(ws, taskId, attachmentId, filename);
   const createdAt = new Date();
+  const storageBackend = chooseBackend();
 
-  // (c) INSERT the claim row first. stored_path is a placeholder;
-  // it will be updated after the byte write succeeds. We use the
-  // storage key as a stable interim value so the row is non-null.
-  await db.insert(attachments).values({
-    id: attachmentId,
-    workspaceId: ws,
-    taskId,
-    uploaderUserId: me,
-    filename,
-    storedPath: storageKey,
-    mimeType,
-    sizeBytes: file.size,
-    createdAt,
-  });
+  // (c) Insert the claim row and its finite write-authority marker in the
+  // same immediate transaction, behind the Project deletion tombstone.
+  const authorityExpiresAt = Date.now() + SERVER_ACTION_UPLOAD_AUTHORITY_MS;
+  await db.transaction(
+    async (transaction) => {
+      const [freshParent] = await transaction
+        .select({ workspaceId: tasks.workspaceId })
+        .from(tasks)
+        .where(and(eq(tasks.id, taskId), eq(tasks.workspaceId, ws)))
+        .limit(1);
+      if (!freshParent) {
+        throw new Error("uploadAttachmentAction: task not found");
+      }
+      const inserted = await transaction
+        .insert(attachments)
+        .values({
+          id: attachmentId,
+          workspaceId: ws,
+          taskId,
+          uploaderUserId: me,
+          filename,
+          storedPath: storageKey,
+          mimeType,
+          sizeBytes: file.size,
+          createdAt,
+        })
+        .returning({ id: attachments.id });
+      if (inserted.length !== 1) {
+        throw new Error("uploadAttachmentAction: claim was not persisted");
+      }
+      await recordNativeUploadClaimInTransaction(transaction, {
+        workspaceId: ws,
+        attachmentId,
+        pathname: storageKey,
+        authorityExpiresAt,
+        cleanupTargetKind:
+          storageBackend === "disk" ? "disk-key" : "blob-pathname",
+      });
+    },
+    { behavior: "immediate" },
+  );
 
   // (d) SUM workspace usage INCLUDING the claim.
   const usageBytesAfterClaim = await getWorkspaceStorageUsage(ws);
@@ -240,28 +296,69 @@ export async function uploadAttachmentAction(
   // (e) Over-quota check.
   if (usageBytesAfterClaim > quota.totalBytes) {
     // Delete the claim row — no orphan row survives.
-    await db.delete(attachments).where(eq(attachments.id, attachmentId));
+    await releaseServerActionUploadClaim(attachmentId, ws);
     throw new Error(
       `uploadAttachmentAction: workspace storage quota exceeded ` +
         `(usage ${usageBytesAfterClaim} bytes, limit ${quota.totalBytes} bytes, tier ${tier})`,
     );
   }
 
-  // (f) Write bytes. If this fails, delete the claim row.
+  // (f) Write bytes. An ambiguous failure gets durable cleanup custody.
   let finalStoredPath: string;
   try {
     finalStoredPath = await putBytes(storageKey, bytes, mimeType);
   } catch (err) {
-    await db.delete(attachments).where(eq(attachments.id, attachmentId));
+    // A failed write can still be ambiguous at a remote store. Transfer the
+    // exact key into durable cleanup custody before releasing its marker.
+    await cleanupAbandonedNativeUploadClaim({
+      workspaceId: ws,
+      attachmentId,
+      storageKey,
+    });
     throw err;
   }
 
-  // Update stored_path to the final value (blob URL or abs disk path).
-  if (finalStoredPath !== storageKey) {
-    await db
-      .update(attachments)
-      .set({ storedPath: finalStoredPath })
-      .where(eq(attachments.id, attachmentId));
+  // The byte write happened outside the writer transaction. Finalization is an
+  // exact CAS behind the deletion tombstone; losing either race transfers the
+  // just-written locator into durable cleanup custody before returning error.
+  let finalization: Awaited<
+    ReturnType<typeof finalizeNativeUploadClaimInTransaction>
+  >;
+  try {
+    finalization = await db.transaction(
+      (transaction) =>
+        finalizeNativeUploadClaimInTransaction(transaction, {
+          workspaceId: ws,
+          attachmentId,
+          pathname: storageKey,
+          uploaderUserId: me,
+          finalStoredPath,
+          mimeType,
+          sizeBytes: file.size,
+        }),
+      { behavior: "immediate" },
+    );
+  } catch (error) {
+    await takeNativeUploadCleanupCustody(
+      { database: db, deleteTarget: deleteNativeByteCleanupTargetConfirmed },
+      {
+        workspaceId: ws,
+        attachmentId,
+        target: { kind: "stored-path", locator: finalStoredPath },
+      },
+    );
+    throw error;
+  }
+  if (finalization === "lost") {
+    await takeNativeUploadCleanupCustody(
+      { database: db, deleteTarget: deleteNativeByteCleanupTargetConfirmed },
+      {
+        workspaceId: ws,
+        attachmentId,
+        target: { kind: "stored-path", locator: finalStoredPath },
+      },
+    );
+    throw new Error("uploadAttachmentAction: Project changed during upload");
   }
 
   await recordActivity(
@@ -296,10 +393,10 @@ export async function uploadAttachmentAction(
 }
 
 /**
- * Delete a single attachment row + best-effort remove bytes.
+ * Delete a single attachment row after its exact bytes enter durable cleanup.
  * Works regardless of quota state; quota never gates deletes.
- * Routes the unlink through the storage seam (handles both blob URLs
- * and disk paths).
+ * Cleanup is replayable across storage failure and process death, and the
+ * storage seam handles both private Blob locators and disk paths.
  */
 export async function deleteAttachmentAction(
   attachmentId: string,
@@ -327,13 +424,30 @@ export async function deleteAttachmentAction(
   // through its task, or the two rows disagree and nothing is deleted.
   if (row.workspaceId !== ws) return;
 
-  await db
-    .delete(attachments)
-    .where(
-      and(eq(attachments.id, attachmentId), eq(attachments.workspaceId, ws)),
-    );
-
-  await deleteBytes(row.storedPath);
+  const deletion = await db.transaction(
+    async (transaction) => {
+      const grant = await authorizeStoredProject({
+        storedProjectId: ws,
+        capability: "createOrEditTasks",
+        actorUserId: me,
+        executor: transaction,
+      });
+      if (!grant.ok) {
+        return { deletedAttachmentIds: [], cleanupReceiptKeys: [] };
+      }
+      await assertProjectNotDeleting(transaction, ws);
+      return deleteNativeAttachmentAndMirrorInTransaction(transaction, {
+        workspaceId: ws,
+        attachmentId,
+      });
+    },
+    { behavior: "immediate" },
+  );
+  if (!deletion.deletedAttachmentIds.includes(attachmentId)) return;
+  await repairExactNativeByteCleanupReceipts(
+    { database: db, deleteTarget: deleteNativeByteCleanupTargetConfirmed },
+    deletion.cleanupReceiptKeys,
+  );
 
   await recordActivity(
     row.taskId,

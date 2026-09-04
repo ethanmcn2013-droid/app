@@ -42,6 +42,13 @@ const service = readFileSync(
   new URL("./projects/service.ts", import.meta.url),
   "utf8",
 );
+const projectDeletion = readFileSync(
+  new URL(
+    "./connections/project-drive-project-deletion.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const publishedPage = readFileSync(
   new URL("../app/p/[slug]/page.tsx", import.meta.url),
   "utf8",
@@ -80,8 +87,9 @@ test("the one delete path drops the cached public page", () => {
 
 test("delete reads the slug before the row is deleted, not after", () => {
   const body = actionBody(service, "deleteProject");
-  const read = body.indexOf(".select({ slug: workspaces.slug");
-  const drop = body.indexOf("delete(workspaces)");
+  assert.match(body, /createProjectDriveProjectDeletionService\(\{/);
+  const read = projectDeletion.indexOf(".from(workspaces)");
+  const drop = projectDeletion.indexOf(".delete(workspaces)");
   assert.ok(read >= 0, "delete must read the slug");
   assert.ok(drop >= 0, "delete must delete the workspace");
   assert.ok(read < drop, "the slug must be read before the workspace row is gone");

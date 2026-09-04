@@ -9,9 +9,9 @@ name: ci
 
 on:
   push:
-    branches: [main]
+    branches: [main, release/january-2027]
   pull_request:
-    branches: [main]
+    branches: [main, release/january-2027]
 
 # Cancel in-progress runs for the same ref so a fresh push supersedes
 # the previous one — saves CI minutes on rapid pushes.
@@ -45,6 +45,9 @@ jobs:
       - name: Migration ledger contract
         run: pnpm db:contract
 
+      - name: Isolated January migration rehearsal
+        run: node scripts/db/verify-january-rehearsal.mjs
+
       - name: Typecheck
         run: pnpm typecheck
 
@@ -56,6 +59,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ethanmcn2013-droid/studio
+          ref: ${{ (github.base_ref == 'release/january-2027' || github.ref_name == 'release/january-2027') && 'release/january-2027' || 'main' }}
           path: studio-parity
 
       - name: Test (includes calendar, Signal, Timeline, and suite truth gates)
@@ -67,6 +71,9 @@ jobs:
       # removed so lint never sweeps a second repository's sources.
       - name: Remove parity checkout
         run: rm -rf studio-parity
+
+      - name: Project Drive lifecycle and recovery
+        run: pnpm test:project-drive
 
       - name: Parser unit test (informational — date-sensitive)
         run: pnpm run test:parser

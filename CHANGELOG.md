@@ -4,6 +4,62 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-09-04 · January candidate · billing follows payment evidence
+
+Event checkout uses a one-time payment and a twelve-month access term. Missing
+billing configuration cannot grant paid access. Repeated provider events resume
+unfinished fulfilment without duplicating access or extending its term. Billing
+settings directs subscription changes to Manage billing and no longer reports a
+cancellation that Stripe has not made.
+
+Internal candidate only. Local database tests, typecheck, lint and build passed;
+provider lifecycle and final suite acceptance remain open. See
+`docs/execution/january-2027/BILLING-REHEARSAL.md` for evidence and limitations.
+
+## 2026-08-27 · T·153 · fixes · settings stopped telling every customer that uploads do not work
+
+**Settings has been saying "File uploads are not yet active on this workspace"
+to every real customer, unconditionally, while uploads were live — and the four
+file-size numbers behind it disagreed with each other and with the platform.
+The copy is now true, the numbers come from one constant, and a file goes from
+the browser to the store without crossing a server.**
+
+Two separate untruths, one screen. The line in `storage.tsx` had no demo-mode
+branch, so it was not stale review copy: it shipped to production, above a
+usage bar that was quietly counting real files. `BLOB_READ_WRITE_TOKEN` has
+been provisioned on the project for twenty-four days.
+
+The size story was worse than the four numbers already recorded. `next.config`
+capped server-action bodies at 8 MB, `SERVER_UPLOAD_LIMIT_BYTES` said 50 MB,
+the free plan said 10 MB, the toast said 50 MB — and Vercel refuses any
+function request body over **4.5 MB** before the framework sees it. Every one
+of the four was unreachable. A 5 MB PDF could not be attached at all, and
+failed with a platform error the app never saw.
+
+So the bytes stopped going that way. The browser asks for a URL signed for one
+pathname, one size and one type set, sends the file straight to the store, and
+a finalize step re-proves the caller,
+confirms the file landed where we said, confirms nobody without credentials can
+read it, and re-reads its leading bytes through the same allowlist the old path
+used. A returned URL is a claim, never evidence. Deliberately the same shape
+Project Drive will use against Google Drive one provider later.
+
+A presigned URL rather than the Blob client helper, for two reasons. The
+helper costs 36.7 KB gzip in every browser and breached the bundle ratchet,
+which is a founder decision rather than an edit. And it could not constrain the
+access mode — the browser passed its own — so a modified client could have
+written a private-by-policy attachment as a public object. Signing bakes that
+in server-side, and leaves the browser a bare PUT with no library at all.
+
+Verified against the production store, not asserted: 17 checks across both
+paths, including a signed URL refused when repointed at another pathname.
+`scripts/verify-blob-store.mjs` reruns it.
+
+Also closed: content validation would otherwise have been lost the moment the
+bytes stopped passing through our hands, and a claim row abandoned by a killed
+browser would have held quota forever. `pnpm first-contact:language`,
+`lint`, `typecheck`, `test` and `build` all green.
+
 ## 2026-08-22 · T·152 · tightens · design tokens now come from the package, not a copy
 
 **The app's system tokens are imported from the `signal-ds` npm package

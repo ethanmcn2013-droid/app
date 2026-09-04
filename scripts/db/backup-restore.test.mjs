@@ -71,16 +71,24 @@ before(async () => {
   }
 });
 
-after(() => {
+after(async () => {
   try {
-    source?.close();
+    await source?.close();
   } catch {
     // handle already closed
   }
   try {
-    fs.rmSync(workDir, { recursive: true, force: true });
+    fs.rmSync(workDir, {
+      recursive: true,
+      force: true,
+      maxRetries: process.platform === "win32" ? 5 : 0,
+      retryDelay: 50,
+    });
   } catch (error) {
-    if (error?.code !== "EPERM") throw error;
+    // A native libSQL handle can survive until process teardown on Windows.
+    // This is a unique OS-temp fixture, so EBUSY/EPERM after bounded retries
+    // is teardown noise rather than a failed backup or restore assertion.
+    if (error?.code !== "EPERM" && error?.code !== "EBUSY") throw error;
   }
 });
 
@@ -104,7 +112,7 @@ describe("backup and restore", () => {
       const blob = await client.execute("SELECT payload FROM ledger WHERE id = 'l-7'");
       assert.equal(Buffer.from(blob.rows[0].payload).toString(), "binary-payload-7");
     } finally {
-      client.close();
+      await client.close();
     }
   });
 
@@ -123,7 +131,7 @@ describe("backup and restore", () => {
         /append-only/,
       );
     } finally {
-      client.close();
+      await client.close();
     }
   });
 
@@ -146,7 +154,7 @@ describe("backup and restore", () => {
       assert.equal(result.ok, false);
       assert.equal(result.differences[0].reason, "row count differs");
     } finally {
-      client.close();
+      await client.close();
     }
   });
 
@@ -170,7 +178,7 @@ describe("backup and restore", () => {
       assert.equal(result.differences[0].table, "workspaces");
       assert.equal(result.differences[0].reason, "content hash differs");
     } finally {
-      client.close();
+      await client.close();
     }
   });
 

@@ -1,0 +1,954 @@
+<title>Unblock Project Drive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+
+<style>
+  /* ── Signal Design System tokens (vendored values, v2.0.1) ──────── */
+  :root {
+    --paper:      #ffffff;
+    --paper-soft: #fafafa;
+    --paper-deep: #f4f4f5;
+
+    --ink:       #111111;
+    --ink-soft:  #3f3f46;
+    --ink-faint: #71717a;
+    --ink-ghost: #d4d4d8;
+
+    --accent:       #4f46e5;
+    --accent-hover: #4338ca;
+    --accent-tint:  #eef2ff;
+    --accent-soft:  rgba(79, 70, 229, 0.12);
+
+    --hairline:      rgba(17, 17, 17, 0.10);
+    --hairline-soft: rgba(17, 17, 17, 0.06);
+
+    --status-done:    #10b981;
+    --status-flight:  #f59e0b;
+    --status-blocked: #ef4444;
+
+    /* Terminal surface — constant across themes; a terminal is a terminal. */
+    --term-bg:   #18181b;
+    --term-ink:  #f4f4f5;
+    --term-dim:  #a1a1aa;
+
+    --font-sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    --text-title:   clamp(1.875rem, 1.4rem + 2.2vw, 3.25rem);
+    --text-section: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem);
+    --text-heading: 1.25rem;
+    --text-body-lg: 1.0625rem;
+    --text-body:    0.9375rem;
+    --text-body-sm: 0.8125rem;
+    --text-caption: 0.75rem;
+    --text-label:   0.6875rem;
+
+    --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+    --space-5: 20px; --space-6: 24px; --space-7: 32px; --space-8: 40px;
+    --space-9: 48px; --space-10: 64px; --space-11: 80px;
+
+    --radius-sm: 4px; --radius-md: 6px; --radius-lg: 10px; --radius-pill: 999px;
+
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --motion-instant: 80ms;
+    --motion-fast: 140ms;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #0f0f10;
+      --paper-soft: #161618;
+      --paper-deep: #1d1d20;
+
+      --ink:       #f4f4f5;
+      --ink-soft:  #d4d4d8;
+      --ink-faint: #a1a1aa;
+      --ink-ghost: #3f3f46;
+
+      --accent:       #6366f1;
+      --accent-hover: #818cf8;
+      --accent-tint:  rgba(79, 70, 229, 0.16);
+      --accent-soft:  rgba(79, 70, 229, 0.20);
+
+      --hairline:      rgba(255, 255, 255, 0.10);
+      --hairline-soft: rgba(255, 255, 255, 0.06);
+
+      --term-bg:  #09090b;
+      --term-ink: #f4f4f5;
+      --term-dim: #71717a;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:      #0f0f10;
+    --paper-soft: #161618;
+    --paper-deep: #1d1d20;
+
+    --ink:       #f4f4f5;
+    --ink-soft:  #d4d4d8;
+    --ink-faint: #a1a1aa;
+    --ink-ghost: #3f3f46;
+
+    --accent:       #6366f1;
+    --accent-hover: #818cf8;
+    --accent-tint:  rgba(79, 70, 229, 0.16);
+    --accent-soft:  rgba(79, 70, 229, 0.20);
+
+    --hairline:      rgba(255, 255, 255, 0.10);
+    --hairline-soft: rgba(255, 255, 255, 0.06);
+
+    --term-bg:  #09090b;
+    --term-ink: #f4f4f5;
+    --term-dim: #71717a;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :root { --motion-instant: 0ms; --motion-fast: 0ms; }
+    * { animation: none !important; transition: none !important; }
+  }
+
+  /* ── Base ───────────────────────────────────────────────────────── */
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-lg);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 47rem;
+    margin: 0 auto;
+    padding: var(--space-10) var(--space-5) var(--space-11);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-10);
+  }
+
+  p { margin: 0; }
+  strong { font-weight: 600; color: var(--ink); }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  /* ── Masthead ───────────────────────────────────────────────────── */
+  .masthead {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding-bottom: var(--space-8);
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .masthead h1 {
+    margin: 0;
+    font-size: var(--text-title);
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    font-weight: 600;
+    text-wrap: balance;
+  }
+
+  .standfirst {
+    color: var(--ink-soft);
+    max-width: 34rem;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    margin-top: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--ink-faint);
+  }
+  .meta span { display: flex; align-items: center; gap: var(--space-2); }
+  .meta b { font-weight: 500; color: var(--ink-soft); }
+
+  /* ── Panels ─────────────────────────────────────────────────────── */
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-6);
+    background: var(--paper-soft);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+  }
+
+  .panel h2 {
+    margin: 0;
+    font-size: var(--text-heading);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .checklist {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .checklist li {
+    display: grid;
+    grid-template-columns: 1.25rem 1fr;
+    gap: var(--space-3);
+    align-items: start;
+    font-size: var(--text-body);
+    color: var(--ink-soft);
+  }
+
+  .tick {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: var(--radius-pill);
+    background: var(--accent-soft);
+    color: var(--accent);
+    display: grid;
+    place-items: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-top: 0.15rem;
+  }
+
+  /* ── Section headers ────────────────────────────────────────────── */
+  .section-head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  .section-head h2 {
+    margin: 0;
+    font-size: var(--text-section);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+  .section-head p { color: var(--ink-faint); font-size: var(--text-body); }
+
+  /* ── Part divider — the guide has three sittings, not one ───────── */
+  .part {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-4);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .part h3 {
+    margin: 0;
+    font-size: var(--text-heading);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .part .part-time {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--ink-faint);
+    white-space: nowrap;
+  }
+  .part .part-mark {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  /* ── Steps ──────────────────────────────────────────────────────── */
+  .steps {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-9);
+  }
+
+  .step {
+    display: grid;
+    grid-template-columns: 2.25rem 1fr;
+    gap: var(--space-5);
+    align-items: start;
+  }
+
+  .step-num {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-pill);
+    background: var(--accent);
+    color: #ffffff;
+    display: grid;
+    place-items: center;
+    font-family: var(--font-mono);
+    font-size: var(--text-body);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .step-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-width: 0;
+    padding-top: 0.2rem;
+  }
+
+  .step-body h3 {
+    margin: 0;
+    font-size: var(--text-heading);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+  }
+
+  .step-body p { color: var(--ink-soft); font-size: var(--text-body); }
+
+  .step-body ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    font-size: var(--text-body);
+    color: var(--ink-soft);
+  }
+
+  /* ── Command block (the thing you type or copy) ─────────────────── */
+  .cmd {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--term-bg);
+  }
+
+  .cmd-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    background: rgba(255, 255, 255, 0.05);
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--term-dim);
+  }
+
+  .copy {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--term-dim);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: var(--radius-sm);
+    padding: 3px var(--space-2);
+    cursor: pointer;
+    transition: color var(--motion-instant) var(--ease-out),
+                border-color var(--motion-instant) var(--ease-out);
+  }
+  .copy:hover { color: var(--term-ink); border-color: rgba(255, 255, 255, 0.34); }
+  .copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .copy[data-done="1"] { color: var(--status-done); border-color: var(--status-done); }
+
+  .cmd-text {
+    margin: 0;
+    padding: var(--space-4);
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: var(--text-body-sm);
+    line-height: 1.7;
+    color: var(--term-ink);
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  /* ── Click path (where to click, not what to type) ──────────────
+     A third device, because this guide splits between a browser and a
+     terminal. It must not read as either: not the dark block you type
+     into, not the light block the computer answers with. */
+  .path {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border: 1px dashed var(--hairline);
+    border-radius: var(--radius-md);
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: var(--text-body-sm);
+  }
+  .path .path-label {
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .path .crumb { color: var(--ink-soft); }
+  .path .crumb.last { color: var(--accent); font-weight: 500; }
+  .path .sep { color: var(--ink-ghost); }
+
+  /* ── Output block (what the screen says back) ───────────────────── */
+  .out {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    background: var(--paper-deep);
+    border: 1px solid var(--hairline-soft);
+    border-radius: var(--radius-md);
+  }
+
+  .out-label {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .out-text {
+    margin: 0;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: var(--text-body-sm);
+    line-height: 1.7;
+    color: var(--ink-soft);
+    white-space: pre-wrap;
+  }
+
+  .out em { font-style: normal; color: var(--ink-faint); }
+
+  /* ── Snag (if it goes wrong) ────────────────────────────────────── */
+  .snag {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-left: 2px solid var(--status-flight);
+    background: var(--paper-soft);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+
+  .snag-label {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--status-flight);
+  }
+
+  .snag p { font-size: var(--text-body-sm); color: var(--ink-soft); }
+  .snag code, .step-body code, .out code, li code, td code, p code {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    background: var(--accent-tint);
+    color: var(--accent);
+    padding: 1px 5px;
+    border-radius: var(--radius-sm);
+    word-break: break-word;
+  }
+
+  /* ── Why-this-matters, for the one step people skip ─────────────── */
+  .why {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    border: 1px solid var(--status-flight);
+    border-radius: var(--radius-md);
+    background: rgba(245, 158, 11, 0.07);
+  }
+  .why-label {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--status-flight);
+  }
+  .why p { font-size: var(--text-body); color: var(--ink-soft); }
+
+  /* ── Table ──────────────────────────────────────────────────────── */
+  .table-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-body-sm);
+    min-width: 30rem;
+  }
+
+  th {
+    text-align: left;
+    padding: var(--space-3) var(--space-4);
+    background: var(--paper-deep);
+    border-bottom: 1px solid var(--hairline);
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--hairline-soft);
+    color: var(--ink-soft);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  td:first-child { color: var(--ink); font-weight: 500; }
+
+  /* ── Closing note ───────────────────────────────────────────────── */
+  .note {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-6);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+    background: var(--accent-tint);
+  }
+  .note h2 { margin: 0; font-size: var(--text-heading); font-weight: 600; }
+  .note p { font-size: var(--text-body); color: var(--ink-soft); }
+
+  .colophon {
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--hairline);
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--ink-faint);
+    line-height: 1.7;
+  }
+
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  @media (max-width: 34rem) {
+    .wrap { padding: var(--space-8) var(--space-4) var(--space-9); gap: var(--space-9); }
+    .step { grid-template-columns: 1.75rem 1fr; gap: var(--space-4); }
+    .step-num { width: 1.75rem; height: 1.75rem; font-size: var(--text-body-sm); }
+    .part { flex-wrap: wrap; }
+    .part .part-time { margin-left: 0; width: 100%; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">Project Drive · four screens · about 10 minutes</div>
+    <h1>Unblock Project Drive</h1>
+    <p class="standfirst">
+      I have done everything that can be done without a browser. What is left
+      is four screens inside Google&rsquo;s console, which has no way in except
+      a person clicking — plus one file to hand me and one email address to
+      tell me.
+    </p>
+    <div class="meta">
+      <span><b>Done</b> 7 of 11 steps</span>
+      <span><b>Left for you</b> 4 screens</span>
+      <span><b>Cost</b> nothing</span>
+    </div>
+  </header>
+
+  <section class="panel">
+    <h2>What I already did</h2>
+    <ul class="checklist">
+      <li>
+        <span class="tick" aria-hidden="true">✓</span>
+        <span>
+          <strong>Merged the app change.</strong> WP-0 is in — the honest
+          file-size numbers, the settings copy that stopped lying, and the new
+          upload path.
+        </span>
+      </li>
+      <li>
+        <span class="tick" aria-hidden="true">✓</span>
+        <span>
+          <strong>Rebuilt and re-opened the HQ records.</strong> The first
+          attempt could not merge — I had cut it from the wrong branch — and
+          then a gate caught two invented status words. Both fixed; it merges
+          on green.
+        </span>
+      </li>
+      <li>
+        <span class="tick" aria-hidden="true">✓</span>
+        <span>
+          <strong>Made the encryption key and put it in Vercel.</strong> All
+          three environments. It exists nowhere else — not on your disk, not in
+          this page, not in our chat.
+        </span>
+      </li>
+      <li>
+        <span class="tick" aria-hidden="true">✓</span>
+        <span>
+          <strong>Checked the project you are working in.</strong> Which turned
+          up the thing that changes the rest of this guide — see the warning
+          below.
+        </span>
+      </li>
+    </ul>
+  </section>
+
+  <section class="why">
+    <div class="why-label">Why I cannot do the next four for you</div>
+    <p>
+      Google deliberately has no programmatic way to create a consent screen or
+      an OAuth client for a web app. There is no command, no key, and nothing I
+      could install would change that — I checked before saying so. These four
+      screens are human-only by design, which is the same design that stops
+      anyone else automating their way into your account.
+    </p>
+    <p>
+      Separately, and regardless of the above: I do not sign into accounts or
+      handle passwords. That line is worth keeping even when it is inconvenient.
+    </p>
+  </section>
+
+  <section class="why">
+    <div class="why-label">The thing that changes what these screens mean</div>
+    <p>
+      Your <code>signal-studio</code> project already holds a credential called
+      <strong>Clerk production</strong>. That is what powers <em>Sign in with
+      Google</em> for every customer you already have, and this project&rsquo;s
+      consent screen is already serving it.
+    </p>
+    <p>
+      Nothing below is dangerous, but you are <strong>adding to a live
+      setup</strong>, not filling in a blank one. One rule covers all four
+      screens: <strong>if something is already there, add beside it — never
+      clear it out.</strong>
+    </p>
+  </section>
+
+  <section class="section-head">
+    <div class="eyebrow">What is left</div>
+    <h2>Four screens, in this order</h2>
+    <p>
+      Each link opens the exact page with your project already selected. The
+      dashed blocks are clicks, the dark blocks are things to copy, the light
+      blocks are what you should see back.
+    </p>
+  </section>
+
+  <ol class="steps">
+
+    <li class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Branding — read it before you change it</h3>
+        <div class="path">
+          <span class="path-label">Open</span>
+          <span class="crumb"><a href="https://console.cloud.google.com/auth/branding?project=signal-studio-496621">console.cloud.google.com › auth › branding</a></span>
+        </div>
+        <p>
+          This screen is already live — it is what people read when they sign in
+          with Google today. If the app name already says
+          <code>Signal Studio</code>, <strong>leave it alone</strong>. Fill in
+          only what is empty:
+        </p>
+        <ul>
+          <li><strong>App home page:</strong> <code>https://signalstudio.ie</code></li>
+          <li><strong>Privacy policy:</strong> <code>https://signalstudio.ie/privacy</code></li>
+          <li><strong>Terms of service:</strong> <code>https://signalstudio.ie/terms</code></li>
+          <li><strong>Authorised domain:</strong> <code>signalstudio.ie</code></li>
+        </ul>
+        <div class="snag">
+          <div class="snag-label">If it goes wrong</div>
+          <p>
+            <strong>Do not upload a logo.</strong> The slot is there and it
+            looks like it wants filling. It puts the whole app into
+            Google&rsquo;s brand-review queue for days and buys us nothing we
+            need today.
+          </p>
+        </div>
+      </div>
+    </li>
+
+    <li class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Audience — check the status, publish only if it says Testing</h3>
+        <div class="path">
+          <span class="path-label">Open</span>
+          <span class="crumb"><a href="https://console.cloud.google.com/auth/audience?project=signal-studio-496621">console.cloud.google.com › auth › audience</a></span>
+        </div>
+        <p>
+          <strong>Look at the publishing status first.</strong> If it already
+          reads <em>In production</em>, this screen is done — Clerk&rsquo;s
+          sign-in will have needed it. Change nothing and move on.
+        </p>
+        <p>
+          If it reads <em>Testing</em>, press <strong>Publish app</strong> and
+          confirm.
+        </p>
+        <div class="out">
+          <div class="out-label">You should see</div>
+          <pre class="out-text">Publishing status: In production</pre>
+        </div>
+        <div class="why">
+          <div class="why-label">Why this one is worth not skipping</div>
+          <p>
+            Left on Testing, Google silently discards every Drive connection
+            after <strong>seven days</strong>. Customers would connect, it would
+            work all week, and the following Monday it would be broken with
+            nothing in our logs to explain it — indistinguishable from a bug in
+            our own code, a week after we stopped looking for one.
+          </p>
+        </div>
+      </div>
+    </li>
+
+    <li class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Data Access — add one permission to the ones already there</h3>
+        <div class="path">
+          <span class="path-label">Open</span>
+          <span class="crumb"><a href="https://console.cloud.google.com/auth/scopes?project=signal-studio-496621">console.cloud.google.com › auth › scopes</a></span>
+        </div>
+        <div class="why">
+          <div class="why-label">Add to this list. Never clear it.</div>
+          <p>
+            There will already be entries named something like
+            <code>userinfo.email</code>, <code>userinfo.profile</code> and
+            <code>openid</code>. Those are what Google sign-in uses.
+            <strong>Leave every one of them ticked.</strong> Removing them
+            breaks sign-in for every customer you have.
+          </p>
+        </div>
+        <p>
+          Press <strong>Add or remove scopes</strong>. Paste this into the
+          filter box, tick the one result it finds, then <strong>Update</strong>
+          and <strong>Save</strong>.
+        </p>
+        <div class="cmd">
+          <div class="cmd-label"><span>Copy this</span><button class="copy" type="button">Copy</button></div>
+          <pre class="cmd-text">https://www.googleapis.com/auth/drive.file</pre>
+        </div>
+        <div class="out">
+          <div class="out-label">You should see</div>
+          <pre class="out-text">Your non-sensitive scopes    <em>3 or 4 — the sign-in ones, plus ours</em>
+
+.../auth/userinfo.email      <em>already there, leave it</em>
+.../auth/userinfo.profile    <em>already there, leave it</em>
+openid                       <em>already there, leave it</em>
+.../auth/drive.file          See, edit, create and delete only the specific
+                             Google Drive files you use with this app</pre>
+        </div>
+        <div class="snag">
+          <div class="snag-label">If it goes wrong</div>
+          <p>
+            If something lands under <em>sensitive</em> or <em>restricted</em>
+            scopes, you ticked the wrong Drive entry — untick that one only. The
+            ones to avoid are <code>drive</code>, <code>drive.readonly</code>
+            and <code>drive.metadata</code>: each reads a customer&rsquo;s
+            entire Drive, and each triggers an annual third-party security audit
+            we neither want nor need.
+          </p>
+        </div>
+      </div>
+    </li>
+
+    <li class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h3>Clients — create a new one, do not touch the old one</h3>
+        <div class="path">
+          <span class="path-label">Open</span>
+          <span class="crumb"><a href="https://console.cloud.google.com/auth/clients?project=signal-studio-496621">console.cloud.google.com › auth › clients</a></span>
+          <span class="sep">›</span>
+          <span class="crumb last">Create client</span>
+        </div>
+        <div class="why">
+          <div class="why-label">The one place a wrong click costs you customers</div>
+          <p>
+            <strong>Clerk production</strong> is in this list. Do not open it,
+            edit it, or delete it — it is what makes <em>Sign in with
+            Google</em> work for everyone who already has an account. Press
+            <strong>Create client</strong> and make a second, separate one. A
+            project may hold as many as it likes.
+          </p>
+        </div>
+        <ul>
+          <li><strong>Application type:</strong> Web application</li>
+          <li><strong>Name:</strong> <code>Signal Studio Drive</code></li>
+        </ul>
+        <p>
+          Under <strong>Authorised redirect URIs</strong>, press <strong>Add
+          URI</strong> twice and paste one into each. These are the only two
+          addresses Google will send a person back to — anything else is
+          refused, which is what stops somebody redirecting your customers
+          elsewhere.
+        </p>
+        <div class="cmd">
+          <div class="cmd-label"><span>Copy this — first URI</span><button class="copy" type="button">Copy</button></div>
+          <pre class="cmd-text">https://app.signalstudio.ie/api/connections/google/callback</pre>
+        </div>
+        <div class="cmd">
+          <div class="cmd-label"><span>Copy this — second URI</span><button class="copy" type="button">Copy</button></div>
+          <pre class="cmd-text">http://localhost:3000/api/connections/google/callback</pre>
+        </div>
+        <p>Press <strong>Create</strong>.</p>
+        <div class="why">
+          <div class="why-label">Then press Download JSON</div>
+          <p>
+            A panel appears holding a client ID and a client secret. The secret
+            is shown <strong>once</strong>. Press <strong>Download JSON</strong>
+            — it lands in your Downloads folder. That file is all I need, and it
+            means the secret never goes through our chat.
+          </p>
+        </div>
+        <div class="snag">
+          <div class="snag-label">If it goes wrong</div>
+          <p>
+            If the second address is refused with <em>&ldquo;Invalid Redirect:
+            must use a secure scheme&rdquo;</em>, check you typed
+            <code>http</code> and not <code>https</code> on the
+            <code>localhost</code> one. Google allows plain <code>http</code>
+            only for localhost, and it is strict about it.
+          </p>
+        </div>
+      </div>
+    </li>
+
+  </ol>
+
+  <section class="note">
+    <h2>Then send me one line</h2>
+    <p>
+      I will find the downloaded file myself and put both values into Vercel, so
+      you do not have to open Vercel at all. Just tell me it is there, and give
+      me the second Google account — an email address is not a secret.
+    </p>
+    <div class="cmd">
+      <div class="cmd-label"><span>Copy this, fill in the address</span><button class="copy" type="button">Copy</button></div>
+      <pre class="cmd-text">JSON is downloaded, second account is name@gmail.com — take it from here</pre>
+    </div>
+    <p>
+      If you got stuck on any of the four, say which one and what the screen
+      said. A screenshot is faster than describing it.
+    </p>
+  </section>
+
+  <section class="section-head">
+    <div class="eyebrow">Then</div>
+    <h2>What happens next, so none of it surprises you</h2>
+  </section>
+
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr><th>Who</th><th>What</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Me</td>
+          <td>Put both values into Vercel, build the connection, and run the whole chain against two real accounts — connect, attach a file, second person opens it, remove them, confirm access is gone.</td>
+        </tr>
+        <tr>
+          <td>You, twice</td>
+          <td>A Google screen saying <em>Signal Studio wants access to your Google Account</em>. Someone has to press <strong>Allow</strong>, once per account. I will send a link. Two short interruptions, not a session of clicking.</td>
+        </tr>
+        <tr>
+          <td>Me</td>
+          <td>Write down what actually happened, including anything that contradicts the plan, and stop for your review before any of it goes near the database.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <section class="section-head">
+    <div class="eyebrow">Not yet</div>
+    <h2>Three decisions I will bring back to you later</h2>
+    <p>Flagged now so none arrives as a surprise. None blocks anything today.</p>
+  </section>
+
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr><th>When</th><th>What I will ask</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>WP-3</td>
+          <td>Whether to run the database change against production, and when. Until you say so the record reads <em>not authorised</em>, the same way the last one did.</td>
+        </tr>
+        <tr>
+          <td>WP-8</td>
+          <td>What the privacy policy says now that files live in a named person&rsquo;s own Google Drive. It also changes account deletion: we can delete our rows, but must not delete files that now belong to somebody else.</td>
+        </tr>
+        <tr>
+          <td>Any time</td>
+          <td>Already decided, reversible, and visible: people you invite get <strong>edit</strong> access to the board&rsquo;s Drive folder rather than read-only — because editing a shared sheet in place is most of the reason to put files in Drive at all.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer class="colophon">
+    Set in Geist and Geist Mono. Colour, spacing and radii taken from
+    signal-design-system v2.0.1 — the same tokens the product ships.
+    Source lives at docs/guides/unblock-project-drive.html, started from
+    connect-claude-design.html; the next operator guide starts from this file.
+    Written 2026-08-27 as eleven steps; cut to four the same day, once seven
+    were done and the project turned out to be already running Clerk&rsquo;s
+    Google sign-in.
+  </footer>
+
+</div>
+
+<script>
+  document.querySelectorAll(".copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var block = btn.closest(".cmd");
+      var text = block.querySelector(".cmd-text").textContent.trim();
+      navigator.clipboard.writeText(text).then(function () {
+        btn.textContent = "Copied";
+        btn.setAttribute("data-done", "1");
+        setTimeout(function () {
+          btn.textContent = "Copy";
+          btn.removeAttribute("data-done");
+        }, 1600);
+      }).catch(function () {
+        btn.textContent = "Select it";
+        setTimeout(function () { btn.textContent = "Copy"; }, 1600);
+      });
+    });
+  });
+</script>

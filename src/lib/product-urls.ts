@@ -104,6 +104,8 @@ export const BRIEFING_APP_PATH = `${HOME_APP_PATH}/briefing`;
  */
 export const PROJECT_APP_PATH = "/app/project";
 export const YOUR_WORK_APP_PATH = "/app/your-work";
+/** Assigned work within the selected Project (the existing My work page). */
+export const MY_WORK_APP_PATH = "/app/my-tasks";
 
 /** The authenticated suite surfaces the shell can mark as current. */
 export type SuiteSurfaceId = "home" | ProductId;

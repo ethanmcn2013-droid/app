@@ -55,16 +55,126 @@ NOTES_TO_TASKS_SECRET=<random>
 PARTNER_STATS_SECRET=<shared with studio>
 
 # Public URLs
+NEXT_PUBLIC_APP_URL=https://app.signalstudio.ie
 NEXT_PUBLIC_SITE_URL=https://app.signalstudio.ie
 NEXT_PUBLIC_STUDIO_URL=https://signalstudio.ie
+
+# Project Drive (optional capability; all are required before enabling it)
+GOOGLE_OAUTH_CLIENT_ID=...
+GOOGLE_OAUTH_CLIENT_SECRET=...
+GOOGLE_OAUTH_REDIRECT_URI=https://app.signalstudio.ie/api/connections/google/callback
+OAUTH_STATE_SECRET=<independent random value, at least 32 bytes>
+PROVIDER_TOKEN_KEY=<base64-encoded 32-byte key>
+PROVIDER_TOKEN_KEY_VERSION=1
+
+# Project Drive repair workers. Absence means disabled. Keep every value false
+# until the founder gates and launch checks below are complete; then activate
+# each independently so one recovery path never silently enables another.
+SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED=false
+SIGNAL_PROJECT_DRIVE_GRANT_CREATE_REPAIR_ENABLED=false
+SIGNAL_PROJECT_DRIVE_FOLDER_REPAIR_ENABLED=false
+SIGNAL_PROJECT_DRIVE_NATIVE_BYTE_REPAIR_ENABLED=false
 ```
+
+Project Drive has five separate founder gates. Do not collapse them into a
+merge or a single "launch" instruction:
+
+1. select and lock A, B, or C (plus any numbered zones) before production UI;
+2. approve the privacy-policy wording;
+3. explicitly authorize migrations 0028 and 0029 after a verified backup and
+   isolated-copy rehearsal;
+4. explicitly authorize the production deployment after UI/live acceptance;
+5. activate each repair worker individually only after the deployed route and
+   production migration state have been verified.
+
+### Google Drive connection contract
+
+Register this production callback **exactly** on the dedicated Google OAuth
+client, then set the identical value in Production:
+
+```
+https://app.signalstudio.ie/api/connections/google/callback
+```
+
+Preview must use its own stable HTTPS Preview origin in
+`GOOGLE_OAUTH_REDIRECT_URI`, and that exact callback must also be registered on
+the client. The server refuses a different path, query, fragment, credentials,
+plain HTTP outside `localhost`, or a callback synthesized from another public
+URL variable. Successful and failed callbacks return to the origin encoded by
+this validated variable; an incoming `Host` header cannot steer the redirect.
+For local development, `http://localhost:<port>/api/connections/google/callback`
+is allowed and must likewise match the Google client registration.
+
+The client requests exactly
+`https://www.googleapis.com/auth/drive.file` — never add identity, full-Drive,
+readonly, or incremental scopes. `GOOGLE_OAUTH_CLIENT_SECRET`,
+`OAUTH_STATE_SECRET`, and `PROVIDER_TOKEN_KEY` are sensitive server values and
+must not use the `NEXT_PUBLIC_` prefix. Generate the state secret separately
+from the token-encryption key so compromise or rotation of one cannot silently
+become compromise of both:
+
+```bash
+node -p "require('crypto').randomBytes(32).toString('base64url')" # OAUTH_STATE_SECRET
+node -p "require('crypto').randomBytes(32).toString('base64')"    # PROVIDER_TOKEN_KEY
+```
+
+The callback creates or reuses only an app-marked, unshared `Signal Studio`
+root. Enabling connected storage for a Project is a separate lifecycle action:
+it provisions that Project's immutable folder generation and its exact
+named-user grants. Never create permissions on the root as an operator
+workaround.
+
+**`PROVIDER_TOKEN_KEY` encrypts stored provider refresh tokens.** Project
+Drive holds a long-lived Google credential per connected account, and this
+is the key that seals it before it touches the database (`secret-box.ts`,
+AES-256-GCM). Generate it once:
+
+```bash
+node -p "require('crypto').randomBytes(32).toString('base64')"
+```
+
+Set it in all three Vercel environments and mark it sensitive. **Then leave
+it alone.** Everything sealed with this key can only be read with this key,
+so changing it forces every customer who has connected their Drive to
+reconnect. That is survivable but visible, and not something to do by
+accident.
+
+Rotating it deliberately, when the time comes, is a three-step move rather
+than a swap — the envelope carries its key version precisely so there is no
+flag day:
+
+1. Add the new key as `PROVIDER_TOKEN_KEY`, bump
+   `PROVIDER_TOKEN_KEY_VERSION`, and move the old one into
+   `PROVIDER_TOKEN_KEY_RETIRED` as `{"1":"<old base64>"}`. New rows seal
+   with the new key; old rows still open.
+2. Re-seal the existing rows. `versionOf()` finds the ones still on the old
+   version without decrypting everything to look.
+3. Only once none remain, drop `PROVIDER_TOKEN_KEY_RETIRED`. Dropping it
+   early produces rows that fail with `unknown-key-version` — recoverable
+   only by putting the old key back.
+
+**`BLOB_READ_WRITE_TOKEN` is required for attachments** and is listed in
+`RECOMMENDED_IN_PRODUCTION` in `src/env.ts`, so its absence warns at boot.
+Without it, `chooseBackend()` returns `vercel-no-token` and every upload throws
+at the moment a customer tries one — serverless disk is ephemeral, so there is
+no fallback on Vercel. To confirm the store actually works, rather than merely
+that a variable is set:
+
+```bash
+vercel env pull .env.production --environment=production
+node scripts/verify-blob-store.mjs .env.production
+rm .env.production        # it holds live credentials
+```
+
+It writes one clearly-named scratch object, reads it back through the download
+route's own call, confirms an anonymous request is refused, and deletes it. No
+database row is created.
 
 Optional, provision deliberately (see INFRASTRUCTURE.md before adding):
 `ANTHROPIC_API_KEY` (+ `TASKS_AI_*` tuning), `SENTRY_DSN` /
 `NEXT_PUBLIC_SENTRY_DSN` / `SENTRY_ENVIRONMENT`, `POSTHOG_API_KEY` /
 `NEXT_PUBLIC_POSTHOG_HOST`, `UPSTASH_REDIS_REST_URL` /
-`UPSTASH_REDIS_REST_TOKEN`, `BLOB_READ_WRITE_TOKEN` (required if task
-attachments should work in production — serverless disk is ephemeral),
+`UPSTASH_REDIS_REST_TOKEN`,
 `RESEND_BCC_DEV`, `OUTBOX_DELIVERY_SECRET` / `SUITE_OUTBOX_CONSUMERS_JSON`,
 `NOTES_TO_TIMELINE_SECRET`, `NOTES_CAPTURE_INBOUND_SECRET`,
 `ADMIN_USER_IDS`, `SIGNAL_ALLOWLIST`, access-mode and feature flags.
@@ -138,8 +248,24 @@ its production state can change independently.
 ## 5. Cron
 
 `vercel.json` declares the daily digest cron (`0 9 * * *` against
-`/api/cron/digest?send=1`). Confirm it appears in Vercel → Settings →
-Cron Jobs after the first deploy.
+`/api/cron/digest?send=1`), the analytics snapshot cron, and the shared Project
+Drive repair cron (`15 3 * * *` against
+`/api/cron/project-drive-grant-repair`). Confirm all three appear in Vercel →
+Settings → Cron Jobs after the first deploy.
+
+The Project Drive route is count-only in its response and logs: it never emits
+member emails, provider ids, operation ids, byte locators, or stored error
+detail. It serves four independent bounded workers behind the four flags above:
+revocation, grant creation, folder provision/rename, and exact Signal-native
+byte cleanup. The byte worker consumes only durable per-object receipts left by
+Project or upload cleanup; it never derives a prefix or touches provider-owned
+Drive files. Storage handover is deliberately excluded because its actor
+authority is not durable journal state. Leave every flag off until migrations
+0028 and 0029 are current and the corresponding feature code is deployed. At
+launch, enable each repair path deliberately; any flag may be disabled alone as
+an operational circuit breaker. On the Vercel Hobby daily cadence, interrupted
+work can wait up to one day for automatic recovery, so the interactive path
+still dispatches immediately and the cron is the safety net.
 
 ## 6. Smoke test (production, from a phone in incognito)
 
@@ -156,3 +282,14 @@ Cron Jobs after the first deploy.
 - [ ] Daily digest cron fires (`curl -H "Authorization: Bearer $CRON_SECRET"
   $URL/api/cron/digest?send=1`) → email lands
 - [ ] Clerk + Stripe webhooks show recent deliveries in their dashboards
+- [ ] Connections requests exactly `drive.file`; the `Signal Studio` root is
+  not shared and no broader OAuth scope is present
+- [ ] Enabling one test Project creates only its board folder and exact
+  named-user grants; a member opens the folder/file but not the parent
+- [ ] A 50 MB attachment completes browser-direct upload and verification
+- [ ] Removing a member revokes the exact Google permission; incomplete current-
+  email writer coverage keeps new files in Signal-native storage
+- [ ] Disconnect makes new uploads fall back to Signal-native storage while
+  existing Drive files remain in the owner's Drive
+- [ ] With all four repair flags absent/false, every worker reports `flag-off`;
+  enabling one worker does not enable any other worker

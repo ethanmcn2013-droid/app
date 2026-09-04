@@ -1,0 +1,129 @@
+- banner:
+  - button "Open Signal Studio launcher":
+    - generic: signal studio.
+  - generic: /
+  - link "Tasks":
+    - /url: /
+    - generic: tasks
+  - navigation:
+    - link "Pricing":
+      - /url: https://signalstudio.ie/pricing
+    - link "Design":
+      - /url: https://signalstudio.ie/design
+    - link "About":
+      - /url: https://signalstudio.ie/about
+  - link "Demo workspace":
+    - /url: /app/tasks
+- main:
+  - generic: Workspace invite
+  - heading "This invite has already been accepted." [level=1]
+  - paragraph: Sign in with the account that accepted it, or ask the owner for a fresh invite.
+  - link "Sign in":
+    - /url: /sign-in?redirect_url=%2Finvite%2Freview-accepted
+- contentinfo:
+  - link "Tasks":
+    - /url: /
+    - generic: tasks
+  - paragraph: Execution clarity for live work. Dates, owners, and the week ahead in plain English.
+  - paragraph:
+    - text: Made by
+    - link "Signal Studio":
+      - /url: https://signalstudio.ie
+    - text: .
+  - navigation "Signal Tasks on social":
+    - link "Signal Tasks on X":
+      - /url: https://x.com/signalstudio_ie
+    - link "Signal Tasks on YouTube":
+      - /url: https://www.youtube.com/@signalstudio_ie
+    - link "Signal Tasks on TikTok":
+      - /url: https://www.tiktok.com/@signalstudio_ie
+    - link "Signal Tasks on LinkedIn":
+      - /url: https://www.linkedin.com/company/signal-studio-ie
+  - navigation "Product":
+    - generic: Product
+    - list:
+      - link "Demo":
+        - /url: /#demo
+      - link "Anatomy":
+        - /url: /#anatomy
+      - link "Workspace":
+        - /url: /app/tasks
+  - navigation "Company":
+    - generic: Company
+    - list:
+      - link "Pricing":
+        - /url: https://signalstudio.ie/pricing
+        - text: Pricing
+        - generic: →
+      - link "About":
+        - /url: https://signalstudio.ie/about
+        - text: About
+        - generic: →
+      - link "Principles":
+        - /url: https://signalstudio.ie/principles
+        - text: Principles
+        - generic: →
+      - link "Contact":
+        - /url: https://signalstudio.ie/about#contact
+        - text: Contact
+        - generic: →
+      - link "Dispatch":
+        - /url: https://signalstudio.ie/dispatch
+        - text: Dispatch
+        - generic: →
+  - navigation "Resources":
+    - generic: Resources
+    - list:
+      - link "Students":
+        - /url: https://signalstudio.ie/students
+        - text: Students
+        - generic: →
+      - link "Venues":
+        - /url: https://signalstudio.ie/venues
+        - text: Venues
+        - generic: →
+      - link "Press":
+        - /url: https://signalstudio.ie/press
+        - text: Press
+        - generic: →
+      - link "Design":
+        - /url: https://signalstudio.ie/design
+        - text: Design
+        - generic: →
+  - navigation "Suite":
+    - generic: Suite
+    - list:
+      - link "Signal Studio":
+        - /url: https://signalstudio.ie
+        - text: Signal Studio
+        - generic: →
+      - link "Notes":
+        - /url: https://signalstudio.ie/notes
+        - text: Notes
+        - generic: →
+      - link "Tasks":
+        - /url: https://signalstudio.ie/tasks
+        - text: Tasks
+        - generic: →
+      - link "Timeline":
+        - /url: https://signalstudio.ie/timeline
+        - text: Timeline
+        - generic: →
+      - link "Daily briefing":
+        - /url: https://signalstudio.ie/features/daily-briefing
+        - text: Daily briefing
+        - generic: →
+  - generic: © 2026 Signal Tasks. Made by Signal Studio.
+  - generic: Clarity, not configuration.
+  - navigation "Legal":
+    - link "Privacy":
+      - /url: https://signalstudio.ie/privacy
+    - generic: ·
+    - link "Terms":
+      - /url: https://signalstudio.ie/terms
+    - generic: ·
+    - link "Security":
+      - /url: https://signalstudio.ie/security
+    - generic: ·
+    - link "Accessibility":
+      - /url: https://signalstudio.ie/accessibility

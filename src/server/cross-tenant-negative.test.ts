@@ -56,6 +56,7 @@ import {
   notifications,
   activities,
   workspaceSponsorships,
+  projectDriveOperations,
 } from "./db/schema";
 
 const WS_A = "ws-alpha";
@@ -129,6 +130,15 @@ async function seedTwoTenants() {
     VALUES
       ('spon-a', '${WS_A}', 'venue-one', 'ref-a', 'ent-a', 'active', '{}', 1, 'rc-a', 0, 0, 0, 0),
       ('spon-b', '${WS_B}', 'venue-two', 'ref-b', 'ent-b', 'active', '{}', 1, 'rc-b', 0, 0, 0, 0);
+
+    INSERT INTO project_drive_operations
+      (id, workspace_id, operation_kind, status, dedupe_key, attempt_count,
+       created_at, updated_at)
+    VALUES
+      ('drive-op-a', '${WS_A}', 'project_delete', 'pending',
+       '${"a".repeat(64)}', 0, 0, 0),
+      ('drive-op-b', '${WS_B}', 'project_delete', 'pending',
+       '${"b".repeat(64)}', 0, 0, 0);
   `);
   return { client, db };
 }
@@ -148,6 +158,7 @@ const OBJECTS = [
   { name: "notifications", table: notifications, ws: notifications.workspaceId, key: notifications.id, a: "note-a", b: "note-b" },
   { name: "activities", table: activities, ws: activities.workspaceId, key: activities.id, a: "act-a", b: "act-b" },
   { name: "sponsorships", table: workspaceSponsorships, ws: workspaceSponsorships.workspaceId, key: workspaceSponsorships.id, a: "spon-a", b: "spon-b" },
+  { name: "Project Drive operations", table: projectDriveOperations, ws: projectDriveOperations.workspaceId, key: projectDriveOperations.id, a: "drive-op-a", b: "drive-op-b" },
 ];
 
 test("a scoped read returns only the caller's own rows, per sensitive object", async () => {

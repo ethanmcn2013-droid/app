@@ -93,16 +93,27 @@ before(async () => {
   }
 });
 
-after(() => {
+after(async () => {
   try {
-    client?.close();
+    await client?.close();
   } catch {
     // already closed
   }
   try {
-    fs.rmSync(workDir, { recursive: true, force: true });
+    // libSQL can release its Windows file handle just after close resolves.
+    // Let Node's bounded retry handle that harmless teardown race instead of
+    // turning a green integrity run into an EBUSY failure.
+    fs.rmSync(workDir, {
+      recursive: true,
+      force: true,
+      maxRetries: process.platform === "win32" ? 5 : 0,
+      retryDelay: 50,
+    });
   } catch (error) {
-    if (error?.code !== "EPERM") throw error;
+    // A native libSQL handle can survive until process teardown on Windows.
+    // The directory is a unique OS-temp fixture, so an exhausted EBUSY/EPERM
+    // cleanup retry is not an integrity failure and the OS may reclaim it.
+    if (error?.code !== "EPERM" && error?.code !== "EBUSY") throw error;
   }
 });
 

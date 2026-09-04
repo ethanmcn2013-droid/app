@@ -5,23 +5,16 @@ import { eq, sql } from "drizzle-orm";
 import * as Sentry from "@sentry/nextjs";
 import { db } from "@/server/db";
 import { users } from "@/server/db/schema";
-import { grantEntitlement } from "@/server/actions/billing";
+import { deleteAccountForUser } from "@/server/account";
+import {
+  beginAccountDeletion,
+  hasAccountDeletionStartedWith,
+} from "@/server/account-deletion-lifecycle";
 import { trackOnboardingEventServer } from "@/lib/onboarding/analytics-server";
 import type { WebhookEvent } from "@clerk/nextjs/server";
 
-/**
- * .edu Pro grant, when the user's primary email ends in `.edu`,
- * we auto-grant Pro for one academic semester (~120 days). The
- * entitlement is user-level (workspaceId = NULL) so the Phase 4
- * layered-resolution path picks it up across every workspace the
- * student creates without per-workspace bookkeeping.
- *
- * Why 120 days: long enough to cover a single semester (~16 weeks)
- * plus a buffer for the post-semester wrap-up. Shorter than a year
- * so the student renews intentionally, and bumps into the manifesto
- * pricing rather than the silent auto-charge.
- */
-const EDU_PRO_DAYS = 120;
+// Student Edition requires the canonical paid offer and verified eligibility.
+// A domain suffix is not evidence; historical grants retain their original terms.
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -183,7 +176,12 @@ async function handleUserCreated(u: ClerkUser): Promise<void> {
 
   // All three writes inside one BEGIN…COMMIT so a crash mid-flight
   // can't leave a user without a workspace.
-  await db.transaction(async (tx) => {
+  const provisioned = await db.transaction(async (tx) => {
+    // `user.created` can be delayed or retried after an in-app erasure starts.
+    // The suppression read and provisioning writes must share this immediate
+    // transaction so creation and deletion have one deterministic winner.
+    if (await hasAccountDeletionStartedWith(tx, userId)) return false;
+
     await tx.run(sql`
       INSERT INTO users (id, clerk_id, email, handle, name, color, initials)
       VALUES (${userId}, ${u.id}, ${email}, ${handle}, ${name}, ${color}, ${initials})
@@ -223,12 +221,11 @@ async function handleUserCreated(u: ClerkUser): Promise<void> {
       INSERT OR IGNORE INTO workspace_members (workspace_id, user_id, role)
       VALUES (${workspaceId}, ${userId}, 'owner')
     `);
-  });
+    return true;
+  }, { behavior: "immediate" });
 
-  // .edu Pro grant. Runs OUTSIDE the transaction, the workspace
-  // exists by this point, and a failure here shouldn't roll back
-  // the user creation. Worst case: the entitlement is missed, the
-  // student lands on Free, and they redeem manually later.
+  if (!provisioned) return;
+
   const emailDomain = email?.split("@")[1]?.toLowerCase() ?? null;
   await trackOnboardingEventServer(userId, "signup_completed", {
     email_domain: emailDomain ?? undefined,
@@ -236,22 +233,6 @@ async function handleUserCreated(u: ClerkUser): Promise<void> {
     primary_use_case: emailDomain && isEduEmail(email!) ? "student" : undefined,
   });
 
-  if (email && isEduEmail(email)) {
-    try {
-      await grantEntitlement({
-        userId,
-        workspaceId: null,
-        tier: "workspace",
-        source: "edu",
-        durationDays: EDU_PRO_DAYS,
-        notes: `edu:${email.toLowerCase()}`,
-      });
-    } catch (err) {
-      // Log + continue. The user is already created; the entitlement
-      // is recoverable via /redeem with a manual support touch.
-      console.warn("[clerk webhook] .edu grant failed", err);
-    }
-  }
 }
 
 /** True when the email's TLD-equivalent suffix is `.edu`. Strips
@@ -264,13 +245,19 @@ function isEduEmail(email: string): boolean {
 async function handleUserUpdated(u: ClerkUser): Promise<void> {
   const email = u.email_addresses?.[0]?.email_address ?? null;
   const name = deriveName(u);
-  await db
-    .update(users)
-    .set({ email, name })
-    .where(eq(users.clerkId, u.id));
+  await db.transaction(async (tx) => {
+    if (await hasAccountDeletionStartedWith(tx, u.id)) return;
+    await tx
+      .update(users)
+      .set({ email, name })
+      .where(eq(users.clerkId, u.id));
+  }, { behavior: "immediate" });
 }
 
 async function handleUserDeleted(u: ClerkUser): Promise<void> {
-  // Cascading FKs delete the user's workspaces (owner) and memberships.
-  await db.delete(users).where(eq(users.clerkId, u.id));
+  // Clerk Dashboard/admin deletions must execute the same complete erasure as
+  // the in-app route. The tombstone makes webhook retries idempotent and blocks
+  // a delayed create/update delivery from resurrecting product data.
+  await beginAccountDeletion(u.id);
+  await deleteAccountForUser(u.id);
 }

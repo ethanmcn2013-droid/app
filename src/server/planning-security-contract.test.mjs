@@ -5,6 +5,13 @@ import { readFileSync } from "node:fs";
 const queries = readFileSync(new URL("./planning/queries.ts", import.meta.url), "utf8");
 const actions = readFileSync(new URL("./actions/planning.ts", import.meta.url), "utf8");
 const service = readFileSync(new URL("./projects/service.ts", import.meta.url), "utf8");
+const projectDeletion = readFileSync(
+  new URL(
+    "./connections/project-drive-project-deletion.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const securityBoundary = readFileSync(new URL("./planning/security-boundary.ts", import.meta.url), "utf8");
 const migration = readFileSync(new URL("../../drizzle/0013_planning_periods.sql", import.meta.url), "utf8");
 const onboarding = readFileSync(new URL("../components/welcome/contextual-onboarding.tsx", import.meta.url), "utf8");
@@ -83,13 +90,17 @@ test("every consolidated Project mutation proves a capability, then writes with 
     assert.match(source, /\.returning\(\{ id: workspaces\.id/);
     assert.match(source, /throw new Error\(RECEIPT_MISSING\)/);
   }
-  // The delete's receipt sits inside its transaction.
+  // Delete keeps authorization in the consolidated service, then delegates
+  // to the durable Project Drive lifecycle. Its workspace receipt sits in
+  // that lifecycle's final immediate transaction.
   const deletion = service.slice(
     service.indexOf("export async function deleteProject"),
   );
   assert.match(deletion, /"deleteOrTransferOwnership"/);
-  assert.match(deletion, /\.returning\(\{ id: workspaces\.id \}\)/);
-  assert.match(deletion, /throw new Error\(RECEIPT_MISSING\)/);
+  assert.match(deletion, /createProjectDriveProjectDeletionService\(\{/);
+  assert.match(projectDeletion, /\.returning\(\{ id: workspaces\.id \}\)/);
+  assert.match(projectDeletion, /behavior: "immediate"/);
+  assert.match(projectDeletion, /if \(!deleted\[0\]\)/);
   // The retired idiom must not creep back into the service. The header prose
   // NAMES workspaceOwnerMembershipCondition (it documents the retirement), so
   // the pin is on the import: the module that exports the sink condition must

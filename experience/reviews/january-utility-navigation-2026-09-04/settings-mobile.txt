@@ -1,0 +1,74 @@
+- link "Skip to main content":
+  - /url: "#app-main-content"
+- banner:
+  - link "Tasks":
+    - /url: /app/tasks
+    - generic: tasks
+  - button "Search tasks and projects":
+  - button "Add task (C)":
+  - generic "Open demo account menu": DO
+- text: Open Notes Tasks · current Open Timeline About Signal Studio ↗ Inbox · daily digest Help and settings Account
+- navigation "Signal Studio products and Tasks views":
+  - list:
+    - link "Home":
+      - /url: /app/home?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+      - generic: Home
+    - link "Notes":
+      - /url: /app/notes?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+      - generic: Notes
+    - link "Tasks":
+      - /url: /app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+      - generic: Tasks
+    - link "Timeline":
+      - /url: /app/timeline?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+      - generic: Timeline
+    - button "Views":
+      - generic: Views
+- main:
+  - heading "Settings" [level=1]:
+    - generic: Settings
+  - paragraph: Project · The Orchard, events
+  - status: Review preview, settings are read-only.
+  - button "Workspace"
+  - button "Members" [active]
+  - button "Notifications"
+  - button "Appearance"
+  - button "Security"
+  - button "Storage"
+  - button "Billing"
+  - button "Privacy and data"
+  - button "Danger zone"
+  - generic: Members
+  - heading "Who’s in this project" [level=2]
+  - paragraph: Roles, tenure, and the door. The owner controls who stays, everyone else can look but not touch.
+  - generic: Invite by email
+  - paragraph: Drop an email and we send them a link. They click it, sign in with that address, and they're in, no setup, no tool tour. Invites are good for seven days.
+  - generic "Free + Pro projects include the owner plus three editing guests.": 1 of 3 used
+  - textbox "teammate@yourdomain.com" [disabled]
+  - combobox "Role for invited member" [disabled]:
+    - option "Member" [disabled] [selected]
+    - option "Owner" [disabled]
+  - button "Send invite" [disabled]
+  - paragraph:
+    - text: Free includes three editing guests beyond the owner.
+    - link "Workspace" [disabled]:
+      - /url: https://signalstudio.ie/pricing
+    - text: unlocks unlimited members.
+  - generic: Person
+  - generic: Role
+  - list:
+    - generic: YO
+    - generic: You
+    - generic: you
+    - generic: you@theorchard.example
+    - generic: Owner
+- status
+- button "Open issues overlay":
+  - generic: "0"
+  - generic: "1"
+  - generic: Issue
+- button "Collapse issues badge":
+- alert
+- status:
+  - generic: In development. You’re seeing it early.
+  - button "Hide development notice": ×

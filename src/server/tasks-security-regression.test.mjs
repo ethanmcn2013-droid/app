@@ -70,6 +70,14 @@ const resourceActions = readFileSync(
   join(serverDir, "actions", "resources.ts"),
   "utf8",
 );
+const seedActions = readFileSync(
+  join(serverDir, "actions", "seed.ts"),
+  "utf8",
+);
+const projectTaskGraph = readFileSync(
+  join(serverDir, "projects", "project-task-graph.ts"),
+  "utf8",
+);
 const nudgeActions = readFileSync(
   join(serverDir, "actions", "nudge.ts"),
   "utf8",
@@ -145,6 +153,63 @@ function assertDemoGuardBefore(source, name, boundary) {
     `${name} must exit demo/review mode before ${boundary}`,
   );
 }
+
+test("destructive task graphs re-prove authority and deletion fences inside their writer transaction", () => {
+  for (const [source, name] of [
+    [attachmentActions, "deleteAttachmentAction"],
+    [resourceActions, "removeResourceAction"],
+    [actions, "removeTaskAction"],
+  ]) {
+    const body = exportedActionBody(source, name);
+    const transaction = body.indexOf("db.transaction");
+    const reproof = body.indexOf("authorizeStoredProject", transaction);
+    const fence = body.indexOf("assertProjectNotDeleting", transaction);
+    assert.ok(transaction >= 0, `${name} must use a writer transaction`);
+    assert.ok(
+      reproof > transaction,
+      `${name} must re-prove authority inside its writer transaction`,
+    );
+    assert.ok(
+      fence > reproof,
+      `${name} must check the deletion fence after transactional reproof`,
+    );
+  }
+
+  const graphFence = projectTaskGraph.indexOf("assertProjectNotDeleting");
+  const graphDelete = projectTaskGraph.indexOf(".delete(", graphFence);
+  assert.ok(
+    graphFence >= 0 && graphDelete > graphFence,
+    "the shared graph replacement must fence Project deletion before mutation",
+  );
+  for (const name of ["clearAllTasksAction", "seedDomainAction"]) {
+    const body = exportedActionBody(seedActions, name);
+    const transaction = body.indexOf("db.transaction");
+    const reproof = body.indexOf("authorizeStoredProject", transaction);
+    const graphReplacement = body.indexOf(
+      "replaceWorkspaceTaskGraphInTransaction",
+      reproof,
+    );
+    assert.ok(transaction >= 0, `${name} must use a writer transaction`);
+    assert.ok(
+      reproof > transaction,
+      `${name} must re-prove authority inside its writer transaction`,
+    );
+    assert.ok(
+      graphReplacement > reproof,
+      `${name} must enter the fenced graph replacement after transactional reproof`,
+    );
+  }
+
+  const attachmentDelete = exportedActionBody(
+    attachmentActions,
+    "deleteAttachmentAction",
+  );
+  assert.match(
+    attachmentDelete,
+    /deleteNativeAttachmentAndMirrorInTransaction\(transaction/,
+    "direct attachment deletion must atomically remove its exact Signal-upload mirror",
+  );
+});
 
 test("recordActivity requires and enforces the caller workspace", () => {
   assert.match(activity, /opts:\s*\{\s*workspaceId:\s*string/);
@@ -320,7 +385,8 @@ test("demo and review actions exit before tenant, database, or disk access", () 
     );
   }
   for (const boundary of [
-    "getActiveWorkspace",
+    "getCurrentUser",
+    "authorizeProjectCandidate",
     "applyTemplateToWorkspace",
     "revalidatePath",
     "emitTasksChanged",
@@ -329,25 +395,23 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   }
   for (const boundary of [
     "getCurrentUser",
-    "reserveUniqueSlug",
-    "db.insert",
+    "remixTemplateIntoWorkspace",
     "cookies",
-    "recordActivity",
     "revalidatePath",
     "emitTasksChanged",
   ]) {
     assertDemoGuardBefore(templateActions, "remixTemplateAction", boundary);
   }
-  for (const boundary of ["mintCompCodeInternal", "sendEmail"]) {
-    assertDemoGuardBefore(compActions, "requestStudentCodeAction", boundary);
-  }
+  const studentRequest = compActions.slice(compActions.indexOf("export async function requestStudentCodeAction"));
+  assert.match(studentRequest, /reason: "unavailable"/);
+  assert.doesNotMatch(studentRequest, /mintCompCodeInternal|sendEmail|db\.|ok: true/);
+
   for (const boundary of ["redeemCompCodeImpl", "Sentry.captureException"]) {
     assertDemoGuardBefore(compActions, "redeemCompCodeAction", boundary);
   }
   for (const boundary of [
     "getCurrentUser",
     "getActiveWorkspace",
-    "grantEntitlement",
     "stripe.checkout.sessions.create",
   ]) {
     assertDemoGuardBefore(
@@ -631,8 +695,13 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   );
   assert.match(
     settingsApp,
-    /<div inert=\{readOnly \|\| undefined\} aria-disabled=\{readOnly \|\| undefined\}>/,
+    /<div inert=\{sectionReadOnly \|\| undefined\} aria-disabled=\{sectionReadOnly \|\| undefined\}>/,
   );
+
+  // The sole interactive read-only section is the credential-free Drive
+  // review fixture. The live mode and every other settings section stay inert.
+  assert.match(settingsApp, /interactiveDriveReview = readOnly && isDemoMode\(\) && tab === "storage" && driveEnabled/);
+  assert.match(settingsApp, /sectionReadOnly = readOnly && !interactiveDriveReview/);
 
   const calendarBody = calendarRoute.slice(
     calendarRoute.indexOf("export async function GET"),
@@ -694,7 +763,10 @@ test("acceptInviteAction validates before writing membership row", () => {
 
   assert.ok(emailCheck < memberInsert, "email validation must precede membership write");
   assert.ok(capCheck < memberInsert, "cap check must precede membership write");
-  assert.ok(memberInsert < tokenBurn, "membership write must precede token burn");
+  assert.ok(body.indexOf("db.transaction(") < tokenBurn, "claim and membership must commit atomically");
+  assert.ok(tokenBurn < memberInsert, "claim a still-live invite before granting membership");
+  assert.match(body, /isNull\(pendingInvites\.acceptedAt\)/);
+  assert.match(body, /gt\(pendingInvites\.expiresAt, new Date\(\)\)/);
 });
 
 test("acceptInviteAction writes invite role not hardcoded member", () => {

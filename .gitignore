@@ -26,6 +26,7 @@
 # misc
 .DS_Store
 *.pem
+/docs/*.last-good.html
 
 # claude code — per-machine permission grants, never shared
 .claude/settings.local.json
@@ -83,3 +84,7 @@ _*.mjs
 m-tmp.mjs
 scripts/design/_*.mjs
 chip-probe*.mjs
+
+# WP-1 spike scratch state — holds a live refresh token
+.spike-state.json
+.spike-findings-*.json

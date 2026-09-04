@@ -9,6 +9,7 @@ import {
   type PaidTier,
 } from "@/server/stripe";
 import { isDemoMode } from "@/lib/access-mode";
+import { checkoutAvailable, EVENT_UNAVAILABLE_MESSAGE } from "@/lib/billing-availability";
 
 /**
  * Cross-product checkout entry point (E-7, 2026-05-14).
@@ -53,6 +54,14 @@ export async function GET(req: Request) {
     );
   }
   const tier = tierParam as PaidTier;
+  // Refuse before sign-in, review redirects or provider setup; an unavailable
+  // offer must not loop through onboarding or look purchasable in a preview.
+  if (!checkoutAvailable(tier)) {
+    return NextResponse.json(
+      { error: EVENT_UNAVAILABLE_MESSAGE, code: "plan_unavailable", tier },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
+    );
+  }
   const interval: BillingInterval =
     url.searchParams.get("interval") === "annual" ? "annual" : "monthly";
   const intervalQS = interval === "annual" ? "&interval=annual" : "";
@@ -63,13 +72,8 @@ export async function GET(req: Request) {
     );
   }
 
-  // SAFETY: in production, if Stripe isn't configured,
-  // createCheckoutSessionAction silently grants the tier locally via
-  // the dev-fallback path. That would let any clicker walk away with
-  // a paid tier without paying. Fail loudly instead, redirect to
-  // /pricing with a state marker the umbrella can render as
-  // "Checkout temporarily offline". Dev environments keep the
-  // fallback path so local testing is unblocked.
+  // Give the public route a recoverable destination when billing is offline.
+  // The Server Action independently refuses missing Stripe configuration.
   if (process.env.NODE_ENV === "production" && !stripeConfigured) {
     return NextResponse.redirect(
       new URL("/pricing?status=checkout-offline", req.url),

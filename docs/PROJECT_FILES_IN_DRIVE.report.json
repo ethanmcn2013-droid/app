@@ -1,0 +1,211 @@
+{
+  "schemaVersion": "signal-ceo-report/1",
+  "id": "project-drive-release-candidate",
+  "title": "Project Drive's backend is assembled; launch remains gated",
+  "scope": "Project Drive · release preparation",
+  "generatedAt": "2026-09-03T14:35:32Z",
+  "status": "in-flight",
+  "summary": "The storage, access, upload, handover, and cleanup paths are assembled on the feature branch, while final integrated verification, customer UI, and every production gate remain open.",
+  "businessMeaning": "The feasibility risk is closed. Signal Studio can focus investment on making ownership and access easy to understand, while separate founder approvals prevent unfinished UI, policy, database, or operational work from reaching customers.",
+  "decisions": [
+    {
+      "question": "Which Connections direction should become the production experience?",
+      "recommendation": "Select A · Custodian, then name any zones 1–5 to carry forward.",
+      "why": "It is the clearest Signal fit: ownership, reassurance, and recovery remain human and understandable without turning a simple connection into an administration console."
+    }
+  ],
+  "metrics": [
+    {
+      "label": "Design evidence · 3 September 2026",
+      "value": "96 frames",
+      "detail": "3 directions × 8 states × 4 viewports."
+    },
+    {
+      "label": "Design checks · 3 September 2026",
+      "value": "202 / 202",
+      "detail": "Behaviour, overflow, accessible names, focus, and product language."
+    },
+    {
+      "label": "Upload ceiling · release candidate",
+      "value": "50 MB",
+      "detail": "One shared product limit; live in-product acceptance is still required."
+    },
+    {
+      "label": "Production changes · through 3 September 2026",
+      "value": "0",
+      "detail": "No migration, policy edit, deployment, or repair-worker activation."
+    }
+  ],
+  "outcomes": [
+    {
+      "title": "Google Drive's access boundary was proved with two accounts",
+      "detail": "The intended second account opened the board folder and file, could not open the private parent, and lost both child links after the exact permission was revoked.",
+      "status": "done",
+      "evidence": "Live Google sharing spike · 2 September 2026"
+    },
+    {
+      "title": "The backend lifecycle is assembled for integrated verification",
+      "detail": "Connection, immutable storage generations, exact writer coverage, browser-direct upload, fallback, handover, deletion, account erasure, and durable cleanup are present on the feature branch.",
+      "status": "in-flight",
+      "evidence": "Final integrated branch gates and Linux CI remain pending"
+    },
+    {
+      "title": "Migrations 0028 and 0029 were rehearsed on disposable local data",
+      "detail": "Fresh apply, second-run no-op, integrity, foreign-key, ledger, receipt, and journal checks passed locally. This is evidence for a later decision, not production authorization.",
+      "status": "done",
+      "evidence": "Database contract 62 / 62 · no remote database contacted"
+    },
+    {
+      "title": "Three complete experience directions await one founder choice",
+      "detail": "A · Custodian, B · Ledger, and C · Threshold cover all required states and widths. Customer-facing implementation remains intentionally paused.",
+      "status": "done",
+      "evidence": "Design branch bc431a25"
+    }
+  ],
+  "health": [
+    {
+      "label": "Backend integration",
+      "status": "in-flight",
+      "detail": "Final review, the complete declared local gate set, and exact assertion accounting are still running."
+    },
+    {
+      "label": "Customer experience",
+      "status": "blocked",
+      "detail": "Connections, Who can open this board's files, and Resources wait for the founder's design selection."
+    },
+    {
+      "label": "Production change control",
+      "status": "done",
+      "detail": "Migrations, privacy wording, deployment, and every repair flag remain behind separate founder gates."
+    },
+    {
+      "label": "Release authority",
+      "status": "next",
+      "detail": "The draft app pull request must receive the final branch head and pass Linux CI before it becomes release evidence."
+    }
+  ],
+  "risks": [
+    {
+      "title": "The integrated branch is not yet fully verified",
+      "impact": "Focused suites can pass while a combined branch still contains an interaction defect, so the backend cannot be called release-ready yet.",
+      "mitigation": "Finish independent review, run every declared gate, push one final head, and record command-level results plus Linux CI.",
+      "owner": "Team",
+      "status": "in-flight"
+    },
+    {
+      "title": "The customer surface is not implemented",
+      "impact": "Customers cannot connect Drive, understand storage ownership, or use the new path through the product.",
+      "mitigation": "Select one thesis and any zones, then build and verify every registered state at all four breakpoints.",
+      "owner": "Founder → Team",
+      "status": "blocked"
+    },
+    {
+      "title": "Production approvals must remain independent",
+      "impact": "Bundling legal, database, deployment, or worker decisions could advance a change without the evidence required for a safe launch.",
+      "mitigation": "Keep privacy wording, migrations 0028 and 0029, deployment, and each repair-worker activation as separate founder gates.",
+      "owner": "Founder",
+      "status": "next"
+    },
+    {
+      "title": "Windows libSQL teardown can obscure local test results",
+      "impact": "Exit 3221225477 can make completed logical assertions appear as an aggregate process failure.",
+      "mitigation": "Record assertion-level results, preserve the exit as a failure, and treat Linux CI as release authority.",
+      "owner": "Team",
+      "status": "in-flight"
+    }
+  ],
+  "nextMoves": [
+    {
+      "owner": "You",
+      "action": "Choose A, B, or C and name any zones 1–5 to carry into production.",
+      "timing": "Now",
+      "status": "next"
+    },
+    {
+      "owner": "You",
+      "action": "Approve the privacy-policy wording after the team presents the exact customer-facing draft.",
+      "timing": "Before release",
+      "status": "next"
+    },
+    {
+      "owner": "You",
+      "action": "Authorize migrations 0028 and 0029 only after the production backup and target-bound execution receipt are verified.",
+      "timing": "After live acceptance",
+      "status": "next"
+    },
+    {
+      "owner": "You",
+      "action": "Authorize deployment and then each of the four repair flags as separate operational decisions.",
+      "timing": "After all release gates",
+      "status": "next"
+    },
+    {
+      "owner": "Team",
+      "action": "Finish the account and native-byte integration review, run the complete branch gates, and bring the final pull-request evidence back.",
+      "timing": "Current",
+      "status": "in-flight"
+    },
+    {
+      "owner": "Team",
+      "action": "Build the selected Connections, access, and Resources surfaces, then run the full live lifecycle and 50 MB acceptance.",
+      "timing": "After the design choice",
+      "status": "blocked"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "Current Project Drive status",
+      "detail": "The durable work-package and verification record, including the final pending placeholders.",
+      "href": "./projects/project-drive/STATUS.md"
+    },
+    {
+      "label": "Decision record",
+      "detail": "Ratified scope, storage, access, fallback, handover, and deletion decisions.",
+      "href": "./projects/project-drive/DECISIONS.md"
+    },
+    {
+      "label": "Google Drive safety model",
+      "detail": "Accessible visual companion for the private parent, exact board folder, and named grants.",
+      "href": "./projects/project-drive/DRIVE-SAFETY-MODEL.html"
+    },
+    {
+      "label": "Live spike findings",
+      "detail": "Owner and second-account evidence, including parent isolation and exact revocation.",
+      "href": "./projects/project-drive/SPIKE-FINDINGS.md"
+    },
+    {
+      "label": "Migration 0029 review receipt",
+      "detail": "Content-addressed operation-journal migration contract; production authorization remains separate.",
+      "href": "../drizzle/receipts/project-drive-operations-2026-09-02.json"
+    },
+    {
+      "label": "App draft pull request #165",
+      "detail": "Review surface only until the final local head is pushed and required Linux checks pass.",
+      "href": "https://github.com/ethanmcn2013-droid/app/pull/165"
+    },
+    {
+      "label": "Signal HQ draft pull request #175",
+      "detail": "Company-level feature, risk, and decision record; checks were green at this review point.",
+      "href": "https://github.com/ethanmcn2013-droid/studio/pull/175"
+    }
+  ],
+  "technicalReceipt": {
+    "summary": "Durable implementation facts for engineering review; none authorizes a production action.",
+    "items": [
+      "Customer UI uses Connections, Who can open this board's files, and Resources. Project Drive remains an internal project name.",
+      "The OAuth request set is exactly https://www.googleapis.com/auth/drive.file; no identity, full-Drive, or read-only-Drive scope is requested.",
+      "One current personal Drive connection may support several boards. Each board names one current storage owner.",
+      "Drive upload readiness requires an exact current-email writer receipt for every current non-owner member.",
+      "The configured Drive and Blob paths send bytes browser-to-provider. A no-Blob fallback remains a separate 3 MB server path.",
+      "The customer upload ceiling is 50 MB. Live in-product 50 MB, killed-browser, full-Drive, disconnect, and recovery acceptance remain pending.",
+      "Drive resources open Google's verified webViewLink in a new tab; the product does not embed the Drive viewer.",
+      "Four tables carry the model: provider_connections, workspace_storage, drive_folder_grants, and project_drive_operations.",
+      "Exact Signal-native cleanup receipts reuse meta and never authorize a prefix deletion or deletion of Drive-owned bytes.",
+      "Migrations 0028 and 0029 passed disposable local apply, no-op, integrity, and contract checks. Neither local evidence nor this report authorizes production migration.",
+      "Four independently selected count-only repair paths default off: revoke, grant creation, folder repair, and native-byte cleanup.",
+      "The two-account result is a live Google sharing spike, not the still-pending in-product customer lifecycle.",
+      "Final integrated branch results and the final pull-request head are intentionally not claimed while their status entries remain pending.",
+      "No privacy wording, pricing, production migration, deployment, or repair-worker activation is authorized by this report."
+    ]
+  }
+}

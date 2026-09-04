@@ -135,9 +135,13 @@ export default async function TasksPage({
       };
     } else {
       const me = await getCurrentUser();
-      venue = await detectVenueWelcome(me);
-      if (venue) {
-        await markVenueEntitlementReached(me);
+      const project = await resolveProjectForRoute(sp.workspaceId);
+      if (project.kind === "ready") {
+        const welcome = await detectVenueWelcome(me, project.workspaceId);
+        venue = welcome;
+        if (welcome) {
+          await markVenueEntitlementReached(me, project.workspaceId, welcome.code);
+        }
       }
     }
   }
