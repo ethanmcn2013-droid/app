@@ -385,7 +385,8 @@ test("demo and review actions exit before tenant, database, or disk access", () 
     );
   }
   for (const boundary of [
-    "getActiveWorkspace",
+    "getCurrentUser",
+    "authorizeProjectCandidate",
     "applyTemplateToWorkspace",
     "revalidatePath",
     "emitTasksChanged",
@@ -394,10 +395,8 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   }
   for (const boundary of [
     "getCurrentUser",
-    "reserveUniqueSlug",
-    "db.insert",
+    "remixTemplateIntoWorkspace",
     "cookies",
-    "recordActivity",
     "revalidatePath",
     "emitTasksChanged",
   ]) {
