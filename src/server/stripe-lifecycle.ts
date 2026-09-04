@@ -1,7 +1,7 @@
 import "server-only";
 import type Stripe from "stripe";
 import { eventAccessExpiresAt, isPaidTier } from "./checkout-policy";
-import { reconcileStripeAccess, type StripeAccess } from "./stripe-access";
+import { reconcileStripeAccess, reconcileStripeAccessBatch, revokeHistoricalStripeAccess, type StripeAccess } from "./stripe-access";
 
 const objectId = (value: string | { id: string } | null | undefined) => typeof value === "string" ? value : value?.id ?? null;
 function identity(metadata: Stripe.Metadata | null | undefined) {
@@ -30,7 +30,18 @@ export function paidSubscriptionTerm(sub: Stripe.Subscription, invoice: Stripe.I
   return new Date(Math.max(...periods) * 1000);
 }
 
-export async function handleStripeLifecycle(event: Stripe.Event, provider: Stripe, sync: (input: StripeAccess) => Promise<void> = reconcileStripeAccess): Promise<void> {
+export async function handleStripeLifecycle(
+  event: Stripe.Event,
+  provider: Stripe,
+  writers: {
+    sync?: typeof reconcileStripeAccess;
+    syncBatch?: typeof reconcileStripeAccessBatch;
+    revokeHistorical?: typeof revokeHistoricalStripeAccess;
+  } = {},
+): Promise<void> {
+  const sync = writers.sync ?? reconcileStripeAccess;
+  const syncBatch = writers.syncBatch ?? reconcileStripeAccessBatch;
+  const revokeHistorical = writers.revokeHistorical ?? revokeHistoricalStripeAccess;
   const subscription = async (id: string, invoiceId?: string) => {
     const sub = await provider.subscriptions.retrieve(id, { expand: ["latest_invoice"] });
     const owner = identity(sub.metadata);
@@ -46,21 +57,29 @@ export async function handleStripeLifecycle(event: Stripe.Event, provider: Strip
       expiresAt = paidSubscriptionTerm(sub, invoice);
       if (!expiresAt) return; // A failed/unpaid period never extends access.
     }
-    await sync({ ...owner, customerId, subscriptionId: sub.id, reference: `stripe-sub:${sub.id}`, expiresAt, revoked });
+    const failures: unknown[] = [];
+    const writes: StripeAccess[] = [{ ...owner, customerId, subscriptionId: sub.id, reference: `stripe-sub:${sub.id}`, expiresAt, revoked }];
 
     // Retire the historical 30-day checkout grant for this exact subscription.
     // Its separate reference must not survive cancellation or outlive a paid term.
-    const sessions = await provider.checkout.sessions.list({ subscription: sub.id, limit: 100 });
-    if (sessions.has_more) throw new Error("Historical checkout reconciliation is incomplete.");
-    for (const session of sessions.data) {
-      if (objectId(session.subscription) !== sub.id) throw new Error("Checkout subscription mismatch.");
-      const sessionOwner = identity(session.metadata);
-      if (JSON.stringify(sessionOwner) !== JSON.stringify(owner) || objectId(session.customer) !== customerId) throw new Error("Checkout ownership mismatch.");
-      await sync({ ...owner, customerId, subscriptionId: sub.id, reference: `stripe:${session.id}`, expiresAt: null, revoked: true });
-    }
+    // Collect each independently verified reference for one local-first batch.
+    try {
+      const sessions = await provider.checkout.sessions.list({ subscription: sub.id, limit: 100 });
+      if (sessions.has_more) failures.push(new Error("Historical checkout reconciliation is incomplete."));
+      for (const session of sessions.data) {
+        try {
+          if (objectId(session.subscription) !== sub.id) throw new Error("Checkout subscription mismatch.");
+          const sessionOwner = identity(session.metadata);
+          if (JSON.stringify(sessionOwner) !== JSON.stringify(owner) || objectId(session.customer) !== customerId) throw new Error("Checkout ownership mismatch.");
+          writes.push({ ...owner, customerId, subscriptionId: sub.id, reference: `stripe:${session.id}`, expiresAt: null, revoked: true });
+        } catch (error) { failures.push(error); }
+      }
+    } catch (error) { failures.push(error); }
+    try { await syncBatch(writes); } catch (error) { failures.push(error); }
+    if (failures.length) throw new AggregateError(failures, "Billing access reconciliation is pending.");
   };
 
-  const checkout = async (sessionId: string) => {
+  const checkout = async (sessionId: string, expectedIntent?: string) => {
     const session = await provider.checkout.sessions.retrieve(sessionId, { expand: ["payment_intent.latest_charge"] });
     if (session.payment_status !== "paid") return;
     const owner = identity(session.metadata);
@@ -74,9 +93,14 @@ export async function handleStripeLifecycle(event: Stripe.Event, provider: Strip
     if (session.mode !== "payment" || (owner.tier !== "event" && owner.tier !== "wedding")) throw new Error("Checkout tier does not match its payment mode.");
     const intent = session.payment_intent;
     if (!intent || typeof intent === "string") throw new Error("Settled payment evidence is missing.");
+    if (expectedIntent && intent.id !== expectedIntent) throw new Error("Refund payment does not match checkout.");
     const charge = intent.latest_charge;
     if (intent.status !== "succeeded" || !charge || typeof charge === "string" || charge.status !== "succeeded" || !charge.paid) return;
     const customerId = objectId(session.customer);
+    if (!customerId && !objectId(intent.customer) && charge.amount_refunded > 0) {
+      await revokeHistorical({ ...owner, reference: `stripe:${session.id}` });
+      return;
+    }
     if (!customerId || objectId(intent.customer) !== customerId) throw new Error("Payment customer mismatch.");
     await sync({ ...owner, customerId, subscriptionId: null, reference: `stripe:${session.id}`,
       expiresAt: owner.tier === "event" ? eventAccessExpiresAt(new Date(charge.created * 1000)) : null,
@@ -105,7 +129,7 @@ export async function handleStripeLifecycle(event: Stripe.Event, provider: Strip
       if (!intent) break;
       const sessions = await provider.checkout.sessions.list({ payment_intent: intent, limit: 100 });
       if (sessions.has_more) throw new Error("Refund reconciliation is incomplete.");
-      for (const session of sessions.data) if (session.mode === "payment") await checkout(session.id);
+      for (const session of sessions.data) if (session.mode === "payment") await checkout(session.id, intent);
       break;
     }
   }

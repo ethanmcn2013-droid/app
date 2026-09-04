@@ -1,9 +1,9 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
-import { stripe } from "@/server/stripe";
+import { stripe as configuredStripe } from "@/server/stripe";
 import { isDemoMode } from "@/lib/access-mode";
-import { billingCustomerForUser } from "@/server/stripe-access";
+import { billingCustomerForUser, withBillingAccount } from "@/server/stripe-access";
 
 const FALLBACK_BASE = "http://localhost:3001";
 
@@ -23,6 +23,7 @@ export async function createBillingPortalSessionAction(
 ): Promise<{
   url: string;
 }> {
+  const stripe = configuredStripe;
   if (isDemoMode()) throw new Error("Billing is unavailable in this preview.");
   if (!stripe) {
     throw new Error("Billing isn't connected yet. Try again later.");
@@ -30,15 +31,17 @@ export async function createBillingPortalSessionAction(
   const { userId } = await auth();
   if (!userId) throw new Error("Not signed in");
 
-  const customerId = await billingCustomerForUser(userId);
-  if (!customerId) throw new Error("Your billing account needs to be linked from its verified payment record. Contact support with your receipt.");
+  return withBillingAccount(userId, async () => {
+    const customerId = await billingCustomerForUser(userId);
+    if (!customerId) throw new Error("Your billing account needs to be linked from its verified payment record. Contact support with your receipt.");
 
-  const path: ReturnPath = RETURN_PATHS.includes(returnPath)
-    ? returnPath
-    : "/settings/plan";
-  const session = await stripe.billingPortal.sessions.create({
-    customer: customerId,
-    return_url: `${siteUrl()}${path}`,
+    const path: ReturnPath = RETURN_PATHS.includes(returnPath)
+      ? returnPath
+      : "/settings/plan";
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: `${siteUrl()}${path}`,
+    });
+    return { url: session.url };
   });
-  return { url: session.url };
 }
