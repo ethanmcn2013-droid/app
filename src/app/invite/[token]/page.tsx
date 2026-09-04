@@ -1,14 +1,18 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { SignOutButton } from "@clerk/nextjs";
+import { currentUser as clerkCurrentUser } from "@clerk/nextjs/server";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/server/db";
-import { pendingInvites, workspaces, users } from "@/server/db/schema";
-import { getCurrentUserOrNull } from "@/server/auth";
+import { pendingInvites, workspaces, workspaceMembers, users } from "@/server/db/schema";
 import { SiteNav } from "@/components/marketing/site-nav";
-// L3: pass isAuthed derived from getCurrentUserOrNull (already called below)
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { AcceptInviteButton } from "./accept-button";
 import { isDemoMode } from "@/lib/access-mode";
+import { inviteAuthUrl } from "@/lib/auth/invite-intent";
+import { MY_WORK_APP_PATH } from "@/lib/product-urls";
+import { parseProjectId } from "@/lib/projects/project-ref";
+import { withActiveProject } from "@/lib/projects/project-url";
+import { isActiveProjectV3Enabled } from "@/lib/projects/flags";
 
 export const dynamic = "force-dynamic";
 
@@ -23,14 +27,15 @@ export const dynamic = "force-dynamic";
  * we say so plainly.
  *
  * The accept itself is a client-island button (`<AcceptInviteButton>`)
- * that calls `acceptInviteAction` and routes to `/app/tasks` on success.
+ * that calls `acceptInviteAction` and opens the joined project's My work.
+ * GET only previews state: it never consumes an invite or selects a project.
  */
 
 type InvitePreview =
   | { state: "ok"; workspaceName: string; inviterName: string; email: string; expiresLabel: string }
   | { state: "missing" }
   | { state: "expired" }
-  | { state: "accepted" };
+  | { state: "accepted"; workspaceId?: string; acceptedByUserId?: string | null };
 
 async function loadInvitePreview(token: string): Promise<InvitePreview> {
   if (isDemoMode()) {
@@ -54,13 +59,16 @@ async function loadInvitePreview(token: string): Promise<InvitePreview> {
       email: pendingInvites.email,
       expiresAt: pendingInvites.expiresAt,
       acceptedAt: pendingInvites.acceptedAt,
+      acceptedByUserId: pendingInvites.acceptedByUserId,
       invitedByUserId: pendingInvites.invitedByUserId,
     })
     .from(pendingInvites)
     .where(eq(pendingInvites.token, token));
   if (!invite) return { state: "missing" };
-  if (invite.acceptedAt) return { state: "accepted" };
-  if (invite.expiresAt < new Date()) return { state: "expired" };
+  if (invite.acceptedAt) return {
+    state: "accepted", workspaceId: invite.workspaceId, acceptedByUserId: invite.acceptedByUserId,
+  };
+  if (invite.expiresAt <= new Date()) return { state: "expired" };
 
   const [workspace] = await db
     .select({ name: workspaces.name })
@@ -93,21 +101,41 @@ export default async function InviteAcceptPage({
   const demoMode = isDemoMode();
   const preview = await loadInvitePreview(token);
 
-  // If the invite is already accepted, send the user straight to the app.
-  if (preview.state === "accepted") {
-    redirect("/app/tasks?invite=already-accepted");
-  }
-
-  const me = await getCurrentUserOrNull();
+  // Previewing must not provision a user or consume state. The shared auth
+  // helper provisions on read, so use Clerk identity plus a read-only lookup.
+  const user = demoMode ? null : await clerkCurrentUser();
+  const [actor] = user ? await db.select({ id: users.id }).from(users)
+    .where(eq(users.clerkId, user.id)) : [];
+  const me = actor?.id ?? user?.id ?? null;
   let myEmail: string | null = null;
+  let emailVerified = false;
+  let acceptedProjectUrl: string | null = null;
   if (demoMode) {
     myEmail = "orla@theorchard.ie";
+    emailVerified = true;
   } else if (me) {
-    const [user] = await db
-        .select({ email: users.email })
-        .from(users)
-        .where(eq(users.id, me));
-    myEmail = user?.email ?? null;
+    const primary = user?.emailAddresses.find((email) => email.id === user.primaryEmailAddressId);
+    myEmail = primary?.emailAddress ?? null;
+    emailVerified = primary?.verification?.status === "verified";
+
+    // A used token is not an access grant. Only its accepting account with
+    // current membership gets a contextual link; a removed member gets none.
+    // Flag-off My work still reads the legacy cookie. A contextual GET must
+    // not select a Project, so only offer this link when its URL is honoured.
+    if (isActiveProjectV3Enabled() && preview.state === "accepted" && preview.acceptedByUserId === me) {
+      const projectId = parseProjectId(preview.workspaceId);
+      if (projectId) {
+        const [membership] = await db.select({ id: workspaceMembers.workspaceId })
+          .from(workspaceMembers)
+          .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
+          .where(and(
+            eq(workspaceMembers.userId, me),
+            eq(workspaceMembers.workspaceId, projectId),
+            isNull(workspaces.archivedAt),
+          ));
+        if (membership) acceptedProjectUrl = withActiveProject(MY_WORK_APP_PATH, projectId);
+      }
+    }
   }
 
   return (
@@ -120,7 +148,29 @@ export default async function InviteAcceptPage({
               Workspace invite
             </div>
 
-            {preview.state === "missing" ? (
+            {preview.state === "accepted" ? (
+              <>
+                <h1 className="mt-3 text-[26px] font-semibold leading-tight tracking-[-0.02em] text-ink">
+                  This invite has already been accepted.
+                </h1>
+                <p className="mt-3 text-[14.5px] leading-[1.55] text-ink-soft">
+                  {acceptedProjectUrl
+                    ? "You can open your assigned work in this project."
+                    : me
+                      ? "Choose the project from your project menu. If it is missing, ask the owner for a fresh invite."
+                      : "Sign in with the account that accepted it, or ask the owner for a fresh invite."}
+                </p>
+                {acceptedProjectUrl ? (
+                  <Link href={acceptedProjectUrl} className="mt-6 inline-flex text-[13px] font-medium text-ink">
+                    Open My work
+                  </Link>
+                ) : !me ? (
+                  <Link href={inviteAuthUrl("sign-in", `/invite/${token}`)} className="mt-6 inline-flex text-[13px] font-medium text-ink">
+                    Sign in
+                  </Link>
+                ) : null}
+              </>
+            ) : preview.state === "missing" ? (
               <>
                 <h1 className="mt-3 text-[26px] font-semibold leading-tight tracking-[-0.02em] text-ink">
                   This invite link doesn&rsquo;t exist.
@@ -179,7 +229,7 @@ export default async function InviteAcceptPage({
                     {/* Security: only reveal the invited email once the signed-in
                         user's email matches. Pre-auth, show a placeholder so the
                         page cannot be used to enumerate email addresses. */}
-                    {myEmail &&
+                    {emailVerified && myEmail &&
                     myEmail.toLowerCase() === preview.email.toLowerCase() ? (
                       <span className="font-mono text-ink">{preview.email}</span>
                     ) : (
@@ -192,7 +242,7 @@ export default async function InviteAcceptPage({
                   </div>
                 </div>
 
-                {myEmail &&
+                {emailVerified && myEmail &&
                 myEmail.toLowerCase() === preview.email.toLowerCase() ? (
                   <div className="mt-7">
                     {demoMode ? (
@@ -212,18 +262,25 @@ export default async function InviteAcceptPage({
                       <AcceptInviteButton token={token} />
                     )}
                   </div>
-                ) : myEmail ? (
-                  <p className="mt-7 rounded-xl border border-amber-200 bg-amber-50/40 px-4 py-3 text-[13px] leading-[1.55] text-amber-800">
-                    You&rsquo;re signed in as{" "}
-                    <span className="font-medium">{myEmail}</span>, but this
-                    invite was sent to{" "}
-                    <span className="font-medium">{preview.email}</span>. Sign
-                    out and sign in with the invited address.
-                  </p>
+                ) : me ? (
+                  <div className="mt-7 rounded-xl border border-amber-200 bg-amber-50/40 px-4 py-3 text-[13px] leading-[1.55] text-amber-800">
+                    <p>
+                      You&rsquo;re signed in as{" "}
+                      <span className="font-medium">{myEmail ?? "an account without a verified email"}</span>.
+                      {emailVerified
+                        ? " Use the email address this invite was sent to."
+                        : " Verify the invited email address before accepting."}
+                    </p>
+                    <SignOutButton redirectUrl={inviteAuthUrl("sign-in", `/invite/${token}`)}>
+                      <button type="button" className="mt-3 min-h-11 font-medium underline">
+                        Sign out and use the invited account
+                      </button>
+                    </SignOutButton>
+                  </div>
                 ) : (
                   <div className="mt-7">
                     <Link
-                      href={`/sign-in?redirect_url=${encodeURIComponent(`/invite/${token}`)}`}
+                      href={inviteAuthUrl("sign-in", `/invite/${token}`)}
                       className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-[14px] font-medium text-white shadow-[0_8px_24px_-8px_rgba(20,21,26,0.4)]"
                     >
                       Sign in to accept

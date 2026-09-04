@@ -5,6 +5,7 @@ import { signalAuthPageAppearance } from "@/components/auth/clerk-appearance";
 import { DemoAuthCard } from "@/components/auth/demo-auth-card";
 import { isDemoMode } from "@/lib/access-mode";
 import { authRouteRobots } from "@/lib/launch";
+import { inviteAuthUrl, inviteReturnPath } from "@/lib/auth/invite-intent";
 
 /**
  * The route stays live and working before launch. It is unlinked and
@@ -18,7 +19,12 @@ export const metadata: Metadata = {
   robots: authRouteRobots(),
 };
 
-export default function SignInPage() {
+export default async function SignInPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ redirect_url?: string | string[] }>;
+}) {
+  const invitePath = inviteReturnPath((await searchParams).redirect_url);
   if (isDemoMode()) {
     return (
       <AuthStage headline="You’re already signed in here.">
@@ -29,7 +35,14 @@ export default function SignInPage() {
 
   return (
     <AuthStage headline="Sign in to Signal Studio.">
-      <SignIn appearance={signalAuthPageAppearance} />
+      <SignIn
+        appearance={signalAuthPageAppearance}
+        {...(invitePath ? {
+          forceRedirectUrl: invitePath,
+          signUpForceRedirectUrl: invitePath,
+          signUpUrl: inviteAuthUrl("sign-up", invitePath),
+        } : {})}
+      />
     </AuthStage>
   );
 }

@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { isProjectCurrency } from "@/lib/money";
 import { cookies } from "next/headers";
@@ -33,6 +33,10 @@ import { inviteEmailHtml, sendEmail } from "@/server/email";
 import { seedDomainAction } from "@/server/actions/seed";
 import type { DomainId } from "@/lib/domains";
 import type { ActivityPayload } from "@/lib/data";
+import { MY_WORK_APP_PATH } from "@/lib/product-urls";
+import { parseProjectId, type ProjectId } from "@/lib/projects/project-ref";
+import { withActiveProject } from "@/lib/projects/project-url";
+import { writeActiveProjectCookie } from "@/server/projects/active-project-cookie";
 
 /**
  * Settings-page mutations — WP3-C, the last file of the mutation-safety wave.
@@ -692,17 +696,19 @@ function mintEventId(): string {
  *  Phase 2 hardening changes:
  *  - G8: validates email against the Clerk VERIFIED primary email
  *    (via clerkCurrentUser()) rather than the lagging users.email mirror.
- *  - Ordering: ALL validation runs BEFORE any membership write or token burn.
+ *  - A live token claim, membership and audit event commit together; failed
+ *    validation or persistence rolls back all three.
  *  - Writes the invite's role (not hardcoded 'member') into workspace_members.
  *  - Records workspace_events {kind:'inviteAccepted', payload:{userId, role}}.
  *
- *  Returns the workspace slug so the page can redirect to
- *  `/app/tasks` with the right active context. */
+ *  Acceptance explicitly selects the joined Project. Returns its canonical
+ *  My work URL; the destination independently authorizes the Project. */
 export async function acceptInviteAction(token: string): Promise<{
   ok: true;
-  workspaceId: string;
+  workspaceId: ProjectId;
   workspaceSlug: string;
   workspaceName: string;
+  redirectTo: string;
 }> {
   // ── 1. Load and validate the invite row ──────────────────────────────────
   const [invite] = await db
@@ -723,7 +729,7 @@ export async function acceptInviteAction(token: string): Promise<{
   if (invite.acceptedAt) {
     throw new Error("This invite has already been accepted.");
   }
-  if (invite.expiresAt < new Date()) {
+  if (invite.expiresAt <= new Date()) {
     throw new Error("This invite has expired. Ask the owner for a fresh one.");
   }
 
@@ -734,11 +740,11 @@ export async function acceptInviteAction(token: string): Promise<{
   if (!clerkUser) {
     throw new Error("You need to be signed in to accept an invite.");
   }
-  const clerkEmail =
-    clerkUser.emailAddresses.find(
-      (e) => e.id === clerkUser.primaryEmailAddressId,
-    )?.emailAddress ?? null;
-  if (!clerkEmail) {
+  const primaryEmail = clerkUser.emailAddresses.find(
+    (e) => e.id === clerkUser.primaryEmailAddressId,
+  );
+  const clerkEmail = primaryEmail?.emailAddress;
+  if (!clerkEmail || primaryEmail?.verification?.status !== "verified") {
     throw new Error(
       "Your account doesn’t have a verified email. Complete email verification and try again.",
     );
@@ -757,16 +763,13 @@ export async function acceptInviteAction(token: string): Promise<{
     );
   }
 
-  // ── 4. Resolve workspace ────────────────────────────────────────────────
-  const [workspace] = await db
-    .select({ slug: workspaces.slug, name: workspaces.name })
-    .from(workspaces)
-    .where(eq(workspaces.id, invite.workspaceId));
-  if (!workspace) {
-    throw new Error("This workspace no longer exists.");
+  const projectId = parseProjectId(invite.workspaceId);
+  if (!projectId) {
+    throw new Error("This project is unavailable.");
   }
+  const redirectTo = withActiveProject(MY_WORK_APP_PATH, projectId);
 
-  // ── 5. All validation passed — now write ─────────────────────────────────
+  // ── 4. Resolve identity, then claim and revalidate inside the transaction ─
   const me = await getCurrentUser();
 
   // Clamp the stored role defensively (belt-and-braces against pre-migration
@@ -774,43 +777,58 @@ export async function acceptInviteAction(token: string): Promise<{
   const grantedRole: "member" | "owner" =
     invite.role === "owner" ? "owner" : "member";
 
-  // INSERT or IGNORE: already-a-member is a no-op success. Write the
-  // invite's role, not a hardcoded 'member' (D-018).
-  await db.run(sql`
-    INSERT OR IGNORE INTO workspace_members (workspace_id, user_id, role)
-    VALUES (${invite.workspaceId}, ${me}, ${grantedRole})
-  `);
+  const workspace = await db.transaction(async (tx) => {
+    // Claim only a still-live invite. A replay or a revocation committed while
+    // auth/capacity was resolving cannot grant membership. Any later failure
+    // rolls the claim back along with membership and the audit event.
+    const [claimed] = await tx
+      .update(pendingInvites)
+      .set({ acceptedAt: new Date(), acceptedByUserId: me })
+      .where(and(
+        eq(pendingInvites.token, token),
+        eq(pendingInvites.workspaceId, projectId),
+        eq(pendingInvites.email, invite.email),
+        eq(pendingInvites.role, invite.role),
+        isNull(pendingInvites.acceptedAt),
+        gt(pendingInvites.expiresAt, new Date()),
+      ))
+      .returning({ token: pendingInvites.token });
+    if (!claimed) throw new Error("This invite is unavailable or has expired. Ask the owner for a fresh one.");
 
-  // Mark the invite accepted (audit trail). Burns the token so it
-  // cannot be reused (INSERT OR IGNORE above makes double-accept safe).
-  await db
-    .update(pendingInvites)
-    .set({ acceptedAt: new Date(), acceptedByUserId: me })
-    .where(eq(pendingInvites.token, token));
+    const [project] = await tx
+      .select({ slug: workspaces.slug, name: workspaces.name })
+      .from(workspaces)
+      .where(and(eq(workspaces.id, projectId), isNull(workspaces.archivedAt)));
+    if (!project) throw new Error("This project is unavailable or archived.");
 
-  // Record workspace audit event (D-019). No email address in payload.
-  await db.insert(workspaceEvents).values({
-    id: mintEventId(),
-    workspaceId: invite.workspaceId,
-    userId: me,
-    kind: "inviteAccepted",
-    payload: JSON.stringify({ userId: me, role: grantedRole }),
-    createdAt: Math.floor(Date.now() / 1000),
+    // Existing membership retains its role; acceptance never escalates it.
+    await tx.run(sql`
+      INSERT OR IGNORE INTO workspace_members (workspace_id, user_id, role)
+      VALUES (${projectId}, ${me}, ${grantedRole})
+    `);
+    const [membership] = await tx
+      .select({ role: workspaceMembers.role })
+      .from(workspaceMembers)
+      .where(and(eq(workspaceMembers.workspaceId, projectId), eq(workspaceMembers.userId, me)));
+    if (!membership) throw new Error("This project is unavailable.");
+
+    await tx.insert(workspaceEvents).values({
+      id: mintEventId(),
+      workspaceId: projectId,
+      userId: me,
+      kind: "inviteAccepted",
+      payload: JSON.stringify({ userId: me, role: membership.role }),
+      createdAt: Math.floor(Date.now() / 1000),
+    });
+    return project;
   });
 
-  // Flip the active-workspace cookie so /app/tasks lands the user
-  // in the freshly-joined workspace.
-  //
-  // Attribute parity with the cookie's four sibling writers (D-021 writer #4,
-  // the last one WP3 left open). This was the only writer with neither
-  // `httpOnly` nor `secure`, so accepting an invite downgraded the last-active
-  // preference to a script-readable cookie sendable over plain HTTP until the
-  // next writer ran. Nothing on the client reads it — it exists so the *next*
-  // server request resolves into the joined workspace — so there was never a
-  // reason for it to be exposed. Pinned, with its siblings, by
-  // `src/server/projects/active-project-contract.test.mjs`.
+  // Both resolver generations must agree after this explicit selection. The
+  // unified cookie outranks the legacy cookie; updating only legacy left A
+  // active after accepting B. Neither preference is an authorization grant.
+  await writeActiveProjectCookie(projectId);
   const c = await cookies();
-  c.set(ACTIVE_WORKSPACE_COOKIE_NAME, invite.workspaceId, {
+  c.set(ACTIVE_WORKSPACE_COOKIE_NAME, projectId, {
     path: "/",
     sameSite: "lax",
     httpOnly: true,
@@ -821,9 +839,10 @@ export async function acceptInviteAction(token: string): Promise<{
   revalidatePath("/app", "layout");
   return {
     ok: true,
-    workspaceId: invite.workspaceId,
+    workspaceId: projectId,
     workspaceSlug: workspace.slug,
     workspaceName: workspace.name,
+    redirectTo,
   };
 }
 
