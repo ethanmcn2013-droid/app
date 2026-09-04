@@ -1,6 +1,9 @@
 {
   "version": 2,
-  "accepts": [1, 2],
+  "accepts": [
+    1,
+    2
+  ],
   "supersedes": 1,
   "basis": "content/hq/decisions/venue-edition-founding-25-2026-08-03.md",
   "currency": "EUR",
@@ -19,13 +22,25 @@
     "firstOutreachDate": "2027-01-21",
     "prelaunchMode": "internal_testing_only",
     "automaticAccessOpening": false,
-    "manualGates": ["user_launch", "first_outreach"],
+    "manualGates": [
+      "user_launch",
+      "first_outreach"
+    ],
     "guestsAndSeating": "no_build_for_january"
   },
   "guestSemantics": {
-    "editingMembers": ["view", "comment", "edit"],
-    "authenticatedGuests": ["view", "comment"],
-    "linkViewers": ["view"],
+    "editingMembers": [
+      "view",
+      "comment",
+      "edit"
+    ],
+    "authenticatedGuests": [
+      "view",
+      "comment"
+    ],
+    "linkViewers": [
+      "view"
+    ],
     "inviteAuthority": "workspace_owner_or_admin_only"
   },
   "trialPolicy": {
@@ -37,7 +52,9 @@
     "publicPrice": null,
     "seatCommitment": null
   },
-  "retiredOffers": ["committee_workspace_49_eur_year"],
+  "retiredOffers": [
+    "committee_workspace_49_eur_year"
+  ],
   "plans": {
     "free": {
       "publicName": "Free",
@@ -75,7 +92,12 @@
       "activeWindowMonths": 12,
       "postWindow": "read_only",
       "refundAccess": "revoked",
-      "status": "verified"
+      "status": "policy_ratified_implementation_required",
+      "availability": "unavailable_until_project_access_closure",
+      "newSalesAvailable": false,
+      "termsStatus": "intended_not_enforced",
+      "policyDecision": "content/hq/decisions/event-project-funding-2026-09-04.md",
+      "historicalReconciliation": "content/hq/operator-todos/event-historical-purchase-reconciliation.md"
     },
     "venue": {
       "publicName": "Venue Edition",
@@ -95,7 +117,12 @@
         "lockCondition": "continuous_renewal_without_lapse",
         "lockFollows": "property",
         "lockTransfersToNewProperties": false,
-        "forbiddenWording": ["for life", "forever", "in perpetuity", "lifetime"],
+        "forbiddenWording": [
+          "for life",
+          "forever",
+          "in perpetuity",
+          "lifetime"
+        ],
         "publicWording": "€500 a year less, for as long as you stay."
       },
       "coupleAccessMonths": 18,
