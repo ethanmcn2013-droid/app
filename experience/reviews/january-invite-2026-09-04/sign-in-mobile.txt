@@ -1,0 +1,38 @@
+- button "Open issues overlay":
+  - generic: "0"
+  - generic: "1"
+  - generic: Issue
+- button "Collapse issues badge":
+- alert: Sign in · Signal Studio
+- banner:
+  - link "Signal Studio":
+    - /url: /
+    - text: signal studio
+    - generic: .
+  - paragraph:
+    - text: Not open yet?
+    - link "Join the waitlist":
+      - /url: https://signalstudio.ie/waitlist
+- main:
+  - heading "You’re already signed in here." [level=1]
+  - paragraph: This review session uses a synthetic workspace. It never opens a real account or reads customer data.
+  - link "Open the demo workspace":
+    - /url: /app/tasks
+  - link "Back to Signal Studio":
+    - /url: /
+  - link "Signal Studio on iPhone QR code for the Signal Studio iPhone app page In build. Scan to follow it.":
+    - /url: https://signalstudio.ie
+    - generic: Signal Studio on iPhone
+    - img "QR code for the Signal Studio iPhone app page"
+    - generic: In build. Scan to follow it.
+  - navigation "Company":
+    - link "Privacy":
+      - /url: https://signalstudio.ie/privacy
+    - link "Terms":
+      - /url: https://signalstudio.ie/terms
+    - link "Security":
+      - /url: https://signalstudio.ie/security
+    - generic: Signal Studio · Ireland
+- status:
+  - generic: In development. You’re seeing it early.
+  - button "Hide development notice": ×

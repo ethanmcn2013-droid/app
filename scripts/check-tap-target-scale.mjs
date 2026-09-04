@@ -39,17 +39,7 @@ const SKIP_DIRS = new Set([
 // Signal's quiet briefing ledger was cleared by T·111 in the Signal surface's
 // own cycle, which pinned those controls to a real `min-height: 44px`. This gate
 // reported that entry as obsolete on the merge, which is the ratchet working.
-const OUTSTANDING = new Map([
-  [
-    "src/app/invite/[token]/page.tsx",
-    "1 hit — critical-tier reviewed surface. experience/registry.json pins a " +
-      "materiality hash for tasks.page.invite-by-token, and changing the source " +
-      "requires an evidence-backed refresh signed by the design owner " +
-      "(product-taste-design-integrity) via scripts/experience/review-materiality.mjs. " +
-      "Not something to self-attest, so the 80px disabled demo-mode Accept invite " +
-      "button is left for a pass that carries that review (2026-07-30, T·112)",
-  ],
-]);
+const OUTSTANDING = new Map([]);
 
 // Container heights that intentionally ride the numeric chrome scale, keyed by
 // "<file>::<exact class>". The studio bar shell cannot drop to a literal 44px

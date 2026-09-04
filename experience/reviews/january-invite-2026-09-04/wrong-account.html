@@ -1,0 +1,282 @@
+<!DOCTYPE html><html lang="en" class="geist_fe37722e-module__2r-lLq__variable geist_mono_be2ce44d-module__3UCl3a__variable h-full antialiased"><head><base href="http://127.0.0.1:4357/"><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/><link rel="stylesheet" href="/_next/static/chunks/%5Broot-of-the-server%5D__1bqy29e._.css" data-precedence="next_static/chunks/[root-of-the-server]__1bqy29e._.css"/><link rel="preload" as="script" fetchPriority="low" href="/_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-client_ts_1wvyd3b._.js"/><meta name="next-size-adjust" content=""/><meta name="theme-color" content="#ffffff"/><title>Wrong-account invitation · synthetic source review</title><meta name="description" content="Notes, tasks, timelines, and the signal that matters in one calm workspace."/><link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials"/><meta property="og:title" content="Signal Studio"/><meta property="og:description" content="Notes, tasks, timelines, and the signal that matters."/><meta property="og:image" content="http://localhost:4357/opengraph-image?c950beb0e854369f"/><meta property="og:image:type" content="image/png"/><meta property="og:image:width" content="1200"/><meta property="og:image:height" content="630"/><meta property="og:image:alt" content="tasks, work that moves itself forward"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="Signal Studio"/><meta name="twitter:description" content="Notes, tasks, timelines, and the signal that matters."/><meta name="twitter:image" content="http://localhost:4357/opengraph-image?c950beb0e854369f"/><meta name="twitter:image:alt" content="tasks, work that moves itself forward"/><meta name="twitter:image:type" content="image/png"/><meta name="twitter:image:width" content="1200"/><meta name="twitter:image:height" content="630"/><link rel="icon" href="/favicon.ico?favicon.2vob68tjqpejf.ico" sizes="256x256" type="image/x-icon"/><link rel="icon" href="/icon?e99a66519efb51f3" type="image/png" sizes="32x32"/><link rel="icon" href="/icon1?3175299cf2516e85" type="image/png" sizes="512x512"/><link rel="apple-touch-icon" href="/apple-icon?7e1937ae399182ea" type="image/png" sizes="180x180"/><link rel="preconnect" href="https://signalstudio.ie"/><link rel="dns-prefetch" href="https://signalstudio.ie"/><style>html{background:#ffffff}html[data-theme="dark"]{background:#0f0f10}</style></head><body class="min-h-full flex flex-col"><div hidden=""><!--$--><!--/$--></div><header class="sticky top-0 z-40" style="border-bottom:1px solid var(--suite-header-hairline, rgba(17, 17, 17, 0.08));background:color-mix(in srgb, var(--bg) 88%, transparent);backdrop-filter:saturate(150%) blur(12px);-webkit-backdrop-filter:saturate(150%) blur(12px)"><div class="mx-auto flex h-14 w-full max-w-[1240px] items-center justify-between px-6"><div class="flex min-w-0 items-center gap-3 whitespace-nowrap"><div class="inline-flex"><div class="suite-launcher-root"><style>
+.suite-launcher-root {
+  --sl-indigo: var(--color-indigo-600, var(--indigo-600, var(--brand)));
+  --sl-ink: var(--color-ink, var(--ink));
+  --sl-ink-soft: var(--color-ink-soft, var(--ink-soft));
+  --sl-ink-quiet: var(--color-ink-quiet, var(--color-ink-faint, var(--ink-quiet)));
+  --sl-ink-faint: var(--color-ink-faint, var(--ink-faint));
+  --sl-paper: var(--color-paper, var(--paper, var(--bg)));
+  --sl-paper-elevated: var(--color-paper, var(--paper, var(--bg-elevated, var(--bg))));
+  --sl-border: var(--color-line, var(--color-line-soft, var(--border, var(--line-soft))));
+  --sl-ease-out: var(--ease-out);
+  --sl-ease-in-out: var(--ease-in-out, var(--ease-out));
+  position: relative;
+  display: inline-flex;
+}
+.sl-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sl-ink-quiet);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  padding: 5px 7px;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+.sl-trigger:hover,
+.sl-trigger[data-open="true"] {
+  border-color: color-mix(in srgb, var(--sl-ink) 8%, transparent);
+  background: color-mix(in srgb, var(--sl-indigo) 5%, transparent);
+  color: var(--sl-ink);
+}
+.sl-trigger:active { transform: translateY(1px); }
+.sl-trigger:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--sl-indigo) 42%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sl-indigo) 14%, transparent);
+}
+.sl-brand-dot { color: var(--sl-indigo); }
+.sl-chevron {
+  color: var(--sl-ink-faint);
+  transition: transform 180ms var(--sl-ease-out), color 160ms var(--sl-ease-out);
+}
+.sl-trigger[data-open="true"] .sl-chevron {
+  color: var(--sl-indigo);
+  transform: rotate(180deg);
+}
+.sl-pop {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  z-index: 80;
+  width: min(340px, calc(100vw - 32px));
+  margin-top: 10px;
+  overflow: hidden;
+  border: 1px solid var(--sl-border);
+  border-radius: 14px;
+  background: var(--sl-paper);
+  box-shadow:
+    0 28px 70px -34px rgba(17, 17, 17, 0.38),
+    0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  color: var(--sl-ink);
+  animation: sl-pop-in 170ms var(--sl-ease-out) both;
+  transform-origin: top left;
+}
+@keyframes sl-pop-in {
+  from { opacity: 0; transform: translateY(-5px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.sl-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--sl-border) 78%, transparent);
+  padding: 14px 14px 11px;
+}
+.sl-kicker {
+  margin-bottom: 3px;
+  color: var(--sl-ink-faint);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.sl-title {
+  color: var(--sl-ink);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+.sl-system-line {
+  margin-top: 3px;
+  color: var(--sl-ink-quiet);
+  font-size: 11px;
+  line-height: 1.25;
+}
+.sl-list {
+  display: grid;
+  gap: 2px;
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+}
+.sl-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 64px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--sl-ink);
+  padding: 9px 10px 9px 9px;
+  text-decoration: none;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+.sl-row::before {
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 2px;
+  border-radius: 999px;
+  background: transparent;
+  content: "";
+}
+.sl-row:hover {
+  border-color: color-mix(in srgb, var(--sl-indigo) 14%, transparent);
+  background: color-mix(in srgb, var(--sl-indigo) 5%, transparent);
+}
+.sl-row:active { transform: translateY(1px); }
+.sl-row:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--sl-indigo) 45%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sl-indigo) 13%, transparent);
+}
+.sl-row[data-current="true"] {
+  border-color: color-mix(in srgb, var(--sl-indigo) 18%, transparent);
+  background: color-mix(in srgb, var(--sl-indigo) 7%, transparent);
+}
+.sl-row[data-current="true"]::before { background: var(--sl-indigo); }
+.sl-gesture {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid color-mix(in srgb, var(--sl-border) 80%, transparent);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--sl-paper-elevated) 82%, var(--sl-paper));
+  color: var(--sl-indigo);
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.sl-row:hover .sl-gesture,
+.sl-row[data-current="true"] .sl-gesture {
+  border-color: color-mix(in srgb, var(--sl-indigo) 20%, transparent);
+  background: color-mix(in srgb, var(--sl-indigo) 6%, var(--sl-paper));
+}
+.sl-wordline {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+}
+.sl-word {
+  color: var(--sl-ink);
+  font-size: 13.5px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.sl-clarity {
+  margin-top: 4px;
+  color: var(--sl-ink-quiet);
+  font-size: 11px;
+  line-height: 1.25;
+}
+.sl-status {
+  color: var(--sl-ink-faint);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  line-height: 1;
+  text-transform: uppercase;
+  transition: color 160ms ease, opacity 160ms ease;
+}
+.sl-row:not([data-current="true"]) .sl-status { opacity: 0.44; }
+.sl-row:not([data-current="true"]):hover .sl-status {
+  color: var(--sl-indigo);
+  opacity: 1;
+}
+.sl-row[data-current="true"] .sl-status { color: var(--sl-indigo); }
+.sl-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid color-mix(in srgb, var(--sl-border) 78%, transparent);
+  color: var(--sl-ink-quiet);
+  font-size: 11px;
+  padding: 11px 14px;
+  text-decoration: none;
+  transition: background 160ms ease, color 160ms ease;
+}
+.sl-footer:hover {
+  background: color-mix(in srgb, var(--sl-ink) 4%, transparent);
+  color: var(--sl-ink);
+}
+.sl-footer:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sl-indigo) 13%, transparent) inset;
+}
+.sl-caret { animation: sl-caret-blink 1.15s steps(1, end) infinite; }
+@keyframes sl-caret-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.sl-pulse-dot { transform-box: fill-box; transform-origin: center; }
+.sl-pulse-dot-1 { animation: sl-pulse 2.8s ease-in-out infinite 0s; }
+.sl-pulse-dot-2 { animation: sl-pulse 2.8s ease-in-out infinite .38s; }
+.sl-pulse-dot-3 { animation: sl-pulse 2.8s ease-in-out infinite .76s; }
+@keyframes sl-pulse {
+  0%, 32%, 100% { transform: scale(1); }
+  12% { transform: scale(1.24); }
+  22% { transform: scale(1); }
+}
+.sl-sweep-dot {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sl-sweep 4.8s var(--sl-ease-in-out) infinite;
+}
+@keyframes sl-sweep {
+  0% { opacity: 1; transform: translateX(0); }
+  58% { opacity: 1; transform: translateX(23px); }
+  62% { opacity: 0; transform: translateX(23px); }
+  72% { opacity: 0; transform: translateX(0); }
+  82%, 100% { opacity: 1; transform: translateX(0); }
+}
+.sl-bar { transform-box: fill-box; transform-origin: bottom; }
+.sl-bar-1 { animation: sl-bar-one 3.4s steps(1, end) infinite; }
+.sl-bar-2 { animation: sl-bar-two 3.4s steps(1, end) infinite .45s; }
+.sl-bar-3 { animation: sl-bar-three 3.4s steps(1, end) infinite .9s; }
+@keyframes sl-bar-one {
+  0% { transform: scaleY(.55); } 33% { transform: scaleY(.9); } 66% { transform: scaleY(.42); }
+}
+@keyframes sl-bar-two {
+  0% { transform: scaleY(.88); } 33% { transform: scaleY(.5); } 66% { transform: scaleY(1); }
+}
+@keyframes sl-bar-three {
+  0% { transform: scaleY(.45); } 33% { transform: scaleY(.78); } 66% { transform: scaleY(.58); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sl-trigger,
+  .sl-chevron,
+  .sl-pop,
+  .sl-row,
+  .sl-status,
+  .sl-footer,
+  .sl-gesture {
+    animation: none !important;
+    transition: none !important;
+  }
+  .sl-caret,
+  .sl-pulse-dot,
+  .sl-sweep-dot,
+  .sl-bar {
+    animation: none !important;
+  }
+  .sl-caret { opacity: 1; }
+  .sl-sweep-dot { transform: none; }
+  .sl-bar { transform: scaleY(.7); }
+}
+</style><button type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Open Signal Studio launcher" class="sl-trigger"><span>signal studio<span class="sl-brand-dot">.</span></span><svg class="sl-chevron" width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M3.25 4.75 6 7.5l2.75-2.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></div></div><span aria-hidden="true" style="color:var(--ink-faint);font-size:12px">/</span><a aria-label="Tasks" class="wordmark-hover relative inline-flex select-none items-baseline font-semibold text-lg" style="letter-spacing:-0.05em" href="/"><span class="wordmark" style="font-weight:600">tasks</span><span class="tasks-dot" aria-hidden="true"></span></a></div><div class="flex items-center gap-2"><nav class="mr-4 hidden items-center gap-7 md:flex" style="font-size:13px;color:var(--ink-soft)"><a href="https://signalstudio.ie/pricing" target="_blank" rel="noopener noreferrer" class="suite-header-link" style="color:var(--ink-soft);text-decoration:none;transition:color 140ms ease">Pricing</a><a href="https://signalstudio.ie/design" target="_blank" rel="noopener noreferrer" class="suite-header-link" style="color:var(--ink-soft);text-decoration:none;transition:color 140ms ease">Design</a><a href="https://signalstudio.ie/about" target="_blank" rel="noopener noreferrer" class="suite-header-link" style="color:var(--ink-soft);text-decoration:none;transition:color 140ms ease">About</a></nav><a class="inline-flex min-h-8 items-center rounded-full bg-ink px-3.5 text-[12px] font-medium text-white transition-transform hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand" href="/app/tasks">Demo workspace</a><button type="button" aria-expanded="false" aria-controls="suite-mobile-nav" aria-label="Open navigation" class="ml-1 inline-flex h-9 w-9 items-center justify-center rounded-full md:hidden" style="border:1px solid var(--suite-header-hairline, rgba(17, 17, 17, 0.08));color:var(--ink-soft)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="7" x2="21" y2="7"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="17" x2="21" y2="17"></line></svg></button></div></div><style>.suite-header-link:hover{color:var(--ink) !important;}</style></header><main class="flex-1"><section class="mx-auto w-full max-w-[640px] px-6 py-20"><div class="rounded-2xl border border-line-soft bg-bg-elevated px-8 py-10"><div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">Workspace invite</div><h1 class="mt-3 text-[26px] font-semibold leading-tight tracking-[-0.02em] text-ink">Niamh O’Connell added you to The Orchard, events.</h1><p class="mt-3 text-[14.5px] leading-[1.55] text-ink-soft">Accepting adds you to this workspace. You will see the same views, tasks and daily briefing the owner sees, and you can edit them.</p><div class="mt-5 grid gap-2 rounded-xl border border-line-soft bg-white px-4 py-3 text-[12.5px]"><div class="flex items-center justify-between"><span class="text-ink-quiet">Sent to</span><span class="text-ink-soft">Sign in to confirm</span></div><div class="flex items-center justify-between"><span class="text-ink-quiet">Expires</span><span class="text-ink">22 January 2027</span></div></div><div class="mt-7 rounded-xl border border-amber-200 bg-amber-50/40 px-4 py-3 text-[13px] leading-[1.55] text-amber-800"><p>You’re signed in as <span class="font-medium">other@example.invalid</span>. Use the email address this invite was sent to.</p><button type="button" class="mt-3 min-h-[44px] font-medium underline">Sign out and use the invited account</button></div></div></section></main><footer class="mt-32 border-t border-hairline-soft pb-10 pt-16"><div class="mx-auto grid w-full max-w-[1240px] gap-10 px-6 sm:grid-cols-2 lg:grid-cols-[1.35fr_repeat(4,1fr)]"><div class="sm:col-span-2 lg:col-span-1"><a aria-label="Tasks" class="wordmark-hover relative inline-flex select-none items-baseline font-semibold text-2xl" style="letter-spacing:-0.05em" href="/"><span class="wordmark" style="font-weight:600">tasks</span><span class="tasks-dot" aria-hidden="true"></span></a><p class="mt-4 max-w-xs text-[13.5px] leading-relaxed text-ink-soft">Execution clarity for live work. Dates, owners, and the week ahead in plain English.</p><p class="mt-4 text-[12px] text-ink-quiet">Made by<!-- --> <a href="https://signalstudio.ie" target="_blank" rel="noopener noreferrer" class="font-medium text-ink-soft transition-colors hover:text-ink">Signal Studio</a>.</p><nav aria-label="Signal Tasks on social" class="-ml-2 mt-3 flex items-center text-ink-quiet"><a href="https://x.com/signalstudio_ie" target="_blank" rel="noopener noreferrer" title="Signal Tasks on X" aria-label="Signal Tasks on X" class="inline-flex h-10 w-10 items-center justify-center transition-colors hover:text-ink"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M18.244 2H21l-6.59 7.53L22 22h-6.828l-4.78-6.234L4.8 22H2l7.06-8.07L1.5 2h6.91l4.32 5.69L18.244 2Zm-2.39 18.4h1.594L7.21 3.512H5.5L15.853 20.4Z"></path></svg></a><a href="https://www.youtube.com/@signalstudio_ie" target="_blank" rel="noopener noreferrer" title="Signal Tasks on YouTube" aria-label="Signal Tasks on YouTube" class="inline-flex h-10 w-10 items-center justify-center transition-colors hover:text-ink"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"></path></svg></a><a href="https://www.tiktok.com/@signalstudio_ie" target="_blank" rel="noopener noreferrer" title="Signal Tasks on TikTok" aria-label="Signal Tasks on TikTok" class="inline-flex h-10 w-10 items-center justify-center transition-colors hover:text-ink"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.84-.1z"></path></svg></a><a href="https://www.linkedin.com/company/signal-studio-ie" target="_blank" rel="noopener noreferrer" title="Signal Tasks on LinkedIn" aria-label="Signal Tasks on LinkedIn" class="inline-flex h-10 w-10 items-center justify-center transition-colors hover:text-ink"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M20.452 20.452h-3.554v-5.569c0-1.328-.024-3.037-1.852-3.037-1.853 0-2.136 1.447-2.136 2.94v5.666H9.356V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.602 0 4.268 2.37 4.268 5.455v6.286ZM5.337 7.433a2.062 2.062 0 1 1 0-4.124 2.062 2.062 0 0 1 0 4.124ZM7.117 20.452H3.555V9h3.562v11.452ZM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003Z"></path></svg></a></nav></div><nav aria-label="Product"><div class="mb-3 text-[12px] font-medium uppercase tracking-[0.14em] text-ink-quiet">Product</div><ul class="space-y-2 text-[13.5px] text-ink-soft"><li><a class="inline-flex min-h-[32px] items-center transition-colors hover:text-ink" href="/#demo">Demo</a></li><li><a class="inline-flex min-h-[32px] items-center transition-colors hover:text-ink" href="/#anatomy">Anatomy</a></li><li><a class="inline-flex min-h-[32px] items-center transition-colors hover:text-ink" href="/app/tasks">Workspace</a></li></ul></nav><nav aria-label="Company"><div class="mb-3 text-[12px] font-medium uppercase tracking-[0.14em] text-ink-quiet">Company</div><ul class="space-y-2 text-[13.5px] text-ink-soft"><li><a href="https://signalstudio.ie/pricing" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-[32px] items-center transition-colors hover:text-ink">Pricing<span aria-hidden="true" class="ml-1 text-[11px] text-ink-quiet">→</span></a></li><li><a href="https://signalstudio.ie/about" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-[32px] items-center transition-colors hover:text-ink">About<span aria-hidden="true" class="ml-1 text-[11px] text-ink-quiet">→</span></a></li><li><a href="https://signalstudio.ie/principles" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-[32px] items-center transition-colors hover:text-ink">Principles<span aria-hidden="true" class="ml-1 text-[11px] text-ink-quiet">→</span></a></li><li><a href="https://signalstudio.ie/about#contact" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-[32px] items-center transition-colors hover:text-ink">Contact<span aria-hidden="true" class="ml-1 text-[11px] text-ink-quiet">→</span></a></li><li><a href="https://signalstudio.ie/dispatch" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-[32px] items-center transition-colors hover:text-ink">Dispatch<span aria-hidden="true" class="ml-1 text-[11px] text-ink-quiet">→</span></a></li></ul></nav><nav aria-label="Resources"><div class="mb-3 text-[12px] font-medium uppercase tracking-[0.14em] text-ink-quiet">Resources</div><ul class="space-y-2 text-[13.5px] text-ink-soft"><li><a href="https://signalstudio.ie/students" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-[32px] items-center transition-colors hover:text-ink">Students<span aria-hidden="true" class="ml-1 text-[11px] text-ink-quiet">→</span></a></li><li><a href="https://signalstudio.ie/venues" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-[32px] items-center transition-colors hover:text-ink">Venues<span aria-hidden="true" class="ml-1 text-[11px] text-ink-quiet">→</span></a></li><li><a href="https://signalstudio.ie/press" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-[32px] items-center transition-colors hover:text-ink">Press<span aria-hidden="true" class="ml-1 text-[11px] text-ink-quiet">→</span></a></li><li><a href="https://signalstudio.ie/design" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-[32px] items-center transition-colors hover:text-ink">Design<span aria-hidden="true" class="ml-1 text-[11px] text-ink-quiet">→</span></a></li></ul></nav><nav aria-label="Suite"><div class="mb-3 text-[12px] font-medium uppercase tracking-[0.14em] text-ink-quiet">Suite</div><ul class="space-y-2 text-[13.5px] text-ink-soft"><li><a href="https://signalstudio.ie" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-[32px] items-center transition-colors hover:text-ink">Signal Studio<span aria-hidden="true" class="ml-1 text-[11px] text-ink-quiet">→</span></a></li><li><a href="https://signalstudio.ie/notes" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-[32px] items-center transition-colors hover:text-ink">Notes<span aria-hidden="true" class="ml-1 text-[11px] text-ink-quiet">→</span></a></li><li><a href="https://signalstudio.ie/tasks" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-[32px] items-center transition-colors hover:text-ink">Tasks<span aria-hidden="true" class="ml-1 text-[11px] text-ink-quiet">→</span></a></li><li><a href="https://signalstudio.ie/timeline" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-[32px] items-center transition-colors hover:text-ink">Timeline<span aria-hidden="true" class="ml-1 text-[11px] text-ink-quiet">→</span></a></li><li><a href="https://signalstudio.ie/features/daily-briefing" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-[32px] items-center transition-colors hover:text-ink">Daily briefing<span aria-hidden="true" class="ml-1 text-[11px] text-ink-quiet">→</span></a></li></ul></nav></div><div class="mx-auto mt-12 flex w-full max-w-[1240px] flex-col items-start justify-between gap-2 border-t border-hairline-soft px-6 pt-6 text-[12px] text-ink-quiet md:flex-row md:items-center"><span>© <!-- -->2026<!-- --> Signal Tasks. Made by Signal Studio.</span><span>Clarity, not configuration.</span></div><nav aria-label="Legal" class="mx-auto mt-4 flex w-full max-w-[1240px] flex-wrap items-center gap-x-1 gap-y-1 px-6 font-mono text-[12px] uppercase tracking-[0.08em] text-ink-quiet" style="padding-bottom:max(0.5rem, env(safe-area-inset-bottom))"><span class="inline-flex items-center"><a href="https://signalstudio.ie/privacy" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-[32px] items-center px-2 py-1 transition-colors hover:text-ink">Privacy</a></span><span class="inline-flex items-center"><span aria-hidden="true" class="px-1 opacity-50">·</span><a href="https://signalstudio.ie/terms" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-[32px] items-center px-2 py-1 transition-colors hover:text-ink">Terms</a></span><span class="inline-flex items-center"><span aria-hidden="true" class="px-1 opacity-50">·</span><a href="https://signalstudio.ie/security" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-[32px] items-center px-2 py-1 transition-colors hover:text-ink">Security</a></span><span class="inline-flex items-center"><span aria-hidden="true" class="px-1 opacity-50">·</span><a href="https://signalstudio.ie/accessibility" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-[32px] items-center px-2 py-1 transition-colors hover:text-ink">Accessibility</a></span></nav></footer><!--$--><!--/$--></body></html>
