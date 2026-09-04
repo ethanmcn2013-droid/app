@@ -11,7 +11,12 @@ existing three-direction exploration; do not start a new programme.
 The materiality assessment, implementation evidence and exact incomplete
 boundaries are in `UI-SLICE.md` and `UI-MATERIALITY.md`. Internal review only:
 no provider/production changes, publication, design gate or human usability
-claim. Handover selection and killed-browser upload recovery remain incomplete.
+claim. The bounded follow-up adds server-checked handover selection/confirmation
+and same-journal continuation. Killed-browser upload recovery remains incomplete:
+existing claims bind metadata but not original contents. Pending reload claims
+must be retained; no reselect byte-resume or new/native copy is offered without
+safe server-verifiable content binding. See `UI-FOLLOW-UP.md` for the exact APIs
+and independent read/explanation slice.
 The feature flag is `NEXT_PUBLIC_PROJECT_DRIVE_UI`, literal `true` only;
 flag-off retains native uploads. Formal review and launch gates remain open.
 

@@ -39,7 +39,9 @@ are not imported as production facts.
   Live Connections is owner-only; members see a clear access-management message.
 - Connect/reconnect, separate board setup and confirmed own-account disconnect
   call existing actions. Disconnect states the affected board count and file
-  consequences before confirmation. No handover mutation UI is exposed.
+  consequences before confirmation. The bounded follow-up adds a server-checked
+  owner choice, explicit handover confirmation and same-journal continuation;
+  see `UI-FOLLOW-UP.md` for its exact safety and verification boundary.
 - A minimal status action requires explicit project management authority before
   reads and again before returning. Demo and flag-off return before the database,
   auth or provider dependency graph is imported. The service projects only owner,
@@ -108,13 +110,15 @@ Validation results and screenshots are recorded in `ui-evidence/README.md`.
 
 ## Deliberate gaps and next review
 
-1. **Handover**: safe candidate listing, eligibility/connection availability,
-   handover progress and retry UI are missing. No client member list is passed
-   off as an eligible owner list. Existing files stay with their old owner.
+1. **Handover**: server-checked choices, confirmation and saved-operation
+   continuation are implemented in `UI-FOLLOW-UP.md`. Manual-attention repair,
+   autonomous polling and live Google handover acceptance remain open. No client
+   member list is passed off as an eligible owner list.
 2. **Recovery after closing the task/browser**: retry works while this attempt
-   remains mounted. There is no pending-claim discovery/reselect-file contract
-   for resuming after a reload. Persisted claims are shown as unconfirmed, with
-   no destructive remove control. Do not claim killed-browser acceptance.
+   remains mounted. The follow-up rediscovers pending claims, blocks new intake
+   and explains recovery limitations. A safe reselect-file contract is missing:
+   server metadata binding cannot prove identical contents. There is no destructive
+   remove control or native fallback. Do not claim killed-browser acceptance.
 3. **Access repair/setup progress**: no individual repair action, operation-list
    UI or autonomous progress polling. Setup with no persisted folder cannot be
    reconstructed as progress from the existing status reader. Own Google-account

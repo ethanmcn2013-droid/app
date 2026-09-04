@@ -1,6 +1,7 @@
 "use client";
 
 import type { ProjectDriveStatus } from "@/lib/project-drive-ui";
+import type { ReactNode } from "react";
 
 export const driveButton = "min-h-[44px] rounded-md border border-line px-3 py-2 text-[13px] font-medium text-ink hover:bg-bg-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-50";
 
@@ -16,7 +17,7 @@ const setupCopy: Record<ProjectDriveStatus["setup"], string> = {
 const accessLabel = { owner: "Owns folder", writer: "Can edit", reader: "Can view", unconfirmed: "Access not confirmed" };
 
 /** Custodian thesis: name the accountable person first; evidence remains distinct. */
-export function ConnectionsView({ status, busy, message, onRefresh, onConnect, onEnable, onDisconnect, confirmation, onCancelDisconnect, onConfirmDisconnect }: {
+export function ConnectionsView({ status, busy, message, onRefresh, onConnect, onEnable, onDisconnect, confirmation, onCancelDisconnect, onConfirmDisconnect, handover }: {
   status: ProjectDriveStatus;
   busy: boolean;
   message: string | null;
@@ -27,6 +28,7 @@ export function ConnectionsView({ status, busy, message, onRefresh, onConnect, o
   confirmation: boolean;
   onCancelDisconnect: () => void;
   onConfirmDisconnect: () => void;
+  handover: ReactNode;
 }) {
   const hasGap = status.access.people.some((person) => person.access === "unconfirmed" || person.access === "reader");
   return <section aria-label="Google Drive connection" className="space-y-5 text-[13px] leading-relaxed text-ink-soft">
@@ -75,7 +77,7 @@ export function ConnectionsView({ status, busy, message, onRefresh, onConnect, o
         <div className="mt-3 flex flex-wrap gap-2"><button autoFocus className={driveButton} disabled={busy} onClick={onCancelDisconnect}>Keep connected</button><button className={driveButton} disabled={busy} onClick={onConfirmDisconnect}>Confirm disconnect</button></div>
       </div> : null}
     </section>
-    <p>Changing storage owner is not available here yet. Existing files remain with their original owner and are not moved to a new Drive.</p>
+    {handover}
     {busy || message ? <p role="status" className="rounded-md border border-line-soft p-3 text-ink">{busy ? "Checking the connection…" : message}</p> : null}
   </section>;
 }

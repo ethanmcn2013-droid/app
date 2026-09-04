@@ -5,9 +5,11 @@ import { spawnSync } from "node:child_process";
 const result = spawnSync(process.execPath, [
   "--import", "tsx", "--import", "./src/test/register-server-only.mjs", "--test",
   "src/lib/project-drive-ui.test.ts",
+  "src/lib/project-drive-follow-up.test.tsx",
   "src/lib/project-drive-upload-machine.test.ts",
   "src/lib/drive-resumable-upload.test.ts",
   "src/server/connections/project-drive-ui-status.test.ts",
+  "src/server/connections/project-drive-handover-ui.test.ts",
   "src/server/project-drive-ui-contract.test.mjs",
 ], {
   stdio: "inherit",
