@@ -177,3 +177,81 @@ dock button) — which is more type system than most shipped products carry.
 What holds it at 8.8 is that the one role which is supposed to prove "this is
 one application" is the one role that is not one object, plus a phone measure
 of 22 characters per line. All four are CSS, all four are validated above.
+
+════════════════════════════════════════════════════════════════════════
+PROSE NOTE — Typography seat, round 7
+════════════════════════════════════════════════════════════════════════
+
+Score: 8.8. Five findings, total cost 8 tenths, all of them CSS.
+
+WHAT EARNED IT. I went looking for the classic failures and could not make
+them happen. Two weights across ten states, five widths and both variants:
+zero violations. Two families: zero. The size ramp: clean, the only off-ramp
+strings being a 1x1 clipped screen-reader heading (which shell.css deliberately
+leaves inherited) and the shared wordmark. Leading: declared and gated in every
+one of the ten states, which is rarer than it sounds. Measure: 31em on every
+surface that carries Orla's own words, rendering at 59-64 characters a line in
+the compose field, the reading body and the peel. Trimming: I could not produce
+a mid-word clip anywhere. Numerals: every counter that ticks in place is
+tabular, including the live character counter, which I typed into to check.
+Not one mixed letterfit inside a single line of type in the whole suite. And
+the tracking curve does arithmetic - the dock's reversed "Add task" computes
+-0.002em because it is `--tr-13` plus `--tr-rev`, "1 overdue" computes +0.002em
+because it is `--tr-12` plus `--tr-rev`. Most of the audit's ten remaining
+"tracking" groups dissolve on that fact alone; the audit does not model the
+polarity branch. This is a real type system, not a stylesheet.
+
+WHAT STANDS BETWEEN IT AND 9.5. Polish, in four places, all of it cheap. The
+one that matters is the headline: the uppercase micro-label - the small-caps
+eyebrow that names a region - is set SIX ways in one application. Notes sets it
+in Geist sans at 600 and +0.075em; Tasks' board sets it in Geist Mono at 400
+and +0.10em; Tasks' LIST sets it in Geist sans at 600 and +0.075em, on the step
+its own comment reserves for a monogram; Timeline sets it in Geist Mono at 400
+and +0.16em, and once more at 12px and +0.20em. Two families, two weights, four
+tracks, one job. The consequence is not theoretical. Drag the window from 1201
+to 1199 and Tasks' lane labels change typeface and weight. And on every row of
+the phone list, "TO DO" in Geist sans 600 and "VENUE" in Geist Mono 400 sit at
+the two ends of ONE LINE, same 11px, same uppercase, same ink at 0.62. I
+cropped it at 4x to be sure. Neither gate can see it, because the audit groups
+letterfit by product plus family plus size, so two families at one size never
+land in the same group.
+
+This round exists to ask whether three products are one thing. On the type
+axis the answer is: everywhere except the one role that would prove it. The
+build already knows how to fix this - round 6 hoisted the keycap to a single
+declaration in shell.css and left the products only their ink. The eyebrow is
+the same move, one object later, and I drove the substitution at five widths on
+five states to confirm nothing wraps, clips or scrolls sideways.
+
+The second is a reading cost rather than a system cost: on a phone, Tasks'
+list gives Orla 22 characters a line at 390 and 14 at 320, because the ≤720
+fold reserves 74px of row 1 for a date chip on every row, including the five of
+thirteen that have no date and only hide the chip. Tasks solved this exact
+problem on the desk with a float and wrote a paragraph about why; the phone
+re-introduced it as a grid reserve.
+
+The third is on the signature object: on the across axis the dates below the
+measure staircase - one wrapped title drops its date a full 22px line - while
+the identical row above the axis holds, because one block is bottom-anchored
+and the other top-anchored. Identical at 1024, 1280, 1440 and 1920.
+
+Fourth, Notes' tracking curve is indexed at sizes its own ramp does not use, so
+four of its eight sizes borrow a neighbour and the file borrows different
+neighbours for the same size - which is how the seam's receipt ends up setting
+the picked sentence at a looser fit than the lighter original above it.
+
+Fifth, and smallest: the type system is declared exactly as far as the gate's
+ten states reach. The card panel - reachable only by driving - has fourteen
+browser-chosen leadings that land on the ladder only because of Geist's own
+metrics, and the seam's return door is the one string in it with no letterfit.
+
+IS THIS POLISH, A BUILD, OR A DECISION? Four of the five are polish: one
+hoisted declaration, one `min-height` plus two `align-items`, one `:not(:has())`
+selector, one token block re-sampled. The sixth-voice fix needs a founder to
+pick a value (0.10em or 0.16em - either is defensible, one of them is not
+optional), which is a decision that takes a minute, not a week. Half of the
+phone-measure fix - floating the chip inside the say column so lines 2-4 stop
+paying for it - is a DOM change and should be costed on its own. Nothing here
+is structural, nothing touches the locked architecture, and nothing needs a new
+colour, weight or face. Fix the six voices and the phone measure and this is
+past 9.5 on my axis.

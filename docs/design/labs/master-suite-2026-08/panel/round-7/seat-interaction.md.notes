@@ -252,3 +252,46 @@ COST: 0.3
 - Home/End are no-ops inside the board's card rover.
 - A pointer drop outside every lane is silent (Escape from a keyboard
   carry announces "Move cancelled").
+
+## Verdict — 8.6
+
+What earned it. The reversibility model is the best thing on this
+surface and it is genuinely Linear-grade: every act that changes
+something announces itself in one voice, hands the keyboard somewhere
+sensible, and can be taken back — the carry ("Picked up ...", "In
+progress, position 1 of 4.", Escape restoring the card to `todo`), the
+seam (send -> focus on "Open in Tasks" -> cross to Tasks with focus on
+the card that landed -> Ctrl Z from Tasks saying "Taken back. Nothing
+went to Tasks."), the dense tick (lane holds scrollTop 251, focus
+follows to Done, undo restores both). The overdue filter states itself,
+keeps head counts honest, and releases itself when moot with a reason.
+Cross-product state holds: a typed draft survives two product switches;
+the two off-screen hosts are hidden + inert + display:none so exactly
+one `main` and one live region are exposed. Dictation is a real focus
+trap with a correct Escape. No console errors in any state I drove. No
+hover reflow on any control in any state. Reveal-on-hover is space-
+reserved and forced visible under a coarse pointer. Tasks holds focus
+across 720 in both directions.
+
+What stands between it and 9.5. Five defects, 1.5 in tenths, and every
+one of them is POLISH — no build, no data, no architecture, no
+re-decision. Two are on primary paths and both are invisible in a
+frame, which is the whole argument for driving: the seam's own act
+becomes a full-ink, accessibility-tree-enabled, silent dead control the
+instant the wording is cleared, with the destructive control sliding
+into the slot it just left; and Timeline's editor opens with 5-108px of
+itself on screen and none of its steppers on the desk's default layout.
+The other three — Notes losing focus at 720, a delete confirmation any
+letter key can overrule, and two suite-level popups advertising a
+keyboard model they do not have — are each an afternoon.
+
+Sizing it for the founder: findings 1 and 4 are one line each; finding 3
+is about eight lines in a capture block that already does the same job
+for fields; finding 2 is a six-line change inside keepInBand, verified
+here not to break the assertion it was written to protect. Finding 5 is
+the largest and it is still only porting the Show menu's existing,
+proven model onto two more objects. One focused day closes all five. It
+is not ready today; it is one day from ready.
+
+Written to panel/round-7/seat-interaction.json (the brief's closing line
+names round-6; the seat was instructed to file in round-7 and did).
