@@ -68,6 +68,7 @@ await esbuild.build({bundle:true,metafile:true,platform:'node',format:'cjs',pack
 const {run}=await import(pathToFileURL(out));
 const receipt=await run();
 receipt.pageSourceSha256=createHash('sha256').update((await fs.readFile('src/modules/notes/app/page.tsx','utf8')).replace(/\r\n/g,'\n')).digest('hex');
-await fs.mkdir('outputs/notes-recovery-context',{recursive:true});
-await fs.writeFile('outputs/notes-recovery-context/page-receipt.json',JSON.stringify(receipt,null,2)+'\n');
+const output = process.env.NOTES_TEST_OUTPUT ?? 'outputs/notes-recovery-context';
+await fs.mkdir(output,{recursive:true});
+await fs.writeFile(`${output}/page-receipt.json`,JSON.stringify(receipt,null,2)+'\n');
 console.log(JSON.stringify(receipt,null,2));

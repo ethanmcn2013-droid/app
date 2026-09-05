@@ -103,6 +103,9 @@ jobs:
       - name: Install the deterministic browser
         run: pnpm exec playwright install --with-deps chromium
 
+      - name: Verify Notes recovery and cold navigation consumers
+        run: pnpm test:notes-recovery:browser
+
       - name: Capture critical rendered evidence
         run: pnpm experience:test
 
@@ -136,5 +139,6 @@ jobs:
             experience/output/playwright-report
             experience/output/playwright-results
             experience/output/timeline-project-switcher-results
+            experience/output/notes-recovery
           if-no-files-found: ignore
           retention-days: 14

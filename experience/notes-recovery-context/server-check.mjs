@@ -57,6 +57,7 @@ await esbuild.build({bundle:true,platform:'node',format:'cjs',packages:'external
 `},logLevel:'warning'});
 const {run}=await import(pathToFileURL(out));
 const receipt=await run();
-await fs.mkdir('outputs/notes-recovery-context',{recursive:true});
-await fs.writeFile('outputs/notes-recovery-context/server-receipt.json',JSON.stringify(receipt,null,2)+'\n');
+const output = process.env.NOTES_TEST_OUTPUT ?? 'outputs/notes-recovery-context';
+await fs.mkdir(output,{recursive:true});
+await fs.writeFile(`${output}/server-receipt.json`,JSON.stringify(receipt,null,2)+'\n');
 console.log(JSON.stringify(receipt,null,2));

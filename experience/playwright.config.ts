@@ -59,7 +59,7 @@ export default defineConfig({
   webServer: {
     command:
       `corepack pnpm exec next build && ` +
-      `corepack pnpm exec next start -p ${port}`,
+      `corepack pnpm exec next start -H 127.0.0.1 -p ${port}`,
     cwd: process.cwd(),
     url: `http://localhost:${port}`,
     timeout: 240_000,
