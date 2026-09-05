@@ -4,6 +4,18 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-09-06 · January candidate · Keep recovery within reach
+
+Project recovery brings file downloads and published-link controls together in
+Settings. It checks your access to that project each time. Links created at the
+same time have distinct references, so their controls can be told apart.
+
+This internal candidate has passed scoped review and rendered recovery checks.
+Complete sign-in journeys, provider recovery and release acceptance remain open.
+The same checkpoint adds complete schema checks while preserving existing
+database adoption records. Evidence and limits:
+`experience/reviews/january-day-close-2026-09-06/README.md`.
+
 ## 2026-09-05 · January candidate · Account data remains within reach
 
 Profile now downloads account JSON directly. Your Event purchase record remains

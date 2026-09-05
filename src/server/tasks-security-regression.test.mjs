@@ -154,6 +154,20 @@ function assertDemoGuardBefore(source, name, boundary) {
   );
 }
 
+test("revoke demo-order guard rejects a missing guard or an earlier identity/storage boundary", () => {
+  const name = "revokeShareLinkAction";
+  const body = exportedActionBody(shareActions, name);
+  const guard = "if (isDemoMode()) return;";
+  assert.ok(body.includes(guard));
+  const absent = body.replace(guard, "");
+  for (const boundary of ["getCurrentUser", "revokeTaskShareByIdWith", "revalidatePath"]) {
+    assertDemoGuardBefore(body, name, boundary);
+    assert.throws(() => assertDemoGuardBefore(absent, name, boundary), /must explicitly guard/);
+    const moved = body.replace(guard, `${boundary};\n  ${guard}`);
+    assert.throws(() => assertDemoGuardBefore(moved, name, boundary), /must exit demo\/review mode before/);
+  }
+});
+
 test("destructive task graphs re-prove authority and deletion fences inside their writer transaction", () => {
   for (const [source, name] of [
     [attachmentActions, "deleteAttachmentAction"],
@@ -355,16 +369,16 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   }
   // WP3 renegotiation (ADR 0001 §9). create/list here still resolve a Project
   // ambiently — they have no object to derive one from — and keep the original
-  // token, which matches getActiveWorkspaceOrNull. revoke and email are object
-  // operations on the link row: they prove the link's own stored Project, so
-  // `authorizeStoredProject` is the boundary. That distinction is the point of
+  // token, which matches getActiveWorkspaceOrNull. Revoke now delegates to
+  // the reviewed transactional recovery writer; email continues to use
+  // authorizeStoredProject. Both prove the link's stored Project. That is the point of
   // the change. A revocation scoped to the cookie silently failed to revoke
   // when the caller's active Project had moved on, which is the worst failure
   // mode a revocation can have.
   for (const [name, boundaries] of [
     ["createShareLinkAction", ["getActiveWorkspace", "db.insert"]],
     ["listShareLinksAction", ["getActiveWorkspace", "await db"]],
-    ["revokeShareLinkAction", ["authorizeStoredProject", "await db", "revalidatePath"]],
+    ["revokeShareLinkAction", ["getCurrentUser", "revokeTaskShareByIdWith", "revalidatePath"]],
     ["bumpShareLinkVisitAction", ["db.run", "recordShareLinkVisit", "revalidatePath"]],
     ["listShareLinkAnalyticsAction", ["getActiveWorkspace", "await db", "getShareLinkVisitAnalytics"]],
     ["emailShareLinkAction", ["await db", "getCurrentUser", "authorizeStoredProject", "sendEmail"]],
