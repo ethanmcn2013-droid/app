@@ -94,7 +94,7 @@ function validateEnvironment(environment) {
 /** Every schema object except the two ledger tables, normalized and hashed. */
 export async function timelineSchemaFingerprintSha256(executor, ledger) {
   const result = await executor.execute({
-    sql: "SELECT type, name, tbl_name, COALESCE(sql, '') AS sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' AND name NOT IN (?, ?) ORDER BY type, name",
+    sql: "SELECT type, name, tbl_name, COALESCE(sql, '') AS sql FROM sqlite_schema WHERE name NOT GLOB 'sqlite_*' AND name NOT IN (?, ?) ORDER BY type, name",
     args: [ledger.databaseLedgerTable, ledger.legacyDrizzleTable],
   });
   const rows = result.rows.map((row) => [
@@ -116,7 +116,7 @@ async function tableExists(executor, table) {
 
 async function applicationObjectCount(executor, ledger) {
   const result = await executor.execute({
-    sql: "SELECT COUNT(*) AS value FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' AND name NOT IN (?, ?)",
+    sql: "SELECT COUNT(*) AS value FROM sqlite_schema WHERE name NOT GLOB 'sqlite_*' AND name NOT IN (?, ?)",
     args: [ledger.databaseLedgerTable, ledger.legacyDrizzleTable],
   });
   return Number(firstScalar(result));

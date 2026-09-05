@@ -43,7 +43,7 @@
     "timeline:db:inventory": "node scripts/db/timeline-inventory.mjs",
     "timeline:db:backfill": "node scripts/db/timeline-backfill-bindings.mjs",
     "db:check": "drizzle-kit check",
-    "db:contract": "node scripts/check-migration-contract.mjs && node --test scripts/db/migration-ledger.test.mjs scripts/db/timeline-migrate.test.mjs scripts/db/timeline-inventory.test.mjs scripts/db/timeline-binding-classification.test.mjs scripts/db/timeline-backfill-bindings.test.mjs",
+    "db:contract": "node scripts/check-migration-contract.mjs && node --test scripts/db/migration-ledger.test.mjs scripts/db/timeline-migrate.test.mjs scripts/db/timeline-inventory.test.mjs scripts/db/timeline-binding-classification.test.mjs scripts/db/timeline-backfill-bindings.test.mjs scripts/db/schema-enumeration.test.mjs",
     "db:seed": "tsx --tsconfig ./tsconfig.json src/server/db/seed.ts",
     "db:backup": "node scripts/db/backup.mjs",
     "db:backup:all": "node scripts/db/backup-all.mjs --verify",
