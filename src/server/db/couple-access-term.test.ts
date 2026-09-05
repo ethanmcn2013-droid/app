@@ -1,12 +1,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
-import { eq } from "drizzle-orm";
 import { freshMemoryDb } from "./memory-test-db";
-import { compCodes, entitlements, workspaces } from "./schema";
+import { workspaces } from "./schema";
 import {
   compRedemptionExpiresAtMs,
-  extendCoupleAccessForWeddingDate,
   isVenueEditionCompNotes,
   weddingDateMsForWorkspace,
   type CoupleAccessDb,
@@ -17,9 +15,9 @@ import { VENUE_EDITION_COUPLE_ACCESS_DAYS } from "@/lib/venue-access-term";
  * R-015 · D-022 — the redemption path, against a real database.
  *
  * `venue-access-term.test.ts` proves the arithmetic. This file proves the
- * arithmetic is the thing the product writes to `entitlements.expires_at`, and
- * that a wedding date arriving after redemption moves the term later and never
- * earlier.
+ * redemption decision uses the canonical Project date. The actual creation
+ * caller regressions live in actions/planning-wedding-date.test.ts; existing
+ * Project update behavior is covered in sponsored-wedding-date.test.ts.
  *
  * Run: node --import tsx --test src/server/db/couple-access-term.test.ts
  */
@@ -33,44 +31,6 @@ const SPONSOR_NOTES = JSON.stringify({
   sponsor_name: "Lamb's Hill",
   source_type: "venue_edition",
 });
-
-async function seed(options: {
-  redeemedAtMs: number;
-  expiresAtMs: number | null;
-  durationDays?: number;
-  compNotes?: string | null;
-  code?: string;
-}): Promise<{ db: CoupleAccessDb; entitlementId: string }> {
-  const { db } = await freshMemoryDb();
-  const code = options.code ?? "LAMBSHIL-ABCDE-FGHJK";
-  await db.insert(compCodes).values({
-    code,
-    tier: "wedding",
-    durationDays: options.durationDays ?? VENUE_EDITION_COUPLE_ACCESS_DAYS,
-    quantity: 1,
-    redeemed: 1,
-    notes: options.compNotes === undefined ? SPONSOR_NOTES : options.compNotes,
-  });
-  await db.insert(entitlements).values({
-    id: "e-couple",
-    workspaceId: "ws-couple",
-    userId: "user_couple",
-    tier: "wedding",
-    source: "comp",
-    startedAt: new Date(options.redeemedAtMs),
-    expiresAt: options.expiresAtMs == null ? null : new Date(options.expiresAtMs),
-    notes: `comp:${code}`,
-  });
-  return { db: db as CoupleAccessDb, entitlementId: "e-couple" };
-}
-
-async function expiryOf(db: CoupleAccessDb, id: string): Promise<number | null> {
-  const [row] = await db
-    .select({ expiresAt: entitlements.expiresAt })
-    .from(entitlements)
-    .where(eq(entitlements.id, id));
-  return row?.expiresAt ? row.expiresAt.getTime() : null;
-}
 
 describe("isVenueEditionCompNotes", () => {
   it("recognises the sponsor JSON issue-codes.ts writes", () => {
@@ -191,144 +151,6 @@ describe("weddingDateMsForWorkspace", () => {
   });
 });
 
-describe("extendCoupleAccessForWeddingDate · only ever later", () => {
-  const redeemedAtMs = at("2027-03-01T00:00:00.000Z");
-  const floor = redeemedAtMs + days(VENUE_EDITION_COUPLE_ACCESS_DAYS);
-
-  it("A WEDDING DATE ARRIVING AFTER REDEMPTION extends the stored term", async () => {
-    const { db, entitlementId } = await seed({ redeemedAtMs, expiresAtMs: floor });
-    const result = await extendCoupleAccessForWeddingDate(db, {
-      userId: "user_couple",
-      weddingDate: "2028-09-15",
-    });
-    assert.deepEqual(result, { extended: 1, unchanged: 0 });
-    assert.equal(
-      await expiryOf(db, entitlementId),
-      at("2028-09-15T00:00:00.000Z") + days(90),
-    );
-  });
-
-  it("a postponement extends it again", async () => {
-    const { db, entitlementId } = await seed({ redeemedAtMs, expiresAtMs: floor });
-    await extendCoupleAccessForWeddingDate(db, {
-      userId: "user_couple",
-      weddingDate: "2028-09-15",
-    });
-    const first = await expiryOf(db, entitlementId);
-    await extendCoupleAccessForWeddingDate(db, {
-      userId: "user_couple",
-      weddingDate: "2029-05-02",
-    });
-    const second = await expiryOf(db, entitlementId);
-    assert.ok((second as number) > (first as number));
-    assert.equal(second, at("2029-05-02T00:00:00.000Z") + days(90));
-  });
-
-  it("an earlier date, a cleared date and a nonsense date all leave it alone", async () => {
-    const { db, entitlementId } = await seed({ redeemedAtMs, expiresAtMs: floor });
-    await extendCoupleAccessForWeddingDate(db, {
-      userId: "user_couple",
-      weddingDate: "2030-05-01",
-    });
-    const long = await expiryOf(db, entitlementId);
-    for (const later of ["2028-01-01", null, "", "next June", "2026-02-31"]) {
-      const result = await extendCoupleAccessForWeddingDate(db, {
-        userId: "user_couple",
-        weddingDate: later,
-      });
-      assert.equal(result.extended, 0, String(later));
-      assert.equal(await expiryOf(db, entitlementId), long, String(later));
-    }
-  });
-
-  it("is idempotent: running it twice with the same date writes once", async () => {
-    const { db, entitlementId } = await seed({ redeemedAtMs, expiresAtMs: floor });
-    const first = await extendCoupleAccessForWeddingDate(db, {
-      userId: "user_couple",
-      weddingDate: "2028-09-15",
-    });
-    const second = await extendCoupleAccessForWeddingDate(db, {
-      userId: "user_couple",
-      weddingDate: "2028-09-15",
-    });
-    assert.deepEqual(first, { extended: 1, unchanged: 0 });
-    assert.deepEqual(second, { extended: 0, unchanged: 1 });
-    assert.equal(
-      await expiryOf(db, entitlementId),
-      at("2028-09-15T00:00:00.000Z") + days(90),
-    );
-  });
-
-  it("never introduces an end date on an entitlement that has none", async () => {
-    const { db, entitlementId } = await seed({ redeemedAtMs, expiresAtMs: null });
-    const result = await extendCoupleAccessForWeddingDate(db, {
-      userId: "user_couple",
-      weddingDate: "2028-09-15",
-    });
-    assert.equal(result.extended, 0);
-    assert.equal(await expiryOf(db, entitlementId), null);
-  });
-
-  it("leaves a non-Venue-Edition comp entitlement untouched", async () => {
-    const { db, entitlementId } = await seed({
-      redeemedAtMs,
-      expiresAtMs: floor,
-      compNotes: "student:tcd.ie",
-    });
-    const result = await extendCoupleAccessForWeddingDate(db, {
-      userId: "user_couple",
-      weddingDate: "2030-09-15",
-    });
-    assert.equal(result.extended, 0);
-    assert.equal(await expiryOf(db, entitlementId), floor);
-  });
-
-  it("does not touch another couple's entitlement", async () => {
-    const { db } = await seed({ redeemedAtMs, expiresAtMs: floor });
-    await db.insert(entitlements).values({
-      id: "e-other",
-      workspaceId: "ws-other",
-      userId: "user_other",
-      tier: "wedding",
-      source: "comp",
-      startedAt: new Date(redeemedAtMs),
-      expiresAt: new Date(floor),
-      notes: "comp:LAMBSHIL-ABCDE-FGHJK",
-    });
-    await extendCoupleAccessForWeddingDate(db, {
-      userId: "user_couple",
-      weddingDate: "2029-09-15",
-    });
-    assert.equal(await expiryOf(db, "e-other"), floor);
-  });
-
-  it("does nothing without a user id", async () => {
-    const { db, entitlementId } = await seed({ redeemedAtMs, expiresAtMs: floor });
-    const result = await extendCoupleAccessForWeddingDate(db, {
-      userId: "",
-      weddingDate: "2029-09-15",
-    });
-    assert.deepEqual(result, { extended: 0, unchanged: 0 });
-    assert.equal(await expiryOf(db, entitlementId), floor);
-  });
-
-  it("respects a long minted duration as the floor", async () => {
-    // The venue minted 900 days because it knew the date. A near wedding must
-    // not claw that back to 548 + 90.
-    const { db, entitlementId } = await seed({
-      redeemedAtMs,
-      expiresAtMs: redeemedAtMs + days(900),
-      durationDays: 900,
-    });
-    const result = await extendCoupleAccessForWeddingDate(db, {
-      userId: "user_couple",
-      weddingDate: "2027-06-01",
-    });
-    assert.equal(result.extended, 0);
-    assert.equal(await expiryOf(db, entitlementId), redeemedAtMs + days(900));
-  });
-});
-
 /* ── Source contract on the shipped redemption path ───────────────────────
  *
  * The behaviour above is only worth anything if `redeemCompCodeImpl` is the
@@ -377,16 +199,10 @@ describe("source contract: src/server/actions/comp.ts", () => {
   });
 });
 
-describe("source contract: the wedding date reaches the term", () => {
-  const planning = readFileSync(
-    new URL("../actions/planning.ts", import.meta.url),
-    "utf8",
-  );
-
-  it("recomputes the couple's term wherever a wedding date is written", () => {
-    assert.match(planning, /extendCoupleAccessForWeddingDate/);
-    const calls = planning.match(/applyWeddingDateToCoupleAccess\(/g) ?? [];
-    // One definition plus both wedding_season write paths.
-    assert.ok(calls.length >= 3, `only ${calls.length} references found`);
+describe("source contract: creation cannot extend actor-wide grants", () => {
+  it("has no obsolete extension helper or caller wiring", () => {
+    const planning = readFileSync(new URL("../actions/planning.ts", import.meta.url), "utf8");
+    const term = readFileSync(new URL("./couple-access-term.ts", import.meta.url), "utf8");
+    assert.doesNotMatch(planning + term, /extendCoupleAccessForWeddingDate|applyWeddingDateToCoupleAccess|WeddingDateExtension/);
   });
 });

@@ -1,0 +1,19 @@
+{
+  "exe": "C:/Users/ethan/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe",
+  "args": [
+    "--import",
+    "tsx",
+    "--import",
+    "./src/test/register-server-only.mjs",
+    "--test",
+    "src/server/db/sponsored-wedding-date.test.ts",
+    "src/server/actions/sponsored-wedding-date.test.ts",
+    "src/components/app/project/wedding-date-form.test.ts",
+    "src/lib/venue-access-term.test.ts",
+    "src/lib/venue-edition-term.vectors.test.ts",
+    "src/server/db/comp-redemption.test.ts"
+  ],
+  "cwd": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\feat-january-sponsored-wedding-date",
+  "exitCode": 0,
+  "studio": "C:/Users/ethan/signal-studio-workspace/worktrees/studio/feat-january-commercial-readiness"
+}

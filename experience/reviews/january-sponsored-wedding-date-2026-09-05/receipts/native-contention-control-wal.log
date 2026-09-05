@@ -1,0 +1,2 @@
+{"control":"bare libSQL, no App implementation imported","afterContention":"LibsqlError: SQLITE_BUSY: cannot commit transaction - SQL statements in progress"}
+isolated reconnect permits the same transaction

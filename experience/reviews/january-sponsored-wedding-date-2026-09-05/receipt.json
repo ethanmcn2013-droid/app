@@ -1,0 +1,470 @@
+{
+  "schema": "sponsored-wedding-date-scoped-receipt/1",
+  "base": "0b9d132ac5b5f47579c8630becb94063b1db947d",
+  "implementation": "bd67c02dab62f55a953a628c8e2a9505863af719",
+  "product": "2d1d77835e7bcedfab5c68e53608fe5d00dd8f9a",
+  "branch": "feat/january-sponsored-wedding-date",
+  "app": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\feat-january-sponsored-wedding-date",
+  "studioRef": "c1dd6221634a7f6cb0559da8fcff49c6dd475023",
+  "sources": [
+    {
+      "file": "src/app/app/project/page.tsx",
+      "sha256": "4b38715dceed59c08e07feef7d9e543d592d0829873f86fb81ab9762a3882f4b",
+      "gitBlob": "9a7f70ccd46896a8b95b79c41e2e95b006ca856b"
+    },
+    {
+      "file": "src/app/app/tasks/page.tsx",
+      "sha256": "f35bab914c9d96bd739df2a755e06cc3ad4d8c5535feb7a8b7d95cb62fc8732f",
+      "gitBlob": "3892d86c9f919ba0589907e165a55773acd035e2"
+    },
+    {
+      "file": "src/app/app/tasks/wedding-date-entry.test.ts",
+      "sha256": "f4c3e685e65b4cb5fc07379fbb4fbf80d4fe8c996069db9282c06e8d7bfc8304",
+      "gitBlob": "96b51d4f8931dabea05f33e4d91f24e8e40efb85"
+    },
+    {
+      "file": "src/components/app/project/project-overview.tsx",
+      "sha256": "223b1fae5eb47575e5c7da62cea7942983f466dbbb9b502290f1a7406af88b27",
+      "gitBlob": "ce114c6ac1e0b66fb2577b9de9e18408c620ee76"
+    },
+    {
+      "file": "src/components/app/project/wedding-date-form.test.ts",
+      "sha256": "ee30d67d0580adc23cf6afcf93af2c038299720612559712e7fdb63a23f5f2ff",
+      "gitBlob": "6c09747599c8ad3c2a676356ce78d505fefaa881"
+    },
+    {
+      "file": "src/components/app/project/wedding-date-form.tsx",
+      "sha256": "c9397376d336424383fadfdeb0bae3f003ec6339124499f15b20983586c80cba",
+      "gitBlob": "28e66862c474db14c817a2064b60f52ba007ff34"
+    },
+    {
+      "file": "src/components/welcome/venue-welcome-card.tsx",
+      "sha256": "d4d6b40593ec0c074468100e7cbed48ba32cd30e260bc41907d07a20d5a596ae",
+      "gitBlob": "c6449eeb6a174cfc44ec4c7700ae23e343bf9ebc"
+    },
+    {
+      "file": "src/lib/sponsored-wedding-date.ts",
+      "sha256": "968c3e127a5ea12d96ddd82d290954445bf33880222322af6f19e846faa22388",
+      "gitBlob": "54c61a64c47a02c84f0d4fc5f9b7344284044c35"
+    },
+    {
+      "file": "src/server/actions/project-overview.ts",
+      "sha256": "84f912a8f182525f6e268f28fb55bfcdede498e83ff34d5b9ddfd661099e542d",
+      "gitBlob": "a911fb885bff71a0ba2ca948eb70497fac7d522b"
+    },
+    {
+      "file": "src/server/actions/sponsored-wedding-date.test.ts",
+      "sha256": "a15a132931e7d10f5d825ed5104b48f0852e56e691609d2cb3c080f4098373ff",
+      "gitBlob": "3820215d3e62dc3c793dbedfd61214930e7b17e4"
+    },
+    {
+      "file": "src/server/actions/sponsored-wedding-date.ts",
+      "sha256": "2faeb8b60a0b0ba10fc5ccc0c477d6b4bd6d8b181febf39030636d48ac87de0f",
+      "gitBlob": "c8154eec2dc405f9e754d0f34cb65135381be928"
+    },
+    {
+      "file": "src/server/db/couple-access-term.ts",
+      "sha256": "a96d8ada31f90dfdadfd650aec1ac4df84668d10223298c44f5b7a0f3730d665",
+      "gitBlob": "5314fd90f1bff019f377527244bd567a39f22110"
+    },
+    {
+      "file": "src/server/db/sponsored-wedding-date.test.ts",
+      "sha256": "413775a45987d8a2af9860c3f72937157ac3d281aee1ebef66b48064d19ef401",
+      "gitBlob": "e44389a8ccfcc388b7db4d2d1f44aed1a29c35b6"
+    },
+    {
+      "file": "src/server/db/sponsored-wedding-date.ts",
+      "sha256": "d68ca634b47acc132545e0b52618dddc10f30bcf2667350e9af0bc478767a38f",
+      "gitBlob": "dcf193a9041d34aec6076364b8c0b5cf18a5dfce"
+    },
+    {
+      "repo": "studio",
+      "ref": "c1dd6221634a7f6cb0559da8fcff49c6dd475023",
+      "file": "contracts/commercial-terms.v2.json",
+      "sha256": "6e3553e5341564bae43554359288e0d6408e4fbcb1b1b84191f6845881f8e54a"
+    },
+    {
+      "repo": "studio",
+      "ref": "c1dd6221634a7f6cb0559da8fcff49c6dd475023",
+      "file": "docs/execution/venue-edition-and-films/DECISIONS.md",
+      "sha256": "a9e47fade4a5a73d014b63bd379b0bf51d615df632f59f080c79d88781b7123e"
+    },
+    {
+      "repo": "studio",
+      "ref": "c1dd6221634a7f6cb0559da8fcff49c6dd475023",
+      "file": "docs/execution/january-2027/PROGRAMME.md",
+      "sha256": "81bbf48c07a80aabf5778ad236ffb3c9c8a2bc5f0d7b9d3fbb2397c23d4cdaf2"
+    },
+    {
+      "repo": "studio",
+      "ref": "c1dd6221634a7f6cb0559da8fcff49c6dd475023",
+      "file": "content/atlas/pricing-and-entitlements.md",
+      "sha256": "14e21b12f5ca24631471a4b13c68261634e877eb76e841a6b7c84858255b1fa2"
+    },
+    {
+      "purpose": "legacy reachability only; not edited",
+      "file": "src/server/actions/planning.ts",
+      "sha256": "5b4962f64680853332195441d3db9e9811ebeb69ff1c8519801a49ec0f0756c2"
+    },
+    {
+      "purpose": "legacy reachability only; not edited",
+      "file": "src/lib/planning/flags.ts",
+      "sha256": "9c1c53e72df514cfd77aa5371feb524d97d548c53b11d2a9a25e3afe97a43191"
+    },
+    {
+      "purpose": "legacy reachability only; not edited",
+      "file": "src/server/planning/flags.ts",
+      "sha256": "5f4224918927e5077f70bea153333b67ca799be5e778d2e19a7c27ad2b34ed4c"
+    },
+    {
+      "purpose": "legacy reachability only; not edited",
+      "file": "src/app/welcome/page.tsx",
+      "sha256": "3e8c53f3e10301f8c2d7ef0728e01ad41b5428eb1f7d3d0fd39ab845af8f0329"
+    },
+    {
+      "purpose": "legacy reachability only; not edited",
+      "file": "src/app/welcome/plan/page.tsx",
+      "sha256": "ea945dc53ea6ab606bc1c998e411d95f332193c15eb6af78ea68a7aace6890c1"
+    },
+    {
+      "purpose": "legacy reachability only; not edited",
+      "file": "src/app/app/your-work/page.tsx",
+      "sha256": "4951bf1c82945c7829cf1af64ec8cccc0ef9a3efb10bb6f64d3d230b3d00ee1f"
+    }
+  ],
+  "logs": [
+    {
+      "name": "component-server-2.log",
+      "originalSha256": "a620ebbef0e2443f1fd9a313bc79a686757471a7491a5d17c1722e6cbf804c14",
+      "packagedSha256": "a620ebbef0e2443f1fd9a313bc79a686757471a7491a5d17c1722e6cbf804c14",
+      "redacted": false
+    },
+    {
+      "name": "component-server-3.log",
+      "originalSha256": "f54ec1e04812ef29f672e07ffa66465f79e30c5295f79ce7e4f77423e0a4f76f",
+      "packagedSha256": "f54ec1e04812ef29f672e07ffa66465f79e30c5295f79ce7e4f77423e0a4f76f",
+      "redacted": false
+    },
+    {
+      "name": "component-server-4.log",
+      "originalSha256": "561023f5b6807ace6bbfe6050ebaf18106bbe3d9d31d33de260a67acce921cda",
+      "packagedSha256": "561023f5b6807ace6bbfe6050ebaf18106bbe3d9d31d33de260a67acce921cda",
+      "redacted": false
+    },
+    {
+      "name": "component-server.bd67.log",
+      "originalSha256": "6f194a2aa34e917abcc76f21966fdbc762754e734ef181cbd75096d51a210dca",
+      "packagedSha256": "6f194a2aa34e917abcc76f21966fdbc762754e734ef181cbd75096d51a210dca",
+      "redacted": false
+    },
+    {
+      "name": "component-server.log",
+      "originalSha256": "6f194a2aa34e917abcc76f21966fdbc762754e734ef181cbd75096d51a210dca",
+      "packagedSha256": "6f194a2aa34e917abcc76f21966fdbc762754e734ef181cbd75096d51a210dca",
+      "redacted": false
+    },
+    {
+      "name": "concurrency-2.log",
+      "originalSha256": "8d27068c5d10425a3a9a1af81d6039065b77c28548885c0215caadcb22427086",
+      "packagedSha256": "8d27068c5d10425a3a9a1af81d6039065b77c28548885c0215caadcb22427086",
+      "redacted": false
+    },
+    {
+      "name": "concurrency-2.receipt.json",
+      "originalSha256": "02cc8dd5115a65636013d78b4ef836cc35a950a2bf97cd20485be144b01b9545",
+      "packagedSha256": "02cc8dd5115a65636013d78b4ef836cc35a950a2bf97cd20485be144b01b9545",
+      "redacted": false
+    },
+    {
+      "name": "dependency-install.log",
+      "originalSha256": "8bc4870217a5aa0360f37012615c94c60f79ee939dd5dc4ae4f3b84075ad6c43",
+      "packagedSha256": "8bc4870217a5aa0360f37012615c94c60f79ee939dd5dc4ae4f3b84075ad6c43",
+      "redacted": false
+    },
+    {
+      "name": "dependency-install.receipt.json",
+      "originalSha256": "51cee6786c2e11da9b823cb9b6f02a51c0bd845d23ab783aa3725e5b9beb1ec0",
+      "packagedSha256": "51cee6786c2e11da9b823cb9b6f02a51c0bd845d23ab783aa3725e5b9beb1ec0",
+      "redacted": false
+    },
+    {
+      "name": "focused-1.log",
+      "originalSha256": "130401dfe9fc785bbad92957c41bec7f3b8a9bda9433d16a6542f3d9ea187e02",
+      "packagedSha256": "130401dfe9fc785bbad92957c41bec7f3b8a9bda9433d16a6542f3d9ea187e02",
+      "redacted": false
+    },
+    {
+      "name": "focused-1.receipt.json",
+      "originalSha256": "ba7c4197e4c573251cca1b33283605f03cb267a1ba637a90a14956b4a058edf3",
+      "packagedSha256": "ba7c4197e4c573251cca1b33283605f03cb267a1ba637a90a14956b4a058edf3",
+      "redacted": false
+    },
+    {
+      "name": "focused-3.log",
+      "originalSha256": "c1758501a9ee580f5007361761148b632033117befc538de2b0a137413bac5ce",
+      "packagedSha256": "c1758501a9ee580f5007361761148b632033117befc538de2b0a137413bac5ce",
+      "redacted": false
+    },
+    {
+      "name": "focused-3.receipt.json",
+      "originalSha256": "d5f1ef0e91ae0adefc8cf05d20ade11707fe46c6b5a0900ed35d2cb5bdcccf9e",
+      "packagedSha256": "d5f1ef0e91ae0adefc8cf05d20ade11707fe46c6b5a0900ed35d2cb5bdcccf9e",
+      "redacted": false
+    },
+    {
+      "name": "focused-4.log",
+      "originalSha256": "3acb9484eb0e9d10214efc2fa9f3cea5def74d08638ea2e12dd26ed726710985",
+      "packagedSha256": "3acb9484eb0e9d10214efc2fa9f3cea5def74d08638ea2e12dd26ed726710985",
+      "redacted": false
+    },
+    {
+      "name": "focused-4.receipt.json",
+      "originalSha256": "37c33bcd5008be7b251cfb86247e73518cbf482443c1260f710b761c13a29a13",
+      "packagedSha256": "37c33bcd5008be7b251cfb86247e73518cbf482443c1260f710b761c13a29a13",
+      "redacted": false
+    },
+    {
+      "name": "keyboard-final.log",
+      "originalSha256": "abcd67de7c8fce23d8983b0029e1644a29ddfe09f38a28a38beb39ed7812f06a",
+      "packagedSha256": "abcd67de7c8fce23d8983b0029e1644a29ddfe09f38a28a38beb39ed7812f06a",
+      "redacted": false
+    },
+    {
+      "name": "language-1.log",
+      "originalSha256": "8fa5bc75ad4737bcb8da19307ea2737cb7314b7c8f8557e3dfc3e67024f1a60b",
+      "packagedSha256": "8fa5bc75ad4737bcb8da19307ea2737cb7314b7c8f8557e3dfc3e67024f1a60b",
+      "redacted": false
+    },
+    {
+      "name": "language-1.receipt.json",
+      "originalSha256": "5250afe6a917b92f3d46bdbe4d34c1352ccdba1d297ea8dec75b59de42ea2d27",
+      "packagedSha256": "5250afe6a917b92f3d46bdbe4d34c1352ccdba1d297ea8dec75b59de42ea2d27",
+      "redacted": false
+    },
+    {
+      "name": "lint-1.log",
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "packagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redacted": false
+    },
+    {
+      "name": "lint-1.receipt.json",
+      "originalSha256": "0325a35247cc45f67fe13022a70f63013761663fecb2dae77686442995faecf0",
+      "packagedSha256": "0325a35247cc45f67fe13022a70f63013761663fecb2dae77686442995faecf0",
+      "redacted": false
+    },
+    {
+      "name": "lint-role-final.log",
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "packagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redacted": false
+    },
+    {
+      "name": "lint-role-final.receipt.json",
+      "originalSha256": "8970fc918983d41d6ea79aaab4b23b3707d1ba36b75050492f5486da8f1eb075",
+      "packagedSha256": "8970fc918983d41d6ea79aaab4b23b3707d1ba36b75050492f5486da8f1eb075",
+      "redacted": false
+    },
+    {
+      "name": "native-contention-control-wal.log",
+      "originalSha256": "3b3e9d33d3da926b2e937e5c6e92e2b2b5703e298360740a7f60f868aed94f99",
+      "packagedSha256": "3b3e9d33d3da926b2e937e5c6e92e2b2b5703e298360740a7f60f868aed94f99",
+      "redacted": false
+    },
+    {
+      "name": "native-contention-control.log",
+      "originalSha256": "53a7013ddf6a4dafc2966a246e2842f001cec4b1f05e291471e0e422d250019b",
+      "packagedSha256": "53a7013ddf6a4dafc2966a246e2842f001cec4b1f05e291471e0e422d250019b",
+      "redacted": false
+    },
+    {
+      "name": "next-dev-1.log",
+      "originalSha256": "2fc7e77028500450176b669307ffc79ea79d7f7069fdea4957f58a5db5d345fb",
+      "packagedSha256": "c26bba4a01b08373161d2d449eb0dd7cfdfe5ce3552950e357df456608bae95d",
+      "redacted": true
+    },
+    {
+      "name": "next-dev.log",
+      "originalSha256": "2fc7e77028500450176b669307ffc79ea79d7f7069fdea4957f58a5db5d345fb",
+      "packagedSha256": "c26bba4a01b08373161d2d449eb0dd7cfdfe5ce3552950e357df456608bae95d",
+      "redacted": true
+    },
+    {
+      "name": "preview.receipt.json",
+      "originalSha256": "3db0529bc99454e584a4fd33c92e666a39f07fd52d34af8150f29a9b7aae8df0",
+      "packagedSha256": "3db0529bc99454e584a4fd33c92e666a39f07fd52d34af8150f29a9b7aae8df0",
+      "redacted": false
+    },
+    {
+      "name": "render-1.log",
+      "originalSha256": "4ac47506a215530043fdaf1516ee4715a6dc8ae4c87fdf5481c75e23ff4f2075",
+      "packagedSha256": "4ac47506a215530043fdaf1516ee4715a6dc8ae4c87fdf5481c75e23ff4f2075",
+      "redacted": false
+    },
+    {
+      "name": "render-components-1.log",
+      "originalSha256": "de3e3a6a0c681fe00b58d1fb6cd18960b59fca9724d9ad91e982a1a5f5ed7804",
+      "packagedSha256": "de3e3a6a0c681fe00b58d1fb6cd18960b59fca9724d9ad91e982a1a5f5ed7804",
+      "redacted": false
+    },
+    {
+      "name": "render-components-final.log",
+      "originalSha256": "de3e3a6a0c681fe00b58d1fb6cd18960b59fca9724d9ad91e982a1a5f5ed7804",
+      "packagedSha256": "de3e3a6a0c681fe00b58d1fb6cd18960b59fca9724d9ad91e982a1a5f5ed7804",
+      "redacted": false
+    },
+    {
+      "name": "role-copy-1.log",
+      "originalSha256": "acde744649774eccd0f1c7ddfe8565fe3e571a686dd04efe9fafa1e66fb98087",
+      "packagedSha256": "acde744649774eccd0f1c7ddfe8565fe3e571a686dd04efe9fafa1e66fb98087",
+      "redacted": false
+    },
+    {
+      "name": "role-copy-1.receipt.json",
+      "originalSha256": "84f334c292ab6249b635e88e4139941f8c45eb39655e34ee171a150bcabf6c6a",
+      "packagedSha256": "84f334c292ab6249b635e88e4139941f8c45eb39655e34ee171a150bcabf6c6a",
+      "redacted": false
+    },
+    {
+      "name": "seed-1.log",
+      "originalSha256": "ac06c8d78f058b5b0fd8e6797c5fbede0d3c49d7369f4584cdf156d4b10c38c0",
+      "packagedSha256": "ac06c8d78f058b5b0fd8e6797c5fbede0d3c49d7369f4584cdf156d4b10c38c0",
+      "redacted": false
+    },
+    {
+      "name": "seed-1.receipt.json",
+      "originalSha256": "21f77275c522d39e72ffecfff30a7ba2fc9e95db46f01a65c587ed611505b423",
+      "packagedSha256": "21f77275c522d39e72ffecfff30a7ba2fc9e95db46f01a65c587ed611505b423",
+      "redacted": false
+    },
+    {
+      "name": "seed-2.log",
+      "originalSha256": "ac06c8d78f058b5b0fd8e6797c5fbede0d3c49d7369f4584cdf156d4b10c38c0",
+      "packagedSha256": "ac06c8d78f058b5b0fd8e6797c5fbede0d3c49d7369f4584cdf156d4b10c38c0",
+      "redacted": false
+    },
+    {
+      "name": "seed-2.receipt.json",
+      "originalSha256": "3f12868d0f7fad175f7d1ad2bb26227d21843befd43ef2461fabf83e0c21964a",
+      "packagedSha256": "3f12868d0f7fad175f7d1ad2bb26227d21843befd43ef2461fabf83e0c21964a",
+      "redacted": false
+    },
+    {
+      "name": "seed-3.log",
+      "originalSha256": "ac06c8d78f058b5b0fd8e6797c5fbede0d3c49d7369f4584cdf156d4b10c38c0",
+      "packagedSha256": "ac06c8d78f058b5b0fd8e6797c5fbede0d3c49d7369f4584cdf156d4b10c38c0",
+      "redacted": false
+    },
+    {
+      "name": "seed-3.receipt.json",
+      "originalSha256": "cfd5b5fc0daa02ae1b14e8c946e913b3f3ca2e26c9a649e374499adadb194b8a",
+      "packagedSha256": "cfd5b5fc0daa02ae1b14e8c946e913b3f3ca2e26c9a649e374499adadb194b8a",
+      "redacted": false
+    },
+    {
+      "name": "seed-4.log",
+      "originalSha256": "ac06c8d78f058b5b0fd8e6797c5fbede0d3c49d7369f4584cdf156d4b10c38c0",
+      "packagedSha256": "ac06c8d78f058b5b0fd8e6797c5fbede0d3c49d7369f4584cdf156d4b10c38c0",
+      "redacted": false
+    },
+    {
+      "name": "seed-4.receipt.json",
+      "originalSha256": "a0bdb4fe1009759509182defe5f0045d7107133b4f30926a419b2e30d6fef595",
+      "packagedSha256": "a0bdb4fe1009759509182defe5f0045d7107133b4f30926a419b2e30d6fef595",
+      "redacted": false
+    },
+    {
+      "name": "typecheck-1.log",
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "packagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redacted": false
+    },
+    {
+      "name": "typecheck-2.log",
+      "originalSha256": "1ed70dec447deda833562171ca8e8c34b9cbb6adba205656b3d1f19a47ce3468",
+      "packagedSha256": "1ed70dec447deda833562171ca8e8c34b9cbb6adba205656b3d1f19a47ce3468",
+      "redacted": false
+    },
+    {
+      "name": "typecheck-2.receipt.json",
+      "originalSha256": "6521c92273d90286c7a946c17bb967ab5fbf09a1917b24fd3b74e490fa404923",
+      "packagedSha256": "6521c92273d90286c7a946c17bb967ab5fbf09a1917b24fd3b74e490fa404923",
+      "redacted": false
+    },
+    {
+      "name": "typecheck-3.log",
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "packagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redacted": false
+    },
+    {
+      "name": "typecheck-3.receipt.json",
+      "originalSha256": "84d97c6a887a8ecb2851815a5a588143c0f23ba510119d6a19f14d47bd38937c",
+      "packagedSha256": "84d97c6a887a8ecb2851815a5a588143c0f23ba510119d6a19f14d47bd38937c",
+      "redacted": false
+    },
+    {
+      "name": "typecheck-final.log",
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "packagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redacted": false
+    },
+    {
+      "name": "typecheck-final.receipt.json",
+      "originalSha256": "6883a18e6ce66ef265f488e4a73f52d6d5fb8ba9ca577fe311a69a1ccdd2791c",
+      "packagedSha256": "6883a18e6ce66ef265f488e4a73f52d6d5fb8ba9ca577fe311a69a1ccdd2791c",
+      "redacted": false
+    }
+  ],
+  "commands": [
+    {
+      "exe": "Node22 v22.23.2",
+      "args": [
+        "--require",
+        "./experience/reviews/january-sponsored-wedding-date-2026-09-05/deny-external.cjs",
+        "--import",
+        "tsx",
+        "--import",
+        "./src/test/register-server-only.mjs",
+        "experience/reviews/january-sponsored-wedding-date-2026-09-05/component-fixture.cjs",
+        "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\work\\sponsored-wedding-date-2026-09-05"
+      ],
+      "result": "listening4490; final PID27972; intentionally stopped after capture"
+    },
+    {
+      "exe": "Node22 v22.23.2",
+      "args": [
+        "--require",
+        "./experience/reviews/january-sponsored-wedding-date-2026-09-05/deny-external.cjs",
+        "experience/reviews/january-sponsored-wedding-date-2026-09-05/capture-components.cjs",
+        "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\work\\sponsored-wedding-date-2026-09-05\\render-components-final"
+      ],
+      "exitCode": 0
+    },
+    {
+      "exe": "Node22 v22.23.2",
+      "args": [
+        "--require",
+        "./experience/reviews/january-sponsored-wedding-date-2026-09-05/deny-external.cjs",
+        "experience/reviews/january-sponsored-wedding-date-2026-09-05/keyboard.cjs",
+        "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\work\\sponsored-wedding-date-2026-09-05\\render-components-final"
+      ],
+      "exitCode": 0
+    },
+    {
+      "exe": "Node22 v22.23.2",
+      "args": [
+        "experience/reviews/january-sponsored-wedding-date-2026-09-05/capture.cjs",
+        "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\work\\sponsored-wedding-date-2026-09-05\\render-1"
+      ],
+      "exitCode": 1,
+      "meaning": "failed Next/Clerk; browser-localhost guard; not automatic approval rejection"
+    }
+  ],
+  "remoteClientContention": "unknown",
+  "legacyActorWideSafety": "not fixed by this milestone; separate requested follow-up",
+  "fullNextClerk": "failed/incomplete; component proof does not replace it",
+  "automationPolicyRejection": false,
+  "rawScratch": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\work\\sponsored-wedding-date-2026-09-05",
+  "sealedAt": "2026-09-05T08:00:32.823Z"
+}

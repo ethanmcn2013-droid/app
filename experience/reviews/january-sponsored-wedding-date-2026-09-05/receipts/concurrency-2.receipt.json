@@ -1,0 +1,14 @@
+{
+  "exitCode": 1,
+  "cwd": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\feat-january-sponsored-wedding-date",
+  "exe": "C:/Users/ethan/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe",
+  "args": [
+    "--import",
+    "tsx",
+    "--import",
+    "./src/test/register-server-only.mjs",
+    "--test",
+    "--test-name-pattern=stale concurrent",
+    "src/server/db/sponsored-wedding-date.test.ts"
+  ]
+}

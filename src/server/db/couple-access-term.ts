@@ -1,50 +1,23 @@
-import { and, eq, isNotNull, like } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import * as schema from "./schema";
-import { compCodes, entitlements, workspaces } from "./schema";
+import { workspaces } from "./schema";
 import {
   coupleAccessExpiryMs,
-  extendedCoupleAccessExpiryMs,
   normaliseWeddingDateMs,
 } from "@/lib/venue-access-term";
 
 /**
- * R-015 · D-022 — the database seam for the couple access term.
+ * D-022 — redemption term arithmetic and the canonical Project date reader.
  *
- * The arithmetic lives in `@/lib/venue-access-term` (pure, ported from
- * `studio/src/lib/venue-edition.ts`, held identical by a differential test).
- * This file is the thin layer that decides which rows the rule applies to and
- * writes the result. It deliberately does NOT import `server-only`, for the
- * same reason `account-erasure.ts` does not: the database handle is a
- * parameter, so the whole thing can be exercised against an in-memory libSQL
- * instance rather than only in production.
+ * New Projects store their own date in workspaces.primary_date. Redemption
+ * reads that Project's date here; creation does not change existing grants.
+ * Existing sponsored Projects update the same field through
+ * server/actions/sponsored-wedding-date.ts and its Project-scoped transaction.
  *
- * ── What the app knows about a wedding date, stated plainly ────────────────
- * The app has no `wedding_date` column on `entitlements`, and this change does
- * not add one. The couple's date already has a home: `workspaces.primary_date`
- * (`schema.ts`), captured by the wedding branch of contextual onboarding. The
- * term is therefore computed from whatever date is on the couple's workspace
- * at the moment it is asked for, and recomputed when that date is written.
- *
- * **No wedding date reaches this code in production today, for three reasons,
- * and every sponsored couple therefore falls back to the 548-day floor:**
- *
- *  1. The capture is gated behind the `contextualOnboarding` flag, whose
- *     default is `NODE_ENV !== "production"` (`lib/planning/flags.ts`).
- *  2. Venue Edition redemption skips onboarding entirely. The result card
- *     deep-links to `/app/tasks?welcome=venue&v=<slug>`
- *     (`redeem-result-card.tsx`), so the sponsored couple is routed around the
- *     one screen that asks for the date. This is the larger blocker.
- *  3. `workspaces.primary_date` is written at workspace creation only. No
- *     action updates it afterwards, so the postponement case D-022 point 3
- *     describes cannot be triggered from the product yet, even though
- *     `extendCoupleAccessForWeddingDate` below implements it.
- *
- * The floor is exactly what shipped before this change, so nobody is worse off
- * and no term is ever shorter than the ratified one. The grace half of D-022
- * starts working the moment a wedding date exists, with no further change to
- * this file. Closing the three gaps above is product-flow work and a founder
- * decision, recorded in `tasks/R-015.md`.
+ * The pure arithmetic lives in @/lib/venue-access-term and is held equal to
+ * Studio's approved rule by a differential test. This reader takes its database
+ * handle explicitly so it can be exercised against isolated SQLite.
  */
 
 export type CoupleAccessDb = LibSQLDatabase<typeof schema>;
@@ -138,98 +111,4 @@ export async function weddingDateMsForWorkspace(
     row.contextType === "wedding" || row.activeDomain === "wedding";
   if (!isWedding) return null;
   return normaliseWeddingDateMs(row.primaryDate);
-}
-
-export type WeddingDateExtension = {
-  /** Entitlement rows whose expiry moved later. */
-  extended: number;
-  /** Rows inspected and left exactly as they were. */
-  unchanged: number;
-};
-
-/**
- * D-022 point 3 — a wedding date arriving after redemption recomputes the
- * term, and **the term only ever moves later**.
- *
- * Matched on the user rather than the workspace on purpose. The entitlement is
- * bound to whichever workspace was active at redemption, and a couple who then
- * runs wedding onboarding creates a *different* workspace to hold the date. The
- * term belongs to the couple, not to a row in `workspaces`.
- *
- * Every write is `Math.max(current, recomputed)` via
- * `extendedCoupleAccessExpiryMs`, so:
- *   - a postponement extends access,
- *   - a correction that would pull the date earlier changes nothing,
- *   - an unparseable or absent date changes nothing,
- *   - an entitlement with no expiry at all keeps having none.
- * There is no branch in this function that can shorten a term.
- */
-export async function extendCoupleAccessForWeddingDate(
-  database: CoupleAccessDb,
-  input: { userId: string; weddingDate: string | number | null | undefined },
-): Promise<WeddingDateExtension> {
-  const result: WeddingDateExtension = { extended: 0, unchanged: 0 };
-  if (!input.userId) return result;
-  const weddingDateMs = normaliseWeddingDateMs(input.weddingDate ?? null);
-  if (weddingDateMs == null) return result;
-
-  const rows = await database
-    .select({
-      id: entitlements.id,
-      startedAt: entitlements.startedAt,
-      expiresAt: entitlements.expiresAt,
-      notes: entitlements.notes,
-    })
-    .from(entitlements)
-    .where(
-      and(
-        eq(entitlements.userId, input.userId),
-        eq(entitlements.tier, "wedding"),
-        eq(entitlements.source, "comp"),
-        isNotNull(entitlements.notes),
-        like(entitlements.notes, "comp:%"),
-      ),
-    );
-
-  for (const row of rows) {
-    const code = (row.notes ?? "").replace(/^comp:/, "");
-    if (!code) continue;
-    const [comp] = await database
-      .select({
-        notes: compCodes.notes,
-        durationDays: compCodes.durationDays,
-      })
-      .from(compCodes)
-      .where(eq(compCodes.code, code))
-      .limit(1);
-    if (!comp || !isVenueEditionCompNotes(comp.notes)) continue;
-
-    const currentMs = row.expiresAt ? row.expiresAt.getTime() : null;
-    const nextMs = extendedCoupleAccessExpiryMs({
-      currentExpiresAtMs: currentMs,
-      redeemedAtMs: row.startedAt.getTime(),
-      weddingDateMs,
-      mintedDurationDays: comp.durationDays,
-    });
-    if (nextMs == null || currentMs == null || nextMs <= currentMs) {
-      result.unchanged += 1;
-      continue;
-    }
-    // Guarded on the expiry this decision was made against, so a concurrent
-    // writer that already moved the row later cannot be overwritten with an
-    // earlier value. Losing this race is a no-op, never a shortening.
-    const moved = await database
-      .update(entitlements)
-      .set({ expiresAt: new Date(nextMs) })
-      .where(
-        and(
-          eq(entitlements.id, row.id),
-          eq(entitlements.expiresAt, row.expiresAt as Date),
-        ),
-      )
-      .returning({ id: entitlements.id });
-    if (moved.length > 0) result.extended += 1;
-    else result.unchanged += 1;
-  }
-  return result;
 }

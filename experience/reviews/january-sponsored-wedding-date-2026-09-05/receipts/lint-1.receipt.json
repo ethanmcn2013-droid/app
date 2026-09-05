@@ -1,0 +1,20 @@
+{
+  "exe": "C:/Users/ethan/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe",
+  "args": [
+    "node_modules/eslint/bin/eslint.js",
+    "src/server/db/sponsored-wedding-date.ts",
+    "src/server/db/sponsored-wedding-date.test.ts",
+    "src/server/actions/sponsored-wedding-date.ts",
+    "src/server/actions/sponsored-wedding-date.test.ts",
+    "src/server/actions/project-overview.ts",
+    "src/lib/sponsored-wedding-date.ts",
+    "src/components/app/project/wedding-date-form.tsx",
+    "src/components/app/project/wedding-date-form.test.ts",
+    "src/components/app/project/project-overview.tsx",
+    "src/components/welcome/venue-welcome-card.tsx",
+    "src/app/app/tasks/page.tsx",
+    "src/app/app/project/page.tsx"
+  ],
+  "exitCode": 0,
+  "cwd": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\feat-january-sponsored-wedding-date"
+}
