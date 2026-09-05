@@ -49,17 +49,26 @@ if (state === "filtered") state = "board";
 let clientOnly = null;  /* one couple, the venue's own way of looking       */
 let todayOnly = false;  /* the question a venue actually opens this to ask  */
 let undone = null;      /* the last reversible act: a completion or a move  */
-let openNoteId = null;  /* the card showing its full note                   */
+/* R7 — the card's open-note state is gone. openNoteId was assigned null at
+   fourteen sites and a task id at none, so every card with a note shipped a
+   permanent aria-expanded="false" (a term role=article does not support
+   anyway, so even a correct value would never have reached a screen reader),
+   `draggable` was permanently "true", `data-open` was never emitted, and five
+   CSS rules could never match — including the one that was supposed to release
+   the note clamp. The disclosure it described moved to .taskPanel rounds ago.
+   Absence read as a pass: nothing failed, because nothing ever ran. */
+/* The card that has just landed, so the arrival has a beat of its own. */
+let settleId = null;
 let openTaskId = null;  /* the task whose expanded surface is open          */
 let moreOpen = false;   /* the dialog's own accordion, closed at rest       */
-/* board | list — the two views that are real. Below 1100 the sheet cannot
+/* board | list — the two views that are real. Below 1200 the sheet cannot
    hold five lanes at a card's floor, and a board that arrives already
    sliced is the wrong first frame for a phone or a tablet, so the list
    opens there: every task as a whole sentence, its lane stated in type.
    The switcher offers the board at every width. */
-const LIST_ONLY = matchMedia("(max-width: 1099px)");
+const LIST_ONLY = matchMedia("(max-width: 1199px)");
 let view = LIST_ONLY.matches ? "list" : "board";
-/* What the person chose with the switcher, if they chose. Below 1100 the
+/* What the person chose with the switcher, if they chose. Below 1200 the
    board cannot hold five lanes at a card's floor, so the width wins there
    and the choice is remembered rather than overwritten: widening puts them
    back on the view they picked. Derived once at parse until 3 September,
@@ -433,13 +442,13 @@ function card(task, force, stop) {
 
   return (
     '<article class="card" data-id="' + esc(task.id) +
-    '" draggable="' + (openNoteId === task.id ? "false" : "true") + '"' +
+    '" draggable="true"' +
     ' aria-label="' + esc(task.title) + '" aria-describedby="cd-' + esc(task.id) + '"' +
-    (task.note ? ' aria-expanded="' + (openNoteId === task.id ? "true" : "false") + '"' : "") +
+    (task.note ? " data-has-note" : "") +
     ' tabindex="' + (stop ? "0" : "-1") + '"' + (done ? "" : ' aria-roledescription="Movable task"') +
     ' aria-keyshortcuts="Space ArrowUp ArrowDown ArrowLeft ArrowRight"' +
     (task.id === carriedId ? ' aria-grabbed="true"' : "") +
-    (task.id === openNoteId ? " data-open" : "") +
+    (task.id === settleId ? " data-settling" : "") +
     (done ? " data-done" : "") + (next ? " data-next" : "") +
     (force ? ' data-force="' + force + '"' :
       task.id === carriedId ? ' data-force="moving"' : "") + ">" +
@@ -547,7 +556,6 @@ const TASKS_API = {
     if (at === -1) return false;
     rows.splice(at, 1);
     if (focusId === id) focusId = null;
-    if (openNoteId === id) openNoteId = null;
     if (carriedId === id) carriedId = null;
     mount();
     return true;
@@ -559,10 +567,21 @@ const TASKS_API = {
     lateOnly = false;
     todayOnly = false;
     clientOnly = null;
-    openNoteId = null;
     focusId = id;
     refocus = true;
     refocusPart = "card";
+    /* THE ARRIVAL IS VISIBLE TO THE HAND. Driven by keyboard this moment
+       painted a 2px focus ring, because the ring is :focus-visible; driven by
+       pointer — which is how it will actually be done — the card was appended
+       fourth in To Do with nothing at all to distinguish it from the other
+       thirteen, and nothing in the 2.7 seconds after: no animation, no
+       transform, the resting card shadow. The one instant the whole suite is
+       built to sell existed for the keyboard and was silent for the hand.
+       It reuses the drop-settle's own hook rather than inventing a second
+       class, so the arrival and the landing are one idea, and the hook is
+       cleared after one beat so a later repaint cannot replay it. */
+    settleId = id;
+    setTimeout(() => { if (settleId === id) { settleId = null; } }, 520);
     mount();
     return true;
   },
@@ -666,7 +685,7 @@ function commitName(field) {
       P.apply(id);
       WORK = null;
       picked.clear(); undoHistory.length = 0; undone = null;
-      openNoteId = null; openTaskId = null; menuFor = null; dayFor = null;
+      openTaskId = null; menuFor = null; dayFor = null;
       focusId = null; lateOnly = false; todayOnly = false; clientOnly = null;
       queryText = ""; drawerTab = "nodate"; state = "board";
       mount();
@@ -755,7 +774,12 @@ function projectMenu() {
 let toolOpen = null;    /* which control surface is open, if any            */
 let sortBy = "manual";  /* manual · due · priority · title                  */
 let showNotes = true;   /* whether cards carry their note                   */
-let density = "comfortable";
+/* Compact is a real, one-click state — Show → Compact — and sixteen rules key
+   off it, but it was in no gate's state list, so a reachable configuration
+   carried a 10.5px type size off the declared ramp on the one piece of card
+   metadata an operator reads on every row. It is drivable now, so both gates
+   walk it. */
+let density = state === "compact" ? "compact" : "comfortable";
 
 function filterCount() {
   return (lateOnly ? 1 : 0) + (todayOnly ? 1 : 0) + (clientOnly ? 1 : 0) +
@@ -1143,10 +1167,24 @@ function board() {
            whole project. This one means this column. */
         /* One Add row in the tab order — the column the roving stop is in —
            reached from any card by Tab, like the card's own controls. */
+        /* THE RESIDUE CARRIES A WORD. A column that hid ten of its thirty-two
+           tasks said so with a hairline and a numeral 630px away at the far
+           right of the lane head, and its Add row sat four pixels below the
+           cut in the position that conventionally ends a list. The count is
+           written here, on the Add row's own line, as quiet text rather than
+           a second tab stop in every lane foot: the lane scroller and the
+           card rover already do the moving. Filled by measureEdges, which is
+           the pass that knows how many cards fit — and it writes to a node
+           outside the scroller it measures, so the rule the fold once broke
+           (no attribute a measure pass writes may take part in the layout
+           that same pass measures) still holds. */
+        '<div class="trayFoot">' +
         '<button class="trayAdd" data-act="add" data-lane="' + c.id +
           '" tabindex="' + (rows.some((t) => t.id === focusId) || (!focusId && c.id === B.columns[0].id) ? "0" : "-1") +
           '" aria-label="Add a task to ' + esc(c.name) + '">' +
           I.plus + "<span>Add here</span></button>" +
+        '<p class="trayRest" hidden></p>' +
+        "</div>" +
         "</section>"
       );
     }).join("") + "</div>" +
@@ -2480,7 +2518,26 @@ function toggleDone(id) {
 
 function undoLast() {
   const act = undoHistory.pop();
-  if (!act) { say("Nothing left to undo."); return; }
+  if (!act) {
+    /* Before denying it, ask the suite. The seam's crossing is the one act
+       whose reversal belongs to no single product's stack, and this room is
+       where the seam sends you — so answering "nothing left to undo" here,
+       inside the window the seam's own strip advertised, was a false
+       statement about the suite's state rather than a missing feature.
+       The revert is Notes'; only the offer travels. */
+    if (window.__SUITE && window.__SUITE.takeCross && window.__SUITE.takeCross()) {
+      /* The card that just left was under the keyboard. Name where the hand
+         goes rather than leaving it on a removed node — the round-1 class
+         this file has closed twice on its own side. */
+      focusId = null;
+      landOn = '.tray[data-lane="' + (laneIds()[0] || "todo") + '"] .trayAdd';
+      refocus = true;
+      mount();
+      return;
+    }
+    say("Nothing left to undo.");
+    return;
+  }
   clearUndo();
   undoing = true;
   try { runUndo(act); } finally { undoing = false; }
@@ -2831,13 +2888,6 @@ function onKey(event) {
       carriedId = null; carriedFrom = null;
       refocus = true; mount(); return;
     }
-    if (openNoteId) {
-      event.preventDefault();
-      focusId = openNoteId;
-      openNoteId = null;
-      say("Note closed.");
-      refocus = true; mount(); return;
-    }
     if (clientOnly || lateOnly || todayOnly) {
       event.preventDefault();
       if (clientOnly) clientOnly = null;
@@ -2881,17 +2931,40 @@ function onKey(event) {
          arrows and dropping it there finishes the work exactly as the tick
          does, so it earns the same receipt and the same sentence — it used
          to say only "dropped in Done." */
-      if (lane === "done" && carriedFrom.lane !== "done") {
+      const from = carriedFrom;
+      if (lane === "done" && from.lane !== "done") {
         completed(task, !allTasks().some((t) => timeOf(t).kind === "overdue"));
+      } else if (lane === from.lane && at.y === from.index) {
+        /* The pointer path's first law, which the keyboard never had: picking
+           a card up and putting it back is a non-event. No receipt, no
+           sentence. */
       } else {
+        /* THE KEYBOARD DROP CAN BE TAKEN BACK. This branch mutated the lane
+           and never called arm(), so the one route to the board's most
+           frequent structural act for the operator who cannot drag — the
+           route the card itself advertises with aria-keyshortcuts — was the
+           only route with no way back. The identical move by mouse, and by
+           the Move menu, was undoable, and a keyboard drop into Done was too,
+           because completed() arms; which is why the gap survived anyone who
+           only tested the completion.
+
+           Captured at PICKUP, not here: moveTo() calls applyLaneFacts()
+           unconditionally on every preview move, so the arrow walk has already
+           nulled heldSince and completedAt by the time Space commits. */
+        arm({ kind: "move", id: id, title: task.title, lane: from.lane, index: from.index,
+              toLane: lane, wasHeldSince: from.wasHeldSince, wasCompletedAt: from.wasCompletedAt });
+        /* And the same law in the spoken channel as the pointer path: a
+           sorted lane never announces an index. */
         say(task.title + " dropped " + inLane(lane) + ".");
       }
       carriedId = null; carriedFrom = null;
     } else {
       const at = place(id);
+      const t = taskById(id);
       carriedId = id;
-      carriedFrom = { lane: laneIds()[at.x], index: at.y };
-      say("Picked up " + taskById(id).title + ".");
+      carriedFrom = { lane: laneIds()[at.x], index: at.y,
+        wasHeldSince: t ? t.heldSince : null, wasCompletedAt: t ? t.completedAt : null };
+      say("Picked up " + t.title + ".");
     }
     refocus = true; mount(); return;
   }
@@ -2904,7 +2977,6 @@ function onKey(event) {
        nobody could see any more. */
     openCard(id, () => {
       openTaskId = openTaskId === id ? null : id;
-      openNoteId = null;
       refocus = true;
       mount();
     }, () => {
@@ -3103,7 +3175,6 @@ function onClick(event) {
       : act.classList.contains("railAdd") ? ".railAdd"
       : view === "list" ? '.lrow[tabindex="0"], .emptyBoard [data-act="add"]'
       : '.tray[data-lane="' + act.dataset.lane + '"] .trayAdd';
-    openNoteId = null;
     say("New task " + inLane(draftLane) + ". Type it, then press Enter.");
     /* THE BUTTON BECOMES THE CARD. "Add here" is a ghost button the width
        of the column; the composer is a card in the same column with the
@@ -3325,7 +3396,6 @@ function onClick(event) {
     picked.clear();
     undoHistory.length = 0;
     undone = null;
-    openNoteId = null;
     menuFor = null;
     dayFor = null;
     focusId = null;
@@ -3482,7 +3552,6 @@ function onClick(event) {
      card with nothing written on it answered a press by saying so — which
      is a product telling a person their own task is not worth opening. */
   openTaskId = openTaskId === card.dataset.id ? null : card.dataset.id;
-  openNoteId = null;
   refocus = true;
   mount();
   if (openTaskId) {
@@ -3638,7 +3707,6 @@ function onDrop(event) {
       openCard(id2, () => {
         focusId = id2;
         openTaskId = openTaskId === id2 ? null : id2;
-        openNoteId = null;
         refocus = true;
         mount();
       }, () => {
@@ -3819,6 +3887,24 @@ function measureEdges(target) {
       if (cut > 0 && cut < room) body.style.blockSize = cut + "px";
     }
     tray.style.setProperty("--body-bottom", top + body.clientHeight + "px");
+    /* HOW MANY, IN WORDS — counted last, after the trim above has settled the
+       scroller's height. A column that hid ten of its thirty-two tasks said so
+       with a hairline and a numeral 630px away at the far right of the lane
+       head, while its Add row sat four pixels below the cut in the position
+       that conventionally ends a list. Counted the way the eye counts it —
+       cards whose whole box is inside the scroller — rather than off the lane
+       total, so the number is what is cut off rather than what is filtered
+       out. The node is in the Add row, outside the box this pass measures, and
+       it changes that row's width and never its height, so the rule holds: no
+       attribute a measure pass writes takes part in the layout it measures. */
+    const foot = tray.querySelector(".trayRest");
+    if (foot) {
+      const bb = body.getBoundingClientRect();
+      const cards = [...body.querySelectorAll(".card:not([data-draft])")];
+      const rest = cards.length - cards.filter((c) => c.getBoundingClientRect().bottom <= bb.bottom + 0.5).length;
+      foot.textContent = rest > 0 ? rest + " more below" : "";
+      foot.hidden = rest <= 0;
+    }
   });
   const board = target.querySelector(".board");
   const sheet = target.querySelector(".sheet");
@@ -4157,6 +4243,10 @@ function mount() {
      Timeline both write theirs onto their own root; the board was the one
      surface whose state a gate could only infer from the pixels. */
   root.setAttribute("data-state", lateOnly ? "filtered" : state);
+  /* Written on every paint, not only when the Show menu is used, so the state
+     a gate drives to is the state the sheet is actually in from the first
+     frame. */
+  root.setAttribute("data-density", density);
   const before = flyId || view === "list" ? snapshot(target) : null;
   const kept = keepPlace(target);
   target.innerHTML = renderApp();
@@ -4191,7 +4281,7 @@ window.__signal = {
     state = next;
     carriedId = null; focusId = null; lateOnly = false; clientOnly = null;
     todayOnly = false; menuFor = null;
-    openNoteId = null; flyId = null; flyFrom = null; draftLane = null; draftText = "";
+    flyId = null; flyFrom = null; draftLane = null; draftText = "";
     drawerTab = "nodate"; picked.clear();
     undoHistory.length = 0;
     clearUndo();
@@ -4211,7 +4301,9 @@ if (host) {
      720 in either direction repaints so exactly one field exists. */
   PHONE.addEventListener("change", () => mount());
   /* And the crossing that decides which VIEW is possible, not just where
-     the search field lives. 1099 is the board's own floor. */
+     the search field lives. 1199 is the board's own floor — raised from 1099
+     because between 1100 and 1279 the board was kept and every card note was
+     trimmed, which is the board without the thing a board is for. */
   LIST_ONLY.addEventListener("change", () => {
     view = LIST_ONLY.matches ? "list" : (viewAsked || "board");
     mount();
@@ -4379,7 +4471,6 @@ if (host) {
     openCard(was.id, () => {
       focusId = was.id;
       openTaskId = was.id;
-      openNoteId = null;
       refocus = true;
       mount();
     }, () => {

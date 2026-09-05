@@ -1533,8 +1533,22 @@ var PHONE_T = matchMedia("(max-width: 720px)");
        window above it; in the pane the free band is the pane, and the
        rail with the steppers in it is outside the pane entirely, so
        following the moment cannot move the control being pressed. */
-    if (!fixed && !paneScrolls) return;
-    var free = fixed ? panel.getBoundingClientRect().top - 16 : pane.clientHeight - 16;
+    /* THE THIRD BAND. Under a docked sheet the free band is the window above
+       it; in the pane it is the pane. On the across desk it is neither: the
+       real scroller is the .app.sheet element the plan sits in, and while the
+       band went unrecognised keepInBand returned here and nothing scrolled at
+       all — scrollTop stayed 0 through the open and through every stepper
+       press. Same arithmetic, one more ancestor. */
+    var sheet = null;
+    if (!fixed && !paneScrolls) {
+      for (var up = root; up && up !== document.body; up = up.parentElement) {
+        var os = getComputedStyle(up).overflowY;
+        if ((os === "auto" || os === "scroll") && up.scrollHeight > up.clientHeight + 1) { sheet = up; break; }
+      }
+      if (!sheet) return;
+    }
+    var box = sheet || pane;
+    var free = fixed ? panel.getBoundingClientRect().top - 16 : box.clientHeight - 16;
     var copy = item.querySelector(".b-copy");
     /* Where the row WILL be, not where it is mid-flight. The move is
        animated, so a rect read during the transition is the position the
@@ -1546,7 +1560,7 @@ var PHONE_T = matchMedia("(max-width: 720px)");
     var push = parseFloat(getComputedStyle(copy).getPropertyValue("--push")) || 0;
     var height = copy.getBoundingClientRect().height;
     var top = measureEl.getBoundingClientRect().top + away * px + push;
-    if (!fixed) top -= pane.getBoundingClientRect().top;
+    if (!fixed) top -= box.getBoundingClientRect().top;
     if (top >= 16 && top + height <= free) return;
     /* The MINIMUM correction that puts the row back in the band, not a
        re-centre. A row two pixels past the edge used to move the whole
@@ -1561,7 +1575,7 @@ var PHONE_T = matchMedia("(max-width: 720px)");
     else if (top < 16) delta = Math.round(top - pad);
     else delta = Math.round(top + height - (free - pad));
     if (fixed) window.scrollBy(0, delta);
-    else pane.scrollTop += delta;
+    else box.scrollTop += delta;
   }
 
   function setVisibility(item, hidden) {
@@ -1982,7 +1996,18 @@ var PHONE_T = matchMedia("(max-width: 720px)");
     }
     closeEditor(root, false);
     var node = editor(root, item);
-    (root.querySelector(".b-editHost") || item.parentElement).appendChild(node);
+    /* Whichever host this layout puts on screen. Both carry :empty display
+       none, so exactly one is ever a box. */
+    /* Whichever host this layout elects. Read off a custom property rather
+       than off computed display, because both hosts are display:none while
+       they are empty — asking the boxes which one is showing got the answer
+       "neither" and mounted the editor into a hidden container. The layout
+       owns this decision, so the layout's own stylesheet states it. */
+    var hosts = [].slice.call(root.querySelectorAll(".b-editHost"));
+    var host = hosts.filter(function (h2) {
+      return getComputedStyle(h2).getPropertyValue("--edit-host").trim() === "1";
+    })[0];
+    (host || hosts[0] || item.parentElement).appendChild(node);
     moveUndoBar(root, node);
     item.setAttribute("data-editing", "true");
     root.setAttribute("data-editor-open", "true");
@@ -2167,6 +2192,10 @@ var PHONE_T = matchMedia("(max-width: 720px)");
            reverse did nothing at all and said nothing at all — which is
            indistinguishable from the shortcut being broken. */
         if (!history.length) {
+          /* And before denying it, ask the suite: the seam's crossing is the
+             one act no single product's stack owns, and this product is one
+             of the rooms it can leave you standing in. */
+          if (window.__SUITE.takeCross && window.__SUITE.takeCross()) return;
           window.__SUITE.say("Nothing left to undo.");
           return;
         }
@@ -2437,6 +2466,22 @@ var PHONE_T = matchMedia("(max-width: 720px)");
           measure({ owner: true }), behindBlock({ owner: true }),
         ]),
       ]),
+      /* THE EDITOR DOES NOT STAND BETWEEN YOU AND THE MEASURE. Timeline is
+         The Approach: the organising object is a distance, and placing a
+         moment on that distance is the one act the direction exists for. In
+         the across desk layout the 554px editor opened between the horizon
+         band and the track and pushed all eight grab handles below the fold —
+         0 of 8 on screen at 1280, 1440 and 1920 alike — so the pin slid 133px
+         along the ruler and the person pressing the stepper saw only a mono
+         line reading "in 8 days". The down layout keeps three of eight,
+         because .b-two is a real two-pane grid there.
+
+         The host cannot simply move into the plan: scrolling the sheet to
+         follow the dot would then carry the steppers out from under the hand,
+         which is exactly what keepInBand's own comment forbids. So it goes
+         after the plan, and only the across desk selects it. Empty, it is not
+         there at all — the same idiom as .b-editHost above. */
+      h("div.b-editHost.b-editAfter"),
       foot({}),
     ], ".b-ownerField");
     wireOwner(node, opts || {});

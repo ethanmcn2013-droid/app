@@ -822,10 +822,16 @@
    scroller is painted under its own content and a card at the foot covers
    the very line that says there is more of it. */
 [data-app="tasks"] .tray { position: relative; }
+/* Drawn in --ink-4, not --line. A hairline in the same value as every card
+   border cannot read as a cue whatever it says beside it: at 1920 on the dense
+   board the fold sat among thirty borders of exactly its own colour, so the
+   only thing separating "there is more below" from "this is a card edge" was
+   position. --ink-4 is the value the card's own open ring already uses, so this
+   borrows a line the surface has rather than inventing one. */
 [data-app="tasks"] .tray::after,
 [data-app="tasks"] .tray::before {
   content: ""; position: absolute; left: 6px; right: 6px; height: 1px;
-  background: var(--line); z-index: 2; pointer-events: none;
+  background: var(--ink-4); z-index: 2; pointer-events: none;
   opacity: 0; transition: opacity var(--dur) var(--curve);
 }
 [data-app="tasks"] .tray::before { top: var(--body-top, 0px); }
@@ -950,18 +956,35 @@
    the fixture at 1440 and five at 1280's narrower lane — a ceiling a real
    note rarely meets; the dialog is the only place a body is ever clamped
    harder than that. */
-@media (min-width: 1280px) {
+/* THE FLOOR IS 1200, NOT 1280. There was a 180px band — 1100 to 1279 — where
+   the board was kept and its cards stopped saying what to do: at 1280 zero of
+   eight notes were trimmed and at 1279 all eight were, because this query was
+   the whole cliff. The lane at 1279 is 226px and the note measure 149px,
+   identical to 1280, so the lane was never the constraint. The board's own two
+   loops straddled the gap — five lanes proved to FIT at 1180, a note proved to
+   READ only at 1280 — so nothing checked reading in between. Below 1200 the
+   lane really is too narrow (titles trim, the board runs 30px over at 1100),
+   and there the list is the view: the crossing moved to 1199 to meet it. */
+/* Between the board's own floor and 1280 the lane is at its narrowest — 226px
+   — and a long title with a date chip sharing its first line needs a fourth.
+   The note gets its five lines here; the title is the thing the card is FOR,
+   so it is not the line to save. Above 1280 three lines is every title in the
+   fixture and the cap goes back to holding. */
+@media (min-width: 1200px) and (max-width: 1279px) {
+  [data-app="tasks"] .cardTitleRow { max-height: calc(14px * 1.36 * 4); }
+}
+@media (min-width: 1200px) {
   [data-app="tasks"] .cardNote { max-height: calc(1.45em * 5); }
   [data-app="tasks"][data-density="compact"] .cardNote { max-height: calc(1.38em * 2); }
 }
-[data-app="tasks"] .card[aria-expanded]:hover .cardNote { color: var(--ink-1); }
-/* Opened in place. The clipped half of a note is the half that carries the
-   deadline, and the only route to it used to be a hover tooltip: no keyboard,
-   no touch, no iPad on a venue desk. */
-[data-app="tasks"] .card[data-open] .cardNote { max-height: none; color: var(--ink-1); }
-/* An open card is being read, not carried, so its words can be taken. */
-[data-app="tasks"] .card[data-open] .cardTitle,
-[data-app="tasks"] .card[data-open] .cardNote { user-select: text; cursor: text; }
+/* Matched on the PRESENCE of aria-expanded, which is why it survived the term
+   being dead — it is what darkens a note under the pointer. Re-sited onto the
+   fact it actually wanted: this card has a note. */
+[data-app="tasks"] .card[data-has-note]:hover .cardNote { color: var(--ink-1); }
+/* R7: four rules keyed off .card[data-open] used to sit here — the clamp
+   release, the text-selection pair and the open ring — and none of them could
+   ever match, because nothing wrote the attribute. The disclosure they were
+   written for is .taskPanel now, which releases the note in full. */
 [data-app="tasks"] .cardFoot {
   grid-column: 2; grid-row: 3;
   /* One line, always. Wrapping put the actions button on a second row and
@@ -1183,7 +1206,6 @@
    least urgent state on the board. It steps onto the existing ladder: 1.5px
    at ink-4 is still firmer and darker than hover's 1px at 0.16, so the rank
    survives without spending the alarm. */
-[data-app="tasks"] .card[data-open] { --card-ring: 0 0 0 1.5px var(--ink-4), var(--float); }
 [data-app="tasks"] .card[data-force="moving"] {
   --card-ring: 0 0 0 1.5px var(--indigo), 0 0 0 5px var(--indigo-ring), var(--lift);
   transform: scale(1.02);
@@ -1253,11 +1275,14 @@
   from { transform: scaleX(0.24); opacity: 0; }
   to   { transform: scaleX(1); opacity: 1; }
 }
-/* The card settles into its new place. One overshoot of 2px, damped — the
-   brief asks for a settle, not a bounce, and anything with a second
-   oscillation reads as a toy. */
+/* The card settles into its new place — and, since R7, the card the seam
+   just sent settles the same way, because an arrival and a landing are the
+   same event to the person watching. This hook was dead until then, which is
+   how it kept a curve that is not on the declared easing ladder; live, it is
+   on the ladder, at the 400ms step the arrival earns. The brief asks for a
+   settle, not a bounce: one damped 2px, no second oscillation. */
 [data-app="tasks"] .card[data-settling] {
-  animation: cardSettle var(--dur-settle) cubic-bezier(0.22, 1.1, 0.36, 1) both;
+  animation: cardSettle 400ms cubic-bezier(0.23, 1, 0.32, 1) both;
 }
 @keyframes cardSettle {
   from { transform: translateY(-2px) scale(0.994); }
@@ -1295,9 +1320,23 @@
    that same pass measures. */
 /* On the card's own two verticals: the plus centred on the tick, the label
    on the title. */
+/* The Add row and the residue share one line: the button keeps its own box and
+   the count sits at the far end of it, quiet and not interactive. */
+[data-app="tasks"] .trayFoot {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 4px; flex: none; min-width: 0;
+}
+[data-app="tasks"] .trayRest {
+  margin: 0; flex: none;
+  font-size: 13px; font-weight: 400; line-height: 1.45;
+  letter-spacing: var(--tr-13);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
 [data-app="tasks"] .trayAdd {
   display: flex; align-items: center; gap: 13px;
-  height: 36px; padding: 0 8px 0 12px; margin-top: 4px;
+  flex: 1 1 auto; min-width: 0;
+  height: 36px; padding: 0 8px 0 12px;
   border-radius: var(--r-chip);
   font-size: 13px; font-weight: 400; color: var(--ink-3);
   flex: none;
@@ -1570,19 +1609,17 @@
   [data-app="tasks"] .dockField.is-live { width: 100%; }
 }
 [data-app="tasks"] .dockField svg { width: 16px; height: 16px; }
-/* One keycap in the product. The two that existed disagreed on size,
-   tracking and radius, which is the kind of drift a design system is for. */
-[data-app="tasks"] .dockField kbd,
-[data-app="tasks"] .carry kbd {
-  font-family: var(--font-mono); font-size: 10px; font-weight: 400;
-  letter-spacing: var(--tr-10);
-  border-radius: 5px; padding: 3px 5px;
-}
-[data-app="tasks"] .dockField kbd { margin-left: auto; border: 1px solid var(--line); color: var(--ink-3); }
+/* One keycap in the product — and, since R7, one in the suite: the family,
+   size, weight, letterfit, radius, padding and ring all come from `.app kbd`
+   in shell.css. What is left here is what is genuinely local: which colour the
+   ring is drawn in, and whether the cap sits on the chrome. */
+[data-app="tasks"] .dockField kbd { margin-left: auto; color: var(--ink-3); box-shadow: inset 0 0 0 1px var(--line); }
 [data-app="tasks"] .carry kbd { background: var(--chrome); color: var(--on-ink-1); }
 /* The one deliberate exception to the tracking curve: mono forces each arrow
-   into a narrow cell, and at 10px the shafts touch. */
-[data-app="tasks"] .carry kbd[data-keys="arrows"] { letter-spacing: 0.28em; padding-inline: 6px 3px; }
+   into a narrow cell and the shafts touch. Re-measured at 11px after the
+   consolidation — 0.22em clears them where 0.28em was tuned for 10px and now
+   reads as a gap between four separate glyphs. */
+[data-app="tasks"] .carry kbd[data-keys="arrows"] { letter-spacing: 0.22em; padding-inline: 6px 3px; }
 [data-app="tasks"] .dockPrimary {
   display: inline-flex; align-items: center; gap: 8px;
   height: 38px; padding: 0 17px 0 14px;
@@ -1980,7 +2017,6 @@
   [data-app="tasks"] .card[data-force="focus"] { outline: 3px solid Highlight; outline-offset: 2px; }
   [data-app="tasks"] .card[data-force="moving"],
   [data-app="tasks"] .card[data-force="drag"] { outline: 3px solid Highlight; outline-offset: 2px; }
-  [data-app="tasks"] .card[data-open] { outline: 2px solid CanvasText; outline-offset: 2px; }
   [data-app="tasks"] .when { border: 1px solid CanvasText; }
   [data-app="tasks"] .when[data-t="overdue"] { forced-color-adjust: none; background: CanvasText; color: Canvas; }
   [data-app="tasks"] .when[data-t="today"] { border-width: 2px; }
@@ -2171,7 +2207,14 @@
 [data-app="tasks"][data-density="compact"] .views { padding-bottom: 10px; }
 [data-app="tasks"][data-density="compact"] .tick { width: 16px; height: 16px; }
 [data-app="tasks"][data-density="compact"] .tick svg { width: 10px; height: 10px; }
-[data-app="tasks"][data-density="compact"] .when { height: 18px; font-size: 10.5px; padding: 0 7px; }
+/* The row height comes out of the box, not out of the type. 10.5px is off the
+   declared ramp (10 and 11 exist; 10.5 does not) and it was inherited by the
+   .sr span inside, so a reachable one-click state carried a half-pixel size on
+   the one piece of card metadata an operator reads on every row — and dropping
+   to 10px would shrink it for no gain. 11px is the comfortable value and it is
+   already on the ramp; the 18px comes from the height and padding declared
+   right here. */
+[data-app="tasks"][data-density="compact"] .when { height: 18px; font-size: 11px; padding: 0 6px; }
 [data-app="tasks"][data-density="compact"] .drawerRow { padding: 8px 10px; }
 [data-app="tasks"][data-density="compact"] .loadCard { padding: 9px; gap: 7px; }
 
@@ -2223,7 +2266,8 @@
    past the row and be clipped with no scroll route. */
 [data-app="tasks"] .board[data-filtered] .tray { align-self: start; max-height: 100%; }
 [data-app="tasks"] .board[data-filtered] .tray[data-empty] .trayBody,
-[data-app="tasks"] .board[data-filtered] .tray[data-empty] .trayAdd { display: none; }
+[data-app="tasks"] .board[data-filtered] .tray[data-empty] .trayAdd,
+[data-app="tasks"] .board[data-filtered] .tray[data-empty] .trayFoot { display: none; }
 [data-app="tasks"] .board[data-filtered] .tray[data-empty] .trayHead { padding-bottom: 0; }
 /* The step back is drawn with the ink ladder, not with element opacity.
    Opacity composites the declared colour, so the audit read #111 and passed
@@ -2246,6 +2290,7 @@
 /* A blank board makes its one offer once. Five Add rows behind a centred
    "Add the first task" is the same offer six times. */
 [data-app="tasks"] .board[data-blank] .trayAdd,
+[data-app="tasks"] .board[data-blank] .trayFoot,
 [data-app="tasks"] .board[data-blank] .trayEmpty { display: none; }
 
 /* Taste · emptiness is the state this board spends most of its life in, and
@@ -2293,8 +2338,8 @@
   color: var(--ink-3); max-width: 40ch; margin-top: -2px;
 }
 
-@media (max-width: 1099px) {
-  /* Below 1100 the list is the default view and the board is a scroller
+@media (max-width: 1199px) {
+  /* Below 1200 the list is the default view and the board is a scroller
      by design; a lane keeps the specimen floor there rather than yielding
      to a width it was never going to fit. The snap that stops a column
      being sliced at the sheet's edge is on .board unconditionally. */

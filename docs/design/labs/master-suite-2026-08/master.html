@@ -1120,6 +1120,41 @@ body {
   .setValue { white-space: normal; overflow-wrap: anywhere; }
 }
 
+/* ═══ ONE KEYCAP IN THE SUITE ═══════════════════════════════════════
+   tasks.css states the rule — "One keycap in the product. The two that
+   existed disagreed on size, tracking and radius, which is the kind of drift
+   a design system is for." Tasks fixed it inside Tasks; the suite re-created
+   it threefold. One object was carrying two families, two sizes, two weights,
+   four letterfits, three radii and three paddings, and in Timeline it was not
+   a key-shaped thing at all — Orla learned the boxed pill in Tasks and Notes
+   and then met "Ctrl Z" in the moment editor as bare grey text. Tasks' 10px
+   was also the only 10px anywhere in the visible suite, so the cap had
+   invented a ramp step for itself.
+
+   11px mono at +0.04em is the one spec that sits on an existing ramp step and
+   does not fight the tracking curve. The RING is declared once here as an
+   inset shadow, because a border and an inset shadow measure differently and
+   that alone put two caps 1.1px apart before any size change; each product
+   leaves only its ring colour and its fill. Scoped to .app so it cannot reach
+   chrome outside the three products. */
+.app kbd {
+  --cap-track: 0.04em;
+  font-family: var(--font-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 400;
+  /* 1.28 is a step every product's leading ladder already declares. */
+  line-height: 1.28;
+  letter-spacing: var(--cap-track);
+  font-variant-numeric: tabular-nums;
+  display: inline-block;
+  padding: 1px 5px;
+  border: 0;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px currentColor;
+  color: inherit;
+  background: none;
+}
+
 /* ══ tasks.css ══════════════════════════════════════════ */
 
 /* Tasks · Studio Floor — GENERATED ONCE by tools/split.mjs from floor.html <style>, then hand-edited.
@@ -1946,10 +1981,16 @@ body {
    scroller is painted under its own content and a card at the foot covers
    the very line that says there is more of it. */
 [data-app="tasks"] .tray { position: relative; }
+/* Drawn in --ink-4, not --line. A hairline in the same value as every card
+   border cannot read as a cue whatever it says beside it: at 1920 on the dense
+   board the fold sat among thirty borders of exactly its own colour, so the
+   only thing separating "there is more below" from "this is a card edge" was
+   position. --ink-4 is the value the card's own open ring already uses, so this
+   borrows a line the surface has rather than inventing one. */
 [data-app="tasks"] .tray::after,
 [data-app="tasks"] .tray::before {
   content: ""; position: absolute; left: 6px; right: 6px; height: 1px;
-  background: var(--line); z-index: 2; pointer-events: none;
+  background: var(--ink-4); z-index: 2; pointer-events: none;
   opacity: 0; transition: opacity var(--dur) var(--curve);
 }
 [data-app="tasks"] .tray::before { top: var(--body-top, 0px); }
@@ -2074,18 +2115,35 @@ body {
    the fixture at 1440 and five at 1280's narrower lane — a ceiling a real
    note rarely meets; the dialog is the only place a body is ever clamped
    harder than that. */
-@media (min-width: 1280px) {
+/* THE FLOOR IS 1200, NOT 1280. There was a 180px band — 1100 to 1279 — where
+   the board was kept and its cards stopped saying what to do: at 1280 zero of
+   eight notes were trimmed and at 1279 all eight were, because this query was
+   the whole cliff. The lane at 1279 is 226px and the note measure 149px,
+   identical to 1280, so the lane was never the constraint. The board's own two
+   loops straddled the gap — five lanes proved to FIT at 1180, a note proved to
+   READ only at 1280 — so nothing checked reading in between. Below 1200 the
+   lane really is too narrow (titles trim, the board runs 30px over at 1100),
+   and there the list is the view: the crossing moved to 1199 to meet it. */
+/* Between the board's own floor and 1280 the lane is at its narrowest — 226px
+   — and a long title with a date chip sharing its first line needs a fourth.
+   The note gets its five lines here; the title is the thing the card is FOR,
+   so it is not the line to save. Above 1280 three lines is every title in the
+   fixture and the cap goes back to holding. */
+@media (min-width: 1200px) and (max-width: 1279px) {
+  [data-app="tasks"] .cardTitleRow { max-height: calc(14px * 1.36 * 4); }
+}
+@media (min-width: 1200px) {
   [data-app="tasks"] .cardNote { max-height: calc(1.45em * 5); }
   [data-app="tasks"][data-density="compact"] .cardNote { max-height: calc(1.38em * 2); }
 }
-[data-app="tasks"] .card[aria-expanded]:hover .cardNote { color: var(--ink-1); }
-/* Opened in place. The clipped half of a note is the half that carries the
-   deadline, and the only route to it used to be a hover tooltip: no keyboard,
-   no touch, no iPad on a venue desk. */
-[data-app="tasks"] .card[data-open] .cardNote { max-height: none; color: var(--ink-1); }
-/* An open card is being read, not carried, so its words can be taken. */
-[data-app="tasks"] .card[data-open] .cardTitle,
-[data-app="tasks"] .card[data-open] .cardNote { user-select: text; cursor: text; }
+/* Matched on the PRESENCE of aria-expanded, which is why it survived the term
+   being dead — it is what darkens a note under the pointer. Re-sited onto the
+   fact it actually wanted: this card has a note. */
+[data-app="tasks"] .card[data-has-note]:hover .cardNote { color: var(--ink-1); }
+/* R7: four rules keyed off .card[data-open] used to sit here — the clamp
+   release, the text-selection pair and the open ring — and none of them could
+   ever match, because nothing wrote the attribute. The disclosure they were
+   written for is .taskPanel now, which releases the note in full. */
 [data-app="tasks"] .cardFoot {
   grid-column: 2; grid-row: 3;
   /* One line, always. Wrapping put the actions button on a second row and
@@ -2307,7 +2365,6 @@ body {
    least urgent state on the board. It steps onto the existing ladder: 1.5px
    at ink-4 is still firmer and darker than hover's 1px at 0.16, so the rank
    survives without spending the alarm. */
-[data-app="tasks"] .card[data-open] { --card-ring: 0 0 0 1.5px var(--ink-4), var(--float); }
 [data-app="tasks"] .card[data-force="moving"] {
   --card-ring: 0 0 0 1.5px var(--indigo), 0 0 0 5px var(--indigo-ring), var(--lift);
   transform: scale(1.02);
@@ -2377,11 +2434,14 @@ body {
   from { transform: scaleX(0.24); opacity: 0; }
   to   { transform: scaleX(1); opacity: 1; }
 }
-/* The card settles into its new place. One overshoot of 2px, damped — the
-   brief asks for a settle, not a bounce, and anything with a second
-   oscillation reads as a toy. */
+/* The card settles into its new place — and, since R7, the card the seam
+   just sent settles the same way, because an arrival and a landing are the
+   same event to the person watching. This hook was dead until then, which is
+   how it kept a curve that is not on the declared easing ladder; live, it is
+   on the ladder, at the 400ms step the arrival earns. The brief asks for a
+   settle, not a bounce: one damped 2px, no second oscillation. */
 [data-app="tasks"] .card[data-settling] {
-  animation: cardSettle var(--dur-settle) cubic-bezier(0.22, 1.1, 0.36, 1) both;
+  animation: cardSettle 400ms cubic-bezier(0.23, 1, 0.32, 1) both;
 }
 @keyframes cardSettle {
   from { transform: translateY(-2px) scale(0.994); }
@@ -2419,9 +2479,23 @@ body {
    that same pass measures. */
 /* On the card's own two verticals: the plus centred on the tick, the label
    on the title. */
+/* The Add row and the residue share one line: the button keeps its own box and
+   the count sits at the far end of it, quiet and not interactive. */
+[data-app="tasks"] .trayFoot {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 4px; flex: none; min-width: 0;
+}
+[data-app="tasks"] .trayRest {
+  margin: 0; flex: none;
+  font-size: 13px; font-weight: 400; line-height: 1.45;
+  letter-spacing: var(--tr-13);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
 [data-app="tasks"] .trayAdd {
   display: flex; align-items: center; gap: 13px;
-  height: 36px; padding: 0 8px 0 12px; margin-top: 4px;
+  flex: 1 1 auto; min-width: 0;
+  height: 36px; padding: 0 8px 0 12px;
   border-radius: var(--r-chip);
   font-size: 13px; font-weight: 400; color: var(--ink-3);
   flex: none;
@@ -2694,19 +2768,17 @@ body {
   [data-app="tasks"] .dockField.is-live { width: 100%; }
 }
 [data-app="tasks"] .dockField svg { width: 16px; height: 16px; }
-/* One keycap in the product. The two that existed disagreed on size,
-   tracking and radius, which is the kind of drift a design system is for. */
-[data-app="tasks"] .dockField kbd,
-[data-app="tasks"] .carry kbd {
-  font-family: var(--font-mono); font-size: 10px; font-weight: 400;
-  letter-spacing: var(--tr-10);
-  border-radius: 5px; padding: 3px 5px;
-}
-[data-app="tasks"] .dockField kbd { margin-left: auto; border: 1px solid var(--line); color: var(--ink-3); }
+/* One keycap in the product — and, since R7, one in the suite: the family,
+   size, weight, letterfit, radius, padding and ring all come from `.app kbd`
+   in shell.css. What is left here is what is genuinely local: which colour the
+   ring is drawn in, and whether the cap sits on the chrome. */
+[data-app="tasks"] .dockField kbd { margin-left: auto; color: var(--ink-3); box-shadow: inset 0 0 0 1px var(--line); }
 [data-app="tasks"] .carry kbd { background: var(--chrome); color: var(--on-ink-1); }
 /* The one deliberate exception to the tracking curve: mono forces each arrow
-   into a narrow cell, and at 10px the shafts touch. */
-[data-app="tasks"] .carry kbd[data-keys="arrows"] { letter-spacing: 0.28em; padding-inline: 6px 3px; }
+   into a narrow cell and the shafts touch. Re-measured at 11px after the
+   consolidation — 0.22em clears them where 0.28em was tuned for 10px and now
+   reads as a gap between four separate glyphs. */
+[data-app="tasks"] .carry kbd[data-keys="arrows"] { letter-spacing: 0.22em; padding-inline: 6px 3px; }
 [data-app="tasks"] .dockPrimary {
   display: inline-flex; align-items: center; gap: 8px;
   height: 38px; padding: 0 17px 0 14px;
@@ -3104,7 +3176,6 @@ body {
   [data-app="tasks"] .card[data-force="focus"] { outline: 3px solid Highlight; outline-offset: 2px; }
   [data-app="tasks"] .card[data-force="moving"],
   [data-app="tasks"] .card[data-force="drag"] { outline: 3px solid Highlight; outline-offset: 2px; }
-  [data-app="tasks"] .card[data-open] { outline: 2px solid CanvasText; outline-offset: 2px; }
   [data-app="tasks"] .when { border: 1px solid CanvasText; }
   [data-app="tasks"] .when[data-t="overdue"] { forced-color-adjust: none; background: CanvasText; color: Canvas; }
   [data-app="tasks"] .when[data-t="today"] { border-width: 2px; }
@@ -3295,7 +3366,14 @@ body {
 [data-app="tasks"][data-density="compact"] .views { padding-bottom: 10px; }
 [data-app="tasks"][data-density="compact"] .tick { width: 16px; height: 16px; }
 [data-app="tasks"][data-density="compact"] .tick svg { width: 10px; height: 10px; }
-[data-app="tasks"][data-density="compact"] .when { height: 18px; font-size: 10.5px; padding: 0 7px; }
+/* The row height comes out of the box, not out of the type. 10.5px is off the
+   declared ramp (10 and 11 exist; 10.5 does not) and it was inherited by the
+   .sr span inside, so a reachable one-click state carried a half-pixel size on
+   the one piece of card metadata an operator reads on every row — and dropping
+   to 10px would shrink it for no gain. 11px is the comfortable value and it is
+   already on the ramp; the 18px comes from the height and padding declared
+   right here. */
+[data-app="tasks"][data-density="compact"] .when { height: 18px; font-size: 11px; padding: 0 6px; }
 [data-app="tasks"][data-density="compact"] .drawerRow { padding: 8px 10px; }
 [data-app="tasks"][data-density="compact"] .loadCard { padding: 9px; gap: 7px; }
 
@@ -3347,7 +3425,8 @@ body {
    past the row and be clipped with no scroll route. */
 [data-app="tasks"] .board[data-filtered] .tray { align-self: start; max-height: 100%; }
 [data-app="tasks"] .board[data-filtered] .tray[data-empty] .trayBody,
-[data-app="tasks"] .board[data-filtered] .tray[data-empty] .trayAdd { display: none; }
+[data-app="tasks"] .board[data-filtered] .tray[data-empty] .trayAdd,
+[data-app="tasks"] .board[data-filtered] .tray[data-empty] .trayFoot { display: none; }
 [data-app="tasks"] .board[data-filtered] .tray[data-empty] .trayHead { padding-bottom: 0; }
 /* The step back is drawn with the ink ladder, not with element opacity.
    Opacity composites the declared colour, so the audit read #111 and passed
@@ -3370,6 +3449,7 @@ body {
 /* A blank board makes its one offer once. Five Add rows behind a centred
    "Add the first task" is the same offer six times. */
 [data-app="tasks"] .board[data-blank] .trayAdd,
+[data-app="tasks"] .board[data-blank] .trayFoot,
 [data-app="tasks"] .board[data-blank] .trayEmpty { display: none; }
 
 /* Taste · emptiness is the state this board spends most of its life in, and
@@ -3417,8 +3497,8 @@ body {
   color: var(--ink-3); max-width: 40ch; margin-top: -2px;
 }
 
-@media (max-width: 1099px) {
-  /* Below 1100 the list is the default view and the board is a scroller
+@media (max-width: 1199px) {
+  /* Below 1200 the list is the default view and the board is a scroller
      by design; a lane keeps the specimen floor there rather than yielding
      to a width it was never going to fit. The snap that stops a column
      being sliced at the sheet's edge is on .board unconditionally. */
@@ -4169,6 +4249,13 @@ body {
   --tr-34: -0.034em; --tr-27: -0.030em; --tr-21: -0.026em; --tr-18: -0.021em;
   --tr-16: -0.016em; --tr-14: -0.012em; --tr-12: -0.006em; --tr-11: 0em;
   --tr-cap: 0.075em;
+  /* THE KEYCAP'S OWN LETTERFIT. The suite has one keycap since R7 — 11px mono
+     at +0.04em, the step Timeline's --track-data already declares — and mono
+     at that size needs the positive fit to keep "Ctrl Z" from setting solid.
+     Written down here rather than left ad hoc, so the audit holds it to a
+     declared step like everything else and the curve stays a curve: this is
+     the one role on the sheet that is not running text. */
+  --tr-key: 0.04em;
 
   /* 4 - 6 - 8 - 12 - 14 - 16 - pill. No seventh step. */
   --r-xs: 4px;
@@ -4573,7 +4660,7 @@ body {
    limit did not exist and nobody was told how close they were. */
 [data-app="notes"] .dockCount { font-variant-numeric: tabular-nums; }
 [data-app="notes"] .topMeta { font-size: var(--t-12); color: var(--ink-3); letter-spacing: var(--tr-12); white-space: nowrap; line-height: var(--lh-base); }
-[data-app="notes"] .topMeta kbd { font: inherit; font-size: var(--t-11); font-weight: 600; padding: 1px 5px; border-radius: var(--r-xs); box-shadow: inset 0 0 0 1px var(--line); margin-left: 7px; }
+[data-app="notes"] .topMeta kbd { box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-3); margin-left: 7px; }
 
 [data-app="notes"] .verb {
   display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 11px; border-radius: var(--r-chip);
@@ -4602,7 +4689,7 @@ body {
 [data-app="notes"] .act[data-destroy] { color: var(--ink-3); }
 [data-app="notes"] .act[data-destroy]:hover { background: var(--ink); color: var(--white); box-shadow: none; }
 [data-app="notes"] .act[data-destroy]:hover svg { color: var(--white); }
-[data-app="notes"] .act kbd { font: inherit; font-size: var(--t-11); font-weight: 600; padding: 1px 5px; border-radius: var(--r-xs); box-shadow: inset 0 0 0 1px currentColor; opacity: 0.55; }
+[data-app="notes"] .act kbd { opacity: 0.55; }
 
 /* A note lifted out of the index and read on the desk. Grafted from
    direction B: the metadata is out of the text column, and the words are
@@ -4927,7 +5014,7 @@ body {
 [data-app="notes"] .dockField:hover { background: rgba(17, 17, 17, 0.06); color: var(--ink-2); }
 [data-app="notes"] .dockField svg { width: 15px; height: 15px; flex: none; }
 [data-app="notes"] .dockField span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-[data-app="notes"] .dockField kbd { font: inherit; margin-left: auto; font-size: var(--t-11); font-weight: 600; padding: 1px 5px; border-radius: var(--r-xs); box-shadow: inset 0 0 0 1px var(--line); flex: none; }
+[data-app="notes"] .dockField kbd { margin-left: auto; box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-3); flex: none; }
 [data-app="notes"] .dockGlyph { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: var(--ink-3); cursor: pointer; flex: none; transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve); }
 /* The one filled control in the dock, and it only exists when there is
    something to keep. */
@@ -4968,7 +5055,9 @@ body {
   display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border-radius: var(--r-pill);
   background: var(--white); color: var(--ink); font-size: var(--t-13); font-weight: 600; letter-spacing: var(--tr-12); cursor: pointer; flex: none; line-height: var(--lh-base); }
 [data-app="notes"] .undoAct svg { width: 13px; height: 13px; }
-[data-app="notes"] .undoAct kbd { font: inherit; font-size: var(--t-11); font-weight: 600; opacity: 0.55; }
+/* R7: this cap had no box at all. It gains the shared ring, which is the
+   consolidation working rather than a regression — one keycap means one. */
+[data-app="notes"] .undoAct kbd { opacity: 0.55; }
 /* The chord that reaches the index, printed where the index is named. */
 /* The way into review: a text control at the quiet tier, in the row that
    counts the notes. The target it answers to is 44, taken behind the
@@ -5092,7 +5181,7 @@ body {
 /* The floor advertises its two keys now, so its keycaps need the same
    rule every other keycap in the product has, or they arrive in the
    browser's monospace and break the type lock. */
-[data-app="notes"] .darkAct kbd { font: inherit; font-size: var(--t-11); font-weight: 600; padding: 1px 5px; border-radius: var(--r-xs); box-shadow: inset 0 0 0 1px currentColor; opacity: 0.55; margin-left: 7px; }
+[data-app="notes"] .darkAct kbd { opacity: 0.55; margin-left: 7px; }
 [data-app="notes"] .darkAct:hover { color: var(--on-ink-1); background: var(--chrome); }
 [data-app="notes"] .darkAct[data-primary] { background: var(--white); color: var(--ink); box-shadow: none; font-weight: 600; }
 [data-app="notes"] .darkAct[data-primary]:hover { background: #f2f2f2; }
@@ -7175,6 +7264,12 @@ body {
 }
 [data-app="timeline"] .b-edit:focus-visible { outline-offset: -2px; }
 [data-app="timeline"] .b-editHost:empty { display: none; }
+/* Two hosts, one visible. The after-the-plan host belongs to the across desk;
+   everywhere else the in-band host is the right place and this one is not
+   rendered at all. See the comment beside .b-editAfter in timeline.js. */
+[data-app="timeline"] .b-editAfter { display: none; }
+/* The in-band host is the default election; across.css moves the vote. */
+[data-app="timeline"] .b-stick .b-editHost { --edit-host: 1; }
 [data-app="timeline"] .b-label {
   font-family: var(--mono);
   font-size: var(--size-label);
@@ -7378,7 +7473,11 @@ body {
    nowhere else in the product - and it sat where the measured gate has
    never been able to look, because the bar is invisible in all twelve
    states the audit visits. */
-[data-app="timeline"] .b-undo kbd { font-family: var(--mono); font-size: var(--size-label); line-height: var(--lead-label); letter-spacing: var(--track-data); color: var(--fore-62); }
+/* R7: this was the third keycap and the one that was not a key — tinted
+   mono text with no box, no radius and no padding, so the cap Orla had
+   learned twice arrived here as bare grey type. It takes the suite's cap
+   now and keeps only its ink. */
+[data-app="timeline"] .b-undo kbd { color: var(--fore-62); }
 
 /* ── the empty field ──────────────────────────────────────────────  */
 [data-app="timeline"] .b-empty { padding: var(--gap-major) 0 var(--gap-major); }
@@ -7811,12 +7910,22 @@ body {
   [data-app="timeline"][data-medium="full"] .b-origin { left: 124px; }
   [data-app="timeline"][data-medium="sheet"] .b-away,
   [data-app="timeline"][data-medium="full"] .b-away { left: -124px; width: 84px; font-size: var(--size-lead); }
-  [data-app="timeline"][data-medium="sheet"] .b-tick,
-  [data-app="timeline"][data-medium="full"] .b-tick { left: -27px; }
+  /* THESE TWO ARE THE VERTICAL MEASURE'S. Direction B's whole claim is that
+     position is daysFromToday x pixels-per-day, and on the across axis the one
+     mark the design accents as "this one, next" was the only mark plotted at
+     the wrong distance: the lead override below is (0,5,0) and beat the
+     across-axis rule at (0,4,0), so `left: 0` reached all six ordinary marks
+     and never the lead one. 28px is not a fixed error in days, because the
+     rail rescales — 1.4 days early at 1920, 4.7 at 768-across, where the mark
+     for Saturday 1 August landed where Monday 27 July belongs. Scoped to the
+     vertical axis rather than answered with a counter-rule, so the down axis
+     is byte-identical and the across axis governs its own marks throughout. */
+  [data-app="timeline"][data-medium="sheet"] .b-measure:not([data-across="true"]) .b-tick,
+  [data-app="timeline"][data-medium="full"] .b-measure:not([data-across="true"]) .b-tick { left: -27px; }
   [data-app="timeline"][data-medium="sheet"] .b-origin::before,
   [data-app="timeline"][data-medium="full"] .b-origin::before { left: -27px; }
-  [data-app="timeline"][data-medium="sheet"] .b-item[data-lead="true"] .b-tick,
-  [data-app="timeline"][data-medium="full"] .b-item[data-lead="true"] .b-tick { left: -28px; }
+  [data-app="timeline"][data-medium="sheet"] .b-measure:not([data-across="true"]) .b-item[data-lead="true"] .b-tick,
+  [data-app="timeline"][data-medium="full"] .b-measure:not([data-across="true"]) .b-item[data-lead="true"] .b-tick { left: -28px; }
   [data-app="timeline"][data-medium="sheet"] .b-item[data-anchor="true"]::before,
   [data-app="timeline"][data-medium="full"] .b-item[data-anchor="true"]::before { left: -27px; }
   [data-app="timeline"][data-medium="sheet"] .b-title,
@@ -8583,6 +8692,20 @@ body {
 @media (max-width: 430px) {
   [data-app="timeline"] .tlHead { padding: var(--gap-line) var(--gap-line) 0; }
 }
+
+/* ── PLACING A MOMENT, WITH THE APPROACH STILL IN FRAME ─────────────
+   src/across.css:308 states the premise this layout is built on — "the whole
+   approach is in frame" — and that was true at rest and false the instant
+   anyone edited: the editor opened between the horizon band and the track and
+   pushed every grab handle off the bottom. On this axis the editor goes after
+   the plan, so the measure keeps the room above it and the steppers stay
+   where the hand left them. */
+[data-app="timeline"][data-layout="across"][data-medium="sheet"] .b-editAfter:not(:empty),
+[data-app="timeline"][data-layout="across"][data-medium="full"] .b-editAfter:not(:empty) { display: block; }
+[data-app="timeline"][data-layout="across"][data-medium="sheet"] .b-editAfter,
+[data-app="timeline"][data-layout="across"][data-medium="full"] .b-editAfter { --edit-host: 1; }
+[data-app="timeline"][data-layout="across"][data-medium="sheet"] .b-stick .b-editHost,
+[data-app="timeline"][data-layout="across"][data-medium="full"] .b-stick .b-editHost { display: none; --edit-host: 0; }
 </style>
 
 <!-- THE GOOEY FILTER, and it has exactly one job: the accent that
@@ -9291,7 +9414,9 @@ window.NOTES = (function () {
       handoffBoundary:
         "Your note stays here. Tasks only ever receives the exact words you pick and check below.",
       sourceLabel: "The words you picked",
-      destinationLabel: "This task is filed under",
+      /* The seam picker's VISIBLE word, so its accessible name can start
+         with it rather than with a phrase the button does not show. */
+      destinationLabel: "To",
       wordingLabel: "The task wording",
       /* Shown in the pick band at rest, so the mechanism is visible
          before the black button is pressed rather than only after a
@@ -10996,6 +11121,19 @@ window.__SUITE = (function () {
      and hands back the way to take it out again. */
   var crossings = Object.create(null);   /* note id → the task it became */
 
+  /* Terminal punctuation, ellipses and run-together whitespace are how the
+     same sentence arrives looking like two. */
+  function normWords(v) {
+    return String(v == null ? "" : v)
+      .replace(/[\u2026.,;:!?\s]+$/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  }
+  function sameWords(a, b) {
+    var x = normWords(a);
+    return x !== "" && x === normWords(b);
+  }
   function cross(entry) {
     var api = registry.tasks && registry.tasks.api;
     if (!api) return null;
@@ -11011,9 +11149,14 @@ window.__SUITE = (function () {
          was read. The card carries the picked words, and carries nothing
          at all when the title already IS them — a note that repeats its
          own title is noise, not privacy. */
-      note: entry.crossedWords && entry.crossedWords.trim() !== String(entry.task).trim()
-        ? entry.crossedWords
-        : "",
+      /* Compared on the NORMALISED strings, not the raw ones. The peel keeps
+         the sentence's own terminal period and the task wording drops it, so a
+         single "." defeated this guard on the one card the whole suite
+         argument exists to produce: title "Switch on before guests arrive, not
+         when", note "Switch on before guests arrive, not when." — the same
+         sentence twice, at 14/600 and then 13/400, and said twice to a screen
+         reader as well. Every other card on the board earns its second line. */
+      note: sameWords(entry.crossedWords, entry.task) ? "" : (entry.crossedWords || ""),
       /* What the note was about is what the task is tagged with. The seam
          resolved a destination on the Notes side; it would be thrown away
          here otherwise. */
@@ -11024,6 +11167,29 @@ window.__SUITE = (function () {
     return task.id;
   }
 
+  /* ── THE ONE ACT THAT CROSSES PRODUCTS ────────────────────────────
+     There are three independent undo stacks, each answering only for its own
+     product — so the one act that by definition crosses products was the one
+     act whose reversal the surface actively denied. Sending a note to Tasks,
+     following the seam's own "Open in Tasks", and then pressing Ctrl+Z — the
+     binding the strip you were reading a second ago advertised — answered
+     "Nothing left to undo." while the 30-second window was still counting
+     down and the card was still under your hand. That is not a missing
+     feature; it is a false statement about the suite's state, spoken into the
+     live region at the moment a person is least sure, on the gesture the whole
+     suite exists to argue for.
+
+     The arming product keeps the revert. This holds only the offer, so no
+     revert logic is duplicated and Notes' own single-consumption and expiry
+     rules go on governing it. */
+  var crossUndo = null;
+  function armCross(run) { crossUndo = run ? { run: run } : null; }
+  function takeCross() {
+    if (!crossUndo) return false;
+    var run = crossUndo.run;
+    crossUndo = null;
+    return run() !== false;
+  }
   function uncross(entry) {
     var api = registry.tasks && registry.tasks.api;
     var noteId = String(entry && entry.id).replace(/^crossed_/, "");
@@ -11439,6 +11605,10 @@ window.__SUITE = (function () {
     go: go,
     cross: cross,
     uncross: uncross,
+    /* The seam's undo, offered to whichever room the person is standing in.
+       See `armCross` above. */
+    armCross: armCross,
+    takeCross: takeCross,
     openTask: openTask,
     /* A control becoming the surface it opens. See `morph` above. */
     morph: morph,
@@ -11518,17 +11688,26 @@ if (state === "filtered") state = "board";
 let clientOnly = null;  /* one couple, the venue's own way of looking       */
 let todayOnly = false;  /* the question a venue actually opens this to ask  */
 let undone = null;      /* the last reversible act: a completion or a move  */
-let openNoteId = null;  /* the card showing its full note                   */
+/* R7 — the card's open-note state is gone. openNoteId was assigned null at
+   fourteen sites and a task id at none, so every card with a note shipped a
+   permanent aria-expanded="false" (a term role=article does not support
+   anyway, so even a correct value would never have reached a screen reader),
+   `draggable` was permanently "true", `data-open` was never emitted, and five
+   CSS rules could never match — including the one that was supposed to release
+   the note clamp. The disclosure it described moved to .taskPanel rounds ago.
+   Absence read as a pass: nothing failed, because nothing ever ran. */
+/* The card that has just landed, so the arrival has a beat of its own. */
+let settleId = null;
 let openTaskId = null;  /* the task whose expanded surface is open          */
 let moreOpen = false;   /* the dialog's own accordion, closed at rest       */
-/* board | list — the two views that are real. Below 1100 the sheet cannot
+/* board | list — the two views that are real. Below 1200 the sheet cannot
    hold five lanes at a card's floor, and a board that arrives already
    sliced is the wrong first frame for a phone or a tablet, so the list
    opens there: every task as a whole sentence, its lane stated in type.
    The switcher offers the board at every width. */
-const LIST_ONLY = matchMedia("(max-width: 1099px)");
+const LIST_ONLY = matchMedia("(max-width: 1199px)");
 let view = LIST_ONLY.matches ? "list" : "board";
-/* What the person chose with the switcher, if they chose. Below 1100 the
+/* What the person chose with the switcher, if they chose. Below 1200 the
    board cannot hold five lanes at a card's floor, so the width wins there
    and the choice is remembered rather than overwritten: widening puts them
    back on the view they picked. Derived once at parse until 3 September,
@@ -11902,13 +12081,13 @@ function card(task, force, stop) {
 
   return (
     '<article class="card" data-id="' + esc(task.id) +
-    '" draggable="' + (openNoteId === task.id ? "false" : "true") + '"' +
+    '" draggable="true"' +
     ' aria-label="' + esc(task.title) + '" aria-describedby="cd-' + esc(task.id) + '"' +
-    (task.note ? ' aria-expanded="' + (openNoteId === task.id ? "true" : "false") + '"' : "") +
+    (task.note ? " data-has-note" : "") +
     ' tabindex="' + (stop ? "0" : "-1") + '"' + (done ? "" : ' aria-roledescription="Movable task"') +
     ' aria-keyshortcuts="Space ArrowUp ArrowDown ArrowLeft ArrowRight"' +
     (task.id === carriedId ? ' aria-grabbed="true"' : "") +
-    (task.id === openNoteId ? " data-open" : "") +
+    (task.id === settleId ? " data-settling" : "") +
     (done ? " data-done" : "") + (next ? " data-next" : "") +
     (force ? ' data-force="' + force + '"' :
       task.id === carriedId ? ' data-force="moving"' : "") + ">" +
@@ -12016,7 +12195,6 @@ const TASKS_API = {
     if (at === -1) return false;
     rows.splice(at, 1);
     if (focusId === id) focusId = null;
-    if (openNoteId === id) openNoteId = null;
     if (carriedId === id) carriedId = null;
     mount();
     return true;
@@ -12028,10 +12206,21 @@ const TASKS_API = {
     lateOnly = false;
     todayOnly = false;
     clientOnly = null;
-    openNoteId = null;
     focusId = id;
     refocus = true;
     refocusPart = "card";
+    /* THE ARRIVAL IS VISIBLE TO THE HAND. Driven by keyboard this moment
+       painted a 2px focus ring, because the ring is :focus-visible; driven by
+       pointer — which is how it will actually be done — the card was appended
+       fourth in To Do with nothing at all to distinguish it from the other
+       thirteen, and nothing in the 2.7 seconds after: no animation, no
+       transform, the resting card shadow. The one instant the whole suite is
+       built to sell existed for the keyboard and was silent for the hand.
+       It reuses the drop-settle's own hook rather than inventing a second
+       class, so the arrival and the landing are one idea, and the hook is
+       cleared after one beat so a later repaint cannot replay it. */
+    settleId = id;
+    setTimeout(() => { if (settleId === id) { settleId = null; } }, 520);
     mount();
     return true;
   },
@@ -12135,7 +12324,7 @@ function commitName(field) {
       P.apply(id);
       WORK = null;
       picked.clear(); undoHistory.length = 0; undone = null;
-      openNoteId = null; openTaskId = null; menuFor = null; dayFor = null;
+      openTaskId = null; menuFor = null; dayFor = null;
       focusId = null; lateOnly = false; todayOnly = false; clientOnly = null;
       queryText = ""; drawerTab = "nodate"; state = "board";
       mount();
@@ -12224,7 +12413,12 @@ function projectMenu() {
 let toolOpen = null;    /* which control surface is open, if any            */
 let sortBy = "manual";  /* manual · due · priority · title                  */
 let showNotes = true;   /* whether cards carry their note                   */
-let density = "comfortable";
+/* Compact is a real, one-click state — Show → Compact — and sixteen rules key
+   off it, but it was in no gate's state list, so a reachable configuration
+   carried a 10.5px type size off the declared ramp on the one piece of card
+   metadata an operator reads on every row. It is drivable now, so both gates
+   walk it. */
+let density = state === "compact" ? "compact" : "comfortable";
 
 function filterCount() {
   return (lateOnly ? 1 : 0) + (todayOnly ? 1 : 0) + (clientOnly ? 1 : 0) +
@@ -12612,10 +12806,24 @@ function board() {
            whole project. This one means this column. */
         /* One Add row in the tab order — the column the roving stop is in —
            reached from any card by Tab, like the card's own controls. */
+        /* THE RESIDUE CARRIES A WORD. A column that hid ten of its thirty-two
+           tasks said so with a hairline and a numeral 630px away at the far
+           right of the lane head, and its Add row sat four pixels below the
+           cut in the position that conventionally ends a list. The count is
+           written here, on the Add row's own line, as quiet text rather than
+           a second tab stop in every lane foot: the lane scroller and the
+           card rover already do the moving. Filled by measureEdges, which is
+           the pass that knows how many cards fit — and it writes to a node
+           outside the scroller it measures, so the rule the fold once broke
+           (no attribute a measure pass writes may take part in the layout
+           that same pass measures) still holds. */
+        '<div class="trayFoot">' +
         '<button class="trayAdd" data-act="add" data-lane="' + c.id +
           '" tabindex="' + (rows.some((t) => t.id === focusId) || (!focusId && c.id === B.columns[0].id) ? "0" : "-1") +
           '" aria-label="Add a task to ' + esc(c.name) + '">' +
           I.plus + "<span>Add here</span></button>" +
+        '<p class="trayRest" hidden></p>' +
+        "</div>" +
         "</section>"
       );
     }).join("") + "</div>" +
@@ -13949,7 +14157,26 @@ function toggleDone(id) {
 
 function undoLast() {
   const act = undoHistory.pop();
-  if (!act) { say("Nothing left to undo."); return; }
+  if (!act) {
+    /* Before denying it, ask the suite. The seam's crossing is the one act
+       whose reversal belongs to no single product's stack, and this room is
+       where the seam sends you — so answering "nothing left to undo" here,
+       inside the window the seam's own strip advertised, was a false
+       statement about the suite's state rather than a missing feature.
+       The revert is Notes'; only the offer travels. */
+    if (window.__SUITE && window.__SUITE.takeCross && window.__SUITE.takeCross()) {
+      /* The card that just left was under the keyboard. Name where the hand
+         goes rather than leaving it on a removed node — the round-1 class
+         this file has closed twice on its own side. */
+      focusId = null;
+      landOn = '.tray[data-lane="' + (laneIds()[0] || "todo") + '"] .trayAdd';
+      refocus = true;
+      mount();
+      return;
+    }
+    say("Nothing left to undo.");
+    return;
+  }
   clearUndo();
   undoing = true;
   try { runUndo(act); } finally { undoing = false; }
@@ -14300,13 +14527,6 @@ function onKey(event) {
       carriedId = null; carriedFrom = null;
       refocus = true; mount(); return;
     }
-    if (openNoteId) {
-      event.preventDefault();
-      focusId = openNoteId;
-      openNoteId = null;
-      say("Note closed.");
-      refocus = true; mount(); return;
-    }
     if (clientOnly || lateOnly || todayOnly) {
       event.preventDefault();
       if (clientOnly) clientOnly = null;
@@ -14350,17 +14570,40 @@ function onKey(event) {
          arrows and dropping it there finishes the work exactly as the tick
          does, so it earns the same receipt and the same sentence — it used
          to say only "dropped in Done." */
-      if (lane === "done" && carriedFrom.lane !== "done") {
+      const from = carriedFrom;
+      if (lane === "done" && from.lane !== "done") {
         completed(task, !allTasks().some((t) => timeOf(t).kind === "overdue"));
+      } else if (lane === from.lane && at.y === from.index) {
+        /* The pointer path's first law, which the keyboard never had: picking
+           a card up and putting it back is a non-event. No receipt, no
+           sentence. */
       } else {
+        /* THE KEYBOARD DROP CAN BE TAKEN BACK. This branch mutated the lane
+           and never called arm(), so the one route to the board's most
+           frequent structural act for the operator who cannot drag — the
+           route the card itself advertises with aria-keyshortcuts — was the
+           only route with no way back. The identical move by mouse, and by
+           the Move menu, was undoable, and a keyboard drop into Done was too,
+           because completed() arms; which is why the gap survived anyone who
+           only tested the completion.
+
+           Captured at PICKUP, not here: moveTo() calls applyLaneFacts()
+           unconditionally on every preview move, so the arrow walk has already
+           nulled heldSince and completedAt by the time Space commits. */
+        arm({ kind: "move", id: id, title: task.title, lane: from.lane, index: from.index,
+              toLane: lane, wasHeldSince: from.wasHeldSince, wasCompletedAt: from.wasCompletedAt });
+        /* And the same law in the spoken channel as the pointer path: a
+           sorted lane never announces an index. */
         say(task.title + " dropped " + inLane(lane) + ".");
       }
       carriedId = null; carriedFrom = null;
     } else {
       const at = place(id);
+      const t = taskById(id);
       carriedId = id;
-      carriedFrom = { lane: laneIds()[at.x], index: at.y };
-      say("Picked up " + taskById(id).title + ".");
+      carriedFrom = { lane: laneIds()[at.x], index: at.y,
+        wasHeldSince: t ? t.heldSince : null, wasCompletedAt: t ? t.completedAt : null };
+      say("Picked up " + t.title + ".");
     }
     refocus = true; mount(); return;
   }
@@ -14373,7 +14616,6 @@ function onKey(event) {
        nobody could see any more. */
     openCard(id, () => {
       openTaskId = openTaskId === id ? null : id;
-      openNoteId = null;
       refocus = true;
       mount();
     }, () => {
@@ -14572,7 +14814,6 @@ function onClick(event) {
       : act.classList.contains("railAdd") ? ".railAdd"
       : view === "list" ? '.lrow[tabindex="0"], .emptyBoard [data-act="add"]'
       : '.tray[data-lane="' + act.dataset.lane + '"] .trayAdd';
-    openNoteId = null;
     say("New task " + inLane(draftLane) + ". Type it, then press Enter.");
     /* THE BUTTON BECOMES THE CARD. "Add here" is a ghost button the width
        of the column; the composer is a card in the same column with the
@@ -14794,7 +15035,6 @@ function onClick(event) {
     picked.clear();
     undoHistory.length = 0;
     undone = null;
-    openNoteId = null;
     menuFor = null;
     dayFor = null;
     focusId = null;
@@ -14951,7 +15191,6 @@ function onClick(event) {
      card with nothing written on it answered a press by saying so — which
      is a product telling a person their own task is not worth opening. */
   openTaskId = openTaskId === card.dataset.id ? null : card.dataset.id;
-  openNoteId = null;
   refocus = true;
   mount();
   if (openTaskId) {
@@ -15107,7 +15346,6 @@ function onDrop(event) {
       openCard(id2, () => {
         focusId = id2;
         openTaskId = openTaskId === id2 ? null : id2;
-        openNoteId = null;
         refocus = true;
         mount();
       }, () => {
@@ -15288,6 +15526,24 @@ function measureEdges(target) {
       if (cut > 0 && cut < room) body.style.blockSize = cut + "px";
     }
     tray.style.setProperty("--body-bottom", top + body.clientHeight + "px");
+    /* HOW MANY, IN WORDS — counted last, after the trim above has settled the
+       scroller's height. A column that hid ten of its thirty-two tasks said so
+       with a hairline and a numeral 630px away at the far right of the lane
+       head, while its Add row sat four pixels below the cut in the position
+       that conventionally ends a list. Counted the way the eye counts it —
+       cards whose whole box is inside the scroller — rather than off the lane
+       total, so the number is what is cut off rather than what is filtered
+       out. The node is in the Add row, outside the box this pass measures, and
+       it changes that row's width and never its height, so the rule holds: no
+       attribute a measure pass writes takes part in the layout it measures. */
+    const foot = tray.querySelector(".trayRest");
+    if (foot) {
+      const bb = body.getBoundingClientRect();
+      const cards = [...body.querySelectorAll(".card:not([data-draft])")];
+      const rest = cards.length - cards.filter((c) => c.getBoundingClientRect().bottom <= bb.bottom + 0.5).length;
+      foot.textContent = rest > 0 ? rest + " more below" : "";
+      foot.hidden = rest <= 0;
+    }
   });
   const board = target.querySelector(".board");
   const sheet = target.querySelector(".sheet");
@@ -15626,6 +15882,10 @@ function mount() {
      Timeline both write theirs onto their own root; the board was the one
      surface whose state a gate could only infer from the pixels. */
   root.setAttribute("data-state", lateOnly ? "filtered" : state);
+  /* Written on every paint, not only when the Show menu is used, so the state
+     a gate drives to is the state the sheet is actually in from the first
+     frame. */
+  root.setAttribute("data-density", density);
   const before = flyId || view === "list" ? snapshot(target) : null;
   const kept = keepPlace(target);
   target.innerHTML = renderApp();
@@ -15660,7 +15920,7 @@ window.__signal = {
     state = next;
     carriedId = null; focusId = null; lateOnly = false; clientOnly = null;
     todayOnly = false; menuFor = null;
-    openNoteId = null; flyId = null; flyFrom = null; draftLane = null; draftText = "";
+    flyId = null; flyFrom = null; draftLane = null; draftText = "";
     drawerTab = "nodate"; picked.clear();
     undoHistory.length = 0;
     clearUndo();
@@ -15680,7 +15940,9 @@ if (host) {
      720 in either direction repaints so exactly one field exists. */
   PHONE.addEventListener("change", () => mount());
   /* And the crossing that decides which VIEW is possible, not just where
-     the search field lives. 1099 is the board's own floor. */
+     the search field lives. 1199 is the board's own floor — raised from 1099
+     because between 1100 and 1279 the board was kept and every card note was
+     trimmed, which is the board without the thing a board is for. */
   LIST_ONLY.addEventListener("change", () => {
     view = LIST_ONLY.matches ? "list" : (viewAsked || "board");
     mount();
@@ -15848,7 +16110,6 @@ if (host) {
     openCard(was.id, () => {
       focusId = was.id;
       openTaskId = was.id;
-      openNoteId = null;
       refocus = true;
       mount();
     }, () => {
@@ -16190,6 +16451,15 @@ window.__SUITE.register("tasks", {
       undoneLabel = `Put back. ${label}`;
     }
     undone = { label, undoneLabel, revert };
+    /* THE SEAM'S OFFER TRAVELS WITH THE PERSON. Every other undo here answers
+       for something that happened in this room and belongs to this room. The
+       seam's does not: it sends you somewhere else and then leaves you there
+       holding a keystroke it advertised. The offer goes onto the suite so
+       whichever room the person is standing in can consult it; the revert
+       stays here, so there is one implementation of taking it back. */
+    if (label === "Sent to Tasks." && window.__SUITE && window.__SUITE.armCross) {
+      window.__SUITE.armCross(() => doUndo());
+    }
     clearTimeout(undoTimer);
     /* "for 30s" stood still for thirty seconds, so the one number that
        is actually running was the one number on the surface that never
@@ -16223,12 +16493,16 @@ window.__SUITE.register("tasks", {
       strip.remove();
       const sheet = mount.querySelector(".sheet");
       if (sheet) sheet.removeAttribute("data-undo");
+      /* The window closing here closes it everywhere. */
+      if (window.__SUITE && window.__SUITE.armCross) window.__SUITE.armCross(null);
     }, UNDO_SECONDS * 1000);
   }
   function doUndo() {
     if (!undone) return false;
     const { revert, undoneLabel } = undone;
     undone = null;
+    /* Single consumption, whichever room asked for it. */
+    if (window.__SUITE && window.__SUITE.armCross) window.__SUITE.armCross(null);
     clearTimeout(undoTimer);
     clearInterval(undoTick);
     revert();
@@ -17517,7 +17791,21 @@ window.__SUITE.register("tasks", {
     if (t.gone) parts.push(noun(t.gone) + (t.gone === 1 ? " went" : " went"));
     if (t.kept) parts.push(noun(t.kept) + " stayed here");
     const went = noun(t.all) + " went through. ";
-    if (parts.length === 1) return went + parts[0][0].toUpperCase() + parts[0].slice(1) + ".";
+    /* ONE OUTCOME DOES NOT NEED THE COUNT TWICE. Clearing a queue of eight by
+       keeping all eight read "8 notes went through. 8 notes stayed here." —
+       eight and eight, on the one screen whose job is relief, and in a product
+       whose central promise is that sending to Tasks is a choice it reads as a
+       claim that eight went somewhere and eight did not. The builder is right
+       for a mixed run and only stutters when every decision was the same kind,
+       which is the common case: Keep is the only one-press outcome in review,
+       so this is the flow's default ending rather than an edge case. The zero
+       branch above was fixed once already; this is the hole it left. */
+    if (parts.length === 1) {
+      const only = t.task ? (t.all === 1 ? "It became a task." : "All of them became tasks.")
+        : t.gone ? (t.all === 1 ? "It went." : "All of them went.")
+        : t.all === 1 ? "It stayed here." : "All of them stayed here.";
+      return went + only;
+    }
     const last = parts.pop();
     const rest = parts.join(", ") + " and " + last;
     return went + rest[0].toUpperCase() + rest.slice(1) + ".";
@@ -17544,7 +17832,15 @@ window.__SUITE.register("tasks", {
       <header class="head">
         <span class="word">notes</span>
         <span class="headRule" aria-hidden="true"></span>
-        <h1 class="headName">All your notes</h1>
+        ${/* THE ONE SENTENCE THAT NAMES WHAT IS ON THE SHEET. Scoped, it kept
+             saying "All your notes" with 11 of 14 hidden, 384px from a filled
+             release pill reading "All 14 notes" — two near-identical phrases
+             side by side and only the one that is a button was true. The head
+             count, the scope button's accessible name and the pill were all
+             honest; the visible words were not. Narrowed rather than named:
+             the pressed scope button 104px to the right already carries the
+             subject, so printing it here would say it twice in one line. */ ""}
+        <h1 class="headName">${scope ? "Your notes, narrowed" : "All your notes"}</h1>
         ${nextUp()}
         ${chip ? `<span class="headRule" aria-hidden="true"></span>${chip}` : ""}
         <div class="headActions">
@@ -17763,7 +18059,9 @@ window.__SUITE.register("tasks", {
         </div>
         <div class="peelRow">
           <button class="picker" type="button" data-act="destination" aria-haspopup="listbox" aria-expanded="${picker === "peel"}"
-            aria-label="${attr(N.copy.destinationLabel)}: ${attr(destinationOf(note))}. Change it."><b>To</b>${esc(destinationOf(note))}${I.chevron}</button>
+            ${/* Its accessible name used to open with words its visible label
+                 does not contain — WCAG 2.5.3. Visible and spoken agree now. */ ""}
+            aria-label="${attr(N.copy.destinationLabel)} ${attr(destinationOf(note))}. Change it."><b>${esc(N.copy.destinationLabel)}</b>${esc(destinationOf(note))}${I.chevron}</button>
           ${picker === "peel" ? subjectList("peel", destination) : ""}
           <span class="spacer"></span>
           <button class="act" data-quiet type="button" data-act="cancel-peel">${esc(N.copy.cancel)}</button>
@@ -17794,10 +18092,17 @@ window.__SUITE.register("tasks", {
     const aside = `
       <div class="deskAside">
         <span class="deskFact"><b>How it arrived</b><span>${src.label}, ${esc(note.when)}${note.edited ? ", edited" : ""}</span></span>
-        <span class="deskFact"><b>What it is about</b>
+        ${/* ONE CONTROL, ONE NAME. The same button — same class, same data-act,
+             same field — was labelled "Filing under" on the writing desk and
+             "What it is about" once a note was lifted onto the reading desk,
+             and "What it is about" is already the index head's sort toggle on
+             the same screen, so one click turned a sort mode into a field
+             label. Three spoken grammars went with it, only one of them
+             carrying a colon. */ ""}
+        <span class="deskFact"><b>${esc(N.copy.filingLabel)}</b>
           <span class="filing">
             <button class="filingBtn" type="button" data-act="refile" aria-haspopup="listbox" aria-expanded="${picker === "note"}"
-              aria-label="This note is about ${attr(note.about.label)}${note.about.when ? `, ${attr(note.about.when)}` : ""}. Change it.">
+              aria-label="Filing this under ${attr(note.about.label)}${note.about.when ? `, ${attr(note.about.when)}` : ""}. Change it.">
               <span>${esc(note.about.label)}${note.about.when ? `, ${esc(note.about.when)}` : ""}</span>${I.chevron}
             </button>
             ${picker === "note" ? subjectList("note", note.aboutKey) : ""}
@@ -17810,7 +18115,16 @@ window.__SUITE.register("tasks", {
              of height and the index paid for them. It stands down the
              moment a pick exists, because then the pick bar says it. */ ""}
         ${standingPick(note) ? "" : `<span class="deskFact"><b>${esc(N.copy.pickLabel)}</b><span class="pickHint">${esc(N.copy.pickHint)}</span></span>`}
-        ${note.sent ? `<span class="deskFact"><b>In Tasks as</b><span><button class="deskFactLink" type="button" data-act="open-task" aria-label="${attr(`Open in Tasks: ${note.task || "a task"}. Your note stays here.`)}">${esc(note.task || "a task")}</button></span></span>` : ""}
+        ${/* ONE ANSWER, NOT FOUR. While the receipt is up the margin row stands
+             down entirely. The desk was printing the sent sentence three times
+             — here, in .peelSent, and in the ALREADY IN TASKS row — under two
+             eyebrows naming one fact two ways, with two separate controls both
+             carrying data-act="open-task" 233px apart and the reassurance
+             doubled; and the loudest rendering was the transient one, so
+             prominence ran backwards. The phone already had the right shape.
+             This row is the durable record and returns the moment the receipt
+             is cleared, so nothing is lost, only queued. */ ""}
+        ${note.sent && !sentTask ? `<span class="deskFact"><b>In Tasks as</b><span><button class="deskFactLink" type="button" data-act="open-task" aria-label="${attr(`Open in Tasks: ${note.task || "a task"}. Your note stays here.`)}">${esc(note.task || "a task")}</button></span></span>` : ""}
       </div>`;
     if (isPeeling) {
       /* The product's signature promise is that the note never leaves and
@@ -18097,7 +18411,7 @@ window.__SUITE.register("tasks", {
           <span class="spacer"></span>
           <span class="filing">
             <button class="filingBtn" type="button" data-act="refile" aria-haspopup="listbox" aria-expanded="${picker === "note"}"
-              aria-label="This note is about ${attr(note.about.label)}. Change it.">
+              aria-label="Filing this under ${attr(note.about.label)}. Change it.">
               <span>${esc(note.about.label)}</span>${I.chevron}
             </button>
             ${picker === "note" ? subjectList("note", note.aboutKey) : ""}
@@ -21611,8 +21925,22 @@ var PHONE_T = matchMedia("(max-width: 720px)");
        window above it; in the pane the free band is the pane, and the
        rail with the steppers in it is outside the pane entirely, so
        following the moment cannot move the control being pressed. */
-    if (!fixed && !paneScrolls) return;
-    var free = fixed ? panel.getBoundingClientRect().top - 16 : pane.clientHeight - 16;
+    /* THE THIRD BAND. Under a docked sheet the free band is the window above
+       it; in the pane it is the pane. On the across desk it is neither: the
+       real scroller is the .app.sheet element the plan sits in, and while the
+       band went unrecognised keepInBand returned here and nothing scrolled at
+       all — scrollTop stayed 0 through the open and through every stepper
+       press. Same arithmetic, one more ancestor. */
+    var sheet = null;
+    if (!fixed && !paneScrolls) {
+      for (var up = root; up && up !== document.body; up = up.parentElement) {
+        var os = getComputedStyle(up).overflowY;
+        if ((os === "auto" || os === "scroll") && up.scrollHeight > up.clientHeight + 1) { sheet = up; break; }
+      }
+      if (!sheet) return;
+    }
+    var box = sheet || pane;
+    var free = fixed ? panel.getBoundingClientRect().top - 16 : box.clientHeight - 16;
     var copy = item.querySelector(".b-copy");
     /* Where the row WILL be, not where it is mid-flight. The move is
        animated, so a rect read during the transition is the position the
@@ -21624,7 +21952,7 @@ var PHONE_T = matchMedia("(max-width: 720px)");
     var push = parseFloat(getComputedStyle(copy).getPropertyValue("--push")) || 0;
     var height = copy.getBoundingClientRect().height;
     var top = measureEl.getBoundingClientRect().top + away * px + push;
-    if (!fixed) top -= pane.getBoundingClientRect().top;
+    if (!fixed) top -= box.getBoundingClientRect().top;
     if (top >= 16 && top + height <= free) return;
     /* The MINIMUM correction that puts the row back in the band, not a
        re-centre. A row two pixels past the edge used to move the whole
@@ -21639,7 +21967,7 @@ var PHONE_T = matchMedia("(max-width: 720px)");
     else if (top < 16) delta = Math.round(top - pad);
     else delta = Math.round(top + height - (free - pad));
     if (fixed) window.scrollBy(0, delta);
-    else pane.scrollTop += delta;
+    else box.scrollTop += delta;
   }
 
   function setVisibility(item, hidden) {
@@ -22060,7 +22388,18 @@ var PHONE_T = matchMedia("(max-width: 720px)");
     }
     closeEditor(root, false);
     var node = editor(root, item);
-    (root.querySelector(".b-editHost") || item.parentElement).appendChild(node);
+    /* Whichever host this layout puts on screen. Both carry :empty display
+       none, so exactly one is ever a box. */
+    /* Whichever host this layout elects. Read off a custom property rather
+       than off computed display, because both hosts are display:none while
+       they are empty — asking the boxes which one is showing got the answer
+       "neither" and mounted the editor into a hidden container. The layout
+       owns this decision, so the layout's own stylesheet states it. */
+    var hosts = [].slice.call(root.querySelectorAll(".b-editHost"));
+    var host = hosts.filter(function (h2) {
+      return getComputedStyle(h2).getPropertyValue("--edit-host").trim() === "1";
+    })[0];
+    (host || hosts[0] || item.parentElement).appendChild(node);
     moveUndoBar(root, node);
     item.setAttribute("data-editing", "true");
     root.setAttribute("data-editor-open", "true");
@@ -22245,6 +22584,10 @@ var PHONE_T = matchMedia("(max-width: 720px)");
            reverse did nothing at all and said nothing at all — which is
            indistinguishable from the shortcut being broken. */
         if (!history.length) {
+          /* And before denying it, ask the suite: the seam's crossing is the
+             one act no single product's stack owns, and this product is one
+             of the rooms it can leave you standing in. */
+          if (window.__SUITE.takeCross && window.__SUITE.takeCross()) return;
           window.__SUITE.say("Nothing left to undo.");
           return;
         }
@@ -22515,6 +22858,22 @@ var PHONE_T = matchMedia("(max-width: 720px)");
           measure({ owner: true }), behindBlock({ owner: true }),
         ]),
       ]),
+      /* THE EDITOR DOES NOT STAND BETWEEN YOU AND THE MEASURE. Timeline is
+         The Approach: the organising object is a distance, and placing a
+         moment on that distance is the one act the direction exists for. In
+         the across desk layout the 554px editor opened between the horizon
+         band and the track and pushed all eight grab handles below the fold —
+         0 of 8 on screen at 1280, 1440 and 1920 alike — so the pin slid 133px
+         along the ruler and the person pressing the stepper saw only a mono
+         line reading "in 8 days". The down layout keeps three of eight,
+         because .b-two is a real two-pane grid there.
+
+         The host cannot simply move into the plan: scrolling the sheet to
+         follow the dot would then carry the steppers out from under the hand,
+         which is exactly what keepInBand's own comment forbids. So it goes
+         after the plan, and only the across desk selects it. Empty, it is not
+         there at all — the same idiom as .b-editHost above. */
+      h("div.b-editHost.b-editAfter"),
       foot({}),
     ], ".b-ownerField");
     wireOwner(node, opts || {});

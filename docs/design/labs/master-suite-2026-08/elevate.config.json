@@ -6,6 +6,7 @@
   "states": [
     "tasks.board",
     "tasks.dense",
+    "tasks.compact",
     "notes.notebook",
     "notes.seam",
     "notes.review",

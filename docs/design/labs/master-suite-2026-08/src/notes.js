@@ -271,6 +271,15 @@
       undoneLabel = `Put back. ${label}`;
     }
     undone = { label, undoneLabel, revert };
+    /* THE SEAM'S OFFER TRAVELS WITH THE PERSON. Every other undo here answers
+       for something that happened in this room and belongs to this room. The
+       seam's does not: it sends you somewhere else and then leaves you there
+       holding a keystroke it advertised. The offer goes onto the suite so
+       whichever room the person is standing in can consult it; the revert
+       stays here, so there is one implementation of taking it back. */
+    if (label === "Sent to Tasks." && window.__SUITE && window.__SUITE.armCross) {
+      window.__SUITE.armCross(() => doUndo());
+    }
     clearTimeout(undoTimer);
     /* "for 30s" stood still for thirty seconds, so the one number that
        is actually running was the one number on the surface that never
@@ -304,12 +313,16 @@
       strip.remove();
       const sheet = mount.querySelector(".sheet");
       if (sheet) sheet.removeAttribute("data-undo");
+      /* The window closing here closes it everywhere. */
+      if (window.__SUITE && window.__SUITE.armCross) window.__SUITE.armCross(null);
     }, UNDO_SECONDS * 1000);
   }
   function doUndo() {
     if (!undone) return false;
     const { revert, undoneLabel } = undone;
     undone = null;
+    /* Single consumption, whichever room asked for it. */
+    if (window.__SUITE && window.__SUITE.armCross) window.__SUITE.armCross(null);
     clearTimeout(undoTimer);
     clearInterval(undoTick);
     revert();
@@ -1598,7 +1611,21 @@
     if (t.gone) parts.push(noun(t.gone) + (t.gone === 1 ? " went" : " went"));
     if (t.kept) parts.push(noun(t.kept) + " stayed here");
     const went = noun(t.all) + " went through. ";
-    if (parts.length === 1) return went + parts[0][0].toUpperCase() + parts[0].slice(1) + ".";
+    /* ONE OUTCOME DOES NOT NEED THE COUNT TWICE. Clearing a queue of eight by
+       keeping all eight read "8 notes went through. 8 notes stayed here." —
+       eight and eight, on the one screen whose job is relief, and in a product
+       whose central promise is that sending to Tasks is a choice it reads as a
+       claim that eight went somewhere and eight did not. The builder is right
+       for a mixed run and only stutters when every decision was the same kind,
+       which is the common case: Keep is the only one-press outcome in review,
+       so this is the flow's default ending rather than an edge case. The zero
+       branch above was fixed once already; this is the hole it left. */
+    if (parts.length === 1) {
+      const only = t.task ? (t.all === 1 ? "It became a task." : "All of them became tasks.")
+        : t.gone ? (t.all === 1 ? "It went." : "All of them went.")
+        : t.all === 1 ? "It stayed here." : "All of them stayed here.";
+      return went + only;
+    }
     const last = parts.pop();
     const rest = parts.join(", ") + " and " + last;
     return went + rest[0].toUpperCase() + rest.slice(1) + ".";
@@ -1625,7 +1652,15 @@
       <header class="head">
         <span class="word">notes</span>
         <span class="headRule" aria-hidden="true"></span>
-        <h1 class="headName">All your notes</h1>
+        ${/* THE ONE SENTENCE THAT NAMES WHAT IS ON THE SHEET. Scoped, it kept
+             saying "All your notes" with 11 of 14 hidden, 384px from a filled
+             release pill reading "All 14 notes" — two near-identical phrases
+             side by side and only the one that is a button was true. The head
+             count, the scope button's accessible name and the pill were all
+             honest; the visible words were not. Narrowed rather than named:
+             the pressed scope button 104px to the right already carries the
+             subject, so printing it here would say it twice in one line. */ ""}
+        <h1 class="headName">${scope ? "Your notes, narrowed" : "All your notes"}</h1>
         ${nextUp()}
         ${chip ? `<span class="headRule" aria-hidden="true"></span>${chip}` : ""}
         <div class="headActions">
@@ -1844,7 +1879,9 @@
         </div>
         <div class="peelRow">
           <button class="picker" type="button" data-act="destination" aria-haspopup="listbox" aria-expanded="${picker === "peel"}"
-            aria-label="${attr(N.copy.destinationLabel)}: ${attr(destinationOf(note))}. Change it."><b>To</b>${esc(destinationOf(note))}${I.chevron}</button>
+            ${/* Its accessible name used to open with words its visible label
+                 does not contain — WCAG 2.5.3. Visible and spoken agree now. */ ""}
+            aria-label="${attr(N.copy.destinationLabel)} ${attr(destinationOf(note))}. Change it."><b>${esc(N.copy.destinationLabel)}</b>${esc(destinationOf(note))}${I.chevron}</button>
           ${picker === "peel" ? subjectList("peel", destination) : ""}
           <span class="spacer"></span>
           <button class="act" data-quiet type="button" data-act="cancel-peel">${esc(N.copy.cancel)}</button>
@@ -1875,10 +1912,17 @@
     const aside = `
       <div class="deskAside">
         <span class="deskFact"><b>How it arrived</b><span>${src.label}, ${esc(note.when)}${note.edited ? ", edited" : ""}</span></span>
-        <span class="deskFact"><b>What it is about</b>
+        ${/* ONE CONTROL, ONE NAME. The same button — same class, same data-act,
+             same field — was labelled "Filing under" on the writing desk and
+             "What it is about" once a note was lifted onto the reading desk,
+             and "What it is about" is already the index head's sort toggle on
+             the same screen, so one click turned a sort mode into a field
+             label. Three spoken grammars went with it, only one of them
+             carrying a colon. */ ""}
+        <span class="deskFact"><b>${esc(N.copy.filingLabel)}</b>
           <span class="filing">
             <button class="filingBtn" type="button" data-act="refile" aria-haspopup="listbox" aria-expanded="${picker === "note"}"
-              aria-label="This note is about ${attr(note.about.label)}${note.about.when ? `, ${attr(note.about.when)}` : ""}. Change it.">
+              aria-label="Filing this under ${attr(note.about.label)}${note.about.when ? `, ${attr(note.about.when)}` : ""}. Change it.">
               <span>${esc(note.about.label)}${note.about.when ? `, ${esc(note.about.when)}` : ""}</span>${I.chevron}
             </button>
             ${picker === "note" ? subjectList("note", note.aboutKey) : ""}
@@ -1891,7 +1935,16 @@
              of height and the index paid for them. It stands down the
              moment a pick exists, because then the pick bar says it. */ ""}
         ${standingPick(note) ? "" : `<span class="deskFact"><b>${esc(N.copy.pickLabel)}</b><span class="pickHint">${esc(N.copy.pickHint)}</span></span>`}
-        ${note.sent ? `<span class="deskFact"><b>In Tasks as</b><span><button class="deskFactLink" type="button" data-act="open-task" aria-label="${attr(`Open in Tasks: ${note.task || "a task"}. Your note stays here.`)}">${esc(note.task || "a task")}</button></span></span>` : ""}
+        ${/* ONE ANSWER, NOT FOUR. While the receipt is up the margin row stands
+             down entirely. The desk was printing the sent sentence three times
+             — here, in .peelSent, and in the ALREADY IN TASKS row — under two
+             eyebrows naming one fact two ways, with two separate controls both
+             carrying data-act="open-task" 233px apart and the reassurance
+             doubled; and the loudest rendering was the transient one, so
+             prominence ran backwards. The phone already had the right shape.
+             This row is the durable record and returns the moment the receipt
+             is cleared, so nothing is lost, only queued. */ ""}
+        ${note.sent && !sentTask ? `<span class="deskFact"><b>In Tasks as</b><span><button class="deskFactLink" type="button" data-act="open-task" aria-label="${attr(`Open in Tasks: ${note.task || "a task"}. Your note stays here.`)}">${esc(note.task || "a task")}</button></span></span>` : ""}
       </div>`;
     if (isPeeling) {
       /* The product's signature promise is that the note never leaves and
@@ -2178,7 +2231,7 @@
           <span class="spacer"></span>
           <span class="filing">
             <button class="filingBtn" type="button" data-act="refile" aria-haspopup="listbox" aria-expanded="${picker === "note"}"
-              aria-label="This note is about ${attr(note.about.label)}. Change it.">
+              aria-label="Filing this under ${attr(note.about.label)}. Change it.">
               <span>${esc(note.about.label)}</span>${I.chevron}
             </button>
             ${picker === "note" ? subjectList("note", note.aboutKey) : ""}

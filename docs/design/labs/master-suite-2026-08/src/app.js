@@ -689,6 +689,19 @@ window.__SUITE = (function () {
      and hands back the way to take it out again. */
   var crossings = Object.create(null);   /* note id → the task it became */
 
+  /* Terminal punctuation, ellipses and run-together whitespace are how the
+     same sentence arrives looking like two. */
+  function normWords(v) {
+    return String(v == null ? "" : v)
+      .replace(/[\u2026.,;:!?\s]+$/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  }
+  function sameWords(a, b) {
+    var x = normWords(a);
+    return x !== "" && x === normWords(b);
+  }
   function cross(entry) {
     var api = registry.tasks && registry.tasks.api;
     if (!api) return null;
@@ -704,9 +717,14 @@ window.__SUITE = (function () {
          was read. The card carries the picked words, and carries nothing
          at all when the title already IS them — a note that repeats its
          own title is noise, not privacy. */
-      note: entry.crossedWords && entry.crossedWords.trim() !== String(entry.task).trim()
-        ? entry.crossedWords
-        : "",
+      /* Compared on the NORMALISED strings, not the raw ones. The peel keeps
+         the sentence's own terminal period and the task wording drops it, so a
+         single "." defeated this guard on the one card the whole suite
+         argument exists to produce: title "Switch on before guests arrive, not
+         when", note "Switch on before guests arrive, not when." — the same
+         sentence twice, at 14/600 and then 13/400, and said twice to a screen
+         reader as well. Every other card on the board earns its second line. */
+      note: sameWords(entry.crossedWords, entry.task) ? "" : (entry.crossedWords || ""),
       /* What the note was about is what the task is tagged with. The seam
          resolved a destination on the Notes side; it would be thrown away
          here otherwise. */
@@ -717,6 +735,29 @@ window.__SUITE = (function () {
     return task.id;
   }
 
+  /* ── THE ONE ACT THAT CROSSES PRODUCTS ────────────────────────────
+     There are three independent undo stacks, each answering only for its own
+     product — so the one act that by definition crosses products was the one
+     act whose reversal the surface actively denied. Sending a note to Tasks,
+     following the seam's own "Open in Tasks", and then pressing Ctrl+Z — the
+     binding the strip you were reading a second ago advertised — answered
+     "Nothing left to undo." while the 30-second window was still counting
+     down and the card was still under your hand. That is not a missing
+     feature; it is a false statement about the suite's state, spoken into the
+     live region at the moment a person is least sure, on the gesture the whole
+     suite exists to argue for.
+
+     The arming product keeps the revert. This holds only the offer, so no
+     revert logic is duplicated and Notes' own single-consumption and expiry
+     rules go on governing it. */
+  var crossUndo = null;
+  function armCross(run) { crossUndo = run ? { run: run } : null; }
+  function takeCross() {
+    if (!crossUndo) return false;
+    var run = crossUndo.run;
+    crossUndo = null;
+    return run() !== false;
+  }
   function uncross(entry) {
     var api = registry.tasks && registry.tasks.api;
     var noteId = String(entry && entry.id).replace(/^crossed_/, "");
@@ -1132,6 +1173,10 @@ window.__SUITE = (function () {
     go: go,
     cross: cross,
     uncross: uncross,
+    /* The seam's undo, offered to whichever room the person is standing in.
+       See `armCross` above. */
+    armCross: armCross,
+    takeCross: takeCross,
     openTask: openTask,
     /* A control becoming the surface it opens. See `morph` above. */
     morph: morph,
