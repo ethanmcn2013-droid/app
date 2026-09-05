@@ -5,6 +5,7 @@ import { HOME_APP_PATH } from "@/lib/product-urls";
 import { resolveProjectForRoute } from "@/server/projects/route-authz";
 import { ActiveProjectRouteSync } from "./active-project-route-sync";
 import { OpenTasksProject } from "./open-tasks-project";
+import type { TasksArrivalSurface } from "@/lib/tasks/arrival-path";
 
 /** Prove the explicit route before rendering any target project content. */
 export async function resolveTasksArrival(requested?: string | string[]) {
@@ -26,7 +27,7 @@ export async function resolveTasksArrival(requested?: string | string[]) {
 export function TasksArrivalRefusal({ arrival, requested, surface, taskId }: {
   arrival: Exclude<Awaited<ReturnType<typeof resolveTasksArrival>>, { kind: "ready" }>;
   requested?: string | string[];
-  surface: "tasks" | "my-work";
+  surface: TasksArrivalSurface;
   taskId?: string;
 }) {
   const project = arrival.kind === "selection-required" ? arrival.project : null;

@@ -8,6 +8,8 @@ import { db } from "@/server/db";
 import { tasks } from "@/server/db/schema";
 import { authorizeObjectProject } from "@/server/projects/route-authz";
 import { assertProjectId } from "@/lib/projects/project-ref";
+import { tasksArrivalPath } from "@/lib/tasks/arrival-path";
+import { resolveTasksArrival, TasksArrivalRefusal } from "@/components/app/tasks-project-arrival";
 import { DEMO_WORKSPACE_ID } from "@/server/demo/tasks-demo";
 import {
   canonicalTaskUrl,
@@ -27,7 +29,7 @@ async function decide(id: string): Promise<TaskRouteDecision> {
     const result = await getTaskDetail(id, demoWorkspaceId);
     if (!result) return { kind: "not-found" };
     return result.archived
-      ? { kind: "archived", task: result.task }
+      ? { kind: "archived", workspaceId: demoWorkspaceId, task: result.task }
       : { kind: "canonical", workspaceId: demoWorkspaceId, taskId: result.task.id };
   }
 
@@ -50,8 +52,10 @@ async function decide(id: string): Promise<TaskRouteDecision> {
 
 export default async function TaskFocusPage({
   params,
+  searchParams: routeSearchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ workspaceId?: string | string[] }>;
 }) {
   const { id } = await params;
   const decision = await decide(id);
@@ -62,11 +66,6 @@ export default async function TaskFocusPage({
   if (decision.kind === "canonical") {
     redirect(canonicalTaskUrl(decision.workspaceId, decision.taskId));
   }
-
-  // Both rendered states mount the runtime with no explicit `workspaceId`
-  // (D-022): this route's Project authority is the task object itself
-  // (ADR 0001 §9), never the URL's query, so the chrome stays on the ambient
-  // Project exactly as it always has.
 
   // Missing, forbidden and deleted — one state, never distinguishable.
   if (decision.kind === "not-found") {
@@ -93,21 +92,36 @@ export default async function TaskFocusPage({
   // board (`queries.ts:109`), so redirecting here would open a detail panel
   // for a task the board cannot list.
   {
-    const { task } = decision;
+    const { task, workspaceId } = decision;
+    // Only the stored, proven object Project may move this runtime. A legacy
+    // layout still needs an explicit selection POST before it can follow B.
+    const arrival = await resolveTasksArrival(workspaceId);
+    if (arrival.kind !== "ready") {
+      return <TasksArrivalRefusal arrival={arrival} requested={workspaceId} surface="task-focus" taskId={task.id} />;
+    }
+    const searchParams = Promise.resolve({ workspaceId });
+    // The object owns the data, while the actual URL owns the snapshot key.
+    // A bare /task/id URL has no query Project; stamping it as B would leave
+    // the control loading forever. A conflicting query cannot change the
+    // stored authority either. Match the URL bridge's first query value.
+    const routeProject = (await routeSearchParams)?.workspaceId;
+    const snapshotRequestedProjectId = Array.isArray(routeProject)
+      ? routeProject[0] ?? null
+      : routeProject ?? null;
     return (
-      <TasksRuntimePageMount>
+      <TasksRuntimePageMount searchParams={searchParams} snapshotRequestedProjectId={snapshotRequestedProjectId}>
         <div className="flex h-full flex-col items-center justify-center gap-3 px-8 text-center">
           <div className="text-[16px] font-semibold text-ink">{task.title}</div>
           <div className="text-[13px] text-ink-soft">This task is archived.</div>
           <div className="mt-2 flex items-center gap-4 text-[12.5px]">
             <Link
-              href="/app/archived"
+              href={tasksArrivalPath("archive", workspaceId)}
               className="text-ink-quiet underline underline-offset-2 transition-colors hover:text-ink-soft"
             >
               Open archive
             </Link>
             <Link
-              href="/app/tasks"
+              href={tasksArrivalPath("tasks", workspaceId)}
               className="text-ink-quiet underline underline-offset-2 transition-colors hover:text-ink-soft"
             >
               Back to board

@@ -332,6 +332,7 @@ const RUNTIME_SEGMENTS = [
  * data against the explicit Project itself.
  */
 const PAGES_PASSING_THE_URL = [
+  "src/app/app/archived/page.tsx",
   "src/app/app/my-tasks/page.tsx",
   "src/app/app/project/page.tsx",
   "src/app/app/tasks/calendar/page.tsx",
@@ -342,8 +343,7 @@ const PAGES_PASSING_THE_URL = [
 ];
 
 /**
- * These pages resolve their content ambiently (`requireRouteProjectId`, or
- * the task object's own Project per ADR 0001 §9), so their mounts must never
+ * These pages resolve their content ambiently (`requireRouteProjectId`), so their mounts must never
  * claim an explicit Project: chrome naming B over content resolved as A is
  * the inequality ADR 0001 §2 calls a release blocker. None of these is a
  * `PROJECT_DESTINATION_SURFACES` entry, so the switcher never emits a
@@ -351,12 +351,11 @@ const PAGES_PASSING_THE_URL = [
  * content reads take the same explicit Project.
  */
 const PAGES_STAYING_AMBIENT = [
-  "src/app/app/archived/page.tsx",
   "src/app/app/import/page.tsx",
   "src/app/app/inbox/page.tsx",
   "src/app/app/settings/page.tsx",
-  "src/app/app/task/[id]/page.tsx",
 ];
+const OBJECT_PROJECT_PAGES = ["src/app/app/task/[id]/page.tsx"];
 
 test("every runtime segment layout mounts through the flag branch and resolves nothing", () => {
   for (const segment of RUNTIME_SEGMENTS) {
@@ -380,7 +379,7 @@ test("every runtime segment layout mounts through the flag branch and resolves n
 });
 
 test("every page in a runtime segment mounts the runtime's page half", () => {
-  for (const page of [...PAGES_PASSING_THE_URL, ...PAGES_STAYING_AMBIENT]) {
+  for (const page of [...PAGES_PASSING_THE_URL, ...PAGES_STAYING_AMBIENT, ...OBJECT_PROJECT_PAGES]) {
     const source = read(page);
     assert.match(
       source,
@@ -420,6 +419,17 @@ test("Tasks refusals publish an unavailable context without reading an ambient r
   assert.match(myWork, /resolveTasksArrival\(requested\)/);
   assert.match(myWork, /<TasksArrivalRefusal/);
   assert.match(myWork, /capabilities.manageProject/);
+});
+
+test("archived object and archive destination keep content and runtime on the proven project", () => {
+  assert.match(taskResolver, /kind: "archived", workspaceId: proven, task: detail.task/);
+  assert.match(taskPage, /const \{ task, workspaceId \} = decision/);
+  assert.match(taskPage, /const searchParams = Promise.resolve\(\{ workspaceId \}\)/);
+  assert.match(taskPage, /<TasksRuntimePageMount searchParams=\{searchParams\} snapshotRequestedProjectId=\{snapshotRequestedProjectId\}>/);
+  const archive = read("src/app/app/archived/page.tsx");
+  assert.match(archive, /resolveTasksArrival\(requested\)/);
+  assert.match(archive, /getArchivedTasks\(arrival.project.workspaceId\)/);
+  assert.doesNotMatch(archive, /requireRouteProjectId/);
 });
 
 test("the shell records how the searchParams half of its allowlist condition is met", () => {

@@ -6,8 +6,8 @@ import { revalidatePath } from "next/cache";
 import { resolveProjectForRoute } from "@/server/projects/route-authz";
 import { writeActiveProjectCookie } from "@/server/projects/active-project-cookie";
 import { parseProjectId } from "@/lib/projects/project-ref";
-import { withActiveProject } from "@/lib/projects/project-url";
-import { MY_WORK_APP_PATH, PRODUCT_APP_PATHS } from "@/lib/product-urls";
+import { tasksArrivalPath } from "@/lib/tasks/arrival-path";
+import { getTaskDetail } from "@/server/db/queries";
 import { isDemoMode } from "@/lib/access-mode";
 import { ACTIVE_WORKSPACE_COOKIE_NAME } from "@/server/auth";
 
@@ -26,14 +26,18 @@ export async function openTasksProjectAction(
     const surface = form.get("surface");
     const task = form.get("task");
     if (!id || form.getAll("workspaceId").length !== 1 || form.getAll("surface").length !== 1 || form.getAll("task").length > 1 ||
-      (surface !== "tasks" && surface !== "my-work") ||
+      (surface !== "tasks" && surface !== "my-work" && surface !== "archive" && surface !== "task-focus") ||
       (task !== null && (typeof task !== "string" || task.length > 200))) {
       return { error: "This project link is not available." };
     }
     const project = await resolveProjectForRoute(id);
     if (project.kind !== "ready" || project.workspaceId !== id) return { error: "This project is not available to open. Return to Home to choose another project." };
-    target = withActiveProject(surface === "tasks" ? PRODUCT_APP_PATHS.tasks : MY_WORK_APP_PATH, id);
-    if (surface === "tasks" && task) target += `&task=${encodeURIComponent(task)}`;
+    // A copied object recovery form may outlive a move/deletion. The object
+    // must still belong to this exact proven Project before preferences move.
+    if (surface === "task-focus" && (!task || !await getTaskDetail(task, id))) {
+      return { error: "This task is not available to open." };
+    }
+    target = tasksArrivalPath(surface, id, task ?? undefined);
     await writeActiveProjectCookie(id);
     const store = await cookies();
     store.set(ACTIVE_WORKSPACE_COOKIE_NAME, id, {

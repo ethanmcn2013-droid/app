@@ -48,7 +48,7 @@ export type TaskRouteDecision =
   /** Canonicalise to the Tasks board with the task's own Project bound. */
   | Readonly<{ kind: "canonical"; workspaceId: ProjectId; taskId: string }>
   /** Archived tasks stay on this route: the board excludes archived rows. */
-  | Readonly<{ kind: "archived"; task: Task }>
+  | Readonly<{ kind: "archived"; workspaceId: ProjectId; task: Task }>
   /** Missing, forbidden and deleted, collapsed. Never distinguishable. */
   | Readonly<{ kind: "not-found" }>;
 
@@ -91,7 +91,7 @@ export async function decideTaskRouteWith(
   const detail = await deps.loadDetail(id, proven);
   if (!detail) return { kind: "not-found" };
 
-  if (detail.archived) return { kind: "archived", task: detail.task };
+  if (detail.archived) return { kind: "archived", workspaceId: proven, task: detail.task };
   return { kind: "canonical", workspaceId: proven, taskId: detail.task.id };
 }
 
