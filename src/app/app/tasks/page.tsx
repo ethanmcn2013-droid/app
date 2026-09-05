@@ -1,4 +1,9 @@
 import { Suspense } from "react";
+import Link from "next/link";
+import { PROJECT_APP_PATH } from "@/lib/product-urls";
+import { withActiveProject } from "@/lib/projects/project-url";
+import { readSponsoredWeddingDate } from "@/server/db/sponsored-wedding-date";
+import { db } from "@/server/db";
 import { HybridWorkspace } from "@/components/hybrid/hybrid-workspace";
 import { TasksRuntimePageMount } from "@/components/app/tasks-runtime-mount";
 import { TemplatedToast } from "@/components/app/templated-toast";
@@ -30,6 +35,9 @@ export default async function TasksPage({
   }
 
   let venue: { sponsorName: string; sponsorSlug: string } | null = null;
+  const weddingDate = isDemoMode() ? null : await readSponsoredWeddingDate(db, {
+    actorUserId: await getCurrentUser(), projectId: arrival.project.workspaceId,
+  });
   if (sp.welcome === "venue") {
     if (isDemoMode()) {
       venue = {
@@ -51,7 +59,15 @@ export default async function TasksPage({
 
   return (
     <TasksRuntimePageMount searchParams={searchParams}>
-      <HybridWorkspace view="board" />
+      <div className="flex h-full min-h-0 flex-col">
+        {weddingDate ? <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-2 border-b border-line-soft bg-bg-elevated px-4 py-2 text-[13px] text-ink-soft">
+          <span>Wedding date{weddingDate.weddingDate ? "" : " not set yet"}</span>
+          <Link href={withActiveProject(`${PROJECT_APP_PATH}#wedding-date`, arrival.project.workspaceId)} className="inline-flex min-h-11 items-center font-medium text-brand underline underline-offset-4">
+            {weddingDate.weddingDate ? "View or update wedding date" : "Add your wedding date"}
+          </Link>
+        </div> : null}
+        <div className="min-h-0 flex-1"><HybridWorkspace view="board" /></div>
+      </div>
       <Suspense fallback={null}>
         <TemplatedToast />
       </Suspense>
@@ -59,6 +75,7 @@ export default async function TasksPage({
         <VenueWelcomeCard
           sponsorName={venue.sponsorName}
           sponsorSlug={venue.sponsorSlug}
+          projectId={arrival.project.workspaceId}
         />
       ) : null}
     </TasksRuntimePageMount>

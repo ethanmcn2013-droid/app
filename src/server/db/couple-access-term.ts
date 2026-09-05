@@ -26,25 +26,12 @@ import {
  * term is therefore computed from whatever date is on the couple's workspace
  * at the moment it is asked for, and recomputed when that date is written.
  *
- * **No wedding date reaches this code in production today, for three reasons,
- * and every sponsored couple therefore falls back to the 548-day floor:**
- *
- *  1. The capture is gated behind the `contextualOnboarding` flag, whose
- *     default is `NODE_ENV !== "production"` (`lib/planning/flags.ts`).
- *  2. Venue Edition redemption skips onboarding entirely. The result card
- *     deep-links to `/app/tasks?welcome=venue&v=<slug>`
- *     (`redeem-result-card.tsx`), so the sponsored couple is routed around the
- *     one screen that asks for the date. This is the larger blocker.
- *  3. `workspaces.primary_date` is written at workspace creation only. No
- *     action updates it afterwards, so the postponement case D-022 point 3
- *     describes cannot be triggered from the product yet, even though
- *     `extendCoupleAccessForWeddingDate` below implements it.
- *
- * The floor is exactly what shipped before this change, so nobody is worse off
- * and no term is ever shorter than the ratified one. The grace half of D-022
- * starts working the moment a wedding date exists, with no further change to
- * this file. Closing the three gaps above is product-flow work and a founder
- * decision, recorded in `tasks/R-015.md`.
+ * Existing sponsored Projects now capture and update that canonical date via
+ * `server/actions/sponsored-wedding-date.ts` and its transactional DB helper.
+ * That path is Project-scoped and preserves revoked grants. The user-wide
+ * helper below remains the legacy experimental onboarding entry point; it is
+ * not used for updates to an existing sponsored Project. Neither path retimes
+ * existing tasks merely because the wedding date changed.
  */
 
 export type CoupleAccessDb = LibSQLDatabase<typeof schema>;

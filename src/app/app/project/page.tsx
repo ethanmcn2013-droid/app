@@ -31,19 +31,8 @@ export const dynamic = "force-dynamic";
  * ADR 0001 §4 step 3 runs and the page replace-redirects to a canonical URL
  * that now carries the Project.
  *
- * ── The interim verification, and why it is here ───────────────────────────
- *
- * `getProjectOverviewData()` still takes no argument, and it lives in
- * `src/server/actions/**`, which another lane owns — an interface request to
- * give it an explicit `projectId` parameter is filed rather than reached for
- * here. Until it lands, this page cannot *direct* that read; what it can do is
- * refuse to render a mismatch. The payload carries its own `workspaceId`, so
- * the authorized Project is compared against the Project the data actually
- * describes, and a disagreement renders the neutral unavailable state instead
- * of silently showing Project A's members and budget under a URL that says B.
- *
- * That is ADR 0001 §2's invariant enforced at the last point this lane
- * controls. It becomes a no-op the moment the parameter exists.
+ * The overview read and its controls receive the authorized URL Project.
+ * The payload check remains a final guard against mismatched content.
  */
 function canonicalProjectUrl(workspaceId: ProjectId): string {
   // The shared contextual-link builder. An earlier draft built this query
@@ -104,7 +93,7 @@ export default async function ProjectPage({
     redirect(canonicalProjectUrl(project.canonicalRedirectTo));
   }
 
-  const data = await getProjectOverviewData();
+  const data = await getProjectOverviewData(authorized);
 
   // See the docblock. Refuse rather than render another Project's overview.
   if (data.workspaceId !== authorized) return <Unavailable />;
@@ -114,7 +103,7 @@ export default async function ProjectPage({
   // consumes it (D-022).
   return (
     <TasksRuntimePageMount searchParams={searchParams}>
-      <ProjectOverview data={data} />
+      <ProjectOverview key={authorized} data={data} />
     </TasksRuntimePageMount>
   );
 }
