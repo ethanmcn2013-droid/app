@@ -57,18 +57,19 @@ export function MyWeekApp({ canSetUpProject = false }: { canSetUpProject?: boole
   // "Due today" three weeks earlier).
   const calendar = useCalendarFrame();
   const now = useMemo(() => new Date(calendar.nowIso), [calendar.nowIso]);
-  const buckets = bucketMyWeek(state.tasks, meId, now);
+  const buckets = bucketMyWeek(state.tasks, meId, now, calendar);
   // Dayparts, "This evening" splits out of Today only when a task
   // carries an explicit evening time. No time typed, no daypart.
   const { day: todayDay, evening: todayEvening } = splitTodayDayparts(
     buckets.today,
     now,
+    calendar,
   );
   // Nudges are computed client-side from the same task list (generateNudges
   // is pure), the proactive "what's stuck" surface folded in from the inbox.
   const nudges = useMemo(
-    () => generateNudges(state.tasks, meId, columnConfig, now),
-    [state.tasks, meId, columnConfig, now],
+    () => generateNudges(state.tasks, meId, columnConfig, now, calendar),
+    [state.tasks, meId, columnConfig, now, calendar],
   );
 
   const totalAttention =
