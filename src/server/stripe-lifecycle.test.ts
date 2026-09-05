@@ -267,6 +267,7 @@ test("recovery: real deletion route fences billing through orchestrated erasure 
     const create = async (args: unknown) => { providerCalls.push(args); return { url: "https://billing.invalid/fixture" }; };
     const provider = { checkout: { sessions: { create } }, billingPortal: { sessions: { create } } };
     const imports = {
+      "@/server/db/event-designation": await import("./db/event-designation"),
       "@/lib/access-mode": { isDemoMode: () => false },
       "@/server/auth": { getCurrentUser: async () => userId, getActiveWorkspaceOrNull: async () => "project-b" },
       "@/server/actions/project-authz": { authorizeProjectCandidate: async () => ({ ok: true, projectId: "project-b" }) },
@@ -495,6 +496,7 @@ test("Event sales hold refuses direct actions before auth, billing writes or pro
   const unexpected = async () => { calls++; throw new Error("Unexpected checkout side effect"); };
   for (const review of [false, true]) {
     const checkout = entryPoint<typeof import("./actions/billing")>("./actions/billing.ts", {
+      "@/server/db/event-designation": await import("./db/event-designation"),
       "@/lib/access-mode": { isDemoMode: () => review },
       "@/lib/billing-availability": billingAvailability,
       "@/server/checkout-policy": await import("./checkout-policy"),
@@ -542,6 +544,7 @@ test("Event hold leaves the annual Workspace checkout route and billing fence op
   try {
     const sessions: Stripe.Checkout.SessionCreateParams[] = [];
     const checkout = entryPoint<typeof import("./actions/billing")>("./actions/billing.ts", {
+      "@/server/db/event-designation": await import("./db/event-designation"),
       "@/lib/access-mode": { isDemoMode: () => false },
       "@/lib/billing-availability": billingAvailability,
       "@/server/checkout-policy": await import("./checkout-policy"),

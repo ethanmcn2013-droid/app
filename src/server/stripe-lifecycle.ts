@@ -105,6 +105,9 @@ export async function handleStripeLifecycle(
     await sync({ ...owner, customerId, subscriptionId: null, reference: `stripe:${session.id}`,
       expiresAt: owner.tier === "event" ? eventAccessExpiresAt(new Date(charge.created * 1000)) : null,
       revoked: charge.amount_refunded > 0,
+      ...(owner.tier === "event" && session.metadata?.eventCheckoutIntent !== undefined ? {
+        eventDesignation: { intentId: session.metadata.eventCheckoutIntent, settledAt: new Date(charge.created * 1000) },
+      } : {}),
     });
   };
 
