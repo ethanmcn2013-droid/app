@@ -1,4 +1,45 @@
-# Recipient checkpoint before visual follow-ups
+# January recipient checkpoints
+
+## Current rendered checkpoint: 50918cdc
+
+Normal Next build `LOG4Ac6gpN8RVrT6FWXDG` uses runtime
+`50918cdc3b6618518cd13278ccf4babefff5c541`. The subsequent registry and Floor
+verification-tooling commits do not change runtime/build inputs. The actual
+132-case built browser matrix passes at all four declared widths, followed by
+source-bound 68 recipient route states, three React context checks, 27 Notes
+browser scenarios and 80 Floor/project contrast checks. The integrated Floor
+command now runs without a local baseline environment variable; it verifies the
+unchanged historical failed baseline before comparing geometry. Three tampered
+baseline probes fail as intended. No contrast threshold was reduced.
+
+`checkpoint-50918cdc.json` indexes 371 retained files and 286 source hashes
+checked against the exact Git objects. LFS archive `checkpoint-50918cdc.zip`
+SHA-256: `e585d9b0027c704a661370130e726cc0f74f676a577649156ffd11ea8aa3b3ae`.
+Raw 132-case artifact SHA-256:
+`95777453bbcc1dbc166bf827e955f860139f432d1c2b53e697ae93bbc694d71b`.
+
+The 17-command continuation through billing, fulfilment, reporting, invitations,
+Notes, module lifecycle, recipient story, complete Drive suite and database
+contracts passes. Typecheck/lint, five redemption renders, normal build and
+performance ceilings pass. Production dependency audit reports zero advisories
+at this candidate; this does not establish absence of application vulnerabilities.
+Shared runtime remains 246.2 KB against the 170 KB target and 247 KB ceiling.
+
+Original Windows native exit, strict billing-loader failures and missing-baseline
+failure remain in the archive beside the corrected results. The built-artifact
+attestation and three renewed materiality receipts pass; earlier receipts remain
+in `../history/pre-50918cdc-capture/`. Mapped registry dates retain the fixture
+template's date; the exact capture timestamp is in the September attestation.
+No required-state coverage or design score was promoted.
+
+Direct built-demo inspection confirms completion/reopen, the owning task dialog
+and focus return at desktop. The archive names remaining demo clock, account
+settings shell and retired public-URL copy observations for the next coherence
+slice. These are not a final S4 closure. RC-3 independent review, actual
+Clerk/Google/Stripe behavior, human/council acceptance and receiving integration
+remain open. No production state or outbound communication changed.
+
+## Original checkpoint before visual follow-ups: e2e4a0c8
 
 Runtime: `e2e4a0c8864408938529ccb8caf2d8e831481669`.
 Build: `FdBgQx-Q8pU8cshvGwDFA`, Next 16.2.11, Node 22.23.2.

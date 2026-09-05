@@ -98,6 +98,14 @@ lint pass. Logs are retained under task work `app-485-final-gates`,
 `app-485-final-continuation`, `app-copy-integration-fix` and
 `app-copy-integration-fix-corrected`. Neither failure is a passing full gate.
 
-Final rendering after these source changes, experience evidence renewal, Linux
-and receiving checks remain open.
+The final `50918cdc` normal build and 132-case browser matrix pass, with 68
+recipient states, three React context checks and 27 Notes browser scenarios.
+The initial normal Floor gate exposed an undeclared local baseline dependency;
+`9b236a26`, composed at `a25f3128`, pins the original failed baseline without
+changing geometry/contrast assertions. Its normal integrated 80-check run passes
+with no baseline environment variable. Materiality/fixture/registry checks pass.
+See `experience/reviews/january-recipient-2026-09-05/checkpoint-50918cdc.json`
+for the exact source and archive hashes. Runtime source remains identical after
+the evidence/tooling commits. Linux, independent RC-3 and receiving checks remain
+open; this is not final experience or release acceptance.
 No production state or outbound communication is changed by this work.
