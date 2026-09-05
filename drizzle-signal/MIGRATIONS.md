@@ -1,5 +1,9 @@
 # Signal / Briefing schema provenance
 
+MIG-01 successor (2026-09-05): source 279c and evidence efca, including their authored local fixtures, remain historical and unaccepted. The original LIKE predicate treated underscore as a wildcard and omitted ordinary sqlitex tables/indexes. Current fingerprint/proofs use literal-prefix GLOB matching, with a new immutable review receipt. Old review receipts and sealed evidence remain unchanged. Existing provisional 279c database registrations retain their old receipt identities and are refused by the successor checksum contract; this slice does not restamp them or claim compatibility/production adoption. Use new disposable fixtures for current local checks. Any transition of retained fixtures requires a separately reviewed decision.
+
+The owning tests exercise ordinary and sqlitex table/index additions at every Notes/Signal schema boundary: registered inventory/migration refuse, unregistered inventory reports unknown-legacy and adoption/migration refuse, direct receipt proofs fail, and each refusal leaves the file byte-identical. Actual sqlite_stat1 and sqlite_autoindex objects remain compatible with adoption and no-op. These are local author checks; successor acceptance still belongs to principal review.
+
 This is a local/test operational runner. It accepts only an explicitly named absolute local file URL and an explicit local or test environment. Remote URLs, production/preview/staging environments, auth-token arguments and ambient module URLs are unsupported. There is no production adoption authority or automatic restore/retry here.
 
 The owning scripts are scripts/db/signal-inventory.mjs and scripts/db/signal-migrate.mjs. They share only the bounded Notes/Signal helpers. Tasks and Timeline runners, package/CI and the primary App migration chain are unchanged.

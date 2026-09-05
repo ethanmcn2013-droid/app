@@ -16,8 +16,8 @@
       "sha256": "3cb0d9ab087e3517133c7165051f2d101530b0bf47f4e7a9a67425cade36cd72",
       "snapshot": "drizzle-notes/meta/0000_snapshot.json",
       "snapshotSha256": "123658e9fff2346f49ef30c02125b7979051dce521a2bdb01ba491658d25a717",
-      "receipt": "drizzle-notes/receipts/local-schema-review-2026-09-05.json",
-      "receiptSha256": "cd260f4d308fd2da0fc9cc720e8d52dd1bf3f51620c2257cebd494b43e4fd516"
+      "receipt": "drizzle-notes/receipts/local-schema-review-mig01-2026-09-05.json",
+      "receiptSha256": "a8c85adedb72713dbb2f07f415a1cf4661e44b06c780c9fda3a3516e886964db"
     },
     {
       "ordinal": 1,
@@ -28,8 +28,8 @@
       "sha256": "319c3a9769102506488ad5d7b4d78fd0a8e3aca42ad215680c5d3b2095dc4736",
       "snapshot": "drizzle-notes/meta/0001_snapshot.json",
       "snapshotSha256": "7a09a20505aab565d8aa82caa54e10df13d75405a718e3308c61b46e3eca02ca",
-      "receipt": "drizzle-notes/receipts/local-schema-review-2026-09-05.json",
-      "receiptSha256": "cd260f4d308fd2da0fc9cc720e8d52dd1bf3f51620c2257cebd494b43e4fd516"
+      "receipt": "drizzle-notes/receipts/local-schema-review-mig01-2026-09-05.json",
+      "receiptSha256": "a8c85adedb72713dbb2f07f415a1cf4661e44b06c780c9fda3a3516e886964db"
     }
   ]
 }

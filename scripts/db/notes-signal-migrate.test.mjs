@@ -7,7 +7,7 @@ import {pathToFileURL, fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {createClient} from '@libsql/client';
 import {canonicalFileSha256, sha256} from './migration-ledger.mjs';
-import {loadNotesSignalLedger, moduleRoot} from './notes-signal-ledger.mjs';
+import {loadNotesSignalLedger, moduleRoot, verifyModuleProofs} from './notes-signal-ledger.mjs';
 import {runNotesSignalCommand} from './notes-signal-migrate.mjs';
 
 const releaseSha = 'a6293a82955d17bc414506ab89412f8667c1cd2f';
@@ -30,7 +30,7 @@ async function createLegacy(f, through) {
 }
 async function contents(f) {
   return withDb(f.file, async client => {
-    const tables = (await client.execute("SELECT name FROM sqlite_schema WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")).rows.map(r => r.name).filter(n => !n.endsWith('_schema_migrations'));
+    const tables = (await client.execute("SELECT name FROM sqlite_schema WHERE type='table' AND name NOT GLOB 'sqlite_*' ORDER BY name")).rows.map(r => r.name).filter(n => !n.endsWith('_schema_migrations'));
     const rows = {};
     for (const table of tables) rows[table] = (await client.execute(`SELECT * FROM "${table}"`)).rows.map(r => Object.values(r));
     return sha256(JSON.stringify(rows));
@@ -47,6 +47,74 @@ function copySource(f) {
   fs.cpSync(path.join(moduleRoot, `drizzle-${f.options.module}`), path.join(root, `drizzle-${f.options.module}`), {recursive: true}); return root;
 }
 function editJson(file, edit) {const data = JSON.parse(fs.readFileSync(file, 'utf8'));edit(data);fs.writeFileSync(file, JSON.stringify(data, null, 2)+'\n');}
+
+// Exercise every owning proof boundary, including the Notes baseline before its forward entry.
+for (const moduleName of ['notes', 'signal']) {
+  const context = loadNotesSignalLedger(moduleName);
+  for (const [ordinal, entry] of context.entries.entries()) {
+    for (const registered of [false, true]) for (const kind of ['table', 'index']) for (const name of ['independent_extra', 'sqlitex_independent_extra']) {
+      test(`${moduleName}/${entry.id}: ${registered ? 'registered' : 'unregistered'} extra ${kind} ${name} refuses certification and writes`, async () => {
+        const f = fixture(moduleName), through = ordinal + 1;
+        if (registered && through === context.entries.length) await f.run('migrate', {create: true});
+        else {
+          await createLegacy(f, through);
+          if (registered) await f.run('adopt', {receiptPath: await receipt(f)});
+        }
+        const receiptPath = registered ? undefined : await receipt(f);
+        await withDb(f.file, async c => {
+          if (kind === 'table') {
+            await c.execute(`CREATE TABLE ${name}(value TEXT)`);
+            await c.execute(`INSERT INTO ${name} VALUES('synthetic row retained through refusal')`);
+          } else await c.execute(`CREATE INDEX ${name} ON ${moduleName === 'notes' ? 'notes(body)' : 'analytics_users(timezone)'}`);
+        });
+        const before = sha256(fs.readFileSync(f.file)), outcomes = {};
+        const refuses = async (label, operation, expected) => {
+          await assert.rejects(operation, error => {outcomes[label] = error.message; assert.match(error.message, expected); return true;});
+          assert.equal(sha256(fs.readFileSync(f.file)), before, `${label} must leave the database byte-identical`);
+        };
+        // Direct proof execution independently covers the receipt SQL, not just the fingerprint guard.
+        await refuses('proof', withDb(f.file, c => verifyModuleProofs(c, entry)), new RegExp(`proof failed: ${kind === 'table' ? 'tables' : 'indexes'}`));
+        if (registered) {
+          await refuses('inventory', f.run('inventory'), /fingerprint mismatch/);
+          await refuses('migrate', f.run('migrate'), /fingerprint mismatch/);
+        } else {
+          outcomes.inventory = await f.run('inventory');
+          assert.equal(outcomes.inventory.state, 'unknown-legacy');
+          assert.equal(sha256(fs.readFileSync(f.file)), before);
+          await refuses('migrate', f.run('migrate'), /unknown legacy schema/);
+          await refuses('adopt', f.run('adopt', {receiptPath}), /unknown legacy schema/);
+        }
+        await withDb(f.file, async c => {
+          assert.equal((await c.execute({sql: 'SELECT COUNT(*) AS n FROM sqlite_schema WHERE type=? AND name=?', args: [kind, name]})).rows[0].n, 1);
+          if (kind === 'table') assert.equal((await c.execute(`SELECT value FROM ${name}`)).rows[0].value, 'synthetic row retained through refusal');
+        });
+        fs.writeFileSync(path.join(f.directory, 'prefix-outcomes.json'), JSON.stringify({module: moduleName, entry: entry.id, registered, kind, name, beforeSha256: before, afterSha256: sha256(fs.readFileSync(f.file)), outcomes}, null, 2)+'\n');
+      });
+    }
+    test(`${moduleName}/${entry.id}: actual sqlite_ internal tables and indexes do not change the recognized schema`, async () => {
+      const f = fixture(moduleName);
+      await createLegacy(f, ordinal + 1);
+      const before = await f.run('inventory');
+      await withDb(f.file, async c => {
+        await c.execute('ANALYZE');
+        assert.equal((await c.execute("SELECT COUNT(*) AS n FROM sqlite_schema WHERE name='sqlite_stat1'")).rows[0].n, 1);
+        assert.ok((await c.execute("SELECT COUNT(*) AS n FROM sqlite_schema WHERE type='index' AND name GLOB 'sqlite_autoindex_*'")).rows[0].n > 0);
+        await verifyModuleProofs(c, entry);
+      });
+      assert.equal((await f.run('inventory')).schemaFingerprintSha256, before.schemaFingerprintSha256);
+      const receiptPath = await receipt(f);
+      await f.run('adopt', {receiptPath});
+      const adoptedBytes = sha256(fs.readFileSync(f.file));
+      assert.equal((await f.run('adopt', {receiptPath})).outcome, 'no-op');
+      assert.equal(sha256(fs.readFileSync(f.file)), adoptedBytes);
+      await f.run('migrate');
+      const currentBytes = sha256(fs.readFileSync(f.file));
+      assert.equal((await f.run('inventory')).state, 'current');
+      assert.equal((await f.run('migrate')).outcome, 'no-op');
+      assert.equal(sha256(fs.readFileSync(f.file)), currentBytes);
+    });
+  }
+}
 
 for (const moduleName of ['notes', 'signal']) {
   test(`${moduleName}: explicit fresh apply, verified current/no-op and read-only inventory`, async () => {
@@ -92,7 +160,7 @@ for (const moduleName of ['notes', 'signal']) {
     editJson(receiptFile, r => r.migrations.find(m => m.id === entry.id).proofs.push({id: 'injected-postcondition-fault', sql: 'SELECT 1 AS value', expected: 0}));
     editJson(ledgerFile, l => {for (const e of l.entries) e.receiptSha256 = canonicalFileSha256(receiptFile);});
     await assert.rejects(f.run('migrate', {create: true, root}), /injected-postcondition-fault/);
-    await withDb(f.file, async c => assert.equal((await c.execute("SELECT COUNT(*) AS n FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%'")).rows[0].n, 0));
+    await withDb(f.file, async c => assert.equal((await c.execute("SELECT COUNT(*) AS n FROM sqlite_schema WHERE name NOT GLOB 'sqlite_*'")).rows[0].n, 0));
     assert.equal((await f.run('migrate')).outcome, 'applied');assert.equal((await f.run('migrate')).outcome, 'no-op');
   });
   test(`${moduleName}: altered registered schema, metadata or foreign ledger is not a no-op`, async () => {

@@ -16,8 +16,8 @@
       "sha256": "e1447993800f0d5429870db605fd7f0fb1b532b734111d0514847e3182c9f98a",
       "snapshot": "drizzle-signal/meta/0000_snapshot.json",
       "snapshotSha256": "f719e13f356f17e978f43dbe63da0ce9cdf5058c6c79dc2dbb2c3353d63d6ac4",
-      "receipt": "drizzle-signal/receipts/local-schema-review-2026-09-05.json",
-      "receiptSha256": "dc1efa6d406db1a5f34ca373f048025357a90ef0ac2e0a31df92d655eac0121c"
+      "receipt": "drizzle-signal/receipts/local-schema-review-mig01-2026-09-05.json",
+      "receiptSha256": "ba721137fca78c560205356fde14c6af27eca46d124c9fc93c6a13760dd18abe"
     }
   ]
 }

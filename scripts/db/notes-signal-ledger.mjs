@@ -77,7 +77,8 @@ export function loadNotesSignalLedger(module, {root = moduleRoot} = {}) {
 }
 
 export async function schemaFingerprint(executor, config) {
-  const result = await executor.execute({sql: "SELECT type,name,tbl_name,COALESCE(sql,'') AS sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' AND name NOT IN (?,?) ORDER BY type,name", args: [config.table, config.legacy]});
+  // GLOB treats the underscore literally; LIKE would also hide undeclared sqlitex objects.
+  const result = await executor.execute({sql: "SELECT type,name,tbl_name,COALESCE(sql,'') AS sql FROM sqlite_schema WHERE name NOT GLOB 'sqlite_*' AND name NOT IN (?,?) ORDER BY type,name", args: [config.table, config.legacy]});
   return {objects: result.rows.length, sha256: sha256(JSON.stringify(result.rows.map(r => [r.type, r.name, r.tbl_name, normalizeDdl(r.sql)])))};
 }
 export async function exists(executor, table) { return scalar(await executor.execute({sql: "SELECT COUNT(*) AS value FROM sqlite_schema WHERE type='table' AND name=?", args: [table]})) === 1; }
