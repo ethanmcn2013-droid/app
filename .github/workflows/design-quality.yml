@@ -154,5 +154,6 @@ jobs:
             experience/output/recipient-project-work/realtime-react
             experience/output/recipient-project-work/floor-theme
             experience/output/recipient-project-work/floor-calendar
+            experience/output/recipient-project-work/wedding-date-readback
           if-no-files-found: ignore
           retention-days: 14
