@@ -1,0 +1,36 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const {createRequire} = require('node:module');
+const {createHash} = require('node:crypto');
+const {execFileSync} = require('node:child_process');
+const app = 'C:/Users/ethan/signal-studio-workspace/worktrees/app/feat-january-final-journeys';
+const req = createRequire(path.join(app,'package.json'));
+const {freshMemoryDb} = req('./src/server/db/memory-test-db.ts');
+const {extendCoupleAccessForWeddingDate} = req('./src/server/db/couple-access-term.ts');
+const {compCodes,entitlements,users,workspaces,workspaceMembers} = req('./src/server/db/schema.ts');
+(async()=>{
+  const {db,client} = await freshMemoryDb();
+  try {
+    for (const id of ['actor','other']) await db.insert(users).values({id,clerkId:id,name:id,initials:'FX',color:'fixture'});
+    await db.insert(workspaces).values([
+      {id:'previous-project',slug:'previous-project',name:'Previous',ownerUserId:'other',contextType:'wedding'},
+      {id:'new-project',slug:'new-project',name:'New',ownerUserId:'actor',contextType:'wedding',primaryDate:'2029-06-01'},
+    ]);
+    await db.insert(workspaceMembers).values({workspaceId:'new-project',userId:'actor',role:'owner'});
+    const code = 'FIXTURE-ABCDE-FGHJK';
+    await db.insert(compCodes).values({code,tier:'wedding',durationDays:548,quantity:1,redeemed:1,notes:JSON.stringify({sponsor_slug:'synthetic-venue',sponsor_name:'Synthetic Venue',source_type:'venue_edition'})});
+    await db.insert(entitlements).values([
+      {id:'revoked-old',workspaceId:'previous-project',userId:'actor',tier:'wedding',source:'comp',startedAt:new Date('2026-09-01T00:00:00Z'),expiresAt:new Date(0),notes:'comp:'+code},
+      {id:'unrelated-active',workspaceId:'previous-project',userId:'actor',tier:'wedding',source:'comp',startedAt:new Date('2026-09-01T00:00:00Z'),expiresAt:new Date('2028-03-02T00:00:00Z'),notes:'comp:'+code},
+    ]);
+    const before = await db.select().from(entitlements);
+    const response = await extendCoupleAccessForWeddingDate(db,{userId:'actor',weddingDate:'2029-06-01'});
+    const after = await db.select().from(entitlements);
+    assert.equal(response.extended,2);
+    assert.ok(after.find(r=>r.id==='revoked-old').expiresAt.getTime()>0);
+    assert.ok(after.find(r=>r.id==='unrelated-active').expiresAt>before.find(r=>r.id==='unrelated-active').expiresAt);
+    const files = ['src/server/db/couple-access-term.ts','src/server/actions/planning.ts'];
+    console.log(JSON.stringify({kind:'original-defect-reproduction',head:execFileSync('git',['rev-parse','HEAD'],{cwd:app,encoding:'utf8'}).trim(),response,before,after,sourceHashes:Object.fromEntries(files.map(file=>[file,createHash('sha256').update(fs.readFileSync(path.join(app,file),'utf8').replace(/\r\n/g,'\n')).digest('hex')])),limit:'Actual old helper with isolated in-memory SQLite. The two production callers are source-traced; no full HTTP, deployed flag or provider execution. Exit0 establishes these original mutations occurred, not a passing invariant.'},null,2));
+  } finally { client.close(); }
+})().catch(error=>{console.error(error);process.exitCode=1;});
