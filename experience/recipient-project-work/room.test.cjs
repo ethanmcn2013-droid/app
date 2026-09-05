@@ -67,18 +67,61 @@ test('both actions reauthorize the current account and removal rather than trust
   } finally { f.close(); }
 });
 
-test('existing member task capability, 280 trim/clear and deferred archive policy are preserved', async () => {
+test('active member task capability and 280 trim/clear are preserved', async () => {
   const f = await fixture();
   try {
     const room = f.load('src/server/actions/room');
     assert.deepEqual(await room.setWorkspacePurposeAction('project-b','  '+ 'x'.repeat(300) +'  '),{ok:true});
     assert.equal((await room.getRoomBriefData('project-b')).purpose,'x'.repeat(280));
-    await f.client.execute("UPDATE workspaces SET archived_at=1 WHERE id='project-b'");
     await room.setWorkspacePurposeAction('project-b','   ');
     assert.equal((await room.getRoomBriefData('project-b')).purpose,null);
     assert.equal((await purposes(f))[0][1],'Only A purpose');
   } finally { f.close(); }
 });
+
+// The previous test pinned a successful clear AFTER archive. ADR 0001 §5
+// requires read-only Project content instead. Exercise all existing editor
+// roles under both flags; fixture SQL supplies archive/restore lifecycle state,
+// while the room action, membership proof, capability model and writes are real.
+for (const role of ['member','co-owner','primary-owner']) {
+  test(`archived purpose lifecycle refuses replacement/clear/create for ${role}, then permits edits after restore`, async () => {
+    const f = await fixture();
+    try {
+      if (role === 'primary-owner') f.state.actor = 'creator';
+      if (role === 'co-owner') await f.client.execute("UPDATE workspace_members SET role='owner' WHERE workspace_id='project-b' AND user_id='recipient'");
+      const revalidations = [];
+      f.boundary['next/cache'].revalidatePath = (...args) => revalidations.push(args);
+      const room = f.load('src/server/actions/room');
+      for (const enabled of [true,false]) {
+        f.state.v3 = enabled;
+        await room.setWorkspacePurposeAction('project-b','  Active B purpose  ');
+        assert.equal((await room.getRoomBriefData('project-b')).purpose,'Active B purpose');
+        await f.client.execute("UPDATE workspaces SET archived_at=1 WHERE id='project-b'");
+        const before = (await f.client.execute("SELECT key,value,updated_at FROM meta ORDER BY key")).rows;
+        const beforeRevalidations = revalidations.length;
+        for (const purpose of ['Archived replacement','   ']) {
+          await assert.rejects(room.setWorkspacePurposeAction('project-b',purpose),{message:'That project isn’t available.'});
+          assert.deepEqual((await f.client.execute("SELECT key,value,updated_at FROM meta ORDER BY key")).rows,before);
+        }
+        assert.equal((await room.getRoomBriefData('project-b')).purpose,'Active B purpose','archive retains readable content');
+        // No existing purpose row must not turn the same lifecycle refusal into
+        // a permitted INSERT. Remove only test setup data to reach this branch.
+        await f.client.execute("DELETE FROM meta WHERE key='room:project-b:purpose'");
+        const absent = await purposes(f);
+        await assert.rejects(room.setWorkspacePurposeAction('project-b','First archived purpose'),{message:'That project isn’t available.'});
+        assert.deepEqual(await purposes(f),absent);
+        assert.equal((await room.getRoomBriefData('project-b')).purpose,null);
+        assert.equal(revalidations.length,beforeRevalidations,'refusal has no revalidation side effect');
+        await f.client.execute("UPDATE workspaces SET archived_at=NULL WHERE id='project-b'");
+        assert.deepEqual(await room.setWorkspacePurposeAction('project-b','  Restored B purpose  '),{ok:true});
+        assert.deepEqual(await purposes(f),[['room:project-a:purpose','Only A purpose'],['room:project-b:purpose','Restored B purpose']]);
+        await room.setWorkspacePurposeAction('project-b','   ');
+        assert.equal((await room.getRoomBriefData('project-b')).purpose,null);
+        assert.equal(f.state.cookieWrites.length,0);
+      }
+    } finally { f.close(); }
+  });
+}
 
 test('demo read and no-op write require no identity or database, even with absent candidates', async () => {
   const f = await fixture();
