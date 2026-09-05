@@ -98,3 +98,47 @@ Invocation remains `node experience/recipient-project-work/floor-theme-browser.m
 This is CSS comparison in a shared environment, not a claim that every component change preserves historical layout. No runtime styles/components, package, registry, CI invocation, principal checkout or final capture changed. Windows and intentional compiled-CSS geometry-mutation results are retained under `outputs/recipient-project-work/floor-same-browser-gate-repair`; principal Linux CI remains the receiving proof. No provider or security review is claimed.
 
 Observed on Node22.23.2 / Chromium149.0.7827.55 / Windows: the normal command with `FLOOR_THEME_BEFORE` unset passes all80 current checks and strict layout equality; the fresh original-CSS comparison retains failed contrast status. A scratch esbuild loader then adds only `margin-left:1px` to the current compiled dock, leaving repository CSS and the original-CSS pass untouched. All80 current checks still pass, but strict equality refuses `x:490.4375` versus `489.4375` and records a failed receipt with exit1. Syntax and focused ESLint pass. The staged diff check reports the original Floor CSS asset's blank line at EOF; its bytes are deliberately retained to preserve the required historical hash. No Linux rerun or root-cause finding is inferred from this Windows evidence.
+
+## Floor calendar repair — 5 September
+
+Base: `07d25138a965b95b6d10349e90d38bdcb2f0e7fd`; branch `fix/january-floor-calendar` in the existing dependency-equipped recipient worktree. The previous `fix/january-recipient-project-work` branch remains at `2123c595fb1af955fa225fe1513e0858d1625415`. This is the delegated bounded follow-up to the read-only date investigation, with user hooks preserved.
+
+Floor's header, counts, card labels and Today/Overdue filters now consume the existing RoomBrief calendar frame. The project calendar day is used for date-only schedules; completed timestamps are converted to that frame's timezone before formatting. Invalid or absent completion timestamps produce no date fact. Completion and milestone precedence, range due dates and the existing label grammar are preserved. The obsolete client-mount date gate and once-only clock memos are removed. Updating the provider updates every Floor date fact; advancing the wall clock alone leaves the request snapshot consistent. No midnight service, new calendar authority, MyWork-selector change, CSS/master/generator change or wedding-date source change is included.
+
+The original investigation remains at projectless task output `outputs/floor-calendar-07d25138/`: six actual-component observations plus a completion-timestamp probe. Its defects remain recorded as defects. It reproduced demo drift, project-day classification errors, UTC-midnight React hydration recovery, stale dates after a provider update and a completion-timezone error. The same-instant timezone-only control did not produce hydration recovery. No original fixture or historical baseline was rewritten.
+
+The existing contrast fixture now supplies a real `RoomBriefProvider` with an explicit **review** frame for its existing January 21 scenario. Both original/current CSS passes receive that identical prerequisite. Its synthetic task dates, clock override, all 80 checks, strict full-rectangle equality, pinned original CSS bytes and failed historical Windows receipt are unchanged. This prevents the isolated July fallback from silently changing which contrast states the January fixture exercises.
+
+### Reproducible commands and observed gates
+
+From this App worktree, with existing pinned dependencies and Playwright Chromium:
+
+```sh
+node --test experience/recipient-project-work/floor-calendar.test.cjs
+node experience/recipient-project-work/floor-calendar-browser.mjs
+corepack pnpm test:calendar-truth
+corepack pnpm test:floor-theme
+corepack pnpm typecheck
+corepack pnpm exec eslint src/components/floor/floor-board.tsx src/components/floor/floor-workspace.tsx src/components/floor/use-floor-place.ts experience/recipient-project-work/floor-calendar.test.cjs experience/recipient-project-work/floor-calendar-browser.mjs experience/recipient-project-work/floor-theme-browser.mjs
+node experience/recipient-project-work/floor-theme-browser.mjs
+git diff --check
+```
+
+Browser commands require fresh destinations. Set `FLOOR_CALENDAR_OUTPUT` and `FLOOR_THEME_OUTPUT` when retaining another run; neither fixture overwrites an existing receipt. No `FLOOR_THEME_BEFORE` is required. The normal gates need no historical Git objects. The new date suite imports the shared fixture builder without launching Chromium.
+
+| Gate | This implementation's result |
+| --- | --- |
+| Exported date-function tests | **26/26**: due/range/milestone/done precedence, missing/invalid completions, UTC offsets, repeated DST hour, spring/fall/calendar boundaries, pinned demo and no live-clock reads |
+| Actual calendar component browser | **16 cases /196 assertions** at 390×844 and 1280×900; 18 screenshots and six SSR HTML artifacts |
+| Calendar truth | **16/16**, plus existing Hybrid calendar scanner |
+| Floor theme | **6/6**, plus unchanged master/generated CSS parity |
+| Typecheck / focused ESLint / diff whitespace | Pass |
+| Normal paired theme browser | **68 Floor +12 Project checks**, strict geometry equality; fresh original-CSS comparison and historical baseline both retain failed contrast status |
+
+Calendar browser cases execute actual FloorWorkspace/FloorBoard, RoomBriefProvider, LabStoreProvider/reducer, React SSR/hydration and global/module CSS. They cover a demo frame against a different wall clock, project days ahead/behind UTC, timezone-only and UTC-midnight hydration, DST hydration, provider day/timezone updates without remount, stable snapshot without a new frame, and Today/Overdue/intersected/cleared filters. Milestones and completed tasks remain excluded from due-today counts. Request navigation, suite metadata and completion notifications are explicit adapters; tasks are isolated synthetic prerequisites.
+
+Evidence: `outputs/floor-calendar-repair/browser-final/receipt.json`, `theme-paired/receipt.json`, `theme-paired/comparison-before/receipt.json`, and `gates/` in the projectless task output. The first new browser run failed because the fixture omitted the real caller's Planning callback and incorrectly expected an undated button. That **fixture setup** failure is retained separately at `browser-initial/receipt.json`; supplying the callback and checking the actual `with no date` label corrected it. This was not an additional runtime defect.
+
+Principal registration needed: the two new commands at the top of this section, respectively in the default test gate and browser/design gate. No package, CI, broad route-browser or registry edit is included. Existing material surface remains Tasks Board; header dates also surround List/Schedule/Calendar through the same FloorWorkspace. Final composed route source hashes/captures belong to principal and must be renewed rather than reusing the old receipt.
+
+This is Windows component and tooling evidence, not a new Linux result or full Next/Clerk/provider acceptance. No real stores, production mutations, external provider calls, physical-device or human-comprehension proof are claimed. Council certification and the held independent/receiving reviews remain separate. Neither stopped RC3 nor Atlas work was retried or rerouted.

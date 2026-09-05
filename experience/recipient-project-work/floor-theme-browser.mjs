@@ -60,6 +60,8 @@ const entry=`import React from 'react';import {createRoot} from 'react-dom/clien
 import {FloorWorkspace} from '@/components/floor/floor-workspace';
 import styles from '@/components/floor/floor.module.css';
 import {LabStoreProvider,useLabStore} from '@/components/hybrid/store';
+import {RoomBriefProvider} from '@/components/app/room/room-brief-context';
+import {createCalendarFrame} from '@/lib/calendar-frame';
 import {ActiveProjectBarCell,ActiveProjectMobileStrip} from '@/components/studio-bar/active-project/active-project-control';
 window.floorStyles=styles;window.navigation=[];
 const scene=[
@@ -72,7 +74,10 @@ const scene=[
 function Surface(){const store=useLabStore();return <FloorWorkspace view="board" tasks={store.tasks} projectName="January arrival plan" initials="EC" onOpenPlanning={()=>{}}/>}
 const root=createRoot(document.getElementById('root'));
 window.mountProject=state=>{const project={id:'project-b',name:'Arrival project B',archivedAt:state==='archived'?1:null};window.projectFixture={chrome:{kind:'verified',project},pending:state==='pending'?{label:'Arrival project B'}:null,refusal:null,lastError:null};root.render(<div key={state} style={{width:'100%'}}><header style={{background:'var(--x-studio-chrome)',height:56,display:'flex',alignItems:'center',padding:'0 16px'}}><ActiveProjectBarCell/></header><ActiveProjectMobileStrip/><main style={{padding:24,color:'var(--ink)'}}>My work</main></div>)};
-if(location.search.includes('surface=project'))window.mountProject('verified');else root.render(<LabStoreProvider initialTasks={scene} initialInspectedId={null} readOnly={false} onInspectedChange={()=>{}}><Surface/></LabStoreProvider>);`;
+// Explicit prerequisite for this existing January scenario, identical in both
+// CSS passes. The demo's July fallback and historical evidence stay unchanged.
+const calendarFrame=createCalendarFrame({now:new Date('2027-01-21T12:00:00Z'),timeZone:'UTC',source:'review'});
+if(location.search.includes('surface=project'))window.mountProject('verified');else root.render(<RoomBriefProvider value={{calendarFrame,periodName:null,dateWindow:null,ownerName:null,purpose:null}}><LabStoreProvider initialTasks={scene} initialInspectedId={null} readOnly={false} onInspectedChange={()=>{}}><Surface/></LabStoreProvider></RoomBriefProvider>);`;
 const bundle=await esbuild.build({bundle:true,metafile:true,platform:'browser',absWorkingDir:root,alias:{'@':path.join(root,'src')},jsx:'automatic',define:{'process.env':'{}','process.env.NODE_ENV':'"production"'},stdin:{contents:entry,loader:'jsx',resolveDir:root},outfile:path.join(out,'bundle.js'),plugins:[{name:'floor-fixture-adapters',setup(build){build.onResolve({filter:/.*/},args=>Object.hasOwn(stubs,args.path)?{path:args.path,namespace:'fixture'}:undefined);build.onLoad({filter:/.*/,namespace:'fixture'},args=>({contents:stubs[args.path],loader:'jsx',resolveDir:root}));build.onLoad({filter:/\.module\.css$/},async args=>{const file=path.relative(root,args.path).replaceAll('\\','/');return baselineCss(file)?{contents:await readSource(file),loader:'local-css'}:undefined;});}}]});
 const css=await postcss([require('@tailwindcss/postcss')({base:root})]).process(await fs.readFile(path.join(root,'src/app/globals.css'),'utf8'),{from:path.join(root,'src/app/globals.css')});
 receipt.cssBaselineRef=baseline?baselineRef:null;
