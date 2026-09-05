@@ -10,7 +10,12 @@ The successor permits the old fingerprint only after validating an existing
 adopted-legacy row, its exact receipt ID/hash, normal source metadata, target,
 environment, proofs and relevant Drizzle history. It returns a read-only no-op;
 no receipt or database metadata is rewritten. New adoptions always need the
-complete fingerprint. Changed ordinary schema and replacement receipts still
+complete fingerprint and `schemaFingerprintVersion: "sqlite-schema/2"` in the
+new receipt. That field participates in the stored immutable receipt hash.
+Versioned receipts never use historical fallback, even when their original
+schema had no ordinary sqlite-like names. A later such object must be detected.
+Unversioned receipts are accepted only as replay of an existing exact adoption;
+they cannot create a new registration. Changed ordinary schema and replacement receipts still
 fail. New backup and inventory queries always enumerate ordinary sqlite-like
 objects using the literal internal prefix.
 

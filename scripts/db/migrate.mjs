@@ -41,6 +41,7 @@ export function databaseIdentitySha256(databaseUrl) {
 }
 
 const supportedEnvironments = new Set(["local", "test", "development", "preview", "staging", "production"]);
+export const SCHEMA_FINGERPRINT_VERSION = "sqlite-schema/2";
 
 export function isLocalDatabaseUrl(databaseUrl) {
   return databaseUrl === ":memory:" || /^file:/i.test(databaseUrl);
@@ -233,6 +234,7 @@ function validateAdoptionReceipt(file, context, { databaseUrl, environment }) {
   invariant(fs.existsSync(absolute), `adoption receipt is missing: ${absolute}`);
   const receipt = JSON.parse(fs.readFileSync(absolute, "utf8"));
   invariant(receipt.schemaVersion === "tasks-production-adoption/1", "unsupported adoption receipt");
+  invariant(receipt.schemaFingerprintVersion === undefined || receipt.schemaFingerprintVersion === SCHEMA_FINGERPRINT_VERSION, "unsupported adoption schema fingerprint version");
   invariant(typeof receipt.id === "string" && receipt.id.length > 0, "adoption receipt is missing id");
   invariant(receipt.environment === environment, "adoption receipt environment does not match");
   invariant(receipt.databaseIdentitySha256 === databaseIdentitySha256(databaseUrl), "adoption receipt targets a different database");
@@ -425,6 +427,7 @@ export async function adoptExistingDatabase({
     validateHighWaterRows(context, await readDrizzleRows(client, context.ledger), existingRows.length);
     const historicalReplay = receipt.document.schemaFingerprintSha256 !== currentFingerprint;
     if (historicalReplay) {
+      invariant(receipt.document.schemaFingerprintVersion === undefined, "adoption receipt schema fingerprint does not match the target database");
       invariant(receipt.document.schemaFingerprintSha256 === await historicalAdoptionFingerprintSha256(client), "adoption receipt schema fingerprint does not match the target database");
     }
     return { status: "no-op", adopted: context.baseline.id, proofs, schemaFingerprintSha256: currentFingerprint,
@@ -437,6 +440,7 @@ export async function adoptExistingDatabase({
   }
 
   invariant(receipt.document.schemaFingerprintSha256 === currentFingerprint, "adoption receipt schema fingerprint does not match the target database");
+  invariant(receipt.document.schemaFingerprintVersion === SCHEMA_FINGERPRINT_VERSION, "new adoption requires schemaFingerprintVersion sqlite-schema/2");
   const drizzleRows = await readDrizzleRows(client, context.ledger);
   invariant(drizzleRows.length === 0, "adopt refuses an unreceipted Drizzle high-water history");
 

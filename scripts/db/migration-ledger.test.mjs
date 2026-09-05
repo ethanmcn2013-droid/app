@@ -871,6 +871,7 @@ test("receipt-backed adoption verifies target, shape, proofs, and is idempotent"
   const receiptPath = path.join(receiptDir, "receipt.json");
   const receipt = {
     schemaVersion: "tasks-production-adoption/1",
+    schemaFingerprintVersion: "sqlite-schema/2",
     id: "tasks-adoption-test",
     environment: "production",
     databaseIdentitySha256: databaseIdentitySha256(databaseUrl),
@@ -925,6 +926,7 @@ test("adoption receipt for another database fails before writing metadata", asyn
   const receiptPath = path.join(receiptDir, "receipt.json");
   fs.writeFileSync(receiptPath, JSON.stringify({
     schemaVersion: "tasks-production-adoption/1",
+    schemaFingerprintVersion: "sqlite-schema/2",
     id: "wrong-target",
     environment: "production",
     databaseIdentitySha256: "f".repeat(64),

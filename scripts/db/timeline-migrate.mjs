@@ -55,7 +55,7 @@ import {
   loadAndValidateLedger,
   sha256,
 } from "./migration-ledger.mjs";
-import { databaseIdentitySha256, isLocalDatabaseUrl, verifyProofs } from "./migrate.mjs";
+import { databaseIdentitySha256, isLocalDatabaseUrl, SCHEMA_FINGERPRINT_VERSION, verifyProofs } from "./migrate.mjs";
 
 export { databaseIdentitySha256, isLocalDatabaseUrl };
 
@@ -288,6 +288,7 @@ function validateAdoptionReceipt(file, context, { databaseUrl, environment }) {
   invariant(fs.existsSync(absolute), `adoption receipt is missing: ${absolute}`);
   const receipt = JSON.parse(fs.readFileSync(absolute, "utf8"));
   invariant(receipt.schemaVersion === "timeline-production-adoption/1", "unsupported adoption receipt");
+  invariant(receipt.schemaFingerprintVersion === undefined || receipt.schemaFingerprintVersion === SCHEMA_FINGERPRINT_VERSION, "unsupported adoption schema fingerprint version");
   invariant(typeof receipt.id === "string" && receipt.id.length > 0, "adoption receipt is missing id");
   invariant(receipt.environment === environment, "adoption receipt environment does not match");
   invariant(receipt.databaseIdentitySha256 === databaseIdentitySha256(databaseUrl), "adoption receipt targets a different database");
@@ -514,6 +515,7 @@ export async function adoptTimelineDatabase({
     invariant(row.execution_receipt_id === receipt.id && row.execution_receipt_sha256 === receipt.sha256, "existing adoption receipt differs from the requested receipt");
     const historicalReplay = receipt.document.schemaFingerprintSha256 !== currentFingerprint;
     if (historicalReplay) {
+      invariant(receipt.document.schemaFingerprintVersion === undefined, "adoption receipt schema fingerprint does not match the target database");
       invariant(receipt.document.schemaFingerprintSha256 === await historicalAdoptionFingerprintSha256(client, context.ledger), "adoption receipt schema fingerprint does not match the target database");
     }
     return { status: "no-op", adopted: context.baseline.id, proofs, schemaFingerprintSha256: currentFingerprint, legacyDrizzleChain: legacy,
@@ -526,6 +528,7 @@ export async function adoptTimelineDatabase({
   }
 
   invariant(receipt.document.schemaFingerprintSha256 === currentFingerprint, "adoption receipt schema fingerprint does not match the target database");
+  invariant(receipt.document.schemaFingerprintVersion === SCHEMA_FINGERPRINT_VERSION, "new adoption requires schemaFingerprintVersion sqlite-schema/2");
   await atomicWrite(client, {
     proofs: [...context.baseline.receipt.record.proofs, ...receipt.document.proofs],
     metadata: [

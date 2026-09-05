@@ -46,7 +46,7 @@ for (const moduleName of ["tasks", "timeline"]) {
       fs.writeFileSync(originalPath, JSON.stringify(receipt, null, 2) + "\n");
       const originalSha = canonicalFileSha256(originalPath);
       const replacementPath = path.join(dir, "complete-receipt.json");
-      fs.writeFileSync(replacementPath, JSON.stringify({ ...receipt, schemaFingerprintSha256: completeFingerprint }, null, 2) + "\n");
+      fs.writeFileSync(replacementPath, JSON.stringify({ ...receipt, schemaFingerprintVersion: "sqlite-schema/2", schemaFingerprintSha256: completeFingerprint }, null, 2) + "\n");
       const adopt = moduleName === "tasks" ? adoptExistingDatabase : adoptTimelineDatabase;
       const options = { client, databaseUrl, context, environment: "test", releaseSha: "synthetic-regression" };
       await assert.rejects(adopt({ ...options, receiptPath: originalPath }), /schema fingerprint/);
@@ -70,6 +70,41 @@ for (const moduleName of ["tasks", "timeline"]) {
       await client.execute("CREATE TABLE ordinary_schema_change (id TEXT)");
       await assert.rejects(adopt({ ...options, receiptPath: originalPath }), /schema fingerprint/);
       assert.equal(JSON.stringify((await client.execute(`SELECT * FROM "${ledgerTable}"`)).rows), before);
+    } finally { client.close(); }
+  }));
+
+  test(`${moduleName} never downgrades a new complete receipt when sqlite-like objects appear later`, () => withTempDatabaseDir(async dir => {
+    const databaseUrl = testDatabaseUrl(dir, "current.db");
+    const client = createClient({ url: databaseUrl });
+    try {
+      const context = moduleName === "tasks" ? loadAndValidateLedger() : loadTimelineLedger();
+      for (const sql of context.baseline.sql.split("--> statement-breakpoint").map(s => s.trim()).filter(Boolean)) await client.execute(sql);
+      const completeFingerprint = moduleName === "tasks" ? await schemaFingerprintSha256(client) : await timelineSchemaFingerprintSha256(client, context.ledger);
+      const legacy = moduleName === "timeline" ? await readLegacyDrizzleChain(client, context.ledger) : null;
+      const receipt = {
+        schemaVersion: `${moduleName}-production-adoption/1`, schemaFingerprintVersion: "sqlite-schema/2",
+        id: "synthetic-new-complete-adoption", environment: "test",
+        databaseIdentitySha256: databaseIdentitySha256(databaseUrl), schemaFingerprintSha256: completeFingerprint,
+        ledgerSha256: context.ledgerSha256, baseline: { id: context.baseline.id, sha256: context.baseline.sha256 },
+        operatorEvidence: [{ receiptSha256: "a".repeat(64), backupSha256: "b".repeat(64) }, { receiptSha256: "c".repeat(64), backupSha256: "d".repeat(64) }],
+        proofs: [{ id: "synthetic-proof", sql: "SELECT 1 AS value", expected: 1 }],
+        ...(legacy ? { legacyLedger: { table: context.ledger.legacyDrizzleTable, rowCount: legacy.rowCount, hashesSha256: legacy.hashesSha256 } } : {}),
+      };
+      const receiptPath = path.join(dir, "complete.json");
+      fs.writeFileSync(receiptPath, JSON.stringify(receipt, null, 2) + "\n");
+      const adopt = moduleName === "tasks" ? adoptExistingDatabase : adoptTimelineDatabase;
+      const options = { client, databaseUrl, context, environment: "test", receiptPath, releaseSha: "synthetic-current" };
+      const unversionedPath = path.join(dir, "unversioned.json");
+      const { schemaFingerprintVersion: omittedVersion, ...unversioned } = receipt;
+      assert.equal(omittedVersion, "sqlite-schema/2");
+      fs.writeFileSync(unversionedPath, JSON.stringify(unversioned, null, 2) + "\n");
+      await assert.rejects(adopt({ ...options, receiptPath: unversionedPath }), /new adoption requires schemaFingerprintVersion/);
+      assert.equal((await adopt(options)).status, "adopted");
+      assert.equal((await adopt(options)).status, "no-op");
+      const before = JSON.stringify((await client.execute(`SELECT * FROM "${context.ledger.databaseLedgerTable}"`)).rows);
+      await client.execute("CREATE TABLE sqlitex_added_later (id TEXT)");
+      await assert.rejects(adopt(options), /schema fingerprint/);
+      assert.equal(JSON.stringify((await client.execute(`SELECT * FROM "${context.ledger.databaseLedgerTable}"`)).rows), before);
     } finally { client.close(); }
   }));
 }
