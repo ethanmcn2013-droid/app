@@ -119,7 +119,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "b2086988072f22ca"
+      "materialityHash": "e1fd36ea48684fdf"
     },
     {
       "id": "tasks.page.app-tasks-calendar",
@@ -376,9 +376,9 @@
       "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "7e967120eab2a5fc",
+      "materialityHash": "ba2e03f3b33cb1d1",
       "materialityReview": {
-        "materialityHash": "7e967120eab2a5fc",
+        "materialityHash": "ba2e03f3b33cb1d1",
         "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.app-my-tasks.json"
       }
@@ -583,9 +583,9 @@
       "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "f9c0e0551c39c96c",
+      "materialityHash": "ff4a649e2d42307f",
       "materialityReview": {
-        "materialityHash": "f9c0e0551c39c96c",
+        "materialityHash": "ff4a649e2d42307f",
         "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.app-archived.json"
       }
@@ -1846,7 +1846,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "642b343ce41628a4"
+      "materialityHash": "697b7a51f3979ba3"
     },
     {
       "id": "tasks.surface.quick-create",
@@ -1986,9 +1986,9 @@
       "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "a809bc29cf6e8034",
+      "materialityHash": "9da9dcfb53810ea7",
       "materialityReview": {
-        "materialityHash": "a809bc29cf6e8034",
+        "materialityHash": "9da9dcfb53810ea7",
         "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.app-task-by-id.json"
       }
