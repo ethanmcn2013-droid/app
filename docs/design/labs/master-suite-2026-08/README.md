@@ -8,16 +8,27 @@ working spine between them. One self-contained page.
 **Read `COMPOSITION.md` first** — it is every decision made where the three sources
 disagreed. `BUILD-LIST.md` is everything noticed and deliberately not built.
 
+**Working in here? Read `AGENTS.md` first** — scope, refusals, the work queue
+and the discipline. This file is the map of the parts.
+
 ## The commands
 
 ```
 node build.mjs                     src/ → master.html            (the living build)
-node verify.mjs                    the gate. 130 checks, ~3 min
+node verify.mjs                    structure and contract        · 497 checks
 node verify.mjs --only=seam        one section: fidelity | console | seam |
                                    spine | contract | grounds | motion | labgates
+node gate.mjs                      measured geometry and colour  ·  20 checks
+node interaction-check.mjs         behaviour, driven in Chromium · 298 assertions
+node tools/prove-check.mjs         proves the gates still fail   ·   4 checks
 node tools/pairs.mjs               shots/PAIRS.html — the fidelity pairs, lookable
 node tools/gates.mjs               the three labs' own audits, against this file
 ```
+
+Four gates, not one. `verify.mjs` reads the document; `interaction-check.mjs`
+drives it in a real browser, and is where every defect that mattered was
+eventually caught. Run the measured gates alone — a fixed clock measures the
+machine.
 
 `master.html` is generated and is never hand-edited. `_wrapped.html` and
 `_gate-*.html` are written by `tools/wrap.mjs` (which `verify.mjs` calls) and exist

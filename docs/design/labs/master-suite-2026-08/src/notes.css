@@ -106,6 +106,13 @@
   --tr-34: -0.034em; --tr-27: -0.030em; --tr-21: -0.026em; --tr-18: -0.021em;
   --tr-16: -0.016em; --tr-14: -0.012em; --tr-12: -0.006em; --tr-11: 0em;
   --tr-cap: 0.075em;
+  /* THE KEYCAP'S OWN LETTERFIT. The suite has one keycap since R7 — 11px mono
+     at +0.04em, the step Timeline's --track-data already declares — and mono
+     at that size needs the positive fit to keep "Ctrl Z" from setting solid.
+     Written down here rather than left ad hoc, so the audit holds it to a
+     declared step like everything else and the curve stays a curve: this is
+     the one role on the sheet that is not running text. */
+  --tr-key: 0.04em;
 
   /* 4 - 6 - 8 - 12 - 14 - 16 - pill. No seventh step. */
   --r-xs: 4px;
@@ -510,7 +517,7 @@
    limit did not exist and nobody was told how close they were. */
 [data-app="notes"] .dockCount { font-variant-numeric: tabular-nums; }
 [data-app="notes"] .topMeta { font-size: var(--t-12); color: var(--ink-3); letter-spacing: var(--tr-12); white-space: nowrap; line-height: var(--lh-base); }
-[data-app="notes"] .topMeta kbd { font: inherit; font-size: var(--t-11); font-weight: 600; padding: 1px 5px; border-radius: var(--r-xs); box-shadow: inset 0 0 0 1px var(--line); margin-left: 7px; }
+[data-app="notes"] .topMeta kbd { box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-3); margin-left: 7px; }
 
 [data-app="notes"] .verb {
   display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 11px; border-radius: var(--r-chip);
@@ -539,7 +546,7 @@
 [data-app="notes"] .act[data-destroy] { color: var(--ink-3); }
 [data-app="notes"] .act[data-destroy]:hover { background: var(--ink); color: var(--white); box-shadow: none; }
 [data-app="notes"] .act[data-destroy]:hover svg { color: var(--white); }
-[data-app="notes"] .act kbd { font: inherit; font-size: var(--t-11); font-weight: 600; padding: 1px 5px; border-radius: var(--r-xs); box-shadow: inset 0 0 0 1px currentColor; opacity: 0.55; }
+[data-app="notes"] .act kbd { opacity: 0.55; }
 
 /* A note lifted out of the index and read on the desk. Grafted from
    direction B: the metadata is out of the text column, and the words are
@@ -864,7 +871,7 @@
 [data-app="notes"] .dockField:hover { background: rgba(17, 17, 17, 0.06); color: var(--ink-2); }
 [data-app="notes"] .dockField svg { width: 15px; height: 15px; flex: none; }
 [data-app="notes"] .dockField span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-[data-app="notes"] .dockField kbd { font: inherit; margin-left: auto; font-size: var(--t-11); font-weight: 600; padding: 1px 5px; border-radius: var(--r-xs); box-shadow: inset 0 0 0 1px var(--line); flex: none; }
+[data-app="notes"] .dockField kbd { margin-left: auto; box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-3); flex: none; }
 [data-app="notes"] .dockGlyph { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: var(--ink-3); cursor: pointer; flex: none; transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve); }
 /* The one filled control in the dock, and it only exists when there is
    something to keep. */
@@ -905,7 +912,9 @@
   display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border-radius: var(--r-pill);
   background: var(--white); color: var(--ink); font-size: var(--t-13); font-weight: 600; letter-spacing: var(--tr-12); cursor: pointer; flex: none; line-height: var(--lh-base); }
 [data-app="notes"] .undoAct svg { width: 13px; height: 13px; }
-[data-app="notes"] .undoAct kbd { font: inherit; font-size: var(--t-11); font-weight: 600; opacity: 0.55; }
+/* R7: this cap had no box at all. It gains the shared ring, which is the
+   consolidation working rather than a regression — one keycap means one. */
+[data-app="notes"] .undoAct kbd { opacity: 0.55; }
 /* The chord that reaches the index, printed where the index is named. */
 /* The way into review: a text control at the quiet tier, in the row that
    counts the notes. The target it answers to is 44, taken behind the
@@ -1029,7 +1038,7 @@
 /* The floor advertises its two keys now, so its keycaps need the same
    rule every other keycap in the product has, or they arrive in the
    browser's monospace and break the type lock. */
-[data-app="notes"] .darkAct kbd { font: inherit; font-size: var(--t-11); font-weight: 600; padding: 1px 5px; border-radius: var(--r-xs); box-shadow: inset 0 0 0 1px currentColor; opacity: 0.55; margin-left: 7px; }
+[data-app="notes"] .darkAct kbd { opacity: 0.55; margin-left: 7px; }
 [data-app="notes"] .darkAct:hover { color: var(--on-ink-1); background: var(--chrome); }
 [data-app="notes"] .darkAct[data-primary] { background: var(--white); color: var(--ink); box-shadow: none; font-weight: 600; }
 [data-app="notes"] .darkAct[data-primary]:hover { background: #f2f2f2; }
@@ -1520,6 +1529,12 @@
 [data-app="notes"] .verb[aria-disabled="true"],
 [data-app="notes"] .dockGlyph[aria-disabled="true"],
 [data-app="notes"] .headAct[aria-disabled="true"] { color: var(--ink-3); }
+/* The instruction, on its own reserved line under the field. */
+[data-app="notes"] .peelHint {
+  margin: 4px 0 0; min-height: 1.45em;
+  font-size: var(--t-12); line-height: 1.45; font-weight: 400;
+  letter-spacing: var(--tr-12); color: var(--ink-3);
+}
 [data-app="notes"] [aria-disabled="true"] { cursor: default; }
 [data-app="notes"][data-radius="sharp"] .dock,
 [data-app="notes"][data-radius="sharp"] .dockField,
@@ -1540,6 +1555,21 @@
    so the next move is the loudest object on the sheet. */
 [data-app="notes"][data-indigo="subtle"] .act[data-primary] { background: var(--ink); }
 [data-app="notes"][data-indigo="subtle"] .act[data-primary]:hover { background: #000; }
+/* THE PRIMARY HAS NEVER HAD A DISABLED APPEARANCE. The ink guard above lists
+   .verb, .dockGlyph and .headAct and has never covered .act[data-primary], so
+   even on the first-paint path — which always wrote the attribute correctly —
+   the seam's Send measured rgb(17,17,17) on white at opacity 1 while it could
+   not run. The correct path looked exactly as live as the broken one, which is
+   why fixing the attribute alone would have shipped a lie with valid ARIA.
+
+   Sited HERE, after the indigo variants: those are (0,4,0) and so is this, so
+   the tie is broken on source order and a rule written earlier would have lost
+   to the very treatment it exists to override. */
+[data-app="notes"] .act[data-primary][aria-disabled="true"],
+[data-app="notes"][data-indigo="subtle"] .act[data-primary][aria-disabled="true"] {
+  background: none; color: var(--ink-3); box-shadow: inset 0 0 0 1px var(--line);
+}
+[data-app="notes"] .act[data-primary][aria-disabled="true"] svg { color: var(--ink-3); }
 [data-app="notes"][data-indigo="forward"] .chip { background: var(--indigo); }
 [data-app="notes"][data-indigo="forward"] .chip:hover { background: var(--indigo-deep); }
 [data-app="notes"][data-indigo="forward"] .idxRow[data-open] { box-shadow: inset 2px 0 0 var(--indigo); }

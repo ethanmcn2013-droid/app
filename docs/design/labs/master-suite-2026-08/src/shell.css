@@ -903,3 +903,38 @@ body {
   .setCard { width: 100%; max-height: 100%; }
   .setValue { white-space: normal; overflow-wrap: anywhere; }
 }
+
+/* ═══ ONE KEYCAP IN THE SUITE ═══════════════════════════════════════
+   tasks.css states the rule — "One keycap in the product. The two that
+   existed disagreed on size, tracking and radius, which is the kind of drift
+   a design system is for." Tasks fixed it inside Tasks; the suite re-created
+   it threefold. One object was carrying two families, two sizes, two weights,
+   four letterfits, three radii and three paddings, and in Timeline it was not
+   a key-shaped thing at all — Orla learned the boxed pill in Tasks and Notes
+   and then met "Ctrl Z" in the moment editor as bare grey text. Tasks' 10px
+   was also the only 10px anywhere in the visible suite, so the cap had
+   invented a ramp step for itself.
+
+   11px mono at +0.04em is the one spec that sits on an existing ramp step and
+   does not fight the tracking curve. The RING is declared once here as an
+   inset shadow, because a border and an inset shadow measure differently and
+   that alone put two caps 1.1px apart before any size change; each product
+   leaves only its ring colour and its fill. Scoped to .app so it cannot reach
+   chrome outside the three products. */
+.app kbd {
+  --cap-track: 0.04em;
+  font-family: var(--font-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 400;
+  /* 1.28 is a step every product's leading ladder already declares. */
+  line-height: 1.28;
+  letter-spacing: var(--cap-track);
+  font-variant-numeric: tabular-nums;
+  display: inline-block;
+  padding: 1px 5px;
+  border: 0;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px currentColor;
+  color: inherit;
+  background: none;
+}

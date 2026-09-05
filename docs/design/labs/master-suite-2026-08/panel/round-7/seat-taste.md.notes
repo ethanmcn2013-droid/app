@@ -1,0 +1,112 @@
+# Seat: Product taste & emotional resonance — Round 7 (working notes)
+# Build: commit 984a0f17, frozen. Written as-I-go.
+
+## Confirmed by driving (running log)
+
+1. **Dictation floor clock ticks** (0:00 -> 0:06). Not a defect. But the interim
+   (grey) words never resolve to ink while the clock runs — the most cinematic
+   screen in the suite is frozen except for the timer. Candidate.
+
+2. **Timeline has no dock at any desk width.** `.dock` measures 370x48 in
+   tasks.board and 348x46 in notes.notebook at both 1440 and 1920;
+   timeline.owner-flight has NO .dock element with geometry at either width.
+   Timeline's primary act ("Add a moment") is a top-right button instead.
+   The locked architecture names "the dock at the foot" as part of the Studio
+   Floor. Two of three products have it. CANDIDATE FINDING.
+
+3. **The account tile renders TWICE** in Notes and Tasks (rail foot + dock),
+   870-1100px apart, and the two copies do not carry the same accessible name:
+     notes rail  "Orla, venue manager"
+     notes dock  "Orla, venue manager. Not here yet."
+     tasks rail  "Orla, venue manager"
+     tasks dock  "Orla, venue manager"
+     timeline rail "Orla, venue manager"  (no dock at all)
+   CANDIDATE FINDING — check behaviour of each.
+
+4. **The person is drawn twice at the foot.** CONFIRMED by crop
+   (_zz-tst-foot.png, tasks.board @1440): `.railAvatar` OR (ghost, 32px, y=900)
+   at bottom-left and `.dockAvatar` OR (FILLED INK, 34px, y=883) at x=907 —
+   ~870px apart on the same eye-line. Both are `aria-disabled="true"`, both
+   open the identical card "Not here yet." / title "Your account, in Signal
+   Studio. Not here yet." So the shell shows the operator's monogram twice and
+   both copies are the same dead door. Worse: the dock copy is filled ink,
+   the same value as the "Add task" primary pill sitting 15px to its left —
+   they read as one two-part control, so the second loudest object in the dock
+   is a door that does not open. Timeline has neither dock nor a second copy,
+   so the suite is also inconsistent about it.
+   (Escape does correctly dismiss the card; the rail avatar IS reachable by
+   ArrowDown on the roving rail. The honest-doors contract holds; the
+   duplication and the ink weight are the defect.)
+
+5. **HEADLINE — the arrival is a 2-pixel nudge.** MEASURED frame-by-frame
+   (_zz-tst-arr2/3.mjs). Send -> "Open in Tasks" -> the card lands. The entire
+   visual event on the arriving card is: `[data-settling]` toggled on, which
+   animates transform from `translateY(-2px) scale(0.994)` to identity over
+   ~420ms. Sampled every frame: opacity 1 throughout, background
+   rgb(255,255,255) throughout, border-color rgb(17,17,17) throughout,
+   box-shadow byte-identical throughout, no ::before/::after content, no class
+   other than `card`. A 2px rise and a 1.5px width change on a 256px card.
+   The card lands LAST in To do, looking exactly like the three cards above it.
+   The gate proves a beat exists and is on the motion ladder; it cannot prove
+   the beat READS, and this one does not. The one gesture that justifies a
+   suite existing arrives without an event.
+
+6. **HEADLINE #2 — the spine reassembles itself under your thumb on a phone.**
+   MEASURED at 390x844 (touch), centre-x of the three product tiles in the
+   capsule:
+        in Notes     Notes@227  Tasks@271  Timeline@315   (pitch 44px, right)
+        in Tasks     Notes@54   Tasks@130  Timeline@206   (pitch 76px, left)
+        in Timeline  Notes@63   Tasks@157  Timeline@251   (pitch 94px, left)
+   Tapping "Tasks" at x=271 while in Notes lands you in Tasks, where "Tasks"
+   has moved to x=130 and x=271 is now bare capsule between More(243) and
+   Add task(295). The Notes tile travels 173px — 44% of the screen — on every
+   crossing, and the pitch changes three times. The architecture says one rail,
+   rendered once, and on a phone the capsule and the dock are the same object.
+   Measured, it is three objects.
+
+7. **Two doors named "More" on one phone screen (Timeline @390).** Both
+   visible simultaneously: capsule grid tile aria-label="More" 44x44 at
+   (297,783), and a "···" aria-label="More" 39x44 at (160,140). One is the
+   unbuilt honest door, the other opens the real Preview/link menu. Same word,
+   two destinations, one 390px screen.
+   And on the **Notes phone the "More" door has zero size** — `.railUtil`'s
+   copy measures 0x0 at 390 and the Notes capsule carries no More tile, while
+   Tasks (243,783) and Timeline (297,783) both keep theirs. The honest door
+   that is supposed to be "present, reachable, in the tab order" is absent in
+   one product at one width.
+
+8. **The moment editor is the one composition that does not hold.** MEASURED
+   at 1280/1440/1920: the "WHAT IT IS" and "WHEN" inputs are 936 / 1096 /
+   1576px wide, holding "Send the invitations" (20 chars) and "8 August 2026"
+   (13 chars). Every other control in the panel — the -7/-1/+1/+7 steppers, the
+   mono readout, WHAT GUESTS SEE, Close, Delete this moment — is left-hugged at
+   x=213. The result at 1920 is an L-shaped void of roughly 1300 x 400px inside
+   a 1610px grey panel, plus a ~100px blank strip reserved at its head for the
+   undo receipt that is not there at rest. No frame in the round shows this
+   screen. It is the editor for the object the whole Timeline direction rests
+   on and it is the only place in the suite where the composition gives up.
+
+9. **The arrival, finished.** After settle the arrived card is byte-identical
+   to its neighbour: box-shadow `rgba(17,17,17,0.08) 0 0 0 1px, ...` on both,
+   background rgb(255,255,255) on both, border-color rgb(17,17,17) on both,
+   outline none on both, `:focus-visible` false (pointer-initiated focus). 70
+   frames x 27 tracked board elements during the crossing: the ONLY property
+   that changes anywhere on the board is the arriving card's own transform.
+   An existing indigo ring already exists in the CSS for `[data-next]` cards —
+   `rgba(79,70,229,0.32) 0 0 0 1px` — so the fix needs no new colour.
+
+## What is good, said plainly
+The Timeline horizon screen (79 / days / Saturday 3 October 2026 / TODAY IS 16
+JULY under an indigo hairline) is award-level and would sit comfortably beside
+Linear or Stripe. The dictation floor taking the whole screen to ink is a real
+moment. The writing is the best thing in the product: "Write the thought before
+it disappears...", "Yours until you send something on", "Nothing is decided
+until you say so, and every decision can be put back.", "Your note is still
+here, still private, still yours to edit.", "Nothing held up.", "3 so far, and
+every note stayed here". The honest doors are a classy answer, not a gap.
+
+## Score: 8.8
+What stands between this and 9.5: one build (give the arrival an event — half a
+day), one decision (fix the phone capsule's geometry so the spine is one object
+— a day), and two polish items (the editor's measure, the doubled identity —
+half a day together). Nothing here is a redesign.

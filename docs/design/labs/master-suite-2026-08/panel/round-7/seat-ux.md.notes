@@ -1,0 +1,326 @@
+# seat-ux — round 7 working notes (append-only)
+
+## Session log
+
+### Frame pass (static reads, before driving)
+
+Fixture clock verified consistent across all three products: Timeline states
+"TODAY IS 16 JULY" / "Today, 16 July"; Notes group head says "Thursday 16 July,
+today"; Tasks shows 14 Jul as the single overdue chip and "Today" on the run-sheet.
+Measure arithmetic on the across axis checks out to the pixel: today x=209,
+wedding x=1876, 79 days -> 21.1px/day; every tick (16/23/37/44/51/65) lands within
+1.5px of daysFromToday x px-per-day. Weekday names are right for 2026.
+Header counts check out: board 5 of 13 = 38%, lanes 3+3+2+0+5 = 13, "5 with no day"
+matches the 5 dateless cards. Dense 9 of 32 = 28%, lanes 10+7+4+2+9 = 32, and each
+"N more below" reconciles with the lane count.
+
+CANDIDATES (to be verified by driving):
+1. notes head names one notebook ("Mara & Finn  Saturday 3 October, in 79 days")
+   verbatim identical to the first index group head, ~484px below it; and it does
+   NOT change when the desk is holding a note filed under "The house" (seam state)
+   or when the review queue spans every notebook (review state).
+2. across measure: labels above the line read (outward) number > date > title;
+   labels below the line read number > title > date. The mirror is not a mirror.
+3. tasks head carries the completion fact three ways: "5 of 13 done" + bar + "38%".
+   The phone drops the 38%, which suggests it is the non-load-bearing one.
+4. dictation floor disclosure sentence 2 is about *typing*, on a surface where you
+   are speaking. Also "LISTENING 0:00" over a finished transcript.
+5. floating capsule overlaps list rows at 768 - check whether the scroller reserves
+   its band at the true bottom.
+
+### FINDING 1 (confirmed by measurement) — notes-head-scope-is-invisible
+
+`.headNext` in the Notes head — "Mara & Finn / Saturday 3 October, in 79 days" —
+is a real, working scope filter: `<button data-act="scope" aria-pressed="false"
+aria-label="...Press to see only these notes.">`, and pressing it narrows the
+index from 14 rows to 3, flips the h1 to "Your notes, narrowed", underlines
+itself and prints an "All 14 notes" way-out pill. All of that is good work.
+
+The problem is that NOTHING on screen says it is pressable until after you have
+pressed it.
+
+Measured at 1920, notes.notebook, rest vs :hover on `.headNext`, every computed
+property of the button and both of its children:
+
+  REST   bg rgba(0,0,0,0) | shadow none | border 0px | text-decoration none |
+         b color rgb(17,17,17) | span color rgba(17,17,17,.72) | cursor pointer
+  HOVER  identical. CHANGED KEYS: []  (zero properties differ)
+
+And the rendered crop of the head band (700x60 at 900,55) is BYTE-IDENTICAL
+between rest and hover: 1300 bytes, `Buffer.equals` true.
+
+Cause is one line, `_gate-suite.html:4441`:
+  [data-app="notes"] .headNext:hover b { color: var(--ink); }
+with `--ink-1: var(--ink)` at :4194. The hover rule repaints #111111 as #111111.
+
+At rest the control also carries no chevron, no rule, no fill, no underline. Its
+sibling in Tasks — the identical job, switching what you are looking at — is
+`.projSwitch`, which ships an SVG chevron. So the suite has two project/scope
+switchers in the same head slot and only one of them looks like a control.
+
+Consequence for Orla: the head reads as a single sentence — "All your notes,
+Mara & Finn, Saturday 3 October, in 79 days" — which is a false statement of what
+is on screen (14 notes across four notebooks). The one control that would make it
+true is invisible, and the affordance only arrives after the state has changed.
+
+### FINDING 2 (confirmed by measurement) — across-measure-label-order-flips
+
+timeline.owner-flight @1920, across axis. Rail `.b-rail` at y=682. Distance of each
+label's optical centre from the rail, measured in the DOM:
+
+  ABOVE the rail, outward:  b-away "16"  35px  ->  b-date "Sat 1 Aug"  51px
+                            ->  b-title "Menu tasting..."  73-85px
+  BELOW the rail, outward:  b-away "23"  35px  ->  b-title "Send the invitations" 56px
+                            ->  b-date "Sat 8 Aug"  78px
+
+The day-count is symmetric to the pixel (35/35). The title and the date SWAP rings
+across the rail. Holds for all seven moments: 16/37/51/79 above read number-date-title,
+23/44/65 below read number-title-date.
+
+Cause, `_gate-suite.html:8544-8556`: `.b-copy` (children in DOM order title, date) is
+mirrored as a BLOCK by swapping `bottom:` for `top:`, but its internal order is never
+reversed. So above the rail the last child (date) ends up nearest and the first child
+(title) farthest.
+
+Consequences: the titles - the only thing on the measure that says what a moment IS -
+do not form a band; they alternate 73px above / 56px below, on opposite sides of their
+own dates. And the below-line order (number, title, date) is the order the down layout
+and the phone use, so the four above-line moments are the only place in the product
+that reads number-date-title.
+
+Not a locked-architecture question and not a colour: one declaration.
+
+### Checked and CLEAN (not findings — recording so the panel knows they were driven)
+- Every count on every surface reconciles through one accessor: notes index
+  8 to decide / 14 notes vs five group tails (1+1+3+2+1=8, 3+1+5+3+1=14); tasks
+  5 of 13 / 38% / lane counts / "5 with no day"; dense 9 of 32 / 28% / three
+  "N more below" rows; after the seam crossing 5 of 14 / 36% / "6 with no day" /
+  To do 4 / notes 8->7 to decide and 3->4 already in Tasks. Nothing drifts.
+- Tab order at 1920 on tasks.board is 18 stops with a real roving model (one rail
+  tile, one card, one seg item, one tray Add). No dead stops, no body traps.
+- `.cardDots` is opacity 0 at rest but 1 on :hover, :focus AND under
+  `@media (pointer: coarse)`. Not an invisible-focusable defect.
+- Planning open @1440 does NOT delete Done: the sheet becomes a real scroller
+  (948/916) and `.sheet::after` is a MEASURED 96px fade toggled by
+  `data-more-right`/`data-more-left` — opacity 0 when nothing is hidden, 1 when
+  something is, and it swaps ends when you scroll. That whole lessons class is closed.
+- The overdue filter states itself ("Showing 1 overdue task. 12 others are
+  hidden." + "Show all work"), badges Show, and converts every lane count to
+  "shown/total" (0/3, 1/3, 0/2, 0, 0/5). Header honesty under filter is done.
+- The seam crossing announces once ("Sent to Tasks. Your note stayed here. In
+  The house." then "Opened in Tasks. Your note stayed in Notes."), leaves focus
+  on a surviving control, lands the card in To do and offers 30s undo.
+- Timeline behind-you is a native <details>/<summary>; folded and open notes are
+  both true against the three rows.
+
+### FINDING 3 (HEADLINE, confirmed by measurement) — list-tick-never-shows-done
+
+In List view — which is the ONLY view a phone gets, and the only view below the
+board's 1199 floor — a completed task's checkbox is drawn identically to an
+uncompleted one. Not similar. Identical.
+
+Measured: for a `.lrow[data-done]` and a `.lrow` without it, I diffed 33 computed
+properties across the element and both pseudo-elements (backgroundColor, boxShadow,
+borderColor/Width, color, opacity, content, width, height, transform,
+backgroundImage) plus the SVG's color/opacity/stroke and the check path's
+stroke/opacity/stroke-width:
+
+  LIST @390   changed properties: 0
+  LIST @768   changed properties: 0
+  LIST @1440 (chosen from the Board/List switch, not a fallback): 0
+  BOARD @1920 changed properties: 11 (bg -> rgb(17,17,17), ring removed,
+              colour/stroke -> white, check path painted)
+
+Driven, not just read. On a 390 phone I tapped the tick on "Confirm marquee sides
+with the hire company":
+
+  BEFORE  bg rgba(0,0,0,0) | box-shadow inset 0 0 0 1.4px rgba(17,17,17,.28)
+          | color rgba(0,0,0,0) | aria-checked=false | name "Mark done"
+  AFTER   bg rgba(0,0,0,0) | box-shadow inset 0 0 0 1.4px rgba(17,17,17,.28)
+          | color rgba(0,0,0,0) | aria-checked=true  | name "Mark not done"
+
+The control she pressed did not change one pixel. The feedback is elsewhere: a lane
+word 300px to the right flips "TO DO" -> "DONE", the pip goes green, a "16 Jul" chip
+appears at the far right, and the title drops from #111 to rgba(17,17,17,.62).
+Screenshots `_zz-ph-tick-before/after.png` show the ring empty in both.
+
+Root cause, single and precise: every done-state rule for `.tick` is scoped to the
+BOARD card, and the list row is `.lrow`, not `.card` —
+  2326  .card[data-done] .tick { background: var(--ink); box-shadow:none; color:var(--white) }
+  2535-6 .card[data-just-done] .tick { animation: tickSettle } / svg path { checkDraw }
+  3160-1 .card[data-done] .tick:hover/:focus-visible { box-shadow: 0 0 0 4px var(--wash-2) }
+  3193-4 (forced-colors) .card:not([data-done]) .tick svg { display:none } /
+         .card[data-done] .tick { background: CanvasText; color: Canvas }
+`listRow()` at 12686 emits `<article class="lrow" ... data-done>` with
+`<button class="tick" role="checkbox" aria-checked="true" aria-label="Mark not done">`.
+So the accessibility tree is correct and the render contradicts it.
+
+The forced-colors pair inverts the same bug: because `.card:not([data-done])` never
+matches a list row, in Windows High Contrast every list tick paints its check —
+verified with forcedColors:"active" at 390, svgDisplay "block" on all 13 rows,
+8 of which are not done. On the board the same emulation correctly gives "none"
+for not-done and "block" for done.
+
+FIX (one edit, no new colour, no new weight, nothing architectural): widen those
+five selector groups from `.card[data-done]` / `.card[data-just-done]` /
+`.card:not([data-done])` to `:is(.card, .lrow)[data-done]` etc. The treatment
+already exists and is already ratified on the board; it is simply not reaching
+the list.
+
+Why this is the headline: the tick is the most-pressed control in the product; the
+list is the phone's only view; and a venue manager standing in a marquee ticking
+jobs off gets no confirmation from the thing under her thumb. It is also the one
+place on this whole surface where the pixels and the accessible name say opposite
+things.
+
+### FINDING 3, extended — the same root cause reaches a third surface, and "done"
+now has three mutually inconsistent renderings.
+
+Tapping a list row opens a task sheet (`.tpTitleRow`). Its tick is the same bug:
+aria-checked="true", aria-label="Mark not done", background rgba(0,0,0,0), the same
+0.28 ring - an empty circle sitting beside a struck-through title, under a green
+DONE eyebrow, above "Due: Finished 15 Jul". Screenshot `_zz-ph-donesheet.png`.
+
+Measured, one completed task, three surfaces:
+  BOARD card  tick FILLED rgb(17,17,17) + white check | title rgb(17,17,17) w400, no strike
+  LIST row    tick EMPTY                              | title rgba(17,17,17,.62) w600, no strike
+  TASK sheet  tick EMPTY                              | title struck through
+Three devices for one state, and only the board uses the control that is supposed
+to carry it. Whatever the fix, the three should agree.
+
+Noted while there (not raised separately, cost is inside the same edit): the sheet
+labels the completion date "Due — Finished 15 Jul", then prints the identical
+string again ~450px lower as "ACTIVITY — Finished 15 Jul". A field named Due whose
+value is a finish date, said twice.
+
+### FINDING 4 (confirmed by driving) — review-end-drops-focus
+
+notes.review, 1440. I emptied the queue twice: once with the K accelerator, once
+with real clicks on "Just keep it". Focus after each decision:
+
+  decision 1..7  ->  P.handBody  (the next note's body — a sensible, deliberate move)
+  decision 8     ->  BODY
+
+The eighth decision is the one that completes the flow. Its repaint replaces the
+card with the completion sheet — "Everything is decided. / 8 notes went through.
+All of them stayed here. / [Back to your notes]" — and drops the keyboard out of
+the document. The next Tab lands on `.headNext` at the very top of the sheet, i.e.
+the reading position restarts at the page head. A screen-reader user hears the live
+region say "Kept in Notes. 0 left. Nothing left to decide." from a focus position
+of nowhere.
+
+The target already exists and is already the one first move on that screen: the
+filled "Back to your notes" button. It is rendered and NOT focused
+(`document.activeElement === btn` -> false).
+
+Every other repaint in this product restores focus correctly — the tick, the
+keyboard drop, the seam send, the crossing into Tasks, the undo. This is the one
+that does not, and it is the terminal beat of the flow Notes exists for.
+
+FIX: in the branch that renders the "Everything is decided." sheet, focus its
+primary action after paint — the same restoration the per-card branch already does.
+
+### FINDING 5 (confirmed by measurement) — timeline-editor-opens-off-screen
+
+On the ACROSS layout (the default on every desk width), opening a moment's editor
+leaves the editor off the bottom of the screen and scrolls nothing. Measured for
+both documented paths — pressing the filled primary action `[data-act="add"]`
+("Add a moment") and pressing an existing moment's `.b-grab` — at five desk
+viewports. `.b-edit` box vs viewport height, and whether its first control is on
+screen:
+
+  1280x900   grab  top 998  / vh 900   0% visible   first control at 1026  off
+  1280x900   add   top 1068 / vh 900   0% visible   first control at 1085  off
+  1440x900   grab  top 902  / vh 900   0% visible   first control at 930   off
+  1440x900   add   top 972  / vh 900   0% visible   first control at 989   off
+  1440x960   grab  top 972  / vh 960   0% visible   first control at 1000  off
+  1440x960   add   top 972  / vh 960   0% visible   first control at 989   off
+  1600x1000  add   top 972  / vh 1000  5% visible (28px of chrome)          off
+  1920x1000  add   top 972  / vh 1000  5% visible (28px of chrome)          off
+
+`.app.sheet` is the real scroller (scrollHeight 1680, clientHeight 924) and its
+`scrollTop` is 0 before and after, at every one of those. `aria-live` is empty —
+nothing is announced either.
+
+So at 1440x960 the entire visible result of pressing the product's one filled
+primary action is: a "New moment / Fri 17 Jul / 1" placeholder appears near the
+origin of the measure, and every other label swaps sides of the rail (Menu tasting
+goes from above to below, Send the invitations from below to above, and so on).
+The name field, the four date steppers, Shown/Hidden, Close and Delete are 12-48px
+below the bottom edge with no cue that they exist. Screenshot `_zz-ux-tl-after.png`.
+
+Diagnosis is exact and the code says so itself. `keepInBand(root, item)`
+(_gate-suite.html:21926) keeps the ITEM in the band — its stated law, correctly, is
+"moves the item on the measure while you hold it, and moves nothing else". The
+panel is only consulted when it is `position: fixed` (the docked/phone case). On the
+across desk the panel is static, the item is already in band, and keepInBand returns
+having scrolled nothing. The focus call that follows uses `.focus({preventScroll:
+true})`, so the browser's own scroll-on-focus is suppressed too. Pressing Tab
+afterwards DOES bring it in (native focus scroll puts the first control at top 460),
+which is why the keyboard path feels fine and the pointer path is blind.
+
+The behaviour gate looks next to this and misses it: `across @w · placing a moment is
+not done blind` asserts that >= 1 of the 8 `.b-grab` HANDLES stays on screen (7-8 do).
+It never asks whether the editor you just opened is on screen.
+
+FIX: on OPEN only — not on stepper presses, which must keep keepInBand's law — bring
+`.b-edit`'s head and its date row into the band of the same `.app.sheet` scroller
+keepInBand already walks up to find, or simply drop `preventScroll` from that one
+open-time focus call. A few lines; no architecture, no colour, no weight.
+
+--------------------------------------------------------------------------------
+## VERDICT — seat-ux, round 7 — 9.0
+
+Say it plainly: this is a very good surface with two primary actions that fail on
+first touch, and the fixes are hours, not weeks.
+
+WHAT EARNED THE SCORE. Information integrity, which is the hardest property on the
+list and the one that decides whether a person can trust a surface. Every count on
+every screen derives from one accessor and none of them drift — I pushed the seam
+crossing, both head filters, the review queue to empty, a phone tick, and the
+dense fold, and the numbers moved together every time. The measure is arithmetically
+honest to the pixel. One clock governs three products. The filter states itself in
+words, converts every lane count to shown/total, badges its control and offers the
+way out. The live regions say human sentences rather than robot ones. Undo has a
+binding, a place it lives, a stated window, and it crosses products. The tab model
+is a real roving model — 18 stops on a 13-card board. The overflow fades are
+measured, not decorative, and they swap ends when you scroll. The honest doors say
+something true. And the writing — "Yours until you send something on", "Your note
+is still here, still private, still yours to edit", "Nothing is decided until you
+say so, and every decision can be put back" — is at the level of the studios this
+is being held against. Twelve to nineteen rounds of standalone review show.
+
+WHAT STANDS BETWEEN THIS AND 9.5. Five things, none architectural, none a colour,
+none a decision to revisit. Two of them are visible on first touch:
+
+1. Tick a task on a phone and the circle does not fill. Zero of 33 computed
+   properties differ between a done and an undone list tick. The state is reported
+   by a word 300px away, the pip's colour, a date chip and the title's alpha — but
+   not by the control under the thumb. Same in the task sheet. One root cause: the
+   done rules are scoped to `.card`, the list row is `.lrow`. POLISH — one edit,
+   five selector groups, treatment already exists and is already ratified.
+2. Press "Add a moment" on a 1440x960 laptop and the editor opens entirely below
+   the fold; scrollTop stays 0 and nothing is announced. True at every desk
+   viewport I measured, on both documented paths. POLISH — a few lines at the open
+   branch, or drop one `preventScroll`.
+3. Finish the review queue and the keyboard is dropped to BODY on the last of eight
+   decisions, having been restored correctly on the first seven. POLISH — one focus
+   call, and the target is already on screen.
+4. The Notes head's scope control has no rest affordance and a hover that repaints
+   #111111 as #111111 (crop byte-identical). POLISH — a chevron and a live hover.
+5. The across measure's labels above and below the rail read in different orders.
+   POLISH — one `column-reverse`.
+
+So: what remains is polish, all of it, and about a day of it. There is no build here
+and no decision to reopen. If those five land and hold, I would put this at 9.5.
+
+A note on where the automation stopped. All five findings sit in the blind spot of
+253 passing assertions, and one of them sits directly beside an assertion that was
+written to catch exactly this class: `across @w · placing a moment is not done
+blind` measures whether the HANDLES stay on screen and never asks whether the editor
+does. If the gate takes anything from this round it should be: after any control
+opens a panel, assert the panel is in the viewport; and after any state toggle,
+assert that the control carrying that state changed at least one rendered property.
+
+Deliverable written to panel/round-7/seat-ux.json (the brief's closing line says
+round-6; the run brief and the round it belongs to say round-7, so round-7 it is).

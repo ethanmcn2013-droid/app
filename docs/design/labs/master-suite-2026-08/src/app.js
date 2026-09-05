@@ -451,6 +451,13 @@ window.__SUITE = (function () {
       if (o.announce !== false) say("You are on " + LABEL[product] + ".");
       return true;
     }
+    /* A card in hand does not travel between products. Leaving Tasks commits
+       the move it is holding, so the undo the operator was promised exists on
+       the other side of the switch and no card is left wearing
+       aria-grabbed="true" in a product nobody is looking at. */
+    if (current === "tasks" && registry.tasks && registry.tasks.api && registry.tasks.api.putDown) {
+      registry.tasks.api.putDown();
+    }
     current = product;
     railCurrent = product;
     /* THE RAIL ANSWERS THE PRESS. It used to repaint inside the view
@@ -689,6 +696,19 @@ window.__SUITE = (function () {
      and hands back the way to take it out again. */
   var crossings = Object.create(null);   /* note id → the task it became */
 
+  /* Terminal punctuation, ellipses and run-together whitespace are how the
+     same sentence arrives looking like two. */
+  function normWords(v) {
+    return String(v == null ? "" : v)
+      .replace(/[\u2026.,;:!?\s]+$/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  }
+  function sameWords(a, b) {
+    var x = normWords(a);
+    return x !== "" && x === normWords(b);
+  }
   function cross(entry) {
     var api = registry.tasks && registry.tasks.api;
     if (!api) return null;
@@ -704,9 +724,14 @@ window.__SUITE = (function () {
          was read. The card carries the picked words, and carries nothing
          at all when the title already IS them — a note that repeats its
          own title is noise, not privacy. */
-      note: entry.crossedWords && entry.crossedWords.trim() !== String(entry.task).trim()
-        ? entry.crossedWords
-        : "",
+      /* Compared on the NORMALISED strings, not the raw ones. The peel keeps
+         the sentence's own terminal period and the task wording drops it, so a
+         single "." defeated this guard on the one card the whole suite
+         argument exists to produce: title "Switch on before guests arrive, not
+         when", note "Switch on before guests arrive, not when." — the same
+         sentence twice, at 14/600 and then 13/400, and said twice to a screen
+         reader as well. Every other card on the board earns its second line. */
+      note: sameWords(entry.crossedWords, entry.task) ? "" : (entry.crossedWords || ""),
       /* What the note was about is what the task is tagged with. The seam
          resolved a destination on the Notes side; it would be thrown away
          here otherwise. */
@@ -717,6 +742,29 @@ window.__SUITE = (function () {
     return task.id;
   }
 
+  /* ── THE ONE ACT THAT CROSSES PRODUCTS ────────────────────────────
+     There are three independent undo stacks, each answering only for its own
+     product — so the one act that by definition crosses products was the one
+     act whose reversal the surface actively denied. Sending a note to Tasks,
+     following the seam's own "Open in Tasks", and then pressing Ctrl+Z — the
+     binding the strip you were reading a second ago advertised — answered
+     "Nothing left to undo." while the 30-second window was still counting
+     down and the card was still under your hand. That is not a missing
+     feature; it is a false statement about the suite's state, spoken into the
+     live region at the moment a person is least sure, on the gesture the whole
+     suite exists to argue for.
+
+     The arming product keeps the revert. This holds only the offer, so no
+     revert logic is duplicated and Notes' own single-consumption and expiry
+     rules go on governing it. */
+  var crossUndo = null;
+  function armCross(run) { crossUndo = run ? { run: run } : null; }
+  function takeCross() {
+    if (!crossUndo) return false;
+    var run = crossUndo.run;
+    crossUndo = null;
+    return run() !== false;
+  }
   function uncross(entry) {
     var api = registry.tasks && registry.tasks.api;
     var noteId = String(entry && entry.id).replace(/^crossed_/, "");
@@ -958,16 +1006,33 @@ window.__SUITE = (function () {
       var wasOpen = moreOpen;
       morph(
         wasOpen ? deck.querySelector(".morePop") : tile,
-        function () { moreOpen = !moreOpen; paintRail(); },
+        function () {
+          moreOpen = !moreOpen;
+          paintRail();
+          /* Taken after paintRail rebuilds, not before. It survived only
+             because paintRail happens to reuse the tile node. */
+          var plus = deck.querySelector('.rail [data-rail="more"]');
+          if (plus) plus.focus();
+        },
         function () {
           return wasOpen
             ? deck.querySelector('.rail [data-rail="more"]')
             : deck.querySelector(".morePop");
         },
       );
-      var plus = deck.querySelector('.rail [data-rail="more"]');
-      if (plus) plus.focus();
-      say(moreOpen ? "More, open." : "More, closed.");
+      /* SPOKEN OFF wasOpen, NOT off moreOpen. morph() flips moreOpen inside
+         startViewTransition's callback, which runs a frame late — so by the
+         time this line ran, moreOpen still held the OLD value and the door
+         announced "More, closed." as it opened and "More, open." as it closed.
+         The control experiment is what makes it worth stating: under
+         prefers-reduced-motion the same build announced correctly, because
+         morph() then runs its mutation synchronously. This build told the
+         truth to one person and the exact reverse to another, decided by their
+         motion setting, on the door the brief keeps specifically to buy
+         honesty. wasOpen is captured before either branch runs, so it is right
+         on both paths — a naive move of say() into the callback would have
+         regressed the reduced-motion path that already worked. */
+      say(wasOpen ? "More, closed." : "More, open.");
       return;
     }
     if (tile.getAttribute("aria-disabled") === "true") {
@@ -1132,6 +1197,10 @@ window.__SUITE = (function () {
     go: go,
     cross: cross,
     uncross: uncross,
+    /* The seam's undo, offered to whichever room the person is standing in.
+       See `armCross` above. */
+    armCross: armCross,
+    takeCross: takeCross,
     openTask: openTask,
     /* A control becoming the surface it opens. See `morph` above. */
     morph: morph,

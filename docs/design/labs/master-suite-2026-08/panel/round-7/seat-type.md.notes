@@ -1,0 +1,257 @@
+# Seat: Typography — Round 7 (working notes, written as I go)
+
+Build: commit 984a0f17, frozen. Lens: type scale, 400/600 only, tracking curve,
+leading, measure, mono micro-labels, numerals, orphans/widows, hierarchy.
+
+## Log
+
+### 1. Tracking survey (driven, 1440, all 10 states)
+Probed computed letterfit for every visible text node, grouped by product
+scope + family + size. Most of the audit's 10 "tracking" groups dissolve on
+inspection — the curves compose a polarity branch (`--tr-13 + --tr-rev` =
+-0.002em on the dock's reversed "Add task"; `--tr-12 + --tr-rev` = +0.002em on
+"1 overdue"), which the audit does not model. Those are principled, not drift.
+
+What survives:
+- tasks · Geist Mono 11: `.trayCount` "3" is tracked +0.1em (the uppercase
+  micro-label step) while `.pacePct` "38%" is tracked -0.012em. Two mono
+  FIGURES in the same header band, 0.112em apart in letterfit.
+- notes · Geist 12: `button.groupBtn` ("What it is about", "When") computes
+  `normal` — the only 12px control in Notes off `--tr-12`.
+
+### 2. Timeline · the date row below the axis is a staircase (CONFIRMED, measured)
+across layout, `timeline.owner-flight`, widths 1024/1280/1440/1920 (identical
+numbers at all four):
+  ABOVE the axis  `.b-copy` is anchored by `bottom:` → `.b-date` top = 623 for
+    every moment, whether the title ran one line or two. One clean row.
+  BELOW the axis  `.b-copy` is anchored by `top:` → `.b-date` top = 752 for the
+    one-line titles ("Send the invitations", "Venue walk-through") and 774 for
+    the two-line one ("Choose the evening music"). A 22px step in a row of
+    dates that is otherwise a ruler's own scale.
+src/across.css:266-277 is where the two anchors are set.
+Fix: reserve two lines for `.b-title` on the across axis and hug the
+axis-facing edge, so `.b-copy` has one height on both sides.
+
+### 3. tasks · the wrapping law — RAISED AND WITHDRAWN
+tasks.css:923 gives `.cardTitle` two wrapping laws switched by a sibling
+(`:has(.when)` → pretty, otherwise balance), four lines under a comment that
+writes "THE RULE: no text block may have two wrapping laws switched by a
+sibling." I measured both laws over 9 state×width combinations (board/dense/
+compact × 1280/1440/1920), 142 multi-line titles:
+  as-is             18 one-word LAST lines, 2 one-word FIRST lines, 0 over-clamp
+  balance everywhere 8 one-word LAST lines, 9 one-word FIRST lines, 0 over-clamp
+  pretty everywhere 24 one-word LAST lines, 14 short last lines
+Balance-everywhere halves the widows but produces exactly the rag the comment
+predicts at 1280 dense: «Chase» ⏎ «linen order, now» ⏎ «shipping Tuesday»,
+«Gravel» ⏎ «delivered for» ⏎ «the top car park», five of them in one column.
+So the recorded decision is the better of the two blunt options and my
+re-measurement CONFIRMS it. NOT raised as a finding.
+(What remains visible: 13 of the 18 widows are on chipped titles under
+`pretty` — "Clear Sunday 11am late checkout with / housekeeping" breaks after
+a preposition at 1280/1440/1920, and "Build the Saturday / run-sheet" at 1440.
+Content-shaped, not fixable by a keyword.)
+
+### 4. `.pacePct` — the one inherited letterfit in the suite (CONFIRMED)
+Swept every visible text element in all 10 states for a letter-spacing
+inherited across a size OR family change. Exactly one hit, suite-wide:
+  tasks `span.pacePct` "38%" — Geist Mono 11px, ls = -0.13px, inherited from
+  `.headFacts` (Geist 13px, `--tr-13` = -0.010em). So a MONO figure carries
+  -0.0118em, a letterfit computed for 13px SANS.
+tasks.css:325-328 declares family, size, line-height, weight, colour and
+tabular figures for `.pacePct` and no letter-spacing. Tasks has no mono step;
+the suite's declared one is +0.04em (notes `--tr-key`, timeline `--track-data`).
+Meanwhile `.trayCount` (tasks.css:149) is a mono figure at +0.1em with
+`margin-right:-0.1em` to kill the trailing space — so the two mono figures in
+the same header band sit 0.112em apart in fit.
+
+### 5. HEADLINE — one role, five settings: the uppercase micro-label (CONFIRMED)
+Swept every uppercase string in all 10 states at 1440. One typographic role —
+the small-caps eyebrow that names a region — is set FIVE ways in one app:
+
+  notes     Geist SANS  11px  600  +0.075em   FILING UNDER · OTHER WAYS IN ·
+                                              YOUR NOTES · STILL TO DECIDE ·
+                                              HOW IT ARRIVED · TURN THIS INTO…
+  notes     Geist SANS  12px  600  +0.075em   LISTENING
+  tasks     Geist Mono  11px  400  +0.10em    TO DO · IN PROGRESS · REVIEW ·
+                                              WAITING · DONE · VENUE · BAR
+  timeline  Geist Mono  11px  400  +0.16em    DAYS AWAY · BEHIND YOU · ACROSS ·
+                                              TODAY IS 16 JULY · ONE OF THREE
+  timeline  Geist Mono  12px  400  +0.20em    MARA & FINN
+
+Two families, two weights, four tracks. Notes is the outlier that costs most:
+it is the only product whose eyebrow is SANS, and the only one at 600 — so in
+Notes weight does NOT separate a label from a title (both 600) while in Tasks
+and Timeline it does (400 vs 600). The same role therefore carries different
+information in different rooms of one application, and the rail does not move
+between them, so the label is one of the few things that visibly re-skins when
+a person crosses the spine.
+
+This is not the ratified-tracking exclusion. Three ratified TRACKING curves do
+not license two FAMILIES and two WEIGHTS for one role.
+
+Tested the unification (Geist Mono / 400 / +0.16em applied to every uppercase
+micro-label) at 390/768/1280/1440/1920 on notebook, board, dense, review,
+voice: 0 labels wrapped to a new line, 0 clipped, 0 new sideways scroll; the
+largest single growth is 24.4px on "STILL TO DECIDE", which sits alone on a
+rule with room. Safe.
+Precedent for the fix already exists in this build: round 6 hoisted the keycap
+to ONE declaration in shell.css (11px mono, +0.04em) and left the products only
+their ink. The eyebrow is the same move, one object later.
+
+### 6. notes · the tracking curve is indexed off the type ramp (CONFIRMED)
+notes.css:89-90 declares the ramp at 11 12 13 15 17 20 27 34.
+notes.css:106-108 declares the curve at 11 12 14 16 18 21 27 34.
+Four of the eight ramp sizes — 13, 15, 17, 20 — have NO step of their own, so
+every rule at those sizes borrows a neighbour by hand, and the file borrows
+different neighbours for the same size. Measured in the file:
+  --t-17 → --tr-18 (-0.021em), --tr-16 (-0.016em) AND --tr-21 (-0.026em)
+  --t-15 → --tr-16 and --tr-14
+  --t-13 → --tr-14 and --tr-12
+against a token block that says "One tracking curve, by size, declared once.
+Every letter-spacing in this file is a token from it."
+Visible instance, driven (lift a note → select → peel → send): the receipt sets
+the picked sentence "Ceremony 2pm in the orchard, drinks on the" at 17px/600,
+letter-spacing -0.272px (-0.016em, `.peelSent`, notes.css:1289 region) directly
+under the SAME sentence on the desk at 17px/400, -0.357px (-0.021em). The
+heavier setting is the LOOSER one, which is backwards.
+Fix: re-index the curve onto the ramp — declare --tr-13/-15/-17/-20 on the
+existing curve and replace the borrowed references, keeping --tr-cap and
+--tr-key as ROLE steps outside the size index.
+
+### 7. tasks · the phone list's measure is starved by a column it isn't using (CONFIRMED)
+tasks.css:573-580, the ≤720 fold: `.lrows { grid-template-columns: 34px
+minmax(0,1fr) 74px }`, `.lrowSay` in column 2 row 1, `.when` in column 3 row 1,
+`.lrowMeta` in column 3 row 2. `.lrow .when[data-t="none"]` (line 563) is
+`visibility: hidden` — so a row with NO day still hands 74px of row 1 to an
+invisible chip.
+Measured, driven, tasks.board:
+  @320  `.lrowSay` = 116px → ~14 characters per line at 13px
+  @390  `.lrowSay` = 186px → ~22 characters per line at 13px (row is 322px)
+  @430  `.lrowSay` = 226px → ~27 characters per line
+5 of 13 rows in board (17 of 32 in dense) carry no day at all, and pay the
+74px anyway. The desk already solved this exact problem with a float —
+tasks.css:911-918 argues it at length ("the date chip was stealing width from
+all three lines instead of one") — and the phone re-introduces it as a grid
+reserve.
+Validated fix (driven, no overlap, no sideways scroll at 320/390/430):
+  @media (max-width:720px){
+    [data-app="tasks"] .lrow:not(:has(.when:not([data-t="none"]))) .lrowSay
+      { grid-column: 2 / -1; }
+  }
+  → say column 116→198 (@320), 186→268 (@390), 226→308 (@430);
+    13 fewer wrapped lines @320, 5 @390, 7 in dense@390.
+The chipped rows keep the narrow measure on lines 2+ until the chip becomes a
+float; that is the second half and it is a DOM change, not a CSS one.
+
+### 8. HEADLINE, SHARPENED — the micro-label is set SIX ways, and two of them
+### share a line (CONFIRMED, driven, cropped)
+Beyond the five settings in §5, Tasks alone sets the role twice:
+  `.trayName` (Board)  tasks.css:786 region  Geist MONO 11/400 +0.10em, ink-1
+  `.lrowLane` (List)   tasks.css:514-520     Geist SANS 11/600 +0.075em, ink-3
+Same five words — TO DO, IN PROGRESS, REVIEW, WAITING, DONE — same product,
+same size, same case, same job. Drag the window from 1201 to 1199 (the recorded
+board floor) and the lane labels change typeface, weight and ink.
+
+Worse: `.lrowLane` reaches for `--tr-cap`, which tasks.css:75-85 declares as
+THE CAP STEP for "a monogram, which is the one string in this product that is a
+letterform rather than a word". It is being spent on words.
+
+And the two voices meet on ONE LINE. In every list row (390 and 1199, verified
+and cropped at 4×) the meta line carries "TO DO" at the left in Geist sans 600
++0.075em and "VENUE" at the right in Geist Mono 400 +0.10em — same 11px, same
+uppercase, same ink-3 (0.62) — 250px apart on one baseline.
+
+Neither gate can see this: the audit groups letterfit by product+family+size,
+so two FAMILIES at one size never land in the same group.
+
+### SCORE 8.8
+Fundamentals are at benchmark and I could not break them: 400/600 held in all
+10 states × 5 widths × both variants (0 violations); the ramp clean; leading
+declared and gated everywhere the gate looks; measure held at 31em / 59-64
+characters on every Notes reading surface; whole-word trimming with zero
+mid-word clips found anywhere; tabular figures on every counter that ticks,
+including the live character counter; ONE keycap; no mixed letterfit inside a
+single line anywhere in the suite; and a tracking curve that composes a
+polarity branch correctly (`--tr-13 + --tr-rev` = -0.002em on the reversed
+dock button) — which is more type system than most shipped products carry.
+What holds it at 8.8 is that the one role which is supposed to prove "this is
+one application" is the one role that is not one object, plus a phone measure
+of 22 characters per line. All four are CSS, all four are validated above.
+
+════════════════════════════════════════════════════════════════════════
+PROSE NOTE — Typography seat, round 7
+════════════════════════════════════════════════════════════════════════
+
+Score: 8.8. Five findings, total cost 8 tenths, all of them CSS.
+
+WHAT EARNED IT. I went looking for the classic failures and could not make
+them happen. Two weights across ten states, five widths and both variants:
+zero violations. Two families: zero. The size ramp: clean, the only off-ramp
+strings being a 1x1 clipped screen-reader heading (which shell.css deliberately
+leaves inherited) and the shared wordmark. Leading: declared and gated in every
+one of the ten states, which is rarer than it sounds. Measure: 31em on every
+surface that carries Orla's own words, rendering at 59-64 characters a line in
+the compose field, the reading body and the peel. Trimming: I could not produce
+a mid-word clip anywhere. Numerals: every counter that ticks in place is
+tabular, including the live character counter, which I typed into to check.
+Not one mixed letterfit inside a single line of type in the whole suite. And
+the tracking curve does arithmetic - the dock's reversed "Add task" computes
+-0.002em because it is `--tr-13` plus `--tr-rev`, "1 overdue" computes +0.002em
+because it is `--tr-12` plus `--tr-rev`. Most of the audit's ten remaining
+"tracking" groups dissolve on that fact alone; the audit does not model the
+polarity branch. This is a real type system, not a stylesheet.
+
+WHAT STANDS BETWEEN IT AND 9.5. Polish, in four places, all of it cheap. The
+one that matters is the headline: the uppercase micro-label - the small-caps
+eyebrow that names a region - is set SIX ways in one application. Notes sets it
+in Geist sans at 600 and +0.075em; Tasks' board sets it in Geist Mono at 400
+and +0.10em; Tasks' LIST sets it in Geist sans at 600 and +0.075em, on the step
+its own comment reserves for a monogram; Timeline sets it in Geist Mono at 400
+and +0.16em, and once more at 12px and +0.20em. Two families, two weights, four
+tracks, one job. The consequence is not theoretical. Drag the window from 1201
+to 1199 and Tasks' lane labels change typeface and weight. And on every row of
+the phone list, "TO DO" in Geist sans 600 and "VENUE" in Geist Mono 400 sit at
+the two ends of ONE LINE, same 11px, same uppercase, same ink at 0.62. I
+cropped it at 4x to be sure. Neither gate can see it, because the audit groups
+letterfit by product plus family plus size, so two families at one size never
+land in the same group.
+
+This round exists to ask whether three products are one thing. On the type
+axis the answer is: everywhere except the one role that would prove it. The
+build already knows how to fix this - round 6 hoisted the keycap to a single
+declaration in shell.css and left the products only their ink. The eyebrow is
+the same move, one object later, and I drove the substitution at five widths on
+five states to confirm nothing wraps, clips or scrolls sideways.
+
+The second is a reading cost rather than a system cost: on a phone, Tasks'
+list gives Orla 22 characters a line at 390 and 14 at 320, because the ≤720
+fold reserves 74px of row 1 for a date chip on every row, including the five of
+thirteen that have no date and only hide the chip. Tasks solved this exact
+problem on the desk with a float and wrote a paragraph about why; the phone
+re-introduced it as a grid reserve.
+
+The third is on the signature object: on the across axis the dates below the
+measure staircase - one wrapped title drops its date a full 22px line - while
+the identical row above the axis holds, because one block is bottom-anchored
+and the other top-anchored. Identical at 1024, 1280, 1440 and 1920.
+
+Fourth, Notes' tracking curve is indexed at sizes its own ramp does not use, so
+four of its eight sizes borrow a neighbour and the file borrows different
+neighbours for the same size - which is how the seam's receipt ends up setting
+the picked sentence at a looser fit than the lighter original above it.
+
+Fifth, and smallest: the type system is declared exactly as far as the gate's
+ten states reach. The card panel - reachable only by driving - has fourteen
+browser-chosen leadings that land on the ladder only because of Geist's own
+metrics, and the seam's return door is the one string in it with no letterfit.
+
+IS THIS POLISH, A BUILD, OR A DECISION? Four of the five are polish: one
+hoisted declaration, one `min-height` plus two `align-items`, one `:not(:has())`
+selector, one token block re-sampled. The sixth-voice fix needs a founder to
+pick a value (0.10em or 0.16em - either is defensible, one of them is not
+optional), which is a decision that takes a minute, not a week. Half of the
+phone-measure fix - floating the chip inside the say column so lines 2-4 stop
+paying for it - is a DOM change and should be costed on its own. Nothing here
+is structural, nothing touches the locked architecture, and nothing needs a new
+colour, weight or face. Fix the six voices and the phone measure and this is
+past 9.5 on my axis.

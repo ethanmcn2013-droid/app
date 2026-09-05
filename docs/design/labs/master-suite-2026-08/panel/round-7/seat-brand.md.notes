@@ -1,0 +1,160 @@
+# Seat: Brand & copy — round 7 working notes
+
+Build: commit 984a0f17 (frozen). Driving `_gate-suite.html` in chromium.
+Written as I go.
+
+## Sweep 1 — static strings, tasks.board / notes.notebook / timeline.owner-flight @1440
+
+Register overall: calm, declarative, sentence case, no exclamation marks, no
+jargon. Eyebrows are mono uppercase and consistently used. Counts reconcile
+(8 to decide = 1+1+3+2+1; 14 notes = 3+1+5+3+2; 5 of 13 done).
+
+CANDIDATE A — "One thing is not going ahead." (Timeline, behind-you note,
+master.html:21455). The product's noun for its own object is "moment"
+("Add a moment", "3 moments", "What is still ahead"). In exactly one
+sentence — the one the OWNER reads — it becomes "thing". And the guest
+branch (21457-21461) names the cancelled moment outright ("The city hotel
+shortlist is not going ahead."), so the owner is given LESS than the guest
+about her own plan. Two grammars for one fact, and the vaguer one is
+pointed at the person who can act.
+
+CANDIDATE B — date grammar inside one region. `b-behindDate` renders
+"Sat 18 Apr" (weekdayShort + short) while the summary sentence directly
+above it renders the same class of fact as "18 April" (fmt.medium),
+and reads "the last of them 18 April" with no preposition.
+
+## Sweep 2 — driving the seam (notebook -> lift -> select -> peel -> send -> open)
+
+CANDIDATE C (strong) — the seam protests too much, and never says where the
+card landed. Driving one crossing produces, in order:
+  1 .peelBoundary  "Your note stays here. Tasks only ever receives the exact
+                    words you pick and check below."
+  2 live (peel)    "Tasks receives these words and nothing else from this note.
+                    The rest of what you wrote stays private here."
+  3 .peelWhy       "Your note is still here, still private, still yours to edit."
+  4 live (send)    "Sent to Tasks. Your note stayed here. In The house."
+  5 live (open)    "Opened in Tasks. Your note stayed in Notes."
+  (+ posed notes.seam fixture, .cnt: "3 so far, and every note stayed here")
+Five wordings of one promise in one gesture; the tense wanders stays ->
+stays private -> is still here -> stayed here -> stayed in Notes; and #3 is
+the only string in the suite that reaches for rhetoric (triple anaphora).
+Meanwhile the card lands in **To do** and NOTHING says so in words: not the
+receipt, not the send announcement, not the arrival announcement. #5 spends
+its second sentence on a fourth repetition of the promise instead of the one
+fact the person does not already know.
+
+CANDIDATE D — the seam carries Notes' vocabulary into Tasks unchanged.
+Notes files under "The house / The studio / The course / The enquiries".
+Tasks tags read "Venue / Bar / Enquiry". Send a note filed under "The house"
+and the card arrives tagged "The house", standing beside "Venue" and "Bar".
+"The enquiries" (Notes) and "Enquiry" (Tasks) are the same bucket under two
+names, in the one product whose argument is that there is one world under
+all three.
+
+## Sweep 3 — the honest doors (driven, not read)
+
+FINDING (confirmed, hard) — **the More door announces the opposite of what
+it did.** Press More on the spine: `.morePop` opens (aria-expanded="true",
+"Also in Signal Studio / Home / Inbox / Help", each "Not here yet"), and the
+live region says **"More, closed."** Press again: the menu closes
+(aria-expanded="false") and the live region says **"More, open."**
+Cause: master.html:11443 calls `say(moreOpen ? "More, open." : "More, closed.")`
+OUTSIDE the morph callback, so it reads the pre-toggle value. The sibling
+control does it right — Projects (14990) calls say() INSIDE the callback,
+after `projOpen = !projOpen`, and announces correctly.
+The doors are the brief's designed answer to what is not built; this one
+tells a screen-reader user the reverse of the truth, every press, in both
+directions. Reproduced from notes.notebook, dispatched click and Enter.
+
+ALSO — the privacy door inverts the doors' declared grammar. Every other
+door is "name the thing. Not here yet. [one sentence]":
+  "Your account, in Signal Studio. Not here yet."
+  "Every project in one list. Not here yet."
+  "A photo, read into words. Not here yet."
+The privacy door answers "Yours until you send something on. Your privacy
+settings. Not here yet." — the name arrives second, and the first sentence
+is a verbatim repeat of the second half of the button's own accessible name
+("Private to you. Yours until you send something on."), which the reader
+heard one keystroke earlier. Source: master.html:19716.
+And it is the ONE door with no visible answer: options, photo and the
+account tile all paint a visible "Not here yet"; privacy answers only in
+the live region.
+
+ALSO — the Notes head "…" is two names for one door: accessible name
+"Notes options" (product scope), answer "More for this note. Not here yet."
+(one-note scope) — and in notes.notebook at rest no note is open at all;
+the desk is an empty capture field. The source comment at 19712 justifies
+the string by a button called "More actions for this note" that does not
+exist in the suite.
+
+## Sweep 4 — naming collisions (driven)
+
+FINDING (confirmed) — **two controls named "More" on one phone screen.**
+timeline.owner-flight @390: `.b-more` (the head's "···", y=140) and
+`.railTile[More]` (the dock, y=783) both carry aria-label "More" and
+aria-haspopup="menu". The first opens a menu ALSO labelled "More" holding
+Preview / Get the link — this plan's sharing. The second opens "Also in
+Signal Studio: Home / Inbox / Help / Settings" — the rest of the suite.
+Two unrelated destinations, one name, 643px apart, only at <=720 where the
+head collapses its acts. At 1440 the head spells them out and the collision
+disappears, which is why frames hide it.
+
+OBSERVED — the identity tile is printed twice at desk width (spine
+`.railAvatar` + product `.dockAvatar`, both "OR", both titled "Your account,
+in Signal Studio. Not here yet.") and carries TWO accessible names:
+"Orla, venue manager" everywhere except Notes' dock tile, which is
+"Orla, venue manager. Not here yet.".
+
+FINDING (confirmed) — **the dictation floor's privacy claim is about
+typing.** master.html:9410, rendered only at 18684, i.e. only on the
+dictation floor: "Signal Studio keeps the words, not the audio. Typing
+stays on this device until you save." Nobody types on that screen. The
+first sentence tells her the words are kept by Signal Studio; the second,
+which is the one that should say what happens to what she just SAID before
+she saves, is about a different verb. Two sentences, and the one that
+matters answers the wrong question.
+
+## Sweep 5 — checks that came back clean (recorded so no one re-runs them)
+
+- Counts reconcile under driving, not just in the frames: "8 to decide" =
+  1+1+3+2+1 group tails; "14 notes" = 14 rows; "5 of 13 done / 38%" becomes
+  "5 of 14 / 36%" the instant a note crosses the seam and "8 to decide"
+  becomes "7"; the dense fold says exactly the number of cards whose box is
+  outside the scroller, correct at 1920, 1440 and 1280 in all five lanes.
+  (I mis-read the To do fold off the frame and the measurement refuted me.)
+- The filter is the model of what the seam should be: "Showing 1 overdue
+  task. 12 others are hidden." is one string in one grammar, printed AND
+  announced, and released with "Showing all work."
+- Empty search: "Nothing matches." on screen, "No task says "marqueezzzz"."
+  aloud — different, but the announcement adds the query, so it earns it.
+- Register holds everywhere: sentence case, no exclamation marks, no
+  jargon, no marketing voice. Eyebrows are consistently noun phrases.
+  Task titles carry no terminal stop; card notes and lane notes do; the
+  peel strips the note's full stop when the words become a title. That is
+  a real rule, kept.
+- The five lane notes ("Agreed and ready to start." / "In motion right now."
+  / "Being checked before it goes out." / "Held by a reply, a delivery, or a
+  decision." / "Finished and put away.") teach the board without a tooltip.
+- "Timeline is another surface in this suite. This lab is the Notes one."
+  (master.html:19700) is a LAB leak, but no control in the suite carries
+  data-act="timeline", so it is unreachable. Not reported.
+- voiceStop: "Stop listening" (9406) is dead — the markup hardcodes
+  "Stop and read it back". Not reported.
+- Timeline's owner behind-note says "One thing is not going ahead." where
+  the guest's names the moment. Noun drift (moment -> thing) and the owner
+  gets less than the guest. Real, but a refuter can argue the owner already
+  knows which one, so it did not make the five.
+- The account tile prints twice at desk width (spine + dock) with two
+  accessible names. Real, small, did not make the five.
+
+## Score
+
+9.1. The copy is genuinely in Linear/Stripe territory for tone and for
+arithmetic honesty. What holds it off 9.5 is five string-level defects, two
+of which actively mislead: the More door announces the reverse of what it
+did, and the dictation floor's privacy sentence answers about typing. One
+door answers a sighted person with nothing. Two buttons share one name on
+the phone. And the seam — the gesture the whole suite exists to justify —
+spends its entire copy budget reassuring and never names the lane it chose.
+All five are strings or one-liners; none is a build and none is a different
+decision. Roughly a day.

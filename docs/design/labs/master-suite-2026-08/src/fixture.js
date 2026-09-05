@@ -623,13 +623,21 @@ window.NOTES = (function () {
          they replace was four sentences in a legal register about service
          retention, on the one surface meant to be calm. */
       voiceDisclosure:
-        "Signal Studio keeps the words, not the audio. Typing stays on this device until you save.",
+        /* "Typing" on the one screen where nobody types. "These words"
+           points at the transcript visibly accumulating in .darkSaid, so it
+           answers the question she is actually asking about the thing she
+           can see — without claiming the SPEECH stays local, which would
+           collapse the words/audio line the first sentence draws and commit
+           the product to on-device transcription. */
+        "Signal Studio keeps the words, not the audio. These words stay on this device until you save.",
       heading: "Turn this into a task",
       begin: "Use these words",
       handoffBoundary:
         "Your note stays here. Tasks only ever receives the exact words you pick and check below.",
       sourceLabel: "The words you picked",
-      destinationLabel: "This task is filed under",
+      /* The seam picker's VISIBLE word, so its accessible name can start
+         with it rather than with a phrase the button does not show. */
+      destinationLabel: "To",
       wordingLabel: "The task wording",
       /* Shown in the pick band at rest, so the mechanism is visible
          before the black button is pressed rather than only after a

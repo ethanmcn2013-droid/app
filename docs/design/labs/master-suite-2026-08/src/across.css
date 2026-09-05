@@ -422,3 +422,17 @@
 @media (max-width: 430px) {
   [data-app="timeline"] .tlHead { padding: var(--gap-line) var(--gap-line) 0; }
 }
+
+/* ── PLACING A MOMENT, WITH THE APPROACH STILL IN FRAME ─────────────
+   src/across.css:308 states the premise this layout is built on — "the whole
+   approach is in frame" — and that was true at rest and false the instant
+   anyone edited: the editor opened between the horizon band and the track and
+   pushed every grab handle off the bottom. On this axis the editor goes after
+   the plan, so the measure keeps the room above it and the steppers stay
+   where the hand left them. */
+[data-app="timeline"][data-layout="across"][data-medium="sheet"] .b-editAfter:not(:empty),
+[data-app="timeline"][data-layout="across"][data-medium="full"] .b-editAfter:not(:empty) { display: block; }
+[data-app="timeline"][data-layout="across"][data-medium="sheet"] .b-editAfter,
+[data-app="timeline"][data-layout="across"][data-medium="full"] .b-editAfter { --edit-host: 1; }
+[data-app="timeline"][data-layout="across"][data-medium="sheet"] .b-stick .b-editHost,
+[data-app="timeline"][data-layout="across"][data-medium="full"] .b-stick .b-editHost { display: none; --edit-host: 0; }

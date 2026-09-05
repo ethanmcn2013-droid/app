@@ -1,0 +1,297 @@
+# Seat: Interaction and states — Round 7 (working notes, written as I go)
+
+Build: commit 984a0f17, frozen. Read the 119 ok() assertions in
+interaction-check.mjs and the paid-for defect library first; both are
+excluded from my findings.
+
+## Log
+
+- Tab order @1440 tasks.board: 18 stops, roving at rail (1 stop), view
+  switcher (1 stop), card grid (1 stop + 4 in-card controls), Add row.
+  Arrows walk all 5 lanes and every card; the empty `waiting` lane is
+  skipped rather than trapping. No console errors. Home/End are no-ops
+  inside the card rover (minor, not filed).
+- `.cardDots` ("Move this task") is opacity:0 at rest, revealed by
+  :hover/:focus-within, forced to opacity 1 under `pointer: coarse`, and
+  its slot is reserved in layout so revealing it moves nothing. This
+  class is closed — not a finding.
+- Carry model verified live: Space announces "Picked up …", arrows
+  announce "In progress, position 1 of 4.", Escape cancels and announces
+  "Move cancelled. … is back in the to do column." and the card really
+  returns to `todo`. This is award-level; nothing to file.
+- CANDIDATE (parked): `timeline.loading` reserves a 372x372 card and the
+  arrival is 372x1653 at 390, 1242x854 at 1440. The skeleton draws the
+  horizon head only — no reserve at all for the measure, which is the
+  organising object. Not a declared state and not shot, so weighed for
+  scope before filing.
+
+## FINDING 1 — seam-send-dead-and-swapped (CONFIRMED, headline)
+`[data-app="notes"] [data-act="send"]`, the seam's primary act.
+
+Clear the wording field (`.peelField`) — the natural retype gesture — and
+three things happen at once at every desk width:
+
+1. `_gate-suite.html:19388` runs
+   `send.toggleAttribute("aria-disabled", !ready)`. `toggleAttribute`
+   writes the EMPTY STRING. `aria-disabled=""` is an invalid ARIA token,
+   so Chromium falls back to the default (false). Playwright's a11y
+   snapshot returns `{"role":"button","name":"Write the wording, then
+   send"}` — no disabled state at all. First paint is correct
+   (`:18076` emits `aria-disabled="true"`); only the live path lies.
+2. Because `""` != `"true"`, every guard keyed on
+   `[aria-disabled="true"]` stops matching: `.verb/.headAct` ink-3
+   colour (5680-5682) and `cursor: default` (5683). Measured: bg stays
+   `rgb(17,17,17)`, colour `rgb(255,255,255)`, `cursor: pointer`,
+   `opacity 1`, `pointer-events: auto`. It is a full-ink primary pill.
+3. Click it or press Enter on it: 13 cards before, 13 after; `#say` is
+   silent; peel stays open; focus stays put. A silent dead control on the
+   one act the suite exists to perform.
+
+And the label swap re-wraps the footer. Measured send rect
+@1440: [596,591,138,36] -> [272,635,227,36] (324px left, 44px down,
+138->227 wide). "Never mind" goes [491,591] -> [637,591] — 146px RIGHT,
+landing INSIDE the rectangle Send occupied a frame earlier (right edges
+both at x=734). True at 768, 1280, 1440 and 1920. So the person who
+select-alls and deletes to retype, then reaches back to where Send was,
+presses the control that throws the peel away.
+
+FIX: at :19388 use
+`send.setAttribute("aria-disabled", ready ? "false" : "true")`, and stop
+swapping the button's own text — keep it "Send to Tasks" at its 138px
+width and move "Write the wording, then send" under `.peelField` as the
+field's hint, so the footer row never rewraps and "Never mind" never
+slides into the slot the primary act just left.
+COST: 0.4
+
+## FINDING 2 — across-editor-opens-below-the-fold (CONFIRMED)
+`[data-app="timeline"] .b-edit` on the ACROSS desk (the default layout).
+
+Round 6 moved the editor out from between the horizon and the track so
+the grab handles stop being pushed off screen. It now opens AFTER the
+plan — and lands below the fold. Measured, on the `.app.sheet` band,
+after a full 1.4s settle:
+
+| entry | viewport | .b-edit rect | px of editor visible | steppers on screen |
+|---|---|---|---|---|
+| `.b-grab` | 1440x960  | [196,859,1130,554] | 101 | 0 of 4 |
+| `.b-grab` | 1440x1000 | [196,899,1130,554] | 101 | 0 of 4 |
+| `.b-grab` | 1920x1000 | [196,899,1610,554] | 101 | 0 of 4 |
+| `.b-grab` | 1280x900  | [196,895, 970,554] | **5** | 0 of 4 |
+| `[data-act="add"]` | 1440x1000 | [196,972,1130,554] | 28 | 0 of 4 |
+
+The first stepper sits 146-242px BELOW the viewport bottom in every one
+of those. Screenshot at 1280x900: pressing "Edit Send the invitations"
+paints a faint wash behind that one label on the measure and scrolls the
+sheet 173px — so the person's place moves and the thing they opened is
+still not on screen. Keyboard users recover on the next Tab (native
+focus scroll); pointer users get nothing at all.
+
+`keepInBand` (:21926) is the mechanism and it is doing what it says:
+it keeps the MOMENT'S ROW in the band. Nothing ever puts `.b-edit` in
+the band. The behaviour gate cannot see this — `across @w · placing a
+moment is not done blind` (:875) asserts `.b-grab` handles remain
+visible, never the editor.
+
+The DOWN layout is correct: [227,615,344,554], 345px visible, 4 of 4
+steppers on screen.
+
+FIX: in `keepInBand`, when `.b-edit` is present and the band resolved to
+the `.app.sheet` scroller (the `!fixed && !paneScrolls` branch), run the
+existing minimum-correction arithmetic on the PANEL rather than the
+moment's row: `top = panel.getBoundingClientRect().top -
+box.getBoundingClientRect().top`, `height =
+panel.getBoundingClientRect().height`. Verified by hand: scrolling the
+band so `.b-edit`'s bottom sits 24px inside the viewport puts all 4
+steppers on screen and still leaves 6 of 7 grab handles visible at
+1280x1000 and 7 of 7 at 1440/1920x1000 — comfortably over the gate's
+`>= 1`.
+COST: 0.4
+- Filters: the overdue chip states itself ("Showing 1 overdue task. 12
+  others are hidden."), keeps head counts honest, and RELEASES ITSELF
+  when moot with a spoken reason ("Nothing is overdue, so the filter is
+  off."). The dead-end-filter class from the library is closed.
+- Dense tick at scrollTop 251: source lane keeps 251, focus follows the
+  card to Done and stays on screen, undo restores both. Clean. (Undo
+  does leave the Done lane's own trayBody at 145 having started at 0 —
+  drift in a lane nobody is looking at; too small to file.)
+
+## FINDING 3 — notes-drops-focus-at-720 (CONFIRMED)
+`[data-app="notes"]`, the 720 crossing.
+
+Focus a Notes control, narrow past 720, widen back. Measured, on one
+page narrowed and widened (the gate's own method):
+
+| control | exists @390 | 1440 | 390 | back to 1440 |
+|---|---|---|---|---|
+| `[data-act="review"]` `.idxGo` | yes | held | **body** | **body** |
+| `[data-act="photo"]` (`.verb`->`.dockGlyph`) | yes | held | **body** | **body** |
+| `[data-act="send"]` (seam primary) | yes | held | **body** | **body** |
+| `.topField` (a TEXTAREA) | yes | held | held | held |
+
+Every one of those controls is present and visible on both sides of the
+crossing. The next Tab from body restarts at the top of the document
+(the first note row). Nothing announces the loss.
+
+Tasks holds focus across the same crossing in both directions (checked
+on `[data-id="demo-t-01"]` and on the dock search field). Timeline moves
+it to a real heading. Notes alone drops it on the floor.
+
+Cause is exact: Notes' repaint (~:19100) captures the index scroll, the
+read-body scroll, and a CARET — but only
+`if (active.tagName === "TEXTAREA" || active.tagName === "INPUT")`.
+`mount.innerHTML = ...` at :19143 then destroys every button. The
+comment above it promises "Nothing here may cost the operator their
+place"; it keeps that promise for fields only. Same-band resizes
+(1440->1400->1300) and the 1199 crossing all hold focus, so this is the
+720 repaint specifically.
+
+The gate cannot see it: `${product} · crossing 720 both ways throws
+nothing` (:1467) asserts layout, toggles, lanes, rows, sideways scroll
+and console noise — never `document.activeElement`. "focus survives the
+repaint" exists only in the pattern comment at :212.
+
+FIX: in the same capture block, when `active` is not a field, record
+`{ act: active.dataset.act, role: active.getAttribute("aria-label") }`
+— both are stable across the breakpoint — and after `mount.innerHTML`
+is written, re-find it with
+`mount.querySelector('[data-act="'+act+'"]')`, confirm the aria-label
+matches, and `.focus({ preventScroll: true })`. This is the two-key
+selector-then-role rule Notes already runs for fields, extended from
+fields to controls.
+COST: 0.2
+
+## FINDING 4 — review-confirm-is-not-one (CONFIRMED)
+`[data-app="notes"]` review, the "Delete it everywhere?" two-step
+confirm (`.confirm` / `[data-act="d-delete-yes"|"d-delete-no"]`).
+
+Press Delete on a review card. The confirm comes up, `#say` reads
+"Delete this note? … You can undo this for 30 seconds.", focus lands on
+"Keep it". Escape, Enter and Space all behave. Then, with the confirm
+still up:
+
+| key | what happens |
+|---|---|
+| `t` | confirm gone with no word; the SEND peel opens; focus jumps into the wording textarea; the pending delete is dropped silently |
+| `k` | confirm gone with no word; the note is FILED and the queue advances 1 of 8 -> 2 of 8: "Kept in Notes. 7 left." |
+| `l` | confirm gone with no word; "Left for later", queue moves to the next note |
+| `d` | correctly a no-op |
+| `Escape` / `Enter` / `Space` | correctly cancel, "Nothing was deleted." |
+
+So the person who asked to delete a note and then touched one letter has
+committed a DIFFERENT decision on that same note and moved on, with
+nothing said about the delete they asked for. The source comment at
+:20166 says "Delete stays keycap-free behind its two-step confirm" — the
+confirm does not hold the keyboard, so it isn't one.
+
+Also: the confirm carries `role="status"`, not `role="alertdialog"`, has
+no `aria-modal`, and Tab from "Keep it" walks straight out of it — index
+row, dock search, account tile, body, then round to the rail — 8 stops
+without ever returning to "Delete"/"Keep it".
+
+FIX: `confirming` (:18634) is already the flag. In the keydown handler,
+immediately after `if (typing) return;` (:20153) add
+`if (state === "review" && confirming) return;` — that is above the `/`
+search branch, the t/k/l branch (:20161) and the
+`["ArrowDown","ArrowUp","j","k"]` branch (:20187), so a pending
+destructive confirm owns the keyboard and only Escape and the two
+answers' own Enter/Space reach anything. Then give the `.confirm` span
+`role="alertdialog" aria-modal="true"` with an accessible name and keep
+Tab cycling between its two buttons.
+COST: 0.2
+
+## FINDING 5 — two-popups-advertise-a-keyboard-they-do-not-have (CONFIRMED)
+`[data-act="projects"]` (the project switcher) and `[data-rail="more"]`
+(the spine's More menu) — both SUITE-level objects.
+
+Four popups in this one application, driven identically (focus the
+opener, Enter, ArrowDown, ArrowDown, Escape) at 1440x960:
+
+| popup | role / items | focus on open | ArrowDown | Escape leaves focus on |
+|---|---|---|---|---|
+| Show (Tasks head) | menu / 14 | IN the menu | walks the menu | "Show" — the word that opened it |
+| card Move | menu / 5 | IN the menu | walks the menu | the card |
+| **project switcher** | **listbox / 4 options** | on the opener | **nothing at all** | the opener |
+| **rail More** | **menu / 3** | on the opener | **walks the RAIL behind the open menu** — "Settings", then "Orla" | "Orla, venue manager" — a rail tile, not the opener |
+
+- The project switcher ships `aria-haspopup="listbox"`, flips
+  `aria-expanded` to "true", and paints a real `role="listbox"`
+  aria-label "Projects" with four `role="option"`s — and then has no
+  listbox keyboard model: no `aria-activedescendant`, no
+  `aria-controls`, arrows and Home/End all dead. Its options are
+  reachable ONLY by Tab. This is the library's "keyboard models
+  advertised but not implemented" class, verbatim.
+- The rail's More menu declares `role="menu"` and the rail's own roving
+  handler eats the arrows, so ArrowDown inside an open menu moves the
+  rail tile UNDER the menu. Escape then abandons focus on whatever tile
+  the rover reached. Show does this correctly two objects away.
+- Separately, Tab from inside the open card Move menu lands on
+  `**BODY**` while `.cardMenu` is still painted over the board; a second
+  Tab reaches the rail.
+
+FIX: give both objects the model Show already has, since it is written
+and proven in this same file. For the switcher: on Enter/Space/ArrowDown
+move focus to the selected `[role="option"]` (or set
+`aria-activedescendant` on the opener and add `aria-controls`), let
+Up/Down/Home/End walk the options, Enter choose, Escape close and return
+focus to the opener. For rail More: while `moreOpen` is true the rail's
+roving arrow handler must return early and hand Up/Down to the three
+`.moreItem` buttons, with Escape returning focus to `[data-rail="more"]`.
+For the card menu: close `.cardMenu` on Tab and move focus to the
+control after `[data-act="menu"]` rather than to the body.
+COST: 0.3
+
+## Weighed and NOT filed
+- `.railAvatar` is 32x32 at 390/768/1440 with no `::before` expander,
+  while every other tile in the same capsule is 44x44/44x46. Real, and
+  the audit's floor is 28 so it is not gated — but one control, one
+  number, and it belongs to a measured seat more than to this one.
+- `timeline.loading` reserves 372x372 and 372x1653 arrives at 390;
+  at 1440 it paints a 390px phone card and a 1242x854 sheet arrives.
+  Real, but `loading` is not a declared state or a shot frame, and the
+  received view is phone-shaped by design. Not spent.
+- Home/End are no-ops inside the board's card rover.
+- A pointer drop outside every lane is silent (Escape from a keyboard
+  carry announces "Move cancelled").
+
+## Verdict — 8.6
+
+What earned it. The reversibility model is the best thing on this
+surface and it is genuinely Linear-grade: every act that changes
+something announces itself in one voice, hands the keyboard somewhere
+sensible, and can be taken back — the carry ("Picked up ...", "In
+progress, position 1 of 4.", Escape restoring the card to `todo`), the
+seam (send -> focus on "Open in Tasks" -> cross to Tasks with focus on
+the card that landed -> Ctrl Z from Tasks saying "Taken back. Nothing
+went to Tasks."), the dense tick (lane holds scrollTop 251, focus
+follows to Done, undo restores both). The overdue filter states itself,
+keeps head counts honest, and releases itself when moot with a reason.
+Cross-product state holds: a typed draft survives two product switches;
+the two off-screen hosts are hidden + inert + display:none so exactly
+one `main` and one live region are exposed. Dictation is a real focus
+trap with a correct Escape. No console errors in any state I drove. No
+hover reflow on any control in any state. Reveal-on-hover is space-
+reserved and forced visible under a coarse pointer. Tasks holds focus
+across 720 in both directions.
+
+What stands between it and 9.5. Five defects, 1.5 in tenths, and every
+one of them is POLISH — no build, no data, no architecture, no
+re-decision. Two are on primary paths and both are invisible in a
+frame, which is the whole argument for driving: the seam's own act
+becomes a full-ink, accessibility-tree-enabled, silent dead control the
+instant the wording is cleared, with the destructive control sliding
+into the slot it just left; and Timeline's editor opens with 5-108px of
+itself on screen and none of its steppers on the desk's default layout.
+The other three — Notes losing focus at 720, a delete confirmation any
+letter key can overrule, and two suite-level popups advertising a
+keyboard model they do not have — are each an afternoon.
+
+Sizing it for the founder: findings 1 and 4 are one line each; finding 3
+is about eight lines in a capture block that already does the same job
+for fields; finding 2 is a six-line change inside keepInBand, verified
+here not to break the assertion it was written to protect. Finding 5 is
+the largest and it is still only porting the Show menu's existing,
+proven model onto two more objects. One focused day closes all five. It
+is not ready today; it is one day from ready.
+
+Written to panel/round-7/seat-interaction.json (the brief's closing line
+names round-6; the seat was instructed to file in round-7 and did).

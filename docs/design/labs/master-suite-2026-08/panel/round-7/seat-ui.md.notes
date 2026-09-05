@@ -1,0 +1,225 @@
+# seat-ui — round 7 working notes (write-as-you-go)
+
+Seat: UI composition. Build: commit 984a0f17, frozen.
+
+## F1 (confirmed by measurement) — the board's right margin is 110px of dead white at 1920
+
+`.board` is `display:grid` with `grid-template-columns: 372px 372px 372px 172px 372px`
+at 1920 (measured). Full lanes clamp at 372px; the empty WAITING lane collapses to
+`var(--rail)` = 172px (deliberate, documented at _gate-suite.html:1833-1841). The 200px
+that collapse hands back is never redistributed.
+
+Measured, viewport → (board content right, last tray right, gap):
+- 1810 → 1776 / 1776 / **0**
+- 1850 → 1816 / 1776 / **40**
+- 1920 → 1886 / 1776 / **110**   ← the canonical shot width
+- 2048 → 1995 / 1795 / **200**
+- 2560 → 2251 / 2051 / **200** (capped: the sheet's own max-width takes over)
+
+tasks.dense (no empty lane) fills to the content edge at every width — gap 0 everywhere.
+So the defect is specific to the shipped board state, which is exactly the state that is
+screenshotted, demoed and shown to Orla.
+
+Consequence: at 1920 the board's own optical margins are 16px left / 126px right.
+
+### F1 alignment contract (measured, tasks.board, .headActions right vs last card right)
+| vw | head/Show right | last card right | break |
+|---|---|---|---|
+|1280|1234|1234|0|
+|1440|1394|1394|0|
+|1600|1554|1554|0|
+|1750|1704|1704|0|
+|1810|1764|1764|0|
+|1850|1804|1764|**40**|
+|1920|1874|1764|**110**|
+|2048|1983|1783|**200**|
+
+Left edge (wordmark ↔ first card) is 128 at every width — perfect. So the surface
+holds a single right-hand edge from 1280 to 1810 and abandons it above.
+Notes (head 1561 = paperStack 1531 + inset, stack centred on sheet centre 1001) and
+Timeline (tl-stage centred, 140→1862) both stay centred at 1920. Only Tasks drifts.
+Second-order: the dock is centred on the SHEET (816.1→1185.9, centre 1001) but the
+board's occupied area is 116→1776, centre 946 — so at 1920 the one floating object on
+the sheet sits 55px off the optical centre of the thing it floats over.
+
+The CSS's own comment (line ~1805) states the intent: "An empty lane on a populated
+board is a rail rather than a fifth of the sheet ... **and the four lanes with work in
+them take the room**." Above 1810 they do not; the room becomes dead white.
+
+FIX, verified by injection — one declaration beside the five existing `:has()` rules:
+```css
+[data-app="tasks"] .board:not([data-filtered]):not([data-blank]):has(> .tray[data-empty]) {
+  --lane: minmax(196px, 422px);   /* 372 + (372-172)/4 */
+}
+```
+Measured after injection: break 0 at 1200/1280/1440/1810/1920/2048/2560; no new
+horizontal scroll at any width; tracks at 1920 become 399.5 399.5 399.5 172 399.5.
+
+## F2 (confirmed by screenshot + measurement) — the list's last row is eaten by the dock
+
+`.board.listBoard` reserves `padding-bottom: 28px`. `.board` (the card board) reserves
+`padding: 0 16px 84px`. The dock is 48px tall sitting 18px off the sheet's foot, so its
+band is 66px + shadow. 28px is not enough.
+
+At 768x1000, tasks.board (the LIST is the view below 1199), scrolled to the true end of
+the scroller (scrollTop = scrollHeight, nothing further to reveal):
+- dock band  y 922 → 970, x 237 → 607
+- last row   y 917 → 953  ("Send registrar paperwork two weeks before the date")
+The final task's title and its owner's name sit entirely inside the dock's box. Screenshot
+_zz-list-end-768.png shows the tick, the DONE pip and the 2 Jul pill surviving either side
+of the dock with the person's words gone.
+
+Reproduced identically at 900x1000. Board states at 1280/1920 are clean (84px reserve).
+Notes is clean at 390/768/1280/1920.
+
+## F3 (confirmed by driving) — the list's tick column never paints its own done state
+
+`.tick` base (line ~2051): `color: transparent`, `box-shadow: inset 0 0 0 1.4px var(--ink-4)`.
+The fill lives at line 2326 and is scoped to the CARD only:
+`[data-app="tasks"] .card[data-done] .tick { background: var(--ink); box-shadow: none; color: var(--white); }`
+There is no `.lrow[data-done] .tick` counterpart. The list has `.lrow[data-done] .lrowTitle`
+and `.lrowNote` colour rules (1723-1724) and nothing else.
+
+Measured at 1024x900, all 13 rows, 8 open + 5 done:
+- tick background: `rgba(0,0,0,0)` on ALL 13
+- tick ring: `rgba(17,17,17,0.28) 0 0 0 1.4px inset` on ALL 13
+- check glyph colour: `rgba(0,0,0,0)` on ALL 13
+- aria-checked: false×8 / true×5
+The only painted difference on a done row is the title going `rgb(17,17,17)` →
+`rgba(17,17,17,0.62)`.
+
+Driven: clicked an open row's tick at 1024. `data-done` flips, the lane word becomes
+DONE, the pip goes green, the title fades — and the circle under the pointer stays an
+empty ring (`_zz-tick-post.png`). `.card[data-just-done] .tick` carries the settle
+animation and the check-draw; `.lrow` has no equivalent, so there is no moment of
+completion at all in the list.
+
+The behaviour gate asserts `after.done` — the ATTRIBUTE flipped (interaction-check.mjs:314).
+It never asserts the control paints. So this is not a restatement.
+The card's own comment (2320) claims done is said "four times over ... and the filled
+tick". In the list one of those four survives.
+
+Affects every width from 320 to 1199, where the list is the default view — Orla's laptop
+and her iPad — and the phone, where the list is the ONLY view.
+
+FIX (mirror the two card rules; verified by injection, `_zz-tick-list-fixed.png`):
+```css
+[data-app="tasks"] .card[data-done] .tick,
+[data-app="tasks"] .lrow[data-done] .tick { background: var(--ink); box-shadow: none; color: var(--white); }
+[data-app="tasks"] .card[data-done] .tick:hover, [data-app="tasks"] .card[data-done] .tick:focus-visible,
+[data-app="tasks"] .lrow[data-done] .tick:hover, [data-app="tasks"] .lrow[data-done] .tick:focus-visible { box-shadow: 0 0 0 4px var(--wash-2); }
+```
+Palette-safe (--ink on white, --white glyph — the exact pair the card already ships).
+
+## F4 (measured) — the Timeline carries two indigo hairlines and only one is a measure
+
+Census of every horizontal rule on timeline.desk @1920 (computed colours):
+- `.tl-paperEdge`  x140→1862  `rgba(17,17,17,0.16)`
+- `.b-behind`      x197→1805  `rgba(17,17,17,0.16)`
+- `.b-foot`        x197→1805  `rgba(17,17,17,0.16)`
+- `.b-todayRule`   x449→793   **`rgb(79,70,229)`**  — 344px, `max-width:344px`, IDENTICAL at 1280/1440/1920
+- `.b-rail`        x201→1801  **`rgb(79,70,229)`**  — the measure; 1120 @1440, 1600 @1920
+
+Every divider on the page is ink-16 except one, and that one is the accent, 1px, horizontal,
+265px directly above the measure, in the same colour and weight. On a surface whose stated
+organising principle is that horizontal length is `daysFromToday × pixels-per-day`, a second
+accent hairline of a length that means nothing — and that never moves while the measure
+below it grows by 480px — invites exactly the wrong reading. (Down layout is clean: the
+measure is vertical there, so the two never compete. This is an `across` defect.)
+
+FIX: `[data-app="timeline"] .b-todayRule { background: var(--fore-16); }` (line 6592) — the
+same ink tint the page's other three rules already use. One indigo line remains and it is
+the measure. In-palette, no new hue.
+
+## F5 (measured, fix verified) — the phone's list does not sit on the head's column
+
+Tasks, list view. Head content edge vs list leading edge:
+| vw | wordmark L | tick L | Δ | head actions R | row meta R | Δ |
+|---|---|---|---|---|---|---|
+|768 |116|117|1|728|728|0|
+|1024|128|129|1|978|978|0|
+|1199|128|129|1|1153|1153|0|
+|**390**|25|**40**|**15**|365|**350**|**15**|
+|430 |25|40|15|405|390|15|
+|600 |25|40|15|575|560|15|
+The desk keeps the contract to a pixel; the phone breaks it by 15px on both sides, because
+the head's inset drops 28→16 under 720 while `.board.listBoard { padding: 0 25px }` is never
+re-scoped. On a 390px screen the whole list sits 15px inside the wordmark, project name,
+progress line and segmented control stacked above it.
+
+FIX (verified at 320/390/430/600; desk untouched, no horizontal scroll anywhere):
+```css
+@media (max-width: 720px) {
+  [data-app="tasks"] .board.listBoard { padding-left: 10px; padding-right: 10px; }
+}
+```
+After: tick L = 25 = wordmark L; row meta R = 365 = head actions R, at every phone width.
+
+## Checked and CLEAN (not findings)
+- Sheet geometry identical in all three products at 1920: 100/18/18/18. Dock centred on the
+  sheet's centre to the pixel (816.1→1185.9, centre 1001 = sheet centre 1001).
+- Notes' 1120 stack and 1060 paper are centred on 1001; Timeline's stage 140→1862 centred
+  on 1001. Only Tasks' board drifts (F1).
+- Rail capsule: 10px top inset, 10px bottom inset, 10px either side of every tile, avatar
+  centred to the pixel at every width tested.
+- Resize round trip 1440→1200→…→390→…→1440 in all three products: head, views, board, dock,
+  seg, tools, headActions and every tray width restore EXACTLY. Zero page errors.
+- Planning drawer at 1920: board refills to gap 0; at 1440 it becomes a scroller rather
+  than dropping Done. Both correct.
+- Timeline moment labels: fixed 168px boxes alternating above/below, no same-side collision
+  at 1920; the copy block keeps reading order on both sides (a mirror of the BLOCK, which is
+  right — I checked and dropped this as a finding).
+- Dense board @1920: five equal 354px lanes filling the sheet exactly, fold rule + count per
+  lane. This is the proof that the board's grid is capable of what F1 asks for.
+
+---
+
+# VERDICT — seat-ui, round 7
+
+**8.8.**
+
+## What earned it
+The suite composes as one object by measurement, not by resemblance. At 1920 all three
+products hang their sheet on the identical box (100/18/18/18 on the ink floor) and all
+three resolve to the same optical centre to the pixel — Notes' 1120 stack, its 1060
+paper, Timeline's 1722 stage, and the dock in both products all land on 1001. The rail
+capsule repeats the discipline in miniature. And it survives driving: narrowing one live
+page 1440→390 and back restores every measured box exactly, in all three products, zero
+errors. Tasks holds a single left edge at 128 from 1280 to 2048 and a single right edge
+(head actions / Show / last card) at every width up to 1810. The dense board with 32
+tasks composes five equal lanes filling the sheet with a fold rule and a count per lane.
+That is award-studio work.
+
+## What stands between it and 9.5
+Five things, all finish, none structural, all with a fix I wrote and verified by
+injection. In founder terms: **this is polish, roughly a day, not a build and not a
+different decision.**
+
+1. **The hero frame has a hole in it.** At 1920 — the width every shot in this lab is
+   taken at — the board stops 110px short of its own sheet because the four content lanes
+   hit a 372px ceiling and the collapsed WAITING lane's 200px is never redistributed. The
+   right-hand edge the surface keeps to the pixel at 1280, 1440, 1600, 1750 and 1810
+   breaks there and stays broken to 200px above 2048. One declaration. **0.3**
+2. **The dock eats the last row of the list**, at every width from 768 to 1199 — the whole
+   band where the list is the default view. The card board reserves 84px for the dock's
+   band and says why in its own comment; the list reserves 28. One line plus a phone
+   exception. **0.3**
+3. **The tick never paints done in the list.** The most-pressed control in the product has
+   no visible completed state in the view that is the default below 1200 and the only view
+   on a phone. `aria-checked` flips; nothing on screen does. Two selectors. **0.3**
+4. **Two indigo hairlines on the Timeline, one of which is not a measure.** One token. **0.1**
+5. **The phone's list sits 15px inside the head it hangs under**, on both edges, at every
+   phone width — a contract the desk keeps to a pixel. One media-query block. **0.1**
+
+Close those five and, from this seat, the composition is at 9.5. What would still be left
+after them is argument rather than defect: the desk's right column holds 530px for 240px
+of metadata at every desk width, and the review card's measure differs from the index it
+sits above. Both are defensible; neither is a finding.
+
+## Not findings (checked, refuted myself)
+- Timeline's moment labels are NOT mis-mirrored: the copy block keeps reading order on
+  both sides of the line while the graduation stays nearest it, which is the correct
+  mirror of the block.
+- The WAITING lane collapsing to a rail is deliberate and documented; the defect is only
+  that nothing takes the room it gives back.
+- No dock/content collision anywhere in Notes, on the phone, or on the card board.

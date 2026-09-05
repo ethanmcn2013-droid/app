@@ -1,0 +1,184 @@
+# Measured evidence seat — round 7 — working notes
+
+Build: commit 984a0f17, frozen. Driving the wrapped copy _gate-suite.html.
+Method: read source (src/*.css, src/*.js), then drive in chromium via playwright,
+probing computed styles / a11y tree / focus order / repaint effects.
+
+## Log
+
+- Ran audit.mjs myself: exit 1 with contrast 21 / tracking 10 / spaceLadder 302.
+  Contrast sightings are all `1:1 (needs 4.5)` on notes.voice + notes.seam, i.e. the
+  model reads fg==bg. Screenshotted notes.voice at 1920: the dictation floor is a full
+  opaque ink overlay; the flagged nodes are the sheet BEHIND it. Model error, not a
+  render defect. NOT a finding.
+- notes.voice focus trap is correct: Tab cycles exactly Cancel / Stop and read it back,
+  never reaching the occluded sheet. Clean.
+
+### FINDING 1 (headline) — Enter during a keyboard carry leaves the board mutated,
+### stuck in the picked-up state, and with no undo.
+src/tasks.js onKey: the Space branch (≈l.2924-2969) is the ONLY drop path. The
+`if (key === "Enter")` branch (≈l.2971-2991) calls openCard(id, ...) with no
+`carriedId` guard. Driven at 1440, tasks.board:
+  Space on demo-t-01  -> aria-grabbed=true, data-force=moving, lane todo
+  ArrowRight          -> lane DOING (carryMove already called moveTo(), the model
+                         is mutated), say "In progress, position 1 of 4."
+  Enter               -> "Task open.", focus to ASIDE.taskPanel
+  Escape              -> "Task closed.", focus back on the card
+  Ctrl+Z              -> "NOTHING LEFT TO UNDO."   (arm() never ran)
+  Ctrl+Z again        -> same
+After all that the card is permanently in In progress, still carries
+aria-grabbed="true" and data-force="moving" (2px indigo outline + 1.5px indigo
+ring + 5px halo + scale(1.02) + lift — the loudest treatment on the board),
+with document.activeElement === BODY. Screenshot _zz-stuck-moving.png confirms.
+Escape during a carry cancels correctly and clears both attributes; only Enter
+leaks. Round 6's "the keyboard drop arms one" fix covered the Space drop only.
+
+WIDER THAN ENTER. Same probe, other exits from a live carry (all at 1440,
+tasks.board, card demo-t-01 walked one lane right so the model is already
+mutated):
+  Tab            -> lane doing, aria-grabbed=true, data-force=moving, Ctrl+Z
+                    "Nothing left to undo."
+  rail Notes/back-> lane doing, aria-grabbed=true, data-force=moving, Ctrl+Z
+                    "Nothing left to undo."
+  click empty lane ground -> endCarry() DOES run, attributes clear, says
+                    "…put down in the in progress column." and Ctrl+Z STILL
+                    says "Nothing left to undo."
+So Space is the only exit that arms an undo (src/tasks.js l.2955 arm({kind:"move"…}))
+and Escape (l.2883) the only exit that reverts. endCarry() (l.2639) commits the
+lane change and never calls arm().
+CODE/COMMENT DISAGREEMENT: the comment above endCarry() (l.2632-2638) states the
+class was fixed — "Tab away, complete another card with the pointer, open the
+composer or the Planning drawer, and the carry ran on". endCarry() is wired to
+pointerdown only (l.4442). Tab away still runs the carry on, exactly as the
+comment says it used to.
+
+### Things I tried to break and could not (recording so the panel knows what was tested)
+- Suite persistence: typed a 45-char draft in .topField, scrolled .index to 260,
+  switched Notes -> Tasks -> Timeline -> Notes. Draft identical, index scrollTop
+  still 260. The suite's central claim holds.
+- Rover reach in tasks.dense: exhaustive up/down/right traversal reaches all 32
+  visible cards. No unreachable card.
+- Roving tabindex is consistent across all four surveyed states (one stop per
+  group, -1 on the rest); the rail's arrow walk reaches the account tile at
+  position 6.
+- notes.voice focus trap: 28 tabs cycle exactly two controls.
+- Space on .tick (role=checkbox) ticks; it does NOT pick the card up
+  (src/tasks.js l.2916 guards it). Contract key intact.
+- .idxRow hover is alive (my first sweep hit row 0, which is [data-cursor] and
+  already carries --wash — false positive, withdrawn).
+
+### FINDING 2 — every Tasks lane becomes a 13–44px sideways scroller between
+### 1199 and ~1420, and one trackpad gesture slides the cards out of register.
+Mechanism: src/tasks.css l.1053-1078. `.cardDots` grows a 24px mark into a 44px
+target with `padding: 10px` + `margin: -13px -10px -13px auto` and
+`box-sizing: content-box`. The negative right margin pulls the box back
+VISUALLY, but negative margins do not shrink an ancestor's scrollable overflow,
+and `.trayBody` is `overflow-x: auto`. Measured (tasks.dense, fresh page, no
+interaction):
+  .trayBody scrollWidth-clientWidth  @1440 [0,0,0,0,0]
+                                     @1400 [3,4,0,0,0]
+                                     @1360 [11,12,2,0,0]
+                                     @1320 [19,20,10,0,0]
+                                     @1280 [27,28,18,0,0]   <- declared viewport
+                                     @1200 [43,44,34,0,0]   <- board floor is 1199
+  tasks.board @1280 [13,14,4,0,0]; tasks.compact @1200 [11,12,0,0,0].
+The offending descendant is .cardDots, right edge 23px past .trayBody's right
+edge; the cards themselves sit 6px INSIDE it.
+Reachable: one `mouse.wheel(80, 0)` over the To do lane at 1280 sets
+scrollLeft 27/27. Screenshot _zz-ev-wheelshift.png: the whole To do column has
+slid left, the first card's tick circle is sliced in half by the lane's left
+edge, the ··· menu is exposed, and the column is now visibly out of register
+with its own "TO DO 10" heading, which did not move.
+No fade, no snap, nothing in the scrolled region — the guillotine edge from the
+lessons file, at a width the console screenshots.
+
+### FINDING 3 — the head's completion meter is the one number on a filtered
+### sheet that never says what it still describes.
+tasks.board @1440. Press .who "Mara & Finn", then the "1 overdue" chip. Board
+shows 0 cards. Every lane restates itself honestly ("To do, 0 of 3 shown",
+visible "0/3"); the empty state says "Nothing matches. No overdue task is on the
+board for Mara & Finn. All 13 are hidden." and offers "Show all work".
+The head still reads "5 of 13 done  ▬▬▬▬  38%" with the pace bar filled, and
+[role=meter] still carries aria-valuenow=5 / aria-label "5 of 13 done, 38
+percent", unqualified. Screenshot _zz-ev-filterhead.png. Same in the List view.
+The lessons file's own rule: "Header counts must say what they still describe
+while a filter hides things."
+
+### FINDING 4 — every board card is spoken about three times.
+page.accessibility.snapshot() on .card[data-id="demo-t-01"], tasks.board @1440:
+  article name  "Confirm marquee sides with the hire company"
+  article desc  "Mara & Finn, Saturday. …by Thursday. Mara & Finn. High priority."
+  > paragraph   "Confirm marquee sides with the hire company"      (title, 2nd)
+  > generic     "Mara & Finn, Saturday. …by Thursday. Mara & Finn. High priority."
+                                                                    (the sr span
+                                                                     itself, 2nd)
+  > paragraph   "Mara & Finn, Saturday. …by Thursday."             (note, 3rd)
+  > button      "Mara & Finn"                                      (tag, 3rd)
+  > text        "High" + "priority"                                (pri, 3rd)
+src/tasks.js l.461 builds `<span class="sr" id="cd-…">` purely as the
+aria-describedby target and leaves it in the reading order; `.sr` hides it from
+sight, not from AT. 13 cards on the board, 32 in dense. Round 6 fixed exactly
+this on the seam's card ("does not say it twice to a screen reader either") and
+left it on every board card.
+
+### FINDING 5 — a done card stops saying it is movable and stays movable.
+src/tasks.js l.448: `(done ? "" : ' aria-roledescription="Movable task"')`.
+l.449 emits aria-keyshortcuts="Space ArrowUp ArrowDown ArrowLeft ArrowRight"
+unconditionally. Driven: all 5 cards in Done have rd=null, ks present; Space +
+ArrowLeft on demo-t-09 moved it to Waiting and the roledescription reappeared.
+So 5 of 13 cards advertise shortcuts with no word for what they do.
+
+### Checked and clean, for the record
+- tracking: re-ran the letterfit census per VISIBLE product only (rail + one app).
+  tasks 5 groups, notes 4, timeline 2, and every one resolves to a role split
+  (caps labels 0.075/0.1/0.16em vs body 0em) or a sub-pixel delta (largest
+  within-role gap 0.104px = 0.008em, "Add task"). No finding.
+- contrast: all 21 sightings are 1:1 behind the opaque dictation floor. No finding.
+- Filters: lane labels restate ("0 of 3 shown"), empty board offers one way out,
+  Escape unwinds one filter per press with an honest sentence each time.
+- Notes index dock band IS reserved (.index padding-bottom 132px); no row is
+  eaten by the floating dock at 768/1280/1440/1920.
+- The tick under the Add row at 1280 is a clipped-scroller artefact, not an
+  overlap — .trayBody bottom 596, card top 604. Withdrawn.
+- Timeline: editor opens after the plan, holds focus, steppers announce through
+  .b-undo, Ctrl+Z works, Escape returns focus to the .b-grab that opened it.
+- Undo strip pauses its own timer on focusin/mouseenter (l.4311-4314).
+
+## VERDICT — 8.8
+
+What earned it. This is a real application, not a document about one. The suite's
+one load-bearing claim — three products mounted at once, nothing lost — is
+measurable and it holds to the byte and to the pixel. The craft that automation
+cannot see is largely at the benchmark: the contract keys are defended (Space on
+role=checkbox ticks, and there is a comment saying why), the roving model reaches
+every card, the filter model is the best thing on the surface (every lane label
+restates what it still describes, the empty board offers exactly one way out,
+Escape unwinds one filter per press and says so), the dictation floor traps focus
+properly, and Notes and Timeline hold focus and every scroller through a full
+1920-768-1920 sweep. The CSS reasons out loud; most non-obvious numbers carry the
+measurement that produced them. Zero console errors in every state at five widths.
+
+What stands between it and 9.5. Four small things and one that is not small.
+
+The one that is not small is POLISH THAT IS ACTUALLY A BUG, half a day: the
+keyboard carry has five exits and only Space records the move. Enter, Tab, a rail
+switch and a pointer press elsewhere all commit a lane change that Ctrl+Z then
+denies exists, and three of them leave the card painted picked-up with nothing
+focused. The board's own file says this class was fixed and names Tab away
+specifically; the fix reached the pointer only. It is one refactor —
+commitCarry() — and four call sites.
+
+The 1199-1420 lane slop is one CSS line (overflow-x: clip on .trayBody) — an hour
+including a re-shoot of the 1280 frames.
+
+The pace meter under a filter is a DECISION before it is a build: does the head
+describe the project or the view? The rest of the sheet has already answered
+"the view", so make the meter agree. Half a day.
+
+The two accessibility ones are ten minutes each: one aria-hidden on the card's
+describedby target, and one ternary deleted so a done card keeps saying it is
+movable.
+
+None of it is architecture, none of it is a direction, and none of it touches a
+protected object. Call it a day and a half of work between this and 9.5 —
+provided the carry fix is treated as the correctness bug it is and not as polish.

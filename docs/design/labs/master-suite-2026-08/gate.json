@@ -4,19 +4,19 @@
       "section": "fidelity",
       "name": "tasks @1440 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "168570 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "170052 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
       "name": "tasks @1440 · the spine",
       "ok": true,
-      "detail": "8442 px, in x 28–1388, y 37–864"
+      "detail": "8442 px, in x 28–1399.5, y 37–864"
     },
     {
       "section": "fidelity",
       "name": "notes @1440 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "152472 px differ · the index column 1060 → 1440, the wedding moved to 3 October, the dock's account tile now says what the rail's says"
+      "detail": "152269 px differ · the index column 1060 → 1440, the wedding moved to 3 October, the dock's account tile now says what the rail's says"
     },
     {
       "section": "fidelity",
@@ -34,19 +34,19 @@
       "section": "fidelity",
       "name": "tasks @1280 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "131113 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "134771 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
       "name": "tasks @1280 · the spine",
       "ok": true,
-      "detail": "8413 px, in x 28–1235.5, y 43.5–863.5"
+      "detail": "8413 px, in x 28–1239.5, y 43.5–863.5"
     },
     {
       "section": "fidelity",
       "name": "notes @1280 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "152470 px differ · the index column 1060 → 1440, the wedding moved to 3 October, the dock's account tile now says what the rail's says"
+      "detail": "152270 px differ · the index column 1060 → 1440, the wedding moved to 3 October, the dock's account tile now says what the rail's says"
     },
     {
       "section": "fidelity",
@@ -76,7 +76,7 @@
       "section": "fidelity",
       "name": "notes @768 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "96542 px differ · the index column 1060 → 1440, the wedding moved to 3 October, the dock's account tile now says what the rail's says"
+      "detail": "96337 px differ · the index column 1060 → 1440, the wedding moved to 3 October, the dock's account tile now says what the rail's says"
     },
     {
       "section": "fidelity",
@@ -628,7 +628,7 @@
       "section": "contract",
       "name": "notes @1440 · families",
       "ok": true,
-      "detail": "Geist"
+      "detail": "Geist Geist Mono"
     },
     {
       "section": "contract",
@@ -1346,13 +1346,13 @@
       "section": "truth",
       "name": "the completion screen reached its end",
       "ok": true,
-      "detail": "8 notes went through. 8 notes stayed here."
+      "detail": "8 notes went through. All of them stayed here."
     },
     {
       "section": "truth",
       "name": "it does not print a zero as an outcome",
       "ok": true,
-      "detail": "8 notes went through. 8 notes stayed here."
+      "detail": "8 notes went through. All of them stayed here."
     },
     {
       "section": "truth",
@@ -2605,13 +2605,13 @@
       "section": "switch",
       "name": "every switch lands, both paths",
       "ok": true,
-      "detail": "with 119/100/150ms · without 30/12/32ms"
+      "detail": "with 108/100/116ms · without 18/8/23ms"
     },
     {
       "section": "switch",
       "name": "the mutation is wrapped, not postponed",
       "ok": true,
-      "detail": "123ms with the transition against 25ms without — the wrap costs 98ms, the capture alone 67ms on this machine, and the animation it starts runs 220ms after it"
+      "detail": "108ms with the transition against 16ms without — the wrap costs 92ms, the capture alone 60ms on this machine, and the animation it starts runs 220ms after it"
     },
     {
       "section": "switch",
@@ -2737,7 +2737,7 @@
       "section": "material",
       "name": "the two beneath climb and shrink",
       "ok": true,
-      "detail": "816@513 · 811@420 · 806@398"
+      "detail": "816@521 · 811@420 · 806@398"
     },
     {
       "section": "material",

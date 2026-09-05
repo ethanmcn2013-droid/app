@@ -1185,6 +1185,12 @@
 }
 [data-app="timeline"] .b-edit:focus-visible { outline-offset: -2px; }
 [data-app="timeline"] .b-editHost:empty { display: none; }
+/* Two hosts, one visible. The after-the-plan host belongs to the across desk;
+   everywhere else the in-band host is the right place and this one is not
+   rendered at all. See the comment beside .b-editAfter in timeline.js. */
+[data-app="timeline"] .b-editAfter { display: none; }
+/* The in-band host is the default election; across.css moves the vote. */
+[data-app="timeline"] .b-stick .b-editHost { --edit-host: 1; }
 [data-app="timeline"] .b-label {
   font-family: var(--mono);
   font-size: var(--size-label);
@@ -1388,7 +1394,11 @@
    nowhere else in the product - and it sat where the measured gate has
    never been able to look, because the bar is invisible in all twelve
    states the audit visits. */
-[data-app="timeline"] .b-undo kbd { font-family: var(--mono); font-size: var(--size-label); line-height: var(--lead-label); letter-spacing: var(--track-data); color: var(--fore-62); }
+/* R7: this was the third keycap and the one that was not a key — tinted
+   mono text with no box, no radius and no padding, so the cap Orla had
+   learned twice arrived here as bare grey type. It takes the suite's cap
+   now and keeps only its ink. */
+[data-app="timeline"] .b-undo kbd { color: var(--fore-62); }
 
 /* ── the empty field ──────────────────────────────────────────────  */
 [data-app="timeline"] .b-empty { padding: var(--gap-major) 0 var(--gap-major); }
@@ -1821,12 +1831,22 @@
   [data-app="timeline"][data-medium="full"] .b-origin { left: 124px; }
   [data-app="timeline"][data-medium="sheet"] .b-away,
   [data-app="timeline"][data-medium="full"] .b-away { left: -124px; width: 84px; font-size: var(--size-lead); }
-  [data-app="timeline"][data-medium="sheet"] .b-tick,
-  [data-app="timeline"][data-medium="full"] .b-tick { left: -27px; }
+  /* THESE TWO ARE THE VERTICAL MEASURE'S. Direction B's whole claim is that
+     position is daysFromToday x pixels-per-day, and on the across axis the one
+     mark the design accents as "this one, next" was the only mark plotted at
+     the wrong distance: the lead override below is (0,5,0) and beat the
+     across-axis rule at (0,4,0), so `left: 0` reached all six ordinary marks
+     and never the lead one. 28px is not a fixed error in days, because the
+     rail rescales — 1.4 days early at 1920, 4.7 at 768-across, where the mark
+     for Saturday 1 August landed where Monday 27 July belongs. Scoped to the
+     vertical axis rather than answered with a counter-rule, so the down axis
+     is byte-identical and the across axis governs its own marks throughout. */
+  [data-app="timeline"][data-medium="sheet"] .b-measure:not([data-across="true"]) .b-tick,
+  [data-app="timeline"][data-medium="full"] .b-measure:not([data-across="true"]) .b-tick { left: -27px; }
   [data-app="timeline"][data-medium="sheet"] .b-origin::before,
   [data-app="timeline"][data-medium="full"] .b-origin::before { left: -27px; }
-  [data-app="timeline"][data-medium="sheet"] .b-item[data-lead="true"] .b-tick,
-  [data-app="timeline"][data-medium="full"] .b-item[data-lead="true"] .b-tick { left: -28px; }
+  [data-app="timeline"][data-medium="sheet"] .b-measure:not([data-across="true"]) .b-item[data-lead="true"] .b-tick,
+  [data-app="timeline"][data-medium="full"] .b-measure:not([data-across="true"]) .b-item[data-lead="true"] .b-tick { left: -28px; }
   [data-app="timeline"][data-medium="sheet"] .b-item[data-anchor="true"]::before,
   [data-app="timeline"][data-medium="full"] .b-item[data-anchor="true"]::before { left: -27px; }
   [data-app="timeline"][data-medium="sheet"] .b-title,
