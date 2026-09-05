@@ -91,3 +91,94 @@ edge, the ··· menu is exposed, and the column is now visibly out of register
 with its own "TO DO 10" heading, which did not move.
 No fade, no snap, nothing in the scrolled region — the guillotine edge from the
 lessons file, at a width the console screenshots.
+
+### FINDING 3 — the head's completion meter is the one number on a filtered
+### sheet that never says what it still describes.
+tasks.board @1440. Press .who "Mara & Finn", then the "1 overdue" chip. Board
+shows 0 cards. Every lane restates itself honestly ("To do, 0 of 3 shown",
+visible "0/3"); the empty state says "Nothing matches. No overdue task is on the
+board for Mara & Finn. All 13 are hidden." and offers "Show all work".
+The head still reads "5 of 13 done  ▬▬▬▬  38%" with the pace bar filled, and
+[role=meter] still carries aria-valuenow=5 / aria-label "5 of 13 done, 38
+percent", unqualified. Screenshot _zz-ev-filterhead.png. Same in the List view.
+The lessons file's own rule: "Header counts must say what they still describe
+while a filter hides things."
+
+### FINDING 4 — every board card is spoken about three times.
+page.accessibility.snapshot() on .card[data-id="demo-t-01"], tasks.board @1440:
+  article name  "Confirm marquee sides with the hire company"
+  article desc  "Mara & Finn, Saturday. …by Thursday. Mara & Finn. High priority."
+  > paragraph   "Confirm marquee sides with the hire company"      (title, 2nd)
+  > generic     "Mara & Finn, Saturday. …by Thursday. Mara & Finn. High priority."
+                                                                    (the sr span
+                                                                     itself, 2nd)
+  > paragraph   "Mara & Finn, Saturday. …by Thursday."             (note, 3rd)
+  > button      "Mara & Finn"                                      (tag, 3rd)
+  > text        "High" + "priority"                                (pri, 3rd)
+src/tasks.js l.461 builds `<span class="sr" id="cd-…">` purely as the
+aria-describedby target and leaves it in the reading order; `.sr` hides it from
+sight, not from AT. 13 cards on the board, 32 in dense. Round 6 fixed exactly
+this on the seam's card ("does not say it twice to a screen reader either") and
+left it on every board card.
+
+### FINDING 5 — a done card stops saying it is movable and stays movable.
+src/tasks.js l.448: `(done ? "" : ' aria-roledescription="Movable task"')`.
+l.449 emits aria-keyshortcuts="Space ArrowUp ArrowDown ArrowLeft ArrowRight"
+unconditionally. Driven: all 5 cards in Done have rd=null, ks present; Space +
+ArrowLeft on demo-t-09 moved it to Waiting and the roledescription reappeared.
+So 5 of 13 cards advertise shortcuts with no word for what they do.
+
+### Checked and clean, for the record
+- tracking: re-ran the letterfit census per VISIBLE product only (rail + one app).
+  tasks 5 groups, notes 4, timeline 2, and every one resolves to a role split
+  (caps labels 0.075/0.1/0.16em vs body 0em) or a sub-pixel delta (largest
+  within-role gap 0.104px = 0.008em, "Add task"). No finding.
+- contrast: all 21 sightings are 1:1 behind the opaque dictation floor. No finding.
+- Filters: lane labels restate ("0 of 3 shown"), empty board offers one way out,
+  Escape unwinds one filter per press with an honest sentence each time.
+- Notes index dock band IS reserved (.index padding-bottom 132px); no row is
+  eaten by the floating dock at 768/1280/1440/1920.
+- The tick under the Add row at 1280 is a clipped-scroller artefact, not an
+  overlap — .trayBody bottom 596, card top 604. Withdrawn.
+- Timeline: editor opens after the plan, holds focus, steppers announce through
+  .b-undo, Ctrl+Z works, Escape returns focus to the .b-grab that opened it.
+- Undo strip pauses its own timer on focusin/mouseenter (l.4311-4314).
+
+## VERDICT — 8.8
+
+What earned it. This is a real application, not a document about one. The suite's
+one load-bearing claim — three products mounted at once, nothing lost — is
+measurable and it holds to the byte and to the pixel. The craft that automation
+cannot see is largely at the benchmark: the contract keys are defended (Space on
+role=checkbox ticks, and there is a comment saying why), the roving model reaches
+every card, the filter model is the best thing on the surface (every lane label
+restates what it still describes, the empty board offers exactly one way out,
+Escape unwinds one filter per press and says so), the dictation floor traps focus
+properly, and Notes and Timeline hold focus and every scroller through a full
+1920-768-1920 sweep. The CSS reasons out loud; most non-obvious numbers carry the
+measurement that produced them. Zero console errors in every state at five widths.
+
+What stands between it and 9.5. Four small things and one that is not small.
+
+The one that is not small is POLISH THAT IS ACTUALLY A BUG, half a day: the
+keyboard carry has five exits and only Space records the move. Enter, Tab, a rail
+switch and a pointer press elsewhere all commit a lane change that Ctrl+Z then
+denies exists, and three of them leave the card painted picked-up with nothing
+focused. The board's own file says this class was fixed and names Tab away
+specifically; the fix reached the pointer only. It is one refactor —
+commitCarry() — and four call sites.
+
+The 1199-1420 lane slop is one CSS line (overflow-x: clip on .trayBody) — an hour
+including a re-shoot of the 1280 frames.
+
+The pace meter under a filter is a DECISION before it is a build: does the head
+describe the project or the view? The rest of the sheet has already answered
+"the view", so make the meter agree. Half a day.
+
+The two accessibility ones are ten minutes each: one aria-hidden on the card's
+describedby target, and one ternary deleted so a done card keeps saying it is
+movable.
+
+None of it is architecture, none of it is a direction, and none of it touches a
+protected object. Call it a day and a half of work between this and 9.5 —
+provided the carry fix is treated as the correctness bug it is and not as polish.
