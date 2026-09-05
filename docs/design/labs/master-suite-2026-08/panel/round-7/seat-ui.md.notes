@@ -54,3 +54,20 @@ FIX, verified by injection — one declaration beside the five existing `:has()`
 ```
 Measured after injection: break 0 at 1200/1280/1440/1810/1920/2048/2560; no new
 horizontal scroll at any width; tracks at 1920 become 399.5 399.5 399.5 172 399.5.
+
+## F2 (confirmed by screenshot + measurement) — the list's last row is eaten by the dock
+
+`.board.listBoard` reserves `padding-bottom: 28px`. `.board` (the card board) reserves
+`padding: 0 16px 84px`. The dock is 48px tall sitting 18px off the sheet's foot, so its
+band is 66px + shadow. 28px is not enough.
+
+At 768x1000, tasks.board (the LIST is the view below 1199), scrolled to the true end of
+the scroller (scrollTop = scrollHeight, nothing further to reveal):
+- dock band  y 922 → 970, x 237 → 607
+- last row   y 917 → 953  ("Send registrar paperwork two weeks before the date")
+The final task's title and its owner's name sit entirely inside the dock's box. Screenshot
+_zz-list-end-768.png shows the tick, the DONE pip and the 2 Jul pill surviving either side
+of the dock with the person's words gone.
+
+Reproduced identically at 900x1000. Board states at 1280/1920 are clean (84px reserve).
+Notes is clean at 390/768/1280/1920.

@@ -50,3 +50,39 @@ and the card arrives tagged "The house", standing beside "Venue" and "Bar".
 "The enquiries" (Notes) and "Enquiry" (Tasks) are the same bucket under two
 names, in the one product whose argument is that there is one world under
 all three.
+
+## Sweep 3 — the honest doors (driven, not read)
+
+FINDING (confirmed, hard) — **the More door announces the opposite of what
+it did.** Press More on the spine: `.morePop` opens (aria-expanded="true",
+"Also in Signal Studio / Home / Inbox / Help", each "Not here yet"), and the
+live region says **"More, closed."** Press again: the menu closes
+(aria-expanded="false") and the live region says **"More, open."**
+Cause: master.html:11443 calls `say(moreOpen ? "More, open." : "More, closed.")`
+OUTSIDE the morph callback, so it reads the pre-toggle value. The sibling
+control does it right — Projects (14990) calls say() INSIDE the callback,
+after `projOpen = !projOpen`, and announces correctly.
+The doors are the brief's designed answer to what is not built; this one
+tells a screen-reader user the reverse of the truth, every press, in both
+directions. Reproduced from notes.notebook, dispatched click and Enter.
+
+ALSO — the privacy door inverts the doors' declared grammar. Every other
+door is "name the thing. Not here yet. [one sentence]":
+  "Your account, in Signal Studio. Not here yet."
+  "Every project in one list. Not here yet."
+  "A photo, read into words. Not here yet."
+The privacy door answers "Yours until you send something on. Your privacy
+settings. Not here yet." — the name arrives second, and the first sentence
+is a verbatim repeat of the second half of the button's own accessible name
+("Private to you. Yours until you send something on."), which the reader
+heard one keystroke earlier. Source: master.html:19716.
+And it is the ONE door with no visible answer: options, photo and the
+account tile all paint a visible "Not here yet"; privacy answers only in
+the live region.
+
+ALSO — the Notes head "…" is two names for one door: accessible name
+"Notes options" (product scope), answer "More for this note. Not here yet."
+(one-note scope) — and in notes.notebook at rest no note is open at all;
+the desk is an empty capture field. The source comment at 19712 justifies
+the string by a button called "More actions for this note" that does not
+exist in the suite.

@@ -50,3 +50,16 @@
    The gate proves a beat exists and is on the motion ladder; it cannot prove
    the beat READS, and this one does not. The one gesture that justifies a
    suite existing arrives without an event.
+
+6. **HEADLINE #2 — the spine reassembles itself under your thumb on a phone.**
+   MEASURED at 390x844 (touch), centre-x of the three product tiles in the
+   capsule:
+        in Notes     Notes@227  Tasks@271  Timeline@315   (pitch 44px, right)
+        in Tasks     Notes@54   Tasks@130  Timeline@206   (pitch 76px, left)
+        in Timeline  Notes@63   Tasks@157  Timeline@251   (pitch 94px, left)
+   Tapping "Tasks" at x=271 while in Notes lands you in Tasks, where "Tasks"
+   has moved to x=130 and x=271 is now bare capsule between More(243) and
+   Add task(295). The Notes tile travels 173px — 44% of the screen — on every
+   crossing, and the pitch changes three times. The architecture says one rail,
+   rendered once, and on a phone the capsule and the dock are the same object.
+   Measured, it is three objects.
