@@ -159,3 +159,42 @@ matches, and `.focus({ preventScroll: true })`. This is the two-key
 selector-then-role rule Notes already runs for fields, extended from
 fields to controls.
 COST: 0.2
+
+## FINDING 4 — review-confirm-is-not-one (CONFIRMED)
+`[data-app="notes"]` review, the "Delete it everywhere?" two-step
+confirm (`.confirm` / `[data-act="d-delete-yes"|"d-delete-no"]`).
+
+Press Delete on a review card. The confirm comes up, `#say` reads
+"Delete this note? … You can undo this for 30 seconds.", focus lands on
+"Keep it". Escape, Enter and Space all behave. Then, with the confirm
+still up:
+
+| key | what happens |
+|---|---|
+| `t` | confirm gone with no word; the SEND peel opens; focus jumps into the wording textarea; the pending delete is dropped silently |
+| `k` | confirm gone with no word; the note is FILED and the queue advances 1 of 8 -> 2 of 8: "Kept in Notes. 7 left." |
+| `l` | confirm gone with no word; "Left for later", queue moves to the next note |
+| `d` | correctly a no-op |
+| `Escape` / `Enter` / `Space` | correctly cancel, "Nothing was deleted." |
+
+So the person who asked to delete a note and then touched one letter has
+committed a DIFFERENT decision on that same note and moved on, with
+nothing said about the delete they asked for. The source comment at
+:20166 says "Delete stays keycap-free behind its two-step confirm" — the
+confirm does not hold the keyboard, so it isn't one.
+
+Also: the confirm carries `role="status"`, not `role="alertdialog"`, has
+no `aria-modal`, and Tab from "Keep it" walks straight out of it — index
+row, dock search, account tile, body, then round to the rail — 8 stops
+without ever returning to "Delete"/"Keep it".
+
+FIX: `confirming` (:18634) is already the flag. In the keydown handler,
+immediately after `if (typing) return;` (:20153) add
+`if (state === "review" && confirming) return;` — that is above the `/`
+search branch, the t/k/l branch (:20161) and the
+`["ArrowDown","ArrowUp","j","k"]` branch (:20187), so a pending
+destructive confirm owns the keyboard and only Escape and the two
+answers' own Enter/Space reach anything. Then give the `.confirm` span
+`role="alertdialog" aria-modal="true"` with an accessible name and keep
+Tab cycling between its two buttons.
+COST: 0.2
