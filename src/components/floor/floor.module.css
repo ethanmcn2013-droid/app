@@ -526,7 +526,13 @@
   display: block; max-height: calc(1.45em * 2); overflow: hidden;
   transition: color var(--dur) var(--curve);
 }
-.card[aria-expanded]:hover .cardNote { color: var(--ink-1); }
+.noteToggle {
+  grid-column: 2; grid-row: 2; min-width: 0;
+  display: block; padding: 0; margin: 0; border: 0;
+  background: transparent; text-align: left; cursor: pointer;
+}
+.noteToggle:focus-visible { outline: 2px solid var(--x-floor-focus); outline-offset: 3px; }
+.card[aria-expanded]:hover .cardNote, .noteToggle:hover .cardNote { color: var(--ink-1); }
 /* Opened in place. The clipped half of a note is the half that carries the
    deadline, and the only route to it used to be a hover tooltip: no keyboard,
    no touch, no iPad on a venue desk. */
@@ -1237,6 +1243,7 @@
 .root[data-density="compact"] .card { padding: 8px 10px 8px 9px; row-gap: 4px; column-gap: 7px; grid-template-columns: 20px minmax(0, 1fr); }
 .root[data-density="compact"] .cardTitle { font-size: 13px; line-height: 1.32; max-height: calc(1.32em * 2); }
 .root[data-density="compact"] .cardNote { font-size: 12px; line-height: 1.38; max-height: 1.38em; }
+.root[data-density="compact"] .card[data-open] .cardNote { max-height: none; }
 .root[data-density="compact"] .cardFoot { min-height: 0; font-size: 11px; gap: 8px; }
 .root[data-density="compact"] .trayBody { gap: 5px; }
 .root[data-density="compact"] .tray { padding: 12px 9px 6px; }

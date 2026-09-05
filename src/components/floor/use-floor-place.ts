@@ -82,8 +82,9 @@ function inView(card: HTMLElement, root: HTMLElement): boolean {
 export type FloorPlace = {
   /** Capture scroll and focus before React replaces the DOM. */
   capture: () => void;
-  /** The element the roving stop should land on after the next paint. */
-  wantFocus: (id: string | null) => void;
+  /** The element the roving stop should land on after the next paint.
+   *  Follow explicit keyboard travel into an off-screen column when requested. */
+  wantFocus: (id: string | null, follow?: boolean) => void;
 };
 
 export function useFloorPlace(root: React.RefObject<HTMLElement | null>, version: string): FloorPlace {
@@ -95,6 +96,7 @@ export function useFloorPlace(root: React.RefObject<HTMLElement | null>, version
     hadFocus: boolean;
   } | null>(null);
   const wanted = useRef<string | null>(null);
+  const followWanted = useRef(false);
 
   const capture = () => {
     const node = root.current;
@@ -111,13 +113,14 @@ export function useFloorPlace(root: React.RefObject<HTMLElement | null>, version
       scrolls,
       left: board?.scrollLeft ?? 0,
       id: card?.dataset.id ?? null,
-      part: active?.dataset.act === "tick" ? "tick" : active?.dataset.act === "menu" ? "menu" : "card",
+      part: active?.dataset.act === "tick" ? "tick" : active?.dataset.act === "menu" ? "menu" : active?.dataset.act === "note" ? "note" : "card",
       hadFocus: Boolean(active && active !== document.body && node.contains(active)),
     };
   };
 
-  const wantFocus = (id: string | null) => {
+  const wantFocus = (id: string | null, follow = false) => {
     wanted.current = id;
+    followWanted.current = follow;
   };
 
   /* Layout effect, not effect: the restore has to land before the browser
@@ -126,6 +129,14 @@ export function useFloorPlace(root: React.RefObject<HTMLElement | null>, version
     const node = root.current;
     const memory = kept.current;
     if (!node) return;
+    const board = node.querySelector<HTMLElement>("[data-board]");
+    let snapRestore: string | null = null;
+    const unsnap = () => {
+      if (board && snapRestore === null) {
+        snapRestore = board.style.scrollSnapType;
+        board.style.scrollSnapType = "none";
+      }
+    };
 
     if (memory) {
       node.querySelectorAll<HTMLElement>("[data-lane]").forEach((tray) => {
@@ -133,16 +144,13 @@ export function useFloorPlace(root: React.RefObject<HTMLElement | null>, version
         const top = memory.scrolls[tray.dataset.lane!];
         if (body && top) body.scrollTop = top;
       });
-      const board = node.querySelector<HTMLElement>("[data-board]");
       if (board && memory.left) {
         /* Mandatory snap re-runs against the fresh layout and drags the board
            back to the first column, which is why every tick on a phone threw
            the operator back to To do. Snap stands down for one frame. */
-        const snap = board.style.scrollSnapType;
-        board.style.scrollSnapType = "none";
+        unsnap();
         void board.scrollWidth;
         board.scrollLeft = memory.left;
-        requestAnimationFrame(() => { board.style.scrollSnapType = snap; });
       }
     }
 
@@ -161,8 +169,19 @@ export function useFloorPlace(root: React.RefObject<HTMLElement | null>, version
          that left is still reachable — the strip names it and Ctrl+Z
          reverses it, neither of which depends on focus. */
       if (card && !inView(card, node)) {
-        const near = [...node.querySelectorAll<HTMLElement>("[data-id]")].find((n) => inView(n, node));
-        card = near ?? card;
+        if (followWanted.current) {
+          // A keyboard carry needs the same card for the next arrow/drop.
+          // Follow it inside the board without scrolling the whole page.
+          if (board) {
+            const box = board.getBoundingClientRect();
+            const rect = card.getBoundingClientRect();
+            unsnap();
+            board.scrollLeft += rect.left < box.left ? rect.left - box.left : rect.right - box.right;
+          }
+        } else {
+          const near = [...node.querySelectorAll<HTMLElement>("[data-id]")].find((n) => inView(n, node));
+          card = near ?? card;
+        }
       }
       const part = wanted.current ? "card" : memory?.part ?? "card";
       const aim = part === "card" ? card : card?.querySelector<HTMLElement>(`[data-act="${part}"]`) ?? card;
@@ -190,7 +209,12 @@ export function useFloorPlace(root: React.RefObject<HTMLElement | null>, version
       }
     }
     wanted.current = null;
+    followWanted.current = false;
     kept.current = null;
+    if (board && snapRestore !== null) {
+      const snap = snapRestore;
+      requestAnimationFrame(() => { board.style.scrollSnapType = snap; });
+    }
 
     /* The trim and the edges are measured from the elements themselves,
        after this paint's layout. */

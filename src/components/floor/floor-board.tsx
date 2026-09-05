@@ -185,12 +185,13 @@ type CardProps = {
   onMenu: (id: string, anchor: HTMLElement) => void;
   onDragStart: (event: React.DragEvent) => void;
   onClient: (name: string) => void;
+  onNote: (id: string) => void;
   menuOpen: boolean;
 };
 
 function FloorCard({
   task, time, done, stop, carried, open, clientOnly,
-  clientOf, tagOf, onTick, onMenu, onClient, menuOpen, onDragStart,
+  clientOf, tagOf, onTick, onMenu, onClient, onNote, menuOpen, onDragStart,
 }: CardProps) {
   const client = clientOf(task);
   const tag = tagOf(task);
@@ -215,7 +216,6 @@ function FloorCard({
       onDragStart={onDragStart}
       aria-label={task.title}
       aria-describedby={`fd-${task.id}`}
-      {...(task.description ? { "aria-expanded": open } : {})}
       tabIndex={stop ? 0 : -1}
       {...(done ? {} : { "aria-roledescription": "Movable task" })}
       {...(carried ? { "aria-grabbed": true, "data-force": "moving" } : {})}
@@ -253,7 +253,21 @@ function FloorCard({
         <span className={styles.sr} id={`fd-${task.id}`}>{described}.</span>
       </div>
 
-      {task.description && <p className={styles.cardNote} data-trim="note">{task.description}</p>}
+      {task.description && (
+        <button
+          type="button"
+          className={styles.noteToggle}
+          data-act="note"
+          tabIndex={stop ? 0 : -1}
+          aria-label={`Note for ${task.title}`}
+          aria-expanded={open}
+          aria-controls={`note-${task.id}`}
+          aria-describedby={`note-${task.id}`}
+          onClick={() => onNote(task.id)}
+        >
+          <span className={styles.cardNote} data-trim="note" id={`note-${task.id}`}>{task.description}</span>
+        </button>
+      )}
 
       <div className={styles.cardFoot}>
         {client && (
@@ -365,7 +379,7 @@ export function FloorBoard({
 
   /* Place, truth and travel are all measured after layout, so they live in
      their own hooks rather than in the render. */
-  const version = `${tasks.map((t) => `${t.id}:${t.status}:${t.completed ? 1 : 0}`).join()}|${openNoteId}|${carriedId}|${draftLane}|${clientOnly}|${lateOnly}|${todayOnly}`;
+  const version = `${tasks.map((t) => `${t.id}:${t.status}:${t.order}:${t.completed ? 1 : 0}`).join()}|${openNoteId}|${carriedId}|${draftLane}|${clientOnly}|${lateOnly}|${todayOnly}`;
   const place = useFloorPlace(rootRef, version);
   const flight = useFloorFlight(rootRef, styles.cardGhost, version);
 
@@ -384,7 +398,7 @@ export function FloorBoard({
       } else {
         store.deleteTask(act.id);
       }
-      place.wantFocus(act.kind === "add" ? null : act.id);
+      place.wantFocus(act.kind === "add" ? null : act.id, act.kind === "move");
       setFocusId(act.kind === "add" ? null : act.id);
     }, [flight, place, store]),
   );
@@ -475,7 +489,9 @@ export function FloorBoard({
         if (menuFor) { event.preventDefault(); setMenuFor(null); return; }
         if (carriedId && carriedFrom.current) {
           event.preventDefault();
+          place.capture();
           store.moveStatus(carriedId, carriedFrom.current.status, carriedFrom.current.index);
+          place.wantFocus(carriedId, true);
           setCarriedId(null); carriedFrom.current = null;
           return;
         }
@@ -501,14 +517,27 @@ export function FloorBoard({
 
       if (event.key === " ") {
         event.preventDefault();
-        if (carriedId === id) { setCarriedId(null); carriedFrom.current = null; return; }
+        if (carriedId === id) {
+          const from = carriedFrom.current;
+          const at = locate();
+          // Arrow presses preview the carry through the existing move port.
+          // Only a meaningful drop enters history, with the original pickup
+          // position even when the path crosses Done or several other lanes.
+          if (from && at && (from.status !== columns[at.x].key || from.index !== at.y)) {
+            const task = at.rows[at.y];
+            undo.arm({ kind: "move", id, title: task.title, lane: from.status, index: from.index, toLane: columns[at.x].key });
+          }
+          place.wantFocus(id, true);
+          setCarriedId(null); carriedFrom.current = null;
+          return;
+        }
         const at = locate();
         if (at) { carriedFrom.current = { status: columns[at.x].key, index: at.y }; setCarriedId(id); }
         return;
       }
       if (event.key === "Enter") {
         event.preventDefault();
-        setOpenNoteId((prev) => (prev === id ? null : id));
+        if (card.querySelector('[data-act="note"]')) setOpenNoteId((prev) => (prev === id ? null : id));
         return;
       }
       const DIR: Record<string, [number, number]> = {
@@ -523,13 +552,13 @@ export function FloorBoard({
       if (carriedId === id) {
         if (dy) {
           const to = Math.max(0, Math.min(at.rows.length - 1, at.y + dy));
-          if (to !== at.y) { place.capture(); store.moveStatus(id, columns[at.x].key, to); place.wantFocus(id); }
+          if (to !== at.y) { place.capture(); store.moveStatus(id, columns[at.x].key, to); place.wantFocus(id, true); }
         } else {
           const x = at.x + dx;
           if (x >= 0 && x < columns.length) {
             place.capture();
             store.moveStatus(id, columns[x].key, Math.min(at.y, rowsFor(columns[x]).length));
-            place.wantFocus(id);
+            place.wantFocus(id, true);
           }
         }
         return;
@@ -733,6 +762,7 @@ export function FloorBoard({
                         tagOf={tagOf}
                         menuOpen={menuFor === task.id}
                         onTick={complete}
+                        onNote={(id) => { setFocusId(id); setOpenNoteId((prev) => prev === id ? null : id); }}
                         onClient={(name) => setClientOnly((p) => (p === name ? null : name))}
                         onMenu={(id, anchor) => {
                           const frame = rootRef.current!.getBoundingClientRect();

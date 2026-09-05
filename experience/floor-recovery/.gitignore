@@ -1,0 +1,4 @@
+# Preserve initial diagnostics locally; commit the bounded captures instead.
+/evidence/baseline/
+/evidence/candidate-1/
+/evidence/candidate-final/

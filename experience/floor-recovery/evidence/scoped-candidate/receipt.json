@@ -1,0 +1,2576 @@
+{
+  "base": "4c88733fab3e0a89fff189a021e919f8c5ec492d",
+  "headAtRun": "4c88733fab3e0a89fff189a021e919f8c5ec492d",
+  "baseline": false,
+  "status": "passed",
+  "sourceInputs": {
+    "src/lib/suite-contracts.v1.json": "7bd4beddcadd03ae8bc7f0292f27958d975829d7cf9b0b7d3191b38fece15702",
+    "src/lib/product-urls.ts": "59f30b5e6a9a4974eaccd323ecaee8853d641f8845684a325f1d8f1bbd8138f6",
+    "src/lib/projects/project-ref.ts": "33f0ed7ee3f979a75a61f3273e1f5b2bad3b36ea422a23eea08d1daaac62bd6b",
+    "src/lib/projects/project-url.ts": "34fc6f6932464565512704127969b5824dac5c204762b43f3e7d09c24339f485",
+    "src/lib/suite-context.ts": "ff9291d508202b3c6235244fd919d8f4c5eb2a65a0982ee8f676589efef6cfe9",
+    "src/lib/planning/dates.ts": "320d5edc4b7ec528b9760b9e5ece163645d28f3bbd1e62152956fe5d3cdc3369",
+    "src/lib/calendar-frame.ts": "abcad0837a2fa12a87aa20e46ed9eed1382862fdca8ddf7d7527c3975c6802c9",
+    "src/components/app/room/room-brief-context.tsx": "76dd01d690dc687a41b28a4c5742d0cf0088c48f50485d72429eca4c186edbba",
+    "src/lib/data.ts": "dd5a98cfa836bfbbbf96f6916228e02dc17204a4d50e2beeb35a5dfea8dbe23c",
+    "src/lib/board-colors.ts": "40dd070f8e89a0e2e8bcc8c5732cf1e5f61606b8e2ebafaf53e4f750f9a95f0e",
+    "src/lib/board-config.ts": "0d8b3e99dc1423de916fcb3dcf4a94d443179d3540f38e52339d6b1169e5f6fc",
+    "src/lib/board-columns.ts": "6be97a8ac71ff861227fd3529aad8abc743a5aa422d77e5fb8281140100a69d3",
+    "src/components/hybrid/dates.ts": "58ca508e2a6caee78f9e5f9c9731cc21a481b7c9e2264f75491d3c2fa27a6584",
+    "src/components/hybrid/store.tsx": "ebd8ed354d17ee02eac9f5c47c8f422b2a722ec5393065a9ffc046b3917468d4",
+    "src/components/hybrid/columns-context.tsx": "aca46d13fb837a0c07a69067afebe2820d1d9bffdebd89944568235806a57d2b",
+    "src/components/hybrid/view-prefs.ts": "37bf8ff33e8d917064fda64bd84e7fddbd31d50f840cb2ee206eeae5b9b076bf",
+    "src/lib/tags.ts": "1dc7002c6d137d73f0123849f3f1cc3a4308f87ec63b0d0bf57b13d7affe9ce2",
+    "src/components/hybrid/fixtures.ts": "e377b22360683d90efe634b1edbe5f3622343c4981a7969023046f13d2390996",
+    "src/components/floor/use-floor-place.ts": "a2047ba40f4e9b91787a51924ac838a4213cdbb50d905716f2dcff768ed1faca",
+    "src/components/floor/use-floor-flight.ts": "2d765885ed25bd858a2fd212b2e695b4ad7a4b6360185f6152f802a396c70d59",
+    "src/components/floor/use-floor-undo.ts": "85394f7c061319186dc707b5ef3519da307d3a58c42c05d843aceb0b014218d3",
+    "src/components/floor/floor.module.css": "d9a762b131eb4dc57daa4b8ba555fcf6d1b4207bef0c5c36e56710018e8225e4",
+    "src/components/floor/floor-board.tsx": "eebbff6f90d48e2f605d2cf229312cadb54ac1030700a242eed3177a28136024",
+    "src/components/floor/floor-preset.ts": "4c46cc579f399566e9915255278dc4a8d8145876e66edff7d0ffeff2b06755f1",
+    "src/components/floor/floor-workspace.tsx": "dc3bf2bc323aa317e81e904c4a9958f29d2272337944d18dd83bcdbea4cc8fd3",
+    "src/app/globals.css": "7f8b99b2c6f13df8f1472d0c3c5a5bb262376a47f300d233300a441232cea514",
+    "docs/design/labs/tasks-2026-08/floor.html": "c36d801b16ddacb8dc89f8fd27719cdd762f0ce66cc65931a189676e8c9cb31e",
+    "scripts/design/extract-floor-css.mjs": "e734334b1548777e43c7ee48a48a8c39a49591f33d6696ce6ffb618d18f02558"
+  },
+  "adapters": {
+    "next/link": "import React from 'react'; export default function Link(props){return <a {...props}/>}",
+    "next/navigation": "export const usePathname=()=>'/app/tasks';export const useRouter=()=>({push:()=>{throw Error('Navigation outside Floor fixture')}});",
+    "@/components/app/use-suite-context": "export const useSuiteContext=()=>({workspaceId:'floor-recovery-synthetic'});",
+    "@/lib/domain-context": "export const useColumnConfig=()=>null;",
+    "@/components/app/done-dopamine/first-completion-moment": "export const maybeFireFirstCompletion=()=>{};"
+  },
+  "cases": [
+    {
+      "name": "carry-drop-history-Control",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "theme": "light",
+      "checks": [
+        {
+          "name": "drop commits the destination",
+          "actual": {
+            "lane": "doing",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "doing",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "drop offers Undo",
+          "actual": 1,
+          "expected": 1,
+          "pass": true
+        },
+        {
+          "name": "first Undo returns to pickup lane/index",
+          "actual": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "first Undo preserves earlier item",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "second Undo reverses earlier item",
+          "actual": false,
+          "expected": false,
+          "pass": true
+        },
+        {
+          "name": "reversal uses pickup move port once",
+          "actual": [
+            1
+          ],
+          "expected": [
+            1
+          ],
+          "pass": true
+        }
+      ],
+      "dropScreenshot": "1440-light-drop-Control.png"
+    },
+    {
+      "name": "carry-drop-history-Meta",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "theme": "light",
+      "checks": [
+        {
+          "name": "drop commits the destination",
+          "actual": {
+            "lane": "doing",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "doing",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "drop offers Undo",
+          "actual": 1,
+          "expected": 1,
+          "pass": true
+        },
+        {
+          "name": "first Undo returns to pickup lane/index",
+          "actual": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "first Undo preserves earlier item",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "second Undo reverses earlier item",
+          "actual": false,
+          "expected": false,
+          "pass": true
+        },
+        {
+          "name": "reversal uses pickup move port once",
+          "actual": [
+            1
+          ],
+          "expected": [
+            1
+          ],
+          "pass": true
+        }
+      ],
+      "dropScreenshot": "1440-light-drop-Meta.png"
+    },
+    {
+      "name": "same-lane-reorder",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "theme": "light",
+      "checks": [
+        {
+          "name": "carried focus stays on the task",
+          "actual": "todo-1",
+          "expected": "todo-1",
+          "pass": true
+        },
+        {
+          "name": "carried card stays in the visible column",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "drop destination",
+          "actual": {
+            "lane": "todo",
+            "index": 3,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 3,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "Undo restores original lane/index/completion",
+          "actual": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "Undo restores focus to task",
+          "actual": "todo-1",
+          "expected": "todo-1",
+          "pass": true
+        },
+        {
+          "name": "Undo leaves task visible",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "board snap restored after travel/reversal",
+          "actual": "none",
+          "expected": "none",
+          "pass": true
+        },
+        {
+          "name": "exactly one move per arrow plus one reversal",
+          "actual": 3,
+          "expected": 3,
+          "pass": true
+        },
+        {
+          "name": "drop cleared carrying",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "into-done",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "theme": "light",
+      "checks": [
+        {
+          "name": "carried focus stays on the task",
+          "actual": "waiting-1",
+          "expected": "waiting-1",
+          "pass": true
+        },
+        {
+          "name": "carried card stays in the visible column",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "drop destination",
+          "actual": {
+            "lane": "done",
+            "index": 1,
+            "completed": true
+          },
+          "expected": {
+            "lane": "done",
+            "index": 1,
+            "completed": true
+          },
+          "pass": true
+        },
+        {
+          "name": "Undo restores original lane/index/completion",
+          "actual": {
+            "lane": "waiting",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "waiting",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "Undo restores focus to task",
+          "actual": "waiting-1",
+          "expected": "waiting-1",
+          "pass": true
+        },
+        {
+          "name": "Undo leaves task visible",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "board snap restored after travel/reversal",
+          "actual": "none",
+          "expected": "none",
+          "pass": true
+        },
+        {
+          "name": "exactly one move per arrow plus one reversal",
+          "actual": 2,
+          "expected": 2,
+          "pass": true
+        },
+        {
+          "name": "drop cleared carrying",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "out-of-done",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "theme": "light",
+      "checks": [
+        {
+          "name": "carried focus stays on the task",
+          "actual": "done-1",
+          "expected": "done-1",
+          "pass": true
+        },
+        {
+          "name": "carried card stays in the visible column",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "drop destination",
+          "actual": {
+            "lane": "review",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "review",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "Undo restores original lane/index/completion",
+          "actual": {
+            "lane": "done",
+            "index": 1,
+            "completed": true
+          },
+          "expected": {
+            "lane": "done",
+            "index": 1,
+            "completed": true
+          },
+          "pass": true
+        },
+        {
+          "name": "Undo restores focus to task",
+          "actual": "done-1",
+          "expected": "done-1",
+          "pass": true
+        },
+        {
+          "name": "Undo leaves task visible",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "board snap restored after travel/reversal",
+          "actual": "none",
+          "expected": "none",
+          "pass": true
+        },
+        {
+          "name": "exactly one move per arrow plus one reversal",
+          "actual": 3,
+          "expected": 3,
+          "pass": true
+        },
+        {
+          "name": "drop cleared carrying",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "cancel",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "theme": "light",
+      "checks": [
+        {
+          "name": "original position preserved",
+          "actual": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "no history pollution ahead of earlier completion",
+          "actual": false,
+          "expected": false,
+          "pass": true
+        },
+        {
+          "name": "carry ended",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        },
+        {
+          "name": "no extra moves from no-op or history",
+          "actual": 2,
+          "expected": 2,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "no-op",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "theme": "light",
+      "checks": [
+        {
+          "name": "original position preserved",
+          "actual": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "no history pollution ahead of earlier completion",
+          "actual": false,
+          "expected": false,
+          "pass": true
+        },
+        {
+          "name": "carry ended",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        },
+        {
+          "name": "no extra moves from no-op or history",
+          "actual": 0,
+          "expected": 0,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "round-trip",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "theme": "light",
+      "checks": [
+        {
+          "name": "original position preserved",
+          "actual": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "no history pollution ahead of earlier completion",
+          "actual": false,
+          "expected": false,
+          "pass": true
+        },
+        {
+          "name": "carry ended",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        },
+        {
+          "name": "no extra moves from no-op or history",
+          "actual": 2,
+          "expected": 2,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "compact-disclosure",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "theme": "light",
+      "checks": [
+        {
+          "name": "full description restored",
+          "actual": "Confirm the final arrival plan with the venue coordinator. Keep the accessible entrance clear and meet the first supplier at the loading door. If the arrival time changes, update the written plan before the briefing. Read this last sentence: the spare table plan is in the blue folder.",
+          "expected": "Confirm the final arrival plan with the venue coordinator. Keep the accessible entrance clear and meet the first supplier at the loading door. If the arrival time changes, update the written plan before the briefing. Read this last sentence: the spare table plan is in the blue folder.",
+          "pass": true
+        },
+        {
+          "name": "no CSS clipping after Enter",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "compact remains enabled",
+          "actual": "compact",
+          "expected": "compact",
+          "pass": true
+        },
+        {
+          "name": "native disclosure exposes expanded state",
+          "actual": "true",
+          "expected": "true",
+          "pass": true
+        },
+        {
+          "name": "focus remains in opened card",
+          "actual": "todo-1",
+          "expected": "todo-1",
+          "pass": true
+        },
+        {
+          "name": "Escape collapses note",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        },
+        {
+          "name": "Escape preserves usable focus",
+          "actual": "todo-1",
+          "expected": "todo-1",
+          "pass": true
+        },
+        {
+          "name": "collapsed aria-expanded",
+          "actual": "false",
+          "expected": "false",
+          "pass": true
+        },
+        {
+          "name": "native Enter opens once",
+          "actual": "true",
+          "expected": "true",
+          "pass": true
+        },
+        {
+          "name": "Escape keeps disclosure focus",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "pointer/touch opens full note",
+          "actual": "true",
+          "expected": "true",
+          "pass": true
+        },
+        {
+          "name": "aria-controls references note",
+          "actual": "note-todo-1",
+          "expected": "note-todo-1",
+          "pass": true
+        },
+        {
+          "name": "description available on disclosure",
+          "actual": "note-todo-1",
+          "expected": "note-todo-1",
+          "pass": true
+        },
+        {
+          "name": "no console/page errors",
+          "actual": [],
+          "expected": [],
+          "pass": true
+        },
+        {
+          "name": "no external requests",
+          "actual": [],
+          "expected": [],
+          "pass": true
+        }
+      ],
+      "beforeScreenshot": "1440-light-note-closed.png",
+      "expandedMetrics": {
+        "height": 132,
+        "scrollHeight": 132,
+        "maxHeight": "none"
+      },
+      "afterScreenshot": "1440-light-note-open.png",
+      "accessibility": "- button \"Note for Confirm the arrival plan\" [expanded]: \"Confirm the final arrival plan with the venue coordinator. Keep the accessible entrance clear and meet the first supplier at the loading door. If the arrival time changes, update the written plan before the briefing. Read this last sentence: the spare table plan is in the blue folder.\"",
+      "denseObservation": {
+        "total": 16,
+        "visible": 8,
+        "more": true,
+        "laneLabel": "To do, 16 tasks",
+        "scrollHeight": 1154,
+        "clientHeight": 656
+      },
+      "navigationObservation": {
+        "key": "ArrowDown without carry",
+        "from": "todo-1",
+        "activeCard": "todo-1",
+        "rovingCard": "todo-2"
+      }
+    },
+    {
+      "name": "carry-drop-history-Control",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "theme": "dark",
+      "checks": [
+        {
+          "name": "drop commits the destination",
+          "actual": {
+            "lane": "doing",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "doing",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "drop offers Undo",
+          "actual": 1,
+          "expected": 1,
+          "pass": true
+        },
+        {
+          "name": "first Undo returns to pickup lane/index",
+          "actual": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "first Undo preserves earlier item",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "second Undo reverses earlier item",
+          "actual": false,
+          "expected": false,
+          "pass": true
+        },
+        {
+          "name": "reversal uses pickup move port once",
+          "actual": [
+            1
+          ],
+          "expected": [
+            1
+          ],
+          "pass": true
+        }
+      ],
+      "dropScreenshot": "1440-dark-drop-Control.png"
+    },
+    {
+      "name": "carry-drop-history-Meta",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "theme": "dark",
+      "checks": [
+        {
+          "name": "drop commits the destination",
+          "actual": {
+            "lane": "doing",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "doing",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "drop offers Undo",
+          "actual": 1,
+          "expected": 1,
+          "pass": true
+        },
+        {
+          "name": "first Undo returns to pickup lane/index",
+          "actual": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "first Undo preserves earlier item",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "second Undo reverses earlier item",
+          "actual": false,
+          "expected": false,
+          "pass": true
+        },
+        {
+          "name": "reversal uses pickup move port once",
+          "actual": [
+            1
+          ],
+          "expected": [
+            1
+          ],
+          "pass": true
+        }
+      ],
+      "dropScreenshot": "1440-dark-drop-Meta.png"
+    },
+    {
+      "name": "same-lane-reorder",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "theme": "dark",
+      "checks": [
+        {
+          "name": "carried focus stays on the task",
+          "actual": "todo-1",
+          "expected": "todo-1",
+          "pass": true
+        },
+        {
+          "name": "carried card stays in the visible column",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "drop destination",
+          "actual": {
+            "lane": "todo",
+            "index": 3,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 3,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "Undo restores original lane/index/completion",
+          "actual": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "Undo restores focus to task",
+          "actual": "todo-1",
+          "expected": "todo-1",
+          "pass": true
+        },
+        {
+          "name": "Undo leaves task visible",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "board snap restored after travel/reversal",
+          "actual": "none",
+          "expected": "none",
+          "pass": true
+        },
+        {
+          "name": "exactly one move per arrow plus one reversal",
+          "actual": 3,
+          "expected": 3,
+          "pass": true
+        },
+        {
+          "name": "drop cleared carrying",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "into-done",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "theme": "dark",
+      "checks": [
+        {
+          "name": "carried focus stays on the task",
+          "actual": "waiting-1",
+          "expected": "waiting-1",
+          "pass": true
+        },
+        {
+          "name": "carried card stays in the visible column",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "drop destination",
+          "actual": {
+            "lane": "done",
+            "index": 1,
+            "completed": true
+          },
+          "expected": {
+            "lane": "done",
+            "index": 1,
+            "completed": true
+          },
+          "pass": true
+        },
+        {
+          "name": "Undo restores original lane/index/completion",
+          "actual": {
+            "lane": "waiting",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "waiting",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "Undo restores focus to task",
+          "actual": "waiting-1",
+          "expected": "waiting-1",
+          "pass": true
+        },
+        {
+          "name": "Undo leaves task visible",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "board snap restored after travel/reversal",
+          "actual": "none",
+          "expected": "none",
+          "pass": true
+        },
+        {
+          "name": "exactly one move per arrow plus one reversal",
+          "actual": 2,
+          "expected": 2,
+          "pass": true
+        },
+        {
+          "name": "drop cleared carrying",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "out-of-done",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "theme": "dark",
+      "checks": [
+        {
+          "name": "carried focus stays on the task",
+          "actual": "done-1",
+          "expected": "done-1",
+          "pass": true
+        },
+        {
+          "name": "carried card stays in the visible column",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "drop destination",
+          "actual": {
+            "lane": "review",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "review",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "Undo restores original lane/index/completion",
+          "actual": {
+            "lane": "done",
+            "index": 1,
+            "completed": true
+          },
+          "expected": {
+            "lane": "done",
+            "index": 1,
+            "completed": true
+          },
+          "pass": true
+        },
+        {
+          "name": "Undo restores focus to task",
+          "actual": "done-1",
+          "expected": "done-1",
+          "pass": true
+        },
+        {
+          "name": "Undo leaves task visible",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "board snap restored after travel/reversal",
+          "actual": "none",
+          "expected": "none",
+          "pass": true
+        },
+        {
+          "name": "exactly one move per arrow plus one reversal",
+          "actual": 3,
+          "expected": 3,
+          "pass": true
+        },
+        {
+          "name": "drop cleared carrying",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "cancel",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "theme": "dark",
+      "checks": [
+        {
+          "name": "original position preserved",
+          "actual": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "no history pollution ahead of earlier completion",
+          "actual": false,
+          "expected": false,
+          "pass": true
+        },
+        {
+          "name": "carry ended",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        },
+        {
+          "name": "no extra moves from no-op or history",
+          "actual": 2,
+          "expected": 2,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "no-op",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "theme": "dark",
+      "checks": [
+        {
+          "name": "original position preserved",
+          "actual": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "no history pollution ahead of earlier completion",
+          "actual": false,
+          "expected": false,
+          "pass": true
+        },
+        {
+          "name": "carry ended",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        },
+        {
+          "name": "no extra moves from no-op or history",
+          "actual": 0,
+          "expected": 0,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "round-trip",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "theme": "dark",
+      "checks": [
+        {
+          "name": "original position preserved",
+          "actual": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "no history pollution ahead of earlier completion",
+          "actual": false,
+          "expected": false,
+          "pass": true
+        },
+        {
+          "name": "carry ended",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        },
+        {
+          "name": "no extra moves from no-op or history",
+          "actual": 2,
+          "expected": 2,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "compact-disclosure",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "theme": "dark",
+      "checks": [
+        {
+          "name": "full description restored",
+          "actual": "Confirm the final arrival plan with the venue coordinator. Keep the accessible entrance clear and meet the first supplier at the loading door. If the arrival time changes, update the written plan before the briefing. Read this last sentence: the spare table plan is in the blue folder.",
+          "expected": "Confirm the final arrival plan with the venue coordinator. Keep the accessible entrance clear and meet the first supplier at the loading door. If the arrival time changes, update the written plan before the briefing. Read this last sentence: the spare table plan is in the blue folder.",
+          "pass": true
+        },
+        {
+          "name": "no CSS clipping after Enter",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "compact remains enabled",
+          "actual": "compact",
+          "expected": "compact",
+          "pass": true
+        },
+        {
+          "name": "native disclosure exposes expanded state",
+          "actual": "true",
+          "expected": "true",
+          "pass": true
+        },
+        {
+          "name": "focus remains in opened card",
+          "actual": "todo-1",
+          "expected": "todo-1",
+          "pass": true
+        },
+        {
+          "name": "Escape collapses note",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        },
+        {
+          "name": "Escape preserves usable focus",
+          "actual": "todo-1",
+          "expected": "todo-1",
+          "pass": true
+        },
+        {
+          "name": "collapsed aria-expanded",
+          "actual": "false",
+          "expected": "false",
+          "pass": true
+        },
+        {
+          "name": "native Enter opens once",
+          "actual": "true",
+          "expected": "true",
+          "pass": true
+        },
+        {
+          "name": "Escape keeps disclosure focus",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "pointer/touch opens full note",
+          "actual": "true",
+          "expected": "true",
+          "pass": true
+        },
+        {
+          "name": "aria-controls references note",
+          "actual": "note-todo-1",
+          "expected": "note-todo-1",
+          "pass": true
+        },
+        {
+          "name": "description available on disclosure",
+          "actual": "note-todo-1",
+          "expected": "note-todo-1",
+          "pass": true
+        },
+        {
+          "name": "no console/page errors",
+          "actual": [],
+          "expected": [],
+          "pass": true
+        },
+        {
+          "name": "no external requests",
+          "actual": [],
+          "expected": [],
+          "pass": true
+        }
+      ],
+      "beforeScreenshot": "1440-dark-note-closed.png",
+      "expandedMetrics": {
+        "height": 132,
+        "scrollHeight": 132,
+        "maxHeight": "none"
+      },
+      "afterScreenshot": "1440-dark-note-open.png",
+      "accessibility": "- button \"Note for Confirm the arrival plan\" [expanded]: \"Confirm the final arrival plan with the venue coordinator. Keep the accessible entrance clear and meet the first supplier at the loading door. If the arrival time changes, update the written plan before the briefing. Read this last sentence: the spare table plan is in the blue folder.\"",
+      "denseObservation": {
+        "total": 16,
+        "visible": 8,
+        "more": true,
+        "laneLabel": "To do, 16 tasks",
+        "scrollHeight": 1154,
+        "clientHeight": 656
+      },
+      "navigationObservation": {
+        "key": "ArrowDown without carry",
+        "from": "todo-1",
+        "activeCard": "todo-1",
+        "rovingCard": "todo-2"
+      }
+    },
+    {
+      "name": "carry-drop-history-Control",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "checks": [
+        {
+          "name": "drop commits the destination",
+          "actual": {
+            "lane": "doing",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "doing",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "drop offers Undo",
+          "actual": 1,
+          "expected": 1,
+          "pass": true
+        },
+        {
+          "name": "first Undo returns to pickup lane/index",
+          "actual": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "first Undo preserves earlier item",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "second Undo reverses earlier item",
+          "actual": false,
+          "expected": false,
+          "pass": true
+        },
+        {
+          "name": "reversal uses pickup move port once",
+          "actual": [
+            1
+          ],
+          "expected": [
+            1
+          ],
+          "pass": true
+        }
+      ],
+      "dropScreenshot": "390-light-drop-Control.png"
+    },
+    {
+      "name": "carry-drop-history-Meta",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "checks": [
+        {
+          "name": "drop commits the destination",
+          "actual": {
+            "lane": "doing",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "doing",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "drop offers Undo",
+          "actual": 1,
+          "expected": 1,
+          "pass": true
+        },
+        {
+          "name": "first Undo returns to pickup lane/index",
+          "actual": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "first Undo preserves earlier item",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "second Undo reverses earlier item",
+          "actual": false,
+          "expected": false,
+          "pass": true
+        },
+        {
+          "name": "reversal uses pickup move port once",
+          "actual": [
+            1
+          ],
+          "expected": [
+            1
+          ],
+          "pass": true
+        }
+      ],
+      "dropScreenshot": "390-light-drop-Meta.png"
+    },
+    {
+      "name": "same-lane-reorder",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "checks": [
+        {
+          "name": "carried focus stays on the task",
+          "actual": "todo-1",
+          "expected": "todo-1",
+          "pass": true
+        },
+        {
+          "name": "carried card stays in the visible column",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "drop destination",
+          "actual": {
+            "lane": "todo",
+            "index": 3,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 3,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "Undo restores original lane/index/completion",
+          "actual": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "Undo restores focus to task",
+          "actual": "todo-1",
+          "expected": "todo-1",
+          "pass": true
+        },
+        {
+          "name": "Undo leaves task visible",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "board snap restored after travel/reversal",
+          "actual": "x mandatory",
+          "expected": "x mandatory",
+          "pass": true
+        },
+        {
+          "name": "exactly one move per arrow plus one reversal",
+          "actual": 3,
+          "expected": 3,
+          "pass": true
+        },
+        {
+          "name": "drop cleared carrying",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "into-done",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "checks": [
+        {
+          "name": "carried focus stays on the task",
+          "actual": "waiting-1",
+          "expected": "waiting-1",
+          "pass": true
+        },
+        {
+          "name": "carried card stays in the visible column",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "drop destination",
+          "actual": {
+            "lane": "done",
+            "index": 1,
+            "completed": true
+          },
+          "expected": {
+            "lane": "done",
+            "index": 1,
+            "completed": true
+          },
+          "pass": true
+        },
+        {
+          "name": "Undo restores original lane/index/completion",
+          "actual": {
+            "lane": "waiting",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "waiting",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "Undo restores focus to task",
+          "actual": "waiting-1",
+          "expected": "waiting-1",
+          "pass": true
+        },
+        {
+          "name": "Undo leaves task visible",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "board snap restored after travel/reversal",
+          "actual": "x mandatory",
+          "expected": "x mandatory",
+          "pass": true
+        },
+        {
+          "name": "exactly one move per arrow plus one reversal",
+          "actual": 2,
+          "expected": 2,
+          "pass": true
+        },
+        {
+          "name": "drop cleared carrying",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "out-of-done",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "checks": [
+        {
+          "name": "carried focus stays on the task",
+          "actual": "done-1",
+          "expected": "done-1",
+          "pass": true
+        },
+        {
+          "name": "carried card stays in the visible column",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "drop destination",
+          "actual": {
+            "lane": "review",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "review",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "Undo restores original lane/index/completion",
+          "actual": {
+            "lane": "done",
+            "index": 1,
+            "completed": true
+          },
+          "expected": {
+            "lane": "done",
+            "index": 1,
+            "completed": true
+          },
+          "pass": true
+        },
+        {
+          "name": "Undo restores focus to task",
+          "actual": "done-1",
+          "expected": "done-1",
+          "pass": true
+        },
+        {
+          "name": "Undo leaves task visible",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "board snap restored after travel/reversal",
+          "actual": "x mandatory",
+          "expected": "x mandatory",
+          "pass": true
+        },
+        {
+          "name": "exactly one move per arrow plus one reversal",
+          "actual": 3,
+          "expected": 3,
+          "pass": true
+        },
+        {
+          "name": "drop cleared carrying",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "cancel",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "checks": [
+        {
+          "name": "original position preserved",
+          "actual": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "no history pollution ahead of earlier completion",
+          "actual": false,
+          "expected": false,
+          "pass": true
+        },
+        {
+          "name": "carry ended",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        },
+        {
+          "name": "no extra moves from no-op or history",
+          "actual": 2,
+          "expected": 2,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "no-op",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "checks": [
+        {
+          "name": "original position preserved",
+          "actual": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "no history pollution ahead of earlier completion",
+          "actual": false,
+          "expected": false,
+          "pass": true
+        },
+        {
+          "name": "carry ended",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        },
+        {
+          "name": "no extra moves from no-op or history",
+          "actual": 0,
+          "expected": 0,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "round-trip",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "checks": [
+        {
+          "name": "original position preserved",
+          "actual": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "no history pollution ahead of earlier completion",
+          "actual": false,
+          "expected": false,
+          "pass": true
+        },
+        {
+          "name": "carry ended",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        },
+        {
+          "name": "no extra moves from no-op or history",
+          "actual": 2,
+          "expected": 2,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "compact-disclosure",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "checks": [
+        {
+          "name": "full description restored",
+          "actual": "Confirm the final arrival plan with the venue coordinator. Keep the accessible entrance clear and meet the first supplier at the loading door. If the arrival time changes, update the written plan before the briefing. Read this last sentence: the spare table plan is in the blue folder.",
+          "expected": "Confirm the final arrival plan with the venue coordinator. Keep the accessible entrance clear and meet the first supplier at the loading door. If the arrival time changes, update the written plan before the briefing. Read this last sentence: the spare table plan is in the blue folder.",
+          "pass": true
+        },
+        {
+          "name": "no CSS clipping after Enter",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "compact remains enabled",
+          "actual": "compact",
+          "expected": "compact",
+          "pass": true
+        },
+        {
+          "name": "native disclosure exposes expanded state",
+          "actual": "true",
+          "expected": "true",
+          "pass": true
+        },
+        {
+          "name": "focus remains in opened card",
+          "actual": "todo-1",
+          "expected": "todo-1",
+          "pass": true
+        },
+        {
+          "name": "Escape collapses note",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        },
+        {
+          "name": "Escape preserves usable focus",
+          "actual": "todo-1",
+          "expected": "todo-1",
+          "pass": true
+        },
+        {
+          "name": "collapsed aria-expanded",
+          "actual": "false",
+          "expected": "false",
+          "pass": true
+        },
+        {
+          "name": "native Enter opens once",
+          "actual": "true",
+          "expected": "true",
+          "pass": true
+        },
+        {
+          "name": "Escape keeps disclosure focus",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "pointer/touch opens full note",
+          "actual": "true",
+          "expected": "true",
+          "pass": true
+        },
+        {
+          "name": "aria-controls references note",
+          "actual": "note-todo-1",
+          "expected": "note-todo-1",
+          "pass": true
+        },
+        {
+          "name": "description available on disclosure",
+          "actual": "note-todo-1",
+          "expected": "note-todo-1",
+          "pass": true
+        },
+        {
+          "name": "no console/page errors",
+          "actual": [],
+          "expected": [],
+          "pass": true
+        },
+        {
+          "name": "no external requests",
+          "actual": [],
+          "expected": [],
+          "pass": true
+        }
+      ],
+      "beforeScreenshot": "390-light-note-closed.png",
+      "expandedMetrics": {
+        "height": 132,
+        "scrollHeight": 132,
+        "maxHeight": "none"
+      },
+      "afterScreenshot": "390-light-note-open.png",
+      "accessibility": "- button \"Note for Confirm the arrival plan\" [expanded]: \"Confirm the final arrival plan with the venue coordinator. Keep the accessible entrance clear and meet the first supplier at the loading door. If the arrival time changes, update the written plan before the briefing. Read this last sentence: the spare table plan is in the blue folder.\"",
+      "denseObservation": {
+        "total": 16,
+        "visible": 4,
+        "more": true,
+        "laneLabel": "To do, 16 tasks",
+        "scrollHeight": 1150,
+        "clientHeight": 437
+      },
+      "navigationObservation": {
+        "key": "ArrowDown without carry",
+        "from": "todo-1",
+        "activeCard": "todo-1",
+        "rovingCard": "todo-2"
+      }
+    },
+    {
+      "name": "carry-drop-history-Control",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "checks": [
+        {
+          "name": "drop commits the destination",
+          "actual": {
+            "lane": "doing",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "doing",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "drop offers Undo",
+          "actual": 1,
+          "expected": 1,
+          "pass": true
+        },
+        {
+          "name": "first Undo returns to pickup lane/index",
+          "actual": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "first Undo preserves earlier item",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "second Undo reverses earlier item",
+          "actual": false,
+          "expected": false,
+          "pass": true
+        },
+        {
+          "name": "reversal uses pickup move port once",
+          "actual": [
+            1
+          ],
+          "expected": [
+            1
+          ],
+          "pass": true
+        }
+      ],
+      "dropScreenshot": "390-dark-drop-Control.png"
+    },
+    {
+      "name": "carry-drop-history-Meta",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "checks": [
+        {
+          "name": "drop commits the destination",
+          "actual": {
+            "lane": "doing",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "doing",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "drop offers Undo",
+          "actual": 1,
+          "expected": 1,
+          "pass": true
+        },
+        {
+          "name": "first Undo returns to pickup lane/index",
+          "actual": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "first Undo preserves earlier item",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "second Undo reverses earlier item",
+          "actual": false,
+          "expected": false,
+          "pass": true
+        },
+        {
+          "name": "reversal uses pickup move port once",
+          "actual": [
+            1
+          ],
+          "expected": [
+            1
+          ],
+          "pass": true
+        }
+      ],
+      "dropScreenshot": "390-dark-drop-Meta.png"
+    },
+    {
+      "name": "same-lane-reorder",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "checks": [
+        {
+          "name": "carried focus stays on the task",
+          "actual": "todo-1",
+          "expected": "todo-1",
+          "pass": true
+        },
+        {
+          "name": "carried card stays in the visible column",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "drop destination",
+          "actual": {
+            "lane": "todo",
+            "index": 3,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 3,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "Undo restores original lane/index/completion",
+          "actual": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "Undo restores focus to task",
+          "actual": "todo-1",
+          "expected": "todo-1",
+          "pass": true
+        },
+        {
+          "name": "Undo leaves task visible",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "board snap restored after travel/reversal",
+          "actual": "x mandatory",
+          "expected": "x mandatory",
+          "pass": true
+        },
+        {
+          "name": "exactly one move per arrow plus one reversal",
+          "actual": 3,
+          "expected": 3,
+          "pass": true
+        },
+        {
+          "name": "drop cleared carrying",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "into-done",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "checks": [
+        {
+          "name": "carried focus stays on the task",
+          "actual": "waiting-1",
+          "expected": "waiting-1",
+          "pass": true
+        },
+        {
+          "name": "carried card stays in the visible column",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "drop destination",
+          "actual": {
+            "lane": "done",
+            "index": 1,
+            "completed": true
+          },
+          "expected": {
+            "lane": "done",
+            "index": 1,
+            "completed": true
+          },
+          "pass": true
+        },
+        {
+          "name": "Undo restores original lane/index/completion",
+          "actual": {
+            "lane": "waiting",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "waiting",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "Undo restores focus to task",
+          "actual": "waiting-1",
+          "expected": "waiting-1",
+          "pass": true
+        },
+        {
+          "name": "Undo leaves task visible",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "board snap restored after travel/reversal",
+          "actual": "x mandatory",
+          "expected": "x mandatory",
+          "pass": true
+        },
+        {
+          "name": "exactly one move per arrow plus one reversal",
+          "actual": 2,
+          "expected": 2,
+          "pass": true
+        },
+        {
+          "name": "drop cleared carrying",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "out-of-done",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "checks": [
+        {
+          "name": "carried focus stays on the task",
+          "actual": "done-1",
+          "expected": "done-1",
+          "pass": true
+        },
+        {
+          "name": "carried card stays in the visible column",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "drop destination",
+          "actual": {
+            "lane": "review",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "review",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "Undo restores original lane/index/completion",
+          "actual": {
+            "lane": "done",
+            "index": 1,
+            "completed": true
+          },
+          "expected": {
+            "lane": "done",
+            "index": 1,
+            "completed": true
+          },
+          "pass": true
+        },
+        {
+          "name": "Undo restores focus to task",
+          "actual": "done-1",
+          "expected": "done-1",
+          "pass": true
+        },
+        {
+          "name": "Undo leaves task visible",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "board snap restored after travel/reversal",
+          "actual": "x mandatory",
+          "expected": "x mandatory",
+          "pass": true
+        },
+        {
+          "name": "exactly one move per arrow plus one reversal",
+          "actual": 3,
+          "expected": 3,
+          "pass": true
+        },
+        {
+          "name": "drop cleared carrying",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "cancel",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "checks": [
+        {
+          "name": "original position preserved",
+          "actual": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "no history pollution ahead of earlier completion",
+          "actual": false,
+          "expected": false,
+          "pass": true
+        },
+        {
+          "name": "carry ended",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        },
+        {
+          "name": "no extra moves from no-op or history",
+          "actual": 2,
+          "expected": 2,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "no-op",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "checks": [
+        {
+          "name": "original position preserved",
+          "actual": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "no history pollution ahead of earlier completion",
+          "actual": false,
+          "expected": false,
+          "pass": true
+        },
+        {
+          "name": "carry ended",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        },
+        {
+          "name": "no extra moves from no-op or history",
+          "actual": 0,
+          "expected": 0,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "round-trip",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "checks": [
+        {
+          "name": "original position preserved",
+          "actual": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "expected": {
+            "lane": "todo",
+            "index": 1,
+            "completed": false
+          },
+          "pass": true
+        },
+        {
+          "name": "no history pollution ahead of earlier completion",
+          "actual": false,
+          "expected": false,
+          "pass": true
+        },
+        {
+          "name": "carry ended",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        },
+        {
+          "name": "no extra moves from no-op or history",
+          "actual": 2,
+          "expected": 2,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "compact-disclosure",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "checks": [
+        {
+          "name": "full description restored",
+          "actual": "Confirm the final arrival plan with the venue coordinator. Keep the accessible entrance clear and meet the first supplier at the loading door. If the arrival time changes, update the written plan before the briefing. Read this last sentence: the spare table plan is in the blue folder.",
+          "expected": "Confirm the final arrival plan with the venue coordinator. Keep the accessible entrance clear and meet the first supplier at the loading door. If the arrival time changes, update the written plan before the briefing. Read this last sentence: the spare table plan is in the blue folder.",
+          "pass": true
+        },
+        {
+          "name": "no CSS clipping after Enter",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "compact remains enabled",
+          "actual": "compact",
+          "expected": "compact",
+          "pass": true
+        },
+        {
+          "name": "native disclosure exposes expanded state",
+          "actual": "true",
+          "expected": "true",
+          "pass": true
+        },
+        {
+          "name": "focus remains in opened card",
+          "actual": "todo-1",
+          "expected": "todo-1",
+          "pass": true
+        },
+        {
+          "name": "Escape collapses note",
+          "actual": null,
+          "expected": null,
+          "pass": true
+        },
+        {
+          "name": "Escape preserves usable focus",
+          "actual": "todo-1",
+          "expected": "todo-1",
+          "pass": true
+        },
+        {
+          "name": "collapsed aria-expanded",
+          "actual": "false",
+          "expected": "false",
+          "pass": true
+        },
+        {
+          "name": "native Enter opens once",
+          "actual": "true",
+          "expected": "true",
+          "pass": true
+        },
+        {
+          "name": "Escape keeps disclosure focus",
+          "actual": true,
+          "expected": true,
+          "pass": true
+        },
+        {
+          "name": "pointer/touch opens full note",
+          "actual": "true",
+          "expected": "true",
+          "pass": true
+        },
+        {
+          "name": "aria-controls references note",
+          "actual": "note-todo-1",
+          "expected": "note-todo-1",
+          "pass": true
+        },
+        {
+          "name": "description available on disclosure",
+          "actual": "note-todo-1",
+          "expected": "note-todo-1",
+          "pass": true
+        },
+        {
+          "name": "no console/page errors",
+          "actual": [],
+          "expected": [],
+          "pass": true
+        },
+        {
+          "name": "no external requests",
+          "actual": [],
+          "expected": [],
+          "pass": true
+        }
+      ],
+      "beforeScreenshot": "390-dark-note-closed.png",
+      "expandedMetrics": {
+        "height": 132,
+        "scrollHeight": 132,
+        "maxHeight": "none"
+      },
+      "afterScreenshot": "390-dark-note-open.png",
+      "accessibility": "- button \"Note for Confirm the arrival plan\" [expanded]: \"Confirm the final arrival plan with the venue coordinator. Keep the accessible entrance clear and meet the first supplier at the loading door. If the arrival time changes, update the written plan before the briefing. Read this last sentence: the spare table plan is in the blue folder.\"",
+      "denseObservation": {
+        "total": 16,
+        "visible": 4,
+        "more": true,
+        "laneLabel": "To do, 16 tasks",
+        "scrollHeight": 1150,
+        "clientHeight": 437
+      },
+      "navigationObservation": {
+        "key": "ArrowDown without carry",
+        "from": "todo-1",
+        "activeCard": "todo-1",
+        "rovingCard": "todo-2"
+      }
+    }
+  ],
+  "limits": [
+    "Real FloorWorkspace/Board/hooks and LabStoreProvider reducer; synthetic identity/tasks and local frontend action ports.",
+    "No Next route, production persistence, custom-column configuration, physical device or assistive-technology certification.",
+    "No held Atlas/Drive/RC3 operation, backend authorization, lifecycle or external request. No closure of the 17 lab findings."
+  ],
+  "fixtureInputs": {
+    "fixture.tsx": "004a92f9dd14aa4bf0cfa55ab40f011427b220a815716e90a8ad333ddcdc5575",
+    "browser.mjs": "a28bdee6a60dca89fadeec9454fd21aefaa1c1d4c59009ab0e59c1342edf25bb"
+  },
+  "cssCompiler": {
+    "automaticSourceScan": false,
+    "inputSha256LF": "3416f0c8e6fafc03aa89f06eae0567fa08130ae894448f16f36df060b65c1fed"
+  },
+  "styleDependencies": {
+    "../feat-january-final-journeys/node_modules/.pnpm/tailwindcss@4.2.4/node_modules/tailwindcss/index.css": "415a5f01208fe877d36ee8421b2135a766f258374f817a8a0a41c478c4009391",
+    "../feat-january-final-journeys/node_modules/.pnpm/signal-ds@2.1.0_react-dom@19.2.4_react@19.2.4__react@19.2.4/node_modules/signal-ds/tokens/tokens.css": "521889b7eead042e17d76d53b67efd59ac51e039fd312a3d40b4027e973d58a1",
+    "src/ds/theme-overrides.css": "7e5bd82fd22463fc8dc4b1060f1ffccaa35f48c00081bda913895393095ee4a7",
+    "../feat-january-final-journeys/node_modules/.pnpm/signal-ds@2.1.0_react-dom@19.2.4_react@19.2.4__react@19.2.4/node_modules/signal-ds/tokens/tailwind.css": "3e92957e0ac7ddc7a093143cbbe1447abaf0da8e0dae0111957482cdee5d2c0f"
+  },
+  "assetHashes": {
+    "/app.css": "d1512b18fa5bf63702b7bcdd8b147f8cee7dbcd8bcb7353aa48c18748b7ea1b4",
+    "/bundle.js": "37cdb8a6901eea6e2bc3c0a38fdcf708522a1d12030b650a83a771ccdeadb3da",
+    "/bundle.css": "f20b2a389366670fd178e0111e1bdc3df680b7906f9bf81a53c535803a59d690",
+    "/Geist.woff2": "e24cec106619c03f0b3519e31b9bc55e0d5e926b6a95b8d798cd8cef215b1505",
+    "/GeistMono.woff2": "5f687a5dd4c87da13deaff9f6b9503d5e62249ff501265a96b134565f9aa8c87"
+  },
+  "environment": {
+    "node": "v22.23.2",
+    "platform": "win32",
+    "chromium": "149.0.7827.55",
+    "origin": "http://127.0.0.1:49761",
+    "pid": 22656,
+    "command": "node experience/floor-recovery/browser.mjs --out=scoped-candidate"
+  },
+  "summary": {
+    "cases": 36,
+    "checks": 264,
+    "failed": 0
+  },
+  "cleanup": {
+    "browserClosed": true,
+    "listenerClosed": true
+  }
+}

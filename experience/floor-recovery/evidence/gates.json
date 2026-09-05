@@ -1,0 +1,64 @@
+{
+  "results": [
+    {
+      "kind": "focused",
+      "args": [
+        "scripts/design/extract-floor-css.mjs",
+        "--check"
+      ],
+      "exitCode": 0,
+      "stdout": "Floor master/generated CSS parity: pass\n",
+      "stderr": ""
+    },
+    {
+      "kind": "focused",
+      "args": [
+        "--test",
+        "experience/floor-recovery/css-contract.test.mjs"
+      ],
+      "exitCode": 0,
+      "stdout": "TAP version 13\n# Subtest: owning master generates the exact committed Floor stylesheet\nok 1 - owning master generates the exact committed Floor stylesheet\n  ---\n  duration_ms: 22.4726\n  type: 'test'\n  ...\n# Subtest: disclosure adds exactly two geometry rules; all 252 existing geometry rules retain their accepted digest\nok 2 - disclosure adds exactly two geometry rules; all 252 existing geometry rules retain their accepted digest\n  ---\n  duration_ms: 32.9302\n  type: 'test'\n  ...\n1..2\n# tests 2\n# suites 0\n# pass 2\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 251.6223\n",
+      "stderr": ""
+    },
+    {
+      "kind": "focused",
+      "args": [
+        "node_modules/eslint/bin/eslint.js",
+        "src/components/floor/floor-board.tsx",
+        "src/components/floor/use-floor-place.ts",
+        "experience/floor-recovery/fixture.tsx",
+        "experience/floor-recovery/browser.mjs",
+        "experience/floor-recovery/css-contract.test.mjs",
+        "experience/floor-recovery/verify-evidence.mjs"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "kind": "integration",
+      "args": [
+        "--test",
+        "scripts/design/extract-floor-css.test.mjs"
+      ],
+      "exitCode": 1,
+      "stdout": "TAP version 13\n# Subtest: committed Floor stylesheet equals extraction and is stable across checkout line endings\nok 1 - committed Floor stylesheet equals extraction and is stable across checkout line endings\n  ---\n  duration_ms: 24.8975\n  type: 'test'\n  ...\n# Subtest: all five corrected keyframe programs retain exact steps and declarations without selector prefixes\nok 2 - all five corrected keyframe programs retain exact steps and declarations without selector prefixes\n  ---\n  duration_ms: 22.4226\n  type: 'test'\n  ...\n# Subtest: generated output compiles as actual CSS Modules without malformed-keyframe warnings\nok 3 - generated output compiles as actual CSS Modules without malformed-keyframe warnings\n  ---\n  duration_ms: 34.5689\n  type: 'test'\n  ...\n# Subtest: regeneration preserves every shipped geometry declaration, including mobile density and fit columns\nnot ok 4 - regeneration preserves every shipped geometry declaration, including mobile density and fit columns\n  ---\n  duration_ms: 17.1128\n  type: 'test'\n  location: 'C:\\\\Users\\\\ethan\\\\signal-studio-workspace\\\\worktrees\\\\app\\\\fix-january-floor-recovery\\\\scripts\\\\design\\\\extract-floor-css.test.mjs:43:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    254 !== 252\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 252\n  actual: 254\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-floor-recovery/scripts/design/extract-floor-css.test.mjs:49:40)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n    Test.processPendingSubtests (node:internal/test_runner/test:744:18)\n    Test.postRun (node:internal/test_runner/test:1173:19)\n    Test.run (node:internal/test_runner/test:1101:12)\n    process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)\n  ...\n# Subtest: dark role mapping stays local and does not redefine global DS ink or paper\nok 5 - dark role mapping stays local and does not redefine global DS ink or paper\n  ---\n  duration_ms: 0.5762\n  type: 'test'\n  ...\n# Subtest: mobile project-strip roles use the actual control breakpoint and do not affect desktop\nok 6 - mobile project-strip roles use the actual control breakpoint and do not affect desktop\n  ---\n  duration_ms: 27.2238\n  type: 'test'\n  ...\n1..6\n# tests 6\n# suites 0\n# pass 5\n# fail 1\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 354.0717\n",
+      "stderr": ""
+    },
+    {
+      "kind": "focused",
+      "args": [
+        "experience/floor-recovery/verify-evidence.mjs"
+      ],
+      "exitCode": 0,
+      "stdout": "Evidence binding: 28 source files; 264 passing assertions; original 85 failures retained.\n",
+      "stderr": ""
+    }
+  ],
+  "scope": "Focused frontend checks plus retained existing CSS freeze failure; no broad App test/build/typecheck or held review.",
+  "diffCheck": {
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": "warning: in the working copy of 'docs/design/labs/tasks-2026-08/floor.html', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/components/floor/floor-board.tsx', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/components/floor/floor.module.css', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/components/floor/use-floor-place.ts', LF will be replaced by CRLF the next time Git touches it\n"
+  }
+}
