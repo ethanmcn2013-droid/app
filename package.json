@@ -79,7 +79,7 @@
     "test:sponsored-use:paired": "node scripts/sponsored-use/acceptance.cjs",
     "test:notes-recovery": "node --import tsx --test src/modules/notes/lib/notes-recovery.test.ts && node experience/notes-recovery-context/run.mjs server",
     "test:notes-recovery:browser": "node experience/notes-recovery-context/run.mjs browser",
-    "test:module-lifecycle": "node --import tsx --import ./src/test/register-server-only.mjs --test --test-concurrency=1 src/server/notes-extract-identity.test.ts src/modules/signal/lib/planning-periods/scope.test.ts src/modules/timeline/server/timeline-gdpr.test.ts",
+    "test:module-lifecycle": "node --import tsx --import ./src/test/register-server-only.mjs --test --test-concurrency=1 src/server/notes-extract-identity.test.ts src/modules/signal/lib/planning-periods/scope.test.ts src/modules/timeline/server/timeline-gdpr.test.ts src/modules/timeline/server/sync/sync-erasure-regression.test.ts",
     "test:recipient-golden": "node --test --test-concurrency=1 experience/recipient-project-work/archive.test.cjs experience/recipient-project-work/room.test.cjs && node experience/recipient-project-work/golden.cjs"
   },
   "dependencies": {

@@ -1,5 +1,37 @@
 # Module lifecycle repair
 
+## Current principal checkpoint — 5 September
+
+The earlier component handoff below is retained as history. Principal composition
+`4e25e85fcaa5e9ae576a628b3fd951ff8405ad00` includes the independently reviewed
+Timeline writer fence and preparation rollback repair through `7f1f48c8`.
+The original sync-after-erasure bypass is independently verified closed at
+`d475362f`. Its low-severity R1 partial-preparation regression is independently
+verified fixed at `7f1f48c8`: actual trigger failures leave no durable changes,
+successful retry works, and pre-0001 and standalone compatibility remain proved.
+Original failure receipts and review verdicts are preserved.
+
+Briefing's additional operational-error fallback finding is repaired separately
+in principal `bcd41baf`; see [the owning repair receipt](PLANNING-FALLBACK-REPAIR.md).
+An unavailable planning query no longer authorizes the unfiltered predecessor
+catalog unless the exact pre-0013 physical schema is positively established.
+
+The mandatory `test:module-lifecycle` gate now includes the three original files
+and `src/modules/timeline/server/sync/sync-erasure-regression.test.ts` (31 cases).
+The exact four-file command passed all 57 checks on Node 22.23.2 in the principal
+composition. The separate continuous four-store creator/recipient proof also
+passed all ten checkpoints at `4e25e85f`; it retains synthetic request, identity
+and email boundaries. These results do not certify realtime, browser continuity,
+live providers or final release acceptance.
+
+Full combined gates, final rendered evidence and receiving-branch integration
+remain pending. Same-connection libSQL busy recovery, other concurrent writers
+and distributed/remote lifecycle behavior remain outside these bounded verdicts.
+The recipient realtime context finding RC-3 is separately assigned and holds
+the final route capture; the module fix does not close that finding.
+
+## Historical component handoff
+
 Base: App `77d22a6bdbe6764da53daf1159049eef58fc523d`. This bounded repair follows the separate immutable App182935f7 module recovery proof; it does not rewrite that proof or treat its passing negative reproductions as fixes. Principal delegated the compatibility decisions below after the fresh read-only boundary investigation. These are delegated implementation decisions, not founder-selected design or production approval.
 
 Ownership is limited to Notes extract identity authorization, Briefing's planning catalog, Timeline local erasure, and scoped regressions/docs. No Tasks My Work/page/selector, Studio, migration, provider, account-start fence or cross-store orchestration changes.
