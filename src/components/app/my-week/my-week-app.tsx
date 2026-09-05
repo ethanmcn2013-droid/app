@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { LANES, USERS, type Task } from "@/lib/data";
+import { LANES, type Task } from "@/lib/data";
 import { useCurrentUser } from "@/lib/auth-context";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import { generateNudges } from "@/lib/nudges/generate-nudges";
@@ -21,7 +21,7 @@ import {
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { EmptyStateOverlay } from "@/components/app/empty-state/empty-state-overlay";
 import { ListGhost } from "@/components/app/empty-state/ghost-views";
-import { usePersonalization, useColumnConfig, useActiveWorkspace } from "@/lib/domain-context";
+import { usePersonalization, useColumnConfig, useActiveWorkspace, useWorkspaceMembers } from "@/lib/domain-context";
 import { PRODUCT_APP_PATHS } from "@/lib/product-urls";
 import { parseProjectId } from "@/lib/projects/project-ref";
 import { withActiveProject } from "@/lib/projects/project-url";
@@ -44,9 +44,10 @@ export function MyWeekApp({ canSetUpProject = false }: { canSetUpProject?: boole
   const { taskId: openTaskId, openTask } = useTaskPanel();
   const columnConfig = useColumnConfig();
   const workspace = useActiveWorkspace();
+  const members = useWorkspaceMembers();
 
   const meId = useCurrentUser();
-  const me = USERS[meId];
+  const myName = members.find((member) => member.id === meId)?.knownName;
   const projectId = parseProjectId(workspace?.id);
   const tasksHref = projectId ? withActiveProject(PRODUCT_APP_PATHS.tasks, projectId) : PRODUCT_APP_PATHS.tasks;
   // The calendar frame is the only clock a Tasks client view may read
@@ -109,7 +110,7 @@ export function MyWeekApp({ canSetUpProject = false }: { canSetUpProject?: boole
     );
   }
 
-  const greeting = greetingFor(now, calendar.timeZone, me?.name);
+  const greeting = greetingFor(now, calendar.timeZone, myName ?? undefined);
 
   return (
     <div className="thin-scroll flex-1 overflow-auto px-6 py-5 md:px-10 md:py-7">

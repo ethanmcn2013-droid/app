@@ -171,6 +171,7 @@ try {
           await assertB(surface);
           assert.equal(f.state.cookieWrites.length,0);
           if(surface.id==='tasks.page.app-my-tasks'){
+            await page.getByRole('heading',{name:/^(Still up|Good morning|Good afternoon|Good evening), Alex\.$/}).waitFor();
             for(const text of ['Without a date','Later','Check the final arrival plan','Confirm the arrival time'])await page.getByText(text,{exact:true}).first().waitFor();
             assert.equal(await page.getByText('Prepare the shared checklist',{exact:true}).count(),0);
           }

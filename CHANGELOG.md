@@ -4,6 +4,13 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-09-05 · January candidate · My work uses your known name
+
+My work now greets the signed-in person using their existing workspace profile.
+When no name is known, the greeting stays neutral. Demo accounts retain their
+sample names. Six source-fixture tests pass; final browser verification remains
+open. Internal candidate only: `docs/execution/january-2027/RECIPIENT-COMPOSITION.md`.
+
 ## 2026-09-05 · January candidate · Home opens the right briefing
 
 An observation about several tasks now opens the full briefing for the same project or planning period. Individual tasks still open their own detail. The aggregate action says “Read”, and the source names the scope it describes.

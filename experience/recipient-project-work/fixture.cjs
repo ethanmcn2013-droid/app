@@ -19,14 +19,14 @@ async function recipientFixture(options = {}) {
   const client = createClient({ url: pathToFileURL(path.join(directory, 'app.db')).href });
   for (const file of fs.readdirSync(path.join(root, 'drizzle')).filter(f => /^\d{4}_.+\.sql$/.test(f) && f >= '0014_').sort())
     await client.executeMultiple(sourceText('drizzle/' + file));
-  const state = { actor: 'recipient', cookies: new Map(), cookieWrites: [], tasks: [], project: 'project-b', v3: true, demo: false, authCalls: 0, reads: [], opened: [], toggled: [] };
+  const state = { actor: 'recipient', cookies: new Map(), cookieWrites: [], tasks: [], members: [], project: 'project-b', v3: true, demo: false, authCalls: 0, reads: [], opened: [], toggled: [] };
   const passthrough = props => React.createElement(React.Fragment, null, props.children);
   const overrides = new Map(), cache = new Map();
   const ui = {
     'src/lib/auth-context': { useCurrentUser: () => state.actor },
     'src/lib/tasks/tasks-context': { useTasksState: () => ({ tasks: state.tasks }), useTasksDispatch: () => ({ toggleComplete: id => state.toggled.push(id) }) },
     'src/lib/tasks/use-task-panel': { useTaskPanel: () => ({ taskId: null, openTask: id => state.opened.push(id) }) },
-    'src/lib/domain-context': { usePersonalization: () => ({ headline: 'Your project starts here', body: 'Add the first piece of work.', firstTaskExample: 'Add your first task' }), useColumnConfig: () => null, useActiveWorkspace: () => ({ id: state.project, slug: state.project }) },
+    'src/lib/domain-context': { usePersonalization: () => ({ headline: 'Your project starts here', body: 'Add the first piece of work.', firstTaskExample: 'Add your first task' }), useColumnConfig: () => null, useActiveWorkspace: () => ({ id: state.project, slug: state.project }), useWorkspaceMembers: () => state.members },
     'src/components/app/room/room-brief-context': { useCalendarFrame: () => ({ nowIso: '2027-01-21T12:00:00Z', timeZone: 'UTC', locale: 'en-GB' }) },
     'src/components/app/add-task/add-task-context': { useAddTask: () => ({ openDialog: () => state.opened.push('new') }) },
     'src/components/app/active-project-route-sync': { ActiveProjectRouteSync: props => React.createElement('i', { 'data-route-project': props.project?.id ?? 'unavailable' }) },
@@ -89,7 +89,7 @@ async function recipientFixture(options = {}) {
   `);
   function cookies(id = 'project-a') { state.cookies.set('signal_active_project', id); state.cookies.set('tasks_active_ws', id); state.cookieWrites.length = 0; }
   cookies();
-  async function reload(project = state.project) { state.project = project; state.tasks = await load('src/server/db/queries').getTasks(project); return state.tasks; }
+  async function reload(project = state.project) { state.project = project; state.tasks = await load('src/server/db/queries').getTasks(project); state.members = await load('src/server/db/members').getWorkspaceMemberMeta(project); return state.tasks; }
   return { root, directory, db, client, schema, state, load, overrides, boundary, ui, cookies, reload, React, passthrough, sourceInputs, sourceText, close: () => client.close() };
 }
 module.exports = { recipientFixture };

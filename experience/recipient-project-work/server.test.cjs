@@ -5,6 +5,53 @@ const { createRequire } = require('node:module'), path = require('node:path');
 const dep = createRequire(path.join(__dirname, '../../package.json'));
 const { renderToStaticMarkup } = dep('react-dom/server');
 
+test('My work greets only its current member by a known profile name and keeps missing names neutral', async () => {
+  const f = await recipientFixture();
+  try {
+    await f.client.executeMultiple(`
+      UPDATE users SET name='Blair Creator' WHERE id='creator';
+      INSERT INTO tasks(id,workspace_id,title,lane,priority,assignees) VALUES
+        ('greeting-task','project-b','A useful assigned action','todo','p2','["recipient"]');
+    `);
+    const MyWork = f.load('src/components/app/my-week/my-week-app').MyWeekApp;
+    const render = () => renderToStaticMarkup(f.React.createElement(MyWork));
+    for (const [storedName, expected, knownName] of [
+      ['  Alex Recipient  ', 'Good afternoon, Alex.', 'Alex Recipient'],
+      ['Someone', 'Good afternoon, Someone.', 'Someone'],
+      [null, 'Good afternoon.', null],
+      ['   ', 'Good afternoon.', null],
+    ]) {
+      await f.client.execute({ sql: 'UPDATE users SET name=? WHERE id=?', args: [storedName, 'recipient'] });
+      await f.reload();
+      assert.equal(f.state.members.find(member => member.id === 'recipient').knownName, knownName);
+      const html = render();
+      assert.ok(html.includes(expected), expected);
+      assert.doesNotMatch(html, /Good afternoon, Blair|Good afternoon, recipient/);
+      if (!knownName) assert.doesNotMatch(html, /Good afternoon, Someone/);
+    }
+    f.state.members = f.state.members.filter(member => member.id !== 'recipient');
+    assert.ok(render().includes('Good afternoon.'), 'a missing current row cannot borrow the owner name');
+  } finally { f.close(); }
+});
+
+test('My work preserves the canonical demo name through the same member data without a database read', async () => {
+  const f = await recipientFixture();
+  try {
+    f.state.demo = true;
+    const { DEMO_USER_ID } = f.load('src/server/demo/tasks-demo');
+    const { REVIEW_SUITE_FIXTURE } = f.load('src/lib/review-suite-fixture');
+    const members = f.load('src/server/db/members');
+    f.db.select = () => { throw Error('Demo member metadata must not query the database'); };
+    f.state.actor = DEMO_USER_ID;
+    f.state.members = await members.getWorkspaceMemberMeta('demo-project');
+    f.state.tasks = [{ id: 'demo-greeting', title: 'Sample assigned action', lane: 'todo', priority: 'p2', assignees: [DEMO_USER_ID] }];
+    const MyWork = f.load('src/components/app/my-week/my-week-app').MyWeekApp;
+    const html = renderToStaticMarkup(f.React.createElement(MyWork));
+    assert.ok(html.includes(`Good afternoon, ${REVIEW_SUITE_FIXTURE.user.name.split(' ')[0]}.`));
+    assert.equal(f.state.authCalls, 0);
+  } finally { f.close(); }
+});
+
 test('actual task-focus page learns stored project before the mapped Task; Notes/Home links cannot become false not-found', async () => {
   const f = await recipientFixture();
   try {
