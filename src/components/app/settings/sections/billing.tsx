@@ -9,7 +9,7 @@ import type { EntitlementTier } from "@/lib/data";
 import type { PaidTier } from "@/server/stripe";
 import { EVENT_SELF_SERVE_AVAILABLE, EVENT_UNAVAILABLE_MESSAGE } from "@/lib/billing-availability";
 import { SectionHeader } from "../settings-app";
-import { REDEEM_FAILURE_COPY } from "@/components/redeem/redeem-result-card";
+import { REDEEM_FAILURE_COPY, REDEEM_TIER_LABELS } from "@/components/redeem/redeem-result-card";
 
 type TierMeta = {
   id: EntitlementTier;
@@ -163,7 +163,7 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
       try {
         const result = await redeemCompCodeAction(code);
         if (result.ok) {
-          toast(`Redeemed: ${TIER_META.find((t) => t.id === result.tier)?.label ?? result.tier}`, {
+          toast(`Redeemed: ${REDEEM_TIER_LABELS[result.tier]}`, {
             tone: "success",
             body: result.expiresAt
               ? `Expires ${new Date(result.expiresAt).toLocaleDateString()}`

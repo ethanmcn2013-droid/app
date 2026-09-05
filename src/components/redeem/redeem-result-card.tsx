@@ -30,7 +30,7 @@ export const REDEEM_FAILURE_COPY: Record<
   },
   "still-provisioning": {
     headline: "We couldn't apply this code to a project.",
-    body: "Check that you're signed into the right account and can edit the intended project, then try the same code again. If it still won't open, email Signal Studio for help.",
+    body: "Check that you're signed into the right account and can manage the intended project, then try the same code again. If it still won't open, email Signal Studio for help.",
   },
   "rate-limited": {
     headline: "Too many tries in a short window.",
@@ -38,7 +38,7 @@ export const REDEEM_FAILURE_COPY: Record<
   },
 };
 
-const TIER_LABEL = {
+export const REDEEM_TIER_LABELS: Record<Extract<RedeemResult, { ok: true }>["tier"], string> = {
   free: "Free",
   event: "Event",
   wedding: "Wedding suite",
@@ -96,7 +96,7 @@ export function RedeemResultCard({
         <h1 className="mt-1.5 text-balance text-[24px] font-semibold leading-snug tracking-[-0.01em] text-ink">
           You&rsquo;re on{" "}
           <span className="text-aud-wedding">
-            {TIER_LABEL[result.tier]}
+            {REDEEM_TIER_LABELS[result.tier]}
           </span>
           {expiresLabel ? ` until ${expiresLabel}` : ""}.
         </h1>
