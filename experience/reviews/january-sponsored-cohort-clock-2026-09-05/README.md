@@ -35,3 +35,15 @@ stories, original mutable-term refusal at the Dublin boundary, missing-completio
 and nonzero-child controls, environment filtering and real-network denial. Runtime,
 schema and original diagnosis archives are unchanged. INDEPENDENT-FIX.md and its
 separate archive retain exact commands and limits. Fresh full Linux remains next.
+
+## Exact Linux checkpoint
+
+Candidate0c93a5cb now passes CI33992802862, Verify33992802886 and
+Design33992802885. Tested mergee893094b has exactly candidate tree2419ad23.
+The complete logs and uploaded132-case artifact are preserved in linux-0c93a5cb.zip:
+468 payload files plus CHECKPOINT.json,24,985,596 bytes, SHA256
+aa76f913a6176202621411152fefe212e7125c82c758ce6e30861c265a27ef0c.
+All290 route,33 Floor and25 calendar source inputs match the exact Git candidate
+after the receipts' newline normalization. The original faileda8c runs and independent
+controls remain intact. This supersedes the pending Linux wording above. It does
+not close receiving, RC3, provider, human/council or release acceptance.
