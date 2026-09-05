@@ -110,3 +110,64 @@ FIX (mirror the two card rules; verified by injection, `_zz-tick-list-fixed.png`
 [data-app="tasks"] .lrow[data-done] .tick:hover, [data-app="tasks"] .lrow[data-done] .tick:focus-visible { box-shadow: 0 0 0 4px var(--wash-2); }
 ```
 Palette-safe (--ink on white, --white glyph — the exact pair the card already ships).
+
+## F4 (measured) — the Timeline carries two indigo hairlines and only one is a measure
+
+Census of every horizontal rule on timeline.desk @1920 (computed colours):
+- `.tl-paperEdge`  x140→1862  `rgba(17,17,17,0.16)`
+- `.b-behind`      x197→1805  `rgba(17,17,17,0.16)`
+- `.b-foot`        x197→1805  `rgba(17,17,17,0.16)`
+- `.b-todayRule`   x449→793   **`rgb(79,70,229)`**  — 344px, `max-width:344px`, IDENTICAL at 1280/1440/1920
+- `.b-rail`        x201→1801  **`rgb(79,70,229)`**  — the measure; 1120 @1440, 1600 @1920
+
+Every divider on the page is ink-16 except one, and that one is the accent, 1px, horizontal,
+265px directly above the measure, in the same colour and weight. On a surface whose stated
+organising principle is that horizontal length is `daysFromToday × pixels-per-day`, a second
+accent hairline of a length that means nothing — and that never moves while the measure
+below it grows by 480px — invites exactly the wrong reading. (Down layout is clean: the
+measure is vertical there, so the two never compete. This is an `across` defect.)
+
+FIX: `[data-app="timeline"] .b-todayRule { background: var(--fore-16); }` (line 6592) — the
+same ink tint the page's other three rules already use. One indigo line remains and it is
+the measure. In-palette, no new hue.
+
+## F5 (measured, fix verified) — the phone's list does not sit on the head's column
+
+Tasks, list view. Head content edge vs list leading edge:
+| vw | wordmark L | tick L | Δ | head actions R | row meta R | Δ |
+|---|---|---|---|---|---|---|
+|768 |116|117|1|728|728|0|
+|1024|128|129|1|978|978|0|
+|1199|128|129|1|1153|1153|0|
+|**390**|25|**40**|**15**|365|**350**|**15**|
+|430 |25|40|15|405|390|15|
+|600 |25|40|15|575|560|15|
+The desk keeps the contract to a pixel; the phone breaks it by 15px on both sides, because
+the head's inset drops 28→16 under 720 while `.board.listBoard { padding: 0 25px }` is never
+re-scoped. On a 390px screen the whole list sits 15px inside the wordmark, project name,
+progress line and segmented control stacked above it.
+
+FIX (verified at 320/390/430/600; desk untouched, no horizontal scroll anywhere):
+```css
+@media (max-width: 720px) {
+  [data-app="tasks"] .board.listBoard { padding-left: 10px; padding-right: 10px; }
+}
+```
+After: tick L = 25 = wordmark L; row meta R = 365 = head actions R, at every phone width.
+
+## Checked and CLEAN (not findings)
+- Sheet geometry identical in all three products at 1920: 100/18/18/18. Dock centred on the
+  sheet's centre to the pixel (816.1→1185.9, centre 1001 = sheet centre 1001).
+- Notes' 1120 stack and 1060 paper are centred on 1001; Timeline's stage 140→1862 centred
+  on 1001. Only Tasks' board drifts (F1).
+- Rail capsule: 10px top inset, 10px bottom inset, 10px either side of every tile, avatar
+  centred to the pixel at every width tested.
+- Resize round trip 1440→1200→…→390→…→1440 in all three products: head, views, board, dock,
+  seg, tools, headActions and every tray width restore EXACTLY. Zero page errors.
+- Planning drawer at 1920: board refills to gap 0; at 1440 it becomes a scroller rather
+  than dropping Done. Both correct.
+- Timeline moment labels: fixed 168px boxes alternating above/below, no same-side collision
+  at 1920; the copy block keeps reading order on both sides (a mirror of the BLOCK, which is
+  right — I checked and dropped this as a finding).
+- Dense board @1920: five equal 354px lanes filling the sheet exactly, fold rule + count per
+  lane. This is the proof that the board's grid is capable of what F1 asks for.
