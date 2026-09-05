@@ -297,12 +297,23 @@ test("analytics dispatch refuses disabled, malformed, conflicting and removed sc
     { workspaceId: "project-b", workspace_id: "project-a" },
     { workspaceId: "project-b", scope_type: "workspace", scope_id: "project-a" },
     { workspaceId: "project-b", scope_type: ["workspace"] },
+    { workspaceId: "project-a,project-b" }, { workspace_id: "project-a,project-b" },
+    { workspaceId: " ,project-a" }, { workspaceId: "project-a,project-b", sourceProduct: "tasks" },
+    { workspaceId: " project-b " }, { workspace_id: " project-b " },
   ];
   for (const input of bad) await assert.rejects(page.SignalBriefPage({ searchParams: Promise.resolve(input) }), /not-found/);
   assert.equal(observed.length, 0);
   deny();
   await assert.rejects(page.SignalBriefPage({ searchParams: Promise.resolve({ workspaceId: "removed-project" }) }), /not-found/);
   assert.equal(observed.at(-1)?.scope.workspaceId, "removed-project");
+});
+
+test("shared Home/legacy scope parsing preserves scalar identity without list or whitespace normalization", () => {
+  for (const value of ["project-a,project-b", " ,project-a", " project-b ", "x\u0000y", "x".repeat(201)]) {
+    assert.deepEqual(parseBriefingReadScopeHint({ workspaceId: value }, true), { kind: "invalid" });
+    assert.deepEqual(parseBriefingReadScopeHint({ planningPeriodId: value }, true), { kind: "invalid" });
+  }
+  assert.deepEqual(parseBriefingReadScopeHint({ workspaceId: "project-b" }, false), { kind: "scope", scope: { kind: "workspace", workspaceId: "project-b" } });
 });
 
 test("engine selection retains legacy/period behavior after shared hint validation", async () => {
