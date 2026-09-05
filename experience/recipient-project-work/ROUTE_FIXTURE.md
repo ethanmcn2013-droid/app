@@ -41,8 +41,12 @@ Formal capture requires locally cached Next Geist font assets in `.next/static`.
 The fixture records binary hashes and the current root font configuration; it
 does not build Next or fetch fonts. A preparation/smoke run can use a labelled
 fallback, but `--capture` refuses absent assets. The recorded desktop smoke used
-the local cached fonts. Five existing `floor.module.css` keyframe warnings from
-esbuild are recorded, not hidden or repaired in this lane.
+the local cached fonts. The author's five `floor.module.css` keyframe warnings
+remain in the original smoke receipt. Principal preparation then confirmed that
+the `.root` prefixes inside five keyframe definitions were invalid selectors.
+Removing those prefixes preserved their keyframe values, timings and reduced-
+motion rules; the actual route bundle and CSS now prepare with zero warnings.
+This preparation does not establish final rendered or motion acceptance.
 
 ## Material surfaces and states
 

@@ -684,19 +684,19 @@
    settles, the check draws, the card's ring resolves to done in the same
    breath. No colour, no bounce, and it yields to reduced motion. */
 @keyframes tickSettle {
-  .root 0% { transform: scale(1); }
-  .root 38% { transform: scale(0.86); }
-  .root 100% { transform: scale(1); }
+  0% { transform: scale(1); }
+  38% { transform: scale(0.86); }
+  100% { transform: scale(1); }
 }
 
 @keyframes checkDraw {
-  .root from { stroke-dasharray: 22; stroke-dashoffset: 22; }
-  .root to { stroke-dasharray: 22; stroke-dashoffset: 0; }
+  from { stroke-dasharray: 22; stroke-dashoffset: 22; }
+  to { stroke-dasharray: 22; stroke-dashoffset: 0; }
 }
 
 @keyframes settleIn {
-  .root from { opacity: 0; transform: translateY(2px); }
-  .root to { opacity: 1; transform: none; }
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: none; }
 }
 
 .card[data-just-done] .tick { animation: tickSettle 320ms var(--curve); }
@@ -1043,7 +1043,7 @@
 }
 
 @keyframes carryIn {
-  .root from { opacity: 0; transform: translate(-50%, 6px) }
+  from { opacity: 0; transform: translate(-50%, 6px) }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1111,8 +1111,8 @@
 
 
 @keyframes breathe {
-  .root 0%, .root 100% { opacity: 1 }
-  .root 50% { opacity: 0.45 }
+  0%, 100% { opacity: 1 }
+  50% { opacity: 0.45 }
 }
 
 @media (prefers-reduced-motion: reduce) {
