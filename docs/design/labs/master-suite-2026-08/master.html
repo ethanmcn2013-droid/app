@@ -1712,7 +1712,9 @@ body {
 }
 /* A finished row reads finished: the same treatment the board's done card
    already carries, so the two views agree about what done looks like. */
-[data-app="tasks"] .lrow[data-done] .lrowTitle { color: var(--ink-3); }
+/* One done ink across the views. The board said 72%, the list 62%; the sheet
+   keeps its strike, which is the sheet's own way of saying it. */
+[data-app="tasks"] .lrow[data-done] .lrowTitle { color: var(--ink-2); }
 [data-app="tasks"] .lrow[data-done] .lrowNote { color: var(--ink-3); }
 /* NOT FLOATED. The chip floats right inside a card, where it sits in the
    title's own text flow; in a grid cell a float takes it out of flow
@@ -2315,7 +2317,14 @@ body {
    partner name outrank the work. The whole card de-escalates together. */
 [data-app="tasks"] .card[data-done] .cardTitle { color: var(--ink-2); }
 [data-app="tasks"] .card[data-done] .who { font-weight: 400; color: var(--ink-2); }
-[data-app="tasks"] .card[data-done] .tick { background: var(--ink); box-shadow: none; color: var(--white); }
+/* THE TICK IS THE SAME OBJECT IN BOTH VIEWS. Every done rule was scoped to
+   .card while listRow() emits .lrow, so in the List — the default view below
+   1200 and the only view a phone gets — a done row and an un-done row
+   differed in ZERO computed properties across the tick, its svg, its check
+   path and both pseudo-elements. Tapping it twice on a phone gave done then
+   not-done with a pixel-identical circle at each, so the natural response to
+   a silent control silently reversed the completion. */
+[data-app="tasks"] :is(.card, .lrow)[data-done] .tick { background: var(--ink); box-shadow: none; color: var(--white); }
 
 /* The one earned indigo in a resting view. */
 [data-app="tasks"] .card[data-next] { --card-rest: 0 0 0 1px var(--indigo-line); --card-hover: 0 0 0 1px var(--indigo), var(--float); }
@@ -2524,8 +2533,8 @@ body {
    the words around them — hierarchy inverted for 150ms in the one moment the
    freeze was lifted for. It settles in place. */
 @keyframes settleIn { from { transform: translateY(2px); } }
-[data-app="tasks"] .card[data-just-done] .tick { animation: tickSettle 320ms var(--curve); }
-[data-app="tasks"] .card[data-just-done] .tick svg path { animation: checkDraw 320ms var(--curve) 60ms both; }
+[data-app="tasks"] :is(.card, .lrow)[data-just-done] .tick { animation: tickSettle 320ms var(--curve); }
+[data-app="tasks"] :is(.card, .lrow)[data-just-done] .tick svg path { animation: checkDraw 320ms var(--curve) 60ms both; }
 /* The rest of the board answers in the same breath: the card's ring and
    title resolve to done, and the counts that changed settle in rather than
    snapping. */
@@ -2535,8 +2544,8 @@ body {
 [data-app="tasks"] .trayCount[data-changed],
 [data-app="tasks"] .headFacts b[data-changed] { animation: settleIn 320ms var(--curve); }
 @media (prefers-reduced-motion: reduce) {
-  [data-app="tasks"] .card[data-just-done] .tick,
-  [data-app="tasks"] .card[data-just-done] .tick svg path,
+  [data-app="tasks"] :is(.card, .lrow)[data-just-done] .tick,
+  [data-app="tasks"] :is(.card, .lrow)[data-just-done] .tick svg path,
   [data-app="tasks"] .trayCount[data-changed],
   [data-app="tasks"] .headFacts b[data-changed] { animation: none; }
 }
@@ -3149,8 +3158,8 @@ body {
 /* A completed tick still answers the pointer, so putting the work back is
    as visible as finishing it. The done rule outranked the hover rule, which
    made un-completing invisible. */
-[data-app="tasks"] .card[data-done] .tick:hover,
-[data-app="tasks"] .card[data-done] .tick:focus-visible {
+[data-app="tasks"] :is(.card, .lrow)[data-done] .tick:hover,
+[data-app="tasks"] :is(.card, .lrow)[data-done] .tick:focus-visible {
   box-shadow: 0 0 0 4px var(--wash-2);
 }
 
@@ -3182,8 +3191,8 @@ body {
   [data-app="tasks"] .tick { border: 1px solid CanvasText; }
   /* Colour is how an unfinished tick hides its check, and a forced palette
      overrides colour — so every card read as done. */
-  [data-app="tasks"] .card:not([data-done]) .tick svg { display: none; }
-  [data-app="tasks"] .card[data-done] .tick { forced-color-adjust: none; background: CanvasText; color: Canvas; }
+  [data-app="tasks"] :is(.card, .lrow):not([data-done]) .tick svg { display: none; }
+  [data-app="tasks"] :is(.card, .lrow)[data-done] .tick { forced-color-adjust: none; background: CanvasText; color: Canvas; }
   /* Both are 1px ink at low alpha, which a forced palette resolves to the
      page background. */
   [data-app="tasks"] .dropLine { forced-color-adjust: none; background: Highlight; }
@@ -5672,6 +5681,12 @@ body {
 [data-app="notes"] .verb[aria-disabled="true"],
 [data-app="notes"] .dockGlyph[aria-disabled="true"],
 [data-app="notes"] .headAct[aria-disabled="true"] { color: var(--ink-3); }
+/* The instruction, on its own reserved line under the field. */
+[data-app="notes"] .peelHint {
+  margin: 4px 0 0; min-height: 1.45em;
+  font-size: var(--t-12); line-height: 1.45; font-weight: 400;
+  letter-spacing: var(--tr-12); color: var(--ink-3);
+}
 [data-app="notes"] [aria-disabled="true"] { cursor: default; }
 [data-app="notes"][data-radius="sharp"] .dock,
 [data-app="notes"][data-radius="sharp"] .dockField,
@@ -5692,6 +5707,21 @@ body {
    so the next move is the loudest object on the sheet. */
 [data-app="notes"][data-indigo="subtle"] .act[data-primary] { background: var(--ink); }
 [data-app="notes"][data-indigo="subtle"] .act[data-primary]:hover { background: #000; }
+/* THE PRIMARY HAS NEVER HAD A DISABLED APPEARANCE. The ink guard above lists
+   .verb, .dockGlyph and .headAct and has never covered .act[data-primary], so
+   even on the first-paint path — which always wrote the attribute correctly —
+   the seam's Send measured rgb(17,17,17) on white at opacity 1 while it could
+   not run. The correct path looked exactly as live as the broken one, which is
+   why fixing the attribute alone would have shipped a lie with valid ARIA.
+
+   Sited HERE, after the indigo variants: those are (0,4,0) and so is this, so
+   the tie is broken on source order and a rule written earlier would have lost
+   to the very treatment it exists to override. */
+[data-app="notes"] .act[data-primary][aria-disabled="true"],
+[data-app="notes"][data-indigo="subtle"] .act[data-primary][aria-disabled="true"] {
+  background: none; color: var(--ink-3); box-shadow: inset 0 0 0 1px var(--line);
+}
+[data-app="notes"] .act[data-primary][aria-disabled="true"] svg { color: var(--ink-3); }
 [data-app="notes"][data-indigo="forward"] .chip { background: var(--indigo); }
 [data-app="notes"][data-indigo="forward"] .chip:hover { background: var(--indigo-deep); }
 [data-app="notes"][data-indigo="forward"] .idxRow[data-open] { box-shadow: inset 2px 0 0 var(--indigo); }
@@ -9408,7 +9438,13 @@ window.NOTES = (function () {
          they replace was four sentences in a legal register about service
          retention, on the one surface meant to be calm. */
       voiceDisclosure:
-        "Signal Studio keeps the words, not the audio. Typing stays on this device until you save.",
+        /* "Typing" on the one screen where nobody types. "These words"
+           points at the transcript visibly accumulating in .darkSaid, so it
+           answers the question she is actually asking about the thing she
+           can see — without claiming the SPEECH stays local, which would
+           collapse the words/audio line the first sentence draws and commit
+           the product to on-device transcription. */
+        "Signal Studio keeps the words, not the audio. These words stay on this device until you save.",
       heading: "Turn this into a task",
       begin: "Use these words",
       handoffBoundary:
@@ -10883,6 +10919,13 @@ window.__SUITE = (function () {
       if (o.announce !== false) say("You are on " + LABEL[product] + ".");
       return true;
     }
+    /* A card in hand does not travel between products. Leaving Tasks commits
+       the move it is holding, so the undo the operator was promised exists on
+       the other side of the switch and no card is left wearing
+       aria-grabbed="true" in a product nobody is looking at. */
+    if (current === "tasks" && registry.tasks && registry.tasks.api && registry.tasks.api.putDown) {
+      registry.tasks.api.putDown();
+    }
     current = product;
     railCurrent = product;
     /* THE RAIL ANSWERS THE PRESS. It used to repaint inside the view
@@ -11431,16 +11474,33 @@ window.__SUITE = (function () {
       var wasOpen = moreOpen;
       morph(
         wasOpen ? deck.querySelector(".morePop") : tile,
-        function () { moreOpen = !moreOpen; paintRail(); },
+        function () {
+          moreOpen = !moreOpen;
+          paintRail();
+          /* Taken after paintRail rebuilds, not before. It survived only
+             because paintRail happens to reuse the tile node. */
+          var plus = deck.querySelector('.rail [data-rail="more"]');
+          if (plus) plus.focus();
+        },
         function () {
           return wasOpen
             ? deck.querySelector('.rail [data-rail="more"]')
             : deck.querySelector(".morePop");
         },
       );
-      var plus = deck.querySelector('.rail [data-rail="more"]');
-      if (plus) plus.focus();
-      say(moreOpen ? "More, open." : "More, closed.");
+      /* SPOKEN OFF wasOpen, NOT off moreOpen. morph() flips moreOpen inside
+         startViewTransition's callback, which runs a frame late — so by the
+         time this line ran, moreOpen still held the OLD value and the door
+         announced "More, closed." as it opened and "More, open." as it closed.
+         The control experiment is what makes it worth stating: under
+         prefers-reduced-motion the same build announced correctly, because
+         morph() then runs its mutation synchronously. This build told the
+         truth to one person and the exact reverse to another, decided by their
+         motion setting, on the door the brief keeps specifically to buy
+         honesty. wasOpen is captured before either branch runs, so it is right
+         on both paths — a naive move of say() into the callback would have
+         regressed the reduced-motion path that already worked. */
+      say(wasOpen ? "More, closed." : "More, open.");
       return;
     }
     if (tile.getAttribute("aria-disabled") === "true") {
@@ -12199,6 +12259,9 @@ const TASKS_API = {
     mount();
     return true;
   },
+  /* The rail switching product is an exit. endCarry is module-local, so the
+     suite reaches it the same way it reaches rows, add, remove and reveal. */
+  putDown() { return commitCarry(); },
   reveal(id) {
     if (!taskById(id)) return false;
     /* A filter can hide the card the seam just made, and being sent to a
@@ -13763,7 +13826,9 @@ function flyCompleted(target) {
   flyFrom = null;
   flyId = null;
   if (!was || !id) return 0;
-  const node = target.querySelector('.card[data-id="' + id + '"]');
+  /* Either object. The list row is the same task wearing a different shape,
+     and the tick it carries is the same control. */
+  const node = target.querySelector('.card[data-id="' + id + '"], .lrow[data-id="' + id + '"]');
   if (!node) return 0;
   /* The travel is right either way — the card should fly back — but the
      check only draws on a card that is actually finished. */
@@ -14066,7 +14131,7 @@ function toggleDone(id) {
   const task = taskById(id);
   if (!task) return;
   const target = window.__SUITE.host("tasks");
-  const node = target && target.querySelector('.card[data-id="' + id + '"]');
+  const node = target && target.querySelector('.card[data-id="' + id + '"], .lrow[data-id="' + id + '"]');
   const row = target && target.querySelector('.lrow[data-id="' + id + '"]');
   flyFrom = node ? node.getBoundingClientRect() : null;
   flyId = id;
@@ -14275,14 +14340,42 @@ function walk(dx, dy) {
    cards at once, a foot pill printing instructions that no longer worked, and
    a completion refused its Undo strip because the pill still owned the slot.
    The hand ends where the operator's attention goes. */
-function endCarry() {
+/* ONE COMMIT, WHICHEVER DOOR YOU LEAVE BY. carryMove() mutates the board on
+   every arrow, and only Space used to arm an undo — so Enter, Tab, a rail
+   switch and a pointer press elsewhere each committed a real lane change that
+   Ctrl+Z then answered with "Nothing left to undo", and three of them never
+   cleared carriedId, leaving the card wearing aria-grabbed="true" and the
+   loudest treatment on the board with focus on BODY, across a full product
+   switch. The file's own comment above this function says this class was fixed
+   and names "Tab away"; that fix reached the pointer path only.
+
+   Every exit runs this now. Picking a card up and putting it back in the same
+   slot stays a non-event, and a sorted lane still never announces an index. */
+function commitCarry(spoken) {
   if (!carriedId) return false;
-  const task = taskById(carriedId);
-  const at = place(carriedId);
+  const id = carriedId;
+  const from = carriedFrom;
+  const task = taskById(id);
+  const at = place(id);
   const lane = at ? laneIds()[at.x] : null;
   carriedId = null; carriedFrom = null; overLane = null;
-  if (task && lane) say(task.title + " put down " + inLane(lane) + ".");
+  /* AND THE BOARD IS REPAINTED. Clearing carriedId is not enough: the card in
+     the DOM keeps aria-grabbed="true" and data-force="moving" — the loudest
+     treatment on the board — until something re-renders it, so a card put down
+     by Tab or by a rail switch stayed visibly in hand with nothing holding it.
+     Repainting is what makes the state and the picture agree. */
+  const settle = () => { refocus = true; mount(); };
+  if (!task || !lane || !from) { settle(); return true; }
+  if (lane === from.lane && at.y === from.index) { settle(); return true; }
+  arm({ kind: "move", id: id, title: task.title, lane: from.lane, index: from.index,
+        toLane: lane, wasHeldSince: from.wasHeldSince, wasCompletedAt: from.wasCompletedAt });
+  if (spoken !== false) say(task.title + " " + (spoken || "put down") + " " + inLane(lane) + ".");
+  settle();
   return true;
+}
+
+function endCarry() {
+  return commitCarry();
 }
 
 function carryMove(dx, dy) {
@@ -14546,6 +14639,19 @@ function onKey(event) {
 
   }
 
+  /* TAB IS AN EXIT, AND IT IS READ BEFORE ANYTHING ELSE. Not behind the
+     card test below: every arrow press calls mount(), which tears the carried
+     card out of the DOM, so by the time a Tab arrives focus can be on BODY and
+     the card test returns early — the exit would be missed exactly when a card
+     is in hand. Not on focusout either, for the same reason: that fires on
+     every arrow with a null relatedTarget and would cancel the carry on the
+     first one. And a guard testing "did focus leave the card's subtree" never
+     fires on this exit at all, because Tab moves focus INTO the carried card's
+     own tick — the worst case of the lot, where Space then completed the task
+     and moved it to Done while aria-grabbed was still set: a card at once in
+     hand and finished, with the original move unrecoverable. */
+  if (key === "Tab" && carriedId) commitCarry();
+
   const card = event.target.closest && event.target.closest(ROW_SEL);
   if (!card) return;
 
@@ -14560,6 +14666,7 @@ function onKey(event) {
   /* The tab stop is always the card the operator is on. */
   focusId = id;
 
+
   if (key === " " || key === "Spacebar") {
     event.preventDefault();
     if (carriedId === id) {
@@ -14573,10 +14680,12 @@ function onKey(event) {
       const from = carriedFrom;
       if (lane === "done" && from.lane !== "done") {
         completed(task, !allTasks().some((t) => timeOf(t).kind === "overdue"));
+        carriedId = null; carriedFrom = null;
       } else if (lane === from.lane && at.y === from.index) {
         /* The pointer path's first law, which the keyboard never had: picking
            a card up and putting it back is a non-event. No receipt, no
            sentence. */
+        carriedId = null; carriedFrom = null;
       } else {
         /* THE KEYBOARD DROP CAN BE TAKEN BACK. This branch mutated the lane
            and never called arm(), so the one route to the board's most
@@ -14590,13 +14699,8 @@ function onKey(event) {
            Captured at PICKUP, not here: moveTo() calls applyLaneFacts()
            unconditionally on every preview move, so the arrow walk has already
            nulled heldSince and completedAt by the time Space commits. */
-        arm({ kind: "move", id: id, title: task.title, lane: from.lane, index: from.index,
-              toLane: lane, wasHeldSince: from.wasHeldSince, wasCompletedAt: from.wasCompletedAt });
-        /* And the same law in the spoken channel as the pointer path: a
-           sorted lane never announces an index. */
-        say(task.title + " dropped " + inLane(lane) + ".");
+        commitCarry("dropped");
       }
-      carriedId = null; carriedFrom = null;
     } else {
       const at = place(id);
       const t = taskById(id);
@@ -14610,6 +14714,8 @@ function onKey(event) {
 
   if (key === "Enter") {
     event.preventDefault();
+    /* Opening is an exit too. */
+    if (carriedId) commitCarry();
     /* Enter opens the task, the same surface a press opens. FOUR routes
        reached the old inline note — click, drop, Enter and pointerup — and
        repointing three of them left the fourth quietly toggling a thing
@@ -18056,6 +18162,11 @@ window.__SUITE.register("tasks", {
         <span class="peelLabel" id="peel-label">${esc(N.copy.wordingLabel)}</span>
         <textarea class="peelField" rows="1" id="peel-field" aria-labelledby="peel-label"
           placeholder="What should the task say?">${esc(taskWording)}</textarea>
+        ${/* The instruction sits here, not on the primary, and its line is
+             reserved whether or not it has anything to say — a hint that comes
+             and goes moves the footer, and a footer that moves is how the
+             reach-back trap returns in miniature. */ ""}
+        <p class="peelHint" id="peel-hint">${taskWording.trim() ? "" : "Write the wording, then send"}</p>
         </div>
         <div class="peelRow">
           <button class="picker" type="button" data-act="destination" aria-haspopup="listbox" aria-expanded="${picker === "peel"}"
@@ -18065,7 +18176,7 @@ window.__SUITE.register("tasks", {
           ${picker === "peel" ? subjectList("peel", destination) : ""}
           <span class="spacer"></span>
           <button class="act" data-quiet type="button" data-act="cancel-peel">${esc(N.copy.cancel)}</button>
-          <button class="act" data-primary type="button" data-act="send"${taskWording.trim() ? "" : " aria-disabled=\"true\""}>${I.send}${taskWording.trim() ? esc(N.copy.send) : "Write the wording, then send"}</button>
+          <button class="act" data-primary type="button" data-act="send" aria-disabled="${taskWording.trim() ? "false" : "true"}" aria-describedby="peel-hint">${I.send}${esc(N.copy.send)}</button>
         </div>
       </div>`;
   }
@@ -19376,9 +19487,25 @@ window.__SUITE.register("tasks", {
       const send = mount.querySelector('[data-act="send"]');
       if (send) {
         const ready = Boolean(taskWording.trim());
-        send.toggleAttribute("aria-disabled", !ready);
-        const label = send.lastChild;
-        if (label && label.nodeType === 3) label.textContent = ready ? N.copy.send : "Write the wording, then send";
+        /* setAttribute, NOT toggleAttribute. toggleAttribute writes the EMPTY
+           STRING, and aria-disabled="" is an invalid token that Chromium
+           resolves to false — so the accessibility tree reported an ordinary
+           enabled button, and every [aria-disabled="true"] rule in the sheet
+           stopped matching, while click and Enter did nothing at all. Five
+           clearing routes at four widths all produced it. First paint was
+           always correct; only the live typing path lied, which is why no
+           static sweep ever saw it. */
+        send.setAttribute("aria-disabled", ready ? "false" : "true");
+        /* AND THE BUTTON KEEPS ITS NAME. Swapping the label rewrapped the
+           footer: Send moved 324px left and 44px down while "Never mind" moved
+           146px RIGHT, into the rectangle Send occupied a frame earlier —
+           same right edge, at 768, 1280, 1440 and 1920. Measured with
+           elementFromPoint at Send's former centre: the control there is
+           cancel-peel. Select all, delete, reach back for Send, throw the peel
+           away. The instruction lives under the field now, where it does not
+           move the primary. */
+        const hint = mount.querySelector("#peel-hint");
+        if (hint) hint.textContent = ready ? "" : "Write the wording, then send";
       }
     }
   });
@@ -19958,6 +20085,18 @@ window.__SUITE.register("tasks", {
         e.preventDefault();
         keepDraft();
       }
+      return;
+    }
+    /* AN OPEN CONFIRM OWNS THE KEYBOARD TOO — the same rule as the picker
+       below, written in the same shape and sited beside it so the two modal
+       objects read as one convention rather than two. "Delete it everywhere?"
+       could be overruled by t, k or l, and two of those commit a DIFFERENT
+       decision on the same note: the surface asked a yes-or-no question and
+       accepted a third answer. Escape still cancels (handled above), and
+       Enter and Space on the focused buttons still answer, because those are
+       native activation rather than keydown routing. */
+    if (confirming && /^[tkljq]$/i.test(e.key)) {
+      e.preventDefault();
       return;
     }
     /* An open popup owns the keyboard. It was a listbox with roles and no
@@ -22408,7 +22547,45 @@ var PHONE_T = matchMedia("(max-width: 720px)");
     place(root.querySelector(".b-measure"));
     reserve(root);
     keepInBand(root, item);
+    /* AND THE EDITOR ITSELF IS BROUGHT INTO THE BAND. Moving the across host
+       after the plan kept the measure in frame and put the panel below the
+       fold: 0 of its 11 controls on screen at 1280x900, 1440x900 and 1440x960
+       on both open paths, with the sheet scroller at scrollTop 0 before and
+       after. The keyboard path felt fine only because Tab triggers a native
+       focus scroll; the pointer path was blind.
+
+       The same minimum correction keepInBand applies to a row, applied once to
+       the PANEL — and applied HERE rather than inside keepInBand, which also
+       runs on every stepper press and whose contract promises the control
+       "moves the item on the measure and moves nothing else". preventScroll
+       stays: dropping it lets the browser jump the sheet 839px against a 779px
+       minimum, and by different amounts on the two paths, because focus lands
+       on the field on one and on the panel on the other. */
+    keepPanelInBand(root, node);
     node.focus({ preventScroll: true });
+  }
+
+  /* The panel's own minimum correction. Bottom-aligned with the same 24px pad
+     keepInBand uses, re-centred only when the panel is too tall to fit. */
+  function keepPanelInBand(root, node) {
+    if (!node) return;
+    var box = null;
+    for (var up = root; up && up !== document.body; up = up.parentElement) {
+      var os = getComputedStyle(up).overflowY;
+      if ((os === "auto" || os === "scroll") && up.scrollHeight > up.clientHeight + 1) { box = up; break; }
+    }
+    if (!box) return;
+    var free = box.clientHeight - 16;
+    var rect = node.getBoundingClientRect();
+    var top = rect.top - box.getBoundingClientRect().top;
+    var height = rect.height;
+    if (top >= 16 && top + height <= free) return;
+    var pad = 24;
+    var delta;
+    if (height + pad * 2 > free) delta = Math.round(top - Math.max(16, (free - height) / 2));
+    else if (top < 16) delta = Math.round(top - pad);
+    else delta = Math.round(top + height - (free - pad));
+    box.scrollTop += delta;
   }
 
   /* One place that hands focus over, and it never moves the page to do

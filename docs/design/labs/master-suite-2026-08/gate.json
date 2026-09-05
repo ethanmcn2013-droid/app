@@ -2605,13 +2605,13 @@
       "section": "switch",
       "name": "every switch lands, both paths",
       "ok": true,
-      "detail": "with 99/86/114ms · without 20/8/26ms"
+      "detail": "with 108/100/116ms · without 18/8/23ms"
     },
     {
       "section": "switch",
       "name": "the mutation is wrapped, not postponed",
       "ok": true,
-      "detail": "100ms with the transition against 18ms without — the wrap costs 82ms, the capture alone 63ms on this machine, and the animation it starts runs 220ms after it"
+      "detail": "108ms with the transition against 16ms without — the wrap costs 92ms, the capture alone 60ms on this machine, and the animation it starts runs 220ms after it"
     },
     {
       "section": "switch",

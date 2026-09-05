@@ -1009,6 +1009,272 @@ for (const w of [1440, 1280]) {
   await page.close();
 }
 
+/* ══ ROUND 7 ═══════════════════════════════════════════════════════
+   Seven blocking and misleading findings, each with the assertion that holds
+   it. Two of them are this round's own regressions; one was invisible to every
+   static sweep because only the live typing path lied. ─────────────────── */
+
+/* R7 seam-send-dead-and-swapped (blocking): toggleAttribute writes the EMPTY
+   STRING, an invalid aria-disabled token Chromium resolves to false — so
+   clearing the wording field left the seam's primary reporting as an enabled
+   button that did nothing. And the label swap moved "Never mind" into the
+   rectangle Send had just vacated, so reaching back for Send threw the peel
+   away. The primary had also never HAD a disabled appearance in any state. */
+for (const w of [768, 1280, 1440, 1920]) {
+  const page = await open({ state: "notes.seam", viewport: { width: w, height: 960 } });
+  const before = await page.evaluate(() => {
+    const s = document.querySelector('[data-app="notes"] [data-act="send"]');
+    const b = s.getBoundingClientRect();
+    return { label: s.textContent.trim(), x: Math.round(b.x), y: Math.round(b.y), w: Math.round(b.width) };
+  });
+  await page.fill('[data-app="notes"] .peelField', "");
+  await page.waitForTimeout(200);
+  const empty = await page.evaluate(() => {
+    const s = document.querySelector('[data-app="notes"] [data-act="send"]');
+    const cs = getComputedStyle(s);
+    const b = s.getBoundingClientRect();
+    const at = document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2);
+    return {
+      attr: s.getAttribute("aria-disabled"),
+      label: s.textContent.trim(),
+      x: Math.round(b.x), y: Math.round(b.y), w: Math.round(b.width),
+      bg: cs.backgroundColor, colour: cs.color,
+      under: at ? (at.closest("[data-act]") || {}).dataset?.act ?? null : null,
+      hint: (document.querySelector("#peel-hint") || {}).textContent || "",
+    };
+  });
+  ok(`seam @${w} · an unrunnable primary says so in a token the browser accepts`,
+    empty.attr === "true", `aria-disabled="${empty.attr}"`);
+  ok(`seam @${w} · and looks unrunnable, which it never has before`,
+    empty.bg !== before.bg && !/rgb\(17, 17, 17\)/.test(empty.bg), empty.bg);
+  ok(`seam @${w} · the primary keeps its name and its place`,
+    empty.label === before.label && empty.x === before.x && empty.y === before.y && empty.w === before.w,
+    JSON.stringify({ before, empty }));
+  ok(`seam @${w} · so reaching back to where Send was does not discard the peel`,
+    empty.under !== "cancel-peel", `${empty.under} is under Send's centre`);
+  ok(`seam @${w} · the instruction is under the field instead`,
+    /write the wording/i.test(empty.hint), empty.hint);
+  const acted = await page.evaluate(async () => {
+    const n = () => document.querySelectorAll('[data-app="tasks"] .card:not([data-draft])').length;
+    const was = n();
+    document.querySelector('[data-app="notes"] [data-act="send"]').click();
+    await new Promise((r) => setTimeout(r, 250));
+    return { was, now: n() };
+  });
+  ok(`seam @${w} · and pressing it changes nothing, as it says`,
+    acted.was === acted.now, JSON.stringify(acted));
+  await page.close();
+}
+
+/* R7 list-tick-never-shows-done (blocking, two seats, one defect): every done
+   rule was scoped to .card while listRow() emits .lrow, so in the view that is
+   default below 1200 and the only view a phone gets, a done row and an un-done
+   row differed in ZERO computed properties — and under forced colours the list
+   painted a check on all thirteen rows, eight of them not done. */
+for (const w of [390, 768, 1440]) {
+  const page = await open({ state: "tasks.board", viewport: { width: w, height: 900 }, touch: w <= 480 });
+  if (w >= 1200) await chooseView(page, "list");
+  const seen = await page.evaluate(() => {
+    const rows = [...document.querySelectorAll('[data-app="tasks"] .lrow')];
+    const done = rows.find((r) => r.hasAttribute("data-done"));
+    const open_ = rows.find((r) => !r.hasAttribute("data-done"));
+    if (!done || !open_) return null;
+    const read = (r) => {
+      const t = r.querySelector(".tick"), cs = getComputedStyle(t);
+      return { bg: cs.backgroundColor, shadow: cs.boxShadow, colour: cs.color,
+        svg: t.querySelector("svg") ? getComputedStyle(t.querySelector("svg")).display : "none" };
+    };
+    const a = read(done), b = read(open_);
+    return { rows: rows.length, differs: Object.keys(a).filter((k) => a[k] !== b[k]), a, b };
+  });
+  ok(`list @${w} · a done row's tick is not the same object as an un-done one`,
+    !!seen && seen.differs.length >= 2, seen ? JSON.stringify(seen) : "no list rows");
+  await page.close();
+}
+{
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, forcedColors: "active" });
+  const page = await context.newPage();
+  const url = new URL(MASTER); url.searchParams.set("state", "tasks.board"); url.searchParams.set("v", config.defaultVariant);
+  await page.goto(url.href, { waitUntil: "load" });
+  await page.waitForTimeout(400);
+  const forced = await page.evaluate(() => {
+    const rows = [...document.querySelectorAll('[data-app="tasks"] .lrow')];
+    const checks = rows.filter((r) => { const g = r.querySelector(".tick svg"); return g && getComputedStyle(g).display !== "none"; });
+    return { rows: rows.length, checks: checks.length, done: rows.filter((r) => r.hasAttribute("data-done")).length };
+  });
+  ok("list · under forced colours only the done rows paint a check",
+    forced.rows > 0 && forced.checks === forced.done, JSON.stringify(forced));
+  await page.close();
+}
+
+/* R7 carry-commits-with-no-way-back (blocking): carryMove mutates on every
+   arrow and only Space armed an undo, so Enter, Tab, a rail switch and a
+   pointer press elsewhere each committed a lane change Ctrl+Z then denied.
+   The worst was Tab, which moves focus INTO the carried card's own tick —
+   where Space completed the task while it was still in hand. */
+for (const exit of ["Tab", "Enter", "rail"]) {
+  const page = await open({ state: "tasks.board", viewport: { width: 1440, height: 960 } });
+  await chooseView(page, "board");
+  const out = await page.evaluate(async (how) => {
+    const card = document.querySelector('[data-app="tasks"] .tray[data-lane="todo"] .card:not([data-draft])');
+    const id = card.getAttribute("data-id");
+    card.focus();
+    const key = (k) => document.activeElement.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true }));
+    key(" "); await new Promise((r) => setTimeout(r, 140));
+    key("ArrowRight"); await new Promise((r) => setTimeout(r, 200));
+    if (how === "Tab") key("Tab");
+    else if (how === "Enter") key("Enter");
+    else document.querySelector('.rail [data-rail="notes"]').click();
+    await new Promise((r) => setTimeout(r, 420));
+    /* Ctrl+Z is routed per product, so asking Tasks to undo means standing in
+       Tasks. Coming back is what an operator does anyway. */
+    if (how === "rail") {
+      document.querySelector('.rail [data-rail="tasks"]').click();
+      await new Promise((r) => setTimeout(r, 420));
+    }
+    const grabbed = document.querySelectorAll('[data-app="tasks"] [aria-grabbed="true"]').length;
+    const moving = document.querySelectorAll('[data-app="tasks"] [data-force="moving"]').length;
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "z", ctrlKey: true, bubbles: true, cancelable: true }));
+    await new Promise((r) => setTimeout(r, 420));
+    const back = document.querySelector(`[data-app="tasks"] .card[data-id="${id}"]`);
+    const live = [...document.querySelectorAll("[aria-live]")].map((n) => n.textContent.trim()).filter(Boolean).join(" | ");
+    return { grabbed, moving, backIn: back ? back.closest(".tray").getAttribute("data-lane") : null, said: live };
+  }, exit);
+  ok(`carry · leaving by ${exit} still leaves a way back`,
+    out.backIn === "todo" && !/nothing left to undo/i.test(out.said), JSON.stringify(out));
+  ok(`carry · and no card is left in hand after ${exit}`,
+    out.grabbed === 0 && out.moving === 0, JSON.stringify(out));
+  await page.close();
+}
+{
+  /* The worst case the refuter found, stated as the law it breaks: there is no
+     moment in which a card is BOTH in hand and finished. Tab used to move
+     focus into the carried card's own tick, where onKey returns early for
+     .tick — so Space there completed the task and moved it to Done with
+     aria-grabbed still set, and Ctrl+Z then unwound only the completion,
+     leaving the original move unrecoverable and the card still grabbed.
+     Driven with a REAL Tab, because a synthetic one cannot move focus. */
+  const page = await open({ state: "tasks.board", viewport: { width: 1440, height: 960 } });
+  await chooseView(page, "board");
+  await page.evaluate(() => {
+    const card = document.querySelector('[data-app="tasks"] .tray[data-lane="todo"] .card:not([data-draft])');
+    window.__R7_CARRY = card.getAttribute("data-id");
+    card.focus();
+    card.dispatchEvent(new KeyboardEvent("keydown", { key: " ", bubbles: true, cancelable: true }));
+  });
+  await page.waitForTimeout(180);
+  await page.evaluate(() => document.activeElement.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true })));
+  await page.waitForTimeout(260);
+  await page.keyboard.press("Tab");
+  await page.waitForTimeout(300);
+  await page.keyboard.press(" ");
+  await page.waitForTimeout(360);
+  const worst = await page.evaluate(() => {
+    const held = [...document.querySelectorAll('[data-app="tasks"] [aria-grabbed="true"]')];
+    return {
+      bothAtOnce: held.filter((n) => n.hasAttribute("data-done")).length,
+      focus: document.activeElement ? (document.activeElement.className || document.activeElement.tagName) : null,
+    };
+  });
+  ok("carry · a card is never both in hand and finished",
+    worst.bothAtOnce === 0, JSON.stringify(worst));
+  await page.close();
+}
+
+/* R7 timeline-editor-opens-off-screen (blocking, two seats, one defect — they
+   pressed different grab handles, which is why their numbers disagreed). */
+for (const [w, h] of [[1280, 900], [1440, 960], [1920, 1000]]) {
+  const page = await open({ state: "timeline.owner-flight", viewport: { width: w, height: h }, layout: "across" });
+  for (const how of ["add", "grab"]) {
+    await page.evaluate(async (path) => {
+      const el = path === "add"
+        ? document.querySelector('[data-app="timeline"] [data-act="add"]')
+        : document.querySelector('[data-app="timeline"] .b-grab');
+      if (el) el.click();
+      await new Promise((r) => setTimeout(r, 500));
+    }, how);
+    const seen = await page.evaluate(() => {
+      const e = document.querySelector("#b-edit");
+      if (!e) return null;
+      const b = e.getBoundingClientRect();
+      const controls = [...e.querySelectorAll("button, input, select, textarea, [tabindex]")];
+      const onScreen = controls.filter((c) => { const r = c.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; });
+      return { visible: Math.max(0, Math.min(b.bottom, innerHeight) - Math.max(b.top, 0)) / b.height,
+        controls: controls.length, onScreen: onScreen.length };
+    });
+    ok(`across @${w}x${h} · the editor opened by ${how} is on screen with its controls`,
+      !!seen && seen.visible > 0.9 && seen.onScreen === seen.controls,
+      seen ? `${Math.round(seen.visible * 100)}% visible, ${seen.onScreen}/${seen.controls} controls` : "no editor");
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(300);
+  }
+  await page.close();
+}
+
+/* R7 review-confirm-is-not-one (blocking): "Delete it everywhere?" could be
+   overruled by t, k or l — and two of those commit a DIFFERENT decision on the
+   same note. A yes-or-no question accepted a third answer. */
+{
+  const page = await open({ state: "notes.review", viewport: { width: 1440, height: 960 } });
+  const held = await page.evaluate(async () => {
+    const del = document.querySelector('[data-app="notes"] [data-act="d-delete"]');
+    if (!del) return null;
+    del.click();
+    await new Promise((r) => setTimeout(r, 260));
+    const asking = !!document.querySelector('[data-app="notes"] .confirm');
+    for (const k of ["t", "k", "l"]) {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true }));
+      await new Promise((r) => setTimeout(r, 160));
+    }
+    return { asking, stillAsking: !!document.querySelector('[data-app="notes"] .confirm') };
+  });
+  ok("review · a yes-or-no question does not accept a third answer",
+    !!held && held.asking && held.stillAsking, JSON.stringify(held));
+  await page.close();
+}
+
+/* R7 more-door-announces-the-reverse (misleading): say() read moreOpen, which
+   morph() flips a frame late inside startViewTransition — so the door said the
+   opposite of what it did. Under reduced motion the same build was CORRECT,
+   because morph runs synchronously there. Both paths are asserted; a
+   single-motion assertion would have passed this build. */
+for (const motion of ["no-preference", "reduce"]) {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 960 }, reducedMotion: motion === "reduce" ? "reduce" : "no-preference" });
+  const page = await context.newPage();
+  const url = new URL(MASTER); url.searchParams.set("state", "tasks.board"); url.searchParams.set("v", config.defaultVariant);
+  await page.goto(url.href, { waitUntil: "load" });
+  await page.waitForTimeout(400);
+  const said = await page.evaluate(async () => {
+    const out = [];
+    for (let i = 0; i < 2; i++) {
+      document.querySelector('.rail [data-rail="more"]').click();
+      await new Promise((r) => setTimeout(r, 600));
+      const live = [...document.querySelectorAll("[aria-live]")].map((n) => n.textContent.trim()).filter((t) => /^More,/.test(t));
+      out.push({ said: live[live.length - 1] || "", open: !!document.querySelector(".morePop") });
+    }
+    return out;
+  });
+  ok(`more door @${motion} · says what it did, not the reverse`,
+    said.every((s) => (s.open ? /open/i.test(s.said) : /closed/i.test(s.said))),
+    JSON.stringify(said));
+  await page.close();
+}
+
+/* R7 dictation-disclosure-is-about-typing (misleading): a sentence about
+   typing on the one screen where nobody types. */
+{
+  const page = await open({ state: "notes.voice", viewport: { width: 1440, height: 960 } });
+  const words = await page.evaluate(() => {
+    const n = [...document.querySelectorAll('[data-app="notes"] *')]
+      .map((e) => e.textContent.replace(/\s+/g, " ").trim())
+      .filter((t) => /keeps the words, not the audio/.test(t));
+    return n.length ? n[n.length - 1] : null;
+  });
+  ok("dictation · the disclosure is about what is on the screen",
+    !!words && !/typing/i.test(words) && /these words/i.test(words), String(words));
+  await page.close();
+}
+
 /* ── the no-day fact is on the head and it is a door, on both devices
       (grok-planning-has-no-door, kept as the master's rule) ──────────── */
 for (const [label, vp, touch] of [["desk", DESK, false], ["phone", PHONE, true]]) {

@@ -451,6 +451,13 @@ window.__SUITE = (function () {
       if (o.announce !== false) say("You are on " + LABEL[product] + ".");
       return true;
     }
+    /* A card in hand does not travel between products. Leaving Tasks commits
+       the move it is holding, so the undo the operator was promised exists on
+       the other side of the switch and no card is left wearing
+       aria-grabbed="true" in a product nobody is looking at. */
+    if (current === "tasks" && registry.tasks && registry.tasks.api && registry.tasks.api.putDown) {
+      registry.tasks.api.putDown();
+    }
     current = product;
     railCurrent = product;
     /* THE RAIL ANSWERS THE PRESS. It used to repaint inside the view
@@ -999,16 +1006,33 @@ window.__SUITE = (function () {
       var wasOpen = moreOpen;
       morph(
         wasOpen ? deck.querySelector(".morePop") : tile,
-        function () { moreOpen = !moreOpen; paintRail(); },
+        function () {
+          moreOpen = !moreOpen;
+          paintRail();
+          /* Taken after paintRail rebuilds, not before. It survived only
+             because paintRail happens to reuse the tile node. */
+          var plus = deck.querySelector('.rail [data-rail="more"]');
+          if (plus) plus.focus();
+        },
         function () {
           return wasOpen
             ? deck.querySelector('.rail [data-rail="more"]')
             : deck.querySelector(".morePop");
         },
       );
-      var plus = deck.querySelector('.rail [data-rail="more"]');
-      if (plus) plus.focus();
-      say(moreOpen ? "More, open." : "More, closed.");
+      /* SPOKEN OFF wasOpen, NOT off moreOpen. morph() flips moreOpen inside
+         startViewTransition's callback, which runs a frame late — so by the
+         time this line ran, moreOpen still held the OLD value and the door
+         announced "More, closed." as it opened and "More, open." as it closed.
+         The control experiment is what makes it worth stating: under
+         prefers-reduced-motion the same build announced correctly, because
+         morph() then runs its mutation synchronously. This build told the
+         truth to one person and the exact reverse to another, decided by their
+         motion setting, on the door the brief keeps specifically to buy
+         honesty. wasOpen is captured before either branch runs, so it is right
+         on both paths — a naive move of say() into the callback would have
+         regressed the reduced-motion path that already worked. */
+      say(wasOpen ? "More, closed." : "More, open.");
       return;
     }
     if (tile.getAttribute("aria-disabled") === "true") {

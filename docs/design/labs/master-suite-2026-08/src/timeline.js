@@ -2016,7 +2016,45 @@ var PHONE_T = matchMedia("(max-width: 720px)");
     place(root.querySelector(".b-measure"));
     reserve(root);
     keepInBand(root, item);
+    /* AND THE EDITOR ITSELF IS BROUGHT INTO THE BAND. Moving the across host
+       after the plan kept the measure in frame and put the panel below the
+       fold: 0 of its 11 controls on screen at 1280x900, 1440x900 and 1440x960
+       on both open paths, with the sheet scroller at scrollTop 0 before and
+       after. The keyboard path felt fine only because Tab triggers a native
+       focus scroll; the pointer path was blind.
+
+       The same minimum correction keepInBand applies to a row, applied once to
+       the PANEL — and applied HERE rather than inside keepInBand, which also
+       runs on every stepper press and whose contract promises the control
+       "moves the item on the measure and moves nothing else". preventScroll
+       stays: dropping it lets the browser jump the sheet 839px against a 779px
+       minimum, and by different amounts on the two paths, because focus lands
+       on the field on one and on the panel on the other. */
+    keepPanelInBand(root, node);
     node.focus({ preventScroll: true });
+  }
+
+  /* The panel's own minimum correction. Bottom-aligned with the same 24px pad
+     keepInBand uses, re-centred only when the panel is too tall to fit. */
+  function keepPanelInBand(root, node) {
+    if (!node) return;
+    var box = null;
+    for (var up = root; up && up !== document.body; up = up.parentElement) {
+      var os = getComputedStyle(up).overflowY;
+      if ((os === "auto" || os === "scroll") && up.scrollHeight > up.clientHeight + 1) { box = up; break; }
+    }
+    if (!box) return;
+    var free = box.clientHeight - 16;
+    var rect = node.getBoundingClientRect();
+    var top = rect.top - box.getBoundingClientRect().top;
+    var height = rect.height;
+    if (top >= 16 && top + height <= free) return;
+    var pad = 24;
+    var delta;
+    if (height + pad * 2 > free) delta = Math.round(top - Math.max(16, (free - height) / 2));
+    else if (top < 16) delta = Math.round(top - pad);
+    else delta = Math.round(top + height - (free - pad));
+    box.scrollTop += delta;
   }
 
   /* One place that hands focus over, and it never moves the page to do

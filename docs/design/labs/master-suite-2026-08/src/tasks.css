@@ -553,7 +553,9 @@
 }
 /* A finished row reads finished: the same treatment the board's done card
    already carries, so the two views agree about what done looks like. */
-[data-app="tasks"] .lrow[data-done] .lrowTitle { color: var(--ink-3); }
+/* One done ink across the views. The board said 72%, the list 62%; the sheet
+   keeps its strike, which is the sheet's own way of saying it. */
+[data-app="tasks"] .lrow[data-done] .lrowTitle { color: var(--ink-2); }
 [data-app="tasks"] .lrow[data-done] .lrowNote { color: var(--ink-3); }
 /* NOT FLOATED. The chip floats right inside a card, where it sits in the
    title's own text flow; in a grid cell a float takes it out of flow
@@ -1156,7 +1158,14 @@
    partner name outrank the work. The whole card de-escalates together. */
 [data-app="tasks"] .card[data-done] .cardTitle { color: var(--ink-2); }
 [data-app="tasks"] .card[data-done] .who { font-weight: 400; color: var(--ink-2); }
-[data-app="tasks"] .card[data-done] .tick { background: var(--ink); box-shadow: none; color: var(--white); }
+/* THE TICK IS THE SAME OBJECT IN BOTH VIEWS. Every done rule was scoped to
+   .card while listRow() emits .lrow, so in the List — the default view below
+   1200 and the only view a phone gets — a done row and an un-done row
+   differed in ZERO computed properties across the tick, its svg, its check
+   path and both pseudo-elements. Tapping it twice on a phone gave done then
+   not-done with a pixel-identical circle at each, so the natural response to
+   a silent control silently reversed the completion. */
+[data-app="tasks"] :is(.card, .lrow)[data-done] .tick { background: var(--ink); box-shadow: none; color: var(--white); }
 
 /* The one earned indigo in a resting view. */
 [data-app="tasks"] .card[data-next] { --card-rest: 0 0 0 1px var(--indigo-line); --card-hover: 0 0 0 1px var(--indigo), var(--float); }
@@ -1365,8 +1374,8 @@
    the words around them — hierarchy inverted for 150ms in the one moment the
    freeze was lifted for. It settles in place. */
 @keyframes settleIn { from { transform: translateY(2px); } }
-[data-app="tasks"] .card[data-just-done] .tick { animation: tickSettle 320ms var(--curve); }
-[data-app="tasks"] .card[data-just-done] .tick svg path { animation: checkDraw 320ms var(--curve) 60ms both; }
+[data-app="tasks"] :is(.card, .lrow)[data-just-done] .tick { animation: tickSettle 320ms var(--curve); }
+[data-app="tasks"] :is(.card, .lrow)[data-just-done] .tick svg path { animation: checkDraw 320ms var(--curve) 60ms both; }
 /* The rest of the board answers in the same breath: the card's ring and
    title resolve to done, and the counts that changed settle in rather than
    snapping. */
@@ -1376,8 +1385,8 @@
 [data-app="tasks"] .trayCount[data-changed],
 [data-app="tasks"] .headFacts b[data-changed] { animation: settleIn 320ms var(--curve); }
 @media (prefers-reduced-motion: reduce) {
-  [data-app="tasks"] .card[data-just-done] .tick,
-  [data-app="tasks"] .card[data-just-done] .tick svg path,
+  [data-app="tasks"] :is(.card, .lrow)[data-just-done] .tick,
+  [data-app="tasks"] :is(.card, .lrow)[data-just-done] .tick svg path,
   [data-app="tasks"] .trayCount[data-changed],
   [data-app="tasks"] .headFacts b[data-changed] { animation: none; }
 }
@@ -1990,8 +1999,8 @@
 /* A completed tick still answers the pointer, so putting the work back is
    as visible as finishing it. The done rule outranked the hover rule, which
    made un-completing invisible. */
-[data-app="tasks"] .card[data-done] .tick:hover,
-[data-app="tasks"] .card[data-done] .tick:focus-visible {
+[data-app="tasks"] :is(.card, .lrow)[data-done] .tick:hover,
+[data-app="tasks"] :is(.card, .lrow)[data-done] .tick:focus-visible {
   box-shadow: 0 0 0 4px var(--wash-2);
 }
 
@@ -2023,8 +2032,8 @@
   [data-app="tasks"] .tick { border: 1px solid CanvasText; }
   /* Colour is how an unfinished tick hides its check, and a forced palette
      overrides colour — so every card read as done. */
-  [data-app="tasks"] .card:not([data-done]) .tick svg { display: none; }
-  [data-app="tasks"] .card[data-done] .tick { forced-color-adjust: none; background: CanvasText; color: Canvas; }
+  [data-app="tasks"] :is(.card, .lrow):not([data-done]) .tick svg { display: none; }
+  [data-app="tasks"] :is(.card, .lrow)[data-done] .tick { forced-color-adjust: none; background: CanvasText; color: Canvas; }
   /* Both are 1px ink at low alpha, which a forced palette resolves to the
      page background. */
   [data-app="tasks"] .dropLine { forced-color-adjust: none; background: Highlight; }

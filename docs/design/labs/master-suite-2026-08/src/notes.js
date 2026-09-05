@@ -1876,6 +1876,11 @@
         <span class="peelLabel" id="peel-label">${esc(N.copy.wordingLabel)}</span>
         <textarea class="peelField" rows="1" id="peel-field" aria-labelledby="peel-label"
           placeholder="What should the task say?">${esc(taskWording)}</textarea>
+        ${/* The instruction sits here, not on the primary, and its line is
+             reserved whether or not it has anything to say — a hint that comes
+             and goes moves the footer, and a footer that moves is how the
+             reach-back trap returns in miniature. */ ""}
+        <p class="peelHint" id="peel-hint">${taskWording.trim() ? "" : "Write the wording, then send"}</p>
         </div>
         <div class="peelRow">
           <button class="picker" type="button" data-act="destination" aria-haspopup="listbox" aria-expanded="${picker === "peel"}"
@@ -1885,7 +1890,7 @@
           ${picker === "peel" ? subjectList("peel", destination) : ""}
           <span class="spacer"></span>
           <button class="act" data-quiet type="button" data-act="cancel-peel">${esc(N.copy.cancel)}</button>
-          <button class="act" data-primary type="button" data-act="send"${taskWording.trim() ? "" : " aria-disabled=\"true\""}>${I.send}${taskWording.trim() ? esc(N.copy.send) : "Write the wording, then send"}</button>
+          <button class="act" data-primary type="button" data-act="send" aria-disabled="${taskWording.trim() ? "false" : "true"}" aria-describedby="peel-hint">${I.send}${esc(N.copy.send)}</button>
         </div>
       </div>`;
   }
@@ -3196,9 +3201,25 @@
       const send = mount.querySelector('[data-act="send"]');
       if (send) {
         const ready = Boolean(taskWording.trim());
-        send.toggleAttribute("aria-disabled", !ready);
-        const label = send.lastChild;
-        if (label && label.nodeType === 3) label.textContent = ready ? N.copy.send : "Write the wording, then send";
+        /* setAttribute, NOT toggleAttribute. toggleAttribute writes the EMPTY
+           STRING, and aria-disabled="" is an invalid token that Chromium
+           resolves to false — so the accessibility tree reported an ordinary
+           enabled button, and every [aria-disabled="true"] rule in the sheet
+           stopped matching, while click and Enter did nothing at all. Five
+           clearing routes at four widths all produced it. First paint was
+           always correct; only the live typing path lied, which is why no
+           static sweep ever saw it. */
+        send.setAttribute("aria-disabled", ready ? "false" : "true");
+        /* AND THE BUTTON KEEPS ITS NAME. Swapping the label rewrapped the
+           footer: Send moved 324px left and 44px down while "Never mind" moved
+           146px RIGHT, into the rectangle Send occupied a frame earlier —
+           same right edge, at 768, 1280, 1440 and 1920. Measured with
+           elementFromPoint at Send's former centre: the control there is
+           cancel-peel. Select all, delete, reach back for Send, throw the peel
+           away. The instruction lives under the field now, where it does not
+           move the primary. */
+        const hint = mount.querySelector("#peel-hint");
+        if (hint) hint.textContent = ready ? "" : "Write the wording, then send";
       }
     }
   });
@@ -3778,6 +3799,18 @@
         e.preventDefault();
         keepDraft();
       }
+      return;
+    }
+    /* AN OPEN CONFIRM OWNS THE KEYBOARD TOO — the same rule as the picker
+       below, written in the same shape and sited beside it so the two modal
+       objects read as one convention rather than two. "Delete it everywhere?"
+       could be overruled by t, k or l, and two of those commit a DIFFERENT
+       decision on the same note: the surface asked a yes-or-no question and
+       accepted a third answer. Escape still cancels (handled above), and
+       Enter and Space on the focused buttons still answer, because those are
+       native activation rather than keydown routing. */
+    if (confirming && /^[tkljq]$/i.test(e.key)) {
+      e.preventDefault();
       return;
     }
     /* An open popup owns the keyboard. It was a listbox with roles and no

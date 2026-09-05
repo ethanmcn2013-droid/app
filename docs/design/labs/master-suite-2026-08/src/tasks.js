@@ -560,6 +560,9 @@ const TASKS_API = {
     mount();
     return true;
   },
+  /* The rail switching product is an exit. endCarry is module-local, so the
+     suite reaches it the same way it reaches rows, add, remove and reveal. */
+  putDown() { return commitCarry(); },
   reveal(id) {
     if (!taskById(id)) return false;
     /* A filter can hide the card the seam just made, and being sent to a
@@ -2124,7 +2127,9 @@ function flyCompleted(target) {
   flyFrom = null;
   flyId = null;
   if (!was || !id) return 0;
-  const node = target.querySelector('.card[data-id="' + id + '"]');
+  /* Either object. The list row is the same task wearing a different shape,
+     and the tick it carries is the same control. */
+  const node = target.querySelector('.card[data-id="' + id + '"], .lrow[data-id="' + id + '"]');
   if (!node) return 0;
   /* The travel is right either way — the card should fly back — but the
      check only draws on a card that is actually finished. */
@@ -2427,7 +2432,7 @@ function toggleDone(id) {
   const task = taskById(id);
   if (!task) return;
   const target = window.__SUITE.host("tasks");
-  const node = target && target.querySelector('.card[data-id="' + id + '"]');
+  const node = target && target.querySelector('.card[data-id="' + id + '"], .lrow[data-id="' + id + '"]');
   const row = target && target.querySelector('.lrow[data-id="' + id + '"]');
   flyFrom = node ? node.getBoundingClientRect() : null;
   flyId = id;
@@ -2636,14 +2641,42 @@ function walk(dx, dy) {
    cards at once, a foot pill printing instructions that no longer worked, and
    a completion refused its Undo strip because the pill still owned the slot.
    The hand ends where the operator's attention goes. */
-function endCarry() {
+/* ONE COMMIT, WHICHEVER DOOR YOU LEAVE BY. carryMove() mutates the board on
+   every arrow, and only Space used to arm an undo — so Enter, Tab, a rail
+   switch and a pointer press elsewhere each committed a real lane change that
+   Ctrl+Z then answered with "Nothing left to undo", and three of them never
+   cleared carriedId, leaving the card wearing aria-grabbed="true" and the
+   loudest treatment on the board with focus on BODY, across a full product
+   switch. The file's own comment above this function says this class was fixed
+   and names "Tab away"; that fix reached the pointer path only.
+
+   Every exit runs this now. Picking a card up and putting it back in the same
+   slot stays a non-event, and a sorted lane still never announces an index. */
+function commitCarry(spoken) {
   if (!carriedId) return false;
-  const task = taskById(carriedId);
-  const at = place(carriedId);
+  const id = carriedId;
+  const from = carriedFrom;
+  const task = taskById(id);
+  const at = place(id);
   const lane = at ? laneIds()[at.x] : null;
   carriedId = null; carriedFrom = null; overLane = null;
-  if (task && lane) say(task.title + " put down " + inLane(lane) + ".");
+  /* AND THE BOARD IS REPAINTED. Clearing carriedId is not enough: the card in
+     the DOM keeps aria-grabbed="true" and data-force="moving" — the loudest
+     treatment on the board — until something re-renders it, so a card put down
+     by Tab or by a rail switch stayed visibly in hand with nothing holding it.
+     Repainting is what makes the state and the picture agree. */
+  const settle = () => { refocus = true; mount(); };
+  if (!task || !lane || !from) { settle(); return true; }
+  if (lane === from.lane && at.y === from.index) { settle(); return true; }
+  arm({ kind: "move", id: id, title: task.title, lane: from.lane, index: from.index,
+        toLane: lane, wasHeldSince: from.wasHeldSince, wasCompletedAt: from.wasCompletedAt });
+  if (spoken !== false) say(task.title + " " + (spoken || "put down") + " " + inLane(lane) + ".");
+  settle();
   return true;
+}
+
+function endCarry() {
+  return commitCarry();
 }
 
 function carryMove(dx, dy) {
@@ -2907,6 +2940,19 @@ function onKey(event) {
 
   }
 
+  /* TAB IS AN EXIT, AND IT IS READ BEFORE ANYTHING ELSE. Not behind the
+     card test below: every arrow press calls mount(), which tears the carried
+     card out of the DOM, so by the time a Tab arrives focus can be on BODY and
+     the card test returns early — the exit would be missed exactly when a card
+     is in hand. Not on focusout either, for the same reason: that fires on
+     every arrow with a null relatedTarget and would cancel the carry on the
+     first one. And a guard testing "did focus leave the card's subtree" never
+     fires on this exit at all, because Tab moves focus INTO the carried card's
+     own tick — the worst case of the lot, where Space then completed the task
+     and moved it to Done while aria-grabbed was still set: a card at once in
+     hand and finished, with the original move unrecoverable. */
+  if (key === "Tab" && carriedId) commitCarry();
+
   const card = event.target.closest && event.target.closest(ROW_SEL);
   if (!card) return;
 
@@ -2921,6 +2967,7 @@ function onKey(event) {
   /* The tab stop is always the card the operator is on. */
   focusId = id;
 
+
   if (key === " " || key === "Spacebar") {
     event.preventDefault();
     if (carriedId === id) {
@@ -2934,10 +2981,12 @@ function onKey(event) {
       const from = carriedFrom;
       if (lane === "done" && from.lane !== "done") {
         completed(task, !allTasks().some((t) => timeOf(t).kind === "overdue"));
+        carriedId = null; carriedFrom = null;
       } else if (lane === from.lane && at.y === from.index) {
         /* The pointer path's first law, which the keyboard never had: picking
            a card up and putting it back is a non-event. No receipt, no
            sentence. */
+        carriedId = null; carriedFrom = null;
       } else {
         /* THE KEYBOARD DROP CAN BE TAKEN BACK. This branch mutated the lane
            and never called arm(), so the one route to the board's most
@@ -2951,13 +3000,8 @@ function onKey(event) {
            Captured at PICKUP, not here: moveTo() calls applyLaneFacts()
            unconditionally on every preview move, so the arrow walk has already
            nulled heldSince and completedAt by the time Space commits. */
-        arm({ kind: "move", id: id, title: task.title, lane: from.lane, index: from.index,
-              toLane: lane, wasHeldSince: from.wasHeldSince, wasCompletedAt: from.wasCompletedAt });
-        /* And the same law in the spoken channel as the pointer path: a
-           sorted lane never announces an index. */
-        say(task.title + " dropped " + inLane(lane) + ".");
+        commitCarry("dropped");
       }
-      carriedId = null; carriedFrom = null;
     } else {
       const at = place(id);
       const t = taskById(id);
@@ -2971,6 +3015,8 @@ function onKey(event) {
 
   if (key === "Enter") {
     event.preventDefault();
+    /* Opening is an exit too. */
+    if (carriedId) commitCarry();
     /* Enter opens the task, the same surface a press opens. FOUR routes
        reached the old inline note — click, drop, Enter and pointerup — and
        repointing three of them left the fourth quietly toggling a thing
