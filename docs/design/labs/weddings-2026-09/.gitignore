@@ -2,3 +2,8 @@
 # browser lives in the shared ms-playwright cache. The lockfile is committed,
 # the install is not.
 node_modules/
+
+# The immutable Phase 1 "before" lives in shots-reference/ and is committed once.
+# Every later round re-shoots into shots/, which travels in the Elevation Log
+# as packed frames rather than as 8MB of PNG per round in this repository.
+shots/

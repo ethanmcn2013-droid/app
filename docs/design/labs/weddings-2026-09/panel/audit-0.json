@@ -1,0 +1,2622 @@
+{
+  "lab": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\design-weddings-exploration\\docs\\design\\labs\\weddings-2026-09",
+  "variant": "a",
+  "viewport": "1440x960",
+  "states": {
+    "guests-list": {
+      "colors": [
+        {
+          "el": "circle",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 1
+        },
+        {
+          "el": "path",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 2
+        }
+      ],
+      "weights": [],
+      "families": [],
+      "contrast": [
+        {
+          "el": "span",
+          "text": "Nadia & Cal",
+          "size": 11,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 2
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "em",
+          "text": "16",
+          "size": 10,
+          "weight": 400,
+          "ratio": 3.61,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "span.kbd",
+          "text": "1–8",
+          "size": 11,
+          "weight": 400,
+          "ratio": 3.97,
+          "need": 4.5,
+          "n": 1
+        }
+      ],
+      "targets": [
+        {
+          "el": "button.kbd",
+          "w": 86,
+          "h": 18,
+          "label": "Replay setup",
+          "n": 1
+        }
+      ],
+      "radii": [],
+      "motion": [],
+      "ramp": [
+        {
+          "el": "b",
+          "size": 30,
+          "text": "104",
+          "n": 4
+        }
+      ],
+      "leading": [
+        {
+          "el": "span",
+          "text": "Workspace",
+          "n": 16
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "n": 3
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "n": 1
+        },
+        {
+          "el": "b.null",
+          "text": "139 invited",
+          "n": 1
+        },
+        {
+          "el": "b.mono",
+          "text": "104 coming",
+          "n": 2
+        },
+        {
+          "el": "button.segBtn",
+          "text": "The list",
+          "n": 6
+        },
+        {
+          "el": "b",
+          "text": "Everyone",
+          "n": 14
+        },
+        {
+          "el": "button.btn",
+          "text": "Chase the sixteen",
+          "n": 2
+        }
+      ],
+      "counts": {
+        "elements": 266
+      }
+    },
+    "guests-household": {
+      "colors": [
+        {
+          "el": "circle",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 1
+        },
+        {
+          "el": "path",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 2
+        }
+      ],
+      "weights": [],
+      "families": [],
+      "contrast": [
+        {
+          "el": "span",
+          "text": "Nadia & Cal",
+          "size": 11,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 2
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "em",
+          "text": "16",
+          "size": 10,
+          "weight": 400,
+          "ratio": 3.61,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "span.kbd",
+          "text": "1–8",
+          "size": 11,
+          "weight": 400,
+          "ratio": 3.97,
+          "need": 4.5,
+          "n": 1
+        }
+      ],
+      "targets": [
+        {
+          "el": "button.kbd",
+          "w": 86,
+          "h": 18,
+          "label": "Replay setup",
+          "n": 1
+        }
+      ],
+      "radii": [],
+      "motion": [],
+      "ramp": [
+        {
+          "el": "b",
+          "size": 30,
+          "text": "74",
+          "n": 1
+        }
+      ],
+      "leading": [
+        {
+          "el": "span",
+          "text": "Workspace",
+          "n": 13
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "n": 3
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "n": 1
+        },
+        {
+          "el": "b.null",
+          "text": "139 invited",
+          "n": 1
+        },
+        {
+          "el": "b.mono",
+          "text": "104 coming",
+          "n": 2
+        },
+        {
+          "el": "button.segBtn",
+          "text": "The list",
+          "n": 6
+        },
+        {
+          "el": "b",
+          "text": "Outstanding",
+          "n": 10
+        }
+      ],
+      "counts": {
+        "elements": 213
+      }
+    },
+    "guests-replies": {
+      "colors": [
+        {
+          "el": "circle",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 1
+        },
+        {
+          "el": "path",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 2
+        }
+      ],
+      "weights": [],
+      "families": [],
+      "contrast": [
+        {
+          "el": "span",
+          "text": "Nadia & Cal",
+          "size": 11,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 2
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "em",
+          "text": "16",
+          "size": 10,
+          "weight": 400,
+          "ratio": 3.61,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "span.kbd",
+          "text": "1–8",
+          "size": 11,
+          "weight": 400,
+          "ratio": 3.97,
+          "need": 4.5,
+          "n": 1
+        }
+      ],
+      "targets": [
+        {
+          "el": "button.kbd",
+          "w": 86,
+          "h": 18,
+          "label": "Replay setup",
+          "n": 1
+        }
+      ],
+      "radii": [],
+      "motion": [],
+      "ramp": [
+        {
+          "el": "b",
+          "size": 30,
+          "text": "123",
+          "n": 1
+        },
+        {
+          "el": "div.funLab",
+          "size": 11.5,
+          "text": "Invited",
+          "n": 3
+        },
+        {
+          "el": "div.n",
+          "size": 10.5,
+          "text": "78",
+          "n": 2
+        }
+      ],
+      "leading": [
+        {
+          "el": "span",
+          "text": "Workspace",
+          "n": 10
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "n": 3
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "n": 1
+        },
+        {
+          "el": "b.null",
+          "text": "139 invited",
+          "n": 1
+        },
+        {
+          "el": "b.mono",
+          "text": "104 coming",
+          "n": 2
+        },
+        {
+          "el": "button.segBtn",
+          "text": "The list",
+          "n": 6
+        },
+        {
+          "el": "b",
+          "text": "As they land",
+          "n": 8
+        },
+        {
+          "el": "div.funLab",
+          "text": "Invited",
+          "n": 3
+        },
+        {
+          "el": "div.lab",
+          "text": "All day",
+          "n": 2
+        },
+        {
+          "el": "div.n",
+          "text": "78",
+          "n": 2
+        }
+      ],
+      "counts": {
+        "elements": 181
+      }
+    },
+    "guests-sends": {
+      "colors": [
+        {
+          "el": "circle",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 1
+        },
+        {
+          "el": "path",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 2
+        }
+      ],
+      "weights": [],
+      "families": [],
+      "contrast": [
+        {
+          "el": "span",
+          "text": "Nadia & Cal",
+          "size": 11,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 2
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "em",
+          "text": "16",
+          "size": 10,
+          "weight": 400,
+          "ratio": 3.61,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "span.kbd",
+          "text": "1–8",
+          "size": 11,
+          "weight": 400,
+          "ratio": 3.97,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "span",
+          "text": "Jun",
+          "size": 9.5,
+          "weight": 400,
+          "ratio": 1.89,
+          "need": 4.5,
+          "n": 5
+        }
+      ],
+      "targets": [
+        {
+          "el": "button.kbd",
+          "w": 86,
+          "h": 18,
+          "label": "Replay setup",
+          "n": 1
+        }
+      ],
+      "radii": [],
+      "motion": [],
+      "ramp": [
+        {
+          "el": "b",
+          "size": 30,
+          "text": "9",
+          "n": 1
+        },
+        {
+          "el": "span",
+          "size": 9.5,
+          "text": "Jun",
+          "n": 5
+        }
+      ],
+      "leading": [
+        {
+          "el": "span",
+          "text": "Workspace",
+          "n": 18
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "n": 3
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "n": 1
+        },
+        {
+          "el": "b.null",
+          "text": "139 invited",
+          "n": 1
+        },
+        {
+          "el": "b.mono",
+          "text": "104 coming",
+          "n": 2
+        },
+        {
+          "el": "button.segBtn",
+          "text": "The list",
+          "n": 6
+        },
+        {
+          "el": "b",
+          "text": "Fourteen months",
+          "n": 11
+        },
+        {
+          "el": "div.laneName",
+          "text": "Post",
+          "n": 2
+        }
+      ],
+      "counts": {
+        "elements": 252
+      }
+    },
+    "guests-food": {
+      "colors": [
+        {
+          "el": "circle",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 1
+        },
+        {
+          "el": "path",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 2
+        }
+      ],
+      "weights": [],
+      "families": [],
+      "contrast": [
+        {
+          "el": "span",
+          "text": "Nadia & Cal",
+          "size": 11,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 2
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "em",
+          "text": "16",
+          "size": 10,
+          "weight": 400,
+          "ratio": 3.61,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "span.kbd",
+          "text": "1–8",
+          "size": 11,
+          "weight": 400,
+          "ratio": 3.97,
+          "need": 4.5,
+          "n": 1
+        }
+      ],
+      "targets": [
+        {
+          "el": "button.kbd",
+          "w": 86,
+          "h": 18,
+          "label": "Replay setup",
+          "n": 1
+        }
+      ],
+      "radii": [
+        {
+          "el": "span.sev",
+          "corner": "borderTopLeftRadius",
+          "px": 2,
+          "n": 24
+        }
+      ],
+      "motion": [],
+      "ramp": [
+        {
+          "el": "div.n",
+          "size": 10.5,
+          "text": "46",
+          "n": 4
+        }
+      ],
+      "leading": [
+        {
+          "el": "span",
+          "text": "Workspace",
+          "n": 6
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "n": 3
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "n": 1
+        },
+        {
+          "el": "b.null",
+          "text": "139 invited",
+          "n": 1
+        },
+        {
+          "el": "b.mono",
+          "text": "104 coming",
+          "n": 2
+        },
+        {
+          "el": "button.segBtn",
+          "text": "The list",
+          "n": 6
+        },
+        {
+          "el": "b",
+          "text": "What would hurt them",
+          "n": 10
+        },
+        {
+          "el": "button.btn",
+          "text": "Send the kitchen a sheet",
+          "n": 2
+        },
+        {
+          "el": "div.lab",
+          "text": "Chicken",
+          "n": 4
+        },
+        {
+          "el": "div.n",
+          "text": "46",
+          "n": 4
+        }
+      ],
+      "counts": {
+        "elements": 200
+      }
+    },
+    "guests-travel": {
+      "colors": [
+        {
+          "el": "circle",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 1
+        },
+        {
+          "el": "path",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 2
+        }
+      ],
+      "weights": [],
+      "families": [],
+      "contrast": [
+        {
+          "el": "span",
+          "text": "Nadia & Cal",
+          "size": 11,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 2
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "em",
+          "text": "16",
+          "size": 10,
+          "weight": 400,
+          "ratio": 3.61,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "span.kbd",
+          "text": "1–8",
+          "size": 11,
+          "weight": 400,
+          "ratio": 3.97,
+          "need": 4.5,
+          "n": 1
+        }
+      ],
+      "targets": [
+        {
+          "el": "button.kbd",
+          "w": 86,
+          "h": 18,
+          "label": "Replay setup",
+          "n": 1
+        }
+      ],
+      "radii": [],
+      "motion": [],
+      "ramp": [
+        {
+          "el": "b",
+          "size": 30,
+          "text": "38",
+          "n": 1
+        },
+        {
+          "el": "div",
+          "size": 11.5,
+          "text": "The room block expires and unboo",
+          "n": 1
+        }
+      ],
+      "leading": [
+        {
+          "el": "span",
+          "text": "Workspace",
+          "n": 9
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "n": 3
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "n": 1
+        },
+        {
+          "el": "b.null",
+          "text": "139 invited",
+          "n": 1
+        },
+        {
+          "el": "b.mono",
+          "text": "104 coming",
+          "n": 2
+        },
+        {
+          "el": "button.segBtn",
+          "text": "The list",
+          "n": 6
+        },
+        {
+          "el": "div",
+          "text": "The room block expires and unboo",
+          "n": 1
+        },
+        {
+          "el": "span.when",
+          "text": "Monday",
+          "n": 1
+        },
+        {
+          "el": "b",
+          "text": "Where people are staying",
+          "n": 10
+        },
+        {
+          "el": "button.btn",
+          "text": "Remind the eighteen",
+          "n": 2
+        }
+      ],
+      "counts": {
+        "elements": 192
+      }
+    },
+    "money-number": {
+      "colors": [
+        {
+          "el": "path",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 2
+        }
+      ],
+      "weights": [],
+      "families": [],
+      "contrast": [
+        {
+          "el": "span",
+          "text": "Nadia & Cal",
+          "size": 11,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "span.kbd",
+          "text": "1–8",
+          "size": 11,
+          "weight": 400,
+          "ratio": 3.97,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "em",
+          "text": "£3,200",
+          "size": 11,
+          "weight": 400,
+          "ratio": 1.88,
+          "need": 4.5,
+          "n": 3
+        }
+      ],
+      "targets": [
+        {
+          "el": "button.kbd",
+          "w": 86,
+          "h": 18,
+          "label": "Replay setup",
+          "n": 1
+        }
+      ],
+      "radii": [],
+      "motion": [],
+      "ramp": [
+        {
+          "el": "b",
+          "size": 30,
+          "text": "£32,000",
+          "n": 1
+        }
+      ],
+      "leading": [
+        {
+          "el": "span",
+          "text": "Workspace",
+          "n": 10
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "n": 6
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "n": 1
+        },
+        {
+          "el": "b.null",
+          "text": "£32,000 planned",
+          "n": 1
+        },
+        {
+          "el": "b.mono",
+          "text": "£2,000 unfunded",
+          "n": 1
+        },
+        {
+          "el": "button.segBtn",
+          "text": "The number",
+          "n": 5
+        },
+        {
+          "el": "b",
+          "text": "Where it goes",
+          "n": 16
+        },
+        {
+          "el": "span.when",
+          "text": "4 days",
+          "n": 3
+        }
+      ],
+      "counts": {
+        "elements": 237
+      }
+    },
+    "money-category": {
+      "colors": [
+        {
+          "el": "path",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 2
+        }
+      ],
+      "weights": [],
+      "families": [],
+      "contrast": [
+        {
+          "el": "span",
+          "text": "Nadia & Cal",
+          "size": 11,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "span.kbd",
+          "text": "1–8",
+          "size": 11,
+          "weight": 400,
+          "ratio": 3.97,
+          "need": 4.5,
+          "n": 1
+        }
+      ],
+      "targets": [
+        {
+          "el": "button.kbd",
+          "w": 86,
+          "h": 18,
+          "label": "Replay setup",
+          "n": 1
+        }
+      ],
+      "radii": [],
+      "motion": [],
+      "ramp": [
+        {
+          "el": "b",
+          "size": 30,
+          "text": "£32,000",
+          "n": 1
+        }
+      ],
+      "leading": [
+        {
+          "el": "span",
+          "text": "Workspace",
+          "n": 13
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "n": 3
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "n": 1
+        },
+        {
+          "el": "b.null",
+          "text": "£32,000 planned",
+          "n": 1
+        },
+        {
+          "el": "b.mono",
+          "text": "£2,000 unfunded",
+          "n": 1
+        },
+        {
+          "el": "button.segBtn",
+          "text": "The number",
+          "n": 5
+        },
+        {
+          "el": "b",
+          "text": "Sorted by what is still open",
+          "n": 12
+        }
+      ],
+      "counts": {
+        "elements": 241
+      }
+    },
+    "money-paying": {
+      "colors": [
+        {
+          "el": "path",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 2
+        }
+      ],
+      "weights": [],
+      "families": [],
+      "contrast": [
+        {
+          "el": "span",
+          "text": "Nadia & Cal",
+          "size": 11,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "span.kbd",
+          "text": "1–8",
+          "size": 11,
+          "weight": 400,
+          "ratio": 3.97,
+          "need": 4.5,
+          "n": 1
+        }
+      ],
+      "targets": [
+        {
+          "el": "button.kbd",
+          "w": 86,
+          "h": 18,
+          "label": "Replay setup",
+          "n": 1
+        }
+      ],
+      "radii": [
+        {
+          "el": "i",
+          "corner": "borderTopLeftRadius",
+          "px": 3,
+          "n": 16
+        }
+      ],
+      "motion": [],
+      "ramp": [
+        {
+          "el": "b",
+          "size": 30,
+          "text": "£30,000",
+          "n": 1
+        }
+      ],
+      "leading": [
+        {
+          "el": "span",
+          "text": "Workspace",
+          "n": 7
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "n": 3
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "n": 1
+        },
+        {
+          "el": "b.null",
+          "text": "£32,000 planned",
+          "n": 1
+        },
+        {
+          "el": "b.mono",
+          "text": "£2,000 unfunded",
+          "n": 1
+        },
+        {
+          "el": "button.segBtn",
+          "text": "The number",
+          "n": 5
+        },
+        {
+          "el": "b",
+          "text": "Where it comes from",
+          "n": 6
+        },
+        {
+          "el": "button.btn",
+          "text": "Draft a note about the £2,000",
+          "n": 2
+        }
+      ],
+      "counts": {
+        "elements": 151
+      }
+    },
+    "money-due": {
+      "colors": [
+        {
+          "el": "path",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 2
+        }
+      ],
+      "weights": [],
+      "families": [],
+      "contrast": [
+        {
+          "el": "span",
+          "text": "Nadia & Cal",
+          "size": 11,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "span.kbd",
+          "text": "1–8",
+          "size": 11,
+          "weight": 400,
+          "ratio": 3.97,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "div.v",
+          "text": "£2,940",
+          "size": 11,
+          "weight": 400,
+          "ratio": 1.88,
+          "need": 4.5,
+          "n": 7
+        }
+      ],
+      "targets": [
+        {
+          "el": "button.kbd",
+          "w": 86,
+          "h": 18,
+          "label": "Replay setup",
+          "n": 1
+        }
+      ],
+      "radii": [],
+      "motion": [],
+      "ramp": [
+        {
+          "el": "b",
+          "size": 30,
+          "text": "£7,530",
+          "n": 1
+        },
+        {
+          "el": "b",
+          "size": 9.5,
+          "text": "Oct",
+          "n": 8
+        }
+      ],
+      "leading": [
+        {
+          "el": "span",
+          "text": "Workspace",
+          "n": 11
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "n": 3
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "n": 1
+        },
+        {
+          "el": "b.null",
+          "text": "£32,000 planned",
+          "n": 1
+        },
+        {
+          "el": "b.mono",
+          "text": "£2,000 unfunded",
+          "n": 1
+        },
+        {
+          "el": "button.segBtn",
+          "text": "The number",
+          "n": 5
+        },
+        {
+          "el": "b",
+          "text": "Across the year",
+          "n": 16
+        },
+        {
+          "el": "div.v",
+          "text": "£2,940",
+          "n": 8
+        }
+      ],
+      "counts": {
+        "elements": 212
+      }
+    },
+    "money-supplier": {
+      "colors": [
+        {
+          "el": "path",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 2
+        }
+      ],
+      "weights": [],
+      "families": [],
+      "contrast": [
+        {
+          "el": "span",
+          "text": "Nadia & Cal",
+          "size": 11,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "span.kbd",
+          "text": "1–8",
+          "size": 11,
+          "weight": 400,
+          "ratio": 3.97,
+          "need": 4.5,
+          "n": 1
+        }
+      ],
+      "targets": [
+        {
+          "el": "button.kbd",
+          "w": 86,
+          "h": 18,
+          "label": "Replay setup",
+          "n": 1
+        }
+      ],
+      "radii": [],
+      "motion": [],
+      "ramp": [
+        {
+          "el": "b",
+          "size": 30,
+          "text": "11",
+          "n": 1
+        }
+      ],
+      "leading": [
+        {
+          "el": "span",
+          "text": "Workspace",
+          "n": 13
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "n": 3
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "n": 1
+        },
+        {
+          "el": "b.null",
+          "text": "£32,000 planned",
+          "n": 1
+        },
+        {
+          "el": "b.mono",
+          "text": "£2,000 unfunded",
+          "n": 1
+        },
+        {
+          "el": "button.segBtn",
+          "text": "The number",
+          "n": 5
+        },
+        {
+          "el": "b",
+          "text": "Everyone you have booked",
+          "n": 7
+        }
+      ],
+      "counts": {
+        "elements": 176
+      }
+    },
+    "seating-queue": {
+      "colors": [
+        {
+          "el": "circle",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 1
+        },
+        {
+          "el": "circle",
+          "prop": "fill",
+          "value": "rgb(165, 180, 252)",
+          "n": 4
+        }
+      ],
+      "weights": [],
+      "families": [],
+      "contrast": [
+        {
+          "el": "span",
+          "text": "Nadia & Cal",
+          "size": 11,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 2
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "em",
+          "text": "16",
+          "size": 10,
+          "weight": 400,
+          "ratio": 3.61,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "span.kbd",
+          "text": "1–8",
+          "size": 11,
+          "weight": 400,
+          "ratio": 3.97,
+          "need": 4.5,
+          "n": 1
+        }
+      ],
+      "targets": [
+        {
+          "el": "button.kbd",
+          "w": 86,
+          "h": 18,
+          "label": "Replay setup",
+          "n": 1
+        }
+      ],
+      "radii": [
+        {
+          "el": "div.wdPhone",
+          "corner": "borderTopLeftRadius",
+          "px": 26,
+          "n": 4
+        },
+        {
+          "el": "div.wdPhoneIn",
+          "corner": "borderTopLeftRadius",
+          "px": 18,
+          "n": 4
+        }
+      ],
+      "motion": [],
+      "ramp": [
+        {
+          "el": "b",
+          "size": 30,
+          "text": "16",
+          "n": 1
+        }
+      ],
+      "leading": [
+        {
+          "el": "span",
+          "text": "Workspace",
+          "n": 19
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "n": 3
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "n": 1
+        },
+        {
+          "el": "b.null",
+          "text": "16 still to seat",
+          "n": 1
+        },
+        {
+          "el": "b.mono",
+          "text": "13 tables",
+          "n": 1
+        },
+        {
+          "el": "button.segBtn",
+          "text": "Still to seat",
+          "n": 5
+        },
+        {
+          "el": "b",
+          "text": "Still to seat",
+          "n": 16
+        },
+        {
+          "el": "button.btn",
+          "text": "Hold a chair",
+          "n": 8
+        },
+        {
+          "el": "div.phoneCap",
+          "text": "The same surface at 390px — comp",
+          "n": 1
+        },
+        {
+          "el": "button.pSeat",
+          "text": "Hold",
+          "n": 6
+        }
+      ],
+      "counts": {
+        "elements": 225
+      }
+    },
+    "seating-room": {
+      "colors": [
+        {
+          "el": "circle",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 1
+        },
+        {
+          "el": "circle",
+          "prop": "fill",
+          "value": "rgb(165, 180, 252)",
+          "n": 4
+        }
+      ],
+      "weights": [],
+      "families": [],
+      "contrast": [
+        {
+          "el": "span",
+          "text": "Nadia & Cal",
+          "size": 11,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 2
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "em",
+          "text": "16",
+          "size": 10,
+          "weight": 400,
+          "ratio": 3.61,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "span.kbd",
+          "text": "1–8",
+          "size": 11,
+          "weight": 400,
+          "ratio": 3.97,
+          "need": 4.5,
+          "n": 1
+        }
+      ],
+      "targets": [
+        {
+          "el": "button.kbd",
+          "w": 86,
+          "h": 18,
+          "label": "Replay setup",
+          "n": 1
+        }
+      ],
+      "radii": [],
+      "motion": [],
+      "ramp": [
+        {
+          "el": "b",
+          "size": 30,
+          "text": "13",
+          "n": 1
+        },
+        {
+          "el": "text",
+          "size": 11.5,
+          "text": "Bar",
+          "n": 2
+        },
+        {
+          "el": "text",
+          "size": 12.5,
+          "text": "Top table · 6",
+          "n": 1
+        }
+      ],
+      "leading": [
+        {
+          "el": "span",
+          "text": "Workspace",
+          "n": 7
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "n": 3
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "n": 1
+        },
+        {
+          "el": "b.null",
+          "text": "16 still to seat",
+          "n": 1
+        },
+        {
+          "el": "b.mono",
+          "text": "13 tables",
+          "n": 1
+        },
+        {
+          "el": "button.segBtn",
+          "text": "Still to seat",
+          "n": 5
+        },
+        {
+          "el": "text",
+          "text": "Dance floor",
+          "n": 31
+        },
+        {
+          "el": "b",
+          "text": "How this room got here",
+          "n": 3
+        },
+        {
+          "el": "dt",
+          "text": "Shape",
+          "n": 4
+        },
+        {
+          "el": "dd",
+          "text": "Barn, 14.2m × 9.8m",
+          "n": 4
+        }
+      ],
+      "counts": {
+        "elements": 192
+      }
+    },
+    "seating-table": {
+      "colors": [
+        {
+          "el": "circle",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 1
+        },
+        {
+          "el": "circle",
+          "prop": "fill",
+          "value": "rgb(165, 180, 252)",
+          "n": 4
+        }
+      ],
+      "weights": [
+        {
+          "el": "b",
+          "weight": 700,
+          "text": "Elaine Okonjo",
+          "n": 3
+        }
+      ],
+      "families": [],
+      "contrast": [
+        {
+          "el": "span",
+          "text": "Nadia & Cal",
+          "size": 11,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 2
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "em",
+          "text": "16",
+          "size": 10,
+          "weight": 400,
+          "ratio": 3.61,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "span.kbd",
+          "text": "1–8",
+          "size": 11,
+          "weight": 400,
+          "ratio": 3.97,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "div.chair",
+          "text": "+",
+          "size": 8.5,
+          "weight": 400,
+          "ratio": 1.89,
+          "need": 4.5,
+          "n": 2
+        }
+      ],
+      "targets": [
+        {
+          "el": "button.kbd",
+          "w": 86,
+          "h": 18,
+          "label": "Replay setup",
+          "n": 1
+        }
+      ],
+      "radii": [],
+      "motion": [],
+      "ramp": [
+        {
+          "el": "span",
+          "size": 10.5,
+          "text": "beside the dance floor, step-fre",
+          "n": 1
+        },
+        {
+          "el": "div.chair",
+          "size": 8.5,
+          "text": "MH",
+          "n": 8
+        },
+        {
+          "el": "div",
+          "size": 9.5,
+          "text": "Margaret Hale",
+          "n": 8
+        }
+      ],
+      "leading": [
+        {
+          "el": "span",
+          "text": "Workspace",
+          "n": 6
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "n": 3
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "n": 1
+        },
+        {
+          "el": "b.null",
+          "text": "16 still to seat",
+          "n": 1
+        },
+        {
+          "el": "b.mono",
+          "text": "13 tables",
+          "n": 1
+        },
+        {
+          "el": "button.segBtn",
+          "text": "Still to seat",
+          "n": 5
+        },
+        {
+          "el": "b",
+          "text": "Table 4",
+          "n": 6
+        },
+        {
+          "el": "span.zoneTag",
+          "text": "Loud",
+          "n": 3
+        },
+        {
+          "el": "button.btn",
+          "text": "Seat two more",
+          "n": 2
+        }
+      ],
+      "counts": {
+        "elements": 164
+      }
+    },
+    "seating-plans": {
+      "colors": [
+        {
+          "el": "circle",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 1
+        },
+        {
+          "el": "circle",
+          "prop": "fill",
+          "value": "rgb(165, 180, 252)",
+          "n": 4
+        }
+      ],
+      "weights": [],
+      "families": [],
+      "contrast": [
+        {
+          "el": "span",
+          "text": "Nadia & Cal",
+          "size": 11,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 2
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "em",
+          "text": "16",
+          "size": 10,
+          "weight": 400,
+          "ratio": 3.61,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "span.kbd",
+          "text": "1–8",
+          "size": 11,
+          "weight": 400,
+          "ratio": 3.97,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "em",
+          "text": "88 seated",
+          "size": 10,
+          "weight": 400,
+          "ratio": 1.89,
+          "need": 4.5,
+          "n": 2
+        },
+        {
+          "el": "div.i",
+          "text": "01",
+          "size": 9.5,
+          "weight": 400,
+          "ratio": 1.89,
+          "need": 4.5,
+          "n": 4
+        },
+        {
+          "el": "div.r",
+          "text": "2 hours ago",
+          "size": 10,
+          "weight": 400,
+          "ratio": 1.89,
+          "need": 4.5,
+          "n": 4
+        }
+      ],
+      "targets": [
+        {
+          "el": "button.kbd",
+          "w": 86,
+          "h": 18,
+          "label": "Replay setup",
+          "n": 1
+        }
+      ],
+      "radii": [],
+      "motion": [],
+      "ramp": [
+        {
+          "el": "b",
+          "size": 30,
+          "text": "3",
+          "n": 1
+        },
+        {
+          "el": "div.diffCell",
+          "size": 11.5,
+          "text": "Nine rounds of eight",
+          "n": 8
+        },
+        {
+          "el": "div.i",
+          "size": 9.5,
+          "text": "01",
+          "n": 4
+        },
+        {
+          "el": "div.m",
+          "size": 11.5,
+          "text": "Cal moved Margaret Hale to table",
+          "n": 4
+        },
+        {
+          "el": "b",
+          "size": 11.5,
+          "text": "Margaret Hale",
+          "n": 4
+        }
+      ],
+      "leading": [
+        {
+          "el": "span",
+          "text": "Workspace",
+          "n": 9
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "n": 6
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "n": 1
+        },
+        {
+          "el": "b.null",
+          "text": "16 still to seat",
+          "n": 1
+        },
+        {
+          "el": "b.mono",
+          "text": "13 tables",
+          "n": 1
+        },
+        {
+          "el": "button.segBtn",
+          "text": "Still to seat",
+          "n": 5
+        },
+        {
+          "el": "b",
+          "text": "Plan A",
+          "n": 5
+        },
+        {
+          "el": "div.diffCell",
+          "text": "Nine rounds of eight",
+          "n": 8
+        },
+        {
+          "el": "div.i",
+          "text": "01",
+          "n": 4
+        },
+        {
+          "el": "div.r",
+          "text": "2 hours ago",
+          "n": 4
+        }
+      ],
+      "counts": {
+        "elements": 221
+      }
+    },
+    "seating-check": {
+      "colors": [
+        {
+          "el": "circle",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 1
+        },
+        {
+          "el": "circle",
+          "prop": "fill",
+          "value": "rgb(165, 180, 252)",
+          "n": 4
+        }
+      ],
+      "weights": [],
+      "families": [],
+      "contrast": [
+        {
+          "el": "span",
+          "text": "Nadia & Cal",
+          "size": 11,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 2
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "em",
+          "text": "16",
+          "size": 10,
+          "weight": 400,
+          "ratio": 3.61,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "span.kbd",
+          "text": "1–8",
+          "size": 11,
+          "weight": 400,
+          "ratio": 3.97,
+          "need": 4.5,
+          "n": 1
+        }
+      ],
+      "targets": [
+        {
+          "el": "button.kbd",
+          "w": 86,
+          "h": 18,
+          "label": "Replay setup",
+          "n": 1
+        }
+      ],
+      "radii": [],
+      "motion": [],
+      "ramp": [],
+      "leading": [
+        {
+          "el": "span",
+          "text": "Workspace",
+          "n": 6
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "n": 3
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "n": 1
+        },
+        {
+          "el": "b.null",
+          "text": "16 still to seat",
+          "n": 1
+        },
+        {
+          "el": "b.mono",
+          "text": "13 tables",
+          "n": 1
+        },
+        {
+          "el": "button.segBtn",
+          "text": "Still to seat",
+          "n": 5
+        },
+        {
+          "el": "b",
+          "text": "Not ready to print",
+          "n": 9
+        },
+        {
+          "el": "button.btn",
+          "text": "Print place cards",
+          "n": 2
+        }
+      ],
+      "counts": {
+        "elements": 159
+      }
+    },
+    "day-order": {
+      "colors": [
+        {
+          "el": "circle",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 1
+        },
+        {
+          "el": "path",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 1
+        }
+      ],
+      "weights": [],
+      "families": [],
+      "contrast": [
+        {
+          "el": "span",
+          "text": "Nadia & Cal",
+          "size": 11,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "span.kbd",
+          "text": "1–8",
+          "size": 11,
+          "weight": 400,
+          "ratio": 3.97,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "em",
+          "text": "Nadia · cottage",
+          "size": 11,
+          "weight": 400,
+          "ratio": 1.88,
+          "need": 4.5,
+          "n": 14
+        }
+      ],
+      "targets": [
+        {
+          "el": "button.kbd",
+          "w": 86,
+          "h": 18,
+          "label": "Replay setup",
+          "n": 1
+        }
+      ],
+      "radii": [],
+      "motion": [],
+      "ramp": [
+        {
+          "el": "b",
+          "size": 30,
+          "text": "41",
+          "n": 1
+        }
+      ],
+      "leading": [
+        {
+          "el": "span",
+          "text": "Workspace",
+          "n": 8
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "n": 17
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "n": 1
+        },
+        {
+          "el": "b.null",
+          "text": "12 September",
+          "n": 1
+        },
+        {
+          "el": "b.mono",
+          "text": "ceremony 14:00",
+          "n": 1
+        },
+        {
+          "el": "button.segBtn",
+          "text": "Running order",
+          "n": 3
+        },
+        {
+          "el": "b",
+          "text": "Running order",
+          "n": 15
+        },
+        {
+          "el": "span.when",
+          "text": "07:30",
+          "n": 14
+        }
+      ],
+      "counts": {
+        "elements": 190
+      }
+    },
+    "day-who": {
+      "colors": [
+        {
+          "el": "circle",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 1
+        },
+        {
+          "el": "path",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 1
+        }
+      ],
+      "weights": [],
+      "families": [],
+      "contrast": [
+        {
+          "el": "span",
+          "text": "Nadia & Cal",
+          "size": 11,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "span.kbd",
+          "text": "1–8",
+          "size": 11,
+          "weight": 400,
+          "ratio": 3.97,
+          "need": 4.5,
+          "n": 1
+        }
+      ],
+      "targets": [
+        {
+          "el": "button.kbd",
+          "w": 86,
+          "h": 18,
+          "label": "Replay setup",
+          "n": 1
+        }
+      ],
+      "radii": [],
+      "motion": [],
+      "ramp": [
+        {
+          "el": "b",
+          "size": 30,
+          "text": "4",
+          "n": 1
+        },
+        {
+          "el": "div.n",
+          "size": 10.5,
+          "text": "2",
+          "n": 5
+        }
+      ],
+      "leading": [
+        {
+          "el": "span",
+          "text": "Workspace",
+          "n": 9
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "n": 3
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "n": 1
+        },
+        {
+          "el": "b.null",
+          "text": "12 September",
+          "n": 1
+        },
+        {
+          "el": "b.mono",
+          "text": "ceremony 14:00",
+          "n": 1
+        },
+        {
+          "el": "button.segBtn",
+          "text": "Running order",
+          "n": 3
+        },
+        {
+          "el": "b",
+          "text": "Unclaimed first",
+          "n": 12
+        },
+        {
+          "el": "div.lab",
+          "text": "Bea Hollis",
+          "n": 5
+        },
+        {
+          "el": "div.n",
+          "text": "2",
+          "n": 5
+        }
+      ],
+      "counts": {
+        "elements": 204
+      }
+    },
+    "day-contacts": {
+      "colors": [
+        {
+          "el": "circle",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 1
+        },
+        {
+          "el": "path",
+          "prop": "stroke",
+          "value": "rgb(165, 180, 252)",
+          "n": 1
+        }
+      ],
+      "weights": [],
+      "families": [],
+      "contrast": [
+        {
+          "el": "span",
+          "text": "Nadia & Cal",
+          "size": 11,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 3
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "size": 10,
+          "weight": 400,
+          "ratio": 4.1,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "span.kbd",
+          "text": "1–8",
+          "size": 11,
+          "weight": 400,
+          "ratio": 3.97,
+          "need": 4.5,
+          "n": 1
+        },
+        {
+          "el": "span.paperNote",
+          "text": "One page. Printed and in a pocket.",
+          "size": 11,
+          "weight": 400,
+          "ratio": 1.89,
+          "need": 4.5,
+          "n": 1
+        }
+      ],
+      "targets": [
+        {
+          "el": "button.kbd",
+          "w": 86,
+          "h": 18,
+          "label": "Replay setup",
+          "n": 1
+        }
+      ],
+      "radii": [],
+      "motion": [],
+      "ramp": [],
+      "leading": [
+        {
+          "el": "span",
+          "text": "Workspace",
+          "n": 16
+        },
+        {
+          "el": "em",
+          "text": "4",
+          "n": 10
+        },
+        {
+          "el": "i",
+          "text": "12 September",
+          "n": 1
+        },
+        {
+          "el": "b.null",
+          "text": "12 September",
+          "n": 1
+        },
+        {
+          "el": "b.mono",
+          "text": "ceremony 14:00",
+          "n": 1
+        },
+        {
+          "el": "button.segBtn",
+          "text": "Running order",
+          "n": 3
+        },
+        {
+          "el": "b",
+          "text": "Nadia & Cal · 12 September",
+          "n": 12
+        },
+        {
+          "el": "span.paperNote",
+          "text": "One page. Printed and in a pocke",
+          "n": 1
+        },
+        {
+          "el": "h4",
+          "text": "Suppliers",
+          "n": 3
+        },
+        {
+          "el": "span.mono",
+          "text": "01488 220914",
+          "n": 11
+        },
+        {
+          "el": "button.btn",
+          "text": "Print",
+          "n": 2
+        }
+      ],
+      "counts": {
+        "elements": 176
+      }
+    }
+  },
+  "totals": {
+    "colors": 33,
+    "weights": 1,
+    "families": 0,
+    "contrast": 96,
+    "targets": 19,
+    "radii": 4,
+    "motion": 0,
+    "ramp": 31,
+    "leading": 166
+  }
+}

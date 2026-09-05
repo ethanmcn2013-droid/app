@@ -143,6 +143,75 @@ ok("zero console errors across all states", pageErrors.length === 0, pageErrors.
    }
    ═══════════════════════════════════════════════════════════════════ */
 
+/* ══ engagement assertions · weddings ═══════════════════════════════
+   Grown from the defects this surface already owes. */
+
+/* The mode row: six modes on Guests, the landing one current, and a
+   switch that keeps the operator's place — focus stays on the control. */
+{
+  const page = await open({ state: "guests-list" });
+  const segs = await page.locator(".segBtn").count();
+  ok("guests mode row renders six modes", segs === 6, String(segs));
+  const current = ((await page.locator('.segBtn[aria-current="true"]').textContent()) || "").trim();
+  ok("the landing mode is marked aria-current", current === "The list", current);
+  await page.locator(".segBtn", { hasText: "By household" }).click();
+  await page.waitForTimeout(250);
+  const after = ((await page.locator('.segBtn[aria-current="true"]').textContent()) || "").trim();
+  ok("clicking a mode moves aria-current", after === "By household", after);
+  ok("focus survives the mode repaint", await page.evaluate(() => !!document.activeElement && document.activeElement.classList.contains("segBtn") && document.activeElement.getAttribute("aria-current") === "true"));
+  const h1 = ((await page.locator(".sheetHead h1").textContent()) || "").trim();
+  ok("the destination title holds across modes", h1 === "Guests", h1);
+  await page.close();
+}
+
+/* Check before you print: print stays disabled while the plan is not
+   ready, and a check that could not run is drawn as unrun, never passed. */
+{
+  const page = await open({ state: "seating-check" });
+  ok("print place cards is disabled while the plan is not ready", await page.locator("button", { hasText: "Print place cards" }).isDisabled());
+  const unrun = await page.locator('.checkRow[data-k="unrun"]').count();
+  const passed = await page.locator('.checkRow[data-k="pass"]').count();
+  ok("two checks are shown as not run, five as passed", unrun === 2 && passed === 5, passed + " pass / " + unrun + " unrun");
+  await page.close();
+}
+
+/* The keyboard model: number keys jump between destinations and the rail
+   marks where you landed. */
+{
+  const page = await open({ state: "money-number" });
+  await page.keyboard.press("7");
+  await page.waitForTimeout(250);
+  const h1 = ((await page.locator(".sheetHead h1").textContent()) || "").trim();
+  ok("pressing 7 jumps to Seating", h1 === "Seating", h1);
+  const railCurrent = (await page.locator('.railItem[aria-current="true"]').textContent()) || "";
+  ok("the rail marks Seating current after the jump", /Seating/.test(railCurrent), railCurrent);
+  ok("focus lands on the current rail item after a keyboard jump", await page.evaluate(() => !!document.activeElement && document.activeElement.classList.contains("railItem")));
+  await page.close();
+}
+
+/* Seating opens on the list, and each row's one action says what it does. */
+{
+  const page = await open({ state: "seating-queue" });
+  const first = (await page.locator(".pane .gRow .btn").first().textContent()) || "";
+  ok("the first unseated row offers to hold a chair for a non-replier", /Hold a chair/.test(first), first);
+  const primaries = await page.locator(".pane .gRow .btn[data-primary]").count();
+  ok("only people who have replied get a primary Seat action", primaries === 4, String(primaries));
+  await page.close();
+}
+
+/* Escape leaves the picker and puts the workspace back as it was. */
+{
+  const page = await open({ state: "guests-list" });
+  await page.locator(".railAdd").click();
+  await page.waitForTimeout(200);
+  ok("the + opens the picker", ((await page.locator(".sheetHead h1").textContent()) || "").trim() === "Add a section");
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(200);
+  ok("Escape returns to Guests", ((await page.locator(".sheetHead h1").textContent()) || "").trim() === "Guests");
+  ok("the Wedding section is still in the rail after Escape", (await page.locator(".railSection span", { hasText: "Wedding" }).count()) === 1);
+  await page.close();
+}
+
 await browser.close();
 process.stdout.write(`\n${results.length} assertions, ${failures} failing\n`);
 process.exit(failures ? 1 : 0);
