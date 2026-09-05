@@ -1,4 +1,0 @@
-Synthetic local fixture. Actual date, overview, arrival and welcome components; board body and identity are fixtures.
-Wedding date not set yet
-Add your wedding date
-Synthetic board body fixture

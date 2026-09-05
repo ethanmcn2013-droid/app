@@ -1,8 +1,0 @@
-{
-  "exe": "C:/Users/ethan/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe",
-  "args": [
-    "scripts/check-first-contact-language.mjs"
-  ],
-  "exitCode": 0,
-  "cwd": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\feat-january-sponsored-wedding-date"
-}

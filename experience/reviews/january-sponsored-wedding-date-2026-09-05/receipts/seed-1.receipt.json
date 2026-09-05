@@ -1,6 +1,0 @@
-{
-  "observation": "Seed completion printed and fixture JSON written; process failed at exit. Retained, not a passing gate.",
-  "exitCode": -1073741819,
-  "exe": "C:/Users/ethan/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe",
-  "command": "--import tsx --import ./src/test/register-server-only.mjs experience/reviews/january-sponsored-wedding-date-2026-09-05/seed.ts <scratch>"
-}
