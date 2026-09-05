@@ -7,7 +7,10 @@ import { eraseAccountData as eraseTasksData } from "@/server/account-erasure";
 import { opLog } from "@/server/operational-log";
 
 // Types for the per-module erase functions so tests can supply stubs.
-export type NotesEraseFn = (clerkId: string) => Promise<
+export type NotesEraseFn = (
+  clerkId: string,
+  options?: { revokeTokens: RevokeTokensFn },
+) => Promise<
   | { ok: true; refreshTokens: string[] }
   | { ok: false; error: string; refreshTokens: string[] }
 >;
@@ -51,27 +54,30 @@ export class UnifiedAccountErasureError extends AggregateError {
 /**
  * Revoke a set of Google OAuth refresh tokens at Google's revocation endpoint.
  *
- * Best-effort: a revocation failure is logged but never fatal. Provider errors
- * are not logged because their response bodies can contain credentials.
+ * Attempt every distinct credential, then reject if any revocation remains
+ * unconfirmed. Provider errors are not retained, returned or logged.
  */
 export async function defaultRevokeGoogleTokens(tokens: string[]): Promise<void> {
   // `google-drive` is a server-only transport. Lazy loading preserves the
   // injectable orchestrator's plain-Node test seam without weakening runtime
   // boundaries in production.
-  const { revokeGoogleToken } = await import(
-    "@/server/connections/google-drive"
-  );
-  await Promise.allSettled(
-    tokens.map(async (token) => {
-      try {
-        // The provider helper places the credential in a form body, never a
-        // URL that a proxy, log, or error reporter is likely to retain.
+  if (tokens.length === 0) return;
+  try {
+    const { revokeGoogleToken } = await import(
+      "@/server/connections/google-drive"
+    );
+    const attempts = await Promise.allSettled(
+      [...new Set(tokens)].map(async (token) => {
+        // Credentials belong in the form body, never a URL or log.
         await revokeGoogleToken(token);
-      } catch {
-        opLog("warn", "gdpr", "Google token revocation failed");
-      }
-    }),
-  );
+      }),
+    );
+    if (attempts.some((attempt) => attempt.status === "rejected")) {
+      throw new Error("Google token revocation incomplete");
+    }
+  } catch {
+    throw new Error("Google token revocation incomplete");
+  }
 }
 
 /**
@@ -82,13 +88,14 @@ export async function defaultRevokeGoogleTokens(tokens: string[]): Promise<void>
  * network access (same db-injection seam as `eraseAccountData`).
  *
  * Execution order:
- *   1. Erase Notes (returns Google tokens collected before deletion),
- *      Timeline, and Signal in parallel. Each module is attempted even when
- *      another one fails.
+ *   1. Erase Notes (strict revocation before its fenced deletion), Timeline,
+ *      and Signal in parallel. Each module is attempted even when another
+ *      one fails.
  *   2. Erase Tasks, strictly revoking each Project Drive credential before
  *      its encrypted row is deleted.
  *   3. Revoke deduplicated tokens returned by legacy/module erasers
- *      (best-effort, and only after the rows that held them are gone).
+ *      strictly. Legacy implementations cannot provide durable retry custody;
+ *      their revocation failures still block identity deletion.
  *   4. Reject with every module that failed, so Clerk deletion cannot run
  *      until all four product erasers have confirmed success.
  *
@@ -117,11 +124,13 @@ export async function deleteUnifiedAccountDataWith(
 ): Promise<void> {
   const failedModules: UnifiedErasureModule[] = [];
 
-  // Step 1: erase Notes (collecting tokens), Timeline, Signal in parallel.
+  // Step 1: erase Notes (retaining custody until revoked), Timeline, Signal.
   // allSettled ensures a thrown transport error cannot skip another eraser.
   const [notesAttempt, timelineAttempt, signalAttempt] =
     await Promise.allSettled([
-      Promise.resolve().then(() => opts.eraseNotes(clerkId)),
+      Promise.resolve().then(() =>
+        opts.eraseNotes(clerkId, { revokeTokens: opts.revokeTokens }),
+      ),
       Promise.resolve().then(() => opts.eraseTimeline(clerkId)),
       Promise.resolve().then(() => opts.eraseSignal(clerkId)),
     ]);
@@ -167,13 +176,14 @@ export async function deleteUnifiedAccountDataWith(
     ...new Set([...notesGoogleTokens, ...tasksGoogleTokens]),
   ];
 
-  // Step 3: revoke Google tokens even when another module failed. Notes may
-  // already have detached the only stored copies, so this custody must survive
-  // every later failure. The seam is guarded as well as the production helper.
+  // Step 3: legacy erasers may return detached tokens. Attempt these even when
+  // another module failed, and never report complete if revocation fails.
   if (googleTokens.length > 0) {
     try {
       await opts.revokeTokens(googleTokens);
     } catch {
+      if (notesGoogleTokens.length > 0) failedModules.push("Notes");
+      if (tasksGoogleTokens.length > 0) failedModules.push("Tasks");
       opLog("warn", "gdpr", "Google token revocation failed");
     }
   }

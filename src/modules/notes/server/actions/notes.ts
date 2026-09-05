@@ -51,6 +51,7 @@ import {
   demoSearchNotes,
 } from "@/modules/notes/server/demo/notes-demo";
 import { recordSponsoredUse } from "@/lib/account/instrumentation/call-site";
+import { assertNotesRecoveryActor } from "@/modules/notes/server/notes-recovery-actor";
 
 function makeId() {
   return `n_${crypto.randomUUID().replace(/-/g, "")}`;
@@ -955,6 +956,7 @@ export async function unPromoteNote(noteId: string): Promise<NoteRead> {
 }
 
 export type CreateNoteIdempotentInput = {
+  expectedActorScope?: string;
   id: string;
   body: string;
   workspaceId: string | null;
@@ -1000,6 +1002,7 @@ export type SetNoteReviewedInput = {
 };
 
 export type UpdateNoteWithVersionInput = {
+  expectedActorScope?: string;
   id: string;
   body: string;
   expectedUpdatedAt: number;
@@ -1292,10 +1295,23 @@ export async function createNoteIdempotent(
   const requestedWorkspaceId = normalizeOptionalWorkspaceId(input.workspaceId);
   const source = normalizeCaptureSource(input.source);
   const userId = await requireUser();
-  // Capture is the load-bearing private action. A stale membership or a
-  // temporarily unavailable sister product must never hold the writing
-  // hostage, so an unconfirmed destination falls back to Unfiled.
-  const workspaceId = requestedWorkspaceId &&
+  assertNotesRecoveryActor(userId, input.expectedActorScope);
+  // Recovery must reconcile the original identity before attempting a new
+  // association. Losing membership after a committed save cannot create a
+  // duplicate, and a new capture cannot silently change its filing Project.
+  if (input.expectedActorScope !== undefined) {
+    const existing = await readOwnedNote(userId, id);
+    if (existing) {
+      if (existing.body !== body || existing.workspaceId !== requestedWorkspaceId) {
+        throw new Error("This capture has a different saved version. Reopen Notes to review it.");
+      }
+      return existing;
+    }
+    if (requestedWorkspaceId) await requireAuthorizedTasksWorkspace(userId, requestedWorkspaceId);
+  }
+  // Older callers retain their Unfiled fallback. The actor-bound recovery
+  // caller above keeps its exact destination or refuses with words retained.
+  const workspaceId = input.expectedActorScope !== undefined ? requestedWorkspaceId : requestedWorkspaceId &&
     (await authorizeTasksWorkspace(userId, requestedWorkspaceId)) === "allowed"
       ? requestedWorkspaceId
       : null;
@@ -1337,9 +1353,16 @@ export async function createNoteIdempotent(
   // collision and never discloses row contents.
   const existing = await readOwnedNote(userId, id);
   if (!existing) throw new Error("Capture id is already in use");
-  // The server may deliberately have fallen back to Unfiled on the first
-  // attempt. Exact body + exact stable identity is therefore sufficient to
-  // reconcile a lost response even if Tasks membership recovered meanwhile.
+  // Another request can insert after the initial read. Actor-bound recovery
+  // must reconcile the same destination here as in the early replay branch.
+  if (
+    input.expectedActorScope !== undefined &&
+    (existing.body !== body || existing.workspaceId !== requestedWorkspaceId)
+  ) {
+    throw new Error("This capture has a different saved version. Reopen Notes to review it.");
+  }
+  // Legacy callers may have fallen back to Unfiled on the first attempt.
+  // Their exact body + stable identity still reconciles that older behavior.
   if (existing.body !== body) {
     throw new Error("Capture id already belongs to different note content");
   }
@@ -1358,6 +1381,7 @@ export async function updateNoteWithVersion(
   const id = validateStableNoteId(input.id);
   const attempted = createAttemptedVersion(input.body, input.expectedUpdatedAt);
   const userId = await requireUser();
+  assertNotesRecoveryActor(userId, input.expectedActorScope);
   const updatedAt = nextUpdatedAt(Date.now(), attempted.updatedAt);
 
   const updated = await db

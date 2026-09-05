@@ -9,8 +9,8 @@
  * Invariants verified:
  *   1. Unified export includes all four top-level sections (tasks, notes,
  *      timeline, signal) with correct shapes.
- *   2. A module stub that returns { available: false } is preserved as-is;
- *      the orchestrator never drops or re-raises it.
+ *   2. An unavailable module retains a stable status and safe reason;
+ *      the orchestrator never exports its diagnostic metadata.
  *   3. A module stub that throws degrades to { available: false } rather than
  *      propagating the error to the caller.
  *   4. Tasks attachment storedPath never appears in the unified JSON
@@ -195,10 +195,8 @@ test("a module that throws degrades to { available: false } without propagating"
 
     const timeline = result.timeline as { available: boolean; reason?: string };
     assert.equal(timeline.available, false);
-    assert.ok(
-      timeline.reason?.includes("TIMELINE_AUTH_TOKEN"),
-      "error message must be preserved in reason",
-    );
+    assert.equal(timeline.reason, "Timeline export is unavailable. Try again later.");
+    assert.doesNotMatch(JSON.stringify(result), /TIMELINE_AUTH_TOKEN/);
     // Notes and Signal still succeeded.
     assert.equal((result.notes as { available: boolean }).available, true);
     assert.equal((result.signal as { available: boolean }).available, true);

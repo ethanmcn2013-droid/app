@@ -59,13 +59,25 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ethanmcn2013-droid/studio
-          ref: ${{ (github.base_ref == 'release/january-2027' || github.ref_name == 'release/january-2027') && 'release/january-2027' || 'main' }}
+          # Every trigger needs this reviewed compatible fixture runtime.
+          ref: b87d139ee1290f6aee75c8d023fe717357a9ab72
           path: studio-parity
+
+      - name: Install immutable paired Studio dependencies
+        working-directory: studio-parity
+        run: corepack pnpm install --frozen-lockfile
+      - name: Record paired Studio revision
+        run: git -C studio-parity rev-parse HEAD
 
       - name: Test (includes calendar, Signal, Timeline, and suite truth gates)
         run: pnpm test
         env:
           STUDIO_REPO_PATH: ${{ github.workspace }}/studio-parity
+
+      - name: Actual Venue payment-evidence to use and erasure rehearsal
+        run: |
+          pnpm test:venue-rehearsal --studio-root studio-parity
+          pnpm test:sponsored-use:paired --studio-root studio-parity
 
       # The parity checkout exists only for the differential step above;
       # removed so lint never sweeps a second repository's sources.

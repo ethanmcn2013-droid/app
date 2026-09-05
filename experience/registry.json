@@ -160,13 +160,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-04",
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "3f5163cb86596bd8",
       "materialityReview": {
         "materialityHash": "3f5163cb86596bd8",
-        "reviewedAt": "2026-09-04",
+        "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.app-tasks-calendar.json"
       }
     },
@@ -317,13 +317,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-04",
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "32d002ae4ca8c95c",
       "materialityReview": {
         "materialityHash": "32d002ae4ca8c95c",
-        "reviewedAt": "2026-09-04",
+        "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.app-tasks-list.json"
       }
     },
@@ -373,13 +373,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-04",
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "ba2e03f3b33cb1d1",
       "materialityReview": {
         "materialityHash": "ba2e03f3b33cb1d1",
-        "reviewedAt": "2026-09-04",
+        "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.app-my-tasks.json"
       }
     },
@@ -424,13 +424,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-04",
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "973bce313aea5f46",
       "materialityReview": {
         "materialityHash": "973bce313aea5f46",
-        "reviewedAt": "2026-09-04",
+        "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.app-settings.json"
       }
     },
@@ -473,13 +473,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-04",
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "919d7874ace4d91f",
       "materialityReview": {
         "materialityHash": "919d7874ace4d91f",
-        "reviewedAt": "2026-09-04",
+        "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.app-tasks-timeline.json"
       }
     },
@@ -529,13 +529,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-04",
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "4951bf1c82945c78",
       "materialityReview": {
         "materialityHash": "4951bf1c82945c78",
-        "reviewedAt": "2026-09-04",
+        "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.app-your-work.json"
       }
     },
@@ -580,13 +580,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-04",
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "ff4a649e2d42307f",
       "materialityReview": {
         "materialityHash": "ff4a649e2d42307f",
-        "reviewedAt": "2026-09-04",
+        "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.app-archived.json"
       }
     },
@@ -630,13 +630,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-04",
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "d226ac71e96df95f",
       "materialityReview": {
         "materialityHash": "d226ac71e96df95f",
-        "reviewedAt": "2026-09-04",
+        "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.embed-by-slug.json"
       }
     },
@@ -774,13 +774,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-04",
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "d1e0b9b359012e20",
       "materialityReview": {
         "materialityHash": "d1e0b9b359012e20",
-        "reviewedAt": "2026-09-04",
+        "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.print-board.json"
       }
     },
@@ -822,13 +822,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-04",
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "3b3fa77295c447eb",
       "materialityReview": {
         "materialityHash": "3b3fa77295c447eb",
-        "reviewedAt": "2026-09-04",
+        "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.print-calendar.json"
       }
     },
@@ -877,13 +877,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-04",
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "4eadbfb50010b0b7",
       "materialityReview": {
         "materialityHash": "4eadbfb50010b0b7",
-        "reviewedAt": "2026-09-04",
+        "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.print-list.json"
       }
     },
@@ -925,13 +925,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-04",
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "2a81a33e08771fe3",
       "materialityReview": {
         "materialityHash": "2a81a33e08771fe3",
-        "reviewedAt": "2026-09-04",
+        "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.print-timeline.json"
       }
     },
@@ -1106,13 +1106,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-04",
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "ee2b4660f7b40532",
       "materialityReview": {
         "materialityHash": "ee2b4660f7b40532",
-        "reviewedAt": "2026-09-04",
+        "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.settings-notifications.json"
       }
     },
@@ -1155,13 +1155,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-04",
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "0b8e551245bd1e38",
       "materialityReview": {
         "materialityHash": "0b8e551245bd1e38",
-        "reviewedAt": "2026-09-04",
+        "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.settings-plan.json"
       }
     },
@@ -1204,13 +1204,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-04",
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "a24a1b85fe91dad0",
       "materialityReview": {
         "materialityHash": "a24a1b85fe91dad0",
-        "reviewedAt": "2026-09-04",
+        "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.settings-profile.json"
       }
     },
@@ -1485,13 +1485,13 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-09-04",
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "3e8c53f3e10301f8",
       "materialityReview": {
         "materialityHash": "3e8c53f3e10301f8",
-        "reviewedAt": "2026-09-04",
+        "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.welcome.json"
       }
     },
@@ -1536,13 +1536,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-04",
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "ea945dc53ea6ab60",
       "materialityReview": {
         "materialityHash": "ea945dc53ea6ab60",
-        "reviewedAt": "2026-09-04",
+        "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.welcome-plan.json"
       }
     },
@@ -1983,13 +1983,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-04",
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "9da9dcfb53810ea7",
       "materialityReview": {
         "materialityHash": "9da9dcfb53810ea7",
-        "reviewedAt": "2026-09-04",
+        "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.app-task-by-id.json"
       }
     },
@@ -2209,13 +2209,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-04",
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "9643e60183b5aa11",
       "materialityReview": {
         "materialityHash": "9643e60183b5aa11",
-        "reviewedAt": "2026-09-04",
+        "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.app-project.json"
       }
     },
@@ -3087,7 +3087,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "939b28828e36486f"
+      "materialityHash": "a1c347b2c0706831"
     },
     {
       "id": "tasks.page.app-home-briefing",
@@ -3561,13 +3561,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-04",
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "3b115a4fbf764125",
       "materialityReview": {
         "materialityHash": "3b115a4fbf764125",
-        "reviewedAt": "2026-09-04",
+        "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.state.app-tasks-loading.json"
       }
     },
@@ -3753,13 +3753,13 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-09-04",
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "1db50c9a5126230a",
       "materialityReview": {
         "materialityHash": "1db50c9a5126230a",
-        "reviewedAt": "2026-09-04",
+        "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.resources.drive-upload.json"
       }
     },
@@ -3860,13 +3860,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-09-04",
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "52aa27dae6dafc3b",
       "materialityReview": {
         "materialityHash": "52aa27dae6dafc3b",
-        "reviewedAt": "2026-09-04",
+        "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.connections.storage-owner-change.json"
       }
     },
@@ -3916,13 +3916,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-09-04",
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "7f4300daa34c292b",
       "materialityReview": {
         "materialityHash": "7f4300daa34c292b",
-        "reviewedAt": "2026-09-04",
+        "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.resources.drive-reload-recovery.json"
       }
     }

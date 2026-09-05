@@ -1,4 +1,5 @@
 import "server-only";
+import { BRIEFING_APP_PATH } from "@/lib/product-urls";
 
 /**
  * Signal's narrow entry point, not its barrel. The barrel also re-exports
@@ -12,6 +13,7 @@ import {
   localWeekday,
   type BriefItem,
   type TaskSignal,
+  type SignalScope,
 } from "@/modules/signal/home";
 
 /**
@@ -28,6 +30,7 @@ import {
 
 export type HomeSignalRow = {
   id: string;
+  destination: "task" | "briefing";
   /** The reader's own task title, sentence-cased by the engine. */
   title: string;
   /** Why it surfaced — the engine's observation prose. */
@@ -63,6 +66,7 @@ export type HomeData =
       dateLabel: string;
       greeting: string;
       scopeLabel: string;
+      briefingHref: string;
       signalRows: HomeSignalRow[];
       /** Set only when nothing is asking for the reader. */
       allClear: {
@@ -80,7 +84,7 @@ const COMING_UP_CAP = 4;
 const REVIEW_CAP = 3;
 
 function taskHref(id: string): string {
-  return `/app/task/${id}`;
+  return `/app/task/${encodeURIComponent(id)}`;
 }
 
 function greetingFor(hour: number): string {
@@ -100,11 +104,13 @@ function dueFromDays(daysOut: number, dueAt: number, timezone: string): string {
 
 export async function loadHomeData(opts: {
   clerkId: string;
+  scope?: SignalScope;
 }): Promise<HomeData> {
   const result = await buildBriefingForUser({
     clerkId: opts.clerkId,
     cadence: "daily",
     recordReadState: false,
+    ...(opts.scope ? { scope: opts.scope } : {}),
   });
   if (result.kind === "no-workspace") return { kind: "new-user" };
 
@@ -115,15 +121,29 @@ export async function loadHomeData(opts: {
   const dueById = new Map(
     briefing.suggestedFocus.map((item) => [item.id, item.due]),
   );
-  const toSignalRow = (item: BriefItem): HomeSignalRow => ({
-    id: item.id,
-    title: item.text,
-    why: item.detail,
-    source: item.sourceLabel,
-    due: dueById.get(item.id) ?? null,
-    trigger: item.trigger,
-    href: taskHref(item.id),
-  });
+  // An aggregate describes the authorized reading scope, not one task or the
+  // first project that happened to contribute. Its destination rebuilds and
+  // authorizes that same scope; no synthetic ID enters an object route.
+  const scopeParams = new URLSearchParams({ contextVersion: "2" });
+  if (authorizedScope.scope.kind === "workspace") {
+    scopeParams.set("workspaceId", authorizedScope.scope.workspaceId);
+  } else {
+    scopeParams.set("planningPeriodId", authorizedScope.scope.planningPeriodId);
+  }
+  const aggregateHref = `${BRIEFING_APP_PATH}?${scopeParams.toString()}`;
+  const toSignalRow = (item: BriefItem): HomeSignalRow => {
+    const aggregate = item.trigger === "overload" || item.trigger === "crowded-week";
+    return {
+      id: item.id,
+      destination: aggregate ? "briefing" : "task",
+      title: item.text,
+      why: item.detail,
+      source: aggregate ? `Tasks · ${authorizedScope.label}` : item.sourceLabel,
+      due: dueById.get(item.id) ?? null,
+      trigger: item.trigger,
+      href: aggregate ? aggregateHref : taskHref(item.id),
+    };
+  };
 
   // The engine already selected and capped (≤3 across attention +
   // risks); Home renders that selection in the engine's own order.
@@ -205,6 +225,7 @@ export async function loadHomeData(opts: {
     dateLabel,
     greeting: greetingFor(briefing.greetingHour),
     scopeLabel: authorizedScope.label,
+    briefingHref: aggregateHref,
     signalRows,
     allClear,
     comingUp,

@@ -25,6 +25,7 @@ import {
 } from "@/server/db/schema";
 import * as schema from "@/server/db/schema";
 import { deleteNativeAttachmentRowsInTransaction } from "@/server/attachments/native-upload-custody";
+import { eraseEntitlementsInTransaction } from "@/server/venue-issuance/erasure";
 
 type ProjectRowsExecutor = Pick<
   LibSQLDatabase<typeof schema>,
@@ -97,9 +98,7 @@ export async function deleteProjectRowsInTransaction(
     .delete(resources)
     .where(byTaskOrWorkspace(resources.taskId, resources.workspaceId));
   await transaction.delete(tasks).where(eq(tasks.workspaceId, workspaceId));
-  await transaction
-    .delete(entitlements)
-    .where(eq(entitlements.workspaceId, workspaceId));
+  await eraseEntitlementsInTransaction(transaction, eq(entitlements.workspaceId, workspaceId));
   await transaction
     .delete(pendingInvites)
     .where(eq(pendingInvites.workspaceId, workspaceId));

@@ -1,4 +1,5 @@
 import { and, eq, inArray, isNull, like, lte, ne, or, sql } from "drizzle-orm";
+import { eraseEntitlementsInTransaction } from "./venue-issuance/erasure";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 import {
@@ -884,7 +885,7 @@ export async function eraseAccountData(
       .where(byTaskOrWs(notifications.taskId, notifications.workspaceId));
 
     await database.delete(tasks).where(eq(tasks.workspaceId, wsId));
-    await database.delete(entitlements).where(eq(entitlements.workspaceId, wsId));
+    await database.transaction((tx) => eraseEntitlementsInTransaction(tx, eq(entitlements.workspaceId, wsId)));
     await database
       .delete(pendingInvites)
       .where(eq(pendingInvites.workspaceId, wsId));
@@ -915,7 +916,7 @@ export async function eraseAccountData(
   await database
     .delete(userPreferences)
     .where(eq(userPreferences.userId, userId));
-  await database.delete(entitlements).where(eq(entitlements.userId, userId));
+  await database.transaction((tx) => eraseEntitlementsInTransaction(tx, eq(entitlements.userId, userId)));
   await database
     .delete(pendingInvites)
     .where(eq(pendingInvites.invitedByUserId, userId));

@@ -107,11 +107,16 @@ export async function buildBriefingForUser(opts: {
 }): Promise<BriefingForUserResult> {
   const { clerkId } = opts;
   const recordReadState = opts.recordReadState ?? true;
+  const periodScopeEnabled = planningPeriodsEnabled();
+  // An explicit link is the requested reading scope. A disabled capability
+  // must not silently turn it into the user's unrelated saved workspace.
+  if (opts.scope?.kind === "planningPeriod" && !periodScopeEnabled) {
+    return { kind: "no-workspace" };
+  }
 
   // Demo/Review: build a real briefing from the shared suite fixture through
   // the pure buildBriefing engine. No DB touch.
   if (isDemoMode()) {
-    const periodScopeEnabled = planningPeriodsEnabled();
     const planningCatalog: PlanningCatalog = {
       periods: [
         {
@@ -179,19 +184,10 @@ export async function buildBriefingForUser(opts: {
           kind: "workspace",
           workspaceId: REVIEW_SUITE_FIXTURE.workspace.id,
         };
-    const requestedScope =
-      opts.scope?.kind === "workspace" || periodScopeEnabled
-        ? opts.scope
-        : undefined;
     const authorizedScope =
       authorizeSignalScope(
         catalog,
-        requestedScope ?? defaultScope,
-        "Europe/Dublin",
-      ) ??
-      authorizeSignalScope(
-        catalog,
-        defaultScope,
+        opts.scope ?? defaultScope,
         "Europe/Dublin",
       );
     if (!authorizedScope) return { kind: "no-workspace" };
@@ -254,7 +250,7 @@ export async function buildBriefingForUser(opts: {
       : prefs?.workspaceId
         ? { kind: "workspace", workspaceId: prefs.workspaceId }
         : null;
-  const requestedScope = planningPeriodsEnabled()
+  const requestedScope = periodScopeEnabled
     ? opts.scope ?? persistedScope
     : opts.scope?.kind === "workspace"
       ? opts.scope
@@ -267,18 +263,13 @@ export async function buildBriefingForUser(opts: {
     clerkId,
     email: null,
   });
-  let authorizedScope = authorizeSignalScope(
+  const authorizedScope = authorizeSignalScope(
     catalog,
     requestedScope,
     prefs?.timezone ?? "UTC",
   );
-  if (!authorizedScope && opts.scope && persistedScope) {
-    authorizedScope = authorizeSignalScope(
-      catalog,
-      persistedScope,
-      prefs?.timezone ?? "UTC",
-    );
-  }
+  // Saved preferences apply only when no explicit scope was requested. In
+  // particular, removing membership must not redirect a deep link's data.
   if (!authorizedScope) return { kind: "no-workspace" };
 
   const workspaceIds = authorizedScope.workspaces.map((w) => w.id);

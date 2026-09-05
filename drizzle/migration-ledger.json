@@ -392,6 +392,25 @@
         "integrity",
         "foreign-keys"
       ]
+    },
+    {
+      "ordinal": 30,
+      "id": "0030_sponsored_use_intents",
+      "file": "drizzle/0030_sponsored_use_intents.sql",
+      "when": 1788548400000,
+      "sha256": "a9319eae5e1a7006ff6ddcd557c62a2e18e5dc0670778f7ccd1389d567c31a37",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/sponsored-use-intents-2026-09-04.json",
+      "receiptSha256": "10fbf8e6c5538ce2f82749d0c176e627247a76877604c500c6d26bc17a21792d",
+      "continuousProofIds": [
+        "usage-intent-columns",
+        "usage-subject-columns",
+        "usage-intent-primary-key",
+        "usage-subject-primary-key",
+        "usage-indexes",
+        "integrity",
+        "foreign-keys"
+      ]
     }
   ]
 }

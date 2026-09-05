@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.welcome",
+  "source": "tasks/src/app/welcome/page.tsx",
+  "materialityHash": "3e8c53f3e10301f8",
+  "reviewedAt": "2026-09-04",
+  "reviewer": "Principal integrator, delegated internal regression review",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-eaebc5221a2ebebcaa062ab8-3dd3e7388ce4997b.json",
+    "attestationSha256": "f24556b4f57dbaf41230b052d3387adc7c9561e380b10994f1a7205a71b25204",
+    "runId": "tasks-playwright-eaebc5221a2ebebcaa062ab8",
+    "canonicalEvidenceSha256": "eaebc5221a2ebebcaa062ab8a07446bc4522257ce9efeaa5c31373289cd19949",
+    "rawArtifactSha256": "3dd3e7388ce4997bedc26b4e68b1610d9c584d6be28389dc06dd3df308978a6d",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.sign-up-by-sign-up",
+    "caseName": "review-mode sign up",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Welcome binds authorization, sponsor lookup, completion and destination to the explicit existing project. New-project contextual onboarding cannot consume an existing-project setup link. Composed actual route/action/helper tests pass at ca95830e; unchanged form component evidence is in docs/guides/template-application.md. The four-width sign-up fixture is regression context only, not authenticated first-run or provider evidence.",
+  "decision": "Accept bounded internal source and regression evidence. Preserve partial coverage and unapproved design status; full authenticated golden story, legacy contextual sponsorship/date adoption and human comprehension remain open."
+}

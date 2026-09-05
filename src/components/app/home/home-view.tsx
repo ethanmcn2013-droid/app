@@ -5,7 +5,6 @@ import type {
   HomeReviewRow,
   HomeSignalRow,
 } from "@/app/app/home/home-data";
-import { BRIEFING_APP_PATH } from "@/lib/product-urls";
 import { HomeItemLink, HomeViewedPing } from "./home-analytics";
 
 /**
@@ -35,7 +34,7 @@ export function HomeView({ data }: { data: Extract<HomeData, { kind: "ok" }> }) 
           <p className="mt-1.5 text-[13px] text-ink-soft">{data.scopeLabel}</p>
         </header>
 
-        <TodaysSignal rows={data.signalRows} allClear={data.allClear} />
+        <TodaysSignal rows={data.signalRows} allClear={data.allClear} briefingHref={data.briefingHref} />
 
         {data.comingUp.length > 0 ? <ComingUp rows={data.comingUp} /> : null}
 
@@ -76,9 +75,11 @@ function SectionLabel({
 function TodaysSignal({
   rows,
   allClear,
+  briefingHref,
 }: {
   rows: HomeSignalRow[];
   allClear: Extract<HomeData, { kind: "ok" }>["allClear"];
+  briefingHref: string;
 }) {
   return (
     <section aria-labelledby="todays-signal" className="mb-10">
@@ -118,13 +119,14 @@ function TodaysSignal({
                   <span className="mt-1.5 block text-[11.5px] text-ink-quiet">
                     {row.source}
                     {row.due ? <> · {row.due}</> : null}
+                    {row.destination === "briefing" ? <span className="sr-only"> · Read full briefing</span> : null}
                   </span>
                 </span>
                 <span
                   aria-hidden
                   className="flex-shrink-0 text-[13px] text-ink-quiet transition-transform group-hover:translate-x-0.5 group-hover:text-ink"
                 >
-                  Open →
+                  {row.destination === "briefing" ? "Read →" : "Open →"}
                 </span>
               </HomeItemLink>
             </li>
@@ -134,7 +136,7 @@ function TodaysSignal({
 
       <div className="mt-4">
         <HomeItemLink
-          href={BRIEFING_APP_PATH}
+          href={briefingHref}
           event="home_briefing_opened"
           properties={{}}
           className="inline-flex items-center gap-1.5 rounded-md text-[13px] font-medium text-ink-soft outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-[color:var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--bg)]"
