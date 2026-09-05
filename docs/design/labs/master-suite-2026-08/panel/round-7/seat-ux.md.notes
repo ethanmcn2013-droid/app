@@ -27,3 +27,38 @@ CANDIDATES (to be verified by driving):
    are speaking. Also "LISTENING 0:00" over a finished transcript.
 5. floating capsule overlaps list rows at 768 - check whether the scroller reserves
    its band at the true bottom.
+
+### FINDING 1 (confirmed by measurement) — notes-head-scope-is-invisible
+
+`.headNext` in the Notes head — "Mara & Finn / Saturday 3 October, in 79 days" —
+is a real, working scope filter: `<button data-act="scope" aria-pressed="false"
+aria-label="...Press to see only these notes.">`, and pressing it narrows the
+index from 14 rows to 3, flips the h1 to "Your notes, narrowed", underlines
+itself and prints an "All 14 notes" way-out pill. All of that is good work.
+
+The problem is that NOTHING on screen says it is pressable until after you have
+pressed it.
+
+Measured at 1920, notes.notebook, rest vs :hover on `.headNext`, every computed
+property of the button and both of its children:
+
+  REST   bg rgba(0,0,0,0) | shadow none | border 0px | text-decoration none |
+         b color rgb(17,17,17) | span color rgba(17,17,17,.72) | cursor pointer
+  HOVER  identical. CHANGED KEYS: []  (zero properties differ)
+
+And the rendered crop of the head band (700x60 at 900,55) is BYTE-IDENTICAL
+between rest and hover: 1300 bytes, `Buffer.equals` true.
+
+Cause is one line, `_gate-suite.html:4441`:
+  [data-app="notes"] .headNext:hover b { color: var(--ink); }
+with `--ink-1: var(--ink)` at :4194. The hover rule repaints #111111 as #111111.
+
+At rest the control also carries no chevron, no rule, no fill, no underline. Its
+sibling in Tasks — the identical job, switching what you are looking at — is
+`.projSwitch`, which ships an SVG chevron. So the suite has two project/scope
+switchers in the same head slot and only one of them looks like a control.
+
+Consequence for Orla: the head reads as a single sentence — "All your notes,
+Mara & Finn, Saturday 3 October, in 79 days" — which is a false statement of what
+is on screen (14 notes across four notebooks). The one control that would make it
+true is invisible, and the affordance only arrives after the state has changed.
