@@ -57,6 +57,9 @@ export async function readback(reader: Reader, manifest: IssuanceManifest, now: 
   const codes: IssuanceReadback["codes"] = [];
   for (const expected of manifest.codes) {
     const row = await readCode(reader, manifest, expected);
+    // isolation-ok: exact issuer-owned code integrity read across recipients.
+    // Filtering by one tenant would hide duplicate consumption. The signed
+    // issuance handler returns code state only, never these grant identities.
     const grants = await reader.select({ id: entitlements.id }).from(entitlements)
       .where(and(eq(entitlements.source, "comp"), eq(entitlements.notes, "comp:" + row.code)));
     const erased = await readErasedConsumption(reader, manifest, expected);
@@ -89,6 +92,10 @@ export type CanonicalVenueClaim = {
  * The caller still verifies event time, membership, erasure and sponsor policy. */
 export async function readCanonicalVenueClaim(reader: Reader, input: { entitlementId: string }): Promise<CanonicalVenueClaim | null> {
   try {
+    // isolation-ok: internal object-ownership lookup by exact grant primary key.
+    // Capture supplies an already actor/project-scoped grant. Signed provenance
+    // derives that stored owner and reauthorizes membership/deletion before
+    // emitting pseudonymous proof. No user route accepts this grant id directly.
     const [grant] = await reader.select().from(entitlements).where(eq(entitlements.id, input.entitlementId));
     if (!grant || grant.source !== "comp" || grant.tier !== "wedding" || !grant.workspaceId ||
         !grant.notes?.startsWith("comp:") || !grant.expiresAt || grant.expiresAt.getTime() <= grant.startedAt.getTime()) return null;
@@ -103,6 +110,9 @@ export async function readCanonicalVenueClaim(reader: Reader, input: { entitleme
     const canonical = await readCode(reader, manifest, expected);
     if (canonical.code !== code || canonical.redeemed !== 1 || canonical.expiresAt !== null) return null;
     if (await readErasedConsumption(reader, manifest, expected)) return null;
+    // isolation-ok: one-use code uniqueness must include every recipient.
+    // A duplicate in another tenant invalidates provenance rather than being
+    // filtered away. Only the already resolved exact grant may qualify.
     const grants = await reader.select({ id: entitlements.id }).from(entitlements)
       .where(and(eq(entitlements.source, "comp"), eq(entitlements.notes, grant.notes)));
     if (grants.length !== 1 || grants[0].id !== grant.id) return null;

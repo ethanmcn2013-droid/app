@@ -12,6 +12,9 @@ type Transaction = Pick<VenueIssuanceDb, "select" | "insert" | "delete">;
  * consumed capacity while removing the exact grants; never reconstruct a
  * receipt for a previously missing grant or adopt historical weak codes. */
 export async function eraseEntitlementsInTransaction(transaction: Transaction, scope: SQL): Promise<void> {
+  // isolation-ok: caller supplies the exact userId or workspaceId predicate
+  // from account-erasure.ts or projects/project-deletion-rows.ts inside its
+  // authorized writer transaction. The identical predicate governs deletion.
   const deleting = await transaction.select().from(entitlements).where(scope);
   for (const grant of deleting) {
     if (grant.source !== "comp" || !grant.notes?.startsWith("comp:")) continue;
@@ -25,6 +28,9 @@ export async function eraseEntitlementsInTransaction(transaction: Transaction, s
     const expected = manifest.codes.find(code => code.licenseCodeId === binding.licenseCodeId);
     if (!expected) throw new VenueIssuanceError("conflict");
     const canonical = await readCode(transaction, manifest, expected);
+    // isolation-ok: global uniqueness of this exact one-use code is required
+    // before recording erased consumption. Cross-tenant duplicate grants must
+    // block erasure, never be hidden by the caller's deletion predicate.
     const claims = await transaction.select({ id: entitlements.id }).from(entitlements)
       .where(and(eq(entitlements.source, "comp"), eq(entitlements.notes, grant.notes)));
     const [withdrawal] = await transaction.select().from(meta)
