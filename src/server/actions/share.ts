@@ -37,6 +37,7 @@ import {
 } from "@/server/db/queries";
 import { isDemoMode } from "@/lib/access-mode";
 import { DEMO_SHARE_TOKEN } from "@/server/demo/tasks-demo";
+import { revokeTaskShareByIdWith } from "@/server/projects/recovery";
 import {
   generateSharePublicId,
   generateShareSecret,
@@ -172,34 +173,9 @@ export async function revokeShareLinkAction(token: string): Promise<void> {
   if (isDemoMode()) return;
   const me = await getCurrentUser();
 
-  // Object operation (ADR 0001 §9): the link's own Project decides. Under the
-  // cookie scoping, an owner whose active Project had moved on could not
-  // revoke their own link — the update matched nothing and the action returned
-  // normally, which is the worst possible failure mode for a revocation.
-  //
-  // isolation-ok: read by the link's public id and deliberately without a
-  // tenant predicate; it discovers which Project the link belongs to so that
-  // Project can be proved on the next statement.
-  const [link] = await db
-    .select({ workspaceId: shareLinks.workspaceId })
-    .from(shareLinks)
-    .where(eq(shareLinks.token, token));
-  if (!link?.workspaceId) return;
-
-  const grant = await authorizeStoredProject({
-    storedProjectId: link.workspaceId,
-    capability: "createOrEditTasks",
-    actorUserId: me,
-  });
-  if (!grant.ok) return; // same silence as an unknown token
-  const ws = grant.projectId;
-
-  await db
-    .update(shareLinks)
-    .set({ revokedAt: new Date() })
-    .where(
-      and(eq(shareLinks.token, token), eq(shareLinks.workspaceId, ws)),
-    );
+  // Same object-owned member population, now re-proved in the transaction.
+  // Revocation is a negative operation independent of task-edit entitlement.
+  if (!(await revokeTaskShareByIdWith(db, me, token))) return;
   revalidatePath("/app", "layout");
   revalidatePath(`/share/${encodeURIComponent(token)}`);
 }
