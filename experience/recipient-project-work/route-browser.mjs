@@ -29,6 +29,13 @@ const receipt={head:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'
   'Final exact-source four-width capture requires --capture after principal source freeze. Smoke/prepare do not close capture or human-comprehension gates.',
 ]};
 const hash=text=>createHash('sha256').update(text.replace(/\r\n/g,'\n')).digest('hex');
+const viewportContractPath='experience/browser-contract.json';
+const viewportContractSource=await fs.readFile(path.join(root,viewportContractPath),'utf8');
+const declaredProjects=JSON.parse(viewportContractSource).projects;
+const desktopProject=declaredProjects.find(project=>project.name==='desktop');
+assert.ok(desktopProject,'The owning browser contract must declare its desktop project');
+sourceInputs[viewportContractPath]=hash(viewportContractSource);
+receipt.projects=declaredProjects;
 const external={
   'server-only':'export {};',
   'next/link':`import React from 'react';export default function Link({href,children,prefetch:_p,replace,scroll:_s,...props}){return <a {...props} href={typeof href==='string'?href:href.pathname} onClick={e=>{props.onClick?.(e);if(!e.defaultPrevented&&!e.metaKey&&!e.ctrlKey){e.preventDefault();window.fixtureNavigate(e.currentTarget.href,replace)}}}>{children}</a>}`,
@@ -91,7 +98,7 @@ try {
   }
   sourceInputs['src/app/layout.tsx']=hash(await fs.readFile(path.join(root,'src/app/layout.tsx'),'utf8'));
   const html=`<!doctype html><html lang="en" data-theme="light"><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><link rel="stylesheet" href="/bundle.css"><style>${fontCss}\n:root{--font-geist-sans:Geist,Arial,sans-serif;--font-geist-mono:'Geist Mono',monospace}body{margin:0}#root{min-height:100vh}</style></head><body><div id="root"></div><script src="/bundle.js"></script></body></html>`;
-  if(prepare){receipt.prepared={surfaces,widths:[390,768,1280,1440],clientModules:[...f.clientModules]};console.log('Prepared actual route trees, browser bundle and CSS. No browser capture.');}
+  if(prepare){receipt.prepared={surfaces,projects:declaredProjects,widths:declaredProjects.map(project=>project.viewport.width),clientModules:[...f.clientModules]};console.log('Prepared actual route trees, browser bundle and CSS. No browser capture.');}
   else {
     // Only actions exercised by this matrix: selection POST and detail reads.
     // Imported write/provider actions remain visible UI but fail if invoked.
@@ -126,8 +133,9 @@ try {
       browser=await chromium.launch({headless:true});
       // Smoke is deliberately one desktop pass. --capture is the separately
       // authorized final four-width matrix; neither proves a Next/Clerk session.
-      for(const width of capture?[390,768,1280,1440]:[1280]) {
-        const context=await browser.newContext({viewport:{width,height:900},reducedMotion:'reduce'}),page=await context.newPage(),errors=[];
+      for(const project of capture?declaredProjects:[desktopProject]) {
+        const {width,height}=project.viewport;
+        const context=await browser.newContext({viewport:{width,height},reducedMotion:'reduce'}),page=await context.newPage(),errors=[];
         page.on('pageerror',error=>{errors.push(error.message);console.error('BROWSER',error.message)});
         page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
         await page.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
@@ -136,7 +144,7 @@ try {
           await fs.writeFile(path.join(out,name+'.html'),await page.content());
           await fs.writeFile(path.join(out,name+'.route.json'),JSON.stringify(await page.evaluate(()=>window.routeFixture),null,2));
           await page.screenshot({path:path.join(out,name+'.png'),fullPage:true});
-          receipt.checks.push({surface,width,state,href:page.url().slice(origin.length),passed:true});
+          receipt.checks.push({surface,project:project.name,width,height,state,href:page.url().slice(origin.length),passed:true});
         }
         async function assertB(surface){
           await page.getByText(surface.text,{exact:true}).first().waitFor();

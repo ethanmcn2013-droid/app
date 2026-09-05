@@ -12,7 +12,8 @@ registration, registry adoption and frozen-source capture belong to the principa
 Run from the receiving App worktree with its pinned dependencies installed:
 
 ```sh
-# New actual SQLite regressions; add to the existing recipient gate.
+# Actual SQLite regressions; now run before the persisted story in
+# the default test:recipient-golden gate.
 node --test experience/recipient-project-work/archive.test.cjs experience/recipient-project-work/room.test.cjs
 
 # Prepare real server trees, actual client bundle and styles. No browser run.
@@ -21,8 +22,9 @@ node experience/recipient-project-work/route-browser.mjs --prepare
 # One-width renderability check, 17 checks at 1280 x 900.
 node experience/recipient-project-work/route-browser.mjs
 
-# ONLY after principal freezes the composition: 17 states at each of
-# 390, 768, 1280 and 1440 x 900. This command has NOT run in this handoff.
+# ONLY after principal freezes the composition: 17 states at each owning
+# browser-contract viewport: 390x844, 768x1024, 1280x900 and 1440x960.
+# This command has NOT run in this handoff.
 node experience/recipient-project-work/route-browser.mjs --capture
 
 # Optional local inspection; bind only 127.0.0.1, choose an unused port.
@@ -101,6 +103,11 @@ missing full-route properties either.
 
 Receipts record overall status, every executed check, production source hashes,
 fixture hashes, Tailwind dependency hashes, cached font hashes and limitations.
+The principal's receiving fixture derives named viewports from
+`experience/browser-contract.json`, records its source hash, and records both
+width and height per case. The earlier author smoke remains at 1280x900.
 Each checked state saves its actual DOM, route DTO and screenshot. Source hashes
 are normalized for CRLF. Smoke artifacts are preparation evidence, not final
-experience-registry adoption. No package, workflow or registry file is changed.
+experience-registry adoption. The principal added the eleven archive/room SQLite
+cases to the existing mandatory recipient gate. Workflow and registry adoption
+remain separate work.
