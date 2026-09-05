@@ -1,0 +1,8 @@
+{
+  "entriesVerified": 195,
+  "sha256": "17839e256005aefca9b81d0e93d406567c0358d32efa93f8a52bfe804d0ba572",
+  "bytes": 6022813,
+  "exitCode": 0,
+  "completedAt": "2026-09-05T20:28:18.5448646Z",
+  "command": "pwsh -File work/drive-permission-removal-2026-09-05/archive.ps1"
+}

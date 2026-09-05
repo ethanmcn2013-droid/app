@@ -17,7 +17,7 @@ const people = [
   { name: 'Orla Synthetic Owner', email: 'orla@example.test', access: 'owner' },
   { name: 'Maeve Synthetic Member', email: 'maeve@example.test', access: 'writer' },
 ];
-const status = { ownerName: 'Orla Synthetic Owner', folderUrl: null, setup: 'active', ownConnection: { connected: true, needsReconnect: false, accountEmail: 'orla@example.test', affectedProjectCount: 2 }, access: { state: 'checked', checkedAt: '2026-09-05T10:00:00.000Z', people, otherPermissionCount: 0 } };
+const status = { ownerName: 'Orla Synthetic Owner', folderUrl: null, setup: 'active', pendingRemovals: { currentFolder: 0, previousFolders: 0 }, ownConnection: { connected: true, needsReconnect: false, accountEmail: 'orla@example.test', affectedProjectCount: 2 }, access: { state: 'checked', checkedAt: '2026-09-05T10:00:00.000Z', people, otherPermissionCount: 0 } };
 if (['not-connected', 'connected-no-folder'].includes(scenario)) {
   status.ownerName = null; status.setup = 'not_connected'; status.access = { state: 'not_connected', checkedAt: null, people: [], otherPermissionCount: 0 };
   if (scenario === 'not-connected') status.ownConnection = { connected: false, needsReconnect: false, accountEmail: null, affectedProjectCount: 0 };
