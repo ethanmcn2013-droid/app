@@ -1,0 +1,4 @@
+# The lab carries its own Playwright so the elevate gates resolve it; the
+# browser lives in the shared ms-playwright cache. The lockfile is committed,
+# the install is not.
+node_modules/

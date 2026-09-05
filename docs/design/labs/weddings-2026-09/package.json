@@ -1,0 +1,6 @@
+{
+  "name": "weddings-lab",
+  "private": true,
+  "description": "Playwright only, so the elevate gates resolve @playwright/test from the lab. The browser comes from the shared ms-playwright cache.",
+  "devDependencies": { "@playwright/test": "1.61.1" }
+}
