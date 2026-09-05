@@ -15,6 +15,18 @@ export type SignalExportFn = (clerkId: string) => Promise<
   | { available: false; reason: string }
 >;
 
+async function exportModule(clerkId: string, name: string, exporter: NotesExportFn) {
+  const unavailable = { available: false as const, reason: `${name} export is unavailable. Try again later.` };
+  try {
+    const result = await exporter(clerkId);
+    return result.available ? result : unavailable;
+  } catch {
+    // Database/provider exception text and failed-result metadata are not
+    // part of the account's data export and may contain server details.
+    return unavailable;
+  }
+}
+
 /**
  * GDPR Art. 20 (data portability) — unified Signal Studio export.
  *
@@ -49,18 +61,9 @@ export async function exportUnifiedAccountDataWith(
 
   // Module sections: degrade gracefully on missing config or query error.
   const [notesResult, timelineResult, signalResult] = await Promise.all([
-    opts.exportNotes(clerkId).catch((err: unknown) => ({
-      available: false as const,
-      reason: err instanceof Error ? err.message : String(err),
-    })),
-    opts.exportTimeline(clerkId).catch((err: unknown) => ({
-      available: false as const,
-      reason: err instanceof Error ? err.message : String(err),
-    })),
-    opts.exportSignal(clerkId).catch((err: unknown) => ({
-      available: false as const,
-      reason: err instanceof Error ? err.message : String(err),
-    })),
+    exportModule(clerkId, "Notes", opts.exportNotes),
+    exportModule(clerkId, "Timeline", opts.exportTimeline),
+    exportModule(clerkId, "Briefing", opts.exportSignal),
   ]);
 
   return {

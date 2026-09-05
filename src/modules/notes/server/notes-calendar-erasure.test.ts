@@ -86,12 +86,11 @@ async function fixture() {
     db, client, writerDb, gdpr, connections,
     cleanup: () => {
       writer.close(); client.close();
-      try { rmSync(directory, { recursive: true, force: true }); }
-      catch (error) {
-        // As with freshFileDb, Windows can retain a disposed native handle.
-        // Only that cleanup condition may leave this synthetic temp fixture.
-        if ((error as NodeJS.ErrnoException).code !== "EBUSY") throw error;
-      }
+      // libSQL's Windows native handles may outlive close(). Retain this
+      // synthetic OS-temp fixture there instead of allowing a finally-block
+      // EPERM/EBUSY to replace the lifecycle assertion. Linux CI removes it.
+      // No arbitrary filesystem error is swallowed and no user data is used.
+      if (process.platform !== "win32") rmSync(directory, { recursive: true, force: true });
     },
   };
 }
