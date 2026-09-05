@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "notes-signal-migration-ledger/1",
+  "module": "signal",
+  "dialect": "sqlite",
+  "journal": "drizzle-signal/meta/_journal.json",
+  "journalSha256": "454952f2915b5d112349e72fe63037cbfd4a63b0e881b9096a50fae89148ea09",
+  "databaseLedgerTable": "signal_briefing_schema_migrations",
+  "legacyDrizzleTable": "__drizzle_migrations",
+  "entries": [
+    {
+      "ordinal": 0,
+      "id": "0000_signal_baseline",
+      "file": "drizzle-signal/0000_signal_baseline.sql",
+      "when": 1785485476804,
+      "policy": "baseline",
+      "sha256": "e1447993800f0d5429870db605fd7f0fb1b532b734111d0514847e3182c9f98a",
+      "snapshot": "drizzle-signal/meta/0000_snapshot.json",
+      "snapshotSha256": "f719e13f356f17e978f43dbe63da0ce9cdf5058c6c79dc2dbb2c3353d63d6ac4",
+      "receipt": "drizzle-signal/receipts/local-schema-review-2026-09-05.json",
+      "receiptSha256": "dc1efa6d406db1a5f34ca373f048025357a90ef0ac2e0a31df92d655eac0121c"
+    }
+  ]
+}
