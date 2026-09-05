@@ -66,3 +66,28 @@ comment says it used to.
   (src/tasks.js l.2916 guards it). Contract key intact.
 - .idxRow hover is alive (my first sweep hit row 0, which is [data-cursor] and
   already carries --wash — false positive, withdrawn).
+
+### FINDING 2 — every Tasks lane becomes a 13–44px sideways scroller between
+### 1199 and ~1420, and one trackpad gesture slides the cards out of register.
+Mechanism: src/tasks.css l.1053-1078. `.cardDots` grows a 24px mark into a 44px
+target with `padding: 10px` + `margin: -13px -10px -13px auto` and
+`box-sizing: content-box`. The negative right margin pulls the box back
+VISUALLY, but negative margins do not shrink an ancestor's scrollable overflow,
+and `.trayBody` is `overflow-x: auto`. Measured (tasks.dense, fresh page, no
+interaction):
+  .trayBody scrollWidth-clientWidth  @1440 [0,0,0,0,0]
+                                     @1400 [3,4,0,0,0]
+                                     @1360 [11,12,2,0,0]
+                                     @1320 [19,20,10,0,0]
+                                     @1280 [27,28,18,0,0]   <- declared viewport
+                                     @1200 [43,44,34,0,0]   <- board floor is 1199
+  tasks.board @1280 [13,14,4,0,0]; tasks.compact @1200 [11,12,0,0,0].
+The offending descendant is .cardDots, right edge 23px past .trayBody's right
+edge; the cards themselves sit 6px INSIDE it.
+Reachable: one `mouse.wheel(80, 0)` over the To do lane at 1280 sets
+scrollLeft 27/27. Screenshot _zz-ev-wheelshift.png: the whole To do column has
+slid left, the first card's tick circle is sliced in half by the lane's left
+edge, the ··· menu is exposed, and the column is now visibly out of register
+with its own "TO DO 10" heading, which did not move.
+No fade, no snap, nothing in the scrolled region — the guillotine edge from the
+lessons file, at a width the console screenshots.

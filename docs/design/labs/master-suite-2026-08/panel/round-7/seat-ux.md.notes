@@ -192,3 +192,30 @@ Noted while there (not raised separately, cost is inside the same edit): the she
 labels the completion date "Due — Finished 15 Jul", then prints the identical
 string again ~450px lower as "ACTIVITY — Finished 15 Jul". A field named Due whose
 value is a finish date, said twice.
+
+### FINDING 4 (confirmed by driving) — review-end-drops-focus
+
+notes.review, 1440. I emptied the queue twice: once with the K accelerator, once
+with real clicks on "Just keep it". Focus after each decision:
+
+  decision 1..7  ->  P.handBody  (the next note's body — a sensible, deliberate move)
+  decision 8     ->  BODY
+
+The eighth decision is the one that completes the flow. Its repaint replaces the
+card with the completion sheet — "Everything is decided. / 8 notes went through.
+All of them stayed here. / [Back to your notes]" — and drops the keyboard out of
+the document. The next Tab lands on `.headNext` at the very top of the sheet, i.e.
+the reading position restarts at the page head. A screen-reader user hears the live
+region say "Kept in Notes. 0 left. Nothing left to decide." from a focus position
+of nowhere.
+
+The target already exists and is already the one first move on that screen: the
+filled "Back to your notes" button. It is rendered and NOT focused
+(`document.activeElement === btn` -> false).
+
+Every other repaint in this product restores focus correctly — the tick, the
+keyboard drop, the seam send, the crossing into Tasks, the undo. This is the one
+that does not, and it is the terminal beat of the flow Notes exists for.
+
+FIX: in the branch that renders the "Everything is decided." sheet, focus its
+primary action after paint — the same restoration the per-card branch already does.
