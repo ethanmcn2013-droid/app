@@ -1,0 +1,8 @@
+{
+  "completedAt": "2026-09-05T22:38:41.1907930Z",
+  "command": "pwsh -File work/notes-signal-mig01-2026-09-05/archive.ps1",
+  "exitCode": 0,
+  "sha256": "adb477821b0d4a2eadd33322aba12a564aa4fb8497a91db6f728426169f845cd",
+  "bytes": 14937565,
+  "entriesVerified": 813
+}

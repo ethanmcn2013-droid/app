@@ -1,5 +1,11 @@
 # Tasks database migrations
 
+New adoption receipts require `schemaFingerprintVersion: "sqlite-schema/2"`
+and the complete current schema fingerprint. Existing unversioned receipts stay
+immutable and may only replay an exactly recorded adoption. Any historical
+fallback is explicitly labelled in the no-op result; it does not certify the
+previously omitted schema or backup. See [compatibility and operator limits](receipts/local-schema-enumeration-2026-09-05/REPLAY.md).
+
 `drizzle/migration-ledger.json` is the migration authority. It binds every SQL
 file to an order, canonical LF SHA-256, execution policy, Drizzle journal entry,
 content-addressed review receipt, optional schema snapshot, rollback plan, and

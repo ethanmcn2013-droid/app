@@ -1,9 +1,9 @@
 import "server-only";
 
-import { and, eq } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import * as schema from "@/server/db/schema";
-import { providerConnections, users, workspaceMembers, workspaceStorage } from "@/server/db/schema";
+import { driveFolderGrants, providerConnections, users, workspaceMembers, workspaceStorage } from "@/server/db/schema";
 import { safeDriveFolderUrl, type DriveAccessPerson, type ProjectDriveStatus } from "@/lib/project-drive-ui";
 import { assertProjectDriveCapability, type AuthorizedProjectDriveContext } from "./project-drive-authz";
 import { readCurrentProjectDriveFolderSetupState } from "./project-drive-folder-management";
@@ -74,10 +74,30 @@ export async function readProjectDriveUiStatus(
       // Neither stored receipts nor a stale prior response can substitute for Google.
     }
   }
+  // Read durable removal intent even when the live permission read failed.
+  // Exact Project + generation joins exclude mismatched/orphan receipts. Do
+  // not attribute historical emails or removed members to today's roster.
+  const removals = await deps.database.select({ current: workspaceStorage.isCurrent, total: count() })
+    .from(driveFolderGrants)
+    .innerJoin(workspaceStorage, and(
+      eq(workspaceStorage.id, driveFolderGrants.storageGenerationId),
+      eq(workspaceStorage.workspaceId, driveFolderGrants.workspaceId),
+    ))
+    .where(and(
+      eq(driveFolderGrants.workspaceId, authorization.projectId),
+      eq(workspaceStorage.workspaceId, authorization.projectId),
+      eq(driveFolderGrants.revokePending, true),
+    ))
+    .groupBy(workspaceStorage.isCurrent);
+  const pendingRemovals = { currentFolder: 0, previousFolders: 0 };
+  for (const removal of removals) {
+    pendingRemovals[removal.current ? "currentFolder" : "previousFolders"] = removal.total;
+  }
   return {
     ownerName: before.storage[0] ? before.storage[0].ownerName || "Storage owner" : null,
     folderUrl: safeDriveFolderUrl(before.storage[0]?.folderUrl ?? null),
     setup: setup && setup.status !== "demo" ? setup.status : "not_connected",
+    pendingRemovals,
     ownConnection: { connected: own.connected, needsReconnect: own.status === "needs_reauth", accountEmail: own.accountEmail, affectedProjectCount: own.affectedProjectCount },
     access,
   };

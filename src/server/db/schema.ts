@@ -1519,3 +1519,32 @@ export const workspaceEvents = sqliteTable("workspace_events", {
 }, (t) => [
   index("idx_workspace_events_workspace_created").on(t.workspaceId, t.createdAt),
 ]);
+
+/**
+ * New Event checkout proof and its one immutable settlement outcome.
+ * No historical adoption. A paid_undesignated receipt never grants authority.
+ * Project deletion removes these facts. Purchaser erasure strips identifying
+ * bindings and retains only the surviving project effect, never positive cover.
+ */
+export const eventPurchaseDesignations = sqliteTable("event_purchase_designations", {
+  id: text("id").primaryKey(),
+  purchaserUserId: text("purchaser_user_id").references(() => users.id, { onDelete: "set null" }),
+  workspaceId: text("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  checkoutAuthorizedAt: integer("checkout_authorized_at", { mode: "timestamp" }),
+  providerReference: text("provider_reference"),
+  settledAt: integer("settled_at", { mode: "timestamp" }),
+  originalExpiresAt: integer("original_expires_at", { mode: "timestamp" }),
+  designation: text("designation").$type<"pending" | "designated" | "paid_undesignated">().notNull().default("pending"),
+  reason: text("reason").$type<"owner_changed" | "membership_removed" | "project_archived" | "project_deleting">(),
+  settlementAuthorizedAt: integer("settlement_authorized_at", { mode: "timestamp" }),
+  revoked: integer("revoked", { mode: "boolean" }).notNull().default(false),
+}, table => [
+  uniqueIndex("event_purchase_reference_unique").on(table.providerReference).where(sql.raw("provider_reference IS NOT NULL")),
+  index("event_purchase_project_idx").on(table.workspaceId),
+  check("event_checkout_time", sql.raw("checkout_authorized_at > 0")),
+  check("event_designation_state", sql.raw("designation IN ('pending','designated','paid_undesignated')")),
+  check("event_designation_reason", sql.raw("reason IN ('owner_changed','membership_removed','project_archived','project_deleting')")),
+  check("event_revoked_boolean", sql.raw("revoked IN (0,1)")),
+  check("event_reference_shape", sql.raw("provider_reference IS NULL OR (provider_reference GLOB 'stripe:cs_*' AND length(provider_reference) <= 255)")),
+  check("event_settlement_shape", sql.raw("(purchaser_user_id IS NULL AND id GLOB 'ered_*' AND designation = 'designated' AND provider_reference IS NULL AND checkout_authorized_at IS NULL AND settlement_authorized_at IS NULL AND reason IS NULL AND settled_at IS NOT NULL AND settled_at > 0 AND original_expires_at IS NOT NULL AND original_expires_at > settled_at) OR (purchaser_user_id IS NOT NULL AND checkout_authorized_at IS NOT NULL AND ( (designation = 'pending' AND settled_at IS NULL AND original_expires_at IS NULL AND reason IS NULL AND settlement_authorized_at IS NULL AND revoked = 0) OR (designation <> 'pending' AND provider_reference IS NOT NULL AND settled_at IS NOT NULL AND settled_at > 0 AND original_expires_at IS NOT NULL AND original_expires_at > settled_at AND ((designation = 'designated' AND reason IS NULL AND settlement_authorized_at IS NOT NULL AND settlement_authorized_at >= checkout_authorized_at) OR (designation = 'paid_undesignated' AND reason IS NOT NULL AND settlement_authorized_at IS NULL)))))")),
+]);

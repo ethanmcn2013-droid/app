@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.connections.storage",
+  "source": "tasks/src/components/app/settings/sections/connections-view.tsx",
+  "materialityHash": "a553937d6a450165",
+  "reviewedAt": "2026-09-05",
+  "reviewer": "Principal integrator under delegated implementation authority, with independent Poincare UI review",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-776b131ccc1d285f9c76fe35-32b4464d184c12d8.json",
+    "attestationSha256": "ea9f9f829defb4ca47457b3a02ea3ee6893fbf52f2a0e9ef57a233cdaf4a729d",
+    "runId": "tasks-playwright-776b131ccc1d285f9c76fe35",
+    "canonicalEvidenceSha256": "776b131ccc1d285f9c76fe35d39885f359fa005fffca90ce659cd2384a783241",
+    "rawArtifactSha256": "32b4464d184c12d8c5bfb077ae842c4dc68e39d89e3dee8403fc198652acc90c",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.surface.task-detail-panel",
+    "caseName": "populated task",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Conditional future custody, visibility and Google-space wording now precedes initial Connect and Use my Drive when no owner is selected. Disconnect cancellation returns focus to the existing trigger. Source8ae94ffb is merged without alteration in29193167. Parent disclosure unit failure and false focus observations remain preserved. Fixed actual-component evidence passes76 cases and14 supplemental geometry/theme/focus checks, with92 plus14 screenshots and no recorded console/page/HTTP/external errors. Principal inspected390px disclosure before Connect. Independent review passes35 focused and4 additional controls. Exact source/adapters/assets are in experience/reviews/january-drive-ui-acceptance-2026-09-05. The linked132-case artifact is preceding8172/6eb suite regression context only; it does not exercise this patch or prove the new candidate built.",
+  "decision": "Accept only the source change and its scoped actual-component UI evidence. Preserve partial coverage, design scores, approvals and outstanding states. Runtime identity/actions/transfer ports are explicit synthetic adapters; no Next/Clerk/OAuth/Google/provider lifecycle is proven. Persistent unconfirmed-disconnect visibility after remount remains a separate unresolved read-model investigation. Complete current candidate Linux, receiving, human, screen-reader and council acceptance remain open. No replacement of held RC3/Atlas actions and no production activation."
+}

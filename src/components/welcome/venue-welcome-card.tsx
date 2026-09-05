@@ -1,11 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { PROJECT_APP_PATH } from "@/lib/product-urls";
+import { withActiveProject } from "@/lib/projects/project-url";
+import type { ProjectId } from "@/lib/projects/project-ref";
 import { useHydrated } from "@/lib/use-hydrated";
 
 type Props = {
   sponsorName: string;
   sponsorSlug: string;
+  projectId: ProjectId;
+  canManageWeddingDate: boolean;
 };
 
 const DISMISS_PREFIX = "signal-tasks.venue-welcome-dismissed:";
@@ -18,7 +24,7 @@ const DISMISS_PREFIX_OLD = "venue-welcome-dismissed:";
  * gets its own card. Copy locked in BRAND.md voice; do not edit at
  * venue boundary.
  */
-export function VenueWelcomeCard({ sponsorName, sponsorSlug }: Props) {
+export function VenueWelcomeCard({ sponsorName, sponsorSlug, projectId, canManageWeddingDate }: Props) {
   const mounted = useHydrated();
   const [dismissed, setDismissed] = useState(() => {
     if (typeof localStorage === "undefined") return false;
@@ -66,9 +72,13 @@ export function VenueWelcomeCard({ sponsorName, sponsorSlug }: Props) {
             Compliments of {sponsorName}
           </div>
           <p className="text-[14px] leading-[1.5] text-ink">
-            Your wedding workspace is ready. Plan without the noise, every
-            view is the same items, all in plain English.
+            Your wedding workspace is ready.{" "}
+            {canManageWeddingDate ? "Add your wedding date when you know it." : "Someone who can manage this project can add the wedding date."}{" "}
+            When no date is known, sponsored access starts with at least 548 days from redemption.
           </p>
+          <Link href={withActiveProject(`${PROJECT_APP_PATH}#wedding-date`, projectId)} className="mt-2 inline-flex min-h-[44px] items-center text-[13px] font-medium text-brand underline underline-offset-4">
+            {canManageWeddingDate ? "Add or update your wedding date" : "View wedding date"}
+          </Link>
         </div>
         <button
           type="button"

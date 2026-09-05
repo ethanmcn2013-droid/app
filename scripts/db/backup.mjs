@@ -100,11 +100,11 @@ export function tableHash(columns, rows) {
   return sha256(JSON.stringify(columns) + "\n" + lines.join("\n"));
 }
 
-/** Read the full schema of a libSQL/SQLite database, tables first. */
+/** Read application DDL, tables first. GLOB treats sqlite_'s underscore literally. */
 export async function readSchema(client) {
   const result = await client.execute(
     "SELECT type, name, tbl_name, sql FROM sqlite_schema " +
-      "WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%' " +
+      "WHERE sql IS NOT NULL AND name NOT GLOB 'sqlite_*' " +
       "ORDER BY CASE type WHEN 'table' THEN 0 WHEN 'index' THEN 1 " +
       "WHEN 'trigger' THEN 2 ELSE 3 END, name",
   );
@@ -117,7 +117,7 @@ export async function readSchema(client) {
 }
 
 /**
- * Take a logical backup. Returns { lines, manifest } without touching the
+ * Take a logical backup. Returns { body, manifest } without touching the
  * filesystem, so tests can exercise the whole path in memory.
  */
 export async function takeBackup(client, { label, url }) {

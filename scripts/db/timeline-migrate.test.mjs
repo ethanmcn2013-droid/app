@@ -84,6 +84,7 @@ async function writeAdoptionReceipt(dir, client, { databaseUrl, overrides = {} }
   const legacy = await readLegacyDrizzleChain(client, context.ledger);
   const receipt = {
     schemaVersion: "timeline-production-adoption/1",
+    schemaFingerprintVersion: "sqlite-schema/2",
     id: "timeline-production-adoption-test",
     environment: "production",
     authorizedBy: "test fixture",

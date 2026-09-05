@@ -1,5 +1,29 @@
 # Status — Project Drive
 
+## Current scoped checkpoint · 2026-09-05
+
+**Verified Drive checkpoint:0c93a5cb88b330dce8673c51fa6d2eed4ddfda73.**
+CI33992802862, Verify33992802886 and Design33992802885 all pass. The tested merge
+e893094b has exactly candidate tree2419ad23. Complete132-case artifact, all logs
+and exact source comparisons are preserved by4493f7bf in the January sponsored-
+cohort-clock packet. It includes custody/focus8ae and pending-removal1ac. Earlier
+a8c paired-fixture failures remain preserved and its test-only clock correction
+is independently verified; runtime privacy rules are unchanged. No provider,
+human/council, receiving or later-source acceptance is inferred.
+The January programme register owns the latest whole-App candidate; this owning
+Drive receipt remains an immutable scoped checkpoint.
+
+The bounded custody/focus follow-up **8ae94ffb4e74bd21ba652f0117417afa03ed43a3** is included in3be. Actual-component76/76 plus14 supplemental checks and independent35+4 controls pass. [Owning UI packet](../../../experience/reviews/january-drive-ui-acceptance-2026-09-05/REPORT.md). Failed baseline/harness receipts remain retained.
+
+The later migration-free **1ac3d2335b68a02594f4e8c68793a962090f9579**, sealed with evidence atce25e4ef and integrated at3b771639, exposes counts of unconfirmed named-user permission removals for current/previous project folders after the live read. Actual SQLite/SSR26 checks, five independent controls and a passing control against the preserved parent failure pass. The saved component matrix has46 cases/52 screenshots. Identity, actions and provider responses are explicit synthetic ports, not a live Google lifecycle. [Owning pending-removal evidence](../../../experience/reviews/january-drive-pending-removal-2026-09-05/REPORT.md). Its complete0c93 candidate gates now pass; earlier3be Linux alone did not cover it.
+
+The separate actual-service/SQLite investigation confirms personal token disconnect still lacks durable requested/confirmed facts, and a no-current retry can imply confirmation without evidence. That receipt/reconnect-generation work remains open. Authored runtimef1d7ce02
+is separate and unintegrated. Its independent lifecycle review was automatically
+stopped for possible cybersecurity risk, with no acceptance verdict. The review and
+requested erasure-ordering control are not retried or rerouted. Author evidence is
+sealed ate311bb65, including an unresolved source-hash mismatch. See the
+[exact hold](../../../experience/reviews/january-drive-token-receipt-hold-2026-09-05/README.md). A pending file-permission notice does not close it. Full Drive acceptance remains open.
+
 ## January takeover · 2026-09-04
 
 This task is accountable for Drive. The stopped Drive task and package evidence below remain provenance. User-owned work was preserved: unpublished changes committed in 1ea5dd8a, January dependency integration 24a59e72 and migration CI 7d4040cb. PR #165 now targets release/january-2027; PR #168 assembles Drive with the other January work. Nothing here authorizes production.

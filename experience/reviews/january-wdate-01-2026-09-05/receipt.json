@@ -1,0 +1,71 @@
+{
+  "kind": "WDATE-01 P3 display fix",
+  "runtime": "69d7880a61840d536beace65875662911336df12",
+  "parent": "83ce38c13455e02ab1a2b94cad43940d50200bb0",
+  "branch": "feat/january-sponsored-wedding-date",
+  "sourceFiles": [
+    "src/components/app/project/wedding-date-form.tsx",
+    "src/components/app/project/wedding-date-readback.browser.test.mjs"
+  ],
+  "overviewUnchanged": true,
+  "gates": {
+    "original-render-1": {
+      "exitCode": 1,
+      "receipt": "original-render-1.receipt.json"
+    },
+    "fixed-render-1": {
+      "exitCode": 0,
+      "receipt": "fixed-render-1.receipt.json"
+    },
+    "browser-default-1": {
+      "exitCode": 0,
+      "receipt": "browser-default-1.receipt.json"
+    },
+    "focused-1": {
+      "exitCode": 0,
+      "receipt": "focused-1.receipt.json"
+    },
+    "lint-1": {
+      "exitCode": 0,
+      "receipt": "lint-1.receipt.json"
+    },
+    "typecheck-1": {
+      "exitCode": 0,
+      "receipt": "typecheck-1.receipt.json"
+    }
+  },
+  "uniqueChecks": 21,
+  "renderedStates": 12,
+  "originalExpectedFailures": 6,
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 1080
+    },
+    {
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "fontMechanism": "Ten preserved compiled CSS/cached Geist asset files; byte-identical copies in archive, fulfilled inside browser routes. Not a normal network font build.",
+  "preservedPackets": [
+    {
+      "root": "C:/Users/ethan/Documents/Codex/2026-09-04/here-are-6-prompts-i-have-2/outputs/sponsored-wedding-date-2026-09-05",
+      "files": 189,
+      "manifestSha256": "c83d3427da25f5fe4d81e3cf66bb0ff997cb20da8ac201e5dbdeb51ffd5156ec",
+      "allMatch": true
+    },
+    {
+      "root": "C:/Users/ethan/Documents/Codex/2026-09-04/here-are-6-prompts-i-have-2/outputs/sponsored-wedding-date-legacy-retirement-2026-09-05",
+      "files": 45,
+      "manifestSha256": "332206d5b759fe307f5daa0174d4e1d54c6557ea8f71f075c3d11a0504e8f58d",
+      "allMatch": true
+    }
+  ],
+  "limitations": [
+    "Actual components, not full Next/Flight/Clerk",
+    "Actual independent reader DTO values; added term/expiry/save fixtures synthetic",
+    "No database writes in browser",
+    "Independent receiving verification and registration remain principal-owned"
+  ]
+}

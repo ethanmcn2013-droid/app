@@ -52,14 +52,14 @@ import { captureTaskCreated } from "@/server/sponsored-use/capture";
 /**
  * Pure read pass-through used by the realtime sync hook to refetch
  * the canonical task list when an SSE "tasks-changed" event arrives.
- * Resolves the active workspace from the session cookie.
+ * The displayed Project is explicit and independently proved for this request.
+ * A global change notification never supplies authority or selects a Project.
  */
-export async function getTasksAction(): Promise<Task[]> {
+export async function getTasksAction(candidateProjectId: string): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  // Fail-closed: a caller who belongs to nothing gets no tasks, where the old
-  // accessor handed back LEGACY_WORKSPACE_ID and this returned its rows (D-005).
-  const ambient = await getActiveWorkspaceOrNull();
-  const ws = await readableProjectOrNull(ambient);
+  // Missing, malformed and inaccessible candidates stay neutral. Never replace
+  // an explicit B store with the caller's authorized ambient A task list.
+  const ws = await readableProjectOrNull(candidateProjectId);
   return ws ? getTasks(ws) : [];
 }
 

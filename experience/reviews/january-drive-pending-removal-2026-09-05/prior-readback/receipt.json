@@ -1,0 +1,1254 @@
+{
+  "source": "27af50c09ea20892e00170b2fa4e7acebbcc9061",
+  "sourceRuntime": "8ae94ffb4e74bd21ba652f0117417afa03ed43a3",
+  "branch": "fix/january-drive-ui-acceptance",
+  "own": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+  "sourceChanged": false,
+  "providerCalls": 0,
+  "isolatedResponseAdapterCalls": 28,
+  "checks": 12,
+  "exitCode": 0,
+  "identities": {
+    "src/lib/projects/project-ref.ts": {
+      "blob": "25082be90385256851c8c3a26f35e16002a9c3d7",
+      "sha256": "33f0ed7ee3f979a75a61f3273e1f5b2bad3b36ea422a23eea08d1daaac62bd6b",
+      "unchangedFrom6eb": true
+    },
+    "src/server/crypto/secret-box.ts": {
+      "blob": "af9ad235218068b4c2f1454e75db1459df1f12c9",
+      "sha256": "480ae18d90eb1803d463735192350068a8c8a4d878015f2fae2001667dc4e554",
+      "unchangedFrom6eb": true
+    },
+    "src/server/db/schema.ts": {
+      "blob": "35a25adf031419d7f9a37fccd3a943009ad53bd2",
+      "sha256": "c21e257b7b669da315b8b19df61bd5d66b4be9e999be1c6d1fe745b177df4385",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/project-drive-core.test.helpers.ts": {
+      "blob": "70fa80faa53ac8a906040d014d99104e0a9961d5",
+      "sha256": "4decf7d12fb9b89bc216d0c80512c6eebd7a054841b1817913e291f8f0e3dcfb",
+      "unchangedFrom6eb": true
+    },
+    "src/lib/suite-contracts.v1.json": {
+      "blob": "e8e3f4e7c4272c08cb7d311776c6fc93fa5c39bd",
+      "sha256": "7bd4beddcadd03ae8bc7f0292f27958d975829d7cf9b0b7d3191b38fece15702",
+      "unchangedFrom6eb": true
+    },
+    "src/lib/product-urls.ts": {
+      "blob": "07180c4ca8e03717e788af1a6ee1ac35c924e87d",
+      "sha256": "59f30b5e6a9a4974eaccd323ecaee8853d641f8845684a325f1d8f1bbd8138f6",
+      "unchangedFrom6eb": true
+    },
+    "src/server/projects/project-deletion-fence.ts": {
+      "blob": "d4a5285e23f0615589a80a9f5f89779a6c02c1ca",
+      "sha256": "2b2eea4b8c1cbb0e4702827b46e8a6cc70423d70d86dbe2568e1c57e1fc4ca8a",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/google-drive-scopes.ts": {
+      "blob": "426285c2cb304ccdb69f5338d068d860f2f3a353",
+      "sha256": "07a75a60e22ef0e6507e71d6fe1db84756b34047c60c439aefee45897c751c83",
+      "unchangedFrom6eb": true
+    },
+    "src/lib/drive-upload-session.ts": {
+      "blob": "32a163f37ced2541ed9a07d71e06aeed74611e60",
+      "sha256": "19a67b1dd938b284993e3192e5a307ca83d5b8b7e7d8fd4f886b8cdb8f70474e",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/google-drive.ts": {
+      "blob": "133574caefd736a53a4cd6ee91b7a01e9146f2a9",
+      "sha256": "a72548103a456ab414abfdb463a2d59d73a16d02cd93c6e6a998eb5a508f2e38",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/google-oauth-state.ts": {
+      "blob": "076c077055aeba2257e645c792c2b2ff8792f491",
+      "sha256": "9e46599c54ee544cd62373a6e0cc97ac8e791fda5f0ca161a5d7fd809f65ebef",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/project-drive-authz.ts": {
+      "blob": "36e7cbb347ea677ee3e8cd5b179a27d11e6c460e",
+      "sha256": "f023de3c3ba75435e727056663288a151c6737debd3d20fd9a06a0f62dfed2a8",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/drive-connections.ts": {
+      "blob": "8e4f262b3182818e4f17df9cec8ed94a217d6998",
+      "sha256": "de97e4724dcc9e4b8f407a23c39ab201fa6b988f7bbbf6a25549a2ba5253db03",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/project-drive-access.ts": {
+      "blob": "fa3e4b4c06c86e67ee43aef65dc9c5caca1173d7",
+      "sha256": "9974f1ad8c1663b4f41124e931ce4fbce526d6e6471a7f60053a79bc7bd3b370",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/project-drive-permission-mutation-lease.ts": {
+      "blob": "fa5d808079092425140f57407dd212f314029f6d",
+      "sha256": "0632230923e77a686df211b7bce037cd839875541992c7ae6150a2b81682c4df",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/drive-grants.ts": {
+      "blob": "4fdaf90e0b3b344eccf049b38cac953c1f531953",
+      "sha256": "b4491e676540e3e2e398f4c7c3b2c9f2c6c6cc8d68e9949e3345fefc00c0abf2",
+      "unchangedFrom6eb": true
+    },
+    "src/lib/project-drive-ui.ts": {
+      "blob": "26e5e46d5eb1f6fbe969bc448fd3e73778f5dcec",
+      "sha256": "785d3a9d1ba26170b148454c726254fe963f031bca422e2d6f94b47191ae0cd6",
+      "unchangedFrom6eb": true
+    },
+    "src/server/db/tenant.ts": {
+      "blob": "e055e9fefabc9a0b8fec40c3f54616e37c99d8f3",
+      "sha256": "45c701e3aefd2515796103b8173a1aa32ac52081aaaba6dc143e23cb77f882df",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/drive-folders.ts": {
+      "blob": "3e14778e1730cc7f1fccd4c3a60ba08daa3577fe",
+      "sha256": "73da879d74d5b30125480f8f88a8291742e6bc975b4e8a9cda4c9985f5bc7d80",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/project-drive-operation-key.ts": {
+      "blob": "7b38f4ec6b524bf80d8da77af9670d7fa42d0d69",
+      "sha256": "ddeef6500c90a277788eb15f1643e2ed9596de6c713828e77397c22a6c5d957f",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/project-drive-operation-lifecycle.ts": {
+      "blob": "77c526d7800f571d0298b501c9b36c86efe0bd92",
+      "sha256": "1accf0e2315a7a95bddfdc9c34d97135729dc878a808c7efe3faf11ad636419f",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/project-drive-operation-journal.ts": {
+      "blob": "af46552742e570fb5aa7cc2119019b95638f7f42",
+      "sha256": "c44d5b36533a4844d1d2f714453d430a8dd21da4c6ff8ec490fa369a6e895260",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/project-drive-operation-orchestrator.ts": {
+      "blob": "2fb245a22daec116d6fcb8c26e2a4deb44d79cf7",
+      "sha256": "5c140d2c0076661f33dc70377e6fbebcf0b45283d505d01bf5d9d8e9be6634ee",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/project-drive-grant-operation-executor.ts": {
+      "blob": "dc58e9d523205f4ab58a84ec9355e7cbd3cfeaee",
+      "sha256": "5c494e558a819b1233b7c2d2e43f0e26ed19d3076c6bf81251333ec9d7bdf557",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/project-drive-membership-lifecycle.ts": {
+      "blob": "439247ad8082d50b200b4a6185fbc5551f0a8493",
+      "sha256": "e244ec204f399a1d4d4017da2eaed27205d68b78135eb8ec38071d99f7111bc1",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/project-drive-upload-receipts-core.ts": {
+      "blob": "215771e7a1a954da57a1a9596826c20aebd430d4",
+      "sha256": "bbcfe2f655d6af4bbbd8ea840578b9e85ebb6bf30a84aa3e3a3afa0b571d3672",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/project-drive-upload-receipts.ts": {
+      "blob": "cf17cf52198404061ef7bc1e0123f3f9cbd96812",
+      "sha256": "f6f3d8034e7a41bf61f0baaade160093867ee672dd627a92515f42f2c338d69e",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/project-drive-folder-operation-executor.ts": {
+      "blob": "ed39a084494daf474c3a391109ba89e720d87946",
+      "sha256": "27f0f7d34f520a2e18384b6c96c080eba185d13f0a12b919000e6bba74d2afe3",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/project-drive-member-coverage.ts": {
+      "blob": "0fa6670e2ba36db69d23cd3530e72bfc352e3aa2",
+      "sha256": "75bd52a92ea576b9d84884796ff2a13c56d86f604ad4a92d3c029317b0d664dc",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/project-drive-folder-management.ts": {
+      "blob": "1ce783d6eabfb5ce665efefabab698b5c922345e",
+      "sha256": "cbc6832f3317e6bc907f84db5bb01b87d5a558ada0bea76c4a08b2ce30f4a675",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/project-drive-ui-status.ts": {
+      "blob": "156cbaeddcaa8bc410989e5d4a0b9e1cc12f405c",
+      "sha256": "f6236ef7e83d7dfb3fe6f9873cd512f5724bb5dbb153a555a4649f2ad2ddbc01",
+      "unchangedFrom6eb": true
+    },
+    "src/components/app/settings/sections/connections-view.tsx": {
+      "blob": "cd11345f88381a706aca0f8f332a906053ee08a3",
+      "sha256": "a553937d6a45016503688270cb64b6f5205b728573835a0d43bcc5ce5d2f0053",
+      "unchangedFrom6eb": false
+    },
+    "src/server/actions/connections.ts": {
+      "blob": "cb41750147a49e18d9b46914d27f76b21b763e04",
+      "sha256": "b5cf6b7a42f96ee5c897a929312787a28980418c7affa874e13455afd46e348e",
+      "unchangedFrom6eb": true
+    },
+    "src/server/actions/project-drive-status.ts": {
+      "blob": "e8a155343249d200d1626d51f3c298e37a538112",
+      "sha256": "456ea3aa005f5581221f51a723abd4405e0680d3bc93582d4e33cd76925dd178",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/project-drive-grant-repair.ts": {
+      "blob": "f79d24d6356fcbb92b9b8088ee579db2d5eddb7b",
+      "sha256": "626d866fb9749283e144d8af4b351d0d29a9e23c56bc02125712c08d4fcff0c2",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/drive-connections.test.ts": {
+      "blob": "38a263107bf349307f44e2bf5172792424f58d91",
+      "sha256": "b53af39408a57c568d01d943ef1d1c954c3a0b1f4c91ccfb7be98d508025489c",
+      "unchangedFrom6eb": true
+    },
+    "src/server/connections/project-drive-ui-status.test.ts": {
+      "blob": "ea18289c8e19550ae33c962e1c7483f2980c3fde",
+      "sha256": "121b88aaaeb5908b44740af51b0719a66dddbf188c84c5665bba5f21e041cb41",
+      "unchangedFrom6eb": true
+    },
+    "drizzle/0028_project_drive.sql": {
+      "blob": "d2875853c0d8efe8fbcc89b6c859211e0e049547",
+      "sha256": "a24f9715df59e2b132f2839d912479304adb4b560ed7052aef1c0d3254c90d8b",
+      "unchangedFrom6eb": true
+    },
+    "drizzle/0029_project_drive_operations.sql": {
+      "blob": "9bde11588db8485cf55e6cca950f1cd3975d1843",
+      "sha256": "332c40bf70ad206f247cb12793b3a49ecf7d20f47b3a16b93cacb519ee13b79a",
+      "unchangedFrom6eb": true
+    }
+  },
+  "commands": [
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "27af50c09ea20892e00170b2fa4e7acebbcc9061\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--name-only",
+        "HEAD",
+        "--"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/lib/projects/project-ref.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "25082be90385256851c8c3a26f35e16002a9c3d7\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/lib/projects/project-ref.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "25082be90385256851c8c3a26f35e16002a9c3d7\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/crypto/secret-box.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "af9ad235218068b4c2f1454e75db1459df1f12c9\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/crypto/secret-box.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "af9ad235218068b4c2f1454e75db1459df1f12c9\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/db/schema.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "35a25adf031419d7f9a37fccd3a943009ad53bd2\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/db/schema.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "35a25adf031419d7f9a37fccd3a943009ad53bd2\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/project-drive-core.test.helpers.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "70fa80faa53ac8a906040d014d99104e0a9961d5\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/project-drive-core.test.helpers.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "70fa80faa53ac8a906040d014d99104e0a9961d5\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/lib/suite-contracts.v1.json"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "e8e3f4e7c4272c08cb7d311776c6fc93fa5c39bd\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/lib/suite-contracts.v1.json"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "e8e3f4e7c4272c08cb7d311776c6fc93fa5c39bd\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/lib/product-urls.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "07180c4ca8e03717e788af1a6ee1ac35c924e87d\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/lib/product-urls.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "07180c4ca8e03717e788af1a6ee1ac35c924e87d\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/projects/project-deletion-fence.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "d4a5285e23f0615589a80a9f5f89779a6c02c1ca\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/projects/project-deletion-fence.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "d4a5285e23f0615589a80a9f5f89779a6c02c1ca\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/google-drive-scopes.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "426285c2cb304ccdb69f5338d068d860f2f3a353\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/google-drive-scopes.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "426285c2cb304ccdb69f5338d068d860f2f3a353\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/lib/drive-upload-session.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "32a163f37ced2541ed9a07d71e06aeed74611e60\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/lib/drive-upload-session.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "32a163f37ced2541ed9a07d71e06aeed74611e60\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/google-drive.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "133574caefd736a53a4cd6ee91b7a01e9146f2a9\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/google-drive.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "133574caefd736a53a4cd6ee91b7a01e9146f2a9\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/google-oauth-state.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "076c077055aeba2257e645c792c2b2ff8792f491\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/google-oauth-state.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "076c077055aeba2257e645c792c2b2ff8792f491\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/project-drive-authz.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "36e7cbb347ea677ee3e8cd5b179a27d11e6c460e\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/project-drive-authz.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "36e7cbb347ea677ee3e8cd5b179a27d11e6c460e\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/drive-connections.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "8e4f262b3182818e4f17df9cec8ed94a217d6998\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/drive-connections.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "8e4f262b3182818e4f17df9cec8ed94a217d6998\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/project-drive-access.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "fa3e4b4c06c86e67ee43aef65dc9c5caca1173d7\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/project-drive-access.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "fa3e4b4c06c86e67ee43aef65dc9c5caca1173d7\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/project-drive-permission-mutation-lease.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "fa5d808079092425140f57407dd212f314029f6d\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/project-drive-permission-mutation-lease.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "fa5d808079092425140f57407dd212f314029f6d\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/drive-grants.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "4fdaf90e0b3b344eccf049b38cac953c1f531953\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/drive-grants.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "4fdaf90e0b3b344eccf049b38cac953c1f531953\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/lib/project-drive-ui.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "26e5e46d5eb1f6fbe969bc448fd3e73778f5dcec\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/lib/project-drive-ui.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "26e5e46d5eb1f6fbe969bc448fd3e73778f5dcec\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/db/tenant.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "e055e9fefabc9a0b8fec40c3f54616e37c99d8f3\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/db/tenant.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "e055e9fefabc9a0b8fec40c3f54616e37c99d8f3\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/drive-folders.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "3e14778e1730cc7f1fccd4c3a60ba08daa3577fe\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/drive-folders.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "3e14778e1730cc7f1fccd4c3a60ba08daa3577fe\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/project-drive-operation-key.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "7b38f4ec6b524bf80d8da77af9670d7fa42d0d69\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/project-drive-operation-key.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "7b38f4ec6b524bf80d8da77af9670d7fa42d0d69\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/project-drive-operation-lifecycle.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "77c526d7800f571d0298b501c9b36c86efe0bd92\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/project-drive-operation-lifecycle.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "77c526d7800f571d0298b501c9b36c86efe0bd92\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/project-drive-operation-journal.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "af46552742e570fb5aa7cc2119019b95638f7f42\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/project-drive-operation-journal.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "af46552742e570fb5aa7cc2119019b95638f7f42\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/project-drive-operation-orchestrator.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "2fb245a22daec116d6fcb8c26e2a4deb44d79cf7\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/project-drive-operation-orchestrator.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "2fb245a22daec116d6fcb8c26e2a4deb44d79cf7\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/project-drive-grant-operation-executor.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "dc58e9d523205f4ab58a84ec9355e7cbd3cfeaee\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/project-drive-grant-operation-executor.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "dc58e9d523205f4ab58a84ec9355e7cbd3cfeaee\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/project-drive-membership-lifecycle.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "439247ad8082d50b200b4a6185fbc5551f0a8493\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/project-drive-membership-lifecycle.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "439247ad8082d50b200b4a6185fbc5551f0a8493\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/project-drive-upload-receipts-core.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "215771e7a1a954da57a1a9596826c20aebd430d4\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/project-drive-upload-receipts-core.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "215771e7a1a954da57a1a9596826c20aebd430d4\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/project-drive-upload-receipts.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "cf17cf52198404061ef7bc1e0123f3f9cbd96812\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/project-drive-upload-receipts.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "cf17cf52198404061ef7bc1e0123f3f9cbd96812\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/project-drive-folder-operation-executor.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "ed39a084494daf474c3a391109ba89e720d87946\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/project-drive-folder-operation-executor.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "ed39a084494daf474c3a391109ba89e720d87946\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/project-drive-member-coverage.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "0fa6670e2ba36db69d23cd3530e72bfc352e3aa2\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/project-drive-member-coverage.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "0fa6670e2ba36db69d23cd3530e72bfc352e3aa2\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/project-drive-folder-management.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "1ce783d6eabfb5ce665efefabab698b5c922345e\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/project-drive-folder-management.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "1ce783d6eabfb5ce665efefabab698b5c922345e\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/project-drive-ui-status.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "156cbaeddcaa8bc410989e5d4a0b9e1cc12f405c\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/project-drive-ui-status.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "156cbaeddcaa8bc410989e5d4a0b9e1cc12f405c\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/components/app/settings/sections/connections-view.tsx"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "cd11345f88381a706aca0f8f332a906053ee08a3\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/components/app/settings/sections/connections-view.tsx"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "39fc42ac53fc0b21627a8bcfd2e402f6d270b973\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/actions/connections.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "cb41750147a49e18d9b46914d27f76b21b763e04\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/actions/connections.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "cb41750147a49e18d9b46914d27f76b21b763e04\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/actions/project-drive-status.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "e8a155343249d200d1626d51f3c298e37a538112\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/actions/project-drive-status.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "e8a155343249d200d1626d51f3c298e37a538112\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/project-drive-grant-repair.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "f79d24d6356fcbb92b9b8088ee579db2d5eddb7b\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/project-drive-grant-repair.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "f79d24d6356fcbb92b9b8088ee579db2d5eddb7b\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/drive-connections.test.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "38a263107bf349307f44e2bf5172792424f58d91\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/drive-connections.test.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "38a263107bf349307f44e2bf5172792424f58d91\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:src/server/connections/project-drive-ui-status.test.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "ea18289c8e19550ae33c962e1c7483f2980c3fde\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:src/server/connections/project-drive-ui-status.test.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "ea18289c8e19550ae33c962e1c7483f2980c3fde\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:drizzle/0028_project_drive.sql"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "d2875853c0d8efe8fbcc89b6c859211e0e049547\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:drizzle/0028_project_drive.sql"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "d2875853c0d8efe8fbcc89b6c859211e0e049547\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "27af50c09ea20892e00170b2fa4e7acebbcc9061:drizzle/0029_project_drive_operations.sql"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "9bde11588db8485cf55e6cca950f1cd3975d1843\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd:drizzle/0029_project_drive_operations.sql"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+      "exitCode": 0,
+      "stdout": "9bde11588db8485cf55e6cca950f1cd3975d1843\n",
+      "stderr": ""
+    }
+  ],
+  "run": {
+    "source": "27af50c09ea20892e00170b2fa4e7acebbcc9061",
+    "baseRuntime": "8ae94ffb4e74bd21ba652f0117417afa03ed43a3",
+    "adapters": {
+      "server-only": "export {};",
+      "@/server/db": "export const db = new Proxy({}, {get(){throw Error(\"Default database forbidden; inject disposable fixture DB\")}});",
+      "@/server/auth": "export async function getCurrentUser(){throw Error(\"Clerk forbidden\")}",
+      "@/server/actions/project-authz": "export async function authorizeStoredProject(){throw Error(\"Fixture supplies existing core authorization; no identity provider\")}",
+      "@/lib/access-mode": "export function isDemoMode(){return false}"
+    },
+    "command": [
+      "C:\\Users\\ethan\\AppData\\Local\\Programs\\nodejs-v22\\node-v22.23.2-win-x64\\node.exe",
+      "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\work\\drive-pending-revocation-2026-09-05\\sqlite\\probe.cjs"
+    ],
+    "exitCode": 0,
+    "inputs": [
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\lib\\projects\\project-ref.ts",
+        "sha256": "d162a747101bbccfba9d06a1bae05f2a63ff6d7d4eca94182de490b1ed4077fd"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\crypto\\secret-box.ts",
+        "sha256": "1e59d1f0e4e6861552d66564309dbf77492fdadf0601267fd9908313168e8bb6"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\db\\schema.ts",
+        "sha256": "81f154354ad4a4c89e61e64cc2dbc2ee6da7a96115994595f1d314c8323af0ce"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\connections\\project-drive-core.test.helpers.ts",
+        "sha256": "3c17b1cc83b1bff5b86d09c46a01a108fbc87ea7cec7041227d90ff920d49bd2"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\lib\\suite-contracts.v1.json",
+        "sha256": "a91e6c84324946a2be6bb438f4238867130a96dc0c1f42af411178110138c74e"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\lib\\product-urls.ts",
+        "sha256": "506978feb749447a70bbd0e8f557153162d52eff440f4f8414198c9e97acdc7b"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\projects\\project-deletion-fence.ts",
+        "sha256": "5541c4ad1bc36a9abb21dfe8dafdcb9ac8270a066bb855160fd63ed10dfa6945"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\connections\\google-drive-scopes.ts",
+        "sha256": "b7a9d4d3bea41c3e279841331351f23c2506745831e10cce833437ff89402eb0"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\lib\\drive-upload-session.ts",
+        "sha256": "70fd2e72ce0a999ee358ccbe43c87b1e1034abbf67d926585ac916c5c9a6604f"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\connections\\google-drive.ts",
+        "sha256": "290af984290c49cc4cf7acf72c7d71665d7eeb43433be23ca101344eeb2e99d3"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\connections\\google-oauth-state.ts",
+        "sha256": "dc368c1cb9bdb6586fbb569e07c73f5b6e75f385a36a67eed770433a82228adf"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\connections\\project-drive-authz.ts",
+        "sha256": "25628a09b36dc44f79c3faff52a501ca0001bbf0a9458b46bdb0ead9f92c1c2b"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\connections\\drive-connections.ts",
+        "sha256": "5216360cbe44e0c21a6ace40d6c9878931f63abeaaf5eb2058c9ad395b595ac6"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\connections\\project-drive-access.ts",
+        "sha256": "fea1db808635d98e3c31211cf515deb912169b861598c33a52a34be6fdc221f4"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\connections\\project-drive-permission-mutation-lease.ts",
+        "sha256": "0da3591c9053829fd813cdbc2e00c4512488cbc391d38db5328a35fe0ab967ff"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\connections\\drive-grants.ts",
+        "sha256": "c89d7af0ad14bdaaa2ce57de52b7cfbd788f758ae80232f3b4091d25538c96b7"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\lib\\project-drive-ui.ts",
+        "sha256": "a6b736f3c73e42ccac042e30a02178fedf39ca45b642ce646767ceffce49aaab"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\db\\tenant.ts",
+        "sha256": "110827de20624f94f83b7e8d2617a39202b3e32ab386791755a92bde90746e3d"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\connections\\drive-folders.ts",
+        "sha256": "37a24ce121431b5fc02db9d4c9fa5ad16c00e20ea736216989f32b457b02599f"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\connections\\project-drive-operation-key.ts",
+        "sha256": "a4811a259e61232bfcd32409ad72a95909afd05600c82fc6d5cdb0fa68c39d98"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\connections\\project-drive-operation-lifecycle.ts",
+        "sha256": "fa16285179ef2e540ec822ec9853930be35971f6e7f97e3abb35c17c0b30a4d3"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\connections\\project-drive-operation-journal.ts",
+        "sha256": "87c621bb26341a499f58f8ac730bd75ead88d315091fb94f5920569679f5ac73"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\connections\\project-drive-operation-orchestrator.ts",
+        "sha256": "c8b331320e153f3b1e0d74cf3d762327445d45382da8dee44fe4402f06343800"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\connections\\project-drive-grant-operation-executor.ts",
+        "sha256": "71345cc3ca1a7840b6c5dbad996d9f8430b702fb31942782219f9dada5be6098"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\connections\\project-drive-membership-lifecycle.ts",
+        "sha256": "7c1f1be173cc764b156c9a3e8168da98cf4f12f6fb4327f1a59ce50805c15c8e"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\connections\\project-drive-upload-receipts-core.ts",
+        "sha256": "ad390f6287dd1b972b095c47fb8f4f82a58e9daf52246ae3d1bf3ebfc28f2e01"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\connections\\project-drive-upload-receipts.ts",
+        "sha256": "55afea58bceaba1e3164e1c8a9914cc10893cae118a457531def30f4f6929bbd"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\connections\\project-drive-folder-operation-executor.ts",
+        "sha256": "fb4428e004ff414c928e4eb763e6684a221c76e37e95861d45d96b32d8d1cf42"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\connections\\project-drive-member-coverage.ts",
+        "sha256": "0a246c8bc63572550ecbca00dc439de2f02c64f07ead37af4cf4b6e05d58753c"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\connections\\project-drive-folder-management.ts",
+        "sha256": "4a9ba8cd4b4f8a11733ab8c1877f3bacd8bbda7a4582d5454baf83199455f758"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\server\\connections\\project-drive-ui-status.ts",
+        "sha256": "63f82b713b1da1145a3353baf44762032862a40d1a13200acd44a1823e05bfee"
+      },
+      {
+        "path": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-drive-ui-acceptance\\src\\components\\app\\settings\\sections\\connections-view.tsx",
+        "sha256": "89d3ecab53fbcfa0177a1f3f5d534db08907f52b38012ece3fa157abb87bfb2e"
+      },
+      {
+        "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\work\\drive-pending-revocation-2026-09-05\\probe.tsx",
+        "sha256": "47a075ba92000c4ad04a05bad6c4d4c09fd899f4de2931ff229890be1d7579b0"
+      }
+    ],
+    "startedAt": "2026-09-05T10:45:10.835Z",
+    "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/fix-january-drive-ui-acceptance",
+    "environment": "OS runtime keys only; NODE_PATH read-only existing dependencies; TEMP/TMP isolated DB path; no stores/provider keys",
+    "signal": null,
+    "completedAt": "2026-09-05T10:45:22.072Z"
+  },
+  "preservedUiPacket": {
+    "manifestSha256": "d6556ca02e634ff7e147d52b6d52b92561099d9c89d032178d523e7f4cbf32ec",
+    "filesVerified": 11,
+    "source": "8ae94ffb4e74bd21ba652f0117417afa03ed43a3",
+    "evidenceHead": "27af50c09ea20892e00170b2fa4e7acebbcc9061"
+  },
+  "scope": "Read-only investigation and recommendation only. No implementation, STATUS, registry, package, CI, migration or principal edits. No source-widening commit."
+}

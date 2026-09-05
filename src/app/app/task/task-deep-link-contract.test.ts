@@ -178,6 +178,8 @@ test("an archived task stays on the focus route rather than canonicalising", asy
   // The board filters archived rows out, so ?task= would open a panel for a
   // task the board cannot list.
   assert.equal(decision.kind, "archived");
+  assert(decision.kind === "archived");
+  assert.equal(decision.workspaceId, "ws-b", "the archived display retains the same proven project");
 });
 
 test("a task inside an archived Project is still readable", async () => {

@@ -60,7 +60,7 @@ jobs:
         with:
           repository: ethanmcn2013-droid/studio
           # Every trigger needs this reviewed compatible fixture runtime.
-          ref: b87d139ee1290f6aee75c8d023fe717357a9ab72
+          ref: 4ed9be64be4f351c5a3e7aa2b396e92d9be570bf
           path: studio-parity
 
       - name: Install immutable paired Studio dependencies

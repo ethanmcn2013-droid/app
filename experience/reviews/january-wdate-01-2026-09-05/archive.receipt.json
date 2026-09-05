@@ -1,0 +1,11 @@
+{
+  "method": "System.IO.Compression.ZipFile.CreateFromDirectory; each decompressed entry SHA256 matched its original payload bytes",
+  "exitCode": 0,
+  "command": "& ./package-evidence.ps1",
+  "runtime": "69d7880a61840d536beace65875662911336df12",
+  "bytes": 982398,
+  "payloadIndex": "artifact-index.json",
+  "archiveSha256": "13aba988f14876c703d5319e71faad569644cef7b0ac3352673f083f236093f5",
+  "entriesVerified": 55,
+  "archive": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\feat-january-sponsored-wedding-date\\experience\\reviews\\january-wdate-01-2026-09-05\\evidence.zip"
+}

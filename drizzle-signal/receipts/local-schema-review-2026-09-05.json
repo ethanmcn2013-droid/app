@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "notes-signal-migration-receipt/1",
+  "module": "signal",
+  "id": "signal-local-schema-review-2026-09-05",
+  "authorizedBy": "Delegated January operational implementation: local/test files only.",
+  "reviewedBy": "Author source/fixture review; independent principal acceptance remains pending.",
+  "authorizationSource": "New Notes/Signal schema-provenance task from exact a6293a82955d17bc414506ab89412f8667c1cd2f. No relation to held reviews.",
+  "migrations": [
+    {
+      "id": "0000_signal_baseline",
+      "sha256": "e1447993800f0d5429870db605fd7f0fb1b532b734111d0514847e3182c9f98a",
+      "reviewedAt": "2026-09-05T21:56:44.595Z",
+      "risk": "Local/test rehearsal only. Preserve historical SQL and any observed foreign ledger. Exact known schema/proofs required; no production adoption authorization.",
+      "rollbackPlan": "A failed local transaction rolls schema/metadata back. Retain successful execution/adoption provenance; restore a separately verified local backup for rollback. No automatic down-migration or production restore.",
+      "postconditions": [
+        "Exact tracked schema fingerprint after this entry.",
+        "Integrity and foreign-key checks pass; expected table/index inventory."
+      ],
+      "schemaFingerprintSha256": "253c30d3b1c0f4a392f3cae2699003823899cb65162fa576d0bcbfef2d090a4b",
+      "proofs": [
+        {
+          "id": "tables",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_schema WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT IN ('signal_briefing_schema_migrations','__drizzle_migrations')",
+          "expected": 10
+        },
+        {
+          "id": "indexes",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_schema WHERE type='index' AND name NOT LIKE 'sqlite_%'",
+          "expected": 7
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

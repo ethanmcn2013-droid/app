@@ -1,0 +1,93 @@
+{
+  "base": "3d71256d9822e9eb34e8bf1524b3099ce47bb6bd",
+  "head": "7742247d7beebeb3b712977f5c3014aa426e55ca",
+  "branch": "feat/january-sponsored-wedding-date",
+  "files": [
+    "src/server/actions/planning.ts",
+    "src/server/db/couple-access-term.ts",
+    "src/server/db/couple-access-term.test.ts",
+    "src/server/actions/planning-wedding-date.test.ts"
+  ],
+  "hookDisposition": "Per-command empty hook directory; avoids out-of-lane Studio drift-sidecar hooks. Shared Git config unchanged. Proportional gates ran explicitly.",
+  "calls": [
+    {
+      "exe": "git",
+      "args": [
+        "rev-parse",
+        "HEAD"
+      ],
+      "exitCode": 0,
+      "stdout": "3d71256d9822e9eb34e8bf1524b3099ce47bb6bd\n",
+      "stderr": ""
+    },
+    {
+      "exe": "git",
+      "args": [
+        "branch",
+        "--show-current"
+      ],
+      "exitCode": 0,
+      "stdout": "feat/january-sponsored-wedding-date\n",
+      "stderr": ""
+    },
+    {
+      "exe": "git",
+      "args": [
+        "diff",
+        "--cached",
+        "--name-only"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "exe": "git",
+      "args": [
+        "diff",
+        "--check"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "warning: in the working copy of 'src/server/actions/planning.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/server/db/couple-access-term.test.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/server/db/couple-access-term.ts', LF will be replaced by CRLF the next time Git touches it\n"
+    },
+    {
+      "exe": "git",
+      "args": [
+        "add",
+        "--",
+        "src/server/actions/planning.ts",
+        "src/server/db/couple-access-term.ts",
+        "src/server/db/couple-access-term.test.ts",
+        "src/server/actions/planning-wedding-date.test.ts"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "warning: in the working copy of 'src/server/actions/planning.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/server/db/couple-access-term.test.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/server/db/couple-access-term.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/server/actions/planning-wedding-date.test.ts', LF will be replaced by CRLF the next time Git touches it\n"
+    },
+    {
+      "exe": "git",
+      "args": [
+        "-c",
+        "core.hooksPath=C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\work\\sponsored-wedding-date-legacy-retirement-2026-09-05\\empty-hooks",
+        "commit",
+        "-q",
+        "-m",
+        "fix(commercial): keep new wedding dates scoped to their Project"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "exe": "git",
+      "args": [
+        "rev-parse",
+        "HEAD"
+      ],
+      "exitCode": 0,
+      "stdout": "7742247d7beebeb3b712977f5c3014aa426e55ca\n",
+      "stderr": ""
+    }
+  ]
+}

@@ -9,6 +9,7 @@ import type { EntitlementTier } from "@/lib/data";
 import type { PaidTier } from "@/server/stripe";
 import { EVENT_SELF_SERVE_AVAILABLE, EVENT_UNAVAILABLE_MESSAGE } from "@/lib/billing-availability";
 import { SectionHeader } from "../settings-app";
+import { REDEEM_FAILURE_COPY, REDEEM_TIER_LABELS } from "@/components/redeem/redeem-copy";
 
 type TierMeta = {
   id: EntitlementTier;
@@ -44,15 +45,15 @@ const TIER_META: TierMeta[] = [
   },
   {
     id: "workspace",
-    label: "Workspace",
+    label: "Pro",
     price: "€12 / mo",
-    blurb: "Unlimited workspaces. Unlimited guests. All three products.",
+    blurb: "Unlimited workspaces. Notes, Tasks and Timeline.",
     paidTier: "workspace",
     features: [
       "Unlimited workspaces",
-      "Unlimited guests and collaborators",
-      "All three products — Notes, Tasks, Timeline — with the daily briefing in Home",
-      "Recurring tasks, blockers, NLP dates",
+      "Editing guest limit not yet published",
+      "All three products, with the daily briefing in Home",
+      "Recurring tasks and dates written in plain English",
     ],
     selfServe: true,
   },
@@ -162,7 +163,7 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
       try {
         const result = await redeemCompCodeAction(code);
         if (result.ok) {
-          toast(`Redeemed: ${result.tier.toUpperCase()}`, {
+          toast(`Redeemed: ${REDEEM_TIER_LABELS[result.tier]}`, {
             tone: "success",
             body: result.expiresAt
               ? `Expires ${new Date(result.expiresAt).toLocaleDateString()}`
@@ -170,16 +171,10 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
           });
           setCode("");
         } else {
-          toast("Code didn’t take", {
+          const failure = REDEEM_FAILURE_COPY[result.reason];
+          toast(failure.headline, {
             tone: "warn",
-            body:
-              result.reason === "not-found"
-                ? "We don’t recognize that code."
-                : result.reason === "exhausted"
-                  ? "All seats on that code are claimed."
-                  : result.reason === "expired"
-                    ? "That code has expired."
-                    : "You’ve already redeemed this one.",
+            body: failure.body,
           });
         }
       } catch (err) {
@@ -196,7 +191,7 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
       <SectionHeader
         eyebrow="Billing"
         title="What you’re on, and what’s next"
-        description="Plans aren’t gates, they’re shapes. Pick the one that fits, change your mind whenever."
+        description="Review your plan, manage billing or redeem an access code."
       />
 
       {/* Current tier strip */}
@@ -357,6 +352,17 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
           </button>
         </div>
       </form>
+      <p className="mt-4 text-[12.5px] leading-[1.55] text-ink-soft">
+        Need help with a payment or access code?{" "}
+        <a
+          href="mailto:hello@signalstudio.ie?subject=Billing%20or%20access%20help"
+          className="font-medium underline underline-offset-4"
+        >
+          Email Signal Studio
+        </a>
+        . Tell us which account you used and what happened. Keep your receipt or
+        original invitation ready.
+      </p>
     </div>
   );
 }
@@ -379,7 +385,7 @@ function TierBadge({ tier }: { tier: EntitlementTier }) {
         s.ink
       }
     >
-      {tier}
+      {TIER_META.find((t) => t.id === tier)?.label ?? tier}
     </span>
   );
 }
