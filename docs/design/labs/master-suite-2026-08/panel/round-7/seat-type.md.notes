@@ -97,3 +97,23 @@ rule with room. Safe.
 Precedent for the fix already exists in this build: round 6 hoisted the keycap
 to ONE declaration in shell.css (11px mono, +0.04em) and left the products only
 their ink. The eyebrow is the same move, one object later.
+
+### 6. notes · the tracking curve is indexed off the type ramp (CONFIRMED)
+notes.css:89-90 declares the ramp at 11 12 13 15 17 20 27 34.
+notes.css:106-108 declares the curve at 11 12 14 16 18 21 27 34.
+Four of the eight ramp sizes — 13, 15, 17, 20 — have NO step of their own, so
+every rule at those sizes borrows a neighbour by hand, and the file borrows
+different neighbours for the same size. Measured in the file:
+  --t-17 → --tr-18 (-0.021em), --tr-16 (-0.016em) AND --tr-21 (-0.026em)
+  --t-15 → --tr-16 and --tr-14
+  --t-13 → --tr-14 and --tr-12
+against a token block that says "One tracking curve, by size, declared once.
+Every letter-spacing in this file is a token from it."
+Visible instance, driven (lift a note → select → peel → send): the receipt sets
+the picked sentence "Ceremony 2pm in the orchard, drinks on the" at 17px/600,
+letter-spacing -0.272px (-0.016em, `.peelSent`, notes.css:1289 region) directly
+under the SAME sentence on the desk at 17px/400, -0.357px (-0.021em). The
+heavier setting is the LOOSER one, which is backwards.
+Fix: re-index the curve onto the ramp — declare --tr-13/-15/-17/-20 on the
+existing curve and replace the borrowed references, keeping --tr-cap and
+--tr-key as ROLE steps outside the size index.

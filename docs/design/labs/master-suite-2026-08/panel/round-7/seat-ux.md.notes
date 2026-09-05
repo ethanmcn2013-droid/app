@@ -112,3 +112,63 @@ Not a locked-architecture question and not a colour: one declaration.
   on a surviving control, lands the card in To do and offers 30s undo.
 - Timeline behind-you is a native <details>/<summary>; folded and open notes are
   both true against the three rows.
+
+### FINDING 3 (HEADLINE, confirmed by measurement) — list-tick-never-shows-done
+
+In List view — which is the ONLY view a phone gets, and the only view below the
+board's 1199 floor — a completed task's checkbox is drawn identically to an
+uncompleted one. Not similar. Identical.
+
+Measured: for a `.lrow[data-done]` and a `.lrow` without it, I diffed 33 computed
+properties across the element and both pseudo-elements (backgroundColor, boxShadow,
+borderColor/Width, color, opacity, content, width, height, transform,
+backgroundImage) plus the SVG's color/opacity/stroke and the check path's
+stroke/opacity/stroke-width:
+
+  LIST @390   changed properties: 0
+  LIST @768   changed properties: 0
+  LIST @1440 (chosen from the Board/List switch, not a fallback): 0
+  BOARD @1920 changed properties: 11 (bg -> rgb(17,17,17), ring removed,
+              colour/stroke -> white, check path painted)
+
+Driven, not just read. On a 390 phone I tapped the tick on "Confirm marquee sides
+with the hire company":
+
+  BEFORE  bg rgba(0,0,0,0) | box-shadow inset 0 0 0 1.4px rgba(17,17,17,.28)
+          | color rgba(0,0,0,0) | aria-checked=false | name "Mark done"
+  AFTER   bg rgba(0,0,0,0) | box-shadow inset 0 0 0 1.4px rgba(17,17,17,.28)
+          | color rgba(0,0,0,0) | aria-checked=true  | name "Mark not done"
+
+The control she pressed did not change one pixel. The feedback is elsewhere: a lane
+word 300px to the right flips "TO DO" -> "DONE", the pip goes green, a "16 Jul" chip
+appears at the far right, and the title drops from #111 to rgba(17,17,17,.62).
+Screenshots `_zz-ph-tick-before/after.png` show the ring empty in both.
+
+Root cause, single and precise: every done-state rule for `.tick` is scoped to the
+BOARD card, and the list row is `.lrow`, not `.card` —
+  2326  .card[data-done] .tick { background: var(--ink); box-shadow:none; color:var(--white) }
+  2535-6 .card[data-just-done] .tick { animation: tickSettle } / svg path { checkDraw }
+  3160-1 .card[data-done] .tick:hover/:focus-visible { box-shadow: 0 0 0 4px var(--wash-2) }
+  3193-4 (forced-colors) .card:not([data-done]) .tick svg { display:none } /
+         .card[data-done] .tick { background: CanvasText; color: Canvas }
+`listRow()` at 12686 emits `<article class="lrow" ... data-done>` with
+`<button class="tick" role="checkbox" aria-checked="true" aria-label="Mark not done">`.
+So the accessibility tree is correct and the render contradicts it.
+
+The forced-colors pair inverts the same bug: because `.card:not([data-done])` never
+matches a list row, in Windows High Contrast every list tick paints its check —
+verified with forcedColors:"active" at 390, svgDisplay "block" on all 13 rows,
+8 of which are not done. On the board the same emulation correctly gives "none"
+for not-done and "block" for done.
+
+FIX (one edit, no new colour, no new weight, nothing architectural): widen those
+five selector groups from `.card[data-done]` / `.card[data-just-done]` /
+`.card:not([data-done])` to `:is(.card, .lrow)[data-done]` etc. The treatment
+already exists and is already ratified on the board; it is simply not reaching
+the list.
+
+Why this is the headline: the tick is the most-pressed control in the product; the
+list is the phone's only view; and a venue manager standing in a marquee ticking
+jobs off gets no confirmation from the thing under her thumb. It is also the one
+place on this whole surface where the pixels and the accessible name say opposite
+things.
