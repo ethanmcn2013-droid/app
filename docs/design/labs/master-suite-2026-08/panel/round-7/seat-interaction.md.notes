@@ -62,3 +62,47 @@ width and move "Write the wording, then send" under `.peelField` as the
 field's hint, so the footer row never rewraps and "Never mind" never
 slides into the slot the primary act just left.
 COST: 0.4
+
+## FINDING 2 — across-editor-opens-below-the-fold (CONFIRMED)
+`[data-app="timeline"] .b-edit` on the ACROSS desk (the default layout).
+
+Round 6 moved the editor out from between the horizon and the track so
+the grab handles stop being pushed off screen. It now opens AFTER the
+plan — and lands below the fold. Measured, on the `.app.sheet` band,
+after a full 1.4s settle:
+
+| entry | viewport | .b-edit rect | px of editor visible | steppers on screen |
+|---|---|---|---|---|
+| `.b-grab` | 1440x960  | [196,859,1130,554] | 101 | 0 of 4 |
+| `.b-grab` | 1440x1000 | [196,899,1130,554] | 101 | 0 of 4 |
+| `.b-grab` | 1920x1000 | [196,899,1610,554] | 101 | 0 of 4 |
+| `.b-grab` | 1280x900  | [196,895, 970,554] | **5** | 0 of 4 |
+| `[data-act="add"]` | 1440x1000 | [196,972,1130,554] | 28 | 0 of 4 |
+
+The first stepper sits 146-242px BELOW the viewport bottom in every one
+of those. Screenshot at 1280x900: pressing "Edit Send the invitations"
+paints a faint wash behind that one label on the measure and scrolls the
+sheet 173px — so the person's place moves and the thing they opened is
+still not on screen. Keyboard users recover on the next Tab (native
+focus scroll); pointer users get nothing at all.
+
+`keepInBand` (:21926) is the mechanism and it is doing what it says:
+it keeps the MOMENT'S ROW in the band. Nothing ever puts `.b-edit` in
+the band. The behaviour gate cannot see this — `across @w · placing a
+moment is not done blind` (:875) asserts `.b-grab` handles remain
+visible, never the editor.
+
+The DOWN layout is correct: [227,615,344,554], 345px visible, 4 of 4
+steppers on screen.
+
+FIX: in `keepInBand`, when `.b-edit` is present and the band resolved to
+the `.app.sheet` scroller (the `!fixed && !paneScrolls` branch), run the
+existing minimum-correction arithmetic on the PANEL rather than the
+moment's row: `top = panel.getBoundingClientRect().top -
+box.getBoundingClientRect().top`, `height =
+panel.getBoundingClientRect().height`. Verified by hand: scrolling the
+band so `.b-edit`'s bottom sits 24px inside the viewport puts all 4
+steppers on screen and still leaves 6 of 7 grab handles visible at
+1280x1000 and 7 of 7 at 1440/1920x1000 — comfortably over the gate's
+`>= 1`.
+COST: 0.4

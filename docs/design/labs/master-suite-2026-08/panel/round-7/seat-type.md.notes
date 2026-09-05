@@ -31,3 +31,35 @@ numbers at all four):
 src/across.css:266-277 is where the two anchors are set.
 Fix: reserve two lines for `.b-title` on the across axis and hug the
 axis-facing edge, so `.b-copy` has one height on both sides.
+
+### 3. tasks · the wrapping law — RAISED AND WITHDRAWN
+tasks.css:923 gives `.cardTitle` two wrapping laws switched by a sibling
+(`:has(.when)` → pretty, otherwise balance), four lines under a comment that
+writes "THE RULE: no text block may have two wrapping laws switched by a
+sibling." I measured both laws over 9 state×width combinations (board/dense/
+compact × 1280/1440/1920), 142 multi-line titles:
+  as-is             18 one-word LAST lines, 2 one-word FIRST lines, 0 over-clamp
+  balance everywhere 8 one-word LAST lines, 9 one-word FIRST lines, 0 over-clamp
+  pretty everywhere 24 one-word LAST lines, 14 short last lines
+Balance-everywhere halves the widows but produces exactly the rag the comment
+predicts at 1280 dense: «Chase» ⏎ «linen order, now» ⏎ «shipping Tuesday»,
+«Gravel» ⏎ «delivered for» ⏎ «the top car park», five of them in one column.
+So the recorded decision is the better of the two blunt options and my
+re-measurement CONFIRMS it. NOT raised as a finding.
+(What remains visible: 13 of the 18 widows are on chipped titles under
+`pretty` — "Clear Sunday 11am late checkout with / housekeeping" breaks after
+a preposition at 1280/1440/1920, and "Build the Saturday / run-sheet" at 1440.
+Content-shaped, not fixable by a keyword.)
+
+### 4. `.pacePct` — the one inherited letterfit in the suite (CONFIRMED)
+Swept every visible text element in all 10 states for a letter-spacing
+inherited across a size OR family change. Exactly one hit, suite-wide:
+  tasks `span.pacePct` "38%" — Geist Mono 11px, ls = -0.13px, inherited from
+  `.headFacts` (Geist 13px, `--tr-13` = -0.010em). So a MONO figure carries
+  -0.0118em, a letterfit computed for 13px SANS.
+tasks.css:325-328 declares family, size, line-height, weight, colour and
+tabular figures for `.pacePct` and no letter-spacing. Tasks has no mono step;
+the suite's declared one is +0.04em (notes `--tr-key`, timeline `--track-data`).
+Meanwhile `.trayCount` (tasks.css:149) is a mono figure at +0.1em with
+`margin-right:-0.1em` to kill the trailing space — so the two mono figures in
+the same header band sit 0.112em apart in fit.

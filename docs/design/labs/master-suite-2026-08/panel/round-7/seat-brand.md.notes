@@ -86,3 +86,30 @@ ALSO — the Notes head "…" is two names for one door: accessible name
 the desk is an empty capture field. The source comment at 19712 justifies
 the string by a button called "More actions for this note" that does not
 exist in the suite.
+
+## Sweep 4 — naming collisions (driven)
+
+FINDING (confirmed) — **two controls named "More" on one phone screen.**
+timeline.owner-flight @390: `.b-more` (the head's "···", y=140) and
+`.railTile[More]` (the dock, y=783) both carry aria-label "More" and
+aria-haspopup="menu". The first opens a menu ALSO labelled "More" holding
+Preview / Get the link — this plan's sharing. The second opens "Also in
+Signal Studio: Home / Inbox / Help / Settings" — the rest of the suite.
+Two unrelated destinations, one name, 643px apart, only at <=720 where the
+head collapses its acts. At 1440 the head spells them out and the collision
+disappears, which is why frames hide it.
+
+OBSERVED — the identity tile is printed twice at desk width (spine
+`.railAvatar` + product `.dockAvatar`, both "OR", both titled "Your account,
+in Signal Studio. Not here yet.") and carries TWO accessible names:
+"Orla, venue manager" everywhere except Notes' dock tile, which is
+"Orla, venue manager. Not here yet.".
+
+FINDING (confirmed) — **the dictation floor's privacy claim is about
+typing.** master.html:9410, rendered only at 18684, i.e. only on the
+dictation floor: "Signal Studio keeps the words, not the audio. Typing
+stays on this device until you save." Nobody types on that screen. The
+first sentence tells her the words are kept by Signal Studio; the second,
+which is the one that should say what happens to what she just SAID before
+she saves, is about a different verb. Two sentences, and the one that
+matters answers the wrong question.
