@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { before, test } from "node:test";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { freshFileDb } from "@/server/db/memory-test-db";
 import { compCodes, entitlements, meta, users, workspaces, workspaceMembers } from "@/server/db/schema";
 import { eraseAccountData } from "@/server/account-erasure";
@@ -32,7 +32,12 @@ async function fixture(member = false) {
     await f.db.insert(workspaces).values({ id: `project-${id}`, slug: id, name: id, ownerUserId: id, contextType: "wedding" });
     await f.db.insert(workspaceMembers).values({ workspaceId: `project-${id}`, userId: id, role: "owner" });
   }
-  if (member) await f.db.insert(workspaceMembers).values({ workspaceId: "project-b", userId: "a", role: "member" });
+  if (member) {
+    // Claim while authorised, then exercise erasure after an ownership transfer.
+    // Current member-only claims are correctly denied by the manager guard.
+    await f.db.update(workspaces).set({ ownerUserId: "a" }).where(eq(workspaces.id, "project-b"));
+    await f.db.insert(workspaceMembers).values({ workspaceId: "project-b", userId: "a", role: "owner" });
+  }
   const codes = [1, 2].map(i => ({ licenseCodeId: "vlc-" + String(i).repeat(32), code: generateCompCode("VENUE") }));
   const input: Extract<IssuanceCommand, { operation: "issue" }> = { operation: "issue", codes, manifest: {
     version: 1, issuanceId: "vi-" + "e".repeat(32), sponsorId: "synthetic-sponsor", sponsorSlug: "synthetic-venue",
@@ -44,6 +49,10 @@ async function fixture(member = false) {
   const claimed = await claim(f.db, { code: codes[0].code, actorUserId: "a", candidateProjectId: member ? "project-b" : "project-a", now: new Date(now + 1000) });
   assert.equal(claimed.ok, true);
   if (!claimed.ok) throw new Error("Fixture claim failed");
+  if (member) {
+    await f.db.update(workspaces).set({ ownerUserId: "b" }).where(eq(workspaces.id, "project-b"));
+    await f.db.update(workspaceMembers).set({ role: "member" }).where(and(eq(workspaceMembers.workspaceId, "project-b"), eq(workspaceMembers.userId, "a")));
+  }
   const read = { operation: "read" as const, issuanceId: input.manifest.issuanceId, manifestHash: manifestHash(input.manifest) };
   const withdraw = { ...read, operation: "withdraw" as const, licenseCodeId: codes[1].licenseCodeId };
   const key = erasedConsumptionKey(input.manifest.issuanceId, codes[0].licenseCodeId);
