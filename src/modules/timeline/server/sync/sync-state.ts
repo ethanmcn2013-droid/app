@@ -43,6 +43,13 @@ export const SYNC_LEASE_TTL_MS = 60_000;
 // retain the default client and the existing standalone transaction behavior.
 type PreparationExecutor = Pick<typeof db, "select" | "insert" | "update">;
 
+/** Must escape the optional-table fallback so the caller rolls back its writes. */
+class BindingWriteFailure extends Error {
+  constructor(cause: unknown) {
+    super("Timeline binding write failed.", { cause });
+  }
+}
+
 export type SyncLease = Readonly<{
   tasksWorkspaceId: string;
   timelineWorkspaceSlug: string;
@@ -125,6 +132,7 @@ export async function ensureSuiteProjectBinding(input: {
   try {
     return await ensureSuiteProjectBindingUnguarded(input, executor);
   } catch (error) {
+    if (error instanceof BindingWriteFailure) throw error;
     console.error("[sync-state] binding not recorded:", String(error));
     return { kind: "not-exact", reason: "binding-unavailable" };
   }
@@ -218,7 +226,12 @@ async function ensureSuiteProjectBindingUnguarded(input: {
     };
     if (executor) await writeBinding(executor);
     else await db.transaction(writeBinding);
-  } catch {
+  } catch (error) {
+    // In a caller-owned transaction our insert may still be uncommitted.
+    // Rereading it cannot prove an independent winner; let the owner roll
+    // back the entire preparation. Early optional-table reads still use the
+    // fallback above, and standalone transactions have already rolled back.
+    if (executor) throw new BindingWriteFailure(error);
     // A lost race is not a licence to rewrite the winner. Re-read it: if the
     // committed row is ours the caller is bound either way, and if it is not,
     // this is a reconciliation case.

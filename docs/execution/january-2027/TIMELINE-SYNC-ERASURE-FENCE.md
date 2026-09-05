@@ -88,3 +88,35 @@ Exact command receipts and the immutable candidate SHA are in the external
 handoff package. Principal owns combined candidate review, receiving Linux/full
 build checks and integration. This branch does not include principal's separate
 Briefing catch-all fallback repair, and does not supersede its documentation.
+
+## R1 independent-review follow-up
+
+Independent review of `d475362f` confirmed the scoped erasure repair and found
+one failure-atomicity regression: after a binding insert, a statement-level
+mirror-update ABORT left the caller transaction usable. The helper reread its
+own uncommitted insert as a race winner; preparation could commit a binding and
+sync-state row while the child mirror stayed null. This was a fault-injected
+atomicity regression, not a newly demonstrated authorization bypass.
+
+Caller-executor failures during the binding write phase now carry an internal
+`BindingWriteFailure` through both catches to the owning transaction. The cause
+is retained; the transaction rolls back rather than rereading its own write as
+independent winner evidence. The early optional-table reads and default
+standalone transaction/winner reread keep their existing behavior. Genuine
+pre-0001 fallback, inherited null-child fill and generation supersession remain
+covered by the existing actual-action cases.
+
+Four additional real-SQLite cases (31 total in the action suite) apply a
+BEFORE UPDATE OF source_tasks_workspace_id ABORT with FKs on/off. Both
+caller-owned cases were red against `d475362f` (one binding instead of zero);
+both standalone controls passed there. The regression now requires every table
+hash to remain unchanged, no lease, no external Tasks read, no invalidation,
+and successful import/reconciliation after removing the fault. The standalone
+controls separately retain fail-soft rollback and successful retry.
+
+The principal will rerun the independent reproducer for this narrow follow-up.
+Its original R1 observation expected partial preparation and a resolved source
+error; revalidation must instead expect a rejected preparation and zero partial
+rows. Preserve that original observation rather than relabelling it as a pass.
+No additional reviewer, optional-schema redesign or client retry repair is part
+of this change.

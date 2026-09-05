@@ -312,3 +312,53 @@ test("late reconcile failure rolls back CAS, node upsert and date history throug
     f.close();
   }
 });
+
+for (const foreignKeys of [true, false]) {
+  test(`R1 caller transaction rolls back an inserted binding after mirror ABORT and permits retry (FK ${foreignKeys})`, async () => {
+    const f = await fixture(foreignKeys);
+    try {
+      await f.client.execute("UPDATE projects SET source_tasks_workspace_id=NULL WHERE workspace_slug='a'");
+      await f.client.execute("CREATE TRIGGER reject_binding_mirror BEFORE UPDATE OF source_tasks_workspace_id ON projects WHEN OLD.workspace_slug='a' BEGIN SELECT RAISE(ABORT,'synthetic mirror failure'); END");
+      const before = await f.hashes();
+      const bystander = await f.bystander();
+      let sourceReads = 0;
+      const result = await f.action({ read: async () => {
+        sourceReads++;
+        return { kind: "error", code: "synthetic-offline" };
+      } })("a", "plan").then(value => ({ value, error: null }), (error: unknown) => ({ value: null, error }));
+      assert.equal(await f.count("suite_project_bindings"), 0, "the current transaction's inserted binding is not an independent race winner");
+      assert.equal(await f.count("timeline_source_sync_state"), 0, "failed preparation must not acquire a lease");
+      assert.deepEqual(await f.hashes(), before, "all data, including the null child, remains as before preparation");
+      assert.ok(result.error instanceof Error, "the write-phase failure must escape both catches and roll back the owning transaction");
+      assert.ok(result.error.cause instanceof Error, "the underlying statement failure remains available to the server");
+      assert.equal(sourceReads, 0, "preparation failure stops before the external Tasks read");
+      assert.deepEqual(f.invalidations, []);
+
+      await f.client.execute("DROP TRIGGER reject_binding_mirror");
+      const retry = await f.action()("a", "plan");
+      assert.ok("ok" in retry && retry.complete);
+      assert.equal(await f.count("suite_project_bindings"), 1);
+      assert.equal(await f.count("timeline_source_sync_state"), 1);
+      assert.equal((await f.queries.getProjectsForWorkspace("a"))[0].sourceTasksWorkspaceId, "tasks-a");
+      assert.equal(await f.count("tasks"), 2, "successful retry imports and reconciles the actual snapshot");
+      assert.equal(await f.bystander(), bystander);
+    } finally { f.close(); }
+  });
+
+  test(`R1 default standalone binding retains rollback/fail-soft behavior and retry (FK ${foreignKeys})`, async () => {
+    const f = await fixture(foreignKeys);
+    try {
+      await f.client.execute("UPDATE projects SET source_tasks_workspace_id=NULL WHERE workspace_slug='a'");
+      await f.client.execute("CREATE TRIGGER reject_binding_mirror BEFORE UPDATE OF source_tasks_workspace_id ON projects WHEN OLD.workspace_slug='a' BEGIN SELECT RAISE(ABORT,'synthetic mirror failure'); END");
+      const before = await f.hashes();
+      const input = { tasksWorkspaceId: "tasks-a", timelineWorkspaceSlug: "a", primaryTimelineSlug: "plan", authority: { kind: "inherits-workspace-binding" as const } };
+      assert.deepEqual(await f.sync.ensureSuiteProjectBinding(input), { kind: "not-exact", reason: "binding-race-lost" });
+      assert.deepEqual(await f.hashes(), before, "the default helper's private transaction still rolls back before rereading");
+      await f.client.execute("DROP TRIGGER reject_binding_mirror");
+      assert.deepEqual(await f.sync.ensureSuiteProjectBinding(input), { kind: "bound", created: true });
+      assert.equal((await f.queries.getProjectsForWorkspace("a"))[0].sourceTasksWorkspaceId, "tasks-a");
+      assert.equal(await f.count("suite_project_bindings"), 1);
+      assert.equal(await f.count("timeline_source_sync_state"), 0, "standalone binding does not acquire a sync lease");
+    } finally { f.close(); }
+  });
+}
