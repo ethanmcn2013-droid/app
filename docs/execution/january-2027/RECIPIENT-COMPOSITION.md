@@ -128,6 +128,8 @@ c1ab14+8 controls and8 request-pair replays preserve revocation and confirmed re
 The506-file source-verified checkpoint retains all failures and current Linux
 metadata/logs. CI33958530678 andVerify33958530581 pass; initial Design33958530570
 rejects the two stale source hashes. Final registry, fixtures and132 attestation
-checks now pass after the evidence-bound renewal. Fresh final Design CI remains
-pending. Earlier native Windows exits are unexplained; later/local/Linux passes
-do not erase them. The existing independent RC-3 and receiving hold remain unchanged.
+checks now pass after the evidence-bound renewal. All three final6eb workflows pass: CI33959562287, Verify33959562365 and
+Design33959562282. The tested merge tree equals the candidate tree. The475-file
+Linux archive retains the full uploaded artifact and independent evidence audit.
+EI-01 corrected16 cases versus two source hashes in the README; no evidence
+changed. Earlier native Windows exits remain unexplained; later passes do not erase them. The existing independent RC-3 and receiving hold remain unchanged.

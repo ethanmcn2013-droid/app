@@ -1,5 +1,30 @@
 # January recipient checkpoints
 
+## Latest Linux acceptance:6ebf71ef
+
+All three exact-candidate workflows pass: CI33959562287, Verify33959562365 and
+Design33959562282. The tested mergeac2470f5 has receiving77d and candidate6eb as
+parents; its tree equals the candidate tree. Product sources are unchanged from8172.
+Linux repeats132 built cases,68 route states, React/Floor/calendar/date/Notes
+checks, locale hydration and Timeline switching. The complete Drive lifecycle
+suite passes332 cases. The council instrument explicitly reports NOT CERTIFIED.
+
+`linux-6ebf71ef.zip` preserves475 indexed payload files and a
+separate embedded checkpoint, including the complete GitHub artifact, all three
+logs/metadata and the independent evidence-integrity audit. SHA-256:
+`afbebe51bc6c79d055665056bdc4153f51500b702c7655741d3200412387aa45`. All289 route,33 Floor and25 calendar
+source-hash entries match immutable6eb Git objects; every archived entry/CRC passes.
+These groups overlap and are not a count of distinct source files.
+
+The independent audit finds no corrupt or mismatched artifact or source binding.
+EI-01 identified one README count error:16 readback cases were mislabeled16 hashes.
+The wording below is corrected to two recorded component hashes; the underlying
+artifact is unchanged. Original audit and negative/failure receipts remain intact.
+No coverage, score, review date, human approval or provider claim was expanded.
+
+Receiving integration and the stopped RC-3 review remain held. Atlas/Studio gates,
+provider/human acceptance and release are separate; this is candidate Linux proof.
+
 ## Current composed evidence:8172364e
 
 Normal build `wnk1OREKC5EKuma6I3VoO` and all132 built browser cases pass at
@@ -32,13 +57,14 @@ reviewed renewal, and local registry/fixtures/132 receipt verification pass.
 `checkpoint-8172364e.zip` preserves506 exact files including raw
 132 embedded screenshots, final follow-up renders, commands, first failures and
 both repositories' six current Linux logs. All289 route,33 Floor and25 calendar
-production inputs match immutable8172 Git objects;16 readback source hashes match
-the captured bytes. SHA-256: `e8c5ba44258900952ca0ddc01bb9c6c195efd4f5dd0ef5c584970f6bb89e118c`.
+production inputs match immutable8172 Git objects. The16 readback cases record
+two component source hashes; both match the captured bytes and normalize to8172. SHA-256: `e8c5ba44258900952ca0ddc01bb9c6c195efd4f5dd0ef5c584970f6bb89e118c`.
 Every archive entry and CRC was verified. All earlier archives remain unchanged.
 
 This closes the scoped date defects and supplies current internal render evidence.
-Final design CI, stopped RC-3 independent review, receiving integration, complete
-authenticated/provider journeys, human/council and release acceptance remain open.
+Source-candidate Linux acceptance is recorded above. The stopped RC-3 review,
+receiving integration, complete authenticated/provider journeys, human/council
+and release acceptance remain open.
 The precedingffef packet below is historical and still describes its then-open
 WDATE-02. No production, Atlas retry, customer message or commercial opening occurred.
 
