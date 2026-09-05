@@ -6,7 +6,7 @@ const root = path.resolve(__dirname, '../..'), dep = createRequire(path.join(roo
 const ts = dep('typescript'), React = dep('react');
 const { createClient } = dep('@libsql/client'), { drizzle } = dep('drizzle-orm/libsql');
 
-async function recipientFixture() {
+async function recipientFixture(options = {}) {
   const scratch = path.join(root, 'experience/output/recipient-project-work/stores');
   fs.mkdirSync(scratch, { recursive: true });
   const directory = fs.mkdtempSync(path.join(scratch, 'recipient-'));
@@ -50,10 +50,10 @@ async function recipientFixture() {
   function load(name) {
     name = name.replace(/\.(tsx?|js)$/, '');
     if (overrides.has(name)) return overrides.get(name);
-    if (ui[name]) return ui[name];
+    if (!options.clientReferences && ui[name]) return ui[name];
     if (name === 'src/server/db/index' || name === 'src/server/db') return { db };
-    if (name === 'src/server/auth') return { ACTIVE_WORKSPACE_COOKIE_NAME: 'tasks_active_ws', getCurrentUser: async () => { state.authCalls++; return state.actor; }, getCurrentUserOrNull: async () => state.actor, getActiveWorkspaceOrNull: async () => state.cookies.get('tasks_active_ws') ?? null };
-    if (name === 'src/lib/access-mode') return { isDemoMode: () => state.demo, getAccessMode: () => state.demo ? 'review' : 'production' };
+    if (!options.actualAuth && name === 'src/server/auth') return { ACTIVE_WORKSPACE_COOKIE_NAME: 'tasks_active_ws', getCurrentUser: async () => { state.authCalls++; return state.actor; }, getCurrentUserOrNull: async () => state.actor, getActiveWorkspaceOrNull: async () => state.cookies.get('tasks_active_ws') ?? null };
+    if (name === 'src/lib/access-mode') return { isDemoMode: () => state.demo, isProductionMode: () => !state.demo, getAccessMode: () => state.demo ? 'review' : 'production' };
     if (name === 'src/lib/projects/flags') return { isActiveProjectV3Enabled: () => state.v3 };
     if (name === 'src/server/events') return { emitTasksChanged: () => {} };
     if (name === 'src/server/actions/seed') return { seedDomainAction: () => { throw Error('No reset is allowed in recipient entry'); } };
@@ -63,6 +63,10 @@ async function recipientFixture() {
     const mod = { exports: {} }; cache.set(name, mod);
     if (file.endsWith('.json')) { mod.exports = JSON.parse(sourceText(file)); return mod.exports; }
     const source = sourceText(file);
+    if (options.clientReferences && /^\s*["']use client["']/.test(source)) {
+      mod.exports = options.clientReferences(file);
+      return mod.exports;
+    }
     const js = ts.transpileModule(source, { fileName: file, compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
     const req = spec => {
       if (boundary[spec]) return boundary[spec];
@@ -71,10 +75,10 @@ async function recipientFixture() {
       if (spec.startsWith('.')) return load(path.posix.normalize(path.posix.join(path.posix.dirname(file), spec)));
       return dep(spec);
     };
-    new Function('require', 'module', 'exports', 'fetch', js)(req, mod, mod.exports, (...args) => {
+    new Function('require', 'module', 'exports', 'fetch', 'process', js)(req, mod, mod.exports, (...args) => {
       if (state.fetch) return state.fetch(...args);
       throw Error('Unexpected network: fixture has no provider access');
-    });
+    }, options.process ?? process);
     return mod.exports;
   }
   schema = load('src/server/db/schema'); db = drizzle(client, { schema });
@@ -85,8 +89,7 @@ async function recipientFixture() {
   `);
   function cookies(id = 'project-a') { state.cookies.set('signal_active_project', id); state.cookies.set('tasks_active_ws', id); state.cookieWrites.length = 0; }
   cookies();
-  const queries = load('src/server/db/queries');
-  async function reload(project = state.project) { state.project = project; state.tasks = await queries.getTasks(project); return state.tasks; }
+  async function reload(project = state.project) { state.project = project; state.tasks = await load('src/server/db/queries').getTasks(project); return state.tasks; }
   return { root, directory, db, client, schema, state, load, overrides, boundary, ui, cookies, reload, React, passthrough, sourceInputs, sourceText, close: () => client.close() };
 }
 module.exports = { recipientFixture };
