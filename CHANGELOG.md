@@ -4,6 +4,16 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-09-05 · January candidate · Unconfirmed file-access removal stays visible
+
+Connections keeps a notice after reload when Google file-access removal is still
+unconfirmed. It distinguishes current and previous project folders, including
+when live access cannot be checked. Existing live permission labels stay separate.
+
+The actual SQLite/component checks and independent projection review pass.
+Personal account-disconnect receipts and the real provider lifecycle remain open.
+Evidence: `experience/reviews/january-drive-pending-removal-2026-09-05/REPORT.md`.
+
 ## 2026-09-05 · January candidate · Drive ownership before connection
 
 Connections explains who will own and see the board's Drive files before an
@@ -7207,4 +7217,3 @@ was unfulfilled.
 **Backlog** — see `docs/cycles/backlog.md` for deferred items
 (TaskCard/MorphCard reunification, dead-code purge, useMemo on
 transitions, stable ref callback).
-

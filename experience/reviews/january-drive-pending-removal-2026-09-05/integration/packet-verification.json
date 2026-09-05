@@ -1,0 +1,24 @@
+{
+  "runtime": "1ac3d2335b68a02594f4e8c68793a962090f9579",
+  "evidenceCommit": "ce25e4ef480de6069713d3f53ae621b1d9fbc00a",
+  "archiveSha256": "17839e256005aefca9b81d0e93d406567c0358d32efa93f8a52bfe804d0ba572",
+  "archiveBytes": 6022813,
+  "verifiedEntries": 195,
+  "verifiedSourceFiles": [
+    "src/lib/project-drive-ui.ts",
+    "src/server/connections/project-drive-ui-status.ts",
+    "src/components/app/settings/sections/connections-view.tsx",
+    "src/components/app/settings/sections/connections-review.tsx",
+    "src/server/connections/project-drive-ui-status.test.ts",
+    "src/lib/project-drive-follow-up.test.tsx",
+    "experience/project-drive-pending-removal/scenarios.ts",
+    "src/components/app/settings/sections/connections.tsx",
+    "src/server/actions/project-drive-status.ts",
+    "src/server/connections/project-drive-core.test.helpers.ts",
+    "src/server/connections/drive-grants.ts",
+    "src/server/connections/project-drive-grant-repair.ts",
+    "src/server/connections/drive-connections.ts"
+  ],
+  "independentReviewPathsInArchive": [],
+  "verdict": "Payload hashes, source bindings and ZIP integrity pass; no new browser/provider/full-suite result is asserted."
+}
