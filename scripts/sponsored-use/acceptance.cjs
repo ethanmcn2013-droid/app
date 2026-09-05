@@ -35,8 +35,10 @@ async function check(name,fn){await fn();checks.push(name);console.log("PASS "+n
    await app.db.insert(app.schema.workspaceMembers).values({workspaceId:project,userId:"owner",role:"owner"});
    await app.db.insert(app.schema.meta).values({key:protocol.issuanceReceiptKey(m.issuanceId),value:JSON.stringify({manifest:m,manifestHash:protocol.manifestHash(m)})});
    await app.db.insert(app.schema.compCodes).values({code,tier:"wedding",durationDays:548,quantity:1,redeemed:1,notes:canonical.canonicalVenueCodeNotes(m,m.codes[0])});
+   // These projects belong to the original action-day cohort. Advancing the
+   // rollup clock must not move a later-inserted fixture grant into the next day.
    await app.db.insert(app.schema.entitlements).values({id:"quiet-grant-"+digit,userId:"owner",workspaceId:project,source:"comp",tier:"wedding",
-    startedAt:new Date(now-86400000),expiresAt:new Date(now+5*86400000),notes:"comp:"+code});
+    startedAt:new Date(app.now-86400000),expiresAt:new Date(app.now+5*86400000),notes:"comp:"+code});
    await mirror({manifest:m,code});
   }
   const appProvenance=app.load("src/app/api/internal/sponsored-use/provenance/route.ts").POST;
@@ -85,7 +87,11 @@ async function check(name,fn){await fn();checks.push(name);console.log("PASS "+n
   });
   studio.state.hqToken=await studio.load("src/lib/hq/auth.ts").createHqAccessToken();
   for(const n of [2,3])await check("actual authenticated HQ projection/export privacy threshold "+n,async()=>{
-   if(n===3){await quietGrant("c","N");assert.equal((await runJob()).status,200);}
+   if(n===3){
+    await quietGrant("c","N");assert.equal((await runJob()).status,200);
+    const days=await studio.database.select().from(studio.schema.sponsorUsageDaily);
+    assert.equal(days.length,1);assert.equal(days[0].eligibleWorkspaces,3,"all three fixture grants cover the original action day");
+   }
    const loaded=await hqAction("synthetic");assert.equal(loaded.ok,true);
    assert.equal(loaded.snapshot.adoption.activeRecently.state,n===2?"withheld":"lower_bound");
    if(n===2)for(const key of ["daysCovered","modulesCovered"])assert.equal(Object.hasOwn(loaded.snapshot.coverage,key),false);
