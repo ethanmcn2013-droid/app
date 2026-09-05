@@ -109,3 +109,25 @@ for the exact source and archive hashes. Runtime source remains identical after
 the evidence/tooling commits. Linux, independent RC-3 and receiving checks remain
 open; this is not final experience or release acceptance.
 No production state or outbound communication is changed by this work.
+
+## Current source8172364e — final internal render renewal
+
+The current checkpoint adds project-calendar continuity, exact-project sponsored
+date editing and the independently verified WDATE-01/02 repairs. It also removes
+both legacy actor-wide project-creation extension calls. Five new controls use
+explicit44px minima; the persisted-recipient fixture uses the actual calendar
+constructor. No schema or new public availability is introduced by these follow-ups.
+
+Normal build wnk1OREKC5EKuma6I3VoO and132 built cases pass. Six declared browser
+commands pass3 React,68 route,80 geometry/contrast,16 calendar,16 date-readback
+and27 Notes cases. The owning32-state/3-keyboard packet verifies the actual date
+components/action with isolated SQLite, normal CSS/fonts and59 touch measurements.
+Its identity/arrival/board/overview/router adapters remain explicit. Independent
+c1ab14+8 controls and8 request-pair replays preserve revocation and confirmed revisions.
+
+The506-file source-verified checkpoint retains all failures and current Linux
+metadata/logs. CI33958530678 andVerify33958530581 pass; initial Design33958530570
+rejects the two stale source hashes. Final registry, fixtures and132 attestation
+checks now pass after the evidence-bound renewal. Fresh final Design CI remains
+pending. Earlier native Windows exits are unexplained; later/local/Linux passes
+do not erase them. The existing independent RC-3 and receiving hold remain unchanged.

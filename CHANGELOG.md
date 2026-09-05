@@ -11,9 +11,10 @@ work and daily grouping. A refreshed project day updates the header and tasks
 together. Creating another wedding project leaves existing access grants alone,
 including revoked grants; redemption reads the new project's own date.
 
-These internal changes pass their scoped regressions and the combined build.
-Sponsored-date editing remains under final review for a refresh-during-save
-retry case. The exact evidence and remaining limits are recorded in
+Sponsored-date editing keeps access copy current and preserves the confirmed
+revision across a pending save. Both readback defects pass independent verification.
+The final build,132 built cases,32 date states and3 keyboard paths pass. Five date
+controls now use an explicit44px minimum. The exact evidence and limits are in
 `experience/reviews/january-recipient-2026-09-05/README.md`. Customer identity,
 provider, design and receiving acceptance remain separate.
 

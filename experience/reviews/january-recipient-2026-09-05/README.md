@@ -1,5 +1,47 @@
 # January recipient checkpoints
 
+## Current composed evidence:8172364e
+
+Normal build `wnk1OREKC5EKuma6I3VoO` and all132 built browser cases pass at
+`8172364e3f7ba8332b4ce7a73ae4563a34b7867c`. All six separate browser commands
+also pass:3 React controls,68 actual-route states,80 strict paired Floor/project
+checks,16 calendar cases,16 wedding readback cases and27 Notes scenarios.
+
+The final date packet in `../january-sponsored-wedding-date-8172-2026-09-05`
+passes32 state/viewport and3 keyboard checks with59 measured44px touch targets.
+Its203-entry archive is independently decompressed/hash-checked. Principal
+inspected mobile arrival, cleared date and expired desktop form renders. Actual
+components and action/SQLite execution retain explicit identity/arrival/board/
+overview/navigation adapters; this is not full Next/Clerk/Flight continuity.
+
+WDATE-01 and WDATE-02 are independently fixed atc1ab57de. The unchanged retained
+14 controls and8 fresh orderings pass;8 actual SQLite request pairs commit while
+preserving revocation. Four old-source pairs reproduce conflict. The independent
+76-file report and its negative controls are preserved in this checkpoint.
+
+The owning full gate caught five spacing11 utilities;054b pins their44px intent
+without changing the rule. Typecheck and full lint pass.8172 replaces an incomplete
+test calendar object with the actual constructor; all228 unchanged assertions pass.
+Native catalog and billing child exits remain retained. Catalog's identical-command
+confirmation passes; billing prints40 passes before its native exit. The remaining
+declared commands,43 date regressions,57 module checks and migration contracts pass.
+Linux CI33958530678 andVerify33958530581 pass at8172. Design33958530570 initially
+rejects stale Tasks/Project materiality; the final actual captures now support their
+reviewed renewal, and local registry/fixtures/132 receipt verification pass.
+
+`checkpoint-8172364e.zip` preserves506 exact files including raw
+132 embedded screenshots, final follow-up renders, commands, first failures and
+both repositories' six current Linux logs. All289 route,33 Floor and25 calendar
+production inputs match immutable8172 Git objects;16 readback source hashes match
+the captured bytes. SHA-256: `e8c5ba44258900952ca0ddc01bb9c6c195efd4f5dd0ef5c584970f6bb89e118c`.
+Every archive entry and CRC was verified. All earlier archives remain unchanged.
+
+This closes the scoped date defects and supplies current internal render evidence.
+Final design CI, stopped RC-3 independent review, receiving integration, complete
+authenticated/provider journeys, human/council and release acceptance remain open.
+The precedingffef packet below is historical and still describes its then-open
+WDATE-02. No production, Atlas retry, customer message or commercial opening occurred.
+
 ## Intermediate composition: ffef20c0
 
 Normal build `W-F-Zpv_Dj2DiF3YAmm5s` and132 built cases pass at
