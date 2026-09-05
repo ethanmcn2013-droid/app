@@ -9,7 +9,7 @@ import type { DriveHandoverRead } from "./project-drive-handover-ui";
 
 test("first consent and separate board setup both disclose future file ownership and visibility", () => {
   for (const connected of [false, true]) {
-    const html = renderToStaticMarkup(<ConnectionsView status={{ ownerName: null, folderUrl: null, setup: "not_connected", ownConnection: { connected, needsReconnect: false, accountEmail: connected ? "owner@example.test" : null, affectedProjectCount: 0 }, access: { state: "not_connected", checkedAt: null, people: [], otherPermissionCount: 0 } }} busy={false} message={null} confirmation={false} handover={null} onRefresh={() => {}} onConnect={() => {}} onEnable={() => {}} onDisconnect={() => {}} onCancelDisconnect={() => {}} onConfirmDisconnect={() => {}} />);
+    const html = renderToStaticMarkup(<ConnectionsView status={{ ownerName: null, folderUrl: null, setup: "not_connected", pendingRemovals: { currentFolder: 0, previousFolders: 0 }, ownConnection: { connected, needsReconnect: false, accountEmail: connected ? "owner@example.test" : null, affectedProjectCount: 0 }, access: { state: "not_connected", checkedAt: null, people: [], otherPermissionCount: 0 } }} busy={false} message={null} confirmation={false} handover={null} onRefresh={() => {}} onConnect={() => {}} onEnable={() => {}} onDisconnect={() => {}} onCancelDisconnect={() => {}} onConfirmDisconnect={() => {}} />);
     assert.match(html, /will own and be able to see its Drive files/);
     assert.match(html, /Those files use their Google Drive space/);
     assert.ok(html.indexOf("will own and be able to see") < html.indexOf(connected ? "Use my Drive for this board" : "Connect Google Drive"));

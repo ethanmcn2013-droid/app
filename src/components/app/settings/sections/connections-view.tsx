@@ -50,6 +50,12 @@ export function ConnectionsView({ status, busy, message, onRefresh, onConnect, o
         <h3 id="drive-access-heading" className="max-w-[340px] text-[16px] font-semibold text-ink">Who can open this board’s files</h3>
         <button className={driveButton} disabled={busy} onClick={onRefresh}>Check again</button>
       </div>
+      {status.pendingRemovals.currentFolder > 0 || status.pendingRemovals.previousFolders > 0 ? <div role="status" aria-label="Pending access removal" className="mt-3 rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-ink">
+        <p className="font-medium">Access removal is pending</p>
+        {status.pendingRemovals.currentFolder > 0 ? <p className="mt-2">Removal of some access to this board’s current Drive folder is still unconfirmed.</p> : null}
+        {status.pendingRemovals.previousFolders > 0 ? <p className="mt-2">Removal of some access to this board’s previous Drive folders is still unconfirmed.</p> : null}
+        <p className="mt-2">People may still be able to open those files.</p>
+      </div> : null}
       {status.access.state === "checked" ? <>
         <p className="mt-2 text-[12px]">Google access checked at <time dateTime={status.access.checkedAt!}>{status.access.checkedAt?.slice(11, 16)} UTC</time>. Access can change in Google Drive.</p>
         {hasGap ? <p className="mt-3 rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-ink">Some members do not have confirmed editing access. Board membership alone does not give Google Drive access.</p> : null}
