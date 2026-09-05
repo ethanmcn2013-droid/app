@@ -34,6 +34,7 @@ import {
 } from "@/modules/notes/lib/notes-view-model";
 import { taskFocusPath } from "@/lib/product-urls";
 import type { NotesCopy } from "@/modules/notes/lib/notes-copy";
+import { editAfterSave, recoveredEditForNote, type RecoveredEdit } from "@/modules/notes/lib/notes-recovery";
 
 /**
  * Everything Notes knows about a person's writing, and everything that can
@@ -113,18 +114,12 @@ type PendingCapture = {
   createdAt: number;
 };
 
-type RecoveredEdit = {
-  body: string;
-  expectedUpdatedAt: number;
-  queued: boolean;
-};
-
 type DeleteUndo = { note: NoteRead; timer: number; finalized: { done: boolean } };
 
 declare global {
   interface Window {
     /** Installed by EarlyCaptureBootstrap; claimed exactly once. */
-    __signalNotesClaimEarlyCapture?: () => { value: string; pendingSave: boolean };
+    __signalNotesClaimEarlyCapture?: () => { value: string; pendingSave: boolean; actorScope: string | null; workspaceId: string | null };
   }
 }
 
@@ -133,6 +128,7 @@ export type NotebookOptions = {
   initialArchivedNotes: NoteRead[];
   initialPendingApprovedTaskSends: PendingApprovedTasksSendRead[];
   initialWorkspaceId: string | null;
+  captureAllowed?: boolean;
   recoveryScope: string;
   demoMode: boolean;
   copy: NotesCopy;
@@ -160,7 +156,11 @@ function upsertNote(notes: NoteRead[], note: NoteRead): NoteRead[] {
 function readSession<T>(key: string, fallback: T): T {
   try {
     const raw = window.sessionStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
+    if (!raw) return fallback;
+    const value: unknown = JSON.parse(raw);
+    if (Array.isArray(fallback)) return Array.isArray(value) ? value as T : fallback;
+    if (typeof fallback === "string") return typeof value === "string" ? value as T : fallback;
+    return value && typeof value === "object" && !Array.isArray(value) ? value as T : fallback;
   } catch {
     return fallback;
   }
@@ -232,11 +232,11 @@ export function useNotebook(options: NotebookOptions) {
   const { demoMode, copy } = options;
   const recoveryKeys = useMemo(
     () => ({
-      draft: `${DRAFT_PREFIX}:${options.recoveryScope}`,
+      draft: `${DRAFT_PREFIX}:${options.recoveryScope}${options.initialWorkspaceId ? `:${encodeURIComponent(options.initialWorkspaceId)}` : ""}`,
       captures: `${CAPTURES_PREFIX}:${options.recoveryScope}`,
       edits: `${EDITS_PREFIX}:${options.recoveryScope}`,
     }),
-    [options.recoveryScope],
+    [options.recoveryScope, options.initialWorkspaceId],
   );
 
   const [notes, setNotes] = useState<NoteRead[]>(() => sortNewest(options.initialNotes));
@@ -249,6 +249,15 @@ export function useNotebook(options: NotebookOptions) {
   const [recoveryAvailable, setRecoveryAvailable] = useState(true);
 
   const [draft, setDraft] = useState("");
+  const [earlierDeviceCopy, setEarlierDeviceCopy] = useState("");
+  const draftRef = useRef("");
+  const mounted = useRef(true);
+  const editMemory = useRef<Record<string, RecoveredEdit>>({});
+  const savingNotes = useRef(new Set<string>());
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   const [captureStatus, setCaptureStatus] = useState<CaptureStatus>("idle");
   const [captureError, setCaptureError] = useState<string | null>(null);
 
@@ -343,25 +352,36 @@ export function useNotebook(options: NotebookOptions) {
 
   const setPending = useCallback(
     (next: PendingCapture[]): boolean => {
-      const persisted = writeSession(recoveryKeys.captures, next);
+      // Other Project queues belong to their original destination. Keep them
+      // until that Project is reopened; never adopt or remove them here.
+      const others = readSession<PendingCapture[]>(recoveryKeys.captures, [])
+        .filter((item) => item && item.workspaceId !== options.initialWorkspaceId);
+      const persisted = writeSession(recoveryKeys.captures, [...others, ...next]);
       pendingRef.current = next;
       return persisted;
     },
-    [recoveryKeys.captures],
+    [recoveryKeys.captures, options.initialWorkspaceId],
   );
 
   const writeRecoveredEdit = useCallback(
-    (noteId: string, edit: RecoveredEdit | null): boolean => {
+    (noteId: string, edit: Omit<RecoveredEdit, "workspaceId"> | RecoveredEdit | null): boolean => {
       const edits = readSession<Record<string, RecoveredEdit>>(recoveryKeys.edits, {});
-      if (edit) edits[noteId] = edit;
-      else delete edits[noteId];
+      if (edit) {
+        const bound = { ...edit, workspaceId: "workspaceId" in edit ? edit.workspaceId : notes.find((note) => note.id === noteId)?.workspaceId ?? null };
+        edits[noteId] = bound;
+        editMemory.current[noteId] = bound;
+      } else {
+        delete edits[noteId];
+        delete editMemory.current[noteId];
+      }
       return writeSession(recoveryKeys.edits, Object.keys(edits).length ? edits : null);
     },
-    [recoveryKeys.edits],
+    [recoveryKeys.edits, notes],
   );
 
   const persistDraft = useCallback(
     (value: string) => {
+      draftRef.current = value;
       setDraft(value);
       setRecoveryAvailable(writeSession(recoveryKeys.draft, value));
     },
@@ -372,8 +392,9 @@ export function useNotebook(options: NotebookOptions) {
 
   const submitCapture = useCallback(
     async (capture: PendingCapture, recoveryReady = true): Promise<boolean> => {
+      if (!mounted.current || capture.workspaceId !== options.initialWorkspaceId) return false;
       const persistenceReady =
-        recoveryReady || writeSession(recoveryKeys.captures, pendingRef.current);
+        recoveryReady || setPending(pendingRef.current);
       setRecoveryAvailable(persistenceReady);
       setMutationStates((current) => ({
         ...current,
@@ -386,6 +407,12 @@ export function useNotebook(options: NotebookOptions) {
           : "This device cannot hold a spare copy. Your words are still in the composer, so keep this tab open until you reconnect.";
         setCaptureError(message);
         announce(message);
+        return false;
+      }
+      if (options.captureAllowed === false) {
+        setMutationStates((current) => ({ ...current, [capture.id]: "failed" }));
+        setCaptureStatus("failed");
+        setCaptureError("This project is unavailable. Your writing is kept here and has not been moved to another project.");
         return false;
       }
       setCaptureStatus("pending");
@@ -404,10 +431,13 @@ export function useNotebook(options: NotebookOptions) {
             body: capture.body,
             workspaceId: capture.workspaceId,
             source: capture.source,
+            expectedActorScope: options.recoveryScope,
           });
+          if (!mounted.current) return false;
           setNotes((current) => upsertNote(current, saved));
         }
         setPending(pendingRef.current.filter((item) => item.id !== capture.id));
+        if (draftRef.current === capture.body) persistDraft("");
         setMutationStates((current) => ({ ...current, [capture.id]: "saved" }));
         setCaptureStatus("saved");
         setCaptureError(null);
@@ -417,6 +447,7 @@ export function useNotebook(options: NotebookOptions) {
         );
         return true;
       } catch (error) {
+        if (!mounted.current) return false;
         setMutationStates((current) => ({ ...current, [capture.id]: "failed" }));
         setCaptureStatus("failed");
         const message = friendlyError(
@@ -432,7 +463,7 @@ export function useNotebook(options: NotebookOptions) {
         return false;
       }
     },
-    [announce, demoMode, online, recoveryKeys.captures, reviewMode, setPending],
+    [announce, demoMode, online, persistDraft, reviewMode, setPending, options.initialWorkspaceId, options.captureAllowed, options.recoveryScope],
   );
 
   /**
@@ -447,9 +478,9 @@ export function useNotebook(options: NotebookOptions) {
       body: string,
       source: NoteCaptureSource = "typed",
     ): Promise<{ ok: boolean; id: string } | null> => {
-      if (readOnly) return null;
-      const text = body.trim();
-      if (!text) return null;
+      if (readOnly || options.captureAllowed === false || !mounted.current) return null;
+      const text = body;
+      if (!text.trim()) return null;
       if (text.length > MAX_NOTE_BODY_CHARS) {
         setCaptureStatus("failed");
         setCaptureError("A note can hold up to 10,000 characters.");
@@ -473,7 +504,7 @@ export function useNotebook(options: NotebookOptions) {
       const ok = await submitCapture(capture, persisted);
       return { ok, id: capture.id };
     },
-    [options.initialWorkspaceId, readOnly, setPending, submitCapture],
+    [options.initialWorkspaceId, options.captureAllowed, readOnly, setPending, submitCapture],
   );
 
   /**
@@ -504,12 +535,12 @@ export function useNotebook(options: NotebookOptions) {
     if (result?.ok) {
       // Only clear once the server has it, and only if the person has not
       // started a different thought in the meantime.
-      setDraft((current) => (current === snapshot ? "" : current));
+      if (mounted.current && draftRef.current === snapshot) persistDraft("");
       announce("Note saved.");
       return result.id;
     }
     return null;
-  }, [announce, captureNote, captureStatus, draft]);
+  }, [announce, captureNote, captureStatus, draft, persistDraft]);
 
   const retryCapture = useCallback(
     async (id: string) => {
@@ -529,21 +560,25 @@ export function useNotebook(options: NotebookOptions) {
     // thing the person wrote and it exists nowhere else.
     const claimed = window.__signalNotesClaimEarlyCapture?.();
     const recoveredDraft = readSession<string>(recoveryKeys.draft, "");
+    // V3's old composer value has no Project binding. Keep it visible to the
+    // same actor as a copyable private artifact, never auto-file it into B.
+    if (options.initialWorkspaceId) setEarlierDeviceCopy(readSession<string>(`${DRAFT_PREFIX}:${options.recoveryScope}`, ""));
     const recoveredPending = readSession<PendingCapture[]>(recoveryKeys.captures, []).filter(
       (capture) =>
         typeof capture?.id === "string" &&
         typeof capture?.body === "string" &&
         typeof capture?.createdAt === "number" &&
-        /^n_[0-9a-f]{32}$/.test(capture.id),
+        /^n_[0-9a-f]{32}$/.test(capture.id) &&
+        capture.workspaceId === options.initialWorkspaceId,
     );
-    const early = claimed?.value?.trim() ? claimed.value : "";
+    const early = claimed?.actorScope === options.recoveryScope && claimed.workspaceId === options.initialWorkspaceId && claimed.value.trim() ? claimed.value : "";
     if (early && recoveredDraft && early !== recoveredDraft) {
       // Two different drafts, both real. Keep the recovered one as a saved
       // note rather than letting the newer keystrokes overwrite it.
       rescuedDraftRef.current = recoveredDraft;
     }
     const adopted = early || recoveredDraft;
-    if (adopted) setDraft(adopted);
+    if (adopted) { draftRef.current = adopted; setDraft(adopted); }
     if (early && claimed?.pendingSave) earlySaveRef.current = adopted;
     if (recoveredPending.length) {
       setPending(recoveredPending);
@@ -557,7 +592,7 @@ export function useNotebook(options: NotebookOptions) {
     };
     const handle = window.setTimeout(adopt, 0);
     return () => window.clearTimeout(handle);
-  }, [recoveryKeys.captures, recoveryKeys.draft, setPending, submitCapture]);
+  }, [recoveryKeys.captures, recoveryKeys.draft, setPending, submitCapture, options.initialWorkspaceId, options.recoveryScope]);
 
   // Retry whatever was queued while offline, the moment the line comes back.
   useEffect(() => {
@@ -629,14 +664,11 @@ export function useNotebook(options: NotebookOptions) {
         setDetailStatus("idle");
         return;
       }
-      const recovered = readSession<Record<string, RecoveredEdit>>(recoveryKeys.edits, {})[
-        note.id
-      ];
-      const valid =
-        recovered &&
-        typeof recovered.body === "string" &&
-        typeof recovered.expectedUpdatedAt === "number";
-      if (valid) {
+      const stored: Partial<RecoveredEdit> | undefined = editMemory.current[note.id] ?? readSession<Record<string, RecoveredEdit>>(recoveryKeys.edits, {})[note.id];
+      // Legacy edit records were actor/note scoped. Bind them to this owned
+      // row; their old version still goes through the normal conflict check.
+      const recovered = recoveredEditForNote(stored && !("workspaceId" in stored) ? { ...stored, workspaceId: note.workspaceId } : stored, note);
+      if (recovered && recovered.body !== note.body) {
         setDetailBody(recovered.body);
         setDetailBase(recovered.expectedUpdatedAt);
         setQueuedEdit(recovered.queued ? note.id : null);
@@ -680,117 +712,92 @@ export function useNotebook(options: NotebookOptions) {
     [copy.errors.retryPending, recoveryKeys.edits],
   );
 
+  const editDetail = useCallback((note: NoteRead, body: string) => {
+    setDetailBody(body);
+    setDetailStatus("idle");
+    // Reverting to the displayed base is still a new edit when an earlier
+    // request may replace that base. Keep it until the reply reconciles.
+    const persisted = writeRecoveredEdit(note.id, body === note.body && !savingNotes.current.has(note.id) ? null : {
+      body, expectedUpdatedAt: detailBase, workspaceId: note.workspaceId, queued: false,
+    });
+    setRecoveryAvailable(persisted);
+    setDetailError(persisted ? null : "This device cannot keep a recovery copy. Keep this tab open until your edit is saved.");
+  }, [detailBase, writeRecoveredEdit]);
+
 
   const saveDetail = useCallback(
-    async (note: NoteRead, overrideExpectedAt?: number): Promise<boolean> => {
-      if (readOnly || detailBody === note.body) return false;
-      if (!detailBody.trim()) {
+    async (note: NoteRead, overrideExpectedAt?: number, retained?: RecoveredEdit): Promise<boolean> => {
+      const body = retained?.body ?? detailBody;
+      const expectedUpdatedAt = overrideExpectedAt ?? retained?.expectedUpdatedAt ?? detailBase;
+      if (!mounted.current || readOnly || body === note.body || savingNotes.current.has(note.id)) return false;
+      if (!body.trim() || body.length > MAX_NOTE_BODY_CHARS) {
         setDetailStatus("failed");
-        setDetailError("A note cannot be empty. Delete it if you no longer need it.");
+        setDetailError(!body.trim() ? "A note cannot be empty. Delete it if you no longer need it." : "A note can hold up to 10,000 characters.");
         return false;
       }
-      if (detailBody.length > MAX_NOTE_BODY_CHARS) {
-        setDetailStatus("failed");
-        setDetailError("A note can hold up to 10,000 characters.");
-        return false;
-      }
+      const attempt = { body, expectedUpdatedAt, workspaceId: note.workspaceId, queued: true };
+      const persisted = writeRecoveredEdit(note.id, attempt);
+      setRecoveryAvailable(persisted);
+      const isOpen = () => openNoteIdRef.current === note.id;
       if (!online) {
-        setDetailStatus("failed");
-        const persisted = writeRecoveredEdit(note.id, {
-          body: detailBody,
-          expectedUpdatedAt: overrideExpectedAt ?? detailBase,
-          queued: true,
-        });
         setQueuedEdit(persisted ? note.id : null);
-        setDetailError(
-          persisted
-            ? "Kept on this device. Signal will check the saved version when you reconnect."
-            : "This device cannot hold a spare copy. Your edit is still on screen, so keep this tab open.",
-        );
+        setDetailStatus("failed");
+        setDetailError(persisted ? "Kept on this device. Signal will check the saved version when you reconnect." : "This device cannot hold a spare copy. Keep this tab open until your edit is saved.");
         return false;
       }
-      setDetailStatus("saving");
-      setDetailError(null);
+      if (isOpen()) { setDetailStatus("saving"); setDetailError(null); }
+      savingNotes.current.add(note.id);
       try {
+        let result;
         if (demoMode) {
           if (reviewMode === "conflict" && !simulatedConflictOnce.current) {
             simulatedConflictOnce.current = true;
-            const remote = demoSaved(note, `${note.body}\n\nEdited somewhere else.`);
-            writeRecoveredEdit(note.id, {
-              body: detailBody,
-              expectedUpdatedAt: detailBase,
-              queued: false,
-            });
-            setNotes((current) => upsertNote(current, remote));
-            setConflict({ noteId: note.id, localBody: detailBody, remote });
-            setDetailStatus("failed");
-            setDetailError("This note changed somewhere else. Both versions are kept.");
-            return false;
+            result = { status: "conflict" as const, remote: demoSaved(note, note.body + "\n\nEdited somewhere else.") };
+          } else {
+            result = { status: "saved" as const, note: demoSaved({ ...note, updatedAt: expectedUpdatedAt }, body) };
           }
-          const saved = demoSaved(
-            { ...note, updatedAt: overrideExpectedAt ?? note.updatedAt },
-            detailBody,
-          );
-          setNotes((current) => upsertNote(current, saved));
-          setDetailBase(saved.updatedAt);
         } else {
-          const result = await updateNoteWithVersion({
-            id: note.id,
-            body: detailBody,
-            expectedUpdatedAt: overrideExpectedAt ?? detailBase,
-          });
-          if (result.status === "conflict") {
-            writeRecoveredEdit(note.id, {
-              body: detailBody,
-              expectedUpdatedAt: detailBase,
-              queued: false,
-            });
-            setNotes((current) => upsertNote(current, result.remote));
-            setConflict({ noteId: note.id, localBody: detailBody, remote: result.remote });
+          result = await updateNoteWithVersion({ id: note.id, body, expectedUpdatedAt, expectedActorScope: options.recoveryScope });
+        }
+        // An old account/Project frame must not settle a new frame's recovery.
+        // Its original persisted attempt will reconcile on the next open.
+        if (!mounted.current) return false;
+        if (result.status === "conflict") {
+          const local = editMemory.current[note.id] ?? attempt;
+          writeRecoveredEdit(note.id, { ...local, queued: false });
+          setNotes((current) => upsertNote(current, result.remote));
+          if (isOpen()) {
+            setConflict({ noteId: note.id, localBody: local.body, remote: result.remote });
             setDetailStatus("failed");
             setDetailError("This note changed somewhere else. Both versions are kept.");
-            return false;
           }
-          setNotes((current) => upsertNote(current, result.note));
-          setDetailBase(result.note.updatedAt);
+          return false;
         }
-        writeRecoveredEdit(note.id, null);
-        setQueuedEdit(null);
-        setConflict(null);
-        setDetailStatus("saved");
-        announce("Note saved.");
-        window.setTimeout(
-          () => setDetailStatus((current) => (current === "saved" ? "idle" : current)),
-          1_600,
-        );
+        const remaining = editAfterSave(editMemory.current[note.id] ?? null, attempt, result.note);
+        writeRecoveredEdit(note.id, remaining);
+        setNotes((current) => upsertNote(current, result.note));
+        setQueuedEdit((current) => current === note.id ? null : current);
+        if (isOpen()) {
+          setDetailBase(remaining?.expectedUpdatedAt ?? result.note.updatedAt);
+          setConflict(null);
+          setDetailStatus(remaining ? "idle" : "saved");
+          if (!remaining) announce("Note saved.");
+        }
         return true;
       } catch (error) {
-        const persisted = writeRecoveredEdit(note.id, {
-          body: detailBody,
-          expectedUpdatedAt: overrideExpectedAt ?? detailBase,
-          queued: true,
-        });
-        setDetailStatus("failed");
-        const message = friendlyError(
-          error,
-          "That edit could not be saved. Your version is still here.",
-        );
-        setDetailError(
-          persisted ? `${message} It is kept for a retry.` : `${message} Keep this tab open.`,
-        );
+        if (!mounted.current) return false;
+        const local = editMemory.current[note.id] ?? attempt;
+        const kept = writeRecoveredEdit(note.id, { ...local, queued: true });
+        if (isOpen()) {
+          setDetailStatus("failed");
+          setDetailError(friendlyError(error, "That edit could not be saved.") + (kept ? " Your version is kept for a retry." : " Keep this tab open."));
+        }
         return false;
+      } finally {
+        savingNotes.current.delete(note.id);
       }
     },
-    [
-      announce,
-      demoMode,
-      detailBase,
-      detailBody,
-      online,
-      readOnly,
-      reviewMode,
-      writeRecoveredEdit,
-    ],
+    [announce, demoMode, detailBase, detailBody, online, options.recoveryScope, readOnly, reviewMode, writeRecoveredEdit],
   );
 
   const resolveConflict = useCallback(
@@ -842,10 +849,11 @@ export function useNotebook(options: NotebookOptions) {
     if (!online || !queuedEdit || conflict || readOnly) return;
     const handle = window.setTimeout(() => {
       const note = notes.find((candidate) => candidate.id === queuedEdit);
-      if (note) void saveDetail(note);
+      const retained = note ? recoveredEditForNote(editMemory.current[note.id] ?? readSession<Record<string, RecoveredEdit>>(recoveryKeys.edits, {})[note.id], note) : null;
+      if (note && retained) void saveDetail(note, undefined, retained);
     }, 0);
     return () => window.clearTimeout(handle);
-  }, [conflict, notes, online, queuedEdit, readOnly, saveDetail]);
+  }, [conflict, notes, online, queuedEdit, readOnly, recoveryKeys.edits, saveDetail]);
 
   // ── Delete, with the undo the person actually needs ─────────────────
 
@@ -1226,6 +1234,7 @@ export function useNotebook(options: NotebookOptions) {
     pendingSends,
 
     draft,
+    earlierDeviceCopy,
     setDraft: persistDraft,
     saveDraft,
     captureNote,
@@ -1236,6 +1245,7 @@ export function useNotebook(options: NotebookOptions) {
 
     detailBody,
     setDetailBody,
+    editDetail,
     detailStatus,
     detailError,
     setDetailError,

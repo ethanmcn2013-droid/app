@@ -230,6 +230,7 @@ export type ActiveProjectState = Readonly<{
 export type ActiveProjectEvent =
   | Readonly<{ type: "route"; routeKey: string }>
   | Readonly<{ type: "snapshot"; snapshot: RouteSnapshot }>
+  | Readonly<{ type: "snapshot-unavailable"; routeKey: string; epoch: number }>
   | Readonly<{ type: "select-started"; pending: ActiveProjectPending }>
   | Readonly<{ type: "select-failed"; message: string }>
   | Readonly<{ type: "select-refused"; refusal: SelectProjectRefusal }>
@@ -251,6 +252,10 @@ export function reduceActiveProject(
   event: ActiveProjectEvent,
 ): ActiveProjectState {
   switch (event.type) {
+    case "snapshot-unavailable":
+      if (event.routeKey !== state.live.routeKey || event.epoch !== state.live.epoch) return state;
+      if (!state.committed && !state.pending) return state;
+      return { ...state, committed: null, pending: null };
     case "route": {
       if (state.live.routeKey === event.routeKey && state.live.epoch > 0) {
         return state;

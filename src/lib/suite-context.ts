@@ -1,9 +1,13 @@
+import { canonicaliseProjectUrl } from "@/lib/projects/project-url";
+
 export type SuiteContextV2 = Readonly<{
   version: 2;
   planningPeriodId?: string;
   projectId?: string;
   workspaceId: string;
 }>;
+
+export type SuiteNavigationContext = SuiteContextV2 | Readonly<{ version: 3; workspaceId: string }>;
 
 const CONTEXT_ID = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
 
@@ -35,13 +39,18 @@ export const SUITE_CONTEXT_V2_PARAMS = [
 /** Context IDs are navigation hints. Consumers must still authorize them. */
 export function withSuiteContext(
   appUrl: string,
-  context: SuiteContextV2 | null,
+  context: SuiteNavigationContext | null,
 ): string {
   if (!context) return appUrl;
   const isAppPath = appUrl.startsWith("/");
   const url = isAppPath
     ? new URL(appUrl, "https://app.signalstudio.ie")
     : new URL(appUrl);
+  if (context.version === 3) {
+    url.searchParams.set("workspaceId", context.workspaceId);
+    const canonical = canonicaliseProjectUrl(`${url.pathname}${url.search}${url.hash}`).url;
+    return isAppPath ? canonical : new URL(canonical, url.origin).toString();
+  }
   url.searchParams.set("sourceProduct", "tasks");
   url.searchParams.set("contextVersion", "2");
   url.searchParams.set("workspaceId", context.workspaceId);
