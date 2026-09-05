@@ -1,0 +1,19 @@
+{"control":"bare libSQL, no App implementation imported","afterContention":"LibsqlError: SQLITE_BUSY: cannot commit transaction - SQL statements in progress"}
+LibsqlError: SQLITE_BUSY: database is locked
+    at mapSqliteError (C:\Users\ethan\signal-studio-workspace\worktrees\app\feat-january-sponsored-wedding-date\node_modules\.pnpm\@libsql+client@0.17.3\node_modules\@libsql\client\lib-cjs\sqlite3.js:458:16)
+    at executeStmt (C:\Users\ethan\signal-studio-workspace\worktrees\app\feat-january-sponsored-wedding-date\node_modules\.pnpm\@libsql+client@0.17.3\node_modules\@libsql\client\lib-cjs\sqlite3.js:361:15)
+    at Sqlite3Transaction.commit (C:\Users\ethan\signal-studio-workspace\worktrees\app\feat-january-sponsored-wedding-date\node_modules\.pnpm\@libsql+client@0.17.3\node_modules\@libsql\client\lib-cjs\sqlite3.js:292:9)
+    at C:\Users\ethan\Documents\Codex\2026-09-04\here-are-6-prompts-i-have-2\work\sponsored-wedding-date-2026-09-05\native-contention-control.cjs:22:96 {
+  code: 'SQLITE_BUSY',
+  extendedCode: 'SQLITE_BUSY',
+  rawCode: 5,
+  [cause]: SqliteError: database is locked
+      at convertError (C:\Users\ethan\signal-studio-workspace\worktrees\app\feat-january-sponsored-wedding-date\node_modules\.pnpm\libsql@0.5.29\node_modules\libsql\index.js:59:12)
+      at Statement.run (C:\Users\ethan\signal-studio-workspace\worktrees\app\feat-january-sponsored-wedding-date\node_modules\.pnpm\libsql@0.5.29\node_modules\libsql\index.js:335:13)
+      at executeStmt (C:\Users\ethan\signal-studio-workspace\worktrees\app\feat-january-sponsored-wedding-date\node_modules\.pnpm\@libsql+client@0.17.3\node_modules\@libsql\client\lib-cjs\sqlite3.js:354:34)
+      at Sqlite3Transaction.commit (C:\Users\ethan\signal-studio-workspace\worktrees\app\feat-january-sponsored-wedding-date\node_modules\.pnpm\@libsql+client@0.17.3\node_modules\@libsql\client\lib-cjs\sqlite3.js:292:9)
+      at C:\Users\ethan\Documents\Codex\2026-09-04\here-are-6-prompts-i-have-2\work\sponsored-wedding-date-2026-09-05\native-contention-control.cjs:22:96 {
+    code: 'SQLITE_BUSY',
+    rawCode: 5
+  }
+}

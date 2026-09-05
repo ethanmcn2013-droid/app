@@ -1,0 +1,94 @@
+/* [project]/src/components/studio-bar/active-project/active-project.module.css [app-client] (css) */
+.active-project-module__3a2hIG__ring:focus-visible {
+  border-radius: var(--ap-r, 8px);
+}
+
+@media (max-width: 767px) {
+  .active-project-module__3a2hIG__ring[data-slot="active-project-trigger"] {
+    --x-studio-ink: var(--ink);
+    --x-studio-ink-soft: var(--ink-soft);
+    --x-studio-ink-quiet: var(--ink-faint);
+    --x-studio-focus: var(--x-accent-focus);
+    --x-studio-chrome: var(--paper);
+  }
+}
+
+.active-project-module__3a2hIG__pop {
+  transform-origin: var(--ap-origin, top left);
+  animation: active-project-module__3a2hIG__ap-pop-in var(--motion-fast) var(--ease-out) both;
+}
+
+@keyframes active-project-module__3a2hIG__ap-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.active-project-module__3a2hIG__sheet {
+  animation: active-project-module__3a2hIG__ap-sheet-in var(--motion-base) var(--ease-out) both;
+}
+
+@keyframes active-project-module__3a2hIG__ap-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.active-project-module__3a2hIG__scrim {
+  animation: active-project-module__3a2hIG__ap-fade-in var(--motion-fast) var(--ease-out) both;
+}
+
+@keyframes active-project-module__3a2hIG__ap-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.active-project-module__3a2hIG__progress:after {
+  content: "";
+  background: var(--x-studio-accent);
+  transform-origin: 0;
+  width: 100%;
+  animation: active-project-module__3a2hIG__ap-progress 2.6s var(--ease-in-out) both;
+  position: absolute;
+  inset: 0 auto 0 0;
+}
+
+@keyframes active-project-module__3a2hIG__ap-progress {
+  from {
+    transform: scaleX(.04);
+  }
+
+  to {
+    transform: scaleX(.92);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .active-project-module__3a2hIG__pop, .active-project-module__3a2hIG__sheet {
+    animation: 1ms linear both active-project-module__3a2hIG__ap-fade-in;
+  }
+
+  .active-project-module__3a2hIG__progress:after {
+    animation: none;
+    transform: scaleX(.5);
+  }
+}
+
+/*# sourceMappingURL=src_components_studio-bar_active-project_active-project_module_css_1igg3k2._.single.css.map*/

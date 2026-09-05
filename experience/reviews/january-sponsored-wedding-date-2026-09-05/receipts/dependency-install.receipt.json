@@ -1,0 +1,5 @@
+{
+  "exitCode": 0,
+  "command": "Node24 corepack/pnpm.js install --frozen-lockfile --offline",
+  "cwd": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\feat-january-sponsored-wedding-date"
+}

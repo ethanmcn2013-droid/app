@@ -1,0 +1,808 @@
+/* [project]/src/components/studio-bar/signal-shell.module.css [app-client] (css) */
+.signal-shell-module___Eiy4a__srOnly {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  width: 1px;
+  height: 1px;
+  position: absolute;
+  overflow: hidden;
+}
+
+.signal-shell-module___Eiy4a__signalRail {
+  background: var(--x-studio-chrome);
+  z-index: 40;
+  border-right: 1px solid #ffffff0f;
+  flex-direction: column;
+  flex: 0 0 60px;
+  align-items: center;
+  width: 60px;
+  height: 100%;
+  padding: 12px 0;
+  position: relative;
+}
+
+.signal-shell-module___Eiy4a__signalRail button {
+  cursor: pointer;
+  font: inherit;
+  background: none;
+  border: 0;
+  position: relative;
+}
+
+.signal-shell-module___Eiy4a__railHome {
+  border-radius: 10px;
+  flex: none;
+  justify-content: center;
+  align-items: center;
+  width: 52px;
+  padding: 3px 0;
+  display: flex;
+  position: relative;
+}
+
+.signal-shell-module___Eiy4a__railHomeTile {
+  border-radius: 10px;
+  flex: none;
+  justify-content: center;
+  align-items: center;
+  width: 34px;
+  height: 34px;
+  transition: background .15s;
+  display: flex;
+}
+
+.signal-shell-module___Eiy4a__railHome:hover .signal-shell-module___Eiy4a__railHomeTile, .signal-shell-module___Eiy4a__railHome:focus-visible .signal-shell-module___Eiy4a__railHomeTile {
+  background: #ffffff0d;
+}
+
+.signal-shell-module___Eiy4a__railHomeDot {
+  background: var(--x-studio-accent);
+  border-radius: 50%;
+  flex: none;
+  width: 10px;
+  height: 10px;
+}
+
+.signal-shell-module___Eiy4a__railDivider {
+  background: #ffffff14;
+  flex: none;
+  width: 24px;
+  height: 1px;
+  margin: 9px 0;
+}
+
+.signal-shell-module___Eiy4a__railProducts {
+  flex-direction: column;
+  flex: none;
+  align-items: center;
+  display: flex;
+}
+
+.signal-shell-module___Eiy4a__railProduct {
+  border-radius: 10px;
+  flex-direction: column;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  width: 52px;
+  height: 58px;
+  margin: 1px 0;
+  padding: 4px 0;
+  text-decoration: none;
+  transition: background .15s, box-shadow .15s, color .15s, transform .12s;
+  display: flex;
+  position: relative;
+}
+
+.signal-shell-module___Eiy4a__railProduct:hover {
+  background: #ffffff0d;
+}
+
+.signal-shell-module___Eiy4a__railProduct:active {
+  transform: scale(.98);
+}
+
+.signal-shell-module___Eiy4a__railTile {
+  color: var(--x-studio-ink-soft);
+  border-radius: 10px;
+  flex: none;
+  justify-content: center;
+  align-items: center;
+  width: 34px;
+  height: 34px;
+  transition: background .15s, color .15s;
+  display: flex;
+}
+
+.signal-shell-module___Eiy4a__railProduct:hover .signal-shell-module___Eiy4a__railTile {
+  color: var(--x-studio-ink);
+}
+
+.signal-shell-module___Eiy4a__railProduct[data-active] {
+  background: color-mix(in srgb, var(--x-studio-accent) 16%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--x-studio-focus) 11%, transparent);
+}
+
+.signal-shell-module___Eiy4a__railProduct[data-active] .signal-shell-module___Eiy4a__railTile {
+  color: var(--x-studio-ink-strong);
+}
+
+.signal-shell-module___Eiy4a__railLabel {
+  color: var(--x-studio-ink-quiet);
+  letter-spacing: .01em;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  transition: color .15s;
+}
+
+.signal-shell-module___Eiy4a__railProduct:hover .signal-shell-module___Eiy4a__railLabel {
+  color: var(--x-studio-ink-hover);
+}
+
+.signal-shell-module___Eiy4a__railProduct[data-active] .signal-shell-module___Eiy4a__railLabel {
+  color: var(--x-studio-ink-strong);
+  font-weight: 600;
+}
+
+.signal-shell-module___Eiy4a__railSpacer {
+  flex: 1;
+  min-height: 12px;
+}
+
+.signal-shell-module___Eiy4a__railUtility {
+  color: var(--x-studio-ink-quiet);
+  border-radius: 10px;
+  flex: none;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 40px;
+  margin: 1px 0;
+  transition: background .15s, color .15s, transform .12s;
+  display: flex;
+  position: relative;
+}
+
+.signal-shell-module___Eiy4a__railUtility:hover {
+  color: var(--x-studio-ink);
+  background: #ffffff0d;
+}
+
+.signal-shell-module___Eiy4a__railUtility:active {
+  transform: scale(.97);
+}
+
+.signal-shell-module___Eiy4a__railHelpMenuHost {
+  flex: none;
+  display: flex;
+  position: relative;
+}
+
+.signal-shell-module___Eiy4a__helpGlyph {
+  font-family: var(--font-geist-mono), monospace;
+  border: 1px solid;
+  border-radius: 50%;
+  justify-content: center;
+  align-items: center;
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  display: flex;
+}
+
+.signal-shell-module___Eiy4a__railHelpMenu {
+  background: var(--x-studio-chrome-raised);
+  z-index: 120;
+  border: 1px solid #ffffff1a;
+  border-radius: 10px;
+  flex-direction: column;
+  width: 220px;
+  padding: 6px;
+  display: flex;
+  position: absolute;
+  bottom: 0;
+  left: calc(100% + 10px);
+  box-shadow: 0 18px 48px #00000047;
+}
+
+.signal-shell-module___Eiy4a__railHelpEyebrow {
+  color: var(--x-studio-ink-quiet);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 7px 9px 6px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.signal-shell-module___Eiy4a__railHelpMenu a {
+  color: var(--x-studio-ink-soft);
+  border-radius: 7px;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 9px;
+  font-size: 12px;
+  text-decoration: none;
+  transition: background .13s, color .13s;
+  display: flex;
+}
+
+.signal-shell-module___Eiy4a__railHelpMenu a:hover, .signal-shell-module___Eiy4a__railHelpMenu a:focus-visible {
+  color: var(--x-studio-ink);
+  background: #ffffff0f;
+}
+
+.signal-shell-module___Eiy4a__railHelpMenuHost[data-open] > .signal-shell-module___Eiy4a__railUtility:after {
+  display: none;
+}
+
+.signal-shell-module___Eiy4a__railAccount {
+  background: var(--x-studio-chrome-raised);
+  color: var(--x-studio-ink-hover);
+  font-family: var(--font-geist-mono), monospace;
+  letter-spacing: .04em;
+  border: 1px solid #ffffff1a;
+  border-radius: 50%;
+  flex: none;
+  justify-content: center;
+  align-items: center;
+  width: 26px;
+  height: 26px;
+  margin-top: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-decoration: none;
+  display: flex;
+  position: relative;
+}
+
+.signal-shell-module___Eiy4a__railAccount:hover {
+  color: var(--x-studio-ink);
+  border-color: #ffffff3d;
+}
+
+.signal-shell-module___Eiy4a__railAccountSlot {
+  flex: none;
+  justify-content: center;
+  align-items: center;
+  margin-top: 10px;
+  margin-bottom: 2px;
+  display: flex;
+  position: relative;
+}
+
+.signal-shell-module___Eiy4a__signalRail :focus-visible {
+  outline: 2px solid var(--x-studio-focus);
+  outline-offset: 2px;
+}
+
+.signal-shell-module___Eiy4a__signalRail [data-tip]:after, .signal-shell-module___Eiy4a__projectsSidebar [data-tip]:after, .signal-shell-module___Eiy4a__projectsDrawer [data-tip]:after {
+  background: var(--x-studio-chrome-raised);
+  color: var(--x-studio-ink);
+  content: attr(data-tip);
+  letter-spacing: .01em;
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 120;
+  border: 1px solid #ffffff14;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  transition: opacity .13s 60ms;
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 10px);
+  transform: translateY(-50%);
+}
+
+.signal-shell-module___Eiy4a__signalRail [data-tip]:hover:after, .signal-shell-module___Eiy4a__signalRail [data-tip]:focus-visible:after, .signal-shell-module___Eiy4a__projectsSidebar [data-tip]:hover:after, .signal-shell-module___Eiy4a__projectsSidebar [data-tip]:focus-visible:after, .signal-shell-module___Eiy4a__projectsDrawer [data-tip]:hover:after, .signal-shell-module___Eiy4a__projectsDrawer [data-tip]:focus-visible:after, .signal-shell-module___Eiy4a__projectsDrawer [data-tip]:focus-visible:after {
+  opacity: 1;
+}
+
+.signal-shell-module___Eiy4a__projectsSidebar .signal-shell-module___Eiy4a__navRow[data-tip]:after, .signal-shell-module___Eiy4a__projectsSidebar .signal-shell-module___Eiy4a__projectParent[data-tip]:after, .signal-shell-module___Eiy4a__projectsSidebar .signal-shell-module___Eiy4a__projectLeaf[data-tip]:after, .signal-shell-module___Eiy4a__projectsDrawer .signal-shell-module___Eiy4a__navRow[data-tip]:after, .signal-shell-module___Eiy4a__projectsDrawer .signal-shell-module___Eiy4a__projectParent[data-tip]:after, .signal-shell-module___Eiy4a__projectsDrawer .signal-shell-module___Eiy4a__projectLeaf[data-tip]:after {
+  top: 100%;
+  left: 12px;
+  transform: none;
+}
+
+.signal-shell-module___Eiy4a__projectsSidebarHost {
+  flex: 0 0 var(--projects-sidebar-width, 236px);
+  height: 100%;
+  transition: flex-basis .22s var(--spring-glide), width .22s var(--spring-glide);
+  width: var(--projects-sidebar-width, 236px);
+  position: relative;
+  overflow: hidden;
+}
+
+.signal-shell-module___Eiy4a__projectsSidebarHost[data-collapsed] {
+  flex-basis: 44px;
+  width: 44px;
+}
+
+.signal-shell-module___Eiy4a__projectsSidebarHost > * {
+  animation: signal-shell-module___Eiy4a__projects-sidebar-content-in .14s var(--ease-out) 70ms backwards;
+}
+
+@keyframes signal-shell-module___Eiy4a__projects-sidebar-content-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.signal-shell-module___Eiy4a__projectsSidebar {
+  background: var(--x-task-raised);
+  border-right: 1px solid var(--x-task-border);
+  flex-direction: column;
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+}
+
+.signal-shell-module___Eiy4a__sidebarHeader {
+  border-bottom: 1px solid var(--x-task-border);
+  flex: none;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 10px 0 16px;
+  display: flex;
+}
+
+.signal-shell-module___Eiy4a__sidebarTitle {
+  color: var(--x-task-text);
+  letter-spacing: -.01em;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.signal-shell-module___Eiy4a__sidebarPicker {
+  color: var(--x-task-text);
+  cursor: pointer;
+  font: inherit;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 0 6px 0 0;
+  display: inline-flex;
+}
+
+.signal-shell-module___Eiy4a__sidebarPicker:hover {
+  color: var(--x-task-accent);
+}
+
+.signal-shell-module___Eiy4a__sidebarPicker .signal-shell-module___Eiy4a__disclosure {
+  width: 13px;
+  height: 13px;
+}
+
+.signal-shell-module___Eiy4a__sidebarResizer {
+  cursor: col-resize;
+  z-index: 58;
+  background: none;
+  border: 0;
+  width: 12px;
+  padding: 0;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+}
+
+.signal-shell-module___Eiy4a__sidebarResizer:after {
+  content: "";
+  background: none;
+  width: 2px;
+  transition: background .12s, box-shadow .12s;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 5px;
+}
+
+.signal-shell-module___Eiy4a__sidebarResizer:hover:after, .signal-shell-module___Eiy4a__sidebarResizer:focus-visible:after, .signal-shell-module___Eiy4a__sidebarResizer:active:after {
+  background: var(--x-task-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--x-task-accent) 10%, transparent);
+}
+
+.signal-shell-module___Eiy4a__sidebarCollapse {
+  color: var(--x-task-text-muted);
+  cursor: pointer;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  justify-content: center;
+  align-items: center;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  position: relative;
+}
+
+.signal-shell-module___Eiy4a__sidebarCollapse:hover {
+  background: var(--x-task-hover);
+  color: var(--x-task-text);
+}
+
+.signal-shell-module___Eiy4a__sidebarScroll {
+  overscroll-behavior: contain;
+  flex: 1;
+  min-height: 0;
+  padding: 10px 8px 16px;
+  overflow-y: auto;
+}
+
+.signal-shell-module___Eiy4a__sidebarNav {
+  flex-direction: column;
+  gap: 1px;
+  display: flex;
+}
+
+.signal-shell-module___Eiy4a__navRow {
+  color: var(--x-task-text-secondary);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 8px;
+  font-size: 13px;
+  text-decoration: none;
+  display: flex;
+  position: relative;
+}
+
+.signal-shell-module___Eiy4a__navRow svg {
+  color: var(--x-task-text-muted);
+}
+
+.signal-shell-module___Eiy4a__navRow:hover {
+  background: var(--x-task-hover);
+  color: var(--x-task-text);
+}
+
+.signal-shell-module___Eiy4a__navRow[aria-current="page"] {
+  background: color-mix(in srgb, var(--x-task-accent) 5%, transparent);
+  color: var(--x-task-text);
+  font-weight: 630;
+}
+
+.signal-shell-module___Eiy4a__navRow[aria-current="page"]:before {
+  background: var(--x-task-accent);
+  content: "";
+  border-radius: 999px;
+  width: 2px;
+  height: 16px;
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+}
+
+.signal-shell-module___Eiy4a__navRow[aria-current="page"] svg {
+  color: var(--x-task-accent);
+}
+
+.signal-shell-module___Eiy4a__navCount {
+  color: var(--x-task-text-muted);
+  font-family: var(--font-geist-mono), monospace;
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+  font-size: 10.5px;
+}
+
+.signal-shell-module___Eiy4a__projectsSection {
+  margin-top: 16px;
+}
+
+.signal-shell-module___Eiy4a__projectsLabel {
+  color: var(--x-task-text-muted);
+  letter-spacing: 0;
+  text-transform: none;
+  margin: 0 0 4px;
+  padding: 0 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.signal-shell-module___Eiy4a__projectsHeading {
+  color: var(--x-task-text-muted);
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  margin: 0;
+  padding: 0 8px 6px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.signal-shell-module___Eiy4a__projectTree {
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+}
+
+.signal-shell-module___Eiy4a__projectParent, .signal-shell-module___Eiy4a__projectLeaf {
+  color: var(--x-task-text-secondary);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 8px;
+  font-size: 13px;
+  display: flex;
+  position: relative;
+}
+
+.signal-shell-module___Eiy4a__projectParent:hover, .signal-shell-module___Eiy4a__projectLeaf:hover {
+  background: var(--x-task-hover);
+  color: var(--x-task-text);
+}
+
+.signal-shell-module___Eiy4a__projectName {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.signal-shell-module___Eiy4a__projectParent[aria-expanded] .signal-shell-module___Eiy4a__projectName {
+  font-weight: 600;
+}
+
+.signal-shell-module___Eiy4a__disclosure {
+  color: var(--x-task-text-muted);
+  flex: none;
+  justify-content: center;
+  align-items: center;
+  width: 14px;
+  height: 14px;
+  transition: transform .14s;
+  display: flex;
+}
+
+.signal-shell-module___Eiy4a__disclosure[data-open] {
+  transform: rotate(90deg);
+}
+
+.signal-shell-module___Eiy4a__disclosureGhost {
+  flex: none;
+  width: 14px;
+}
+
+.signal-shell-module___Eiy4a__projectChildren {
+  flex-direction: column;
+  gap: 1px;
+  margin: 1px 0 6px;
+  padding: 0 0 0 22px;
+  list-style: none;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+}
+
+.signal-shell-module___Eiy4a__projectChildren:before {
+  background: var(--x-task-border);
+  content: "";
+  width: 1px;
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  left: 15px;
+}
+
+.signal-shell-module___Eiy4a__projectChildren .signal-shell-module___Eiy4a__projectLeaf {
+  min-height: 34px;
+  padding-left: 25px;
+}
+
+.signal-shell-module___Eiy4a__projectLeaf[aria-current="page"] {
+  background: color-mix(in srgb, var(--x-task-accent) 5%, transparent);
+  color: var(--x-task-text);
+  cursor: pointer;
+  font-weight: 630;
+}
+
+.signal-shell-module___Eiy4a__projectLeaf[aria-current="page"]:before {
+  background: var(--x-task-accent);
+  content: "";
+  border-radius: 999px;
+  width: 2px;
+  height: 16px;
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+}
+
+.signal-shell-module___Eiy4a__leafCount {
+  color: var(--x-task-text-muted);
+  font-family: var(--font-geist-mono), monospace;
+  flex: none;
+  margin-left: auto;
+  font-size: 10px;
+}
+
+.signal-shell-module___Eiy4a__projectLeaf[aria-current="page"] .signal-shell-module___Eiy4a__leafCount {
+  color: var(--x-task-accent);
+}
+
+.signal-shell-module___Eiy4a__projectRowWrap {
+  position: relative;
+}
+
+.signal-shell-module___Eiy4a__projectRowWrap[data-recently-placed] {
+  animation: signal-shell-module___Eiy4a__project-placement-receipt .28s var(--ease-out) both;
+}
+
+.signal-shell-module___Eiy4a__projectRowWrap [aria-busy="true"]:after {
+  color: var(--x-task-text-muted);
+  content: "Opening…";
+  font-family: var(--font-geist-mono), monospace;
+  margin-left: auto;
+  font-size: 9px;
+}
+
+@keyframes signal-shell-module___Eiy4a__project-placement-receipt {
+  0% {
+    background: color-mix(in srgb, var(--x-task-accent) 10%, transparent);
+  }
+
+  100% {
+    background: none;
+  }
+}
+
+.signal-shell-module___Eiy4a__projectRowMenu {
+  opacity: 0;
+  transition: opacity .12s;
+  position: absolute;
+  top: 50%;
+  right: 3px;
+  transform: translateY(-50%);
+}
+
+.signal-shell-module___Eiy4a__projectRowWrap:hover .signal-shell-module___Eiy4a__projectRowMenu, .signal-shell-module___Eiy4a__projectRowMenu[data-open] {
+  opacity: 1;
+}
+
+.signal-shell-module___Eiy4a__projectRowMenuBtn {
+  background: var(--x-task-hover);
+  color: var(--x-task-text-secondary);
+  cursor: pointer;
+  border: 0;
+  border-radius: 5px;
+  justify-content: center;
+  align-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  display: flex;
+}
+
+.signal-shell-module___Eiy4a__projectRowMenuBtn:hover {
+  background: var(--x-task-selected);
+  color: var(--x-task-text);
+}
+
+.signal-shell-module___Eiy4a__projectLeaf[data-archived] {
+  color: var(--x-task-text-muted);
+  cursor: default;
+}
+
+.signal-shell-module___Eiy4a__projectLeaf[data-archived]:hover {
+  background: none;
+}
+
+.signal-shell-module___Eiy4a__privacyMark {
+  color: var(--x-task-text-muted);
+  flex: none;
+  align-items: center;
+  margin-left: auto;
+  display: flex;
+}
+
+.signal-shell-module___Eiy4a__sidebarFoot {
+  flex: none;
+  height: 14px;
+}
+
+.signal-shell-module___Eiy4a__projectsSidebar :focus-visible, .signal-shell-module___Eiy4a__projectsDrawer :focus-visible, .signal-shell-module___Eiy4a__projectsDrawer :focus-visible {
+  outline: 2px solid var(--x-task-focus);
+  outline-offset: 2px;
+}
+
+.signal-shell-module___Eiy4a__drawerBackdrop {
+  background: color-mix(in srgb, var(--x-task-text) 36%, transparent);
+  z-index: 72;
+  position: fixed;
+  inset: 48px 0 0;
+}
+
+.signal-shell-module___Eiy4a__projectsDrawer {
+  background: var(--x-task-surface);
+  border-right: 1px solid var(--x-task-border);
+  box-shadow: var(--x-task-shadow);
+  z-index: 73;
+  flex-direction: column;
+  width: 272px;
+  display: flex;
+  position: fixed;
+  top: 48px;
+  bottom: 0;
+  left: 60px;
+}
+
+@media (max-width: 1439px) {
+  .signal-shell-module___Eiy4a__projectsSidebarHost[data-collapsed] {
+    flex-basis: 44px;
+    width: 44px;
+  }
+}
+
+@media (max-width: 1279px) {
+  .signal-shell-module___Eiy4a__projectsSidebarHost[data-collapsed] {
+    flex-basis: 44px;
+    width: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signal-shell-module___Eiy4a__projectsSidebarHost {
+    transition: none;
+  }
+
+  .signal-shell-module___Eiy4a__projectsSidebarHost > *, .signal-shell-module___Eiy4a__projectRowWrap[data-recently-placed] {
+    animation: none;
+  }
+
+  .signal-shell-module___Eiy4a__railHomeTile, .signal-shell-module___Eiy4a__railProduct, .signal-shell-module___Eiy4a__railTile, .signal-shell-module___Eiy4a__railLabel, .signal-shell-module___Eiy4a__railUtility, .signal-shell-module___Eiy4a__disclosure, .signal-shell-module___Eiy4a__sidebarResizer:after, .signal-shell-module___Eiy4a__signalRail [data-tip]:after, .signal-shell-module___Eiy4a__projectsSidebar [data-tip]:after, .signal-shell-module___Eiy4a__projectsDrawer [data-tip]:after {
+    transition: none;
+  }
+}
+
+.signal-shell-module___Eiy4a__addProjectInput {
+  border: 1px solid var(--x-task-focus);
+  color: var(--x-task-text);
+  font: inherit;
+  background: none;
+  border-radius: 6px;
+  outline: none;
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  padding: 4px 6px;
+  font-size: 13px;
+}
+
+.signal-shell-module___Eiy4a__addProjectInput::placeholder {
+  color: var(--x-task-text-muted);
+}
+
+/*# sourceMappingURL=src_components_studio-bar_signal-shell_module_css_1igg3k2._.single.css.map*/

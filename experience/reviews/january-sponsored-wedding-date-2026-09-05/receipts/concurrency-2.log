@@ -1,0 +1,28 @@
+✖ stale concurrent managers cannot silently overwrite a newer date (600.8966ms)
+ℹ [{"status":"fulfilled","value":{"ok":true,"data":{"projectId":"a","weddingDate":"2029-06-01","revision":2,"canManage":true,"access":{"status":"active","expiresAt":"2029-08-30T00:00:00.000Z"}}}},{"status":"rejected","reason":{"code":"SQLITE_BUSY","extendedCode":"SQLITE_BUSY","rawCode":5,"name":"LibsqlError"}}]
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2612.7903
+
+✖ failing tests:
+
+test at src\server\db\sponsored-wedding-date.test.ts:2:11524
+✖ stale concurrent managers cannot silently overwrite a newer date (600.8966ms)
+  Error [LibsqlError]: SQLITE_BUSY: cannot commit transaction - SQL statements in progress
+      at mapSqliteError (C:\Users\ethan\signal-studio-workspace\worktrees\app\feat-january-sponsored-wedding-date\node_modules\.pnpm\@libsql+client@0.17.3\node_modules\@libsql\client\lib-cjs\sqlite3.js:458:16)
+      at executeStmt (C:\Users\ethan\signal-studio-workspace\worktrees\app\feat-january-sponsored-wedding-date\node_modules\.pnpm\@libsql+client@0.17.3\node_modules\@libsql\client\lib-cjs\sqlite3.js:361:15)
+      at Sqlite3Transaction.commit (C:\Users\ethan\signal-studio-workspace\worktrees\app\feat-january-sponsored-wedding-date\node_modules\.pnpm\@libsql+client@0.17.3\node_modules\@libsql\client\lib-cjs\sqlite3.js:292:9)
+      at LibSQLSession.transaction (C:\Users\ethan\signal-studio-workspace\worktrees\app\feat-january-sponsored-wedding-date\node_modules\.pnpm\drizzle-orm@0.45.2_@libsql+_a9da55d58c8edf3f3e8540c153fd5c7f\node_modules\src\libsql\session.ts:123:19)
+      at async TestContext.<anonymous> (C:\Users\ethan\signal-studio-workspace\worktrees\app\feat-january-sponsored-wedding-date\src\server\db\sponsored-wedding-date.test.ts:178:22)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    code: 'SQLITE_BUSY',
+    extendedCode: 'SQLITE_BUSY',
+    rawCode: 5,
+    [cause]: { code: 'SQLITE_BUSY', rawCode: 5 }
+  }

@@ -1,0 +1,28 @@
+// Seal local sources, commands and sanitized evidence; never include provider files.
+const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),cp=require('node:child_process');
+const app=process.cwd(),scratch=path.resolve(process.argv[2]),output=path.resolve(process.argv[3]),evidence=__dirname;
+if(!scratch.includes('sponsored-wedding-date-2026-09-05')||!output.includes('sponsored-wedding-date-2026-09-05'))throw Error('Expected task output paths');
+const base='0b9d132ac5b5f47579c8630becb94063b1db947d',product='2d1d77835e7bcedfab5c68e53608fe5d00dd8f9a',studio='C:/Users/ethan/signal-studio-workspace/worktrees/studio/feat-january-commercial-readiness',studioRef='c1dd6221634a7f6cb0559da8fcff49c6dd475023';
+const hash=buffer=>crypto.createHash('sha256').update(buffer).digest('hex');
+function write(file,data){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,data)}
+function copy(from,to){if(fs.statSync(from).isDirectory()){for(const name of fs.readdirSync(from))copy(path.join(from,name),path.join(to,name))}else write(to,fs.readFileSync(from))}
+const sources=[];for(const file of cp.execFileSync('git',['diff','--name-only',base,product],{cwd:app,encoding:'utf8'}).trim().split('\n')){const bytes=cp.execFileSync('git',['show',product+':'+file],{cwd:app});sources.push({file,sha256:hash(bytes),gitBlob:cp.execFileSync('git',['rev-parse',product+':'+file],{cwd:app,encoding:'utf8'}).trim()});write(path.join(evidence,'source-readbacks/app',file),bytes)}
+for(const file of ['contracts/commercial-terms.v2.json','docs/execution/venue-edition-and-films/DECISIONS.md','docs/execution/january-2027/PROGRAMME.md','content/atlas/pricing-and-entitlements.md']){const bytes=cp.execFileSync('git',['show',studioRef+':'+file],{cwd:studio});sources.push({repo:'studio',ref:studioRef,file,sha256:hash(bytes)});write(path.join(evidence,'source-readbacks/studio',file),bytes)}
+for(const file of ['src/server/actions/planning.ts','src/lib/planning/flags.ts','src/server/planning/flags.ts','src/app/welcome/page.tsx','src/app/welcome/plan/page.tsx','src/app/app/your-work/page.tsx']){const bytes=cp.execFileSync('git',['show',product+':'+file],{cwd:app});sources.push({purpose:'legacy reachability only; not edited',file,sha256:hash(bytes)});write(path.join(evidence,'source-readbacks/legacy',file),bytes)}
+const logs=[];for(const name of fs.readdirSync(scratch)){if(!/\.(log|receipt\.json)$/.test(name))continue;const bytes=fs.readFileSync(path.join(scratch,name));const text=bytes.toString('utf8');const clean=text.replace(/(token=)[^&\s"'<>]+/gi,'$1[REDACTED-CLAIM-TOKEN]');logs.push({name,originalSha256:hash(bytes),packagedSha256:hash(Buffer.from(clean)),redacted:clean!==text});write(path.join(evidence,'receipts',name),clean)}
+for(const name of ['base-source.json','component-fixture-boundaries.final.json','native-contention-control.cjs','native-contention-control-wal.cjs'])copy(path.join(scratch,name),path.join(evidence,'receipts',name));
+copy(path.join(scratch,'bd67-before-role-copy'),path.join(evidence,'source-readbacks/bd67-before-role-copy'));
+copy(path.join(scratch,'render-components-final'),path.join(evidence,'rendered'));
+copy(path.join(scratch,'render-1/receipt.json'),path.join(evidence,'receipts/failed-next-render.json'));
+copy(path.join(scratch,'render-components-1/receipt.json'),path.join(evidence,'receipts/component-before-font-classes.json'));
+const commands=[
+ {exe:'Node22 v22.23.2',args:['--require','./experience/reviews/january-sponsored-wedding-date-2026-09-05/deny-external.cjs','--import','tsx','--import','./src/test/register-server-only.mjs','experience/reviews/january-sponsored-wedding-date-2026-09-05/component-fixture.cjs',scratch],result:'listening4490; final PID27972; intentionally stopped after capture'},
+ {exe:'Node22 v22.23.2',args:['--require','./experience/reviews/january-sponsored-wedding-date-2026-09-05/deny-external.cjs','experience/reviews/january-sponsored-wedding-date-2026-09-05/capture-components.cjs',path.join(scratch,'render-components-final')],exitCode:0},
+ {exe:'Node22 v22.23.2',args:['--require','./experience/reviews/january-sponsored-wedding-date-2026-09-05/deny-external.cjs','experience/reviews/january-sponsored-wedding-date-2026-09-05/keyboard.cjs',path.join(scratch,'render-components-final')],exitCode:0},
+ {exe:'Node22 v22.23.2',args:['experience/reviews/january-sponsored-wedding-date-2026-09-05/capture.cjs',path.join(scratch,'render-1')],exitCode:1,meaning:'failed Next/Clerk; browser-localhost guard; not automatic approval rejection'},
+];
+const receipt={schema:'sponsored-wedding-date-scoped-receipt/1',base,implementation:'bd67c02dab62f55a953a628c8e2a9505863af719',product,branch:'feat/january-sponsored-wedding-date',app,studioRef,sources,logs,commands,remoteClientContention:'unknown',legacyActorWideSafety:'not fixed by this milestone; separate requested follow-up',fullNextClerk:'failed/incomplete; component proof does not replace it',automationPolicyRejection:false,rawScratch:scratch,sealedAt:new Date().toISOString()};
+write(path.join(evidence,'receipt.json'),JSON.stringify(receipt,null,2));
+copy(evidence,output);
+const sum=[];function walk(root,dir=root){for(const name of fs.readdirSync(dir)){const full=path.join(dir,name);if(fs.statSync(full).isDirectory())walk(root,full);else if(name!=='SHA256SUMS.txt')sum.push(hash(fs.readFileSync(full))+'  '+path.relative(root,full).replaceAll('\\','/'))}}walk(output);write(path.join(output,'SHA256SUMS.txt'),sum.sort().join('\n')+'\n');
+console.log(JSON.stringify({output,files:sum.length,sources:sources.length,logs:logs.length,redactedLogs:logs.filter(x=>x.redacted).map(x=>x.name)}));
