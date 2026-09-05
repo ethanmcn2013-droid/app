@@ -24,7 +24,7 @@ export function sourceModule(file, adapters = {}) {
   return loaded.exports;
 }
 
-export async function recoveryFixture({ links = 2, publications = 2 } = {}) {
+export async function recoveryFixture({ links = 2, publications = 2, publicationId = index => "publication-" + index } = {}) {
   process.env.NEXT_PUBLIC_SIGNAL_ACCESS_MODE = "review";
   process.env.NEXT_PUBLIC_SIGNAL_DEPLOYMENT_ENV = "preview";
   const originalFetch = globalThis.fetch;
@@ -56,12 +56,12 @@ export async function recoveryFixture({ links = 2, publications = 2 } = {}) {
   await timeline.insert(timelineSchema.workspaces).values({ slug: "own-timeline", name: "PRIVATE_TIMELINE_NAME", ownerUserId: "buyer" });
   for (let i = 0; i < publications; i++) {
     await timeline.insert(timelineSchema.timelinePublications).values({
-      id: "publication-" + i, workspaceSlug: "own-timeline", sourceWorkspaceId: "project-b",
+      id: publicationId(i), workspaceSlug: "own-timeline", sourceWorkspaceId: "project-b",
       sourceDigest: "PRIVATE_DIGEST", label: "PRIVATE_PUBLICATION", audienceKind: "couple",
       timezone: "Europe/Dublin", state: "published", publishedAt: new Date(), createdAt: new Date(1800000000000 + i * 1000),
     });
     await timeline.insert(timelineSchema.audienceShares).values({
-      id: "share-" + i, publicationId: "publication-" + i, tokenHash: "SECRET_TOKEN_HASH_" + i, state: "active", version: 1,
+      id: "share-" + i, publicationId: publicationId(i), tokenHash: "SECRET_TOKEN_HASH_" + i, state: "active", version: 1,
     });
   }
   const state = { actor: "buyer", demo: false, changes: [], authCalls: 0, fail: false, delay: 0,

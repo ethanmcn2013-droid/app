@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DataPrivacy } from "./profile/data-privacy";
+import { recoveryCreationTime } from "./recovery-creation-time";
 import { projectRecoveryPath, type ProjectRecovery, type RecoveryActionResult, type RecoveryCursor } from "@/lib/projects/recovery";
 
 const control = "inline-flex min-h-[44px] items-center justify-center rounded-md border border-line bg-bg-elevated px-3 py-2 text-[12.5px] font-medium text-ink disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
@@ -63,10 +64,17 @@ export function ProjectRecoveryPanel({ recovery, cursor = {}, action, preview = 
         {tasks.canUnpublish ? <button className={`${control} mt-3`} disabled={pending || !tasks.published || tasks.deletionPending} onClick={() => perform("unpublish-board")}>Unpublish board</button> : null}
         <h3 className="mt-5 text-[14px] font-semibold text-ink">Shared Tasks links</h3>
         {!tasks.links.items.length ? <p className="mt-2 text-[13px] text-ink-quiet">No links on this page.</p> : null}
-        <ul className="mt-2 divide-y divide-line-soft">{tasks.links.items.map(link => <li key={link.fingerprint} className="flex flex-wrap items-center justify-between gap-3 py-3">
-          <span className="text-[13px] text-ink-soft">Created {link.createdAt.slice(0, 10)} · {link.state}</span>
-          <button className={control} disabled={pending || link.state === "revoked" || tasks.deletionPending} onClick={() => perform("revoke-task-link", { row: String(link.row), fingerprint: link.fingerprint })}>Revoke link</button>
-        </li>)}</ul>
+        <ul className="mt-2 divide-y divide-line-soft">{tasks.links.items.map(link => {
+          const created = recoveryCreationTime(link.createdAt);
+          const reference = `Link reference ${link.fingerprint}`;
+          return <li key={link.fingerprint} aria-label={reference} className="flex flex-wrap items-center justify-between gap-3 py-4">
+            <div className="min-w-0 flex-1 basis-[240px]">
+              <p className="text-[12px] text-ink-quiet">Link reference <bdi className="mt-1 block break-all font-mono text-[12px] leading-relaxed text-ink">{link.fingerprint}</bdi></p>
+              <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">{created.dateTime ? <>Created <time dateTime={created.dateTime}>{created.label}</time></> : created.label} · {link.state}</p>
+            </div>
+            <button className={control} aria-label={`Revoke link, ${reference}, ${created.label}`} disabled={pending || link.state === "revoked" || tasks.deletionPending} onClick={() => perform("revoke-task-link", { row: String(link.row), fingerprint: link.fingerprint })}>Revoke link</button>
+          </li>;
+        })}</ul>
         {more("links", tasks.links.next)}
       </section>
       {tasks.canDelete ? <section className={card}>
@@ -84,13 +92,18 @@ export function ProjectRecoveryPanel({ recovery, cursor = {}, action, preview = 
     {timeline.kind === "ready" ? <section className={card}>
       <h2 className="text-[15px] font-semibold text-ink">Published Timeline controls</h2>
       <p className="mt-2 text-[13px] text-ink-quiet">These publications belong to your Timeline account and record this project as their source. Revoke every active link for a publication, or unpublish it. No published content is loaded here.</p>
-      <ul className="mt-3 divide-y divide-line-soft">{timeline.publications.items.map(publication => <li key={publication.id} className="py-3">
-        <p className="text-[13px] text-ink-soft">Created {publication.createdAt.slice(0, 10)} · {publication.state}</p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <button className={control} disabled={pending} onClick={() => perform("revoke-timeline", { publicationId: publication.id })}>Revoke publication links</button>
-          <button className={control} disabled={pending || publication.state === "unpublished"} onClick={() => perform("unpublish-timeline", { publicationId: publication.id })}>Unpublish Timeline</button>
-        </div>
-      </li>)}</ul>
+      <ul className="mt-3 divide-y divide-line-soft">{timeline.publications.items.map(publication => {
+        const created = recoveryCreationTime(publication.createdAt);
+        const reference = `Publication reference ${publication.id}`;
+        return <li key={publication.id} aria-label={reference} className="py-4">
+          <p className="text-[12px] text-ink-quiet">Publication reference <bdi className="mt-1 block break-all font-mono text-[12px] leading-relaxed text-ink">{publication.id}</bdi></p>
+          <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">{created.dateTime ? <>Created <time dateTime={created.dateTime}>{created.label}</time></> : created.label} · {publication.state}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button className={control} aria-label={`Revoke publication links, ${reference}, ${created.label}`} disabled={pending} onClick={() => perform("revoke-timeline", { publicationId: publication.id })}>Revoke publication links</button>
+            <button className={control} aria-label={`Unpublish Timeline, ${reference}, ${created.label}`} disabled={pending || publication.state === "unpublished"} onClick={() => perform("unpublish-timeline", { publicationId: publication.id })}>Unpublish Timeline</button>
+          </div>
+        </li>;
+      })}</ul>
       {more("publications", timeline.publications.next)}
     </section> : null}
     {!deleted && tasks.kind === "ready" && tasks.canDelete ? <section className={card}>
