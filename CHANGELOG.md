@@ -4,6 +4,16 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-09-05 · January candidate · Drive ownership before connection
+
+Connections explains who will own and see the board's Drive files before an
+account is connected. Cancelling disconnect or an owner change returns keyboard
+focus to the control that opened it.
+
+The scoped component matrix and independent UI review pass. Pending revocation
+after reload and the complete provider lifecycle remain open. Evidence and limits:
+`experience/reviews/january-drive-ui-acceptance-2026-09-05/REPORT.md`.
+
 ## 2026-09-05 · January candidate · Dates follow the project
 
 Floor and My work now use the same project calendar for day labels, overdue
@@ -7197,5 +7207,4 @@ was unfulfilled.
 **Backlog** — see `docs/cycles/backlog.md` for deferred items
 (TaskCard/MorphCard reunification, dead-code purge, useMemo on
 transitions, stable ref callback).
-
 

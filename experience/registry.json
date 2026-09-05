@@ -3702,10 +3702,15 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": null,
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "778ef47b2a7cb691"
+      "materialityHash": "a553937d6a450165",
+      "materialityReview": {
+        "materialityHash": "a553937d6a450165",
+        "reviewedAt": "2026-09-05",
+        "evidence": "experience/reviews/january-8ae94ffb-tasks.connections.storage.json"
+      }
     },
     {
       "id": "tasks.resources.drive-upload",
@@ -3863,11 +3868,11 @@
       "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "52aa27dae6dafc3b",
+      "materialityHash": "8d7e84db7d7d8f9b",
       "materialityReview": {
-        "materialityHash": "52aa27dae6dafc3b",
+        "materialityHash": "8d7e84db7d7d8f9b",
         "reviewedAt": "2026-09-05",
-        "evidence": "experience/reviews/january-ca95830e-tasks.connections.storage-owner-change.json"
+        "evidence": "experience/reviews/january-8ae94ffb-tasks.connections.storage-owner-change.json"
       }
     },
     {
