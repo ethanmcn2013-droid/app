@@ -2,6 +2,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+// Keep the actual route/action/SQLite regressions in the existing Linux default
+// gate as well as the source contracts, without separate package wiring.
+import "../../../experience/recipient-project-work/server.test.cjs";
 
 /**
  * WP3 route half — source contracts for the six named deep-link defects.
@@ -28,6 +31,7 @@ const taskPage = read("src/app/app/task/[id]/page.tsx");
 const taskResolver = read("src/app/app/task/[id]/resolve-task-route.ts");
 const projectPage = read("src/app/app/project/page.tsx");
 const tasksPage = read("src/app/app/tasks/page.tsx");
+const tasksArrival = read("src/components/app/tasks-project-arrival.tsx");
 const attachmentRoute = read("src/app/api/attachments/[id]/route.ts");
 const printGate = read("src/app/print/print-project.tsx");
 const printLayout = read("src/app/print/layout.tsx");
@@ -262,22 +266,24 @@ test("an unauthorized attachment is indistinguishable from a missing one", () =>
 test("/app/tasks reads workspaceId and refuses rather than rendering a wrong board", () => {
   assert.match(tasksPage, /searchParams: Promise<\{[^}]*workspaceId/s);
   const body = tasksPage.slice(tasksPage.indexOf("export default async function TasksPage"));
-  const resolveAt = body.indexOf("resolveProjectForRoute(sp.workspaceId)");
+  const resolveAt = body.indexOf("resolveTasksArrival(sp.workspaceId)");
   const renderAt = body.indexOf("<HybridWorkspace");
   assert(resolveAt > 0, "the carried Project must actually be consumed");
   assert(resolveAt < renderAt, "it must be resolved before the board renders");
-  assert.match(body, /return <ProjectUnavailable \/>/);
-  assert.match(body, /return <ProjectMismatch/);
+  assert.match(body, /return <TasksArrivalRefusal/);
+  assert.match(tasksArrival, /await resolveProjectForRoute\(requested\)/);
+  assert.match(tasksArrival, /requested !== undefined && !isActiveProjectV3Enabled\(\)/);
 });
 
 test("the venue-welcome demo guard still precedes every production boundary", () => {
-  // The WP3 change inserted a branch above the venue block; the demo fixture
-  // must still resolve before auth and entitlement access.
+  // The shared arrival guard delegates to the same demo-first authorization
+  // seam. The venue fixture must still precede its production-only reads.
   const body = tasksPage.slice(tasksPage.indexOf("export default async function TasksPage"));
-  const mismatchGuard = body.indexOf("!isDemoMode()");
+  const arrivalGuard = body.indexOf("resolveTasksArrival(sp.workspaceId)");
   const welcomeAt = body.indexOf('sp.welcome === "venue"');
-  assert(mismatchGuard > 0, "the Project branch must be skipped in demo mode");
-  assert(mismatchGuard < welcomeAt, "and it must not run ahead of the venue fixture");
+  assert(arrivalGuard > 0 && arrivalGuard < welcomeAt);
+  assert.match(routeAuthz, /if \(isDemoMode\(\)\)/);
+  assert(body.indexOf("if (isDemoMode())", welcomeAt) < body.indexOf("await getCurrentUser()", welcomeAt));
 });
 
 /* ── Defect 5 · the runtime shell ───────────────────────────────────────── */
@@ -406,38 +412,14 @@ test("only the pages whose content follows the URL hand the mount their searchPa
   }
 });
 
-test("the board's refusal cards render in the ambient runtime; the board follows the URL", () => {
-  // The two withholding cards state a disagreement with what the caller has
-  // open, so the chrome around them must keep showing the ambient Project —
-  // their mounts carry no searchParams. The board itself is the surface the
-  // parameter exists for.
-  const unavailable = tasksPage.slice(
-    tasksPage.indexOf("function ProjectUnavailable"),
-    tasksPage.indexOf("function ProjectMismatch"),
-  );
-  const mismatch = tasksPage.slice(
-    tasksPage.indexOf("function ProjectMismatch"),
-    tasksPage.indexOf("export default async function TasksPage"),
-  );
-  for (const [name, card] of [
-    ["ProjectUnavailable", unavailable],
-    ["ProjectMismatch", mismatch],
-  ]) {
-    assert.match(
-      card,
-      /<TasksRuntimePageMount>/,
-      `${name} must mount the runtime so the refusal renders inside chrome`,
-    );
-    assert.doesNotMatch(
-      card,
-      /<TasksRuntimePageMount searchParams/,
-      `${name} must stay on the ambient Project — the card's copy refers to it`,
-    );
-  }
-  const body = tasksPage.slice(
-    tasksPage.indexOf("export default async function TasksPage"),
-  );
-  assert.match(body, /<TasksRuntimePageMount searchParams=\{searchParams\}>/);
+test("Tasks refusals publish an unavailable context without reading an ambient runtime", () => {
+  assert.match(tasksArrival, /<ActiveProjectRouteSync project=\{null\}/);
+  assert.doesNotMatch(tasksArrival, /<TasksRuntimePageMount/);
+  assert.match(tasksPage, /<TasksRuntimePageMount searchParams=\{searchParams\}>/);
+  const myWork = read("src/app/app/my-tasks/page.tsx");
+  assert.match(myWork, /resolveTasksArrival\(requested\)/);
+  assert.match(myWork, /<TasksArrivalRefusal/);
+  assert.match(myWork, /capabilities.manageProject/);
 });
 
 test("the shell records how the searchParams half of its allowlist condition is met", () => {

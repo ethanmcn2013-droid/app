@@ -13,7 +13,40 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import type { Task } from "@/lib/data";
-import { splitTodayDayparts } from "./selectors";
+import { bucketMyWeek, splitTodayDayparts } from "./selectors";
+
+test("My work retains every open assignment exactly once, including later and undated work", () => {
+  const now = new Date(2026, 8, 5, 12);
+  const task = (id: string, dueAt?: Date, lane: Task["lane"] = "todo", assignees = ["member"]) => ({
+    id, title: id, lane, assignees, dueAt, priority: "p2", updatedAt: now,
+  }) as Task;
+  const rows = [
+    task("today", now),
+    task("soon", new Date(2026, 8, 6)),
+    task("later", new Date(2026, 8, 20)),
+    task("undated"),
+    task("moving-without-date", undefined, "doing"),
+    task("waiting", undefined, "review"),
+    task("someone-else", now, "todo", ["owner"]),
+    task("unassigned", now, "todo", []),
+  ];
+  const result = bucketMyWeek(rows, "member", now);
+  assert.deepEqual(result.today.map(t => t.id), ["today"]);
+  assert.deepEqual(result.thisWeek.map(t => t.id), ["soon"]);
+  assert.deepEqual(result.later.map(t => t.id), ["later"]);
+  assert.deepEqual(result.undated.map(t => t.id), ["undated", "moving-without-date"]);
+  assert.deepEqual(result.waiting.map(t => t.id), ["waiting"]);
+  const displayed = Object.values(result).flat().map(t => t.id);
+  assert.equal(displayed.length, 6);
+  assert.equal(new Set(displayed).size, 6);
+  assert.ok(!displayed.includes("someone-else") && !displayed.includes("unassigned"));
+});
+
+test("an empty personal view does not imply an empty project", () => {
+  const tasks = [{ id: "owner-task", assignees: ["owner"], lane: "todo", updatedAt: new Date() }] as Task[];
+  assert.equal(Object.values(bucketMyWeek(tasks, "member")).flat().length, 0);
+  assert.equal(tasks.length, 1);
+});
 
 // Fixed local reference day at 09:00.
 const NOW = new Date(2026, 5, 6, 9, 0, 0);

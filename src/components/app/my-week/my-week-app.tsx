@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import { motion } from "motion/react";
 import { LANES, USERS, type Task } from "@/lib/data";
 import { useCurrentUser } from "@/lib/auth-context";
@@ -20,7 +21,10 @@ import {
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { EmptyStateOverlay } from "@/components/app/empty-state/empty-state-overlay";
 import { ListGhost } from "@/components/app/empty-state/ghost-views";
-import { usePersonalization, useColumnConfig } from "@/lib/domain-context";
+import { usePersonalization, useColumnConfig, useActiveWorkspace } from "@/lib/domain-context";
+import { PRODUCT_APP_PATHS } from "@/lib/product-urls";
+import { parseProjectId } from "@/lib/projects/project-ref";
+import { withActiveProject } from "@/lib/projects/project-url";
 import { isTaskDone } from "@/lib/board-columns";
 import type { ColumnConfig } from "@/lib/board-config";
 import { DopamineCheck } from "@/components/app/done-dopamine/dopamine-check";
@@ -29,19 +33,22 @@ import { DoneTitle } from "@/components/app/done-dopamine/done-title";
 /**
  * My Week, calm editorial briefing.
  *
- * Five sections, each rendered with a quiet small-caps header. Sections
+ * Each section uses the existing quiet small-caps header. Sections
  * with no tasks for the day are silent, except "Today", which always
  * renders so an empty day reads as confidence, not absence.
  */
-export function MyWeekApp() {
+export function MyWeekApp({ canSetUpProject = false }: { canSetUpProject?: boolean }) {
   const personalization = usePersonalization();
   const state = useTasksState();
   const { toggleComplete } = useTasksDispatch();
   const { taskId: openTaskId, openTask } = useTaskPanel();
   const columnConfig = useColumnConfig();
+  const workspace = useActiveWorkspace();
 
   const meId = useCurrentUser();
   const me = USERS[meId];
+  const projectId = parseProjectId(workspace?.id);
+  const tasksHref = projectId ? withActiveProject(PRODUCT_APP_PATHS.tasks, projectId) : PRODUCT_APP_PATHS.tasks;
   // The calendar frame is the only clock a Tasks client view may read
   // (calendar-frame.ts): SSR and hydration agree about "today", and the
   // demo stays pinned to its one anchor instead of drifting with the
@@ -54,6 +61,7 @@ export function MyWeekApp() {
   // carries an explicit evening time. No time typed, no daypart.
   const { day: todayDay, evening: todayEvening } = splitTodayDayparts(
     buckets.today,
+    now,
   );
   // Nudges are computed client-side from the same task list (generateNudges
   // is pure), the proactive "what's stuck" surface folded in from the inbox.
@@ -67,17 +75,37 @@ export function MyWeekApp() {
   const hasAnything =
     totalAttention +
       buckets.needsAttention.length +
+      buckets.later.length +
+      buckets.undated.length +
       buckets.doneRecently.length >
     0;
 
-  if (!hasAnything) {
+  // Permission comes from this route's verified project, never from an
+  // empty personal filter. The seed action independently reauthorizes it.
+  if (!hasAnything && state.tasks.length === 0 && canSetUpProject) {
     return (
       <EmptyStateOverlay
         ghost={<ListGhost />}
         headline={personalization.headline}
         body={personalization.body}
         primaryLabel={personalization.firstTaskExample}
+        allowStarterPacks={false}
       />
+    );
+  }
+  if (!hasAnything) {
+    return (
+      <div className="flex flex-1 items-center justify-center px-6 py-12 text-center">
+        <div className="max-w-md">
+          <h2 className="text-[22px] font-medium tracking-tight text-ink">No tasks assigned to you yet</h2>
+          <p className="mt-3 text-[14px] leading-relaxed text-ink-soft">
+            Open the project’s tasks to see what everyone is working on and where you can help.
+          </p>
+          <Link href={tasksHref} className="mt-5 inline-flex min-h-[44px] items-center rounded-full bg-ink px-5 py-2.5 text-[14px] font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">
+            View project tasks
+          </Link>
+        </div>
+      </div>
     );
   }
 
@@ -138,6 +166,24 @@ export function MyWeekApp() {
         <Section
           title="This week"
           tasks={buckets.thisWeek}
+          openTaskId={openTaskId}
+          openTask={openTask}
+          toggleComplete={toggleComplete}
+          columnConfig={columnConfig}
+          empty=""
+        />
+        <Section
+          title="Later"
+          tasks={buckets.later}
+          openTaskId={openTaskId}
+          openTask={openTask}
+          toggleComplete={toggleComplete}
+          columnConfig={columnConfig}
+          empty=""
+        />
+        <Section
+          title="Without a date"
+          tasks={buckets.undated}
           openTaskId={openTaskId}
           openTask={openTask}
           toggleComplete={toggleComplete}
@@ -248,7 +294,6 @@ function Row({
         delay: Math.min(i * 0.012, 0.12),
         ease: [0.16, 1, 0.3, 1],
       }}
-      onClick={onOpen}
       style={{
         background: isOpen ? "var(--brand-soft)" : undefined,
         boxShadow: isOpen ? "inset 2px 0 0 var(--brand)" : undefined,
@@ -263,7 +308,7 @@ function Row({
         onToggle={onToggle}
         title={task.title}
       />
-      <div className="min-w-0 flex-1">
+      <button type="button" onClick={onOpen} className="min-h-[44px] min-w-0 flex-1 text-left focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
         <DoneTitle
           done={isDone}
           className="line-clamp-1 text-[13.5px] text-ink"
@@ -298,7 +343,7 @@ function Row({
             </>
           ) : null}
         </div>
-      </div>
+      </button>
       <div className="flex-shrink-0">
         <AvatarStack users={task.assignees} size={18} />
       </div>
