@@ -62,6 +62,16 @@ export async function schemaFingerprintSha256(executor) {
   return sha256(JSON.stringify(rows));
 }
 
+// Historical coverage only: call after validating an already-recorded adoption's
+// exact immutable receipt. Never use for new adoption, status or backup evidence.
+async function historicalAdoptionFingerprintSha256(executor) {
+  const result = await executor.execute("SELECT type, name, tbl_name, COALESCE(sql, '') AS sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' AND name NOT IN ('signal_schema_migrations', '__drizzle_migrations') ORDER BY type, name");
+  return sha256(JSON.stringify(result.rows.map(row => [
+    String(row.type), String(row.name), String(row.tbl_name),
+    String(row.sql).replace(/\s+/g, " ").trim(),
+  ])));
+}
+
 export async function verifyProofs(executor, proofs) {
   const results = [];
   for (const proof of proofs) {
@@ -397,7 +407,6 @@ export async function adoptExistingDatabase({
   invariant((await applicationObjectCount(client, context.ledger)) > 0, "adopt refuses an empty database; run migrate to apply the fresh baseline");
   const receipt = validateAdoptionReceipt(receiptPath, context, { databaseUrl, environment });
   const currentFingerprint = await schemaFingerprintSha256(client);
-  invariant(receipt.document.schemaFingerprintSha256 === currentFingerprint, "adoption receipt schema fingerprint does not match the target database");
   const proofs = await verifyProofs(client, [
     ...context.baseline.receipt.record.proofs,
     ...receipt.document.proofs,
@@ -414,9 +423,20 @@ export async function adoptExistingDatabase({
     invariant(row.status === "adopted_legacy", "existing baseline was not adopted as legacy state");
     invariant(row.execution_receipt_id === receipt.id && row.execution_receipt_sha256 === receipt.sha256, "existing adoption receipt differs from the requested receipt");
     validateHighWaterRows(context, await readDrizzleRows(client, context.ledger), existingRows.length);
-    return { status: "no-op", adopted: context.baseline.id, proofs, schemaFingerprintSha256: currentFingerprint };
+    const historicalReplay = receipt.document.schemaFingerprintSha256 !== currentFingerprint;
+    if (historicalReplay) {
+      invariant(receipt.document.schemaFingerprintSha256 === await historicalAdoptionFingerprintSha256(client), "adoption receipt schema fingerprint does not match the target database");
+    }
+    return { status: "no-op", adopted: context.baseline.id, proofs, schemaFingerprintSha256: currentFingerprint,
+      ...(historicalReplay ? {
+        receiptFingerprintMode: "legacy-like-replay",
+        receiptFingerprintSha256: receipt.document.schemaFingerprintSha256,
+        notice: "Historical receipt replay only. Its fingerprint excluded ordinary sqlite-like names; the complete current fingerprint is reported separately.",
+      } : {}),
+    };
   }
 
+  invariant(receipt.document.schemaFingerprintSha256 === currentFingerprint, "adoption receipt schema fingerprint does not match the target database");
   const drizzleRows = await readDrizzleRows(client, context.ledger);
   invariant(drizzleRows.length === 0, "adopt refuses an unreceipted Drizzle high-water history");
 
