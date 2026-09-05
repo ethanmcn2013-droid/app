@@ -34,6 +34,9 @@ async function provedProject(
   const grant = await authorizeProjectCandidate({
     candidateProjectId: candidate,
     capability,
+    // ADR 0001 §5: purpose is Project content, so archive makes it read-only.
+    // The existing capability model keeps `open` available for the brief read.
+    archivePolicy: "enforce",
   });
   // One neutral message for every refusal (ADR 0001 §4).
   if (!grant.ok) throw new Error("That project isn’t available.");
