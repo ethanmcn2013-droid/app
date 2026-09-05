@@ -113,3 +113,48 @@ first sentence tells her the words are kept by Signal Studio; the second,
 which is the one that should say what happens to what she just SAID before
 she saves, is about a different verb. Two sentences, and the one that
 matters answers the wrong question.
+
+## Sweep 5 — checks that came back clean (recorded so no one re-runs them)
+
+- Counts reconcile under driving, not just in the frames: "8 to decide" =
+  1+1+3+2+1 group tails; "14 notes" = 14 rows; "5 of 13 done / 38%" becomes
+  "5 of 14 / 36%" the instant a note crosses the seam and "8 to decide"
+  becomes "7"; the dense fold says exactly the number of cards whose box is
+  outside the scroller, correct at 1920, 1440 and 1280 in all five lanes.
+  (I mis-read the To do fold off the frame and the measurement refuted me.)
+- The filter is the model of what the seam should be: "Showing 1 overdue
+  task. 12 others are hidden." is one string in one grammar, printed AND
+  announced, and released with "Showing all work."
+- Empty search: "Nothing matches." on screen, "No task says "marqueezzzz"."
+  aloud — different, but the announcement adds the query, so it earns it.
+- Register holds everywhere: sentence case, no exclamation marks, no
+  jargon, no marketing voice. Eyebrows are consistently noun phrases.
+  Task titles carry no terminal stop; card notes and lane notes do; the
+  peel strips the note's full stop when the words become a title. That is
+  a real rule, kept.
+- The five lane notes ("Agreed and ready to start." / "In motion right now."
+  / "Being checked before it goes out." / "Held by a reply, a delivery, or a
+  decision." / "Finished and put away.") teach the board without a tooltip.
+- "Timeline is another surface in this suite. This lab is the Notes one."
+  (master.html:19700) is a LAB leak, but no control in the suite carries
+  data-act="timeline", so it is unreachable. Not reported.
+- voiceStop: "Stop listening" (9406) is dead — the markup hardcodes
+  "Stop and read it back". Not reported.
+- Timeline's owner behind-note says "One thing is not going ahead." where
+  the guest's names the moment. Noun drift (moment -> thing) and the owner
+  gets less than the guest. Real, but a refuter can argue the owner already
+  knows which one, so it did not make the five.
+- The account tile prints twice at desk width (spine + dock) with two
+  accessible names. Real, small, did not make the five.
+
+## Score
+
+9.1. The copy is genuinely in Linear/Stripe territory for tone and for
+arithmetic honesty. What holds it off 9.5 is five string-level defects, two
+of which actively mislead: the More door announces the reverse of what it
+did, and the dictation floor's privacy sentence answers about typing. One
+door answers a sighted person with nothing. Two buttons share one name on
+the phone. And the seam — the gesture the whole suite exists to justify —
+spends its entire copy budget reassuring and never names the lane it chose.
+All five are strings or one-liners; none is a build and none is a different
+decision. Roughly a day.
