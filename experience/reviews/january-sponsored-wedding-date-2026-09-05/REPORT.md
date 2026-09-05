@@ -61,3 +61,5 @@ Both gates default off only when NODE_ENV is production and on otherwise; explic
 
 No pricing, policy, schema, package, CI, principal, Studio, customer or production edits. Existing Timeline/RC-3/Atlas and earlier programme receipts remain unchanged. External launch/outreach remains held for January 21.
 
+
+Packaging note: repository source readbacks carry a .txt suffix so frozen snapshots are not compiled as live App modules. Their archived content hashes are unchanged. The originally sealed 189-file chat packet is retained unchanged.
