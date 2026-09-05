@@ -1,0 +1,9 @@
+[
+  {
+    "id": "dictation-disclosure-is-about-typing",
+    "verdict": "CONFIRMED",
+    "severity": "misleading",
+    "why": "Re-measured: `voiceDisclosure` is defined once (master.html:9410) and rendered from exactly one place, `STATES.voice`'s .darkFoot (18684) — no other state emits it. Driven at 1440x960 on notes.voice, `.dark` is `position:absolute; inset:0; background:var(--ink)` and measures 1440x960, so it fully covers the only text field in Notes (.topField, 496x55 at y=108); the full screen text is Dictating / LISTENING / 0:01 / transcript / the disclosure / Cancel / Stop and read it back — nobody types on it. The second sentence is therefore true and irrelevant, and by naming typing specifically it carries the false implicature that the local-until-save guarantee is about the verb she is NOT performing, at the one moment she is asking whether her speech has already left.",
+    "sharpenedFix": "Confirmed, but the seat's replacement over-claims. \"What you say stays on this device until you save\" asserts the SPEECH stays local, which collapses the distinction sentence one just drew (\"keeps the words, not the audio\") and would commit the product to on-device transcription — a bigger claim than the surface can honour. Change master.html:9410 (and src/fixture.js:625, which is the same string) to \"Signal Studio keeps the words, not the audio. These words stay on this device until you save.\" Same two-sentence shape, same length class, same plain register as \"Held on this device.\" elsewhere; \"these words\" points at the transcript visibly accumulating in .darkSaid, so it answers her question about the thing she can see without asserting anything about where the audio was turned into text."
+  }
+]
