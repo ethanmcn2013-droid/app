@@ -27,6 +27,7 @@ import {
   type ProjectGrant,
 } from "@/server/actions/project-authz";
 import { deleteProject, renameProject } from "@/server/projects/service";
+import { unpublishProjectWith } from "@/server/projects/recovery";
 import { currentUser as clerkCurrentUser } from "@clerk/nextjs/server";
 import { canAddMember } from "@/server/db/membership";
 import { inviteEmailHtml, sendEmail } from "@/server/email";
@@ -470,22 +471,9 @@ export async function unpublishWorkspaceAction(projectId?: string): Promise<{
     "revokeTimeline",
     "Only the owner can unpublish this workspace.",
   );
-  const row = await db.transaction(
-    async (tx) => {
-      await assertProjectNotDeleting(tx, ws);
-      const [row] = await tx
-        .select({ slug: workspaces.slug })
-        .from(workspaces)
-        .where(eq(workspaces.id, ws));
-      await tx
-        .update(workspaces)
-        .set({ publishedAt: null })
-        .where(eq(workspaces.id, ws));
-      return row ?? null;
-    },
-    { behavior: "immediate" },
-  );
-  if (row) revalidatePath(`/p/${row.slug}`);
+  const row = await unpublishProjectWith(db, await getCurrentUser(), ws);
+  if (!row) throw new Error("That project isn’t available.");
+  revalidatePath(`/p/${row.slug}`);
   revalidatePath("/app", "layout");
   return { ok: true };
 }
