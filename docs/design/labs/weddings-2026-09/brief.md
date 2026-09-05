@@ -10,8 +10,7 @@ floor, floating rail, one white sheet). The single job: two people run the
 planning of their own wedding from these four places without being taught how.
 
 ## Audience
-Two people planning their own wedding, tired, on a laptop, who have never used
-project-management software and will not read a manual.
+Two people planning their own wedding, tired, on a laptop, who have never used project-management software and will not read a manual
 
 ## Fixture
 Nadia & Cal, marrying at Wrenfield Barn on 12 September, seven days out. 139
