@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import { loadAndValidateLedger } from "./db/migration-ledger.mjs";
+import { loadNotesSignalLedger } from "./db/notes-signal-ledger.mjs";
 
 const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
 const scripts = packageJson.scripts ?? {};
@@ -77,4 +78,24 @@ if ((inventorySource.match(/\.execute\s*\(/g) ?? []).length !== 1) {
 
 const context = loadAndValidateLedger();
 const timeline = loadAndValidateLedger({ module: "timeline" });
-console.log(`migration-contract: ok (tasks: ${context.entries.length} SQL files, baseline ${context.baseline.id}; timeline: ${timeline.entries.length} SQL files, baseline ${timeline.baseline.id})`);
+// Notes and Signal deliberately require explicit local/test file targets. Their
+// strict source loader validates every owning SQL/journal/receipt before any
+// connection opens; normal CI must keep exercising their refusal paths.
+for (const moduleName of ["notes", "signal"]) {
+  for (const command of ["migrate", "status", "adopt", "inventory"]) {
+    const expected = command === "inventory"
+      ? `node scripts/db/${moduleName}-inventory.mjs`
+      : `node scripts/db/${moduleName}-migrate.mjs ${command}`;
+    if (scripts[`${moduleName}:db:${command}`] !== expected) {
+      console.error(`migration-contract: ${moduleName}:db:${command} must use its owning local/test runner`);
+      process.exit(1);
+    }
+  }
+}
+if (!contract.includes("scripts/db/notes-signal-migrate.test.mjs")) {
+  console.error("migration-contract: db:contract must run the local Notes/Signal migration tests");
+  process.exit(1);
+}
+const notes = loadNotesSignalLedger("notes");
+const signal = loadNotesSignalLedger("signal");
+console.log(`migration-contract: ok (tasks: ${context.entries.length} SQL files, baseline ${context.baseline.id}; timeline: ${timeline.entries.length} SQL files, baseline ${timeline.baseline.id}; local notes: ${notes.entries.length}; local signal: ${signal.entries.length})`);

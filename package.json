@@ -43,7 +43,7 @@
     "timeline:db:inventory": "node scripts/db/timeline-inventory.mjs",
     "timeline:db:backfill": "node scripts/db/timeline-backfill-bindings.mjs",
     "db:check": "drizzle-kit check",
-    "db:contract": "node scripts/check-migration-contract.mjs && node --test scripts/db/migration-ledger.test.mjs scripts/db/timeline-migrate.test.mjs scripts/db/timeline-inventory.test.mjs scripts/db/timeline-binding-classification.test.mjs scripts/db/timeline-backfill-bindings.test.mjs",
+    "db:contract": "node scripts/check-migration-contract.mjs && node --test scripts/db/migration-ledger.test.mjs scripts/db/timeline-migrate.test.mjs scripts/db/timeline-inventory.test.mjs scripts/db/timeline-binding-classification.test.mjs scripts/db/timeline-backfill-bindings.test.mjs scripts/db/notes-signal-migrate.test.mjs",
     "db:seed": "tsx --tsconfig ./tsconfig.json src/server/db/seed.ts",
     "db:backup": "node scripts/db/backup.mjs",
     "db:backup:all": "node scripts/db/backup-all.mjs --verify",
@@ -88,7 +88,15 @@
     "test:wedding-date-readback:browser": "node scripts/test-wedding-date-readback.mjs",
     "test:event-designation": "node --import tsx --import ./src/test/register-server-only.mjs --test --test-concurrency=1 src/server/db/event-designation.test.ts src/server/db/event-designation-webhook.test.ts && node --test src/server/db/event-designation-clock.test.mjs",
     "test:event-export": "node --import tsx --import ./src/test/register-server-only.mjs --test --test-concurrency=1 src/server/account-event-export.test.ts",
-    "test:event-export:browser": "node --import tsx --import ./src/test/register-server-only.mjs experience/event-account-export/browser.mjs"
+    "test:event-export:browser": "node --import tsx --import ./src/test/register-server-only.mjs experience/event-account-export/browser.mjs",
+    "notes:db:migrate": "node scripts/db/notes-migrate.mjs migrate",
+    "notes:db:status": "node scripts/db/notes-migrate.mjs status",
+    "notes:db:adopt": "node scripts/db/notes-migrate.mjs adopt",
+    "notes:db:inventory": "node scripts/db/notes-inventory.mjs",
+    "signal:db:migrate": "node scripts/db/signal-migrate.mjs migrate",
+    "signal:db:status": "node scripts/db/signal-migrate.mjs status",
+    "signal:db:adopt": "node scripts/db/signal-migrate.mjs adopt",
+    "signal:db:inventory": "node scripts/db/signal-inventory.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.75",
