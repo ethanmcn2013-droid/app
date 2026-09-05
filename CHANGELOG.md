@@ -4,6 +4,17 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-09-05 · January candidate · Event purchase history
+
+Event checkout records the intended project and verifies its owner again when
+payment settles. Original access dates and refunds stay attached to that purchase.
+Account erasure preserves the effect on a surviving project without retaining
+the former purchaser's identity.
+
+The internal foundation and two test corrections passed independent review.
+Recovery and post-term access enforcement remain in progress; Event sales stay held.
+Evidence: `experience/reviews/january-event-designation-2026-09-05/README.md`.
+
 ## 2026-09-05 · January candidate · Unconfirmed file-access removal stays visible
 
 Connections keeps a notice after reload when Google file-access removal is still
