@@ -8,8 +8,10 @@ next cycle.
 
 My work now greets the signed-in person using their existing workspace profile.
 When no name is known, the greeting stays neutral. Demo accounts retain their
-sample names. Six source-fixture tests pass; final browser verification remains
-open. Internal candidate only: `docs/execution/january-2027/RECIPIENT-COMPOSITION.md`.
+sample names. Completion controls use the existing task colors and a 44-pixel
+target. Completed text stays subdued while its control remains at full contrast.
+Six source-fixture tests pass; final browser verification remains open. Internal
+candidate only: `docs/execution/january-2027/RECIPIENT-COMPOSITION.md`.
 
 ## 2026-09-05 · January candidate · Home opens the right briefing
 

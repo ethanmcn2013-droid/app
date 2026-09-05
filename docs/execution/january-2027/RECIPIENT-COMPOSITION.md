@@ -48,7 +48,11 @@ access retained and edits restored after unarchiving. This bounded correction
 does not close the broader task-action archive compatibility policy.
 
 Manual inspection found Floor dark-mode and mobile project-label contrast defects
-despite the passing structural matrix. Those visual repairs remain assigned.
+despite the passing structural matrix. Repair `da025bcba` is composed at
+`2db35ab8`; the focused six-test generator suite and author 80-case component
+contrast matrix pass. `83006da0` registers them in the normal recipient gates.
+The combined 26-case recipient gate and ten-checkpoint persisted story pass
+there. Source and rendered-state limits remain in `FLOOR_THEME_REPAIR.md`.
 My work also addressed a named recipient as “Someone” because it used the
 showcase-only name lookup. The bounded repair consumes the existing member data:
 the already-selected profile name retains its known/null provenance and only the
@@ -57,7 +61,22 @@ greeting; a real profile named “Someone” remains legitimate. No new provider
 lookup, membership access or telemetry is introduced. Six actual-source server
 fixture tests pass, including the original route tests, persisted known/blank/null
 names, current-member selection and the canonical demo name without a DB read.
-The final route capture now also requires the known recipient's visible greeting.
+The desktop route smoke at `c64b8cb3` passes 17 states, including the known
+recipient's visible greeting; final four-width capture remains separate.
+
+Further measured My work control defects: idle outline contrast 1.23:1 in light
+and 1.28:1 in dark; checked white glyph contrast 2.46:1, lower again inside the
+dimmed Done row; only an 18-pixel click target. The repair reuses the existing
+task-control/done/raised color roles in the 18-pixel visual circle, inside a
+44-pixel semantic button. Done-row dimming now belongs to text and avatars, so
+it cannot reduce control contrast. The existing focus and completion motion
+remain. Focused lint and six actual-source recipient cases pass; final measured
+contrast, keyboard/pointer interaction and route rendering remain pending.
+
+Commercial copy `053ef810` is composed at `9d41060c`: Pro is the public name,
+legacy grants retain their public labels, and redemption recovery preserves
+the original account/code and accurately names project-management capability.
+No price, payment state or entitlement implementation changes in this slice.
 
 Final rendering after these source changes, experience evidence renewal, Linux
 and receiving checks remain open.

@@ -299,17 +299,14 @@ function Row({
         background: isOpen ? "var(--brand-soft)" : undefined,
         boxShadow: isOpen ? "inset 2px 0 0 var(--brand)" : undefined,
       }}
-      className={
-        "group flex cursor-pointer items-center gap-3 border-b border-line-soft/60 px-1 py-2.5 transition-colors last:border-b-0 hover:bg-bg-sunken/40 " +
-        (muted ? "opacity-75" : "")
-      }
+      className="group flex cursor-pointer items-center gap-3 border-b border-line-soft/60 px-1 py-2.5 transition-colors last:border-b-0 hover:bg-bg-sunken/40"
     >
       <DopamineCheck
         checked={isDone}
         onToggle={onToggle}
         title={task.title}
       />
-      <button type="button" onClick={onOpen} className="min-h-[44px] min-w-0 flex-1 text-left focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+      <button type="button" onClick={onOpen} className={"min-h-[44px] min-w-0 flex-1 text-left focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand" + (muted ? " opacity-75" : "")}>
         <DoneTitle
           done={isDone}
           className="line-clamp-1 text-[13.5px] text-ink"
@@ -345,7 +342,7 @@ function Row({
           ) : null}
         </div>
       </button>
-      <div className="flex-shrink-0">
+      <div className={"flex-shrink-0" + (muted ? " opacity-75" : "")}>
         <AvatarStack users={task.assignees} size={18} />
       </div>
     </motion.li>
