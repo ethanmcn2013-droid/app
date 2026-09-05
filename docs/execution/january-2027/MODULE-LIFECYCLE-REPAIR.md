@@ -30,9 +30,32 @@ Four new actual-SQL regressions failed before the patch, including the real non-
 node --import tsx --import ./src/test/register-server-only.mjs --test --test-concurrency=1 src/modules/signal/lib/planning-periods/scope.test.ts src/modules/signal/server/briefing/signal-build-for-user.test.ts src/modules/signal/signal-suite-context.test.ts
 ```
 
-All 7 focused tests passed. New registration for the principal: `src/modules/signal/lib/planning-periods/scope.test.ts`. No package/workflow edits are included.
+All 7 focused tests, typecheck and scoped lint passed. New registration for the principal: `src/modules/signal/lib/planning-periods/scope.test.ts`. No package/workflow edits are included.
 
-## Remaining authorized slice and compatibility
+## Timeline local erasure — candidate
+
+`eraseForUser` now selects exact Clerk-owned workspaces inside one transaction, collects child IDs there, deletes normalized sync state before all binding states, and explicitly removes old content/publication children before projects/workspaces. RESTRICT remains unchanged. Workspace-owned orphan subtasks are also swept when FK enforcement was absent. The owner query does not depend on Tasks membership. No export shape, account-start fence, orchestration or provider implementation changed.
+
+The pre-0001 mode is recognized only when both normalized object names are absent from `sqlite_schema`. One missing table, objects of another type and metadata query failure all return failure with local rollback. The owning transaction is not a cross-store backup/erasure transaction and does not fence every in-flight writer.
+
+```sh
+node --import tsx --import ./src/test/register-server-only.mjs --test --test-concurrency=1 src/modules/timeline/server/timeline-gdpr.test.ts src/modules/timeline/server/qualified-view-security.test.mjs
+node --import tsx --import ./src/test/register-server-only.mjs --test --test-concurrency=1 src/server/account-deletion-lifecycle.test.ts src/server/account-deletion-lifecycle-contract.test.mjs src/server/account-unified-erasure.test.ts src/modules/notes/server/notes-calendar-erasure.test.ts
+```
+
+The first command passes 14 checks (10 new actual-SQL erasure regressions, four existing audience contracts); the second passes 32 existing lifecycle/orchestration/Notes-calendar checks. New registration: `src/modules/timeline/server/timeline-gdpr.test.ts`. The existing POST route is exercised through its actual loader boundary. Svix `user.deleted` fence ordering is source-checked, not a new live Clerk or signed-webhook rehearsal. Tasks still executes after module failures and aggregate failure still prevents success. No provider calls use live credentials.
+
+The current combined candidate passes `node node_modules/typescript/bin/tsc --noEmit --incremental false`, scoped ESLint on all eight runtime/test files, and `git diff --check`. Full DB/tenant/erasure/repository lint gates follow the requested fresh candidate review; they are not claimed complete in this pre-review milestone.
+
+Original red evidence: verified baseline-only controls passed while normalized erasure failed under RESTRICT, FK-off cleanup left normalized rows, late failure retained only part of the original graph, and metadata/partial-schema/held-lease expectations failed. Current tests verify FK mode inside every transaction because libSQL reconnects after handing off a transaction; a one-time pragma would not prove FK-off behavior. Full table counts/hashes including the owning migration ledger establish rollback and bystander preservation without outputting row contents. Test fixture cleanup tolerates only Windows EPERM after libSQL close, after the awaited test has settled. Earlier fixture setup failures are retained separately from the usable red reproduction.
+
+### Remaining bounded concurrency finding
+
+The requested separate null-lease investigation is now a reproduced boundary, not merely an inference. In the actual `syncMilestonesAction` pre-0001 path, deletion during the Tasks source read is stopped by `bindProjectToTasksWorkspace` checking for the parent again. However, deletion after that awaited binding check and before `writeRoadmapNodes` lets the null-lease branch recreate one orphan task and report success after the owner workspace has been erased. The same two-actor FK-on fixture leaves the bystander unchanged. A held normalized lease correctly loses its actual `commitSyncGeneration` CAS after erasure.
+
+This candidate does not modify the independent writer. The bounded negative proof and replay script are in the task output handoff (`null-lease-proof.json`, `probe-null-lease.cjs`), with the actual action/binding/writer source and synthetic auth/Tasks/framework boundaries distinguished. A successful reproduction of this race is **not** a fixed regression. Account erasure cannot be described as suppressing all concurrent Timeline writers. A separate writer repair would need a current local ownership/existence check in the same write transaction while preserving the verified pre-0001 behavior; principal synthesis/review remains required before broadening this candidate.
+
+## Delegated compatibility and final review boundary
 
 - Briefing: add only genuinely loose active authorized projects (`w.planning_period_id IS NULL`). Preserve the exclusion of archived periods and dangling non-null references, the 200-row bound and exact-request refusal. Do not reinterpret an invalid link as loose or union the stale predecessor catalog. Archived-period usability remains separate policy scope.
 - Timeline: select owned workspaces by exact Clerk identity inside one local transaction; collect IDs and sweep every owned child in that transaction. Remove sync state before all binding states, then restricted projects/workspaces. Preserve explicit cleanup with FKs off, pre-0001 compatibility through an exact table-absence check, and operational failure as failure. No Google files or provider operations belong in this eraser.

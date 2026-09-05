@@ -1,4 +1,4 @@
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import {
   activity,
   comments,
@@ -12,6 +12,8 @@ import {
   timelinePublicationItems,
   audienceShares,
   audienceViewReceipts,
+  suiteProjectBindings,
+  timelineSourceSyncState,
 } from "./db/timeline-schema";
 import { db } from "./db/timeline-client";
 
@@ -149,65 +151,78 @@ export async function exportForUser(clerkId: string): Promise<
  * the orchestrator can attempt every product eraser and then fail closed
  * before identity deletion.
  *
- * Idempotent: retrying after partial failure is safe.
+ * One local transaction includes ownership selection and every child sweep.
+ * Failure rolls back this module; the orchestrator still attempts other stores.
+ * Idempotent: retrying a failed or completed erasure is safe.
  */
 export async function eraseForUser(
   clerkId: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
-    const ownedWorkspaces = await db
-      .select({ slug: workspaces.slug })
-      .from(workspaces)
-      .where(eq(workspaces.ownerUserId, clerkId));
+    await db.transaction(async (tx) => {
+      // Timeline owns by immutable Clerk identity, independently of Tasks membership.
+      const ownedWorkspaces = await tx
+        .select({ slug: workspaces.slug })
+        .from(workspaces)
+        .where(eq(workspaces.ownerUserId, clerkId));
+      if (ownedWorkspaces.length === 0) return;
+      const slugs = ownedWorkspaces.map((w) => w.slug);
 
-    if (ownedWorkspaces.length === 0) return { ok: true };
+      // Before 0001 BOTH normalized tables are absent. Inspect that exact state
+      // instead of catching failed deletes: operational/partial-schema failures
+      // must roll back, not be mistaken for successful legacy cleanup.
+      const normalizedTables = await tx.all<{ name: string; type: string }>(sql`
+        SELECT name, type FROM sqlite_schema
+        WHERE name IN ('suite_project_bindings', 'timeline_source_sync_state')
+      `);
+      if (normalizedTables.length !== 0 && (
+        normalizedTables.length !== 2 || normalizedTables.some((object) => object.type !== "table")
+      )) {
+        throw new Error("Timeline normalized erasure schema is incomplete");
+      }
+      if (normalizedTables.length === 2) {
+        await tx.delete(timelineSourceSyncState)
+          .where(inArray(timelineSourceSyncState.timelineWorkspaceSlug, slugs));
+        // All states are owned data, including orphaned and retired bindings.
+        await tx.delete(suiteProjectBindings)
+          .where(inArray(suiteProjectBindings.timelineWorkspaceSlug, slugs));
+      }
 
-    const slugs = ownedWorkspaces.map((w) => w.slug);
+      const taskRows = await tx
+        .select({ id: tasks.id })
+        .from(tasks)
+        .where(inArray(tasks.workspaceSlug, slugs));
+      if (taskRows.length > 0) {
+        await tx.delete(subtasks).where(inArray(subtasks.taskId, taskRows.map((t) => t.id)));
+      }
+      // Also cover workspace-owned legacy orphans when FKs were not enforced.
+      await tx.delete(subtasks).where(inArray(subtasks.workspaceSlug, slugs));
 
-    // Sweep subtasks by task id (keyed by taskId, not workspaceSlug).
-    const taskRows = await db
-      .select({ id: tasks.id })
-      .from(tasks)
-      .where(inArray(tasks.workspaceSlug, slugs));
-    if (taskRows.length > 0) {
-      const ids = taskRows.map((t) => t.id);
-      await db.delete(subtasks).where(inArray(subtasks.taskId, ids));
-    }
-
-    // Sweep timeline publications and their children.
-    const pubRows = await db
-      .select({ id: timelinePublications.id })
-      .from(timelinePublications)
-      .where(inArray(timelinePublications.workspaceSlug, slugs));
-    if (pubRows.length > 0) {
-      const pubIds = pubRows.map((p) => p.id);
-      await db
-        .delete(audienceViewReceipts)
-        .where(inArray(audienceViewReceipts.publicationId, pubIds));
-      await db
-        .delete(audienceShares)
-        .where(inArray(audienceShares.publicationId, pubIds));
-      await db
-        .delete(timelinePublicationItems)
-        .where(inArray(timelinePublicationItems.publicationId, pubIds));
-      await db
-        .delete(timelinePublications)
+      const pubRows = await tx
+        .select({ id: timelinePublications.id })
+        .from(timelinePublications)
         .where(inArray(timelinePublications.workspaceSlug, slugs));
-    }
+      if (pubRows.length > 0) {
+        const pubIds = pubRows.map((p) => p.id);
+        await tx.delete(audienceViewReceipts)
+          .where(inArray(audienceViewReceipts.publicationId, pubIds));
+        await tx.delete(audienceShares)
+          .where(inArray(audienceShares.publicationId, pubIds));
+        await tx.delete(timelinePublicationItems)
+          .where(inArray(timelinePublicationItems.publicationId, pubIds));
+        await tx.delete(timelinePublications)
+          .where(inArray(timelinePublications.workspaceSlug, slugs));
+      }
 
-    // Workspace-scoped content tables, explicit, no cascade reliance.
-    await db.delete(comments).where(inArray(comments.workspaceSlug, slugs));
-    await db
-      .delete(nodeOverlays)
-      .where(inArray(nodeOverlays.workspaceSlug, slugs));
-    await db.delete(activity).where(inArray(activity.workspaceSlug, slugs));
-    await db
-      .delete(projectSources)
-      .where(inArray(projectSources.workspaceSlug, slugs));
-    await db.delete(tasks).where(inArray(tasks.workspaceSlug, slugs));
-    await db.delete(projects).where(inArray(projects.workspaceSlug, slugs));
-    await db.delete(workspaces).where(inArray(workspaces.slug, slugs));
-
+      // Explicit child cleanup works with FKs on or off; keep RESTRICT intact.
+      await tx.delete(comments).where(inArray(comments.workspaceSlug, slugs));
+      await tx.delete(nodeOverlays).where(inArray(nodeOverlays.workspaceSlug, slugs));
+      await tx.delete(activity).where(inArray(activity.workspaceSlug, slugs));
+      await tx.delete(projectSources).where(inArray(projectSources.workspaceSlug, slugs));
+      await tx.delete(tasks).where(inArray(tasks.workspaceSlug, slugs));
+      await tx.delete(projects).where(inArray(projects.workspaceSlug, slugs));
+      await tx.delete(workspaces).where(inArray(workspaces.slug, slugs));
+    });
     return { ok: true };
   } catch (err) {
     const error = err instanceof Error ? err.message : String(err);
