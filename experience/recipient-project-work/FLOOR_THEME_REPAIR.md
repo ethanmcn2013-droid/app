@@ -27,7 +27,7 @@ git diff --check
 
 All pass; the focused unit suite is **6/6**. Parent registration needed: `node --test scripts/design/extract-floor-css.test.mjs` plus the read-only parity command if desired. No package, CI or registry edit is included.
 
-The browser fixture requires the existing Playwright Chromium and pinned dependencies. Use fresh output directories. The explicit baseline mode reads the two CSS blobs from the frozen base without changing any checkout. Other rendered production components are unchanged from that base. Example PowerShell:
+The browser fixture requires the existing Playwright Chromium and pinned dependencies. Use fresh output directories. The following commands record the **original historical execution**, not a prerequisite for the normal gate. Explicit `--baseline` mode reads the two CSS blobs from the frozen base without changing any checkout; a new diagnostic capture does not replace the pinned original receipt.
 
 ```powershell
 $env:FLOOR_THEME_OUTPUT='experience/output/recipient-project-work/floor-theme/before-final-verified'
@@ -57,3 +57,21 @@ No full Next/Clerk session, provider, database action, physical-device test, fin
 The Impeccable detector ran once and exited 2 in degraded regex mode because its HTML parser dependencies are unavailable. Its two warnings are the same pre-existing `transition: margin-right` rule in the master and generated CSS. That rule was verified in the base and left unchanged; this is not a clean detector-audit claim. Early fixture setup failures (missing browser `process.env` and eager theme assignment) were corrected in the fixture only and are retained as setup evidence, not product findings.
 
 No RC-3 review was retried. Parent owns composition, final build/captures, greeting changes, commercial-copy integration, package/CI/registry and canonical HQ.
+
+## Self-contained normal gate — 5 September follow-up
+
+The principal's declared invocation reached all 80 checks at `50918cdc` but then threw because `FLOOR_THEME_BEFORE` was unset. That failed run remains preserved at task output `outputs/recipient-project-work/floor-theme-50918cdc`; its receipt must not be promoted to a pass. This follow-up changes tooling and retains evidence only, with no runtime CSS/component or package/CI edits.
+
+The normal command now loads `experience/reviews/january-recipient-2026-09-05/floor-theme-e2e4a0c8-before.json` directly from the checkout. This is an exact copy of the original `outputs/recipient-project-work/floor-theme-repair/before/receipt.json`, not a renewed capture. Its raw SHA-256 is `4d676b6f51493caa992a6074d66b268336ee636b530d30ea5e8ad11df57f1aa3`. The gate pins that same **LF-normalized SHA-256**, allowing only Git checkout CRLF differences. It additionally requires `head` and `cssBaselineRef` to equal `e2e4a0c8864408938529ccb8caf2d8e831481669`, `baseline: true`, and the original `status: "failed"`. Its historical contrast failures remain failures; only its measured geometry is the comparison reference.
+
+Run from App root with no `FLOOR_THEME_BEFORE`:
+
+```sh
+node experience/recipient-project-work/floor-theme-browser.mjs
+```
+
+For a fresh local evidence directory, set only `FLOOR_THEME_OUTPUT`. The default destination remains `experience/output/recipient-project-work/floor-theme/after`, and existing receipts are never overwritten. An optional `FLOOR_THEME_BEFORE` directory must contain `receipt.json` with exactly the same pinned normalized bytes and expected identity; an arbitrary new after/baseline run cannot become the oracle. Normal execution uses the current Git HEAD for provenance but needs no historical Git objects. `--baseline` remains a separate diagnostic mode requiring the old CSS objects.
+
+Baseline validation runs before bundling or launching Chromium. Every original geometry equality and text/UI contrast threshold remains enforced. The result records the retained baseline identity separately from the new result. Any thrown validation, build or browser error records `status: "failed"` and its error before propagating the nonzero exit. Browser and server cleanup are attempted on failure; cleanup failure is recorded without hiding an earlier gate error.
+
+The bounded verification ran the actual normal command with `FLOOR_THEME_BEFORE` removed: **68 Floor +12 Project checks passed**, including unchanged geometry. Three subsequent explicit invalid-baseline controls (changed geometry, wrong HEAD, rewritten passed status) each exited1, saved a failed receipt, and stopped before bundling. Syntax and focused ESLint passed. Logs and the replay helper are retained under task output `outputs/recipient-project-work/floor-baseline-gate-repair`. These are verification-tooling checks, not a provider/security review, a full Next run or receiving Linux acceptance. Parent owns final integration and invocation registration.
