@@ -1,7 +1,7 @@
 "use client";
 
 import type { ProjectDriveStatus } from "@/lib/project-drive-ui";
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 
 export const driveButton = "min-h-[44px] rounded-md border border-line px-3 py-2 text-[13px] font-medium text-ink hover:bg-bg-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-50";
 
@@ -30,6 +30,7 @@ export function ConnectionsView({ status, busy, message, onRefresh, onConnect, o
   onConfirmDisconnect: () => void;
   handover: ReactNode;
 }) {
+  const disconnectButton = useRef<HTMLButtonElement>(null);
   const hasGap = status.access.people.some((person) => person.access === "unconfirmed" || person.access === "reader");
   return <section aria-label="Google Drive connection" className="space-y-5 text-[13px] leading-relaxed text-ink-soft">
     <header>
@@ -41,7 +42,7 @@ export function ConnectionsView({ status, busy, message, onRefresh, onConnect, o
       <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-quiet">Storage owner</p>
       <p className="mt-2 break-words text-[24px] font-semibold leading-tight tracking-tight text-ink">{status.ownerName ?? "Not chosen yet"}</p>
       <p className="mt-3">{setupCopy[status.setup]}</p>
-      {status.ownerName ? <p className="mt-3">The storage owner owns and can see every file attached to this Drive folder. Those files use their Google Drive space.</p> : null}
+      <p className="mt-3">{status.ownerName ? "The storage owner owns and can see every file attached to this Drive folder. Those files use their Google Drive space." : "If you use Drive for this board, the storage owner will own and be able to see its Drive files. Those files use their Google Drive space."}</p>
       {status.folderUrl ? <a className="mt-3 inline-flex min-h-[44px] items-center font-medium text-brand underline underline-offset-4" href={status.folderUrl} target="_blank" rel="noreferrer">Open board folder <span className="sr-only">in a new tab</span></a> : null}
     </div>
     <section aria-labelledby="drive-access-heading" className="rounded-xl border border-line-soft bg-bg-elevated p-5">
@@ -69,12 +70,12 @@ export function ConnectionsView({ status, busy, message, onRefresh, onConnect, o
       <div className="mt-3 flex flex-wrap gap-2">
         <button className={driveButton} disabled={busy || status.setup === "archived"} onClick={onConnect}>{status.ownConnection.connected || status.ownConnection.needsReconnect ? "Reconnect Google Drive" : "Connect Google Drive"}</button>
         {status.setup === "not_connected" && status.ownConnection.connected && !status.ownConnection.needsReconnect ? <button className={driveButton} disabled={busy} onClick={onEnable}>Use my Drive for this board</button> : null}
-        {status.ownConnection.connected ? <button className={driveButton} disabled={busy} onClick={onDisconnect}>Disconnect my Drive</button> : null}
+        {status.ownConnection.connected ? <button ref={disconnectButton} className={driveButton} disabled={busy} onClick={onDisconnect}>Disconnect my Drive</button> : null}
       </div>
       {confirmation ? <div className="mt-4 rounded-lg border border-line p-4" role="group" aria-label="Confirm Drive disconnect">
         <p className="font-medium text-ink">Disconnect your Google Drive?</p>
         <p className="mt-2">This affects {status.ownConnection.affectedProjectCount} {status.ownConnection.affectedProjectCount === 1 ? "board" : "boards"} using your account. Future files can use Signal Studio. Existing files stay in Drive; access may change when Signal’s sharing is removed.</p>
-        <div className="mt-3 flex flex-wrap gap-2"><button autoFocus className={driveButton} disabled={busy} onClick={onCancelDisconnect}>Keep connected</button><button className={driveButton} disabled={busy} onClick={onConfirmDisconnect}>Confirm disconnect</button></div>
+        <div className="mt-3 flex flex-wrap gap-2"><button autoFocus className={driveButton} disabled={busy} onClick={() => { onCancelDisconnect(); disconnectButton.current?.focus(); }}>Keep connected</button><button className={driveButton} disabled={busy} onClick={onConfirmDisconnect}>Confirm disconnect</button></div>
       </div> : null}
     </section>
     {handover}
