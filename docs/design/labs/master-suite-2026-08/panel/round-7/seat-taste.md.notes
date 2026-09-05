@@ -37,3 +37,16 @@
    (Escape does correctly dismiss the card; the rail avatar IS reachable by
    ArrowDown on the roving rail. The honest-doors contract holds; the
    duplication and the ink weight are the defect.)
+
+5. **HEADLINE — the arrival is a 2-pixel nudge.** MEASURED frame-by-frame
+   (_zz-tst-arr2/3.mjs). Send -> "Open in Tasks" -> the card lands. The entire
+   visual event on the arriving card is: `[data-settling]` toggled on, which
+   animates transform from `translateY(-2px) scale(0.994)` to identity over
+   ~420ms. Sampled every frame: opacity 1 throughout, background
+   rgb(255,255,255) throughout, border-color rgb(17,17,17) throughout,
+   box-shadow byte-identical throughout, no ::before/::after content, no class
+   other than `card`. A 2px rise and a 1.5px width change on a 256px card.
+   The card lands LAST in To do, looking exactly like the three cards above it.
+   The gate proves a beat exists and is on the motion ladder; it cannot prove
+   the beat READS, and this one does not. The one gesture that justifies a
+   suite existing arrives without an event.

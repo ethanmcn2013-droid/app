@@ -18,3 +18,16 @@ What survives:
   FIGURES in the same header band, 0.112em apart in letterfit.
 - notes · Geist 12: `button.groupBtn` ("What it is about", "When") computes
   `normal` — the only 12px control in Notes off `--tr-12`.
+
+### 2. Timeline · the date row below the axis is a staircase (CONFIRMED, measured)
+across layout, `timeline.owner-flight`, widths 1024/1280/1440/1920 (identical
+numbers at all four):
+  ABOVE the axis  `.b-copy` is anchored by `bottom:` → `.b-date` top = 623 for
+    every moment, whether the title ran one line or two. One clean row.
+  BELOW the axis  `.b-copy` is anchored by `top:` → `.b-date` top = 752 for the
+    one-line titles ("Send the invitations", "Venue walk-through") and 774 for
+    the two-line one ("Choose the evening music"). A 22px step in a row of
+    dates that is otherwise a ruler's own scale.
+src/across.css:266-277 is where the two anchors are set.
+Fix: reserve two lines for `.b-title` on the across axis and hug the
+axis-facing edge, so `.b-copy` has one height on both sides.

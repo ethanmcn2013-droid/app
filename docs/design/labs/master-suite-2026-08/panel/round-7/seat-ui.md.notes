@@ -21,3 +21,36 @@ So the defect is specific to the shipped board state, which is exactly the state
 screenshotted, demoed and shown to Orla.
 
 Consequence: at 1920 the board's own optical margins are 16px left / 126px right.
+
+### F1 alignment contract (measured, tasks.board, .headActions right vs last card right)
+| vw | head/Show right | last card right | break |
+|---|---|---|---|
+|1280|1234|1234|0|
+|1440|1394|1394|0|
+|1600|1554|1554|0|
+|1750|1704|1704|0|
+|1810|1764|1764|0|
+|1850|1804|1764|**40**|
+|1920|1874|1764|**110**|
+|2048|1983|1783|**200**|
+
+Left edge (wordmark ↔ first card) is 128 at every width — perfect. So the surface
+holds a single right-hand edge from 1280 to 1810 and abandons it above.
+Notes (head 1561 = paperStack 1531 + inset, stack centred on sheet centre 1001) and
+Timeline (tl-stage centred, 140→1862) both stay centred at 1920. Only Tasks drifts.
+Second-order: the dock is centred on the SHEET (816.1→1185.9, centre 1001) but the
+board's occupied area is 116→1776, centre 946 — so at 1920 the one floating object on
+the sheet sits 55px off the optical centre of the thing it floats over.
+
+The CSS's own comment (line ~1805) states the intent: "An empty lane on a populated
+board is a rail rather than a fifth of the sheet ... **and the four lanes with work in
+them take the room**." Above 1810 they do not; the room becomes dead white.
+
+FIX, verified by injection — one declaration beside the five existing `:has()` rules:
+```css
+[data-app="tasks"] .board:not([data-filtered]):not([data-blank]):has(> .tray[data-empty]) {
+  --lane: minmax(196px, 422px);   /* 372 + (372-172)/4 */
+}
+```
+Measured after injection: break 0 at 1200/1280/1440/1810/1920/2048/2560; no new
+horizontal scroll at any width; tracks at 1920 become 399.5 399.5 399.5 172 399.5.

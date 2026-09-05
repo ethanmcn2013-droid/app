@@ -62,3 +62,30 @@ Consequence for Orla: the head reads as a single sentence — "All your notes,
 Mara & Finn, Saturday 3 October, in 79 days" — which is a false statement of what
 is on screen (14 notes across four notebooks). The one control that would make it
 true is invisible, and the affordance only arrives after the state has changed.
+
+### FINDING 2 (confirmed by measurement) — across-measure-label-order-flips
+
+timeline.owner-flight @1920, across axis. Rail `.b-rail` at y=682. Distance of each
+label's optical centre from the rail, measured in the DOM:
+
+  ABOVE the rail, outward:  b-away "16"  35px  ->  b-date "Sat 1 Aug"  51px
+                            ->  b-title "Menu tasting..."  73-85px
+  BELOW the rail, outward:  b-away "23"  35px  ->  b-title "Send the invitations" 56px
+                            ->  b-date "Sat 8 Aug"  78px
+
+The day-count is symmetric to the pixel (35/35). The title and the date SWAP rings
+across the rail. Holds for all seven moments: 16/37/51/79 above read number-date-title,
+23/44/65 below read number-title-date.
+
+Cause, `_gate-suite.html:8544-8556`: `.b-copy` (children in DOM order title, date) is
+mirrored as a BLOCK by swapping `bottom:` for `top:`, but its internal order is never
+reversed. So above the rail the last child (date) ends up nearest and the first child
+(title) farthest.
+
+Consequences: the titles - the only thing on the measure that says what a moment IS -
+do not form a band; they alternate 73px above / 56px below, on opposite sides of their
+own dates. And the below-line order (number, title, date) is the order the down layout
+and the phone use, so the four above-line moments are the only place in the product
+that reads number-date-title.
+
+Not a locked-architecture question and not a colour: one declaration.

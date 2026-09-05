@@ -13,3 +13,41 @@ probing computed styles / a11y tree / focus order / repaint effects.
   render defect. NOT a finding.
 - notes.voice focus trap is correct: Tab cycles exactly Cancel / Stop and read it back,
   never reaching the occluded sheet. Clean.
+
+### FINDING 1 (headline) — Enter during a keyboard carry leaves the board mutated,
+### stuck in the picked-up state, and with no undo.
+src/tasks.js onKey: the Space branch (≈l.2924-2969) is the ONLY drop path. The
+`if (key === "Enter")` branch (≈l.2971-2991) calls openCard(id, ...) with no
+`carriedId` guard. Driven at 1440, tasks.board:
+  Space on demo-t-01  -> aria-grabbed=true, data-force=moving, lane todo
+  ArrowRight          -> lane DOING (carryMove already called moveTo(), the model
+                         is mutated), say "In progress, position 1 of 4."
+  Enter               -> "Task open.", focus to ASIDE.taskPanel
+  Escape              -> "Task closed.", focus back on the card
+  Ctrl+Z              -> "NOTHING LEFT TO UNDO."   (arm() never ran)
+  Ctrl+Z again        -> same
+After all that the card is permanently in In progress, still carries
+aria-grabbed="true" and data-force="moving" (2px indigo outline + 1.5px indigo
+ring + 5px halo + scale(1.02) + lift — the loudest treatment on the board),
+with document.activeElement === BODY. Screenshot _zz-stuck-moving.png confirms.
+Escape during a carry cancels correctly and clears both attributes; only Enter
+leaks. Round 6's "the keyboard drop arms one" fix covered the Space drop only.
+
+WIDER THAN ENTER. Same probe, other exits from a live carry (all at 1440,
+tasks.board, card demo-t-01 walked one lane right so the model is already
+mutated):
+  Tab            -> lane doing, aria-grabbed=true, data-force=moving, Ctrl+Z
+                    "Nothing left to undo."
+  rail Notes/back-> lane doing, aria-grabbed=true, data-force=moving, Ctrl+Z
+                    "Nothing left to undo."
+  click empty lane ground -> endCarry() DOES run, attributes clear, says
+                    "…put down in the in progress column." and Ctrl+Z STILL
+                    says "Nothing left to undo."
+So Space is the only exit that arms an undo (src/tasks.js l.2955 arm({kind:"move"…}))
+and Escape (l.2883) the only exit that reverts. endCarry() (l.2639) commits the
+lane change and never calls arm().
+CODE/COMMENT DISAGREEMENT: the comment above endCarry() (l.2632-2638) states the
+class was fixed — "Tab away, complete another card with the pointer, open the
+composer or the Planning drawer, and the carry ran on". endCarry() is wired to
+pointerdown only (l.4442). Tab away still runs the carry on, exactly as the
+comment says it used to.
