@@ -53,10 +53,15 @@ node --import tsx --import ./src/test/register-server-only.mjs experience/event-
 Results: 27/27 export tests (12 new direct SQLite, 7 unified, 6 HTTP, 2 existing
 account); 1/1 existing actual Notes-export case; 24/24 tenant checks; typecheck,
 module and first-contact gates pass. Focused lint: zero errors, 12 existing unused
-`_id` warnings in unchanged unified-test callbacks. Browser: 4/4 actual component
-cases, 390x844 and 1440x960, light/dark, keyboard focus/Enter/native download,
+`_id` warnings in unchanged unified-test callbacks. Browser: 8/8 cases: four actual component
+renders, 390x844 and 1440x960, light/dark, keyboard focus/Enter/native download,
 44px target, no horizontal overflow, no eager request, no console/network errors.
 Each download runs the actual HTTP handler and unified Tasks SQLite exporter.
+The other four cases are actual host HTTP 500, local connection abort and a
+successful retry from the same page after each. The intentional connection-abort
+control does not invoke the export handler. Successful retries preserve partial
+module unavailability. The fixture-only follow-up passed focused lint and diff
+checks; runtime TypeScript is unchanged from the recorded full typecheck.
 
 `PROFILE_EXPORT_OUTPUT` must select a fresh output directory. Baseline invocation
 adds `--baseline`; it swaps only DataPrivacy with immutable cbf40 source and is
@@ -74,10 +79,24 @@ fixture and loads the old exporter with `git show`.
 The first typecheck rejected a synthetic `med` priority; the fixture now uses
 `p2`. The initial passing browser receipt used a design-system 80px minimum;
 manual inspection led to explicit 44px. Both earlier results remain unchanged.
-`browser-after-final` is the final source render. The early missing-projection
+`browser-after-final` retains the first final runtime render; the same runtime is
+rendered again in `browser-failure-retry-final` by the extended fixture. The early missing-projection
 log predates that fixture priority correction; it is not an exact-final-test
 baseline. The immutable old/new SQLite comparison supplies the stronger boundary
 control with final code.
+
+The native failure follow-up is above source commit
+`ac7a913d6d28fb0b1bac6f6b68ad7c54df959e33`. Actual host 500 and a local TCP response
+abort both yield `download.failure() === "canceled"`; `download.path()` rejects,
+so no error JSON is available as a completed export. Profile stays open with no
+inline error, and both same-page retries then succeed. The earlier scratch probe
+labelled `network` actually reached the host (recorded HTTP 500); it is preserved
+but receives no transport-failure credit. The corrected probe aborts the server
+connection, records those attempts before any exporter call, and retains all
+observations. Its `passed` receipt means asserted browser behavior, not human
+acceptance of native download-panel feedback. No runtime busy/error state was
+added. Chromium's download panel, other browsers and duplicate-click UX remain
+unverified; the existing native download behavior is retained.
 
 Final behavioral controls include real prepare/bind/settlement, transfer/removal,
 paid-undesignated recovery facts, refund-first and failed shared-mirror/local
@@ -101,6 +120,9 @@ Principal owns all package/CI/registry/full-route integration and canonical stat
 Durable archive uses the existing recipient review LFS rule:
 `experience/reviews/january-recipient-2026-09-05/event-export-cbf40-prerequisite.zip`.
 Its adjacent manifest identifies byte hashes, source inventory and receipts.
+The subsequent failure/retry fixture and receipts are retained separately in
+`experience/reviews/january-recipient-2026-09-05/event-export-ac7-failure-retry.zip`
+with their own manifest. Neither earlier archive nor failed receipt was replaced.
 Projectless output mirror: `outputs/event-export-prerequisite-2026-09-05/` in the
 shared Documents task. Browser source hashes normalize CRLF to LF; runner receipts
 hash raw bytes. The inventory records both explicitly.

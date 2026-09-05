@@ -89,9 +89,15 @@ createRoot(document.getElementById('root')).render(<main style={{maxWidth:800,ma
   for (const [url, body] of Object.entries(assets)) await fs.writeFile(path.join(out, path.basename(url)), body);
   const html = `<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><style>@font-face{font-family:Geist;src:url('/Geist.woff2');font-weight:100 900}@font-face{font-family:'Geist Mono';src:url('/GeistMono.woff2');font-weight:100 900}:root{--font-geist-sans:Geist;--font-geist-mono:'Geist Mono'}</style></head><body><div id="root"></div><script src="/bundle.js"></script></body></html>`;
   const apiRequests = [];
+  let abortExportConnection = false;
   server = createServer(async (request, response) => {
     try {
       if (request.url === "/api/account/export" && request.method === "GET") {
+        if (abortExportConnection) {
+          apiRequests.push({ path: request.url, failure: "fixture connection abort before export" });
+          response.destroy();
+          return;
+        }
         const result = await loaded.exports.GET();
         apiRequests.push({ path: request.url, status: result.status, cacheControl: result.headers.get("Cache-Control") });
         response.writeHead(result.status, Object.fromEntries(result.headers.entries()));
@@ -158,6 +164,68 @@ createRoot(document.getElementById('root')).render(<main style={{maxWidth:800,ma
       assert.deepEqual(errors, []);
     } catch (error) { result.failures.push(error.message); gateError ??= error; }
     finally { result.errors = errors; await page.close(); }
+  }
+  // Native downloads bypassed page.route in the retained original probe. Abort
+  // the local HTTP connection itself so this control proves an actual transport
+  // failure. A host read failure separately runs the real handler's generic 500.
+  if (!baseline) {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await page.route("**/*", route => new URL(route.request().url()).origin === origin ? route.continue() : route.abort());
+    await page.goto(`${origin}/settings/profile`);
+    const link = page.getByRole("link", { name: "Download account JSON", exact: true });
+    await link.waitFor();
+    let retryIntentId;
+    for (const failure of ["host-http500", "network-abort"]) {
+      const result = { failure, failures: [] };
+      receipt.cases.push(result);
+      if (failure === "host-http500") await fixture.local.client.execute("DROP TABLE event_purchase_designations");
+      else abortExportConnection = true;
+      try {
+        const before = apiRequests.length;
+        const pending = page.waitForEvent("download");
+        await link.click();
+        const download = await pending;
+        result.downloadFailure = await download.failure();
+        assert.ok(result.downloadFailure, "Host/transport failure must not become a successful file download");
+        await assert.rejects(download.path(), "A failed export must not expose a completed download file");
+        const requests = apiRequests.slice(before);
+        assert.ok(requests.length >= 1);
+        if (failure === "host-http500") assert.deepEqual(requests, [{ path: "/api/account/export", status: 500, cacheControl: "private, no-store" }]);
+        else assert.ok(requests.every(request => request.failure === "fixture connection abort before export"));
+        assert.equal(page.url(), `${origin}/settings/profile`);
+        assert.equal(await link.isVisible(), true);
+        result.visibleText = await page.locator("main").innerText();
+        result.inlineError = await page.getByRole("alert").count();
+        await page.screenshot({ path: path.join(out, `${failure}.png`), fullPage: true });
+      } catch (error) { result.failures.push(error.message); gateError ??= error; }
+      finally { abortExportConnection = false; }
+
+      // Restore only the disposable host store, then retry from the same page.
+      // No UI reload, successful-output seeding or provider operation is used.
+      if (failure === "host-http500") {
+        fixture.close();
+        fixture = await entitlementFixture();
+        retryIntentId = await prepareEventCheckoutWith(fixture.local.db, { actorUserId: "buyer", workspaceId: "project-a" });
+      }
+      const retry = { retryAfter: failure, failures: [] };
+      receipt.cases.push(retry);
+      try {
+        const pending = page.waitForEvent("download");
+        await link.click();
+        const download = await pending;
+        assert.equal(await download.failure(), null);
+        const destination = path.join(out, `${failure}-retry-account.json`);
+        await download.saveAs(destination);
+        const account = JSON.parse(await fs.readFile(destination, "utf8"));
+        assert.equal(account.tasks.eventPurchases[0].id, retryIntentId);
+        assert.equal(account.tasks.eventPurchases[0].designation, "pending");
+        assert.equal(account.notes.available, false, "Successful partial-module JSON must retain its unavailable status");
+        assert.deepEqual(apiRequests.at(-1), { path: "/api/account/export", status: 200, cacheControl: "private, no-store" });
+        assert.equal(page.url(), `${origin}/settings/profile`);
+        retry.download = { filename: download.suggestedFilename(), sha256: hash(await fs.readFile(destination)), status: 200 };
+      } catch (error) { retry.failures.push(error.message); gateError ??= error; }
+    }
+    await page.close();
   }
   receipt.apiRequests = apiRequests;
   if (gateError) throw gateError;
