@@ -1,21 +1,24 @@
 import { getArchivedTasks } from "@/server/db/queries";
-import { requireRouteProjectId } from "@/server/projects/route-authz";
+import { resolveTasksArrival, TasksArrivalRefusal } from "@/components/app/tasks-project-arrival";
 import { AppPageHeader } from "@/components/app/page-header";
 import { ArchivedApp } from "@/components/app/archived/archived-app";
 import { TasksRuntimePageMount } from "@/components/app/tasks-runtime-mount";
 
 export const dynamic = "force-dynamic";
 
-export default async function ArchivedPage() {
-  // WP3: fail closed rather than fall through to LEGACY_WORKSPACE_ID (D-005).
-  // The runtime mounts with no explicit `workspaceId` on purpose (D-022):
-  // this page's own read below is ambient, so handing the chrome an explicit
-  // Project would render one Project's chrome over another's archive — the
-  // URL/content inequality ADR 0001 §2 forbids. Both halves stay ambient.
-  const ws = await requireRouteProjectId();
-  const tasks = await getArchivedTasks(ws);
+export default async function ArchivedPage({ searchParams }: {
+  searchParams: Promise<{ workspaceId?: string | string[] }>;
+}) {
+  const requested = (await searchParams).workspaceId;
+  const arrival = await resolveTasksArrival(requested);
+  if (arrival.kind !== "ready") {
+    return <TasksArrivalRefusal arrival={arrival} requested={requested} surface="archive" />;
+  }
+  // Content and runtime follow the same authorized Project. The flag-off
+  // mismatch has already refused before this archive read.
+  const tasks = await getArchivedTasks(arrival.project.workspaceId);
   return (
-    <TasksRuntimePageMount>
+    <TasksRuntimePageMount searchParams={searchParams}>
       <AppPageHeader />
       <ArchivedApp tasks={tasks} />
     </TasksRuntimePageMount>

@@ -2,11 +2,12 @@
 
 import { useActionState } from "react";
 import { openTasksProjectAction } from "@/server/actions/tasks-project-arrival";
+import type { TasksArrivalSurface } from "@/lib/tasks/arrival-path";
 
 export function OpenTasksProject({ workspaceId, name, surface, taskId }: {
   workspaceId: string;
   name: string;
-  surface: "tasks" | "my-work";
+  surface: TasksArrivalSurface;
   taskId?: string;
 }) {
   const [state, action, pending] = useActionState(openTasksProjectAction, null);
