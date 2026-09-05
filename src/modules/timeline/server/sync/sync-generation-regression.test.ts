@@ -457,7 +457,7 @@ test("the action commits the generation before it writes nodes", () => {
   assert.ok(cas < write, "the compare-and-set must run before the nodes are written");
   assert.match(
     body.slice(cas, write),
-    /if \(!current\) return false;/,
+    /if \(!current\) return "superseded";/,
     "a refused compare-and-set must abandon the write",
   );
 });
@@ -530,7 +530,7 @@ test("the action skips the node write and the revalidation on an unchanged diges
     /plan\.reconcile === "destructive" &&\s*\n\s*snapshot\.kind === "complete"/,
     "only a whole snapshot may claim nothing changed; a partial one has not seen everything",
   );
-  assert.match(body, /if \(unchanged\) return true;/, "the node write is skipped");
+  assert.match(body, /if \(unchanged\) return "applied";/, "the node write is skipped");
   assert.match(
     body,
     /if \(!unchanged\) \{\s*\n\s*revalidatePath\("\/app\/timeline"\);/,
