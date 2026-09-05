@@ -7,6 +7,7 @@ import { hasAccountDeletionStartedWith } from "./account-deletion-lifecycle";
 import { entitlementsDb } from "@/lib/entitlements-shared/client";
 import { entitlements as sharedEntitlements } from "@/lib/entitlements-shared/schema";
 import type { PaidTier } from "@/server/stripe";
+import { recordEventSettlementInTransaction, markEventRevokedInTransaction, EventDesignationPendingError } from "@/server/db/event-designation";
 
 export type StripeAccess = Readonly<{
   userId: string;
@@ -17,6 +18,8 @@ export type StripeAccess = Readonly<{
   subscriptionId: string | null;
   expiresAt: Date | null;
   revoked: boolean;
+  /** Only the verified Event checkout handler supplies this new-intent proof. */
+  eventDesignation?: Readonly<{ intentId: string; settledAt: Date }>;
 }>;
 
 type SharedDatabase = ReturnType<typeof entitlementsDb>;
@@ -57,8 +60,9 @@ export async function reconcileStripeAccessBatch(inputs: readonly StripeAccess[]
   for (const input of inputs) {
     try {
       await retryBusyWrite(async () => {
-        const id = await commitLocalAccess(input, dependencies);
-        if (id) pending.push({ input, id });
+        const result = await commitLocalAccess(input, dependencies);
+        if (result?.id) pending.push({ input, id: result.id });
+        if (result?.designationPending) failures.push(new EventDesignationPendingError());
       });
     } catch (error) { failures.push(error); }
   }
@@ -77,7 +81,7 @@ export async function reconcileStripeAccessBatch(inputs: readonly StripeAccess[]
   if (failures.length > 1) throw new AggregateError(failures, "Billing access reconciliation is pending.");
 }
 
-async function commitLocalAccess(input: StripeAccess, dependencies: AccessDependencies): Promise<string | undefined> {
+async function commitLocalAccess(input: StripeAccess, dependencies: AccessDependencies): Promise<{ id?: string; designationPending?: boolean } | undefined> {
   const store = dependencies.database ?? db;
   if (!input.reference || !input.customerId || (input.workspaceId === null && input.tier !== "studio")) {
     throw new Error("Billing scope is incomplete.");
@@ -91,12 +95,6 @@ async function commitLocalAccess(input: StripeAccess, dependencies: AccessDepend
     const [owner] = await database.select({ id: users.id }).from(users)
       .where(and(eq(users.id, input.userId), eq(users.clerkId, input.userId))).limit(1);
     if (!owner) throw new Error("Payment account is not available.");
-    if (input.workspaceId !== null && !input.revoked) {
-      const [membership] = await database.select({ id: workspaces.id }).from(workspaces)
-        .innerJoin(workspaceMembers, and(eq(workspaceMembers.workspaceId, workspaces.id), eq(workspaceMembers.userId, input.userId)))
-        .where(and(eq(workspaces.id, input.workspaceId), isNull(workspaces.archivedAt))).limit(1);
-      if (!membership) throw new Error("Payment project is not available. Reconciliation is required.");
-    }
     // isolation-ok: a verified Stripe delivery locates its global provider reference;
     // every matching owner/project/tier/source is checked below before a write,
     // and neither the row nor its values are returned to a requesting client.
@@ -105,11 +103,25 @@ async function commitLocalAccess(input: StripeAccess, dependencies: AccessDepend
     if (existing.length > 1 || existing.some(row => row.userId !== input.userId || row.workspaceId !== input.workspaceId || row.tier !== input.tier || row.source !== "purchase")) {
       throw new Error("Billing reference has a different recorded scope.");
     }
-    let revoked = input.revoked || existing[0]?.expiresAt?.getTime() === 0;
+    const eventReceipt = await recordEventSettlementInTransaction(database, input, existing.length === 1);
+    const designationPending = eventReceipt?.designation === "paid_undesignated";
+    if (designationPending && !input.revoked && !eventReceipt.revoked) {
+      // Commit the paid receipt, then return a retryable failure OUTSIDE this
+      // transaction. It must not create positive local or shared authority.
+      return { designationPending: true };
+    }
+    let revoked = input.revoked || eventReceipt?.revoked === true || existing[0]?.expiresAt?.getTime() === 0;
+    if (input.workspaceId !== null && !revoked && !(eventReceipt?.designation === "designated" && existing.length === 1)) {
+      const [membership] = await database.select({ id: workspaces.id }).from(workspaces)
+        .innerJoin(workspaceMembers, and(eq(workspaceMembers.workspaceId, workspaces.id), eq(workspaceMembers.userId, input.userId)))
+        .where(and(eq(workspaces.id, input.workspaceId), isNull(workspaces.archivedAt))).limit(1);
+      if (!membership) throw new Error("Payment project is not available. Reconciliation is required.");
+    }
     if (!revoked) {
       const binding = await positiveBinding(input, existing.length > 0, dependencies.sharedDatabase ?? entitlementsDb());
       revoked = binding.status === "revoked";
     }
+    if (revoked) await markEventRevokedInTransaction(database, input);
     const id = existing[0]?.id ?? `e-${createHash("sha256").update(JSON.stringify([input.userId, input.reference])).digest("hex")}`;
     const term = revoked ? new Date(0) : input.expiresAt;
     const seconds = term ? Math.floor(term.getTime() / 1000) : null;
@@ -130,7 +142,9 @@ async function commitLocalAccess(input: StripeAccess, dependencies: AccessDepend
     if (!stored || stored.userId !== input.userId || stored.workspaceId !== input.workspaceId || stored.tier !== input.tier) {
       throw new Error("Billing reference has a different recorded scope.");
     }
-    return stored.id;
+    // A verified refund resolves the payment without retroactively designating
+    // the project. Only its failed negative mirror still needs delivery retry.
+    return { id: stored.id, designationPending: designationPending && !revoked };
   }, { behavior: "immediate" });
 }
 
@@ -185,6 +199,7 @@ export async function revokeHistoricalStripeAccess(input: HistoricalStripeRevoca
         throw new Error("Historical billing reference is missing or has a different scope.");
       }
       await transaction.update(entitlements).set({ expiresAt: new Date(0) }).where(eq(entitlements.id, rows[0].id));
+      await markEventRevokedInTransaction(transaction, input);
       return rows[0].id;
     }, { behavior: "immediate" });
     if (!id) return;
