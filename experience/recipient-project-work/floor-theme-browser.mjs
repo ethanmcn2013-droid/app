@@ -20,6 +20,27 @@ const readSource=async file=>baselineCss(file)?execFileSync('git',['show',baseli
 const out=path.resolve(process.env.FLOOR_THEME_OUTPUT??`experience/output/recipient-project-work/floor-theme/${baseline?'before':'after'}`);
 await fs.mkdir(out,{recursive:true});
 assert.equal(await fs.access(path.join(out,'receipt.json')).then(()=>true,()=>false),false,'Use a fresh evidence directory');
+const hash=content=>createHash('sha256').update(content).digest('hex');
+// Original failed e2e4 capture, not a newly approved visual baseline. Normalize
+// checkout line endings only; every other byte remains pinned, including failure.
+const retainedBaseline='experience/reviews/january-recipient-2026-09-05/floor-theme-e2e4a0c8-before.json';
+const baselineSha256LF='4d676b6f51493caa992a6074d66b268336ee636b530d30ea5e8ad11df57f1aa3';
+async function readGeometryBaseline() {
+  const file=process.env.FLOOR_THEME_BEFORE?path.resolve(process.env.FLOOR_THEME_BEFORE,'receipt.json'):path.join(root,retainedBaseline);
+  const content=(await fs.readFile(file,'utf8')).replace(/\r\n/g,'\n');
+  assert.equal(hash(content),baselineSha256LF,'Floor geometry baseline SHA-256 mismatch');
+  const old=JSON.parse(content);
+  assert.equal(old.head,baselineRef,'Floor geometry baseline HEAD mismatch');
+  assert.equal(old.cssBaselineRef,baselineRef,'Floor geometry baseline CSS identity mismatch');
+  assert.equal(old.baseline,true,'Floor geometry baseline must be an original baseline capture');
+  assert.equal(old.status,'failed','Keep the original failed contrast receipt as historical evidence');
+  return {old,identity:{path:file,sha256LF:baselineSha256LF,head:old.head,cssBaselineRef:old.cssBaselineRef,baseline:old.baseline,status:old.status}};
+}
+const receipt={head:null,baseline,status:'running',sourceInputs:{},cases:[],limits:['Actual Floor components, store/reducer and global/module CSS; synthetic task prerequisites, Next/suite adapters.','No Next/Clerk/DB/provider or final experience-registry capture.','Chromium emulation, not physical-device or human-comprehension proof.']};
+let old,server,browser,gateError;
+try {
+receipt.head=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim();
+if(!baseline){const loaded=await readGeometryBaseline();old=loaded.old;receipt.geometryBaseline=loaded.identity;}
 const stubs={
   'next/link':`import React from 'react';export default function Link(props){return <a {...props}/>}`,
   'next/navigation':`export const usePathname=()=>'/app/tasks';export const useRouter=()=>({push:href=>window.navigation.push(href)});`,
@@ -48,8 +69,6 @@ window.mountProject=state=>{const project={id:'project-b',name:'Arrival project 
 if(location.search.includes('surface=project'))window.mountProject('verified');else root.render(<LabStoreProvider initialTasks={scene} initialInspectedId={null} readOnly={false} onInspectedChange={()=>{}}><Surface/></LabStoreProvider>);`;
 const bundle=await esbuild.build({bundle:true,metafile:true,platform:'browser',absWorkingDir:root,alias:{'@':path.join(root,'src')},jsx:'automatic',define:{'process.env':'{}','process.env.NODE_ENV':'"production"'},stdin:{contents:entry,loader:'jsx',resolveDir:root},outfile:path.join(out,'bundle.js'),plugins:[{name:'floor-fixture-adapters',setup(build){build.onResolve({filter:/.*/},args=>Object.hasOwn(stubs,args.path)?{path:args.path,namespace:'fixture'}:undefined);build.onLoad({filter:/.*/,namespace:'fixture'},args=>({contents:stubs[args.path],loader:'jsx',resolveDir:root}));build.onLoad({filter:/\.module\.css$/},async args=>{const file=path.relative(root,args.path).replaceAll('\\','/');return baselineCss(file)?{contents:await readSource(file),loader:'local-css'}:undefined;});}}]});
 const css=await postcss([require('@tailwindcss/postcss')({base:root})]).process(await fs.readFile(path.join(root,'src/app/globals.css'),'utf8'),{from:path.join(root,'src/app/globals.css')});
-const hash=content=>createHash('sha256').update(content).digest('hex');
-const receipt={head:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),baseline,status:'running',sourceInputs:{},cases:[],limits:['Actual Floor components, store/reducer and global/module CSS; synthetic task prerequisites, Next/suite adapters.','No Next/Clerk/DB/provider or final experience-registry capture.','Chromium emulation, not physical-device or human-comprehension proof.']};
 receipt.cssBaselineRef=baseline?baselineRef:null;
 for(const file of Object.keys(bundle.metafile.inputs))if(file.startsWith('src/'))receipt.sourceInputs[file]=hash((await readSource(file)).replace(/\r\n/g,'\n'));
 for(const file of ['src/app/globals.css','docs/design/labs/tasks-2026-08/floor.html','scripts/design/extract-floor-css.mjs'])receipt.sourceInputs[file]=hash((await fs.readFile(path.join(root,file),'utf8')).replace(/\r\n/g,'\n'));
@@ -59,11 +78,10 @@ const assets={'/app.css':css.css,'/bundle.js':await fs.readFile(path.join(out,'b
 for(const name of ['Geist','GeistMono'])assets[`/${name}.woff2`]=await fs.readFile(path.join(root,`docs/design/labs/tasks-2026-08/fonts/${name}.woff2`));
 receipt.fonts=Object.fromEntries(['Geist','GeistMono'].map(n=>[n,hash(assets[`/${n}.woff2`])]));
 const html=`<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><link rel="stylesheet" href="/bundle.css"><style>@font-face{font-family:Geist;src:url('/Geist.woff2');font-weight:100 900}@font-face{font-family:'Geist Mono';src:url('/GeistMono.woff2');font-weight:100 900}:root{--font-geist-sans:Geist;--font-geist-mono:'Geist Mono'}body{margin:0}#root{height:100dvh;display:flex;min-width:0}</style></head><body><div id="root"></div><script src="/bundle.js"></script></body></html>`;
-const server=createServer((req,res)=>{res.setHeader('Content-Type',req.url.endsWith('.js')?'text/javascript':req.url.endsWith('.css')?'text/css':req.url.endsWith('.woff2')?'font/woff2':'text/html');res.end(assets[req.url]??html);});
+server=createServer((req,res)=>{res.setHeader('Content-Type',req.url.endsWith('.js')?'text/javascript':req.url.endsWith('.css')?'text/css':req.url.endsWith('.woff2')?'font/woff2':'text/html');res.end(assets[req.url]??html);});
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const origin=`http://127.0.0.1:${server.address().port}`;
-receipt.origin=origin;const browser=await chromium.launch({headless:true});
-try {
+receipt.origin=origin;browser=await chromium.launch({headless:true});
   for(const viewport of [{width:1280,height:900},{width:390,height:844}])for(const theme of ['light','dark']){
     const page=await browser.newPage({viewport,colorScheme:theme,reducedMotion:'reduce'}),errors=[];
     page.on('pageerror',error=>{errors.push(error.message);console.error(error.message);});page.on('console',message=>{if(message.type()==='error'){errors.push(message.text());console.error(message.text());}});
@@ -130,12 +148,19 @@ try {
   // Preserve geometry, while explicitly repairing the demonstrated light UI
   // contrast failures. Brand wordmarks are not included as text/UI controls.
   if(!baseline){
-    assert.ok(process.env.FLOOR_THEME_BEFORE,'Provide the preserved baseline directory for layout identity proof');
-    const old=JSON.parse(await fs.readFile(path.join(process.env.FLOOR_THEME_BEFORE,'receipt.json'),'utf8'));
     for(const c of receipt.cases)assert.deepEqual(c.rest.layout,old.cases.find(b=>b.theme===c.theme&&b.viewport.width===c.viewport.width).rest.layout,'The Floor layout must remain unchanged');
     receipt.layoutIdentity=true;
   }
   receipt.status=receipt.cases.some(c=>c.failures.length)||receipt.projectCases.some(c=>!c.pass)?'failed':'passed';
   console.log(JSON.stringify(receipt.cases.map(c=>({theme:c.theme,width:c.viewport.width,ground:c.rest.ground,failures:c.failures}))));
   if(!baseline)assert.equal(receipt.status,'passed','Theme contrast/behavior checks failed; see receipt');
-}finally{await fs.writeFile(path.join(out,'receipt.json'),JSON.stringify(receipt,null,2));await browser.close();await new Promise(resolve=>server.close(resolve));}
+}catch(error){
+  gateError=error;receipt.status='failed';receipt.error={name:error.name,message:error.message};throw error;
+}finally{
+  let cleanupError;
+  for(const close of [()=>browser?.close(),()=>server?.listening?new Promise((resolve,reject)=>server.close(error=>error?reject(error):resolve())):undefined]){
+    try{await close();}catch(error){cleanupError??=error;receipt.status='failed';receipt.cleanupError={name:error.name,message:error.message};}
+  }
+  await fs.writeFile(path.join(out,'receipt.json'),JSON.stringify(receipt,null,2));
+  if(cleanupError&&!gateError)throw cleanupError;
+}
