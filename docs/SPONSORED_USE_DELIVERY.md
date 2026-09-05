@@ -16,6 +16,8 @@ Migration `0030_sponsored_use_intents` adds only this queue and erasure link, re
 
 ## Local verification and registration
 
+Delivery retires event or erasure custody only after an unredirected HTTP200 `application/json` response containing exactly `{ "ok": true }` (JSON whitespace allowed). The response is streamed with a256-byte bound and a5-second body deadline; extra/duplicate keys, non-JSON, incomplete streams and other2xx responses remain pending. No remote body is logged or persisted. This is defensive transport hardening; no attacker path through the real Studio handler was demonstrated. The two current Studio handlers already return this acknowledgement after their transaction succeeds.
+
 Run on the pinned installed dependencies with Node24. These commands use disposable local SQLite and synthetic Request transport:
 
 ```sh

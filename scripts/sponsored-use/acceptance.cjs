@@ -88,6 +88,8 @@ async function check(name,fn){await fn();checks.push(name);console.log("PASS "+n
    if(n===3){await quietGrant("c","N");assert.equal((await runJob()).status,200);}
    const loaded=await hqAction("synthetic");assert.equal(loaded.ok,true);
    assert.equal(loaded.snapshot.adoption.activeRecently.state,n===2?"withheld":"lower_bound");
+   if(n===2)for(const key of ["daysCovered","modulesCovered"])assert.equal(Object.hasOwn(loaded.snapshot.coverage,key),false);
+   else assert.equal(loaded.snapshot.coverage.daysCovered,1,"eligible cohort retains observed coverage");
    assert.equal(loaded.snapshot.productReach.find(r=>r.product==="Notes").workspacesReached.state,"unavailable");
    for(const format of ["csv","html"]){
     const response=await download(new Request("http://studio.test/hq/account-review/download?source=live&venue=synthetic&format="+format));
