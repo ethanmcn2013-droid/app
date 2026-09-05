@@ -142,3 +142,38 @@ Validated fix (driven, no overlap, no sideways scroll at 320/390/430):
     13 fewer wrapped lines @320, 5 @390, 7 in dense@390.
 The chipped rows keep the narrow measure on lines 2+ until the chip becomes a
 float; that is the second half and it is a DOM change, not a CSS one.
+
+### 8. HEADLINE, SHARPENED — the micro-label is set SIX ways, and two of them
+### share a line (CONFIRMED, driven, cropped)
+Beyond the five settings in §5, Tasks alone sets the role twice:
+  `.trayName` (Board)  tasks.css:786 region  Geist MONO 11/400 +0.10em, ink-1
+  `.lrowLane` (List)   tasks.css:514-520     Geist SANS 11/600 +0.075em, ink-3
+Same five words — TO DO, IN PROGRESS, REVIEW, WAITING, DONE — same product,
+same size, same case, same job. Drag the window from 1201 to 1199 (the recorded
+board floor) and the lane labels change typeface, weight and ink.
+
+Worse: `.lrowLane` reaches for `--tr-cap`, which tasks.css:75-85 declares as
+THE CAP STEP for "a monogram, which is the one string in this product that is a
+letterform rather than a word". It is being spent on words.
+
+And the two voices meet on ONE LINE. In every list row (390 and 1199, verified
+and cropped at 4×) the meta line carries "TO DO" at the left in Geist sans 600
++0.075em and "VENUE" at the right in Geist Mono 400 +0.10em — same 11px, same
+uppercase, same ink-3 (0.62) — 250px apart on one baseline.
+
+Neither gate can see this: the audit groups letterfit by product+family+size,
+so two FAMILIES at one size never land in the same group.
+
+### SCORE 8.8
+Fundamentals are at benchmark and I could not break them: 400/600 held in all
+10 states × 5 widths × both variants (0 violations); the ramp clean; leading
+declared and gated everywhere the gate looks; measure held at 31em / 59-64
+characters on every Notes reading surface; whole-word trimming with zero
+mid-word clips found anywhere; tabular figures on every counter that ticks,
+including the live character counter; ONE keycap; no mixed letterfit inside a
+single line anywhere in the suite; and a tracking curve that composes a
+polarity branch correctly (`--tr-13 + --tr-rev` = -0.002em on the reversed
+dock button) — which is more type system than most shipped products carry.
+What holds it at 8.8 is that the one role which is supposed to prove "this is
+one application" is the one role that is not one object, plus a phone measure
+of 22 characters per line. All four are CSS, all four are validated above.

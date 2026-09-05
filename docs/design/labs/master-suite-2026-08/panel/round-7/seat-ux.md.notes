@@ -219,3 +219,108 @@ that does not, and it is the terminal beat of the flow Notes exists for.
 
 FIX: in the branch that renders the "Everything is decided." sheet, focus its
 primary action after paint — the same restoration the per-card branch already does.
+
+### FINDING 5 (confirmed by measurement) — timeline-editor-opens-off-screen
+
+On the ACROSS layout (the default on every desk width), opening a moment's editor
+leaves the editor off the bottom of the screen and scrolls nothing. Measured for
+both documented paths — pressing the filled primary action `[data-act="add"]`
+("Add a moment") and pressing an existing moment's `.b-grab` — at five desk
+viewports. `.b-edit` box vs viewport height, and whether its first control is on
+screen:
+
+  1280x900   grab  top 998  / vh 900   0% visible   first control at 1026  off
+  1280x900   add   top 1068 / vh 900   0% visible   first control at 1085  off
+  1440x900   grab  top 902  / vh 900   0% visible   first control at 930   off
+  1440x900   add   top 972  / vh 900   0% visible   first control at 989   off
+  1440x960   grab  top 972  / vh 960   0% visible   first control at 1000  off
+  1440x960   add   top 972  / vh 960   0% visible   first control at 989   off
+  1600x1000  add   top 972  / vh 1000  5% visible (28px of chrome)          off
+  1920x1000  add   top 972  / vh 1000  5% visible (28px of chrome)          off
+
+`.app.sheet` is the real scroller (scrollHeight 1680, clientHeight 924) and its
+`scrollTop` is 0 before and after, at every one of those. `aria-live` is empty —
+nothing is announced either.
+
+So at 1440x960 the entire visible result of pressing the product's one filled
+primary action is: a "New moment / Fri 17 Jul / 1" placeholder appears near the
+origin of the measure, and every other label swaps sides of the rail (Menu tasting
+goes from above to below, Send the invitations from below to above, and so on).
+The name field, the four date steppers, Shown/Hidden, Close and Delete are 12-48px
+below the bottom edge with no cue that they exist. Screenshot `_zz-ux-tl-after.png`.
+
+Diagnosis is exact and the code says so itself. `keepInBand(root, item)`
+(_gate-suite.html:21926) keeps the ITEM in the band — its stated law, correctly, is
+"moves the item on the measure while you hold it, and moves nothing else". The
+panel is only consulted when it is `position: fixed` (the docked/phone case). On the
+across desk the panel is static, the item is already in band, and keepInBand returns
+having scrolled nothing. The focus call that follows uses `.focus({preventScroll:
+true})`, so the browser's own scroll-on-focus is suppressed too. Pressing Tab
+afterwards DOES bring it in (native focus scroll puts the first control at top 460),
+which is why the keyboard path feels fine and the pointer path is blind.
+
+The behaviour gate looks next to this and misses it: `across @w · placing a moment is
+not done blind` asserts that >= 1 of the 8 `.b-grab` HANDLES stays on screen (7-8 do).
+It never asks whether the editor you just opened is on screen.
+
+FIX: on OPEN only — not on stepper presses, which must keep keepInBand's law — bring
+`.b-edit`'s head and its date row into the band of the same `.app.sheet` scroller
+keepInBand already walks up to find, or simply drop `preventScroll` from that one
+open-time focus call. A few lines; no architecture, no colour, no weight.
+
+--------------------------------------------------------------------------------
+## VERDICT — seat-ux, round 7 — 9.0
+
+Say it plainly: this is a very good surface with two primary actions that fail on
+first touch, and the fixes are hours, not weeks.
+
+WHAT EARNED THE SCORE. Information integrity, which is the hardest property on the
+list and the one that decides whether a person can trust a surface. Every count on
+every screen derives from one accessor and none of them drift — I pushed the seam
+crossing, both head filters, the review queue to empty, a phone tick, and the
+dense fold, and the numbers moved together every time. The measure is arithmetically
+honest to the pixel. One clock governs three products. The filter states itself in
+words, converts every lane count to shown/total, badges its control and offers the
+way out. The live regions say human sentences rather than robot ones. Undo has a
+binding, a place it lives, a stated window, and it crosses products. The tab model
+is a real roving model — 18 stops on a 13-card board. The overflow fades are
+measured, not decorative, and they swap ends when you scroll. The honest doors say
+something true. And the writing — "Yours until you send something on", "Your note
+is still here, still private, still yours to edit", "Nothing is decided until you
+say so, and every decision can be put back" — is at the level of the studios this
+is being held against. Twelve to nineteen rounds of standalone review show.
+
+WHAT STANDS BETWEEN THIS AND 9.5. Five things, none architectural, none a colour,
+none a decision to revisit. Two of them are visible on first touch:
+
+1. Tick a task on a phone and the circle does not fill. Zero of 33 computed
+   properties differ between a done and an undone list tick. The state is reported
+   by a word 300px away, the pip's colour, a date chip and the title's alpha — but
+   not by the control under the thumb. Same in the task sheet. One root cause: the
+   done rules are scoped to `.card`, the list row is `.lrow`. POLISH — one edit,
+   five selector groups, treatment already exists and is already ratified.
+2. Press "Add a moment" on a 1440x960 laptop and the editor opens entirely below
+   the fold; scrollTop stays 0 and nothing is announced. True at every desk
+   viewport I measured, on both documented paths. POLISH — a few lines at the open
+   branch, or drop one `preventScroll`.
+3. Finish the review queue and the keyboard is dropped to BODY on the last of eight
+   decisions, having been restored correctly on the first seven. POLISH — one focus
+   call, and the target is already on screen.
+4. The Notes head's scope control has no rest affordance and a hover that repaints
+   #111111 as #111111 (crop byte-identical). POLISH — a chevron and a live hover.
+5. The across measure's labels above and below the rail read in different orders.
+   POLISH — one `column-reverse`.
+
+So: what remains is polish, all of it, and about a day of it. There is no build here
+and no decision to reopen. If those five land and hold, I would put this at 9.5.
+
+A note on where the automation stopped. All five findings sit in the blind spot of
+253 passing assertions, and one of them sits directly beside an assertion that was
+written to catch exactly this class: `across @w · placing a moment is not done
+blind` measures whether the HANDLES stay on screen and never asks whether the editor
+does. If the gate takes anything from this round it should be: after any control
+opens a panel, assert the panel is in the viewport; and after any state toggle,
+assert that the control carrying that state changed at least one rendered property.
+
+Deliverable written to panel/round-7/seat-ux.json (the brief's closing line says
+round-6; the run brief and the round it belongs to say round-7, so round-7 it is).

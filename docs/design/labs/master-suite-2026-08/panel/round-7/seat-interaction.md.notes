@@ -198,3 +198,57 @@ answers' own Enter/Space reach anything. Then give the `.confirm` span
 `role="alertdialog" aria-modal="true"` with an accessible name and keep
 Tab cycling between its two buttons.
 COST: 0.2
+
+## FINDING 5 — two-popups-advertise-a-keyboard-they-do-not-have (CONFIRMED)
+`[data-act="projects"]` (the project switcher) and `[data-rail="more"]`
+(the spine's More menu) — both SUITE-level objects.
+
+Four popups in this one application, driven identically (focus the
+opener, Enter, ArrowDown, ArrowDown, Escape) at 1440x960:
+
+| popup | role / items | focus on open | ArrowDown | Escape leaves focus on |
+|---|---|---|---|---|
+| Show (Tasks head) | menu / 14 | IN the menu | walks the menu | "Show" — the word that opened it |
+| card Move | menu / 5 | IN the menu | walks the menu | the card |
+| **project switcher** | **listbox / 4 options** | on the opener | **nothing at all** | the opener |
+| **rail More** | **menu / 3** | on the opener | **walks the RAIL behind the open menu** — "Settings", then "Orla" | "Orla, venue manager" — a rail tile, not the opener |
+
+- The project switcher ships `aria-haspopup="listbox"`, flips
+  `aria-expanded` to "true", and paints a real `role="listbox"`
+  aria-label "Projects" with four `role="option"`s — and then has no
+  listbox keyboard model: no `aria-activedescendant`, no
+  `aria-controls`, arrows and Home/End all dead. Its options are
+  reachable ONLY by Tab. This is the library's "keyboard models
+  advertised but not implemented" class, verbatim.
+- The rail's More menu declares `role="menu"` and the rail's own roving
+  handler eats the arrows, so ArrowDown inside an open menu moves the
+  rail tile UNDER the menu. Escape then abandons focus on whatever tile
+  the rover reached. Show does this correctly two objects away.
+- Separately, Tab from inside the open card Move menu lands on
+  `**BODY**` while `.cardMenu` is still painted over the board; a second
+  Tab reaches the rail.
+
+FIX: give both objects the model Show already has, since it is written
+and proven in this same file. For the switcher: on Enter/Space/ArrowDown
+move focus to the selected `[role="option"]` (or set
+`aria-activedescendant` on the opener and add `aria-controls`), let
+Up/Down/Home/End walk the options, Enter choose, Escape close and return
+focus to the opener. For rail More: while `moreOpen` is true the rail's
+roving arrow handler must return early and hand Up/Down to the three
+`.moreItem` buttons, with Escape returning focus to `[data-rail="more"]`.
+For the card menu: close `.cardMenu` on Tab and move focus to the
+control after `[data-act="menu"]` rather than to the body.
+COST: 0.3
+
+## Weighed and NOT filed
+- `.railAvatar` is 32x32 at 390/768/1440 with no `::before` expander,
+  while every other tile in the same capsule is 44x44/44x46. Real, and
+  the audit's floor is 28 so it is not gated — but one control, one
+  number, and it belongs to a measured seat more than to this one.
+- `timeline.loading` reserves 372x372 and 372x1653 arrives at 390;
+  at 1440 it paints a 390px phone card and a 1242x854 sheet arrives.
+  Real, but `loading` is not a declared state or a shot frame, and the
+  received view is phone-shaped by design. Not spent.
+- Home/End are no-ops inside the board's card rover.
+- A pointer drop outside every lane is silent (Escape from a keyboard
+  carry announces "Move cancelled").
