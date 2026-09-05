@@ -4,32 +4,101 @@
   "master": "master.html",
   "gate": 9.5,
   "states": [
-    "guests-list", "guests-household", "guests-replies", "guests-sends", "guests-food", "guests-travel",
-    "money-number", "money-category", "money-paying", "money-due", "money-supplier",
-    "seating-queue", "seating-room", "seating-table", "seating-plans", "seating-check",
-    "day-order", "day-who", "day-contacts"
+    "guests-list",
+    "guests-household",
+    "guests-replies",
+    "guests-sends",
+    "guests-food",
+    "guests-travel",
+    "money-number",
+    "money-category",
+    "money-paying",
+    "money-due",
+    "money-supplier",
+    "seating-queue",
+    "seating-room",
+    "seating-table",
+    "seating-plans",
+    "seating-check",
+    "day-order",
+    "day-who",
+    "day-contacts"
   ],
-  "variants": ["a"],
+  "variants": [
+    "a"
+  ],
   "defaultVariant": "a",
   "viewports": [
-    { "name": "1280x900", "width": 1280, "height": 900 },
-    { "name": "1440x960", "width": 1440, "height": 960 }
+    {
+      "name": "1280x900",
+      "width": 1280,
+      "height": 900
+    },
+    {
+      "name": "1440x960",
+      "width": 1440,
+      "height": 960
+    }
   ],
   "palette": [
-    { "name": "Ink", "hex": "#111111" },
-    { "name": "Indigo", "hex": "#4f46e5" },
-    { "name": "White", "hex": "#ffffff" }
+    {
+      "name": "Ink",
+      "hex": "#111111"
+    },
+    {
+      "name": "Indigo",
+      "hex": "#4f46e5"
+    },
+    {
+      "name": "White",
+      "hex": "#ffffff"
+    }
   ],
-  "families": ["Geist", "Geist Mono"],
-  "weights": [400, 600],
+  "families": [
+    "Geist",
+    "Geist Mono"
+  ],
+  "weights": [
+    400,
+    600
+  ],
   "ladders": {
-    "radii": [0, 4, 6, 8, 12, 16, 999],
-    "durations": [0, 0.08, 0.14, 0.22, 0.4],
-    "easings": ["cubic-bezier(0.23, 1, 0.32, 1)"],
-    "typeRamp": [10, 11, 12, 13, 14, 15, 18, 22, 28]
+    "radii": [
+      0,
+      4,
+      6,
+      8,
+      12,
+      16,
+      999
+    ],
+    "durations": [
+      0,
+      0.08,
+      0.14,
+      0.22,
+      0.4
+    ],
+    "easings": [
+      "cubic-bezier(0.23, 1, 0.32, 1)"
+    ],
+    "typeRamp": [
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      18,
+      22,
+      28
+    ]
   },
   "console": {
-    "widths": [1440, 1280],
+    "widths": [
+      1440,
+      1280
+    ],
     "inline": [],
     "fonts": [],
     "meta": {
@@ -37,5 +106,8 @@
       "footNote": "This is the real master, not a picture of one. Every control writes the attribute the product reads, so any combination you land on is buildable. <b>Every combination stays on palette:</b> Ink <b>#111111</b>, Indigo <b>#4f46e5</b>, White <b>#ffffff</b>, and tints of those. Nothing in this console can reach another colour."
     }
   },
-  "artifacts": { "console": "", "log": "" }
+  "artifacts": {
+    "console": "https://claude.ai/code/artifact/1cc7c4d9-50e0-4753-a33a-f0f94544e415",
+    "log": "https://claude.ai/code/artifact/3d60ae8a-5cfc-4376-8ed7-2466f2735f61"
+  }
 }

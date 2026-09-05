@@ -7,3 +7,15 @@ node_modules/
 # Every later round re-shoots into shots/, which travels in the Elevation Log
 # as packed frames rather than as 8MB of PNG per round in this repository.
 shots/
+
+# Audit runs are scratch; the record is panel.json.
+panel/audit-*.json
+panel/audit-*.err
+
+# Generated every round from master.html + panel.json + shots/; published as artifacts, not stored here.
+frames.json
+console.html
+report.html
+
+# verify-artifact.mjs leaves its three render checks behind.
+_verify-*.png

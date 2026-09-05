@@ -1361,6 +1361,45 @@ body { overflow: hidden; }
 .tbl::-webkit-scrollbar-thumb { background: var(--line); border-radius: var(--r-pill); }
 .tbl::-webkit-scrollbar-track { background: transparent; }
 .tblIn { min-width: 600px; }
+
+/* ══ THE MEASURED GATE · round 0 ══════════════════════════════════════
+   Each rule answers one audit failure at its source. */
+
+/* Leading is a decision. The shell declared none, so every element that
+   did not set its own computed to `normal`. */
+body { line-height: 1.5; }
+/* Emphasis is the suite's semibold, never the browser's 700. */
+b, strong { font-weight: var(--w-semibold); }
+
+/* Words on the floor read at 4.1:1 in --on-ink-3. That step is for rules
+   and glyph rests, not for anything a person reads; words are on-ink-2. */
+.railTitle span, .railSection > i, .railItem > em, .railFoot span { color: var(--on-ink-2); }
+.kbd { color: var(--on-ink-1); }
+
+/* The current item is filled — white glyph, white label — and the accent
+   is the 2px edge marker in indigo itself. #a5b4fc was never on the lock. */
+.railItem[aria-current="true"] > .g,
+.railItem[aria-current="true"] > em { color: var(--on-ink-1); }
+.railItem[aria-current="true"]::before { background: var(--indigo); }
+:focus-visible { outline-color: var(--indigo); }
+.rail :focus-visible { outline-color: var(--on-ink-1); }
+
+/* The replay control keeps its 18px face and gains the 44px hit area, the
+   way a small control should — by expanding its target, not its body. */
+.railFoot button.kbd { position: relative; }
+.railFoot button.kbd::before { content: ""; position: absolute; inset: -13px -8px; }
+
+/* Figures top out at the ramp's largest step. */
+.fig b { font-size: var(--t-28); }
+/* The phone frame sits on the radius ladder like everything else. */
+.wdPhone { border-radius: var(--r-sheet); }
+.wdPhoneIn { border-radius: var(--r-card); }
+/* Row trailers are read, so they take the reading step, not the decorative one. */
+.planRow em { color: var(--ink-3); }
+
+/* The + is quieter than a destination, but "Add a section" is still read: on-ink-2, not the rule step. */
+.railAdd { color: var(--on-ink-2); }
+.railAdd:hover, .railAdd[data-open] { color: var(--on-ink-1); }
 /* ══════════════════════════════════════════════════════════════════════
    THE FIFTEEN MODES · the chrome they needed
    Held to the palette lock: ink, indigo, white and tints. No hue carries
@@ -1508,6 +1547,30 @@ body { overflow: hidden; }
 [data-moments="off"] .seedLine,
 [data-moments="off"] .seedDone,
 [data-moments="off"] .railGroup[data-new] { animation: none; }
+
+/* ══ THE MEASURED GATE · round 0 ══════════════════════════════════════
+   The four content stylesheets were drawn for screenshots at mockup scale
+   and carry sizes off the ramp and the decorative ink on words. Each rule
+   snaps one of them to the lock, scoped to the running product. */
+
+/* Off-ramp sizes, snapped to the nearest declared step. */
+.appBody .laneScale span, .appBody .logRow .i, .appBody .gChip .n,
+.appBody .monthCell b, .appBody .seat > div, .appBody .chair { font-size: var(--t-10); }
+.appBody .barRow .n, .appBody .tableDisc span, .appBody .logRow .r { font-size: var(--t-11); }
+.appBody .diffCell, .appBody .logRow .m, .appBody .funLab, .appBody .deadline div { font-size: var(--t-12); }
+.appBody svg text[font-size="11.5"] { font-size: 11px; }
+.appBody svg text[font-size="12.5"] { font-size: 12px; }
+
+/* --ink-4 is "decorative only, never type". These were type. */
+.appBody .laneScale span, .appBody .logRow .i, .appBody .logRow .r,
+.appBody .monthCell[data-past] .v, .appBody .seat[data-empty] .chair,
+.appBody .paperNote, .appBody .gChip .n, .appBody .count .n,
+.appBody .sendCell .n, .appBody .planFoot em, .appBody .nextCard em,
+.appBody .pickCard .later { color: var(--ink-3); }
+
+/* Two corners off the ladder. */
+.appBody .sev { border-radius: var(--r-xs); }
+.shareItem i { border-radius: var(--r-xs); }
 </style>
 </head>
 <body>
@@ -3531,7 +3594,9 @@ function modeRow(d) {
   return h("div", { class: "seg" }, d.modes.map((m) =>
     h("button", {
       class: "segBtn", type: "button", "aria-current": ST.modes[d.id] === m.k ? "true" : null,
-      onclick: () => { ST.modes[d.id] = m.k; render(); }
+      /* A repaint must not annihilate place: the whole head is rebuilt, so
+         focus is put back on the button that is now current. */
+      onclick: () => { ST.modes[d.id] = m.k; render(); refocus('.segBtn[aria-current="true"]'); }
     }, m.label)
   ));
 }
@@ -3650,7 +3715,10 @@ function renderSeed(headEl, body) {
 }
 
 /* ── routing ──────────────────────────────────────────────────── */
-function go(id) { ST.route = id; render(); el("body").scrollTop = 0; }
+function go(id) { ST.route = id; render(); el("body").scrollTop = 0; refocus('.railItem[aria-current="true"]'); }
+/* Focus follows the current control across a rebuild, without scrolling
+   the sheet to it — the sheet was just reset to the top on purpose. */
+function refocus(sel) { const n = document.querySelector(sel); if (n && document.activeElement !== n) n.focus({ preventScroll: true }); }
 function render() { renderRail(); renderSheet(); }
 
 document.addEventListener("keydown", (e) => {
