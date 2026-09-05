@@ -2,7 +2,7 @@
 
 ## Current scoped checkpoint · 2026-09-05
 
-**Latest complete published Linux checkpoint:0c93a5cb88b330dce8673c51fa6d2eed4ddfda73.**
+**Verified Drive checkpoint:0c93a5cb88b330dce8673c51fa6d2eed4ddfda73.**
 CI33992802862, Verify33992802886 and Design33992802885 all pass. The tested merge
 e893094b has exactly candidate tree2419ad23. Complete132-case artifact, all logs
 and exact source comparisons are preserved by4493f7bf in the January sponsored-
@@ -10,6 +10,8 @@ cohort-clock packet. It includes custody/focus8ae and pending-removal1ac. Earlie
 a8c paired-fixture failures remain preserved and its test-only clock correction
 is independently verified; runtime privacy rules are unchanged. No provider,
 human/council, receiving or later-source acceptance is inferred.
+The January programme register owns the latest whole-App candidate; this owning
+Drive receipt remains an immutable scoped checkpoint.
 
 The bounded custody/focus follow-up **8ae94ffb4e74bd21ba652f0117417afa03ed43a3** is included in3be. Actual-component76/76 plus14 supplemental checks and independent35+4 controls pass. [Owning UI packet](../../../experience/reviews/january-drive-ui-acceptance-2026-09-05/REPORT.md). Failed baseline/harness receipts remain retained.
 

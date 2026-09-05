@@ -34,3 +34,16 @@ The distinct held Drive lifecycle, RC3 and Atlas actions are not replaced or ret
 See preservation.json for both new immutable archives and exact source comparisons.
 Fresh complete Linux gates for this composition remain next. No production migration,
 provider call, release, customer send or venue outreach is included.
+
+
+## Exact Linux acceptance
+
+Candidate6d2d53d3 passes CI33994297426, Verify33994297429 and Design33994297432.
+Tested merge6dd6b4ff equals candidate treef78bea7a. The complete132-case built
+matrix and eight-case profile-export fixture pass. All290 route,33 Floor,25 calendar
+and10 export source inputs match exact Git bytes after documented newline handling.
+The owning archive linux-6d2d53d3.zip retains489 payload files plus CHECKPOINT.json,
+25,547,707 bytes, SHA2564c71266240357e46aa5b2b5040c2d50214ba62d85150f33ff81b128fedb91427.
+Its adjacent JSON records every file and source binding. This supersedes the pending
+Linux statement above, preserving all earlier failures and scope limits. No receiving,
+RC3, held Drive lifecycle, Atlas, provider, human/council or release gate is closed.
