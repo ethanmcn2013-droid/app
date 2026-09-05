@@ -1,5 +1,28 @@
 # January recipient checkpoints
 
+## Intermediate composition: ffef20c0
+
+Normal build `W-F-Zpv_Dj2DiF3YAmm5s` and132 built cases pass at
+`ffef20c083f8744330c0f85f775a51e77f9ab3d0`. The separate recipient process
+first exits3221225477 before captures. Its unchanged serial confirmation passes
+all68 route states,3 React cases,80 strict paired Floor/project checks,16 Floor
+calendar cases,12 date-readback controls and27 Notes browser scenarios. The
+native exit remains a failed process with an unverified cause.
+
+The source-checked archive preserves471 files: `checkpoint-ffef20c0.zip`,
+SHA-256 `d0f9e210cfe02bcead4e0793b9365a69eca6e0749041528d9c5c998d73f49b09`.
+All289 route,33 Floor and25 calendar production inputs match the exact Git
+objects. Every archived file and ZIP integrity were verified. The132 screenshots
+remain embedded in the original Playwright JSON. Earlier archives are unchanged.
+
+This is **not final date acceptance**. Independent review confirms WDATE-01's
+fresh-access display repair but reproduces WDATE-02: a same-key refresh during a
+pending save can discard its returned revision and make the next save conflict.
+Both independent reports and their original/fixed controls are in this archive.
+The owner is repairing that bounded follow-up; newer source needs new evidence.
+The review workbench remains unsealed after its argument-schema error. No
+stopped RC-3/Atlas action, provider call or receiving integration is retried here.
+
 ## Linux acceptance of candidate 07d25138
 
 All three candidate workflows pass: [CI33951498708](https://github.com/ethanmcn2013-droid/app/actions/runs/33951498708),

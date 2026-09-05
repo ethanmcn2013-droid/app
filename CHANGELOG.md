@@ -4,6 +4,19 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-09-05 · January candidate · Dates follow the project
+
+Floor and My work now use the same project calendar for day labels, overdue
+work and daily grouping. A refreshed project day updates the header and tasks
+together. Creating another wedding project leaves existing access grants alone,
+including revoked grants; redemption reads the new project's own date.
+
+These internal changes pass their scoped regressions and the combined build.
+Sponsored-date editing remains under final review for a refresh-during-save
+retry case. The exact evidence and remaining limits are recorded in
+`experience/reviews/january-recipient-2026-09-05/README.md`. Customer identity,
+provider, design and receiving acceptance remain separate.
+
 ## 2026-09-05 · January candidate · My work uses your known name
 
 My work now greets the signed-in person using their existing workspace profile.
