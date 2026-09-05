@@ -172,3 +172,23 @@ list is the phone's only view; and a venue manager standing in a marquee ticking
 jobs off gets no confirmation from the thing under her thumb. It is also the one
 place on this whole surface where the pixels and the accessible name say opposite
 things.
+
+### FINDING 3, extended — the same root cause reaches a third surface, and "done"
+now has three mutually inconsistent renderings.
+
+Tapping a list row opens a task sheet (`.tpTitleRow`). Its tick is the same bug:
+aria-checked="true", aria-label="Mark not done", background rgba(0,0,0,0), the same
+0.28 ring - an empty circle sitting beside a struck-through title, under a green
+DONE eyebrow, above "Due: Finished 15 Jul". Screenshot `_zz-ph-donesheet.png`.
+
+Measured, one completed task, three surfaces:
+  BOARD card  tick FILLED rgb(17,17,17) + white check | title rgb(17,17,17) w400, no strike
+  LIST row    tick EMPTY                              | title rgba(17,17,17,.62) w600, no strike
+  TASK sheet  tick EMPTY                              | title struck through
+Three devices for one state, and only the board uses the control that is supposed
+to carry it. Whatever the fix, the three should agree.
+
+Noted while there (not raised separately, cost is inside the same edit): the sheet
+labels the completion date "Due — Finished 15 Jul", then prints the identical
+string again ~450px lower as "ACTIVITY — Finished 15 Jul". A field named Due whose
+value is a finish date, said twice.

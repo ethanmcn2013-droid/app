@@ -51,3 +51,18 @@ class was fixed — "Tab away, complete another card with the pointer, open the
 composer or the Planning drawer, and the carry ran on". endCarry() is wired to
 pointerdown only (l.4442). Tab away still runs the carry on, exactly as the
 comment says it used to.
+
+### Things I tried to break and could not (recording so the panel knows what was tested)
+- Suite persistence: typed a 45-char draft in .topField, scrolled .index to 260,
+  switched Notes -> Tasks -> Timeline -> Notes. Draft identical, index scrollTop
+  still 260. The suite's central claim holds.
+- Rover reach in tasks.dense: exhaustive up/down/right traversal reaches all 32
+  visible cards. No unreachable card.
+- Roving tabindex is consistent across all four surveyed states (one stop per
+  group, -1 on the rest); the rail's arrow walk reaches the account tile at
+  position 6.
+- notes.voice focus trap: 28 tabs cycle exactly two controls.
+- Space on .tick (role=checkbox) ticks; it does NOT pick the card up
+  (src/tasks.js l.2916 guards it). Contract key intact.
+- .idxRow hover is alive (my first sweep hit row 0, which is [data-cursor] and
+  already carries --wash — false positive, withdrawn).
