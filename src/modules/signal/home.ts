@@ -34,3 +34,5 @@ export {
   localWeekday,
 } from "./lib/briefing/calendar-time";
 export { requireSignalUser } from "./server/signal-auth";
+export { parseBriefingReadScopeHint } from "./lib/planning-periods/read-scope-hint";
+export { planningPeriodsEnabled, type SignalScope } from "./lib/planning-periods/scope";

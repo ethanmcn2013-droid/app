@@ -10,6 +10,9 @@ import { calendarDayDifference, localWeekday } from "@/modules/signal/lib/briefi
 import type { TaskSignal } from "@/modules/signal/lib/briefing/types";
 import type { PlanningCatalog, SignalScope } from "@/modules/signal/lib/planning-periods/scope";
 import type { BriefingForUserResult } from "@/modules/signal/home";
+import { parseBriefingReadScopeHint } from "@/modules/signal/lib/planning-periods/read-scope-hint";
+import { AnalyticsApiError } from "@/modules/signal/server/analytics/api-error";
+import type { ParsedAnalyticsQuery } from "@/modules/signal/server/analytics/query";
 
 function load<T>(relative: string, boundaries: Record<string, unknown>): T {
   const file = new URL(relative, import.meta.url);
@@ -93,7 +96,7 @@ test("aggregate destination passes its scope to the actual briefing route and re
   let currentCatalog = catalog;
   const observed: SignalScope[] = [];
   const page = load<typeof import("@/modules/signal/app/signal-legacy-briefing")>("../../../modules/signal/app/signal-legacy-briefing.tsx", {
-    "next/navigation": { redirect: (href: string) => { throw new Error(`redirect:${href}`); } },
+    "next/navigation": { redirect: (href: string) => { throw new Error(`redirect:${href}`); }, notFound: () => { throw new Error("not-found"); } },
     "@/lib/access-mode": { isDemoMode: () => false },
     "../server/signal-auth": { requireSignalUser: async () => "synthetic" },
     "../server/onboarding/signal-onboarding-queries": { isOnboarded: async () => true },
@@ -110,7 +113,7 @@ test("aggregate destination passes its scope to the actual briefing route and re
   await page.SignalLegacyBriefing({ searchParams: params });
   assert.deepEqual(observed[0], { kind: "workspace", workspaceId: "project-b" });
   currentCatalog = { ...catalog, workspaces: catalog.workspaces.filter(item => item.id !== "project-b") };
-  await assert.rejects(page.SignalLegacyBriefing({ searchParams: params }), /redirect:\/app\/home\/briefing\/onboarding/);
+  await assert.rejects(page.SignalLegacyBriefing({ searchParams: params }), /not-found/);
   assert.equal(observed.length, 2);
 });
 
@@ -125,6 +128,8 @@ test("rendered Home distinguishes reading an aggregate and opening a task", asyn
   assert.match(html, /Read full briefing/);
   assert.match(html, /Open →/);
   assert.doesNotMatch(html, /href="[^"]*synthetic/);
+  assert.equal(data.briefingHref, "/app/home/briefing?contextVersion=2&workspaceId=project-b");
+  assert.doesNotMatch(html, /href="\/app\/home\/briefing"/);
 });
 
 test("no-workspace remains a new-user result without invented signals", async () => {
@@ -133,3 +138,195 @@ test("no-workspace remains a new-user result without invented signals", async ()
   });
   assert.deepEqual(await home.loadHomeData({ clerkId: "new" }), { kind: "new-user" });
 });
+
+function realOrchestratorFixture(periodEnabled = true) {
+  const reads: string[][] = [];
+  const prefs = { workspaceId: "project-a", scopeKind: "workspace", planningPeriodId: null, timezone: "Europe/Dublin" };
+  const query = { from: () => query, where: () => query, limit: async () => [prefs] };
+  const orchestrator = load<typeof import("@/modules/signal/server/briefing/signal-build-for-user")>(
+    "../../../modules/signal/server/briefing/signal-build-for-user.ts", {
+      "../db/signal-analytics-client": { signalAnalyticsDb: { select: () => query } },
+      "../../lib/data/source": { dataSource: {
+        getWorkspaceOnboarding: async () => null,
+        readMany: async (ids: string[]) => { reads.push(ids); return ids.map(id => ({ workspaceId: id, tasks: [] })); },
+      } },
+      "@/lib/access-mode": { isDemoMode: () => false },
+      "../../lib/planning-periods/scope": { ...scopeApi, planningPeriodsEnabled: () => periodEnabled, listPlanningCatalogForUser: async () => catalog },
+      "./signal-read-state": { getDismissedKeys: async () => new Set(), getSurfacedAges: async () => new Map(), recordSurfaced: async () => {} },
+      "./signal-rotation": { bumpRotations: async () => {} },
+    },
+  );
+  return { orchestrator, reads };
+}
+
+for (const flag of [false, true]) {
+  test(`actual orchestrator never falls back from an unavailable explicit project (period flag ${flag})`, async () => {
+    const { orchestrator, reads } = realOrchestratorFixture(flag);
+    const bad = await orchestrator.buildBriefingForUser({ clerkId: "synthetic", cadence: "daily", scope: { kind: "workspace", workspaceId: "removed-project" } });
+    assert.deepEqual(bad, { kind: "no-workspace" });
+    assert.deepEqual(reads, [], "must not read the saved project's tasks");
+    const valid = await orchestrator.buildBriefingForUser({ clerkId: "synthetic", cadence: "daily", scope: { kind: "workspace", workspaceId: "project-b" }, recordReadState: false });
+    assert.equal(valid.kind, "ok");
+    if (valid.kind === "ok") assert.deepEqual(valid.authorizedScope.scope, { kind: "workspace", workspaceId: "project-b" });
+    assert.deepEqual(reads, [["project-b"]]);
+    await orchestrator.buildBriefingForUser({ clerkId: "synthetic", cadence: "daily", recordReadState: false });
+    assert.deepEqual(reads, [["project-b"], ["project-a"]], "an unscoped visit still uses saved preferences");
+  });
+}
+
+test("actual orchestrator refuses disabled or unavailable periods without reading a saved project", async () => {
+  for (const flag of [false, true]) {
+    const { orchestrator, reads } = realOrchestratorFixture(flag);
+    const result = await orchestrator.buildBriefingForUser({ clerkId: "synthetic", cadence: "daily", scope: { kind: "planningPeriod", planningPeriodId: flag ? "missing-season" : "season" } });
+    assert.deepEqual(result, { kind: "no-workspace" });
+    assert.deepEqual(reads, []);
+  }
+});
+
+test("actual briefing route refuses malformed or disabled explicit hints before a data read", async () => {
+  let calls = 0;
+  const page = load<typeof import("@/modules/signal/app/signal-legacy-briefing")>("../../../modules/signal/app/signal-legacy-briefing.tsx", {
+    "next/navigation": { redirect: () => { throw new Error("redirect"); }, notFound: () => { throw new Error("not-found"); } },
+    "@/lib/access-mode": { isDemoMode: () => false },
+    "../server/signal-auth": { requireSignalUser: async () => "synthetic" },
+    "../server/onboarding/signal-onboarding-queries": { isOnboarded: async () => true },
+    "../lib/planning-periods/scope": { planningPeriodsEnabled: () => false },
+    "../server/briefing/signal-build-for-user": { buildBriefingForUser: async () => { calls++; return { kind: "no-workspace" }; } },
+    "../server/analytics/build-ledger-dto": {},
+    "../server/signal-planning-events": {},
+    "../components/brief/quiet-briefing-ledger": {},
+    "../components/brief/scope-switcher": {},
+  });
+  for (const params of [{ workspaceId: ["project-a", "project-b"] }, { workspaceId: " " }, { planningPeriodId: "season" }, { planningPeriodId: ["season"] }]) {
+    await assert.rejects(page.SignalLegacyBriefing({ searchParams: params }), /not-found/);
+  }
+  assert.equal(calls, 0);
+  await assert.rejects(page.SignalLegacyBriefing({ searchParams: {} }), /redirect/);
+  assert.equal(calls, 1, "no explicit scope retains the normal onboarding path");
+});
+
+test("actual Home page carries its explicit scope and never invents a new-user view for a refused link", async () => {
+  const { data } = await fixture(signals(6));
+  let permitted = true;
+  let enabled = true;
+  const calls: unknown[] = [];
+  const page = load<typeof import("./page")>("./page.tsx", {
+    "next/navigation": { redirect: () => { throw new Error("redirect"); }, notFound: () => { throw new Error("not-found"); } },
+    "@/lib/access-mode": { isDemoMode: () => false },
+    "@/server/app-access": { requireAppAccessTasks: async () => {} },
+    "@/modules/signal/home": { requireSignalUser: async () => "synthetic", parseBriefingReadScopeHint, planningPeriodsEnabled: () => enabled },
+    "./home-data": { loadHomeData: async (input: unknown) => { calls.push(input); return permitted ? data : { kind: "new-user" }; } },
+    "@/components/app/home/home-view": { HomeView: () => null, HomeNewUser: () => null },
+  });
+  for (const flag of [true, false]) {
+    enabled = flag;
+    await page.default({ searchParams: Promise.resolve({ workspaceId: "project-b", planningPeriodId: "season" }) });
+    assert.deepEqual(calls.at(-1), { clerkId: "synthetic", scope: { kind: "workspace", workspaceId: "project-b" } });
+  }
+  const before = calls.length;
+  await assert.rejects(page.default({ searchParams: Promise.resolve({ workspaceId: ["project-b"] }) }), /not-found/);
+  await assert.rejects(page.default({ searchParams: Promise.resolve({ planningPeriodId: "season" }) }), /not-found/);
+  assert.equal(calls.length, before);
+  permitted = false;
+  await assert.rejects(page.default({ searchParams: Promise.resolve({ workspaceId: "project-b" }) }), /not-found/);
+  await page.default();
+  assert.deepEqual(calls.at(-1), { clerkId: "synthetic" }, "a bare new-user visit remains supported");
+});
+
+function analyticsDispatcherFixture() {
+  let selects = 0;
+  let denied = false;
+  let periods = false;
+  let analytics = true;
+  const observed: ParsedAnalyticsQuery[] = [];
+  const queryDb = { select: () => {
+    const index = selects++ % 3;
+    // B deliberately lies outside this bounded navigation catalog. The real
+    // policy, not catalog position, decides whether a requested B may open.
+    const rows = index === 0 ? [{ id: "actor" }] : index === 1 ? [{ id: "project-a", name: "A", planningPeriodId: null }] : [];
+    const query = { from: () => query, where: () => query, innerJoin: () => query, limit: async () => rows };
+    return query;
+  } };
+  const context = load<typeof import("@/modules/signal/server/analytics/page-context")>("../../../modules/signal/server/analytics/page-context.ts", {
+    "@clerk/nextjs/server": { auth: async () => ({ userId: "synthetic" }) },
+    "@/lib/access-mode": { getAccessMode: () => "production" },
+    "@/server/db/ensure-user": { ensureUserProvisioned: async () => {} },
+    "../tasks-db/signal-tasks-db-client": { getTasksDb: () => queryDb },
+    "./policy": {
+      resolveLinkedAnalyticsWorkspace: async () => "project-a",
+      authorizeAnalyticsRequest: async (parsed: ParsedAnalyticsQuery) => {
+        observed.push(parsed);
+        if (denied) throw new AnalyticsApiError(403, "forbidden", "Synthetic denied membership");
+        throw new Error(`policy-boundary:${parsed.scope.workspaceId}`);
+      },
+    },
+    "./preferences": {}, "./service": {},
+  });
+  const pageData = load<typeof import("@/modules/signal/app/signal-page-data")>("../../../modules/signal/app/signal-page-data.ts", {
+    "next/navigation": { notFound: () => { throw new Error("not-found"); }, redirect: () => { throw new Error("onboarding"); } },
+    "../server/analytics/page-context": context,
+  });
+  const page = load<typeof import("@/modules/signal/app/signal-brief-page")>("../../../modules/signal/app/signal-brief-page.tsx", {
+    "next/navigation": { notFound: () => { throw new Error("not-found"); } },
+    "../lib/planning-periods/scope": { planningPeriodsEnabled: () => periods },
+    "../server/analytics/feature-flag": { isSignalAnalyticsEnabled: () => analytics },
+    "./signal-page-data": pageData,
+    "../server/analytics/service": {}, "../server/analytics/build-ledger-dto": {},
+    "../components/brief/quiet-briefing-ledger": {}, "../components/signal/evidence-drawer": {},
+    "./signal-legacy-briefing": { SignalLegacyBriefing: () => null },
+  });
+  return { page, observed, deny: () => { denied = true; }, flags: (a: boolean, p: boolean) => { analytics = a; periods = p; } };
+}
+
+test("real analytics dispatcher/context authorizes exact Home B and native B, never saved A", async () => {
+  const { page, observed } = analyticsDispatcherFixture();
+  for (const input of [{ contextVersion: "2", workspaceId: "project-b" }, { workspace_id: "project-b" }]) {
+    await assert.rejects(page.SignalBriefPage({ searchParams: Promise.resolve(input) }), /policy-boundary:project-b/);
+    assert.equal(observed.at(-1)?.scope.workspaceId, "project-b");
+  }
+  await assert.rejects(page.SignalBriefPage({ searchParams: Promise.resolve({}) }), /policy-boundary:project-a/);
+  await assert.rejects(page.SignalBriefPage({ searchParams: Promise.resolve({ workspaceId: "project-b", sourceProduct: "tasks", projectId: "historical-label" }) }), /policy-boundary:project-b/);
+  assert.deepEqual(observed.at(-1)?.labelIds, ["historical-label"], "native compatibility still interprets a legacy Label as a filter");
+});
+
+test("analytics dispatch refuses disabled, malformed, conflicting and removed scopes neutrally", async () => {
+  const { page, observed, deny } = analyticsDispatcherFixture();
+  const bad: Record<string, string | string[]>[] = [
+    { planningPeriodId: "season" }, { workspaceId: " " }, { workspaceId: ["project-b", "project-a"] },
+    { workspace_id: " " }, { workspace_id: ["project-b", "project-a"] },
+    { workspaceId: "project-b", workspace_id: "project-a" },
+    { workspaceId: "project-b", scope_type: "workspace", scope_id: "project-a" },
+    { workspaceId: "project-b", scope_type: ["workspace"] },
+    { workspaceId: "project-a,project-b" }, { workspace_id: "project-a,project-b" },
+    { workspaceId: " ,project-a" }, { workspaceId: "project-a,project-b", sourceProduct: "tasks" },
+    { workspaceId: " project-b " }, { workspace_id: " project-b " },
+  ];
+  for (const input of bad) await assert.rejects(page.SignalBriefPage({ searchParams: Promise.resolve(input) }), /not-found/);
+  assert.equal(observed.length, 0);
+  deny();
+  await assert.rejects(page.SignalBriefPage({ searchParams: Promise.resolve({ workspaceId: "removed-project" }) }), /not-found/);
+  assert.equal(observed.at(-1)?.scope.workspaceId, "removed-project");
+});
+
+test("shared Home/legacy scope parsing preserves scalar identity without list or whitespace normalization", () => {
+  for (const value of ["project-a,project-b", " ,project-a", " project-b ", "x\u0000y", "x".repeat(201)]) {
+    assert.deepEqual(parseBriefingReadScopeHint({ workspaceId: value }, true), { kind: "invalid" });
+    assert.deepEqual(parseBriefingReadScopeHint({ planningPeriodId: value }, true), { kind: "invalid" });
+  }
+  assert.deepEqual(parseBriefingReadScopeHint({ workspaceId: "project-b" }, false), { kind: "scope", scope: { kind: "workspace", workspaceId: "project-b" } });
+});
+
+test("engine selection retains legacy/period behavior after shared hint validation", async () => {
+  const { page, observed, flags } = analyticsDispatcherFixture();
+  for (const [analytics, periods, input] of [
+    [false, false, { workspaceId: "project-b" }],
+    [true, true, { planningPeriodId: "season" }],
+    [true, true, { workspaceId: "project-b", planningPeriodId: "season" }],
+  ] as const) {
+    flags(analytics, periods);
+    const result = await page.SignalBriefPage({ searchParams: Promise.resolve(input) });
+    assert.deepEqual(result.props.searchParams, input);
+  }
+  assert.equal(observed.length, 0);
+});
+
