@@ -37,3 +37,21 @@ Next authorized work: account export and independent profile download reachabili
 then minimal owner recovery before content denial. Drive0032 receipt work has its
 own writer; it does not change this foundation's acceptance. Production migrations,
 Event sales, deployment and outreach remain held. RC3/Atlas gates are unchanged.
+
+## A8 Linux result and paired-fixture correction
+
+Design33991689089 passes at a8c225c7, with its complete132-case artifact retained.
+CI33991689111 and Verify33991689081 both fail the later paired sponsored-use
+cohort assertion. The actual three-offer/24-checkpoint rehearsal passes before
+that separate failure. All three logs and the exact merge/source comparisons are
+preserved in linux-a8c225c7.zip/json:468 payload files,290 route/33 Floor/25 calendar
+source entries, merge8dd5b517 with candidate tree decd3682. This is one passing
+workflow and two failed workflows, not full candidate acceptance.
+
+Independent diagnosis reproduces the same time-dependent fixture defect on3be:
+the third quiet grant can begin after the event's Dublin reporting day. Runtime
+correctly withholds the two-project cohort. Test-only correction6d49de54 anchors
+terms to the original fixture day and passes four9-check clock stories, including
+January2027, plus independent negative/exit/report/environment controls. Privacy
+thresholds and runtime are unchanged. Its owning packet is
+../january-sponsored-cohort-clock-2026-09-05. New complete Linux remains required.
