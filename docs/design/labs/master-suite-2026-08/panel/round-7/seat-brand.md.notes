@@ -22,3 +22,31 @@ CANDIDATE B — date grammar inside one region. `b-behindDate` renders
 "Sat 18 Apr" (weekdayShort + short) while the summary sentence directly
 above it renders the same class of fact as "18 April" (fmt.medium),
 and reads "the last of them 18 April" with no preposition.
+
+## Sweep 2 — driving the seam (notebook -> lift -> select -> peel -> send -> open)
+
+CANDIDATE C (strong) — the seam protests too much, and never says where the
+card landed. Driving one crossing produces, in order:
+  1 .peelBoundary  "Your note stays here. Tasks only ever receives the exact
+                    words you pick and check below."
+  2 live (peel)    "Tasks receives these words and nothing else from this note.
+                    The rest of what you wrote stays private here."
+  3 .peelWhy       "Your note is still here, still private, still yours to edit."
+  4 live (send)    "Sent to Tasks. Your note stayed here. In The house."
+  5 live (open)    "Opened in Tasks. Your note stayed in Notes."
+  (+ posed notes.seam fixture, .cnt: "3 so far, and every note stayed here")
+Five wordings of one promise in one gesture; the tense wanders stays ->
+stays private -> is still here -> stayed here -> stayed in Notes; and #3 is
+the only string in the suite that reaches for rhetoric (triple anaphora).
+Meanwhile the card lands in **To do** and NOTHING says so in words: not the
+receipt, not the send announcement, not the arrival announcement. #5 spends
+its second sentence on a fourth repetition of the promise instead of the one
+fact the person does not already know.
+
+CANDIDATE D — the seam carries Notes' vocabulary into Tasks unchanged.
+Notes files under "The house / The studio / The course / The enquiries".
+Tasks tags read "Venue / Bar / Enquiry". Send a note filed under "The house"
+and the card arrives tagged "The house", standing beside "Venue" and "Bar".
+"The enquiries" (Notes) and "Enquiry" (Tasks) are the same bucket under two
+names, in the one product whose argument is that there is one world under
+all three.

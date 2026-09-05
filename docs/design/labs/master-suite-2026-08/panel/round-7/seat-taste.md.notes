@@ -22,3 +22,18 @@
      tasks dock  "Orla, venue manager"
      timeline rail "Orla, venue manager"  (no dock at all)
    CANDIDATE FINDING — check behaviour of each.
+
+4. **The person is drawn twice at the foot.** CONFIRMED by crop
+   (_zz-tst-foot.png, tasks.board @1440): `.railAvatar` OR (ghost, 32px, y=900)
+   at bottom-left and `.dockAvatar` OR (FILLED INK, 34px, y=883) at x=907 —
+   ~870px apart on the same eye-line. Both are `aria-disabled="true"`, both
+   open the identical card "Not here yet." / title "Your account, in Signal
+   Studio. Not here yet." So the shell shows the operator's monogram twice and
+   both copies are the same dead door. Worse: the dock copy is filled ink,
+   the same value as the "Add task" primary pill sitting 15px to its left —
+   they read as one two-part control, so the second loudest object in the dock
+   is a door that does not open. Timeline has neither dock nor a second copy,
+   so the suite is also inconsistent about it.
+   (Escape does correctly dismiss the card; the rail avatar IS reachable by
+   ArrowDown on the roving rail. The honest-doors contract holds; the
+   duplication and the ink weight are the defect.)
