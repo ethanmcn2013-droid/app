@@ -372,7 +372,7 @@ test("expired/revoked/future independent grants do not override an archive; miss
     for (const [id, status, expiresAt, grantedAt] of [
       ["expired", "active", PAID.getTime(), PAID.getTime()],
       ["revoked", "revoked", null, PAID.getTime()],
-      ["future", "active", null, new Date("2029-01-01Z").getTime()],
+      ["future", "active", null, AFTER.getTime() + 86_400_000],
     ] as const) {
       await f.shared.insert(sharedEntitlements).values({ id, userClerkId: "buyer", tier: "studio",
         source: "compliments", status, expiresAt, grantedAt, metadata: JSON.stringify({ workspaceId: null }) });

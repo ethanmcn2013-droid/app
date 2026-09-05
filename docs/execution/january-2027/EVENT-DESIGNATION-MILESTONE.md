@@ -116,6 +116,7 @@ command (or append to the billing gate), without changing its existing tests:
 
 ```sh
 node --import tsx --import ./src/test/register-server-only.mjs --test --test-concurrency=1 src/server/db/event-designation.test.ts src/server/db/event-designation-webhook.test.ts
+node --test src/server/db/event-designation-clock.test.mjs
 pnpm test:billing
 pnpm db:contract
 node --test src/server/tenant-scope.test.mjs src/server/tenant-scope-rules.test.mjs src/server/stripe-contract.test.mjs
@@ -133,6 +134,15 @@ retrieval is a stub and network fetch is forbidden. The two test files share fix
 but use separate Node test processes. This retains all assertions after two Windows
 monolithic runs passed their assertions then exited with native status 3221225477.
 Those failed gate outputs are retained; the split does not assert their root cause.
+
+EV-TEST-01 corrected a test-only fixed 2029 grant start: the future grant now
+starts one day after the fixture's `AFTER` evaluation instant. The separate clock
+regression above runs that actual SQLite test in a child process with the January
+21, 2027 clock set before fixture import. It requires exactly one passing test,
+so an empty name-filter result fails. The same regression fails against the a59
+test with `editable` instead of `read_only`; both that counterexample and the
+reviewer's original receipts remain preserved. Register this clock command too.
+No writer, evaluator, migration, grant policy or sales availability changed.
 
 The migration adds twelve receipt proofs and extends the existing mandatory
 `db:contract` suite with populated-history, forced-proof rollback, exact-ledger and
