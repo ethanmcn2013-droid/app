@@ -1,0 +1,11 @@
+{
+  "exitCode": 0,
+  "command": "& ./package-evidence.ps1",
+  "status": "stopped non-final32; keyboard3 not run",
+  "bytes": 2720110,
+  "sha256": "d5cff0e94461ac5f021def26e71fc9a1917f5b06fb4f2882d1950474f99fa357",
+  "source": "ffef20c083f8744330c0f85f775a51e77f9ab3d0",
+  "entriesVerified": 138,
+  "method": "CreateFromDirectory; decompressed every entry and compared SHA256 with original payload index",
+  "archive": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\feat-january-sponsored-wedding-date\\experience\\reviews\\january-sponsored-wedding-date-ffef-2026-09-05\\evidence.zip"
+}
