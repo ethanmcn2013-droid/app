@@ -31,6 +31,32 @@ import {
 } from "./account-unified-erasure";
 import { freshFileDb } from "./db/memory-test-db";
 
+for (const source of ["Notes", "Tasks", "both"] as const) {
+  test(`legacy returned-token revocation failure blocks ${source} erasure confirmation`, async () => {
+    const { db, cleanup } = await freshFileDb();
+    try {
+      const attempted: string[] = [];
+      const expected = source === "both" ? ["Notes", "Tasks"] : [source];
+      await assert.rejects(deleteUnifiedAccountDataWith(db, "clerk_target", {
+        eraseNotes: async () => ({ ok: true, refreshTokens: source !== "Tasks" ? ["synthetic-detached-token"] : [] }),
+        eraseTimeline: async () => { attempted.push("Timeline"); return { ok: true }; },
+        eraseSignal: async () => { attempted.push("Signal"); return { ok: true }; },
+        eraseTasks: async () => { attempted.push("Tasks"); return { googleRefreshTokens: source !== "Notes" ? ["synthetic-detached-token"] : [] }; },
+        revokeTokens: async (tokens) => {
+          assert.deepEqual(tokens, ["synthetic-detached-token"]);
+          throw new Error("synthetic-detached-token secret provider body");
+        },
+      }), (error: unknown) => {
+        assert.ok(error instanceof UnifiedAccountErasureError);
+        assert.deepEqual(error.failedModules, expected);
+        assert.doesNotMatch(error.message + JSON.stringify(error.errors), /synthetic-|provider body/);
+        return true;
+      });
+      assert.deepEqual(attempted.sort(), ["Signal", "Tasks", "Timeline"]);
+    } finally { cleanup(); }
+  });
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function count(client: Client, where: string): Promise<number> {

@@ -219,26 +219,17 @@ export type NoteTaskSendOutbox = typeof noteTaskSendOutbox.$inferSelect;
 export type NewNoteTaskSendOutbox = typeof noteTaskSendOutbox.$inferInsert;
 
 /**
- * N·24 (Pattern 4), calendar OAuth connection.
+ * Retained N·24 (Pattern 4) calendar OAuth connection schema.
  *
- * One row per (user, provider, calendar) triple. v1 carries Google
- * only; `provider` exists so Microsoft can land later without a
- * second table. Tokens stored here are OAuth refresh tokens, long
- * lived; access tokens are minted at use-time and never persisted.
+ * The original design intended Google first, later providers, a five-minute
+ * poller and pre-event scaffolds. The current repository
+ * has no calendar connection writer or polling worker; this table is retained
+ * for existing data and GDPR export/erasure. Live population is unverified.
  *
- * Encryption at rest: PRODUCT.md §11 (3) flags server-side encryption
- * beyond standard Turso encryption as a Plan 4 follow-up. v1 stores
- * refresh tokens unencrypted-at-application-layer, relying on Turso
- * at-rest encryption + tight server-only access. Documented as a
- * Pattern-4 follow-up; do not block the cycle on it.
- *
- * Webhook channel: Google supports both polling and push (watch
- * channels). v1 ships a 5-minute polling cron (Vercel cron), the
- * spawn window is +/- 5 min so push fidelity is not load-bearing.
- *
- * Spawn idempotency keys on (userId, calendarEventId) via the
- * `spawned_calendar_events` table below, never re-spawn the same
- * event occurrence, even across cron runs or multi-device races.
+ * Refresh tokens here have no application-layer encryption; the historical
+ * PRODUCT.md §11 (3) reference records that follow-up, not implemented protection.
+ * Export omits credentials. Erasure retains them until provider revocation
+ * succeeds. The lookup index below is not a uniqueness constraint.
  */
 export const calendarConnections = sqliteTable(
   "calendar_connections",
@@ -248,9 +239,8 @@ export const calendarConnections = sqliteTable(
     calendarId: text("calendar_id").notNull(), // Google calendar id ("primary" usually)
     refreshToken: text("refresh_token").notNull(),
     /**
-     * Last time the worker polled this connection successfully.
-     * Used to bound the polling window and to surface "last sync"
-     * if account UI wants it later.
+     * Historical polling checkpoint, retained as data. No current worker or
+     * observed synchronization is implied by the column's presence.
      */
     lastSyncedAt: integer("last_synced_at", { mode: "number" }),
     createdAt: integer("created_at", { mode: "number" })

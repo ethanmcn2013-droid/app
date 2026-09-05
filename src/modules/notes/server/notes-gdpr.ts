@@ -105,53 +105,76 @@ export async function exportForUser(clerkId: string): Promise<{
 /**
  * GDPR right-to-erasure — Notes module.
  *
- * Hard-deletes every row keyed to `clerkId` across all five user-keyed
- * Notes tables and returns the Google OAuth refresh tokens that were stored
- * so the orchestrator can revoke them at Google AFTER the DB rows are gone.
+ * Revoke observed Google credentials before deleting any owner data. Keep
+ * their exact rows for retry if the provider fails or a connection changes
+ * during that wait. The short transaction below contains no provider calls.
  *
- * Returns `{ ok: true, refreshTokens }` on success.
- * Returns `{ ok: false, error, refreshTokens }` if a DB call throws, so the
- * orchestrator can retain token custody, attempt every other product eraser,
- * and then fail closed before identity deletion.
- *
- * Idempotent: a retry after partial failure is safe (all deletes are no-ops
- * once the rows are gone).
+ * The orchestrator supplies its strict, idempotent revoker. A direct caller
+ * without one may erase only an account with no stored credentials. Retain
+ * the legacy result shape, but never return credentials: custody stays in
+ * Notes until revocation and the fenced deletion both succeed.
  */
-export async function eraseForUser(clerkId: string): Promise<
+export async function eraseForUser(
+  clerkId: string,
+  options?: { revokeTokens: (tokens: string[]) => Promise<void> },
+): Promise<
   | { ok: true; refreshTokens: string[] }
   | { ok: false; error: string; refreshTokens: string[] }
 > {
-  // Collect tokens BEFORE deleting so a deletion failure never loses the
-  // pointer needed to revoke the credential at Google.
-  let refreshTokens: string[] = [];
   try {
     const connections = await db
-      .select({ refreshToken: calendarConnections.refreshToken })
+      .select()
       .from(calendarConnections)
       .where(eq(calendarConnections.userId, clerkId));
-    refreshTokens = connections
-      .map((c) => c.refreshToken)
-      .filter((t): t is string => Boolean(t));
+    const refreshTokens = [
+      ...new Set(connections.map((row) => row.refreshToken).filter(Boolean)),
+    ];
+    if (refreshTokens.length > 0) {
+      // The retained schema names future providers, but the available
+      // revoker proves only Google's postcondition. Never guess another one.
+      if (
+        !options?.revokeTokens ||
+        connections.some((row) => row.refreshToken && row.provider !== "google")
+      ) {
+        throw new Error("Calendar revocation unavailable");
+      }
+      await options.revokeTokens(refreshTokens);
+    }
 
-    // Pending outbox rows carry creator-approved text — delete explicitly
-    // before notes; production must not rely on SQLite FK enforcement.
-    await db
-      .delete(noteTaskSendOutbox)
-      .where(eq(noteTaskSendOutbox.userId, clerkId));
-    await db.delete(notes).where(eq(notes.userId, clerkId));
-    await db
-      .delete(spawnedCalendarEvents)
-      .where(eq(spawnedCalendarEvents.userId, clerkId));
-    await db
-      .delete(calendarConnections)
-      .where(eq(calendarConnections.userId, clerkId));
-    await db
-      .delete(userPreferences)
-      .where(eq(userPreferences.userId, clerkId));
+    // This table has no unique key. Compare the complete multiset, including
+    // tokens, metadata and duplicate rows, without depending on query order.
+    const snapshot = (rows: typeof connections) =>
+      JSON.stringify(rows.map((row) => JSON.stringify(row)).sort());
+    const observed = snapshot(connections);
+    await db.transaction(async (tx) => {
+      const current = await tx
+        .select()
+        .from(calendarConnections)
+        .where(eq(calendarConnections.userId, clerkId));
+      if (snapshot(current) !== observed) {
+        throw new Error("Calendar connections changed during erasure");
+      }
 
-    return { ok: true, refreshTokens };
-  } catch (err) {
-    const error = err instanceof Error ? err.message : String(err);
-    return { ok: false, error, refreshTokens };
+      // Pending outbox rows carry creator-approved text. Delete explicitly
+      // before notes; do not depend on SQLite FK enforcement being enabled.
+      await tx
+        .delete(noteTaskSendOutbox)
+        .where(eq(noteTaskSendOutbox.userId, clerkId));
+      await tx.delete(notes).where(eq(notes.userId, clerkId));
+      await tx
+        .delete(spawnedCalendarEvents)
+        .where(eq(spawnedCalendarEvents.userId, clerkId));
+      await tx
+        .delete(calendarConnections)
+        .where(eq(calendarConnections.userId, clerkId));
+      await tx
+        .delete(userPreferences)
+        .where(eq(userPreferences.userId, clerkId));
+    }, { behavior: "immediate" });
+
+    return { ok: true, refreshTokens: [] };
+  } catch {
+    // Driver/provider messages can contain credential-bearing SQL or bodies.
+    return { ok: false, error: "Notes erasure incomplete", refreshTokens: [] };
   }
 }
