@@ -28,7 +28,7 @@ const external = { ...revoked, weddingDate: "2031-06-01", revision: 3 };
 const adapters = {
   "next/navigation": "export const useRouter=()=>({refresh(){window.refreshes++}});",
   "next/link": 'import React from "react";export default function Link(props){return React.createElement("a",props);}',
-  "@/server/actions/sponsored-wedding-date": "export async function saveSponsoredWeddingDate(input){window.saveCalls.push(input);return structuredClone(window.saveReply);}",
+  "@/server/actions/sponsored-wedding-date": "export async function saveSponsoredWeddingDate(input){window.saveCalls.push(input);if(window.delaySave)return await new Promise(resolve=>window.finishSave=resolve);return structuredClone(window.saveReply);}",
   "@/server/actions/project-overview": 'export async function setProjectStatusAction(){throw Error("Outside fixture");}export async function setProjectTargetDateAction(){throw Error("Outside fixture");}',
   "@/components/app/detail-panel/popover": "export const Popover=()=>null;",
   "@/components/app/detail-panel/due-calendar": "export const DueCalendar=()=>null;",
@@ -108,7 +108,8 @@ async function record(f, name, expected) {
   const draft = await page.locator("#wedding-date input").count() ? await page.locator("#wedding-date input").inputValue() : null;
   const fonts = await page.locator("#wedding-date").evaluate(el => ({ family: getComputedStyle(el).fontFamily, loaded: document.fonts.check('14px "Geist"') }));
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
-  records.push({ name, expected, actual, draft, errors: [...f.errors], unexpectedRequests: [...f.unexpectedRequests], fonts, overflow });
+  const calls = await page.evaluate(() => window.saveCalls);
+  records.push({ name, expected, actual, draft, calls, errors: [...f.errors], unexpectedRequests: [...f.unexpectedRequests], fonts, overflow });
   if (output) await page.locator("#wedding-date").screenshot({ path: path.join(output, name + ".png") });
   assert.deepEqual(f.errors, []);
   assert.deepEqual(f.unexpectedRequests, []);
@@ -154,6 +155,39 @@ for (const [size, viewport] of Object.entries({ desktop: { width: 1440, height: 
       assert.equal(await f.page.evaluate(() => window.saveCalls[1].expectedRevision), 3);
     } finally { await f.page.close(); }
   });
+  for (const ordering of ["props-before-reply", "props-after-reply"]) {
+    test(size + ": " + ordering + " keeps confirmed revision and newer revoked display for repeat save", async () => {
+      const f = await open(viewport);
+      try {
+        // The active reply was read before the newer revocation snapshot. Its
+        // successful mutation revision remains valid even if delivery is late.
+        const reply = { ...active, weddingDate: "2032-06-01", revision: 3, access: { status: "active", expiresAt: "2032-08-30T00:00:00.000Z" } };
+        await f.page.evaluate(() => { window.delaySave = true; });
+        await f.page.locator("#wedding-date input").fill(reply.weddingDate);
+        await f.page.getByRole("button", { name: "Save wedding date", exact: true }).click();
+        await f.page.waitForFunction(() => typeof window.finishSave === "function");
+        if (ordering === "props-before-reply") await show(f.page, revoked);
+        assert.equal(await f.page.locator("#wedding-date input").inputValue(), reply.weddingDate);
+        await f.page.evaluate(data => { window.delaySave = false; window.finishSave({ ok: true, data }); }, reply);
+        await f.page.waitForFunction(() => window.refreshes === 1);
+        if (ordering === "props-after-reply") {
+          await f.page.locator("#wedding-date input").fill("2034-06-01");
+          await show(f.page, revoked);
+        }
+        assert.equal(await f.page.locator("#wedding-date input").inputValue(), ordering === "props-after-reply" ? "2034-06-01" : reply.weddingDate);
+        assert.match(await f.page.locator("#wedding-date").innerText(), /Your sponsored access was revoked/);
+        assert.doesNotMatch(await f.page.locator("#wedding-date").innerText(), /Your sponsored access is available until/);
+        await f.page.evaluate(data => { window.saveReply = { ok: true, data }; }, { ...revoked, weddingDate: "2033-06-01", revision: 4 });
+        await f.page.locator("#wedding-date input").fill("2033-06-01");
+        await f.page.getByRole("button", { name: "Save wedding date", exact: true }).click();
+        await f.page.waitForFunction(() => window.refreshes === 2);
+        const result = await record(f, size + "-" + ordering, "Newer revoked display and confirmed revision3 for repeat save");
+        assert.match(result.actual, /Your sponsored access was revoked/);
+        assert.equal(result.draft, "2033-06-01");
+        assert.equal(await f.page.evaluate(() => window.saveCalls[1].expectedRevision), 3);
+      } finally { await f.page.close(); }
+    });
+  }
   test(size + ": incoming new revision retains the existing remount and canonical-date control", async () => {
     const f = await open(viewport);
     try {

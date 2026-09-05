@@ -18,6 +18,9 @@ export function WeddingDateForm({ initial, previousTarget }: { initial: Sponsore
   // A save reply is current until fresh server props arrive. Keep that readback
   // separate from the unsaved draft so grant-only refreshes do not erase edits.
   const saved = saveReadback?.from === initial ? saveReadback.data : initial;
+  // Access props can refresh while a save is pending. Its confirmed revision
+  // still belongs to the next mutation, even when its access copy is superseded.
+  const confirmedRevision = Math.max(initial.revision, saveReadback?.data.revision ?? initial.revision);
   const [draft, setDraft] = useState(initial.weddingDate ?? "");
   const [message, setMessage] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
@@ -28,7 +31,7 @@ export function WeddingDateForm({ initial, previousTarget }: { initial: Sponsore
     setMessage(null);
     startTransition(async () => {
       try {
-        const result = await saveSponsoredWeddingDate({ projectId: saved.projectId, expectedRevision: saved.revision, weddingDate: draft || null });
+        const result = await saveSponsoredWeddingDate({ projectId: saved.projectId, expectedRevision: confirmedRevision, weddingDate: draft || null });
         if (!result.ok) {
           setFailed(true);
           setMessage(WEDDING_DATE_ERRORS[result.reason]);
