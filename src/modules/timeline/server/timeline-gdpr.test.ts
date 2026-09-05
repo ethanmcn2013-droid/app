@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, win32 } from "node:path";
 import { pathToFileURL } from "node:url";
 import { test } from "node:test";
 import { createClient } from "@libsql/client";
@@ -31,6 +31,28 @@ function load<T>(relative: string, database: Database): T {
   return loaded.exports as T;
 }
 const sha = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
+
+function cleanupTimelineFixture(
+  directory: string,
+  close: () => void,
+  remove: (path: string) => void = path => rmSync(path, { recursive: true, force: true }),
+  platform: NodeJS.Platform = process.platform,
+) {
+  // Called by finally only after the awaited test body settles. A close failure
+  // is not a cleanup lock and must propagate, just like an assertion failure.
+  close();
+  try { remove(directory); }
+  catch (error) {
+    const failure = error as NodeJS.ErrnoException & { path?: unknown };
+    const knownPath = typeof failure?.path === "string" && win32.isAbsolute(failure.path)
+      && [directory, win32.join(directory, "timeline.db")].some(path =>
+        win32.toNamespacedPath(path).toLowerCase() === win32.toNamespacedPath(failure.path as string).toLowerCase());
+    // libSQL may retain the disposable handle after close on Windows: Node22
+    // reports EBUSY on the file, while Node24 may report EPERM on its directory.
+    // Keep those files for OS/process cleanup; never retry deletion externally.
+    if (platform !== "win32" || !knownPath || !["EBUSY", "EPERM"].includes(failure?.code ?? "")) throw error;
+  }
+}
 
 async function fixture(foreignKeys: boolean, legacy = false) {
   const directory = mkdtempSync(join(tmpdir(), "timeline-erasure-"));
@@ -96,13 +118,7 @@ async function fixture(foreignKeys: boolean, legacy = false) {
     return result;
   }
   return { client, db, gdpr, tables, snapshot, cleanup() {
-    client.close();
-    try { rmSync(directory, { recursive: true, force: true }); }
-    catch (error) {
-      // Same libSQL post-close Windows handle boundary as memory-test-db.ts.
-      // Cleanup happens only after the awaited test; never mask its assertions.
-      if (process.platform !== "win32" || (error as NodeJS.ErrnoException).code !== "EPERM") throw error;
-    }
+    cleanupTimelineFixture(directory, () => client.close());
   } };
 }
 
@@ -221,4 +237,60 @@ test("normalized names occupied by views are not exact legacy absence", async ()
     assert.equal((await f.gdpr.eraseForUser("clerk-a")).ok, false);
     assert.deepEqual(await f.snapshot(), before);
   } finally { f.cleanup(); }
+});
+
+test("fixture cleanup retains only known Windows post-close locked paths", () => {
+  const directory = "C:\\synthetic-temp\\timeline-erasure-fixture";
+  for (const code of ["EBUSY", "EPERM"]) {
+    for (const path of [directory, win32.join(directory, "timeline.db"), win32.toNamespacedPath(directory)]) {
+      const calls: string[] = [];
+      cleanupTimelineFixture(directory, () => { calls.push("close"); }, removed => {
+        assert.equal(removed, directory);
+        calls.push("remove");
+        throw Object.assign(new Error("synthetic locked handle"), { code, path });
+      }, "win32");
+      assert.deepEqual(calls, ["close", "remove"]);
+    }
+  }
+});
+
+test("fixture cleanup propagates other codes, unknown paths and non-Windows failures", () => {
+  const directory = "C:\\synthetic-temp\\timeline-erasure-fixture";
+  for (const [platform, code, path] of [
+    ["linux", "EBUSY", directory], ["darwin", "EPERM", directory],
+    ["win32", "EIO", directory], ["win32", "EACCES", directory],
+    ["win32", "EBUSY", undefined], ["win32", "EPERM", "timeline.db"],
+    ["win32", "EBUSY", `${directory}-bystander\\timeline.db`],
+    ["win32", "EPERM", win32.join(directory, "unrelated.db")],
+  ] as const) {
+    const failure = Object.assign(new Error("synthetic unexpected cleanup failure"), { code, path });
+    assert.throws(() => cleanupTimelineFixture(directory, () => {}, () => { throw failure; }, platform), error => error === failure);
+  }
+});
+
+test("fixture cleanup never treats client-close errors as retained-file success", () => {
+  const directory = "C:\\synthetic-temp\\timeline-erasure-fixture";
+  const failure = Object.assign(new Error("synthetic close failure"), { code: "EBUSY", path: directory });
+  let removed = false;
+  assert.throws(() => cleanupTimelineFixture(directory, () => { throw failure; }, () => { removed = true; }, "win32"), error => error === failure);
+  assert.equal(removed, false);
+});
+
+test("a retained Windows file cannot turn a rejected awaited assertion into a pass", async () => {
+  const directory = "C:\\synthetic-temp\\timeline-erasure-fixture";
+  const failure = new assert.AssertionError({ message: "synthetic assertion must survive cleanup" });
+  const calls: string[] = [];
+  await assert.rejects(async () => {
+    try {
+      await Promise.resolve();
+      calls.push("assertion");
+      throw failure;
+    } finally {
+      cleanupTimelineFixture(directory, () => { calls.push("close"); }, () => {
+        calls.push("remove");
+        throw Object.assign(new Error("synthetic retained file"), { code: "EBUSY", path: win32.join(directory, "timeline.db") });
+      }, "win32");
+    }
+  }, error => error === failure);
+  assert.deepEqual(calls, ["assertion", "close", "remove"]);
 });
