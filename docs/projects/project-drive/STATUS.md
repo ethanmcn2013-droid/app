@@ -1,5 +1,11 @@
 # Status — Project Drive
 
+## Current scoped checkpoint · 2026-09-05
+
+**Latest complete published Linux checkpoint: 6ebf71ef595ac2dd5f0c77ff0725758acc30f0fd.** [CI33959562287](https://github.com/ethanmcn2013-droid/app/actions/runs/33959562287), [Verify33959562365](https://github.com/ethanmcn2013-droid/app/actions/runs/33959562365) and [Design33959562282](https://github.com/ethanmcn2013-droid/app/actions/runs/33959562282) all pass. Retained Verify log confirms Project Drive lifecycle332/332; merge ac2470f5 has exactly candidate6eb tree fb867522. Runtime equals8172364e. This supersedes the dated Linux checkpoints below, without changing their historical scope or asserting live-provider/human acceptance.
+
+Separate bounded UI follow-up **8ae94ffb4e74bd21ba652f0117417afa03ed43a3** explains ownership before initial Connect/setup and restores keyboard focus after disconnect/handover cancellation. Local actual-component matrix76/76 plus14supplemental geometry/theme/focus checks and focused6/6 pass; inherited6eb Linux results do not cover this follow-up. [Owning source/adapters/gates/render packet](../../../experience/reviews/january-drive-ui-acceptance-2026-09-05/REPORT.md). Failed baseline/harness receipts remain retained. Persistent unconfirmed-disconnect visibility after reload is a separate source-traced read-model question awaiting actual service/SQLite validation; transient action copy does not close it. Full Drive acceptance remains open.
+
 ## January takeover · 2026-09-04
 
 This task is accountable for Drive. The stopped Drive task and package evidence below remain provenance. User-owned work was preserved: unpublished changes committed in 1ea5dd8a, January dependency integration 24a59e72 and migration CI 7d4040cb. PR #165 now targets release/january-2027; PR #168 assembles Drive with the other January work. Nothing here authorizes production.
