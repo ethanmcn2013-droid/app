@@ -16,6 +16,8 @@ type Props = {
   primaryLabel?: string;
   /** Keep structural headers legible while the view body recedes behind the CTA. */
   ghostMode?: "subtle" | "structural";
+  /** Personal filters must never offer the destructive project reset. */
+  allowStarterPacks?: boolean;
 };
 
 export function EmptyStateOverlay({
@@ -24,6 +26,7 @@ export function EmptyStateOverlay({
   body,
   primaryLabel = "Add your first task",
   ghostMode = "subtle",
+  allowStarterPacks = true,
 }: Props) {
   const { openDialog } = useAddTask();
   const [pending, startTransition] = useTransition();
@@ -95,7 +98,7 @@ export function EmptyStateOverlay({
             </kbd>
           </button>
 
-          <div className="mt-5 border-t border-line-soft pt-4">
+          {allowStarterPacks ? <div className="mt-5 border-t border-line-soft pt-4">
             <p className="text-[12.5px] leading-[1.6] text-ink-quiet">
               Or load a starter pack:{" "}
               {DOMAIN_ORDER.map((id, i) => {
@@ -136,7 +139,7 @@ export function EmptyStateOverlay({
                 </button>
               </div>
             ) : null}
-          </div>
+          </div> : null}
         </div>
       </motion.div>
     </div>

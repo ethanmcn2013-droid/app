@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { eq } from "drizzle-orm";
 import { TasksRuntimePageMount } from "@/components/app/tasks-runtime-mount";
 import { isDemoMode } from "@/lib/access-mode";
-import { getTaskById, getTaskDetail } from "@/server/db/queries";
+import { getTaskDetail } from "@/server/db/queries";
+import { db } from "@/server/db";
+import { tasks } from "@/server/db/schema";
 import { authorizeObjectProject } from "@/server/projects/route-authz";
 import { assertProjectId } from "@/lib/projects/project-ref";
 import { DEMO_WORKSPACE_ID } from "@/server/demo/tasks-demo";
@@ -29,7 +32,16 @@ async function decide(id: string): Promise<TaskRouteDecision> {
   }
 
   return decideTaskRouteWith(id, {
-    loadTaskProject: async (taskId) => (await getTaskById(taskId))?.workspaceId,
+    loadTaskProject: async (taskId) => {
+      // Learn only the stored Project. The client Task mapper deliberately
+      // omits this field; it cannot supply authority for an object route.
+      const [row] = await db.select({ workspaceId: tasks.workspaceId })
+        .from(tasks)
+        // isolation-ok: object-route bootstrap reads only the owning project
+        // id; decideTaskRouteWith proves membership before reading content.
+        .where(eq(tasks.id, taskId)).limit(1);
+      return row?.workspaceId;
+    },
     authorize: authorizeObjectProject,
     loadDetail: (taskId, provenWorkspaceId) =>
       getTaskDetail(taskId, provenWorkspaceId),

@@ -91,17 +91,16 @@ export function laneOrder(): LaneId[] {
  *   2. `needsAttention`   lane === doing AND idle ≥ 4 days
  *   3. `waiting`     lane === review  (something else is gating it)
  *   4. `thisWeek`    lane in todo/doing AND due within (today, today+7d]
- *   5. `doneRecently`     lane === done AND updatedAt within last 7 days
- *
- * Open tasks without a due date and without idle-attention pressure
- * simply don't appear, that's the spec's restraint. They live on the
- * board and the list; My Week is the briefing, not the inbox.
+ *   5. `later` / `undated` keep all remaining open assignments discoverable.
+ *   6. `doneRecently`     lane === done AND updatedAt within last 7 days
  */
 export type MyWeekBuckets = {
   today: Task[];
   needsAttention: Task[];
   waiting: Task[];
   thisWeek: Task[];
+  later: Task[];
+  undated: Task[];
   doneRecently: Task[];
 };
 
@@ -127,6 +126,8 @@ export function bucketMyWeek(
     needsAttention: [],
     waiting: [],
     thisWeek: [],
+    later: [],
+    undated: [],
     doneRecently: [],
   };
 
@@ -180,11 +181,14 @@ export function bucketMyWeek(
       buckets.thisWeek.push(t);
       continue;
     }
+    (due ? buckets.later : buckets.undated).push(t);
   }
 
   // Sort each bucket so the calm-briefing read is consistent.
   buckets.today.sort(byDueThenPriority);
   buckets.thisWeek.sort(byDueThenPriority);
+  buckets.later.sort(byDueThenPriority);
+  buckets.undated.sort(byDueThenPriority);
   buckets.needsAttention.sort((a, b) => idleDays(b, now) - idleDays(a, now));
   buckets.waiting.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
   buckets.doneRecently.sort(
