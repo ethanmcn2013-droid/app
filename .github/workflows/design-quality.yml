@@ -60,7 +60,9 @@ concurrency:
 jobs:
   registry-and-drift:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # The additional actual-route matrix covers 68 states plus three React
+    # lifecycle checks after the existing built-browser matrix. Keep every gate.
+    timeout-minutes: 20
     steps:
       # Full history, because this job is the only one that runs the council,
       # and the council verifies that the commit its external baseline was
@@ -109,6 +111,12 @@ jobs:
       - name: Capture critical rendered evidence
         run: pnpm experience:test
 
+      # The preceding build supplies the local Geist assets required by this
+      # fixture. Its explicit framework/identity adapters remain documented;
+      # these results do not establish real Clerk or production continuity.
+      - name: Verify recipient routes and React context replacement
+        run: pnpm test:recipient-context:browser
+
       - name: Verify settings hydration across locales
         run: pnpm test:settings-hydration
 
@@ -140,5 +148,7 @@ jobs:
             experience/output/playwright-results
             experience/output/timeline-project-switcher-results
             experience/output/notes-recovery
+            experience/output/recipient-project-work/routes
+            experience/output/recipient-project-work/realtime-react
           if-no-files-found: ignore
           retention-days: 14
