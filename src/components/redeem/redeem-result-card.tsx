@@ -5,19 +5,20 @@ import Link from "next/link";
 import type { RedeemResult } from "@/server/actions/comp";
 import { withActiveProject } from "@/lib/projects/project-url";
 import { parseProjectId } from "@/lib/projects/project-ref";
+import { PRODUCT_APP_PATHS } from "@/lib/product-urls";
 import { formatRedeemExpiryDate } from "./redeem-expiry-date";
 
-const FAILURE_COPY: Record<
+export const REDEEM_FAILURE_COPY: Record<
   Exclude<RedeemResult, { ok: true }>["reason"],
   { headline: string; body: string }
 > = {
   "not-found": {
     headline: "We don't recognize that code.",
-    body: "Double-check the link, letter for letter, dash for dash. If it came from us and still won't unlock, send it back and we'll look it up.",
+    body: "Check the original link for missing letters or dashes. If it still doesn't work, email Signal Studio for help.",
   },
   exhausted: {
     headline: "All redemptions on this code are used up.",
-    body: "This was a limited batch and someone got there first. Drop us a line and we'll see if we can mint a fresh one.",
+    body: "If you've used this code before, sign in with that account and try the same code. Otherwise, contact Signal Studio before trying another code.",
   },
   expired: {
     headline: "This access is no longer available.",
@@ -25,15 +26,15 @@ const FAILURE_COPY: Record<
   },
   "already-redeemed": {
     headline: "We couldn't confirm this redemption.",
-    body: "Contact Signal Studio support before trying another code.",
+    body: "Sign in with the account you first used and try the same code. If you still cannot open the workspace, contact Signal Studio before trying another code.",
   },
   "still-provisioning": {
     headline: "We couldn't apply this code to a project.",
-    body: "Check that you're signed into the right account and can edit the intended project, then try again.",
+    body: "Check that you're signed into the right account and can edit the intended project, then try the same code again. If it still won't open, email Signal Studio for help.",
   },
   "rate-limited": {
     headline: "Too many tries in a short window.",
-    body: "Wait ten minutes and enter the code again. If it came from your venue and still won't open, send it back to us and we'll look it up.",
+    body: "Wait ten minutes, then try the same code with the same account. If it still won't open, email Signal Studio for help.",
   },
 };
 
@@ -41,7 +42,7 @@ const TIER_LABEL = {
   free: "Free",
   event: "Event",
   wedding: "Wedding suite",
-  workspace: "Workspace",
+  workspace: "Pro",
   studio: "Studio",
 } as const;
 
@@ -129,7 +130,7 @@ export function RedeemResultCard({
     );
   }
 
-  const copy = FAILURE_COPY[result.reason];
+  const copy = REDEEM_FAILURE_COPY[result.reason];
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -163,8 +164,18 @@ export function RedeemResultCard({
       <div className="mt-3 font-mono text-[10.5px] tabular-nums text-ink-quiet">
         {code}
       </div>
+      <p className="mt-4 text-[12.5px] leading-[1.55] text-ink-soft">
+        <a
+          href="mailto:hello@signalstudio.ie?subject=Access%20code%20help"
+          className="font-medium underline underline-offset-4"
+        >
+          Email Signal Studio
+        </a>
+        . Tell us which account you used and what happened. Keep your original
+        invitation ready.
+      </p>
       <Link
-        href="/"
+        href={PRODUCT_APP_PATHS.tasks}
         className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-4 py-2 text-[12.5px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink"
       >
         Back to Tasks
