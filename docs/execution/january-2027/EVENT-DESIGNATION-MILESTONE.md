@@ -138,8 +138,12 @@ Those failed gate outputs are retained; the split does not assert their root cau
 EV-TEST-01 corrected a test-only fixed 2029 grant start: the future grant now
 starts one day after the fixture's `AFTER` evaluation instant. The separate clock
 regression above runs that actual SQLite test in a child process with the January
-21, 2027 clock set before fixture import. It requires exactly one passing test,
-so an empty name-filter result fails. The same regression fails against the a59
+21, 2027 clock set before fixture import. It requires the exact selected test's
+successful TAP record as well as one-test passing totals. Node 22 reports an empty
+selection as one passing file wrapper; totals alone were insufficient (EV-TEST-02).
+Executable negative controls retain that empty selection and a different passing
+SQLite case, and require the same guard to reject both. SKIP/TODO records do not
+match the required successful record. The same clock regression fails against the a59
 test with `editable` instead of `read_only`; both that counterexample and the
 reviewer's original receipts remain preserved. Register this clock command too.
 No writer, evaluator, migration, grant policy or sales availability changed.
