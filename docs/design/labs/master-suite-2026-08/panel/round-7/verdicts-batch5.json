@@ -1,0 +1,9 @@
+[
+  {
+    "id": "second-accent-hairline-above-the-measure",
+    "verdict": "REFUTED",
+    "severity": "refinement",
+    "why": "I drove timeline.owner-flight and timeline.desk at 1280/1440/1920 on paper and re-measured every 1px rule in the timeline subtree. The two indigo lines are NOT the same colour or weight: .b-todayRule paints var(--accent) at opacity 1 (#4f46e5), while the measure .b-rail carries [data-accent=\"structure\"] opacity 0.46, compositing to roughly rgb(174,170,243) on white — a 54% difference in alpha, visible in the frame. The seat's geometry is also partly wrong: the vertical gap is 265px at 1440/1920 but 361px at 1280, and the 344px cap is not arbitrary — the date line it underlines ('Saturday 3 October 2026') measures 330.1px, so the rule is a block-width underline for the ceremonial date, immediately above its paired '.b-todayLabel' (\"Today is 16 July\"), not a free-floating second measure.",
+    "sharpenedFix": "No change. The fix would be actively harmful: demoting .b-todayRule to var(--fore-16) strips the accent off the horizon marker — the one object Direction B says never moves — and leaves the strongest indigo on the surface at 46% on the rail, with today marked in the same ink tint as the 'Behind you' divider. The paired full-strength treatment is a recorded decision (see the comment at _gate-suite.html:7110-7113: on ink the rail goes to opacity 1 to match 'the weight the today rule and the lead tick already carry there'). If any refinement is wanted here it is the opposite of the proposal: nothing."
+  }
+]
