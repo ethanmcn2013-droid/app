@@ -5,3 +5,11 @@ Method: read source (src/*.css, src/*.js), then drive in chromium via playwright
 probing computed styles / a11y tree / focus order / repaint effects.
 
 ## Log
+
+- Ran audit.mjs myself: exit 1 with contrast 21 / tracking 10 / spaceLadder 302.
+  Contrast sightings are all `1:1 (needs 4.5)` on notes.voice + notes.seam, i.e. the
+  model reads fg==bg. Screenshotted notes.voice at 1920: the dictation floor is a full
+  opaque ink overlay; the flagged nodes are the sheet BEHIND it. Model error, not a
+  render defect. NOT a finding.
+- notes.voice focus trap is correct: Tab cycles exactly Cancel / Stop and read it back,
+  never reaching the occluded sheet. Clean.

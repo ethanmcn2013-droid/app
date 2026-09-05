@@ -15,3 +15,12 @@ excluded from my findings.
   :hover/:focus-within, forced to opacity 1 under `pointer: coarse`, and
   its slot is reserved in layout so revealing it moves nothing. This
   class is closed — not a finding.
+- Carry model verified live: Space announces "Picked up …", arrows
+  announce "In progress, position 1 of 4.", Escape cancels and announces
+  "Move cancelled. … is back in the to do column." and the card really
+  returns to `todo`. This is award-level; nothing to file.
+- CANDIDATE (parked): `timeline.loading` reserves a 372x372 card and the
+  arrival is 372x1653 at 390, 1242x854 at 1440. The skeleton draws the
+  horizon head only — no reserve at all for the measure, which is the
+  organising object. Not a declared state and not shot, so weighed for
+  scope before filing.
