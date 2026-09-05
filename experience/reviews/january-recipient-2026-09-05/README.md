@@ -1,5 +1,32 @@
 # January recipient checkpoints
 
+## Current Floor verification: paired CSS rendering
+
+Candidate `0b9d132ac5b5f47579c8630becb94063b1db947d` integrates the
+verification-only repair `2123c595`. The normal command, with
+`FLOOR_THEME_BEFORE` unset, passes all 80 contrast/behavior checks and strict
+before/after layout equality in the principal Windows checkout. Both stylesheet
+versions render through the same components, fonts, global CSS and Chromium
+instance. No tolerance or contrast threshold changed. The writer's test-only
+one-pixel dock mutation still fails exact geometry equality.
+
+This supersedes the cross-platform geometry comparison described below. Linux
+Design run `33950035915` at `313fbc56` failed on a subpixel dock difference from
+the original Windows capture; its exact failure is retained. The original failed
+Windows receipt and its two original CSS blobs remain immutable. The fresh
+original-CSS render is separate comparison evidence and its bad contrast remains
+failed, with no acceptance credit. Linux acceptance of this repair remains a
+separate exact-candidate gate.
+
+`floor-paired-0b9d132a.json` indexes 149 retained files and 33 verified current
+source inputs. LFS archive `floor-paired-0b9d132a.zip` SHA-256:
+`ed4ffefec48a7313b9eba78488573f2530d431b3179168b7fff85898f660aa74`.
+It preserves the principal render, writer positive/negative controls and original
+Linux failure. Both earlier checkpoint archives below retain their exact hashes.
+The pinned original Floor stylesheet deliberately retains its historical blank
+line at EOF. Product runtime remains `50918cdc`; no provider, independent RC-3,
+Atlas, human/council or receiving acceptance is implied.
+
 ## Current rendered checkpoint: 50918cdc
 
 Normal Next build `LOG4Ac6gpN8RVrT6FWXDG` uses runtime
