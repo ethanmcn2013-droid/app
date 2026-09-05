@@ -278,8 +278,10 @@ test("public routes use the explicit allowlisted projection", () => {
 });
 
 test("demo and review actions exit before tenant, database, or disk access", () => {
+  // Realtime reads now require the displayed Project rather than a cookie.
+  // Preserve the same demo-before-authorization guard at the actual boundary.
+  assertDemoGuardBefore(actions, "getTasksAction", "readableProjectOrNull");
   for (const name of [
-    "getTasksAction",
     "moveTaskAction",
     "toggleCompleteAction",
     "updateTaskAction",
