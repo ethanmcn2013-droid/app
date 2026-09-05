@@ -46,7 +46,7 @@ async function withClient(operation) {
 
 test("authoritative ledger registers every SQL file with receipt and journal parity", () => {
   const context = loadAndValidateLedger();
-  assert.equal(context.entries.length, 30);
+  assert.equal(context.entries.length, 31);
   assert.equal(context.baseline.id, "0014_current_schema_baseline");
   assert.deepEqual(context.forward.map((entry) => entry.id), [
     "0015_notes_extract_exact_identity",
@@ -64,6 +64,7 @@ test("authoritative ledger registers every SQL file with receipt and journal par
     "0027_share_link_token_hash",
     "0028_project_drive",
     "0029_project_drive_operations",
+    "0030_sponsored_use_intents",
   ]);
   assert.equal(context.entries.filter((entry) => entry.policy === "legacy-adopt-only").length, 14);
 });
@@ -130,13 +131,14 @@ test("fresh databases apply the canonical baseline plus forwards and rerun as a 
     "0027_share_link_token_hash",
     "0028_project_drive",
     "0029_project_drive_operations",
+    "0030_sponsored_use_intents",
   ]);
-  assert.equal(first.proofs.length, 149);
+  assert.equal(first.proofs.length, 157);
 
   const objectCounts = await client.execute("SELECT type, COUNT(*) AS value FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' AND name NOT IN ('signal_schema_migrations', '__drizzle_migrations') GROUP BY type ORDER BY type");
   assert.deepEqual(objectCounts.rows.map((row) => [row.type, Number(row.value)]), [
-    ["index", 47],
-    ["table", 27],
+    ["index", 49],
+    ["table", 29],
     ["trigger", 4],
   ]);
 
@@ -964,4 +966,19 @@ test("the resource backfill count remains required when its migration executes",
   const proof = entry.receipt.record.proofs.find((candidate) => candidate.id === "backfill-upload-count-matches-attachments");
   proof.sql = "SELECT 0 AS value";
   await assert.rejects(() => runMigrations({ client, context, releaseSha: "broken-backfill-test" }), /backfill-upload-count-matches-attachments/);
+}));
+
+test("usage migration proof failure rolls back both new tables and its ledger receipt", async () => withClient(async (client) => {
+  const before = loadAndValidateLedger();
+  before.forward = before.forward.filter(entry => entry.id !== "0030_sponsored_use_intents");
+  await runMigrations({ client, context: before, releaseSha: "usage-before" });
+  const broken = loadAndValidateLedger();
+  const entry = broken.forward.find(row => row.id === "0030_sponsored_use_intents");
+  entry.receipt.record.proofs.push({ id: "usage-forced-failure", sql: "SELECT 0 AS value", expected: 1 });
+  await assert.rejects(() => runMigrations({ client, context: broken, releaseSha: "usage-failed" }), /usage-forced-failure/);
+  assert.equal(Number((await client.execute("SELECT count(*) AS n FROM sqlite_schema WHERE name IN ('sponsored_use_intents','sponsored_use_subjects')")).rows[0].n), 0);
+  assert.equal(Number((await client.execute("SELECT count(*) AS n FROM signal_schema_migrations WHERE id='0030_sponsored_use_intents'")).rows[0].n), 0);
+  const applied = await runMigrations({ client, releaseSha: "usage-retry" });
+  assert.deepEqual(applied.applied, ["0030_sponsored_use_intents"]);
+  assert.equal((await runMigrations({ client, releaseSha: "usage-no-op" })).status, "no-op");
 }));
