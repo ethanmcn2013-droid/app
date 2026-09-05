@@ -21,16 +21,28 @@ before writing either preference, so a moved/deleted task or stale form cannot
 select a project on its behalf. Archived projects cannot become the active
 selection. GET does not write either cookie.
 
+The actual-shell browser fixture additionally reproduced a permanently loading
+project control on the bare archived object route. The runtime must distinguish
+its proven data project from the URL query used to match a chrome snapshot.
+The object page now supplies both explicitly. Bare, conflicting and repeated
+queries still read stored B; their snapshot keys match the real URL bridge.
+
+The sole room-brief caller now passes the shell's proved project. The room read
+requires that explicit candidate and independently authorizes `open`. The
+exported purpose action also requires a project and reauthorizes its existing
+`createOrEditTasks` capability. Demo no-op, 280-character trim/clear and the
+existing deferred archive policy are unchanged; no purpose-editing UI was added.
+
 Focused commands (parent owns package/default-CI registration):
 
 ```sh
-node --test experience/recipient-project-work/archive.test.cjs experience/recipient-project-work/server.test.cjs
+node --test experience/recipient-project-work/archive.test.cjs experience/recipient-project-work/server.test.cjs experience/recipient-project-work/room.test.cjs
 node --import tsx --import ./src/test/register-server-only.mjs --test src/app/app/task/task-deep-link-contract.test.ts
 node --test src/server/projects/route-authz-contract.test.mjs src/server/projects/active-project-contract.test.mjs src/server/tenant-scope-rules.test.mjs src/server/tenant-scope.test.mjs
 corepack pnpm typecheck
 ```
 
-The first command has five new archive scenarios and four retained recipient
+The first command has six archive, five room and four retained recipient
 scenarios. These use real SQLite and actual pages/actions; the demo archived
 detail is a labelled input-seam test. Runtime-page mounts are executed, but the
 old server fixture treats the shell body as a leaf. The separate four-surface

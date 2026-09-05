@@ -425,7 +425,7 @@ test("archived object and archive destination keep content and runtime on the pr
   assert.match(taskResolver, /kind: "archived", workspaceId: proven, task: detail.task/);
   assert.match(taskPage, /const \{ task, workspaceId \} = decision/);
   assert.match(taskPage, /const searchParams = Promise.resolve\(\{ workspaceId \}\)/);
-  assert.match(taskPage, /<TasksRuntimePageMount searchParams=\{searchParams\}>/);
+  assert.match(taskPage, /<TasksRuntimePageMount searchParams=\{searchParams\} snapshotRequestedProjectId=\{snapshotRequestedProjectId\}>/);
   const archive = read("src/app/app/archived/page.tsx");
   assert.match(archive, /resolveTasksArrival\(requested\)/);
   assert.match(archive, /getArchivedTasks\(arrival.project.workspaceId\)/);

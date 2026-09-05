@@ -52,8 +52,10 @@ async function decide(id: string): Promise<TaskRouteDecision> {
 
 export default async function TaskFocusPage({
   params,
+  searchParams: routeSearchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ workspaceId?: string | string[] }>;
 }) {
   const { id } = await params;
   const decision = await decide(id);
@@ -98,8 +100,16 @@ export default async function TaskFocusPage({
       return <TasksArrivalRefusal arrival={arrival} requested={workspaceId} surface="task-focus" taskId={task.id} />;
     }
     const searchParams = Promise.resolve({ workspaceId });
+    // The object owns the data, while the actual URL owns the snapshot key.
+    // A bare /task/id URL has no query Project; stamping it as B would leave
+    // the control loading forever. A conflicting query cannot change the
+    // stored authority either. Match the URL bridge's first query value.
+    const routeProject = (await routeSearchParams)?.workspaceId;
+    const snapshotRequestedProjectId = Array.isArray(routeProject)
+      ? routeProject[0] ?? null
+      : routeProject ?? null;
     return (
-      <TasksRuntimePageMount searchParams={searchParams}>
+      <TasksRuntimePageMount searchParams={searchParams} snapshotRequestedProjectId={snapshotRequestedProjectId}>
         <div className="flex h-full flex-col items-center justify-center gap-3 px-8 text-center">
           <div className="text-[16px] font-semibold text-ink">{task.title}</div>
           <div className="text-[13px] text-ink-soft">This task is archived.</div>

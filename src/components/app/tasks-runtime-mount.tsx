@@ -110,6 +110,7 @@ export function TasksRuntimeLayoutMount({
  */
 export async function TasksRuntimePageMount({
   searchParams,
+  snapshotRequestedProjectId,
   children,
 }: {
   /**
@@ -117,6 +118,9 @@ export async function TasksRuntimePageMount({
    * is resolved ambiently — see the module docblock for the policy.
    */
   searchParams?: TasksRuntimeSearchParams;
+  /** Object routes use the stored Project for data, and the actual URL query
+   * for snapshot matching. Undefined preserves ordinary query-route behavior. */
+  snapshotRequestedProjectId?: string | null;
   children: React.ReactNode;
 }) {
   if (!isActiveProjectV3Enabled()) return children;
@@ -126,6 +130,7 @@ export async function TasksRuntimePageMount({
   return (
     <TasksRuntimeShell
       requestedProjectId={typeof requested === "string" ? requested : null}
+      snapshotRequestedProjectId={snapshotRequestedProjectId}
     >
       {children}
     </TasksRuntimeShell>

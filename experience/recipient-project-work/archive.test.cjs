@@ -24,6 +24,7 @@ test('archived object B retains B runtime and links; archive page authorizes and
     const element = await page(params('archive-b'));
     const shell = await element.type(element.props);
     assert.equal(shell.props.requestedProjectId, 'project-b');
+    assert.equal(shell.props.snapshotRequestedProjectId, null);
     const html = renderToStaticMarkup(element.props.children);
     assert.match(html, /Archived B task/);assert.doesNotMatch(html, /Archived A task/);
     assert.match(html, /href="\/app\/archived\?workspaceId=project-b"/);
@@ -32,6 +33,21 @@ test('archived object B retains B runtime and links; archive page authorizes and
     assert.deepEqual(list.props.children[1].props.tasks.map(t => t.id), ['archive-b']);
     assert.equal((await list.type(list.props)).props.requestedProjectId, 'project-b');
     assert.equal(f.state.cookieWrites.length, 0);
+  } finally { f.close(); }
+});
+
+test('archived B owns runtime while bare, conflicting and repeated URL parameters retain their actual snapshot key', async () => {
+  const f = await archiveFixture();
+  try {
+    const page = f.load('src/app/app/task/[id]/page').default;
+    for (const [query,expected] of [[undefined,null],['project-a','project-a'],[['project-c','project-a'],'project-c']]) {
+      const element=await page({...params('archive-b'),searchParams:Promise.resolve({workspaceId:query})});
+      const shell=await element.type(element.props);
+      assert.equal(shell.props.requestedProjectId,'project-b');
+      assert.equal(shell.props.snapshotRequestedProjectId,expected);
+      assert.match(renderToStaticMarkup(element.props.children),/Archived B task/);
+    }
+    assert.equal(f.state.cookieWrites.length,0);
   } finally { f.close(); }
 });
 

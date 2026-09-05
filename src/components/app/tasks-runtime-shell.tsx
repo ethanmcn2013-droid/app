@@ -108,6 +108,7 @@ import {
 export async function TasksRuntimeShell({
   children,
   requestedProjectId,
+  snapshotRequestedProjectId = requestedProjectId ?? null,
 }: {
   children: React.ReactNode;
   /**
@@ -117,6 +118,10 @@ export async function TasksRuntimeShell({
    * the V3 flag is on; the flag-off layout mount never passes one.
    */
   requestedProjectId?: string | null;
+  /** Actual URL query used only to match the chrome snapshot to its route.
+   * Object routes can authorize a different stored Project. This value never
+   * selects or authorizes data. */
+  snapshotRequestedProjectId?: string | null;
 }) {
   await requireAppAccessTasks();
 
@@ -246,7 +251,7 @@ export async function TasksRuntimeShell({
                     the hook inside returns null and it publishes nothing. */}
                 <ActiveProjectRouteSync
                   project={project.project}
-                  requestedProjectId={requestedProjectId ?? null}
+                  requestedProjectId={snapshotRequestedProjectId}
                 />
                 <AddTaskRoot>
                   <PaletteRoot>
