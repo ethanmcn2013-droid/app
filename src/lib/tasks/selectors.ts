@@ -1,4 +1,6 @@
 import { LANE_ORDER, type LaneId, type Task, type UserId } from "@/lib/data";
+import type { CalendarFrame } from "@/lib/calendar-frame";
+import { calendarDateInTimeZone, calendarDaysBetween } from "@/lib/planning/dates";
 import type { TasksState } from "./tasks-reducer";
 
 export function tasksByLane(
@@ -90,7 +92,7 @@ export function laneOrder(): LaneId[] {
  *   1. `today`       lane in todo/doing AND (overdue OR due today)
  *   2. `needsAttention`   lane === doing AND idle ≥ 4 days
  *   3. `waiting`     lane === review  (something else is gating it)
- *   4. `thisWeek`    lane in todo/doing AND due within (today, today+7d]
+ *   4. `thisWeek`    lane in todo/doing AND due after today, before day 7
  *   5. `later` / `undated` keep all remaining open assignments discoverable.
  *   6. `doneRecently`     lane === done AND updatedAt within last 7 days
  */
@@ -120,6 +122,8 @@ export function bucketMyWeek(
   tasks: Task[],
   currentUser: UserId,
   now: Date = new Date(),
+  /** MyWork supplies the project frame. Omitted callers keep local behavior. */
+  calendar?: Pick<CalendarFrame, "today" | "timeZone">,
 ): MyWeekBuckets {
   const buckets: MyWeekBuckets = {
     today: [],
@@ -132,9 +136,7 @@ export function bucketMyWeek(
   };
 
   const mine = tasks.filter((t) => t.assignees.includes(currentUser));
-  const todayStart = startOfLocalDay(now);
-  const tomorrowStart = new Date(todayStart.getTime() + DAY_MS);
-  const weekEnd = new Date(todayStart.getTime() + 7 * DAY_MS);
+  const localStart = calendar ? 0 : startOfLocalDay(now).getTime();
   const sevenDaysAgo = new Date(now.getTime() - 7 * DAY_MS);
 
   for (const t of mine) {
@@ -148,12 +150,17 @@ export function bucketMyWeek(
 
     // Open tasks (todo/doing/review) below.
     const due = t.dueAt;
+    const dueDayOffset = calendar && due && !Number.isNaN(due.getTime())
+      ? calendarDaysBetween(calendar.today, calendarDateInTimeZone(due, calendar.timeZone))
+      : null;
 
     // 1, Today: overdue or due today (open only)
     if (
       (t.lane === "todo" || t.lane === "doing") &&
       due &&
-      due.getTime() < tomorrowStart.getTime()
+      (calendar
+        ? dueDayOffset !== null && dueDayOffset <= 0
+        : due.getTime() < localStart + DAY_MS)
     ) {
       buckets.today.push(t);
       continue;
@@ -171,12 +178,13 @@ export function bucketMyWeek(
       continue;
     }
 
-    // 4, This week: due in (today, today+7d]
+    // 4, This week: tomorrow through day 6; the existing day-7 cutoff is exclusive.
     if (
       (t.lane === "todo" || t.lane === "doing") &&
       due &&
-      due.getTime() >= tomorrowStart.getTime() &&
-      due.getTime() < weekEnd.getTime()
+      (calendar
+        ? dueDayOffset !== null && dueDayOffset > 0 && dueDayOffset < 7
+        : due.getTime() >= localStart + DAY_MS && due.getTime() < localStart + 7 * DAY_MS)
     ) {
       buckets.thisWeek.push(t);
       continue;
@@ -210,16 +218,26 @@ export function bucketMyWeek(
 export function splitTodayDayparts(
   today: Task[],
   now: Date = new Date(),
+  calendar?: Pick<CalendarFrame, "today" | "timeZone">,
 ): { day: Task[]; evening: Task[] } {
-  const todayStart = startOfLocalDay(now).getTime();
+  const todayStart = calendar ? 0 : startOfLocalDay(now).getTime();
   const eveningStart = todayStart + 17 * 60 * 60 * 1000;
   const tomorrowStart = todayStart + DAY_MS;
+  const projectHour = calendar ? new Intl.DateTimeFormat("en-GB", {
+    timeZone: calendar.timeZone,
+    hour: "numeric",
+    hourCycle: "h23",
+  }) : null;
 
   const day: Task[] = [];
   const evening: Task[] = [];
   for (const t of today) {
-    const due = t.dueAt?.getTime();
-    if (due !== undefined && due >= eveningStart && due < tomorrowStart) {
+    const due = t.dueAt;
+    const isEvening = due && !Number.isNaN(due.getTime()) && (calendar && projectHour
+      ? calendarDateInTimeZone(due, calendar.timeZone) === calendar.today &&
+        Number(projectHour.formatToParts(due).find(part => part.type === "hour")?.value) >= 17
+      : due.getTime() >= eveningStart && due.getTime() < tomorrowStart);
+    if (isEvening) {
       evening.push(t);
     } else {
       day.push(t);
