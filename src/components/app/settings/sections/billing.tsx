@@ -9,7 +9,7 @@ import type { EntitlementTier } from "@/lib/data";
 import type { PaidTier } from "@/server/stripe";
 import { EVENT_SELF_SERVE_AVAILABLE, EVENT_UNAVAILABLE_MESSAGE } from "@/lib/billing-availability";
 import { SectionHeader } from "../settings-app";
-import { REDEEM_FAILURE_COPY, REDEEM_TIER_LABELS } from "@/components/redeem/redeem-result-card";
+import { REDEEM_FAILURE_COPY, REDEEM_TIER_LABELS } from "@/components/redeem/redeem-copy";
 
 type TierMeta = {
   id: EntitlementTier;

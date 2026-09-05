@@ -11,6 +11,7 @@ import { entitlements, users, workspaces, workspaceMembers } from "./db/schema";
 import * as sharedSchema from "../lib/entitlements-shared/schema";
 import type { StripeAccess } from "./stripe-access";
 import * as billingAvailability from "../lib/billing-availability";
+import * as redeemCopy from "../components/redeem/redeem-copy";
 
 let access: typeof import("./stripe-access");
 let lifecycle: typeof import("./stripe-lifecycle");
@@ -618,6 +619,7 @@ test("billing renders available offers and preserves the current Event holder wi
     "../components/app/settings/sections/billing.tsx", {
       "react": React, "react/jsx-runtime": await import("react/jsx-runtime"),
       "@/lib/billing-availability": billingAvailability,
+      "@/components/redeem/redeem-copy": redeemCopy,
       "@/components/primitives/toast": { useToast: () => ({ toast: () => { throw new Error("Unexpected toast during render"); } }) },
       "@/server/actions/billing": {}, "@/server/actions/plan": {}, "@/server/actions/comp": {},
       "../settings-app": { SectionHeader: () => null },
@@ -626,12 +628,13 @@ test("billing renders available offers and preserves the current Event holder wi
   const free = renderToStaticMarkup(React.createElement(BillingSection, { tier: "free" }));
   const offerText = [...free.matchAll(/>([^<>]+)</g)].map(match => match[1]);
   assert.ok(!offerText.includes("Event"));
-  assert.ok(offerText.includes("Workspace"));
+  assert.ok(offerText.includes("Pro"));
+  assert.ok(!offerText.includes("Workspace"));
   assert.ok(offerText.includes("Upgrade"));
   const held = renderToStaticMarkup(React.createElement(BillingSection, { tier: "event" }));
   assert.match(held, />Event</);
   assert.match(held, /Manage billing/);
   assert.match(held, /New Event purchases are currently unavailable/);
   assert.doesNotMatch(held, /reads forever|read-only forever/i);
-  assert.equal((held.match(/>Upgrade</g) ?? []).length, 1); // Workspace, never another Event sale.
+  assert.equal((held.match(/>Upgrade</g) ?? []).length, 1); // Pro, never another Event sale.
 });

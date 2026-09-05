@@ -3,7 +3,8 @@ import { test } from "node:test";
 import { formatRedeemExpiryDate } from "./redeem-expiry-date";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { RedeemResultCard, REDEEM_FAILURE_COPY, REDEEM_TIER_LABELS } from "./redeem-result-card";
+import { RedeemResultCard } from "./redeem-result-card";
+import { REDEEM_FAILURE_COPY, REDEEM_TIER_LABELS } from "./redeem-copy";
 
 test("redeem expiry copy is identical across server and browser locales", () => {
   assert.equal(

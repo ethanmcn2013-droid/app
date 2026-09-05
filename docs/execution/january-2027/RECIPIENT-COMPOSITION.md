@@ -70,13 +70,33 @@ dimmed Done row; only an 18-pixel click target. The repair reuses the existing
 task-control/done/raised color roles in the 18-pixel visual circle, inside a
 44-pixel semantic button. Done-row dimming now belongs to text and avatars, so
 it cannot reduce control contrast. The existing focus and completion motion
-remain. Focused lint and six actual-source recipient cases pass; final measured
-contrast, keyboard/pointer interaction and route rendering remain pending.
+remain. Focused lint and six actual-source recipient cases pass. The subsequent
+actual-component/row check at 390 and 1280 pixels in light and dark passes:
+idle contrast 4.83/7.48, checked glyph 4.58/7.55, 44-pixel target and a
+12-pixel gap from Open task. Edge clicks, Space and the separate Open action
+work without overlap. Task output `dopamine-check-contrast-after-9d41060c`
+binds the source hashes present at `485b3bc0`; its folder name denotes the
+earlier base. This is component evidence, not authenticated-route or human
+acceptance. Final integrated route rendering remains open.
 
 Commercial copy `053ef810` is composed at `9d41060c`: Pro is the public name,
 legacy grants retain their public labels, and redemption recovery preserves
 the original account/code and accurately names project-management capability.
 No price, payment state or entitlement implementation changes in this slice.
+
+The composed Windows gate at `485b3bc0` exposed two separate failures. The
+Timeline group exited natively after its assertions passed; the unchanged
+group then passed. Billing failed because its strict source-loader did not
+declare the new redemption-copy dependency. The latter is repaired by moving
+unchanged constants into `redeem-copy.ts`, importing that pure module in both
+surfaces and explicitly supplying its real exports to the strict loader.
+The billing assertion now checks the approved public Pro name while retaining
+the Event sales hold and current-holder checks. An initial repair put the
+dependency in the wrong fixture map and failed; that attempt is retained.
+The corrected 40 billing tests, five redemption-render tests, typecheck and
+lint pass. Logs are retained under task work `app-485-final-gates`,
+`app-485-final-continuation`, `app-copy-integration-fix` and
+`app-copy-integration-fix-corrected`. Neither failure is a passing full gate.
 
 Final rendering after these source changes, experience evidence renewal, Linux
 and receiving checks remain open.
