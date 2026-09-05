@@ -171,3 +171,55 @@ After: tick L = 25 = wordmark L; row meta R = 365 = head actions R, at every pho
   right — I checked and dropped this as a finding).
 - Dense board @1920: five equal 354px lanes filling the sheet exactly, fold rule + count per
   lane. This is the proof that the board's grid is capable of what F1 asks for.
+
+---
+
+# VERDICT — seat-ui, round 7
+
+**8.8.**
+
+## What earned it
+The suite composes as one object by measurement, not by resemblance. At 1920 all three
+products hang their sheet on the identical box (100/18/18/18 on the ink floor) and all
+three resolve to the same optical centre to the pixel — Notes' 1120 stack, its 1060
+paper, Timeline's 1722 stage, and the dock in both products all land on 1001. The rail
+capsule repeats the discipline in miniature. And it survives driving: narrowing one live
+page 1440→390 and back restores every measured box exactly, in all three products, zero
+errors. Tasks holds a single left edge at 128 from 1280 to 2048 and a single right edge
+(head actions / Show / last card) at every width up to 1810. The dense board with 32
+tasks composes five equal lanes filling the sheet with a fold rule and a count per lane.
+That is award-studio work.
+
+## What stands between it and 9.5
+Five things, all finish, none structural, all with a fix I wrote and verified by
+injection. In founder terms: **this is polish, roughly a day, not a build and not a
+different decision.**
+
+1. **The hero frame has a hole in it.** At 1920 — the width every shot in this lab is
+   taken at — the board stops 110px short of its own sheet because the four content lanes
+   hit a 372px ceiling and the collapsed WAITING lane's 200px is never redistributed. The
+   right-hand edge the surface keeps to the pixel at 1280, 1440, 1600, 1750 and 1810
+   breaks there and stays broken to 200px above 2048. One declaration. **0.3**
+2. **The dock eats the last row of the list**, at every width from 768 to 1199 — the whole
+   band where the list is the default view. The card board reserves 84px for the dock's
+   band and says why in its own comment; the list reserves 28. One line plus a phone
+   exception. **0.3**
+3. **The tick never paints done in the list.** The most-pressed control in the product has
+   no visible completed state in the view that is the default below 1200 and the only view
+   on a phone. `aria-checked` flips; nothing on screen does. Two selectors. **0.3**
+4. **Two indigo hairlines on the Timeline, one of which is not a measure.** One token. **0.1**
+5. **The phone's list sits 15px inside the head it hangs under**, on both edges, at every
+   phone width — a contract the desk keeps to a pixel. One media-query block. **0.1**
+
+Close those five and, from this seat, the composition is at 9.5. What would still be left
+after them is argument rather than defect: the desk's right column holds 530px for 240px
+of metadata at every desk width, and the review card's measure differs from the index it
+sits above. Both are defensible; neither is a finding.
+
+## Not findings (checked, refuted myself)
+- Timeline's moment labels are NOT mis-mirrored: the copy block keeps reading order on
+  both sides of the line while the graduation stays nearest it, which is the correct
+  mirror of the block.
+- The WAITING lane collapsing to a rail is deliberate and documented; the defect is only
+  that nothing takes the room it gives back.
+- No dock/content collision anywhere in Notes, on the phone, or on the card board.
