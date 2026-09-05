@@ -14,7 +14,10 @@ function dateLabel(value: string): string {
 export function WeddingDateForm({ initial, previousTarget }: { initial: SponsoredWeddingDate; previousTarget: string | null }) {
   const inputId = useId();
   const router = useRouter();
-  const [saved, setSaved] = useState(initial);
+  const [saveReadback, setSaveReadback] = useState<{ from: SponsoredWeddingDate; data: SponsoredWeddingDate } | null>(null);
+  // A save reply is current until fresh server props arrive. Keep that readback
+  // separate from the unsaved draft so grant-only refreshes do not erase edits.
+  const saved = saveReadback?.from === initial ? saveReadback.data : initial;
   const [draft, setDraft] = useState(initial.weddingDate ?? "");
   const [message, setMessage] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
@@ -31,7 +34,7 @@ export function WeddingDateForm({ initial, previousTarget }: { initial: Sponsore
           setMessage(WEDDING_DATE_ERRORS[result.reason]);
           return;
         }
-        setSaved(result.data);
+        setSaveReadback({ from: initial, data: result.data });
         setDraft(result.data.weddingDate ?? "");
         setFailed(false);
         setMessage(result.data.weddingDate ? "Wedding date saved." : "Wedding date cleared. Access already granted is unchanged.");
