@@ -1,5 +1,29 @@
 # January recipient checkpoints
 
+## Linux acceptance of candidate 07d25138
+
+All three candidate workflows pass: [CI33951498708](https://github.com/ethanmcn2013-droid/app/actions/runs/33951498708),
+[Verify33951498771](https://github.com/ethanmcn2013-droid/app/actions/runs/33951498771)
+and [Design33951498698](https://github.com/ethanmcn2013-droid/app/actions/runs/33951498698).
+GitHub tested merge `0d66bfb2523a1c60a91bce937f486f310b84fb96`; its parents
+are receiving77d and candidate07d, and its tree is identical to07d. All33 Floor
+and286 route source inputs independently match the candidate's Git objects.
+
+Linux Node22.23.2 / Chromium149.0.7827.55 passes132 built browser cases with no
+skips/flakes/unexpected cases,68 recipient route states,3 React context cases,
+Notes recovery, locale hydration, Timeline switching and the80-check Floor
+comparison. Original/current CSS geometry is strictly equal in that browser.
+The original-CSS contrast result remains failed and unaccepted.
+
+`linux-07d25138.json` indexes419 preserved files, including the complete uploaded
+artifact and workflow log/metadata. LFS archive `linux-07d25138.zip` SHA-256:
+`9f0a70e2749f69f2242b741a7c5d4caa22c2fdaffc46eb44e13b9379863fd5f8`.
+This closes the specific cross-platform verification failure. The quality-council
+step explicitly reports **NOT CERTIFIED**: its instrument is healthy, but product
+and journey approvals are missing. Independent RC-3, full provider/human proof
+and receiving integration remain open. The subsequent calendar correctness
+investigation is separate product work and requires fresh acceptance after repair.
+
 ## Current Floor verification: paired CSS rendering
 
 Candidate `0b9d132ac5b5f47579c8630becb94063b1db947d` integrates the
