@@ -109,8 +109,9 @@ export async function listPlanningCatalogForUser(
           SELECT 1 FROM workspace_members wm
           WHERE wm.workspace_id = w.id AND wm.user_id = cu.id
         )
-      INNER JOIN planning_periods p ON p.id = w.planning_period_id
+      LEFT JOIN planning_periods p ON p.id = w.planning_period_id
       WHERE w.archived_at IS NULL AND p.archived_at IS NULL
+        AND (w.planning_period_id IS NULL OR p.id IS NOT NULL)
       ORDER BY p.position ASC, w.position ASC, w.name ASC
       LIMIT 200
     `);
@@ -123,18 +124,21 @@ export async function listPlanningCatalogForUser(
       const workspaceName = text(row.workspace_name);
       const contextType = text(row.period_context_type);
       const timezone = text(row.timezone);
-      if (!periodId || !periodName || !workspaceId || !workspaceName || !contextType || !timezone) {
-        continue;
-      }
-      if (!periods.has(periodId)) {
-        periods.set(periodId, {
-          id: periodId,
-          name: periodName,
-          contextType,
-          startDate: text(row.start_date),
-          endDate: text(row.end_date),
-          timezone,
-        });
+      if (!workspaceId || !workspaceName) continue;
+      // SQL admits only genuinely loose projects or a present, active period.
+      // Invalid non-null period metadata must not become a loose project.
+      if (row.period_id !== null) {
+        if (!periodId || !periodName || !contextType || !timezone) continue;
+        if (!periods.has(periodId)) {
+          periods.set(periodId, {
+            id: periodId,
+            name: periodName,
+            contextType,
+            startDate: text(row.start_date),
+            endDate: text(row.end_date),
+            timezone,
+          });
+        }
       }
       workspaces.push({
         id: workspaceId,
