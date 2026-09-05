@@ -394,7 +394,7 @@ export function useNotebook(options: NotebookOptions) {
     async (capture: PendingCapture, recoveryReady = true): Promise<boolean> => {
       if (!mounted.current || capture.workspaceId !== options.initialWorkspaceId) return false;
       const persistenceReady =
-        recoveryReady || writeSession(recoveryKeys.captures, pendingRef.current);
+        recoveryReady || setPending(pendingRef.current);
       setRecoveryAvailable(persistenceReady);
       setMutationStates((current) => ({
         ...current,
@@ -463,7 +463,7 @@ export function useNotebook(options: NotebookOptions) {
         return false;
       }
     },
-    [announce, demoMode, online, persistDraft, recoveryKeys.captures, reviewMode, setPending, options.initialWorkspaceId, options.captureAllowed, options.recoveryScope],
+    [announce, demoMode, online, persistDraft, reviewMode, setPending, options.initialWorkspaceId, options.captureAllowed, options.recoveryScope],
   );
 
   /**

@@ -1,0 +1,232 @@
+{
+  "revision": "8963e9197df1d3511758101b7f4f9e85ee43452a",
+  "sourceRoot": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-notes-recovery-context",
+  "dirty": "?? experience/notes-recovery-context/followup-browser.mjs\n?? work/\n",
+  "runtime": {
+    "node": "v24.19.0",
+    "chromium": "149.0.7827.55"
+  },
+  "checkedAt": "2026-09-05T00:07:54.938Z",
+  "cases": [
+    {
+      "name": "retry-preserves-other-project-queue",
+      "width": 1440,
+      "passed": false,
+      "error": "AssertionError [ERR_ASSERTION]: retry A must retain the exact B ID and words\n+ actual - expected\n\n  [\n    {\n-     body: 'B unique pending words',\n-     createdAt: 1788566875597,\n-     id: 'n_0e4cadba528842a29f36c5075c5cc883',\n-     source: null,\n-     workspaceId: 'project-b'\n-   },\n-   {\n      body: 'A pending words',\n      createdAt: 1788566875960,\n      id: 'n_bee8e979043a44dbbfbaee14e875aa12',\n      source: null,\n      workspaceId: 'project-a'\n",
+      "errors": []
+    },
+    {
+      "name": "retry-preserves-other-project-queue",
+      "width": 390,
+      "passed": false,
+      "error": "AssertionError [ERR_ASSERTION]: retry A must retain the exact B ID and words\n+ actual - expected\n\n  [\n    {\n-     body: 'B unique pending words',\n-     createdAt: 1788566876786,\n-     id: 'n_52a807185b6c422ca825e628f96f4092',\n-     source: null,\n-     workspaceId: 'project-b'\n-   },\n-   {\n      body: 'A pending words',\n      createdAt: 1788566877131,\n      id: 'n_b3c5c54224624a8abbf8d7ec27753de2',\n      source: null,\n      workspaceId: 'project-a'\n",
+      "errors": []
+    },
+    {
+      "name": "actual-rail-true",
+      "width": 1440,
+      "passed": true,
+      "evidence": {
+        "links": [
+          "/app/notes?workspaceId=project-b",
+          "/app/tasks?workspaceId=project-b",
+          "/app/timeline?workspaceId=project-b"
+        ],
+        "refused": [
+          "/app/notes",
+          "/app/tasks",
+          "/app/timeline"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "name": "actual-rail-true",
+      "width": 390,
+      "passed": true,
+      "evidence": {
+        "links": [
+          "/app/notes?workspaceId=project-b",
+          "/app/tasks?workspaceId=project-b",
+          "/app/timeline?workspaceId=project-b"
+        ],
+        "refused": [
+          "/app/notes",
+          "/app/tasks",
+          "/app/timeline"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "name": "actual-rail-false",
+      "width": 1440,
+      "passed": true,
+      "evidence": {
+        "links": [
+          "/app/notes?sourceProduct=tasks&contextVersion=2&workspaceId=project-b",
+          "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=project-b",
+          "/app/timeline?sourceProduct=tasks&contextVersion=2&workspaceId=project-b"
+        ],
+        "refused": [
+          "/app/notes",
+          "/app/tasks",
+          "/app/timeline"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "name": "actual-rail-false",
+      "width": 390,
+      "passed": true,
+      "evidence": {
+        "links": [
+          "/app/notes?sourceProduct=tasks&contextVersion=2&workspaceId=project-b",
+          "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=project-b",
+          "/app/timeline?sourceProduct=tasks&contextVersion=2&workspaceId=project-b"
+        ],
+        "refused": [
+          "/app/notes",
+          "/app/tasks",
+          "/app/timeline"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "name": "storage-quota-cold-consumers-false",
+      "width": 1440,
+      "passed": false,
+      "error": "AssertionError [ERR_ASSERTION]: every early and late consumer must use B",
+      "errors": []
+    },
+    {
+      "name": "storage-quota-cold-consumers-false",
+      "width": 390,
+      "passed": false,
+      "error": "AssertionError [ERR_ASSERTION]: every early and late consumer must use B",
+      "errors": []
+    },
+    {
+      "name": "storage-quota-cold-consumers-true",
+      "width": 1440,
+      "passed": true,
+      "evidence": {
+        "links": [
+          "/app/notes?workspaceId=project-b",
+          "/app/tasks?workspaceId=project-b",
+          "/app/timeline?workspaceId=project-b",
+          "/app/home?workspaceId=project-b",
+          "/app/notes?workspaceId=project-b",
+          "/app/tasks?workspaceId=project-b",
+          "/app/timeline?workspaceId=project-b"
+        ],
+        "refused": [
+          "/app/notes",
+          "/app/tasks",
+          "/app/timeline",
+          "/app/home",
+          "/app/notes",
+          "/app/tasks",
+          "/app/timeline"
+        ],
+        "readableCache": "project-a",
+        "storageWrites": "throw",
+        "coldAndLaterSubscribers": true
+      },
+      "errors": []
+    },
+    {
+      "name": "storage-quota-cold-consumers-true",
+      "width": 390,
+      "passed": true,
+      "evidence": {
+        "links": [
+          "/app/notes?workspaceId=project-b",
+          "/app/tasks?workspaceId=project-b",
+          "/app/timeline?workspaceId=project-b",
+          "/app/home?workspaceId=project-b",
+          "/app/notes?workspaceId=project-b",
+          "/app/tasks?workspaceId=project-b",
+          "/app/timeline?workspaceId=project-b"
+        ],
+        "refused": [
+          "/app/notes",
+          "/app/tasks",
+          "/app/timeline",
+          "/app/home",
+          "/app/notes",
+          "/app/tasks",
+          "/app/timeline"
+        ],
+        "readableCache": "project-a",
+        "storageWrites": "throw",
+        "coldAndLaterSubscribers": true
+      },
+      "errors": []
+    },
+    {
+      "name": "publisher-unmount-clears-live-context",
+      "width": 390,
+      "passed": false,
+      "error": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok(links.every(h=>!h.includes('project-a')&&!h.includes('project-b')))\n",
+      "errors": []
+    },
+    {
+      "name": "closed-note-late-save-keeps-other-editor",
+      "width": 1440,
+      "passed": true,
+      "evidence": {
+        "otherEditorPreserved": true,
+        "calls": []
+      },
+      "errors": []
+    },
+    {
+      "name": "unmounted-project-frame-cannot-clear-new-recovery",
+      "width": 1440,
+      "passed": true,
+      "evidence": {
+        "originalBoundEditRetained": true
+      },
+      "errors": []
+    }
+  ],
+  "sourceInputs": {
+    "src/modules/notes/app/CaptureEmailRow.module.css": "31a035d52430c38cd4b5fd47a2e5e381c705a43542f265220e549b26ec9f1d76",
+    "src/modules/notes/app/CaptureEmailRow.tsx": "e15dbd7b845857c8a8c1e5afab40fa06541fdf1aba400aa20b995040eb5d7bd4",
+    "src/modules/notes/lib/notes-copy.ts": "5e2f1cc4d94fcde391122d36d5f04170f823f6e03eb20a196c6fc01ee771a922",
+    "src/modules/notes/lib/notes-hybrid.ts": "22fcb62876768dfae80f66f38d6d36df2a48040f6cc98d1aef6eb37b8ffa3fe3",
+    "src/lib/suite-contracts.v1.json": "7bd4beddcadd03ae8bc7f0292f27958d975829d7cf9b0b7d3191b38fece15702",
+    "src/lib/product-urls.ts": "59f30b5e6a9a4974eaccd323ecaee8853d641f8845684a325f1d8f1bbd8138f6",
+    "src/lib/projects/project-ref.ts": "33f0ed7ee3f979a75a61f3273e1f5b2bad3b36ea422a23eea08d1daaac62bd6b",
+    "src/lib/projects/project-url.ts": "34fc6f6932464565512704127969b5824dac5c204762b43f3e7d09c24339f485",
+    "src/modules/notes/lib/notes-view-model.ts": "747ac747d77ca79a541f21e336b6429271263159aa011b23d373af211d9fd0ba",
+    "src/components/app/unsaved-work-context.tsx": "3c94b18fcba26572eb0f261610d52575956b880f318ba54bb5b54abb9cafce82",
+    "src/modules/notes/lib/notes-recovery.ts": "2e36f414a5a3466201db9f73dbaf3fd078f8d0045e56eacd9d723fea0544325a",
+    "src/lib/planning/context.ts": "9343127fc1143f9598eb2e194906e71cdce27140b5f6d580b4d1fcf2540f483e",
+    "src/modules/notes/app/workspace/use-speech-capture.ts": "72ef0a18da85aa706758a1454f17d808dd16552116e8fad5464993b898ba9584",
+    "src/modules/notes/app/workspace/icons.tsx": "e902d99c0eba307914364a9a577c90eb5c52c613e5d1e0a61b4b77fa5cb5d1e3",
+    "src/modules/notes/app/workspace/notes-workspace.module.css": "eaa67559767cdf73a673635ebc4006f8fb77110da8882751e04840e7060322f3",
+    "src/modules/notes/app/workspace/Composer.tsx": "e710c9f01097f4da77c107f2e2cb811fbf589e578986639d4cdb53a4ccf92474",
+    "src/modules/notes/app/workspace/use-notebook.ts": "0b9b3b7c32cda7a66651219237ff7ba66504d307c9e21886acca168e7815da4d",
+    "src/modules/notes/app/workspace/use-note-motion.ts": "5b53ac76133559b3d3056b810a254487fc08f38823323a168ce7541e102a7921",
+    "src/modules/notes/app/workspace/NotesWorkspace.tsx": "7a016f7920f4a2f997a5c1e5516c40e1a6beee1b507e4933234fca83427db380",
+    "src/lib/projects/route-snapshot.ts": "24c49b196fcd33527099ae46e92ae6aac57719cf2d8e6e450ebfff6f58ef9d76",
+    "src/lib/projects/unsaved-work.ts": "691b4c96072b9edecdd9fd7f634936cdfab949eeb03ef1fa71f5e6d1a1627a7c",
+    "src/components/app/active-project-provider.tsx": "c6e7497d72cc63060618b5b1cbdfdcf54dd92187603b73466f84fd336d9f11af",
+    "src/lib/suite-context.ts": "ff9291d508202b3c6235244fd919d8f4c5eb2a65a0982ee8f676589efef6cfe9",
+    "src/components/app/suite-context-publisher.tsx": "264a404d61fb1400e61bbb4a6e98ac97b4066344b20ac7d67619cc09fbc834a4",
+    "src/components/app/use-suite-context.ts": "858f23568679e94bc00650f7190134a0da60001dd73108c5b0aa3d981f183be2",
+    "src/components/studio-bar/rail-icons.tsx": "fd704bcfc7fdfb78545c56ddb070a22be451b416a9faabf104855a62349466ae",
+    "src/components/studio-bar/signal-shell.module.css": "6fb8fda225d592f03e330a2e0ef45635209ec98e6872fa6becb493162f28dfb3",
+    "src/components/studio-bar/studio-rail.tsx": "445a58f12c654202dedcb4ef241af64b90791afbf0a857e87967ff52628baf8f",
+    "src/components/app/mobile-suite-nav.tsx": "b7f011aee7c0b40b4becee0e78797c8b8a646c60c172bbe1e78049a95c0ee246",
+    "src/components/app/suite-switcher-pills.tsx": "85ed02d33d68e3126e07c07fcd3243f7e8baf2e6f2a28f3b2e4b561593b51ea9",
+    "src/components/app/active-project-route-sync.tsx": "d8a7750f68bdc70283aff3e42cc194e71115db8f8dfa802c603dc76244238b9e",
+    "src/app/globals.css": "7f8b99b2c6f13df8f1472d0c3c5a5bb262376a47f300d233300a441232cea514",
+    "src/ds/theme-overrides.css": "c831bb6c4749fda4d01d3c8899ef986cd7710e29e63a3b25aad7a3bb6135a2b2"
+  },
+  "tokensSha256": "521889b7eead042e17d76d53b67efd59ac51e039fd312a3d40b4027e973d58a1"
+}

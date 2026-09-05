@@ -5,6 +5,7 @@ import { useActiveProject } from "@/components/app/active-project-provider";
 import {
   SUITE_CONTEXT_EVENT,
   SUITE_CONTEXT_STORAGE_KEY,
+  readPublishedSuiteContext,
 } from "@/components/app/suite-context-publisher";
 import {
   isSuiteContextId,
@@ -43,6 +44,11 @@ export function useSuiteContext(): SuiteNavigationContext | null {
 
   useEffect(() => {
     const readStored = () => {
+      const published = readPublishedSuiteContext();
+      if (published !== undefined) {
+        setSuiteContext(validatedSuiteContext(published));
+        return;
+      }
       try {
         setSuiteContext(
           validatedSuiteContext(
@@ -64,9 +70,9 @@ export function useSuiteContext(): SuiteNavigationContext | null {
     };
 
     // Subscribe before reading. If the Tasks publisher writes between these
-    // two operations, the event is observed; if it wrote earlier, storage is
-    // already authoritative. Reading first left a narrow first-load gap where
-    // one responsive nav instance could miss both and emit a bare product URL.
+    // two operations, the event is observed; if it wrote earlier, its live
+    // publication is still available even when storage writes failed. A late
+    // responsive nav must not revive a cached project or erase a refusal.
     window.addEventListener(SUITE_CONTEXT_EVENT, onContext);
     readStored();
     return () => window.removeEventListener(SUITE_CONTEXT_EVENT, onContext);

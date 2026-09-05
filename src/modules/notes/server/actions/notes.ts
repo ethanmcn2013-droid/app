@@ -1353,9 +1353,16 @@ export async function createNoteIdempotent(
   // collision and never discloses row contents.
   const existing = await readOwnedNote(userId, id);
   if (!existing) throw new Error("Capture id is already in use");
-  // The server may deliberately have fallen back to Unfiled on the first
-  // attempt. Exact body + exact stable identity is therefore sufficient to
-  // reconcile a lost response even if Tasks membership recovered meanwhile.
+  // Another request can insert after the initial read. Actor-bound recovery
+  // must reconcile the same destination here as in the early replay branch.
+  if (
+    input.expectedActorScope !== undefined &&
+    (existing.body !== body || existing.workspaceId !== requestedWorkspaceId)
+  ) {
+    throw new Error("This capture has a different saved version. Reopen Notes to review it.");
+  }
+  // Legacy callers may have fallen back to Unfiled on the first attempt.
+  // Their exact body + stable identity still reconciles that older behavior.
   if (existing.body !== body) {
     throw new Error("Capture id already belongs to different note content");
   }
