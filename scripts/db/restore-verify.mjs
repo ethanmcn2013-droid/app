@@ -177,7 +177,7 @@ export function compare(manifest, measured) {
  */
 export async function compareDdl(client, manifest) {
   const result = await client.execute(
-    "SELECT type, name FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%'",
+    "SELECT type, name FROM sqlite_schema WHERE name NOT GLOB 'sqlite_*'",
   );
   const present = new Set(result.rows.map((row) => `${row.type}:${row.name}`));
   const missing = [];
