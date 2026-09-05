@@ -233,7 +233,12 @@ export async function TasksRuntimeShell({
           workspaceId={workspaceId}
           workspaceSlug={workspaceSlug}
         >
-          <TasksProvider initialTasks={tasks}>
+          <TasksProvider
+            key={JSON.stringify([currentUser, workspaceId])}
+            actorId={currentUser}
+            projectId={workspaceId}
+            initialTasks={tasks}
+          >
             <RoomBriefProvider value={roomBrief}>
               <ToastRoot>
                 <SuiteContextPublisher
