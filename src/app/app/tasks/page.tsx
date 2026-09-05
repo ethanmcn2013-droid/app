@@ -62,7 +62,7 @@ export default async function TasksPage({
       <div className="flex h-full min-h-0 flex-col">
         {weddingDate ? <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-2 border-b border-line-soft bg-bg-elevated px-4 py-2 text-[13px] text-ink-soft">
           <span>Wedding date{weddingDate.weddingDate ? "" : " not set yet"}</span>
-          <Link href={withActiveProject(`${PROJECT_APP_PATH}#wedding-date`, arrival.project.workspaceId)} className="inline-flex min-h-11 items-center font-medium text-brand underline underline-offset-4">
+          <Link href={withActiveProject(`${PROJECT_APP_PATH}#wedding-date`, arrival.project.workspaceId)} className="inline-flex min-h-[44px] items-center font-medium text-brand underline underline-offset-4">
             {weddingDate.canManage ? (weddingDate.weddingDate ? "View or update wedding date" : "Add your wedding date") : "View wedding date"}
           </Link>
         </div> : null}

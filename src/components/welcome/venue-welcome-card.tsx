@@ -76,7 +76,7 @@ export function VenueWelcomeCard({ sponsorName, sponsorSlug, projectId, canManag
             {canManageWeddingDate ? "Add your wedding date when you know it." : "Someone who can manage this project can add the wedding date."}{" "}
             When no date is known, sponsored access starts with at least 548 days from redemption.
           </p>
-          <Link href={withActiveProject(`${PROJECT_APP_PATH}#wedding-date`, projectId)} className="mt-2 inline-flex min-h-11 items-center text-[13px] font-medium text-brand underline underline-offset-4">
+          <Link href={withActiveProject(`${PROJECT_APP_PATH}#wedding-date`, projectId)} className="mt-2 inline-flex min-h-[44px] items-center text-[13px] font-medium text-brand underline underline-offset-4">
             {canManageWeddingDate ? "Add or update your wedding date" : "View wedding date"}
           </Link>
         </div>

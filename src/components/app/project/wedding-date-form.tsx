@@ -59,9 +59,9 @@ export function WeddingDateForm({ initial, previousTarget }: { initial: Sponsore
         <form onSubmit={submit} className="mt-4">
           <label htmlFor={inputId} className="block text-[12px] font-medium text-ink">Your wedding date</label>
           <div className="mt-2 flex flex-wrap items-end gap-3">
-            <input id={inputId} type="date" value={draft} onChange={event => setDraft(event.target.value)} disabled={pending} aria-describedby={`${inputId}-help ${inputId}-unknown`} className="min-h-11 min-w-0 rounded-lg border border-line-soft bg-bg px-3 text-[14px] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand" />
-            <button type="submit" disabled={pending} className="min-h-11 rounded-lg bg-brand px-4 text-[13px] font-medium text-white disabled:opacity-60">{pending ? "Saving…" : "Save wedding date"}</button>
-            {draft ? <button type="button" disabled={pending} onClick={() => setDraft("")} className="min-h-11 text-[13px] text-ink-soft underline underline-offset-2">Clear date</button> : null}
+            <input id={inputId} type="date" value={draft} onChange={event => setDraft(event.target.value)} disabled={pending} aria-describedby={`${inputId}-help ${inputId}-unknown`} className="min-h-[44px] min-w-0 rounded-lg border border-line-soft bg-bg px-3 text-[14px] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand" />
+            <button type="submit" disabled={pending} className="min-h-[44px] rounded-lg bg-brand px-4 text-[13px] font-medium text-white disabled:opacity-60">{pending ? "Saving…" : "Save wedding date"}</button>
+            {draft ? <button type="button" disabled={pending} onClick={() => setDraft("")} className="min-h-[44px] text-[13px] text-ink-soft underline underline-offset-2">Clear date</button> : null}
           </div>
           <p id={`${inputId}-unknown`} className="mt-2 max-w-[65ch] text-[12px] leading-relaxed text-ink-quiet">Not set yet? Leave the date blank. Sponsored access starts with at least 548 days from redemption when no wedding date is known. You can add it here later.</p>
         </form>
