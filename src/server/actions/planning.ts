@@ -1,7 +1,6 @@
 "use server";
 
 import { createHash, randomUUID } from "node:crypto";
-import * as Sentry from "@sentry/nextjs";
 import {
   and,
   asc,
@@ -61,7 +60,6 @@ import {
 import { assertIanaTimeZone } from "@/lib/planning/dates";
 import { trackPlanningEvent } from "@/server/planning/analytics-server";
 import { detectVenueWelcomeForLegacyPlanning } from "@/server/db/venue-welcome";
-import { extendCoupleAccessForWeddingDate } from "@/server/db/couple-access-term";
 import { requirePlanningFeature } from "@/server/planning/flags";
 import { isDemoMode } from "@/lib/access-mode";
 
@@ -284,34 +282,6 @@ export async function deleteProjectAction(
   return { ok: true };
 }
 
-/**
- * R-015 · D-022 point 3. The wedding date is captured here, on the workspace,
- * and the sponsored couple's access term is derived from it. Writing the date
- * without recomputing the term is what left the ratified rule unimplemented on
- * the path that actually runs.
- *
- * The recompute can only move the term LATER (see
- * `extendCoupleAccessForWeddingDate`). A failure is reported and swallowed
- * rather than thrown: the couple keeps the 548-day floor they already had, and
- * failing their onboarding to fix an extension would be the worse trade.
- */
-async function applyWeddingDateToCoupleAccess(
-  actorUserId: string,
-  weddingDate: string | null | undefined,
-): Promise<void> {
-  if (!weddingDate) return;
-  try {
-    await extendCoupleAccessForWeddingDate(db, {
-      userId: actorUserId,
-      weddingDate,
-    });
-  } catch (err) {
-    Sentry.captureException(err, {
-      tags: { action: "extend-couple-access-for-wedding-date" },
-    });
-  }
-}
-
 export type BulkWorkspaceInput = {
   planningPeriodId: string;
   names: string | string[];
@@ -375,9 +345,6 @@ export async function bulkCreateWorkspacesAction(
     }),
   );
   if (created[0]) await selectWorkspaceCookie(created[0].id);
-  if (period.contextType === "wedding_season") {
-    await applyWeddingDateToCoupleAccess(actorUserId, primaryDate);
-  }
   revalidatePlanningSurfaces();
   await trackPlanningEvent(actorUserId, "workspace_bulk_created", {
     planning_period_context: period.contextType,
@@ -897,9 +864,6 @@ export async function completeContextualOnboardingAction(
     return workspaceRows;
   });
   if (created[0]) await selectWorkspaceCookie(created[0].id);
-  if (period.contextType === "wedding_season") {
-    await applyWeddingDateToCoupleAccess(actorUserId, primaryDate);
-  }
   revalidatePlanningSurfaces();
   await trackPlanningEvent(actorUserId, "contextual_onboarding_completed", {
     planning_period_context: period.contextType,
