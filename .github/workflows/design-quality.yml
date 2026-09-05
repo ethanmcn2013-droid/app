@@ -25,6 +25,7 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "scripts/experience/**"
+      - "scripts/design/extract-floor-css*"
       - ".github/workflows/design-quality.yml"
       - ".github/pull_request_template.md"
   push:
@@ -47,6 +48,7 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "scripts/experience/**"
+      - "scripts/design/extract-floor-css*"
       - ".github/workflows/design-quality.yml"
       - ".github/pull_request_template.md"
 
@@ -60,8 +62,8 @@ concurrency:
 jobs:
   registry-and-drift:
     runs-on: ubuntu-latest
-    # The additional actual-route matrix covers 68 states plus three React
-    # lifecycle checks after the existing built-browser matrix. Keep every gate.
+    # The added fixtures cover 68 route states, three React lifecycle checks
+    # and scoped Floor/project-label contrast after the built-browser matrix.
     timeout-minutes: 20
     steps:
       # Full history, because this job is the only one that runs the council,
@@ -114,7 +116,7 @@ jobs:
       # The preceding build supplies the local Geist assets required by this
       # fixture. Its explicit framework/identity adapters remain documented;
       # these results do not establish real Clerk or production continuity.
-      - name: Verify recipient routes and React context replacement
+      - name: Verify recipient routes, React context and theme contrast
         run: pnpm test:recipient-context:browser
 
       - name: Verify settings hydration across locales
@@ -150,5 +152,6 @@ jobs:
             experience/output/notes-recovery
             experience/output/recipient-project-work/routes
             experience/output/recipient-project-work/realtime-react
+            experience/output/recipient-project-work/floor-theme
           if-no-files-found: ignore
           retention-days: 14
