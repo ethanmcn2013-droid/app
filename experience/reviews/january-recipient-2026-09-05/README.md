@@ -33,9 +33,12 @@ template's date; the exact capture timestamp is in the September attestation.
 No required-state coverage or design score was promoted.
 
 Direct built-demo inspection confirms completion/reopen, the owning task dialog
-and focus return at desktop. The archive names remaining demo clock, account
-settings shell and retired public-URL copy observations for the next coherence
-slice. These are not a final S4 closure. RC-3 independent review, actual
+and focus return at desktop. The archive records demo clock and account settings
+shell observations for the next coherence investigation. Its public-host finding
+was incorrect: the URL contract explicitly reserves that host for published
+artifacts. [The dated correction](checkpoint-50918cdc-corrections.md) preserves
+the original record and explains the owning sources. This is not a final S4
+closure. RC-3 independent review, actual
 Clerk/Google/Stripe behavior, human/council acceptance and receiving integration
 remain open. No production state or outbound communication changed.
 
