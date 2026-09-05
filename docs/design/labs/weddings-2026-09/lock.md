@@ -62,3 +62,17 @@ first measured findings, not exceptions to the ramp.
 
 The master honours the toolchain contract, both gates go green before any
 panel, both artifacts go live empty, then the loop.
+
+## The room, confirmed
+
+**Founder, 2026-09-05, after the console went live:** the configuration to
+carry through every round is the preset as locked —
+
+    preset         A · Floor
+    rows           Comfortable
+    figures        Hero
+    moments        On
+
+— and the loop runs until every seat is at 9.5 or six rounds are complete,
+front end only. The console's three decisions stay live for review; the
+master's default is this one.
