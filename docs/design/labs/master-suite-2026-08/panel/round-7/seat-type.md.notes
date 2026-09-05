@@ -63,3 +63,37 @@ the suite's declared one is +0.04em (notes `--tr-key`, timeline `--track-data`).
 Meanwhile `.trayCount` (tasks.css:149) is a mono figure at +0.1em with
 `margin-right:-0.1em` to kill the trailing space — so the two mono figures in
 the same header band sit 0.112em apart in fit.
+
+### 5. HEADLINE — one role, five settings: the uppercase micro-label (CONFIRMED)
+Swept every uppercase string in all 10 states at 1440. One typographic role —
+the small-caps eyebrow that names a region — is set FIVE ways in one app:
+
+  notes     Geist SANS  11px  600  +0.075em   FILING UNDER · OTHER WAYS IN ·
+                                              YOUR NOTES · STILL TO DECIDE ·
+                                              HOW IT ARRIVED · TURN THIS INTO…
+  notes     Geist SANS  12px  600  +0.075em   LISTENING
+  tasks     Geist Mono  11px  400  +0.10em    TO DO · IN PROGRESS · REVIEW ·
+                                              WAITING · DONE · VENUE · BAR
+  timeline  Geist Mono  11px  400  +0.16em    DAYS AWAY · BEHIND YOU · ACROSS ·
+                                              TODAY IS 16 JULY · ONE OF THREE
+  timeline  Geist Mono  12px  400  +0.20em    MARA & FINN
+
+Two families, two weights, four tracks. Notes is the outlier that costs most:
+it is the only product whose eyebrow is SANS, and the only one at 600 — so in
+Notes weight does NOT separate a label from a title (both 600) while in Tasks
+and Timeline it does (400 vs 600). The same role therefore carries different
+information in different rooms of one application, and the rail does not move
+between them, so the label is one of the few things that visibly re-skins when
+a person crosses the spine.
+
+This is not the ratified-tracking exclusion. Three ratified TRACKING curves do
+not license two FAMILIES and two WEIGHTS for one role.
+
+Tested the unification (Geist Mono / 400 / +0.16em applied to every uppercase
+micro-label) at 390/768/1280/1440/1920 on notebook, board, dense, review,
+voice: 0 labels wrapped to a new line, 0 clipped, 0 new sideways scroll; the
+largest single growth is 24.4px on "STILL TO DECIDE", which sits alone on a
+rule with room. Safe.
+Precedent for the fix already exists in this build: round 6 hoisted the keycap
+to ONE declaration in shell.css (11px mono, +0.04em) and left the products only
+their ink. The eyebrow is the same move, one object later.
