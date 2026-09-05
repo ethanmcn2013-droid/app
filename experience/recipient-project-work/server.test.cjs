@@ -5,6 +5,42 @@ const { createRequire } = require('node:module'), path = require('node:path');
 const dep = createRequire(path.join(__dirname, '../../package.json'));
 const { renderToStaticMarkup } = dep('react-dom/server');
 
+test('actual task-focus page learns stored project before the mapped Task; Notes/Home links cannot become false not-found', async () => {
+  const f = await recipientFixture();
+  try {
+    await f.client.execute("INSERT INTO tasks(id,workspace_id,title,lane,priority) VALUES ('from-notes','project-b','Persisted linked work','todo','p2')");
+    const queries = f.load('src/server/db/queries'), detailReads = [];
+    f.overrides.set('src/server/db/queries', { ...queries, getTaskDetail: async (...args) => {
+      detailReads.push(args);return queries.getTaskDetail(...args);
+    } });
+    const page = f.load('src/app/app/task/[id]/page').default;
+    const read = () => page({ params: Promise.resolve({ id: 'from-notes' }) });
+    const renderPage = element => renderToStaticMarkup(element.props.children);
+    await assert.rejects(read(), error => {
+      const url = new URL(error.href, 'https://fixture.invalid');
+      assert.equal(url.pathname, '/app/tasks');
+      assert.equal(url.searchParams.get('workspaceId'), 'project-b');
+      assert.equal(url.searchParams.get('task'), 'from-notes');
+      return true;
+    });
+    assert.deepEqual(detailReads, [['from-notes', 'project-b']]);
+    assert.equal(f.state.cookieWrites.length, 0);
+    f.state.actor = 'outsider';
+    const forbidden = renderPage(await read());
+    const missing = renderPage(await page({ params: Promise.resolve({ id: 'absent' }) }));
+    assert.equal(forbidden, missing);assert.doesNotMatch(forbidden, /Persisted linked work/);
+    assert.equal(detailReads.length, 1, 'no content query before exact-project authorization');
+    f.state.actor = 'recipient';
+    await f.client.execute("UPDATE tasks SET archived_at=1 WHERE id='from-notes'");
+    assert.match(renderPage(await read()), /This task is archived/);
+    assert.equal(detailReads.length, 2);
+    await f.client.execute("DELETE FROM workspace_members WHERE workspace_id='project-b' AND user_id='recipient'");
+    assert.equal(renderPage(await read()), missing);
+    assert.equal(detailReads.length, 2, 'removal denies the next content query');
+    assert.equal(f.state.cookieWrites.length, 0);
+  } finally { f.close(); }
+});
+
 test('actual Tasks and My work routes consume authorized B, reject foreign/removed/malformed targets, and never write on GET', async () => {
   const f = await recipientFixture();
   try {
