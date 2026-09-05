@@ -119,6 +119,11 @@ jobs:
       - name: Verify recipient routes, React context and theme contrast
         run: pnpm test:recipient-context:browser
 
+      # Actual component and HTTP handler, with explicit fixture identity/module
+      # ports. Includes unsuccessful download and same-page recovery controls.
+      - name: Verify independent profile account export and retry
+        run: pnpm test:event-export:browser
+
       - name: Verify settings hydration across locales
         run: pnpm test:settings-hydration
 
@@ -155,5 +160,6 @@ jobs:
             experience/output/recipient-project-work/floor-theme
             experience/output/recipient-project-work/floor-calendar
             experience/output/recipient-project-work/wedding-date-readback
+            experience/output/event-account-export
           if-no-files-found: ignore
           retention-days: 14

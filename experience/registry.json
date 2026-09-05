@@ -1173,8 +1173,8 @@
       "source": "tasks/src/app/settings/profile/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "settings-and-administration",
-      "primaryJob": "Understand and use settings Ã‚Â· profile.",
-      "primaryAction": "Complete the primary action on settings Ã‚Â· profile.",
+      "primaryJob": "Manage your account, download your data and control account access.",
+      "primaryAction": "Update your profile or download your account data.",
       "roles": [
         "owner",
         "member"
@@ -1211,7 +1211,7 @@
       "materialityReview": {
         "materialityHash": "a24a1b85fe91dad0",
         "reviewedAt": "2026-09-05",
-        "evidence": "experience/reviews/january-ca95830e-tasks.page.settings-profile.json"
+        "evidence": "experience/reviews/january-ac7a913d-tasks.page.settings-profile.json"
       }
     },
     {

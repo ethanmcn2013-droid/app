@@ -4,6 +4,17 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-09-05 · January candidate · Account data remains within reach
+
+Profile now downloads account JSON directly. Your Event purchase record remains
+yours after a project changes hands. The new owner receives the project access
+dates and refund state without the former payer's receipt details.
+
+The download explains unavailable sections and excludes uploaded or Google Drive
+file contents. Local export and failure/retry checks pass; complete project recovery
+and Event access enforcement remain in progress. No sales or release is opened.
+Evidence: `experience/reviews/january-event-export-2026-09-05/README.md`.
+
 ## 2026-09-05 · January candidate · Event purchase history
 
 Event checkout records the intended project and verifies its owner again when
