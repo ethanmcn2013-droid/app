@@ -185,7 +185,7 @@ export async function TasksRuntimeShell({
           .where(eq(workspaces.id, workspaceId))
           .then((rows) => rows[0]),
     listMyWorkspaces(),
-    getRoomBriefData(),
+    getRoomBriefData(workspaceId),
     getProjectsTreeData(),
     getBoardName(workspaceId),
     getColumnConfig(workspaceId),
