@@ -23,7 +23,7 @@ function load<T>(relative: string, boundaries: Record<string, unknown>): T {
   return loaded.exports as T;
 }
 
-async function fixture() {
+async function fixture(options: { unavailableCatalog?: boolean } = {}) {
   const f = await freshFileDb();
   await f.client.execute("PRAGMA foreign_keys=ON");
   await f.client.executeMultiple(`
@@ -62,7 +62,12 @@ async function fixture() {
   });
   const scope = load<typeof import("./scope")>("./scope.ts", {
     "../data/source": source,
-    "../../server/tasks-db/signal-tasks-db-client": tasksBoundary,
+    "../../server/tasks-db/signal-tasks-db-client": options.unavailableCatalog
+      ? { getTasksDb: () => new Proxy(f.db, { get(target, key) {
+        if (key === "all") return () => { throw Object.assign(new Error("synthetic catalog busy"), { code: "SQLITE_BUSY" }); };
+        return Reflect.get(target, key);
+      } }) }
+      : tasksBoundary,
   });
   const briefing = load<typeof import("../../server/briefing/signal-build-for-user")>("../../server/briefing/signal-build-for-user.ts", {
     ...signalBoundary,
@@ -150,4 +155,69 @@ test("catalog remains bounded to 200 genuinely authorized active projects", asyn
     assert.ok(catalog.workspaces.every(w => w.id.startsWith("bound-") || ["grouped-a", "loose-a", "shared-b"].includes(w.id)));
     assert.equal((await f.client.execute("PRAGMA foreign_key_check")).rows.length, 0);
   } finally { f.cleanup(); }
+});
+
+test("a real partial-schema planning error cannot authorize archived work through the legacy catalog", async () => {
+  const f = await fixture();
+  try {
+    await f.client.execute("INSERT INTO tasks(id,workspace_id,seq,title,lane,priority) VALUES ('private-archived','archived-project',1,'Archived synthetic work','todo','normal')");
+    await f.client.execute("ALTER TABLE planning_periods RENAME COLUMN position TO unavailable_position");
+    const identity = { clerkId: "clerk-a", email: null };
+    assert.ok((await f.source.dataSource.listForUser(identity)).some(w => w.workspaceId === "archived-project"));
+    const catalog = await f.scope.listPlanningCatalogForUser(identity);
+    assert.deepEqual(catalog, { periods: [], workspaces: [], planningSchemaAvailable: false });
+    for (const workspaceId of ["archived-project", "archived-period", "loose-a"]) {
+      assert.equal(f.scope.authorizeSignalScope(catalog, { kind: "workspace", workspaceId }), null);
+      assert.deepEqual(await f.briefing.buildBriefingForUser({
+        clerkId: identity.clerkId, cadence: "daily", recordReadState: false,
+        scope: { kind: "workspace", workspaceId },
+      }), { kind: "no-workspace" });
+    }
+    assert.equal((await f.signalClient.execute("SELECT * FROM surfaced_items")).rows.length, 0);
+  } finally { f.cleanup(); }
+});
+
+test("operational catalog/metadata errors fail closed even while the real legacy lookup succeeds", async () => {
+  const f = await fixture({ unavailableCatalog: true });
+  try {
+    const identity = { clerkId: "clerk-a", email: null };
+    assert.ok((await f.source.dataSource.listForUser(identity)).length > 0);
+    assert.deepEqual(await f.scope.listPlanningCatalogForUser(identity), { periods: [], workspaces: [], planningSchemaAvailable: false });
+    assert.deepEqual(await f.briefing.buildBriefingForUser({
+      clerkId: identity.clerkId, cadence: "daily", recordReadState: false,
+      scope: { kind: "workspace", workspaceId: "archived-project" },
+    }), { kind: "no-workspace" });
+  } finally { f.cleanup(); }
+});
+
+test("verified pre-planning schema preserves real immutable owner/member catalog; any partial adoption refuses", async () => {
+  const client = createClient({ url: ":memory:" });
+  try {
+    // The original owning baseline is historical compatibility evidence, not
+    // the supported current bootstrap or a production migration shortcut.
+    await client.executeMultiple(readFileSync(new URL("../../../../../drizzle/0000_flat_blur.sql", import.meta.url), "utf8"));
+    await client.executeMultiple(`
+      INSERT INTO users(id,clerk_id,color,initials) VALUES ('old-local-a','old-clerk-a','blue','AA'),('old-local-b','old-clerk-b','blue','BB');
+      INSERT INTO workspaces(id,slug,name,owner_user_id) VALUES ('old-a','old-a','Old A','old-local-a'),('old-b','old-b','Old B','old-local-b');
+      INSERT INTO workspace_members(workspace_id,user_id) VALUES ('old-b','old-local-a');
+    `);
+    const tasksBoundary = { getTasksDb: () => drizzle(client), tasksDbConfigured: true };
+    const source = load<typeof import("../data/source")>("../data/source.ts", {
+      "@/modules/signal/server/tasks-db/signal-tasks-db-client": tasksBoundary,
+    });
+    const scope = load<typeof import("./scope")>("./scope.ts", {
+      "../data/source": source,
+      "../../server/tasks-db/signal-tasks-db-client": tasksBoundary,
+    });
+    const identity = { clerkId: "old-clerk-a", email: null };
+    const before = await scope.listPlanningCatalogForUser(identity);
+    assert.equal(before.planningSchemaAvailable, false);
+    assert.deepEqual(before.workspaces.map(w => [w.id, w.role, w.planningPeriodId]), [["old-a", "owner", null], ["old-b", "member", null]]);
+    assert.deepEqual((await scope.listPlanningCatalogForUser({ clerkId: "old-local-a", email: null })).workspaces, []);
+    await client.execute("CREATE VIEW planning_periods AS SELECT 1 AS id");
+    assert.deepEqual((await scope.listPlanningCatalogForUser(identity)).workspaces, []);
+    await client.execute("DROP VIEW planning_periods");
+    await client.execute("ALTER TABLE workspaces ADD COLUMN archived_at INTEGER");
+    assert.deepEqual((await scope.listPlanningCatalogForUser(identity)).workspaces, []);
+  } finally { client.close(); }
 });

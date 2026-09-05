@@ -58,11 +58,27 @@ function text(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value : null;
 }
 
+/** 0013 introduced archives and period links together. Only their verified
+ * absence permits the old membership-only catalog; a query error proves neither. */
+async function hasLegacyPlanningSchema(tasksDb: NonNullable<ReturnType<typeof getTasksDb>>): Promise<boolean> {
+  const objects = await tasksDb.all<{ name: string; type: string }>(sql`
+    SELECT name, type FROM sqlite_schema
+    WHERE name IN ('workspaces', 'planning_periods', 'planning_period_migration_report')
+  `);
+  if (objects.length !== 1 || objects[0]?.name !== "workspaces" || objects[0]?.type !== "table") return false;
+  const columns = await tasksDb.all<{ name: string }>(sql`SELECT name FROM pragma_table_info('workspaces')`);
+  const names = new Set(columns.map(column => column.name));
+  const introduced = ["planning_period_id", "context_type", "primary_date", "primary_date_label", "position", "archived_at", "revision", "updated_at"];
+  return ["id", "name", "owner_user_id"].every(name => names.has(name))
+    && introduced.every(name => !names.has(name));
+}
+
 /**
  * Current-membership catalog from the canonical Tasks DB. The v2 query is
  * bounded and selects only period/workspace context. If Tasks has not yet
- * rolled out the additive columns, workspace scope remains available through
- * the v1 membership query and period scope fails closed.
+ * rolled out the additive columns, their exact absence permits workspace scope
+ * through the v1 membership query. Partial schema and operational failures
+ * authorize no scope; they cannot reclassify excluded projects as loose.
  */
 export async function listPlanningCatalogForUser(
   identity: UserIdentity,
@@ -156,7 +172,12 @@ export async function listPlanningCatalogForUser(
       planningSchemaAvailable: true,
     };
   } catch {
-    return fallback;
+    try {
+      if (await hasLegacyPlanningSchema(tasksDb)) return fallback;
+    } catch {
+      // Metadata is unavailable too. This cannot prove legacy compatibility.
+    }
+    return { periods: [], workspaces: [], planningSchemaAvailable: false };
   }
 }
 
