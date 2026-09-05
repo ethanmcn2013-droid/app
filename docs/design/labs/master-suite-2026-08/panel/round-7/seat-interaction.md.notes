@@ -1,0 +1,7 @@
+# Seat: Interaction and states — Round 7 (working notes, written as I go)
+
+Build: commit 984a0f17, frozen. Read the 119 ok() assertions in
+interaction-check.mjs and the paid-for defect library first; both are
+excluded from my findings.
+
+## Log

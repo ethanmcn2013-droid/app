@@ -1,0 +1,7 @@
+# Measured evidence seat — round 7 — working notes
+
+Build: commit 984a0f17, frozen. Driving the wrapped copy _gate-suite.html.
+Method: read source (src/*.css, src/*.js), then drive in chromium via playwright,
+probing computed styles / a11y tree / focus order / repaint effects.
+
+## Log

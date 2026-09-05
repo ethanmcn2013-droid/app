@@ -1,0 +1,6 @@
+# Seat: Typography — Round 7 (working notes, written as I go)
+
+Build: commit 984a0f17, frozen. Lens: type scale, 400/600 only, tracking curve,
+leading, measure, mono micro-labels, numerals, orphans/widows, hierarchy.
+
+## Log
