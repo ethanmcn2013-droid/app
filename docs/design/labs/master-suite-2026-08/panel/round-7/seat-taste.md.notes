@@ -74,3 +74,39 @@
    Tasks (243,783) and Timeline (297,783) both keep theirs. The honest door
    that is supposed to be "present, reachable, in the tab order" is absent in
    one product at one width.
+
+8. **The moment editor is the one composition that does not hold.** MEASURED
+   at 1280/1440/1920: the "WHAT IT IS" and "WHEN" inputs are 936 / 1096 /
+   1576px wide, holding "Send the invitations" (20 chars) and "8 August 2026"
+   (13 chars). Every other control in the panel — the -7/-1/+1/+7 steppers, the
+   mono readout, WHAT GUESTS SEE, Close, Delete this moment — is left-hugged at
+   x=213. The result at 1920 is an L-shaped void of roughly 1300 x 400px inside
+   a 1610px grey panel, plus a ~100px blank strip reserved at its head for the
+   undo receipt that is not there at rest. No frame in the round shows this
+   screen. It is the editor for the object the whole Timeline direction rests
+   on and it is the only place in the suite where the composition gives up.
+
+9. **The arrival, finished.** After settle the arrived card is byte-identical
+   to its neighbour: box-shadow `rgba(17,17,17,0.08) 0 0 0 1px, ...` on both,
+   background rgb(255,255,255) on both, border-color rgb(17,17,17) on both,
+   outline none on both, `:focus-visible` false (pointer-initiated focus). 70
+   frames x 27 tracked board elements during the crossing: the ONLY property
+   that changes anywhere on the board is the arriving card's own transform.
+   An existing indigo ring already exists in the CSS for `[data-next]` cards —
+   `rgba(79,70,229,0.32) 0 0 0 1px` — so the fix needs no new colour.
+
+## What is good, said plainly
+The Timeline horizon screen (79 / days / Saturday 3 October 2026 / TODAY IS 16
+JULY under an indigo hairline) is award-level and would sit comfortably beside
+Linear or Stripe. The dictation floor taking the whole screen to ink is a real
+moment. The writing is the best thing in the product: "Write the thought before
+it disappears...", "Yours until you send something on", "Nothing is decided
+until you say so, and every decision can be put back.", "Your note is still
+here, still private, still yours to edit.", "Nothing held up.", "3 so far, and
+every note stayed here". The honest doors are a classy answer, not a gap.
+
+## Score: 8.8
+What stands between this and 9.5: one build (give the arrival an event — half a
+day), one decision (fix the phone capsule's geometry so the spine is one object
+— a day), and two polish items (the editor's measure, the doubled identity —
+half a day together). Nothing here is a redesign.

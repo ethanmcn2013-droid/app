@@ -106,3 +106,11 @@ steppers on screen and still leaves 6 of 7 grab handles visible at
 1280x1000 and 7 of 7 at 1440/1920x1000 — comfortably over the gate's
 `>= 1`.
 COST: 0.4
+- Filters: the overdue chip states itself ("Showing 1 overdue task. 12
+  others are hidden."), keeps head counts honest, and RELEASES ITSELF
+  when moot with a spoken reason ("Nothing is overdue, so the filter is
+  off."). The dead-end-filter class from the library is closed.
+- Dense tick at scrollTop 251: source lane keeps 251, focus follows the
+  card to Done and stays on screen, undo restores both. Clean. (Undo
+  does leave the Done lane's own trayBody at 145 having started at 0 —
+  drift in a lane nobody is looking at; too small to file.)

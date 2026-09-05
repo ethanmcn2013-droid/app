@@ -71,3 +71,42 @@ of the dock with the person's words gone.
 
 Reproduced identically at 900x1000. Board states at 1280/1920 are clean (84px reserve).
 Notes is clean at 390/768/1280/1920.
+
+## F3 (confirmed by driving) — the list's tick column never paints its own done state
+
+`.tick` base (line ~2051): `color: transparent`, `box-shadow: inset 0 0 0 1.4px var(--ink-4)`.
+The fill lives at line 2326 and is scoped to the CARD only:
+`[data-app="tasks"] .card[data-done] .tick { background: var(--ink); box-shadow: none; color: var(--white); }`
+There is no `.lrow[data-done] .tick` counterpart. The list has `.lrow[data-done] .lrowTitle`
+and `.lrowNote` colour rules (1723-1724) and nothing else.
+
+Measured at 1024x900, all 13 rows, 8 open + 5 done:
+- tick background: `rgba(0,0,0,0)` on ALL 13
+- tick ring: `rgba(17,17,17,0.28) 0 0 0 1.4px inset` on ALL 13
+- check glyph colour: `rgba(0,0,0,0)` on ALL 13
+- aria-checked: false×8 / true×5
+The only painted difference on a done row is the title going `rgb(17,17,17)` →
+`rgba(17,17,17,0.62)`.
+
+Driven: clicked an open row's tick at 1024. `data-done` flips, the lane word becomes
+DONE, the pip goes green, the title fades — and the circle under the pointer stays an
+empty ring (`_zz-tick-post.png`). `.card[data-just-done] .tick` carries the settle
+animation and the check-draw; `.lrow` has no equivalent, so there is no moment of
+completion at all in the list.
+
+The behaviour gate asserts `after.done` — the ATTRIBUTE flipped (interaction-check.mjs:314).
+It never asserts the control paints. So this is not a restatement.
+The card's own comment (2320) claims done is said "four times over ... and the filled
+tick". In the list one of those four survives.
+
+Affects every width from 320 to 1199, where the list is the default view — Orla's laptop
+and her iPad — and the phone, where the list is the ONLY view.
+
+FIX (mirror the two card rules; verified by injection, `_zz-tick-list-fixed.png`):
+```css
+[data-app="tasks"] .card[data-done] .tick,
+[data-app="tasks"] .lrow[data-done] .tick { background: var(--ink); box-shadow: none; color: var(--white); }
+[data-app="tasks"] .card[data-done] .tick:hover, [data-app="tasks"] .card[data-done] .tick:focus-visible,
+[data-app="tasks"] .lrow[data-done] .tick:hover, [data-app="tasks"] .lrow[data-done] .tick:focus-visible { box-shadow: 0 0 0 4px var(--wash-2); }
+```
+Palette-safe (--ink on white, --white glyph — the exact pair the card already ships).

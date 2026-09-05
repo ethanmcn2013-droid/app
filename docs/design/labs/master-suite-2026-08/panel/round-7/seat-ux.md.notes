@@ -89,3 +89,26 @@ and the phone use, so the four above-line moments are the only place in the prod
 that reads number-date-title.
 
 Not a locked-architecture question and not a colour: one declaration.
+
+### Checked and CLEAN (not findings — recording so the panel knows they were driven)
+- Every count on every surface reconciles through one accessor: notes index
+  8 to decide / 14 notes vs five group tails (1+1+3+2+1=8, 3+1+5+3+1=14); tasks
+  5 of 13 / 38% / lane counts / "5 with no day"; dense 9 of 32 / 28% / three
+  "N more below" rows; after the seam crossing 5 of 14 / 36% / "6 with no day" /
+  To do 4 / notes 8->7 to decide and 3->4 already in Tasks. Nothing drifts.
+- Tab order at 1920 on tasks.board is 18 stops with a real roving model (one rail
+  tile, one card, one seg item, one tray Add). No dead stops, no body traps.
+- `.cardDots` is opacity 0 at rest but 1 on :hover, :focus AND under
+  `@media (pointer: coarse)`. Not an invisible-focusable defect.
+- Planning open @1440 does NOT delete Done: the sheet becomes a real scroller
+  (948/916) and `.sheet::after` is a MEASURED 96px fade toggled by
+  `data-more-right`/`data-more-left` — opacity 0 when nothing is hidden, 1 when
+  something is, and it swaps ends when you scroll. That whole lessons class is closed.
+- The overdue filter states itself ("Showing 1 overdue task. 12 others are
+  hidden." + "Show all work"), badges Show, and converts every lane count to
+  "shown/total" (0/3, 1/3, 0/2, 0, 0/5). Header honesty under filter is done.
+- The seam crossing announces once ("Sent to Tasks. Your note stayed here. In
+  The house." then "Opened in Tasks. Your note stayed in Notes."), leaves focus
+  on a surviving control, lands the card in To do and offers 30s undo.
+- Timeline behind-you is a native <details>/<summary>; folded and open notes are
+  both true against the three rows.
