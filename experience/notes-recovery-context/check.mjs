@@ -10,7 +10,7 @@ const root = path.resolve(process.env.NOTES_TEST_SOURCE_ROOT ?? process.cwd());
 const require = createRequire(path.join(process.cwd(), 'package.json'));
 const esbuild = createRequire(require.resolve('tsx/package.json'))('esbuild');
 const { chromium } = require('@playwright/test');
-const buildDir = path.resolve('work/notes-recovery-context');
+const buildDir = path.resolve('experience/output/notes-recovery/build/original-browser');
 const out = path.resolve(process.env.NOTES_TEST_OUTPUT ?? 'outputs/notes-recovery-context');
 await fs.mkdir(buildDir, {recursive:true});
 await fs.mkdir(out, {recursive:true});

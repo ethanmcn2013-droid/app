@@ -3,14 +3,14 @@
   "experienceId": "tasks.page.print-timeline",
   "source": "tasks/src/app/print/timeline/page.tsx",
   "materialityHash": "2a81a33e08771fe3",
-  "reviewedAt": "2026-09-04",
-  "reviewer": "Principal integrator, delegated internal regression review",
+  "reviewedAt": "2026-09-05",
+  "reviewer": "Principal integrator using delegated authority",
   "playwrightEvidence": {
-    "attestationPath": "experience/evidence-runs/tasks-playwright-eaebc5221a2ebebcaa062ab8-3dd3e7388ce4997b.json",
-    "attestationSha256": "f24556b4f57dbaf41230b052d3387adc7c9561e380b10994f1a7205a71b25204",
-    "runId": "tasks-playwright-eaebc5221a2ebebcaa062ab8",
-    "canonicalEvidenceSha256": "eaebc5221a2ebebcaa062ab8a07446bc4522257ce9efeaa5c31373289cd19949",
-    "rawArtifactSha256": "3dd3e7388ce4997bedc26b4e68b1610d9c584d6be28389dc06dd3df308978a6d",
+    "attestationPath": "experience/evidence-runs/tasks-playwright-776b131ccc1d285f9c76fe35-5b99dd431aff0439.json",
+    "attestationSha256": "ff8441cd96805b0e7aa0258052acbb45760c8b709819db54a71c3cabf14bea79",
+    "runId": "tasks-playwright-776b131ccc1d285f9c76fe35",
+    "canonicalEvidenceSha256": "776b131ccc1d285f9c76fe35d39885f359fa005fffca90ce659cd2384a783241",
+    "rawArtifactSha256": "5b99dd431aff04392b1618420e2a4561e7b51a03f4f1209a37b26c4c4b7b78cb",
     "artifactPath": "experience/output/critical-evidence.json",
     "fixtureId": "tasks.page.app",
     "caseName": "front door lands on Home",
@@ -21,6 +21,6 @@
       "wide"
     ]
   },
-  "reviewedChange": "Source bytes match the previous normalized materiality hash. Fresh ca95830e built regression evidence follows the corrected redemption failure-state fixture. The associated case is suite regression context; it does not add unexercised states or provider behavior. Prior scoped surface evidence and limitations remain in experience/reviews/history/pre-january-fixture-contract/tasks.page.print-timeline-2026-08-13-wp4-analytics.json",
-  "decision": "Accept the new deterministic regression receipt only. Preserve current coverage, scores and unresolved findings. No founder selection, council certification, live-provider result or human-comprehension claim."
+  "reviewedChange": "Source hash remains unchanged from the archived prior review. Rebound after the actual full132-case run at182935f7 with the loopback-only server contract and integrated Home/Notes project-context repairs. Prior source decision: Source bytes match the previous normalized materiality hash. Fresh ca95830e built regression evidence follows the corrected redemption failure-state fixture. The associated case is suite regression context; it does not add unexercised states or provider behavior. Prior scoped surface evidence and limitations remain in experience/reviews/history/pre-january-fixture-contract/tasks.page.print-timeline-2026-08-13-wp4-analytics.json",
+  "decision": "Retain the existing scoped decision and remaining-state limits. The current browser case was actually rerun;27 separate Notes recovery/navigation browser scenarios and independent Home/Notes reviews support the context change. This does not establish full feature-state, provider, human or council acceptance. Prior scoped decision: Accept the new deterministic regression receipt only. Preserve current coverage, scores and unresolved findings. No founder selection, council certification, live-provider result or human-comprehension claim."
 }

@@ -8,7 +8,7 @@ const root=path.resolve(process.env.NOTES_TEST_SOURCE_ROOT??process.cwd());
 const require=createRequire(path.join(root,'package.json'));
 const esbuild=createRequire(require.resolve('tsx/package.json'))('esbuild');
 const outputDir=path.resolve(process.env.NOTES_TEST_OUTPUT??'outputs/notes-recovery-followup/server');
-const buildDir=path.resolve('work/notes-recovery-followup-server');
+const buildDir=path.resolve('experience/output/notes-recovery/build/followup-server');
 await fs.mkdir(buildDir,{recursive:true});
 await fs.mkdir(outputDir,{recursive:true});
 const out=path.join(buildDir,'bundle.cjs');

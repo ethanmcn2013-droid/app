@@ -5,7 +5,7 @@ import { pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 const root=process.cwd(),require=createRequire(path.join(root,'package.json'));
 const esbuild=createRequire(require.resolve('tsx/package.json'))('esbuild');
-const out=path.join(root,'work/notes-recovery-context/page-check.cjs');
+const out=path.join(root,'experience/output/notes-recovery/build/page-check.cjs');
 // Execute the actual page. Auth, membership, reads and rendered client children
 // are explicit fixture boundaries. No provider or database can be reached.
 const stubs={

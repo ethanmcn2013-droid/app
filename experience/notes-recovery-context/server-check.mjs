@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 const root=process.cwd(),require=createRequire(path.join(root,'package.json'));
 const esbuild=createRequire(require.resolve('tsx/package.json'))('esbuild');
-const out=path.join(root,'work/notes-recovery-context/server-check.cjs');
+const out=path.join(root,'experience/output/notes-recovery/build/server-check.cjs');
 const stubs={
  'server-only':'',
  'next/cache':'export const revalidatePath=()=>{};',
