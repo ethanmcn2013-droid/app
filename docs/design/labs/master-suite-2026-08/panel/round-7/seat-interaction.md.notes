@@ -114,3 +114,48 @@ COST: 0.4
   card to Done and stays on screen, undo restores both. Clean. (Undo
   does leave the Done lane's own trayBody at 145 having started at 0 —
   drift in a lane nobody is looking at; too small to file.)
+
+## FINDING 3 — notes-drops-focus-at-720 (CONFIRMED)
+`[data-app="notes"]`, the 720 crossing.
+
+Focus a Notes control, narrow past 720, widen back. Measured, on one
+page narrowed and widened (the gate's own method):
+
+| control | exists @390 | 1440 | 390 | back to 1440 |
+|---|---|---|---|---|
+| `[data-act="review"]` `.idxGo` | yes | held | **body** | **body** |
+| `[data-act="photo"]` (`.verb`->`.dockGlyph`) | yes | held | **body** | **body** |
+| `[data-act="send"]` (seam primary) | yes | held | **body** | **body** |
+| `.topField` (a TEXTAREA) | yes | held | held | held |
+
+Every one of those controls is present and visible on both sides of the
+crossing. The next Tab from body restarts at the top of the document
+(the first note row). Nothing announces the loss.
+
+Tasks holds focus across the same crossing in both directions (checked
+on `[data-id="demo-t-01"]` and on the dock search field). Timeline moves
+it to a real heading. Notes alone drops it on the floor.
+
+Cause is exact: Notes' repaint (~:19100) captures the index scroll, the
+read-body scroll, and a CARET — but only
+`if (active.tagName === "TEXTAREA" || active.tagName === "INPUT")`.
+`mount.innerHTML = ...` at :19143 then destroys every button. The
+comment above it promises "Nothing here may cost the operator their
+place"; it keeps that promise for fields only. Same-band resizes
+(1440->1400->1300) and the 1199 crossing all hold focus, so this is the
+720 repaint specifically.
+
+The gate cannot see it: `${product} · crossing 720 both ways throws
+nothing` (:1467) asserts layout, toggles, lanes, rows, sideways scroll
+and console noise — never `document.activeElement`. "focus survives the
+repaint" exists only in the pattern comment at :212.
+
+FIX: in the same capture block, when `active` is not a field, record
+`{ act: active.dataset.act, role: active.getAttribute("aria-label") }`
+— both are stable across the breakpoint — and after `mount.innerHTML`
+is written, re-find it with
+`mount.querySelector('[data-act="'+act+'"]')`, confirm the aria-label
+matches, and `.focus({ preventScroll: true })`. This is the two-key
+selector-then-role rule Notes already runs for fields, extended from
+fields to controls.
+COST: 0.2
