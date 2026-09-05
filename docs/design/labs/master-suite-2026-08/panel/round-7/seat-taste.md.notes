@@ -63,3 +63,14 @@
    crossing, and the pitch changes three times. The architecture says one rail,
    rendered once, and on a phone the capsule and the dock are the same object.
    Measured, it is three objects.
+
+7. **Two doors named "More" on one phone screen (Timeline @390).** Both
+   visible simultaneously: capsule grid tile aria-label="More" 44x44 at
+   (297,783), and a "···" aria-label="More" 39x44 at (160,140). One is the
+   unbuilt honest door, the other opens the real Preview/link menu. Same word,
+   two destinations, one 390px screen.
+   And on the **Notes phone the "More" door has zero size** — `.railUtil`'s
+   copy measures 0x0 at 390 and the Notes capsule carries no More tile, while
+   Tasks (243,783) and Timeline (297,783) both keep theirs. The honest door
+   that is supposed to be "present, reachable, in the tab order" is absent in
+   one product at one width.
