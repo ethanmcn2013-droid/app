@@ -1,3 +1,23 @@
 # seat-ui — round 7 working notes (write-as-you-go)
 
 Seat: UI composition. Build: commit 984a0f17, frozen.
+
+## F1 (confirmed by measurement) — the board's right margin is 110px of dead white at 1920
+
+`.board` is `display:grid` with `grid-template-columns: 372px 372px 372px 172px 372px`
+at 1920 (measured). Full lanes clamp at 372px; the empty WAITING lane collapses to
+`var(--rail)` = 172px (deliberate, documented at _gate-suite.html:1833-1841). The 200px
+that collapse hands back is never redistributed.
+
+Measured, viewport → (board content right, last tray right, gap):
+- 1810 → 1776 / 1776 / **0**
+- 1850 → 1816 / 1776 / **40**
+- 1920 → 1886 / 1776 / **110**   ← the canonical shot width
+- 2048 → 1995 / 1795 / **200**
+- 2560 → 2251 / 2051 / **200** (capped: the sheet's own max-width takes over)
+
+tasks.dense (no empty lane) fills to the content edge at every width — gap 0 everywhere.
+So the defect is specific to the shipped board state, which is exactly the state that is
+screenshotted, demoed and shown to Orla.
+
+Consequence: at 1920 the board's own optical margins are 16px left / 126px right.

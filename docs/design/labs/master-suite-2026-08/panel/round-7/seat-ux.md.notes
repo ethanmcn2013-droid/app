@@ -1,3 +1,29 @@
 # seat-ux — round 7 working notes (append-only)
 
 ## Session log
+
+### Frame pass (static reads, before driving)
+
+Fixture clock verified consistent across all three products: Timeline states
+"TODAY IS 16 JULY" / "Today, 16 July"; Notes group head says "Thursday 16 July,
+today"; Tasks shows 14 Jul as the single overdue chip and "Today" on the run-sheet.
+Measure arithmetic on the across axis checks out to the pixel: today x=209,
+wedding x=1876, 79 days -> 21.1px/day; every tick (16/23/37/44/51/65) lands within
+1.5px of daysFromToday x px-per-day. Weekday names are right for 2026.
+Header counts check out: board 5 of 13 = 38%, lanes 3+3+2+0+5 = 13, "5 with no day"
+matches the 5 dateless cards. Dense 9 of 32 = 28%, lanes 10+7+4+2+9 = 32, and each
+"N more below" reconciles with the lane count.
+
+CANDIDATES (to be verified by driving):
+1. notes head names one notebook ("Mara & Finn  Saturday 3 October, in 79 days")
+   verbatim identical to the first index group head, ~484px below it; and it does
+   NOT change when the desk is holding a note filed under "The house" (seam state)
+   or when the review queue spans every notebook (review state).
+2. across measure: labels above the line read (outward) number > date > title;
+   labels below the line read number > title > date. The mirror is not a mirror.
+3. tasks head carries the completion fact three ways: "5 of 13 done" + bar + "38%".
+   The phone drops the 38%, which suggests it is the non-load-bearing one.
+4. dictation floor disclosure sentence 2 is about *typing*, on a surface where you
+   are speaking. Also "LISTENING 0:00" over a finished transcript.
+5. floating capsule overlaps list rows at 768 - check whether the scroller reserves
+   its band at the true bottom.

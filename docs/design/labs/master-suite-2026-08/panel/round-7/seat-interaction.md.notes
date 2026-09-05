@@ -5,3 +5,13 @@ interaction-check.mjs and the paid-for defect library first; both are
 excluded from my findings.
 
 ## Log
+
+- Tab order @1440 tasks.board: 18 stops, roving at rail (1 stop), view
+  switcher (1 stop), card grid (1 stop + 4 in-card controls), Add row.
+  Arrows walk all 5 lanes and every card; the empty `waiting` lane is
+  skipped rather than trapping. No console errors. Home/End are no-ops
+  inside the card rover (minor, not filed).
+- `.cardDots` ("Move this task") is opacity:0 at rest, revealed by
+  :hover/:focus-within, forced to opacity 1 under `pointer: coarse`, and
+  its slot is reserved in layout so revealing it moves nothing. This
+  class is closed — not a finding.

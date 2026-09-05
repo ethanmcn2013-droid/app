@@ -1,3 +1,24 @@
 # Seat: Product taste & emotional resonance — Round 7 (working notes)
 # Build: commit 984a0f17, frozen. Written as-I-go.
 
+## Confirmed by driving (running log)
+
+1. **Dictation floor clock ticks** (0:00 -> 0:06). Not a defect. But the interim
+   (grey) words never resolve to ink while the clock runs — the most cinematic
+   screen in the suite is frozen except for the timer. Candidate.
+
+2. **Timeline has no dock at any desk width.** `.dock` measures 370x48 in
+   tasks.board and 348x46 in notes.notebook at both 1440 and 1920;
+   timeline.owner-flight has NO .dock element with geometry at either width.
+   Timeline's primary act ("Add a moment") is a top-right button instead.
+   The locked architecture names "the dock at the foot" as part of the Studio
+   Floor. Two of three products have it. CANDIDATE FINDING.
+
+3. **The account tile renders TWICE** in Notes and Tasks (rail foot + dock),
+   870-1100px apart, and the two copies do not carry the same accessible name:
+     notes rail  "Orla, venue manager"
+     notes dock  "Orla, venue manager. Not here yet."
+     tasks rail  "Orla, venue manager"
+     tasks dock  "Orla, venue manager"
+     timeline rail "Orla, venue manager"  (no dock at all)
+   CANDIDATE FINDING — check behaviour of each.

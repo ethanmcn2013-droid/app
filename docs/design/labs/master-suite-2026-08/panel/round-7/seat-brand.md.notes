@@ -3,3 +3,22 @@
 Build: commit 984a0f17 (frozen). Driving `_gate-suite.html` in chromium.
 Written as I go.
 
+## Sweep 1 — static strings, tasks.board / notes.notebook / timeline.owner-flight @1440
+
+Register overall: calm, declarative, sentence case, no exclamation marks, no
+jargon. Eyebrows are mono uppercase and consistently used. Counts reconcile
+(8 to decide = 1+1+3+2+1; 14 notes = 3+1+5+3+2; 5 of 13 done).
+
+CANDIDATE A — "One thing is not going ahead." (Timeline, behind-you note,
+master.html:21455). The product's noun for its own object is "moment"
+("Add a moment", "3 moments", "What is still ahead"). In exactly one
+sentence — the one the OWNER reads — it becomes "thing". And the guest
+branch (21457-21461) names the cancelled moment outright ("The city hotel
+shortlist is not going ahead."), so the owner is given LESS than the guest
+about her own plan. Two grammars for one fact, and the vaguer one is
+pointed at the person who can act.
+
+CANDIDATE B — date grammar inside one region. `b-behindDate` renders
+"Sat 18 Apr" (weekdayShort + short) while the summary sentence directly
+above it renders the same class of fact as "18 April" (fmt.medium),
+and reads "the last of them 18 April" with no preposition.

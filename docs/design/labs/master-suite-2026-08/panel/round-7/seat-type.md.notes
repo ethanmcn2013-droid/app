@@ -4,3 +4,17 @@ Build: commit 984a0f17, frozen. Lens: type scale, 400/600 only, tracking curve,
 leading, measure, mono micro-labels, numerals, orphans/widows, hierarchy.
 
 ## Log
+
+### 1. Tracking survey (driven, 1440, all 10 states)
+Probed computed letterfit for every visible text node, grouped by product
+scope + family + size. Most of the audit's 10 "tracking" groups dissolve on
+inspection — the curves compose a polarity branch (`--tr-13 + --tr-rev` =
+-0.002em on the dock's reversed "Add task"; `--tr-12 + --tr-rev` = +0.002em on
+"1 overdue"), which the audit does not model. Those are principled, not drift.
+
+What survives:
+- tasks · Geist Mono 11: `.trayCount` "3" is tracked +0.1em (the uppercase
+  micro-label step) while `.pacePct` "38%" is tracked -0.012em. Two mono
+  FIGURES in the same header band, 0.112em apart in letterfit.
+- notes · Geist 12: `button.groupBtn` ("What it is about", "When") computes
+  `normal` — the only 12px control in Notes off `--tr-12`.
