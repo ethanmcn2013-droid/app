@@ -1,0 +1,772 @@
+TAP version 13
+# Subtest: bulk creation preserves every existing grant and old Project date, including revoked/departed/null-scope grants
+not ok 1 - bulk creation preserves every existing grant and old Project date, including revoked/departed/null-scope grants
+  ---
+  duration_ms: 2328.3311
+  type: 'test'
+  location: 'C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\feat-january-sponsored-wedding-date\\src\\server\\actions\\planning-wedding-date.test.ts:2:7043'
+  failureType: 'testCodeFailure'
+  error: |-
+    Project creation must not extend or rebind existing grants
+    + actual - expected
+    ... Skipped lines
+    
+      [
+        {
+    +     expiresAt: 2029-08-30T00:00:00.000Z,
+    -     expiresAt: 2028-03-05T12:00:00.000Z,
+          id: 'old-active',
+          notes: 'comp:OLD',
+          reachedBoardAt: null,
+          source: 'comp',
+          startedAt: 2026-09-04T12:00:00.000Z,
+    ...
+        {
+    +     expiresAt: 2029-08-30T00:00:00.000Z,
+    -     expiresAt: 1970-01-01T00:00:00.000Z,
+          id: 'old-revoked',
+          notes: 'comp:OLD',
+          reachedBoardAt: null,
+          source: 'comp',
+          startedAt: 2026-09-04T12:00:00.000Z,
+    ...
+        {
+    +     expiresAt: 2029-08-30T00:00:00.000Z,
+    -     expiresAt: 2028-03-05T12:00:00.000Z,
+          id: 'personal-comp',
+          notes: 'comp:OLD',
+          reachedBoardAt: null,
+          source: 'comp',
+          startedAt: 2026-09-04T12:00:00.000Z,
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0:
+      id: 'old-active'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    1:
+      id: 'old-revoked'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 1970-01-01T00:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    2:
+      id: 'personal-comp'
+      workspaceId: ~
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    3:
+      id: 'event-purchase'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'event'
+      source: 'purchase'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'purchase:independent'
+      reachedBoardAt: ~
+    4:
+      id: 'personal-purchase'
+      workspaceId: ~
+      userId: 'actor'
+      tier: 'workspace'
+      source: 'purchase'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'purchase:personal'
+      reachedBoardAt: ~
+  actual:
+    0:
+      id: 'old-active'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2029-08-30T00:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    1:
+      id: 'old-revoked'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2029-08-30T00:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    2:
+      id: 'personal-comp'
+      workspaceId: ~
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2029-08-30T00:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    3:
+      id: 'event-purchase'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'event'
+      source: 'purchase'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'purchase:independent'
+      reachedBoardAt: ~
+    4:
+      id: 'personal-purchase'
+      workspaceId: ~
+      userId: 'actor'
+      tier: 'workspace'
+      source: 'purchase'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'purchase:personal'
+      reachedBoardAt: ~
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (C:\Users\ethan\signal-studio-workspace\worktrees\app\feat-january-sponsored-wedding-date\src\server\actions\planning-wedding-date.test.ts:92:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: all-skipped creation preserves every existing grant and old Project date, including revoked/departed/null-scope grants
+not ok 2 - all-skipped creation preserves every existing grant and old Project date, including revoked/departed/null-scope grants
+  ---
+  duration_ms: 715.6798
+  type: 'test'
+  location: 'C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\feat-january-sponsored-wedding-date\\src\\server\\actions\\planning-wedding-date.test.ts:2:7043'
+  failureType: 'testCodeFailure'
+  error: |-
+    Project creation must not extend or rebind existing grants
+    + actual - expected
+    ... Skipped lines
+    
+      [
+        {
+    +     expiresAt: 2029-08-30T00:00:00.000Z,
+    -     expiresAt: 2028-03-05T12:00:00.000Z,
+          id: 'old-active',
+          notes: 'comp:OLD',
+          reachedBoardAt: null,
+          source: 'comp',
+          startedAt: 2026-09-04T12:00:00.000Z,
+    ...
+        {
+    +     expiresAt: 2029-08-30T00:00:00.000Z,
+    -     expiresAt: 1970-01-01T00:00:00.000Z,
+          id: 'old-revoked',
+          notes: 'comp:OLD',
+          reachedBoardAt: null,
+          source: 'comp',
+          startedAt: 2026-09-04T12:00:00.000Z,
+    ...
+        {
+    +     expiresAt: 2029-08-30T00:00:00.000Z,
+    -     expiresAt: 2028-03-05T12:00:00.000Z,
+          id: 'personal-comp',
+          notes: 'comp:OLD',
+          reachedBoardAt: null,
+          source: 'comp',
+          startedAt: 2026-09-04T12:00:00.000Z,
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0:
+      id: 'old-active'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    1:
+      id: 'old-revoked'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 1970-01-01T00:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    2:
+      id: 'personal-comp'
+      workspaceId: ~
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    3:
+      id: 'event-purchase'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'event'
+      source: 'purchase'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'purchase:independent'
+      reachedBoardAt: ~
+    4:
+      id: 'personal-purchase'
+      workspaceId: ~
+      userId: 'actor'
+      tier: 'workspace'
+      source: 'purchase'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'purchase:personal'
+      reachedBoardAt: ~
+  actual:
+    0:
+      id: 'old-active'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2029-08-30T00:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    1:
+      id: 'old-revoked'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2029-08-30T00:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    2:
+      id: 'personal-comp'
+      workspaceId: ~
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2029-08-30T00:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    3:
+      id: 'event-purchase'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'event'
+      source: 'purchase'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'purchase:independent'
+      reachedBoardAt: ~
+    4:
+      id: 'personal-purchase'
+      workspaceId: ~
+      userId: 'actor'
+      tier: 'workspace'
+      source: 'purchase'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'purchase:personal'
+      reachedBoardAt: ~
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (C:\Users\ethan\signal-studio-workspace\worktrees\app\feat-january-sponsored-wedding-date\src\server\actions\planning-wedding-date.test.ts:92:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: contextual creation preserves every existing grant and old Project date, including revoked/departed/null-scope grants
+not ok 3 - contextual creation preserves every existing grant and old Project date, including revoked/departed/null-scope grants
+  ---
+  duration_ms: 731.9718
+  type: 'test'
+  location: 'C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\feat-january-sponsored-wedding-date\\src\\server\\actions\\planning-wedding-date.test.ts:2:7043'
+  failureType: 'testCodeFailure'
+  error: |-
+    Project creation must not extend or rebind existing grants
+    + actual - expected
+    ... Skipped lines
+    
+      [
+        {
+    +     expiresAt: 2029-08-30T00:00:00.000Z,
+    -     expiresAt: 2028-03-05T12:00:00.000Z,
+          id: 'old-active',
+          notes: 'comp:OLD',
+          reachedBoardAt: null,
+          source: 'comp',
+          startedAt: 2026-09-04T12:00:00.000Z,
+    ...
+        {
+    +     expiresAt: 2029-08-30T00:00:00.000Z,
+    -     expiresAt: 1970-01-01T00:00:00.000Z,
+          id: 'old-revoked',
+          notes: 'comp:OLD',
+          reachedBoardAt: null,
+          source: 'comp',
+          startedAt: 2026-09-04T12:00:00.000Z,
+    ...
+        {
+    +     expiresAt: 2029-08-30T00:00:00.000Z,
+    -     expiresAt: 2028-03-05T12:00:00.000Z,
+          id: 'personal-comp',
+          notes: 'comp:OLD',
+          reachedBoardAt: null,
+          source: 'comp',
+          startedAt: 2026-09-04T12:00:00.000Z,
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0:
+      id: 'old-active'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    1:
+      id: 'old-revoked'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 1970-01-01T00:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    2:
+      id: 'personal-comp'
+      workspaceId: ~
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    3:
+      id: 'event-purchase'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'event'
+      source: 'purchase'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'purchase:independent'
+      reachedBoardAt: ~
+    4:
+      id: 'personal-purchase'
+      workspaceId: ~
+      userId: 'actor'
+      tier: 'workspace'
+      source: 'purchase'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'purchase:personal'
+      reachedBoardAt: ~
+  actual:
+    0:
+      id: 'old-active'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2029-08-30T00:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    1:
+      id: 'old-revoked'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2029-08-30T00:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    2:
+      id: 'personal-comp'
+      workspaceId: ~
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2029-08-30T00:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    3:
+      id: 'event-purchase'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'event'
+      source: 'purchase'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'purchase:independent'
+      reachedBoardAt: ~
+    4:
+      id: 'personal-purchase'
+      workspaceId: ~
+      userId: 'actor'
+      tier: 'workspace'
+      source: 'purchase'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'purchase:personal'
+      reachedBoardAt: ~
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (C:\Users\ethan\signal-studio-workspace\worktrees\app\feat-january-sponsored-wedding-date\src\server\actions\planning-wedding-date.test.ts:92:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: contextual-with-sponsor creation preserves every existing grant and old Project date, including revoked/departed/null-scope grants
+not ok 4 - contextual-with-sponsor creation preserves every existing grant and old Project date, including revoked/departed/null-scope grants
+  ---
+  duration_ms: 792.9741
+  type: 'test'
+  location: 'C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\feat-january-sponsored-wedding-date\\src\\server\\actions\\planning-wedding-date.test.ts:2:7043'
+  failureType: 'testCodeFailure'
+  error: |-
+    Project creation must not extend or rebind existing grants
+    + actual - expected
+    ... Skipped lines
+    
+      [
+        {
+    +     expiresAt: 2029-08-30T00:00:00.000Z,
+    -     expiresAt: 2028-03-05T12:00:00.000Z,
+          id: 'old-active',
+          notes: 'comp:OLD',
+          reachedBoardAt: null,
+          source: 'comp',
+          startedAt: 2026-09-04T12:00:00.000Z,
+    ...
+        {
+    +     expiresAt: 2029-08-30T00:00:00.000Z,
+    -     expiresAt: 1970-01-01T00:00:00.000Z,
+          id: 'old-revoked',
+          notes: 'comp:OLD',
+          reachedBoardAt: null,
+          source: 'comp',
+          startedAt: 2026-09-04T12:00:00.000Z,
+    ...
+        {
+    +     expiresAt: 2029-08-30T00:00:00.000Z,
+    -     expiresAt: 2028-03-05T12:00:00.000Z,
+          id: 'personal-comp',
+          notes: 'comp:OLD',
+          reachedBoardAt: null,
+          source: 'comp',
+          startedAt: 2026-09-04T12:00:00.000Z,
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0:
+      id: 'old-active'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    1:
+      id: 'old-revoked'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 1970-01-01T00:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    2:
+      id: 'personal-comp'
+      workspaceId: ~
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    3:
+      id: 'event-purchase'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'event'
+      source: 'purchase'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'purchase:independent'
+      reachedBoardAt: ~
+    4:
+      id: 'personal-purchase'
+      workspaceId: ~
+      userId: 'actor'
+      tier: 'workspace'
+      source: 'purchase'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'purchase:personal'
+      reachedBoardAt: ~
+  actual:
+    0:
+      id: 'old-active'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2029-08-30T00:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    1:
+      id: 'old-revoked'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2029-08-30T00:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    2:
+      id: 'personal-comp'
+      workspaceId: ~
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2029-08-30T00:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    3:
+      id: 'event-purchase'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'event'
+      source: 'purchase'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'purchase:independent'
+      reachedBoardAt: ~
+    4:
+      id: 'personal-purchase'
+      workspaceId: ~
+      userId: 'actor'
+      tier: 'workspace'
+      source: 'purchase'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'purchase:personal'
+      reachedBoardAt: ~
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (C:\Users\ethan\signal-studio-workspace\worktrees\app\feat-january-sponsored-wedding-date\src\server\actions\planning-wedding-date.test.ts:92:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: new Project redemption reads its own 2029-06-01 date and preserves all older grants
+not ok 5 - new Project redemption reads its own 2029-06-01 date and preserves all older grants
+  ---
+  duration_ms: 778.9886
+  type: 'test'
+  location: 'C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\feat-january-sponsored-wedding-date\\src\\server\\actions\\planning-wedding-date.test.ts:2:8706'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    ... Skipped lines
+    
+      [
+        {
+    +     expiresAt: 2029-08-30T00:00:00.000Z,
+    -     expiresAt: 2028-03-05T12:00:00.000Z,
+          id: 'old-active',
+          notes: 'comp:OLD',
+          reachedBoardAt: null,
+          source: 'comp',
+          startedAt: 2026-09-04T12:00:00.000Z,
+    ...
+        {
+    +     expiresAt: 2029-08-30T00:00:00.000Z,
+    -     expiresAt: 1970-01-01T00:00:00.000Z,
+          id: 'old-revoked',
+          notes: 'comp:OLD',
+          reachedBoardAt: null,
+          source: 'comp',
+          startedAt: 2026-09-04T12:00:00.000Z,
+    ...
+        {
+    +     expiresAt: 2029-08-30T00:00:00.000Z,
+    -     expiresAt: 2028-03-05T12:00:00.000Z,
+          id: 'personal-comp',
+          notes: 'comp:OLD',
+          reachedBoardAt: null,
+          source: 'comp',
+          startedAt: 2026-09-04T12:00:00.000Z,
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0:
+      id: 'old-active'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    1:
+      id: 'old-revoked'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 1970-01-01T00:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    2:
+      id: 'personal-comp'
+      workspaceId: ~
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    3:
+      id: 'event-purchase'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'event'
+      source: 'purchase'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'purchase:independent'
+      reachedBoardAt: ~
+    4:
+      id: 'personal-purchase'
+      workspaceId: ~
+      userId: 'actor'
+      tier: 'workspace'
+      source: 'purchase'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'purchase:personal'
+      reachedBoardAt: ~
+  actual:
+    0:
+      id: 'old-active'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2029-08-30T00:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    1:
+      id: 'old-revoked'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2029-08-30T00:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    2:
+      id: 'personal-comp'
+      workspaceId: ~
+      userId: 'actor'
+      tier: 'wedding'
+      source: 'comp'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2029-08-30T00:00:00.000Z
+      notes: 'comp:OLD'
+      reachedBoardAt: ~
+    3:
+      id: 'event-purchase'
+      workspaceId: 'old-project'
+      userId: 'actor'
+      tier: 'event'
+      source: 'purchase'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'purchase:independent'
+      reachedBoardAt: ~
+    4:
+      id: 'personal-purchase'
+      workspaceId: ~
+      userId: 'actor'
+      tier: 'workspace'
+      source: 'purchase'
+      startedAt: 2026-09-04T12:00:00.000Z
+      expiresAt: 2028-03-05T12:00:00.000Z
+      notes: 'purchase:personal'
+      reachedBoardAt: ~
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (C:\Users\ethan\signal-studio-workspace\worktrees\app\feat-january-sponsored-wedding-date\src\server\actions\planning-wedding-date.test.ts:117:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: new Project redemption reads its own unknown date and preserves all older grants
+ok 6 - new Project redemption reads its own unknown date and preserves all older grants
+  ---
+  duration_ms: 716.226
+  type: 'test'
+  ...
+# Subtest: existing missing-date validation and independently disabled flags do not create Projects or touch grants
+ok 7 - existing missing-date validation and independently disabled flags do not create Projects or touch grants
+  ---
+  duration_ms: 1971.3297
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 2
+# fail 5
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10378.8004

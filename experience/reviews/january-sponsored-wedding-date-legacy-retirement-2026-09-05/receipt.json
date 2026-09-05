@@ -1,0 +1,68 @@
+{
+  "kind": "separate-commercial-creation-path-retirement",
+  "status": "bounded runtime validation complete; final integration independent",
+  "branch": "feat/january-sponsored-wedding-date",
+  "branchBase": "0b9d132ac5b5f47579c8630becb94063b1db947d",
+  "parent": "3d71256d9822e9eb34e8bf1524b3099ce47bb6bd",
+  "runtimeCommit": "7742247d7beebeb3b712977f5c3014aa426e55ca",
+  "frozenUiCommit": "2d1d77835e7bcedfab5c68e53608fe5d00dd8f9a",
+  "authoredFiles": [
+    "src/server/actions/planning-wedding-date.test.ts",
+    "src/server/actions/planning.ts",
+    "src/server/db/couple-access-term.test.ts",
+    "src/server/db/couple-access-term.ts"
+  ],
+  "principalOriginal": "2fdd06c404e6833dc3110fab2643084a3cd5785d",
+  "originalEquivalence": {
+    "planningIdentical": true,
+    "removedHelperIdentical": true,
+    "wholeTermFileDifference": "Introductory commentary only; full original readbacks and diff retained."
+  },
+  "gates": {
+    "original-callers-1": {
+      "exitCode": 1,
+      "detail": "5 intended invariant failures / 7 tests",
+      "commandReceipt": "original-callers-1.receipt.json"
+    },
+    "patched-callers-1": {
+      "exitCode": 0,
+      "detail": "7 pass",
+      "commandReceipt": "patched-callers-1.receipt.json"
+    },
+    "focused-1": {
+      "exitCode": 0,
+      "detail": "95 pass, 0 skipped; 792 paired arithmetic cases included",
+      "commandReceipt": "focused-1.receipt.json"
+    },
+    "typecheck-1": {
+      "exitCode": 0,
+      "detail": "pass",
+      "commandReceipt": "typecheck-1.receipt.json"
+    },
+    "lint-1": {
+      "exitCode": 0,
+      "detail": "pass",
+      "commandReceipt": "lint-1.receipt.json"
+    }
+  },
+  "consumerSearch": "zero obsolete references in live src/scripts; absence guard in test retained",
+  "preservedUi": {
+    "path": "C:/Users/ethan/Documents/Codex/2026-09-04/here-are-6-prompts-i-have-2/outputs/sponsored-wedding-date-2026-09-05",
+    "manifestSha256": "c83d3427da25f5fe4d81e3cf66bb0ff997cb20da8ac201e5dbdeb51ffd5156ec",
+    "filesVerified": 189,
+    "allMatch": true
+  },
+  "flags": {
+    "planningPeriods": "default false in production; independently enabled and disabled fixtures",
+    "contextualOnboarding": "default false in production; independently enabled and disabled fixtures",
+    "deployed": "unknown"
+  },
+  "limits": [
+    "SQLite creation caller fixtures use FK OFF; no new FK ON or full HTTP/provider proof.",
+    "Earlier full Next/Clerk failed fixture remains separate: browser route denial, not automatic policy rejection; server-side keyless disposition unverified.",
+    "Actual remote-client transaction contention/recovery remains unknown.",
+    "No historical grant reassignment/repair.",
+    "Principal owns final integration, merged registration, independent review disposition and broad receiving gates."
+  ],
+  "launch": "Jan21 hold unchanged; no outreach or production action"
+}
