@@ -6,6 +6,7 @@ import {
   comments,
   driveFolderGrants,
   entitlements,
+  eventPurchaseDesignations,
   meta,
   notificationPrefs,
   notifications,
@@ -28,6 +29,44 @@ import type {
 } from "./db/schema";
 
 export type ExportDb = LibSQLDatabase<typeof schema>;
+
+/** Private checkout/settlement facts belong to their purchaser even after
+ * transfer or removal. Never join project content or names into this record. */
+const eventPurchaseMeta = {
+  id: eventPurchaseDesignations.id,
+  workspaceId: eventPurchaseDesignations.workspaceId,
+  checkoutAuthorizedAt: eventPurchaseDesignations.checkoutAuthorizedAt,
+  providerReference: eventPurchaseDesignations.providerReference,
+  settledAt: eventPurchaseDesignations.settledAt,
+  originalExpiresAt: eventPurchaseDesignations.originalExpiresAt,
+  designation: eventPurchaseDesignations.designation,
+  reason: eventPurchaseDesignations.reason,
+  settlementAuthorizedAt: eventPurchaseDesignations.settlementAuthorizedAt,
+  revoked: eventPurchaseDesignations.revoked,
+};
+
+/** Governing project facts, not an access decision or a former payer's receipt.
+ * This stays identical after erasure; even the replacement row id is omitted. */
+const eventProjectEffectMeta = {
+  workspaceId: eventPurchaseDesignations.workspaceId,
+  settledAt: eventPurchaseDesignations.settledAt,
+  originalExpiresAt: eventPurchaseDesignations.originalExpiresAt,
+  designation: eventPurchaseDesignations.designation,
+  revoked: eventPurchaseDesignations.revoked,
+};
+
+function ownerEntitlement(row: typeof entitlements.$inferSelect) {
+  // The existing Event grant's notes also carry the payment reference. Export
+  // its project term here; the purchaser retains their own full account row.
+  if (row.tier === "event") return {
+    workspaceId: row.workspaceId,
+    tier: row.tier,
+    source: row.source,
+    startedAt: row.startedAt,
+    expiresAt: row.expiresAt,
+  };
+  return row;
+}
 
 /** Attachment columns minus the internal storage locator; bytes are fetched
  *  via the authenticated download route, never inlined into the export. */
@@ -239,6 +278,8 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
     myDriveFolderGrants,
     myAddedResources,
     myGoogleDriveActivityRows,
+    myEventPurchases,
+    ownedEventProjectEffects,
   ] = await Promise.all([
     slugs.length ? database.select().from(tasks).where(inArray(tasks.workspaceId, slugs)) : [],
     slugs.length ? database.select().from(comments).where(inArray(comments.workspaceId, slugs)) : [],
@@ -311,6 +352,22 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
             )
           : accountProjectDriveActivityScope,
       ),
+    database
+      // isolation-ok: account portability uses the freshly resolved purchaser
+      // id, independently of membership. No project content/name is joined.
+      .select(eventPurchaseMeta)
+      .from(eventPurchaseDesignations)
+      .where(eq(eventPurchaseDesignations.purchaserUserId, userId)),
+    slugs.length
+      ? database.select(eventProjectEffectMeta)
+          .from(eventPurchaseDesignations)
+          .innerJoin(workspaces, eq(workspaces.id, eventPurchaseDesignations.workspaceId))
+          .where(and(
+            inArray(eventPurchaseDesignations.workspaceId, slugs),
+            eq(workspaces.ownerUserId, userId),
+            eq(eventPurchaseDesignations.designation, "designated"),
+          ))
+      : [],
   ]);
 
   return {
@@ -318,6 +375,7 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
     exportedAt,
     clerkId,
     user,
+    eventPurchases: myEventPurchases,
     ownedWorkspaces: {
       workspaces: ownedWorkspaces,
       tasks: ownedTasks,
@@ -326,7 +384,8 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
       attachments: ownedAttachments,
       resources: ownedResources,
       notifications: ownedNotifications,
-      entitlements: ownedEntitlements,
+      entitlements: ownedEntitlements.map(ownerEntitlement),
+      eventProjectEffects: ownedEventProjectEffects,
       shareLinks: ownedShareLinks,
       pendingInvites: ownedInvites,
       members: ownedMembers,
