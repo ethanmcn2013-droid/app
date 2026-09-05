@@ -3930,6 +3930,62 @@
         "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.resources.drive-reload-recovery.json"
       }
+    },
+    {
+      "id": "tasks.page.settings-projects-by-project-id-recovery",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/settings/projects/[projectId]/recovery",
+      "source": "tasks/src/app/settings/projects/[projectId]/recovery/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "settings-and-administration",
+      "primaryJob": "Recover project files and control published access without opening normal project content.",
+      "primaryAction": "Download a file, withdraw a published link or remove a project you own.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "empty",
+        "populated",
+        "loading",
+        "partial-failure",
+        "error",
+        "success",
+        "restricted",
+        "disabled",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "core",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "under-remediation",
+      "auditScore": null,
+      "openFindingIds": [
+        "JAN-RECOVERY-FRAMEWORK-ACCEPTANCE",
+        "JAN-RECOVERY-PROVIDER-BYTES",
+        "JAN-RECOVERY-REFERENCE-USABILITY"
+      ],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "partial",
+      "accessibilityCoverage": "partial",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "2dafc6ff8f760305"
     }
   ]
 }

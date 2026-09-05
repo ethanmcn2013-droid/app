@@ -124,6 +124,9 @@ jobs:
       - name: Verify independent profile account export and retry
         run: pnpm test:event-export:browser
 
+      - name: Verify exact-project recovery and record identification
+        run: pnpm test:project-recovery:browser
+
       - name: Verify settings hydration across locales
         run: pnpm test:settings-hydration
 
@@ -161,5 +164,6 @@ jobs:
             experience/output/recipient-project-work/floor-calendar
             experience/output/recipient-project-work/wedding-date-readback
             experience/output/event-account-export
+            experience/output/project-recovery
           if-no-files-found: ignore
           retention-days: 14

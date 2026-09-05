@@ -9,8 +9,8 @@ import { readTimelineRecovery, withdrawTimelinePublication } from "@/modules/tim
 import { readProjectRecoveryWith, runProjectRecoveryWith, type RecoveryDependencies } from "./project-recovery-core";
 import type { RecoveryCursor } from "@/lib/projects/recovery";
 
-/** Narrow product-recovery composition. The principal-owned module gate needs
- * an exact import allowance for this file and the Timeline recovery surface.
+/** Narrow product-recovery composition. The module gate allows only this exact
+ * host file and the independently reviewed Timeline recovery surface.
  * Authentication is supplied only by the server page/action, never by a form. */
 async function localActor(clerkId: string): Promise<string | null> {
   const [user] = await db.select({ id: users.id }).from(users).where(eq(users.clerkId, clerkId)).limit(1);
