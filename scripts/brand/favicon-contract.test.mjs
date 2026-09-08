@@ -15,10 +15,10 @@ const { SuiteMark } = require("../../src/lib/brand/suite-mark.tsx");
 const read = (path) => readFileSync(join(root, path));
 const PNG_SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
-// Ethan's committed dot + broadcast-ring artwork, studio 839fd493.
+// The ink field + single indigo dot shipped in T·153 (app#172).
 // An intentional mark change must review and update this seal in both repos.
 const CANONICAL_MARK_SHA256 =
-  "4b00fa51d93e967dfda92641394e806e4a097a1047b453c064e6681520f5f14d";
+  "df5bb369eda59b197558033ac98fbe8ea1ac7efe975f0a8a805df9188a613b37";
 
 test("the shared renderer preserves the committed Signal artwork", () => {
   const source = read("src/lib/brand/suite-mark.tsx").toString().replace(/\r\n?/g, "\n");

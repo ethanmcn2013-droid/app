@@ -1,34 +1,69 @@
 # Signal favicon contract
 
-`src/lib/brand/suite-mark.tsx` is the artwork source for the browser icon,
-Apple touch icon, install icon and ICO fallback. It is the indigo dot and
-broadcast ring on white committed in Studio `839fd493` on 1 July 2026,
-also preserved as `public/brand/kit/svg/mark/dot-ring-indigo.svg`.
+`src/lib/brand/suite-mark.tsx` is the artwork source for all four icon
+entry points: the browser tab icon, the Apple touch icon, the Android
+install icon and the ICO fallback. The mark is a single indigo dot
+(`#6366f1`, indigo-500) centred on ink (`#17171a`, `--x-studio-chrome`),
+holding 40% of the canvas. The reasoning behind those two colours — in
+particular why the dot is indigo-500 and not the brand's indigo-600 —
+lives in `docs/brand.md` under **App icon**, and in the source comment.
 
-The September 2026 repair replaced the legacy black tile with a white
-triangle still present in `src/app/favicon.ico`. That stale file had SHA256
-`2b8ad2d33455a8f736fc3a8ebf8f0bdea8848ad4c0db48a2833bd0f9cd775932`.
-Next adds this file to page metadata independently of `/icon`, so correcting
-only the generated routes leaves competing artwork in the browser.
+## Why this file exists
 
-Run `pnpm brand:icons` after an intentional artwork change. It renders
-`SuiteMark` through the same Next ImageResponse implementation as `/icon`
-and packs 16, 32, 48 and 256 pixel PNG frames into the ICO. The generator
-contains no duplicated brand colours or proportions.
+`/icon`, `/icon1` and `/apple-icon` are Next routes rendered from
+`SuiteMark` at request time, so they cannot drift from it. `favicon.ico`
+can. It is a static file in `src/app/` that Next serves verbatim at
+`/favicon.ico` for the clients that request that path directly instead of
+reading the `<link rel="icon">` tag, and Next adds it to page metadata
+independently of `/icon`. Change the mark and update only the routes, and
+the browser is served two different pieces of artwork depending on how it
+asks. That is precisely what had happened before T·153: the routes carried
+the branded mark while the ICO still held a stale icon.
 
-`pnpm test` verifies the committed artwork seal, every generated ICO frame,
-and actual image responses from `/icon`, `/apple-icon` and `/icon1`. The
-guard failed against the previous triangle before regeneration. Update the
-artwork seal only after reviewing the intended mark, and carry the same
-change through Studio and App together.
+## Regenerating
 
-Studio's active standalone brand pages use `assets/signal-favicon.ico`, an
-identical generated copy. The documents publisher already copies relative
-`assets/` references into the `growth.` and `plan.` mirrors; absolute site
-paths would break those independent hosts. The default test checks the copy
-and each page's favicon reference. Archived design prototypes remain dated
-evidence. Signal Design System is a package and has no favicon route.
+```bash
+pnpm brand:icons
+```
 
-The external `ceo1.html` reference mentioned in the feedback was unavailable
-in this workspace. This repair establishes consistency with the committed
-mark; it does not claim an exact artwork match to that external file.
+The generator renders the real `SuiteMark` component through the same
+`ImageResponse` implementation `/icon` uses and packs 16, 32, 48 and 256
+pixel PNG frames into a standard ICO directory. It deliberately contains
+no colours or proportions of its own — if it re-implemented the circle it
+would be a second source of truth, and a second thing to forget.
+
+Because it renders a React component through `next/og`, it needs the TS
+loader: the `brand:icons` script supplies `--import tsx`. Running
+`node scripts/brand/generate-favicon-ico.mjs` bare will fail.
+
+## The gate
+
+`scripts/brand/favicon-contract.test.mjs` runs first in `pnpm test` and
+asserts four things:
+
+1. **The artwork seal.** `suite-mark.tsx` hashes to a pinned SHA-256. Any
+   edit to the mark — deliberate or accidental — fails here first.
+2. **The committed ICO byte-matches a fresh render**, so a mark change
+   that skips `pnpm brand:icons` cannot merge.
+3. **Every ICO frame** is a well-formed PNG at its declared size, with a
+   correct directory entry.
+4. **`/icon`, `/apple-icon` and `/icon1`** still render the same artwork,
+   at the right size and content type.
+
+When you change the mark on purpose: edit `suite-mark.tsx`, run
+`pnpm brand:icons`, **look at the rendered icon at 16px**, then re-pin
+`CANONICAL_MARK_SHA256` in the contract test. The seal is a checkpoint
+that forces that look, not a lock.
+
+## Mirrors
+
+If `public/brand/assets/` exists, the generator also writes
+`signal-favicon.ico` there and the contract test asserts the copy matches.
+The deck publisher copies relative `assets/` references into the static
+mirror hosts, so those pages must use a relative href — an absolute site
+path would break on the independent hosts. This repo currently ships no
+`public/brand/` directory, so both the write and the assertion are
+inert; they exist so the mirror cannot be added later without the
+favicon coming with it.
+
+Signal Design System is a package and has no favicon route.
