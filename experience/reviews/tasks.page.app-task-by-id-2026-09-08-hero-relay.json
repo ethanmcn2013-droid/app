@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-task-by-id",
+  "source": "tasks/src/app/app/task/[id]/page.tsx",
+  "materialityHash": "9da9dcfb53810ea7",
+  "reviewedAt": "2026-09-08",
+  "reviewer": "Claude (Claude Code remote session, T·155 hero relay; evidence run executed in this session)",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-826bc6504d14fb554df1f11e-6d8f0e1bcd07d6e7.json",
+    "attestationSha256": "aca971d76f5b40703bc5c614628b02db10eecf94bac4dd0b8cc726f1d7d64b3e",
+    "runId": "tasks-playwright-826bc6504d14fb554df1f11e",
+    "canonicalEvidenceSha256": "826bc6504d14fb554df1f11eecfdcebc0291dfcd5e54a91125b47161aa4c5e4c",
+    "rawArtifactSha256": "6d8f0e1bcd07d6e764efe3150cb3bfbb613820a400b4c422f2b8b76d609a05e6",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.surface.task-detail-panel",
+    "caseName": "populated task",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Source unchanged and materiality hash unchanged. This receipt was re-issued because experience/critical-fixtures.json changed: the customer-facing homepage fixture now asserts the suite headline (Project management for people not in tech.) after T·155 replaced the Tasks-only hero with the three product cards from the 2 September front-door directions. Every receipt binds fixtureManifestSha256 to the exact evidence contract, so all twenty required a real re-run rather than a hash refresh. This surface was not touched by the change: the new hero lives in src/components/marketing/hero.tsx and hero-relay.tsx and is mounted only by src/app/page.tsx. The run used the committed experience contract (config, spec, fixtures, browser contract all unchanged apart from the root heading assertion) through a local wrapper that pointed Playwright 1.61 at the environment's pre-installed Chromium 1194 build.",
+  "decision": "Accepted. Re-run passed 132/132 across mobile, tablet, desktop and wide on the production build in demo mode; this surface was not modified."
+}
