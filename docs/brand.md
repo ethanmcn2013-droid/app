@@ -18,7 +18,7 @@ The dot is load-bearing. Don't replace it with a swoosh, a checkmark, or a squar
 
 ## App icon
 
-The icon is that same dot and nothing else: a single indigo dot centred on ink, no ring, no glyph, no wordmark. Source of truth is `src/lib/brand/suite-mark.tsx`; `/icon` (32), `/icon1` (512, maskable) and `/apple-icon` (180) all render from it, and `src/app/favicon.ico` is regenerated from the same two colours by `node scripts/brand/generate-favicon-ico.mjs`.
+The icon is that same dot and nothing else: a single indigo dot centred on ink, no ring, no glyph, no wordmark. Source of truth is `src/lib/brand/suite-mark.tsx`: `/icon` (32), `/icon1` (512, maskable) and `/apple-icon` (180) render from it at request time, and `src/app/favicon.ico` is regenerated from the same component by `pnpm brand:icons`. A contract test in the default gate fails if any of the four drifts — see `docs/FAVICONS.md`.
 
 | | Value | Why |
 |---|---|---|
