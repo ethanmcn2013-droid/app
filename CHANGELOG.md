@@ -4,6 +4,10 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-09-08 · T·153 · tightens · One favicon across the app
+
+**The browser fallback now carries the same indigo dot and broadcast ring as the app's generated icons.** The old Next triangle remained in `favicon.ico` even after the branded icon routes changed. A generator now renders the shared mark at each ICO size; the default test gate compares the committed fallback and all icon responses to that source, so the two paths cannot silently diverge again.
+
 ## 2026-08-22 · T·152 · tightens · design tokens now come from the package, not a copy
 
 **The app's system tokens are imported from the `signal-ds` npm package
