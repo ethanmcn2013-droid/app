@@ -14,6 +14,8 @@ export type ProjectDriveStatus = Readonly<{
   ownerName: string | null;
   folderUrl: string | null;
   setup: "not_connected" | "active" | "setting_up" | "fallback" | "needs_attention" | "unavailable" | "archived";
+  /** Requested named-permission removals, independent of live access or OAuth. */
+  pendingRemovals: Readonly<{ currentFolder: number; previousFolders: number }>;
   ownConnection: Readonly<{
     connected: boolean;
     needsReconnect: boolean;

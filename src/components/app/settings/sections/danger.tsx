@@ -7,6 +7,7 @@ import { Dialog } from "@/components/primitives/dialog";
 import { clearAllTasksAction, seedDomainAction } from "@/server/actions/seed";
 import { deleteWorkspaceAction } from "@/server/actions/settings";
 import { SectionHeader } from "../settings-app";
+import { projectRecoveryPath } from "@/lib/projects/recovery";
 
 export function DangerSection({
   myRole,
@@ -98,6 +99,10 @@ export function DangerSection({
         title="Things you can’t undo"
         description="The button-colored-red kind. We make you confirm because we’re not in the business of regret."
       />
+
+      {projectId ? <p className="mb-4 text-[13px] text-ink-quiet">
+        <a className="underline underline-offset-4" href={projectRecoveryPath(projectId)}>Project recovery</a> keeps export, file downloads and permitted public-access controls available outside the workspace.
+      </p> : null}
 
       <div className="space-y-4">
         {/* Load the wedding demo */}

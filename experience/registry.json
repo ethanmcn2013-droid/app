@@ -119,7 +119,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "e1fd36ea48684fdf"
+      "materialityHash": "78488f61db8efff3"
     },
     {
       "id": "tasks.page.app-tasks-calendar",
@@ -376,9 +376,9 @@
       "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "ba2e03f3b33cb1d1",
+      "materialityHash": "7e967120eab2a5fc",
       "materialityReview": {
-        "materialityHash": "ba2e03f3b33cb1d1",
+        "materialityHash": "7e967120eab2a5fc",
         "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.app-my-tasks.json"
       }
@@ -583,9 +583,9 @@
       "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "ff4a649e2d42307f",
+      "materialityHash": "f9c0e0551c39c96c",
       "materialityReview": {
-        "materialityHash": "ff4a649e2d42307f",
+        "materialityHash": "f9c0e0551c39c96c",
         "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.app-archived.json"
       }
@@ -1173,8 +1173,8 @@
       "source": "tasks/src/app/settings/profile/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "settings-and-administration",
-      "primaryJob": "Understand and use settings Ã‚Â· profile.",
-      "primaryAction": "Complete the primary action on settings Ã‚Â· profile.",
+      "primaryJob": "Manage your account, download your data and control account access.",
+      "primaryAction": "Update your profile or download your account data.",
       "roles": [
         "owner",
         "member"
@@ -1211,7 +1211,7 @@
       "materialityReview": {
         "materialityHash": "a24a1b85fe91dad0",
         "reviewedAt": "2026-09-05",
-        "evidence": "experience/reviews/january-ca95830e-tasks.page.settings-profile.json"
+        "evidence": "experience/reviews/january-ac7a913d-tasks.page.settings-profile.json"
       }
     },
     {
@@ -1846,7 +1846,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "697b7a51f3979ba3"
+      "materialityHash": "642b343ce41628a4"
     },
     {
       "id": "tasks.surface.quick-create",
@@ -1986,9 +1986,9 @@
       "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "9da9dcfb53810ea7",
+      "materialityHash": "a809bc29cf6e8034",
       "materialityReview": {
-        "materialityHash": "9da9dcfb53810ea7",
+        "materialityHash": "a809bc29cf6e8034",
         "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.page.app-task-by-id.json"
       }
@@ -2212,11 +2212,11 @@
       "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "9643e60183b5aa11",
+      "materialityHash": "4b38715dceed59c0",
       "materialityReview": {
-        "materialityHash": "9643e60183b5aa11",
+        "materialityHash": "4b38715dceed59c0",
         "reviewedAt": "2026-09-05",
-        "evidence": "experience/reviews/january-ca95830e-tasks.page.app-project.json"
+        "evidence": "experience/reviews/january-8172364e-tasks.page.app-project.json"
       }
     },
     {
@@ -3702,10 +3702,15 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": null,
+      "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "778ef47b2a7cb691"
+      "materialityHash": "31d858c47674f034",
+      "materialityReview": {
+        "materialityHash": "31d858c47674f034",
+        "reviewedAt": "2026-09-05",
+        "evidence": "experience/reviews/january-1ac3d233-tasks.connections.storage.json"
+      }
     },
     {
       "id": "tasks.resources.drive-upload",
@@ -3863,11 +3868,11 @@
       "lastReviewedAt": "2026-09-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "52aa27dae6dafc3b",
+      "materialityHash": "8d7e84db7d7d8f9b",
       "materialityReview": {
-        "materialityHash": "52aa27dae6dafc3b",
+        "materialityHash": "8d7e84db7d7d8f9b",
         "reviewedAt": "2026-09-05",
-        "evidence": "experience/reviews/january-ca95830e-tasks.connections.storage-owner-change.json"
+        "evidence": "experience/reviews/january-8ae94ffb-tasks.connections.storage-owner-change.json"
       }
     },
     {
@@ -3925,6 +3930,62 @@
         "reviewedAt": "2026-09-05",
         "evidence": "experience/reviews/january-ca95830e-tasks.resources.drive-reload-recovery.json"
       }
+    },
+    {
+      "id": "tasks.page.settings-projects-by-project-id-recovery",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/settings/projects/[projectId]/recovery",
+      "source": "tasks/src/app/settings/projects/[projectId]/recovery/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "settings-and-administration",
+      "primaryJob": "Recover project files and control published access without opening normal project content.",
+      "primaryAction": "Download a file, withdraw a published link or remove a project you own.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "empty",
+        "populated",
+        "loading",
+        "partial-failure",
+        "error",
+        "success",
+        "restricted",
+        "disabled",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "core",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "under-remediation",
+      "auditScore": null,
+      "openFindingIds": [
+        "JAN-RECOVERY-FRAMEWORK-ACCEPTANCE",
+        "JAN-RECOVERY-PROVIDER-BYTES",
+        "JAN-RECOVERY-REFERENCE-USABILITY"
+      ],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "partial",
+      "accessibilityCoverage": "partial",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "2dafc6ff8f760305"
     }
   ]
 }

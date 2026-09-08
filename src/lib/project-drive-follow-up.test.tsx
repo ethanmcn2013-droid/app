@@ -4,7 +4,18 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { driveReloadState } from "./project-drive-reload";
 import { DriveReloadNotice } from "@/components/app/detail-panel/drive-reload-notice";
 import { DriveHandoverView } from "@/components/app/settings/sections/drive-handover-view";
+import { ConnectionsView } from "@/components/app/settings/sections/connections-view";
 import type { DriveHandoverRead } from "./project-drive-handover-ui";
+
+test("first consent and separate board setup both disclose future file ownership and visibility", () => {
+  for (const connected of [false, true]) {
+    const html = renderToStaticMarkup(<ConnectionsView status={{ ownerName: null, folderUrl: null, setup: "not_connected", pendingRemovals: { currentFolder: 0, previousFolders: 0 }, ownConnection: { connected, needsReconnect: false, accountEmail: connected ? "owner@example.test" : null, affectedProjectCount: 0 }, access: { state: "not_connected", checkedAt: null, people: [], otherPermissionCount: 0 } }} busy={false} message={null} confirmation={false} handover={null} onRefresh={() => {}} onConnect={() => {}} onEnable={() => {}} onDisconnect={() => {}} onCancelDisconnect={() => {}} onConfirmDisconnect={() => {}} />);
+    assert.match(html, /will own and be able to see its Drive files/);
+    assert.match(html, /Those files use their Google Drive space/);
+    assert.ok(html.indexOf("will own and be able to see") < html.indexOf(connected ? "Use my Drive for this board" : "Connect Google Drive"));
+    assert.match(html, /Connecting your account does not change where this board/);
+  }
+});
 
 test("reloaded claims block new intake regardless of file metadata; refresh errors never mean empty", () => {
   const pending = [{ id: "original-claim", storage: "google_drive", accessState: "pending" }];

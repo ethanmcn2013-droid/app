@@ -2,15 +2,15 @@
   "schemaVersion": "signal-materiality-review/2",
   "experienceId": "tasks.page.app-task-by-id",
   "source": "tasks/src/app/app/task/[id]/page.tsx",
-  "materialityHash": "9da9dcfb53810ea7",
+  "materialityHash": "a809bc29cf6e8034",
   "reviewedAt": "2026-09-05",
   "reviewer": "Principal integrator using delegated authority",
   "playwrightEvidence": {
-    "attestationPath": "experience/evidence-runs/tasks-playwright-776b131ccc1d285f9c76fe35-5b99dd431aff0439.json",
-    "attestationSha256": "ff8441cd96805b0e7aa0258052acbb45760c8b709819db54a71c3cabf14bea79",
+    "attestationPath": "experience/evidence-runs/tasks-playwright-776b131ccc1d285f9c76fe35-95777453bbcc1dbc.json",
+    "attestationSha256": "738917f64586dd006345277584f977052e4a4e5939796a9b69d209e7c3d3ee39",
     "runId": "tasks-playwright-776b131ccc1d285f9c76fe35",
     "canonicalEvidenceSha256": "776b131ccc1d285f9c76fe35d39885f359fa005fffca90ce659cd2384a783241",
-    "rawArtifactSha256": "5b99dd431aff04392b1618420e2a4561e7b51a03f4f1209a37b26c4c4b7b78cb",
+    "rawArtifactSha256": "95777453bbcc1dbc166bf827e955f860139f432d1c2b53e697ae93bbc694d71b",
     "artifactPath": "experience/output/critical-evidence.json",
     "fixtureId": "tasks.surface.task-detail-panel",
     "caseName": "populated task",
@@ -21,6 +21,6 @@
       "wide"
     ]
   },
-  "reviewedChange": "Source hash remains unchanged from the archived prior review. Rebound after the actual full132-case run at182935f7 with the loopback-only server contract and integrated Home/Notes project-context repairs. Prior source decision: Source bytes match the previous normalized materiality hash. Fresh ca95830e built regression evidence follows the corrected redemption failure-state fixture. The associated case is suite regression context; it does not add unexercised states or provider behavior. Prior scoped surface evidence and limitations remain in experience/reviews/history/pre-january-fixture-contract/tasks.page.app-task-by-id-2026-08-17-wp6-d022.json",
-  "decision": "Retain the existing scoped decision and remaining-state limits. The current browser case was actually rerun;27 separate Notes recovery/navigation browser scenarios and independent Home/Notes reviews support the context change. This does not establish full feature-state, provider, human or council acceptance. Prior scoped decision: Accept the new deterministic regression receipt only. Preserve current coverage, scores and unresolved findings. No founder selection, council certification, live-provider result or human-comprehension claim."
+  "reviewedChange": "Canonical task ownership, archived read context and explicit route refusal. Reviewed with the actual 68-state recipient route capture at runtime 50918cdc, four declared widths, after the final normal Next build and 132-case regression run. Exact route inputs and rendered HTML/PNG are retained in task outputs/recipient-project-work/routes-50918cdc and the owning January checkpoint. The linked built fixture is suite regression context; it does not stand in for the owning route.",
+  "decision": "Accept only the bounded scripted materiality evidence. Preserve coverage scores, required-state gaps and historical receipts. Route fixtures use explicit framework/session adapters; Next demo rendering, 27 separate Notes recovery scenarios and direct desktop inspection do not establish real Clerk/provider continuity, human/council acceptance or independent RC-3 closure. The stopped independent review remains incomplete."
 }

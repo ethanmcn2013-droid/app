@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { DriveHandoverRead } from "@/lib/project-drive-handover-ui";
 import { driveButton } from "./connections-view";
 
@@ -22,6 +22,14 @@ export function DriveHandoverView({ read, busy, onSubmit }: {
   const selectId = useId();
   const [selected, setSelected] = useState("");
   const [confirmation, setConfirmation] = useState(false);
+  const reviewButton = useRef<HTMLButtonElement>(null);
+  const restoreFocus = useRef(false);
+  useEffect(() => {
+    if (!confirmation && restoreFocus.current) {
+      restoreFocus.current = false;
+      reviewButton.current?.focus();
+    }
+  }, [confirmation]);
   const target = read.state === "in_progress" ? read.continuation : read.state === "ready" ? read.choices.find(choice => choice.userId === selected) : null;
   return <section aria-label="Change storage owner" className="rounded-xl border border-line-soft bg-bg-elevated p-5">
     <h3 className="text-[16px] font-semibold text-ink">Change storage owner</h3>
@@ -35,12 +43,12 @@ export function DriveHandoverView({ read, busy, onSubmit }: {
       </select>
     </div> : <p className="mt-3 text-ink">Another board owner needs to connect their Google Drive first. Then check again to choose them.</p> : null}
     {read.state === "in_progress" && target ? <p className="mt-3 break-words font-medium text-ink">Saved change: {target.name}</p> : null}
-    {target && !confirmation ? <button className={`${driveButton} mt-3`} disabled={busy} onClick={() => setConfirmation(true)}>{read.state === "in_progress" ? "Continue saved change" : "Review owner change"}</button> : null}
+    {target && !confirmation ? <button ref={reviewButton} className={`${driveButton} mt-3`} disabled={busy} onClick={() => setConfirmation(true)}>{read.state === "in_progress" ? "Continue saved change" : "Review owner change"}</button> : null}
     {target && confirmation ? <div className="mt-4 rounded-lg border border-line p-4" role="group" aria-label="Confirm storage owner change">
       <p className="break-words font-medium text-ink">Use {target.name}’s Drive for future files?</p>
       <p className="mt-2">They will own and can see those files, which use their Drive space. Existing files stay where they are. Access for future uploads must finish being set up.</p>
       <div className="mt-3 flex flex-wrap gap-2">
-        <button autoFocus className={driveButton} disabled={busy} onClick={() => setConfirmation(false)}>Go back</button>
+        <button autoFocus className={driveButton} disabled={busy} onClick={() => { restoreFocus.current = true; setConfirmation(false); }}>Go back</button>
         <button className={driveButton} disabled={busy} onClick={() => onSubmit(target.userId)}>{busy ? "Checking change…" : "Confirm owner change"}</button>
       </div>
     </div> : null}

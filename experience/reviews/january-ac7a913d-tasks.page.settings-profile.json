@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.settings-profile",
+  "source": "tasks/src/app/settings/profile/page.tsx",
+  "materialityHash": "a24a1b85fe91dad0",
+  "reviewedAt": "2026-09-05",
+  "reviewer": "Principal integrator under delegated authority; separate from the Event export author",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-776b131ccc1d285f9c76fe35-32b4464d184c12d8.json",
+    "attestationSha256": "ea9f9f829defb4ca47457b3a02ea3ee6893fbf52f2a0e9ef57a233cdaf4a729d",
+    "runId": "tasks-playwright-776b131ccc1d285f9c76fe35",
+    "canonicalEvidenceSha256": "776b131ccc1d285f9c76fe35d39885f359fa005fffca90ce659cd2384a783241",
+    "rawArtifactSha256": "32b4464d184c12d8c5bfb077ae842c4dc68e39d89e3dee8403fc198652acc90c",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.surface.task-detail-panel",
+    "caseName": "populated task",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "DataPrivacy now links directly to the existing authenticated account JSON download from the independent profile page. Copy excludes uploaded/Google Drive file bytes and explains unavailable sections. The 44px native link has semantic light/dark colors and visible focus. Page source is unchanged; this review concerns its changed imported DataPrivacy dependency. Profile DangerZone remains present. Principal27 export and24 tenant tests pass, author final8 component/actual-HTTP cases and their10 exact source inputs are verified, and the principal inspected mobile dark, desktop light and host500 images. Native failures cancel with no completed JSON file, keep the profile open and permit same-page retry. No inline app error is rendered; browser download-panel and other-browser presentation remain unverified. Owning evidence: experience/reviews/january-recipient-2026-09-05/event-export-* and january-event-export-2026-09-05. The linked132-case preceding built receipt supplies suite regression context only, not full profile/provider acceptance. The registry job/action encoding is repaired to plain account language.",
+  "decision": "Accept this scoped export prerequisite and its bounded source/component evidence. Keep coverage fields, audit scores, approvals and open full-profile states unchanged. Current principal composition and Linux checks must independently pass. This does not close Event recovery/enforcement, receiving, RC3, stopped Drive lifecycle review, Atlas, provider, human-comprehension or council acceptance. No production or external action is authorized."
+}

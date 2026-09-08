@@ -1,0 +1,406 @@
+TAP version 13
+# Subtest: authoritative ledger registers every SQL file with receipt and journal parity
+ok 1 - authoritative ledger registers every SQL file with receipt and journal parity
+  ---
+  duration_ms: 34.4638
+  type: 'test'
+  ...
+# Subtest: an unregistered SQL file fails the contract
+ok 2 - an unregistered SQL file fails the contract
+  ---
+  duration_ms: 259.867
+  type: 'test'
+  ...
+# Subtest: a modified SQL file fails the content-addressed contract
+ok 3 - a modified SQL file fails the content-addressed contract
+  ---
+  duration_ms: 120.5331
+  type: 'test'
+  ...
+# Subtest: a registered but unreceipted migration fails the contract
+ok 4 - a registered but unreceipted migration fails the contract
+  ---
+  duration_ms: 123.1031
+  type: 'test'
+  ...
+# Subtest: a modified receipt fails its content-addressed ledger binding
+ok 5 - a modified receipt fails its content-addressed ledger binding
+  ---
+  duration_ms: 142.4759
+  type: 'test'
+  ...
+# Subtest: a modified snapshot fails its content-addressed ledger binding
+ok 6 - a modified snapshot fails its content-addressed ledger binding
+  ---
+  duration_ms: 132.9679
+  type: 'test'
+  ...
+# Subtest: journal omission fails even when the SQL and receipt exist
+ok 7 - journal omission fails even when the SQL and receipt exist
+  ---
+  duration_ms: 234.2097
+  type: 'test'
+  ...
+# Subtest: fresh databases apply the canonical baseline plus forwards and rerun as a no-op
+ok 8 - fresh databases apply the canonical baseline plus forwards and rerun as a no-op
+  ---
+  duration_ms: 390.993
+  type: 'test'
+  ...
+# Subtest: Project Drive preserves credential, folder, and grant generations
+ok 9 - Project Drive preserves credential, folder, and grant generations
+  ---
+  duration_ms: 192.6967
+  type: 'test'
+  ...
+# Subtest: Project Drive operation journal is typed, recoverable, and lifecycle-safe with foreign keys on
+ok 10 - Project Drive operation journal is typed, recoverable, and lifecycle-safe with foreign keys on
+  ---
+  duration_ms: 180.5627
+  type: 'test'
+  ...
+# Subtest: Project Drive operation journal detects same-name partial-index drift
+ok 11 - Project Drive operation journal detects same-name partial-index drift
+  ---
+  duration_ms: 270.4718
+  type: 'test'
+  ...
+# Subtest: a non-empty database without an exact ledger refuses migration execution
+ok 12 - a non-empty database without an exact ledger refuses migration execution
+  ---
+  duration_ms: 22.4735
+  type: 'test'
+  ...
+# Subtest: database ledger hash drift fails closed
+ok 13 - database ledger hash drift fails closed
+  ---
+  duration_ms: 176.925
+  type: 'test'
+  ...
+# Subtest: schema drift fails both migration no-op and current status
+ok 14 - schema drift fails both migration no-op and current status
+  ---
+  duration_ms: 218.1184
+  type: 'test'
+  ...
+# Subtest: applied forward migration drift fails both migration no-op and current status
+ok 15 - applied forward migration drift fails both migration no-op and current status
+  ---
+  duration_ms: 243.1381
+  type: 'test'
+  ...
+# Subtest: migration-time backfill proofs do not become false production drift alarms
+ok 16 - migration-time backfill proofs do not become false production drift alarms
+  ---
+  duration_ms: 330.2081
+  type: 'test'
+  ...
+# Subtest: same-name wrong-definition source-note index fails semantic proofs
+ok 17 - same-name wrong-definition source-note index fails semantic proofs
+  ---
+  duration_ms: 204.9247
+  type: 'test'
+  ...
+# Subtest: same-name inert parent guards fail both trigger-definition proofs
+ok 18 - same-name inert parent guards fail both trigger-definition proofs
+  ---
+  duration_ms: 199.2354
+  type: 'test'
+  ...
+# Subtest: remote databases cannot bypass receipt safety with a local label or environment typo
+ok 19 - remote databases cannot bypass receipt safety with a local label or environment typo
+  ---
+  duration_ms: 41.1302
+  type: 'test'
+  ...
+# Subtest: production execution receipt is bound to target, environment, ledger, and pending hashes
+ok 20 - production execution receipt is bound to target, environment, ledger, and pending hashes
+  ---
+  duration_ms: 245.2792
+  type: 'test'
+  ...
+# Subtest: failed postconditions roll back both SQL and ledger row
+ok 21 - failed postconditions roll back both SQL and ledger row
+  ---
+  duration_ms: 204.4256
+  type: 'test'
+  ...
+# Subtest: receipt-backed adoption verifies target, shape, proofs, and is idempotent
+ok 22 - receipt-backed adoption verifies target, shape, proofs, and is idempotent
+  ---
+  duration_ms: 233.537
+  type: 'test'
+  ...
+# Subtest: adoption receipt for another database fails before writing metadata
+ok 23 - adoption receipt for another database fails before writing metadata
+  ---
+  duration_ms: 38.0222
+  type: 'test'
+  ...
+# Subtest: normal post-migration resources do not invalidate the historical backfill receipt
+ok 24 - normal post-migration resources do not invalidate the historical backfill receipt
+  ---
+  duration_ms: 348.9245
+  type: 'test'
+  ...
+# Subtest: the resource backfill count remains required when its migration executes
+ok 25 - the resource backfill count remains required when its migration executes
+  ---
+  duration_ms: 49.4665
+  type: 'test'
+  ...
+# Subtest: usage migration proof failure rolls back both new tables and its ledger receipt
+ok 26 - usage migration proof failure rolls back both new tables and its ledger receipt
+  ---
+  duration_ms: 352.1912
+  type: 'test'
+  ...
+# Subtest: Event additive migration preserves populated history; failed proof rolls back all objects and its receipt before a successful retry/no-op
+ok 27 - Event additive migration preserves populated history; failed proof rolls back all objects and its receipt before a successful retry/no-op
+  ---
+  duration_ms: 426.3446
+  type: 'test'
+  ...
+# Subtest: a dry run classifies everything and writes nothing
+ok 28 - a dry run classifies everything and writes nothing
+  ---
+  duration_ms: 218.3478
+  type: 'test'
+  ...
+# Subtest: the committed receipt carries counts and salted hashes only
+ok 29 - the committed receipt carries counts and salted hashes only
+  ---
+  duration_ms: 209.7371
+  type: 'test'
+  ...
+# Subtest: apply writes exactly the exact-evidence rows, their mirrors, and nothing else
+ok 30 - apply writes exactly the exact-evidence rows, their mirrors, and nothing else
+  ---
+  duration_ms: 240.0295
+  type: 'test'
+  ...
+# Subtest: the operator manifest carries the exact ids and a rollback, and is written 0600
+ok 31 - the operator manifest carries the exact ids and a rollback, and is written 0600
+  ---
+  duration_ms: 257.7985
+  type: 'test'
+  ...
+# Subtest: apply refuses to write the manifest inside the repository
+ok 32 - apply refuses to write the manifest inside the repository
+  ---
+  duration_ms: 204.3058
+  type: 'test'
+  ...
+# Subtest: an unreadable Tasks database aborts rather than orphaning live couples
+ok 33 - an unreadable Tasks database aborts rather than orphaning live couples
+  ---
+  duration_ms: 230.4159
+  type: 'test'
+  ...
+# Subtest: orphaned bindings are written only when explicitly asked for
+ok 34 - orphaned bindings are written only when explicitly asked for
+  ---
+  duration_ms: 197.2902
+  type: 'test'
+  ...
+# Subtest: parent=A and exactly one child=A auto-binds as legacy_exact
+ok 35 - parent=A and exactly one child=A auto-binds as legacy_exact
+  ---
+  duration_ms: 4.7796
+  type: 'test'
+  ...
+# Subtest: parent=A with one unbound child auto-binds and mirrors the child
+ok 36 - parent=A with one unbound child auto-binds and mirrors the child
+  ---
+  duration_ms: 0.2534
+  type: 'test'
+  ...
+# Subtest: parent=A with one unbound child refuses when anything else claims A
+ok 37 - parent=A with one unbound child refuses when anything else claims A
+  ---
+  duration_ms: 0.3033
+  type: 'test'
+  ...
+# Subtest: an unbound parent with one owned child auto-binds only on a proved owner
+ok 38 - an unbound parent with one owned child auto-binds only on a proved owner
+  ---
+  duration_ms: 0.3515
+  type: 'test'
+  ...
+# Subtest: parent=A and child=B is needs_review with no write
+ok 39 - parent=A and child=B is needs_review with no write
+  ---
+  duration_ms: 0.2392
+  type: 'test'
+  ...
+# Subtest: mixed and duplicated child sources are preserved, never merged
+ok 40 - mixed and duplicated child sources are preserved, never merged
+  ---
+  duration_ms: 0.2175
+  type: 'test'
+  ...
+# Subtest: several unbound children under a bound parent will not have a primary guessed
+ok 41 - several unbound children under a bound parent will not have a primary guessed
+  ---
+  duration_ms: 0.2747
+  type: 'test'
+  ...
+# Subtest: fully unlinked is never inferred from names, order or dates
+ok 42 - fully unlinked is never inferred from names, order or dates
+  ---
+  duration_ms: 0.1766
+  type: 'test'
+  ...
+# Subtest: a missing Tasks Project is orphaned, and only with a complete export
+ok 43 - a missing Tasks Project is orphaned, and only with a complete export
+  ---
+  duration_ms: 0.876
+  type: 'test'
+  ...
+# Subtest: an existing binding elsewhere is never overwritten
+ok 44 - an existing binding elsewhere is never overwritten
+  ---
+  duration_ms: 0.6363
+  type: 'test'
+  ...
+# Subtest: a bound parent with no child at all cannot invent one
+ok 45 - a bound parent with no child at all cannot invent one
+  ---
+  duration_ms: 0.2622
+  type: 'test'
+  ...
+# Subtest: the summary counts every outcome without naming anything
+ok 46 - the summary counts every outcome without naming anything
+  ---
+  duration_ms: 0.4247
+  type: 'test'
+  ...
+# Subtest: the inventory counts every shape the classification table names
+ok 47 - the inventory counts every shape the classification table names
+  ---
+  duration_ms: 44.1117
+  type: 'test'
+  ...
+# Subtest: the cross-database check separates missing Projects from archived ones
+ok 48 - the cross-database check separates missing Projects from archived ones
+  ---
+  duration_ms: 30.2539
+  type: 'test'
+  ...
+# Subtest: the inventory refuses anything that is not a single read
+ok 49 - the inventory refuses anything that is not a single read
+  ---
+  duration_ms: 0.7496
+  type: 'test'
+  ...
+# Subtest: a write cannot reach a database even by calling the query helper
+ok 50 - a write cannot reach a database even by calling the query helper
+  ---
+  duration_ms: 25.3024
+  type: 'test'
+  ...
+# Subtest: the file has exactly one execute call, and it is the guarded one
+ok 51 - the file has exactly one execute call, and it is the guarded one
+  ---
+  duration_ms: 0.7195
+  type: 'test'
+  ...
+# Subtest: the ledger registers both Timeline SQL files with receipt and journal parity
+ok 52 - the ledger registers both Timeline SQL files with receipt and journal parity
+  ---
+  duration_ms: 2.3168
+  type: 'test'
+  ...
+# Subtest: a tampered Timeline migration fails the content-addressed contract
+ok 53 - a tampered Timeline migration fails the content-addressed contract
+  ---
+  duration_ms: 44.9233
+  type: 'test'
+  ...
+# Subtest: a fresh database applies the baseline plus forwards and reruns as a no-op
+ok 54 - a fresh database applies the baseline plus forwards and reruns as a no-op
+  ---
+  duration_ms: 45.6261
+  type: 'test'
+  ...
+# Subtest: a database carrying the foreign 0000-0007 chain refuses baseline replay
+ok 55 - a database carrying the foreign 0000-0007 chain refuses baseline replay
+  ---
+  duration_ms: 8.6316
+  type: 'test'
+  ...
+# Subtest: adoption registers the observed fingerprint, is idempotent, and unlocks forward migration
+ok 56 - adoption registers the observed fingerprint, is idempotent, and unlocks forward migration
+  ---
+  duration_ms: 385.2041
+  type: 'test'
+  ...
+# Subtest: adoption refuses a receipt whose legacy chain fingerprint has moved
+ok 57 - adoption refuses a receipt whose legacy chain fingerprint has moved
+  ---
+  duration_ms: 290.6634
+  type: 'test'
+  ...
+# Subtest: adoption refuses a receipt written against a different database or a drifted schema
+ok 58 - adoption refuses a receipt written against a different database or a drifted schema
+  ---
+  duration_ms: 338.542
+  type: 'test'
+  ...
+# Subtest: a remote target cannot be migrated without an execution receipt
+ok 59 - a remote target cannot be migrated without an execution receipt
+  ---
+  duration_ms: 1.3835
+  type: 'test'
+  ...
+# Subtest: a failed postcondition rolls back the schema and the ledger row together
+ok 60 - a failed postcondition rolls back the schema and the ledger row together
+  ---
+  duration_ms: 31.0591
+  type: 'test'
+  ...
+# Subtest: dry run writes nothing to the target and rehearses on a copy
+ok 61 - dry run writes nothing to the target and rehearses on a copy
+  ---
+  duration_ms: 394.8696
+  type: 'test'
+  ...
+# Subtest: a dry run against a remote target refuses to rehearse rather than pretending
+ok 62 - a dry run against a remote target refuses to rehearse rather than pretending
+  ---
+  duration_ms: 1.5348
+  type: 'test'
+  ...
+# Subtest: ledger row tampering fails closed on the next run
+ok 63 - ledger row tampering fails closed on the next run
+  ---
+  duration_ms: 27.6748
+  type: 'test'
+  ...
+# Subtest: schema drift after apply fails both the no-op and the status check
+ok 64 - schema drift after apply fails both the no-op and the status check
+  ---
+  duration_ms: 27.2825
+  type: 'test'
+  ...
+# Subtest: a backfilled binding row is not read as production drift
+ok 65 - a backfilled binding row is not read as production drift
+  ---
+  duration_ms: 29.6556
+  type: 'test'
+  ...
+# Subtest: the binding table refuses the states and shapes the plan forbids
+ok 66 - the binding table refuses the states and shapes the plan forbids
+  ---
+  duration_ms: 22.7388
+  type: 'test'
+  ...
+1..66
+# tests 66
+# suites 0
+# pass 66
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6679.1103

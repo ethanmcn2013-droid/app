@@ -1,0 +1,114 @@
+{
+  "runtime": "8ae94ffb4e74bd21ba652f0117417afa03ed43a3",
+  "archive": "independent-8ae.zip",
+  "bytes": 452659,
+  "sha256": "903af1bda985ba44c8ef18e9bab20929b2cd0ecc38014b35c5cc35c70b299a9e",
+  "entries": [
+    {
+      "path": "author-snapshots/baseline-capture/connections-not-connected-390-light.png",
+      "bytes": 86354,
+      "sha256": "898da2f4bb0ae1dd9c1338caa52663540b8dc7a875b5f9f93e907b23c190aa29"
+    },
+    {
+      "path": "author-snapshots/baseline-capture/handover-confirm-connected-1440-light.png",
+      "bytes": 136508,
+      "sha256": "c7e24815771d5cfd45ed46cd051a179a8e33915bcfcc66248e2cf3b5a0bd41a2"
+    },
+    {
+      "path": "author-snapshots/baseline-capture/receipt.json",
+      "bytes": 96805,
+      "sha256": "084ee8fd0e8dae6b7bf9479f0135969eb0f982b4677b43084b4e45bf2ee000db"
+    },
+    {
+      "path": "author-snapshots/baseline-focused.log",
+      "bytes": 17822,
+      "sha256": "3c0eb027a9cf58415b3e46ffa62c5f955b26c3e2ce5da6cc8d3d611b675932c7"
+    },
+    {
+      "path": "author-snapshots/baseline-focused.receipt.json",
+      "bytes": 1153,
+      "sha256": "a7d1c5530bc13fe25cacb5f2456bff8b1bf247a2d9aaadc2ed711c5895e338e2"
+    },
+    {
+      "path": "author-snapshots/final-capture/connections-not-connected-390-light.png",
+      "bytes": 93424,
+      "sha256": "77710647f938520f5a4e0ec03468eec78d6f546093dfa3e501ff33ba429a4529"
+    },
+    {
+      "path": "author-snapshots/final-capture/handover-confirm-connected-1440-light.png",
+      "bytes": 136508,
+      "sha256": "c7e24815771d5cfd45ed46cd051a179a8e33915bcfcc66248e2cf3b5a0bd41a2"
+    },
+    {
+      "path": "author-snapshots/final-capture/receipt.json",
+      "bytes": 96536,
+      "sha256": "c26ed0b22ecb2fc5363c0cac7036c2ab6ad330532d9adbde5fae961db2f4cbf0"
+    },
+    {
+      "path": "author-snapshots/final-capture.receipt.json",
+      "bytes": 849,
+      "sha256": "825c8928b1db0ac04212650e7d73e6e8e48b2a507c8c3225215c537c54d6f3bc"
+    },
+    {
+      "path": "author-snapshots/final-server.adapters.json",
+      "bytes": 2724,
+      "sha256": "ce7fbc2a9272a5183462a8594c5843ff110cf5079f5b2ab5777f3523bd4a675e"
+    },
+    {
+      "path": "author-snapshots/final-stop.receipt.json",
+      "bytes": 688,
+      "sha256": "6dae881304beacb6d9b35c1170026149e4bcbaf29459c313ad4914333456e77f"
+    },
+    {
+      "path": "author-snapshots/unit-baseline.log",
+      "bytes": 6828,
+      "sha256": "8273e5a77da913c91b2e18a61ca1898ba427821cd2b442ea375dee8626c6ce28"
+    },
+    {
+      "path": "author-snapshots/unit-baseline.receipt.json",
+      "bytes": 1170,
+      "sha256": "7069f48b2ac605a74aedf8eb84431e49a66919214f33e3a9f55be468448a720b"
+    },
+    {
+      "path": "author-snapshots/unit-fixed.log",
+      "bytes": 1593,
+      "sha256": "de695478da3a62b5ad5326ff4e495f86834f4e6e153eb559367177b76f7a01a8"
+    },
+    {
+      "path": "author-snapshots/unit-fixed.receipt.json",
+      "bytes": 1091,
+      "sha256": "f47daa53abeacbaba8caa5e32d443f4113f3134a01b38d25eb04fde70f7caec9"
+    },
+    {
+      "path": "fixed-client-regressions.log",
+      "bytes": 3313,
+      "sha256": "0747f4f655353ca04c12ed68050418903f8c4103b805748fc616a4a4656c7cba"
+    },
+    {
+      "path": "independent-markup-retention.log",
+      "bytes": 539,
+      "sha256": "1c66f32d5624d2f9e426a580c4c574239acc7a9f4de097a091fdd0daf7f714d5"
+    },
+    {
+      "path": "local-checks.json",
+      "bytes": 6196,
+      "sha256": "65510d5fe0d6e15bc0190015d7ab9666c029a5e0828aa9a1cc545b824f033def"
+    },
+    {
+      "path": "parent-new-disclosure-counterexample.log",
+      "bytes": 6052,
+      "sha256": "5b9c46058799f77504c62e8fa59e8bd8ff5c4388502c9b950fcdb44f62a101c3"
+    },
+    {
+      "path": "README.md",
+      "bytes": 8150,
+      "sha256": "4f8e615823adba0469ea365cea0ad60b38b809c24ef813b232808a6208d1b5ba"
+    },
+    {
+      "path": "source-and-author-evidence.json",
+      "bytes": 24476,
+      "sha256": "c3d07d56f1eac5fdfa7aeded2d9462b61c98a5540f0bb33d41f5ce741ebc7cf8"
+    }
+  ],
+  "scope": "Independent UI patch review only; no new provider, security/RC3, full-candidate or receiving acceptance."
+}

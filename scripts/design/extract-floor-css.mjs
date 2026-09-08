@@ -11,6 +11,7 @@
  * only elements or attributes. Re-run it whenever the master changes.
  */
 import { readFile, writeFile } from "node:fs/promises";
+import { pathToFileURL } from "node:url";
 
 const MASTER = "docs/design/labs/tasks-2026-08/floor.html";
 const OUT = "src/components/floor/floor.module.css";
@@ -57,7 +58,8 @@ function pure(selector) {
     .join(", ");
 }
 
-const src = await readFile(MASTER, "utf8");
+export function extractFloorCss(src) {
+src = src.replace(/\r\n/g, "\n");
 const css = src.split("<style>")[1].split("</style>")[0];
 
 let tokens = "";
@@ -72,6 +74,19 @@ for (const block of blocks(css)) {
   const body = block.slice(block.indexOf("{"));
 
   if (selector === ":root") { tokens = `.root ${body}`; continue; }
+  if (selector === ':root[data-theme="dark"]') {
+    // Theme belongs to the app, while these component roles belong to Floor.
+    // Do not prefix the theme attribute onto .root like a board option.
+    kept.push(`${comment}:global([data-theme="dark"]) .root ${body}`);
+    continue;
+  }
+
+  if (/^@(?:-webkit-)?keyframes\b/.test(selector)) {
+    // Keyframe steps are not selectors. Preserve all five canonical animation
+    // bodies (0562baeb); .root from / .root 0% is malformed CSS.
+    kept.push(`${comment}${selector} ${body}\n`);
+    continue;
+  }
 
   if (selector.startsWith("@")) {
     // Recurse one level: media and supports blocks hold their own rules.
@@ -135,7 +150,7 @@ const host = `
   /* The master painted the ink ground on <body>; that rule does not come
      across, so the page paints its own. Without it the spine is white on
      white and the sheet has nothing to be lifted off. */
-  background: var(--ink);
+  background: var(--x-floor-ground);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -159,6 +174,14 @@ const host = `
  * workspace with four columns then rendered a fifth empty 312px track, which
  * is the dead sheet to the right of Done. The count comes from the render. */
 .root .board { grid-template-columns: repeat(var(--lanes, 5), minmax(258px, 312px)); }
+
+/* Preserve the shipped fit-columns preference. This production-only rule had
+ * drifted into generated CSS without its generator and was lost on extraction. */
+@media (min-width: 1201px) {
+  .root .board[data-fit] {
+    grid-template-columns: repeat(var(--lanes, 5), minmax(258px, 1fr));
+  }
+}
 
 /* A card that has nothing to say says nothing.
  *
@@ -201,8 +224,20 @@ const sheet = alias((head + tokens + "\n" + kept.join("") + host)
   .replace(/(^|[\s,(])\.floor\b/g, "$1.root"),
 );
 
-await writeFile(OUT, sheet, "utf8");
-process.stdout.write(`${OUT}\n  tokens: ${tokens ? "yes" : "MISSING"}  kept: ${kept.length}  dropped: ${dropped}\n`);
+return { sheet, tokens: Boolean(tokens), kept: kept.length, dropped };
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const result = extractFloorCss(await readFile(MASTER, "utf8"));
+  if (process.argv.includes("--check")) {
+    const current = (await readFile(OUT, "utf8")).replace(/\r\n/g, "\n");
+    if (current !== result.sheet.replace(/\r\n/g, "\n")) throw new Error("Floor CSS differs from its master; run the extractor");
+    process.stdout.write("Floor master/generated CSS parity: pass\n");
+  } else {
+    await writeFile(OUT, result.sheet, "utf8");
+    process.stdout.write(`${OUT}\n  tokens: ${result.tokens ? "yes" : "MISSING"}  kept: ${result.kept}  dropped: ${result.dropped}\n`);
+  }
+}
 
 /**
  * The palette, sourced rather than restated.

@@ -1,0 +1,33 @@
+{
+  "runtime": "8ae94ffb4e74bd21ba652f0117417afa03ed43a3",
+  "evidenceCommit": "27af50c09ea20892e00170b2fa4e7acebbcc9061",
+  "archiveSha256": "dfd04141c4a01c60f3c868e8e32105c9c1b87a453d09c79ec76f4c03a13275bc",
+  "archiveBytes": 17130272,
+  "verifiedEntries": 624,
+  "verifiedSourceFiles": [
+    "src/components/app/settings/sections/connections.tsx",
+    "src/components/app/settings/sections/connections-view.tsx",
+    "src/components/app/settings/sections/connections-review.tsx",
+    "src/components/app/settings/sections/drive-handover-view.tsx",
+    "src/components/app/settings/sections/storage.tsx",
+    "src/components/app/detail-panel/resources-section.tsx",
+    "src/components/app/detail-panel/drive-upload-row.tsx",
+    "src/components/app/detail-panel/drive-upload-review.tsx",
+    "src/components/app/detail-panel/drive-reload-notice.tsx",
+    "src/components/app/detail-panel/use-drive-uploads.ts",
+    "src/components/app/detail-panel/use-drive-upload-recovery.ts",
+    "src/lib/project-drive-ui.ts",
+    "src/lib/project-drive-upload-machine.ts",
+    "src/lib/project-drive-upload-recovery.ts",
+    "src/lib/project-drive-reload.ts",
+    "src/server/connections/project-drive-ui-status.ts",
+    "src/lib/project-drive-follow-up.test.tsx",
+    "src/server/connections/drive-connections.ts",
+    "src/server/actions/connections.ts",
+    "src/server/actions/project-drive-status.ts",
+    "src/server/connections/project-drive-operation-journal.ts",
+    "src/server/connections/project-drive-grant-repair.ts"
+  ],
+  "independentReviewPathsInArchive": [],
+  "verdict": "Payload hashes, source bindings and ZIP integrity pass; no new browser/provider/full-suite result is asserted."
+}

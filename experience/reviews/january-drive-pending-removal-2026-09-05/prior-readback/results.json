@@ -1,0 +1,2173 @@
+{
+  "source": "27af50c09ea20892e00170b2fa4e7acebbcc9061",
+  "runtime": "8ae94ffb4e74bd21ba652f0117417afa03ed43a3",
+  "cases": [
+    {
+      "name": "active",
+      "ok": true,
+      "calls": [
+        {
+          "host": "oauth2.googleapis.com",
+          "path": "/token",
+          "method": "POST"
+        },
+        {
+          "host": "www.googleapis.com",
+          "path": "/drive/v3/files/folder-current/permissions",
+          "method": "GET"
+        }
+      ],
+      "before": {
+        "connections": [
+          {
+            "id": "conn-new",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-old",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-other",
+            "user_id": "outsider",
+            "provider_account_id": "account-other",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          }
+        ],
+        "storage": [
+          {
+            "id": "gen-current",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 1
+          },
+          {
+            "id": "gen-old",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 0
+          },
+          {
+            "id": "gen-other",
+            "workspace_id": "ws-b",
+            "connection_id": "conn-other",
+            "state": "active",
+            "is_current": 1
+          }
+        ],
+        "journal": [],
+        "grants": []
+      },
+      "status": {
+        "ownerName": "Storage owner",
+        "folderUrl": "https://drive.google.com/drive/folders/folder-current",
+        "setup": "fallback",
+        "ownConnection": {
+          "connected": true,
+          "needsReconnect": false,
+          "accountEmail": "owner@example.com",
+          "affectedProjectCount": 1
+        },
+        "access": {
+          "state": "checked",
+          "checkedAt": "2026-09-05T10:45:00.000Z",
+          "people": [
+            {
+              "name": "Member.A@Example.com",
+              "email": "Member.A@Example.com",
+              "access": "writer"
+            },
+            {
+              "name": "member.b@example.com",
+              "email": "member.b@example.com",
+              "access": "unconfirmed"
+            },
+            {
+              "name": "owner@example.com",
+              "email": "owner@example.com",
+              "access": "unconfirmed"
+            }
+          ],
+          "otherPermissionCount": 0
+        }
+      },
+      "after": {
+        "connections": [
+          {
+            "id": "conn-new",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": 1788605100
+          },
+          {
+            "id": "conn-old",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-other",
+            "user_id": "outsider",
+            "provider_account_id": "account-other",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          }
+        ],
+        "storage": [
+          {
+            "id": "gen-current",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 1
+          },
+          {
+            "id": "gen-old",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 0
+          },
+          {
+            "id": "gen-other",
+            "workspace_id": "ws-b",
+            "connection_id": "conn-other",
+            "state": "active",
+            "is_current": 1
+          }
+        ],
+        "journal": [],
+        "grants": []
+      },
+      "visibleText": " Connections A home for this board’s files Keep attaching from Resources. One storage owner’s Google Drive can hold the files for this board. Storage owner Storage owner Some members are missing the access needed for new Drive uploads. New files can use Signal Studio. The storage owner owns and can see every file attached to this Drive folder. Those files use their Google Drive space. Open board folder in a new tab Who can open this board’s files Check again Google access checked at 10:45 UTC . Access can change in Google Drive. Some members do not have confirmed editing access. Board membership alone does not give Google Drive access. Member.A@Example.com Member.A@Example.com Can edit member.b@example.com member.b@example.com Access not confirmed owner@example.com owner@example.com Access not confirmed Your Google Drive owner@example.com Connecting your account does not change where this board’s files go. Setting up the board folder is a separate step. Reconnect Google Drive Disconnect my Drive ",
+      "pendingMessageVisible": false,
+      "database": [
+        {
+          "seq": 0,
+          "name": "main",
+          "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\work\\drive-pending-revocation-2026-09-05\\sqlite\\db\\signal-drive-core-HyYL14\\core.test.db"
+        },
+        {
+          "seq": 1,
+          "name": "temp",
+          "file": ""
+        }
+      ]
+    },
+    {
+      "name": "revoke-200",
+      "ok": true,
+      "calls": [
+        {
+          "host": "oauth2.googleapis.com",
+          "path": "/revoke",
+          "method": "POST"
+        }
+      ],
+      "before": {
+        "connections": [
+          {
+            "id": "conn-new",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-old",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-other",
+            "user_id": "outsider",
+            "provider_account_id": "account-other",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          }
+        ],
+        "storage": [
+          {
+            "id": "gen-current",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 1
+          },
+          {
+            "id": "gen-old",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 0
+          },
+          {
+            "id": "gen-other",
+            "workspace_id": "ws-b",
+            "connection_id": "conn-other",
+            "state": "active",
+            "is_current": 1
+          }
+        ],
+        "journal": [],
+        "grants": []
+      },
+      "action": {
+        "disconnected": true,
+        "affectedProjectCount": 1,
+        "revocationConfirmed": true
+      },
+      "status": {
+        "ownerName": "Storage owner",
+        "folderUrl": "https://drive.google.com/drive/folders/folder-current",
+        "setup": "needs_attention",
+        "ownConnection": {
+          "connected": false,
+          "needsReconnect": false,
+          "accountEmail": null,
+          "affectedProjectCount": 0
+        },
+        "access": {
+          "state": "unavailable",
+          "checkedAt": null,
+          "people": [],
+          "otherPermissionCount": 0
+        }
+      },
+      "summary": {
+        "connected": false,
+        "accountEmail": null,
+        "status": null,
+        "connectedAt": null,
+        "rootFolderUrl": null,
+        "projectUsesThisAccount": false,
+        "affectedProjectCount": 0
+      },
+      "repeat": {
+        "disconnected": false,
+        "affectedProjectCount": 0,
+        "revocationConfirmed": true
+      },
+      "after": {
+        "connections": [
+          {
+            "id": "conn-new",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "revoked",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-old",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-other",
+            "user_id": "outsider",
+            "provider_account_id": "account-other",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          }
+        ],
+        "storage": [
+          {
+            "id": "gen-current",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "needs_reauth",
+            "is_current": 1
+          },
+          {
+            "id": "gen-old",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 0
+          },
+          {
+            "id": "gen-other",
+            "workspace_id": "ws-b",
+            "connection_id": "conn-other",
+            "state": "active",
+            "is_current": 1
+          }
+        ],
+        "journal": [],
+        "grants": []
+      },
+      "visibleText": " Connections A home for this board’s files Keep attaching from Resources. One storage owner’s Google Drive can hold the files for this board. Storage owner Storage owner This board’s Drive needs attention. New files can use Signal Studio; existing Drive files stay where they are. The storage owner owns and can see every file attached to this Drive folder. Those files use their Google Drive space. Open board folder in a new tab Who can open this board’s files Check again Google access could not be checked. No current permissions are confirmed here. Check again or ask the storage owner to reconnect. Your Google Drive No Google account connected. Connecting your account does not change where this board’s files go. Setting up the board folder is a separate step. Connect Google Drive ",
+      "pendingMessageVisible": false,
+      "database": [
+        {
+          "seq": 0,
+          "name": "main",
+          "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\work\\drive-pending-revocation-2026-09-05\\sqlite\\db\\signal-drive-core-i3R2N1\\core.test.db"
+        },
+        {
+          "seq": 1,
+          "name": "temp",
+          "file": ""
+        }
+      ]
+    },
+    {
+      "name": "revoke-500",
+      "ok": true,
+      "calls": [
+        {
+          "host": "oauth2.googleapis.com",
+          "path": "/revoke",
+          "method": "POST"
+        }
+      ],
+      "before": {
+        "connections": [
+          {
+            "id": "conn-new",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-old",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-other",
+            "user_id": "outsider",
+            "provider_account_id": "account-other",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          }
+        ],
+        "storage": [
+          {
+            "id": "gen-current",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 1
+          },
+          {
+            "id": "gen-old",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 0
+          },
+          {
+            "id": "gen-other",
+            "workspace_id": "ws-b",
+            "connection_id": "conn-other",
+            "state": "active",
+            "is_current": 1
+          }
+        ],
+        "journal": [],
+        "grants": []
+      },
+      "action": {
+        "disconnected": true,
+        "affectedProjectCount": 1,
+        "revocationConfirmed": false
+      },
+      "status": {
+        "ownerName": "Storage owner",
+        "folderUrl": "https://drive.google.com/drive/folders/folder-current",
+        "setup": "needs_attention",
+        "ownConnection": {
+          "connected": false,
+          "needsReconnect": false,
+          "accountEmail": null,
+          "affectedProjectCount": 0
+        },
+        "access": {
+          "state": "unavailable",
+          "checkedAt": null,
+          "people": [],
+          "otherPermissionCount": 0
+        }
+      },
+      "summary": {
+        "connected": false,
+        "accountEmail": null,
+        "status": null,
+        "connectedAt": null,
+        "rootFolderUrl": null,
+        "projectUsesThisAccount": false,
+        "affectedProjectCount": 0
+      },
+      "repeat": {
+        "disconnected": false,
+        "affectedProjectCount": 0,
+        "revocationConfirmed": true
+      },
+      "after": {
+        "connections": [
+          {
+            "id": "conn-new",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "revoked",
+            "is_current": 0,
+            "last_error_at": 1788605100,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-old",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-other",
+            "user_id": "outsider",
+            "provider_account_id": "account-other",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          }
+        ],
+        "storage": [
+          {
+            "id": "gen-current",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "needs_reauth",
+            "is_current": 1
+          },
+          {
+            "id": "gen-old",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 0
+          },
+          {
+            "id": "gen-other",
+            "workspace_id": "ws-b",
+            "connection_id": "conn-other",
+            "state": "active",
+            "is_current": 1
+          }
+        ],
+        "journal": [],
+        "grants": []
+      },
+      "visibleText": " Connections A home for this board’s files Keep attaching from Resources. One storage owner’s Google Drive can hold the files for this board. Storage owner Storage owner This board’s Drive needs attention. New files can use Signal Studio; existing Drive files stay where they are. The storage owner owns and can see every file attached to this Drive folder. Those files use their Google Drive space. Open board folder in a new tab Who can open this board’s files Check again Google access could not be checked. No current permissions are confirmed here. Check again or ask the storage owner to reconnect. Your Google Drive No Google account connected. Connecting your account does not change where this board’s files go. Setting up the board folder is a separate step. Connect Google Drive ",
+      "pendingMessageVisible": false,
+      "database": [
+        {
+          "seq": 0,
+          "name": "main",
+          "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\work\\drive-pending-revocation-2026-09-05\\sqlite\\db\\signal-drive-core-0U6HhM\\core.test.db"
+        },
+        {
+          "seq": 1,
+          "name": "temp",
+          "file": ""
+        }
+      ]
+    },
+    {
+      "name": "network-failure",
+      "ok": true,
+      "calls": [
+        {
+          "host": "oauth2.googleapis.com",
+          "path": "/revoke",
+          "method": "POST"
+        }
+      ],
+      "before": {
+        "connections": [
+          {
+            "id": "conn-new",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-old",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-other",
+            "user_id": "outsider",
+            "provider_account_id": "account-other",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          }
+        ],
+        "storage": [
+          {
+            "id": "gen-current",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 1
+          },
+          {
+            "id": "gen-old",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 0
+          },
+          {
+            "id": "gen-other",
+            "workspace_id": "ws-b",
+            "connection_id": "conn-other",
+            "state": "active",
+            "is_current": 1
+          }
+        ],
+        "journal": [],
+        "grants": []
+      },
+      "action": {
+        "disconnected": true,
+        "affectedProjectCount": 1,
+        "revocationConfirmed": false
+      },
+      "status": {
+        "ownerName": "Storage owner",
+        "folderUrl": "https://drive.google.com/drive/folders/folder-current",
+        "setup": "needs_attention",
+        "ownConnection": {
+          "connected": false,
+          "needsReconnect": false,
+          "accountEmail": null,
+          "affectedProjectCount": 0
+        },
+        "access": {
+          "state": "unavailable",
+          "checkedAt": null,
+          "people": [],
+          "otherPermissionCount": 0
+        }
+      },
+      "summary": {
+        "connected": false,
+        "accountEmail": null,
+        "status": null,
+        "connectedAt": null,
+        "rootFolderUrl": null,
+        "projectUsesThisAccount": false,
+        "affectedProjectCount": 0
+      },
+      "repeat": {
+        "disconnected": false,
+        "affectedProjectCount": 0,
+        "revocationConfirmed": true
+      },
+      "after": {
+        "connections": [
+          {
+            "id": "conn-new",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "revoked",
+            "is_current": 0,
+            "last_error_at": 1788605100,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-old",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-other",
+            "user_id": "outsider",
+            "provider_account_id": "account-other",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          }
+        ],
+        "storage": [
+          {
+            "id": "gen-current",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "needs_reauth",
+            "is_current": 1
+          },
+          {
+            "id": "gen-old",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 0
+          },
+          {
+            "id": "gen-other",
+            "workspace_id": "ws-b",
+            "connection_id": "conn-other",
+            "state": "active",
+            "is_current": 1
+          }
+        ],
+        "journal": [],
+        "grants": []
+      },
+      "visibleText": " Connections A home for this board’s files Keep attaching from Resources. One storage owner’s Google Drive can hold the files for this board. Storage owner Storage owner This board’s Drive needs attention. New files can use Signal Studio; existing Drive files stay where they are. The storage owner owns and can see every file attached to this Drive folder. Those files use their Google Drive space. Open board folder in a new tab Who can open this board’s files Check again Google access could not be checked. No current permissions are confirmed here. Check again or ask the storage owner to reconnect. Your Google Drive No Google account connected. Connecting your account does not change where this board’s files go. Setting up the board folder is a separate step. Connect Google Drive ",
+      "pendingMessageVisible": false,
+      "database": [
+        {
+          "seq": 0,
+          "name": "main",
+          "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\work\\drive-pending-revocation-2026-09-05\\sqlite\\db\\signal-drive-core-FFQT6i\\core.test.db"
+        },
+        {
+          "seq": 1,
+          "name": "temp",
+          "file": ""
+        }
+      ]
+    },
+    {
+      "name": "missing-key",
+      "ok": true,
+      "calls": [],
+      "before": {
+        "connections": [
+          {
+            "id": "conn-new",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-old",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-other",
+            "user_id": "outsider",
+            "provider_account_id": "account-other",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          }
+        ],
+        "storage": [
+          {
+            "id": "gen-current",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 1
+          },
+          {
+            "id": "gen-old",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 0
+          },
+          {
+            "id": "gen-other",
+            "workspace_id": "ws-b",
+            "connection_id": "conn-other",
+            "state": "active",
+            "is_current": 1
+          }
+        ],
+        "journal": [],
+        "grants": []
+      },
+      "action": {
+        "disconnected": true,
+        "affectedProjectCount": 1,
+        "revocationConfirmed": false
+      },
+      "status": {
+        "ownerName": "Storage owner",
+        "folderUrl": "https://drive.google.com/drive/folders/folder-current",
+        "setup": "needs_attention",
+        "ownConnection": {
+          "connected": false,
+          "needsReconnect": false,
+          "accountEmail": null,
+          "affectedProjectCount": 0
+        },
+        "access": {
+          "state": "unavailable",
+          "checkedAt": null,
+          "people": [],
+          "otherPermissionCount": 0
+        }
+      },
+      "summary": {
+        "connected": false,
+        "accountEmail": null,
+        "status": null,
+        "connectedAt": null,
+        "rootFolderUrl": null,
+        "projectUsesThisAccount": false,
+        "affectedProjectCount": 0
+      },
+      "repeat": {
+        "disconnected": false,
+        "affectedProjectCount": 0,
+        "revocationConfirmed": true
+      },
+      "after": {
+        "connections": [
+          {
+            "id": "conn-new",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "revoked",
+            "is_current": 0,
+            "last_error_at": 1788605100,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-old",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-other",
+            "user_id": "outsider",
+            "provider_account_id": "account-other",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          }
+        ],
+        "storage": [
+          {
+            "id": "gen-current",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "needs_reauth",
+            "is_current": 1
+          },
+          {
+            "id": "gen-old",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 0
+          },
+          {
+            "id": "gen-other",
+            "workspace_id": "ws-b",
+            "connection_id": "conn-other",
+            "state": "active",
+            "is_current": 1
+          }
+        ],
+        "journal": [],
+        "grants": []
+      },
+      "visibleText": " Connections A home for this board’s files Keep attaching from Resources. One storage owner’s Google Drive can hold the files for this board. Storage owner Storage owner This board’s Drive needs attention. New files can use Signal Studio; existing Drive files stay where they are. The storage owner owns and can see every file attached to this Drive folder. Those files use their Google Drive space. Open board folder in a new tab Who can open this board’s files Check again Google access could not be checked. No current permissions are confirmed here. Check again or ask the storage owner to reconnect. Your Google Drive No Google account connected. Connecting your account does not change where this board’s files go. Setting up the board folder is a separate step. Connect Google Drive ",
+      "pendingMessageVisible": false,
+      "database": [
+        {
+          "seq": 0,
+          "name": "main",
+          "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\work\\drive-pending-revocation-2026-09-05\\sqlite\\db\\signal-drive-core-NhPtjF\\core.test.db"
+        },
+        {
+          "seq": 1,
+          "name": "temp",
+          "file": ""
+        }
+      ]
+    },
+    {
+      "name": "invalid-token",
+      "ok": true,
+      "calls": [
+        {
+          "host": "oauth2.googleapis.com",
+          "path": "/revoke",
+          "method": "POST"
+        }
+      ],
+      "before": {
+        "connections": [
+          {
+            "id": "conn-new",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-old",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-other",
+            "user_id": "outsider",
+            "provider_account_id": "account-other",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          }
+        ],
+        "storage": [
+          {
+            "id": "gen-current",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 1
+          },
+          {
+            "id": "gen-old",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 0
+          },
+          {
+            "id": "gen-other",
+            "workspace_id": "ws-b",
+            "connection_id": "conn-other",
+            "state": "active",
+            "is_current": 1
+          }
+        ],
+        "journal": [],
+        "grants": []
+      },
+      "action": {
+        "disconnected": true,
+        "affectedProjectCount": 1,
+        "revocationConfirmed": true
+      },
+      "status": {
+        "ownerName": "Storage owner",
+        "folderUrl": "https://drive.google.com/drive/folders/folder-current",
+        "setup": "needs_attention",
+        "ownConnection": {
+          "connected": false,
+          "needsReconnect": false,
+          "accountEmail": null,
+          "affectedProjectCount": 0
+        },
+        "access": {
+          "state": "unavailable",
+          "checkedAt": null,
+          "people": [],
+          "otherPermissionCount": 0
+        }
+      },
+      "summary": {
+        "connected": false,
+        "accountEmail": null,
+        "status": null,
+        "connectedAt": null,
+        "rootFolderUrl": null,
+        "projectUsesThisAccount": false,
+        "affectedProjectCount": 0
+      },
+      "repeat": {
+        "disconnected": false,
+        "affectedProjectCount": 0,
+        "revocationConfirmed": true
+      },
+      "after": {
+        "connections": [
+          {
+            "id": "conn-new",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "revoked",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-old",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-other",
+            "user_id": "outsider",
+            "provider_account_id": "account-other",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          }
+        ],
+        "storage": [
+          {
+            "id": "gen-current",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "needs_reauth",
+            "is_current": 1
+          },
+          {
+            "id": "gen-old",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 0
+          },
+          {
+            "id": "gen-other",
+            "workspace_id": "ws-b",
+            "connection_id": "conn-other",
+            "state": "active",
+            "is_current": 1
+          }
+        ],
+        "journal": [],
+        "grants": []
+      },
+      "visibleText": " Connections A home for this board’s files Keep attaching from Resources. One storage owner’s Google Drive can hold the files for this board. Storage owner Storage owner This board’s Drive needs attention. New files can use Signal Studio; existing Drive files stay where they are. The storage owner owns and can see every file attached to this Drive folder. Those files use their Google Drive space. Open board folder in a new tab Who can open this board’s files Check again Google access could not be checked. No current permissions are confirmed here. Check again or ask the storage owner to reconnect. Your Google Drive No Google account connected. Connecting your account does not change where this board’s files go. Setting up the board folder is a separate step. Connect Google Drive ",
+      "pendingMessageVisible": false,
+      "database": [
+        {
+          "seq": 0,
+          "name": "main",
+          "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\work\\drive-pending-revocation-2026-09-05\\sqlite\\db\\signal-drive-core-xCgd9B\\core.test.db"
+        },
+        {
+          "seq": 1,
+          "name": "temp",
+          "file": ""
+        }
+      ]
+    },
+    {
+      "name": "inflight-200",
+      "ok": true,
+      "calls": [
+        {
+          "host": "oauth2.googleapis.com",
+          "path": "/revoke",
+          "method": "POST"
+        }
+      ],
+      "before": {
+        "connections": [
+          {
+            "id": "conn-new",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-old",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-other",
+            "user_id": "outsider",
+            "provider_account_id": "account-other",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          }
+        ],
+        "storage": [
+          {
+            "id": "gen-current",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 1
+          },
+          {
+            "id": "gen-old",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 0
+          },
+          {
+            "id": "gen-other",
+            "workspace_id": "ws-b",
+            "connection_id": "conn-other",
+            "state": "active",
+            "is_current": 1
+          }
+        ],
+        "journal": [],
+        "grants": []
+      },
+      "inflight": {
+        "connections": [
+          {
+            "id": "conn-new",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "revoked",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-old",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-other",
+            "user_id": "outsider",
+            "provider_account_id": "account-other",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          }
+        ],
+        "storage": [
+          {
+            "id": "gen-current",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "needs_reauth",
+            "is_current": 1
+          },
+          {
+            "id": "gen-old",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 0
+          },
+          {
+            "id": "gen-other",
+            "workspace_id": "ws-b",
+            "connection_id": "conn-other",
+            "state": "active",
+            "is_current": 1
+          }
+        ],
+        "journal": [],
+        "grants": []
+      },
+      "inflightStatus": {
+        "ownerName": "Storage owner",
+        "folderUrl": "https://drive.google.com/drive/folders/folder-current",
+        "setup": "needs_attention",
+        "ownConnection": {
+          "connected": false,
+          "needsReconnect": false,
+          "accountEmail": null,
+          "affectedProjectCount": 0
+        },
+        "access": {
+          "state": "unavailable",
+          "checkedAt": null,
+          "people": [],
+          "otherPermissionCount": 0
+        }
+      },
+      "action": {
+        "disconnected": true,
+        "affectedProjectCount": 1,
+        "revocationConfirmed": true
+      },
+      "status": {
+        "ownerName": "Storage owner",
+        "folderUrl": "https://drive.google.com/drive/folders/folder-current",
+        "setup": "needs_attention",
+        "ownConnection": {
+          "connected": false,
+          "needsReconnect": false,
+          "accountEmail": null,
+          "affectedProjectCount": 0
+        },
+        "access": {
+          "state": "unavailable",
+          "checkedAt": null,
+          "people": [],
+          "otherPermissionCount": 0
+        }
+      },
+      "summary": {
+        "connected": false,
+        "accountEmail": null,
+        "status": null,
+        "connectedAt": null,
+        "rootFolderUrl": null,
+        "projectUsesThisAccount": false,
+        "affectedProjectCount": 0
+      },
+      "repeat": {
+        "disconnected": false,
+        "affectedProjectCount": 0,
+        "revocationConfirmed": true
+      },
+      "after": {
+        "connections": [
+          {
+            "id": "conn-new",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "revoked",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-old",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-other",
+            "user_id": "outsider",
+            "provider_account_id": "account-other",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          }
+        ],
+        "storage": [
+          {
+            "id": "gen-current",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "needs_reauth",
+            "is_current": 1
+          },
+          {
+            "id": "gen-old",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 0
+          },
+          {
+            "id": "gen-other",
+            "workspace_id": "ws-b",
+            "connection_id": "conn-other",
+            "state": "active",
+            "is_current": 1
+          }
+        ],
+        "journal": [],
+        "grants": []
+      },
+      "visibleText": " Connections A home for this board’s files Keep attaching from Resources. One storage owner’s Google Drive can hold the files for this board. Storage owner Storage owner This board’s Drive needs attention. New files can use Signal Studio; existing Drive files stay where they are. The storage owner owns and can see every file attached to this Drive folder. Those files use their Google Drive space. Open board folder in a new tab Who can open this board’s files Check again Google access could not be checked. No current permissions are confirmed here. Check again or ask the storage owner to reconnect. Your Google Drive No Google account connected. Connecting your account does not change where this board’s files go. Setting up the board folder is a separate step. Connect Google Drive ",
+      "pendingMessageVisible": false,
+      "database": [
+        {
+          "seq": 0,
+          "name": "main",
+          "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\work\\drive-pending-revocation-2026-09-05\\sqlite\\db\\signal-drive-core-P05d2A\\core.test.db"
+        },
+        {
+          "seq": 1,
+          "name": "temp",
+          "file": ""
+        }
+      ]
+    },
+    {
+      "name": "inflight-500",
+      "ok": true,
+      "calls": [
+        {
+          "host": "oauth2.googleapis.com",
+          "path": "/revoke",
+          "method": "POST"
+        }
+      ],
+      "before": {
+        "connections": [
+          {
+            "id": "conn-new",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-old",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-other",
+            "user_id": "outsider",
+            "provider_account_id": "account-other",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          }
+        ],
+        "storage": [
+          {
+            "id": "gen-current",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 1
+          },
+          {
+            "id": "gen-old",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 0
+          },
+          {
+            "id": "gen-other",
+            "workspace_id": "ws-b",
+            "connection_id": "conn-other",
+            "state": "active",
+            "is_current": 1
+          }
+        ],
+        "journal": [],
+        "grants": []
+      },
+      "inflight": {
+        "connections": [
+          {
+            "id": "conn-new",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "revoked",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-old",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-other",
+            "user_id": "outsider",
+            "provider_account_id": "account-other",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          }
+        ],
+        "storage": [
+          {
+            "id": "gen-current",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "needs_reauth",
+            "is_current": 1
+          },
+          {
+            "id": "gen-old",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 0
+          },
+          {
+            "id": "gen-other",
+            "workspace_id": "ws-b",
+            "connection_id": "conn-other",
+            "state": "active",
+            "is_current": 1
+          }
+        ],
+        "journal": [],
+        "grants": []
+      },
+      "inflightStatus": {
+        "ownerName": "Storage owner",
+        "folderUrl": "https://drive.google.com/drive/folders/folder-current",
+        "setup": "needs_attention",
+        "ownConnection": {
+          "connected": false,
+          "needsReconnect": false,
+          "accountEmail": null,
+          "affectedProjectCount": 0
+        },
+        "access": {
+          "state": "unavailable",
+          "checkedAt": null,
+          "people": [],
+          "otherPermissionCount": 0
+        }
+      },
+      "action": {
+        "disconnected": true,
+        "affectedProjectCount": 1,
+        "revocationConfirmed": false
+      },
+      "status": {
+        "ownerName": "Storage owner",
+        "folderUrl": "https://drive.google.com/drive/folders/folder-current",
+        "setup": "needs_attention",
+        "ownConnection": {
+          "connected": false,
+          "needsReconnect": false,
+          "accountEmail": null,
+          "affectedProjectCount": 0
+        },
+        "access": {
+          "state": "unavailable",
+          "checkedAt": null,
+          "people": [],
+          "otherPermissionCount": 0
+        }
+      },
+      "summary": {
+        "connected": false,
+        "accountEmail": null,
+        "status": null,
+        "connectedAt": null,
+        "rootFolderUrl": null,
+        "projectUsesThisAccount": false,
+        "affectedProjectCount": 0
+      },
+      "repeat": {
+        "disconnected": false,
+        "affectedProjectCount": 0,
+        "revocationConfirmed": true
+      },
+      "after": {
+        "connections": [
+          {
+            "id": "conn-new",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "revoked",
+            "is_current": 0,
+            "last_error_at": 1788605100,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-old",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-other",
+            "user_id": "outsider",
+            "provider_account_id": "account-other",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          }
+        ],
+        "storage": [
+          {
+            "id": "gen-current",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "needs_reauth",
+            "is_current": 1
+          },
+          {
+            "id": "gen-old",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 0
+          },
+          {
+            "id": "gen-other",
+            "workspace_id": "ws-b",
+            "connection_id": "conn-other",
+            "state": "active",
+            "is_current": 1
+          }
+        ],
+        "journal": [],
+        "grants": []
+      },
+      "visibleText": " Connections A home for this board’s files Keep attaching from Resources. One storage owner’s Google Drive can hold the files for this board. Storage owner Storage owner This board’s Drive needs attention. New files can use Signal Studio; existing Drive files stay where they are. The storage owner owns and can see every file attached to this Drive folder. Those files use their Google Drive space. Open board folder in a new tab Who can open this board’s files Check again Google access could not be checked. No current permissions are confirmed here. Check again or ask the storage owner to reconnect. Your Google Drive No Google account connected. Connecting your account does not change where this board’s files go. Setting up the board folder is a separate step. Connect Google Drive ",
+      "pendingMessageVisible": false,
+      "database": [
+        {
+          "seq": 0,
+          "name": "main",
+          "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\work\\drive-pending-revocation-2026-09-05\\sqlite\\db\\signal-drive-core-KCzeg4\\core.test.db"
+        },
+        {
+          "seq": 1,
+          "name": "temp",
+          "file": ""
+        }
+      ]
+    },
+    {
+      "name": "permission-500-then-204",
+      "ok": true,
+      "calls": [
+        {
+          "host": "oauth2.googleapis.com",
+          "path": "/token",
+          "method": "POST"
+        },
+        {
+          "host": "www.googleapis.com",
+          "path": "/drive/v3/files/folder-current/permissions/permission-a",
+          "method": "DELETE"
+        },
+        {
+          "host": "oauth2.googleapis.com",
+          "path": "/token",
+          "method": "POST"
+        },
+        {
+          "host": "www.googleapis.com",
+          "path": "/drive/v3/files/folder-current/permissions",
+          "method": "GET"
+        },
+        {
+          "host": "oauth2.googleapis.com",
+          "path": "/token",
+          "method": "POST"
+        },
+        {
+          "host": "www.googleapis.com",
+          "path": "/drive/v3/files/folder-other/permissions",
+          "method": "GET"
+        },
+        {
+          "host": "oauth2.googleapis.com",
+          "path": "/token",
+          "method": "POST"
+        },
+        {
+          "host": "www.googleapis.com",
+          "path": "/drive/v3/files/folder-current/permissions/permission-a",
+          "method": "DELETE"
+        },
+        {
+          "host": "oauth2.googleapis.com",
+          "path": "/token",
+          "method": "POST"
+        },
+        {
+          "host": "www.googleapis.com",
+          "path": "/drive/v3/files/folder-current/permissions",
+          "method": "GET"
+        }
+      ],
+      "afterFailure": {
+        "connections": [
+          {
+            "id": "conn-new",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": 1788605100
+          },
+          {
+            "id": "conn-old",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-other",
+            "user_id": "outsider",
+            "provider_account_id": "account-other",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          }
+        ],
+        "storage": [
+          {
+            "id": "gen-current",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 1
+          },
+          {
+            "id": "gen-old",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 0
+          },
+          {
+            "id": "gen-other",
+            "workspace_id": "ws-b",
+            "connection_id": "conn-other",
+            "state": "active",
+            "is_current": 1
+          }
+        ],
+        "journal": [],
+        "grants": [
+          {
+            "workspace_id": "ws-a",
+            "storage_generation_id": "gen-current",
+            "user_id": "member-a",
+            "permission_id": "permission-a",
+            "revoke_pending": 1
+          }
+        ]
+      },
+      "status": {
+        "ownerName": "Storage owner",
+        "folderUrl": "https://drive.google.com/drive/folders/folder-current",
+        "setup": "fallback",
+        "ownConnection": {
+          "connected": true,
+          "needsReconnect": false,
+          "accountEmail": "owner@example.com",
+          "affectedProjectCount": 1
+        },
+        "access": {
+          "state": "checked",
+          "checkedAt": "2026-09-05T10:45:00.000Z",
+          "people": [
+            {
+              "name": "Member.A@Example.com",
+              "email": "Member.A@Example.com",
+              "access": "writer"
+            },
+            {
+              "name": "member.b@example.com",
+              "email": "member.b@example.com",
+              "access": "unconfirmed"
+            },
+            {
+              "name": "owner@example.com",
+              "email": "owner@example.com",
+              "access": "unconfirmed"
+            }
+          ],
+          "otherPermissionCount": 0
+        }
+      },
+      "pendingMessageVisible": false,
+      "otherProject": {
+        "ownerName": "Storage owner",
+        "folderUrl": null,
+        "setup": "active",
+        "ownConnection": {
+          "connected": true,
+          "needsReconnect": false,
+          "accountEmail": "outside@example.com",
+          "affectedProjectCount": 1
+        },
+        "access": {
+          "state": "checked",
+          "checkedAt": "2026-09-05T10:45:00.000Z",
+          "people": [
+            {
+              "name": "outside@example.com",
+              "email": "outside@example.com",
+              "access": "unconfirmed"
+            }
+          ],
+          "otherPermissionCount": 1
+        }
+      },
+      "retry": {
+        "revoked": true,
+        "alreadyAbsent": false
+      },
+      "afterRetry": {
+        "connections": [
+          {
+            "id": "conn-new",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": 1788605100
+          },
+          {
+            "id": "conn-old",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-other",
+            "user_id": "outsider",
+            "provider_account_id": "account-other",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": 1788605100
+          }
+        ],
+        "storage": [
+          {
+            "id": "gen-current",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 1
+          },
+          {
+            "id": "gen-old",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 0
+          },
+          {
+            "id": "gen-other",
+            "workspace_id": "ws-b",
+            "connection_id": "conn-other",
+            "state": "active",
+            "is_current": 1
+          }
+        ],
+        "journal": [],
+        "grants": []
+      },
+      "afterStatus": {
+        "ownerName": "Storage owner",
+        "folderUrl": "https://drive.google.com/drive/folders/folder-current",
+        "setup": "fallback",
+        "ownConnection": {
+          "connected": true,
+          "needsReconnect": false,
+          "accountEmail": "owner@example.com",
+          "affectedProjectCount": 1
+        },
+        "access": {
+          "state": "checked",
+          "checkedAt": "2026-09-05T10:45:00.000Z",
+          "people": [
+            {
+              "name": "Member.A@Example.com",
+              "email": "Member.A@Example.com",
+              "access": "unconfirmed"
+            },
+            {
+              "name": "member.b@example.com",
+              "email": "member.b@example.com",
+              "access": "unconfirmed"
+            },
+            {
+              "name": "owner@example.com",
+              "email": "owner@example.com",
+              "access": "unconfirmed"
+            }
+          ],
+          "otherPermissionCount": 0
+        }
+      },
+      "database": [
+        {
+          "seq": 0,
+          "name": "main",
+          "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\work\\drive-pending-revocation-2026-09-05\\sqlite\\db\\signal-drive-core-OB5euO\\core.test.db"
+        }
+      ]
+    },
+    {
+      "name": "permission-500-then-404",
+      "ok": true,
+      "calls": [
+        {
+          "host": "oauth2.googleapis.com",
+          "path": "/token",
+          "method": "POST"
+        },
+        {
+          "host": "www.googleapis.com",
+          "path": "/drive/v3/files/folder-current/permissions/permission-a",
+          "method": "DELETE"
+        },
+        {
+          "host": "oauth2.googleapis.com",
+          "path": "/token",
+          "method": "POST"
+        },
+        {
+          "host": "www.googleapis.com",
+          "path": "/drive/v3/files/folder-current/permissions",
+          "method": "GET"
+        },
+        {
+          "host": "oauth2.googleapis.com",
+          "path": "/token",
+          "method": "POST"
+        },
+        {
+          "host": "www.googleapis.com",
+          "path": "/drive/v3/files/folder-other/permissions",
+          "method": "GET"
+        },
+        {
+          "host": "oauth2.googleapis.com",
+          "path": "/token",
+          "method": "POST"
+        },
+        {
+          "host": "www.googleapis.com",
+          "path": "/drive/v3/files/folder-current/permissions/permission-a",
+          "method": "DELETE"
+        },
+        {
+          "host": "oauth2.googleapis.com",
+          "path": "/token",
+          "method": "POST"
+        },
+        {
+          "host": "www.googleapis.com",
+          "path": "/drive/v3/files/folder-current/permissions",
+          "method": "GET"
+        }
+      ],
+      "afterFailure": {
+        "connections": [
+          {
+            "id": "conn-new",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": 1788605100
+          },
+          {
+            "id": "conn-old",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-other",
+            "user_id": "outsider",
+            "provider_account_id": "account-other",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          }
+        ],
+        "storage": [
+          {
+            "id": "gen-current",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 1
+          },
+          {
+            "id": "gen-old",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 0
+          },
+          {
+            "id": "gen-other",
+            "workspace_id": "ws-b",
+            "connection_id": "conn-other",
+            "state": "active",
+            "is_current": 1
+          }
+        ],
+        "journal": [],
+        "grants": [
+          {
+            "workspace_id": "ws-a",
+            "storage_generation_id": "gen-current",
+            "user_id": "member-a",
+            "permission_id": "permission-a",
+            "revoke_pending": 1
+          }
+        ]
+      },
+      "status": {
+        "ownerName": "Storage owner",
+        "folderUrl": "https://drive.google.com/drive/folders/folder-current",
+        "setup": "fallback",
+        "ownConnection": {
+          "connected": true,
+          "needsReconnect": false,
+          "accountEmail": "owner@example.com",
+          "affectedProjectCount": 1
+        },
+        "access": {
+          "state": "checked",
+          "checkedAt": "2026-09-05T10:45:00.000Z",
+          "people": [
+            {
+              "name": "Member.A@Example.com",
+              "email": "Member.A@Example.com",
+              "access": "writer"
+            },
+            {
+              "name": "member.b@example.com",
+              "email": "member.b@example.com",
+              "access": "unconfirmed"
+            },
+            {
+              "name": "owner@example.com",
+              "email": "owner@example.com",
+              "access": "unconfirmed"
+            }
+          ],
+          "otherPermissionCount": 0
+        }
+      },
+      "pendingMessageVisible": false,
+      "otherProject": {
+        "ownerName": "Storage owner",
+        "folderUrl": null,
+        "setup": "active",
+        "ownConnection": {
+          "connected": true,
+          "needsReconnect": false,
+          "accountEmail": "outside@example.com",
+          "affectedProjectCount": 1
+        },
+        "access": {
+          "state": "checked",
+          "checkedAt": "2026-09-05T10:45:00.000Z",
+          "people": [
+            {
+              "name": "outside@example.com",
+              "email": "outside@example.com",
+              "access": "unconfirmed"
+            }
+          ],
+          "otherPermissionCount": 1
+        }
+      },
+      "retry": {
+        "revoked": true,
+        "alreadyAbsent": true
+      },
+      "afterRetry": {
+        "connections": [
+          {
+            "id": "conn-new",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": 1788605100
+          },
+          {
+            "id": "conn-old",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-other",
+            "user_id": "outsider",
+            "provider_account_id": "account-other",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": 1788605100
+          }
+        ],
+        "storage": [
+          {
+            "id": "gen-current",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 1
+          },
+          {
+            "id": "gen-old",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 0
+          },
+          {
+            "id": "gen-other",
+            "workspace_id": "ws-b",
+            "connection_id": "conn-other",
+            "state": "active",
+            "is_current": 1
+          }
+        ],
+        "journal": [],
+        "grants": []
+      },
+      "afterStatus": {
+        "ownerName": "Storage owner",
+        "folderUrl": "https://drive.google.com/drive/folders/folder-current",
+        "setup": "fallback",
+        "ownConnection": {
+          "connected": true,
+          "needsReconnect": false,
+          "accountEmail": "owner@example.com",
+          "affectedProjectCount": 1
+        },
+        "access": {
+          "state": "checked",
+          "checkedAt": "2026-09-05T10:45:00.000Z",
+          "people": [
+            {
+              "name": "Member.A@Example.com",
+              "email": "Member.A@Example.com",
+              "access": "unconfirmed"
+            },
+            {
+              "name": "member.b@example.com",
+              "email": "member.b@example.com",
+              "access": "unconfirmed"
+            },
+            {
+              "name": "owner@example.com",
+              "email": "owner@example.com",
+              "access": "unconfirmed"
+            }
+          ],
+          "otherPermissionCount": 0
+        }
+      },
+      "database": [
+        {
+          "seq": 0,
+          "name": "main",
+          "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\work\\drive-pending-revocation-2026-09-05\\sqlite\\db\\signal-drive-core-AvT9Dl\\core.test.db"
+        }
+      ]
+    },
+    {
+      "name": "member-denied",
+      "ok": true,
+      "calls": [],
+      "after": {
+        "connections": [
+          {
+            "id": "conn-new",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-old",
+            "user_id": "owner",
+            "provider_account_id": "account-owner",
+            "status": "active",
+            "is_current": 0,
+            "last_error_at": null,
+            "last_used_at": null
+          },
+          {
+            "id": "conn-other",
+            "user_id": "outsider",
+            "provider_account_id": "account-other",
+            "status": "active",
+            "is_current": 1,
+            "last_error_at": null,
+            "last_used_at": null
+          }
+        ],
+        "storage": [
+          {
+            "id": "gen-current",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 1
+          },
+          {
+            "id": "gen-old",
+            "workspace_id": "ws-a",
+            "connection_id": "conn-old",
+            "state": "active",
+            "is_current": 0
+          },
+          {
+            "id": "gen-other",
+            "workspace_id": "ws-b",
+            "connection_id": "conn-other",
+            "state": "active",
+            "is_current": 1
+          }
+        ],
+        "journal": [],
+        "grants": [
+          {
+            "workspace_id": "ws-a",
+            "storage_generation_id": "gen-current",
+            "user_id": "member-a",
+            "permission_id": "permission-a",
+            "revoke_pending": 0
+          }
+        ]
+      },
+      "database": [
+        {
+          "seq": 0,
+          "name": "main",
+          "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\work\\drive-pending-revocation-2026-09-05\\sqlite\\db\\signal-drive-core-TAQVgn\\core.test.db"
+        }
+      ]
+    },
+    {
+      "name": "persistent-ambiguity-and-ui-equality",
+      "ok": true
+    }
+  ],
+  "limits": [
+    "Actual service/access/grant/status/SSR source; injected synthetic OAuth/Google responses only.",
+    "Existing core fixture authorization bypasses Clerk/minter; actual service capability assertions remain. No action-wrapper authorization claim.",
+    "Fresh file-backed SQLite per case with FK ON after fixture seed; DB files retained."
+  ],
+  "pass": 12,
+  "fail": 0
+}

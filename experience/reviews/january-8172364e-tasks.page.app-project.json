@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-project",
+  "source": "tasks/src/app/app/project/page.tsx",
+  "materialityHash": "4b38715dceed59c0",
+  "reviewedAt": "2026-09-05",
+  "reviewer": "Principal integrator using delegated implementation authority",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-776b131ccc1d285f9c76fe35-32b4464d184c12d8.json",
+    "attestationSha256": "ea9f9f829defb4ca47457b3a02ea3ee6893fbf52f2a0e9ef57a233cdaf4a729d",
+    "runId": "tasks-playwright-776b131ccc1d285f9c76fe35",
+    "canonicalEvidenceSha256": "776b131ccc1d285f9c76fe35d39885f359fa005fffca90ce659cd2384a783241",
+    "rawArtifactSha256": "32b4464d184c12d8c5bfb077ae842c4dc68e39d89e3dee8403fc198652acc90c",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app",
+    "caseName": "front door lands on Home",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "ProjectOverview reads and edits the explicitly authorized project wedding date, separating it from the legacy generic target. The actual route/overview/form evidence at8172364e is in the final68-route packet and experience/reviews/january-sponsored-wedding-date-8172-2026-09-05:32 component cases and3 keyboard paths with normal build wnk1OREKC5EKuma6I3VoO, plus59 actual touch-target measurements. Principal inspected mobile arrival, cleared date and expired desktop renders. Independent c1ab review closes stale-access and pending-save revision defects with14+8 controls and8 SQLite request pairs preserving revocation. The linked132-case Home fixture is suite regression context, not evidence that Home exercises ProjectOverview or the date action.",
+  "decision": "Accept this reviewed source change and its bounded route/component/persistence evidence. Preserve all existing coverage levels, audit scores, approvals and unresolved full-state limits. Synthetic identity/arrival/board/overview/navigation adapters remain explicit; full Next/Clerk/Flight/provider behavior, human comprehension, design council and receiving acceptance remain open. The earlier RC3 stop is not replaced by this review. Historical receipts are retained."
+}

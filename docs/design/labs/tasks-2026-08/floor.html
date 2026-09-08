@@ -36,6 +36,10 @@
   --ink: #111111;
   --indigo: #4f46e5;
   --white: #ffffff;
+  /* The ground is a surface role, not the theme's foreground ink. */
+  --x-floor-ground: var(--ink);
+  --x-floor-control-edge: var(--ink-3);
+  --x-floor-focus: var(--indigo);
 
   /* ── ink, at stated alphas (over white) ────────────────────── */
   --ink-1: var(--ink);                       /* primary type       21:1 */
@@ -108,9 +112,29 @@
   --lift: 0 1px 2px rgba(17, 17, 17, 0.06), 0 4px 10px rgba(17, 17, 17, 0.08), 0 22px 44px rgba(17, 17, 17, 0.16);
 }
 
-html { background: var(--ink); color: var(--ink-1); }
+/* Production inherits the canonical DS dark ink/paper from html[data-theme].
+   Only Floor-local roles change here; the locked light palette stays intact.
+   The standalone lab foundation supplies the light reference tokens. */
+:root[data-theme="dark"] {
+  --x-floor-ground: var(--paper);
+  --ink-2: color-mix(in srgb, var(--ink) 72%, transparent);
+  --ink-3: color-mix(in srgb, var(--ink) 62%, transparent);
+  --ink-4: color-mix(in srgb, var(--ink) 28%, transparent);
+  --wash: color-mix(in srgb, var(--ink) 4%, transparent);
+  --line-soft: color-mix(in srgb, var(--ink) 6%, transparent);
+  --line: color-mix(in srgb, var(--ink) 8%, transparent);
+  --wash-2: color-mix(in srgb, var(--ink) 8%, transparent);
+  --line-strong: color-mix(in srgb, var(--ink) 16%, transparent);
+  --on-ink-1: var(--ink);
+  --indigo-ink: var(--x-accent-ink, var(--indigo-400));
+  --x-floor-focus: var(--x-accent-focus, var(--indigo-400));
+  /* A checkbox is a control, unlike the decorative 28% ink step. */
+  --x-floor-control-edge: var(--ink-3);
+}
+
+html { background: var(--x-floor-ground); color: var(--ink-1); }
 body {
-  background: var(--ink);
+  background: var(--x-floor-ground);
   color: var(--ink-1);
   font-feature-settings: "ss01", "cv01";
 }
@@ -141,7 +165,7 @@ body {
 /* Outline only. Setting a radius here overrode every element's own, which
    squared off the completion circle for keyboard users and nobody else. */
 a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
-  outline: 2px solid var(--indigo);
+  outline: 2px solid var(--x-floor-focus);
   outline-offset: 2px;
 }
 
@@ -194,6 +218,9 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
    is the only way out of the product; the overdue count is the only filter
    an operator reaches for on a Saturday. Both now answer the keyboard. */
 .railAvatar, .dockAvatar, .late { cursor: pointer; }
+/* More is an interactive control, not an exempt brand mark. Keep its declared
+   on-chrome ink after the shared button reset instead of inheriting page ink. */
+.railMark { color: var(--on-ink-1); }
 .railTile {
   width: var(--tap); height: var(--tap);
   border-radius: 12px;
@@ -470,7 +497,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   width: 18px; height: 18px; border-radius: 50%;
   border: 0; padding: 0; font: inherit; -webkit-appearance: none;
   background: none;
-  box-shadow: inset 0 0 0 1.4px var(--ink-4);
+  box-shadow: inset 0 0 0 1.4px var(--x-floor-control-edge);
   margin-top: 1px;
   display: grid; place-items: center;
   color: transparent;
@@ -486,7 +513,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .card:hover .tick, .card[data-force="hover"] .tick { background: var(--wash); }
 .tick:hover { box-shadow: inset 0 0 0 1.4px var(--ink-1); background: var(--wash-2); }
 .tick:active { background: var(--line-strong); }
-.tick:focus-visible { outline: 2px solid var(--indigo); outline-offset: 3px; }
+.tick:focus-visible { outline: 2px solid var(--x-floor-focus); outline-offset: 3px; }
 
 /* The top-right of a card belongs to the time fact and nothing else. */
 /* The clamp lives on the row, not on the title. overflow:hidden on the
@@ -644,9 +671,9 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .card:hover, .card[data-force="hover"] { --card-ring: var(--ring-strong), var(--raise); }
 .card:focus-visible, .card[data-force="focus"] {
   outline: none;
-  --card-ring: 0 0 0 1px var(--indigo), 0 0 0 4px var(--indigo-ring);
+  --card-ring: 0 0 0 1px var(--x-floor-focus), 0 0 0 4px var(--indigo-ring);
 }
-.card[data-force="selected"] { --card-ring: 0 0 0 1.5px var(--indigo); }
+.card[data-force="selected"] { --card-ring: 0 0 0 1.5px var(--x-floor-focus); }
 .card[data-force="drag"] {
   transform: rotate(-1.4deg) scale(1.02);
   cursor: grabbing;
@@ -660,7 +687,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
    tray to be read, which is a rank above the card under the pointer. */
 .card[data-open] { --card-ring: 0 0 0 1.5px var(--ink-1), var(--float); }
 .card[data-force="moving"] {
-  --card-ring: 0 0 0 1.5px var(--indigo), 0 0 0 5px var(--indigo-ring), var(--lift);
+  --card-ring: 0 0 0 1.5px var(--x-floor-focus), 0 0 0 5px var(--indigo-ring), var(--lift);
   transform: scale(1.02);
 }
 @media (prefers-reduced-motion: reduce) { .card[data-force="moving"] { transform: none; } }
@@ -774,7 +801,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 
 /* The composer is a card, not a dialog: the thing being made looks like the
    thing it will be, in the column it will live in. */
-.card[data-draft] { --card-ring: 0 0 0 1.5px var(--indigo); cursor: default; }
+.card[data-draft] { --card-ring: 0 0 0 1.5px var(--x-floor-focus); cursor: default; }
 /* The draft grows with the sentence and snaps back to the three-line clamp
    the moment Enter turns it into a card. Safe for float containment: a draft
    renders no date chip inside the row. */
@@ -1030,7 +1057,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   max-width: min(760px, calc(100% - 36px)); box-sizing: border-box;
   min-height: 36px; padding: 0 6px 0 14px;
   border-radius: var(--r-pill);
-  background: var(--ink-1); color: var(--on-ink-1);
+  background: var(--x-floor-ground); color: var(--on-ink-1);
   font-size: 12px; letter-spacing: var(--tr-12);
   box-shadow: var(--lift);
   animation: carryIn var(--dur) var(--curve);
@@ -1310,7 +1337,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
    rates one with no keyboard route as a serious failure. It is a stop now, so
    it needs a ring — drawn inside its own box, because it marks a region the
    eye should read as bounded, not an object sitting on the board. */
-.trayBody:focus-visible { outline: 2px solid var(--indigo); outline-offset: -2px; border-radius: 4px; }
+.trayBody:focus-visible { outline: 2px solid var(--x-floor-focus); outline-offset: -2px; border-radius: 4px; }
 
 /* A blank board makes its one offer once. Five Add rows behind a centred
    "Add the first task" is the same offer six times. */
@@ -1417,8 +1444,9 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   .railAvatar { margin: 0; }
   .sheet { height: calc(100dvh - 60px - var(--inset) * 3 - env(safe-area-inset-bottom)); border-radius: 16px; }
   /* Explicit areas rather than wrap plus order. Wrapping left the wordmark
-     alone on line one with 60% of the row empty beside it. */
-  .head {
+     alone on line one with 60% of the row empty beside it. The density
+     prefix preserves the shipped compact header's mobile override. */
+  .head, .floor[data-density] .head {
     height: auto; display: grid; padding: 14px 16px 0;
     grid-template-columns: auto 1fr;
     grid-template-areas: "word actions" "name name" "facts facts";
@@ -1443,14 +1471,14 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   .carry em:not(:last-child) { display: none; }
   /* The switcher loses its icons rather than its fourth view. Cutting
      "Calendar" mid-word at the sheet edge read as a broken layout. */
-  .views { padding: 14px 16px 12px; }
+  .views, .floor[data-density] .views { padding: 14px 16px 12px; }
   .seg { width: 100%; }
   .segItem { flex: 1 1 0; justify-content: center; padding: 0 8px; }
   .segItem svg { display: none; }
   .viewTools { display: none; }
   .board { padding: 0 12px 14px; grid-auto-columns: 86%; scroll-snap-type: x mandatory; scroll-padding-left: 12px; }
   /* No dock on a phone, so no clearance to reserve. */
-  .tray { scroll-snap-align: start; padding-bottom: 8px; }
+  .tray, .floor[data-density] .tray { scroll-snap-align: start; padding-bottom: 8px; }
   .trayBody { padding-bottom: 4px; }
   .sheet::after, .sheet::before { display: none; }
   .dock { display: none; }

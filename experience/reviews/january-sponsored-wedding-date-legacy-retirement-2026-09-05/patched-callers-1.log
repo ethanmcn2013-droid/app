@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: bulk creation preserves every existing grant and old Project date, including revoked/departed/null-scope grants
+ok 1 - bulk creation preserves every existing grant and old Project date, including revoked/departed/null-scope grants
+  ---
+  duration_ms: 1986.3706
+  type: 'test'
+  ...
+# Subtest: all-skipped creation preserves every existing grant and old Project date, including revoked/departed/null-scope grants
+ok 2 - all-skipped creation preserves every existing grant and old Project date, including revoked/departed/null-scope grants
+  ---
+  duration_ms: 670.0607
+  type: 'test'
+  ...
+# Subtest: contextual creation preserves every existing grant and old Project date, including revoked/departed/null-scope grants
+ok 3 - contextual creation preserves every existing grant and old Project date, including revoked/departed/null-scope grants
+  ---
+  duration_ms: 758.9198
+  type: 'test'
+  ...
+# Subtest: contextual-with-sponsor creation preserves every existing grant and old Project date, including revoked/departed/null-scope grants
+ok 4 - contextual-with-sponsor creation preserves every existing grant and old Project date, including revoked/departed/null-scope grants
+  ---
+  duration_ms: 610.8898
+  type: 'test'
+  ...
+# Subtest: new Project redemption reads its own 2029-06-01 date and preserves all older grants
+ok 5 - new Project redemption reads its own 2029-06-01 date and preserves all older grants
+  ---
+  duration_ms: 769.7512
+  type: 'test'
+  ...
+# Subtest: new Project redemption reads its own unknown date and preserves all older grants
+ok 6 - new Project redemption reads its own unknown date and preserves all older grants
+  ---
+  duration_ms: 633.4319
+  type: 'test'
+  ...
+# Subtest: existing missing-date validation and independently disabled flags do not create Projects or touch grants
+ok 7 - existing missing-date validation and independently disabled flags do not create Projects or touch grants
+  ---
+  duration_ms: 2066.781
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9567.3635

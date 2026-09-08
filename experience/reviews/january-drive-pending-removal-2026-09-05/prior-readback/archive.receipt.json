@@ -1,0 +1,8 @@
+{
+  "command": "pwsh -File work/drive-pending-revocation-2026-09-05/archive.ps1",
+  "completedAt": "2026-09-05T10:50:25.1407940Z",
+  "exitCode": 0,
+  "entriesVerified": 70,
+  "bytes": 372660,
+  "sha256": "f20ff6c363c4ce6026b81e6875441dd196d47652fe7fb1742552e9069a0be5c2"
+}

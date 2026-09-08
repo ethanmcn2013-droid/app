@@ -1,0 +1,352 @@
+[
+  {
+    "sha256": "8f0bb8146134a93cce43551f22778cbf5aa588f6321df748525ab01834b09fd9",
+    "bytes": 2111,
+    "path": "scratch/archive.ps1"
+  },
+  {
+    "sha256": "62c158be5abaf5c4ce6c63f14b8fc9e0247ca1ccee05799d0dd30e9ba085b007",
+    "bytes": 16689,
+    "path": "scratch/package.cjs"
+  },
+  {
+    "sha256": "47a075ba92000c4ad04a05bad6c4d4c09fd899f4de2931ff229890be1d7579b0",
+    "bytes": 11686,
+    "path": "scratch/probe.tsx"
+  },
+  {
+    "sha256": "de143211d0c027d9a8d8000120ea1028559fe93fae55c7321fc7765109f00150",
+    "bytes": 3524,
+    "path": "scratch/run.mjs"
+  },
+  {
+    "sha256": "e8ed56f7a741c8a820e74bf7b91d365a4077b85fa2570852934fc1b14cb2fe36",
+    "bytes": 11604,
+    "path": "scratch/original/probe-before-async-wrapper.tsx.txt"
+  },
+  {
+    "sha256": "0bc95bddd355bc7f89736c6a2c501399af9ff31972195ecec8e3bdd98caa13c4",
+    "bytes": 1882,
+    "path": "scratch/original/receipt.json"
+  },
+  {
+    "sha256": "a24f9715df59e2b132f2839d912479304adb4b560ed7052aef1c0d3254c90d8b",
+    "bytes": 5830,
+    "path": "scratch/source/drizzle/0028_project_drive.sql.txt"
+  },
+  {
+    "sha256": "332c40bf70ad206f247cb12793b3a49ecf7d20f47b3a16b93cacb519ee13b79a",
+    "bytes": 10609,
+    "path": "scratch/source/drizzle/0029_project_drive_operations.sql.txt"
+  },
+  {
+    "sha256": "a553937d6a45016503688270cb64b6f5205b728573835a0d43bcc5ce5d2f0053",
+    "bytes": 7903,
+    "path": "scratch/source/src/components/app/settings/sections/connections-view.tsx.txt"
+  },
+  {
+    "sha256": "19a67b1dd938b284993e3192e5a307ca83d5b8b7e7d8fd4f886b8cdb8f70474e",
+    "bytes": 1477,
+    "path": "scratch/source/src/lib/drive-upload-session.ts.txt"
+  },
+  {
+    "sha256": "59f30b5e6a9a4974eaccd323ecaee8853d641f8845684a325f1d8f1bbd8138f6",
+    "bytes": 6390,
+    "path": "scratch/source/src/lib/product-urls.ts.txt"
+  },
+  {
+    "sha256": "785d3a9d1ba26170b148454c726254fe963f031bca422e2d6f94b47191ae0cd6",
+    "bytes": 1565,
+    "path": "scratch/source/src/lib/project-drive-ui.ts.txt"
+  },
+  {
+    "sha256": "7bd4beddcadd03ae8bc7f0292f27958d975829d7cf9b0b7d3191b38fece15702",
+    "bytes": 2448,
+    "path": "scratch/source/src/lib/suite-contracts.v1.json.txt"
+  },
+  {
+    "sha256": "33f0ed7ee3f979a75a61f3273e1f5b2bad3b36ea422a23eea08d1daaac62bd6b",
+    "bytes": 6579,
+    "path": "scratch/source/src/lib/projects/project-ref.ts.txt"
+  },
+  {
+    "sha256": "b5cf6b7a42f96ee5c897a929312787a28980418c7affa874e13455afd46e348e",
+    "bytes": 4078,
+    "path": "scratch/source/src/server/actions/connections.ts.txt"
+  },
+  {
+    "sha256": "456ea3aa005f5581221f51a723abd4405e0680d3bc93582d4e33cd76925dd178",
+    "bytes": 1420,
+    "path": "scratch/source/src/server/actions/project-drive-status.ts.txt"
+  },
+  {
+    "sha256": "b53af39408a57c568d01d943ef1d1c954c3a0b1f4c91ccfb7be98d508025489c",
+    "bytes": 21585,
+    "path": "scratch/source/src/server/connections/drive-connections.test.ts.txt"
+  },
+  {
+    "sha256": "de97e4724dcc9e4b8f407a23c39ab201fa6b988f7bbbf6a25549a2ba5253db03",
+    "bytes": 26026,
+    "path": "scratch/source/src/server/connections/drive-connections.ts.txt"
+  },
+  {
+    "sha256": "73da879d74d5b30125480f8f88a8291742e6bc975b4e8a9cda4c9985f5bc7d80",
+    "bytes": 21014,
+    "path": "scratch/source/src/server/connections/drive-folders.ts.txt"
+  },
+  {
+    "sha256": "b4491e676540e3e2e398f4c7c3b2c9f2c6c6cc8d68e9949e3345fefc00c0abf2",
+    "bytes": 35452,
+    "path": "scratch/source/src/server/connections/drive-grants.ts.txt"
+  },
+  {
+    "sha256": "07a75a60e22ef0e6507e71d6fe1db84756b34047c60c439aefee45897c751c83",
+    "bytes": 2078,
+    "path": "scratch/source/src/server/connections/google-drive-scopes.ts.txt"
+  },
+  {
+    "sha256": "a72548103a456ab414abfdb463a2d59d73a16d02cd93c6e6a998eb5a508f2e38",
+    "bytes": 25431,
+    "path": "scratch/source/src/server/connections/google-drive.ts.txt"
+  },
+  {
+    "sha256": "9e46599c54ee544cd62373a6e0cc97ac8e791fda5f0ca161a5d7fd809f65ebef",
+    "bytes": 12615,
+    "path": "scratch/source/src/server/connections/google-oauth-state.ts.txt"
+  },
+  {
+    "sha256": "9974f1ad8c1663b4f41124e931ce4fbce526d6e6471a7f60053a79bc7bd3b370",
+    "bytes": 16839,
+    "path": "scratch/source/src/server/connections/project-drive-access.ts.txt"
+  },
+  {
+    "sha256": "f023de3c3ba75435e727056663288a151c6737debd3d20fd9a06a0f62dfed2a8",
+    "bytes": 3198,
+    "path": "scratch/source/src/server/connections/project-drive-authz.ts.txt"
+  },
+  {
+    "sha256": "4decf7d12fb9b89bc216d0c80512c6eebd7a054841b1817913e291f8f0e3dcfb",
+    "bytes": 5805,
+    "path": "scratch/source/src/server/connections/project-drive-core.test.helpers.ts.txt"
+  },
+  {
+    "sha256": "cbc6832f3317e6bc907f84db5bb01b87d5a558ada0bea76c4a08b2ce30f4a675",
+    "bytes": 13978,
+    "path": "scratch/source/src/server/connections/project-drive-folder-management.ts.txt"
+  },
+  {
+    "sha256": "27f0f7d34f520a2e18384b6c96c080eba185d13f0a12b919000e6bba74d2afe3",
+    "bytes": 28959,
+    "path": "scratch/source/src/server/connections/project-drive-folder-operation-executor.ts.txt"
+  },
+  {
+    "sha256": "5c494e558a819b1233b7c2d2e43f0e26ed19d3076c6bf81251333ec9d7bdf557",
+    "bytes": 29436,
+    "path": "scratch/source/src/server/connections/project-drive-grant-operation-executor.ts.txt"
+  },
+  {
+    "sha256": "626d866fb9749283e144d8af4b351d0d29a9e23c56bc02125712c08d4fcff0c2",
+    "bytes": 11122,
+    "path": "scratch/source/src/server/connections/project-drive-grant-repair.ts.txt"
+  },
+  {
+    "sha256": "75bd52a92ea576b9d84884796ff2a13c56d86f604ad4a92d3c029317b0d664dc",
+    "bytes": 4422,
+    "path": "scratch/source/src/server/connections/project-drive-member-coverage.ts.txt"
+  },
+  {
+    "sha256": "e244ec204f399a1d4d4017da2eaed27205d68b78135eb8ec38071d99f7111bc1",
+    "bytes": 12983,
+    "path": "scratch/source/src/server/connections/project-drive-membership-lifecycle.ts.txt"
+  },
+  {
+    "sha256": "c44d5b36533a4844d1d2f714453d430a8dd21da4c6ff8ec490fa369a6e895260",
+    "bytes": 56866,
+    "path": "scratch/source/src/server/connections/project-drive-operation-journal.ts.txt"
+  },
+  {
+    "sha256": "ddeef6500c90a277788eb15f1643e2ed9596de6c713828e77397c22a6c5d957f",
+    "bytes": 4070,
+    "path": "scratch/source/src/server/connections/project-drive-operation-key.ts.txt"
+  },
+  {
+    "sha256": "1accf0e2315a7a95bddfdc9c34d97135729dc878a808c7efe3faf11ad636419f",
+    "bytes": 2883,
+    "path": "scratch/source/src/server/connections/project-drive-operation-lifecycle.ts.txt"
+  },
+  {
+    "sha256": "5c140d2c0076661f33dc70377e6fbebcf0b45283d505d01bf5d9d8e9be6634ee",
+    "bytes": 15097,
+    "path": "scratch/source/src/server/connections/project-drive-operation-orchestrator.ts.txt"
+  },
+  {
+    "sha256": "0632230923e77a686df211b7bce037cd839875541992c7ae6150a2b81682c4df",
+    "bytes": 9076,
+    "path": "scratch/source/src/server/connections/project-drive-permission-mutation-lease.ts.txt"
+  },
+  {
+    "sha256": "121b88aaaeb5908b44740af51b0719a66dddbf188c84c5665bba5f21e041cb41",
+    "bytes": 3765,
+    "path": "scratch/source/src/server/connections/project-drive-ui-status.test.ts.txt"
+  },
+  {
+    "sha256": "f6236ef7e83d7dfb3fe6f9873cd512f5724bb5dbb153a555a4649f2ad2ddbc01",
+    "bytes": 4699,
+    "path": "scratch/source/src/server/connections/project-drive-ui-status.ts.txt"
+  },
+  {
+    "sha256": "bbcfe2f655d6af4bbbd8ea840578b9e85ebb6bf30a84aa3e3a3afa0b571d3672",
+    "bytes": 5759,
+    "path": "scratch/source/src/server/connections/project-drive-upload-receipts-core.ts.txt"
+  },
+  {
+    "sha256": "f6f3d8034e7a41bf61f0baaade160093867ee672dd627a92515f42f2c338d69e",
+    "bytes": 230,
+    "path": "scratch/source/src/server/connections/project-drive-upload-receipts.ts.txt"
+  },
+  {
+    "sha256": "480ae18d90eb1803d463735192350068a8c8a4d878015f2fae2001667dc4e554",
+    "bytes": 13295,
+    "path": "scratch/source/src/server/crypto/secret-box.ts.txt"
+  },
+  {
+    "sha256": "c21e257b7b669da315b8b19df61bd5d66b4be9e999be1c6d1fe745b177df4385",
+    "bytes": 63139,
+    "path": "scratch/source/src/server/db/schema.ts.txt"
+  },
+  {
+    "sha256": "45c701e3aefd2515796103b8173a1aa32ac52081aaaba6dc143e23cb77f882df",
+    "bytes": 1868,
+    "path": "scratch/source/src/server/db/tenant.ts.txt"
+  },
+  {
+    "sha256": "2b2eea4b8c1cbb0e4702827b46e8a6cc70423d70d86dbe2568e1c57e1fc4ca8a",
+    "bytes": 2219,
+    "path": "scratch/source/src/server/projects/project-deletion-fence.ts.txt"
+  },
+  {
+    "sha256": "fbe82b17e4604ebc82e02199ed6fe8caaf8f58798e1a80fe5b740ce8cb175fd2",
+    "bytes": 4095,
+    "path": "scratch/sqlite/active.html"
+  },
+  {
+    "sha256": "cc9252ca0c603c69b93fafea8a148c1b47952cd9ea01c7e2b19a2f90febd2a53",
+    "bytes": 2697,
+    "path": "scratch/sqlite/inflight-200.html"
+  },
+  {
+    "sha256": "cc9252ca0c603c69b93fafea8a148c1b47952cd9ea01c7e2b19a2f90febd2a53",
+    "bytes": 2697,
+    "path": "scratch/sqlite/inflight-500.html"
+  },
+  {
+    "sha256": "cc9252ca0c603c69b93fafea8a148c1b47952cd9ea01c7e2b19a2f90febd2a53",
+    "bytes": 2697,
+    "path": "scratch/sqlite/invalid-token.html"
+  },
+  {
+    "sha256": "cc9252ca0c603c69b93fafea8a148c1b47952cd9ea01c7e2b19a2f90febd2a53",
+    "bytes": 2697,
+    "path": "scratch/sqlite/missing-key.html"
+  },
+  {
+    "sha256": "cc9252ca0c603c69b93fafea8a148c1b47952cd9ea01c7e2b19a2f90febd2a53",
+    "bytes": 2697,
+    "path": "scratch/sqlite/network-failure.html"
+  },
+  {
+    "sha256": "fbe82b17e4604ebc82e02199ed6fe8caaf8f58798e1a80fe5b740ce8cb175fd2",
+    "bytes": 4095,
+    "path": "scratch/sqlite/permission-500-then-204.html"
+  },
+  {
+    "sha256": "fbe82b17e4604ebc82e02199ed6fe8caaf8f58798e1a80fe5b740ce8cb175fd2",
+    "bytes": 4095,
+    "path": "scratch/sqlite/permission-500-then-404.html"
+  },
+  {
+    "sha256": "2fe138b0f5d2751f0b96b00c2147885b224e70a729c7b808faac9a004f12cafb",
+    "bytes": 244158,
+    "path": "scratch/sqlite/probe.cjs"
+  },
+  {
+    "sha256": "4b91ffda6bc077c9d44b01b0d74c61ea577da91076d32d2b3aff3c071b9f5b98",
+    "bytes": 479,
+    "path": "scratch/sqlite/probe.log"
+  },
+  {
+    "sha256": "e3a70540e94eb89932db166fe74c7e65c6d4e4ffb9de62d20793a7831fd900ff",
+    "bytes": 9693,
+    "path": "scratch/sqlite/receipt.json"
+  },
+  {
+    "sha256": "d2d0c9ed1788bfa464b89b6f1f51993d346d0e551d1db565d2e8b1445da7ab29",
+    "bytes": 66819,
+    "path": "scratch/sqlite/results.json"
+  },
+  {
+    "sha256": "cc9252ca0c603c69b93fafea8a148c1b47952cd9ea01c7e2b19a2f90febd2a53",
+    "bytes": 2697,
+    "path": "scratch/sqlite/revoke-200.html"
+  },
+  {
+    "sha256": "cc9252ca0c603c69b93fafea8a148c1b47952cd9ea01c7e2b19a2f90febd2a53",
+    "bytes": 2697,
+    "path": "scratch/sqlite/revoke-500.html"
+  },
+  {
+    "sha256": "7a740be3cb0cde215e2eddc838914d23ef616af0f0af855f9f079deb85de77e8",
+    "bytes": 483328,
+    "path": "scratch/sqlite/db/signal-drive-core-0U6HhM/core.test.db"
+  },
+  {
+    "sha256": "ca0a9750ab6bc08fe9c8f39b963d518f3f717ba10f4d1fb91140b2696ca88e4d",
+    "bytes": 483328,
+    "path": "scratch/sqlite/db/signal-drive-core-AvT9Dl/core.test.db"
+  },
+  {
+    "sha256": "e741abe29c3db32fdb2a823e961b2503e544e8f1d63976eaffada05b1719f6bb",
+    "bytes": 483328,
+    "path": "scratch/sqlite/db/signal-drive-core-FFQT6i/core.test.db"
+  },
+  {
+    "sha256": "e7554730ab2f7e2e85202be42db3c1d81931a3b6c5702be342c9469c53523083",
+    "bytes": 483328,
+    "path": "scratch/sqlite/db/signal-drive-core-HyYL14/core.test.db"
+  },
+  {
+    "sha256": "01e1dd87eb47cd9a7f5e235529944101dd9c56dcad6cef42b5235025e8c7d098",
+    "bytes": 483328,
+    "path": "scratch/sqlite/db/signal-drive-core-i3R2N1/core.test.db"
+  },
+  {
+    "sha256": "37fce30aa3bda2e8f5812707c1820a1202ce20414c413f35267eb85f813ebcd6",
+    "bytes": 483328,
+    "path": "scratch/sqlite/db/signal-drive-core-KCzeg4/core.test.db"
+  },
+  {
+    "sha256": "63711640acc3a85d2f007deb1636db847799333f7aebf0619ecfd616b3ea93bc",
+    "bytes": 483328,
+    "path": "scratch/sqlite/db/signal-drive-core-NhPtjF/core.test.db"
+  },
+  {
+    "sha256": "7833e5c8c7aad7ba288869c9463a43dcb28e5c229ca2c20da38aa00cf8e312fd",
+    "bytes": 483328,
+    "path": "scratch/sqlite/db/signal-drive-core-OB5euO/core.test.db"
+  },
+  {
+    "sha256": "af8ca0a19dcc3c57ceac41103b64711c611ae7286a321a910a98ac4b25259226",
+    "bytes": 483328,
+    "path": "scratch/sqlite/db/signal-drive-core-P05d2A/core.test.db"
+  },
+  {
+    "sha256": "3251715c2f9639aff397a7bed21eb2a4716b0662fa6574e4842017558d0359ef",
+    "bytes": 483328,
+    "path": "scratch/sqlite/db/signal-drive-core-TAQVgn/core.test.db"
+  },
+  {
+    "sha256": "856c4ca86b06617b75fea3550abb285a52eb804643c3f15cff670468e588267a",
+    "bytes": 483328,
+    "path": "scratch/sqlite/db/signal-drive-core-xCgd9B/core.test.db"
+  }
+]

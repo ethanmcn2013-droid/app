@@ -26,7 +26,10 @@
  * existing store's — this file replaces the rendering, nothing else.
  */
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { useCalendarFrame } from "@/components/app/room/room-brief-context";
+import type { CalendarFrame } from "@/lib/calendar-frame";
+import { calendarDateInTimeZone } from "@/lib/planning/dates";
 import { useLabStore } from "@/components/hybrid/store";
 import { useBoardColumns } from "@/components/hybrid/columns-context";
 import { useFitColumns } from "@/components/hybrid/view-prefs";
@@ -72,17 +75,22 @@ function dayCount(iso: string, today: number): string {
 
 export type TimeFact = { kind: string; label: string; said: string; spoken: string };
 
-/** Midnight UTC today, so a card's time fact is stable across a render. */
-export function todayStamp(): number {
-  const now = new Date();
-  return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-}
-
-export function timeOf(task: LabTask, columnIsDone: boolean, today: number): TimeFact {
+export function timeOf(
+  task: LabTask,
+  columnIsDone: boolean,
+  calendar: Pick<CalendarFrame, "today" | "timeZone">,
+): TimeFact {
+  // Date-only schedules stay calendar dates. UTC is just their arithmetic
+  // representation; the request frame has already selected the project day.
+  const today = toUTC(calendar.today);
   const none = { kind: "none", label: "", said: "", spoken: "" };
   if (task.completed || columnIsDone) {
     if (!task.completedAt) return none;
-    const iso = task.completedAt.slice(0, 10);
+    const completed = new Date(task.completedAt);
+    if (Number.isNaN(completed.getTime())) return none;
+    // Completion is an instant, unlike a due date. Resolve it in the same
+    // project timezone before naming its calendar day.
+    const iso = calendarDateInTimeZone(completed, calendar.timeZone);
     return {
       kind: "done",
       label: dayLabel(iso, today),
@@ -308,7 +316,7 @@ export function FloorBoard({
   const [fitColumns] = useFitColumns();
   const rootRef = useRef<HTMLDivElement>(null);
 
-  const today = useMemo(() => todayStamp(), []);
+  const calendar = useCalendarFrame();
 
   const [focusId, setFocusId] = useState<string | null>(null);
   const [carriedId, setCarriedId] = useState<string | null>(null);
@@ -338,12 +346,12 @@ export function FloorBoard({
   const rowsFor = useCallback(
     (column: { key: string; isDone: boolean }) => {
       let rows = tasks.filter((t) => t.status === column.key).sort((a, b) => a.order - b.order);
-      if (lateOnly) rows = rows.filter((t) => timeOf(t, column.isDone, today).kind === "overdue");
-      if (todayOnly) rows = rows.filter((t) => timeOf(t, column.isDone, today).kind === "today");
+      if (lateOnly) rows = rows.filter((t) => timeOf(t, column.isDone, calendar).kind === "overdue");
+      if (todayOnly) rows = rows.filter((t) => timeOf(t, column.isDone, calendar).kind === "today");
       if (clientOnly) rows = rows.filter((t) => clientOf(t) === clientOnly);
       return rows;
     },
-    [tasks, clientOnly, clientOf, lateOnly, todayOnly, today],
+    [tasks, clientOnly, clientOf, lateOnly, todayOnly, calendar],
   );
 
   const all = tasks;
@@ -715,7 +723,7 @@ export function FloorBoard({
                       key={task.id}
                       onDragStart={(e) => onDragStart(e, task.id)}
                         task={task}
-                        time={timeOf(task, column.isDone, today)}
+                        time={timeOf(task, column.isDone, calendar)}
                         done={task.completed || column.isDone}
                         stop={task.id === stopId}
                         carried={task.id === carriedId}

@@ -25,6 +25,7 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "scripts/experience/**"
+      - "scripts/design/extract-floor-css*"
       - ".github/workflows/design-quality.yml"
       - ".github/pull_request_template.md"
   push:
@@ -47,6 +48,7 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "scripts/experience/**"
+      - "scripts/design/extract-floor-css*"
       - ".github/workflows/design-quality.yml"
       - ".github/pull_request_template.md"
 
@@ -60,7 +62,9 @@ concurrency:
 jobs:
   registry-and-drift:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # The added fixtures cover 68 route states, three React lifecycle checks
+    # and scoped Floor/project-label contrast after the built-browser matrix.
+    timeout-minutes: 20
     steps:
       # Full history, because this job is the only one that runs the council,
       # and the council verifies that the commit its external baseline was
@@ -109,6 +113,20 @@ jobs:
       - name: Capture critical rendered evidence
         run: pnpm experience:test
 
+      # The preceding build supplies the local Geist assets required by this
+      # fixture. Its explicit framework/identity adapters remain documented;
+      # these results do not establish real Clerk or production continuity.
+      - name: Verify recipient routes, React context and theme contrast
+        run: pnpm test:recipient-context:browser
+
+      # Actual component and HTTP handler, with explicit fixture identity/module
+      # ports. Includes unsuccessful download and same-page recovery controls.
+      - name: Verify independent profile account export and retry
+        run: pnpm test:event-export:browser
+
+      - name: Verify exact-project recovery and record identification
+        run: pnpm test:project-recovery:browser
+
       - name: Verify settings hydration across locales
         run: pnpm test:settings-hydration
 
@@ -140,5 +158,12 @@ jobs:
             experience/output/playwright-results
             experience/output/timeline-project-switcher-results
             experience/output/notes-recovery
+            experience/output/recipient-project-work/routes
+            experience/output/recipient-project-work/realtime-react
+            experience/output/recipient-project-work/floor-theme
+            experience/output/recipient-project-work/floor-calendar
+            experience/output/recipient-project-work/wedding-date-readback
+            experience/output/event-account-export
+            experience/output/project-recovery
           if-no-files-found: ignore
           retention-days: 14

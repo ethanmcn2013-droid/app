@@ -168,6 +168,7 @@ export const TENANT_SURFACES = [
       "resources",
       "workspaceEvents",
       "workspaceSponsorships",
+      "eventPurchaseDesignations",
       "suiteOutbox",
       // Project Drive custody. Provider connections are person-scoped; the
       // other tables carry workspace_id and must never be read without scope.

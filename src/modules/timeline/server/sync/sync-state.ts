@@ -39,6 +39,17 @@ import { assertOwnershipCovers } from "@/modules/timeline/lib/tasks-project-owne
 /** How long a refresh may hold its lease before another may assume it died. */
 export const SYNC_LEASE_TTL_MS = 60_000;
 
+// Sync can supply its guarded local transaction. Provisioning/direct callers
+// retain the default client and the existing standalone transaction behavior.
+type PreparationExecutor = Pick<typeof db, "select" | "insert" | "update">;
+
+/** Must escape the optional-table fallback so the caller rolls back its writes. */
+class BindingWriteFailure extends Error {
+  constructor(cause: unknown) {
+    super("Timeline binding write failed.", { cause });
+  }
+}
+
 export type SyncLease = Readonly<{
   tasksWorkspaceId: string;
   timelineWorkspaceSlug: string;
@@ -97,7 +108,7 @@ export async function ensureSuiteProjectBinding(input: {
   timelineWorkspaceSlug: string;
   primaryTimelineSlug: string;
   authority: SuiteBindingAuthority;
-}): Promise<EnsureBindingResult> {
+}, executor?: PreparationExecutor): Promise<EnsureBindingResult> {
   // ── FAIL SOFT, DELIBERATELY ──────────────────────────────────────────────
   // Code ships before a migration runs, always. Until 0001 is applied the
   // binding table does not exist, and every caller of this function is on a
@@ -119,8 +130,9 @@ export async function ensureSuiteProjectBinding(input: {
     );
   }
   try {
-    return await ensureSuiteProjectBindingUnguarded(input);
+    return await ensureSuiteProjectBindingUnguarded(input, executor);
   } catch (error) {
+    if (error instanceof BindingWriteFailure) throw error;
     console.error("[sync-state] binding not recorded:", String(error));
     return { kind: "not-exact", reason: "binding-unavailable" };
   }
@@ -131,10 +143,11 @@ async function ensureSuiteProjectBindingUnguarded(input: {
   timelineWorkspaceSlug: string;
   primaryTimelineSlug: string;
   authority: SuiteBindingAuthority;
-}): Promise<EnsureBindingResult> {
+}, executor?: PreparationExecutor): Promise<EnsureBindingResult> {
   const { tasksWorkspaceId, timelineWorkspaceSlug, primaryTimelineSlug, authority } = input;
+  const reader = executor ?? db;
 
-  const [existing] = await db
+  const [existing] = await reader
     .select()
     .from(suiteProjectBindings)
     .where(eq(suiteProjectBindings.tasksWorkspaceId, tasksWorkspaceId))
@@ -148,7 +161,7 @@ async function ensureSuiteProjectBindingUnguarded(input: {
       : { kind: "not-exact", reason: "claimed-elsewhere" };
   }
 
-  const [workspace] = await db
+  const [workspace] = await reader
     .select({ suiteWorkspaceId: workspaces.suiteWorkspaceId })
     .from(workspaces)
     .where(eq(workspaces.slug, timelineWorkspaceSlug))
@@ -166,7 +179,7 @@ async function ensureSuiteProjectBindingUnguarded(input: {
     return { kind: "not-exact", reason: "parent-mirror-disagrees" };
   }
 
-  const [child] = await db
+  const [child] = await reader
     .select({ sourceTasksWorkspaceId: projects.sourceTasksWorkspaceId })
     .from(projects)
     .where(
@@ -182,7 +195,7 @@ async function ensureSuiteProjectBindingUnguarded(input: {
   }
 
   try {
-    await db.transaction(async (tx) => {
+    const writeBinding = async (tx: PreparationExecutor) => {
       await tx.insert(suiteProjectBindings).values({
         tasksWorkspaceId,
         timelineWorkspaceSlug,
@@ -210,12 +223,19 @@ async function ensureSuiteProjectBindingUnguarded(input: {
             ),
           );
       }
-    });
-  } catch {
+    };
+    if (executor) await writeBinding(executor);
+    else await db.transaction(writeBinding);
+  } catch (error) {
+    // In a caller-owned transaction our insert may still be uncommitted.
+    // Rereading it cannot prove an independent winner; let the owner roll
+    // back the entire preparation. Early optional-table reads still use the
+    // fallback above, and standalone transactions have already rolled back.
+    if (executor) throw new BindingWriteFailure(error);
     // A lost race is not a licence to rewrite the winner. Re-read it: if the
     // committed row is ours the caller is bound either way, and if it is not,
     // this is a reconciliation case.
-    const [winner] = await db
+    const [winner] = await reader
       .select({ timelineWorkspaceSlug: suiteProjectBindings.timelineWorkspaceSlug })
       .from(suiteProjectBindings)
       .where(eq(suiteProjectBindings.tasksWorkspaceId, tasksWorkspaceId))
@@ -243,7 +263,7 @@ export async function acquireSyncLease(input: {
   timelineSlug: string;
   now?: number;
   ttlMs?: number;
-}): Promise<SyncLease | null> {
+}, executor: PreparationExecutor = db): Promise<SyncLease | null> {
   const now = input.now ?? Date.now();
   const expiresAt = new Date(now + (input.ttlMs ?? SYNC_LEASE_TTL_MS));
   const leaseToken = randomUUID();
@@ -253,7 +273,7 @@ export async function acquireSyncLease(input: {
   // Returning null means "no lease", and the caller then behaves exactly as it
   // did before WP4 — safe, just without the newer-wins guarantee.
   try {
-    return await acquireSyncLeaseUnguarded({ ...input, now, expiresAt, leaseToken });
+    return await acquireSyncLeaseUnguarded({ ...input, now, expiresAt, leaseToken }, executor);
   } catch (error) {
     console.error("[sync-state] lease not acquired:", String(error));
     return null;
@@ -267,19 +287,19 @@ async function acquireSyncLeaseUnguarded(input: {
   now: number;
   expiresAt: Date;
   leaseToken: string;
-}): Promise<SyncLease | null> {
+}, executor: PreparationExecutor): Promise<SyncLease | null> {
   const { now, expiresAt, leaseToken } = input;
   // Read the digest BEFORE the upsert overwrites nothing and the generation
   // moves. `RETURNING` gives post-update values, so the previous one has to be
   // read on its own statement; it is one indexed primary-key lookup, and it
   // buys skipping a full node rewrite on every unchanged refresh.
-  const [previous] = await db
+  const [previous] = await executor
     .select({ snapshotDigest: timelineSourceSyncState.snapshotDigest })
     .from(timelineSourceSyncState)
     .where(eq(timelineSourceSyncState.tasksWorkspaceId, input.tasksWorkspaceId))
     .limit(1);
 
-  const rows = await db
+  const rows = await executor
     .insert(timelineSourceSyncState)
     .values({
       tasksWorkspaceId: input.tasksWorkspaceId,

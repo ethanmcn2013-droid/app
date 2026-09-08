@@ -1,0 +1,74 @@
+{
+  "status": "bounded WDATE-02 correction; independent receiving and final build/capture pending",
+  "runtime": "c1ab57deb75be316400c334b61713842198ce98c",
+  "parent": "a09f807165eb802a40bcc978f3d06f0238e0f623",
+  "baseline": "69d7880a61840d536beace65875662911336df12",
+  "branch": "feat/january-sponsored-wedding-date",
+  "sourceFiles": [
+    "src/components/app/project/wedding-date-form.tsx",
+    "src/components/app/project/wedding-date-readback.browser.test.mjs"
+  ],
+  "gates": {
+    "original69-ordering-1": {
+      "exitCode": 1,
+      "receipt": "original69-ordering-1.receipt.json"
+    },
+    "fixed-ordering-1": {
+      "exitCode": 0,
+      "receipt": "fixed-ordering-1.receipt.json"
+    },
+    "original69-ordering-2": {
+      "exitCode": 1,
+      "receipt": "original69-ordering-2.receipt.json"
+    },
+    "fixed-ordering-2": {
+      "exitCode": 0,
+      "receipt": "fixed-ordering-2.receipt.json"
+    },
+    "sqlite-replay-1": {
+      "exitCode": 0,
+      "receipt": "sqlite-replay-1.receipt.json"
+    },
+    "focused-1": {
+      "exitCode": 0,
+      "receipt": "focused-1.receipt.json"
+    },
+    "lint-1": {
+      "exitCode": 0,
+      "receipt": "lint-1.receipt.json"
+    },
+    "lint-2": {
+      "exitCode": 0,
+      "receipt": "lint-2.receipt.json"
+    },
+    "typecheck-1": {
+      "exitCode": 0,
+      "receipt": "typecheck-1.receipt.json"
+    }
+  },
+  "uniqueComponentAndEntryChecks": 25,
+  "actualPersistencePairs": 8,
+  "finalCallsEqualReplayed": true,
+  "preservedPackets": [
+    {
+      "root": "C:/Users/ethan/Documents/Codex/2026-09-04/here-are-6-prompts-i-have-2/outputs/sponsored-wedding-date-2026-09-05",
+      "manifestSha256": "c83d3427da25f5fe4d81e3cf66bb0ff997cb20da8ac201e5dbdeb51ffd5156ec",
+      "files": 189,
+      "allMatch": true
+    },
+    {
+      "root": "C:/Users/ethan/Documents/Codex/2026-09-04/here-are-6-prompts-i-have-2/outputs/sponsored-wedding-date-legacy-retirement-2026-09-05",
+      "manifestSha256": "332206d5b759fe307f5daa0174d4e1d54c6557ea8f71f075c3d11a0504e8f58d",
+      "files": 45,
+      "allMatch": true
+    },
+    {
+      "root": "C:/Users/ethan/Documents/Codex/2026-09-04/here-are-6-prompts-i-have-2/outputs/wdate-01-fresh-access-readback-2026-09-05",
+      "manifestSha256": "d09abf8360a4d5236d363ef6a1f9a7c10451204c6271593c430f647f8a1b8ace",
+      "files": 61,
+      "allMatch": true
+    }
+  ],
+  "renderMode": "Unstyled actual Overview/Form Chromium; explicit deferred action/router adapters; no full Next/Clerk or final style claim",
+  "ffefRenewal": "Stopped/non-final:32 captured,3 keyboard not run; corrected final normal build and renewal still required"
+}

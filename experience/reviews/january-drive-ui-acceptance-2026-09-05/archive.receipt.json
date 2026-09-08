@@ -1,0 +1,8 @@
+{
+  "completedAt": "2026-09-05T10:40:06.4187574Z",
+  "entriesVerified": 624,
+  "command": "pwsh -File work/drive-ui-acceptance-2026-09-05/archive.ps1",
+  "bytes": 17130272,
+  "sha256": "dfd04141c4a01c60f3c868e8e32105c9c1b87a453d09c79ec76f4c03a13275bc",
+  "exitCode": 0
+}

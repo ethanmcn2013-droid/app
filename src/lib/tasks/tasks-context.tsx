@@ -28,6 +28,7 @@ import {
 import {
   addTaskAction,
   duplicateTaskAction,
+  getTasksAction,
   moveTaskAction,
   removeTaskAction,
   reorderTaskAction,
@@ -145,10 +146,14 @@ function commitTasksState(
 }
 
 export function TasksProvider({
+  projectId,
+  actorId,
   children,
   initialTasks,
   initialPreviousLane,
 }: {
+  projectId: string;
+  actorId: UserId;
   children: ReactNode;
   initialTasks?: Task[];
   initialPreviousLane?: Record<string, LaneId>;
@@ -164,6 +169,11 @@ export function TasksProvider({
   // commit that same state object to both the synchronous ref and React.
   // This keeps timestamped optimistic updates identical in both places.
   const stateRef = useRef(state);
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   const dispatch = useCallback(
     (action: TasksAction) => {
       const nextState = tasksReducer(stateRef.current, action);
@@ -178,6 +188,8 @@ export function TasksProvider({
   // The provider's own optimistic + reconcile path already handles
   // this tab's mutations; this hook only reacts to peer events.
   useRealtimeSync({
+    projectId,
+    actorId,
     onChange: (fresh) => dispatch({ type: "hydrate", tasks: fresh }),
   });
 
@@ -225,8 +237,9 @@ export function TasksProvider({
     [dispatch],
   );
 
-  // Stable dispatcher object. None of these read render-scoped
-  // state, so the empty deps are correct.
+  // Reconciliation belongs to this provider's displayed Project. The runtime
+  // keys the provider by verified actor/Project so old optimistic state and
+  // pending mutation callbacks cannot hydrate a replacement context.
   const dispatchers = useMemo<TasksDispatchers>(
     () => ({
       moveTask: (id, toLane) =>
@@ -239,11 +252,14 @@ export function TasksProvider({
         const prior = stateRef.current.tasks;
         // Optimistic: update local state immediately.
         dispatch({ type: "moveToColumn", id, columnKey, isSystemLane });
+        if (isDemoMode()) return;
         // Server sync: fire and reconcile via getTasksAction after completion.
         startTransition(async () => {
           try {
             await moveTaskToColumnAction(id, columnKey);
-            const fresh = await (await import("@/server/actions/tasks")).getTasksAction();
+            if (!mounted.current) return;
+            const fresh = await getTasksAction(projectId);
+            if (!mounted.current) return;
             // Only accept the server's copy when it actually carries the move.
             // The unconditional hydrate meant any surface whose read does not
             // reflect the write — a deterministic demo board, a replica that
@@ -254,7 +270,7 @@ export function TasksProvider({
             const effective = landed ? landed.boardColumnKey || landed.lane : null;
             if (effective === columnKey) dispatch({ type: "hydrate", tasks: fresh });
           } catch (err) {
-
+            if (!mounted.current) return;
             console.warn("tasks: moveTaskToColumn failed; reverting", err);
             dispatch({ type: "hydrate", tasks: prior });
           }
@@ -375,7 +391,7 @@ export function TasksProvider({
       },
     }),
 
-    [dispatch, withServerSync],
+    [dispatch, withServerSync, projectId],
   );
 
   return (

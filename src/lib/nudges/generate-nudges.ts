@@ -1,6 +1,11 @@
 import type { Task, UserId } from "@/lib/data";
 import { isTaskDone } from "@/lib/board-columns";
 import type { ColumnConfig } from "@/lib/board-config";
+import type { CalendarFrame } from "@/lib/calendar-frame";
+import {
+  calendarDateInTimeZone,
+  calendarDaysBetween as projectCalendarDaysBetween,
+} from "@/lib/planning/dates";
 
 export type NudgeKind =
   | "idle-doing"
@@ -111,7 +116,7 @@ function formatDays(n: number): string {
  * "1 day" while the board (calendar-date maths) said "2 days overdue" for
  * the same task.
  */
-function calendarDaysBetween(from: Date, to: Date): number {
+function utcCalendarDaysBetween(from: Date, to: Date): number {
   const a = Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate());
   const b = Date.UTC(to.getUTCFullYear(), to.getUTCMonth(), to.getUTCDate());
   return Math.round((b - a) / DAY_MS);
@@ -128,6 +133,8 @@ export function generateNudges(
    *  (T·122); defaults to null (["done"]) for callers that haven't wired it. */
   columnConfig: ColumnConfig | null = null,
   now: Date = new Date(),
+  /** MyWork supplies its project frame; other consumers retain UTC due rules. */
+  calendar?: Pick<CalendarFrame, "today" | "timeZone">,
 ): Nudge[] {
   const out: Nudge[] = [];
 
@@ -179,8 +186,10 @@ export function generateNudges(
 
   // Rule 3, past due (mine)
   for (const t of myOpen) {
-    if (!t.dueAt) continue;
-    const dDays = calendarDaysBetween(t.dueAt, now);
+    if (!t.dueAt || Number.isNaN(t.dueAt.getTime())) continue;
+    const dDays = calendar
+      ? projectCalendarDaysBetween(calendarDateInTimeZone(t.dueAt, calendar.timeZone), calendar.today)
+      : utcCalendarDaysBetween(t.dueAt, now);
     if (dDays > 0 && dDays <= 3) {
       const tpl = pickRand(PAST_DUE_NEAR, t.id + "due-near");
       out.push({

@@ -55,12 +55,14 @@ import { TasksRuntimeShell } from "@/components/app/tasks-runtime-shell";
  *
  *   - The four Tasks views and `/app/my-tasks` render entirely from the
  *     shell's providers, and `/app/your-work` is user-scoped: pass it.
- *   - `/app/project` reads are verified against the explicit Project by the
- *     page itself: pass it.
- *   - `/app/inbox`, `/app/archived`, `/app/import` and `/app/settings` fetch
+ *   - `/app/project` and `/app/archived` reads are verified against the
+ *     explicit Project by the page itself: pass it.
+ *   - An archived `/app/task/[id]` carries its stored, proven Project into
+ *     the mount. It never uses an incoming query to choose object authority.
+ *     Flag-off mismatches first offer the explicit selection POST.
+ *   - `/app/inbox`, `/app/import` and `/app/settings` fetch
  *     their content through the ambient resolution (`requireRouteProjectId`),
- *     and `/app/task/[id]` derives its Project from the task object (ADR 0001
- *     §9). Handing only their chrome an explicit Project would render B's
+ *     (ADR 0001 §9). Handing only their chrome an explicit Project would render B's
  *     chrome over A's content — the exact inequality ADR 0001 §2 calls a
  *     release blocker — so these pages mount the runtime with no parameter
  *     and both halves stay on the ambient Project. None of them is a
@@ -108,6 +110,7 @@ export function TasksRuntimeLayoutMount({
  */
 export async function TasksRuntimePageMount({
   searchParams,
+  snapshotRequestedProjectId,
   children,
 }: {
   /**
@@ -115,6 +118,9 @@ export async function TasksRuntimePageMount({
    * is resolved ambiently — see the module docblock for the policy.
    */
   searchParams?: TasksRuntimeSearchParams;
+  /** Object routes use the stored Project for data, and the actual URL query
+   * for snapshot matching. Undefined preserves ordinary query-route behavior. */
+  snapshotRequestedProjectId?: string | null;
   children: React.ReactNode;
 }) {
   if (!isActiveProjectV3Enabled()) return children;
@@ -124,6 +130,7 @@ export async function TasksRuntimePageMount({
   return (
     <TasksRuntimeShell
       requestedProjectId={typeof requested === "string" ? requested : null}
+      snapshotRequestedProjectId={snapshotRequestedProjectId}
     >
       {children}
     </TasksRuntimeShell>

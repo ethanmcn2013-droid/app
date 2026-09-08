@@ -119,13 +119,13 @@ test("removed Notes member cannot replay an existing promotion or receive metada
       INSERT INTO tasks
         (id, workspace_id, title, lane, priority, source_note_id)
       VALUES
-        ('task-existing', 'ws-notes', 'Existing promotion', 'todo', 'p2', 'notes-user:note-1');
+        ('task-existing', 'ws-notes', 'Existing promotion', 'todo', 'p2', 'clerk-notes:note-1');
     `);
 
     const before = await resolveNotesExtractAccess(db, {
-      userId: "notes-user",
+      userId: "clerk-notes",
       requestedWorkspaceId: "ws-notes",
-      sourceNoteId: "notes-user:note-1",
+      sourceNoteId: "clerk-notes:note-1",
     });
     assert.deepEqual(before, {
       kind: "allowed",
@@ -148,9 +148,9 @@ test("removed Notes member cannot replay an existing promotion or receive metada
       );
 
     const replay = await resolveNotesExtractAccess(db, {
-      userId: "notes-user",
+      userId: "clerk-notes",
       requestedWorkspaceId: "ws-notes",
-      sourceNoteId: "notes-user:note-1",
+      sourceNoteId: "clerk-notes:note-1",
     });
     assert.deepEqual(replay, { kind: "denied" });
     const serialized = JSON.stringify(replay);

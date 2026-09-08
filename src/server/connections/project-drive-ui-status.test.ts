@@ -3,6 +3,10 @@ import assert from "node:assert/strict";
 import { projectDriveAccessPeople, readProjectDriveUiStatus } from "./project-drive-ui-status";
 import { coreAuthorization, freshProjectDriveCoreDb, seedProjectDriveCore, seedStorageGenerations } from "./project-drive-core.test.helpers";
 import type { LiveDrivePermission } from "./drive-grants";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { ConnectionsView } from "@/components/app/settings/sections/connections-view";
+import { removalCases, removalScenario } from "../../../experience/project-drive-pending-removal/scenarios";
 
 function permission(overrides: Partial<LiveDrivePermission> = {}): LiveDrivePermission {
   return { permissionId: "secret-permission-id", type: "user", role: "writer", emailAddress: "member.a@example.com", displayName: "Google name", deleted: false, source: "signal-grant", signalUserId: "member-a", ...overrides };
@@ -47,4 +51,47 @@ test("status is project scoped, sanitized, race aware and fails closed on provid
     await assert.rejects(readProjectDriveUiStatus(coreAuthorization("member-a", "ws-a", false), { ...deps, permissions: async () => { calls++; return []; } }));
     assert.equal(calls, 0);
   } finally { fixture.cleanup(); }
+});
+
+for (const scenario of removalCases) test(`pending permission removal: ${scenario.name}`, async () => {
+  const f = await removalScenario(scenario.name);
+  try {
+    const expected = { currentFolder: scenario.current, previousFolders: scenario.previous };
+    assert.deepEqual(f.status.pendingRemovals, expected);
+    const reloaded = await f.read();
+    assert.deepEqual(reloaded.pendingRemovals, expected, "a new read must not depend on an action message");
+    assert.doesNotMatch(JSON.stringify(reloaded), /private-permission|stale-private|live-private|Private provider|private-root|private-connected|conn-old|gen-current/);
+    const html = renderToStaticMarkup(createElement(ConnectionsView, {
+      status: reloaded, busy: false, message: null, confirmation: false, handover: null,
+      onRefresh() {}, onConnect() {}, onEnable() {}, onDisconnect() {}, onCancelDisconnect() {}, onConfirmDisconnect() {},
+    }));
+    assert.equal(html.includes('aria-label="Pending access removal"'), scenario.current + scenario.previous > 0);
+    assert.equal(html.includes("current Drive folder is still unconfirmed"), scenario.current > 0);
+    assert.equal(html.includes("previous Drive folders is still unconfirmed"), scenario.previous > 0);
+    if (scenario.name.startsWith("unavailable") || scenario.name === "appears-during-failed-live-read") {
+      assert.equal(reloaded.access.state, "unavailable");
+      assert.deepEqual(reloaded.access.people, []);
+      assert.match(html, /No current permissions are confirmed here/);
+    }
+    if (["current", "previous", "both", "cleared-during-live-read"].includes(scenario.name)) {
+      assert.equal(reloaded.access.people.find(p => p.email === "Member.A@Example.com")?.access, "writer");
+      assert.match(html, /Can edit/);
+    }
+    if (scenario.name === "stale-email") assert.equal(reloaded.access.people.find(p => p.email === "new-address@example.test")?.access, "unconfirmed");
+    if (scenario.name === "removed-member") assert.equal(reloaded.access.people.some(p => p.email === "Member.A@Example.com"), false);
+  } finally { f.cleanup(); }
+});
+
+test("pending receipts do not grant project management or turn a failed receipt read into zero", async () => {
+  const f = await removalScenario("current");
+  try {
+    let providerCalls = 0;
+    await assert.rejects(readProjectDriveUiStatus(coreAuthorization("member-a", "ws-a", false), {
+      ...f.deps, permissions: async () => { providerCalls++; return []; },
+    }));
+    assert.equal(providerCalls, 0);
+    // A storage read still works, but the canonical removal-receipt read fails.
+    await f.client.execute("DROP TABLE drive_folder_grants");
+    await assert.rejects(f.read());
+  } finally { f.cleanup(); }
 });

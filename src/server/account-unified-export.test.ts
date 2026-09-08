@@ -26,6 +26,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { exportUnifiedAccountDataWith } from "./account-unified-export";
 import { freshMemoryDb } from "./db/memory-test-db";
+import { eq } from "drizzle-orm";
+import { workspaces, workspaceMembers } from "./db/schema";
+import { fixture, checkout, sync } from "./db/event-designation-test-fixture";
 
 // ── Stub factories ────────────────────────────────────────────────────────────
 
@@ -66,6 +69,28 @@ const okOpts = {
   exportTimeline: async (_id: string) => TIMELINE_OK,
   exportSignal: async (_id: string) => SIGNAL_OK,
 };
+
+test("real Event purchaser facts survive the unified wrapper after removal alongside same-actor personal Notes and unavailable modules", async () => {
+  const f = await fixture();
+  try {
+    const input = await checkout(f); await sync(f, input);
+    await f.local.db.update(workspaces).set({ ownerUserId: "next-owner", name: "PRIVATE-NEW-OWNER-PROJECT" }).where(eq(workspaces.id, "project-a"));
+    await f.local.db.delete(workspaceMembers).where(eq(workspaceMembers.userId, "buyer"));
+    const actors: string[] = [];
+    const result = await exportUnifiedAccountDataWith(f.local.db, "buyer", {
+      exportNotes: async actor => { actors.push(actor); return { available: true, notes: [{ id: `personal:${actor}`, body: "my private Note" }] }; },
+      exportTimeline: async actor => { actors.push(actor); throw new Error("PRIVATE-MODULE-TOKEN"); },
+      exportSignal: async actor => { actors.push(actor); return { available: false, reason: "PRIVATE-MODULE-QUERY" }; },
+    });
+    assert.deepEqual(actors, ["buyer", "buyer", "buyer"]);
+    assert.equal(result.tasks.eventPurchases?.[0].providerReference, input.reference);
+    assert.deepEqual(result.tasks.ownedWorkspaces?.eventProjectEffects, []);
+    assert.deepEqual(result.notes, { available: true, notes: [{ id: "personal:buyer", body: "my private Note" }] });
+    assert.deepEqual(result.timeline, { available: false, reason: "Timeline export is unavailable. Try again later." });
+    assert.deepEqual(result.signal, { available: false, reason: "Briefing export is unavailable. Try again later." });
+    assert.doesNotMatch(JSON.stringify(result), /PRIVATE-NEW-OWNER|PRIVATE-MODULE/);
+  } finally { f.close(); }
+});
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

@@ -104,7 +104,7 @@ test("Notes extract insert races converge through conflict-safe canonical reread
 
 test("Notes extract rechecks membership before an idempotent replay", () => {
   const membershipCheck = access.indexOf(
-    "eq(workspaceMembers.userId, input.userId)",
+    "eq(users.clerkId, input.userId)",
   );
   const existingTaskLookup = access.indexOf(
     "const existing = await readNotesExtractIdentity",

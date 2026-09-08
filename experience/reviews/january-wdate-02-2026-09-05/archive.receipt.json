@@ -1,0 +1,11 @@
+{
+  "exitCode": 0,
+  "command": "& ./package-evidence.ps1",
+  "status": "bounded ordering proof",
+  "bytes": 1119111,
+  "sha256": "4e595dda90d81d7858797b77c9fd4fc49867419ac63fd47fc794fc94e29db09c",
+  "source": "c1ab57deb75be316400c334b61713842198ce98c",
+  "entriesVerified": 96,
+  "method": "CreateFromDirectory; decompressed every entry and compared SHA256 with original payload index",
+  "archive": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\feat-january-sponsored-wedding-date\\experience\\reviews\\january-wdate-02-2026-09-05\\evidence.zip"
+}

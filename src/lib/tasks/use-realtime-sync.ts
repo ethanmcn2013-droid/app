@@ -3,8 +3,12 @@
 import { useEffect, useRef } from "react";
 import { getTasksAction } from "@/server/actions/tasks";
 import type { Task } from "@/lib/data";
+import { isDemoMode } from "@/lib/access-mode";
 
 type Options = {
+  /** Server-proved runtime identity. The action reauthorizes the Project. */
+  projectId: string;
+  actorId: string;
   /** Called with the freshly-fetched task list whenever a peer mutation
    *  arrives via SSE. The provider passes its `hydrate` dispatcher here. */
   onChange: (tasks: Task[]) => void;
@@ -22,13 +26,14 @@ type Options = {
  * (browser-native). On `error` we just log; the next heartbeat cycle
  * (or visibility change) re-establishes the stream.
  */
-export function useRealtimeSync({ onChange, clientId }: Options) {
+export function useRealtimeSync({ projectId, actorId, onChange, clientId }: Options) {
   const onChangeRef = useRef(onChange);
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
 
   useEffect(() => {
+    if (isDemoMode()) return;
     if (typeof window === "undefined") return;
     if (typeof EventSource === "undefined") return;
 
@@ -37,7 +42,10 @@ export function useRealtimeSync({ onChange, clientId }: Options) {
 
     let inflight = false;
     let pendingWhileInflight = false;
+    let disposed = false;
+    let cooldown: ReturnType<typeof setTimeout> | undefined;
     const fetchAndHydrate = async () => {
+      if (disposed) return;
       // Coalesce bursts: a stream of 5 mutations in 30ms only refetches once.
       // But remember that an event arrived during the in-flight window so we
       // don't settle on pre-event state until some unrelated future event
@@ -48,22 +56,25 @@ export function useRealtimeSync({ onChange, clientId }: Options) {
       }
       inflight = true;
       try {
-        const fresh = await getTasksAction();
-        onChangeRef.current(fresh);
+        const fresh = await getTasksAction(projectId);
+        if (!disposed) onChangeRef.current(fresh);
       } catch (e) {
-
-        console.warn("realtime: refetch failed", e);
+        if (!disposed) console.warn("realtime: refetch failed", e);
       } finally {
         // Tiny gap so a follow-up mutation 50ms later doesn't get
         // dropped, gives React a render tick to flush. If events were
         // coalesced away while we were in flight, run exactly once more.
-        setTimeout(() => {
-          inflight = false;
-          if (pendingWhileInflight) {
-            pendingWhileInflight = false;
-            void fetchAndHydrate();
-          }
-        }, 100);
+        if (!disposed) {
+          cooldown = setTimeout(() => {
+            cooldown = undefined;
+            if (disposed) return;
+            inflight = false;
+            if (pendingWhileInflight) {
+              pendingWhileInflight = false;
+              void fetchAndHydrate();
+            }
+          }, 100);
+        }
       }
     };
 
@@ -83,15 +94,19 @@ export function useRealtimeSync({ onChange, clientId }: Options) {
       // a stream that will never exist. A CLOSED stream is permanent: close
       // it explicitly so no further reconnect is attempted.
       if (es.readyState === EventSource.CLOSED) {
-        es.close();
+        dispose();
       }
     };
     es.addEventListener("error", onError);
 
-    return () => {
+    function dispose() {
+      disposed = true;
+      pendingWhileInflight = false;
+      if (cooldown !== undefined) clearTimeout(cooldown);
       es.removeEventListener("tasks-changed", onTasksChanged);
       es.removeEventListener("error", onError);
       es.close();
-    };
-  }, [clientId]);
+    }
+    return dispose;
+  }, [projectId, actorId, clientId]);
 }

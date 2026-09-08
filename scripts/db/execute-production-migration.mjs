@@ -31,6 +31,7 @@ import {
   sha256,
 } from "./migration-ledger.mjs";
 import { databaseIdentitySha256, schemaFingerprintSha256 } from "./migrate.mjs";
+import { readSchema } from "./backup.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..", "..");
@@ -60,9 +61,7 @@ const context = loadAndValidateLedger({ root });
 const remote = createClient({ url: databaseUrl, authToken });
 
 // ── 1. Logical backup ────────────────────────────────────────────────────
-const schemaRows = (await remote.execute(
-  "SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%' ORDER BY CASE type WHEN 'table' THEN 0 WHEN 'index' THEN 1 WHEN 'trigger' THEN 2 ELSE 3 END, name",
-)).rows;
+const schemaRows = await readSchema(remote);
 
 const tables = schemaRows.filter((row) => row.type === "table").map((row) => String(row.name));
 const lines = [JSON.stringify({ kind: "meta", url: "redacted", takenAt: new Date().toISOString(), tables })];

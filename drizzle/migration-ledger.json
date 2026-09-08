@@ -411,6 +411,29 @@
         "integrity",
         "foreign-keys"
       ]
+    },
+    {
+      "ordinal": 31,
+      "id": "0031_event_purchase_designations",
+      "file": "drizzle/0031_event_purchase_designations.sql",
+      "when": 1788602400000,
+      "sha256": "139892f27ff427e36ede52e470ec94f32eabfb7ad5308a0906e8c31f922c60d3",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/event-purchase-designations-2026-09-05.json",
+      "receiptSha256": "87b8ccc423f5b14dfee54d99e14e8be7df279e01e56daf2744b27438f709af7c",
+      "continuousProofIds": [
+        "event-columns",
+        "event-primary-key",
+        "event-lifecycle-keys",
+        "event-reference-index",
+        "event-project-index",
+        "event-shape-constraints",
+        "event-immutable-facts-trigger",
+        "event-purchaser-erasure",
+        "event-project-erasure",
+        "integrity",
+        "foreign-keys"
+      ]
     }
   ]
 }

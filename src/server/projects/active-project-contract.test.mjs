@@ -59,6 +59,7 @@ test("only explicit switching and invite acceptance write the last-active Projec
     [
       "src/server/actions/active-project.ts",
       "src/server/actions/settings.ts",
+      "src/server/actions/tasks-project-arrival.ts",
       "src/server/projects/active-project-cookie.ts",
       "src/server/projects/active-project-contract.test.mjs",
     ].sort(),
@@ -133,6 +134,10 @@ test("the unified cookie name is spelled in exactly one module", () => {
  * `writeActiveProjectCookie` (D-021 interface request 5) has not begun.
  */
 const LEGACY_COOKIE_WRITERS = {
+  // Recipient recovery is an explicit, freshly authorized selection POST.
+  // D-021 bounded addition: both preferences must move together while the
+  // flag-off layout still reads the legacy cookie. Contextual GETs do not write.
+  "src/server/actions/tasks-project-arrival.ts": ["httpOnly", "maxAge", "path", "sameSite", "secure"],
   // src/app/api/suite-context/route.ts is deliberately ABSENT (D-028,
   // 2026-08-17). It was writer #1 — the inbound suite-link handler, whose write
   // made following a contextual link rewrite the bare-entry preference, the

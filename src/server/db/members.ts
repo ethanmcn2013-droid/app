@@ -27,6 +27,7 @@ export async function getWorkspaceMemberMeta(
       {
         id: demo.id,
         name: demo.name,
+        knownName: demo.name,
         initials: demo.initials,
         color: demo.color,
         role: "owner",
@@ -52,6 +53,7 @@ export async function getWorkspaceMemberMeta(
       return {
         id: row.userId,
         name: resolved.name,
+        knownName: row.name?.trim() || null,
         initials: row.initials?.trim() || resolved.initials,
         color: row.color?.trim() || resolved.color,
         role: row.role,

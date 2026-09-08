@@ -1,0 +1,39 @@
+{
+  "label": "patched-callers-1",
+  "kind": "callers",
+  "startedAt": "2026-09-05T08:13:33.788Z",
+  "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/feat-january-sponsored-wedding-date",
+  "exe": "C:/Users/ethan/AppData/Local/Programs/nodejs-v22/node-v22.23.2-win-x64/node.exe",
+  "args": [
+    "--require",
+    "./experience/reviews/january-sponsored-wedding-date-2026-09-05/deny-external.cjs",
+    "--import",
+    "tsx",
+    "--import",
+    "./src/test/register-server-only.mjs",
+    "--test",
+    "src/server/actions/planning-wedding-date.test.ts"
+  ],
+  "sourceRef": "working-tree",
+  "head": "3d71256d9822e9eb34e8bf1524b3099ce47bb6bd",
+  "sourceHashes": {
+    "src/server/actions/planning.ts": "c870ea1a7e81f156bade7ef58bc1b44e30ee81413153f00f8130d898573e7f0f",
+    "src/server/db/couple-access-term.ts": "1a80537024f57d95e128c10b6d76ce87d1494b43742ebd1dc361b688374374c6",
+    "src/server/db/couple-access-term.test.ts": "4bd7413f9eb4d360c97c527d5ab79cabaf0a114a94bd73d03383018cd4d9cce1",
+    "src/server/actions/planning-wedding-date.test.ts": "04e2d5fe585df27ff01b4b62c7229127e6bdad1ae7680b3ce0424aef2ad70587"
+  },
+  "fixtureEnv": {
+    "TEMP": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\work\\sponsored-wedding-date-legacy-retirement-2026-09-05\\fixtures",
+    "TMP": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\work\\sponsored-wedding-date-legacy-retirement-2026-09-05\\fixtures",
+    "TASKS_DATABASE_URL": "file::memory:",
+    "NEXT_PUBLIC_SIGNAL_ACCESS_MODE": "review",
+    "NEXT_PUBLIC_SIGNAL_DEPLOYMENT_ENV": "preview",
+    "STUDIO_REPO_PATH": "C:/Users/ethan/signal-studio-workspace/worktrees/studio/feat-january-commercial-readiness"
+  },
+  "inheritedEnvironment": "OS/runtime keys only; provider/store credentials not inherited",
+  "finishedAt": "2026-09-05T08:13:43.469Z",
+  "exitCode": 0,
+  "signal": null,
+  "error": null,
+  "externalNetworkAttempts": 0
+}

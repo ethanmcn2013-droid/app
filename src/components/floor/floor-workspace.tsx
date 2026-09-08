@@ -25,9 +25,9 @@ import { withSuiteContext } from "@/lib/suite-context";
 import { useLabStore } from "@/components/hybrid/store";
 import { useBoardColumns } from "@/components/hybrid/columns-context";
 import type { LabTask, LabView } from "@/components/hybrid/types";
-import { FloorBoard, timeOf, todayStamp } from "./floor-board";
+import { FloorBoard, timeOf } from "./floor-board";
 import { FLOOR_PRESET } from "./floor-preset";
-import { useDayIsKnown } from "./use-floor-place";
+import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import styles from "./floor.module.css";
 
 /* ── the spine ─────────────────────────────────────────────────── */
@@ -164,7 +164,7 @@ export function FloorWorkspace({
   const pathname = usePathname() ?? "";
   const store = useLabStore();
   const columns = useBoardColumns();
-  const today = todayStamp();
+  const calendar = useCalendarFrame();
 
   /* The two facts a venue owner acts on. They are the loudest objects in the
      header because they are the questions the board is opened to answer, and
@@ -185,22 +185,20 @@ export function FloorWorkspace({
     let dueToday = 0;
     let undated = 0;
     for (const task of tasks) {
-      const time = timeOf(task, isDone(task), today);
+      const time = timeOf(task, isDone(task), calendar);
       if (time.kind === "overdue") overdue += 1;
       if (time.kind === "today") dueToday += 1;
       if (time.kind === "none" && !isDone(task)) undated += 1;
     }
     return { total, done, overdue, dueToday, undated };
-  }, [tasks, columns, today]);
+  }, [tasks, columns, calendar]);
 
   const suite = useSuiteContext();
 
-  const dayKnown = useDayIsKnown();
-
-  const todayLabel = useMemo(() => {
-    const now = new Date();
-    return `${DAYS[now.getDay()]} ${now.getDate()} ${MONTHS[now.getMonth()]}`;
-  }, []);
+  // Format the project's date without consulting the browser clock/timezone.
+  // The same serialized frame supplies SSR, hydration, counts and card filters.
+  const day = new Date(`${calendar.today}T12:00:00Z`);
+  const todayLabel = `${DAYS[day.getUTCDay()]} ${day.getUTCDate()} ${MONTHS[day.getUTCMonth()]}`;
 
   /* Crossing to another product carries the workspace with it. The suite
      sidebar did this and the spine that replaced it did not, so stepping from
@@ -276,12 +274,7 @@ export function FloorWorkspace({
           <span className={styles.headRule} />
           <h1 className={styles.headName}>{projectName}</h1>
           <div className={styles.headFacts}>
-            {/* Withheld until a timezone exists, and marked so React never
-                treats the change from nothing to a date as a mismatch. The
-                span itself is always here, so the row does not move. */}
-            <span className={styles.today} suppressHydrationWarning>
-              {dayKnown ? todayLabel : ""}
-            </span>
+            <span className={styles.today}>{todayLabel}</span>
             {facts.total > 0 && facts.done === facts.total ? (
               <span className={styles.ratio} data-all="">Everything is done.</span>
             ) : facts.total > 0 ? (

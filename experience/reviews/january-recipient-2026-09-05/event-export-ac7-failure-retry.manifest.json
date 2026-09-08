@@ -1,0 +1,15 @@
+{
+  "runtimeCommit": "ac7a913d6d28fb0b1bac6f6b68ad7c54df959e33",
+  "archive": "event-export-ac7-failure-retry.zip",
+  "sha256": "fcd848f2b66c7b65460af5b6ba6b48e2a7d21a20a588c6e3f78f7d963c519ba7",
+  "bytes": 1012241,
+  "files": 41,
+  "report": "failure-followup/README.md",
+  "receipt": "failure-followup/browser-failure-retry-final/receipt.json",
+  "result": "8/8: four rendered keyboard downloads, actual host 500, connection abort, two same-page retries",
+  "limits": "Native Chromium cancels failures with no completed file and no inline error; browser download panel/other browsers not observed",
+  "originalProbe": "The first page-route network abort did not intercept native download: both original observations reached HTTP 500; no transport credit",
+  "runtimeChanges": "none above ac7a913d",
+  "focusedLint": "passed; zero warnings",
+  "allOriginalEvidence": "preserved unchanged"
+}

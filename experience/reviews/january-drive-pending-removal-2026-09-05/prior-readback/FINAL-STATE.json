@@ -1,0 +1,19 @@
+{
+  "head": "27af50c09ea20892e00170b2fa4e7acebbcc9061",
+  "commands": [
+    "git -C <owned> status --short",
+    "git -C <owned> rev-parse HEAD",
+    "git -C <owned> diff --name-only HEAD"
+  ],
+  "untrackedPreserved": [
+    "?? .githooks/post-checkout",
+    "?? .githooks/post-commit",
+    "?? .githooks/post-merge",
+    "?? .githooks/pre-push"
+  ],
+  "trackedDiff": [],
+  "exitCode": 0,
+  "sourceChanged": false,
+  "completedAt": "2026-09-05T10:51:27.1062776Z",
+  "scope": "Investigation ended at minimal repair recommendation; no migration allocation or implementation"
+}

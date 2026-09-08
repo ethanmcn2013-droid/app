@@ -218,6 +218,13 @@
       "when": 1788548400000,
       "tag": "0030_sponsored_use_intents",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "6",
+      "when": 1788602400000,
+      "tag": "0031_event_purchase_designations",
+      "breakpoints": true
     }
   ]
 }

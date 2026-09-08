@@ -15,7 +15,6 @@ import { revalidatePath } from "next/cache";
 import { eq, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import { meta, planningPeriods, users, workspaces } from "@/server/db/schema";
-import { getActiveWorkspaceOrNull } from "@/server/auth";
 import {
   authorizeProjectCandidate,
   type ProjectCapabilityKey,
@@ -24,9 +23,9 @@ import {
 /**
  * The Project this action acts on — ADR 0001 §9, create/list.
  *
- * Resolved through the fail-closed accessor so the cookie can no longer decay
- * into LEGACY_WORKSPACE_ID (D-005), then proved against live membership before
- * anything is read or written.
+ * The caller supplies the displayed Project explicitly. It is still untrusted:
+ * prove live membership and capability before reading or writing its content.
+ * A missing candidate never falls back to an ambient cookie.
  */
 async function provedProject(
   candidate: string | null | undefined,
@@ -35,6 +34,9 @@ async function provedProject(
   const grant = await authorizeProjectCandidate({
     candidateProjectId: candidate,
     capability,
+    // ADR 0001 §5: purpose is Project content, so archive makes it read-only.
+    // The existing capability model keeps `open` available for the brief read.
+    archivePolicy: "enforce",
   });
   // One neutral message for every refusal (ADR 0001 §4).
   if (!grant.ok) throw new Error("That project isn’t available.");
@@ -90,7 +92,9 @@ function formatCalendarDate(value: string): string {
  * Server read for the four view pages. One workspace row + up to two
  * small lookups; pages are force-dynamic already.
  */
-export async function getRoomBriefData(): Promise<RoomBriefData> {
+export async function getRoomBriefData(
+  candidateProjectId: string,
+): Promise<RoomBriefData> {
   if (isDemoMode()) {
     const accessMode = getAccessMode();
     return {
@@ -107,7 +111,7 @@ export async function getRoomBriefData(): Promise<RoomBriefData> {
   }
 
   const workspaceId = await provedProject(
-    await getActiveWorkspaceOrNull(),
+    candidateProjectId,
     "open",
   );
 
@@ -199,13 +203,14 @@ export async function getRoomBriefData(): Promise<RoomBriefData> {
  * no-ops like every other write.
  */
 export async function setWorkspacePurposeAction(
+  candidateProjectId: string,
   purpose: string,
 ): Promise<{ ok: true }> {
   if (isDemoMode()) return { ok: true };
   // board.ts's shape again: the purpose is a `meta` row keyed
   // `room:{workspaceId}:purpose`, so the resolved id is the destination rather
   // than a predicate that could merely match nothing.
-  const ws = await provedProject(await getActiveWorkspaceOrNull());
+  const ws = await provedProject(candidateProjectId);
   const clamped = purpose.trim().slice(0, MAX_PURPOSE_LEN);
   const key = purposeKey(ws);
   await db.run(sql`

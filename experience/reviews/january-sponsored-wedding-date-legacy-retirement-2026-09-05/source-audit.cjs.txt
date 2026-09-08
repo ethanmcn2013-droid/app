@@ -1,0 +1,35 @@
+const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process'),crypto=require('node:crypto'),assert=require('node:assert/strict');
+const app="C:/Users/ethan/signal-studio-workspace/worktrees/app/feat-january-sponsored-wedding-date",work=__dirname,scoped="C:/Users/ethan/Documents/Codex/2026-09-04/here-are-6-prompts-i-have-2/outputs/sponsored-wedding-date-2026-09-05",runtime="7742247d7beebeb3b712977f5c3014aa426e55ca";
+const original='3d71256d9822e9eb34e8bf1524b3099ce47bb6bd',principal='2fdd06c404e6833dc3110fab2643084a3cd5785d',ui='2d1d77835e7bcedfab5c68e53608fe5d00dd8f9a';
+const sha=b=>crypto.createHash('sha256').update(b).digest('hex'),calls=[];
+function command(exe,args,cwd=app,allow=[0]){const r=cp.spawnSync(exe,args,{cwd,encoding:'utf8'});calls.push({exe,args,cwd,exitCode:r.status,stdout:r.stdout,stderr:r.stderr});assert.ok(allow.includes(r.status),r.stderr);return r.stdout;}
+const files=['src/server/actions/planning.ts','src/server/db/couple-access-term.ts','src/server/db/couple-access-term.test.ts','src/server/actions/planning-wedding-date.test.ts'];
+const sourceFiles=[...files,'src/lib/planning/flags.ts','src/server/planning/flags.ts','src/server/planning/authorization.ts','src/server/db/comp-redemption.ts','src/server/db/sponsored-wedding-date.ts','src/server/actions/sponsored-wedding-date.ts','src/lib/venue-access-term.ts','src/components/welcome/contextual-onboarding.tsx','src/components/app/your-work/your-work-view.tsx'];
+const identities={base:'0b9d132ac5b5f47579c8630becb94063b1db947d',original,principal,ui,runtime,branch:command('git',['branch','--show-current']).trim(),files:{},sourceTree:command('git',['rev-parse',runtime+':src']).trim()};
+assert.equal(command('git',['rev-parse','HEAD']).trim(),runtime);
+for(const file of sourceFiles){const text=command('git',['show',runtime+':'+file]);const target=path.join(work,'fixed-source',file+'.txt');fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,text);identities.files[file]={blob:command('git',['rev-parse',runtime+':'+file]).trim(),committedSha256:sha(text),workingSha256:sha(fs.readFileSync(path.join(app,file)))};}
+const prior={};for(const ref of [original,principal]){prior[ref]={};for(const file of files.slice(0,2)){const text=command('git',['show',ref+':'+file]);const target=path.join(work,'immutable-original-source',ref,file+'.txt');fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,text);prior[ref][file]={blob:command('git',['rev-parse',ref+':'+file]).trim(),sha256:sha(text)};}}
+identities.originalSources=prior;
+const originalPlanning=command('git',['show',original+':'+files[0]]),principalPlanning=command('git',['show',principal+':'+files[0]]);
+assert.equal(originalPlanning,principalPlanning);
+const originalTerm=command('git',['show',original+':'+files[1]]),principalTerm=command('git',['show',principal+':'+files[1]]);
+const helperFrom=source=>source.slice(source.indexOf('export type WeddingDateExtension'));
+assert.equal(helperFrom(originalTerm),helperFrom(principalTerm));
+identities.principalEquivalence={planningIdentical:true,removedHelperIdentical:true,wholeTermFileDifference:'Introductory commentary only; full original readbacks and diff retained.'};
+fs.writeFileSync(path.join(work,'principal-term-comment-only.diff'),command('git',['diff',original,principal,'--',files[1]]));
+fs.writeFileSync(path.join(work,'runtime.patch'),command('git',['diff',original,runtime,'--',...files]));
+const removed=command('rg',['-n','extendCoupleAccessForWeddingDate|applyWeddingDateToCoupleAccess|WeddingDateExtension','src','scripts','--glob','!*.test.*'],app,[1]);
+assert.equal(removed,'');
+command('rg',['-n','bulkCreateWorkspacesAction|completeContextualOnboardingAction|primaryDate,','src/server/actions/planning.ts','src/components/app/your-work/your-work-view.tsx','src/components/welcome/contextual-onboarding.tsx']);
+command('rg',['-n','extendedCoupleAccessExpiryMs|weddingDateMsForWorkspace','src','scripts']);
+const changed=command('git',['diff','--name-only',ui,runtime,'--','src']).trim().split(/\r?\n/).sort();assert.deepEqual(changed,[...files].sort());identities.frozenUiSourceUnchanged=true;identities.changesSinceUi=changed;
+const studio='C:/Users/ethan/signal-studio-workspace/worktrees/studio/feat-january-commercial-readiness';
+identities.studio={head:command('git',['rev-parse','HEAD'],studio).trim(),termBlob:command('git',['rev-parse','HEAD:src/lib/venue-edition.ts'],studio).trim(),termSha256:sha(fs.readFileSync(path.join(studio,'src/lib/venue-edition.ts')))};
+const manifest=fs.readFileSync(path.join(scoped,'SHA256SUMS.txt'),'utf8');let preserved=0;for(const line of manifest.trim().split(/\r?\n/)){const match=/^([0-9a-f]{64})  (.+)$/.exec(line);assert.ok(match,line);const target=path.resolve(scoped,match[2]);assert.ok(target.startsWith(path.resolve(scoped)+path.sep));assert.equal(sha(fs.readFileSync(target)),match[1],match[2]);preserved++;}
+identities.scopedPacketPreservation={path:scoped,manifestSha256:sha(manifest),filesVerified:preserved,allMatch:true};
+identities.principalSuppliedArtifacts=Object.fromEntries(['principal-original.json','principal-original-probe.cjs'].map(file=>[file,sha(fs.readFileSync(path.join(work,file)))]));
+const tested=JSON.parse(fs.readFileSync(path.join(work,'focused-1.receipt.json')));for(const file of files)assert.equal(tested.sourceHashes[file],identities.files[file].workingSha256,file+' changed since tests');
+identities.testedSourceStillExact=true;
+fs.writeFileSync(path.join(work,'source-identities.json'),JSON.stringify(identities,null,2)+'\n');
+fs.writeFileSync(path.join(work,'source-audit.commands.json'),JSON.stringify(calls,null,2)+'\n');
+console.log(JSON.stringify({runtime,originalCallerSourceIdenticalToPrincipal:true,originalHelperIdenticalToPrincipal:true,removedLiveReferences:0,frozenUiUnchanged:true,sealedFilesVerified:preserved,studio:identities.studio.head}));

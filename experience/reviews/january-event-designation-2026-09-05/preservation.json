@@ -1,0 +1,930 @@
+{
+  "candidate": "cbf40af93907a07dde82f2e8036ce84a72a92d88",
+  "eventSource": "80f3837b1b62341ae8a71e398b4befb7dc0f735d",
+  "foundationSource": "a59dbd3e5a2f6fb8badb3a6de8a3c40cc6f7ffec",
+  "archives": [
+    {
+      "packet": "event-designation-milestone-2026-09-05",
+      "archive": "event-designation-milestone-2026-09-05.zip",
+      "bytes": 127553,
+      "sha256": "90af9e088c70dce127fc87264dc387ce917d68ec3263a51482c47f60833b4757",
+      "entries": [
+        {
+          "path": "gates/event-ambient-immutable.txt",
+          "bytes": 102,
+          "sha256": "80aea802476e00ec34cc6e0797dcff9cb5fa9e52bbdadd9f45d3a5db5817e95d"
+        },
+        {
+          "path": "gates/event-billing-gate.txt",
+          "bytes": 10357,
+          "sha256": "1347c63927a016a48fd0ff046244db6a13395c176ec3bbde7401af0f1aea0354"
+        },
+        {
+          "path": "gates/event-db-contract-second.txt",
+          "bytes": 14519,
+          "sha256": "9d7511327ab7879a0b4d8b102a03f97499a509d3b4816059215e4f4510bc0f91"
+        },
+        {
+          "path": "gates/event-existing-erasure.txt",
+          "bytes": 2473,
+          "sha256": "f8fb588dbae2bc95ba0f3640551381f6a50dd34a9feaa70efbe286ffcfe5b317"
+        },
+        {
+          "path": "gates/event-lint-final.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "gates/event-runtime-immutable.txt",
+          "bytes": 10341,
+          "sha256": "62f59f1bf713ceb30791af256832036960ce952d5cb0ab528f6ee707562dbc61"
+        },
+        {
+          "path": "gates/event-source-contracts-immutable.txt",
+          "bytes": 5286,
+          "sha256": "be66c01ae3a7324f40d016f562f83e2c6a03b595ea655bc019ac2568f225b743"
+        },
+        {
+          "path": "gates/event-typecheck-clean.txt",
+          "bytes": 36,
+          "sha256": "e0eddf17f5c613cde38a9ee4d152820b9e76a65a14199b38dd83048194ff40a5"
+        },
+        {
+          "path": "IMPLEMENTATION.md",
+          "bytes": 10141,
+          "sha256": "ff0f4ca942fe125bab1dfe32d5351a1f81e984b33d8ecafb12305f6af94ff525"
+        },
+        {
+          "path": "README.md",
+          "bytes": 5016,
+          "sha256": "35e099746f59ce455e0e00feee0e1f17ce311154c68407b3dcf48ef025cc70bc"
+        },
+        {
+          "path": "retained-development-outputs/event-ambient-final.txt",
+          "bytes": 102,
+          "sha256": "80aea802476e00ec34cc6e0797dcff9cb5fa9e52bbdadd9f45d3a5db5817e95d"
+        },
+        {
+          "path": "retained-development-outputs/event-db-contract-first.txt",
+          "bytes": 15753,
+          "sha256": "0d2f9b5874d30fb47ac6580e6f5f6fdb3ac840a10f4a46965ef7bf544ffc32d7"
+        },
+        {
+          "path": "retained-development-outputs/event-lint-first.txt",
+          "bytes": 378,
+          "sha256": "436b0a50b5351e49fec344f897328a08749ebc47bd273bdcab00b83c46027cc9"
+        },
+        {
+          "path": "retained-development-outputs/event-runtime-final.txt",
+          "bytes": 10342,
+          "sha256": "462d447d8b3a633007f0ea3a8074efcf7325ef3ecd7302f36af9903888ff050e"
+        },
+        {
+          "path": "retained-development-outputs/event-runtime-fourth.txt",
+          "bytes": 10465,
+          "sha256": "c442d390ce87379efc2463bb585dbbe61135d3f65927a50eeb8a318d0c4ea777"
+        },
+        {
+          "path": "retained-development-outputs/event-runtime-second.txt",
+          "bytes": 8938,
+          "sha256": "4c899bf0670826d433ff9a11e298366914068867f89e5aaf631da13f1cded9a7"
+        },
+        {
+          "path": "retained-development-outputs/event-runtime-split-first.txt",
+          "bytes": 10027,
+          "sha256": "0339569dafba9cba284a1e410a622d54402f7cee377cab1c881352179962cf35"
+        },
+        {
+          "path": "retained-development-outputs/event-runtime-third.txt",
+          "bytes": 10240,
+          "sha256": "59e8c07a27068816ca335f4738e2366df66cb1a81b7557d2a11f19e3ef2024c8"
+        },
+        {
+          "path": "retained-development-outputs/event-source-contracts-final.txt",
+          "bytes": 5282,
+          "sha256": "0742249b446df0035700d78c9bad374584195714dd1d5e70615e5791b19eab25"
+        },
+        {
+          "path": "retained-development-outputs/event-source-contracts.txt",
+          "bytes": 8203,
+          "sha256": "1ae6c78a7763e651c87348704a3ca421b46427e82f34be54d3805079a08fd92d"
+        },
+        {
+          "path": "retained-development-outputs/event-tenant-gate-first.txt",
+          "bytes": 7372,
+          "sha256": "776a26dc8d23fd6f9ce19d6163bce4f6ee4fc0db4bfd1859ae3befa8a1c5ea9c"
+        },
+        {
+          "path": "retained-development-outputs/event-typecheck-final.txt",
+          "bytes": 4082,
+          "sha256": "a2eb8f68981e899905bb9a14bfd7f41449654a0fee8f28652f824063da9ae6b4"
+        },
+        {
+          "path": "retained-development-outputs/event-typecheck-first.txt",
+          "bytes": 4082,
+          "sha256": "e0481ea62b6ecb9d9dfbb2bc0de70614240c511fb54008d3144b4f16ba8cff49"
+        },
+        {
+          "path": "retained-development-outputs/event-webhook-isolated.txt",
+          "bytes": 662,
+          "sha256": "2cc482bd774d009590cb5f1471f63374919756993f9157c4b56822a74a63a283"
+        },
+        {
+          "path": "source-inventory.json",
+          "bytes": 5700,
+          "sha256": "806af2e7367dde769ff775c087e86275aa23da907fd8879c74dec6792156cfe0"
+        },
+        {
+          "path": "source-tree/docs/execution/january-2027/EVENT-DESIGNATION-MILESTONE.md",
+          "bytes": 10141,
+          "sha256": "ff0f4ca942fe125bab1dfe32d5351a1f81e984b33d8ecafb12305f6af94ff525"
+        },
+        {
+          "path": "source-tree/drizzle/0031_event_purchase_designations.sql",
+          "bytes": 3840,
+          "sha256": "139892f27ff427e36ede52e470ec94f32eabfb7ad5308a0906e8c31f922c60d3"
+        },
+        {
+          "path": "source-tree/drizzle/meta/_journal.json",
+          "bytes": 4797,
+          "sha256": "f7dfde00a493acccbba4add09f3f4a930143a7338f5c90c9d3d285af9f778105"
+        },
+        {
+          "path": "source-tree/drizzle/migration-ledger.json",
+          "bytes": 18585,
+          "sha256": "3b5a8c4515efa2e5cf926adbe9aa9a1212fb0adb8f70ec5484ec0c956c0b20a7"
+        },
+        {
+          "path": "source-tree/drizzle/receipts/event-purchase-designations-2026-09-05.json",
+          "bytes": 8643,
+          "sha256": "87b8ccc423f5b14dfee54d99e14e8be7df279e01e56daf2744b27438f709af7c"
+        },
+        {
+          "path": "source-tree/scripts/db/migration-ledger.test.mjs",
+          "bytes": 48216,
+          "sha256": "460e7bf83417fbabc1c6f474e2893c64826b48de78ea55034f5de1a0885ba767"
+        },
+        {
+          "path": "source-tree/src/server/actions/billing.ts",
+          "bytes": 4940,
+          "sha256": "b3e633372ebaa0a78aa683e7184b338dcddec4104633af313fefd48cbd07ffb4"
+        },
+        {
+          "path": "source-tree/src/server/db/event-designation-test-fixture.ts",
+          "bytes": 4828,
+          "sha256": "78d9c8a907d9b2a0c3c7f5e9587c92eae6dc264dc05d0ffd7a7d9394b9347637"
+        },
+        {
+          "path": "source-tree/src/server/db/event-designation-webhook.test.ts",
+          "bytes": 5188,
+          "sha256": "c5d0fe4dbb82a58c372726a58d0dde661e49080cb170cb782a9d58eec3d05c5f"
+        },
+        {
+          "path": "source-tree/src/server/db/event-designation.test.ts",
+          "bytes": 33381,
+          "sha256": "d7032f4e1b60c5977994f3425024bfe5a07d61b46403c7fceb5380d168b7e0ca"
+        },
+        {
+          "path": "source-tree/src/server/db/event-designation.ts",
+          "bytes": 9761,
+          "sha256": "b611c7b3c4d2b641f8ddbaedd9796c3d67759cbbe72a3a29d0505442aa128945"
+        },
+        {
+          "path": "source-tree/src/server/db/schema.ts",
+          "bytes": 66215,
+          "sha256": "469ece3de06bea25a5341adef3715236f4d64afd1b97ad4b561bff99d51ff0de"
+        },
+        {
+          "path": "source-tree/src/server/projects/event-project-access.ts",
+          "bytes": 11211,
+          "sha256": "ed8d0374f429d616bd893b8290da967c084fc2efe8e87db583e4494e20f1c334"
+        },
+        {
+          "path": "source-tree/src/server/stripe-access.ts",
+          "bytes": 17730,
+          "sha256": "4ccb435c18aec4a38708dffe605b3439a1ae0b3d60b6102ccbc9bec609be112a"
+        },
+        {
+          "path": "source-tree/src/server/stripe-lifecycle.test.ts",
+          "bytes": 40061,
+          "sha256": "a8b01bb89cc1ccf558366b8ab81fd189d963e7f7edb721404d98a4bf2f4b456c"
+        },
+        {
+          "path": "source-tree/src/server/stripe-lifecycle.ts",
+          "bytes": 8002,
+          "sha256": "04c8da72caf5c7be7ac95ce4568544baad50957fc3628922095942f85016c7b3"
+        },
+        {
+          "path": "source-tree/src/server/tenant-scope-rules.mjs",
+          "bytes": 15571,
+          "sha256": "fd56bce54aea337ebeb16fbea929db416676cf341684af167ddb5e531b923e0a"
+        },
+        {
+          "path": "verification.json",
+          "bytes": 4586,
+          "sha256": "838d81a6611ba9c6640a9b14319f9c4e98b9620b437906a781bec169cef54ab7"
+        }
+      ]
+    },
+    {
+      "packet": "event-a59-independent-review",
+      "archive": "event-a59-independent-review.zip",
+      "bytes": 46140,
+      "sha256": "cf6d1ca22c94d0cecc36689fb676d6122f4764a685bc1f217a8351e37ceabf78",
+      "entries": [
+        {
+          "path": "ambient-contract.json",
+          "bytes": 767,
+          "sha256": "8a91f65e3459758df0ca7d0844f9df63cd753eb07225167439d707f43315b2c0"
+        },
+        {
+          "path": "ambient-contract.log",
+          "bytes": 101,
+          "sha256": "2bd73d361c85d7e1d7e87181a4929d48d603b8c2c8064b0d3581da2ff7902a0a"
+        },
+        {
+          "path": "billing-regressions.json",
+          "bytes": 1061,
+          "sha256": "22821be52b3c5f093b0511c99a4a8a15ecd1f123cf16b6401cda3ecb60556d23"
+        },
+        {
+          "path": "billing-regressions.log",
+          "bytes": 9840,
+          "sha256": "62c7a056fe85bd64d7dca5dab293130b10d5c6814824a6df9e6a0d8ceb1042ab"
+        },
+        {
+          "path": "final-integrity.json",
+          "bytes": 13096,
+          "sha256": "1057ac599c7063fb55cfcd822b0b724d6e61ff134e0464e2b7a6965297a0e94f"
+        },
+        {
+          "path": "independent-event-final.json",
+          "bytes": 890,
+          "sha256": "9a30e5c88ffe44b884eabac72fa2e042607e8b50f71c5ecef67436b17c0583a6"
+        },
+        {
+          "path": "independent-event-final.log",
+          "bytes": 2618,
+          "sha256": "e6ded1fe3bafc0e1f79a5f363139f673dd4caed2bb6d89aeb89e3d244ec09d70"
+        },
+        {
+          "path": "independent-event.json",
+          "bytes": 884,
+          "sha256": "243cfcf513f8568fcbf4db7c363f2b8182b4405c6a612a751001f0f05d6977ff"
+        },
+        {
+          "path": "independent-event.log",
+          "bytes": 2682,
+          "sha256": "1c331ff2ab6d81df0e962f0598ef427940d8bdfadf42885bc37e490a2e281c27"
+        },
+        {
+          "path": "independent-migration.json",
+          "bytes": 774,
+          "sha256": "6d3333a6dbae24d0430e6cdbe0a49187f93d408e957e77f18ce15ac6a5a488e3"
+        },
+        {
+          "path": "independent-migration.log",
+          "bytes": 402,
+          "sha256": "40665d4255a9cade3440febf1359b6262c4d288cca5054b52b23becda00cc456"
+        },
+        {
+          "path": "launch-year-control.json",
+          "bytes": 998,
+          "sha256": "c1f50c82a7784873fe2b838baac95256a2eb2077e3fe1deca193a71fdcecf8d8"
+        },
+        {
+          "path": "launch-year-control.log",
+          "bytes": 480,
+          "sha256": "0bb1211ea36d160cb380d48eb2a3b7e26b5b7a1f88667b6824004b6f37eadc42"
+        },
+        {
+          "path": "launch-year-counterexample.json",
+          "bytes": 991,
+          "sha256": "4b514fd59d676d9496b97a6a1922d190f4669602a15bb762c5d51477eb01fd18"
+        },
+        {
+          "path": "launch-year-counterexample.log",
+          "bytes": 1260,
+          "sha256": "e551e2850fa6d6842f07a673278a6158cd81476ef62d8e113fa8d2167e67b2ad"
+        },
+        {
+          "path": "migration-contract-complete-inputs.json",
+          "bytes": 778,
+          "sha256": "faff0f4d2f71a1ddad5c6162717373e00ad160e13131b54a3d95ff329f228b01"
+        },
+        {
+          "path": "migration-contract-complete-inputs.log",
+          "bytes": 140,
+          "sha256": "822b027c842392290c15be9e82c6285c80648c9c13c3b51aefe785e88b48e167"
+        },
+        {
+          "path": "migration-contract.json",
+          "bytes": 762,
+          "sha256": "0dae58a101739ce13035ce2623d1570a8052fa318562d2282323ce65446984c9"
+        },
+        {
+          "path": "migration-contract.log",
+          "bytes": 1389,
+          "sha256": "71afe925f54885b0e6b6deaee3fee7acf159e5758876c7bdbc2298cfc888b569"
+        },
+        {
+          "path": "migration-ledger.json",
+          "bytes": 775,
+          "sha256": "c86d0791d1b7b76fae5df36d9d74cf695569cdb548cfcb1e87cef747f275b40e"
+        },
+        {
+          "path": "migration-ledger.log",
+          "bytes": 5864,
+          "sha256": "1b3d8557c968863b67932dc3604c94e813f4a47b762356a7864602c60d9ff905"
+        },
+        {
+          "path": "original-event-tests.json",
+          "bytes": 957,
+          "sha256": "14c4befe7d4d79c1932cc9ef736afea8b1dea1c36cda6173fdc3034d6c9346c0"
+        },
+        {
+          "path": "original-event-tests.log",
+          "bytes": 10110,
+          "sha256": "2a98f3dc730161ddc4a09be39d2fb4782ce5e1760f973c76cc91d553ba7fb186"
+        },
+        {
+          "path": "preparation-first-failure.txt",
+          "bytes": 698,
+          "sha256": "af034c74e88f763972793462891878cabe9268d4985238b9686a4b82a819b3bb"
+        },
+        {
+          "path": "README.md",
+          "bytes": 10660,
+          "sha256": "fd65993f3b18d2cc7d33b2297211b4e04048035ec8cbc880d3a964eb3f79de0b"
+        },
+        {
+          "path": "reproduction/clock-2027.mjs",
+          "bytes": 310,
+          "sha256": "a0a198a61ebb0af76fa8874eb70999c75feeed884d75f2afee41393c9c4b0674"
+        },
+        {
+          "path": "reproduction/deny-network.mjs",
+          "bytes": 314,
+          "sha256": "9ea6aaadb719fca7b763dba71e7bce5c2a446ec2f0758631b9a82fe51c13df10"
+        },
+        {
+          "path": "reproduction/EVENT-ACCESS-CLOSURE.md",
+          "bytes": 9857,
+          "sha256": "69dc31121ae75b3f09374ca303865f9bb21f7b23a1b4790ad0e229c060dac48f"
+        },
+        {
+          "path": "reproduction/EVENT-DESIGNATION-MILESTONE.md",
+          "bytes": 10303,
+          "sha256": "a9ba4384579d30f0ac6857be566ba52a57f753ed5e2799fa56fa5f3f893908f5"
+        },
+        {
+          "path": "reproduction/event-project-funding-2026-09-04.md",
+          "bytes": 5518,
+          "sha256": "5f3a328f61a54177844dbad47bacaa0483607060dcb11c5e37fdc9113502e893"
+        },
+        {
+          "path": "reproduction/independent-event.test.ts",
+          "bytes": 8877,
+          "sha256": "17ec21496227b100ce8b9f8864be871ebed9becf76333b8037bc1d20b3b1ecde"
+        },
+        {
+          "path": "reproduction/independent-migration.test.mjs",
+          "bytes": 1692,
+          "sha256": "0772629b9485461f38123ec944b60be31d2df26cdb55d651841e6e5f231b3a9d"
+        },
+        {
+          "path": "reproduction/launch-year-control.patch",
+          "bytes": 235,
+          "sha256": "15336320cd54ce508f9d99f1d7fd2c5fca17e725a0fbbcd957469eb4a9b29107"
+        },
+        {
+          "path": "reproduction/run.py",
+          "bytes": 1711,
+          "sha256": "11eb6b41373dce2f9a0d39361680278e09dc5ce32578e810dfbcc3c932440de1"
+        },
+        {
+          "path": "scoped-contracts.json",
+          "bytes": 862,
+          "sha256": "270144738136ea7f14ec46c9a0c238b8da39f9ff7fdf6d6b7c003b6d3f9ac924"
+        },
+        {
+          "path": "scoped-contracts.log",
+          "bytes": 5108,
+          "sha256": "c1028c1808a7a46f281b4c3869af4943fe9636e7c13eb8983171ad920219ba7d"
+        },
+        {
+          "path": "source.json",
+          "bytes": 3008,
+          "sha256": "a232b1dda7c8ed90c53bff58ac962f27868118c2677812f574b9339b3d3fe03f"
+        }
+      ]
+    },
+    {
+      "packet": "event-test-clock-correction-2026-09-05",
+      "archive": "event-test-clock-correction-2026-09-05.zip",
+      "bytes": 44315,
+      "sha256": "4a02fab54d74f3f71dca93309b4df87d34017c30aeaeb9381e4f863a1fde2f9f",
+      "entries": [
+        {
+          "path": "event-suite-fixed.json",
+          "bytes": 1217,
+          "sha256": "d3d7b1125b658d51e202611999bd8c3717fd3a823aa10f71b38f52b79a6b6698"
+        },
+        {
+          "path": "event-suite-fixed.log",
+          "bytes": 10115,
+          "sha256": "3658b9cdacdc9e643b7fbd22316f31d98a67bdb40a7450ea75f552a532a4496d"
+        },
+        {
+          "path": "focused-lint.json",
+          "bytes": 1124,
+          "sha256": "187b5c0559a5544c6ea1f8aaa2c6deb7a9f835ea0996ac41a22bea76d4e6cb5f"
+        },
+        {
+          "path": "focused-lint.log",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "launch-regression-fixed.json",
+          "bytes": 1061,
+          "sha256": "ac69eb08ae0b1116964b650c02e50d6aefe8297fd5b8e2e22b3e7ae90520e937"
+        },
+        {
+          "path": "launch-regression-fixed.log",
+          "bytes": 358,
+          "sha256": "61c968b1fba26c5d1fbb6bc185552a21680a1f88e7190a9201206e1c2f48296c"
+        },
+        {
+          "path": "launch-regression-original-red.json",
+          "bytes": 1068,
+          "sha256": "afc0c1d8fe7f874bf6b5b99f19a69715a7baa6e969bc13e63db748fb36fe91dc"
+        },
+        {
+          "path": "launch-regression-original-red.log",
+          "bytes": 2481,
+          "sha256": "e1fa58b2c82a1a5e3df8733b2627db4378f2779d9d6db217be0fe36516af325f"
+        },
+        {
+          "path": "patch.diff",
+          "bytes": 5113,
+          "sha256": "87c9e0ec863aa6b80ceada624477b0dc4ef6d7a0f85ae4c331d2728935c87f89"
+        },
+        {
+          "path": "preserved-a59/clock-2027.mjs",
+          "bytes": 310,
+          "sha256": "a0a198a61ebb0af76fa8874eb70999c75feeed884d75f2afee41393c9c4b0674"
+        },
+        {
+          "path": "preserved-a59/deny-network.mjs",
+          "bytes": 314,
+          "sha256": "9ea6aaadb719fca7b763dba71e7bce5c2a446ec2f0758631b9a82fe51c13df10"
+        },
+        {
+          "path": "preserved-a59/event-designation.test.a59.ts",
+          "bytes": 33381,
+          "sha256": "d7032f4e1b60c5977994f3425024bfe5a07d61b46403c7fceb5380d168b7e0ca"
+        },
+        {
+          "path": "preserved-a59/launch-year-control.json",
+          "bytes": 998,
+          "sha256": "c1f50c82a7784873fe2b838baac95256a2eb2077e3fe1deca193a71fdcecf8d8"
+        },
+        {
+          "path": "preserved-a59/launch-year-control.log",
+          "bytes": 480,
+          "sha256": "0bb1211ea36d160cb380d48eb2a3b7e26b5b7a1f88667b6824004b6f37eadc42"
+        },
+        {
+          "path": "preserved-a59/launch-year-counterexample.json",
+          "bytes": 991,
+          "sha256": "4b514fd59d676d9496b97a6a1922d190f4669602a15bb762c5d51477eb01fd18"
+        },
+        {
+          "path": "preserved-a59/launch-year-counterexample.log",
+          "bytes": 1260,
+          "sha256": "e551e2850fa6d6842f07a673278a6158cd81476ef62d8e113fa8d2167e67b2ad"
+        },
+        {
+          "path": "preserved-a59/README.md",
+          "bytes": 10660,
+          "sha256": "fd65993f3b18d2cc7d33b2297211b4e04048035ec8cbc880d3a964eb3f79de0b"
+        },
+        {
+          "path": "README.md",
+          "bytes": 3517,
+          "sha256": "9547e4f1ff2666df52f70941a747c3ac3c6ab271eed353c0c7253f87b4ea260c"
+        },
+        {
+          "path": "reviewer-clock-fixed.json",
+          "bytes": 1562,
+          "sha256": "03225f7c200dd4bf54a1c8eaea57ba9084a09c1d9aa0fbace1387e188a0500f1"
+        },
+        {
+          "path": "reviewer-clock-fixed.log",
+          "bytes": 480,
+          "sha256": "a90c89000480f8ead70003ec64827cbd9250f905b8d21fea6e57f2ca2c443ab7"
+        },
+        {
+          "path": "source-inventory.json",
+          "bytes": 5234,
+          "sha256": "2e18770114e128da22dd0ed8db7d3d19b8257b2ca25bf3595cb80f6dd62f18a4"
+        },
+        {
+          "path": "source-tree/docs/execution/january-2027/EVENT-DESIGNATION-MILESTONE.md",
+          "bytes": 10838,
+          "sha256": "8a506f59347b1f79dd8e50656ec5644b03f5d0a01a64c0c30c9228a412a3261f"
+        },
+        {
+          "path": "source-tree/src/server/db/event-designation-clock.test.mjs",
+          "bytes": 2004,
+          "sha256": "a6e25dedd9125dc1eab52bc0486dae261ebb11ade4240b30a13da25ead5c42f5"
+        },
+        {
+          "path": "source-tree/src/server/db/event-designation.test.ts",
+          "bytes": 33376,
+          "sha256": "e9ad9ca13fa4add6f57b3d1de0101f8bfa23906d3ce3138d40b2d7d406a6048f"
+        },
+        {
+          "path": "typecheck.json",
+          "bytes": 1068,
+          "sha256": "458cda333d408301fd7f5fd43baf1f5a7b47c9810db67aca6faae669ca642348"
+        },
+        {
+          "path": "typecheck.log",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "verification.json",
+          "bytes": 2960,
+          "sha256": "be37e8e3472d48be65445d1ebb7f36d85069a986101b68e2b89b3f43dee08c55"
+        }
+      ]
+    },
+    {
+      "packet": "event-93be-clock-review",
+      "archive": "event-93be-clock-review.zip",
+      "bytes": 17153,
+      "sha256": "9a1a3bdea064810ba2c394af51df3be61cfb1fb2dca1c311755685fec015d288",
+      "entries": [
+        {
+          "path": "candidate-clock.json",
+          "bytes": 850,
+          "sha256": "0d3287dfa15b74da6d8523754488ac9e8479b96e690635b715ad5afa31fa9684"
+        },
+        {
+          "path": "candidate-clock.log",
+          "bytes": 358,
+          "sha256": "f0ed6da7fc95078074ce0d364b3b7e2be602dc28eaa2594ecc75ee791d4af037"
+        },
+        {
+          "path": "empty-selected-child.json",
+          "bytes": 1074,
+          "sha256": "37ff08ef50291320179daea10d074b4e4b200fc52b029a691ccaaf78c8942adc"
+        },
+        {
+          "path": "empty-selected-child.log",
+          "bytes": 279,
+          "sha256": "35af7f2ac4c043edb3f852835c1cb807582b71b021039a9e113adb63f3b1d4a4"
+        },
+        {
+          "path": "empty-selection-red.json",
+          "bytes": 868,
+          "sha256": "f92463ad2f55fcdc9879c1ce1319091bce99dd118f150944e7ce525f5a3396df"
+        },
+        {
+          "path": "empty-selection-red.log",
+          "bytes": 358,
+          "sha256": "ff06795327572e9bf536269b39d09a5aace471b5037bb8ff1c440e75e6ec2434"
+        },
+        {
+          "path": "independent-2027.json",
+          "bytes": 1047,
+          "sha256": "4d92a5e08683e02bfacd811ca8a9ce62fac39244a9e7d944b9b9bbb7d611e5e0"
+        },
+        {
+          "path": "independent-2027.log",
+          "bytes": 480,
+          "sha256": "9a6f264bb56ac1e5807239c7d36fb72a7bbf2ec553b827b046befed9ca899520"
+        },
+        {
+          "path": "parent-red.json",
+          "bytes": 861,
+          "sha256": "21f0802b74ac22378a8fa89372769070241b3458ccf0e478fdea42e51fda0f3b"
+        },
+        {
+          "path": "parent-red.log",
+          "bytes": 2580,
+          "sha256": "4a8d981f17fd292e03c1bce83839548d7c96e068a08814838c85b0f6e035e1f9"
+        },
+        {
+          "path": "patch.diff",
+          "bytes": 5113,
+          "sha256": "87c9e0ec863aa6b80ceada624477b0dc4ef6d7a0f85ae4c331d2728935c87f89"
+        },
+        {
+          "path": "README.md",
+          "bytes": 4871,
+          "sha256": "46f8562d11fef5b419ab085beb15f97963571d316c2ac882656f77c769c4a560"
+        },
+        {
+          "path": "reproduction/clock-2027.mjs",
+          "bytes": 310,
+          "sha256": "a0a198a61ebb0af76fa8874eb70999c75feeed884d75f2afee41393c9c4b0674"
+        },
+        {
+          "path": "reproduction/deny-network.mjs",
+          "bytes": 314,
+          "sha256": "9ea6aaadb719fca7b763dba71e7bce5c2a446ec2f0758631b9a82fe51c13df10"
+        },
+        {
+          "path": "reproduction/prepare.py",
+          "bytes": 3270,
+          "sha256": "8a5d923b8ab30c26412d23a59f53c1d63b7d6c547b3e653d19e5be612460671b"
+        },
+        {
+          "path": "reproduction/run.py",
+          "bytes": 1740,
+          "sha256": "ec8e2e29deea76318d7a1b4b50b1ccf4356e41189f4f725d2eb73512b9dc5729"
+        },
+        {
+          "path": "source.json",
+          "bytes": 4968,
+          "sha256": "0a8352868c56eb14d737f56e3c988e4416242148385b63434044f1df8d773750"
+        },
+        {
+          "path": "verification.json",
+          "bytes": 1367,
+          "sha256": "8d20c8e873b2ae2b5bb3253f5d99d773d2b708678484a24c9e66ad2542dda34d"
+        }
+      ]
+    },
+    {
+      "packet": "event-clock-selection-correction-2026-09-05",
+      "archive": "event-clock-selection-correction-2026-09-05.zip",
+      "bytes": 31037,
+      "sha256": "1853a6501bc45a362e624a085116595533193425c254592cf6eb70f975a6e7d7",
+      "entries": [
+        {
+          "path": "clock-guard-fixed.json",
+          "bytes": 1055,
+          "sha256": "513ca69a7b80a65c9e88b5516a07348b3fb30d6772362f8941b0bf82c55322ca"
+        },
+        {
+          "path": "clock-guard-fixed.log",
+          "bytes": 777,
+          "sha256": "607d7e54079769496ab91519fe59442d5721c2808a0576bd35d76e923f8c8d3a"
+        },
+        {
+          "path": "coordination.json",
+          "bytes": 546,
+          "sha256": "1c59d2edc224a2a5d8b8f78a969565502eacd458b5b88ca71ad32dc5994d0612"
+        },
+        {
+          "path": "event-suite-fixed.json",
+          "bytes": 1217,
+          "sha256": "2f1db7528f667f049cfe846b280cd7caf2eaaee617a7580abbf5cd8f5e3e175b"
+        },
+        {
+          "path": "event-suite-fixed.log",
+          "bytes": 10583,
+          "sha256": "25149e1fde19f51e2d70bb4ba860bae561fe315b768d4b1d02c62655eda41915"
+        },
+        {
+          "path": "event-suite-rerun.json",
+          "bytes": 1217,
+          "sha256": "e099d73aa02077a73e3e02d47797f97b2a9332bb664b32e086d476e04f77ce1e"
+        },
+        {
+          "path": "event-suite-rerun.log",
+          "bytes": 10117,
+          "sha256": "3adf46a41c1d23101fee51de18a3a71bfcca10b33d39ed45dbf21e2b3ecdd15b"
+        },
+        {
+          "path": "focused-lint.json",
+          "bytes": 1077,
+          "sha256": "c64efb6c573494d2d687d280293ad02b4433d9edc06f844d02a1e49911a9c81e"
+        },
+        {
+          "path": "focused-lint.log",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "original-guard-negative-controls.json",
+          "bytes": 1070,
+          "sha256": "7d894a38db81e9d641f63ebdb25f4b36842644cc35b99ecc3ec348bcecfb55b6"
+        },
+        {
+          "path": "original-guard-negative-controls.log",
+          "bytes": 2520,
+          "sha256": "01baac5f6d416a748a77d4cc6fecffbe7d451dfb1dd2e684579829e033844448"
+        },
+        {
+          "path": "patch.diff",
+          "bytes": 5324,
+          "sha256": "da1acd0f2eb784946d78ee77519120d1518137674377fd070b4adda82434b08f"
+        },
+        {
+          "path": "preserved-93be/empty-selected-child.json",
+          "bytes": 1074,
+          "sha256": "37ff08ef50291320179daea10d074b4e4b200fc52b029a691ccaaf78c8942adc"
+        },
+        {
+          "path": "preserved-93be/empty-selected-child.log",
+          "bytes": 279,
+          "sha256": "35af7f2ac4c043edb3f852835c1cb807582b71b021039a9e113adb63f3b1d4a4"
+        },
+        {
+          "path": "preserved-93be/empty-selection-red.json",
+          "bytes": 868,
+          "sha256": "f92463ad2f55fcdc9879c1ce1319091bce99dd118f150944e7ce525f5a3396df"
+        },
+        {
+          "path": "preserved-93be/empty-selection-red.log",
+          "bytes": 358,
+          "sha256": "ff06795327572e9bf536269b39d09a5aace471b5037bb8ff1c440e75e6ec2434"
+        },
+        {
+          "path": "preserved-93be/event-designation-clock.93be.test.mjs",
+          "bytes": 2004,
+          "sha256": "a6e25dedd9125dc1eab52bc0486dae261ebb11ade4240b30a13da25ead5c42f5"
+        },
+        {
+          "path": "preserved-93be/original-guard-with-negative-controls.test.mjs",
+          "bytes": 3280,
+          "sha256": "da84c23a336445fcd859a4b2938beede02dcf7bea38bd90fd221b38e8cf57809"
+        },
+        {
+          "path": "preserved-93be/README.md",
+          "bytes": 4871,
+          "sha256": "46f8562d11fef5b419ab085beb15f97963571d316c2ac882656f77c769c4a560"
+        },
+        {
+          "path": "README.md",
+          "bytes": 3675,
+          "sha256": "f29924f5320a2685966ae6d536ec58ff6a9405a3a4658a196674e3eb8ccb521b"
+        },
+        {
+          "path": "source-inventory.json",
+          "bytes": 1755,
+          "sha256": "c39f0b1e851a0ceeca442d0e405b157af57e042820666e7799c36f7c70910fa9"
+        },
+        {
+          "path": "source-tree/docs/execution/january-2027/EVENT-DESIGNATION-MILESTONE.md",
+          "bytes": 11173,
+          "sha256": "cb7e4e30da013bc4bfd6e284e09958d6f01dd5d56dea32b90cacc8c8b87d0854"
+        },
+        {
+          "path": "source-tree/src/server/db/event-designation-clock.test.mjs",
+          "bytes": 3657,
+          "sha256": "8dc3ae5a6c5d3967b1a7e0a181ba66e4a256360600a38496622b9d52826a8cd9"
+        },
+        {
+          "path": "typecheck.json",
+          "bytes": 1068,
+          "sha256": "261e7d0580f2de78303c73f0e91c9208f6ad876edbc2dd675055aa7a570375a2"
+        },
+        {
+          "path": "typecheck.log",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "verification.json",
+          "bytes": 2107,
+          "sha256": "4cb397cc0db2e9a7f46c4e84365745fba6bce9c4788aba73485b33d298f3f214"
+        }
+      ]
+    },
+    {
+      "packet": "event-80f-clock-review",
+      "archive": "event-80f-clock-review.zip",
+      "bytes": 21073,
+      "sha256": "231d26a589291c7d9608f42afab3b4eec3af046614fe04d2d41c24dc167740d3",
+      "entries": [
+        {
+          "path": "candidate-clock.json",
+          "bytes": 849,
+          "sha256": "96bd9ca365dd0c87b678ba60549ae2b9f5322d4242220a661502819e2c72da47"
+        },
+        {
+          "path": "candidate-clock.log",
+          "bytes": 776,
+          "sha256": "87e04af7a9eb36afb7e785bc12db6e0ef25cf2e7021564cb9556fd4cc6dd188f"
+        },
+        {
+          "path": "empty-selection-refused.json",
+          "bytes": 871,
+          "sha256": "7324bd901d2790876417d9c19539ea23bfe87324af7d5694946ca29c352a718c"
+        },
+        {
+          "path": "empty-selection-refused.log",
+          "bytes": 2167,
+          "sha256": "65546222af421ae57e0f1fdfaae13f50c791c2d07680ea13e19f31503e4ef005"
+        },
+        {
+          "path": "patch.diff",
+          "bytes": 5324,
+          "sha256": "da1acd0f2eb784946d78ee77519120d1518137674377fd070b4adda82434b08f"
+        },
+        {
+          "path": "README.md",
+          "bytes": 4632,
+          "sha256": "0d0119209afc64c63eb1176e7c85b8688a76855ba15fefa63a2301da10055e81"
+        },
+        {
+          "path": "reproduction/deny-network.mjs",
+          "bytes": 314,
+          "sha256": "9ea6aaadb719fca7b763dba71e7bce5c2a446ec2f0758631b9a82fe51c13df10"
+        },
+        {
+          "path": "reproduction/empty-control-clock.test.mjs",
+          "bytes": 3758,
+          "sha256": "5019a7e46f3d79b41d70d4ccf1bb90bda4217f3f1300bea16c50afce4853c58c"
+        },
+        {
+          "path": "reproduction/old-guard-control-clock.test.mjs",
+          "bytes": 3503,
+          "sha256": "62ff87bcc79a8e14ab56d8bacee665d8fe418cea7be0bba3396ba9ea8424ed90"
+        },
+        {
+          "path": "reproduction/prepare.py",
+          "bytes": 3784,
+          "sha256": "1d03f2eb80724fbe161ed7321db5847dd1833a72c5bb20764168412e933c4e34"
+        },
+        {
+          "path": "reproduction/run.py",
+          "bytes": 1758,
+          "sha256": "3b6d32be70d824a897c9aa277914661b21739d39f408186e3c51131e79120b05"
+        },
+        {
+          "path": "reproduction/source-clock.test.mjs",
+          "bytes": 3732,
+          "sha256": "e313ca9a1106dd40c3e972ed2b6fe17d6676ffa60065fdd552fdc7ecc2a8558f"
+        },
+        {
+          "path": "source.json",
+          "bytes": 6799,
+          "sha256": "5a27c4908a21166adacd53fbdfbdcec37efa6960271576b44c17d9039f601140"
+        },
+        {
+          "path": "totals-only-counterexample.json",
+          "bytes": 882,
+          "sha256": "e71e1b12f8dafe18762b0a1945ab121990dc09736ce7ba1fa47866da7c32866c"
+        },
+        {
+          "path": "totals-only-counterexample.log",
+          "bytes": 2631,
+          "sha256": "62bf5d2a413bf3e803e1c5a801ebaee21f6c62bbc99334c16dee2a5476bf25c1"
+        },
+        {
+          "path": "verification.json",
+          "bytes": 890,
+          "sha256": "0e7d9b1e2d1201ea2681ced0e1bfe988707bdaa053ccac914443f8a39039e95a"
+        }
+      ]
+    }
+  ],
+  "verifiedFoundationFiles": [
+    "drizzle/0031_event_purchase_designations.sql",
+    "drizzle/receipts/event-purchase-designations-2026-09-05.json",
+    "drizzle/migration-ledger.json",
+    "drizzle/meta/_journal.json",
+    "scripts/db/migration-ledger.test.mjs",
+    "src/server/actions/billing.ts",
+    "src/server/db/schema.ts",
+    "src/server/db/event-designation.ts",
+    "src/server/db/event-designation.test.ts",
+    "src/server/db/event-designation-webhook.test.ts",
+    "src/server/db/event-designation-test-fixture.ts",
+    "src/server/projects/event-project-access.ts",
+    "src/server/stripe-access.ts",
+    "src/server/stripe-lifecycle.ts",
+    "src/server/stripe-lifecycle.test.ts",
+    "src/server/tenant-scope-rules.mjs",
+    "docs/execution/january-2027/EVENT-DESIGNATION-MILESTONE.md"
+  ],
+  "unchangedIntegratedEventFiles": [
+    "docs/execution/january-2027/EVENT-DESIGNATION-MILESTONE.md",
+    "drizzle/0031_event_purchase_designations.sql",
+    "drizzle/meta/_journal.json",
+    "drizzle/migration-ledger.json",
+    "drizzle/receipts/event-purchase-designations-2026-09-05.json",
+    "scripts/db/migration-ledger.test.mjs",
+    "src/server/actions/billing.ts",
+    "src/server/db/event-designation-clock.test.mjs",
+    "src/server/db/event-designation-test-fixture.ts",
+    "src/server/db/event-designation-webhook.test.ts",
+    "src/server/db/event-designation.test.ts",
+    "src/server/db/event-designation.ts",
+    "src/server/db/schema.ts",
+    "src/server/projects/event-project-access.ts",
+    "src/server/stripe-access.ts",
+    "src/server/stripe-lifecycle.test.ts",
+    "src/server/stripe-lifecycle.ts",
+    "src/server/tenant-scope-rules.mjs"
+  ],
+  "scope": "Foundation plus two independently verified test corrections; no content denial/export/recovery/sales/provider/receiving acceptance."
+}

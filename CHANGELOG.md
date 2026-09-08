@@ -4,6 +4,84 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-09-06 · January candidate · Keep recovery within reach
+
+Project recovery brings file downloads and published-link controls together in
+Settings. It checks your access to that project each time. Links created at the
+same time have distinct references, so their controls can be told apart.
+
+This internal candidate has passed scoped review and rendered recovery checks.
+Complete sign-in journeys, provider recovery and release acceptance remain open.
+The same checkpoint adds complete schema checks while preserving existing
+database adoption records. Evidence and limits:
+`experience/reviews/january-day-close-2026-09-06/README.md`.
+
+## 2026-09-05 · January candidate · Account data remains within reach
+
+Profile now downloads account JSON directly. Your Event purchase record remains
+yours after a project changes hands. The new owner receives the project access
+dates and refund state without the former payer's receipt details.
+
+The download explains unavailable sections and excludes uploaded or Google Drive
+file contents. Local export and failure/retry checks pass; complete project recovery
+and Event access enforcement remain in progress. No sales or release is opened.
+Evidence: `experience/reviews/january-event-export-2026-09-05/README.md`.
+
+## 2026-09-05 · January candidate · Event purchase history
+
+Event checkout records the intended project and verifies its owner again when
+payment settles. Original access dates and refunds stay attached to that purchase.
+Account erasure preserves the effect on a surviving project without retaining
+the former purchaser's identity.
+
+The internal foundation and two test corrections passed independent review.
+Recovery and post-term access enforcement remain in progress; Event sales stay held.
+Evidence: `experience/reviews/january-event-designation-2026-09-05/README.md`.
+
+## 2026-09-05 · January candidate · Unconfirmed file-access removal stays visible
+
+Connections keeps a notice after reload when Google file-access removal is still
+unconfirmed. It distinguishes current and previous project folders, including
+when live access cannot be checked. Existing live permission labels stay separate.
+
+The actual SQLite/component checks and independent projection review pass.
+Personal account-disconnect receipts and the real provider lifecycle remain open.
+Evidence: `experience/reviews/january-drive-pending-removal-2026-09-05/REPORT.md`.
+
+## 2026-09-05 · January candidate · Drive ownership before connection
+
+Connections explains who will own and see the board's Drive files before an
+account is connected. Cancelling disconnect or an owner change returns keyboard
+focus to the control that opened it.
+
+The scoped component matrix and independent UI review pass. Pending revocation
+after reload and the complete provider lifecycle remain open. Evidence and limits:
+`experience/reviews/january-drive-ui-acceptance-2026-09-05/REPORT.md`.
+
+## 2026-09-05 · January candidate · Dates follow the project
+
+Floor and My work now use the same project calendar for day labels, overdue
+work and daily grouping. A refreshed project day updates the header and tasks
+together. Creating another wedding project leaves existing access grants alone,
+including revoked grants; redemption reads the new project's own date.
+
+Sponsored-date editing keeps access copy current and preserves the confirmed
+revision across a pending save. Both readback defects pass independent verification.
+The final build,132 built cases,32 date states and3 keyboard paths pass. Five date
+controls now use an explicit44px minimum. The exact evidence and limits are in
+`experience/reviews/january-recipient-2026-09-05/README.md`. Customer identity,
+provider, design and receiving acceptance remain separate.
+
+## 2026-09-05 · January candidate · My work uses your known name
+
+My work now greets the signed-in person using their existing workspace profile.
+When no name is known, the greeting stays neutral. Demo accounts retain their
+sample names. Completion controls use the existing task colors and a 44-pixel
+target. Completed text stays subdued while its control remains at full contrast.
+Six source-fixture tests and final scripted browser checks pass. Real account
+and human-use verification remain open. Internal candidate only:
+`docs/execution/january-2027/RECIPIENT-COMPOSITION.md`.
+
 ## 2026-09-05 · January candidate · Home opens the right briefing
 
 An observation about several tasks now opens the full briefing for the same project or planning period. Individual tasks still open their own detail. The aggregate action says “Read”, and the source names the scope it describes.
@@ -7173,5 +7251,3 @@ was unfulfilled.
 **Backlog** — see `docs/cycles/backlog.md` for deferred items
 (TaskCard/MorphCard reunification, dead-code purge, useMemo on
 transitions, stable ref callback).
-
-

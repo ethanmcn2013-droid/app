@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: revoke demo-order guard rejects a missing guard or an earlier identity/storage boundary
+ok 1 - revoke demo-order guard rejects a missing guard or an earlier identity/storage boundary
+  ---
+  duration_ms: 3.0077
+  type: 'test'
+  ...
+# Subtest: destructive task graphs re-prove authority and deletion fences inside their writer transaction
+ok 2 - destructive task graphs re-prove authority and deletion fences inside their writer transaction
+  ---
+  duration_ms: 0.4649
+  type: 'test'
+  ...
+# Subtest: recordActivity requires and enforces the caller workspace
+ok 3 - recordActivity requires and enforces the caller workspace
+  ---
+  duration_ms: 0.2168
+  type: 'test'
+  ...
+# Subtest: updateTaskAction resolves an owned row before emitting activity
+ok 4 - updateTaskAction resolves an owned row before emitting activity
+  ---
+  duration_ms: 0.2275
+  type: 'test'
+  ...
+# Subtest: addTaskAction validates parent ownership and top-level shape
+ok 5 - addTaskAction validates parent ownership and top-level shape
+  ---
+  duration_ms: 0.2692
+  type: 'test'
+  ...
+# Subtest: subtask reads include both parent id and workspace scope
+ok 6 - subtask reads include both parent id and workspace scope
+  ---
+  duration_ms: 0.1583
+  type: 'test'
+  ...
+# Subtest: public routes use the explicit allowlisted projection
+ok 7 - public routes use the explicit allowlisted projection
+  ---
+  duration_ms: 0.4688
+  type: 'test'
+  ...
+# Subtest: demo and review actions exit before tenant, database, or disk access
+ok 8 - demo and review actions exit before tenant, database, or disk access
+  ---
+  duration_ms: 2.4236
+  type: 'test'
+  ...
+# Subtest: demo and review cannot bind or seed the configured database
+ok 9 - demo and review cannot bind or seed the configured database
+  ---
+  duration_ms: 0.5715
+  type: 'test'
+  ...
+# Subtest: acceptInviteAction validates before writing membership row
+ok 10 - acceptInviteAction validates before writing membership row
+  ---
+  duration_ms: 0.5582
+  type: 'test'
+  ...
+# Subtest: acceptInviteAction writes invite role not hardcoded member
+ok 11 - acceptInviteAction writes invite role not hardcoded member
+  ---
+  duration_ms: 0.3139
+  type: 'test'
+  ...
+# Subtest: invite actions insert workspace_events rows
+ok 12 - invite actions insert workspace_events rows
+  ---
+  duration_ms: 0.2611
+  type: 'test'
+  ...
+# Subtest: revokeSessionAction lists owned sessions before revoking
+ok 13 - revokeSessionAction lists owned sessions before revoking
+  ---
+  duration_ms: 0.1527
+  type: 'test'
+  ...
+# Subtest: revokeOtherSessionsAction lists owned sessions before revoking
+ok 14 - revokeOtherSessionsAction lists owned sessions before revoking
+  ---
+  duration_ms: 0.1737
+  type: 'test'
+  ...
+# Subtest: security.ts server reads are guarded before Clerk or DB calls
+ok 15 - security.ts server reads are guarded before Clerk or DB calls
+  ---
+  duration_ms: 0.1563
+  type: 'test'
+  ...
+# Subtest: createShareLinkAction clamps mode to view
+ok 16 - createShareLinkAction clamps mode to view
+  ---
+  duration_ms: 0.1675
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 121.4881

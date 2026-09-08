@@ -1,0 +1,226 @@
+TAP version 13
+# Subtest: actual signed webhook keeps paid-undesignated and mirror-failed events retryable; negative local facts precede 503
+ok 1 - actual signed webhook keeps paid-undesignated and mirror-failed events retryable; negative local facts precede 503
+  ---
+  duration_ms: 15485.0418
+  type: 'test'
+  ...
+# Subtest: actual account erasure after transfer preserves only project effect (FK=false, refunded=false)
+ok 2 - actual account erasure after transfer preserves only project effect (FK=false, refunded=false)
+  ---
+  duration_ms: 1763.9086
+  type: 'test'
+  ...
+# Subtest: actual account erasure after transfer preserves only project effect (FK=false, refunded=true)
+ok 3 - actual account erasure after transfer preserves only project effect (FK=false, refunded=true)
+  ---
+  duration_ms: 779.1911
+  type: 'test'
+  ...
+# Subtest: actual account erasure after transfer preserves only project effect (FK=true, refunded=false)
+ok 4 - actual account erasure after transfer preserves only project effect (FK=true, refunded=false)
+  ---
+  duration_ms: 749.8711
+  type: 'test'
+  ...
+# Subtest: actual account erasure after transfer preserves only project effect (FK=true, refunded=true)
+ok 5 - actual account erasure after transfer preserves only project effect (FK=true, refunded=true)
+  ---
+  duration_ms: 838.5559
+  type: 'test'
+  ...
+# Subtest: checkout proves primary ownership: co-owner/member/outsider/malformed and removed owner cause zero writes/provider calls
+ok 6 - checkout proves primary ownership: co-owner/member/outsider/malformed and removed owner cause zero writes/provider calls
+  ---
+  duration_ms: 612.8944
+  type: 'test'
+  ...
+# Subtest: real settlement commits designation and local entitlement together; exact duplicates/concurrent retries preserve one reference and original term
+ok 7 - real settlement commits designation and local entitlement together; exact duplicates/concurrent retries preserve one reference and original term
+  ---
+  duration_ms: 685.5139
+  type: 'test'
+  ...
+# Subtest: ownership change at settlement commits paid-undesignated evidence without positive local/shared authority; later owner restoration cannot infer past designation
+ok 8 - ownership change at settlement commits paid-undesignated evidence without positive local/shared authority; later owner restoration cannot infer past designation
+  ---
+  duration_ms: 644.2184
+  type: 'test'
+  ...
+# Subtest: fresh settlement records membership_removed as undesignated, with no positive writer
+ok 9 - fresh settlement records membership_removed as undesignated, with no positive writer
+  ---
+  duration_ms: 591.1321
+  type: 'test'
+  ...
+# Subtest: fresh settlement records project_archived as undesignated, with no positive writer
+ok 10 - fresh settlement records project_archived as undesignated, with no positive writer
+  ---
+  duration_ms: 653.7616
+  type: 'test'
+  ...
+# Subtest: a later primary-owner transfer does not rewrite a completed designation, even after the purchaser loses membership
+ok 11 - a later primary-owner transfer does not rewrite a completed designation, even after the purchaser loses membership
+  ---
+  duration_ms: 936.8817
+  type: 'test'
+  ...
+# Subtest: refund-first and late-positive deliveries preserve epoch-zero and original positive history without archive rights
+ok 12 - refund-first and late-positive deliveries preserve epoch-zero and original positive history without archive rights
+  ---
+  duration_ms: 716.4165
+  type: 'test'
+  ...
+# Subtest: local negative facts and all validated references commit despite failed shared mirrors; stale positive mirrors cannot retain access
+ok 13 - local negative facts and all validated references commit despite failed shared mirrors; stale positive mirrors cannot retain access
+  ---
+  duration_ms: 989.144
+  type: 'test'
+  ...
+# Subtest: shared-first success/local failure rolls back designation and local grant; retry repairs the original intent and reference
+ok 14 - shared-first success/local failure rolls back designation and local grant; retry repairs the original intent and reference
+  ---
+  duration_ms: 734.5686
+  type: 'test'
+  ...
+# Subtest: a first shared outage preserves pending proof and returns retryably; valid local coverage survives a later shared outage
+ok 15 - a first shared outage preserves pending proof and returns retryably; valid local coverage survives a later shared outage
+  ---
+  duration_ms: 893.1985
+  type: 'test'
+  ...
+# Subtest: a durable intent survives a lost checkout response/local binding failure and is recovered from exact signed-session metadata
+ok 16 - a durable intent survives a lost checkout response/local binding failure and is recovered from exact signed-session metadata
+  ---
+  duration_ms: 973.4619
+  type: 'test'
+  ...
+# Subtest: conflicting purchaser/project/reference and term cannot rebind an intent; SQL constraints also prevent incomplete facts, changed terms and revocation reversal
+ok 17 - conflicting purchaser/project/reference and term cannot rebind an intent; SQL constraints also prevent incomplete facts, changed terms and revocation reversal
+  ---
+  duration_ms: 866.4133
+  type: 'test'
+  ...
+# Subtest: legacy Event fulfilment is not backfilled or used to infer ownership at checkout
+ok 18 - legacy Event fulfilment is not backfilled or used to infer ownership at checkout
+  ---
+  duration_ms: 662.3398
+  type: 'test'
+  ...
+# Subtest: customerless historical refund only marks an existing exact fact revoked and preserves positive dates
+ok 19 - customerless historical refund only marks an existing exact fact revoked and preserves positive dates
+  ---
+  duration_ms: 728.4731
+  type: 'test'
+  ...
+# Subtest: account fence and actual user/workspace deletion refuse delayed settlement and never recreate designation facts
+ok 20 - account fence and actual user/workspace deletion refuse delayed settlement and never recreate designation facts
+  ---
+  duration_ms: 2002.0094
+  type: 'test'
+  ...
+# Subtest: coverage precedence: current owner's local account Pro
+ok 21 - coverage precedence: current owner's local account Pro
+  ---
+  duration_ms: 705.2132
+  type: 'test'
+  ...
+# Subtest: coverage precedence: member's personal local Pro
+ok 22 - coverage precedence: member's personal local Pro
+  ---
+  duration_ms: 671.1754
+  type: 'test'
+  ...
+# Subtest: coverage precedence: co-owner's personal shared Studio
+ok 23 - coverage precedence: co-owner's personal shared Studio
+  ---
+  duration_ms: 624.0048
+  type: 'test'
+  ...
+# Subtest: coverage precedence: current owner's other-project Pro
+ok 24 - coverage precedence: current owner's other-project Pro
+  ---
+  duration_ms: 678.8833
+  type: 'test'
+  ...
+# Subtest: coverage precedence: explicit project-covering shared venue grant
+ok 25 - coverage precedence: explicit project-covering shared venue grant
+  ---
+  duration_ms: 704.3007
+  type: 'test'
+  ...
+# Subtest: coverage precedence: current owner's legacy shared Studio account grant
+ok 26 - coverage precedence: current owner's legacy shared Studio account grant
+  ---
+  duration_ms: 608.0103
+  type: 'test'
+  ...
+# Subtest: two independently completed terms survive one refund; independent current cover also survives that refund
+ok 27 - two independently completed terms survive one refund; independent current cover also survives that refund
+  ---
+  duration_ms: 912.3529
+  type: 'test'
+  ...
+# Subtest: account coverage follows the current primary owner; transfer cannot rewrite the historic purchaser
+ok 28 - account coverage follows the current primary owner; transfer cannot rewrite the historic purchaser
+  ---
+  duration_ms: 672.172
+  type: 'test'
+  ...
+# Subtest: expired/revoked/future independent grants do not override an archive; missing local purchase behind a positive mirror is verification-unavailable
+ok 29 - expired/revoked/future independent grants do not override an archive; missing local purchase behind a positive mirror is verification-unavailable
+  ---
+  duration_ms: 655.9353
+  type: 'test'
+  ...
+# Subtest: boundary equality is read-only; malformed/foreign/removed identities return neutral unavailable; local read failure is explicit
+ok 30 - boundary equality is read-only; malformed/foreign/removed identities return neutral unavailable; local read failure is explicit
+  ---
+  duration_ms: 652.4232
+  type: 'test'
+  ...
+# Subtest: the internal evaluator does not wire a project-wide denial or change manual archive/role capability semantics
+ok 31 - the internal evaluator does not wire a project-wide denial or change manual archive/role capability semantics
+  ---
+  duration_ms: 738.3328
+  type: 'test'
+  ...
+# Subtest: actual held checkout action + future-branch harness carry exact project/intent/idempotency into the actual verified settlement writer
+ok 32 - actual held checkout action + future-branch harness carry exact project/intent/idempotency into the actual verified settlement writer
+  ---
+  duration_ms: 943.6364
+  type: 'test'
+  ...
+# Subtest: real project deletion fence prevents checkout and commits an undesignated paid outcome at settlement
+ok 33 - real project deletion fence prevents checkout and commits an undesignated paid outcome at settlement
+  ---
+  duration_ms: 689.6441
+  type: 'test'
+  ...
+# Subtest: ownership is re-proved between durable preparation and the provider callback
+ok 34 - ownership is re-proved between durable preparation and the provider callback
+  ---
+  duration_ms: 586.7866
+  type: 'test'
+  ...
+# Subtest: historical payment date and conflicting durable customer binding cannot commit a new designation
+ok 35 - historical payment date and conflicting durable customer binding cannot commit a new designation
+  ---
+  duration_ms: 645.1185
+  type: 'test'
+  ...
+# Subtest: missing recorded local evidence is verification-unavailable, never undesignated history; independent cover still wins
+ok 36 - missing recorded local evidence is verification-unavailable, never undesignated history; independent cover still wins
+  ---
+  duration_ms: 774.7784
+  type: 'test'
+  ...
+1..36
+# tests 36
+# suites 0
+# pass 36
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 50684.2659

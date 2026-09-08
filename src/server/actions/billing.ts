@@ -13,6 +13,7 @@ import { isDemoMode } from "@/lib/access-mode";
 import { checkoutModeFor, isPaidTier } from "@/server/checkout-policy";
 import { billingCustomerForUser, withBillingAccount } from "@/server/stripe-access";
 import { checkoutAvailable, EVENT_UNAVAILABLE_MESSAGE } from "@/lib/billing-availability";
+import { createEventCheckout } from "@/server/db/event-designation";
 
 const FALLBACK_BASE = "http://localhost:3001";
 
@@ -36,6 +37,7 @@ function siteUrl(): string {
 export async function createCheckoutSessionAction(
   tier: PaidTier,
   interval: BillingInterval = "monthly",
+  eventProjectId?: string,
 ): Promise<{ url: string }> {
   const stripe = configuredStripe;
   if (!isPaidTier(tier) || (interval !== "monthly" && interval !== "annual")) {
@@ -51,7 +53,7 @@ export async function createCheckoutSessionAction(
   // Previously an ambient cookie chose it, and its LEGACY_WORKSPACE_ID
   // fallback could have attached a paid entitlement to a workspace the caller
   // had proved no membership of (D-005).
-  const ambient = await getActiveWorkspaceOrNull();
+  const ambient = tier === "event" ? eventProjectId : await getActiveWorkspaceOrNull();
   const grant = await authorizeProjectCandidate({
     candidateProjectId: ambient,
     capability: "createOrEditTasks",
@@ -84,7 +86,7 @@ export async function createCheckoutSessionAction(
   // in the webhook. Keeps the type contract honest.
   const metadataWorkspaceId = scopedWorkspaceId ?? "*";
 
-  return withBillingAccount(me, async () => {
+  const createSession = async (eventCheckoutIntent?: string) => {
     const customer = await billingCustomerForUser(me);
     const session = await stripe.checkout.sessions.create({
       ...(customer ? { customer } : checkoutModeFor(tier) === "payment" ? { customer_creation: "always" as const } : {}),
@@ -94,18 +96,28 @@ export async function createCheckoutSessionAction(
       success_url: `${siteUrl()}/app/tasks?upgrade=ok&session={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl()}/pricing?upgrade=cancel`,
       client_reference_id: `${me}::${metadataWorkspaceId}`,
-      metadata: { userId: me, workspaceId: metadataWorkspaceId, tier },
+      metadata: { userId: me, workspaceId: metadataWorkspaceId, tier,
+        ...(eventCheckoutIntent ? { eventCheckoutIntent } : {}),
+      },
       subscription_data:
         checkoutModeFor(tier) === "payment"
           ? undefined
           : {
               metadata: { userId: me, workspaceId: metadataWorkspaceId, tier },
             },
-    });
+    }, eventCheckoutIntent ? { idempotencyKey: eventCheckoutIntent } : undefined);
 
     if (!session.url) {
       throw new Error("Stripe returned a session without a URL");
     }
+    return { id: session.id, url: session.url };
+  };
+
+  if (tier === "event") {
+    return createEventCheckout({ actorUserId: me, workspaceId: ws }, createSession);
+  }
+  return withBillingAccount(me, async () => {
+    const session = await createSession();
     return { url: session.url };
   });
 }

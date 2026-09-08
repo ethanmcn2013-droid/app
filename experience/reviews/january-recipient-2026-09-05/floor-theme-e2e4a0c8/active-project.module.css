@@ -1,0 +1,102 @@
+/**
+ * Active Project chrome — the parts Tailwind cannot express.
+ *
+ * Three jobs, and no more:
+ *
+ *  1. Disarm the unlayered `:focus-visible` rule in globals.css, which forces
+ *     `border-radius: 6px` on anything that takes focus. Inside a 56px bar a
+ *     control that changes shape on focus reads as a rendering fault, so `.ring`
+ *     restores the intended radius at higher specificity — (0,2,0) against the
+ *     bare pseudo-class's (0,1,0). It never touches the outline itself: the
+ *     suite-wide indigo ring is the accessibility affordance and stays exactly
+ *     as globals draws it.
+ *
+ *  2. Carry the enter motion as CSS rather than JavaScript, so reduced motion is
+ *     honoured by the platform. Durations come from `--motion-*`, which
+ *     tokens.css already zeroes under `prefers-reduced-motion`; the explicit
+ *     query below is belt-and-braces for the travel, which must not merely
+ *     shorten.
+ *
+ *  3. The one progress affordance, past 300ms: a line that finishes rather than
+ *     a spinner that never does.
+ */
+
+.ring:focus-visible {
+  border-radius: var(--ap-r, 8px);
+}
+
+/* Anchored popover (desktop). Scales from the trigger it belongs to. */
+.pop {
+  transform-origin: var(--ap-origin, top left);
+  animation: ap-pop-in var(--motion-fast) var(--ease-out) both;
+}
+@keyframes ap-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Bottom sheet (phone). A sheet that fades in place reads as a dialog that was
+   already there; this one arrives from the edge it is anchored to. */
+.sheet {
+  animation: ap-sheet-in var(--motion-base) var(--ease-out) both;
+}
+@keyframes ap-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.scrim {
+  animation: ap-fade-in var(--motion-fast) var(--ease-out) both;
+}
+@keyframes ap-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Past 300ms, a line that completes. Never a spinner. The track is painted by
+   the element; this draws the fill. */
+.progress::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 100%;
+  background: var(--x-studio-accent);
+  transform-origin: left;
+  animation: ap-progress 2600ms var(--ease-in-out) both;
+}
+@keyframes ap-progress {
+  from {
+    transform: scaleX(0.04);
+  }
+  to {
+    transform: scaleX(0.92);
+  }
+}
+
+/* Opacity only: no travel, no creeping line. */
+@media (prefers-reduced-motion: reduce) {
+  .pop,
+  .sheet {
+    animation: ap-fade-in 1ms linear both;
+  }
+  .progress::after {
+    animation: none;
+    transform: scaleX(0.5);
+  }
+}

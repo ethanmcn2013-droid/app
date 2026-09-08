@@ -18,6 +18,7 @@ export function ConnectionsReview() {
     ownerName: absent ? null : "Orla Murphy",
     folderUrl: null,
     setup: absent ? "not_connected" : state === "setting-up" ? "setting_up" : state === "attention" ? "fallback" : "active",
+    pendingRemovals: { currentFolder: 0, previousFolders: 0 },
     ownConnection: { connected: !absent, needsReconnect: state === "unavailable", accountEmail: absent ? null : "orla@example.test", affectedProjectCount: 2 },
     access: {
       state: absent ? "not_connected" : state === "unavailable" ? "unavailable" : "checked",

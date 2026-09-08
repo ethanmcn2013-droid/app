@@ -18,6 +18,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Popover } from "@/components/app/detail-panel/popover";
 import { DueCalendar } from "@/components/app/detail-panel/due-calendar";
+import { WeddingDateForm } from "./wedding-date-form";
 import {
   setProjectStatusAction,
   setProjectTargetDateAction,
@@ -287,14 +288,14 @@ export function ProjectOverview({ data }: { data: ProjectOverviewData }) {
   function handleSetStatus(s: ProjectStatus) {
     setStatus(s);
     startStatusTransition(async () => {
-      await setProjectStatusAction(s);
+      await setProjectStatusAction(s, data.workspaceId);
     });
   }
 
   function handleSetTargetDate(iso: string | null) {
     setTargetDate(iso);
     startDateTransition(async () => {
-      await setProjectTargetDateAction(iso);
+      await setProjectTargetDateAction(iso, data.workspaceId);
     });
   }
 
@@ -330,12 +331,12 @@ export function ProjectOverview({ data }: { data: ProjectOverviewData }) {
             onSet={handleSetStatus}
             pending={statusPending}
           />
-          <TargetDateControl
+          {!data.sponsoredWeddingDate ? <TargetDateControl
             targetDate={targetDate}
             isOwner={isOwner}
             onSet={handleSetTargetDate}
             pending={datePending}
-          />
+          /> : null}
         </div>
 
         {/* Program line — only when a planning period is assigned */}
@@ -351,6 +352,12 @@ export function ProjectOverview({ data }: { data: ProjectOverviewData }) {
 
       {/* Body */}
       <div className="mx-auto w-full max-w-[860px] space-y-10 px-8 py-8">
+
+        {data.sponsoredWeddingDate ? <WeddingDateForm
+          key={`${data.workspaceId}:${data.sponsoredWeddingDate.revision}:${data.sponsoredWeddingDate.canManage}`}
+          initial={data.sponsoredWeddingDate}
+          previousTarget={data.targetDate}
+        /> : null}
 
         {/* Progress section */}
         <section aria-label="Task progress">

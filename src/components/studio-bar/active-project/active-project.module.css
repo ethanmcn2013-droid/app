@@ -25,6 +25,19 @@
   border-radius: var(--ap-r, 8px);
 }
 
+/* The phone trigger sits on the paper strip, not the desktop charcoal bar.
+   Its existing label/pending/chevron classes inherit these local role values;
+   keep desktop chrome and chooser content outside this correction. */
+@media (max-width: 767px) {
+  .ring[data-slot="active-project-trigger"] {
+    --x-studio-ink: var(--ink);
+    --x-studio-ink-soft: var(--ink-soft);
+    --x-studio-ink-quiet: var(--ink-faint);
+    --x-studio-focus: var(--x-accent-focus);
+    --x-studio-chrome: var(--paper);
+  }
+}
+
 /* Anchored popover (desktop). Scales from the trigger it belongs to. */
 .pop {
   transform-origin: var(--ap-origin, top left);

@@ -46,7 +46,7 @@ async function withClient(operation) {
 
 test("authoritative ledger registers every SQL file with receipt and journal parity", () => {
   const context = loadAndValidateLedger();
-  assert.equal(context.entries.length, 31);
+  assert.equal(context.entries.length, 32);
   assert.equal(context.baseline.id, "0014_current_schema_baseline");
   assert.deepEqual(context.forward.map((entry) => entry.id), [
     "0015_notes_extract_exact_identity",
@@ -65,6 +65,7 @@ test("authoritative ledger registers every SQL file with receipt and journal par
     "0028_project_drive",
     "0029_project_drive_operations",
     "0030_sponsored_use_intents",
+    "0031_event_purchase_designations",
   ]);
   assert.equal(context.entries.filter((entry) => entry.policy === "legacy-adopt-only").length, 14);
 });
@@ -132,14 +133,15 @@ test("fresh databases apply the canonical baseline plus forwards and rerun as a 
     "0028_project_drive",
     "0029_project_drive_operations",
     "0030_sponsored_use_intents",
+    "0031_event_purchase_designations",
   ]);
-  assert.equal(first.proofs.length, 157);
+  assert.equal(first.proofs.length, 169);
 
   const objectCounts = await client.execute("SELECT type, COUNT(*) AS value FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' AND name NOT IN ('signal_schema_migrations', '__drizzle_migrations') GROUP BY type ORDER BY type");
   assert.deepEqual(objectCounts.rows.map((row) => [row.type, Number(row.value)]), [
-    ["index", 49],
-    ["table", 29],
-    ["trigger", 4],
+    ["index", 51],
+    ["table", 30],
+    ["trigger", 7],
   ]);
 
   const second = await runMigrations({ client, releaseSha: "test-release" });
@@ -869,6 +871,7 @@ test("receipt-backed adoption verifies target, shape, proofs, and is idempotent"
   const receiptPath = path.join(receiptDir, "receipt.json");
   const receipt = {
     schemaVersion: "tasks-production-adoption/1",
+    schemaFingerprintVersion: "sqlite-schema/2",
     id: "tasks-adoption-test",
     environment: "production",
     databaseIdentitySha256: databaseIdentitySha256(databaseUrl),
@@ -923,6 +926,7 @@ test("adoption receipt for another database fails before writing metadata", asyn
   const receiptPath = path.join(receiptDir, "receipt.json");
   fs.writeFileSync(receiptPath, JSON.stringify({
     schemaVersion: "tasks-production-adoption/1",
+    schemaFingerprintVersion: "sqlite-schema/2",
     id: "wrong-target",
     environment: "production",
     databaseIdentitySha256: "f".repeat(64),
@@ -970,7 +974,7 @@ test("the resource backfill count remains required when its migration executes",
 
 test("usage migration proof failure rolls back both new tables and its ledger receipt", async () => withClient(async (client) => {
   const before = loadAndValidateLedger();
-  before.forward = before.forward.filter(entry => entry.id !== "0030_sponsored_use_intents");
+  before.forward = before.forward.filter(entry => entry.ordinal < 30);
   await runMigrations({ client, context: before, releaseSha: "usage-before" });
   const broken = loadAndValidateLedger();
   const entry = broken.forward.find(row => row.id === "0030_sponsored_use_intents");
@@ -979,6 +983,47 @@ test("usage migration proof failure rolls back both new tables and its ledger re
   assert.equal(Number((await client.execute("SELECT count(*) AS n FROM sqlite_schema WHERE name IN ('sponsored_use_intents','sponsored_use_subjects')")).rows[0].n), 0);
   assert.equal(Number((await client.execute("SELECT count(*) AS n FROM signal_schema_migrations WHERE id='0030_sponsored_use_intents'")).rows[0].n), 0);
   const applied = await runMigrations({ client, releaseSha: "usage-retry" });
-  assert.deepEqual(applied.applied, ["0030_sponsored_use_intents"]);
+  assert.deepEqual(applied.applied, ["0030_sponsored_use_intents", "0031_event_purchase_designations"]);
   assert.equal((await runMigrations({ client, releaseSha: "usage-no-op" })).status, "no-op");
+}));
+
+test("Event additive migration preserves populated history; failed proof rolls back all objects and its receipt before a successful retry/no-op", async () => withClient(async (client) => {
+  const before = loadAndValidateLedger();
+  before.forward = before.forward.filter(entry => entry.ordinal < 31);
+  await runMigrations({ client, context: before, releaseSha: "event-before" });
+  await client.execute("INSERT INTO users(id,initials,color) VALUES ('historic-owner','HO','#000')");
+  await client.execute("INSERT INTO workspaces(id,slug,name,owner_user_id) VALUES ('historic-project','historic-project','Preserved','historic-owner')");
+  await client.execute("INSERT INTO entitlements(id,user_id,workspace_id,tier,source,expires_at,notes) VALUES ('historic-event','historic-owner','historic-project','event','purchase',0,'stripe:cs_historical')");
+  const snapshot = async () => ({
+    schema: (await client.execute("SELECT type,name,sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name")).rows,
+    grants: (await client.execute("SELECT * FROM entitlements ORDER BY id")).rows,
+    projects: (await client.execute("SELECT * FROM workspaces ORDER BY id")).rows,
+  });
+  const original = await snapshot();
+  const broken = loadAndValidateLedger();
+  broken.forward.find(row => row.ordinal === 31).receipt.record.proofs.push({
+    id: "event-forced-failure", sql: "SELECT 0 AS value", expected: 1,
+  });
+  await assert.rejects(runMigrations({ client, context: broken, releaseSha: "event-failed" }), /event-forced-failure/);
+  assert.deepEqual(await snapshot(), original);
+  assert.equal(Number((await client.execute("SELECT count(*) AS n FROM signal_schema_migrations WHERE id='0031_event_purchase_designations'")).rows[0].n), 0);
+  assert.deepEqual((await runMigrations({ client, releaseSha: "event-retry" })).applied, ["0031_event_purchase_designations"]);
+  assert.deepEqual((await client.execute("SELECT * FROM entitlements ORDER BY id")).rows, original.grants);
+  assert.deepEqual((await client.execute("SELECT * FROM workspaces ORDER BY id")).rows, original.projects);
+  assert.equal(Number((await client.execute("SELECT count(*) AS n FROM event_purchase_designations")).rows[0].n), 0);
+  assert.equal((await runMigrations({ client, releaseSha: "event-no-op" })).status, "no-op");
+  // Explicitly local, empty-table rollback. This is NOT a production downgrade
+  // runner or permission to discard paid designation/reconciliation history.
+  await client.batch([
+    "DROP TRIGGER event_purchase_purchaser_erasure",
+    "DROP TRIGGER event_purchase_project_erasure",
+    "DROP TRIGGER event_purchase_facts_immutable",
+    "DROP INDEX event_purchase_reference_unique",
+    "DROP INDEX event_purchase_project_idx",
+    "DROP TABLE event_purchase_designations",
+    "DELETE FROM signal_schema_migrations WHERE id='0031_event_purchase_designations'",
+    "DELETE FROM __drizzle_migrations WHERE created_at=1788602400000",
+  ], "write");
+  assert.deepEqual(await snapshot(), original);
+  assert.deepEqual((await runMigrations({ client, releaseSha: "event-reapply-local" })).applied, ["0031_event_purchase_designations"]);
 }));

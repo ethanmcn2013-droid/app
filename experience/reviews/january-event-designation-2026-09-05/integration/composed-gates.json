@@ -1,0 +1,115 @@
+{
+  "head": "cbf40af93907a07dde82f2e8036ce84a72a92d88",
+  "node": "v22.23.2",
+  "environment": "OS allowlist plus credential-free review/preview; no provider/database bindings",
+  "checks": [
+    {
+      "name": "event-designation",
+      "args": [
+        "--import",
+        "tsx",
+        "--import",
+        "./src/test/register-server-only.mjs",
+        "--test",
+        "--test-concurrency=1",
+        "src/server/db/event-designation.test.ts",
+        "src/server/db/event-designation-webhook.test.ts"
+      ],
+      "startedAt": "2026-09-05T20:53:44.966Z",
+      "finishedAt": "2026-09-05T20:54:35.755Z",
+      "exit": 0,
+      "signal": null
+    },
+    {
+      "name": "event-clock",
+      "args": [
+        "--test",
+        "src/server/db/event-designation-clock.test.mjs"
+      ],
+      "startedAt": "2026-09-05T20:54:35.758Z",
+      "finishedAt": "2026-09-05T20:54:51.413Z",
+      "exit": 0,
+      "signal": null
+    },
+    {
+      "name": "migration-contract",
+      "args": [
+        "scripts/check-migration-contract.mjs"
+      ],
+      "startedAt": "2026-09-05T20:54:51.414Z",
+      "finishedAt": "2026-09-05T20:54:51.859Z",
+      "exit": 0,
+      "signal": null
+    },
+    {
+      "name": "migration-tests",
+      "args": [
+        "--test",
+        "scripts/db/migration-ledger.test.mjs",
+        "scripts/db/timeline-migrate.test.mjs",
+        "scripts/db/timeline-inventory.test.mjs",
+        "scripts/db/timeline-binding-classification.test.mjs",
+        "scripts/db/timeline-backfill-bindings.test.mjs"
+      ],
+      "startedAt": "2026-09-05T20:54:51.860Z",
+      "finishedAt": "2026-09-05T20:54:58.610Z",
+      "exit": 0,
+      "signal": null
+    },
+    {
+      "name": "isolated-migration",
+      "args": [
+        "scripts/db/verify-january-rehearsal.mjs"
+      ],
+      "startedAt": "2026-09-05T20:54:58.611Z",
+      "finishedAt": "2026-09-05T20:54:59.447Z",
+      "exit": 0,
+      "signal": null
+    },
+    {
+      "name": "full-typecheck",
+      "args": [
+        "node_modules/typescript/bin/tsc",
+        "--noEmit",
+        "--incremental",
+        "false"
+      ],
+      "startedAt": "2026-09-05T20:54:59.449Z",
+      "finishedAt": "2026-09-05T20:55:42.722Z",
+      "exit": 0,
+      "signal": null
+    },
+    {
+      "name": "full-lint",
+      "args": [
+        "node_modules/eslint/bin/eslint.js"
+      ],
+      "startedAt": "2026-09-05T20:55:42.723Z",
+      "finishedAt": "2026-09-05T20:56:50.512Z",
+      "exit": 0,
+      "signal": null
+    },
+    {
+      "name": "tenant-stripe",
+      "args": [
+        "--test",
+        "src/server/tenant-scope-rules.test.mjs",
+        "src/server/stripe-contract.test.mjs"
+      ],
+      "startedAt": "2026-09-05T20:56:50.514Z",
+      "finishedAt": "2026-09-05T20:56:50.717Z",
+      "exit": 0,
+      "signal": null
+    },
+    {
+      "name": "ambient",
+      "args": [
+        "scripts/check-ambient-workspace-ratchet.mjs"
+      ],
+      "startedAt": "2026-09-05T20:56:50.718Z",
+      "finishedAt": "2026-09-05T20:56:51.058Z",
+      "exit": 0,
+      "signal": null
+    }
+  ]
+}

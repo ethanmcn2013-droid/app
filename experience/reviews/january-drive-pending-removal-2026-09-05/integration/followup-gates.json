@@ -1,0 +1,37 @@
+{
+  "head": "3b771639de633169fcd64d849105df6c8725bc50",
+  "node": "v22.23.2",
+  "reason": "One bounded repeat of unchanged declared Drive UI command after native upload-recovery process exit3221225477; original99 assertions/1 failed file retained. Remaining original gates run regardless. A passing repeat does not explain the native failure.",
+  "checks": [
+    {
+      "name": "drive-ui-exact-repeat",
+      "args": [
+        "scripts/test-project-drive-ui.mjs"
+      ],
+      "startedAt": "2026-09-05T20:43:02.324Z",
+      "finishedAt": "2026-09-05T20:43:38.927Z",
+      "exit": 0,
+      "signal": null
+    },
+    {
+      "name": "full-lint",
+      "args": [
+        "node_modules/eslint/bin/eslint.js"
+      ],
+      "startedAt": "2026-09-05T20:43:38.930Z",
+      "finishedAt": "2026-09-05T20:45:12.956Z",
+      "exit": 0,
+      "signal": null
+    },
+    {
+      "name": "first-contact",
+      "args": [
+        "scripts/check-first-contact-language.mjs"
+      ],
+      "startedAt": "2026-09-05T20:45:12.956Z",
+      "finishedAt": "2026-09-05T20:45:13.333Z",
+      "exit": 0,
+      "signal": null
+    }
+  ]
+}

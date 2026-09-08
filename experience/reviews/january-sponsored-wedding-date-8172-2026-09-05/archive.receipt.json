@@ -1,0 +1,13 @@
+{
+  "sha256": "1f95758eff64e0d2a3562b174060a298be3d4b5b66e38d6ff37cc107a3160c98",
+  "archive": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\feat-january-sponsored-wedding-date\\experience\\reviews\\january-sponsored-wedding-date-8172-2026-09-05\\evidence.zip",
+  "buildId": "wnk1OREKC5EKuma6I3VoO",
+  "exitCode": 0,
+  "command": "& 'work/sponsored-wedding-date-8172-renewal-2026-09-05/package-evidence.ps1'",
+  "bytes": 3263664,
+  "entriesVerified": 203,
+  "method": "Created ZIP then decompressed every entry and verified SHA256 against payload index",
+  "source": "8172364e3f7ba8332b4ce7a73ae4563a34b7867c",
+  "declaredReplayCommand": "powershell -NoProfile -File work/sponsored-wedding-date-8172-renewal-2026-09-05/package-evidence.ps1",
+  "cwd": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2"
+}
