@@ -1,2 +1,32 @@
+# Keep source, automation, and repository contracts stable across platforms.
+.env.example text eol=lf
+.gitattributes text eol=lf
+.gitignore text eol=lf
+.githooks/* text eol=lf
+.nvmrc text eol=lf
+*.cjs text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.mjs text eol=lf
+*.sh text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+# Migration SQL must remain byte-stable for checksums and drift checks.
 drizzle/*.sql text eol=lf
 drizzle-timeline/*.sql text eol=lf
+
+# Never attempt line-ending conversion on shipped media or font assets.
+*.gif binary
+*.ico binary
+*.jpeg binary
+*.jpg binary
+*.pdf binary
+*.png binary
+*.webp binary
+*.woff binary
+*.woff2 binary
