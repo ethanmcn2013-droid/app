@@ -4,6 +4,46 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-09-08 · T·153 · tightens · the favicon is one indigo dot on ink
+
+**The suite mark drops its broadcast ring and its paper field: it is now a
+single indigo dot centred on the Studio Bar charcoal, across `/icon`,
+`/icon1`, `/apple-icon` and `favicon.ico`.**
+
+The ring was a second idea competing with the first at the only size that
+decides. At 16×16 a 1.5px stroke is not a ring, it is a grey smudge around
+the thing you actually wanted to see — and `docs/brand.md` has always been
+explicit that the wordmark's trailing dot is the load-bearing element
+("don't replace it with a swoosh, a checkmark, or a square"). So the icon
+is that dot and nothing else, grown from 36% to 40% of the canvas to keep
+its presence in a tab strip now that it has no outer edge.
+
+The field is `#17171a` — `--x-studio-chrome`, the charcoal L-frame of the
+Studio Bar. It is the one surface colour identical in BOTH themes, and it
+was already the manifest's `theme_color`, so an installed PWA's title bar
+and its icon are now the same charcoal instead of white-on-charcoal. In a
+dark tab strip the old white tile was the brightest object on screen,
+which is the opposite of what a signal should do.
+
+The dot is indigo-500 (`#6366f1`), not the brand's indigo-600. A favicon
+dot is a non-text graphic, so its floor is WCAG 1.4.11's 3:1 against the
+field it sits on, and on this charcoal indigo-600 measures 2.84:1 —
+the same failure `globals.css` already documented for the dark accent
+roles. indigo-500 measures 4.00:1 and is not a new value invented for the
+icon: `--x-studio-accent` already resolves to it, so this is the repo's
+existing answer to which indigo rides on the charcoal chrome. indigo-400
+clears by more but drifts lilac at 16px, where the dot is read as a colour
+and nothing else.
+
+`favicon.ico` was the half of this that used to get left behind — a static
+file Next serves verbatim at `/favicon.ico` for the clients that request
+that path directly rather than reading the `<link rel="icon">` tag, and an
+opaque binary nobody could re-derive. It is now a build artifact of the
+same two colours: `node scripts/brand/generate-favicon-ico.mjs` writes the
+16/32/48/256 frame set from the same 40% geometry, supersampled 8×8 so the
+16px frame gets a soft edge rather than a staircase. Dependency-free, and
+16.5KB against the old 25.9KB.
+
 ## 2026-08-22 · T·152 · tightens · design tokens now come from the package, not a copy
 
 **The app's system tokens are imported from the `signal-ds` npm package
