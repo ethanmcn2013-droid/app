@@ -7,10 +7,7 @@ import {
   isBareArtifactPath,
   isBareChromePath,
 } from "@/lib/bare-artifact-path";
-import {
-  APP_ORIGIN,
-  PRODUCT_MARKETING_URLS,
-} from "@/lib/product-urls";
+import { APP_ORIGIN, STUDIO_ORIGIN } from "@/lib/product-urls";
 
 /**
  * Next.js 16 renamed middleware → proxy. Same shape, same matcher
@@ -126,9 +123,18 @@ function productRootRedirect(
     return null;
   }
 
-  const destination = isAuthed
-    ? `${APP_ORIGIN}/app`
-    : PRODUCT_MARKETING_URLS.tasks;
+  // Signed out, this lands on the umbrella root rather than
+  // PRODUCT_MARKETING_URLS.tasks. That pointed at signalstudio.ie/tasks,
+  // which the 2026-09-11 estate cut archived until launch — so it 307s
+  // onward to the umbrella root, making this the first of two redirects on
+  // the commonest signed-out entry path. Nothing is painted until a chain
+  // resolves, and a chain is also how a later edit at one end quietly
+  // becomes a loop.
+  //
+  // The constant itself is untouched and stays correct: /tasks comes back at
+  // the same address, and the call sites that link out to it (suite-arrows,
+  // suite-launcher, the footers) cost one hop on a click, not on arrival.
+  const destination = isAuthed ? `${APP_ORIGIN}/app` : STUDIO_ORIGIN;
   return NextResponse.redirect(destination, isAuthed ? 307 : 308);
 }
 
