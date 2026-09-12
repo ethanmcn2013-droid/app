@@ -80,14 +80,14 @@ export function ProjectConversationPrototype() {
   const workButtonRef = useRef<HTMLButtonElement>(null);
 
   const fixture = projectFixtures[project];
-  const effectiveId = scenario.startsWith("dm_") ? "dm" : ["project", "pending", "uncertain", "failed", "audience_changed", "guest_preview", "archived"].includes(scenario) ? "project" : activeId;
+  const effectiveId = scenario.startsWith("dm_") ? "dm" : ["pending", "uncertain", "failed", "audience_changed", "guest_preview", "archived"].includes(scenario) ? "project" : activeId;
   const conversationKey = `${project}:${effectiveId}`;
   const selectedConversation = fixture.conversations.find((item) => item.id === effectiveId) ?? fixture.conversations[0];
   const baseCopy = scenario === "project" && effectiveId === "dm" ? scenarioCopy.dm_active : scenarioCopy[scenario];
   const copy = {
     ...baseCopy,
     title: effectiveId === "discussion" ? selectedConversation.title : baseCopy.title === "Website launch" ? fixture.name : baseCopy.title === "Maya Chen" ? selectedConversation.title : baseCopy.title,
-    description: effectiveId === "discussion" ? `Task discussion in ${fixture.name} · visible to current project members` : baseCopy.description.replaceAll("Website launch", fixture.name).replace("6 current project members", `${fixture.people} current project members`),
+    description: effectiveId === "discussion" ? `Task discussion in ${fixture.name} · visible to current project members` : baseCopy.description.replaceAll("Website launch", fixture.name).replaceAll("Maya", selectedConversation.title).replace("6 current project members", `${fixture.people} current project members`),
   };
   const blocked = copy.status !== "active" || effectiveId === "discussion";
   const visibleMessages = useMemo(() => scenario === "dm_pending" ? [] : messages[conversationKey] ?? [], [conversationKey, messages, scenario]);
@@ -95,7 +95,7 @@ export function ProjectConversationPrototype() {
 
   function chooseConversation(id: string) {
     setActiveId(id);
-    setScenario(id === "maya" ? "dm_active" : "project");
+    setScenario(id === "dm" ? "dm_active" : "project");
     setReplyingTo(null);
   }
 
@@ -137,7 +137,7 @@ export function ProjectConversationPrototype() {
       </aside>
 
       <div className={styles.labBar}>
-        <div><strong>Project conversation</strong><span>Synthetic review lab · no data is saved or delivered</span></div>
+        <div><strong>Project conversation</strong><span className={styles.labTruth}>Synthetic review lab · no data is saved or delivered</span><span className={styles.mobileTruth}>Preview · synthetic</span></div>
         <label>Project
           <select value={project} onChange={(event) => { setProject(event.target.value as ProjectKey); setActiveId("project"); setScenario("project"); setReplyingTo(null); }}>
             <option value="website">Website launch</option>
@@ -171,7 +171,7 @@ export function ProjectConversationPrototype() {
           ) : (
             <>
               <div className={styles.feedScroller}>
-                {scenario === "dm_pending" ? <div className={styles.stateBanner}><strong>Waiting for Maya</strong><span>Your request doesn’t include message text. You can send after Maya accepts.</span></div> : null}
+                {scenario === "dm_pending" ? <div className={styles.stateBanner}><strong>Waiting for {selectedConversation.title}</strong><span>Your request doesn’t include message text. You can send after they accept.</span></div> : null}
                 {scenario === "guest_preview" ? <div className={styles.stateBanner}><strong>Guest flow preview only</strong><span>Sofia has no access. A later invitation would disclose the audience and history policy before acceptance.</span></div> : null}
                 {scenario === "dm_blocked" ? <div className={styles.stateBanner} data-tone="danger"><strong>Messages are blocked</strong><span>You can read retained history, but neither person can send or receive alerts.</span></div> : null}
                 {scenario === "audience_changed" ? <div className={styles.stateBanner} data-tone="danger"><strong>Review the audience</strong><span>A member left after this draft began. Return to the current audience before sending.</span></div> : null}
@@ -184,7 +184,7 @@ export function ProjectConversationPrototype() {
                     <textarea aria-label={`Message ${copy.title}`} onChange={(event) => setDrafts((current) => ({ ...current, [conversationKey]: event.target.value }))} onKeyDown={handleComposerKeyDown} placeholder={`Message ${copy.title}`} ref={composerRef} rows={2} value={drafts[conversationKey] ?? ""} />
                     <div className={styles.composerFooter}>
                       <div className={styles.actionMenuWrap}>
-                        <button aria-expanded={menuOpen} aria-haspopup="menu" className={styles.addButton} onClick={() => setMenuOpen((open) => !open)} ref={workButtonRef} type="button"><Icon size={16}><path d="M12 5v14M5 12h14" /></Icon><span>Turn into work</span></button>
+                        <button aria-expanded={menuOpen} aria-haspopup="menu" aria-label="Turn message into work" className={styles.addButton} onClick={() => setMenuOpen((open) => !open)} ref={workButtonRef} type="button"><Icon size={16}><path d="M12 5v14M5 12h14" /></Icon><span>Turn into work</span></button>
                         {menuOpen ? <div className={styles.actionMenu} onKeyDown={(event) => {
                           const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>("button"));
                           const current = buttons.indexOf(document.activeElement as HTMLButtonElement);
@@ -203,9 +203,9 @@ export function ProjectConversationPrototype() {
           )}
         </main>
       </div>
-      {replyingTo ? <ThreadPanel draft={threadDrafts[replyingTo.id] ?? ""} onClose={() => setReplyingTo(null)} onDraftChange={(value) => setThreadDrafts((current) => ({ ...current, [replyingTo.id]: value }))} onSend={() => {
+      {replyingTo && !blocked ? <ThreadPanel draft={threadDrafts[replyingTo.id] ?? ""} onClose={() => setReplyingTo(null)} onDraftChange={(value) => setThreadDrafts((current) => ({ ...current, [replyingTo.id]: value }))} onSend={() => {
         const body = threadDrafts[replyingTo.id]?.trim();
-        if (!body) return;
+        if (!body || blocked) return;
         setThreadReplies((current) => ({ ...current, [replyingTo.id]: [...(current[replyingTo.id] ?? []), { id: `reply-${Date.now()}`, author: "You", initials: "EM", time: "Now", body }] }));
         setThreadDrafts((current) => ({ ...current, [replyingTo.id]: "" }));
       }} replies={threadReplies[replyingTo.id] ?? []} root={replyingTo} /> : null}

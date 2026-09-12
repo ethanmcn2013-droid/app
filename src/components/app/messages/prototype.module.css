@@ -34,6 +34,7 @@
 .labBar > div { display: flex; flex-direction: column; min-width: 0; }
 .labBar strong { font-size: 13px; }
 .labBar span { color: var(--x-studio-ink-soft, #a2a2ab); font-size: 11px; margin-top: 2px; }
+.mobileTruth { display: none; }
 .labBar label { align-items: center; color: var(--x-studio-ink-soft, #a2a2ab); display: flex; font-size: 11px; gap: 9px; }
 .labBar select { background: var(--x-studio-chrome-raised, #26262c); border: 1px solid #3f3f46; border-radius: 999px; color: var(--x-studio-ink, #fff); min-height: 34px; padding: 0 30px 0 12px; }
 .viewSwitch { background: var(--x-studio-capsule, #fff); border: 1px solid var(--x-studio-capsule-edge, #fff); border-radius: 999px; color: var(--x-studio-capsule-ink, #17171a); cursor: pointer; font-size: 11px; font-weight: 650; min-height: 34px; padding: 0 12px; white-space: nowrap; }
@@ -154,7 +155,8 @@
   .labBar { grid-column: 1; padding: 10px 12px; }
   .labBar { align-items: stretch; flex-wrap: wrap; gap: 7px; }
   .labBar > div { flex-basis: 100%; }
-  .labBar span { display: none; }
+  .labBar .labTruth { display: none; }
+  .labBar .mobileTruth { display: inline; }
   .labBar label { flex: 1 1 0; font-size: 0; min-width: 0; }
   .labBar select { font-size: 11px; max-width: none; min-width: 0; width: 100%; }
   .viewSwitch { display: none; }
