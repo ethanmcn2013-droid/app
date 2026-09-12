@@ -117,6 +117,7 @@ try {
     profile.withinTargets = profile.observedDeliveries === profile.expectedDeliveries && profile.sendP95Ms <= 800 && profile.visibilityP95Ms !== null && profile.visibilityP95Ms <= 1500 && profile.warmP95Ms <= 1000;
     report.profiles.push(profile);
     process.stdout.write(JSON.stringify(profile) + "\n");
+    assert.equal(profile.withinTargets, true, `${viewers}-viewer profile exceeded local latency or delivery targets`);
     // Verify immediate post-revoke denial independently on both runtime instances.
     await fixture.client.execute({ sql: "DELETE FROM workspace_members WHERE workspace_id=? AND user_id=?", args: [scope.projectId, actors[0]] });
     for (const instance of instances) assert.deepEqual((await read(instance, actors[0])).value, { ok: false, code: "unavailable" });

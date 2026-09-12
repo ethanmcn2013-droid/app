@@ -7,7 +7,7 @@ Branch: feat/project-conversation-integration; source base a709e22a9f19ffb4c45b1
 
 Approved local scope: PC-00–PC-14 and local PC-20, with proposed scope corrections accepted by EXECUTE. External/live-data, guest/AI expansion, paid services and destructive actions retain their explicit gates. Continue all independent safe work while awaiting concrete human/environment gates. Never claim human research passed without participants.
 
-Progress denominator: 16 accepted local milestones (PC-00 through PC-14 plus PC-20). Current accepted: 3/16 = 18.75% (PC-00, PC-01, PC-02). This is task acceptance, not an estimate of elapsed effort, launch readiness or a passed live pilot. Do not count partially implemented work as accepted. Progress automation: project-conversation-progress, 30-minute thread heartbeat; pause at completion/cancellation.
+Progress denominator: 16 accepted local milestones (PC-00 through PC-14 plus PC-20). Current accepted: 4/16 = 25% (PC-00, PC-01, PC-02, PC-05). This is task acceptance, not an estimate of elapsed effort, launch readiness or a passed live pilot. Do not count partially implemented work as accepted. Progress automation: project-conversation-progress, 30-minute thread heartbeat; pause at completion/cancellation.
 
 Agent use: root owns architecture/integration; explicit Luna low for PC-00 read-only reference inventory; Sol medium for PC-02 frontend prototype; Sol high for bounded database feasibility after contracts. One writer per owned worktree, at most two useful concurrent workers, no nested delegation. Requested worker model/effort is recorded separately from unverified effective worker runtime identity. Parent turn_context metadata verifies gpt-6-astra, effort high; this does not verify worker settings.
 
@@ -17,10 +17,11 @@ Agent use: root owns architecture/integration; explicit Luna low for PC-00 read-
 | PC-01 contracts | Accepted | Typed oracle 10/10 passes; independent Sol high contract review accepted; SQL oracle O01–O13 documented |
 | PC-02 prototype | Accepted at synthetic prototype scope | Fresh finish reviewer: ship after scoped correction; browser and linked TypeScript pass; design recorded; physical IME unavailable, code guard reviewed |
 | PC-03 human review | Founder question pending | Reviewable local prototype shown; explicit amendment requested to continue local backend before participant study; no answer assumed |
-| PC-04/05 feasibility | PC-04 in progress | Sol high owns spike/project-conversation-transactions; isolated file DB, no remote credentials |
+| PC-04 transactions | Correction in progress | Fresh Astra review found DM confirmation and membership churn could erase a block; Sol high corrects in spike/project-conversation-transactions with regressions |
+| PC-05 synchronization | Accepted at local feasibility scope | Fresh Astra review accepted dd93297e source/evidence: two processes, 2,600 observations, local latency targets met; remote behavior remains unverified |
 | PC-06–14, PC-20 | Pending dependencies | Build/verify in order; no partial-completion claim |
 
-Environment: dependency node_modules junction reuses already installed App modules read-only. No env files copied, no app server/import executed. New-worktree helper inspected; direct git worktree add at pinned base avoids its unconditional fetch/prune. Local commits use inspected hook (no production side effect). No push/PR.
+Environment: dependency node_modules junction reuses already installed App modules read-only. No env files copied. An isolated Next prototype preview runs on loopback port 3187 with synthetic state and provider settings removed in the child process; see operations-local.md. New-worktree helper inspected; direct git worktree add at pinned base avoids its unconditional fetch/prune. Local commits use inspected hook (no production side effect). No push/PR.
 
 ---
 # Project Conversation state
