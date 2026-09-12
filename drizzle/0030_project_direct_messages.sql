@@ -171,7 +171,8 @@ CREATE TRIGGER conversation_dm_membership_delete
 AFTER DELETE ON workspace_members
 BEGIN
   UPDATE conversation_participants SET status='membership_lost',consented=0,retains_history=0,reopen_confirmed=0
-    WHERE user_id=OLD.user_id AND conversation_id IN (SELECT id FROM conversations WHERE kind='dm' AND workspace_id=OLD.workspace_id);
+    WHERE user_id=OLD.user_id AND status<>'removed'
+      AND conversation_id IN (SELECT id FROM conversations WHERE kind='dm' AND workspace_id=OLD.workspace_id);
   UPDATE conversation_participants SET reopen_confirmed=0
     WHERE conversation_id IN (SELECT id FROM conversations WHERE kind='dm' AND workspace_id=OLD.workspace_id AND OLD.user_id IN(dm_low_user_id,dm_high_user_id));
   UPDATE conversations SET pair_state='membership_lost',dm_blocked_by_user_id=NULL,dm_state_before_block=NULL
@@ -197,7 +198,13 @@ BEGIN SELECT RAISE(ABORT, 'dm_user_id_immutable'); END;
 
 ALTER TABLE work_operation_receipts ADD COLUMN source_conversation_id TEXT;
 --> statement-breakpoint
+DROP TRIGGER work_operation_receipts_identity_immutable;
+--> statement-breakpoint
 UPDATE work_operation_receipts SET source_conversation_id=(SELECT l.source_conversation_id FROM work_links l WHERE l.id=work_operation_receipts.work_link_id);
+--> statement-breakpoint
+CREATE TRIGGER work_operation_receipts_identity_immutable
+BEFORE UPDATE ON work_operation_receipts
+BEGIN SELECT RAISE(ABORT, 'immutable_work_operation_receipt'); END;
 --> statement-breakpoint
 CREATE TRIGGER work_operation_receipts_source_conversation_required
 BEFORE INSERT ON work_operation_receipts

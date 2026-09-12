@@ -7,7 +7,7 @@
   "migrations": [
     {
       "id": "0030_project_direct_messages",
-      "sha256": "e04360a6c96a50c2de44522ea331059a0b526e7d839088b03472d26461065afe",
+      "sha256": "e384172282c5c908ee7834a1c52b53b1fd9441f3cd5571065c8a3a3180d79948",
       "reviewedAt": "2026-09-12T00:00:00.000Z",
       "risk": "Application-integrity risk: enables exactly-two-person Project DMs with consent, retained-history, membership-churn, block-owner and immutable receipt rules. Additive columns and tables copy no message body.",
       "rollbackPlan": "Disable conversation sends and DM entry while retaining acknowledged messages, state receipts, task provenance and history. Do not drop acknowledged data.",

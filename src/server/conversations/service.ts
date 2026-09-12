@@ -418,7 +418,7 @@ export function createConversationService(adapter: ConversationDatabaseAdapter) 
         ? { ok:true,value:{scope:authorized.value.scope,clientRequestId:args.clientRequestId,committedAt:integer(prior.rows[0].committed_at)} }
         : failure("request_conflict");
       const scope=authorized.value.scope; const row=authorized.value.row;
-      if(scope.lifecycle === "archived") return failure("archived");
+      if(scope.lifecycle === "archived" && args.operation !== "block" && args.operation !== "leave") return failure("archived");
       if(scope.audienceEpoch !== args.expectedAudienceEpoch) return failure("audience_changed");
       let resulting: DirectMessagePairState=scope.pairState;
       if(args.operation === "accept" || args.operation === "decline") {
@@ -494,6 +494,8 @@ export function createConversationService(adapter: ConversationDatabaseAdapter) 
     return inTransaction("write", async (executor) => {
       const authorized = await authorizeConversation(executor, { actorId, ...input });
       if (!authorized.ok) return authorized;
+      if (authorized.value.scope.kind === "dm" && !authorized.value.scope.canRead &&
+          !["pending", "declined"].includes(authorized.value.scope.pairState)) return failure("unavailable");
       const prior = await findReceipt(executor, { actorId, ...input });
       if (prior) {
         return prior.operation === "send" && prior.payload_hash === payloadHash
@@ -691,6 +693,9 @@ export function createConversationService(adapter: ConversationDatabaseAdapter) 
     return inTransaction("write", async (executor) => {
       const authorized = await authorizeConversation(executor, args);
       if (!authorized.ok) return authorized;
+      if (authorized.value.scope.kind === "dm" && !authorized.value.scope.canRead) return failure(
+        ["pending", "declined"].includes(authorized.value.scope.pairState) ? "consent_required" : "unavailable",
+      );
       const prior = await findReceipt(executor, args);
       if (prior) {
         return prior.operation === operation && prior.payload_hash === payloadHash

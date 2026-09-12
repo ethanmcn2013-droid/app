@@ -100,3 +100,49 @@ test("foreign-key-off guards reject third participants, pair mutation, and activ
     await assert.rejects(f.client.execute("UPDATE workspace_members SET user_id='mallory' WHERE workspace_id='dm_project' AND user_id='bob'"),/dm_membership_key_immutable/);
   } finally {f.client.close();}
 });
+
+test("0030 preserves populated PC08 receipts, including a deleted-link receipt with no invented source",async()=>{
+  const root=resolve(process.env.PC10_WORK_DIR ?? tmpdir()); await mkdir(root,{recursive:true});
+  const directory=await mkdtemp(join(root,"signal-pc10-upgrade-"));
+  const client=createClient({url:`file:${join(directory,"tasks.db").replaceAll("\\","/")}`});
+  try {
+    await client.execute("PRAGMA foreign_keys=OFF");
+    for(const migration of (await readdir("drizzle")).filter((name)=>/^\d{4}_.+\.sql$/.test(name)&&name>="0014_"&&name<="0029_conversation_task_outcomes.sql").sort())
+      await client.executeMultiple(await readFile(join("drizzle",migration),"utf8"));
+    await client.execute("INSERT INTO users(id,name,color,initials) VALUES('upgrade_actor','Actor','#111','AA')");
+    await client.execute("INSERT INTO workspaces(id,slug,name,owner_user_id,context_type,created_at,updated_at) VALUES('upgrade_project','upgrade','Upgrade','upgrade_actor','project',1,1)");
+    await client.execute("INSERT INTO workspace_members(workspace_id,user_id,role,joined_at) VALUES('upgrade_project','upgrade_actor','owner',1)");
+    await client.execute("INSERT INTO conversations(id,workspace_id,kind,lifecycle,audience_epoch,next_create_seq,next_change_seq,created_by,created_at) VALUES('upgrade_room','upgrade_project','project','active',1,2,2,'upgrade_actor',1)");
+    await client.execute("INSERT INTO conversation_messages(id,conversation_id,workspace_id,author_id,client_request_id,request_hash,create_seq,revision,body,created_at) VALUES('upgrade_message','upgrade_room','upgrade_project','upgrade_actor','upgrade_message_req','hash',1,1,'body',1)");
+    for(const suffix of ["live","deleted"]){
+      await client.execute({sql:"INSERT INTO tasks(id,workspace_id,title,lane,priority) VALUES(?, 'upgrade_project','Task','todo','normal')",args:[`task_${suffix}`]});
+      await client.execute({sql:"INSERT INTO work_links(id,source_project_id,source_conversation_id,source_message_id,source_revision,source_audience_epoch,destination_project_id,task_id,created_by,created_at) VALUES(?,'upgrade_project','upgrade_room','upgrade_message',1,1,'upgrade_project',?,'upgrade_actor',1)",args:[`link_${suffix}`,`task_${suffix}`]});
+      await client.execute({sql:"INSERT INTO work_operation_receipts(actor_id,client_request_id,operation,payload_hash,source_project_id,destination_project_id,task_id,work_link_id,committed_at) VALUES('upgrade_actor',?,'conversation_task','hash','upgrade_project','upgrade_project',?,?,1)",args:[`request_${suffix}`,`task_${suffix}`,`link_${suffix}`]});
+    }
+    await client.execute("DELETE FROM work_links WHERE id='link_deleted'");
+    await client.executeMultiple(await readFile("drizzle/0030_project_direct_messages.sql","utf8"));
+    const rows=await client.execute("SELECT client_request_id,source_conversation_id FROM work_operation_receipts ORDER BY client_request_id");
+    assert.deepEqual(rows.rows.map((row)=>[row.client_request_id,row.source_conversation_id]),[["request_deleted",null],["request_live","upgrade_room"]]);
+    await assert.rejects(client.execute("UPDATE work_operation_receipts SET source_project_id='changed'"),/immutable_work_operation_receipt/);
+  } finally {client.close();}
+});
+
+test("departed actors cannot replay edit or delete receipts, while archive still permits block and leave",async()=>{
+  const f=await fixture(); try {
+    const made=await request(f.service); if(!made.ok) throw new Error("pair"); const id=made.value.scope.conversationId;
+    const accepted=await transition(f.service,"bob",id,"accept","dm_mutation_accept_01"); if(!accepted.ok) throw new Error("accept");
+    const sent=await f.service.sendMessage({actorId:"alice",input:{projectId,conversationId:id,clientRequestId:"dm_mutation_send_001",expectedAudienceEpoch:accepted.value.scope.audienceEpoch,body:"Original",rootId:null,mentionUserIds:[]}}); if(!sent.ok) throw new Error("send");
+    const current=await f.service.getDirectMessage({actorId:"alice",projectId,conversationId:id}); if(!current.ok) throw new Error("scope");
+    const edit={actorId:"alice",projectId,conversationId:id,messageId:sent.value.messageId,clientRequestId:"dm_mutation_edit_001",expectedRevision:1,expectedAudienceEpoch:current.value.audienceEpoch,body:"Edited",mentionUserIds:[]};
+    assert.equal((await f.service.editMessage(edit)).ok,true);
+    const afterEdit=await f.service.getDirectMessage({actorId:"alice",projectId,conversationId:id}); if(!afterEdit.ok) throw new Error("scope");
+    const deletedSource=await f.service.sendMessage({actorId:"alice",input:{projectId,conversationId:id,clientRequestId:"dm_delete_send_0001",expectedAudienceEpoch:afterEdit.value.audienceEpoch,body:"Delete me",rootId:null,mentionUserIds:[]}}); if(!deletedSource.ok) throw new Error("send");
+    const tombstone={actorId:"alice",projectId,conversationId:id,messageId:deletedSource.value.messageId,clientRequestId:"dm_mutation_delete01",expectedRevision:1,expectedAudienceEpoch:afterEdit.value.audienceEpoch};
+    assert.equal((await f.service.tombstoneMessage(tombstone)).ok,true);
+    await f.client.execute({sql:"UPDATE workspaces SET archived_at=? WHERE id=?",args:[Date.now(),projectId]});
+    assert.equal((await transition(f.service,"bob",id,"block","dm_archive_block_001")).ok,true);
+    assert.equal((await transition(f.service,"alice",id,"leave","dm_archive_leave_001")).ok,true);
+    assert.deepEqual(await f.service.editMessage(edit),{ok:false,code:"unavailable"});
+    assert.deepEqual(await f.service.tombstoneMessage(tombstone),{ok:false,code:"unavailable"});
+  } finally {f.client.close();}
+});
