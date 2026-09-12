@@ -17,6 +17,7 @@ import { StudioChromeProvider } from "@/components/studio-bar/studio-chrome-cont
 import { isDemoMode } from "@/lib/access-mode";
 import { requireAppAccessTasks } from "@/server/app-access";
 import { ActiveProjectProvider } from "@/components/app/active-project-provider";
+import { ConversationSessionRuntime } from "@/components/app/conversation-session-runtime";
 import { isActiveProjectV3Enabled } from "@/lib/projects/flags";
 import { readActiveProjectCookies } from "@/server/projects/active-project-cookie";
 import { PAPER_LIGHT, PAPER_DARK } from "@/lib/document-paper";
@@ -141,7 +142,7 @@ export default function AppLayout({
             </SuiteChromeGate>
             <Suspense fallback={<SuiteLoading />}>
               <SharedAppGate>
-                <ProductWorkspaceShell>{children}</ProductWorkspaceShell>
+                <ConversationSessionRuntime><ProductWorkspaceShell>{children}</ProductWorkspaceShell></ConversationSessionRuntime>
               </SharedAppGate>
             </Suspense>
           </SuiteScrollFrameBody>

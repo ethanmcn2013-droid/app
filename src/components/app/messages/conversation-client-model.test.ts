@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { parseProjectId } from "@/lib/projects/project-ref";
-import { anchoredScrollTop, resolveScrollAnchor, audienceResponseMatches, conversationHeaders, draftKey, forgetProjectDrafts, needsFreshAudienceSend, rememberDraft, shouldSendComposerKey } from "./conversation-client-model";
+import { anchoredScrollTop, resolveScrollAnchor, audienceResponseMatches, conversationHeaders, draftKey, forgetProjectDrafts, needsFreshAudienceSend, rememberDraft, shouldSendComposerKey, hasDraftCapacity } from "./conversation-client-model";
 
 const project = parseProjectId("synthetic_project_a")!;
 
@@ -11,14 +11,24 @@ test("draft identities include actor, Project, room and thread", () => {
   assert.notEqual(draftKey("alice", project, "room_a", null), draftKey("alice", project, "room_a", "root_a"));
 });
 
-test("draft cache keeps the twenty most recently touched nonempty scopes", () => {
+test("draft capacity refuses a new scope without evicting saved text", () => {
   const cache = new Map<string, string>();
   for (let index = 0; index < 22; index++) rememberDraft(cache, `scope_${index}`, `draft_${index}`);
   assert.equal(cache.size, 20);
-  assert.equal(cache.has("scope_0"), false);
+  assert.equal(cache.get("scope_0"), "draft_0");
+  assert.equal(rememberDraft(cache, "scope_20", "new text"), false);
   rememberDraft(cache, "scope_2", "updated");
   rememberDraft(cache, "scope_2", "");
   assert.equal(cache.has("scope_2"), false);
+  assert.equal(rememberDraft(cache, "scope_20", "new text"), true);
+});
+
+test("unresolved outgoing work reserves a draft slot and is never silently discarded", () => {
+  const drafts = new Map<string, string>();
+  const outgoing = new Map(Array.from({ length: 20 }, (_, index) => [`scope_${index}`, { pending: [], recoveredDrafts: [], reviewedAudienceEpoch: 1 }]));
+  assert.equal(hasDraftCapacity(drafts, outgoing, "scope_20"), false);
+  assert.equal(hasDraftCapacity(drafts, outgoing, "scope_0"), true);
+  assert.equal(outgoing.size, 20);
 });
 
 test("fixture identity header is absent from the default same-origin transport", () => {

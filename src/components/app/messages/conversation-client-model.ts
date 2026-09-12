@@ -5,10 +5,16 @@ export type DraftCache = Map<string, string>;
 export type ScrollCache = Map<string, Readonly<{ top: number; bottomDistance: number }>>;
 export type OutgoingCache = Map<string, Readonly<{ pending: readonly PendingSend[]; recoveredDrafts: readonly RecoveredDraft[]; reviewedAudienceEpoch: number | null; draftMentionUserIds?: readonly string[] }>>;
 
-export function rememberDraft(cache: DraftCache, key: string, value: string, limit = 20): void {
-  cache.delete(key);
+export function rememberDraft(cache: DraftCache, key: string, value: string, limit = 20): boolean {
+  if (value && !cache.has(key) && cache.size >= limit) return false;
   if (value) cache.set(key, value);
-  while (cache.size > limit) cache.delete(cache.keys().next().value as string);
+  else cache.delete(key);
+  return true;
+}
+
+export function hasDraftCapacity(drafts: DraftCache, outgoing: OutgoingCache, key: string, limit = 20): boolean {
+  const occupied = new Set([...drafts.keys(), ...outgoing.keys()]);
+  return occupied.has(key) || occupied.size < limit;
 }
 
 export function draftKey(actorId: string, projectId: ProjectId, conversationId: string, rootId: string | null): string {

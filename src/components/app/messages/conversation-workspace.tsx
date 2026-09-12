@@ -9,6 +9,8 @@ import { ConversationPoller } from "@/lib/conversations/polling";
 import { AudienceHeader, Icon } from "./prototype-panels";
 import { MemberMentionPicker } from "./member-mention-picker";
 import { TaskDiscussionDirectory } from "./task-discussion-directory";
+import { useConversationCaches } from "./conversation-session-provider";
+import { hasDraftCapacity } from "./conversation-client-model";
 import { DirectMessageControls, DirectMessageDirectory, type DirectMessageScope } from "./direct-message-directory";
 import { resolveTaskOutcome, type TaskOutcomeSubmission } from "./task-outcome-client";
 import { TaskOutcomeForm, type TaskOutcomeRequest, type TaskOutcomeResult } from "./task-outcome-form";
@@ -61,9 +63,7 @@ function ConversationWorkspaceActor({ actorId, projects, initialProjectId, fixtu
   const [projectId, setProjectId] = useState<ProjectId | undefined>(initial);
   const [view, setView] = useState<"full" | "context">("full");
   const [direct, setDirect] = useState<DirectMessageScope | null>(null);
-  const [draftCache] = useState<DraftCache>(() => new Map());
-  const [scrollCache] = useState<ScrollCache>(() => new Map());
-  const [outgoingCache] = useState<OutgoingCache>(() => new Map());
+  const { drafts: draftCache, scroll: scrollCache, outgoing: outgoingCache } = useConversationCaches(actorId);
   if (!projectId || projects.length === 0) return <main className={styles.noProjects}><h1>Messages</h1><p>Add a Project before starting a Project conversation.</p></main>;
   const selected = projects.find((project) => project.id === projectId) ?? projects[0];
   return <section className={styles.workspace} data-view={view}>
@@ -81,8 +81,12 @@ function ConversationWorkspaceActor({ actorId, projects, initialProjectId, fixtu
 function ProjectConversationSession({ actorId, project, projects, fixtureActor, directId, rootId = null, onCloseThread, draftCache, outgoingCache, scrollCache, view, onToggleView }: Readonly<{ actorId: string; project: ProjectOption; projects: readonly ProjectOption[]; fixtureActor?: string; directId?: string; rootId?: string | null; onCloseThread?: () => void; draftCache: DraftCache; outgoingCache: OutgoingCache; scrollCache: ScrollCache; view: "full" | "context"; onToggleView: () => void }>) {
   const [state, dispatch] = useReducer(conversationReducer, undefined, () => emptyConversationState(actorId, `${project.id}:pending`, 1));
   const draftMentionUserIds = state.draftMentionUserIds;
-  const setDraftMentionUserIds = (ids: readonly string[]) => dispatch({ type: "draft_mentions", ids });
+  const setDraftMentionUserIds = (ids: readonly string[]) => {
+    if (ids.length && scope && !hasDraftCapacity(draftCache, outgoingCache, scopeCacheKey(scope))) { setDraftLimitReached(true); return; }
+    dispatch({ type: "draft_mentions", ids });
+  };
   const [showDetails, setShowDetails] = useState(false);
+  const [draftLimitReached, setDraftLimitReached] = useState(false);
   const [openedRoot, setOpenedRoot] = useState<string | null>(null);
   const [scope, setScope] = useState<ConversationScope | null | undefined>(undefined);
   const [audience, setAudience] = useState<Audience | null>(null);
@@ -316,7 +320,13 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scope, scrollCache, state.cursor, state.messages.length, state.pending.length, state.status]);
 
-  function updateDraft(value: string) { if (scope) { dispatch({ type: "draft", value }); rememberDraft(draftCache, scopeCacheKey(scope), value); } }
+  function updateDraft(value: string) {
+    if (!scope) return;
+    const key = scopeCacheKey(scope);
+    if (value && !hasDraftCapacity(draftCache, outgoingCache, key)) { setDraftLimitReached(true); return; }
+    if (!rememberDraft(draftCache, key, value)) { setDraftLimitReached(true); return; }
+    dispatch({ type: "draft", value });
+  }
 
   async function startConversation() {
     let requestGeneration = generationRef.current; let signal = sessionControllerRef.current?.signal; setStartFailure(null);
@@ -448,7 +458,15 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
       {state.recoveredDrafts.map((draft) => <li className={styles.pendingMessage} key={`recovered:${draft.requestId}`}><strong>Earlier message was not sent</strong><p>{draft.body}</p><span>{state.draft || draftMentionUserIds.length ? "Your current draft is kept. Send or save it before restoring this text." : "Restore this text to review it with the current audience."}</span><button disabled={state.draft !== "" || draftMentionUserIds.length > 0} onClick={() => dispatch({ type: "restore_recovered", requestId: draft.requestId })} type="button">Restore draft</button><button onClick={() => dispatch({ type: "discard_recovered", requestId: draft.requestId })} type="button">Discard earlier draft</button></li>)}
     </ol></div>
     <section aria-label="Message composer" className={styles.composer}>{state.status === "offline" ? <p>Offline. Your draft stays here; nothing will send automatically.</p> : removedRoot || scope.lifecycle === "archived" || sendsOff || (scope.kind === "dm" && !scope.canWrite) ? <p>{scope.kind === "dm" && !scope.canRead && scope.pairState !== "pending" ? "Messages are unavailable to you." : removedRoot ? "The original message was removed. Existing replies remain available." : scope.lifecycle === "archived" ? "This conversation is read only." : scope.kind === "dm" && !scope.canWrite ? "Messages are paused until both people can participate." : "Sending is currently turned off."}</p> : <>
-      <textarea aria-label={rootId ? "Write a reply" : `Message ${title}`} maxLength={CONVERSATION_LIMITS.bodyCharacters} onChange={(event) => updateDraft(event.target.value)} onKeyDown={(event) => { const mobileReturn = window.matchMedia("(max-width: 760px), (pointer: coarse)").matches; if (shouldSendComposerKey({ key: event.key, shiftKey: event.shiftKey, composing: event.nativeEvent.isComposing, mobileReturn })) { event.preventDefault(); void send(); } }} placeholder={rootId ? "Write a reply" : `Message ${title}`} rows={3} value={state.draft} />
+      {draftLimitReached || !hasDraftCapacity(draftCache, outgoingCache, scopeCacheKey(scope)) ? <section aria-label="Saved drafts" className={styles.notice}>
+        <strong>Your 20 draft spaces are in use</strong><p>Copy or discard a saved draft before starting another. Resolve uncertain sends in their conversation to free their space.</p>
+        {[...draftCache].filter(([key]) => key !== scopeCacheKey(scope)).map(([key, body], index) => {
+          const saved = outgoingCache.get(key);
+          const unresolved = !!(saved?.pending.length || saved?.recoveredDrafts.length);
+          return <details key={key}><summary>Saved draft {index + 1}</summary><textarea aria-label={`Saved draft ${index + 1}`} readOnly value={body} rows={3} /><button disabled={unresolved} type="button" onClick={() => { draftCache.delete(key); outgoingCache.delete(key); setDraftLimitReached(false); dispatch({ type: "draft", value: state.draft }); }}>Discard saved draft {index + 1}</button>{unresolved ? <p>This conversation has unresolved work. Check it before discarding.</p> : null}</details>;
+        })}
+      </section> : null}
+      <textarea disabled={!hasDraftCapacity(draftCache, outgoingCache, scopeCacheKey(scope))} aria-label={rootId ? "Write a reply" : `Message ${title}`} maxLength={CONVERSATION_LIMITS.bodyCharacters} onChange={(event) => updateDraft(event.target.value)} onKeyDown={(event) => { const mobileReturn = window.matchMedia("(max-width: 760px), (pointer: coarse)").matches; if (shouldSendComposerKey({ key: event.key, shiftKey: event.shiftKey, composing: event.nativeEvent.isComposing, mobileReturn })) { event.preventDefault(); void send(); } }} placeholder={rootId ? "Write a reply" : `Message ${title}`} rows={3} value={state.draft} />
       {unavailableMention ? <p>A selected person is no longer available. Remove them from Notify people before sending.</p> : null}
       {audienceReady ? <MemberMentionPicker actorId={actorId} members={members} selected={draftMentionUserIds} onChange={setDraftMentionUserIds} /> : null}
       <div><span data-invalid={state.draft.length > 0 && (!bodyValid || bodyBytes > CONVERSATION_LIMITS.bodyBytes) || undefined}>{Array.from(state.draft).length.toLocaleString()} / {CONVERSATION_LIMITS.bodyCharacters.toLocaleString()}</span><button disabled={!bodyValid || bodyBytes > CONVERSATION_LIMITS.bodyBytes || audienceNeedsReview || unavailableMention} onClick={() => void send()} type="button">Send</button></div>

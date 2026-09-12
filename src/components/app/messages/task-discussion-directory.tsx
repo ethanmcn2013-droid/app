@@ -29,5 +29,5 @@ export function TaskDiscussionDirectory({ projectId, fixtureActor }: Readonly<{ 
     void refresh();
     return () => { controller.abort(); clearTimeout(timer); };
   }, [projectId, fixtureActor]);
-  return <section className={styles.discussionDirectory} aria-label="Task discussions"><h2>Task discussions</h2>{tasks.map((task) => fixtureActor ? <span className={styles.roomChoice} key={task.taskId}>{task.title}</span> : <Link className={styles.roomChoice} href={`${taskFocusPath(task.taskId)}#discussion`} key={task.taskId}>{task.title}</Link>)}{unavailable ? <p>Discussions could not be refreshed.</p> : !tasks.length ? <p>Task discussions appear here when a conversation starts in Tasks.</p> : null}</section>;
+  return <section className={styles.discussionDirectory} aria-label="Task discussions"><h2>Task discussions</h2>{tasks.map((task) => <Link className={styles.roomChoice} href={fixtureActor ? `/lab/project-conversation/discussion?actor=${fixtureActor.replace("synthetic_", "")}&task=${task.taskId === "synthetic_task_b" ? "b" : "a"}` : `${taskFocusPath(task.taskId)}#discussion`} key={task.taskId}>{task.title}</Link>)}{unavailable ? <p>Discussions could not be refreshed.</p> : !tasks.length ? <p>Task discussions appear here when a conversation starts in Tasks.</p> : null}</section>;
 }
