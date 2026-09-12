@@ -23,7 +23,10 @@ export async function getConversationService(): Promise<Service> {
     if (cached.url !== url) return createConversationService(createUnavailableConversationDatabaseAdapter("runtime_configuration_changed"));
     return cached.service;
   }
-  const service = createConversationService(createLocalConversationDatabaseAdapter({ client: createClient({ url }) }));
+  const client = createClient({ url });
+  const service = createConversationService(createLocalConversationDatabaseAdapter({ client: {
+    execute: (statement) => client.execute(typeof statement === "string" ? statement : { sql: statement.sql, args: [...(statement.args ?? [])] }),
+  } }));
   runtimeGlobal.conversationLocalRuntime = { url, service };
   return service;
 }
