@@ -3,7 +3,7 @@ import type { PendingSend, RecoveredDraft } from "@/lib/conversations/reducer";
 
 export type DraftCache = Map<string, string>;
 export type ScrollCache = Map<string, Readonly<{ top: number; bottomDistance: number }>>;
-export type OutgoingCache = Map<string, Readonly<{ pending: readonly PendingSend[]; recoveredDrafts: readonly RecoveredDraft[]; reviewedAudienceEpoch: number | null }>>;
+export type OutgoingCache = Map<string, Readonly<{ pending: readonly PendingSend[]; recoveredDrafts: readonly RecoveredDraft[]; reviewedAudienceEpoch: number | null; draftMentionUserIds?: readonly string[] }>>;
 
 export function rememberDraft(cache: DraftCache, key: string, value: string, limit = 20): void {
   cache.delete(key);

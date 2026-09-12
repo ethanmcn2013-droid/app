@@ -1,7 +1,7 @@
 import type { ConversationDelta, ConversationFailure, MessagePage, MessageReceipt, MessageRecord, SendInput } from "./contracts";
 
 export type PendingSend = { input: SendInput; state: "pending" | "uncertain" | "failed"; error?: ConversationFailure["code"] };
-export type RecoveredDraft = Readonly<{ requestId: string; body: string }>;
+export type RecoveredDraft = Readonly<{ requestId: string; body: string; mentionUserIds?: readonly string[] }>;
 export type ConversationClientState = {
   generation: number;
   actorId: string;
@@ -43,6 +43,14 @@ function mergeMessages(current: readonly MessageRecord[], incoming: readonly Mes
     if (!prior || candidate.revision > prior.revision || (candidate.revision === prior.revision && candidate.deletedAt !== null)) {
       records.set(candidate.id, candidate.deletedAt !== null ? { ...candidate, body: null } : candidate);
     }
+    // A reply changes a root's count without editing its body. These two
+    // independently ordered values must survive out-of-order page delivery.
+    const oldCount = prior as (MessageRecord & { replyCount?: number; replyCountChangeSeq?: number }) | undefined;
+    const newCount = candidate as MessageRecord & { replyCount?: number; replyCountChangeSeq?: number };
+    const count = (newCount.replyCountChangeSeq ?? -1) > (oldCount?.replyCountChangeSeq ?? -1) ? newCount : oldCount;
+    if (count?.replyCountChangeSeq !== undefined) {
+      records.set(candidate.id, { ...records.get(candidate.id)!, replyCount: count.replyCount, replyCountChangeSeq: count.replyCountChangeSeq } as MessageRecord);
+    }
   }
   return [...records.values()].sort((a, b) => a.createSeq - b.createSeq);
 }
@@ -83,7 +91,7 @@ export function conversationReducer(state: ConversationClientState, action: Conv
     if (!pending) return state;
     const occupied = state.draft !== "" && state.draft !== pending.input.body;
     return { ...state, draft: occupied ? state.draft : pending.input.body,
-      recoveredDrafts: occupied ? [...state.recoveredDrafts.filter((draft) => draft.requestId !== action.requestId), { requestId: action.requestId, body: pending.input.body }] : state.recoveredDrafts,
+      recoveredDrafts: occupied ? [...state.recoveredDrafts.filter((draft) => draft.requestId !== action.requestId), { requestId: action.requestId, body: pending.input.body, mentionUserIds: [...pending.input.mentionUserIds] }] : state.recoveredDrafts,
       pending: state.pending.filter((send) => send !== pending), error: "audience_changed", status: "loading" };
   }
   if (action.type === "page") {

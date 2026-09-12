@@ -70,7 +70,7 @@ test("an absent older send keeps the occupied composer and a separately recovera
   state = reduce(state, { type: "draft", value: "Newer composer text" });
   state = reduce(state, { type: "restore_absent", generation: 0, requestId: input.clientRequestId });
   assert.equal(state.draft, "Newer composer text"); assert.deepEqual(state.pending, []);
-  assert.deepEqual(state.recoveredDrafts, [{ requestId: input.clientRequestId, body: input.body }]);
+  assert.deepEqual(state.recoveredDrafts, [{ requestId: input.clientRequestId, body: input.body, mentionUserIds: input.mentionUserIds }]);
   assert.equal(reduce(state, { type: "restore_recovered", requestId: input.clientRequestId }), state);
   state = reduce(state, { type: "draft", value: "" });
   state = reduce(state, { type: "restore_recovered", requestId: input.clientRequestId });
@@ -109,4 +109,27 @@ test("audience change prevents silently sending the previous draft epoch", () =>
   assert.equal(state.draft, input.body);
   state = reduce(state, { type: "review_audience", audienceEpoch: 2 });
   assert.equal(reduce(state, { type: "submit", input: { ...input, expectedAudienceEpoch: 2 } }).pending.length, 1);
+});
+
+
+test("reply counts merge independently from body revision and old pages cannot regress them", () => {
+  const root = { id: "root", authorId: "alice", rootId: null, createSeq: 1, revision: 1, body: "Question", createdAt: 1, editedAt: null, deletedAt: null, replyCount: 0, replyCountChangeSeq: 1 };
+  let state = reduce(ready(), { type: "delta", generation: 0, delta: { audienceEpoch: 1, throughChangeSeq: 1, hasMore: false, messages: [root] } });
+  state = reduce(state, { type: "delta", generation: 0, delta: { audienceEpoch: 1, throughChangeSeq: 5, hasMore: false, messages: [{ ...root, replyCount: 3, replyCountChangeSeq: 5 }] } });
+  assert.equal((state.messages[0] as typeof root).replyCount, 3);
+  state = reduce(state, { type: "page", generation: 0, initialize: false, page: { audienceEpoch: 1, throughChangeSeq: 3, hasOlder: false, beforeCreateSeq: null, messages: [{ ...root, revision: 2, body: null, deletedAt: 3, replyCount: 1, replyCountChangeSeq: 3 }] } });
+  assert.equal(state.messages[0].body, null);
+  assert.equal((state.messages[0] as typeof root).replyCount, 3);
+  state = reduce(state, { type: "delta", generation: 0, delta: { audienceEpoch: 1, throughChangeSeq: 6, hasMore: false, messages: [{ ...root, replyCount: 2, replyCountChangeSeq: 6 }] } });
+  assert.equal(state.messages[0].body, null);
+  assert.equal((state.messages[0] as typeof root).replyCount, 2);
+});
+
+test("an uncertain directed message retains selected member IDs in its separately recovered draft", () => {
+  const directed = { ...input, mentionUserIds: ["bob"] };
+  let state = reduce(ready(), { type: "submit", input: directed });
+  state = reduce(state, { type: "draft", value: "New draft" });
+  state = reduce(state, { type: "restore_absent", generation: 0, requestId: directed.clientRequestId });
+  assert.equal(state.draft, "New draft");
+  assert.deepEqual(state.recoveredDrafts[0].mentionUserIds, ["bob"]);
 });
