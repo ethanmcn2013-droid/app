@@ -31,6 +31,7 @@ const DESTINATIONS: readonly Readonly<{
 ]);
 
 function activeMobileKey(pathname: string): string {
+  if (pathname === "/app/messages" || pathname.startsWith("/app/messages/")) return "messages";
   return suiteSurfaceFromAppPath(pathname);
 }
 
@@ -46,7 +47,7 @@ export function MobileSuiteNav({ messagesEnabled = false }: { messagesEnabled?: 
   const activeKey = activeMobileKey(pathname);
   const suiteContext = useSuiteContext();
 
-  if (activeKey === "tasks" && !pathname.startsWith("/app/messages")) return null;
+  if (activeKey === "tasks") return null;
 
   return (
     <nav
