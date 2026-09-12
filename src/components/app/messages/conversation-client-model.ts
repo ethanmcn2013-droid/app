@@ -1,9 +1,26 @@
-import type { ProjectId } from "@/lib/projects/project-ref";
+import { parseProjectId, type ProjectId } from "@/lib/projects/project-ref";
 import type { PendingSend, RecoveredDraft } from "@/lib/conversations/reducer";
 
 export type DraftCache = Map<string, string>;
 export type ScrollCache = Map<string, Readonly<{ top: number; bottomDistance: number }>>;
-export type OutgoingCache = Map<string, Readonly<{ pending: readonly PendingSend[]; recoveredDrafts: readonly RecoveredDraft[]; reviewedAudienceEpoch: number | null; draftMentionUserIds?: readonly string[] }>>;
+export type OutgoingCache = Map<string, Readonly<{ pending: readonly PendingSend[]; recoveredDrafts: readonly RecoveredDraft[]; reviewedAudienceEpoch: number | null; draftMentionUserIds?: readonly string[]; scopeKind?: "project" | "dm" }>>;
+export type SavedConversationScope = Readonly<{ projectId: ProjectId; conversationId: string; rootId: string | null; kind: "project" | "dm" }>;
+
+export function listSavedDrafts(actorId: string, drafts: DraftCache, outgoing: OutgoingCache) {
+  return [...new Set([...drafts.keys(), ...outgoing.keys()])].flatMap((key) => {
+    try {
+      const tuple: unknown = JSON.parse(key);
+      if (!Array.isArray(tuple) || tuple.length !== 4 || tuple[0] !== actorId || typeof tuple[1] !== "string" || typeof tuple[2] !== "string" || (tuple[3] !== null && typeof tuple[3] !== "string")) return [];
+      const projectId = parseProjectId(tuple[1]);
+      if (!projectId) return [];
+      const saved = outgoing.get(key);
+      return [{ key, scope: { projectId, conversationId: tuple[2], rootId: tuple[3], kind: saved?.scopeKind ?? "project" } as SavedConversationScope,
+        bodies: [drafts.get(key), ...saved?.pending.map((item) => item.input.body) ?? [], ...saved?.recoveredDrafts.map((item) => item.body) ?? []].filter((body): body is string => !!body),
+        selectedPeople: saved?.draftMentionUserIds?.length ?? 0,
+        unresolved: !!(saved?.pending.length || saved?.recoveredDrafts.length) }];
+    } catch { return []; }
+  });
+}
 
 export function rememberDraft(cache: DraftCache, key: string, value: string, limit = 20): boolean {
   if (value && !cache.has(key) && cache.size >= limit) return false;
