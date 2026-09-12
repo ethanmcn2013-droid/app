@@ -2,6 +2,12 @@
 
 12 September 2026 · PC-02 synthetic frontend prototype
 
+## Revised founder direction
+
+The founder supplied ClickUp layout references and explicitly chose white, stone black and indigo. Final revised source is prototype `9713dcdc`, equivalent to integration `263963ce`. The white conversation index, broad author rows, framed composer and optional related-work panel follow that direction. Related work starts closed. Mobile uses a reserved bottom navigation row, with the feed scrolling above the visible composer. Root's final 1440×1000 and 390×844 browser checks passed; related work opens/closes and the Send control remains reachable. Console errors/warnings: none. Fresh independent Sol finish review: ship at synthetic prototype scope. Evidence: `evidence/white-desktop.png` and `evidence/white-mobile.png`. Earlier screenshots below are historical.
+
+PC-03 now permits local backend continuation after this founder instruction; participant comprehension remains an unpassed release gate. See decisions.md. The durable visual record is `design/white-stone-indigo.md`, with the scoped design palette updated alongside it.
+
 ## Review surface
 
 Open `/lab/project-conversation`. The page is an isolated client-side lab route. It imports no authentication, database, server action, environment or delivery module. All people, projects, messages and receipts are synthetic and reset on refresh.

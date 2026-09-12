@@ -2,12 +2,12 @@
 name: Project Conversation Prototype
 description: A compact, audience-explicit messaging workspace inside Signal Studio's operating shell.
 colors:
-  chrome: "#17171a"
+  chrome: "#171717"
   paper: "#ffffff"
-  surface: "#f7f7f8"
-  line: "#e4e4e7"
-  ink: "#18181b"
-  quiet-ink: "#52525b"
+  surface: "#ffffff"
+  line: "#e7e5e4"
+  ink: "#0c0a09"
+  quiet-ink: "#57534e"
   indigo: "#4f46e5"
   indigo-on: "#ffffff"
   danger-paper: "#fff1f2"
@@ -99,10 +99,10 @@ The palette is neutral and operational, with one indigo action voice and narrow 
 
 ### Neutral
 
-- **Charcoal Chrome:** Frames the lab bar and studio rail.
-- **Paper White:** Carries the workspace, feed, composer, panels, and active rows.
-- **Quiet Surface:** Separates conversation navigation, banners, root messages, and low-emphasis controls.
-- **Hairline Gray:** Divides regions and outlines neutral controls.
+- **Stone Black:** Frames the lab bar and studio rail.
+- **Crisp White:** Carries the workspace, feed, composer, panels, and active rows.
+- **White Surface:** Separates conversation navigation, banners, root messages, and low-emphasis controls.
+- **Stone Hairline:** Divides regions and outlines neutral controls.
 - **Ink:** Supplies primary text; **Quiet Ink** supplies metadata and supporting copy.
 - **Rose Alert:** Appears only for blocked, unavailable, failed, or audience-change semantics.
 
@@ -127,15 +127,15 @@ The palette is neutral and operational, with one indigo action voice and narrow 
 
 ## Layout
 
-Desktop uses a 60px studio rail, a 58px lab bar, and a white workspace split into a 290px conversation list plus a flexible feed. Context view narrows the workspace to at most 720px and removes the list. Feed content centers at 760px; the composer centers at 808px.
+Desktop uses a 60px studio rail, a 58px lab bar, and a white workspace split into a 260px conversation list plus a flexible feed and an optional 286px related-work rail. Context view narrows the workspace to at most 1040px and removes the list. Feed content centers at 760px; the composer centers at 760px.
 
-At 760px and below, the rail becomes a fixed 60px bottom navigation bar, the conversation list becomes a 66px avatar switcher, and the audience header, feed, and composer share the remaining pane. Touch actions become at least 44px high where the mobile layout exposes them.
+At 760px and below, the rail becomes a reserved 60px bottom navigation row plus safe-area inset, the conversation list becomes a 66px avatar switcher, and the audience header, feed, and composer share the remaining pane. Touch actions become at least 44px high where the mobile layout exposes them.
 
 **The Visible Audience Rule.** Every usable conversation pane begins with the Project scope and reader/access description; scrolling content and narrow layouts must not erase that context.
 
 ## Elevation & Depth
 
-The prototype is flat by default. Borders and tonal surfaces define structure; restrained shadows appear only on the selected desktop conversation row, menus, and fixed side panels.
+The prototype is flat by default. Borders and spacing define structure; restrained shadows appear only on the selected desktop conversation row, menus, and fixed side panels.
 
 ### Shadow Vocabulary
 
@@ -143,7 +143,7 @@ The prototype is flat by default. Borders and tonal surfaces define structure; r
 - **Floating menu:** `0 16px 36px -18px rgba(24,24,27,.38)` separates a temporary action menu.
 - **Side panel:** `-18px 0 42px -32px rgba(24,24,27,.5)` marks thread and work-preview overlays.
 
-**The Flat Canvas Rule.** Persistent surfaces use tone and hairlines; shadow is reserved for selection or temporary layers.
+**The Flat Canvas Rule.** Persistent surfaces use white, spacing and hairlines; shadow is reserved for selection or temporary layers.
 
 ## Shapes
 

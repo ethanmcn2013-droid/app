@@ -2,6 +2,8 @@
 
 **Execution underway · 12 September 2026.** The founder approved continuous local execution after reviewing this package. Current accepted milestones and evidence are in [STATE](STATE.md). The prototype and isolated experiments are implemented; this is not a deployed product.
 
+**Latest amendment:** the founder selected white/stone-black/indigo with supplied conversation-layout references and instructed continued execution. Local backend work now proceeds; participant testing remains required before release. This supersedes the original prototype-before-backend sequencing described later in this planning package. See [the decision record](decisions.md).
+
 Recommend a conversation module inside the existing Signal Studio app, using Clerk identity and the Tasks libSQL/Drizzle store. Preserve canonical Project membership, Tasks and task Discussion. Add dependable sending, fresh authorization on retrieval and one shared in-app attention state; external delivery uses a durable outbox. Prove synchronization and revocation in isolated experiments before committing to a realtime vendor.
 
 The repository changes several starting assumptions. A Project is currently the database workspace, Notes are private to their author, and the published Timeline imports designated milestones. The approved local execution envelope starts with Project conversation, later adds **Project-scoped DMs**, labels the note action **Save to my Notes**, and keeps ordinary deadlines in Tasks Schedule/Calendar. Human testing, provider verification and release retain their separate gates.
