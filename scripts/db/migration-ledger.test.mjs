@@ -46,7 +46,7 @@ async function withClient(operation) {
 
 test("authoritative ledger registers every SQL file with receipt and journal parity", () => {
   const context = loadAndValidateLedger();
-  assert.equal(context.entries.length, 28);
+  assert.equal(context.entries.length, 29);
   assert.equal(context.baseline.id, "0014_current_schema_baseline");
   assert.deepEqual(context.forward.map((entry) => entry.id), [
     "0015_notes_extract_exact_identity",
@@ -62,6 +62,7 @@ test("authoritative ledger registers every SQL file with receipt and journal par
     "0025_tasks_completed_at",
     "0026_workspace_money",
     "0027_share_link_token_hash",
+    "0028_project_conversations",
   ]);
   assert.equal(context.entries.filter((entry) => entry.policy === "legacy-adopt-only").length, 14);
 });
@@ -126,14 +127,15 @@ test("fresh databases apply the canonical baseline plus forwards and rerun as a 
     "0025_tasks_completed_at",
     "0026_workspace_money",
     "0027_share_link_token_hash",
+    "0028_project_conversations",
   ]);
-  assert.equal(first.proofs.length, 79);
+  assert.equal(first.proofs.length, 87);
 
   const objectCounts = await client.execute("SELECT type, COUNT(*) AS value FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' AND name NOT IN ('signal_schema_migrations', '__drizzle_migrations') GROUP BY type ORDER BY type");
   assert.deepEqual(objectCounts.rows.map((row) => [row.type, Number(row.value)]), [
-    ["index", 32],
-    ["table", 23],
-    ["trigger", 2],
+    ["index", 39],
+    ["table", 30],
+    ["trigger", 15],
   ]);
 
   const second = await runMigrations({ client, releaseSha: "test-release" });

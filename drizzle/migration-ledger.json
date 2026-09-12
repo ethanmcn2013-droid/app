@@ -293,6 +293,16 @@
       "policy": "forward",
       "receipt": "drizzle/receipts/share-link-token-hash-2026-08-03.json",
       "receiptSha256": "a23495b8358c10182caff25e13146aed0a77cafd07eb8d825153aa5308264ad3"
+    },
+    {
+      "ordinal": 28,
+      "id": "0028_project_conversations",
+      "file": "drizzle/0028_project_conversations.sql",
+      "when": 1789142400000,
+      "sha256": "7d1f8ecf781cb8cac6f5f931ffe61da6e10eb7c43783eacf10797918d58c2416",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/project-conversations-2026-09-12.json",
+      "receiptSha256": "7cf267215a8fb374b53d23c799925b3b597b3b914728157165d14b36a015f404"
     }
   ]
 }

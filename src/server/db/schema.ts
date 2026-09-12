@@ -495,6 +495,136 @@ export const comments = sqliteTable("comments", {
   index("idx_comments_user_id").on(t.userId),
 ]);
 
+export const conversations = sqliteTable("conversations", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  kind: text("kind").$type<"project" | "dm">().notNull(),
+  lifecycle: text("lifecycle").$type<"active" | "archived">().notNull().default("active"),
+  audienceEpoch: integer("audience_epoch").notNull().default(1),
+  nextCreateSeq: integer("next_create_seq").notNull().default(1),
+  nextChangeSeq: integer("next_change_seq").notNull().default(1),
+  dmLowUserId: text("dm_low_user_id"),
+  dmHighUserId: text("dm_high_user_id"),
+  pairState: text("pair_state").$type<"pending" | "active" | "declined" | "blocked" | "left" | "membership_lost" | "rejoin_pending">(),
+  createdBy: text("created_by").notNull().references(() => users.id),
+  createdAt: integer("created_at").notNull(),
+}, (t) => [
+  uniqueIndex("conversations_one_project_room").on(t.workspaceId).where(sql`${t.kind} = 'project'`),
+  uniqueIndex("conversations_one_dm_pair").on(t.workspaceId, t.dmLowUserId, t.dmHighUserId).where(sql`${t.kind} = 'dm'`),
+  check("conversations_kind_check", sql`${t.kind} IN ('project', 'dm')`),
+  check("conversations_lifecycle_check", sql`${t.lifecycle} IN ('active', 'archived')`),
+  check("conversations_audience_epoch_check", sql`${t.audienceEpoch} >= 1`),
+  check("conversations_next_create_seq_check", sql`${t.nextCreateSeq} >= 1`),
+  check("conversations_next_change_seq_check", sql`${t.nextChangeSeq} >= 1`),
+  check("conversations_shape_check", sql`(
+    (${t.kind} = 'project' AND ${t.dmLowUserId} IS NULL AND ${t.dmHighUserId} IS NULL AND ${t.pairState} IS NULL)
+    OR (${t.kind} = 'dm' AND ${t.dmLowUserId} IS NOT NULL AND ${t.dmHighUserId} IS NOT NULL
+      AND ${t.dmLowUserId} < ${t.dmHighUserId} AND ${t.pairState} IS NOT NULL)
+  )`),
+  check("conversations_pair_state_check", sql`${t.pairState} IS NULL OR ${t.pairState} IN ('pending', 'active', 'declined', 'blocked', 'left', 'membership_lost', 'rejoin_pending')`),
+]);
+
+export const conversationParticipants = sqliteTable("conversation_participants", {
+  conversationId: text("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  status: text("status").$type<"active" | "removed" | "membership_lost" | "rejoin_pending">().notNull(),
+  consented: integer("consented", { mode: "boolean" }).notNull().default(false),
+  retainsHistory: integer("retains_history", { mode: "boolean" }).notNull().default(false),
+}, (t) => [
+  primaryKey({ columns: [t.conversationId, t.userId] }),
+  check("conversation_participants_status_check", sql`${t.status} IN ('active', 'removed', 'membership_lost', 'rejoin_pending')`),
+]);
+
+export const conversationMessages = sqliteTable("conversation_messages", {
+  id: text("id").primaryKey(),
+  conversationId: text("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  workspaceId: text("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  authorId: text("author_id").notNull().references(() => users.id),
+  clientRequestId: text("client_request_id").notNull(),
+  requestHash: text("request_hash").notNull(),
+  rootId: text("root_id"),
+  createSeq: integer("create_seq").notNull(),
+  revision: integer("revision").notNull(),
+  body: text("body"),
+  createdAt: integer("created_at").notNull(),
+  editedAt: integer("edited_at"),
+  deletedAt: integer("deleted_at"),
+}, (t) => [
+  uniqueIndex("conversation_messages_request").on(t.conversationId, t.authorId, t.clientRequestId),
+  uniqueIndex("conversation_messages_sequence").on(t.conversationId, t.createSeq),
+  index("conversation_messages_root").on(t.conversationId, t.rootId, t.createSeq),
+  check("conversation_messages_create_seq_check", sql`${t.createSeq} >= 1`),
+  check("conversation_messages_revision_check", sql`${t.revision} >= 1`),
+  check("conversation_messages_tombstone_check", sql`((${t.deletedAt} IS NULL AND ${t.body} IS NOT NULL) OR (${t.deletedAt} IS NOT NULL AND ${t.body} IS NULL))`),
+]);
+
+export const conversationChanges = sqliteTable("conversation_changes", {
+  conversationId: text("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  changeSeq: integer("change_seq").notNull(),
+  kind: text("kind").$type<"create" | "edit" | "delete" | "audience">().notNull(),
+  messageId: text("message_id"),
+  revision: integer("revision"),
+  audienceEpoch: integer("audience_epoch").notNull(),
+  happenedAt: integer("happened_at").notNull(),
+}, (t) => [
+  primaryKey({ columns: [t.conversationId, t.changeSeq] }),
+  check("conversation_changes_sequence_check", sql`${t.changeSeq} >= 1`),
+  check("conversation_changes_kind_check", sql`${t.kind} IN ('create', 'edit', 'delete', 'audience')`),
+  check("conversation_changes_audience_epoch_check", sql`${t.audienceEpoch} >= 1`),
+  check("conversation_changes_shape_check", sql`(
+    (${t.kind} = 'audience' AND ${t.messageId} IS NULL AND ${t.revision} IS NULL)
+    OR (${t.kind} <> 'audience' AND ${t.messageId} IS NOT NULL AND ${t.revision} IS NOT NULL)
+  )`),
+]);
+
+export const conversationReceipts = sqliteTable("conversation_receipts", {
+  conversationId: text("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  actorId: text("actor_id").notNull(),
+  clientRequestId: text("client_request_id").notNull(),
+  operation: text("operation").$type<"send" | "edit" | "delete">().notNull(),
+  payloadHash: text("payload_hash").notNull(),
+  messageId: text("message_id").notNull().references(() => conversationMessages.id, { onDelete: "cascade" }),
+  createSeq: integer("create_seq").notNull(),
+  changeSeq: integer("change_seq").notNull(),
+  revision: integer("revision").notNull(),
+  committedAt: integer("committed_at").notNull(),
+}, (t) => [primaryKey({ columns: [t.conversationId, t.actorId, t.clientRequestId] })]);
+
+export const conversationAttention = sqliteTable("conversation_attention", {
+  id: text("id").primaryKey(),
+  conversationId: text("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  workspaceId: text("workspace_id").notNull(),
+  recipientId: text("recipient_id").notNull(),
+  messageId: text("message_id").notNull(),
+  rootId: text("root_id"),
+  createSeq: integer("create_seq").notNull(),
+  reasonBits: integer("reason_bits").notNull().default(1),
+  observedAt: integer("observed_at"),
+}, (t) => [
+  uniqueIndex("conversation_attention_source_recipient").on(t.conversationId, t.recipientId, t.messageId),
+  index("conversation_attention_recipient").on(t.recipientId, t.observedAt, t.createSeq),
+]);
+
+export const conversationOutbox = sqliteTable("conversation_outbox", {
+  id: text("id").primaryKey(),
+  conversationId: text("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  workspaceId: text("workspace_id").notNull(),
+  recipientId: text("recipient_id").notNull(),
+  messageId: text("message_id").notNull(),
+  sourceRevision: integer("source_revision").notNull().default(1),
+  audienceEpoch: integer("audience_epoch").notNull().default(1),
+  state: text("state").$type<"pending" | "leased" | "delivered" | "dropped">().notNull().default("pending"),
+  attemptCount: integer("attempt_count").notNull().default(0),
+  nextAttemptAt: integer("next_attempt_at"),
+  leaseUntil: integer("lease_until"),
+  leaseToken: text("lease_token"),
+  lastErrorCode: text("last_error_code"),
+  createdAt: integer("created_at").notNull(),
+}, (t) => [
+  uniqueIndex("conversation_outbox_source_recipient").on(t.conversationId, t.recipientId, t.messageId),
+  index("conversation_outbox_claim").on(t.state, t.nextAttemptAt),
+]);
+
 // Compile-time contract, flags drift between schema and the
 // hand-written client `Task` type in src/lib/data.ts. `comments`,
 // `subtaskCount`, and `subtaskDone` are excluded because they are derived
