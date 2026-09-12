@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-12T10:28:03.4914841Z",
+  "title": "Design System: Project Conversation Prototype",
+  "extensions": {
+    "colorMeta": {
+      "chrome": { "role": "neutral", "displayName": "Charcoal Chrome", "canonical": "#17171a", "tonalRamp": ["#17171a", "#252529", "#3a3a40", "#55555d", "#73737d", "#9898a1", "#c7c7cc", "#f3f3f4"] },
+      "paper": { "role": "neutral", "displayName": "Paper White", "canonical": "#ffffff", "tonalRamp": ["#202022", "#3b3b3e", "#59595d", "#79797e", "#9a9a9f", "#bdbdc1", "#dddddf", "#ffffff"] },
+      "surface": { "role": "neutral", "displayName": "Quiet Surface", "canonical": "#f7f7f8", "tonalRamp": ["#1f1f22", "#39393d", "#56565b", "#75757b", "#96969c", "#b9b9be", "#d9d9dc", "#f7f7f8"] },
+      "line": { "role": "neutral", "displayName": "Hairline Gray", "canonical": "#e4e4e7", "tonalRamp": ["#222226", "#3c3c42", "#595960", "#77777f", "#96969e", "#b4b4bb", "#ccccd2", "#e4e4e7"] },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#18181b", "tonalRamp": ["#18181b", "#28282c", "#3d3d43", "#585860", "#76767f", "#9b9ba3", "#c9c9ce", "#f4f4f5"] },
+      "quiet-ink": { "role": "neutral", "displayName": "Quiet Ink", "canonical": "#52525b", "tonalRamp": ["#202025", "#33333a", "#47474f", "#5d5d66", "#777780", "#9999a1", "#c1c1c6", "#eeeeef"] },
+      "indigo": { "role": "primary", "displayName": "Signal Indigo", "canonical": "#4f46e5", "tonalRamp": ["#17124f", "#241c78", "#3228a2", "#4035c8", "#4f46e5", "#7771ec", "#aaa6f4", "#e8e7fd"] },
+      "indigo-on": { "role": "neutral", "displayName": "Indigo On-Color", "canonical": "#ffffff", "tonalRamp": ["#202022", "#3b3b3e", "#59595d", "#79797e", "#9a9a9f", "#bdbdc1", "#dddddf", "#ffffff"] },
+      "danger-paper": { "role": "neutral", "displayName": "Rose Alert Paper", "canonical": "#fff1f2", "tonalRamp": ["#3d1019", "#641725", "#8c2034", "#b92d48", "#dc5269", "#ec8d9c", "#f7c1c8", "#fff1f2"] },
+      "danger-ink": { "role": "neutral", "displayName": "Rose Alert Ink", "canonical": "#9f1239", "tonalRamp": ["#410817", "#650b23", "#880f30", "#9f1239", "#c52c52", "#e16c88", "#f2adbd", "#fdecef"] }
+    },
+    "typographyMeta": {
+      "headline": { "displayName": "Headline", "purpose": "Messages list heading." },
+      "title": { "displayName": "Title", "purpose": "Conversation and panel headings." },
+      "body": { "displayName": "Body", "purpose": "Conversation content." },
+      "label": { "displayName": "Label", "purpose": "Project grouping and compact control copy." }
+    },
+    "shadows": [
+      { "name": "selected-row", "value": "0 6px 18px -16px rgba(24,24,27,.45)", "purpose": "Desktop active conversation only." },
+      { "name": "floating-menu", "value": "0 16px 36px -18px rgba(24,24,27,.38)", "purpose": "Temporary action menus." },
+      { "name": "side-panel", "value": "-18px 0 42px -32px rgba(24,24,27,.5)", "purpose": "Thread and work-preview panels." }
+    ],
+    "motion": [
+      { "name": "panel-enter", "value": "180ms cubic-bezier(.16,1,.3,1)", "purpose": "Work-preview entrance when reduced motion is not requested." }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "760px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Send Button",
+      "kind": "button",
+      "refersTo": "send-button",
+      "description": "Primary message action with a pill silhouette.",
+      "html": "<button class=\"ds-send\">Send</button>",
+      "css": ".ds-send{background:#4f46e5;color:#fff;border:0;border-radius:999px;min-height:36px;padding:0 16px;font:650 12px Geist,sans-serif;cursor:pointer}.ds-send:hover{filter:brightness(.94)}.ds-send:focus-visible{outline:2px solid #4f46e5;outline-offset:2px}.ds-send:active{transform:translateY(1px)}.ds-send:disabled{cursor:not-allowed;opacity:.42}"
+    },
+    {
+      "name": "Composer Field",
+      "kind": "input",
+      "refersTo": "composer-field",
+      "description": "Open message field anchored to the paper canvas.",
+      "html": "<textarea class=\"ds-composer\" placeholder=\"Message Website launch\" rows=\"2\"></textarea>",
+      "css": ".ds-composer{background:#fff;border:1px solid #71717a;border-radius:12px;color:#18181b;font:400 14px/1.5 Geist,sans-serif;min-height:72px;padding:12px 14px;resize:vertical;width:100%}.ds-composer::placeholder{color:#52525b}.ds-composer:focus-visible{outline:2px solid #4f46e5;outline-offset:2px}"
+    },
+    {
+      "name": "Active Conversation Row",
+      "kind": "nav",
+      "refersTo": "conversation-row-active",
+      "description": "Selected desktop conversation with identity, scope detail, and unread count.",
+      "html": "<button class=\"ds-conversation\"><span class=\"ds-avatar\">WL</span><span class=\"ds-copy\"><strong>Website launch</strong><small>Project conversation · 6 people</small></span><span class=\"ds-unread\">2</span></button>",
+      "css": ".ds-conversation{align-items:center;background:#fff;border:0;border-radius:10px;box-shadow:0 6px 18px -16px rgba(24,24,27,.45);color:#18181b;display:grid;gap:9px;grid-template-columns:34px minmax(0,1fr) auto;min-height:58px;padding:7px 9px;text-align:left;width:100%}.ds-conversation:hover{background:#f7f7f8}.ds-conversation:focus-visible{outline:2px solid #4f46e5;outline-offset:2px}.ds-avatar{align-items:center;background:#4f46e5;border-radius:50%;color:#fff;display:flex;font:700 10px Geist,sans-serif;height:34px;justify-content:center;width:34px}.ds-copy{display:flex;flex-direction:column;min-width:0}.ds-copy strong{font:650 13px Geist,sans-serif}.ds-copy small{color:#52525b;font:400 11px Geist,sans-serif;margin-top:3px}.ds-unread{align-items:center;background:#4f46e5;border-radius:999px;color:#fff;display:flex;font:400 10px Geist,sans-serif;height:20px;justify-content:center;min-width:20px;padding:0 6px}"
+    },
+    {
+      "name": "Audience Status",
+      "kind": "chip",
+      "refersTo": "audience-status",
+      "description": "Compact access state shown beside the conversation title.",
+      "html": "<span class=\"ds-audience\">Can send</span>",
+      "css": ".ds-audience{background:color-mix(in srgb,#4f46e5 11%,#fff);border-radius:999px;color:#4f46e5;display:inline-block;font:650 10px Geist,sans-serif;padding:4px 8px;text-transform:capitalize}"
+    },
+    {
+      "name": "Message Row",
+      "kind": "custom",
+      "description": "Open conversation row with metadata and a directed-attention mark.",
+      "html": "<article class=\"ds-message\"><span class=\"ds-directed\"></span><span class=\"ds-message-avatar\">MC</span><div><div class=\"ds-meta\"><strong>Maya Chen</strong><time>09:18</time></div><p>The venue confirmed Friday. Can we lock the homepage copy by Wednesday?</p><button>Reply</button></div></article>",
+      "css": ".ds-message{color:#18181b;display:flex;gap:11px;padding:7px;position:relative}.ds-directed{background:#4f46e5;border-radius:999px;height:6px;left:-8px;position:absolute;top:20px;width:6px}.ds-message-avatar{align-items:center;background:#f7f7f8;border:1px solid #e4e4e7;border-radius:50%;color:#52525b;display:flex;font:700 10px Geist,sans-serif;height:34px;justify-content:center;width:34px}.ds-meta{align-items:baseline;display:flex;gap:8px}.ds-meta strong{font:650 13px Geist,sans-serif}.ds-meta time{color:#52525b;font:400 11px Geist,sans-serif}.ds-message p{font:400 14px/1.6 Geist,sans-serif;margin:5px 0 0;max-width:68ch}.ds-message button{background:transparent;border:0;color:#4f46e5;cursor:pointer;font:400 11px Geist,sans-serif;padding:5px 0}.ds-message button:hover{text-decoration:underline}.ds-message button:focus-visible{outline:2px solid #4f46e5;outline-offset:2px}"
+    },
+    {
+      "name": "State Banner",
+      "kind": "custom",
+      "description": "Inline access or delivery state that precedes conversation history.",
+      "html": "<div class=\"ds-banner\"><strong>Review the audience</strong><span>A member left after this draft began.</span></div>",
+      "css": ".ds-banner{background:#fff7f7;border-bottom:1px solid #e4e4e7;display:flex;gap:7px;justify-content:center;padding:10px 18px}.ds-banner strong,.ds-banner span{font:400 12px Geist,sans-serif}.ds-banner strong{font-weight:650}.ds-banner span{color:#52525b}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Explicit Operating Room",
+    "overview": "This scoped prototype extends the existing Signal Studio operating surface: a compact charcoal rail surrounds a white workspace, while ink typography and a restrained indigo accent keep the conversation legible and task-oriented. Information density is deliberate, with authorship, delivery state, Project scope, and audience kept close to the message they qualify.\n\nThe system recorded here describes `/lab/project-conversation` only. Its data and receipts are synthetic, and the implementation does not establish production messaging behavior, backend guarantees, or human acceptance.",
+    "keyCharacteristics": ["White working canvas inside compact charcoal chrome.", "Geist throughout, with a small and practical type ramp.", "Indigo reserved for selection, action, unread, and focus.", "Audience and access state remain visible above conversation content.", "Mobile reflows to one usable conversation pane with bottom navigation."],
+    "rules": [
+      { "name": "The One Accent Rule", "body": "Indigo carries interaction and attention; do not introduce a second decorative accent within this prototype surface.", "section": "colors" },
+      { "name": "The Conversation First Rule", "body": "Message text stays at body size and relaxed leading; metadata remains smaller so it cannot compete with the conversation.", "section": "typography" },
+      { "name": "The Visible Audience Rule", "body": "Every usable conversation pane begins with the Project scope and reader/access description; scrolling content and narrow layouts must not erase that context.", "section": "layout" },
+      { "name": "The Flat Canvas Rule", "body": "Persistent surfaces use tone and hairlines; shadow is reserved for selection or temporary layers.", "section": "elevation" }
+    ],
+    "dos": ["Do keep Project scope and audience language explicit in the conversation header.", "Do use indigo sparingly for action, focus, selection, unread, and directed attention.", "Do preserve the one-pane mobile reflow and touch-sized exposed controls.", "Do describe prototype receipts, work handoffs, and message histories as synthetic behavior."],
+    "donts": ["Don't replace the existing charcoal rail and white operating canvas with a broad shell redesign.", "Don't turn messages into decorative speech bubbles or add ornamental color.", "Don't imply that the prototype proves persistence, authorization, delivery, task creation, Notes storage, or user acceptance.", "Don't hide audience context behind a details action or an off-canvas panel."]
+  }
+}

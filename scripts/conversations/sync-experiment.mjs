@@ -78,7 +78,7 @@ try {
         const started = performance.now();
         const response = await fetch(`${instances[index % 2].url}/send`, {
           method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(8_000),
-          body: JSON.stringify({ ...scope, actorId: FIXTURE.alice, clientRequestId: requestId, expectedAudienceEpoch: epoch, body: `Synthetic sync message ${viewers}/${index}`, mentionUserIds: [], rootId: null }),
+          body: JSON.stringify({ ...scope, actorId: FIXTURE.alice, clientRequestId: requestId, expectedAudienceEpoch: epoch, body: `Synthetic sync message ${viewers}/${index}`, mentionUserIds: actors.slice(0, 50), rootId: null }),
         });
         const receipt = await response.json();
         assert.equal(receipt.ok, true, JSON.stringify(receipt));
@@ -107,7 +107,7 @@ try {
       }
       for (const id of expected.keys()) assert.ok(ids.has(id), "acknowledged message missing");
     }
-    const profile = { viewers, messages: expected.size, durationMs: Math.round(performance.now() - runStarted), pollingRequests: requestTimes.length,
+    const profile = { viewers, directedRecipientsPerMessage: Math.min(viewers, 50), messages: expected.size, durationMs: Math.round(performance.now() - runStarted), pollingRequests: requestTimes.length,
       warmP95Ms: percentile(warm.map((value) => value.elapsed), 0.95), sendP95Ms: percentile(ackTimes, 0.95), visibilityP95Ms: percentile(observedDelays, 0.95),
       observedDeliveries: observedDelays.length, expectedDeliveries: viewers * expected.size, pollP95Ms: percentile(requestTimes, 0.95) };
     profile.withinTargets = profile.observedDeliveries === profile.expectedDeliveries && profile.sendP95Ms <= 800 && profile.visibilityP95Ms !== null && profile.visibilityP95Ms <= 1500 && profile.warmP95Ms <= 1000;

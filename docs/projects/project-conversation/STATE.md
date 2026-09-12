@@ -7,7 +7,7 @@ Branch: feat/project-conversation-integration; source base a709e22a9f19ffb4c45b1
 
 Approved local scope: PC-00–PC-14 and local PC-20, with proposed scope corrections accepted by EXECUTE. External/live-data, guest/AI expansion, paid services and destructive actions retain their explicit gates. Continue all independent safe work while awaiting concrete human/environment gates. Never claim human research passed without participants.
 
-Progress denominator: 16 accepted local milestones (PC-00 through PC-14 plus PC-20). Current accepted: 2/16 = 12.5% (PC-00, PC-01). This is task acceptance, not an estimate of elapsed effort, launch readiness or a passed live pilot. Do not count partially implemented work as accepted. Progress automation: project-conversation-progress, 30-minute thread heartbeat; pause at completion/cancellation.
+Progress denominator: 16 accepted local milestones (PC-00 through PC-14 plus PC-20). Current accepted: 3/16 = 18.75% (PC-00, PC-01, PC-02). This is task acceptance, not an estimate of elapsed effort, launch readiness or a passed live pilot. Do not count partially implemented work as accepted. Progress automation: project-conversation-progress, 30-minute thread heartbeat; pause at completion/cancellation.
 
 Agent use: root owns architecture/integration; explicit Luna low for PC-00 read-only reference inventory; Sol medium for PC-02 frontend prototype; Sol high for bounded database feasibility after contracts. One writer per owned worktree, at most two useful concurrent workers, no nested delegation. Requested worker model/effort is recorded separately from unverified effective worker runtime identity. Parent turn_context metadata verifies gpt-6-astra, effort high; this does not verify worker settings.
 
@@ -15,7 +15,7 @@ Agent use: root owns architecture/integration; explicit Luna low for PC-00 read-
 |---|---|---|
 | PC-00 baseline | Accepted | a709e22a selected; required executor seam present; January-only wrapper/deletion deltas recorded in contract-oracle.md |
 | PC-01 contracts | Accepted | Typed oracle 10/10 passes; independent Sol high contract review accepted; SQL oracle O01–O13 documented |
-| PC-02 prototype | Awaiting fresh finish review | Committed prototype integrated; desktop/mobile browser evidence captured; focused navigation/recovery/access tests pass |
+| PC-02 prototype | Accepted at synthetic prototype scope | Fresh finish reviewer: ship after scoped correction; browser and linked TypeScript pass; design recorded; physical IME unavailable, code guard reviewed |
 | PC-03 human review | Founder question pending | Reviewable local prototype shown; explicit amendment requested to continue local backend before participant study; no answer assumed |
 | PC-04/05 feasibility | PC-04 in progress | Sol high owns spike/project-conversation-transactions; isolated file DB, no remote credentials |
 | PC-06–14, PC-20 | Pending dependencies | Build/verify in order; no partial-completion claim |
@@ -84,6 +84,7 @@ Input hashes and structural validation results are appended by the final local c
 Final planning check: seven expected Markdown artifacts present; all T01–T24, R01–R14, WP01–WP12 and D01–D12 identifiers mapped; PC-00–PC-20 present; local Markdown document links resolve; code fences balanced. These are document checks, not product tests.
 
 Final Git observation: HEAD remains a709e22a9f19ffb4c45b1c420815f2edf6bfbf30; tracked-file diff empty; only docs/projects/project-conversation/ is newly untracked. No pre-existing source file was edited. One bounded cross-check completed, its six findings incorporated; implementation/participant/provider gates remain open.
+
 
 
 

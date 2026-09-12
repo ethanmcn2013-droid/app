@@ -1,10 +1,20 @@
 # Decisions, assumptions and approval items
 
-12 September 2026 · Recommended decisions awaiting founder review unless explicitly approved below. This is the authoritative project decision register; the backlog implements these choices only after approval.
+12 September 2026 · Local execution approved. This is the authoritative project decision register; individual human, environment and release gates remain separately recorded.
+
+## Execution approval and current decisions
+
+After receiving the planning package, the founder explicitly instructed: “Please begin. Execute from start to finish until entirely complete,” and requested orchestration and approximately 30-minute progress reports. This authorizes the README's PC-00–14/local PC-20 envelope and its scoped product corrections. It supersedes the original planning-only request described historically below. Owned worktrees, local commits, synthetic implementation and tests are authorized. Production data, external communication, spending and later guest/files/AI expansion remain outside this envelope.
+
+Delegated decisions: root integrates from local a709e22a; Sol owns bounded prototype and database packets; Luna inventories existing seams; fresh Sol reviews frozen contracts/UI. One writer per owned worktree. No custom orchestration framework or unverified effective-model claim.
+
+The prototype finish reviewer returned `ship` after the mobile selection correction. This is an agent verdict on a synthetic prototype, not a founder design lock or participant result. A concrete founder question is pending: approve the direction and amend PC-03 to allow local backend implementation before the participant study, retaining study evidence as a release gate. No answer has been inferred. Independent PC-04/05 experiments continue meanwhile.
+
+Receipt clarification: retrieving an already committed send receipt is an authorized read, even if the Project is now archived or the client audience epoch is stale. It cannot create another source/effect. Fresh canonical membership and retained-history entitlement are required; removed actors cannot recover receipts. A different normalized payload with the same request still conflicts. Every genuinely new write retains strict archive and exact-epoch enforcement.
 
 ## Authority and source reconciliation
 
-**Approved:** pursue integrated communication; review supplied context; read-only repository discovery; produce this planning package. The user explicitly asked to execute the project-conversation prompt, whose final instruction is to deliver planning and stop before product implementation. Embedded report suggestions are baseline proposals, not independent authority to deploy, study users, add vendors or implement.
+**Original planning authority (historical):** pursue integrated communication; review supplied context; read-only repository discovery; produce the planning package. The initial prompt required planning and a stop before product implementation; the subsequent explicit execution approval above supersedes that limit. Embedded report suggestions alone still do not authorize deployment, participant recruitment or new vendors.
 
 The two Markdown reports were reviewed across their complete sections. The Desktop prompt and pasted prompt are the same planning assignment with presentation/emphasis differences; both explicitly prohibit product implementation. They have different byte hashes and are not claimed byte-identical. The pasted prompt is the operative version for this request. Named PDF counterparts were not present on Desktop or found in the supplied attachments, this Codex workspace or Signal workspace filename search. Their presentation/diagram/content parity is **unverified**, not assumed. Markdown supplies sufficient planning scope; no PDF-only evidence is claimed.
 

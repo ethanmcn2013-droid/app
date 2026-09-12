@@ -1,6 +1,6 @@
 # Delivery backlog
 
-12 September 2026 · **Planning complete; every implementation task below remains unstarted and gated.**
+12 September 2026 · **Local execution approved and underway.** Current per-task acceptance is in [STATE](STATE.md); the task contracts below retain their evidence and dependency requirements. Historical planning language is superseded by the explicit execution approval recorded in [decisions](decisions.md).
 
 Scope authority: [decisions](decisions.md). Technical interfaces, permission invariants and proposed modules: [technical plan](technical-plan.md). Test IDs, experiments and gates: [verification-release](verification-release.md). Model IDs/settings and budget rules: [orchestration](agent-orchestration.md).
 
