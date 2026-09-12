@@ -4,6 +4,12 @@
 
 ## Execution approval and current decisions
 
+### Founder direction and local continuation amendment — 12 September 2026
+
+After opening the prototype, the founder supplied two ClickUp reference images and said: “I don't really like the grey or the papery kind of looks. I like white. And I like my stone black and indigo,” followed by “Please continue and execute ... until complete.” This is the current Signal Studio visual preference: crisp white working surfaces, stone-black structure and typography, indigo actions/selection. Neutral text and thin dividers remain useful; grey/cream page fills, paper textures and decorative gradients are not the chosen direction. References guide conversation sidebar/feed/composer/context hierarchy; they do not add ClickUp features, branding, AI, or broader navigation scope.
+
+This response to the pending continuation question approves local implementation with that revised direction. PC-03 is amended: actual participant comprehension results remain required before release/pilot; they no longer block synthetic local PC-06–14 work. No participant test has passed. Routine implementation and bounded visual correction continue without another direction checkpoint. Production, real-data, external communication and provider gates remain separate.
+
 After receiving the planning package, the founder explicitly instructed: “Please begin. Execute from start to finish until entirely complete,” and requested orchestration and approximately 30-minute progress reports. This authorizes the README's PC-00–14/local PC-20 envelope and its scoped product corrections. It supersedes the original planning-only request described historically below. Owned worktrees, local commits, synthetic implementation and tests are authorized. Production data, external communication, spending and later guest/files/AI expansion remain outside this envelope.
 
 Delegated decisions: root integrates from local a709e22a; Sol owns bounded prototype and database packets; Luna inventories existing seams; fresh Sol reviews frozen contracts/UI. One writer per owned worktree. No custom orchestration framework or unverified effective-model claim.
