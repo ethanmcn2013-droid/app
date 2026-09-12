@@ -46,7 +46,7 @@ async function withClient(operation) {
 
 test("authoritative ledger registers every SQL file with receipt and journal parity", () => {
   const context = loadAndValidateLedger();
-  assert.equal(context.entries.length, 31);
+  assert.equal(context.entries.length, 32);
   assert.equal(context.baseline.id, "0014_current_schema_baseline");
   assert.deepEqual(context.forward.map((entry) => entry.id), [
     "0015_notes_extract_exact_identity",
@@ -65,6 +65,7 @@ test("authoritative ledger registers every SQL file with receipt and journal par
     "0028_project_conversations",
     "0029_conversation_task_outcomes",
     "0030_project_direct_messages",
+    "0031_task_discussion",
   ]);
   assert.equal(context.entries.filter((entry) => entry.policy === "legacy-adopt-only").length, 14);
 });
@@ -132,6 +133,7 @@ test("fresh databases apply the canonical baseline plus forwards and rerun as a 
     "0028_project_conversations",
     "0029_conversation_task_outcomes",
     "0030_project_direct_messages",
+    "0031_task_discussion",
   ]);
   assert.equal(first.proofs.length, 101);
 

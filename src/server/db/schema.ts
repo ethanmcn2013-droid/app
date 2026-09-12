@@ -485,15 +485,111 @@ export const comments = sqliteTable("comments", {
   userId: text("user_id")
     .notNull()
     .references(() => users.id),
-  body: text("body").notNull(),
+  body: text("body"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
+  clientRequestId: text("client_request_id"),
+  requestHash: text("request_hash"),
+  revision: integer("revision"),
+  editedAt: integer("edited_at"),
+  deletedAt: integer("deleted_at"),
+  rootId: text("root_id"),
+  createSeq: integer("create_seq"),
 }, (t) => [
   // Mirror drizzle/0003_hot_indexes.sql.
   index("idx_comments_task_id").on(t.taskId),
   index("idx_comments_user_id").on(t.userId),
+  uniqueIndex("task_comments_request").on(t.taskId, t.userId, t.clientRequestId)
+    .where(sql`${t.clientRequestId} IS NOT NULL`),
+  uniqueIndex("task_comments_sequence").on(t.taskId, t.createSeq)
+    .where(sql`${t.createSeq} IS NOT NULL`),
+  index("task_comments_root").on(t.taskId, t.rootId, t.createSeq),
 ]);
+
+export const taskDiscussionState = sqliteTable("task_discussion_state", {
+  taskId: text("task_id").primaryKey().references(() => tasks.id, { onDelete: "cascade" }),
+  workspaceId: text("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  audienceEpoch: integer("audience_epoch").notNull().default(1),
+  nextCreateSeq: integer("next_create_seq").notNull().default(1),
+  nextChangeSeq: integer("next_change_seq").notNull().default(1),
+}, (t) => [
+  check("task_discussion_epoch_check", sql`${t.audienceEpoch} >= 1`),
+  check("task_discussion_create_seq_check", sql`${t.nextCreateSeq} >= 1`),
+  check("task_discussion_change_seq_check", sql`${t.nextChangeSeq} >= 1`),
+]);
+
+export const taskCommentChanges = sqliteTable("task_comment_changes", {
+  taskId: text("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  changeSeq: integer("change_seq").notNull(),
+  kind: text("kind").$type<"create" | "edit" | "delete" | "audience">().notNull(),
+  commentId: text("comment_id"),
+  revision: integer("revision"),
+  audienceEpoch: integer("audience_epoch").notNull(),
+  happenedAtMs: integer("happened_at_ms").notNull(),
+}, (t) => [
+  primaryKey({ columns: [t.taskId, t.changeSeq] }),
+  check("task_comment_changes_sequence_check", sql`${t.changeSeq} >= 1`),
+  check("task_comment_changes_epoch_check", sql`${t.audienceEpoch} >= 1`),
+]);
+
+export const taskCommentReceipts = sqliteTable("task_comment_receipts", {
+  taskId: text("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  actorId: text("actor_id").notNull(),
+  clientRequestId: text("client_request_id").notNull(),
+  operation: text("operation").$type<"send" | "edit" | "delete">().notNull(),
+  payloadHash: text("payload_hash").notNull(),
+  commentId: text("comment_id").notNull().references(() => comments.id, { onDelete: "cascade" }),
+  createSeq: integer("create_seq").notNull(),
+  changeSeq: integer("change_seq").notNull(),
+  revision: integer("revision").notNull(),
+  committedAtMs: integer("committed_at_ms").notNull(),
+}, (t) => [primaryKey({ columns: [t.taskId, t.actorId, t.clientRequestId] })]);
+
+export const taskCommentAttention = sqliteTable("task_comment_attention", {
+  id: text("id").primaryKey(),
+  eventId: text("event_id").notNull().unique(),
+  taskId: text("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  workspaceId: text("workspace_id").notNull(),
+  recipientId: text("recipient_id").notNull(),
+  commentId: text("comment_id").notNull().references(() => comments.id, { onDelete: "cascade" }),
+  sourceRevision: integer("source_revision").notNull(),
+  rootId: text("root_id"),
+  createSeq: integer("create_seq").notNull(),
+  reasonBits: integer("reason_bits").notNull(),
+  seenAtMs: integer("seen_at_ms"),
+}, (t) => [
+  uniqueIndex("task_comment_attention_source_recipient").on(t.taskId, t.recipientId, t.commentId),
+  index("task_comment_attention_recipient").on(t.recipientId, t.seenAtMs, t.createSeq),
+]);
+
+export const taskCommentOutbox = sqliteTable("task_comment_outbox", {
+  id: text("id").primaryKey(),
+  eventId: text("event_id").notNull().unique(),
+  taskId: text("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  workspaceId: text("workspace_id").notNull(),
+  recipientId: text("recipient_id").notNull(),
+  commentId: text("comment_id").notNull().references(() => comments.id, { onDelete: "cascade" }),
+  sourceRevision: integer("source_revision").notNull(),
+  audienceEpoch: integer("audience_epoch").notNull(),
+  state: text("state").$type<"pending" | "leased" | "delivered" | "dropped">().notNull().default("pending"),
+  attemptCount: integer("attempt_count").notNull().default(0),
+  nextAttemptAt: integer("next_attempt_at"),
+  leaseUntil: integer("lease_until"),
+  leaseToken: text("lease_token"),
+  lastErrorCode: text("last_error_code"),
+  createdAtMs: integer("created_at_ms").notNull(),
+}, (t) => [
+  uniqueIndex("task_comment_outbox_source_recipient").on(t.taskId, t.recipientId, t.commentId),
+  index("task_comment_outbox_claim").on(t.state, t.nextAttemptAt),
+]);
+
+export const taskCommentMigrationReport = sqliteTable("task_comment_migration_report", {
+  commentId: text("comment_id").primaryKey(),
+  disposition: text("disposition").$type<"quarantined">().notNull(),
+  reason: text("reason").$type<"missing_task_tenant" | "missing_author" | "tenant_mismatch">().notNull(),
+  recordedAtMs: integer("recorded_at_ms").notNull(),
+});
 
 export const conversations = sqliteTable("conversations", {
   id: text("id").primaryKey(),

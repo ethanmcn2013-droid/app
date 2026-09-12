@@ -1,557 +1,361 @@
 "use client";
 
-import {
-  motion,
-  AnimatePresence,
-  useReducedMotion,
-} from "motion/react";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
-import {
-  isSeedUser,
-  LANES,
-  USERS,
-  type Activity,
-  type ActivityPayload,
-  type Comment,
-  type LaneId,
-  type UserId,
-} from "@/lib/data";
-import { EASE_OUT_TOKEN } from "@/components/primitives/anchored-layer";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { Activity, UserId } from "@/lib/data";
+import type { TaskCommentRecord, TaskDiscussionSnapshot } from "@/lib/conversations/task-discussion-contracts";
 import { useCurrentUser } from "@/lib/auth-context";
-import { useWorkspaceMembers } from "@/lib/domain-context";
 import { Avatar } from "@/components/showcase/avatar";
-import { MentionField, toMentionPeople, type MentionPerson } from "@/components/ui/mention-field";
+import { MentionField, type MentionPerson } from "@/components/ui/mention-field";
 import { formatRelativeTime } from "@/lib/utils";
 import {
   addCommentAction,
+  editCommentAction,
+  getCommentReceiptAction,
+  openTaskDiscussionAction,
   removeCommentAction,
 } from "@/server/actions/comments";
-import type { ConversationItem } from "@/server/db/queries";
-import { DraftReplyButton } from "@/components/app/ai/draft-reply-button";
-import { ConversationSummary } from "@/components/app/ai/conversation-summary";
 import { beginTaskSync } from "@/lib/tasks/delight-events";
 
-/** Threshold: thread must have ≥ this many comments before the
- *  "Summarize this thread" affordance is offered. Below that the
- *  reader can just read it. */
-const SUMMARIZE_MIN_MESSAGES = 6;
-
-type Props = {
+export type ConversationFeedProps = {
   taskId: string;
-  initialItems: ConversationItem[];
-  /** People to offer for @mentions — the task's assignees. Participants who
-   *  have already commented are folded in from the live feed. */
-  assigneeIds?: UserId[];
+  initialDiscussion: TaskDiscussionSnapshot;
+  initialActivities?: readonly Activity[];
 };
 
-/**
- * Unified Conversation feed, comments and activity interleaved
- * chronologically (oldest at top, composer at bottom). Replaces the
- * previous separate Activity + Comments sections so the panel reads
- * like a real conversation history.
- *
- * Optimistic adds use `temp-<n>` ids so deletes that haven't been
- * acknowledged by the server are pure local removes.
- */
-export function ConversationFeed({ taskId, initialItems, assigneeIds = [] }: Props) {
-  const [items, setItems] = useState<ConversationItem[]>(initialItems);
-  const [, startTransition] = useTransition();
-  const [pending, setPending] = useState(false);
-  const me = useCurrentUser();
-  const members = useWorkspaceMembers();
+type PendingComment = Readonly<{
+  clientRequestId: string;
+  body: string;
+  rootCommentId: string | null;
+  state: "pending" | "uncertain";
+}>;
 
-  // Mention pool: everyone in the workspace, then the task's assignees, then
-  // everyone who has spoken in the thread. Members lead because that is who
-  // the writer can actually reach; assignees and past speakers are folded in
-  // so a person who has since left the workspace still resolves in an old
-  // thread. Before members were included the pool was assignees plus speakers
-  // only, so in a fresh workspace nobody could be mentioned until someone had
-  // already commented — a two-person wedding workspace could not @ its second
-  // person. Names carry into the posted body as "@Name" and the server's
-  // existing mention scan turns those into notifications.
-  const people: MentionPerson[] = useMemo(() => {
-    const commentAuthors = items
-      .filter((it) => it.kind === "comment")
-      .map((it) => it.comment.userId);
-    const memberNames = new Map(members.map((m) => [m.id, m.name]));
-    return toMentionPeople(
-      [...members.map((m) => m.id), ...assigneeIds, ...commentAuthors],
-      (id) => {
-        const name = memberNames.get(id);
-        return name ? { name } : USERS[id];
-      },
-    );
-  }, [assigneeIds, items, members]);
-
-  const handleAdd = useCallback(
-    (body: string) => {
-      const trimmed = body.trim();
-      if (!trimmed) return;
-      const tempId = `temp-${Math.random().toString(36).slice(2, 8)}`;
-      const optimistic: Comment = {
-        id: tempId,
-        taskId,
-        userId: me,
-        // authorName null here, the server round-trip will supply the real
-        // name; the fallback in CommentRow reads USERS[me].name for seed
-        // users and will show the right name for the current session user.
-        authorName: null,
-        body: trimmed,
-        createdAt: new Date(),
-      };
-      setItems((cur) => [
-        ...cur,
-        { kind: "comment", comment: optimistic },
-      ]);
-      setPending(true);
-      const finishSync = beginTaskSync();
-      startTransition(async () => {
-        try {
-          const fresh = await addCommentAction(taskId, trimmed);
-          // Reconcile: replace temp comment with the server's persisted
-          // comments + leave activity alone (parent reload will refresh
-          // activities through the panel re-fetch).
-          setItems((cur) => {
-            const nonComments = cur.filter((it) => it.kind !== "comment");
-            const next: ConversationItem[] = [
-              ...nonComments,
-              ...fresh.map<ConversationItem>((c) => ({
-                kind: "comment",
-                comment: c,
-              })),
-            ];
-            next.sort(
-              (a, b) =>
-                keyOf(a).getTime() - keyOf(b).getTime(),
-            );
-            return next;
-          });
-          finishSync();
-        } catch (err) {
-          console.warn("comments: add failed; rolling back", err);
-          setItems((cur) =>
-            cur.filter(
-              (it) =>
-                !(it.kind === "comment" && it.comment.id === tempId),
-            ),
-          );
-          finishSync(err);
-        } finally {
-          setPending(false);
-        }
-      });
-    },
-    [taskId, me],
-  );
-
-  const handleRemove = useCallback(
-    (commentId: string) => {
-      const removed = items.find(
-        (item) => item.kind === "comment" && item.comment.id === commentId,
-      );
-      // Optimistic delete; if it's a temp id we never sent it.
-      setItems((cur) =>
-        cur.filter(
-          (it) =>
-            !(it.kind === "comment" && it.comment.id === commentId),
-        ),
-      );
-      if (commentId.startsWith("temp-")) return;
-      const finishSync = beginTaskSync();
-      startTransition(async () => {
-        try {
-          await removeCommentAction(commentId);
-          finishSync();
-        } catch (err) {
-          console.warn("comments: remove failed", err);
-          if (removed) {
-            setItems((current) => {
-              if (current.some((item) => item.kind === "comment" && item.comment.id === commentId)) return current;
-              return [...current, removed].sort((a, b) => keyOf(a).getTime() - keyOf(b).getTime());
-            });
-          }
-          finishSync(err);
-        }
-      });
-    },
-    [items],
-  );
-
-  const commentCount = items.filter((it) => it.kind === "comment").length;
-
-  return (
-    <div className="space-y-3 pb-6">
-      <ConversationSummary
-        taskId={taskId}
-        eligible={commentCount >= SUMMARIZE_MIN_MESSAGES}
-      />
-      {items.length === 0 ? (
-        <EmptyState />
-      ) : (
-        <AnimatePresence initial={false}>
-          {items.map((it) =>
-            it.kind === "comment" ? (
-              <CommentRow
-                key={it.comment.id}
-                comment={it.comment}
-                me={me}
-                onRemove={() => handleRemove(it.comment.id)}
-              />
-            ) : (
-              <ActivityRow key={it.activity.id} activity={it.activity} />
-            ),
-          )}
-        </AnimatePresence>
-      )}
-
-      <Composer
-        me={me}
-        taskId={taskId}
-        people={people}
-        disabled={!taskId}
-        isPending={pending}
-        onSubmit={handleAdd}
-      />
-    </div>
-  );
+function newRequestId(kind: string) {
+  return `${kind}_${crypto.randomUUID().replaceAll("-", "")}`;
 }
 
-function keyOf(i: ConversationItem): Date {
-  return i.kind === "comment" ? i.comment.createdAt : i.activity.createdAt;
+function mergeComments(current: readonly TaskCommentRecord[], incoming: readonly TaskCommentRecord[]) {
+  const byId = new Map(current.map((comment) => [comment.id, comment]));
+  for (const comment of incoming) {
+    const prior = byId.get(comment.id);
+    if (!prior || comment.revision >= prior.revision) byId.set(comment.id, comment);
+  }
+  return [...byId.values()].sort((a, b) => a.createSeq - b.createSeq);
+}
+
+/** Canonical task comments plus the task's existing body-free activity history. */
+export function ConversationFeed({
+  taskId,
+  initialDiscussion,
+  initialActivities = [],
+}: ConversationFeedProps) {
+  const [discussion, setDiscussion] = useState(initialDiscussion);
+  const [comments, setComments] = useState(initialDiscussion.comments);
+  const [pending, setPending] = useState<readonly PendingComment[]>([]);
+  const [notice, setNotice] = useState<string | null>(null);
+  const me = useCurrentUser();
+
+  useEffect(() => {
+    setDiscussion(initialDiscussion);
+    setComments(initialDiscussion.comments);
+    setPending([]);
+    setNotice(null);
+  }, [initialDiscussion]);
+
+  const refresh = useCallback(async () => {
+    const fresh = await openTaskDiscussionAction(taskId);
+    if (!fresh.ok) return false;
+    setDiscussion(fresh.value);
+    setComments((current) => mergeComments(current, fresh.value.comments));
+    setPending([]);
+    return true;
+  }, [taskId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let cursor = discussion.throughChangeSeq;
+    const poll = async () => {
+      try {
+        const result = await fetch(
+          `/api/task-discussion?action=history&taskId=${encodeURIComponent(taskId)}&afterChangeSeq=${cursor}&limit=100`,
+          { cache: "no-store" },
+        ).then((response) => response.json());
+        if (cancelled) return;
+        if (result.ok) {
+          setComments((current) => mergeComments(current, result.value.comments));
+          cursor = result.value.throughChangeSeq;
+          if (result.value.audienceEpoch !== discussion.audienceEpoch) {
+            setNotice("The people with access changed. Review recipients before sending.");
+            await refresh();
+          }
+        } else if (result.code === "resync_required") {
+          await refresh();
+        }
+      } catch {
+        // Polling is advisory. Pending sends use durable receipts for recovery.
+      }
+    };
+    const timer = window.setInterval(poll, 2_500);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, [discussion.audienceEpoch, discussion.throughChangeSeq, refresh, taskId]);
+
+  const people = useMemo<MentionPerson[]>(() => discussion.members.map((member) => ({
+    id: member.id,
+    name: member.name,
+    handle: member.name.toLowerCase().replace(/[^a-z0-9]+/g, ""),
+  })), [discussion.members]);
+
+  const submit = useCallback(async (
+    body: string,
+    mentionUserIds: readonly string[],
+    rootCommentId: string | null,
+  ) => {
+    const clientRequestId = newRequestId("task_comment");
+    setPending((current) => [...current, { clientRequestId, body, rootCommentId, state: "pending" }]);
+    setNotice(null);
+    const finishSync = beginTaskSync();
+    try {
+      const result = await addCommentAction({
+        taskId, clientRequestId, expectedAudienceEpoch: discussion.audienceEpoch,
+        body, rootCommentId, mentionUserIds,
+      });
+      if (!result.ok) {
+        setPending((current) => current.filter((item) => item.clientRequestId !== clientRequestId));
+        if (result.code === "audience_changed") {
+          setNotice("The people with access changed. Review recipients and send again.");
+          await refresh();
+        } else {
+          setNotice(result.code === "archived" ? "This task is archived and read-only." : "Comment not sent.");
+        }
+        finishSync(new Error(result.code));
+        return false;
+      }
+      await refresh();
+      finishSync();
+      return true;
+    } catch (error) {
+      try {
+        const lookup = await getCommentReceiptAction(taskId, clientRequestId);
+        if (lookup.ok && lookup.value.state === "committed") {
+          await refresh();
+          finishSync();
+          return true;
+        }
+      } catch {
+        // The receipt lookup is also uncertain, so keep the local row.
+      }
+      setPending((current) => current.map((item) =>
+        item.clientRequestId === clientRequestId ? { ...item, state: "uncertain" } : item));
+      setNotice("Delivery is uncertain. Check the receipt before trying again.");
+      finishSync(error);
+      return true;
+    }
+  }, [discussion.audienceEpoch, refresh, taskId]);
+
+  const edit = useCallback(async (
+    comment: TaskCommentRecord,
+    body: string,
+    mentionUserIds: readonly string[],
+  ) => {
+    const result = await editCommentAction({
+      taskId, commentId: comment.id, clientRequestId: newRequestId("task_comment_edit"),
+      expectedRevision: comment.revision, expectedAudienceEpoch: discussion.audienceEpoch,
+      body, mentionUserIds,
+    });
+    if (!result.ok) {
+      setNotice(result.code === "revision_conflict"
+        ? "This comment changed. Review the latest version."
+        : "Edit not saved.");
+      await refresh();
+      return false;
+    }
+    await refresh();
+    return true;
+  }, [discussion.audienceEpoch, refresh, taskId]);
+
+  const tombstone = useCallback(async (comment: TaskCommentRecord) => {
+    const result = await removeCommentAction({
+      taskId, commentId: comment.id, clientRequestId: newRequestId("task_comment_delete"),
+      expectedRevision: comment.revision, expectedAudienceEpoch: discussion.audienceEpoch,
+    });
+    if (!result.ok) {
+      setNotice(result.code === "revision_conflict"
+        ? "This comment changed. Review the latest version."
+        : "Comment not deleted.");
+    }
+    await refresh();
+  }, [discussion.audienceEpoch, refresh, taskId]);
+
+  const rows = useMemo(() => [
+    ...comments.map((comment) => ({ kind: "comment" as const, at: comment.createdAt, comment })),
+    ...initialActivities.map((activity) =>
+      ({ kind: "activity" as const, at: activity.createdAt.getTime(), activity })),
+  ].sort((a, b) => a.at - b.at), [comments, initialActivities]);
+
+  return (
+    <div id="discussion" className="space-y-3 pb-6" data-task-discussion data-audience-epoch={discussion.audienceEpoch}>
+      {notice ? (
+        <p role="status" className="rounded-lg bg-bg-sunken px-3 py-2 text-[12px] text-ink-soft">{notice}</p>
+      ) : null}
+      {rows.length === 0 && pending.length === 0 ? <EmptyState /> : (
+        <AnimatePresence initial={false}>
+          {rows.map((row) => row.kind === "comment" ? (
+            <CommentRow key={row.comment.id} comment={row.comment} currentActorId={me}
+              members={people} onEdit={edit} onDelete={tombstone} />
+          ) : <ActivityRow key={row.activity.id} activity={row.activity} />)}
+          {pending.map((item) => <PendingRow key={item.clientRequestId} item={item} />)}
+        </AnimatePresence>
+      )}
+      <Composer taskId={taskId} me={me} people={people}
+        disabled={discussion.lifecycle === "archived"} onSubmit={submit} comments={comments} />
+    </div>
+  );
 }
 
 function EmptyState() {
-  return (
-    <div className="py-1">
-      <div className="text-[13px] text-ink-quiet">No conversation yet.</div>
-      <div className="text-[12px] text-ink-faint">
-        Comments and changes will appear here as they happen.
-      </div>
-    </div>
-  );
+  return <div className="py-1">
+    <div className="text-[13px] text-ink-quiet">No discussion yet.</div>
+    <div className="text-[12px] text-ink-faint">Comments and changes will appear here as they happen.</div>
+  </div>;
 }
 
-function CommentRow({
-  comment,
-  me,
-  onRemove,
-}: {
-  comment: Comment;
-  me: import("@/lib/data").UserId;
-  onRemove: () => void;
-}) {
-  const reduce = useReducedMotion();
-  const u = USERS[comment.userId];
-  // authorName is resolved at query time via LEFT JOIN users; fall back to
-  // the seeded USERS map for demo data, then to a generic label.
-  const displayName = comment.authorName ?? u.name;
-  const isOwn = comment.userId === me;
+function Initials({ name }: { name: string }) {
+  return <span aria-hidden className="grid h-[22px] w-[22px] flex-none place-items-center rounded-full bg-bg-sunken text-[9px] font-semibold text-ink-soft">
+    {name.split(/\s+/).map((part) => part[0]).slice(0, 2).join("").toUpperCase()}
+  </span>;
+}
 
-  return (
-    <motion.div
-      layout="position"
-      initial={reduce ? { opacity: 0 } : { opacity: 0, transform: "translateY(4px)" }}
-      animate={{ opacity: 1, transform: "translateY(0)" }}
-      exit={{ opacity: 0 }}
-      transition={
-        reduce
-          ? { duration: 0.12 }
-          : { duration: 0.24, ease: [0.16, 1, 0.3, 1] }
-      }
-      className="group/comment relative flex items-start gap-2.5 rounded-md px-1 py-1"
-    >
-      <Avatar user={comment.userId} size={22} />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-[13px] font-medium text-ink">{displayName}</span>
-          {isSeedUser(comment.userId) ? (
-            <span className="rounded bg-bg-sunken px-1 py-0 text-[11px] text-ink-faint">
-              sample
-            </span>
-          ) : null}
-          <span
-            className="text-[11px] tabular-nums text-ink-quiet"
-            title={comment.createdAt.toLocaleString()}
-          >
-            {formatRelativeTime(comment.createdAt)}
-          </span>
-        </div>
-        <p className="mt-0.5 whitespace-pre-wrap text-[13px] leading-[var(--x-lead-read)] text-ink-soft">
-          {comment.body}
-        </p>
+function CommentRow({ comment, currentActorId, members, onEdit, onDelete }: {
+  comment: TaskCommentRecord;
+  currentActorId: string;
+  members: MentionPerson[];
+  onEdit: (comment: TaskCommentRecord, body: string, mentions: readonly string[]) => Promise<boolean>;
+  onDelete: (comment: TaskCommentRecord) => void;
+}) {
+  const reduced = useReducedMotion();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(comment.body ?? "");
+  const own = comment.authorId === currentActorId;
+  const mentions = comment.mentionUserIds.filter((id) => members.some((member) => member.id === id));
+  return <motion.article id={`comment-${comment.id}`} layout="position"
+    initial={reduced ? { opacity: 0 } : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+    className={`group/comment flex items-start gap-2.5 rounded-md px-1 py-1 ${comment.rootCommentId ? "ml-8 border-l border-line-soft pl-3" : ""}`}>
+    <Initials name={comment.authorName} />
+    <div className="min-w-0 flex-1">
+      <div className="flex items-baseline gap-1.5">
+        <span className="text-[13px] font-medium text-ink">{comment.authorName}</span>
+        <span className="text-[11px] tabular-nums text-ink-quiet" title={new Date(comment.createdAt).toLocaleString()}>
+          {formatRelativeTime(new Date(comment.createdAt))}{comment.editedAt ? " · edited" : ""}
+        </span>
       </div>
-      {isOwn ? (
-        <button
-          type="button"
-          onClick={onRemove}
-          aria-label="Delete comment"
-          className="absolute right-0 top-0.5 inline-flex h-6 w-6 items-center justify-center rounded text-ink-faint opacity-0 transition-opacity duration-[var(--motion-fast)] ease-[var(--ease-out)] hover:bg-bg-sunken hover:text-ink-soft group-hover/comment:opacity-100 focus-visible:opacity-100"
-        >
-          <svg
-            width="13"
-            height="13"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            strokeLinecap="round"
-          >
-            <line x1="6" y1="6" x2="18" y2="18" />
-            <line x1="6" y1="18" x2="18" y2="6" />
-          </svg>
-        </button>
+      {comment.body === null ? (
+        <p className="mt-0.5 text-[13px] italic text-ink-quiet">Comment deleted</p>
+      ) : editing ? (
+        <div className="mt-1 space-y-2">
+          <textarea value={draft} onChange={(event) => setDraft(event.target.value)}
+            className="w-full rounded-lg border border-line-soft bg-white p-2 text-[13px] text-ink" />
+          <div className="flex gap-2">
+            <button type="button" className="text-[12px] font-medium text-brand"
+              onClick={async () => { if (await onEdit(comment, draft, mentions)) setEditing(false); }}>Save</button>
+            <button type="button" className="text-[12px] text-ink-quiet"
+              onClick={() => { setDraft(comment.body ?? ""); setEditing(false); }}>Cancel</button>
+          </div>
+        </div>
+      ) : (
+        <p className="mt-0.5 whitespace-pre-wrap text-[13px] leading-[var(--x-lead-read)] text-ink-soft">{comment.body}</p>
+      )}
+      {own && comment.body !== null && !editing ? (
+        <div className="mt-1 flex gap-2 opacity-0 transition-opacity group-hover/comment:opacity-100 group-focus-within/comment:opacity-100">
+          <button type="button" className="text-[11px] text-ink-quiet hover:text-ink" onClick={() => setEditing(true)}>Edit</button>
+          <button type="button" className="text-[11px] text-ink-quiet hover:text-ink" onClick={() => onDelete(comment)}>Delete</button>
+        </div>
       ) : null}
-    </motion.div>
-  );
+    </div>
+  </motion.article>;
+}
+
+function PendingRow({ item }: { item: PendingComment }) {
+  return <motion.div initial={{ opacity: 0 }}
+    animate={{ opacity: item.state === "pending" ? 0.65 : 1 }}
+    className={`flex gap-2.5 px-1 py-1 ${item.rootCommentId ? "ml-8 border-l border-line-soft pl-3" : ""}`}>
+    <Initials name="You" />
+    <div><p className="whitespace-pre-wrap text-[13px] text-ink-soft">{item.body}</p>
+      <span className="text-[11px] text-ink-quiet">{item.state === "pending" ? "Sending…" : "Receipt check needed"}</span>
+    </div>
+  </motion.div>;
 }
 
 function ActivityRow({ activity }: { activity: Activity }) {
-  const reduce = useReducedMotion();
-  const u = USERS[activity.userId];
-  // authorName resolved at query time; fall back to seeded USERS map.
-  const displayName = activity.authorName ?? u.name;
-  const sentence = formatActivityLine(activity.payload);
-  return (
-    <motion.li
-      layout="position"
-      initial={reduce ? { opacity: 0 } : { opacity: 0, transform: "translateY(2px)" }}
-      animate={{ opacity: 1, transform: "translateY(0)" }}
-      transition={{ duration: reduce ? 0.1 : 0.18, ease: EASE_OUT_TOKEN }}
-      className="flex items-center gap-2 px-1 text-[12px] leading-[var(--x-lead-read)] text-ink-quiet"
-    >
-      <span className="block h-px flex-shrink-0" style={{ width: 22 }} aria-hidden>
-        <Avatar user={activity.userId} size={14} />
-      </span>
-      <span className="min-w-0 flex-1 truncate">
-        <span className="font-medium text-ink-soft">{displayName}</span>
-        {isSeedUser(activity.userId) ? (
-          <span className="ml-1 rounded bg-bg-sunken px-1 py-0 text-[11px] text-ink-faint">
-            sample
-          </span>
-        ) : null}{" "}
-        <span>{sentence}</span>
-      </span>
-      <span
-        className="flex-shrink-0 select-none tabular-nums"
-        title={activity.createdAt.toLocaleString("en-US")}
-      >
-        {formatRelativeTime(activity.createdAt)}
-      </span>
-    </motion.li>
-  );
+  const name = activity.authorName ?? "Someone";
+  return <div className="flex items-center gap-2 px-1 text-[12px] text-ink-quiet">
+    <Initials name={name} />
+    <span><strong className="font-medium text-ink-soft">{name}</strong> updated this task</span>
+    <span className="ml-auto text-[11px] tabular-nums">{formatRelativeTime(activity.createdAt)}</span>
+  </div>;
 }
 
-function laneLabel(lane: LaneId): string {
-  return LANES[lane].name;
-}
-
-function formatActivityLine(payload: ActivityPayload): string {
-  switch (payload.kind) {
-    case "taskAdd":
-      return "created this task";
-    case "move":
-      return `moved this from ${laneLabel(payload.from)} to ${laneLabel(payload.to)}`;
-    case "toggleComplete":
-      return payload.to === "done"
-        ? "marked this complete"
-        : "reopened this";
-    case "update": {
-      switch (payload.field) {
-        case "title":
-          return "renamed this";
-        case "description":
-          return "edited the description";
-        case "priority":
-          return "changed the priority";
-        case "due":
-          return "updated the due date";
-        case "assignees":
-          return "updated assignees";
-        case "tags":
-          return "updated tags";
-        case "estimate":
-          return "updated the estimate";
-        case "recurrence":
-          return "set a recurrence";
-        default: {
-          const _exhaustive: never = payload.field;
-          void _exhaustive;
-          return "edited this";
-        }
-      }
-    }
-    case "commentAdd":
-      return "commented";
-    case "commentRemove":
-      return "deleted a comment";
-    case "attach":
-      return `attached \`${payload.filename}\` · ${formatBytesShort(payload.sizeBytes)}`;
-    case "detach":
-      return `removed the attachment \`${payload.filename}\``;
-    case "parentChanged": {
-      if (payload.from === null && payload.to !== null) {
-        return "moved this under a parent task";
-      }
-      if (payload.from !== null && payload.to === null) {
-        return "removed this from its parent task";
-      }
-      return "changed the parent task";
-    }
-    case "resourceAdd":
-      return `added resource \`${payload.title}\``;
-    case "resourceRemove":
-      return `removed resource \`${payload.title}\``;
-    case "nudgeSent":
-      return "sent a nudge";
-    case "inviteSent":
-      return "invited a new member";
-    case "inviteAccepted":
-      return "accepted the workspace invite";
-    case "archived":
-      return "archived this task";
-    case "restored":
-      return "restored this task";
-    default: {
-      const _exhaustive: never = payload;
-      void _exhaustive;
-      return "did something";
-    }
-  }
-}
-
-/** Inline byte formatter, kept local to avoid pulling the
- *  attachments-section helper across the client boundary. Matches
- *  its rounding so the conversation copy reads consistently. */
-function formatBytesShort(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  const kb = bytes / 1024;
-  if (kb < 1024) return `${(Math.round(kb * 10) / 10).toString()} KB`;
-  const mb = kb / 1024;
-  return `${(Math.round(mb * 10) / 10).toString()} MB`;
-}
-
-function Composer({
-  me,
-  taskId,
-  people,
-  disabled,
-  isPending,
-  onSubmit,
-}: {
-  me: import("@/lib/data").UserId;
+function Composer({ taskId, me, people, disabled, onSubmit, comments }: {
   taskId: string;
+  me: UserId;
   people: MentionPerson[];
   disabled: boolean;
-  isPending: boolean;
-  onSubmit: (body: string) => void;
+  onSubmit: (body: string, mentions: readonly string[], root: string | null) => Promise<boolean>;
+  comments: readonly TaskCommentRecord[];
 }) {
   const [draft, setDraft] = useState("");
+  const [mentionIds, setMentionIds] = useState<readonly string[]>([]);
+  const [rootId, setRootId] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
   const ref = useRef<HTMLTextAreaElement>(null);
+  const root = comments.find((comment) => comment.id === rootId);
 
-  const autoresize = useCallback(() => {
-    const el = ref.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 168)}px`;
-  }, []);
+  const change = (value: string) => {
+    setDraft(value);
+    setMentionIds((ids) => ids.filter((id) => {
+      const person = people.find((candidate) => candidate.id === id);
+      return person ? value.includes(`@${person.name}`) : false;
+    }));
+  };
+  const submit = async () => {
+    if (disabled || sending || !draft.trim()) return;
+    setSending(true);
+    const accepted = await onSubmit(draft, mentionIds, rootId);
+    setSending(false);
+    if (accepted) { setDraft(""); setMentionIds([]); setRootId(null); }
+    requestAnimationFrame(() => ref.current?.focus());
+  };
 
-  useEffect(() => {
-    autoresize();
-  }, [draft, autoresize]);
-
-  function submit() {
-    if (disabled || isPending) return;
-    const trimmed = draft.trim();
-    if (!trimmed) return;
-    onSubmit(trimmed);
-    setDraft("");
-    requestAnimationFrame(() => {
-      ref.current?.focus();
-    });
-  }
-
-  // The Draft button writes streaming tokens directly into the
-  // composer state, which means the user sees the reply forming in
-  // place, no modal, no review step. They can edit before posting.
-  const handleDraft = useCallback((cumulative: string) => {
-    setDraft(cumulative);
-    requestAnimationFrame(() => {
-      ref.current?.focus();
-      // Move caret to end so subsequent typing appends.
-      const len = cumulative.length;
-      ref.current?.setSelectionRange(len, len);
-    });
-  }, []);
-
-  return (
-    <div
-      className="sticky bottom-0 -mx-6 mt-4 flex items-start gap-2.5 border-t border-line-soft bg-bg-elevated/95 px-6 pb-2 pt-3 backdrop-blur"
-      data-comment-composer
-    >
+  return <div className="sticky bottom-0 -mx-6 mt-4 border-t border-line-soft bg-bg-elevated/95 px-6 pb-2 pt-3 backdrop-blur" data-comment-composer>
+    {root ? <div className="mb-2 flex items-center justify-between rounded-md bg-bg-sunken px-2 py-1 text-[11px] text-ink-quiet">
+      <span>Replying to {root.authorName}</span><button type="button" onClick={() => setRootId(null)}>Cancel</button>
+    </div> : null}
+    {!root && comments.some((comment) => comment.body !== null && comment.rootCommentId === null) ? (
+      <label className="mb-1 block text-[11px] text-ink-quiet">Reply to
+        <select value="" onChange={(event) => setRootId(event.target.value || null)} className="ml-1 bg-transparent text-ink-soft">
+          <option value="">Discussion</option>
+          {comments.filter((comment) => comment.body !== null && comment.rootCommentId === null).map((comment) =>
+            <option key={comment.id} value={comment.id}>{comment.authorName}: {comment.body?.slice(0, 40)}</option>)}
+        </select>
+      </label>
+    ) : null}
+    <div className="flex items-start gap-2.5">
       <Avatar user={me} size={22} />
-      <MentionField
-        ref={ref}
-        value={draft}
-        onChange={setDraft}
-        people={people}
-        onKeyDown={(e) => {
-          if (
-            e.key === "Enter" &&
-            !e.shiftKey &&
-            !e.nativeEvent.isComposing
-          ) {
-            e.preventDefault();
-            submit();
+      <MentionField ref={ref} value={draft} onChange={change} people={people}
+        onMention={(person) => setMentionIds((ids) => ids.includes(person.id) ? ids : [...ids, person.id])}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+            event.preventDefault();
+            void submit();
           }
         }}
-        rows={1}
-        placeholder="Reply or comment, @ to mention"
-        disabled={disabled || isPending}
-        className="block min-h-[22px] w-full resize-none bg-transparent text-[13px] leading-[var(--x-lead-read)] text-ink placeholder:text-ink-faint focus:outline-none disabled:opacity-50"
-      />
-      <div className="flex items-center gap-1.5">
-        <DraftReplyButton
-          taskId={taskId}
-          onDraft={handleDraft}
-          disabled={disabled || isPending}
-        />
-        <KbdHint
-          state={isPending ? "pending" : draft.trim() ? "ready" : "empty"}
-        />
-      </div>
+        rows={1} placeholder="Reply or comment, @ to mention" disabled={disabled || sending}
+        className="block min-h-[22px] w-full resize-none bg-transparent text-[13px] text-ink placeholder:text-ink-faint focus:outline-none disabled:opacity-50" />
+      <button type="button" disabled={disabled || sending || !draft.trim()} onClick={() => void submit()}
+        className="rounded-full bg-brand px-3 py-1 text-[12px] font-medium text-white disabled:opacity-40">
+        {sending ? "Sending" : "Send"}
+      </button>
     </div>
-  );
+    <span className="sr-only">Task {taskId}</span>
+  </div>;
 }
 
-function KbdHint({ state }: { state: "empty" | "ready" | "pending" }) {
-  const reduce = useReducedMotion();
-  if (state === "pending") {
-    return (
-      <motion.span
-        animate={reduce ? { opacity: 0.65 } : { rotate: 360 }}
-        transition={reduce ? { duration: 0 } : { duration: 0.9, ease: "linear", repeat: Infinity }}
-        className="mt-0.5 inline-block h-[10px] w-[10px] rounded-full border-2 border-brand/30 border-t-brand"
-        aria-label="Posting"
-      />
-    );
-  }
-  return (
-    <kbd
-      className={
-        "inline-flex h-[18px] select-none items-center rounded border border-line-soft bg-white px-1 text-[11px] tabular-nums transition-opacity duration-[var(--motion-fast)] ease-[var(--ease-out)] " +
-        (state === "ready"
-          ? "text-ink-soft opacity-100"
-          : "text-ink-quiet opacity-100")
-      }
-    >
-      ⏎
-    </kbd>
-  );
-}

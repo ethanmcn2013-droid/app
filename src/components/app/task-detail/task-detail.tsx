@@ -24,7 +24,8 @@ import { useTasksDispatch } from "@/lib/tasks/tasks-context";
 import { useDomain, useColumnConfig } from "@/lib/domain-context";
 import { isTaskDone } from "@/lib/board-columns";
 import { getTaskConversationAction } from "@/server/actions/conversation";
-import type { ConversationItem } from "@/server/db/queries";
+import { openTaskDiscussionAction } from "@/server/actions/comments";
+import type { TaskDiscussionSnapshot } from "@/lib/conversations/task-discussion-contracts";
 
 import { TaskIdChip, EditedStamp } from "@/components/app/detail-panel/panel-header";
 import { DescriptionEditor } from "@/components/app/detail-panel/description-editor";
@@ -52,7 +53,8 @@ export type TaskDetailProps = {
 // ─── Conversation logic (moved from task-detail-panel.tsx) ───────────────────
 
 function useConversation(task: Task) {
-  const [items, setItems] = useState<ConversationItem[]>([]);
+  const [discussion, setDiscussion] = useState<TaskDiscussionSnapshot | null>(null);
+  const [activities, setActivities] = useState<import("@/lib/data").Activity[]>([]);
   const [loading, setLoading] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
 
@@ -67,15 +69,22 @@ function useConversation(task: Task) {
         setTimeout(() => reject(new Error("timeout")), 5000),
       );
 
-      Promise.race([getTaskConversationAction(taskId), timeout])
-        .then((rows) => {
-          if (!signal.ignored) setItems(rows);
+      Promise.race([Promise.all([
+        openTaskDiscussionAction(taskId),
+        getTaskConversationAction(taskId),
+      ]), timeout])
+        .then(([result, rows]) => {
+          if (signal.ignored) return;
+          if (!result.ok) throw new Error(result.code);
+          setDiscussion(result.value);
+          setActivities(rows.filter((row) => row.kind === "activity").map((row) => row.activity));
         })
         .catch((err) => {
           if (!signal.ignored) {
             const isTimeout = err instanceof Error && err.message === "timeout";
             console.warn("conversation: fetch failed", err);
-            setItems([]);
+            setDiscussion(null);
+            setActivities([]);
             if (isTimeout) setTimedOut(true);
           }
         })
@@ -98,7 +107,7 @@ function useConversation(task: Task) {
     };
   }, [task.id, refreshKey, fetchConversation]);
 
-  return { items, loading, timedOut, retry: () => {
+  return { discussion, activities, loading, timedOut, retry: () => {
     const signal = { ignored: false };
     fetchConversation(task.id, signal);
   }};
@@ -428,7 +437,7 @@ function PrimaryContent({
   conversation: ReturnType<typeof useConversation>;
   showTip: boolean;
 }) {
-  const { items, loading, timedOut, retry } = conversation;
+  const { discussion, activities, loading, timedOut, retry } = conversation;
   return (
     <div className="min-w-0">
       {/* Description */}
@@ -454,13 +463,17 @@ function PrimaryContent({
           <ConversationSkeleton />
         ) : timedOut ? (
           <ConversationTimeout onRetry={retry} />
-        ) : (
+        ) : discussion ? (
           <ConversationFeed
             key={task.id}
             taskId={task.id}
-            initialItems={items}
-            assigneeIds={task.assignees}
+            initialDiscussion={discussion}
+            initialActivities={activities}
           />
+        ) : (
+          <div className="rounded-lg bg-bg-sunken px-3 py-2 text-[12px] text-ink-quiet">
+            Discussion is unavailable right now.
+          </div>
         )}
       </section>
 

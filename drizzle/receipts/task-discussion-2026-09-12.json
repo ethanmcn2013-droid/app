@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "task-discussion-2026-09-12",
+  "authorizedBy": "The founder explicitly authorized continued local Project Conversation implementation on 2026-09-12. This receipt authorizes isolated local dry runs and CI application only; it does not authorize a remote database migration, production data, a pilot, external delivery, or release.",
+  "reviewedBy": "Codex PC-10 implementation pass on 2026-09-12; independent Astra acceptance remains required by the delivery backlog.",
+  "authorizationSource": "PC-10 canonical Task Discussion in docs/projects/project-conversation/delivery-backlog.md.",
+  "migrations": [
+    {
+      "id": "0031_task_discussion",
+      "sha256": "e3ba9ab1b88c36a01b6c2254938bf0be101fa6a321f7812d67ff51a4082e14f1",
+      "reviewedAt": "2026-09-12T00:00:00.000Z",
+      "risk": "Application-integrity risk: upgrades canonical comments in place with receipt-backed revisions, tombstones, task-local ordering and body-free directed effects. Ambiguous legacy tenants are quarantined rather than assigned.",
+      "rollbackPlan": "Disable Task Discussion writes while retaining canonical comments, receipts, tombstones, ordering and migration reports. Do not drop or rewrite acknowledged comment history.",
+      "postconditions": [
+        "legacy canonical comment ids remain unchanged",
+        "only parent-and-author-validated legacy tenants are backfilled",
+        "ambiguous legacy rows remain quarantined and unreadable by the canonical adapter",
+        "comment changes, attention, outbox and migration reports contain no comment body",
+        "task-derived tenant, author, root and receipt guards remain installed",
+        "integrity check passes",
+        "foreign keys remain clean"
+      ],
+      "proofs": [
+        {
+          "id": "task-discussion-tables",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type='table' AND name IN ('task_discussion_state','task_comment_changes','task_comment_receipts','task_comment_attention','task_comment_outbox','task_comment_migration_report')",
+          "expected": 6
+        },
+        {
+          "id": "task-comment-columns",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('comments') WHERE name IN ('client_request_id','request_hash','revision','edited_at','deleted_at','root_id','create_seq')",
+          "expected": 7
+        },
+        {
+          "id": "task-discussion-guards",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type='trigger' AND name IN ('task_discussion_state_guard_insert','task_comments_guard_insert','task_comments_guard_update','task_comment_changes_guard_insert','task_comment_receipts_guard_insert','task_comment_attention_guard_insert','task_comment_attention_guard_update','task_comment_outbox_guard_insert','task_comment_outbox_guard_update')",
+          "expected": 9
+        },
+        {
+          "id": "body-free-directed-tables",
+          "sql": "SELECT (SELECT COUNT(*) FROM pragma_table_info('task_comment_changes') WHERE name IN ('body','snippet','payload')) + (SELECT COUNT(*) FROM pragma_table_info('task_comment_attention') WHERE name IN ('body','snippet','payload')) + (SELECT COUNT(*) FROM pragma_table_info('task_comment_outbox') WHERE name IN ('body','snippet','payload')) AS value",
+          "expected": 0
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

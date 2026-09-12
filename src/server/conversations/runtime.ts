@@ -4,16 +4,22 @@ import { auth } from "@clerk/nextjs/server";
 import { resolveConversationControls } from "../../lib/conversations/flags";
 import { createConversationService } from "./service";
 import { createConversationTaskOutcomeService } from "./work-links";
+import { createTaskDiscussionService } from "./task-discussion";
 import { createLocalConversationDatabaseAdapter, createUnavailableConversationDatabaseAdapter } from "./database";
 
 type Service = ReturnType<typeof createConversationService>;
 type TaskOutcomes = ReturnType<typeof createConversationTaskOutcomeService>;
-type RuntimeServices = Readonly<{ conversation: Service; taskOutcomes: TaskOutcomes }>;
+type TaskDiscussion = ReturnType<typeof createTaskDiscussionService>;
+type RuntimeServices = Readonly<{ conversation: Service; taskOutcomes: TaskOutcomes; taskDiscussion: TaskDiscussion }>;
 const runtimeGlobal = globalThis as typeof globalThis & { conversationLocalRuntime?: { url: string; services: RuntimeServices } };
 
 function unavailableServices(reason: string): RuntimeServices {
   const adapter = createUnavailableConversationDatabaseAdapter(reason);
-  return { conversation: createConversationService(adapter), taskOutcomes: createConversationTaskOutcomeService(adapter) };
+  return {
+    conversation: createConversationService(adapter),
+    taskOutcomes: createConversationTaskOutcomeService(adapter),
+    taskDiscussion: createTaskDiscussionService(adapter),
+  };
 }
 
 async function getRuntimeServices(): Promise<RuntimeServices> {
@@ -30,7 +36,11 @@ async function getRuntimeServices(): Promise<RuntimeServices> {
   const adapter = createLocalConversationDatabaseAdapter({ client: {
     execute: (statement) => client.execute(typeof statement === "string" ? statement : { sql: statement.sql, args: [...(statement.args ?? [])] }),
   } });
-  const services = { conversation: createConversationService(adapter), taskOutcomes: createConversationTaskOutcomeService(adapter) };
+  const services = {
+    conversation: createConversationService(adapter),
+    taskOutcomes: createConversationTaskOutcomeService(adapter),
+    taskDiscussion: createTaskDiscussionService(adapter),
+  };
   runtimeGlobal.conversationLocalRuntime = { url, services };
   return services;
 }
@@ -42,6 +52,10 @@ export async function getConversationService(): Promise<Service> {
 
 export async function getConversationTaskOutcomeService(): Promise<TaskOutcomes> {
   return (await getRuntimeServices()).taskOutcomes;
+}
+
+export async function getTaskDiscussionService(): Promise<TaskDiscussion> {
+  return (await getRuntimeServices()).taskDiscussion;
 }
 
 export async function authenticateConversationActor(): Promise<string | null> {
