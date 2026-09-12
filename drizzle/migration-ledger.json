@@ -303,6 +303,16 @@
       "policy": "forward",
       "receipt": "drizzle/receipts/project-conversations-2026-09-12.json",
       "receiptSha256": "d9924344ae2c06a5b14fc550c6c6b87e5444bfa1626c214a29472650b0c60c32"
+    },
+    {
+      "ordinal": 29,
+      "id": "0029_conversation_task_outcomes",
+      "file": "drizzle/0029_conversation_task_outcomes.sql",
+      "when": 1789142401000,
+      "sha256": "5fdf246389988e2c7f4eef01a42ee0893f42af02302380165424a8e585919dc3",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/conversation-task-outcomes-2026-09-12.json",
+      "receiptSha256": "7c62696453273ca3d77259defda3bc556c06ee5e81d138bb207b1192997f8ce8"
     }
   ]
 }

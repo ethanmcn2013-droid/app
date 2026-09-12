@@ -7,16 +7,18 @@ import { db } from "@/server/db";
 import { readWorkspaceColumnConfig } from "@/server/db/board-config-read";
 import { isDoneColumnKey, isTaskDone } from "@/lib/board-columns";
 import { nextTaskSeq } from "@/server/db/task-seq";
-import { activities, attachments, comments, resources, tasks } from "@/server/db/schema";
+import { activities, attachments, comments, resources, tasks, users } from "@/server/db/schema";
 import { getSubtasks, getTasks } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
 import { getActiveWorkspaceOrNull, getCurrentUser } from "@/server/auth";
 import {
   authorizeProjectCandidate,
+  proveProjectCapability,
   readableProjectOrNull,
   scopeForTask,
 } from "@/server/actions/project-authz";
+import { createTaskInTransaction, prepareCanonicalTaskCreate } from "@/server/tasks/create-task-core";
 import { isDemoMode } from "@/lib/access-mode";
 import { maybeAwardCompletionMilestone } from "@/server/milestones";
 import { demoTasks } from "@/server/demo/tasks-demo";
@@ -596,56 +598,60 @@ export async function addTaskAction(input: {
   const id =
     input.id ??
     `t-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).slice(0, 8)}`;
-  const lane = input.lane ?? "todo";
-  // Creating straight into a done column is a completion (T·122).
-  const createdDone = isDoneColumnKey(lane, await readWorkspaceColumnConfig(ws));
-  if (input.parentTaskId) {
-    // A subtask inherits its parent's tenant. Require a top-level parent in
-    // the active workspace; this rejects both foreign-parent injection and
-    // unsupported deeper nesting before any child row is inserted.
-    const [parent] = await db
-      .select({ id: tasks.id })
-      .from(tasks)
-      .where(
-        and(
-          eq(tasks.id, input.parentTaskId),
-          eq(tasks.workspaceId, ws),
-          isNull(tasks.parentTaskId),
-        ),
-      );
-    if (!parent) {
-      throw new Error(
-        "addTaskAction: parent task is not in the active workspace",
-      );
+  const created = await db.transaction(async (tx) => {
+    // Re-prove both the canonical user and Project membership in the same
+    // snapshot as sequence allocation, task insertion, and activity.
+    const [liveUser] = await tx.select({ id: users.id }).from(users).where(eq(users.id, me)).limit(1);
+    if (!liveUser) return false;
+    const freshGrant = await proveProjectCapability(me, ws, "createOrEditTasks", "defer", tx);
+    if (!freshGrant.ok) return false;
+    const lane = input.lane ?? "todo";
+    const createdDone = isDoneColumnKey(lane, await readWorkspaceColumnConfig(ws, tx));
+    if (input.parentTaskId) {
+      const [parent] = await tx.select({ id: tasks.id }).from(tasks).where(and(
+        eq(tasks.id, input.parentTaskId), eq(tasks.workspaceId, ws), isNull(tasks.parentTaskId),
+      ));
+      if (!parent) throw new Error("addTaskAction: parent task is not in the active workspace");
     }
-  }
-  const position = await nextPositionForLane(lane, ws);
-  await db.insert(tasks).values({
-    id,
-    workspaceId: ws,
-    seq: nextTaskSeq(ws),
-    title: input.title,
-    description: input.description,
-    lane,
-    completedAt: createdDone ? new Date() : null,
-    priority: input.priority ?? "p2",
-    assignees: input.assignees ?? [],
-    estimate: input.estimate,
-    due: input.due,
-    position,
-    dueAt: input.dueAt,
-    tags: input.tags,
-    recurrence: input.recurrence,
-    externalContactName: input.externalContactName ?? null,
-    externalContactEmail: input.externalContactEmail ?? null,
-    cents: sanitizeCents(input.cents ?? null),
-    parentTaskId: input.parentTaskId ?? null,
-    ...bump(),
+    const task = prepareCanonicalTaskCreate({
+      id, workspaceId: ws, title: input.title, description: input.description, lane,
+      priority: input.priority, assignees: input.assignees, estimate: input.estimate,
+      due: input.due, dueAt: input.dueAt, tags: input.tags, recurrence: input.recurrence,
+      externalContactName: input.externalContactName, externalContactEmail: input.externalContactEmail,
+      cents: sanitizeCents(input.cents ?? null), parentTaskId: input.parentTaskId,
+      completedAt: createdDone ? new Date() : null,
+    });
+    await createTaskInTransaction({
+      async nextPosition(value) {
+        const [row] = await tx.select({ max: sql<number | null>`MAX(${tasks.position})` }).from(tasks)
+          .where(and(eq(tasks.lane, value.lane), eq(tasks.workspaceId, value.workspaceId)));
+        return (row?.max ?? 0) + 1;
+      },
+      async insertTask(value) {
+        const [row] = await tx.insert(tasks).values({
+          id: value.id, workspaceId: value.workspaceId, seq: nextTaskSeq(value.workspaceId), title: value.title,
+          description: value.description, lane: value.lane, priority: value.priority,
+          assignees: [...value.assignees], estimate: value.estimate, due: value.due,
+          dueAt: value.dueAtSeconds == null ? null : new Date(value.dueAtSeconds * 1000),
+          tags: value.tags == null ? null : [...value.tags], recurrence: value.recurrence,
+          externalContactName: value.externalContactName, externalContactEmail: value.externalContactEmail,
+          cents: value.cents, parentTaskId: value.parentTaskId, position: value.position,
+          completedAt: value.completedAtSeconds == null ? null : new Date(value.completedAtSeconds * 1000),
+          isMilestone: value.isMilestone, updatedAt: new Date(value.createdAtSeconds * 1000),
+        }).returning({ seq: tasks.seq });
+        return { seq: row?.seq ?? 0 };
+      },
+      async insertActivity(value) {
+        await tx.insert(activities).values({
+          id: `a-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).replace(/-/g, "").slice(0, 8)}`,
+          workspaceId: value.workspaceId, taskId: value.id, userId: me, kind: "taskAdd",
+          payload: { kind: "taskAdd", lane: value.lane }, createdAt: new Date(value.createdAtSeconds * 1000),
+        });
+      },
+    }, task);
+    return true;
   });
-  await recordActivity(id, {
-    kind: "taskAdd",
-    lane: input.lane ?? "todo",
-  }, { workspaceId: ws });
+  if (!created) return neutralTaskList(ambient);
   await recordSponsoredUse(
     { product: "tasks", kind: "task_created", objectKey: id, subjectId: me, workspaceId: ws },
     true,

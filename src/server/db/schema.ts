@@ -625,6 +625,37 @@ export const conversationOutbox = sqliteTable("conversation_outbox", {
   index("conversation_outbox_claim").on(t.state, t.nextAttemptAt),
 ]);
 
+/** Body-free provenance for a canonical task created from reviewed conversation work. */
+export const workLinks = sqliteTable("work_links", {
+  id: text("id").primaryKey(),
+  sourceProjectId: text("source_project_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  sourceConversationId: text("source_conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  sourceMessageId: text("source_message_id").notNull().references(() => conversationMessages.id, { onDelete: "cascade" }),
+  sourceRevision: integer("source_revision").notNull(),
+  sourceAudienceEpoch: integer("source_audience_epoch").notNull(),
+  destinationProjectId: text("destination_project_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  taskId: text("task_id").notNull().unique().references(() => tasks.id, { onDelete: "cascade" }),
+  createdBy: text("created_by").notNull().references(() => users.id),
+  createdAt: integer("created_at").notNull(),
+}, (t) => [
+  index("work_links_source").on(t.sourceConversationId, t.sourceMessageId),
+  check("work_links_revision_check", sql`${t.sourceRevision} >= 1`),
+  check("work_links_epoch_check", sql`${t.sourceAudienceEpoch} >= 1`),
+]);
+
+export const workOperationReceipts = sqliteTable("work_operation_receipts", {
+  actorId: text("actor_id").notNull().references(() => users.id),
+  clientRequestId: text("client_request_id").notNull(),
+  operation: text("operation").$type<"conversation_task">().notNull(),
+  payloadHash: text("payload_hash").notNull(),
+  taskId: text("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  workLinkId: text("work_link_id").notNull().references(() => workLinks.id, { onDelete: "cascade" }),
+  committedAt: integer("committed_at").notNull(),
+}, (t) => [
+  primaryKey({ columns: [t.actorId, t.clientRequestId, t.operation] }),
+  check("work_operation_receipts_operation_check", sql`${t.operation} = 'conversation_task'`),
+]);
+
 // Compile-time contract, flags drift between schema and the
 // hand-written client `Task` type in src/lib/data.ts. `comments`,
 // `subtaskCount`, and `subtaskDone` are excluded because they are derived

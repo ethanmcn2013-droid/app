@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "conversation-task-outcomes-2026-09-12",
+  "authorizedBy": "The founder explicitly authorized continued local Project Conversation implementation on 2026-09-12 after the prototype decision. This receipt authorizes isolated local dry runs and CI application only. It does not authorize a remote database migration, production data, a pilot, external delivery, or release.",
+  "reviewedBy": "Codex PC-08 implementation pass on 2026-09-12; independent Astra acceptance remains required by the delivery backlog.",
+  "authorizationSource": "PC-08 Promote conversation work into Tasks in docs/projects/project-conversation/delivery-backlog.md.",
+  "migrations": [
+    {
+      "id": "0029_conversation_task_outcomes",
+      "sha256": "5fdf246389988e2c7f4eef01a42ee0893f42af02302380165424a8e585919dc3",
+      "reviewedAt": "2026-09-12T00:00:00.000Z",
+      "risk": "Application-integrity risk: this adds immutable, body-free message-to-task provenance and durable operation receipts. The migration is additive and copies no message body or existing task data.",
+      "rollbackPlan": "Disable the promotion route while retaining committed tasks, immutable links, and receipts. Do not drop acknowledged data as an operational rollback.",
+      "postconditions": [
+        "work_links and work_operation_receipts exist",
+        "work links bind an exact source Project, conversation, message revision, audience epoch, destination Project and task",
+        "work links have no body or excerpt column",
+        "relationship guards reject mismatched task and source identity even with foreign keys disabled",
+        "operation receipts are immutable and bind one actor request to one task and link",
+        "integrity check passes",
+        "foreign keys remain clean"
+      ],
+      "proofs": [
+        {
+          "id": "task-outcome-tables-exist",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type = 'table' AND name IN ('work_links','work_operation_receipts')",
+          "expected": 2
+        },
+        {
+          "id": "task-outcome-guards-exist",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type = 'trigger' AND name IN ('work_links_guard_insert','work_links_identity_immutable','work_operation_receipts_guard_insert','work_operation_receipts_identity_immutable')",
+          "expected": 4
+        },
+        {
+          "id": "work-links-body-free",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('work_links') WHERE name LIKE '%body%' OR name LIKE '%excerpt%'",
+          "expected": 0
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}
