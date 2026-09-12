@@ -26,6 +26,9 @@ export type WrongAccountDiagnostic = Readonly<{
       | "unclassified";
     genericError: boolean;
     clerkUi: boolean;
+    wrongCopyVisible: boolean;
+    unverifiedCopyVisible: boolean;
+    switchVisible: boolean;
   }>;
   browserIdentity: Readonly<{
     clerkLoaded: boolean;
@@ -36,6 +39,12 @@ export type WrongAccountDiagnostic = Readonly<{
   errors: Readonly<{
     consoleCount: number;
     pageCount: number;
+    pageClass:
+      | "none"
+      | "missingClerkProvider"
+      | "multipleClerkProviders"
+      | "hydration"
+      | "other";
   }>;
 }>;
 

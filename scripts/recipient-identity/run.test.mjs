@@ -124,9 +124,15 @@ test("wrong-account diagnostics retain only boolean, enum and bounded count fiel
       stages: {},
       wrongAccountDiagnostic: {
         routeClass: "invite",
-        rendered: { serverState: "wrongVerified", genericError: false, rawText: "private page text" },
+        rendered: {
+          serverState: "wrongVerified",
+          genericError: false,
+          wrongCopyVisible: true,
+          switchVisible: true,
+          rawText: "private page text",
+        },
         browserIdentity: { signedIn: true, email: "private@example.test" },
-        errors: { consoleCount: 1001, pageCount: 1, message: "private error" },
+        errors: { consoleCount: 1001, pageCount: 1, pageClass: "private error", message: "private error" },
         url: "https://private.example/invite/private-token",
         token: "private-token",
       },
@@ -138,6 +144,9 @@ test("wrong-account diagnostics retain only boolean, enum and bounded count fiel
       serverState: "wrongVerified",
       genericError: false,
       clerkUi: false,
+      wrongCopyVisible: true,
+      unverifiedCopyVisible: false,
+      switchVisible: true,
     },
     browserIdentity: {
       clerkLoaded: false,
@@ -145,7 +154,7 @@ test("wrong-account diagnostics retain only boolean, enum and bounded count fiel
       primaryVerified: false,
       expectedCreator: false,
     },
-    errors: { consoleCount: 999, pageCount: 1 },
+    errors: { consoleCount: 999, pageCount: 1, pageClass: "other" },
   });
   const serialized = JSON.stringify(receipt);
   for (const forbidden of ["private page text", "private@example.test", "private error", "private-token", "private.example"]) {

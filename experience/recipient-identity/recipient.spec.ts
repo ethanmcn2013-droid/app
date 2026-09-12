@@ -5,7 +5,11 @@ import {
   observeWrongAccountDiagnostic,
   type WrongAccountDiagnostic,
 } from "./evidence";
-import { anyMatchVisible } from "./diagnostic";
+import {
+  anyMatchVisible,
+  classifyPageError,
+  type PageErrorClass,
+} from "./diagnostic";
 import {
   PRIVATE_TASK_TITLE,
   RECIPIENT_PROJECT_ID,
@@ -50,7 +54,11 @@ async function wrongAccountDiagnostic(
   page: Page,
   invitePath: string,
   creatorEmail: string,
-  errors: Readonly<{ consoleCount: number; pageCount: number }>,
+  errors: Readonly<{
+    consoleCount: number;
+    pageCount: number;
+    pageClass: PageErrorClass;
+  }>,
 ): Promise<WrongAccountDiagnostic> {
   const currentPath = new URL(page.url()).pathname;
   const routeClass = currentPath === invitePath
@@ -80,6 +88,12 @@ async function wrongAccountDiagnostic(
     name: "Sign out and use the invited account",
   });
   const switchAccountVisible = await anyMatchVisible(switchAccount);
+  const wrongCopyVisible = await anyMatchVisible(
+    page.getByText(/Use the email address this invite was sent to/),
+  );
+  const unverifiedCopyVisible = await anyMatchVisible(
+    page.getByText(/Verify the invited email address before accepting/),
+  );
   const branches = [
     {
       state: "signedOut" as const,
@@ -87,11 +101,11 @@ async function wrongAccountDiagnostic(
     },
     {
       state: "wrongVerified" as const,
-      visible: switchAccountVisible && await anyMatchVisible(page.getByText(/Use the email address this invite was sent to/)),
+      visible: switchAccountVisible && wrongCopyVisible,
     },
     {
       state: "wrongUnverified" as const,
-      visible: switchAccountVisible && await anyMatchVisible(page.getByText(/Verify the invited email address before accepting/)),
+      visible: switchAccountVisible && unverifiedCopyVisible,
     },
     {
       state: "matchingAccount" as const,
@@ -119,6 +133,9 @@ async function wrongAccountDiagnostic(
         : "unclassified",
       genericError: await anyMatchVisible(page.getByText(/Application error|Something went wrong/)),
       clerkUi: await anyMatchVisible(page.locator(".cl-rootBox")),
+      wrongCopyVisible,
+      unverifiedCopyVisible,
+      switchVisible: switchAccountVisible,
     },
     browserIdentity,
     errors,
@@ -132,12 +149,23 @@ test("controlled recipient accepts B, completes assigned work, and loses B after
   const recipientContext = await browser.newContext();
   const creatorPage = await creatorContext.newPage();
   const recipientPage = await recipientContext.newPage();
-  const creatorErrors = { consoleCount: 0, pageCount: 0 };
+  const creatorErrors: {
+    consoleCount: number;
+    pageCount: number;
+    pageClass: PageErrorClass;
+  } = { consoleCount: 0, pageCount: 0, pageClass: "none" };
   creatorPage.on("console", (message) => {
     if (message.type() === "error") creatorErrors.consoleCount += 1;
   });
-  creatorPage.on("pageerror", () => {
+  creatorPage.on("pageerror", (error) => {
     creatorErrors.pageCount += 1;
+    const nextClass = classifyPageError(error);
+    creatorErrors.pageClass = creatorErrors.pageClass === "none" || creatorErrors.pageClass === nextClass
+      ? nextClass
+      : "other";
+    // Actual runs redirect stdout/stderr to private custody. The sanitized
+    // receipt retains only the fixed class and count below.
+    console.error("recipient identity private page error", error);
   });
 
   try {

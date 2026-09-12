@@ -116,6 +116,9 @@ const SERVER_STATES = new Set([
   "signedOut", "wrongVerified", "wrongUnverified", "matchingAccount",
   "missing", "expired", "accepted", "unclassified",
 ]);
+const PAGE_ERROR_CLASSES = new Set([
+  "none", "missingClerkProvider", "multipleClerkProviders", "hydration", "other",
+]);
 const IDENTITY_DIAGNOSTIC_KEYS = [
   "clerkLoaded", "signedIn", "primaryVerified", "expectedCreator",
 ];
@@ -136,11 +139,17 @@ export function sanitizeWrongAccountDiagnostic(value) {
         : "unclassified",
       genericError: value.rendered?.genericError === true,
       clerkUi: value.rendered?.clerkUi === true,
+      wrongCopyVisible: value.rendered?.wrongCopyVisible === true,
+      unverifiedCopyVisible: value.rendered?.unverifiedCopyVisible === true,
+      switchVisible: value.rendered?.switchVisible === true,
     },
     browserIdentity,
     errors: {
       consoleCount: safeCount(value.errors?.consoleCount),
       pageCount: safeCount(value.errors?.pageCount),
+      pageClass: PAGE_ERROR_CLASSES.has(value.errors?.pageClass)
+        ? value.errors.pageClass
+        : "other",
     },
   };
 }
