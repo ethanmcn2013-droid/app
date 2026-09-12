@@ -7,7 +7,7 @@ const base = "https://app.example.test/api/conversations";
 const input = { action: "send", projectId: "project-a", conversationId: "room-a", clientRequestId: "request_http_00000001", expectedAudienceEpoch: 1, body: "Reviewed message", rootId: null, mentionUserIds: [] };
 function fixture(options: { actor?: string | null; sends?: boolean; enabled?: boolean; throwService?: boolean } = {}) {
   const calls: { method: string; value: unknown }[] = [];
-  const service = Object.fromEntries(["ensureProjectConversation", "getProjectConversation", "listProjectAudience", "sendMessage", "getReceipt", "getHistory", "editMessage", "tombstoneMessage"].map((method) => [method, async (value: unknown) => {
+  const service = Object.fromEntries(["ensureProjectConversation", "getProjectConversation", "listProjectAudience", "sendMessage", "getReceipt", "getHistory", "getMessagePage", "editMessage", "tombstoneMessage"].map((method) => [method, async (value: unknown) => {
     calls.push({ method, value });
     if (options.throwService) throw new Error("SQL secret message body and bearer token");
     return { ok: true, value: { marker: method } };
@@ -53,6 +53,17 @@ test("cursor and page bounds cannot be widened or silently normalized", async ()
     assert.equal(result.status, 400); assert.equal(f.calls.length, 0);
   }
 });
+test("recent-message pages retain exact bounds and remain readable with sends off", async () => {
+  const f = fixture({ sends: false });
+  const query = `${base}?action=messages&projectId=project-a&conversationId=room-a`;
+  for (const suffix of ["&limit=101", "&beforeCreateSeq=0", "&beforeCreateSeq=-1", "&beforeCreateSeq=1e2"]) assert.equal((await f.handle(new Request(query + suffix))).status, 400);
+  assert.equal(f.calls.length, 0);
+  const response = await f.handle(new Request(query + "&limit=20&beforeCreateSeq=80"));
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("cache-control")!, /no-store/);
+  assert.deepEqual(f.calls, [{ method: "getMessagePage", value: { actorId: "canonical-alice", projectId: "project-a", conversationId: "room-a", limit: 20, beforeCreateSeq: 80 } }]);
+});
+
 test("operational failure returns a neutral retryable response without content or exception details", async () => {
   const f = fixture({ throwService: true }); const result = await f.handle(post(input));
   assert.equal(result.status, 503);

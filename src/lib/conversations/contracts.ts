@@ -61,6 +61,13 @@ export type ConversationDelta = Readonly<{
   messages: readonly MessageRecord[];
 }>;
 /** No sender-visible read receipts. Root and opened-thread coverage are separate. */
+export type MessagePage = Readonly<{
+  audienceEpoch: number;
+  throughChangeSeq: number;
+  messages: readonly MessageRecord[];
+  hasOlder: boolean;
+  beforeCreateSeq: number | null;
+}>;
 export type ObservedRange = Readonly<{
   rootId: string | null;
   fromCreateSeq: number;

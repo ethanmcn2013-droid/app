@@ -77,6 +77,13 @@ export function createConversationHttp(deps: Dependencies) {
           if (!validRequestId(clientRequestId)) return fail("invalid_input");
           return response(await service.getReceipt({ actorId, projectId, conversationId, clientRequestId }));
         }
+        if (action === "messages") {
+          const beforeText = url.searchParams.get("beforeCreateSeq");
+          const limitText = url.searchParams.get("limit") ?? "50";
+          if (!/^\d+$/.test(limitText) || !positive(Number(limitText)) || Number(limitText) > 100 ||
+            (beforeText !== null && (!/^\d+$/.test(beforeText) || !positive(Number(beforeText))))) return fail("invalid_input");
+          return response(await service.getMessagePage({ actorId, projectId, conversationId, limit: Number(limitText), ...(beforeText !== null ? { beforeCreateSeq: Number(beforeText) } : {}) }));
+        }
         if (action !== "history") return fail("invalid_input");
         const cursorText = url.searchParams.get("afterChangeSeq") ?? "0";
         const limitText = url.searchParams.get("limit") ?? "50";

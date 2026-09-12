@@ -156,6 +156,37 @@ test("ensure and send are durable and idempotent, with atomic directed effects",
   });
 });
 
+test("recent and older pages use current sources and a matching delta cursor; revoked or foreign readers get no page", async () => {
+  await withFixture(async ({ client, service }) => {
+    const room = await service.ensureProjectConversation({ actorId: "synthetic_alice", projectId: projectA });
+    if (!room.ok) assert.fail("fixture room missing");
+    const scope = { actorId: "synthetic_alice", projectId: projectA, conversationId: room.value.conversationId };
+    const sent = [];
+    for (let i = 0; i < 3; i++) {
+      const result = await service.sendMessage({ actorId: scope.actorId, input: { ...sendInput(scope.conversationId, `request_paged_000${i}`, room.value.audienceEpoch, `Message ${i}`), mentionUserIds: [] } });
+      if (!result.ok) assert.fail("fixture send failed");
+      sent.push(result.value);
+    }
+    const recent = await service.getMessagePage({ ...scope, limit: 2 });
+    if (!recent.ok) assert.fail("recent page missing");
+    assert.deepEqual(recent.value.messages.map((m) => m.id), sent.slice(1).map((m) => m.messageId));
+    assert.equal(recent.value.hasOlder, true);
+    assert.equal(recent.value.throughChangeSeq, 3);
+    assert.equal((await service.tombstoneMessage({ ...scope, messageId: sent[0].messageId, clientRequestId: "request_page_delete1", expectedRevision: 1, expectedAudienceEpoch: room.value.audienceEpoch })).ok, true);
+    const older = await service.getMessagePage({ ...scope, limit: 2, beforeCreateSeq: recent.value.beforeCreateSeq! });
+    if (!older.ok) assert.fail("older page missing");
+    assert.equal(older.value.hasOlder, false);
+    assert.equal(older.value.messages[0].body, null);
+    assert.equal(older.value.throughChangeSeq, 4);
+    assert.deepEqual(await service.getHistory({ ...scope, afterChangeSeq: 99 }), { ok: false, code: "resync_required" });
+    const delta = await service.getHistory({ ...scope, afterChangeSeq: recent.value.throughChangeSeq });
+    assert.equal(delta.ok && delta.value.messages[0].body, null);
+    assert.deepEqual(await service.getMessagePage({ ...scope, projectId: projectB }), { ok: false, code: "unavailable" });
+    await client.execute({ sql: "DELETE FROM workspace_members WHERE user_id = ? AND workspace_id = ?", args: [scope.actorId, projectA] });
+    assert.deepEqual(await service.getMessagePage(scope), { ok: false, code: "unavailable" });
+  });
+});
+
 test("process exit after commit preserves one source and receipt for a fresh process", async () => {
   const fixture = await freshDatabase();
   const path = join(fixture.directory, "tasks.db").replaceAll("\\", "/");

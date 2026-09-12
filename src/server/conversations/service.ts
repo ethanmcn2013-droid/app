@@ -5,6 +5,8 @@ import type {
   ConversationDelta,
   ConversationResult,
   MessageReceipt,
+  MessagePage,
+  MessageRecord,
   ReceiptLookup,
   SendInput,
 } from "@/lib/conversations/contracts";
@@ -98,6 +100,17 @@ function scopeFromRow(row: Record<string, unknown>): ProjectConversationScope {
     projectName: text(row.workspace_name),
     audienceEpoch: integer(row.audience_epoch),
     lifecycle: row.workspace_archived_at == null && row.lifecycle === "active" ? "active" : "archived",
+  };
+}
+
+function messageFromRow(row: Record<string, unknown>): MessageRecord {
+  return {
+    id: text(row.id), authorId: text(row.author_id),
+    rootId: row.root_id == null ? null : text(row.root_id),
+    createSeq: integer(row.create_seq), revision: integer(row.revision),
+    body: row.deleted_at == null ? text(row.body) : null,
+    createdAt: integer(row.created_at), editedAt: row.edited_at == null ? null : integer(row.edited_at),
+    deletedAt: row.deleted_at == null ? null : integer(row.deleted_at),
   };
 }
 
@@ -388,6 +401,29 @@ export function createConversationService(adapter: ConversationDatabaseAdapter) 
     });
   }
 
+  async function getMessagePage(input: ActorConversation & { beforeCreateSeq?: number; limit?: number }): Promise<ConversationResult<MessagePage>> {
+    const limit = input.limit ?? CONVERSATION_LIMITS.pageDefault;
+    if (!validIdentity(input.actorId) || !isProjectId(input.projectId) || !validIdentity(input.conversationId) ||
+      !Number.isSafeInteger(limit) || limit < 1 || limit > CONVERSATION_LIMITS.pageMaximum ||
+      (input.beforeCreateSeq !== undefined && (!validSequence(input.beforeCreateSeq) || input.beforeCreateSeq < 1))) return failure("invalid_input");
+    return inTransaction("read", async (executor) => {
+      const authorized = await authorizeConversation(executor, input);
+      if (!authorized.ok) return authorized;
+      const sequence = await executor.execute({ sql: "SELECT next_change_seq - 1 AS cursor FROM conversations WHERE id = ?", args: [input.conversationId] });
+      const result = await executor.execute({
+        sql: `SELECT id,author_id,root_id,create_seq,revision,body,created_at,edited_at,deleted_at
+          FROM conversation_messages WHERE conversation_id = ? AND (? IS NULL OR create_seq < ?)
+          ORDER BY create_seq DESC LIMIT ?`,
+        args: [input.conversationId, input.beforeCreateSeq ?? null, input.beforeCreateSeq ?? null, limit + 1],
+      });
+      const messages = result.rows.slice(0, limit).reverse().map(messageFromRow);
+      return { ok: true, value: {
+        audienceEpoch: authorized.value.scope.audienceEpoch, throughChangeSeq: integer(sequence.rows[0].cursor),
+        messages, hasOlder: result.rows.length > limit, beforeCreateSeq: messages[0]?.createSeq ?? null,
+      } };
+    });
+  }
+
   async function getHistory(input: ActorConversation & { afterChangeSeq: number; limit?: number }): Promise<ConversationResult<ConversationDelta>> {
     const limit = input.limit ?? CONVERSATION_LIMITS.pageDefault;
     if (!validIdentity(input.actorId) || !isProjectId(input.projectId) ||
@@ -396,6 +432,8 @@ export function createConversationService(adapter: ConversationDatabaseAdapter) 
     return inTransaction("read", async (executor) => {
       const authorized = await authorizeConversation(executor, input);
       if (!authorized.ok) return authorized;
+      const maximum = await executor.execute({ sql: "SELECT next_change_seq - 1 AS cursor FROM conversations WHERE id = ?", args: [input.conversationId] });
+      if (input.afterChangeSeq > integer(maximum.rows[0].cursor)) return failure("resync_required");
       const changes = await executor.execute({
         sql: `SELECT change_seq, message_id FROM conversation_changes
           WHERE conversation_id = ? AND change_seq > ? ORDER BY change_seq LIMIT ?`,
@@ -413,14 +451,7 @@ export function createConversationService(adapter: ConversationDatabaseAdapter) 
             ORDER BY create_seq`,
           args: [input.conversationId, ...ids],
         });
-        messages = source.rows.map((row) => ({
-          id: text(row.id), authorId: text(row.author_id),
-          rootId: row.root_id == null ? null : text(row.root_id),
-          createSeq: integer(row.create_seq), revision: integer(row.revision),
-          body: row.deleted_at == null ? text(row.body) : null,
-          createdAt: integer(row.created_at), editedAt: row.edited_at == null ? null : integer(row.edited_at),
-          deletedAt: row.deleted_at == null ? null : integer(row.deleted_at),
-        }));
+        messages = source.rows.map(messageFromRow);
       }
       return {
         ok: true,
@@ -535,6 +566,7 @@ export function createConversationService(adapter: ConversationDatabaseAdapter) 
     sendMessage,
     getReceipt,
     getHistory,
+    getMessagePage,
     editMessage,
     tombstoneMessage,
   } as const;
