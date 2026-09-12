@@ -22,6 +22,7 @@ export type ProjectConversationScope = Readonly<{
   conversationId: string;
   projectId: ProjectId;
   kind: "project";
+  projectName: string;
   audienceEpoch: number;
   lifecycle: "active" | "archived";
 }>;
@@ -94,6 +95,7 @@ function scopeFromRow(row: Record<string, unknown>): ProjectConversationScope {
     conversationId: text(row.id),
     projectId: text(row.workspace_id) as ProjectId,
     kind: "project",
+    projectName: text(row.workspace_name),
     audienceEpoch: integer(row.audience_epoch),
     lifecycle: row.workspace_archived_at == null && row.lifecycle === "active" ? "active" : "archived",
   };
@@ -105,7 +107,7 @@ async function loadProjectScope(
 ): Promise<{ row: Record<string, unknown> | null; member: boolean }> {
   const result = await executor.execute({
     sql: `SELECT c.id, c.workspace_id, c.kind, c.lifecycle, c.audience_epoch,
-        w.archived_at AS workspace_archived_at, wm.user_id AS member_id
+        w.archived_at AS workspace_archived_at, w.name AS workspace_name, wm.user_id AS member_id
       FROM workspaces w
       LEFT JOIN workspace_members wm ON wm.workspace_id = w.id AND wm.user_id = ?
       LEFT JOIN conversations c ON c.workspace_id = w.id AND c.kind = 'project'
@@ -122,7 +124,7 @@ async function authorizeConversation(
 ): Promise<ConversationResult<{ row: Record<string, unknown>; scope: ProjectConversationScope }>> {
   const result = await executor.execute({
     sql: `SELECT c.id, c.workspace_id, c.kind, c.lifecycle, c.audience_epoch,
-        w.archived_at AS workspace_archived_at
+        w.archived_at AS workspace_archived_at, w.name AS workspace_name
       FROM conversations c
       JOIN workspaces w ON w.id = c.workspace_id
       JOIN workspace_members wm ON wm.workspace_id = c.workspace_id AND wm.user_id = ?
@@ -227,6 +229,20 @@ export function createConversationService(adapter: ConversationDatabaseAdapter) 
       const loaded = await loadProjectScope(executor, input);
       if (!loaded.row || !loaded.member) return failure("unavailable");
       return { ok: true, value: loaded.row.id ? scopeFromRow(loaded.row) : null };
+    });
+  }
+
+  /** Selection hints only; every selected resource is independently authorized. */
+  async function listProjects(input: { actorId: string }): Promise<ConversationResult<readonly { id: ProjectId; name: string }[]>> {
+    if (!validIdentity(input.actorId)) return failure("invalid_input");
+    return inTransaction("read", async (executor) => {
+      const result = await executor.execute({
+        sql: `SELECT w.id, w.name FROM workspaces w
+          JOIN workspace_members wm ON wm.workspace_id=w.id AND wm.user_id=?
+          JOIN users u ON u.id=wm.user_id ORDER BY w.name, w.id LIMIT 2000`,
+        args: [input.actorId],
+      });
+      return { ok: true, value: result.rows.map((row) => ({ id: text(row.id) as ProjectId, name: text(row.name) })) };
     });
   }
 
@@ -514,6 +530,7 @@ export function createConversationService(adapter: ConversationDatabaseAdapter) 
 
   return {
     resolveActor,
+    listProjects,
     getProjectConversation,
     ensureProjectConversation,
     listProjectAudience,

@@ -11,6 +11,8 @@ import {
   type ConversationDatabaseAdapter,
 } from "./database";
 import { createConversationService } from "./service";
+import { createConversationHttp } from "./http";
+import { resolveConversationControls } from "../../lib/conversations/flags";
 
 const repoRoot = resolve(process.cwd());
 const projectA = assertProjectId("synthetic_project_a");
@@ -82,7 +84,41 @@ test("unverified storage fails closed and Clerk identity resolves only through c
     assert.equal(await service.resolveActor("clerk_alice"), "synthetic_alice");
     assert.equal(await service.resolveActor("synthetic_alice"), null);
     assert.equal(await service.resolveActor("clerk_missing"), null);
+    assert.deepEqual(await service.listProjects({ actorId: "synthetic_bob" }), { ok: true, value: [{ id: projectA, name: "Project A" }] });
+    assert.deepEqual(await service.listProjects({ actorId: "synthetic_charlie" }), { ok: true, value: [{ id: projectB, name: "Project B" }] });
   });
+});
+
+test("HTTP receipt recovery survives lost acknowledgment and send rollback; another connection revokes all later reads", async () => {
+  const fixture = await freshDatabase();
+  const second = createClient({ url: `file:${join(fixture.directory, "tasks.db").replaceAll("\\", "/")}` });
+  const service = createConversationService(createLocalConversationDatabaseAdapter({ client: fixture.client }));
+  let sends = true;
+  const handle = createConversationHttp({ authenticate: () => service.resolveActor("clerk_alice"), service: async () => service,
+    controls: () => resolveConversationControls({ SIGNAL_CONVERSATION_INTERNAL_ENABLED: "true", SIGNAL_CONVERSATION_SEND_ENABLED: String(sends), SIGNAL_CONVERSATION_INTERNAL_ACTOR_IDS: "synthetic_alice" }),
+  });
+  const origin = "https://app.example.test";
+  const post = (body: unknown) => handle(new Request(`${origin}/api/conversations`, { method: "POST", headers: { origin, "content-type": "application/json" }, body: JSON.stringify(body) }));
+  try {
+    const ensured = await (await post({ action: "ensure", projectId: projectA })).json();
+    assert.equal(ensured.ok, true);
+    const input = { ...sendInput(ensured.value.conversationId, "request_http_persist_01", ensured.value.audienceEpoch), action: "send" };
+    const acknowledgment = await post(input);
+    assert.equal(acknowledgment.status, 200); // Simulate caller losing this body after the committed response.
+    const lookupUrl = `${origin}/api/conversations?action=receipt&projectId=${projectA}&conversationId=${input.conversationId}&clientRequestId=${input.clientRequestId}`;
+    const recovered = await (await handle(new Request(lookupUrl))).json();
+    assert.equal(recovered.value.state, "committed");
+    assert.deepEqual((await (await post(input)).json()).value, recovered.value.receipt);
+    assert.equal(Number((await second.execute("SELECT COUNT(*) AS n FROM conversation_messages")).rows[0].n), 1);
+    sends = false;
+    assert.equal((await post({ ...input, clientRequestId: "request_send_off_0001" })).status, 403);
+    assert.equal((await handle(new Request(lookupUrl))).status, 200);
+    await second.execute({ sql: "DELETE FROM workspace_members WHERE workspace_id=? AND user_id='synthetic_alice'", args: [projectA] });
+    assert.equal((await handle(new Request(lookupUrl))).status, 404);
+    assert.equal((await handle(new Request(`${origin}/api/conversations?action=history&projectId=${projectA}&conversationId=${input.conversationId}`))).status, 404);
+    sends = true;
+    assert.equal((await post(input)).status, 404);
+  } finally { second.close(); fixture.client.close(); }
 });
 
 test("ensure and send are durable and idempotent, with atomic directed effects", async () => {

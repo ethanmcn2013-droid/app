@@ -89,7 +89,7 @@ export function createConversationHttp(deps: Dependencies) {
       if (!availability.send) return fail("read_only");
       const body = await boundedJson(request);
       if (!body || "actorId" in body || "userId" in body) return fail("invalid_input");
-      const projectId = parseProjectId(body.projectId);
+      const projectId = typeof body.projectId === "string" ? parseProjectId(body.projectId) : null;
       if (!projectId) return fail("invalid_input");
       const service = await deps.service();
       if (body.action === "ensure") return response(await service.ensureProjectConversation({ actorId, projectId }));
