@@ -81,6 +81,7 @@ export function ConversationList({
       {items.map((item) => (
         <button
           aria-current={activeId === item.id ? "page" : undefined}
+          aria-label={`${item.title}, ${item.detail}`}
           className={styles.conversationRow}
           data-active={activeId === item.id || undefined}
           key={item.id}

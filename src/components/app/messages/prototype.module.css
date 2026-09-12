@@ -165,7 +165,7 @@
   .listHeading { justify-content: center; padding: 0 0 12px; }
   .listHeading h2, .projectLabel, .conversationCopy, .unread, .quietNotice { display: none; }
   .conversationRow { display: flex; justify-content: center; min-height: 58px; padding: 7px; }
-  .conversationRow[data-active] { box-shadow: none; }
+  .conversationRow[data-active] { box-shadow: none; outline: 2px solid var(--pc-ink); outline-offset: -4px; }
   .audienceHeader { align-items: flex-start; min-height: 68px; padding: 10px 12px; }
   .audienceHeader p { line-height: 1.35; white-space: normal; }
   .audienceHeader .iconButton { display: none; }
