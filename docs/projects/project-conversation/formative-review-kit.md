@@ -30,4 +30,4 @@ One row per participant per journey: anonymous ID, device/input, exact commit, u
 
 Proposed acceptance is at least 8/10 unaided on each core journey A/B/C/E/F, with no dangerous audience confusion regardless of average. An incomplete cohort does not satisfy 8/10. A dangerous misunderstanding requires correcting that flow and a targeted retest; do not restart unrelated polishing. Record founder direction acceptance, participant acceptance and automated acceptance in separate rows.
 
-Current result: **0 sessions; no human acceptance claim.** The concrete prototype and local database experiments can be completed while this gate is pending. The reviewed delivery plan requires this gate before PC-06 backend integration unless explicitly amended by the founder.
+Current result: **0 sessions; no human acceptance claim.** After reviewing the prototype, the founder selected white/stone-black/indigo and explicitly requested continued execution. The local-continuation gate is amended in decisions.md: PC-06–14 may proceed using synthetic data; the participant acceptance criteria above remain required before release or pilot.

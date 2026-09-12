@@ -15,6 +15,10 @@
 
 Missing switches are false in development, tests and production. Only exact `true` enables a switch. Guest, attachment and AI controls are hard false in this scope. No public environment variable or client-controlled input may enable the backend. These flags do not affect the clearly marked in-memory lab fixture.
 
+The current candidate runtime additionally requires `SIGNAL_CONVERSATION_DATABASE_MODE=local` and an explicit canonical `TASKS_DATABASE_URL=file:...` outside production/Vercel. It creates no fallback database, imports no ambient seeding module and never switches database URLs while a process is running. Remote runtime activation remains unavailable until the designated transaction/primary evidence is supplied. The allowlist contains canonical user IDs resolved from `users.clerk_id` after a real Clerk session; client actor fields are rejected. Missing Clerk configuration never enables a seed identity.
+
+`scripts/conversations/preview-server.ts` is a separate loopback-only synthetic fixture proxy for browser verification. It creates a uniquely named file DB under an explicit scratch directory, applies supported migrations and seeds only invented identities/projects. Its `x-fixture-actor` input and `/__fixture` controls exist only in this script; application routes import neither. It forwards UI assets to an owned local Next preview and invokes the same HTTP handler/service. This proves local browser behavior with fixtures, never Clerk authentication or deployed authorization.
+
 Data-preserving rollback means disabling sends and delivery while keeping internal entitled history available. Existing receipts, source IDs and change sequences must survive. A global internal-off switch hides the candidate completely; use the send-off switch for a read-only incident response. There is no down-migration/drop-table rollback. Disable an experimental poller without deleting history; restarting it reauthorizes and resumes from the durable change cursor.
 
 ## Concrete checks to close at integration
