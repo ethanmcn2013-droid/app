@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, readFile, readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
+import { spawnSync } from "node:child_process";
 import { createClient, type Client } from "@libsql/client";
 import { assertProjectId } from "@/lib/projects/project-ref";
 import {
@@ -153,6 +154,28 @@ test("ensure and send are durable and idempotent, with atomic directed effects",
       assert.equal(Number(count.rows[0].count), 1, table);
     }
   });
+});
+
+test("process exit after commit preserves one source and receipt for a fresh process", async () => {
+  const fixture = await freshDatabase();
+  const path = join(fixture.directory, "tasks.db").replaceAll("\\", "/");
+  const environment = { ...process.env };
+  for (const key of Object.keys(environment)) if (/^(TASKS_|NOTES_|TIMELINE_|SIGNAL_|NEXT_PUBLIC_|CLERK_|SENTRY_|RESEND_|STRIPE_|BLOB_|OPENAI_|ANTHROPIC_|VERCEL_|CRON_|OUTBOX_)/.test(key)) delete environment[key];
+  const run = (mode: string) => spawnSync(process.execPath, ["--import", "tsx", "--import", "./src/test/register-server-only.mjs", "src/server/conversations/fixtures/restart-process.ts", path, mode], { cwd: repoRoot, env: environment, encoding: "utf8", timeout: 20_000 });
+  try {
+    const committed = run("commit");
+    assert.equal(committed.status, 0, committed.stderr);
+    assert.equal(committed.stdout, "");
+    const recovery = run("recover");
+    assert.equal(recovery.status, 0, recovery.stderr);
+    const result = JSON.parse(recovery.stdout);
+    assert.equal(result.recovered.value.state, "committed");
+    assert.deepEqual(result.retried.value, result.recovered.value.receipt);
+    for (const table of ["conversation_messages", "conversation_receipts", "conversation_attention", "conversation_outbox"]) {
+      const count: Awaited<ReturnType<Client["execute"]>> = await fixture.client.execute(`SELECT COUNT(*) AS n FROM ${table}`);
+      assert.equal(Number(count.rows[0].n), 1, table);
+    }
+  } finally { fixture.client.close(); }
 });
 
 test("only explicit mentions create attention while other members retain history", async () => {
