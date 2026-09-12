@@ -47,6 +47,8 @@ corepack pnpm test:recipient-identity
 
 The runner also requires the exact recipient-proof branch, both pinned source ancestors, a clean source tree, and a free loopback port. It builds the app, creates isolated file databases, and passes the child process an explicit small environment instead of the caller's general provider or repository credentials.
 
+The production-mode boot contract requires a Tasks database auth-token value. For this local file target, the runner creates a fixed public sentinel inside the child environment; libSQL does not use it to authenticate the file database. Preflight still refuses every caller-supplied database auth token, and no remote database URL is allowed.
+
 ## What the journey proves
 
 The test uses Clerk's supported Playwright ticket helper to establish real development-instance sessions for the two controlled accounts. Ticket sign-in bypasses credential entry, verification, and MFA. The test therefore checks the signed-out invitation and its exact sign-in redirect intent, but does not claim that sign-in form interaction was exercised.

@@ -3,7 +3,12 @@ import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { buildChildEnvironment, buildReceipt, resetRunOutput } from "./run.mjs";
+import {
+  buildChildEnvironment,
+  buildReceipt,
+  LOCAL_DATABASE_AUTH_SENTINEL,
+  resetRunOutput,
+} from "./run.mjs";
 
 test("run reset invalidates stale receipt and browser output", () => {
   const allowedRoot = path.resolve("experience", "output", "recipient-identity");
@@ -40,6 +45,10 @@ test("child process receives no arbitrary repository or provider credentials", (
     GITHUB_TOKEN: "must-not-cross",
     RESEND_API_KEY: "must-not-cross",
     TURSO_AUTH_TOKEN: "must-not-cross",
+    TASKS_AUTH_TOKEN: "caller-database-secret-must-not-cross",
+    NOTES_AUTH_TOKEN: "must-not-cross",
+    TIMELINE_AUTH_TOKEN: "must-not-cross",
+    SIGNAL_AUTH_TOKEN: "must-not-cross",
   });
   assert.equal(child.PATH, "safe-path");
   assert.equal(child.CLERK_SECRET_KEY, declaredSecret);
@@ -47,6 +56,11 @@ test("child process receives no arbitrary repository or provider credentials", (
   assert.equal(child.GITHUB_TOKEN, undefined);
   assert.equal(child.RESEND_API_KEY, undefined);
   assert.equal(child.TURSO_AUTH_TOKEN, undefined);
+  assert.equal(child.TASKS_AUTH_TOKEN, LOCAL_DATABASE_AUTH_SENTINEL);
+  assert.notEqual(child.TASKS_AUTH_TOKEN, "caller-database-secret-must-not-cross");
+  assert.equal(child.NOTES_AUTH_TOKEN, undefined);
+  assert.equal(child.TIMELINE_AUTH_TOKEN, undefined);
+  assert.equal(child.SIGNAL_AUTH_TOKEN, undefined);
 });
 
 test("failed preflight receipt cannot claim an unvalidated deployment guard", () => {

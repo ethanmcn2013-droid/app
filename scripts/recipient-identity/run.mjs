@@ -29,6 +29,12 @@ const SAFE_OS_KEYS = [
   "SYSTEMROOT", "SystemRoot", "TEMP", "TMP", "USERPROFILE", "WINDIR", "windir",
 ];
 
+// Next production-mode validation requires the Tasks token to be present even
+// though libSQL file clients do not authenticate. This fixed, public sentinel
+// is created inside the isolated child boundary; caller-supplied database
+// credentials remain forbidden by preflight and never cross into the child.
+export const LOCAL_DATABASE_AUTH_SENTINEL = "recipient-identity-local-file-sentinel";
+
 const REQUIRED_STAGES = [
   "testingTokenIssued", "twoSessionsIssued", "signedOutInviteShown", "wrongAccountRefused",
   "inviteAccepted", "recipientTaskCompleted", "homeReturned", "creatorReadback",
@@ -145,6 +151,7 @@ export function buildChildEnvironment(merged, config, osEnvironment = process.en
     SIGNAL_RECIPIENT_EVIDENCE_PATH: evidencePath,
     SIGNAL_RECIPIENT_SOURCE_REVISION: config.sourceRevision,
     TASKS_DATABASE_URL: localDatabaseUrl("tasks"),
+    TASKS_AUTH_TOKEN: LOCAL_DATABASE_AUTH_SENTINEL,
     NOTES_DATABASE_URL: localDatabaseUrl("notes"),
     TIMELINE_DATABASE_URL: localDatabaseUrl("timeline"),
     SIGNAL_DATABASE_URL: localDatabaseUrl("signal"),
