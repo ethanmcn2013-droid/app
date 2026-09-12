@@ -17,5 +17,5 @@ export default async function LiveProjectConversationLab({ searchParams }: { sea
   if (process.env.NODE_ENV === "production") notFound();
   const requested = (await searchParams).actor;
   const fixtureActor = typeof requested === "string" && requested in actors ? requested as keyof typeof actors : "alice";
-  return <ConversationWorkspace actorId={actors[fixtureActor]} fixtureActor={fixtureActor} projects={projects} />;
+  return <div style={{ height: "100dvh", background: "white" }}><ConversationWorkspace actorId={actors[fixtureActor]} fixtureActor={actors[fixtureActor]} projects={projects} /></div>;
 }

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { ClerkRuntimeProvider } from "@/components/clerk-runtime-provider";
 import { MobileSuiteNav } from "@/components/app/mobile-suite-nav";
+import { ConversationMobileNav, ConversationStudioRail } from "@/components/app/conversation-navigation-runtime";
 import { ProductWorkspaceShell } from "@/components/app/product-workspace-shell";
 import { SuiteChromeGate } from "@/components/app/suite-chrome-gate";
 import {
@@ -136,7 +137,7 @@ export default function AppLayout({
           </SuiteChromeGate>
           <SuiteScrollFrameBody>
             <SuiteChromeGate>
-              <StudioRail />
+              <Suspense fallback={<StudioRail />}><ConversationStudioRail /></Suspense>
             </SuiteChromeGate>
             <Suspense fallback={<SuiteLoading />}>
               <SharedAppGate>
@@ -145,7 +146,7 @@ export default function AppLayout({
             </Suspense>
           </SuiteScrollFrameBody>
           <SuiteChromeGate>
-            <MobileSuiteNav />
+            <Suspense fallback={<MobileSuiteNav />}><ConversationMobileNav /></Suspense>
             <SuiteCommandRoot />
           </SuiteChromeGate>
         </SuiteScrollFrame>

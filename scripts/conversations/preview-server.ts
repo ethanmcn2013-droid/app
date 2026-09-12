@@ -10,6 +10,7 @@ import { createConversationService } from "../../src/server/conversations/servic
 import { createConversationHttp } from "../../src/server/conversations/http";
 import { resolveConversationControls } from "../../src/lib/conversations/flags";
 
+async function main() {
 const parentDirectory = process.argv[2];
 if (!parentDirectory) throw new Error("An explicit synthetic output directory is required");
 const port = Number(process.argv[3] ?? "3189");
@@ -86,3 +87,5 @@ server.on("upgrade", (request, socket, head) => {
 });
 server.listen(port, "127.0.0.1", () => process.stdout.write(JSON.stringify({ origin, directory, synthetic: true, nextPort }) + "\n"));
 process.on("SIGINT", () => server.close(() => { client.close(); process.exit(0); }));
+}
+void main().catch((error) => { process.stderr.write(String(error) + "\n"); process.exitCode = 1; });

@@ -24,7 +24,7 @@ export class ConversationPoller<T> {
     random?: () => number;
     clock?: PollClock;
   }>) {
-    this.clock = options.clock ?? { set: (callback, ms) => setTimeout(callback, ms), clear: clearTimeout };
+    this.clock = options.clock ?? { set: (callback, ms) => setTimeout(callback, ms), clear: (timer) => clearTimeout(timer) };
   }
 
   /** Reconfiguration invalidates all responses from the previous session/scope. */

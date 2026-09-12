@@ -41,12 +41,12 @@ function activeMobileKey(pathname: string): string {
  * suite rail appears on Home and the sibling canvases. Tasks remains one
  * tap away and its account menu retains the cross-product escape hatch.
  */
-export function MobileSuiteNav() {
+export function MobileSuiteNav({ messagesEnabled = false }: { messagesEnabled?: boolean }) {
   const pathname = usePathname() ?? "";
   const activeKey = activeMobileKey(pathname);
   const suiteContext = useSuiteContext();
 
-  if (activeKey === "tasks") return null;
+  if (activeKey === "tasks" && !pathname.startsWith("/app/messages")) return null;
 
   return (
     <nav
@@ -84,6 +84,7 @@ export function MobileSuiteNav() {
           </Link>
         );
       })}
+      {messagesEnabled ? <Link href="/app/messages" aria-current={pathname.startsWith("/app/messages") ? "page" : undefined} className="flex min-h-[54px] min-w-0 flex-1 flex-col items-center justify-center gap-1 text-[var(--x-studio-ink-strong)] focus-visible:outline-2 focus-visible:outline-indigo-500"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M5 4h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6 3V6a2 2 0 0 1 2-2Z" /></svg><span className="text-[10px] font-medium">Messages</span></Link> : null}
     </nav>
   );
 }
