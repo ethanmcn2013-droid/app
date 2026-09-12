@@ -198,25 +198,6 @@ function ConversationFeedState({
         throughChangeSeq: history.value.throughChangeSeq }));
       setComments((current) => mergeComments(current, history.value.comments));
     };
-    // The VM branch keeps the source-level acceptance harness deterministic.
-    // Browser/runtime builds always take the visibility-aware poller branch.
-    if (typeof document === "undefined") {
-      const controller = new AbortController();
-      let inFlight = false;
-      const run = async () => {
-        if (inFlight) return;
-        inFlight = true;
-        try { apply(await poll(controller.signal)); } catch { /* retry on the next tick */ }
-        finally { inFlight = false; }
-      };
-      const timer = window.setInterval(run, 2_500);
-      return () => {
-        controller.abort();
-        window.clearInterval(timer);
-        for (const operation of operationControllers) operation.abort();
-        operationControllers.clear();
-      };
-    }
     const poller = new ConversationPoller<{
       history: ConversationResult<TaskDiscussionDelta>;
       snapshot?: ConversationResult<TaskDiscussionSnapshot>;
@@ -488,6 +469,7 @@ function CommentRow({ comment, currentActorId, members, onEdit, onDelete }: {
       ) : editing ? (
         <div className="mt-1 space-y-2">
           <MentionField value={draft} onChange={setDraft} people={members}
+            aria-label="Edit comment"
             onMention={(person) => setMentionIds((current) => current.includes(person.id) ? current : [...current, person.id])}
             className="w-full rounded-lg border border-line-soft bg-white p-2 text-[13px] text-ink" />
           <MentionSelection people={members} selectedIds={mentionIds}
@@ -531,7 +513,7 @@ function PendingRow({ item, canRetry, onResolve, onDiscard }: {
       <span className="text-[11px] text-ink-quiet">{label} · {item.state === "pending" ? "Sending…" : item.state === "uncertain" ? "Receipt check needed" : "Not committed"}</span>
       {item.state !== "pending" ? <div className="mt-1 flex gap-2">
         <button type="button" disabled={!canRetry} className="text-[11px] font-medium text-brand disabled:opacity-40" onClick={onResolve}>Check receipt, then retry</button>
-        <button type="button" className="text-[11px] text-ink-quiet" onClick={onDiscard}>Discard</button>
+        {item.state === "failed" ? <button type="button" className="text-[11px] text-ink-quiet" onClick={onDiscard}>Discard</button> : null}
       </div> : null}
     </div>
   </motion.div>;

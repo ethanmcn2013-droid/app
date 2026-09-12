@@ -4,6 +4,7 @@ import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import test from "node:test";
 import vm from "node:vm";
+import { ConversationPoller } from "./polling";
 
 const requireFromRepo = createRequire(resolve("package.json"));
 
@@ -15,11 +16,26 @@ async function harness(outgoingCache?: Map<string, unknown>) {
   }).outputText;
   const states: unknown[] = [];
   const effects: Array<() => void | (() => void)> = [];
+  const scheduled = new Map<number, () => void>();
+  let nextTimer = 1;
   let slot = 0;
   let transport: (url: unknown, init?: RequestInit) => Promise<{ json(): Promise<unknown> }> = async () => {
     throw new Error("unexpected transport");
   };
   const element = (type: unknown, props: unknown) => ({ type, props });
+  const clock = {
+    set(callback: () => void) {
+      const timer = nextTimer++;
+      scheduled.set(timer, callback);
+      return timer as unknown as ReturnType<typeof setTimeout>;
+    },
+    clear(timer: ReturnType<typeof setTimeout>) { scheduled.delete(Number(timer)); },
+  };
+  class HarnessConversationPoller<T> extends ConversationPoller<T> {
+    constructor(options: ConstructorParameters<typeof ConversationPoller<T>>[0]) {
+      super({ ...options, clock });
+    }
+  }
   const react = {
     useState: (initial: unknown) => {
       const index = slot++;
@@ -41,7 +57,10 @@ async function harness(outgoingCache?: Map<string, unknown>) {
     AbortController,
     crypto: requireFromRepo("node:crypto").webcrypto,
     fetch: (url: unknown, init?: RequestInit) => transport(url, init),
-    window: { setInterval: () => 1, clearInterval: () => {}, matchMedia: () => ({ matches: false }) },
+    document: { visibilityState: "visible", hasFocus: () => true,
+      addEventListener: () => {}, removeEventListener: () => {} },
+    window: { addEventListener: () => {}, removeEventListener: () => {},
+      matchMedia: () => ({ matches: false }) },
     requestAnimationFrame: (fn: () => void) => fn(),
     require: (id: string) => {
       if (id === "react") return react;
@@ -56,6 +75,7 @@ async function harness(outgoingCache?: Map<string, unknown>) {
         const taskDiscussions = new Map();
         return { useConversationCaches: () => ({ taskDiscussions }) };
       }
+      if (id === "@/lib/conversations/polling") return { ConversationPoller: HarnessConversationPoller };
       return {};
     },
   });
@@ -73,7 +93,14 @@ async function harness(outgoingCache?: Map<string, unknown>) {
   const render = () => { slot = 0; return outer.type(props) as ElementNode; };
   const first = render();
   effects[0]?.();
-  return { snapshot, first, render, setTransport: (next: typeof transport) => { transport = next; } };
+  return { snapshot, first, render, setTransport: (next: typeof transport) => { transport = next; },
+    poll: async () => {
+      const next = scheduled.entries().next().value as [number, () => void] | undefined;
+      assert.ok(next, "poller scheduled a request");
+      scheduled.delete(next[0]);
+      next[1]();
+      for (let index = 0; index < 100 && scheduled.size === 0; index++) await Promise.resolve();
+    } };
 }
 
 type ElementNode = { type?: { name?: string }; props?: Record<string, unknown> } | null;
@@ -88,9 +115,43 @@ function find(node: unknown, name: string): ElementNode {
   return find(element?.props?.children, name);
 }
 
+function textContent(node: unknown): string {
+  if (node == null) return "";
+  if (typeof node === "string") return node;
+  if (Array.isArray(node)) return node.map(textContent).join(" ");
+  return textContent((node as ElementNode)?.props?.children);
+}
+
 const flush = async () => {
   for (let index = 0; index < 8; index++) await Promise.resolve();
 };
+
+test("the real poller path clears canonical content after access revocation", async () => {
+  const feed = await harness();
+  feed.setTransport(async () => ({ json: async () => ({ ok: false, code: "unavailable" }) }));
+  await feed.poll();
+  const current = feed.render();
+  assert.equal(current?.props?.["data-discussion-unavailable"], true);
+});
+
+test("the real poller path requires review after an audience expansion", async () => {
+  const feed = await harness();
+  feed.setTransport(async (url) => ({ json: async () => String(url).includes("action=history")
+    ? { ok: true, value: { audienceEpoch: 2, throughChangeSeq: 2, comments: [], hasMore: false } }
+    : { ok: true, value: { ...feed.snapshot, audienceEpoch: 2, throughChangeSeq: 2 } } }));
+  await feed.poll();
+  const composer = find(feed.render(), "Composer");
+  assert.ok(composer);
+  let posts = 0;
+  feed.setTransport(async (_url, init) => {
+    if (init?.method === "POST") posts++;
+    return { json: async () => ({ ok: false, code: "temporarily_unavailable" }) };
+  });
+  assert.equal(await (composer.props!.onSubmit as (
+    body: string, mentions: readonly string[], root: string | null,
+  ) => Promise<boolean>)("Retained draft", [], null), false);
+  assert.equal(posts, 0);
+});
 
 test("task navigation restores cached in-flight work as uncertain without replay", async () => {
   const outgoingCache = new Map<string, unknown>();
@@ -126,6 +187,9 @@ test("uncertain send retries its exact request id, body, root and structured men
   await flush();
   const pending = find(feed.render(), "PendingRow");
   assert.ok(pending);
+  const pendingView = (pending.type as unknown as (props: unknown) => unknown)(pending.props);
+  assert.doesNotMatch(textContent(pendingView), /Discard/,
+    "an uncertain request may already be committed and cannot be presented as discardable");
   const operation = pending.props!.item as { input: Record<string, unknown> };
   const requestId = operation.input.clientRequestId;
   assert.deepEqual(Array.from(operation.input.mentionUserIds as readonly string[]), ["bob"]);
