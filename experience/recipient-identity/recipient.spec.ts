@@ -5,6 +5,7 @@ import {
   observeWrongAccountDiagnostic,
   type WrongAccountDiagnostic,
 } from "./evidence";
+import { anyMatchVisible } from "./diagnostic";
 import {
   PRIVATE_TASK_TITLE,
   RECIPIENT_PROJECT_ID,
@@ -77,35 +78,36 @@ async function wrongAccountDiagnostic(
   }, creatorEmail);
   const switchAccount = await page.getByRole("button", {
     name: "Sign out and use the invited account",
-  }).isVisible();
+  });
+  const switchAccountVisible = await anyMatchVisible(switchAccount);
   const branches = [
     {
       state: "signedOut" as const,
-      visible: await page.getByRole("link", { name: "Sign in to accept" }).isVisible(),
+      visible: await anyMatchVisible(page.getByRole("link", { name: "Sign in to accept" })),
     },
     {
       state: "wrongVerified" as const,
-      visible: switchAccount && await page.getByText(/Use the email address this invite was sent to/).isVisible(),
+      visible: switchAccountVisible && await anyMatchVisible(page.getByText(/Use the email address this invite was sent to/)),
     },
     {
       state: "wrongUnverified" as const,
-      visible: switchAccount && await page.getByText(/Verify the invited email address before accepting/).isVisible(),
+      visible: switchAccountVisible && await anyMatchVisible(page.getByText(/Verify the invited email address before accepting/)),
     },
     {
       state: "matchingAccount" as const,
-      visible: await page.getByRole("button", { name: "Accept invite" }).isVisible(),
+      visible: await anyMatchVisible(page.getByRole("button", { name: "Accept invite" })),
     },
     {
       state: "accepted" as const,
-      visible: await page.getByRole("heading", { name: "This invite has already been accepted." }).isVisible(),
+      visible: await anyMatchVisible(page.getByRole("heading", { name: "This invite has already been accepted." })),
     },
     {
       state: "expired" as const,
-      visible: await page.getByRole("heading", { name: "This invite has expired." }).isVisible(),
+      visible: await anyMatchVisible(page.getByRole("heading", { name: "This invite has expired." })),
     },
     {
       state: "missing" as const,
-      visible: await page.getByRole("heading", { name: "This invite link doesn’t exist." }).isVisible(),
+      visible: await anyMatchVisible(page.getByRole("heading", { name: "This invite link doesn’t exist." })),
     },
   ];
   const visibleBranches = branches.filter((branch) => branch.visible);
@@ -115,8 +117,8 @@ async function wrongAccountDiagnostic(
       serverState: visibleBranches.length === 1
         ? visibleBranches[0]!.state
         : "unclassified",
-      genericError: await page.getByText(/Application error|Something went wrong/).isVisible(),
-      clerkUi: await page.locator(".cl-rootBox").isVisible(),
+      genericError: await anyMatchVisible(page.getByText(/Application error|Something went wrong/)),
+      clerkUi: await anyMatchVisible(page.locator(".cl-rootBox")),
     },
     browserIdentity,
     errors,
