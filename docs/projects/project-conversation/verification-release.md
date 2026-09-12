@@ -1,6 +1,6 @@
 # Verification and release controls
 
-12 September 2026 · Planned tests, not passed results. Planning used static source reads, Git metadata, one read-only worker and official documentation. No app build, DB migration, provider experiment, customer study or product browser test ran.
+12 September 2026 · The traceability matrix below originated during planning. Current executed results and milestone dispositions are in STATE, operations-local, backend-report and task-outcomes-report. Local PC-00–08 are accepted; full VS1/VS2, human, remote and release gates remain distinct. Historical statements that no implementation tests ran apply only to the initial planning checkpoint.
 
 ## Traceability: original tests
 
