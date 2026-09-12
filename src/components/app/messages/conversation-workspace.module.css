@@ -142,8 +142,9 @@
   .feedScroller { scroll-behavior: auto; }
 }
 
-.threadPanel { background: var(--cw-white); border-left: 1px solid var(--cw-line); bottom: 0; box-shadow: -10px 0 30px #1717170a; position: absolute; right: 0; top: 0; width: min(620px, 100%); z-index: 10; }
-.threadPanel > main { height: 100%; }
+.threadPanel { background: var(--cw-white); border: 0; border-left: 1px solid var(--cw-line); bottom: 0; box-shadow: -10px 0 30px #1717170a; height: 100dvh; left: auto; margin: 0; max-height: 100dvh; max-width: 100vw; padding: 0; position: fixed; right: 0; top: 0; width: min(620px, 100%); z-index: 10; }
+.threadPanel > :is(main, section) { height: 100%; }
+.threadPanel::backdrop { background: #17171718; }
 .closeThread { background: var(--cw-white); border: 0; border-bottom: 1px solid var(--cw-line); color: var(--cw-indigo); cursor: pointer; font-size: 12px; min-height: 44px; padding: 10px 20px; text-align: left; }
 
 .mentionPicker { font-size: 11px; position: relative; }
@@ -152,3 +153,10 @@
 .mentionPicker p { color: var(--cw-soft); line-height: 1.5; margin: 0 0 8px; }
 .mentionPicker label { align-items: center; display: flex; gap: 8px; min-height: 34px; }
 .mentionPicker input { accent-color: var(--cw-indigo); height: 16px; width: 16px; }
+
+.discussionDirectory { border-top: 1px solid var(--cw-line); margin-top: 18px; padding: 14px 9px 0; }
+.discussionDirectory h2 { color: var(--cw-soft); font-size: 12px; font-weight: 550; margin: 0 0 8px; }
+.discussionDirectory p { color: var(--cw-soft); font-size: 11px; line-height: 1.5; }
+.discussionDirectory a { text-decoration: none; }
+.discussionDirectory a:hover { background: #eef2ff; }
+@media (max-width: 760px) { .discussionDirectory { align-items: center; border: 0; display: flex; flex: 0 0 auto; gap: 6px; margin: 0; padding: 0 4px; } .discussionDirectory h2, .discussionDirectory p { display: none; } }

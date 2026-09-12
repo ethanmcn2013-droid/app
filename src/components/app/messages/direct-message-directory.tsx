@@ -57,7 +57,7 @@ export function DirectMessageDirectory({ actorId, projectId, fixtureActor, selec
   async function choose() {
     setChoosing(true); setError(null);
     try {
-      const result = await request<{ members: readonly Member[] }>(fixtureActor, { action: "audience", projectId });
+      const result = await request<{ members: readonly Member[] }>(fixtureActor, { action: "task-destination", projectId });
       if (!mounted.current) return;
       if (result.ok) setMembers(result.value.members.filter((member) => member.id !== actorId));
       else setError("Project members are unavailable. Try again shortly.");
@@ -112,13 +112,11 @@ export function DirectMessageControls({ actorId, scope, fixtureActor, onChange }
     if (scope.pairState === "pending" && scope.requesterId !== actorId) actions.push(["accept", "Accept conversation"], ["decline", "Decline"]);
     if (scope.pairState === "rejoin_pending" && !scope.ownConfirmed) actions.push(["reopen", "Confirm reopening"]);
     if (scope.blockOwnerId === actorId) actions.push(["unblock", "Unblock"]);
-    else if (!scope.blockOwnerId && scope.pairState !== "declined") actions.push(["block", "Block"]);
-    if (scope.canWrite) actions.push(["leave", "Leave conversation"]);
   }
+  if (!scope.blockOwnerId && scope.pairState !== "declined" && scope.pairState !== "left") actions.push(["block", "Block"]);
+  if (scope.canRead && scope.pairState !== "left" && scope.pairState !== "membership_lost") actions.push(["leave", "Leave conversation"]);
   const description = scope.canWrite ? "Only the two of you can read this conversation." : scope.pairState === "pending" ? (scope.requesterId === actorId ? "Your request is waiting for acceptance. No message has been sent." : "You have a request for a private conversation in this Project. Accept to begin exchanging messages.") : scope.pairState === "rejoin_pending" ? "Both people must confirm reopening. Restoring Project membership does not restart this conversation." : scope.pairState === "blocked" ? "This conversation is blocked. Previously available history remains read only." : scope.pairState === "declined" ? "This request was declined." : "This conversation is read only. Participation must be restored before messages can resume.";
   // The mapped click handlers read the request controller only when invoked, never during render.
   // eslint-disable-next-line react-hooks/refs
   return <section className={styles.pairControls} aria-label="Private conversation participation"><p>{description}</p><div>{attempt ? <button disabled={busy} onClick={() => void change(attempt!.operation)} type="button">Retry change</button> : actions.map(([operation, label]) => <button disabled={busy} key={operation} onClick={() => void change(operation)} type="button">{label}</button>)}</div>{error ? <p role="alert">{error}</p> : null}</section>;
 }
-
-

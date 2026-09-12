@@ -40,16 +40,18 @@ export function AudienceHeader({
   onToggleRelated,
   showRelatedWork = true,
   onShowDetails,
+  showTabs = true,
 }: {
   title: string;
   description: string;
-  status: "active" | "pending" | "blocked" | "archived" | "unavailable";
+  status: "active" | "pending" | "blocked" | "archived" | "unavailable" | "left" | "declined" | "membership_lost" | "rejoin_pending";
   relatedOpen: boolean;
   onToggleRelated: () => void;
   showRelatedWork?: boolean;
   onShowDetails?: () => void;
+  showTabs?: boolean;
 }) {
-  const label = status === "active" ? "Can send" : status.replace("_", " ");
+  const label = { active: "Can send", pending: "Awaiting acceptance", blocked: "Blocked", archived: "Archived", unavailable: "Unavailable", left: "Left", declined: "Declined", membership_lost: "Read only", rejoin_pending: "Reopening required" }[status];
   return (
     <header className={styles.audienceHeader}>
       <div className={styles.headerMain}>
@@ -64,10 +66,10 @@ export function AudienceHeader({
           <Icon><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></Icon>
         </button> : null}
       </div>
-      <nav aria-label="Conversation views" className={styles.headerTabs}>
+      {showTabs ? <nav aria-label="Conversation views" className={styles.headerTabs}>
         <button aria-current="page" onClick={() => { if (relatedOpen) onToggleRelated(); }} type="button">Conversation</button>
         {showRelatedWork ? <button aria-pressed={relatedOpen} onClick={onToggleRelated} type="button">Related work <span>2</span></button> : null}
-      </nav>
+      </nav> : null}
     </header>
   );
 }
