@@ -302,6 +302,7 @@ BEGIN
     );
   UPDATE conversation_spike_conversations SET pair_state = 'rejoin_pending'
     WHERE workspace_id = NEW.workspace_id AND kind = 'dm'
+      AND pair_state = 'membership_lost'
       AND NEW.user_id IN (dm_low_user_id, dm_high_user_id)
       AND EXISTS (SELECT 1 FROM conversation_spike_participants p WHERE p.conversation_id = id AND p.user_id = NEW.user_id AND p.status = 'rejoin_pending');
 END;
@@ -320,7 +321,9 @@ BEGIN
     WHERE user_id = OLD.user_id
       AND conversation_id IN (SELECT id FROM conversation_spike_conversations WHERE workspace_id = OLD.workspace_id AND kind = 'dm');
   UPDATE conversation_spike_conversations SET pair_state = 'membership_lost'
-    WHERE workspace_id = OLD.workspace_id AND kind = 'dm' AND OLD.user_id IN (dm_low_user_id, dm_high_user_id);
+    WHERE workspace_id = OLD.workspace_id AND kind = 'dm'
+      AND pair_state NOT IN ('blocked', 'left')
+      AND OLD.user_id IN (dm_low_user_id, dm_high_user_id);
 END;
 
 CREATE TRIGGER conversation_spike_membership_update_epoch

@@ -29,7 +29,7 @@ const evidence = {
   baselineMigrationFiles: 0,
   independentClientsPerCase: 2,
   oracleCases: 13,
-  testAssertions: 15,
+  testAssertions: 17,
   duplicateStress: null,
   settings: [],
 };
@@ -493,6 +493,7 @@ test("O09 membership loss and rejoin preserve only entitled DM history and requi
       clientRequestId: "request_dm_member_lost_01",
       expectedAudienceEpoch: currentEpoch,
     })), { ok: false, code: "read_only" });
+    const beforeRejoinEpoch = await epoch(harness.first.client, FIXTURE.dmConversation);
     await harness.first.client.execute({
       sql: "INSERT INTO workspace_members(workspace_id, user_id, role) VALUES (?, ?, 'member')",
       args: [FIXTURE.projectA, FIXTURE.bob],
@@ -507,7 +508,30 @@ test("O09 membership loss and rejoin preserve only entitled DM history and requi
       conversationId: FIXTURE.dmConversation, afterChangeSeq: 0,
     }), { ok: false, code: "unavailable" });
     assert.deepEqual(await harness.second.confirmDm({
-      actorId: FIXTURE.bob, projectId: FIXTURE.projectA, conversationId: FIXTURE.dmConversation,
+      actorId: FIXTURE.bob, projectId: FIXTURE.projectA,
+      conversationId: FIXTURE.dmConversation, expectedAudienceEpoch: beforeRejoinEpoch,
+    }), {
+      ok: false,
+      code: "audience_changed",
+      audienceEpoch: await epoch(harness.first.client, FIXTURE.dmConversation),
+    });
+    await harness.first.client.execute({
+      sql: "UPDATE workspaces SET archived_at = ? WHERE id = ?",
+      args: [Date.now(), FIXTURE.projectA],
+    });
+    assert.deepEqual(await harness.second.confirmDm({
+      actorId: FIXTURE.bob, projectId: FIXTURE.projectA,
+      conversationId: FIXTURE.dmConversation,
+      expectedAudienceEpoch: await epoch(harness.first.client, FIXTURE.dmConversation),
+    }), { ok: false, code: "archived" });
+    await harness.first.client.execute({
+      sql: "UPDATE workspaces SET archived_at = NULL WHERE id = ?",
+      args: [FIXTURE.projectA],
+    });
+    assert.deepEqual(await harness.second.confirmDm({
+      actorId: FIXTURE.bob, projectId: FIXTURE.projectA,
+      conversationId: FIXTURE.dmConversation,
+      expectedAudienceEpoch: await epoch(harness.first.client, FIXTURE.dmConversation),
     }), { ok: true, value: { active: false } });
     currentEpoch = await epoch(harness.first.client, FIXTURE.dmConversation);
     assert.deepEqual(await harness.second.send(sendInput({
@@ -517,7 +541,13 @@ test("O09 membership loss and rejoin preserve only entitled DM history and requi
       expectedAudienceEpoch: currentEpoch,
     })), { ok: false, code: "read_only" });
     assert.deepEqual(await harness.first.confirmDm({
-      actorId: FIXTURE.alice, projectId: FIXTURE.projectA, conversationId: FIXTURE.dmConversation,
+      actorId: FIXTURE.alice, projectId: FIXTURE.projectA,
+      conversationId: FIXTURE.dmConversation,
+      expectedAudienceEpoch: currentEpoch - 1,
+    }), { ok: false, code: "audience_changed", audienceEpoch: currentEpoch });
+    assert.deepEqual(await harness.first.confirmDm({
+      actorId: FIXTURE.alice, projectId: FIXTURE.projectA,
+      conversationId: FIXTURE.dmConversation, expectedAudienceEpoch: currentEpoch,
     }), { ok: true, value: { active: true } });
     currentEpoch = await epoch(harness.first.client, FIXTURE.dmConversation);
     assert.equal((await harness.second.send(sendInput({
@@ -533,6 +563,81 @@ test("O09 membership loss and rejoin preserve only entitled DM history and requi
     }), { ok: false, code: "unavailable" });
   } finally {
     harness.close();
+  }
+});
+
+test("O09 direct confirmation cannot reactivate blocked or left DMs", async () => {
+  const harness = await freshCase("o09-restrict-confirm");
+  try {
+    for (const state of ["blocked", "left"]) {
+      await harness.first.client.execute({
+        sql: "UPDATE conversation_spike_conversations SET pair_state = ? WHERE id = ?",
+        args: [state, FIXTURE.dmConversation],
+      });
+      assert.deepEqual(await harness.second.confirmDm({
+        actorId: FIXTURE.bob,
+        projectId: FIXTURE.projectA,
+        conversationId: FIXTURE.dmConversation,
+        expectedAudienceEpoch: await epoch(harness.first.client, FIXTURE.dmConversation),
+      }), { ok: false, code: "read_only" });
+      assert.equal(await scalar(
+        harness.first.client,
+        "SELECT pair_state FROM conversation_spike_conversations WHERE id = ?",
+        [FIXTURE.dmConversation],
+      ), state);
+    }
+  } finally {
+    harness.close();
+  }
+});
+
+test("O09 membership churn cannot erase blocked or left DM state", async () => {
+  for (const state of ["blocked", "left"]) {
+    const harness = await freshCase(`o09-${state}-membership-churn`);
+    try {
+      await harness.first.client.execute({
+        sql: "UPDATE conversation_spike_conversations SET pair_state = ? WHERE id = ?",
+        args: [state, FIXTURE.dmConversation],
+      });
+      await harness.first.client.execute({
+        sql: "DELETE FROM workspace_members WHERE workspace_id = ? AND user_id = ?",
+        args: [FIXTURE.projectA, FIXTURE.bob],
+      });
+      assert.equal(await scalar(
+        harness.first.client,
+        "SELECT pair_state FROM conversation_spike_conversations WHERE id = ?",
+        [FIXTURE.dmConversation],
+      ), state);
+      await harness.first.client.execute({
+        sql: "INSERT INTO workspace_members(workspace_id, user_id, role) VALUES (?, ?, 'member')",
+        args: [FIXTURE.projectA, FIXTURE.bob],
+      });
+      assert.equal(await scalar(
+        harness.first.client,
+        "SELECT pair_state FROM conversation_spike_conversations WHERE id = ?",
+        [FIXTURE.dmConversation],
+      ), state);
+      for (const [store, actorId] of [[harness.second, FIXTURE.bob], [harness.first, FIXTURE.alice]]) {
+        assert.deepEqual(await store.confirmDm({
+          actorId,
+          projectId: FIXTURE.projectA,
+          conversationId: FIXTURE.dmConversation,
+          expectedAudienceEpoch: await epoch(harness.first.client, FIXTURE.dmConversation),
+        }), { ok: false, code: "read_only" });
+      }
+      assert.equal(await scalar(
+        harness.first.client,
+        "SELECT pair_state FROM conversation_spike_conversations WHERE id = ?",
+        [FIXTURE.dmConversation],
+      ), state);
+      assert.equal(await scalar(
+        harness.first.client,
+        "SELECT SUM(consented) FROM conversation_spike_participants WHERE conversation_id = ?",
+        [FIXTURE.dmConversation],
+      ), 0);
+    } finally {
+      harness.close();
+    }
   }
 });
 

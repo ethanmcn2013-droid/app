@@ -589,7 +589,9 @@ export async function openConversationSpikeStore({ databasePath, foreignKeys = f
   async function confirmDm(scope) {
     return withOperation(() => withWriteRetry(async (tx) => {
       const basic = await tx.execute({
-        sql: `SELECT c.audience_epoch FROM conversation_spike_conversations c
+        sql: `SELECT c.audience_epoch, c.lifecycle, c.pair_state,
+            p.status AS participant_status, p.consented
+          FROM conversation_spike_conversations c
           JOIN workspace_members wm ON wm.workspace_id = c.workspace_id AND wm.user_id = ?
           JOIN conversation_spike_participants p ON p.conversation_id = c.id AND p.user_id = ?
           WHERE c.id = ? AND c.workspace_id = ? AND c.kind = 'dm'`,
@@ -599,12 +601,33 @@ export async function openConversationSpikeStore({ databasePath, foreignKeys = f
         await tx.rollback();
         return { ok: false, code: "unavailable" };
       }
-      await tx.execute({
-        sql: `UPDATE conversation_spike_participants
-          SET status = 'active', consented = 1, retains_history = 1
-          WHERE conversation_id = ? AND user_id = ?`,
-        args: [scope.conversationId, scope.actorId],
-      });
+      const row = basic.rows[0];
+      const currentEpoch = integer(rowValue(row, "audience_epoch"));
+      if (rowValue(row, "lifecycle") === "archived") {
+        await tx.rollback();
+        return { ok: false, code: "archived" };
+      }
+      if (rowValue(row, "pair_state") !== "rejoin_pending") {
+        await tx.rollback();
+        return { ok: false, code: "read_only" };
+      }
+      if (!Number.isSafeInteger(scope.expectedAudienceEpoch) || scope.expectedAudienceEpoch !== currentEpoch) {
+        await tx.rollback();
+        return { ok: false, code: "audience_changed", audienceEpoch: currentEpoch };
+      }
+      const alreadyConfirmed = rowValue(row, "participant_status") === "active" && integer(rowValue(row, "consented")) === 1;
+      if (!alreadyConfirmed && rowValue(row, "participant_status") !== "rejoin_pending") {
+        await tx.rollback();
+        return { ok: false, code: "read_only" };
+      }
+      if (!alreadyConfirmed) {
+        await tx.execute({
+          sql: `UPDATE conversation_spike_participants
+            SET status = 'active', consented = 1, retains_history = 1
+            WHERE conversation_id = ? AND user_id = ? AND status = 'rejoin_pending' AND consented = 0`,
+          args: [scope.conversationId, scope.actorId],
+        });
+      }
       const pair = await tx.execute({
         sql: `SELECT COUNT(*) AS count FROM conversation_spike_participants p
           JOIN conversation_spike_conversations c ON c.id = p.conversation_id
