@@ -15,8 +15,8 @@ Agent use: root owns architecture/integration; explicit Luna low for PC-00 read-
 |---|---|---|
 | PC-00 baseline | Accepted | a709e22a selected; required executor seam present; January-only wrapper/deletion deltas recorded in contract-oracle.md |
 | PC-01 contracts | Accepted | Typed oracle 10/10 passes; independent Sol high contract review accepted; SQL oracle O01–O13 documented |
-| PC-02 prototype | In progress | Sol medium owns feat/project-conversation-prototype; synthetic frontend only |
-| PC-03 human review | Pending prototype | Present concrete result; no fabricated participant validation |
+| PC-02 prototype | Awaiting fresh finish review | Committed prototype integrated; desktop/mobile browser evidence captured; focused navigation/recovery/access tests pass |
+| PC-03 human review | Founder question pending | Reviewable local prototype shown; explicit amendment requested to continue local backend before participant study; no answer assumed |
 | PC-04/05 feasibility | PC-04 in progress | Sol high owns spike/project-conversation-transactions; isolated file DB, no remote credentials |
 | PC-06–14, PC-20 | Pending dependencies | Build/verify in order; no partial-completion claim |
 
@@ -84,5 +84,6 @@ Input hashes and structural validation results are appended by the final local c
 Final planning check: seven expected Markdown artifacts present; all T01–T24, R01–R14, WP01–WP12 and D01–D12 identifiers mapped; PC-00–PC-20 present; local Markdown document links resolve; code fences balanced. These are document checks, not product tests.
 
 Final Git observation: HEAD remains a709e22a9f19ffb4c45b1c420815f2edf6bfbf30; tracked-file diff empty; only docs/projects/project-conversation/ is newly untracked. No pre-existing source file was edited. One bounded cross-check completed, its six findings incorporated; implementation/participant/provider gates remain open.
+
 
 
