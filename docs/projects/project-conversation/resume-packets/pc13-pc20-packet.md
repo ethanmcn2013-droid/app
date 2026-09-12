@@ -1,0 +1,49 @@
+# PC13 / PC20 local implementation checklist
+
+Preparation baseline: integration `6d411c72788e62ea3ac1a839f9f971cc4fdd10fe`. This is a read-only audit packet; repository source is unchanged. PC13 starts only after accepted PC11 and PC12, using the live migration head rather than guessing an ordinal.
+
+## Current seams to preserve
+
+- `src/server/actions/cross-workspace-search.ts` searches task titles through ambient `db`/`getCurrentUser`, returns at most 30 rows, and does not search messages. Do not extend this action into the conversation authority boundary. Build injected-adapter search under `src/server/conversations/` and authenticate through the conversation runtime.
+- `src/server/conversations/work-links.ts` exposes destination task → source through `getTaskOutcome`; there is no source message → related tasks read. `work_links_source` already indexes `(source_conversation_id,source_message_id)`.
+- No reaction table, service, or route exists. The accepted source records are `conversation_messages` and canonical `comments` under `task_discussion_state`.
+- Project archive/restore already flows through `src/server/projects/service.ts:setProjectArchived`. Migration triggers advance conversation and Task Discussion epochs; archive is the lifecycle authority. Avoid a second Project archive state. New reactions/work association must refuse while archived, while authorized history/search and DM block/leave controls remain available.
+- `duplicateProjectIntoPeriodTx` copies only allowlisted task fields. It does not copy comments, conversations, work links, attention, receipts, or outboxes. Preserve this boundary and add explicit assertions for every new derivative.
+- `account-erasure.ts` explicitly handles Task Discussion rows but not Project/DM conversation sources. `account-export.ts` exports legacy tasks/comments and user preferences but no conversation sources, reactions, work links, or reader-private state.
+- `flags.ts` defaults internal/read, send, and delivery off. `runtime.ts` permits only explicit local `file:` Tasks DB outside production/Vercel and shares one queued adapter across services. PC13 must reuse that adapter and fail closed elsewhere.
+- The receipt-backed migration runner validates SQL hashes, receipts, proof queries, journal parity, and exact applied rows. `backup-all.mjs --verify` and `restore-verify.mjs` can rehearse a local restore; `integrity-check.mjs` does not yet cover messaging tables.
+
+## PC13 implementation
+
+### Search
+
+- Add client-safe contracts for `searchMessages({actorId, scope, query, personId?, fromMs?, toMs?, cursor?, limit<=30})`. Results carry canonical source IDs, current revision, a bounded snippet produced only after access proof, and a canonical deep link. Return no global/foreign counts.
+- Implement `src/server/conversations/search.ts` on `ConversationDatabaseAdapter`. Each read snapshot must join live user, Project membership, Project/archive state, exact conversation kind and DM pair/retained-history state, or the canonical task → Project relation. Exclude tombstones and quarantined/moved Task Discussion rows before ranking or snippet generation.
+- Benchmark FTS5 availability on the supported local driver. Use same-store FTS5 only if the target capability and trigger/rebuild behavior are proven. Otherwise use bounded parameterized `LIKE` only if the acceptance profile passes. Do not reuse the existing search action’s wildcard escaping without an explicit SQLite `ESCAPE` clause.
+- Create an isolated 10k-source file fixture: accessible Project roots/replies and Task Discussion comments plus foreign Project, non-pair DM, revoked member, moved/deleted task, and tombstoned rows. Run warm representative text/person/date/special-character queries, record corpus, driver, machine, query count and p95; require p95 <=1 second and zero restricted result/snippet/count. Exercise `%`, `_`, backslash, quotes, Unicode, RTL and emoji. Reauthorize every result when opened.
+- Search-index triggers must cover create/edit/tombstone/source deletion and FK-off cleanup. A rebuild command reads only canonical live rows and is idempotent; index rows are disposable derivatives, never source or authorization.
+
+### Reactions, related work, and links
+
+- Add source-local reactions with unique `(source_id, actor_id, emoji)` identity, a small emoji allowlist, current revision/audience epoch checks, and durable idempotent add/remove receipts. Each mutation shares the source transaction and change sequence. Reactions create no attention or delivery event and expose no reader state.
+- Read reactions only with current source authorization. Archive permits reads and blocks additions/removals; tombstone/source deletion removes reactions. Owners gain no DM access. Test concurrent duplicate adds, remove replay, forged source/project/task, stale epoch/revision, archive/restore, revoke, DM leave/block, and FK-off raw deletion.
+- Add `listRelatedTasksForMessage({actorId,sourceProjectId,conversationId,messageId})`. Require current source access, then independently require current destination Project/task access for every returned row. Join a live task still in `destination_project_id`; omit deleted or moved tasks and never reveal inaccessible destination title/count. This complements, not replaces, `getTaskOutcome(taskId)`.
+- Add one client-safe deep-link module. Message links must encode exact `workspaceId`, conversation, message and optional root; Task Discussion links use `taskFocusPath(taskId)` plus an exact comment focus parameter and `#discussion`. Route parsing strictly validates IDs, opens the stored scope, reauthorizes, focuses only a returned canonical item, and never falls back to another Project. Current `/app/messages` accepts only a Project selector and current Discussion links have no comment ID, so both ends require coverage.
+
+### Lifecycle, duplication, export, erasure
+
+- Treat Project archive as the source event: verify epoch/change invalidation, read/search continuity, write/reaction/work-link refusal, and restore only for current members. No restore resets audience epochs or DM consent.
+- Extend duplication tests to assert zero copied rows across conversations, participants, messages/comments, reactions, search index, attention/outboxes/deliveries, read coverage, follows/mutes/visibility, work links/receipts, and private DM state, even when reusable tasks are copied.
+- Define the founder/privacy decision for source erasure versus pseudonymization before real data. Then extend `account-export.ts` through injected, subject-authorized selectors: the subject’s authored sources/reactions and own private preferences/read state; Project ownership must not grant another person’s DM or seen state. Export work-link metadata only where the subject is currently entitled; never export search-index duplicates or provider secrets.
+- Extend `account-erasure.ts`, Project deletion, and raw-delete triggers for every source and derivative. Include conversations/participants/DM receipts/messages/changes/receipts, Task Discussion state/change/receipt rows, reactions, search index, attention/outboxes/deliveries, reader ranges/preferences/follows/leases, work links and operation custody. Independently authored destination Tasks/Notes remain canonical records; remove their live source preview/link as policy requires without deleting them. Preserve retry custody needed to finish an accepted erasure.
+
+## PC20 integration and rehearsal
+
+- Add separate default-off search/reaction controls; authenticated history/export/erasure do not depend on write flags. Delivery stays independently pausable. Wire PC11/12/13 services to the exact existing runtime adapter/queue; no ambient client, second connection queue, remote fallback, or synthetic actor in app routes.
+- Register the additive migration in `drizzle/migration-ledger.json`, `_journal.json`, schema and receipt with fresh and upgraded proofs. Run the declared contract runner plus fresh baseline → live head and populated pre-PC13 → live head fixtures. Search index is rebuildable; sources, receipts and custody are retained across app rollback.
+- Extend `integrity-check.mjs` with orphan/tenant/source checks for all messaging tables and derivatives. Logs contain request/event IDs, status class, latency, queue age and counts only—no body, snippet, name, address, token, private title, seen timestamp or authenticated deep link.
+- Rehearse locally from a populated synthetic DB: take a logical backup, restore to a fresh file with DDL/triggers, verify row hashes, run integrity checks, migrate the restored copy, and exercise export/erasure twice. Assert source/index/queue/link counts, tombstone bodies, DM isolation, reader-private export, unfinished delivery/operation custody, and idempotent second erasure.
+- Rehearse non-destructive rollback: disable new sends, reactions, search UI and delivery; keep entitled history, receipt recovery, export and revocation available; run the prior compatible app reader against additive schema; then re-enable current code, rebuild search, and replay pending outbox work with original event IDs after fresh authorization. Never drop chat tables, receipts, deliveries, or indexes as the ordinary rollback.
+- Record exact commit, ledger/checksum, commands, DB path/hash, fixture identities, counts before/after, timings, flag matrix and limitations. Local proof does not close remote transaction, provider, retention/admin/support, backup-expiry, human-study, real-device, or production-release gates.
+
+Minimum closeout: scoped tests plus full type/lint and DB contract; 10k search profile <=1s with all denial fixtures; reaction concurrency/archive/revoke tests; related-task and deep-link authorization; Project duplication zero-copy proof; export/erasure/restore replay over every derivative; flag rollback with history and custody intact; fresh Astra lifecycle/privacy review.

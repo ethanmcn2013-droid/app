@@ -1,0 +1,79 @@
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+import { readFile, readdir, mkdtemp } from 'node:fs/promises';
+import { join } from 'node:path';
+import vm from 'node:vm';
+import test from 'node:test';
+import { createTaskDiscussionService } from 'C:/Users/ethan/signal-studio-workspace/worktrees/app/feat-project-conversation-integration/src/server/conversations/task-discussion.ts';
+import { createLocalConversationDatabaseAdapter } from 'C:/Users/ethan/signal-studio-workspace/worktrees/app/feat-project-conversation-integration/src/server/conversations/database.ts';
+const require=createRequire(process.cwd()+'/package.json');
+const {createClient}=require('@libsql/client');
+async function fixture(max='0031'){
+ const dir=await mkdtemp('C:/Users/ethan/Documents/Codex/2026-09-12/plea/work/discussion-acceptance/db-');
+ const client=createClient({url:'file:'+dir+'/tasks.db'});await client.execute('PRAGMA foreign_keys=OFF');
+ for(const name of (await readdir('drizzle')).filter(n=>/^\d{4}_.+\.sql$/.test(n)&&n>='0014_'&&n.slice(0,4)<=max).sort()) await client.executeMultiple(await readFile(join('drizzle',name),'utf8'));
+ for(const who of ['alice','bob']) await client.execute({sql:'INSERT INTO users(id,clerk_id,name,color,initials) VALUES(?,?,?,?,?)',args:[who,'clerk_'+who,who,'#111','AA']});
+ await client.execute("INSERT INTO workspaces(id,slug,name,owner_user_id,context_type,created_at,updated_at) VALUES('project','project','Project','alice','project',1,1)");
+ for(const who of ['alice','bob']) await client.execute({sql:"INSERT INTO workspace_members(workspace_id,user_id,role,joined_at) VALUES('project',?,'member',1)",args:[who]});
+ await client.execute("INSERT INTO tasks(id,workspace_id,title,lane,priority) VALUES('task','project','Task','backlog','p2')");
+ const service=createTaskDiscussionService(createLocalConversationDatabaseAdapter({client}));return {client,service};
+}
+let seq=0;
+async function send(f,actorId='alice',rootCommentId=null){const opened=await f.service.openTaskDiscussion({actorId,taskId:'task'});assert.ok(opened.ok);return f.service.sendComment({actorId,input:{taskId:'task',clientRequestId:'discussion_send_'+(++seq),expectedAudienceEpoch:opened.value.audienceEpoch,body:'Message',rootCommentId,mentionUserIds:[]}});}
+test('populated upgrade with an early quarantined comment can accept a new send',async()=>{const f=await fixture('0030');try{
+ await f.client.execute("INSERT INTO comments(id,workspace_id,task_id,user_id,body,created_at) VALUES('bad','wrong','task','alice','Quarantine',1),('good','project','task','alice','Valid',2)");
+ await f.client.executeMultiple(await readFile('drizzle/0031_task_discussion.sql','utf8'));
+ const result=await send(f);assert.ok(result.ok,JSON.stringify(result));
+ }finally{f.client.close();}});
+test('remaining member may reply to a departed member retained root',async()=>{const f=await fixture();try{
+ const root=await send(f,'bob');assert.ok(root.ok);await f.client.execute("DELETE FROM workspace_members WHERE workspace_id='project' AND user_id='bob'");
+ const reply=await send(f,'alice',root.value.commentId);assert.ok(reply.ok,JSON.stringify(reply));
+ assert.equal(Number((await f.client.execute("SELECT COUNT(*) AS n FROM task_comment_attention WHERE recipient_id='bob'")).rows[0].n),0);
+ }finally{f.client.close();}});
+test('raw canonical update cannot resurrect a tombstone',async()=>{const f=await fixture();try{
+ const posted=await send(f);assert.ok(posted.ok);const opened=await f.service.openTaskDiscussion({actorId:'alice',taskId:'task'});assert.ok(opened.ok);
+ assert.ok((await f.service.tombstoneComment({actorId:'alice',taskId:'task',commentId:posted.value.commentId,clientRequestId:'discussion_delete_001',expectedRevision:1,expectedAudienceEpoch:opened.value.audienceEpoch})).ok);
+ await assert.rejects(f.client.execute({sql:'UPDATE comments SET body=?,deleted_at=NULL,revision=revision+1 WHERE id=?',args:['Resurrected',posted.value.commentId]}));
+ }finally{f.client.close();}});
+test('exported edit action cannot override authenticated actor with an input field',async()=>{const f=await fixture();try{
+ const posted=await send(f,'bob');assert.ok(posted.ok);const opened=await f.service.openTaskDiscussion({actorId:'alice',taskId:'task'});assert.ok(opened.ok);
+ const ts=require('typescript');const source=await readFile('src/server/actions/comments.ts','utf8');
+ const compiled=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+ const exports={};vm.runInNewContext(compiled,{exports,require:(id)=>{if(id==='@/server/conversations/runtime')return {authenticateConversationActor:async()=> 'alice',getTaskDiscussionService:async()=>f.service};if(id==='@/lib/access-mode')return {isDemoMode:()=>false};throw new Error(id);}});
+ const result=await exports.editCommentAction({actorId:'bob',taskId:'task',commentId:posted.value.commentId,clientRequestId:'forged_edit_request_001',expectedRevision:1,expectedAudienceEpoch:opened.value.audienceEpoch,body:'Alice forged Bob',mentionUserIds:[]});
+ assert.equal(result.ok,false,JSON.stringify(result));
+ }finally{f.client.close();}});
+async function feedHarness(){
+ const ts=require('typescript');const source=await readFile('src/components/app/detail-panel/conversation-feed.tsx','utf8');
+ const compiled=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText;
+ const taskDiscussions=new Map();const states=[],effects=[];const scheduled=new Map();let timerId=0;
+ const RealConversationPoller=require(process.cwd()+'/src/lib/conversations/polling.ts').ConversationPoller;
+ const clock={set:(callback)=>{const id=++timerId;scheduled.set(id,callback);return id},clear:(id)=>scheduled.delete(id)};
+ class HarnessConversationPoller extends RealConversationPoller{constructor(options){super({...options,clock})}}
+ const timers=[async()=>{const next=scheduled.entries().next().value;assert.ok(next,'actual poller scheduled');scheduled.delete(next[0]);next[1]();for(let i=0;i<100;i++)await Promise.resolve()}];let slot=0;let transport=async()=>{throw new Error('unexpected fetch')};
+ const element=(type,props)=>({type,props});const react={useState:(initial)=>{const index=slot++;if(!(index in states))states[index]=initial;return [states[index],(value)=>{states[index]=typeof value==='function'?value(states[index]):value}];},useCallback:(fn)=>fn,useMemo:(fn)=>fn(),useRef:(value)=>({current:value}),useEffect:(fn)=>{effects.push(fn)}};
+ const exports={};vm.runInNewContext(compiled,{exports,URLSearchParams,Headers,AbortController,crypto:require('node:crypto').webcrypto,fetch:(...args)=>transport(...args),document:{visibilityState:"visible",hasFocus:()=>true,addEventListener:()=>{},removeEventListener:()=>{}},window:{addEventListener:()=>{},removeEventListener:()=>{}},require:(id)=>{
+ if(id==='react')return react;if(id==='react/jsx-runtime')return {jsx:element,jsxs:element};if(id==='motion/react')return {motion:{},AnimatePresence:()=>{},useReducedMotion:()=>false};
+ if(id==='@/lib/auth-context')return {useCurrentUser:()=> 'alice'};if(id==='@/lib/tasks/delight-events')return {beginTaskSync:()=>()=>{}};if(id==='@/components/app/messages/conversation-client-model')return {conversationHeaders:()=>new Headers()};if(id==='@/lib/conversations/polling')return {ConversationPoller:HarnessConversationPoller};if(id==='@/components/app/messages/conversation-session-provider')return {useConversationCaches:()=>({taskDiscussions})};return {};
+ }});
+ const snapshot={taskId:'task',projectId:'project',projectName:'Project',lifecycle:'active',audienceEpoch:1,throughChangeSeq:1,members:[{id:'alice',name:'Alice'}],comments:[{id:'comment',authorId:'alice',authorName:'Alice',body:'Private content',revision:1,createSeq:1,createdAt:1,rootCommentId:null,mentionUserIds:[]}],hasOlder:false,beforeCreateSeq:1};
+ const props={taskId:'task',initialDiscussion:snapshot};const outer=exports.ConversationFeed(props);
+ const render=()=>{slot=0;return outer.type(props)};const tree=render();effects[0]();
+ function composer(node){if(!node)return null;if(Array.isArray(node)){for(const child of node){const found=composer(child);if(found)return found}return null}if(node.type?.name==='Composer')return node;return composer(node.props?.children)}
+ return {states,timers,snapshot,render,composer,setTransport:(fn)=>{transport=fn},tree};
+}
+test('feed clears private comments after the history API revokes access',async()=>{const f=await feedHarness();f.setTransport(async()=>({json:async()=>({ok:false,code:'unavailable'})}));await f.timers[0]();assert.equal(f.states[1].length,0);});
+test('audience refresh retains an unresolved send instead of discarding its key and body',async()=>{const f=await feedHarness();
+ f.setTransport(async(url)=>{if(String(url).includes('receipt'))throw new Error('receipt timeout');return {json:async()=>({ok:false,code:'temporarily_unavailable'})}});
+ await f.composer(f.tree).props.onSubmit('Uncertain draft',[],null);assert.equal(f.states[2].length,1);
+ f.setTransport(async(url)=>({json:async()=>String(url).includes('action=history')?{ok:true,value:{audienceEpoch:2,throughChangeSeq:2,comments:[],hasMore:false}}:{ok:true,value:{...f.snapshot,audienceEpoch:2,throughChangeSeq:2}}}));
+ await f.timers[0]();assert.equal(f.states[2].length,1);
+});
+test('draft composed before audience expansion requires review before send',async()=>{const f=await feedHarness();
+ const oldDraft='Draft written for Alice only';f.setTransport(async(url)=>({json:async()=>String(url).includes('action=history')?{ok:true,value:{audienceEpoch:2,throughChangeSeq:2,comments:[],hasMore:false}}:{ok:true,value:{...f.snapshot,audienceEpoch:2,throughChangeSeq:2,members:[...f.snapshot.members,{id:'bob',name:'Bob'}]}}}));
+ await f.timers[0]();const current=f.render();let posts=0;
+ f.setTransport(async(url,init)=>{if(init?.method==='POST')posts++;return {json:async()=>init?.method==='POST'?{ok:true,value:{commentId:'sent',clientRequestId:'same',revision:1,createSeq:2,changeSeq:3,committedAt:3}}:{ok:true,value:{...f.snapshot,audienceEpoch:2,throughChangeSeq:3}}}});
+ await f.composer(current).props.onSubmit(oldDraft,[],null);assert.equal(posts,0);
+});
+
+

@@ -1,15 +1,15 @@
-# Active execution checkpoint
+# Paused execution checkpoint
 
-2026-09-12 14:36 UTC · Founder explicitly approved EXECUTE and requested continuous completion with approximately 30-minute updates. This checkpoint supersedes the historical planning-only status below.
+2026-09-12 15:22 UTC · User explicitly requested finishing the current work and stopping at the next natural checkpoint. This pause supersedes the earlier continuous-execution instruction. Do not start PC-11 or resume the heartbeat until the user resumes work.
 
-Canonical execution worktree: C:/Users/ethan/signal-studio-workspace/worktrees/app/feat-project-conversation-integration
-Branch: feat/project-conversation-integration; source base a709e22a9f19ffb4c45b1c420815f2edf6bfbf30. Original planning copy in app/main is preserved.
+**PC-10 is accepted locally. Accepted milestones: 11/16 = 68.75% (about 69%).** Denominator: PC-00 through PC-14 plus local PC-20. This is equal-weight milestone acceptance, not elapsed effort, a completion-date estimate or launch readiness. PC-03 is accepted only as the amended local-continuation gate; participant sessions remain zero. See [the full pause report](PROGRESS-REPORT.md).
 
-Approved local scope: PC-00–PC-14 and local PC-20, with proposed scope corrections accepted by EXECUTE. External/live-data, guest/AI expansion, paid services and destructive actions retain their explicit gates. Continue all independent safe work while awaiting concrete human/environment gates. Never claim human research passed without participants.
+Canonical worktree: C:/Users/ethan/signal-studio-workspace/worktrees/app/feat-project-conversation-integration
+Branch: feat/project-conversation-integration
+Source base: a709e22a9f19ffb4c45b1c420815f2edf6bfbf30
+Reviewed application source: 7669af5b73904ce0dcbd5256ce3f4bdf79bff3de. The subsequent pause commit changes documentation/evidence only; resolve its exact SHA from Git and the output pause manifest.
 
-Progress denominator: 16 accepted local milestones (PC-00 through PC-14 plus PC-20). Current accepted: 10/16 = 62.5% (PC-00–PC-09, with PC-03 accepted only as the amended local-continuation gate). Participant study remains a separate release dependency with zero sessions. This is task acceptance, not an estimate of elapsed effort, launch readiness or a passed live pilot. Do not count partially implemented work as accepted. Progress automation: project-conversation-progress, 30-minute thread heartbeat; pause at completion/cancellation; remain quiet while an external gate is unchanged.
-
-Agent use: root owns architecture/integration; explicit Luna low for PC-00 read-only reference inventory; Sol medium for PC-02 frontend prototype; Sol high for bounded database feasibility after contracts. One writer per owned worktree, at most two useful concurrent workers, no nested delegation. Requested worker model/effort is recorded separately from unverified effective worker runtime identity. Parent turn_context metadata verifies gpt-6-astra, effort high; this does not verify worker settings.
+Approved local scope remains PC-00–PC-14 and PC-20, synthetic data only. External/live-data, credentials, guests/files/AI expansion, paid services, outreach, publication and destructive actions remain outside this execution. No push or PR. No production build, real Clerk browser, remote database or real provider acceptance is inferred.
 
 | Milestone | State | Evidence / next action |
 |---|---|---|
@@ -23,15 +23,48 @@ Agent use: root owns architecture/integration; explicit Luna low for PC-00 read-
 | PC-07 client | Accepted at local scope | Fresh Sol narrow acceptance at 5a22b2af; 52/52 conversation checks, full TypeScript and scoped lint pass. Actual live arrival preserved top513 while height6442→6505; earlier history reachable, lost acknowledgment one Bob message, draft return verified. Final integrated responsive matrix remains PC-14 evidence. |
 | PC-08 task outcomes | Accepted at local scope | Fresh Astra accepted 3c705509 after receipt-denial correction; 65/65 isolated checks, full TypeScript and scoped lint pass. Actual browser commit/withheld receipt/destination removal/restoration/sends-off recovery: exactly one task/link/receipt, chosen due date, non-milestone. |
 | PC-09 integrated first slice | Accepted at local scope | Fresh Sol verification and Astra acceptance at 092ced53; 69/69 checks, full TypeScript and scoped lint. Initial-page/delta and older-message/newer-draft counterexamples corrected and independently green. Actual actor-scoped recovery, audience review and task-dialog focus verified. |
-| PC-10 | In progress; Discussion correction required | DM backend accepted by fresh Astra at 0c1b901ec31c9b849e779e506207c410156c7b57; DM/reply UI accepted by independent Sol at 856abd41. Integrated suite 90/90 and TypeScript pass, but fresh Astra rejected Discussion 59cb6e7d with seven reproduced action/migration/access/recovery/consent findings. Author is correcting these in its owned Discussion tree. Milestone remains open. |
-| PC-14 draft continuity subtask | Accepted subtask; milestone remains open | Independent Sol accepted 6d411c72: authenticated actor-scoped layout provider, no silent eviction, union recovery inventory with exact Project/DM/root reopening and protected uncertain work. Root browser verified text plus recipient across route navigation, all 20 scopes at capacity, exact reply reopening, explicit discard freeing a slot. Phone polish 115344b8 and screenshot show 390×844 with no page overflow. PC-14 is not counted. |
-| PC-11–14, PC-20 | Pending dependencies / controls in progress | Build and verify in order; no partial-completion claim |
+| PC-10 DMs, replies, Discussion | Accepted locally | DM backend 0c1b901e and UI856abd41 accepted independently. Discussion correction accepted at receiving5223840a, actual-poller counterexamples13/13. Existing-history compatibility corrected and independently accepted at receiving7669af5b,9/9. Final isolated integrated suite111/111, full TypeScript and scoped lint passed. Actual synthetic browser recovery, audience confirmation, revocation/re-entry and desktop/phone evidence saved. |
+| PC-11 attention/delivery | Open, paused before implementation stage | Quiet-hours helper accepted as a subtask at a713cd5e (author d2b552c5),7/7 including daylight-saving fold counterexample. Full attention/Inbox/delivery flow is not implemented. Resume-packets/pc11-attention-packet.md and fixture matrix are ready. |
+| PC-12 private Notes outcome | Open | Prepared resume-packets/pc12-notes-packet.md includes separate-store authorization, exact receipt custody, private ownership, account-generation fence and source revocation linearization. |
+| PC-13 search/lifecycle | Open | Prepared resume-packets/pc13-pc20-packet.md. Search, reactions, source-related work, export/erasure/duplication inventory remain. |
+| PC-14 integrated readiness | Open; Messages draft subtask accepted | 6d411c72 accepted authenticated draft provider, recovery inventory, exact reopening and no silent capacity eviction. Actual capacity/phone evidence saved. Combining Task Discussion drafts with this inventory/cap, exact deep links, full frozen-build/browser/accessibility/fault matrix remain. |
+| PC-20 operations | Open; per-slice controls partially proven | Existing runtime flags, migration receipts and lost-ack process restart have local evidence. Final queue stop/replay, backup/restore, export/erasure, supported upgrade and data-preserving rollback remain. |
 
-Environment: dependency node_modules junction reuses already installed App modules read-only. No env files copied. An isolated Next prototype preview runs on loopback port 3187 with synthetic state and provider settings removed in the child process; see operations-local.md. New-worktree helper inspected; direct git worktree add at pinned base avoids its unconditional fetch/prune. Local commits use inspected hook (no production side effect). No push/PR.
+## Final receiving proof and limits
 
-Latest receiving evidence: code revision `85963f762fd07861608554e8f8bbd67413c75829`, 12 September 2026 10:47 UTC. EX-01 run `run-2026-09-12T10-44-59.459Z-22000`; EX-02 10:44:59.834–10:45:17.030 UTC. JSON copies and reports are committed in this package. Final prototype source `e7eed757` is equivalent to integrated UI `a8207004`; screenshots show 1440×1000 and 390×844. Desktop SHA-256 `ebb7c45c71388ecb8508fe7eb6bdbf06a4d4430bcd2e3efdb0dd6cc49eddeb43`; mobile `bb1e5b298e954f1ff17ba475640614c19c09d8310d54d19294dda50753e976b1`.
+- Application source7669af5b: node scripts/conversations/check.mjs passed111/111, exit0,28517.6774ms; full TypeScript exit0; scoped ESLint zero warnings. Logs are in evidence/reviews. A copied standalone TypeScript review harness initially entered application typechecking; its artifact extension was corrected to .ts.txt, failed log retained, then full types passed.
+- Independent Astra acceptance: Discussion5223840a13/13; compatibility7669af5b9/9, including unchanged revocation-ordering counterexample and task-switch/unmount retry checks. Original red compatibility evidence at bd7ceff8 remains preserved. Read-only compatibility has strict Clerk mapping, live Task-derived Project membership and no fallback after canonical-path refusal.
+- Actual browser at UI7669af5b and isolated corrected Discussion service: pending send/edit/delete survives route navigation and resolves the same operation; deleted root retains another member's reply; audience expansion shows current names and needs explicit review; revocation clears content/draft; membership restoration and re-entry returns an empty composer. Final desktop1280×720 and phone390×844 frames are in evidence. These are synthetic adapter tests, not a real Clerk browser session.
+- Current corrected fixture: C:/Users/ethan/Documents/Codex/2026-09-12/plea/work/pc10-discussion-corrected-browser/browser-fixture-HRAe4t/tasks.db. Source record counts at receipt recovery: two comments, one tombstone, root revision3 and four operation receipts. Alice membership was restored after revocation to verify an empty composer; Dana remains a synthetic Project member.
+- Other retained fixtures: work/pc10-final/browser-fixture-EtHcfh/tasks.db (accepted DM); work/pc10-discussion-browser/browser-fixture-OceKC5/tasks.db (older Discussion backend, draft-capacity fixture only); work/pc10-live at3189 is historical and must not be cited as the final backend.
 
-Current next proof: PC-10 exact-pair consent, raw membership/rejoin/block guards, one-level replies and canonical Task Discussion at a frozen integrated revision. PC-09 accepted at 092ced53 by independent Sol and Astra review. White/stone-black/indigo remains the accepted direction. Human formative study remains a separate release gate with zero participant sessions. The private delivery authority is active (workspace cutover 2c22c8eccfaaa8703f42b1222fa0ab05ea4ab8a5). Execution claim and next proof belong to private workspace issue #13, under parent #12; issue and board read back OPEN / In progress. Root remains the integration writer. This repository owns implementation evidence; no tracker acceptance is claimed. This branch is local and unpushed.
+## Ownership and pause disposition
+
+Private delivery authority active at workspace main2c22c8eccfaaa8703f42b1222fa0ab05ea4ab8a5. Work ID: private workspace issue13 under12, https://github.com/ethanmcn2013-droid/signal-studio-workspace/issues/13 . Last readback OPEN / In progress. No remote tracker writes were authorized in this run; pause/claim reconciliation remains pending. Root's local integration writing is paused; there is no silent transfer to another task or model.
+
+Root integrated and tested. Sol owned bounded DM, Discussion and compatibility packets in separate worktrees; Astra independently reviewed the high-risk corrections. Source reviewers did not edit frozen source. Workers are idle; no PC-11 dispatch is active. The report worker only prepares this pause report. Requested model/effort configuration is not a claim of independently verified effective worker identity.
+
+All six owned preview listeners3187–3192 were stopped after exact process-command verification; readback found zero remaining listeners. Scripts and fixture DBs are retained. See evidence/paused-services.json. Progress automation project-conversation-progress is PAUSED. In-memory browser drafts were synthetic test inputs; this feature does not promise draft recovery across browser closure/restart. The tested custody behavior and fixture data are documented rather than persisting private draft contents to storage.
+
+Preserve worker refs:
+
+| Worktree suffix | Branch | HEAD at pause |
+|---|---|---|
+| feat-project-conversation-discussion-history | feat/project-conversation-discussion-history | 88ba10e6affbc7dfe9cc7d1b82f46ca632ccbbd5 |
+| feat-project-conversation-discussion | feat/project-conversation-discussion | 01102e080828049245c12ff3f1545209b1dccbdb |
+| feat-project-conversation-dms | feat/project-conversation-dms | 0c1b901ec31c9b849e779e506207c410156c7b57 |
+| feat-project-conversation-attention-delivery | feat/project-conversation-attention-delivery | d2b552c5a14171a212490c6ad5564e27bcc1fdac |
+| feat-project-conversation-prototype | feat/project-conversation-prototype | 9713dcdc (resolve full SHA before use) |
+
+No dependency install, env copying, branch reset, unrelated January edit or production mutation is part of this checkpoint. node_modules junction shares existing App dependencies read-only; do not run pnpm exec because it attempts to reinstall/purge this junction.
+
+## First actions after the user resumes
+
+1. Read workspace/App AGENTS, delivery config/OPERATING and continuation-and-acceptance; inspect issue13 claim before writing. Verify integration Git status, current SHA, saved pause manifest and worker refs. Do not infer takeover from age.
+2. Read README, decisions, this state and the prepared PC-11 packet. Preserve white/stone-black/indigo direction, Project identity, strict Clerk mapping, canonical comments and immutable receipt contracts. Begin the shared attention adapter and isolated delivery sink; do not repeat completed PC-10 work without drift.
+3. Root owns integrated UI/deep links; one bounded Sol worker may own PC-11 server/schema at a new pinned base; fresh Astra accepts the integrated high-risk packet. The quiet-hours commits already exist in integration: do not duplicate them or reset the worker tree.
+4. Reuse work/start-conversation-live-preview.ps1 or inspect/restart an equivalent isolated command only when browser work is needed. The fixture proxy command is node --import tsx --import ./src/test/register-server-only.mjs scripts/conversations/preview-server.ts <explicit-synthetic-directory> <free-loopback-port>3188. It creates a new synthetic DB; point-in-time saved DBs remain historical evidence.
+5. Continue PC-12,PC-13,PC-14 and PC-20 in dependency order. Retention/admin/support and human/live-provider gates must be explicit before any pilot. Resume the existing progress heartbeat only with the resumed user instruction; no duplicate automation.
 
 ---
 # Project Conversation state

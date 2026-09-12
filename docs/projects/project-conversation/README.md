@@ -1,6 +1,6 @@
 # Project Conversation
 
-**Execution underway · 12 September 2026.** The founder approved continuous local execution after reviewing this package. Current accepted milestones and evidence are in [STATE](STATE.md). The prototype and isolated experiments are implemented; this is not a deployed product.
+**Paused at PC-10 · 12 September 2026.** At the user’s request, local work is saved after 11 of 16 accepted milestones (68.75%). Read the [full progress report](PROGRESS-REPORT.md) and [restart state](STATE.md). No production deployment is claimed.
 
 **Latest amendment:** the founder selected white/stone-black/indigo with supplied conversation-layout references and instructed continued execution. Local backend work now proceeds; participant testing remains required before release. This supersedes the original prototype-before-backend sequencing described later in this planning package. See [the decision record](decisions.md).
 

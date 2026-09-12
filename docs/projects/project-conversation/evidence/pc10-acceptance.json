@@ -1,0 +1,30 @@
+{
+  "scope": "local synthetic PC-10 checkpoint",
+  "acceptedAt": "2026-09-12T15:22:00Z",
+  "sourceRevision": "7669af5b73904ce0dcbd5256ce3f4bdf79bff3de",
+  "acceptedBy": "root integrator under user-authorized local scope",
+  "acceptedMilestones": ["PC-00", "PC-01", "PC-02", "PC-03", "PC-04", "PC-05", "PC-06", "PC-07", "PC-08", "PC-09", "PC-10"],
+  "approvedMilestones": ["PC-00", "PC-01", "PC-02", "PC-03", "PC-04", "PC-05", "PC-06", "PC-07", "PC-08", "PC-09", "PC-10", "PC-11", "PC-12", "PC-13", "PC-14", "PC-20"],
+  "pc03Limit": "Local-continuation amendment only; participant research is not passed.",
+  "participantSessions": 0,
+  "checks": [
+    {"name": "isolated conversation suite", "passed": 111, "total": 111, "exitCode": 0, "durationMs": 28517.6774, "log": "reviews/integrated-7669af5b.tap"},
+    {"name": "full TypeScript", "exitCode": 0, "log": "reviews/types-7669af5b.log"},
+    {"name": "scoped lint compatibility and Discussion", "exitCode": 0, "warnings": 0, "log": "reviews/lint-7669af5b.log"},
+    {"name": "independent compatibility acceptance", "passed": 9, "total": 9, "exitCode": 0, "durationMs": 2321.4359, "revision": "7669af5b73904ce0dcbd5256ce3f4bdf79bff3de", "log": "reviews/compatibility-7669af5b.tap"},
+    {"name": "independent Discussion correction acceptance", "passed": 13, "total": 13, "exitCode": 0, "durationMs": 5262.4276, "revision": "5223840afd2a2159fe5cc80d8acdbbaccd9a665c", "log": "reviews/correction-5223840a.tap"}
+  ],
+  "browser": {
+    "adapter": "isolated synthetic fixture proxy, not real Clerk",
+    "operations": ["send acknowledgement and receipt outage recovery", "edit acknowledgement and receipt outage recovery", "tombstone acknowledgement and receipt outage recovery", "route navigation custody", "reply retained after root deletion", "explicit current-name audience confirmation", "revocation clears Discussion and draft", "restored membership and re-entry has empty composer"],
+    "recoveredDatabaseCounts": {"comments": 2, "tombstones": 1, "rootRevision": 3, "receipts": 4},
+    "frames": [
+      {"path": "discussion-checkpoint-desktop.png", "width": 1280, "height": 720, "revision": "7669af5b73904ce0dcbd5256ce3f4bdf79bff3de", "sha256": "c15f5a64d699b9afd0eb12eba0a3dad0f1a37fe53cba66a53ee42c845ff0d81e"},
+      {"path": "discussion-checkpoint-mobile.png", "width": 390, "height": 844, "revision": "7669af5b73904ce0dcbd5256ce3f4bdf79bff3de", "sha256": "b69b5381912884b3c0a4747242aa7be1d7c778dbfed643fb16207c9165d06a21"}
+    ]
+  },
+  "remainingReleaseEvidence": ["final PC-14 candidate build and browser/accessibility matrix", "real Clerk sessions", "remote database behavior", "real delivery provider", "participant study", "retention/admin/support decisions", "pilot and deployment authorization"],
+  "published": false,
+  "trackerDone": false,
+  "userPaused": true
+}
