@@ -34,6 +34,24 @@ export type ProjectConversationAudience = Readonly<{
   members: readonly Readonly<{ id: string; name: string }>[];
 }>;
 
+export type DirectMessagePairState = "pending" | "active" | "declined" | "blocked" | "left" | "membership_lost" | "rejoin_pending";
+export type DirectMessageScope = Readonly<{
+  conversationId: string;
+  projectId: ProjectId;
+  kind: "dm";
+  audienceEpoch: number;
+  lifecycle: "active" | "archived";
+  pairState: DirectMessagePairState;
+  other: Readonly<{ id: string; name: string }>;
+  requesterId: string;
+  blockOwnerId: string | null;
+  ownConfirmed: boolean;
+  canWrite: boolean;
+  canRead: boolean;
+}>;
+export type DirectMessageTransition = "accept" | "decline" | "block" | "unblock" | "leave" | "reopen";
+export type DirectMessageReceipt = Readonly<{ scope: DirectMessageScope; clientRequestId: string; committedAt: number }>;
+
 export type MessageMutationReceipt = Readonly<{
   messageId: string;
   clientRequestId: string;
@@ -103,6 +121,27 @@ function scopeFromRow(row: Record<string, unknown>): ProjectConversationScope {
   };
 }
 
+function directMessageId(projectId: ProjectId, lowUserId: string, highUserId: string): string {
+  return `dm_${hashTuple(["project-dm-v1", projectId, lowUserId, highUserId]).slice(0, 32)}`;
+}
+
+function dmScopeFromRow(row: Record<string, unknown>): DirectMessageScope {
+  const state = text(row.pair_state) as DirectMessagePairState;
+  const lifecycle = row.workspace_archived_at == null && row.lifecycle === "active" ? "active" : "archived";
+  const currentMember = Boolean(row.current_member);
+  const participant = Boolean(row.participant_status);
+  const canRead = currentMember && participant && integer(row.retains_history) === 1 && !["pending", "declined"].includes(state);
+  return {
+    conversationId: text(row.id), projectId: text(row.workspace_id) as ProjectId, kind: "dm",
+    audienceEpoch: integer(row.audience_epoch), lifecycle, pairState: state,
+    other: { id: text(row.other_pair_id), name: row.other_name == null ? "Former member" : text(row.other_name) }, requesterId: text(row.dm_requester_id),
+    blockOwnerId: row.dm_blocked_by_user_id == null ? null : text(row.dm_blocked_by_user_id),
+    ownConfirmed: integer(row.reopen_confirmed) === 1,
+    canWrite: lifecycle === "active" && state === "active" && currentMember && participant && integer(row.active_pair_count) === 2,
+    canRead,
+  };
+}
+
 function messageFromRow(row: Record<string, unknown>): MessageRecord {
   return {
     id: text(row.id), authorId: text(row.author_id),
@@ -111,6 +150,8 @@ function messageFromRow(row: Record<string, unknown>): MessageRecord {
     body: row.deleted_at == null ? text(row.body) : null,
     createdAt: integer(row.created_at), editedAt: row.edited_at == null ? null : integer(row.edited_at),
     deletedAt: row.deleted_at == null ? null : integer(row.deleted_at),
+    ...(row.reply_count == null ? {} : { replyCount: integer(row.reply_count) }),
+    ...(row.reply_count_change_seq == null ? {} : { replyCountChangeSeq: integer(row.reply_count_change_seq) }),
   };
 }
 
@@ -135,30 +176,39 @@ async function loadProjectScope(
 async function authorizeConversation(
   executor: ConversationSqlExecutor,
   input: ActorConversation,
-): Promise<ConversationResult<{ row: Record<string, unknown>; scope: ProjectConversationScope }>> {
+): Promise<ConversationResult<{ row: Record<string, unknown>; scope: ProjectConversationScope | DirectMessageScope }>> {
   const result = await executor.execute({
-    sql: `SELECT c.id, c.workspace_id, c.kind, c.lifecycle, c.audience_epoch,
-        w.archived_at AS workspace_archived_at, w.name AS workspace_name
+    sql: `SELECT c.*, w.archived_at AS workspace_archived_at, w.name AS workspace_name,
+        wm.user_id AS current_member, p.status AS participant_status, p.consented, p.retains_history, p.reopen_confirmed,
+        CASE WHEN c.dm_low_user_id=? THEN c.dm_high_user_id ELSE c.dm_low_user_id END AS other_pair_id,
+        other.id AS other_id, COALESCE(NULLIF(other.name,''),NULLIF(other.handle,''),other.initials) AS other_name,
+        (SELECT COUNT(*) FROM conversation_participants bp
+          JOIN workspace_members bwm ON bwm.workspace_id=c.workspace_id AND bwm.user_id=bp.user_id
+          JOIN users bu ON bu.id=bp.user_id WHERE bp.conversation_id=c.id AND bp.status='active' AND bp.consented=1 AND bp.retains_history=1) AS active_pair_count
       FROM conversations c
       JOIN workspaces w ON w.id = c.workspace_id
       JOIN workspace_members wm ON wm.workspace_id = c.workspace_id AND wm.user_id = ?
       JOIN users u ON u.id = wm.user_id
-      WHERE c.id = ? AND c.workspace_id = ? AND c.kind = 'project'`,
-    args: [input.actorId, input.conversationId, input.projectId],
+      LEFT JOIN conversation_participants p ON p.conversation_id=c.id AND p.user_id=?
+      LEFT JOIN users other ON other.id=CASE WHEN c.dm_low_user_id=? THEN c.dm_high_user_id ELSE c.dm_low_user_id END
+      WHERE c.id = ? AND c.workspace_id = ? AND (c.kind='project' OR (c.kind='dm' AND ? IN(c.dm_low_user_id,c.dm_high_user_id)))`,
+    args: [input.actorId, input.actorId, input.actorId, input.actorId, input.conversationId, input.projectId, input.actorId],
   });
   const row = result.rows[0];
   if (!row) return failure("unavailable");
-  return { ok: true, value: { row, scope: scopeFromRow(row) } };
+  if (row.kind === "dm" && !row.participant_status) return failure("unavailable");
+  return { ok: true, value: { row, scope: row.kind === "dm" ? dmScopeFromRow(row) : scopeFromRow(row) } };
 }
 
 function writeGate(
-  scope: ProjectConversationScope,
+  scope: ProjectConversationScope | DirectMessageScope,
   expectedAudienceEpoch: number,
 ): ConversationResult<true> {
   if (scope.lifecycle === "archived") return failure("archived");
   if (!Number.isSafeInteger(expectedAudienceEpoch) || expectedAudienceEpoch !== scope.audienceEpoch) {
     return failure("audience_changed");
   }
+  if (scope.kind === "dm" && !scope.canWrite) return failure(scope.pairState === "pending" || scope.pairState === "declined" ? "consent_required" : "read_only");
   return { ok: true, value: true };
 }
 
@@ -166,13 +216,16 @@ async function validateMentionMembers(
   executor: ConversationSqlExecutor,
   projectId: ProjectId,
   mentions: readonly string[],
+  conversationId?: string,
 ): Promise<boolean> {
   if (mentions.length === 0) return true;
   const placeholders = mentions.map(() => "?").join(", ");
   const result = await executor.execute({
     sql: `SELECT wm.user_id FROM workspace_members wm JOIN users u ON u.id = wm.user_id
-      WHERE wm.workspace_id = ? AND wm.user_id IN (${placeholders})`,
-    args: [projectId, ...mentions],
+      ${conversationId ? "JOIN conversations c ON c.id = ? AND c.workspace_id=wm.workspace_id" : ""}
+      WHERE wm.workspace_id = ? AND wm.user_id IN (${placeholders})
+      ${conversationId ? "AND (c.kind='project' OR wm.user_id IN(c.dm_low_user_id,c.dm_high_user_id))" : ""}`,
+    args: [...(conversationId ? [conversationId] : []), projectId, ...mentions],
   });
   return result.rows.length === mentions.length;
 }
@@ -277,7 +330,133 @@ export function createConversationService(adapter: ConversationDatabaseAdapter) 
         args: [id, input.projectId, input.actorId, now],
       });
       const authorized = await authorizeConversation(executor, { ...input, conversationId: id });
-      return authorized.ok ? { ok: true, value: authorized.value.scope } : authorized;
+      return authorized.ok && authorized.value.scope.kind === "project"
+        ? { ok: true, value: authorized.value.scope }
+        : failure("unavailable");
+    });
+  }
+
+  async function getDirectMessage(input: ActorConversation): Promise<ConversationResult<DirectMessageScope>> {
+    if (!validIdentity(input.actorId) || !isProjectId(input.projectId) || !validIdentity(input.conversationId)) return failure("invalid_input");
+    return inTransaction("read", async (executor) => {
+      const authorized = await authorizeConversation(executor, input);
+      if (!authorized.ok || authorized.value.scope.kind !== "dm") return failure("unavailable");
+      return { ok: true, value: authorized.value.scope };
+    });
+  }
+
+  async function listDirectMessages(input: ActorProject): Promise<ConversationResult<readonly DirectMessageScope[]>> {
+    if (!validIdentity(input.actorId) || !isProjectId(input.projectId)) return failure("invalid_input");
+    return inTransaction("read", async (executor) => {
+      const member = await executor.execute({ sql: `SELECT 1 FROM workspace_members wm JOIN users u ON u.id=wm.user_id
+        JOIN workspaces w ON w.id=wm.workspace_id WHERE wm.workspace_id=? AND wm.user_id=?`, args: [input.projectId, input.actorId] });
+      if (!member.rows[0]) return failure("unavailable");
+      const ids = await executor.execute({ sql: `SELECT id FROM conversations WHERE workspace_id=? AND kind='dm'
+        AND ? IN(dm_low_user_id,dm_high_user_id) ORDER BY created_at DESC,id`, args: [input.projectId, input.actorId] });
+      const scopes: DirectMessageScope[] = [];
+      for (const row of ids.rows) {
+        const authorized = await authorizeConversation(executor, { ...input, conversationId: text(row.id) });
+        if (authorized.ok && authorized.value.scope.kind === "dm") scopes.push(authorized.value.scope);
+      }
+      return { ok: true, value: scopes };
+    });
+  }
+
+  async function listDirectMessageAudience(input: ActorConversation): Promise<ConversationResult<ProjectConversationAudience>> {
+    if (!validIdentity(input.actorId) || !isProjectId(input.projectId) || !validIdentity(input.conversationId)) return failure("invalid_input");
+    return inTransaction("read", async (executor) => {
+      const authorized = await authorizeConversation(executor, input);
+      if (!authorized.ok || authorized.value.scope.kind !== "dm") return failure("unavailable");
+      const members = await executor.execute({ sql: `SELECT u.id,COALESCE(NULLIF(u.name,''),NULLIF(u.handle,''),u.initials) AS name
+        FROM users u JOIN conversations c ON c.id=? WHERE u.id IN(c.dm_low_user_id,c.dm_high_user_id) ORDER BY lower(name),u.id`, args: [input.conversationId] });
+      return { ok: true, value: { audienceEpoch: authorized.value.scope.audienceEpoch,
+        members: members.rows.map((row) => ({ id: text(row.id), name: text(row.name) })) } };
+    });
+  }
+
+  async function requestDirectMessage(args: Readonly<{ actorId: string; projectId: ProjectId; recipientId: string; clientRequestId: string }>): Promise<ConversationResult<DirectMessageReceipt>> {
+    if (!validIdentity(args.actorId) || !isProjectId(args.projectId) || !validIdentity(args.recipientId) || args.recipientId === args.actorId || !validRequestId(args.clientRequestId)) return failure("invalid_input");
+    const [low, high] = [args.actorId, args.recipientId].sort();
+    const payloadHash = hashTuple(["dm-state-v1", "request", args.actorId, args.projectId, args.recipientId]);
+    return inTransaction("write", async (executor) => {
+      const prior = await executor.execute({ sql: `SELECT conversation_id,payload_hash,committed_at FROM conversation_dm_receipts WHERE actor_id=? AND client_request_id=?`, args: [args.actorId, args.clientRequestId] });
+      if (prior.rows[0]) {
+        if (prior.rows[0].payload_hash !== payloadHash) return failure("request_conflict");
+        const replay = await authorizeConversation(executor, { actorId: args.actorId, projectId: args.projectId, conversationId: text(prior.rows[0].conversation_id) });
+        if (!replay.ok || replay.value.scope.kind !== "dm") return failure("unavailable");
+        return { ok: true, value: { scope: replay.value.scope, clientRequestId: args.clientRequestId, committedAt: integer(prior.rows[0].committed_at) } };
+      }
+      const eligible = await executor.execute({ sql: `SELECT w.archived_at,(SELECT COUNT(*) FROM workspace_members wm JOIN users u ON u.id=wm.user_id
+        WHERE wm.workspace_id=w.id AND wm.user_id IN(?,?)) AS member_count FROM workspaces w WHERE w.id=?`, args: [low, high, args.projectId] });
+      if (!eligible.rows[0] || integer(eligible.rows[0].member_count) !== 2) return failure("unavailable");
+      if (eligible.rows[0].archived_at != null) return failure("archived");
+      const existing = await executor.execute({ sql: `SELECT id FROM conversations WHERE workspace_id=? AND kind='dm' AND dm_low_user_id=? AND dm_high_user_id=?`, args: [args.projectId, low, high] });
+      if (existing.rows[0]) return failure("read_only");
+      const id = directMessageId(args.projectId, low, high); const committedAt = Date.now();
+      await executor.execute({ sql: `INSERT INTO conversations(id,workspace_id,kind,lifecycle,audience_epoch,next_create_seq,next_change_seq,
+        dm_low_user_id,dm_high_user_id,pair_state,created_by,created_at,dm_requester_id)
+        VALUES(?,?,'dm','active',1,1,1,?,?,'pending',?,?,?)`, args: [id,args.projectId,low,high,args.actorId,committedAt,args.actorId] });
+      await executor.execute({ sql: `INSERT INTO conversation_participants(conversation_id,user_id,status,consented,retains_history,reopen_confirmed)
+        VALUES(?,?,'active',1,0,0),(?,?,'active',0,0,0)`, args: [id,args.actorId,id,args.recipientId] });
+      await executor.execute({ sql: `INSERT INTO conversation_dm_receipts(actor_id,client_request_id,operation,payload_hash,conversation_id,resulting_state,committed_at)
+        VALUES(?,?,'request',?,?,'pending',?)`, args: [args.actorId,args.clientRequestId,payloadHash,id,committedAt] });
+      const authorized = await authorizeConversation(executor, { actorId: args.actorId, projectId: args.projectId, conversationId: id });
+      if (!authorized.ok || authorized.value.scope.kind !== "dm") return failure("unavailable");
+      return { ok: true, value: { scope: authorized.value.scope, clientRequestId: args.clientRequestId, committedAt } };
+    });
+  }
+
+  async function transitionDirectMessage(args: Readonly<ActorConversation & { clientRequestId: string; expectedAudienceEpoch: number; operation: DirectMessageTransition }>): Promise<ConversationResult<DirectMessageReceipt>> {
+    if (!validIdentity(args.actorId) || !isProjectId(args.projectId) || !validIdentity(args.conversationId) || !validRequestId(args.clientRequestId) ||
+      !Number.isSafeInteger(args.expectedAudienceEpoch) || args.expectedAudienceEpoch < 1 || !["accept","decline","block","unblock","leave","reopen"].includes(args.operation)) return failure("invalid_input");
+    const payloadHash = hashTuple(["dm-state-v1", args.operation, args.actorId, args.projectId, args.conversationId]);
+    return inTransaction("write", async (executor) => {
+      const prior = await executor.execute({ sql: `SELECT payload_hash,committed_at FROM conversation_dm_receipts WHERE actor_id=? AND client_request_id=?`, args: [args.actorId,args.clientRequestId] });
+      const authorized = await authorizeConversation(executor,args);
+      if (!authorized.ok || authorized.value.scope.kind !== "dm") return failure("unavailable");
+      if (prior.rows[0]) return prior.rows[0].payload_hash === payloadHash
+        ? { ok:true,value:{scope:authorized.value.scope,clientRequestId:args.clientRequestId,committedAt:integer(prior.rows[0].committed_at)} }
+        : failure("request_conflict");
+      const scope=authorized.value.scope; const row=authorized.value.row;
+      if(scope.lifecycle === "archived") return failure("archived");
+      if(scope.audienceEpoch !== args.expectedAudienceEpoch) return failure("audience_changed");
+      let resulting: DirectMessagePairState=scope.pairState;
+      if(args.operation === "accept" || args.operation === "decline") {
+        if(scope.pairState!=="pending" || scope.requesterId===args.actorId) return failure("read_only");
+        resulting=args.operation === "accept" ? "active" : "declined";
+        if(resulting === "active") await executor.execute({sql:`UPDATE conversation_participants SET status='active',consented=1,retains_history=1 WHERE conversation_id=?`,args:[args.conversationId]});
+        else await executor.execute({sql:`UPDATE conversation_participants SET consented=0,retains_history=0,reopen_confirmed=0 WHERE conversation_id=?`,args:[args.conversationId]});
+        await executor.execute({sql:"UPDATE conversations SET pair_state=? WHERE id=?",args:[resulting,args.conversationId]});
+      } else if(args.operation === "block") {
+        if(scope.pairState==="blocked" || scope.pairState==="left" || scope.pairState==="membership_lost" || scope.pairState==="rejoin_pending") return failure("read_only");
+        resulting="blocked";
+        await executor.execute({sql:"UPDATE conversations SET pair_state='blocked',dm_blocked_by_user_id=?,dm_state_before_block=? WHERE id=?",args:[args.actorId,scope.pairState,args.conversationId]});
+      } else if(args.operation === "unblock") {
+        if(scope.pairState!=="blocked" || scope.blockOwnerId!==args.actorId) return failure("read_only");
+        const pair=await executor.execute({sql:`SELECT COUNT(*) AS members,SUM(CASE WHEN p.status='removed' THEN 1 ELSE 0 END) AS removed,
+          SUM(CASE WHEN p.status='rejoin_pending' OR p.status='membership_lost' THEN 1 ELSE 0 END) AS churned,
+          SUM(CASE WHEN p.status='active' AND p.consented=1 AND p.retains_history=1 THEN 1 ELSE 0 END) AS active
+          FROM conversation_participants p JOIN conversations c ON c.id=p.conversation_id
+          LEFT JOIN workspace_members wm ON wm.workspace_id=c.workspace_id AND wm.user_id=p.user_id
+          WHERE p.conversation_id=? AND wm.user_id IS NOT NULL`,args:[args.conversationId]});
+        const p=pair.rows[0]; resulting=integer(p?.members)!==2?"membership_lost":integer(p?.removed)>0?"left":integer(p?.churned)>0?"rejoin_pending":integer(p?.active)===2?"active":text(row.dm_state_before_block) as DirectMessagePairState;
+        await executor.execute({sql:"UPDATE conversations SET pair_state=?,dm_blocked_by_user_id=NULL,dm_state_before_block=NULL WHERE id=?",args:[resulting,args.conversationId]});
+      } else if(args.operation === "leave") {
+        await executor.execute({sql:`UPDATE conversation_participants SET status='removed',consented=0,retains_history=0,reopen_confirmed=0 WHERE conversation_id=? AND user_id=?`,args:[args.conversationId,args.actorId]});
+        if(scope.pairState!=="blocked") { resulting="left"; await executor.execute({sql:"UPDATE conversations SET pair_state='left' WHERE id=?",args:[args.conversationId]}); }
+      } else {
+        if(scope.pairState!=="rejoin_pending" || !["rejoin_pending","active"].includes(text(row.participant_status))) return failure("read_only");
+        await executor.execute({sql:`UPDATE conversation_participants SET status='active',consented=1,retains_history=1,reopen_confirmed=1 WHERE conversation_id=? AND user_id=?`,args:[args.conversationId,args.actorId]});
+        const both=await executor.execute({sql:`SELECT COUNT(*) AS count FROM conversation_participants p JOIN conversations c ON c.id=p.conversation_id
+          JOIN workspace_members wm ON wm.workspace_id=c.workspace_id AND wm.user_id=p.user_id JOIN users u ON u.id=p.user_id
+          WHERE p.conversation_id=? AND p.status='active' AND p.consented=1 AND p.retains_history=1 AND p.reopen_confirmed=1`,args:[args.conversationId]});
+        if(integer(both.rows[0]?.count)===2){resulting="active";await executor.execute({sql:"UPDATE conversations SET pair_state='active' WHERE id=?",args:[args.conversationId]});}
+      }
+      const committedAt=Date.now();
+      await executor.execute({sql:`INSERT INTO conversation_dm_receipts(actor_id,client_request_id,operation,payload_hash,conversation_id,resulting_state,committed_at)
+        VALUES(?,?,?,?,?,?,?)`,args:[args.actorId,args.clientRequestId,args.operation,payloadHash,args.conversationId,resulting,committedAt]});
+      const updated=await authorizeConversation(executor,args); if(!updated.ok || updated.value.scope.kind!=="dm") return failure("unavailable");
+      return {ok:true,value:{scope:updated.value.scope,clientRequestId:args.clientRequestId,committedAt}};
     });
   }
 
@@ -323,7 +502,7 @@ export function createConversationService(adapter: ConversationDatabaseAdapter) 
       }
       const gate = writeGate(authorized.value.scope, input.expectedAudienceEpoch);
       if (!gate.ok) return gate;
-      if (!await validateMentionMembers(executor, input.projectId, mentions)) return failure("invalid_input");
+      if (!await validateMentionMembers(executor, input.projectId, mentions, input.conversationId)) return failure("invalid_input");
       if (input.rootId !== null) {
         const root = await executor.execute({
           sql: `SELECT id FROM conversation_messages
@@ -361,7 +540,10 @@ export function createConversationService(adapter: ConversationDatabaseAdapter) 
       });
       // Membership grants history access; only explicit mentions direct attention.
       // The normalized set was validated against live members in this transaction.
-      for (const recipientId of mentions.filter((id) => id !== actorId)) {
+      const recipients = authorized.value.scope.kind === "dm"
+        ? [authorized.value.scope.other.id]
+        : mentions.filter((id) => id !== actorId);
+      for (const recipientId of [...new Set(recipients)]) {
         const eventKey = hashTuple([input.conversationId, id, recipientId]).slice(0, 32);
         await executor.execute({
           sql: `INSERT INTO conversation_attention
@@ -395,26 +577,36 @@ export function createConversationService(adapter: ConversationDatabaseAdapter) 
     return inTransaction<{ state: "committed"; receipt: MessageReceipt } | { state: "absent" }>("read", async (executor) => {
       const authorized = await authorizeConversation(executor, input);
       if (!authorized.ok) return authorized;
+      if (authorized.value.scope.kind === "dm" && !authorized.value.scope.canRead) return failure(
+        ["pending", "declined"].includes(authorized.value.scope.pairState) ? "consent_required" : "unavailable",
+      );
       const prior = await findReceipt(executor, input);
       if (!prior || prior.operation !== "send") return { ok: true, value: { state: "absent" } };
       return { ok: true, value: { state: "committed", receipt: sendReceipt(prior) } };
     });
   }
 
-  async function getMessagePage(input: ActorConversation & { beforeCreateSeq?: number; limit?: number }): Promise<ConversationResult<MessagePage>> {
+  async function getMessagePage(input: ActorConversation & { beforeCreateSeq?: number; limit?: number; rootId?: string | null }): Promise<ConversationResult<MessagePage>> {
     const limit = input.limit ?? CONVERSATION_LIMITS.pageDefault;
     if (!validIdentity(input.actorId) || !isProjectId(input.projectId) || !validIdentity(input.conversationId) ||
       !Number.isSafeInteger(limit) || limit < 1 || limit > CONVERSATION_LIMITS.pageMaximum ||
-      (input.beforeCreateSeq !== undefined && (!validSequence(input.beforeCreateSeq) || input.beforeCreateSeq < 1))) return failure("invalid_input");
+      (input.beforeCreateSeq !== undefined && (!validSequence(input.beforeCreateSeq) || input.beforeCreateSeq < 1)) ||
+      (input.rootId !== undefined && input.rootId !== null && !validIdentity(input.rootId))) return failure("invalid_input");
     return inTransaction("read", async (executor) => {
       const authorized = await authorizeConversation(executor, input);
       if (!authorized.ok) return authorized;
+      if (authorized.value.scope.kind === "dm" && !authorized.value.scope.canRead) return failure(
+        ["pending", "declined"].includes(authorized.value.scope.pairState) ? "consent_required" : "unavailable",
+      );
       const sequence = await executor.execute({ sql: "SELECT next_change_seq - 1 AS cursor FROM conversations WHERE id = ?", args: [input.conversationId] });
       const result = await executor.execute({
-        sql: `SELECT id,author_id,root_id,create_seq,revision,body,created_at,edited_at,deleted_at
-          FROM conversation_messages WHERE conversation_id = ? AND (? IS NULL OR create_seq < ?)
+        sql: `SELECT m.id,m.author_id,m.root_id,m.create_seq,m.revision,m.body,m.created_at,m.edited_at,m.deleted_at,
+          CASE WHEN m.root_id IS NULL THEN (SELECT COUNT(*) FROM conversation_messages reply WHERE reply.conversation_id=m.conversation_id AND reply.root_id=m.id) ELSE 0 END AS reply_count,
+          CASE WHEN m.root_id IS NULL THEN (SELECT next_change_seq-1 FROM conversations snapshot WHERE snapshot.id=m.conversation_id) END AS reply_count_change_seq
+          FROM conversation_messages m WHERE m.conversation_id = ?
+          AND (${input.rootId ? "(m.id=? OR m.root_id=?)" : "m.root_id IS NULL"}) AND (? IS NULL OR m.create_seq < ?)
           ORDER BY create_seq DESC LIMIT ?`,
-        args: [input.conversationId, input.beforeCreateSeq ?? null, input.beforeCreateSeq ?? null, limit + 1],
+        args: [input.conversationId, ...(input.rootId ? [input.rootId,input.rootId] : []), input.beforeCreateSeq ?? null, input.beforeCreateSeq ?? null, limit + 1],
       });
       const messages = result.rows.slice(0, limit).reverse().map(messageFromRow);
       return { ok: true, value: {
@@ -432,22 +624,28 @@ export function createConversationService(adapter: ConversationDatabaseAdapter) 
     return inTransaction("read", async (executor) => {
       const authorized = await authorizeConversation(executor, input);
       if (!authorized.ok) return authorized;
+      if (authorized.value.scope.kind === "dm" && !authorized.value.scope.canRead) return failure(
+        ["pending", "declined"].includes(authorized.value.scope.pairState) ? "consent_required" : "unavailable",
+      );
       const maximum = await executor.execute({ sql: "SELECT next_change_seq - 1 AS cursor FROM conversations WHERE id = ?", args: [input.conversationId] });
       if (input.afterChangeSeq > integer(maximum.rows[0].cursor)) return failure("resync_required");
       const changes = await executor.execute({
-        sql: `SELECT change_seq, message_id FROM conversation_changes
-          WHERE conversation_id = ? AND change_seq > ? ORDER BY change_seq LIMIT ?`,
+        sql: `SELECT ch.change_seq,ch.message_id,m.root_id FROM conversation_changes ch
+          LEFT JOIN conversation_messages m ON m.id=ch.message_id AND m.conversation_id=ch.conversation_id
+          WHERE ch.conversation_id = ? AND ch.change_seq > ? ORDER BY ch.change_seq LIMIT ?`,
         args: [input.conversationId, input.afterChangeSeq, limit + 1],
       });
       const page = changes.rows.slice(0, limit);
-      const ids = [...new Set(page.map((row) => row.message_id).filter((id): id is string => typeof id === "string"))];
+      const ids = [...new Set(page.flatMap((row) => [row.message_id,row.root_id]).filter((id): id is string => typeof id === "string"))];
       let messages: ConversationDelta["messages"] = [];
       if (ids.length > 0) {
         const placeholders = ids.map(() => "?").join(", ");
         const source = await executor.execute({
-          sql: `SELECT id, author_id, root_id, create_seq, revision, body,
-              created_at, edited_at, deleted_at
-            FROM conversation_messages WHERE conversation_id = ? AND id IN (${placeholders})
+          sql: `SELECT m.id,m.author_id,m.root_id,m.create_seq,m.revision,m.body,
+              m.created_at,m.edited_at,m.deleted_at,
+              CASE WHEN m.root_id IS NULL THEN (SELECT COUNT(*) FROM conversation_messages reply WHERE reply.conversation_id=m.conversation_id AND reply.root_id=m.id) ELSE 0 END AS reply_count,
+              CASE WHEN m.root_id IS NULL THEN (SELECT next_change_seq-1 FROM conversations snapshot WHERE snapshot.id=m.conversation_id) END AS reply_count_change_seq
+            FROM conversation_messages m WHERE m.conversation_id = ? AND m.id IN (${placeholders})
             ORDER BY create_seq`,
           args: [input.conversationId, ...ids],
         });
@@ -501,7 +699,7 @@ export function createConversationService(adapter: ConversationDatabaseAdapter) 
       }
       const gate = writeGate(authorized.value.scope, args.expectedAudienceEpoch);
       if (!gate.ok) return gate;
-      if (!await validateMentionMembers(executor, args.projectId, mentions)) return failure("invalid_input");
+      if (!await validateMentionMembers(executor, args.projectId, mentions, args.conversationId)) return failure("invalid_input");
       const source = await executor.execute({
         sql: `SELECT author_id, create_seq, revision, deleted_at FROM conversation_messages
           WHERE id = ? AND conversation_id = ? AND workspace_id = ?`,
@@ -563,6 +761,11 @@ export function createConversationService(adapter: ConversationDatabaseAdapter) 
     getProjectConversation,
     ensureProjectConversation,
     listProjectAudience,
+    getDirectMessage,
+    listDirectMessages,
+    listDirectMessageAudience,
+    requestDirectMessage,
+    transitionDirectMessage,
     sendMessage,
     getReceipt,
     getHistory,

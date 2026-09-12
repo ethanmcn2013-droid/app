@@ -506,6 +506,9 @@ export const conversations = sqliteTable("conversations", {
   dmLowUserId: text("dm_low_user_id"),
   dmHighUserId: text("dm_high_user_id"),
   pairState: text("pair_state").$type<"pending" | "active" | "declined" | "blocked" | "left" | "membership_lost" | "rejoin_pending">(),
+  dmRequesterId: text("dm_requester_id"),
+  dmBlockedByUserId: text("dm_blocked_by_user_id"),
+  dmStateBeforeBlock: text("dm_state_before_block").$type<"pending" | "active" | "declined" | "left" | "membership_lost" | "rejoin_pending">(),
   createdBy: text("created_by").notNull().references(() => users.id),
   createdAt: integer("created_at").notNull(),
 }, (t) => [
@@ -530,10 +533,21 @@ export const conversationParticipants = sqliteTable("conversation_participants",
   status: text("status").$type<"active" | "removed" | "membership_lost" | "rejoin_pending">().notNull(),
   consented: integer("consented", { mode: "boolean" }).notNull().default(false),
   retainsHistory: integer("retains_history", { mode: "boolean" }).notNull().default(false),
+  reopenConfirmed: integer("reopen_confirmed", { mode: "boolean" }).notNull().default(false),
 }, (t) => [
   primaryKey({ columns: [t.conversationId, t.userId] }),
   check("conversation_participants_status_check", sql`${t.status} IN ('active', 'removed', 'membership_lost', 'rejoin_pending')`),
 ]);
+
+export const conversationDmReceipts = sqliteTable("conversation_dm_receipts", {
+  actorId: text("actor_id").notNull(),
+  clientRequestId: text("client_request_id").notNull(),
+  operation: text("operation").$type<"request" | "accept" | "decline" | "block" | "unblock" | "leave" | "reopen">().notNull(),
+  payloadHash: text("payload_hash").notNull(),
+  conversationId: text("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  resultingState: text("resulting_state").$type<"pending" | "active" | "declined" | "blocked" | "left" | "membership_lost" | "rejoin_pending">().notNull(),
+  committedAt: integer("committed_at").notNull(),
+}, (t) => [primaryKey({ columns: [t.actorId, t.clientRequestId] })]);
 
 export const conversationMessages = sqliteTable("conversation_messages", {
   id: text("id").primaryKey(),
@@ -649,6 +663,7 @@ export const workOperationReceipts = sqliteTable("work_operation_receipts", {
   operation: text("operation").$type<"conversation_task">().notNull(),
   payloadHash: text("payload_hash").notNull(),
   sourceProjectId: text("source_project_id").notNull(),
+  sourceConversationId: text("source_conversation_id"),
   destinationProjectId: text("destination_project_id").notNull(),
   taskId: text("task_id").notNull(),
   workLinkId: text("work_link_id").notNull(),

@@ -53,6 +53,9 @@ export type MessageRecord = Readonly<{
   createdAt: number;
   editedAt: number | null;
   deletedAt: number | null;
+  /** Present on root pages; thread replies never contribute to observation implicitly. */
+  replyCount?: number;
+  replyCountChangeSeq?: number;
 }>;
 export type ConversationDelta = Readonly<{
   audienceEpoch: number;

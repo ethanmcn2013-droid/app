@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "project-direct-messages-2026-09-12",
+  "authorizedBy": "The founder explicitly authorized continued local Project Conversation implementation on 2026-09-12. This receipt authorizes isolated local dry runs and CI application only; it does not authorize a remote database migration, production data, a pilot, external delivery, or release.",
+  "reviewedBy": "Codex PC-10 implementation pass on 2026-09-12; independent Astra acceptance remains required by the delivery backlog.",
+  "authorizationSource": "PC-10 Direct messages and canonical Task Discussion in docs/projects/project-conversation/delivery-backlog.md.",
+  "migrations": [
+    {
+      "id": "0030_project_direct_messages",
+      "sha256": "e04360a6c96a50c2de44522ea331059a0b526e7d839088b03472d26461065afe",
+      "reviewedAt": "2026-09-12T00:00:00.000Z",
+      "risk": "Application-integrity risk: enables exactly-two-person Project DMs with consent, retained-history, membership-churn, block-owner and immutable receipt rules. Additive columns and tables copy no message body.",
+      "rollbackPlan": "Disable conversation sends and DM entry while retaining acknowledged messages, state receipts, task provenance and history. Do not drop acknowledged data.",
+      "postconditions": [
+        "one sorted DM pair per Project remains enforced",
+        "DM request and transition receipts are durable and body-free",
+        "message, attention and outbox guards require an active consenting pair",
+        "membership loss denies the affected participant and never silently reuses consent",
+        "task receipts retain source conversation identity",
+        "integrity check passes",
+        "foreign keys remain clean"
+      ],
+      "proofs": [
+        {
+          "id": "dm-receipts-exist",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type='table' AND name='conversation_dm_receipts'",
+          "expected": 1
+        },
+        {
+          "id": "dm-columns",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('conversations') WHERE name IN ('dm_requester_id','dm_blocked_by_user_id','dm_state_before_block')",
+          "expected": 3
+        },
+        {
+          "id": "dm-guards",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type='trigger' AND name IN ('conversation_participants_guard_insert','conversation_participants_identity_immutable','conversation_messages_guard_insert','conversation_dm_membership_delete','conversation_dm_membership_insert','conversation_dm_user_id_immutable')",
+          "expected": 6
+        },
+        {
+          "id": "task-receipt-source-conversation",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('work_operation_receipts') WHERE name='source_conversation_id'",
+          "expected": 1
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

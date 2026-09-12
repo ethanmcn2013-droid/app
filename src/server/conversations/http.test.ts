@@ -7,7 +7,7 @@ const base = "https://app.example.test/api/conversations";
 const input = { action: "send", projectId: "project-a", conversationId: "room-a", clientRequestId: "request_http_00000001", expectedAudienceEpoch: 1, body: "Reviewed message", rootId: null, mentionUserIds: [] };
 function fixture(options: { actor?: string | null; sends?: boolean; enabled?: boolean; throwService?: boolean } = {}) {
   const calls: { method: string; value: unknown }[] = [];
-  const service = Object.fromEntries(["ensureProjectConversation", "getProjectConversation", "listProjectAudience", "sendMessage", "getReceipt", "getHistory", "getMessagePage", "editMessage", "tombstoneMessage"].map((method) => [method, async (value: unknown) => {
+  const service = Object.fromEntries(["ensureProjectConversation", "getProjectConversation", "listProjectAudience", "getDirectMessage", "listDirectMessages", "listDirectMessageAudience", "requestDirectMessage", "transitionDirectMessage", "sendMessage", "getReceipt", "getHistory", "getMessagePage", "editMessage", "tombstoneMessage"].map((method) => [method, async (value: unknown) => {
     calls.push({ method, value });
     if (options.throwService) throw new Error("SQL secret message body and bearer token");
     return { ok: true, value: { marker: method } };
@@ -110,6 +110,33 @@ test("recent-message pages retain exact bounds and remain readable with sends of
   assert.equal(response.status, 200);
   assert.match(response.headers.get("cache-control")!, /no-store/);
   assert.deepEqual(f.calls, [{ method: "getMessagePage", value: { actorId: "canonical-alice", projectId: "project-a", conversationId: "room-a", limit: 20, beforeCreateSeq: 80 } }]);
+});
+
+test("DM reads and root/thread pages use canonical actor and remain readable with sends off", async () => {
+  const f=fixture({sends:false});
+  for(const query of ["action=dm-list&projectId=project-a","action=dm-scope&projectId=project-a&conversationId=room-a","action=dm-audience&projectId=project-a&conversationId=room-a"])
+    assert.equal((await f.handle(new Request(`${base}?${query}`))).status,200);
+  assert.equal((await f.handle(new Request(`${base}?action=messages&projectId=project-a&conversationId=room-a&rootId=root-a`))).status,200);
+  assert.deepEqual(f.calls,[
+    {method:"listDirectMessages",value:{actorId:"canonical-alice",projectId:"project-a"}},
+    {method:"getDirectMessage",value:{actorId:"canonical-alice",projectId:"project-a",conversationId:"room-a"}},
+    {method:"listDirectMessageAudience",value:{actorId:"canonical-alice",projectId:"project-a",conversationId:"room-a"}},
+    {method:"getMessagePage",value:{actorId:"canonical-alice",projectId:"project-a",conversationId:"room-a",limit:50,rootId:"root-a"}},
+  ]);
+});
+
+test("DM request and transitions validate exact fields and never accept a forged actor",async()=>{
+  const requestBody={action:"dm-request",projectId:"project-a",recipientId:"canonical-bob",clientRequestId:"dm_http_request_001"};
+  const transitionBody={action:"dm-transition",projectId:"project-a",conversationId:"dm-room",clientRequestId:"dm_http_accept_0001",expectedAudienceEpoch:4,operation:"accept"};
+  const f=fixture(); assert.equal((await f.handle(post(requestBody))).status,200); assert.equal((await f.handle(post(transitionBody))).status,200);
+  assert.deepEqual(f.calls,[
+    {method:"requestDirectMessage",value:{actorId:"canonical-alice",projectId:"project-a",recipientId:"canonical-bob",clientRequestId:"dm_http_request_001"}},
+    {method:"transitionDirectMessage",value:{actorId:"canonical-alice",projectId:"project-a",conversationId:"dm-room",clientRequestId:"dm_http_accept_0001",expectedAudienceEpoch:4,operation:"accept"}},
+  ]);
+  for(const body of [{...requestBody,actorId:"canonical-bob"},{...requestBody,recipientId:""},{...requestBody,extra:true},{...transitionBody,operation:"activate"},{...transitionBody,expectedAudienceEpoch:0},{...transitionBody,blockOwnerId:"canonical-alice"}]){
+    const rejected=fixture(); assert.equal((await rejected.handle(post(body))).status,400); assert.equal(rejected.calls.length,0);
+  }
+  const paused=fixture({sends:false}); assert.equal((await paused.handle(post(requestBody))).status,403); assert.equal((await paused.handle(post(transitionBody))).status,403);
 });
 
 test("operational failure returns a neutral retryable response without content or exception details", async () => {

@@ -39,6 +39,8 @@ const taskTitle = (value: unknown): value is string => typeof value === "string"
   Array.from(value).length <= 1_000 && new TextEncoder().encode(value).byteLength <= 4_000 && !/[\u0000-\u001f]/.test(value);
 const PROMOTE_FIELDS = new Set(["action", "projectId", "conversationId", "messageId", "clientRequestId",
   "expectedRevision", "expectedAudienceEpoch", "destinationProjectId", "title", "ownerUserId", "dueDate"]);
+const DM_REQUEST_FIELDS = new Set(["action", "projectId", "recipientId", "clientRequestId"]);
+const DM_TRANSITION_FIELDS = new Set(["action", "projectId", "conversationId", "clientRequestId", "expectedAudienceEpoch", "operation"]);
 
 async function boundedJson(request: Request): Promise<Record<string, unknown> | null> {
   if (request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") return null;
@@ -90,10 +92,13 @@ export function createConversationHttp(deps: Dependencies) {
           return response(await (await deps.taskOutcomes()).getTaskDestination({ actorId, projectId }));
         }
         const service = await deps.service();
+        if (action === "dm-list") return response(await service.listDirectMessages({ actorId, projectId }));
         if (action === "project") return response(await service.getProjectConversation({ actorId, projectId }));
         if (action === "audience") return response(await service.listProjectAudience({ actorId, projectId }));
         const conversationId = url.searchParams.get("conversationId");
         if (!id(conversationId)) return fail("invalid_input");
+        if (action === "dm-scope") return response(await service.getDirectMessage({ actorId, projectId, conversationId }));
+        if (action === "dm-audience") return response(await service.listDirectMessageAudience({ actorId, projectId, conversationId }));
         if (action === "receipt") {
           const clientRequestId = url.searchParams.get("clientRequestId");
           if (!validRequestId(clientRequestId)) return fail("invalid_input");
@@ -104,7 +109,10 @@ export function createConversationHttp(deps: Dependencies) {
           const limitText = url.searchParams.get("limit") ?? "50";
           if (!/^\d+$/.test(limitText) || !positive(Number(limitText)) || Number(limitText) > 100 ||
             (beforeText !== null && (!/^\d+$/.test(beforeText) || !positive(Number(beforeText))))) return fail("invalid_input");
-          return response(await service.getMessagePage({ actorId, projectId, conversationId, limit: Number(limitText), ...(beforeText !== null ? { beforeCreateSeq: Number(beforeText) } : {}) }));
+          const rootId = url.searchParams.get("rootId");
+          if (rootId !== null && !id(rootId)) return fail("invalid_input");
+          return response(await service.getMessagePage({ actorId, projectId, conversationId, limit: Number(limitText),
+            ...(rootId !== null ? { rootId } : {}), ...(beforeText !== null ? { beforeCreateSeq: Number(beforeText) } : {}) }));
         }
         if (action !== "history") return fail("invalid_input");
         const cursorText = url.searchParams.get("afterChangeSeq") ?? "0";
@@ -135,6 +143,17 @@ export function createConversationHttp(deps: Dependencies) {
         } }));
       }
       const service = await deps.service();
+      if (body.action === "dm-request") {
+        if (Object.keys(body).some((key) => !DM_REQUEST_FIELDS.has(key)) || !id(body.recipientId) || !validRequestId(body.clientRequestId)) return fail("invalid_input");
+        return response(await service.requestDirectMessage({ actorId, projectId, recipientId: body.recipientId, clientRequestId: body.clientRequestId }));
+      }
+      if (body.action === "dm-transition") {
+        if (Object.keys(body).some((key) => !DM_TRANSITION_FIELDS.has(key)) || !id(body.conversationId) || !validRequestId(body.clientRequestId) ||
+          !positive(body.expectedAudienceEpoch) || typeof body.operation !== "string" || !["accept","decline","block","unblock","leave","reopen"].includes(body.operation)) return fail("invalid_input");
+        return response(await service.transitionDirectMessage({ actorId, projectId, conversationId: body.conversationId,
+          clientRequestId: body.clientRequestId, expectedAudienceEpoch: body.expectedAudienceEpoch,
+          operation: body.operation as "accept"|"decline"|"block"|"unblock"|"leave"|"reopen" }));
+      }
       if (body.action === "ensure") return response(await service.ensureProjectConversation({ actorId, projectId }));
       const { conversationId, clientRequestId, expectedAudienceEpoch } = body;
       if (!id(conversationId) || !validRequestId(clientRequestId) || !positive(expectedAudienceEpoch)) return fail("invalid_input");

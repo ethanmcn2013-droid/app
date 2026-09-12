@@ -78,13 +78,16 @@ async function sourceAndDestination(
   input: PromoteMessageToTaskInput,
 ): Promise<"ok" | "unavailable" | "archived" | "audience_changed" | "revision_conflict"> {
   const source = await executor.execute({
-    sql: `SELECT c.audience_epoch, c.lifecycle, sw.archived_at, m.revision, m.deleted_at
+    sql: `SELECT c.audience_epoch, c.lifecycle, c.kind, sw.archived_at, m.revision, m.deleted_at
       FROM conversations c
       JOIN workspaces sw ON sw.id = c.workspace_id
       JOIN workspace_members sm ON sm.workspace_id = c.workspace_id AND sm.user_id = ?
       JOIN users actor ON actor.id = sm.user_id
+      LEFT JOIN conversation_participants participant ON participant.conversation_id=c.id AND participant.user_id=actor.id
       JOIN conversation_messages m ON m.id = ? AND m.conversation_id = c.id AND m.workspace_id = c.workspace_id
-      WHERE c.id = ? AND c.workspace_id = ? AND c.kind = 'project'`,
+      WHERE c.id = ? AND c.workspace_id = ? AND (c.kind='project' OR
+        (c.kind='dm' AND actor.id IN(c.dm_low_user_id,c.dm_high_user_id) AND participant.retains_history=1
+          AND participant.status='active' AND c.pair_state NOT IN('pending','declined')))`,
     args: [actorId, input.messageId, input.conversationId, input.sourceProjectId],
   });
   const row = source.rows[0];
@@ -156,7 +159,7 @@ async function findStoredReceipt(
   clientRequestId: string,
 ): Promise<Record<string, unknown> | null> {
   const result = await executor.execute({
-    sql: `SELECT payload_hash, source_project_id, destination_project_id, task_id, work_link_id, committed_at
+    sql: `SELECT payload_hash, source_project_id, source_conversation_id, destination_project_id, task_id, work_link_id, committed_at
       FROM work_operation_receipts
       WHERE actor_id = ? AND client_request_id = ? AND operation = 'conversation_task'`,
     args: [actorId, clientRequestId],
@@ -175,9 +178,13 @@ async function actorCanRecoverReceipt(
       JOIN workspaces destination_project ON destination_project.id = ?
       JOIN workspace_members source_member ON source_member.user_id = actor.id AND source_member.workspace_id = ?
       JOIN workspace_members destination_member ON destination_member.user_id = actor.id AND destination_member.workspace_id = ?
-      WHERE actor.id = ?`,
-    args: [String(receipt.source_project_id), String(receipt.destination_project_id),
-      String(receipt.source_project_id), String(receipt.destination_project_id), actorId],
+      JOIN conversations source_conversation ON source_conversation.id=? AND source_conversation.workspace_id=source_project.id
+      LEFT JOIN conversation_participants participant ON participant.conversation_id=source_conversation.id AND participant.user_id=actor.id
+      WHERE actor.id = ? AND (source_conversation.kind='project' OR (source_conversation.kind='dm'
+        AND actor.id IN(source_conversation.dm_low_user_id,source_conversation.dm_high_user_id)
+        AND participant.status='active' AND participant.retains_history=1 AND source_conversation.pair_state NOT IN('pending','declined')))`,
+    args: [String(receipt.source_project_id), String(receipt.destination_project_id), String(receipt.source_project_id),
+      String(receipt.destination_project_id), String(receipt.source_conversation_id), actorId],
   });
   return Boolean(result.rows[0]);
 }
@@ -245,10 +252,10 @@ export function createConversationTaskOutcomeService(
         await options.afterWrite?.("outbox");
         await executor.execute({
           sql: `INSERT INTO work_operation_receipts(actor_id, client_request_id, operation, payload_hash,
-            source_project_id, destination_project_id, task_id, work_link_id, committed_at)
-            VALUES (?, ?, 'conversation_task', ?, ?, ?, ?, ?, ?)`,
+            source_project_id, source_conversation_id, destination_project_id, task_id, work_link_id, committed_at)
+            VALUES (?, ?, 'conversation_task', ?, ?, ?, ?, ?, ?, ?)`,
           args: [args.actorId, input.clientRequestId, payloadHash, input.sourceProjectId,
-            input.destinationProjectId, taskId, workLinkId, committedAt],
+            input.conversationId, input.destinationProjectId, taskId, workLinkId, committedAt],
         });
         await options.afterWrite?.("receipt");
         return { ok: true, value: { taskId, workLinkId, clientRequestId: input.clientRequestId, committedAt } };
@@ -283,13 +290,17 @@ export function createConversationTaskOutcomeService(
           JOIN workspace_members source_member ON source_member.workspace_id = l.source_project_id AND source_member.user_id = actor.id
           JOIN workspace_members destination_member ON destination_member.workspace_id = l.destination_project_id AND destination_member.user_id = actor.id
           JOIN conversations source_conversation ON source_conversation.id = l.source_conversation_id
-            AND source_conversation.workspace_id = l.source_project_id AND source_conversation.kind = 'project'
+            AND source_conversation.workspace_id = l.source_project_id
+          LEFT JOIN conversation_participants participant ON participant.conversation_id=source_conversation.id AND participant.user_id=actor.id
           JOIN conversation_messages source_message ON source_message.id = l.source_message_id
             AND source_message.conversation_id = l.source_conversation_id
             AND source_message.workspace_id = l.source_project_id AND source_message.deleted_at IS NULL
           JOIN tasks destination_task ON destination_task.id = l.task_id
             AND destination_task.workspace_id = l.destination_project_id
-          WHERE l.task_id = ?`, args: [args.actorId, args.taskId],
+          WHERE l.task_id = ? AND (source_conversation.kind='project' OR (source_conversation.kind='dm'
+            AND actor.id IN(source_conversation.dm_low_user_id,source_conversation.dm_high_user_id)
+            AND participant.status='active' AND participant.retains_history=1
+            AND source_conversation.pair_state NOT IN('pending','declined')))`, args: [args.actorId, args.taskId],
       });
       const row = result.rows[0];
       if (!row) return { ok: true, value: null };
