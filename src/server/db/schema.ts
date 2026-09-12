@@ -644,12 +644,14 @@ export const workLinks = sqliteTable("work_links", {
 ]);
 
 export const workOperationReceipts = sqliteTable("work_operation_receipts", {
-  actorId: text("actor_id").notNull().references(() => users.id),
+  actorId: text("actor_id").notNull(),
   clientRequestId: text("client_request_id").notNull(),
   operation: text("operation").$type<"conversation_task">().notNull(),
   payloadHash: text("payload_hash").notNull(),
-  taskId: text("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
-  workLinkId: text("work_link_id").notNull().references(() => workLinks.id, { onDelete: "cascade" }),
+  sourceProjectId: text("source_project_id").notNull(),
+  destinationProjectId: text("destination_project_id").notNull(),
+  taskId: text("task_id").notNull(),
+  workLinkId: text("work_link_id").notNull(),
   committedAt: integer("committed_at").notNull(),
 }, (t) => [
   primaryKey({ columns: [t.actorId, t.clientRequestId, t.operation] }),

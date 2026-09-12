@@ -28,6 +28,11 @@ export type TaskOutcomeReceipt = Readonly<{
   committedAt: number;
 }>;
 
+export type TaskReceiptLookup = Readonly<
+  | { state: "absent" }
+  | { state: "committed"; receipt: TaskOutcomeReceipt; taskAvailable: boolean }
+>;
+
 export type TaskOutcomeLink = Readonly<{
   taskId: string;
   sourceProjectId: ProjectId;
@@ -89,7 +94,7 @@ async function sourceAndDestination(
   if (asNumber(row.revision) !== input.expectedRevision || row.deleted_at != null) return "revision_conflict";
 
   const destination = await executor.execute({
-    sql: `SELECT dw.archived_at, owner.user_id AS owner_id
+    sql: `SELECT dw.archived_at, owner_user.id AS owner_user_id
       FROM workspaces dw
       JOIN workspace_members actor_member ON actor_member.workspace_id = dw.id AND actor_member.user_id = ?
       JOIN users actor ON actor.id = actor_member.user_id
@@ -99,7 +104,7 @@ async function sourceAndDestination(
     args: [actorId, input.ownerUserId, input.destinationProjectId],
   });
   const destinationRow = destination.rows[0];
-  if (!destinationRow || !destinationRow.owner_id) return "unavailable";
+  if (!destinationRow || !destinationRow.owner_user_id) return "unavailable";
   return destinationRow.archived_at == null ? "ok" : "archived";
 }
 
@@ -145,6 +150,51 @@ function rawTaskOperations(
   };
 }
 
+async function findStoredReceipt(
+  executor: ConversationSqlExecutor,
+  actorId: string,
+  clientRequestId: string,
+): Promise<Record<string, unknown> | null> {
+  const result = await executor.execute({
+    sql: `SELECT payload_hash, source_project_id, destination_project_id, task_id, work_link_id, committed_at
+      FROM work_operation_receipts
+      WHERE actor_id = ? AND client_request_id = ? AND operation = 'conversation_task'`,
+    args: [actorId, clientRequestId],
+  });
+  return result.rows[0] ?? null;
+}
+
+async function actorCanRecoverReceipt(
+  executor: ConversationSqlExecutor,
+  actorId: string,
+  receipt: Record<string, unknown>,
+): Promise<boolean> {
+  const result = await executor.execute({
+    sql: `SELECT actor.id FROM users actor
+      JOIN workspaces source_project ON source_project.id = ?
+      JOIN workspaces destination_project ON destination_project.id = ?
+      JOIN workspace_members source_member ON source_member.user_id = actor.id AND source_member.workspace_id = ?
+      JOIN workspace_members destination_member ON destination_member.user_id = actor.id AND destination_member.workspace_id = ?
+      WHERE actor.id = ?`,
+    args: [String(receipt.source_project_id), String(receipt.destination_project_id),
+      String(receipt.source_project_id), String(receipt.destination_project_id), actorId],
+  });
+  return Boolean(result.rows[0]);
+}
+
+function receiptValue(row: Record<string, unknown>, clientRequestId: string): TaskOutcomeReceipt {
+  return { taskId: String(row.task_id), workLinkId: String(row.work_link_id), clientRequestId,
+    committedAt: asNumber(row.committed_at) };
+}
+
+async function taskIsAvailable(executor: ConversationSqlExecutor, receipt: Record<string, unknown>): Promise<boolean> {
+  const result = await executor.execute({
+    sql: "SELECT 1 AS available FROM tasks WHERE id = ? AND workspace_id = ?",
+    args: [String(receipt.task_id), String(receipt.destination_project_id)],
+  });
+  return Boolean(result.rows[0]);
+}
+
 export function createConversationTaskOutcomeService(
   adapter: ConversationDatabaseAdapter,
   options: Readonly<{ afterWrite?: (seam: Seam) => void | Promise<void> }> = {},
@@ -158,18 +208,14 @@ export function createConversationTaskOutcomeService(
       input.destinationProjectId, input.title, input.ownerUserId, input.dueDate]);
     try {
       return await adapter.transaction("write", async (executor) => {
+        const existing = await findStoredReceipt(executor, args.actorId, input.clientRequestId);
+        if (existing) {
+          if (!await actorCanRecoverReceipt(executor, args.actorId, existing)) return fail("unavailable");
+          if (existing.payload_hash !== payloadHash) return fail("request_conflict");
+          return { ok: true, value: receiptValue(existing, input.clientRequestId) };
+        }
         const access = await sourceAndDestination(executor, args.actorId, input);
         if (access !== "ok") return fail(access);
-        const existing = await executor.execute({
-          sql: `SELECT payload_hash, task_id, work_link_id, committed_at FROM work_operation_receipts
-            WHERE actor_id = ? AND client_request_id = ? AND operation = 'conversation_task'`,
-          args: [args.actorId, input.clientRequestId],
-        });
-        if (existing.rows[0]) {
-          if (existing.rows[0].payload_hash !== payloadHash) return fail("request_conflict");
-          return { ok: true, value: { taskId: String(existing.rows[0].task_id), workLinkId: String(existing.rows[0].work_link_id),
-            clientRequestId: input.clientRequestId, committedAt: asNumber(existing.rows[0].committed_at) } };
-        }
         const taskId = `t-${hash(["conversation_task", args.actorId, input.clientRequestId]).slice(0, 24)}`;
         const workLinkId = `work-${hash([taskId, input.messageId, input.expectedRevision]).slice(0, 24)}`;
         const committedAt = Date.now();
@@ -199,8 +245,10 @@ export function createConversationTaskOutcomeService(
         await options.afterWrite?.("outbox");
         await executor.execute({
           sql: `INSERT INTO work_operation_receipts(actor_id, client_request_id, operation, payload_hash,
-            task_id, work_link_id, committed_at) VALUES (?, ?, 'conversation_task', ?, ?, ?, ?)`,
-          args: [args.actorId, input.clientRequestId, payloadHash, taskId, workLinkId, committedAt],
+            source_project_id, destination_project_id, task_id, work_link_id, committed_at)
+            VALUES (?, ?, 'conversation_task', ?, ?, ?, ?, ?, ?)`,
+          args: [args.actorId, input.clientRequestId, payloadHash, input.sourceProjectId,
+            input.destinationProjectId, taskId, workLinkId, committedAt],
         });
         await options.afterWrite?.("receipt");
         return { ok: true, value: { taskId, workLinkId, clientRequestId: input.clientRequestId, committedAt } };
@@ -211,6 +259,18 @@ export function createConversationTaskOutcomeService(
     }
   }
 
+  async function getTaskReceipt(args: Readonly<{ actorId: string; clientRequestId: string }>): Promise<ConversationResult<TaskReceiptLookup>> {
+    if (!validIdentity(args.actorId) || !validRequestId(args.clientRequestId)) return fail("invalid_input");
+    if (!adapter.available) return fail("temporarily_unavailable");
+    return adapter.transaction("read", async (executor) => {
+      const receipt = await findStoredReceipt(executor, args.actorId, args.clientRequestId);
+      if (!receipt) return { ok: true, value: { state: "absent" } };
+      if (!await actorCanRecoverReceipt(executor, args.actorId, receipt)) return fail("unavailable");
+      return { ok: true, value: { state: "committed", receipt: receiptValue(receipt, args.clientRequestId),
+        taskAvailable: await taskIsAvailable(executor, receipt) } };
+    });
+  }
+
   async function getTaskOutcome(args: Readonly<{ actorId: string; taskId: string }>): Promise<ConversationResult<TaskOutcomeLink | null>> {
     if (!validIdentity(args.actorId) || !validIdentity(args.taskId)) return fail("invalid_input");
     if (!adapter.available) return fail("temporarily_unavailable");
@@ -218,8 +278,17 @@ export function createConversationTaskOutcomeService(
       const result = await executor.execute({
         sql: `SELECT l.* FROM work_links l
           JOIN users actor ON actor.id = ?
+          JOIN workspaces source_project ON source_project.id = l.source_project_id
+          JOIN workspaces destination_project ON destination_project.id = l.destination_project_id
           JOIN workspace_members source_member ON source_member.workspace_id = l.source_project_id AND source_member.user_id = actor.id
           JOIN workspace_members destination_member ON destination_member.workspace_id = l.destination_project_id AND destination_member.user_id = actor.id
+          JOIN conversations source_conversation ON source_conversation.id = l.source_conversation_id
+            AND source_conversation.workspace_id = l.source_project_id AND source_conversation.kind = 'project'
+          JOIN conversation_messages source_message ON source_message.id = l.source_message_id
+            AND source_message.conversation_id = l.source_conversation_id
+            AND source_message.workspace_id = l.source_project_id AND source_message.deleted_at IS NULL
+          JOIN tasks destination_task ON destination_task.id = l.task_id
+            AND destination_task.workspace_id = l.destination_project_id
           WHERE l.task_id = ?`, args: [args.actorId, args.taskId],
       });
       const row = result.rows[0];
@@ -255,5 +324,5 @@ export function createConversationTaskOutcomeService(
     });
   }
 
-  return { promoteMessageToTask, getTaskOutcome, getTaskDestination };
+  return { promoteMessageToTask, getTaskReceipt, getTaskOutcome, getTaskDestination };
 }

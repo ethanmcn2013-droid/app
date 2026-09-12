@@ -25,13 +25,12 @@ CREATE TABLE work_operation_receipts (
   client_request_id TEXT NOT NULL,
   operation TEXT NOT NULL CHECK (operation = 'conversation_task'),
   payload_hash TEXT NOT NULL,
+  source_project_id TEXT NOT NULL,
+  destination_project_id TEXT NOT NULL,
   task_id TEXT NOT NULL,
   work_link_id TEXT NOT NULL,
   committed_at INTEGER NOT NULL,
-  PRIMARY KEY (actor_id, client_request_id, operation),
-  FOREIGN KEY (actor_id) REFERENCES users(id),
-  FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
-  FOREIGN KEY (work_link_id) REFERENCES work_links(id) ON DELETE CASCADE
+  PRIMARY KEY (actor_id, client_request_id, operation)
 );
 --> statement-breakpoint
 
@@ -71,6 +70,8 @@ BEGIN
   SELECT CASE WHEN NOT EXISTS (
     SELECT 1 FROM work_links l
     WHERE l.id = NEW.work_link_id AND l.task_id = NEW.task_id AND l.created_by = NEW.actor_id
+      AND l.source_project_id = NEW.source_project_id
+      AND l.destination_project_id = NEW.destination_project_id
   ) THEN RAISE(ABORT, 'invalid_work_operation_receipt') END;
 END;
 --> statement-breakpoint

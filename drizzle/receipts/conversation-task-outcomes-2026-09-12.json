@@ -7,7 +7,7 @@
   "migrations": [
     {
       "id": "0029_conversation_task_outcomes",
-      "sha256": "5fdf246389988e2c7f4eef01a42ee0893f42af02302380165424a8e585919dc3",
+      "sha256": "28477c279dc45b8c7c26a5bfeec10fee7754f5c7c89638d61d61b9f3b2f22b7a",
       "reviewedAt": "2026-09-12T00:00:00.000Z",
       "risk": "Application-integrity risk: this adds immutable, body-free message-to-task provenance and durable operation receipts. The migration is additive and copies no message body or existing task data.",
       "rollbackPlan": "Disable the promotion route while retaining committed tasks, immutable links, and receipts. Do not drop acknowledged data as an operational rollback.",
@@ -17,6 +17,7 @@
         "work links have no body or excerpt column",
         "relationship guards reject mismatched task and source identity even with foreign keys disabled",
         "operation receipts are immutable and bind one actor request to one task and link",
+        "operation receipts retain source and destination authorization scope without cascading task or link foreign keys",
         "integrity check passes",
         "foreign keys remain clean"
       ],
@@ -34,6 +35,16 @@
         {
           "id": "work-links-body-free",
           "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('work_links') WHERE name LIKE '%body%' OR name LIKE '%excerpt%'",
+          "expected": 0
+        },
+        {
+          "id": "operation-receipt-scope-columns",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('work_operation_receipts') WHERE name IN ('source_project_id','destination_project_id')",
+          "expected": 2
+        },
+        {
+          "id": "operation-receipts-do-not-cascade",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_list('work_operation_receipts')",
           "expected": 0
         },
         {

@@ -309,10 +309,10 @@
       "id": "0029_conversation_task_outcomes",
       "file": "drizzle/0029_conversation_task_outcomes.sql",
       "when": 1789142401000,
-      "sha256": "5fdf246389988e2c7f4eef01a42ee0893f42af02302380165424a8e585919dc3",
+      "sha256": "28477c279dc45b8c7c26a5bfeec10fee7754f5c7c89638d61d61b9f3b2f22b7a",
       "policy": "forward",
       "receipt": "drizzle/receipts/conversation-task-outcomes-2026-09-12.json",
-      "receiptSha256": "7c62696453273ca3d77259defda3bc556c06ee5e81d138bb207b1192997f8ce8"
+      "receiptSha256": "8d9ff3a38c910b96a375056e7d3dc59e1ed13a7db549e1a73c5722add872c34c"
     }
   ]
 }

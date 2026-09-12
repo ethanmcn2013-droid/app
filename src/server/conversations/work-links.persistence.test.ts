@@ -112,3 +112,60 @@ test("faults at every durable seam roll back task, activity, link, outbox, and r
     } finally { f.client.close(); }
   }
 });
+
+test("committed receipt recovery precedes changed source, epoch, archive, and former owner checks", async () => {
+  const f = await fixture();
+  try {
+    const service = createConversationTaskOutcomeService(f.adapter);
+    const committed = await service.promoteMessageToTask({ actorId: "alice", input: f.input });
+    assert.equal(committed.ok, true);
+    await f.client.execute({ sql: "UPDATE conversation_messages SET revision=2, body='Edited after promotion' WHERE id=?", args: [f.input.messageId] });
+    await f.client.execute({ sql: "INSERT INTO workspace_members(workspace_id,user_id,role,joined_at) VALUES (?,'mallory','member',?)", args: [sourceProject, Date.now()] });
+    await f.client.execute({ sql: "UPDATE workspaces SET archived_at=? WHERE id=?", args: [Date.now(), destinationProject] });
+    await f.client.execute({ sql: "DELETE FROM workspace_members WHERE workspace_id=? AND user_id='bob'", args: [destinationProject] });
+
+    assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: f.input }), committed);
+    assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: { ...f.input, title: "Changed after commit" } }), { ok: false, code: "request_conflict" });
+    const lookup = await service.getTaskReceipt({ actorId: "alice", clientRequestId: f.input.clientRequestId });
+    assert.equal(lookup.ok && lookup.value.state === "committed" && lookup.value.taskAvailable, true);
+
+    await f.client.execute({ sql: "DELETE FROM workspace_members WHERE workspace_id=? AND user_id='alice'", args: [sourceProject] });
+    assert.deepEqual(await service.getTaskReceipt({ actorId: "alice", clientRequestId: f.input.clientRequestId }), { ok: false, code: "unavailable" });
+    assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: f.input }), { ok: false, code: "unavailable" });
+  } finally { f.client.close(); }
+});
+
+test("orphan destination owner membership cannot create any durable effect", async () => {
+  const f = await fixture();
+  try {
+    await f.client.execute({ sql: "INSERT INTO workspace_members(workspace_id,user_id,role,joined_at) VALUES (?,'ghost_owner','member',?)", args: [destinationProject, Date.now()] });
+    const service = createConversationTaskOutcomeService(f.adapter);
+    assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: { ...f.input, ownerUserId: "ghost_owner" } }), { ok: false, code: "unavailable" });
+    for (const table of ["tasks", "activities", "work_links", "suite_outbox", "work_operation_receipts"]) assert.equal(await count(f.client, table), 0, table);
+  } finally { f.client.close(); }
+});
+
+test("usable links require current source, destination, message, and task relationships while receipts survive task loss", async () => {
+  for (const mutation of ["source-delete", "destination-delete", "message-delete", "task-move", "task-delete"] as const) {
+    const f = await fixture();
+    try {
+      const service = createConversationTaskOutcomeService(f.adapter);
+      const committed = await service.promoteMessageToTask({ actorId: "alice", input: f.input });
+      assert.equal(committed.ok, true);
+      if (!committed.ok) continue;
+      if (mutation === "source-delete") await f.client.execute({ sql: "DELETE FROM workspaces WHERE id=?", args: [sourceProject] });
+      if (mutation === "destination-delete") await f.client.execute({ sql: "DELETE FROM workspaces WHERE id=?", args: [destinationProject] });
+      if (mutation === "message-delete") await f.client.execute({ sql: "DELETE FROM conversation_messages WHERE id=?", args: [f.input.messageId] });
+      if (mutation === "task-move") await f.client.execute({ sql: "UPDATE tasks SET workspace_id=? WHERE id=?", args: [sourceProject, committed.value.taskId] });
+      if (mutation === "task-delete") await f.client.execute({ sql: "DELETE FROM tasks WHERE id=?", args: [committed.value.taskId] });
+      assert.deepEqual(await service.getTaskOutcome({ actorId: "alice", taskId: committed.value.taskId }), { ok: true, value: null }, mutation);
+      const receiptRows = await f.client.execute("SELECT COUNT(*) AS n FROM work_operation_receipts");
+      assert.equal(Number(receiptRows.rows[0].n), 1, `receipt retained:${mutation}`);
+      if (mutation === "task-move" || mutation === "task-delete") {
+        const lookup = await service.getTaskReceipt({ actorId: "alice", clientRequestId: f.input.clientRequestId });
+        assert.equal(lookup.ok && lookup.value.state === "committed" && lookup.value.taskAvailable, false);
+        assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: f.input }), committed);
+      }
+    } finally { f.client.close(); }
+  }
+});
