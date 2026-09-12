@@ -37,6 +37,7 @@ const service = createConversationService(adapter);
 const taskOutcomes = createConversationTaskOutcomeService(adapter);
 let sendsEnabled = true;
 const dropNextResponse = new Set<string>();
+const withholdNextReceipt = new Set<string>();
 const origin = `http://127.0.0.1:${port}`;
 const server = createServer(async (incoming, outgoing) => {
   const path = new URL(incoming.url ?? "/", origin);
@@ -48,6 +49,7 @@ const server = createServer(async (incoming, outgoing) => {
       const actorId = path.searchParams.get("actorId");
       if (action === "sends-off" || action === "sends-on") sendsEnabled = action === "sends-on";
       else if (action === "lose-response" && people.some(([id]) => id === actorId)) dropNextResponse.add(actorId!);
+      else if (action === "withhold-receipt" && people.some(([id]) => id === actorId)) withholdNextReceipt.add(actorId!);
       else if (action === "remove" && people.some(([id]) => id === actorId)) await adapter.transaction("write", (tx) => tx.execute({ sql: "DELETE FROM workspace_members WHERE workspace_id='synthetic_project_a' AND user_id=?", args: [actorId!] }));
       else { outgoing.writeHead(400); outgoing.end(); return; }
       outgoing.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" }); outgoing.end('{"ok":true}');
@@ -68,6 +70,11 @@ const server = createServer(async (incoming, outgoing) => {
       ...(!["GET", "HEAD"].includes(incoming.method ?? "GET") ? { body: Readable.toWeb(incoming) as ReadableStream<Uint8Array>, duplex: "half" } : {}),
     });
     const result = await handle(request);
+    if (incoming.method === "POST" && result.ok && fixtureActor && withholdNextReceipt.delete(fixtureActor)) {
+      // A deterministic uncertain outcome, unaffected by browser socket retries.
+      outgoing.writeHead(503, { "content-type": "application/json", "cache-control": "no-store" });
+      outgoing.end('{"ok":false,"code":"temporarily_unavailable"}'); return;
+    }
     if (incoming.method === "POST" && result.ok && fixtureActor && dropNextResponse.delete(fixtureActor)) {
       outgoing.destroy(); return; // The service has committed; the browser must reconcile the original ID.
     }

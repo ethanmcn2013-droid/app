@@ -5,6 +5,7 @@ import type { ConversationResult } from "@/lib/conversations/contracts";
 import type { ProjectId } from "@/lib/projects/project-ref";
 import { isCalendarDate, type CalendarDate } from "@/lib/planning/dates";
 import { taskFocusPath } from "@/lib/product-urls";
+import { taskOutcomeIsUnknown, type TaskOutcomeSubmission } from "./task-outcome-client";
 import styles from "./task-outcome-form.module.css";
 
 type Destination = Readonly<{ projectId: ProjectId; name: string; members: readonly { id: string; name: string }[] }>;
@@ -19,7 +20,7 @@ type Props = Readonly<{
   source: Pick<TaskOutcomeRequest, "sourceProjectId" | "conversationId" | "messageId" | "expectedRevision" | "expectedAudienceEpoch">;
   projects: readonly { id: ProjectId; name: string }[];
   loadDestination: (projectId: ProjectId, signal: AbortSignal) => Promise<ConversationResult<Destination>>;
-  submit: (input: TaskOutcomeRequest) => Promise<ConversationResult<TaskOutcomeResult>>;
+  submit: (input: TaskOutcomeRequest) => Promise<TaskOutcomeSubmission>;
   onCreated: (result: TaskOutcomeResult) => void;
   fixture?: boolean;
 }>;
@@ -74,8 +75,10 @@ export function TaskOutcomeForm(props: Props) {
       const response = await props.submit(input);
       if (!mounted.current) return;
       if (response.ok) { setResult(response.value); props.onCreated(response.value); return; }
-      if (response.code === "temporarily_unavailable" || response.code === "rate_limited") {
-        setError("The outcome is still unknown. Check again to recover this same task.");
+      if (taskOutcomeIsUnknown(response)) {
+        setError(response.code === "unavailable" || response.code === "unauthenticated"
+          ? "Access is needed to check the original task. This request is kept here; restore access, then check again."
+          : "The outcome is still unknown. Check again to recover this same task.");
       } else {
         attempted.current = null;
         setAttempt(null);

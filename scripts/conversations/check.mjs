@@ -17,7 +17,7 @@ const files = ["src/lib/conversations", "src/server/conversations", "src/compone
   .flatMap((folder) => readdirSync(join(root, folder)).filter((name) => name.endsWith(".test.ts")).map((name) => `${folder}/${name}`));
 // The task creation core retains its own domain folder.
 try {
-  files.push(...readdirSync(join(root, "src/server/tasks")).filter((name) => name.includes("conversation") && name.endsWith(".test.ts")).map((name) => `src/server/tasks/${name}`));
+  files.push(...readdirSync(join(root, "src/server/tasks")).filter((name) => (name.includes("conversation") || name === "create-task-core.test.ts") && name.endsWith(".test.ts")).map((name) => `src/server/tasks/${name}`));
 } catch (error) { if (error.code !== "ENOENT") throw error; }
 const result = spawnSync(process.execPath, ["--import", "tsx", "--import", "./src/test/register-server-only.mjs", "--test", ...files.sort()], { cwd: root, env: environment, stdio: "inherit" });
 if (result.error) throw result.error;

@@ -7,6 +7,7 @@ import { CONVERSATION_LIMITS, normalizeMessageBody, validMessageBody } from "@/l
 import { conversationReducer, emptyConversationState, type PendingSend } from "@/lib/conversations/reducer";
 import { ConversationPoller } from "@/lib/conversations/polling";
 import { AudienceHeader, Icon } from "./prototype-panels";
+import { resolveTaskOutcome, type TaskOutcomeSubmission } from "./task-outcome-client";
 import { TaskOutcomeForm, type TaskOutcomeRequest, type TaskOutcomeResult } from "./task-outcome-form";
 import { anchoredScrollTop, resolveScrollAnchor, type ScrollAnchor, audienceResponseMatches, conversationHeaders, draftKey, forgetProjectDrafts, needsFreshAudienceSend, rememberDraft, shouldSendComposerKey, type DraftCache, type ScrollCache } from "./conversation-client-model";
 import styles from "./conversation-workspace.module.css";
@@ -361,18 +362,14 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
     } catch { if (isCurrent(generation, signal)) setMutationError("The change outcome is unknown. Refresh history before trying again."); }
   }
 
-  async function submitTask(input: TaskOutcomeRequest): Promise<ConversationResult<TaskOutcomeResult>> {
+  async function submitTask(input: TaskOutcomeRequest): Promise<TaskOutcomeSubmission> {
     const generation = generationRef.current;
     const signal = sessionControllerRef.current?.signal;
-    type Receipt = { state: "absent" } | { state: "committed"; receipt: TaskOutcomeResult; taskAvailable: boolean };
-    const lookup = await apiResult<Receipt>(apiUrl("task-receipt", project.id, { clientRequestId: input.clientRequestId }), fixtureActor, { signal });
-    if (!isCurrent(generation, signal)) return { ok: false, code: "unavailable" };
-    if (!lookup.ok) return lookup;
-    if (lookup.value.state === "committed") return { ok: true, value: { ...lookup.value.receipt, taskAvailable: lookup.value.taskAvailable } };
-    const { sourceProjectId, ...fields } = input;
-    const result = await apiResult<TaskOutcomeResult>("/api/conversations", fixtureActor, { method: "POST", body: JSON.stringify({ action: "promote-task", projectId: sourceProjectId, ...fields }), signal });
-    if (!isCurrent(generation, signal)) return { ok: false, code: "unavailable" };
-    return result;
+    return resolveTaskOutcome(input, {
+      isCurrent: () => isCurrent(generation, signal),
+      lookup: (clientRequestId) => apiResult(apiUrl("task-receipt", project.id, { clientRequestId }), fixtureActor, { signal }),
+      promote: ({ sourceProjectId, ...fields }) => apiResult<TaskOutcomeResult>("/api/conversations", fixtureActor, { method: "POST", body: JSON.stringify({ action: "promote-task", projectId: sourceProjectId, ...fields }), signal }),
+    });
   }
 
   const members = audience?.members ?? [];

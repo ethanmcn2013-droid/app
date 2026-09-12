@@ -8,6 +8,7 @@ import { assertProjectId } from "@/lib/projects/project-ref";
 import { createLocalConversationDatabaseAdapter } from "./database";
 import { createConversationService } from "./service";
 import { createConversationTaskOutcomeService, type PromoteMessageToTaskInput } from "./work-links";
+import { resolveTaskOutcome, taskOutcomeIsUnknown } from "@/components/app/messages/task-outcome-client";
 
 const repoRoot = resolve(process.cwd());
 const sourceProject = assertProjectId("synthetic_project_source");
@@ -57,6 +58,37 @@ async function fixture() {
 async function count(client: Client, table: string): Promise<number> {
   return Number((await client.execute(`SELECT COUNT(*) AS n FROM ${table}`)).rows[0].n);
 }
+
+test("client recovery keeps the original task request through lost acknowledgment and destination access loss", async () => {
+  const f = await fixture();
+  try {
+    const service = createConversationTaskOutcomeService(f.adapter);
+    let promotions = 0;
+    const transport = {
+      isCurrent: () => true,
+      lookup: (clientRequestId: string) => service.getTaskReceipt({ actorId: "alice", clientRequestId }),
+      promote: async (input: PromoteMessageToTaskInput) => {
+        promotions++;
+        const result = await service.promoteMessageToTask({ actorId: "alice", input });
+        assert.equal(result.ok, true);
+        throw new Error("lost_acknowledgment");
+      },
+    };
+    await assert.rejects(resolveTaskOutcome(f.input, transport), /lost_acknowledgment/);
+    await f.client.execute({ sql: "DELETE FROM workspace_members WHERE workspace_id=? AND user_id='alice'", args: [destinationProject] });
+    const denied = await resolveTaskOutcome(f.input, transport);
+    assert.deepEqual(denied, { ok: false, code: "unavailable", outcomeUnknown: true });
+    assert.equal(taskOutcomeIsUnknown(denied), true, "form must retain the original attempt");
+    await f.client.execute({ sql: "INSERT INTO workspace_members(workspace_id,user_id,role,joined_at) VALUES (?,'alice','owner',?)", args: [destinationProject, Date.now()] });
+    const recovered = await resolveTaskOutcome(f.input, transport);
+    assert.equal(recovered.ok, true);
+    if (!recovered.ok) throw new Error("receipt recovery failed");
+    assert.equal(recovered.value.clientRequestId, f.input.clientRequestId);
+    assert.equal(recovered.value.taskAvailable, true);
+    assert.equal(promotions, 1);
+    for (const table of ["tasks", "work_links", "work_operation_receipts"]) assert.equal(await count(f.client, table), 1, table);
+  } finally { f.client.close(); }
+});
 
 test("promotion is atomic, body-free, dated, non-milestone, and exactly replayable", async () => {
   const f = await fixture();
