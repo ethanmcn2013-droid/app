@@ -419,7 +419,11 @@ export async function openConversationSpikeStore({ databasePath, foreignKeys = f
             )) ORDER BY wm.user_id`,
         args: [input.projectId, input.actorId, String(rowValue(auth.row, "kind")), input.conversationId],
       });
-      for (const recipient of recipients.rows) {
+      // Project membership grants history; only explicit mentions are directed here.
+      // Follow/mute/quiet-hours policy is a later PC-11 adapter, not assumed by this spike.
+      const directedRecipients = recipients.rows.filter((recipient) =>
+        rowValue(auth.row, "kind") === "dm" || mentions.includes(String(rowValue(recipient, "user_id"))));
+      for (const recipient of directedRecipients) {
         const recipientId = String(rowValue(recipient, "user_id"));
         await tx.execute({
           sql: `INSERT INTO conversation_spike_attention
@@ -429,7 +433,7 @@ export async function openConversationSpikeStore({ databasePath, foreignKeys = f
         });
       }
       if (options.failAfter === "attention") throw new SeamFailureError("attention");
-      for (const recipient of recipients.rows) {
+      for (const recipient of directedRecipients) {
         const recipientId = String(rowValue(recipient, "user_id"));
         await tx.execute({
           sql: `INSERT INTO conversation_spike_outbox

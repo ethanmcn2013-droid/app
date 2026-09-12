@@ -86,9 +86,13 @@ try {
         expected.set(receipt.value.messageId, receipt.value.committedAt);
         await delay(100);
       }
-      sendDone = true;
+    sendDone = true;
       await Promise.all(readers);
     } finally { stopped = true; await Promise.allSettled(readers); }
+    for (const id of expected.keys()) {
+      const cardinality = await fixture.client.execute({ sql: "SELECT COUNT(*) AS total FROM conversation_spike_attention WHERE message_id=?", args: [id] });
+      assert.equal(Number(cardinality.rows[0].total), Math.min(viewers, 50), "directed fan-out differs from intended mentions");
+    }
     for (const observations of seen) for (const [id, committedAt] of expected) {
       if (observations.has(id)) observedDelays.push(observations.get(id) - committedAt);
     }

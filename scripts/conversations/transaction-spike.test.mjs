@@ -29,7 +29,7 @@ const evidence = {
   baselineMigrationFiles: 0,
   independentClientsPerCase: 2,
   oracleCases: 13,
-  testAssertions: 14,
+  testAssertions: 15,
   duplicateStress: null,
   settings: [],
 };
@@ -737,6 +737,23 @@ for (const foreignKeys of [false, true]) {
     }
   });
 }
+
+test("O12 ordinary Project audience is not automatically directed attention", async () => {
+  const harness = await freshCase("o12-directed-audience");
+  try {
+    await harness.first.client.execute({
+      sql: "INSERT INTO workspace_members(workspace_id,user_id,role,joined_at) VALUES (?,?,'member',?)",
+      args: [FIXTURE.projectA, FIXTURE.dave, Date.now()],
+    });
+    const currentEpoch = await epoch(harness.first.client, FIXTURE.projectConversationA);
+    const sent = await harness.first.send(sendInput({ clientRequestId: "request_directed_audience_01", expectedAudienceEpoch: currentEpoch }));
+    assert.equal(sent.ok, true);
+    assert.equal(await scalar(harness.first.client, "SELECT COUNT(*) FROM conversation_spike_attention WHERE recipient_id=?", [FIXTURE.bob]), 1);
+    assert.equal(await scalar(harness.first.client, "SELECT COUNT(*) FROM conversation_spike_attention WHERE recipient_id=?", [FIXTURE.dave]), 0);
+    assert.equal(await scalar(harness.first.client, "SELECT COUNT(*) FROM conversation_spike_outbox WHERE recipient_id=?", [FIXTURE.dave]), 0);
+    assert.equal((await harness.second.readChanges({ actorId: FIXTURE.dave, projectId: FIXTURE.projectA, conversationId: FIXTURE.projectConversationA })).ok, true);
+  } finally { harness.close(); }
+});
 
 test("O12 in-app attention commits without a worker and root observation leaves hidden replies unread", async () => {
   const harness = await freshCase("o12-attention");
