@@ -405,6 +405,7 @@ function ConversationFeedState({
       ) : null}
       {!audienceReady ? <div className="rounded-lg border border-line-soft bg-bg-sunken px-3 py-2 text-[12px] text-ink-soft">
         <p>Project access changed. Review the current {discussion.members.length} people before continuing.</p>
+        <p>{discussion.members.map((member) => member.name).join(", ")}</p>
         <button type="button" className="mt-1 font-medium text-brand" onClick={() => {
           setReviewedAudienceEpoch(discussion.audienceEpoch);
           setNotice(null);
