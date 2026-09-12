@@ -56,11 +56,31 @@ function useConversation(task: Task) {
   const [surface, setSurface] = useState<TaskConversationSurface | null>(null);
   const [loading, setLoading] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
+  const activeTaskRef = useRef<string | null>(task.id);
+  const requestGenerationRef = useRef(0);
 
   const refreshKey = task.updatedAt?.getTime();
 
+  const beginRequest = useCallback((taskId: string) => {
+    if (activeTaskRef.current !== taskId) return null;
+    return ++requestGenerationRef.current;
+  }, []);
+
+  const isCurrentRequest = useCallback((taskId: string, generation: number) =>
+    activeTaskRef.current === taskId && requestGenerationRef.current === generation, []);
+
+  const refuseCurrentRequest = useCallback((taskId: string, generation: number) => {
+    if (!isCurrentRequest(taskId, generation)) return false;
+    // A denial is a fence, not just an empty render. Invalidate every older
+    // callback before clearing its authorized content.
+    requestGenerationRef.current++;
+    return true;
+  }, [isCurrentRequest]);
+
   const fetchConversation = useCallback(
     (taskId: string, signal: { ignored: boolean }) => {
+      const generation = beginRequest(taskId);
+      if (generation === null) return;
       setLoading(true);
       setTimedOut(false);
 
@@ -70,24 +90,38 @@ function useConversation(task: Task) {
 
       Promise.race([loadTaskConversationAction(taskId), timeout])
         .then((result) => {
-          if (signal.ignored) return;
+          if (signal.ignored || !isCurrentRequest(taskId, generation)) return;
           if (!result.ok) throw new Error(result.code);
           setSurface(result.value);
         })
         .catch((err) => {
-          if (!signal.ignored) {
+          if (!signal.ignored && isCurrentRequest(taskId, generation)) {
             const isTimeout = err instanceof Error && err.message === "timeout";
             console.warn("conversation: fetch failed", err);
+            setLoading(false);
+            refuseCurrentRequest(taskId, generation);
             setSurface(null);
             if (isTimeout) setTimedOut(true);
           }
         })
         .finally(() => {
-          if (!signal.ignored) setLoading(false);
+          if (!signal.ignored && isCurrentRequest(taskId, generation)) setLoading(false);
         });
     },
-    [],
+    [beginRequest, isCurrentRequest, refuseCurrentRequest],
   );
+
+  // This is the scope fence for every bootstrap, manual retry and background
+  // read. Cleanup invalidates callbacks that outlive a task or unmount.
+  useEffect(() => {
+    activeTaskRef.current = task.id;
+    return () => {
+      if (activeTaskRef.current === task.id) activeTaskRef.current = null;
+      // This mutable counter is the intentional cross-request fence.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      requestGenerationRef.current++;
+    };
+  }, [task.id]);
 
   useEffect(() => {
     const signal = { ignored: false };
@@ -110,17 +144,21 @@ function useConversation(task: Task) {
     let inFlight = false;
     const refresh = async () => {
       if (inFlight) return;
+      const generation = beginRequest(task.id);
+      if (generation === null) return;
       inFlight = true;
       try {
         const result = await loadTaskConversationAction(task.id);
-        if (signal.ignored) return;
+        if (signal.ignored || !isCurrentRequest(task.id, generation)) return;
+        setLoading(false);
         if (result.ok) setSurface(result.value);
         else if (result.code === "unavailable" || result.code === "unauthenticated") {
-          setSurface(null);
+          if (refuseCurrentRequest(task.id, generation)) setSurface(null);
         }
       } catch {
         // Keep the authorized snapshot across a transient read failure. The
         // next tick rechecks access; denials above clear it immediately.
+        if (!signal.ignored && isCurrentRequest(task.id, generation)) setLoading(false);
       } finally {
         inFlight = false;
       }
@@ -130,7 +168,7 @@ function useConversation(task: Task) {
       signal.ignored = true;
       window.clearInterval(timer);
     };
-  }, [surface?.mode, task.id]);
+  }, [beginRequest, isCurrentRequest, refuseCurrentRequest, surface?.mode, task.id]);
 
   return { surface, loading, timedOut, retry: () => {
     const signal = { ignored: false };
