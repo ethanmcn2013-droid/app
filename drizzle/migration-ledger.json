@@ -299,10 +299,10 @@
       "id": "0028_project_conversations",
       "file": "drizzle/0028_project_conversations.sql",
       "when": 1789142400000,
-      "sha256": "7d1f8ecf781cb8cac6f5f931ffe61da6e10eb7c43783eacf10797918d58c2416",
+      "sha256": "ebd7067120118c9757a143303a66fa2defb7d98462c7036ce25f674eb91afd6b",
       "policy": "forward",
       "receipt": "drizzle/receipts/project-conversations-2026-09-12.json",
-      "receiptSha256": "7cf267215a8fb374b53d23c799925b3b597b3b914728157165d14b36a015f404"
+      "receiptSha256": "d9924344ae2c06a5b14fc550c6c6b87e5444bfa1626c214a29472650b0c60c32"
     }
   ]
 }

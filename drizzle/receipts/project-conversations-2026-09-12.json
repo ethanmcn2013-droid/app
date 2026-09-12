@@ -7,7 +7,7 @@
   "migrations": [
     {
       "id": "0028_project_conversations",
-      "sha256": "7d1f8ecf781cb8cac6f5f931ffe61da6e10eb7c43783eacf10797918d58c2416",
+      "sha256": "ebd7067120118c9757a143303a66fa2defb7d98462c7036ce25f674eb91afd6b",
       "reviewedAt": "2026-09-12T00:00:00.000Z",
       "risk": "High application-integrity risk because this introduces the durable message, change, attention, outbox, and receipt aggregate. Apply-time risk is bounded: the migration is additive, copies no legacy comment or message data, and database triggers preserve exact Project scope even when foreign keys are disabled. DM-shaped rows are explicitly rejected until the later DM authorization task enables them.",
       "rollbackPlan": "Disable conversation sends and creation through the server controls while retaining all additive tables, receipts, and acknowledged history. Do not drop the schema as an operational rollback. Removing stored conversation data is a separately authorized destructive data operation.",
@@ -20,7 +20,8 @@
         "conversation_outbox stores source identity and revision but no message body",
         "migration is additive and copies no legacy comments",
         "integrity check passes",
-        "foreign keys remain clean"
+        "foreign keys remain clean",
+        "raw user deletion removes Project memberships and advances only affected audience epochs even with foreign keys disabled"
       ],
       "proofs": [
         {
@@ -62,6 +63,11 @@
           "id": "foreign-keys",
           "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
           "expected": 0
+        },
+        {
+          "id": "account-membership-cleanup-trigger-exists",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type = 'trigger' AND name = 'conversations_user_membership_cleanup'",
+          "expected": 1
         }
       ]
     }

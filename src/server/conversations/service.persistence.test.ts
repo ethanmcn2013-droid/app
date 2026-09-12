@@ -155,6 +155,54 @@ test("ensure and send are durable and idempotent, with atomic directed effects",
   });
 });
 
+test("only explicit mentions create attention while other members retain history", async () => {
+  await withFixture(async ({ client, service }) => {
+    await client.execute({ sql: "INSERT INTO workspace_members(workspace_id,user_id,role,joined_at) VALUES (?,'synthetic_charlie','member',?)", args: [projectA, Date.now()] });
+    const room = await service.ensureProjectConversation({ actorId: "synthetic_alice", projectId: projectA });
+    assert.equal(room.ok, true);
+    if (!room.ok) return;
+    for (const [request, mentions] of [["request_directed_01", ["synthetic_bob"]], ["request_undirected1", []]] as const) {
+      const sent = await service.sendMessage({ actorId: "synthetic_alice", input: { ...sendInput(room.value.conversationId, request, room.value.audienceEpoch), mentionUserIds: mentions } });
+      assert.equal(sent.ok, true);
+      if (!sent.ok) return;
+      for (const table of ["conversation_attention", "conversation_outbox"]) {
+        const rows: Awaited<ReturnType<Client["execute"]>> = await client.execute({ sql: `SELECT recipient_id FROM ${table} WHERE message_id = ? ORDER BY recipient_id`, args: [sent.value.messageId] });
+        assert.deepEqual(rows.rows.map((row) => row.recipient_id), [...mentions], table);
+      }
+    }
+    const history = await service.getHistory({ actorId: "synthetic_charlie", projectId: projectA, conversationId: room.value.conversationId, afterChangeSeq: 0 });
+    assert.equal(history.ok && history.value.messages.length, 2);
+  });
+});
+
+test("raw account deletion invalidates a cached actor and only affected Project epochs", async () => {
+  await withFixture(async ({ client, service }) => {
+    const actorId = await service.resolveActor("clerk_bob");
+    assert.equal(actorId, "synthetic_bob");
+    if (!actorId) return;
+    const room = await service.ensureProjectConversation({ actorId, projectId: projectA });
+    const unrelated = await service.ensureProjectConversation({ actorId: "synthetic_charlie", projectId: projectB });
+    assert.equal(room.ok && unrelated.ok, true);
+    if (!room.ok || !unrelated.ok) return;
+    const input = { ...sendInput(room.value.conversationId, "request_account_01", room.value.audienceEpoch), mentionUserIds: [] };
+    assert.equal((await service.sendMessage({ actorId, input })).ok, true);
+    await client.execute("DELETE FROM users WHERE id = 'synthetic_bob'");
+    const epochs = await client.execute("SELECT workspace_id,audience_epoch FROM conversations ORDER BY workspace_id");
+    assert.deepEqual(epochs.rows.map((row) => [row.workspace_id, Number(row.audience_epoch)]), [[projectA, room.value.audienceEpoch + 1], [projectB, unrelated.value.audienceEpoch]]);
+    assert.equal(Number((await client.execute("SELECT COUNT(*) AS n FROM workspace_members WHERE user_id = 'synthetic_bob'")).rows[0].n), 0);
+    const scope = { actorId, projectId: projectA, conversationId: room.value.conversationId };
+    assert.deepEqual(await service.getProjectConversation(scope), { ok: false, code: "unavailable" });
+    assert.deepEqual(await service.getHistory({ ...scope, afterChangeSeq: 0 }), { ok: false, code: "unavailable" });
+    assert.deepEqual(await service.getReceipt({ ...scope, clientRequestId: input.clientRequestId }), { ok: false, code: "unavailable" });
+    assert.deepEqual(await service.sendMessage({ actorId, input }), { ok: false, code: "unavailable" });
+    // Even an orphan membership introduced by a raw writer cannot substitute for a live account.
+    await client.execute({ sql: "INSERT INTO workspace_members(workspace_id,user_id,role,joined_at) VALUES (?,'synthetic_bob','member',?)", args: [projectA, Date.now()] });
+    assert.deepEqual(await service.getProjectConversation(scope), { ok: false, code: "unavailable" });
+    assert.deepEqual(await service.getHistory({ ...scope, afterChangeSeq: 0 }), { ok: false, code: "unavailable" });
+    assert.deepEqual(await service.sendMessage({ actorId, input }), { ok: false, code: "unavailable" });
+  });
+});
+
 test("every injected failure rolls back source, change, effect, receipt, and sequence allocation", async () => {
   await withFixture(async ({ client }) => {
     const base = createLocalConversationDatabaseAdapter({ client });

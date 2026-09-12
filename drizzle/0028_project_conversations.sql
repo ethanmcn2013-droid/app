@@ -285,6 +285,13 @@ BEGIN
 END;
 --> statement-breakpoint
 
+CREATE TRIGGER conversations_user_membership_cleanup
+BEFORE DELETE ON users
+BEGIN
+  DELETE FROM workspace_members WHERE user_id = OLD.id;
+END;
+--> statement-breakpoint
+
 CREATE TRIGGER conversations_workspace_cleanup
 BEFORE DELETE ON workspaces
 BEGIN

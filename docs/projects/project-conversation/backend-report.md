@@ -33,3 +33,9 @@ Synthetic file databases used three canonical users, two Projects and exact `wor
 ## Limits and remaining gates
 
 This local evidence does not verify Turso primary forwarding, remote transaction behavior, multi-region latency, Clerk session revocation timing, provider delivery or production migration safety. No production execution receipt exists. HTTP/auth integration, UI integration and internal flag/allowlist behavior are owned by their separate packets and must be retested after integration. DM consent, read coverage, delivery draining and task/Notes outcomes remain later backlog tasks. The amended PC-03 human study remains a release gate; this implementation is not permission for a real-data pilot or release.
+
+## Independent review correction — 12 September 2026
+
+Frozen 43507a5c review found unmentioned-member fanout and cached-actor access after raw user deletion with foreign keys OFF. Both counterexamples were reproduced by two failing persistence tests before correction. Project attention/outbox now use the validated explicit mention set excluding sender. Operation authorization requires a live users row; raw account deletion removes memberships through an FK-independent trigger, advancing only affected epochs. Regression also reinserts an orphan membership and proves it cannot authorize a missing account.
+
+After correction: focused persistence/HTTP/reducer suite 19/19 passed (5,516.8443 ms); migration ledger suite 20/20 passed (3,419.254 ms), including fresh apply and no-op replay; migration contract passed with 29 Tasks / 2 Timeline SQL files. SQL and receipt hashes refreshed. Narrow independent acceptance pending; no remote, real Clerk, delivery or release acceptance claimed.

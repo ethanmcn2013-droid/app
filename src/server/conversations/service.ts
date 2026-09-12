@@ -107,9 +107,10 @@ async function loadProjectScope(
 ): Promise<{ row: Record<string, unknown> | null; member: boolean }> {
   const result = await executor.execute({
     sql: `SELECT c.id, c.workspace_id, c.kind, c.lifecycle, c.audience_epoch,
-        w.archived_at AS workspace_archived_at, w.name AS workspace_name, wm.user_id AS member_id
+        w.archived_at AS workspace_archived_at, w.name AS workspace_name, u.id AS member_id
       FROM workspaces w
       LEFT JOIN workspace_members wm ON wm.workspace_id = w.id AND wm.user_id = ?
+      LEFT JOIN users u ON u.id = wm.user_id
       LEFT JOIN conversations c ON c.workspace_id = w.id AND c.kind = 'project'
       WHERE w.id = ?`,
     args: [input.actorId, input.projectId],
@@ -128,6 +129,7 @@ async function authorizeConversation(
       FROM conversations c
       JOIN workspaces w ON w.id = c.workspace_id
       JOIN workspace_members wm ON wm.workspace_id = c.workspace_id AND wm.user_id = ?
+      JOIN users u ON u.id = wm.user_id
       WHERE c.id = ? AND c.workspace_id = ? AND c.kind = 'project'`,
     args: [input.actorId, input.conversationId, input.projectId],
   });
@@ -155,8 +157,8 @@ async function validateMentionMembers(
   if (mentions.length === 0) return true;
   const placeholders = mentions.map(() => "?").join(", ");
   const result = await executor.execute({
-    sql: `SELECT user_id FROM workspace_members
-      WHERE workspace_id = ? AND user_id IN (${placeholders})`,
+    sql: `SELECT wm.user_id FROM workspace_members wm JOIN users u ON u.id = wm.user_id
+      WHERE wm.workspace_id = ? AND wm.user_id IN (${placeholders})`,
     args: [projectId, ...mentions],
   });
   return result.rows.length === mentions.length;
@@ -344,13 +346,9 @@ export function createConversationService(adapter: ConversationDatabaseAdapter) 
           VALUES (?, ?, 'create', ?, 1, ?, ?)`,
         args: [input.conversationId, changeSeq, id, authorized.value.scope.audienceEpoch, committedAt],
       });
-      const recipients = await executor.execute({
-        sql: `SELECT user_id FROM workspace_members
-          WHERE workspace_id = ? AND user_id <> ? ORDER BY user_id`,
-        args: [input.projectId, actorId],
-      });
-      for (const recipient of recipients.rows) {
-        const recipientId = text(recipient.user_id);
+      // Membership grants history access; only explicit mentions direct attention.
+      // The normalized set was validated against live members in this transaction.
+      for (const recipientId of mentions.filter((id) => id !== actorId)) {
         const eventKey = hashTuple([input.conversationId, id, recipientId]).slice(0, 32);
         await executor.execute({
           sql: `INSERT INTO conversation_attention

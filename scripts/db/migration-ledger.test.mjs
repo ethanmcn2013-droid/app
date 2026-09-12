@@ -129,13 +129,13 @@ test("fresh databases apply the canonical baseline plus forwards and rerun as a 
     "0027_share_link_token_hash",
     "0028_project_conversations",
   ]);
-  assert.equal(first.proofs.length, 87);
+  assert.equal(first.proofs.length, 88);
 
   const objectCounts = await client.execute("SELECT type, COUNT(*) AS value FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' AND name NOT IN ('signal_schema_migrations', '__drizzle_migrations') GROUP BY type ORDER BY type");
   assert.deepEqual(objectCounts.rows.map((row) => [row.type, Number(row.value)]), [
     ["index", 39],
     ["table", 30],
-    ["trigger", 15],
+    ["trigger", 16],
   ]);
 
   const second = await runMigrations({ client, releaseSha: "test-release" });
