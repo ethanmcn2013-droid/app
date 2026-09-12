@@ -61,7 +61,7 @@ export function AudienceHeader({
         </button>
       </div>
       <nav aria-label="Conversation views" className={styles.headerTabs}>
-        <button aria-current="page" type="button">Conversation</button>
+        <button aria-current="page" onClick={() => { if (relatedOpen) onToggleRelated(); }} type="button">Conversation</button>
         <button aria-pressed={relatedOpen} onClick={onToggleRelated} type="button">Related work <span>2</span></button>
       </nav>
     </header>

@@ -77,7 +77,7 @@ export function ProjectConversationPrototype() {
   const [preview, setPreview] = useState<"task" | "note" | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [view, setView] = useState<"full" | "context">("full");
-  const [relatedOpen, setRelatedOpen] = useState(true);
+  const [relatedOpen, setRelatedOpen] = useState(false);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const workButtonRef = useRef<HTMLButtonElement>(null);
 
