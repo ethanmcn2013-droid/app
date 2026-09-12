@@ -57,7 +57,7 @@ The test uses Clerk's supported Playwright ticket helper to establish real devel
 
 The journey checks a wrong-account refusal, the exact signed-out redirect intent and automatic return, recipient acceptance into the exact project, absence of a creator-private task, completion of one assigned task, return to Home, creator browser readback of the durable done state, replay refusal, and access refusal after membership removal. Synthetic identity tests and an issued Clerk testing token do not count as journey acceptance.
 
-The project, pending invitation, assigned task, and membership removal are created or changed directly in the isolated local database fixture. This proof does not exercise creator invitation-authoring UI or live membership-removal UI.
+The project, pending invitation, assigned task, and membership removal are created or changed directly in the isolated local database fixture. If authenticated entry has already provisioned either controlled identity in that database, the fixture reuses the matching Clerk subject only when its stored email is absent or matches the verified account. This proof does not exercise creator invitation-authoring UI or live membership-removal UI.
 
 ## Evidence custody
 
