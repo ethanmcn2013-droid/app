@@ -56,6 +56,17 @@ test("failed requests back off with a hard 30-second ceiling; success resets", a
   failing = false; await fixture.fire(); assert.equal(fixture.delay(), 1_000); poller.stop();
 });
 
+test("structured temporary failures use backoff even when the transport resolves normally", async () => {
+  const fixture = clockFixture(); let failing = true; let applied = 0;
+  const poller = new ConversationPoller({ clock: fixture.clock, random: () => 0.5,
+    poll: async () => ({ ok: !failing, code: failing ? "temporarily_unavailable" : undefined }),
+    apply: () => { applied++; }, isRetryable: (result) => !result.ok && result.code === "temporarily_unavailable",
+  });
+  poller.configure(scope, true);
+  for (const delay of [2_000, 4_000, 8_000, 16_000, 30_000]) { await fixture.fire(); assert.equal(fixture.delay(), delay); }
+  failing = false; await fixture.fire(); assert.equal(fixture.delay(), 1_000); assert.equal(applied, 6); poller.stop();
+});
+
 test("an asynchronous page application completes before another poll is scheduled", async () => {
   const fixture = clockFixture(); let releaseApply: () => void = () => {}; let applications = 0;
   const poller = new ConversationPoller({ clock: fixture.clock, random: () => 0.5,

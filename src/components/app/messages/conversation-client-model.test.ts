@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { parseProjectId } from "@/lib/projects/project-ref";
-import { anchoredScrollTop, audienceResponseMatches, conversationHeaders, draftKey, forgetProjectDrafts, needsFreshAudienceSend, rememberDraft, shouldSendComposerKey } from "./conversation-client-model";
+import { anchoredScrollTop, resolveScrollAnchor, audienceResponseMatches, conversationHeaders, draftKey, forgetProjectDrafts, needsFreshAudienceSend, rememberDraft, shouldSendComposerKey } from "./conversation-client-model";
 
 const project = parseProjectId("synthetic_project_a")!;
 
@@ -52,4 +52,12 @@ test("composer Enter and scroll anchoring follow desktop and mobile interaction 
   assert.equal(shouldSendComposerKey({ key: "Enter", shiftKey: false, composing: true, mobileReturn: false }), false);
   assert.equal(shouldSendComposerKey({ key: "Enter", shiftKey: false, composing: false, mobileReturn: true }), false);
   assert.equal(anchoredScrollTop(1_400, 600, 75), 725);
+});
+
+test("live arrivals preserve the current reading position while prepends preserve the visible content anchor", () => {
+  // Initial viewport: height 600 in a 2000px feed, reader at y=500.
+  const reader = { top: 500, bottomDistance: 900, mode: "live" as const };
+  assert.equal(resolveScrollAnchor(2100, 600, reader), 500);
+  assert.equal(resolveScrollAnchor(2300, 600, { ...reader, mode: "prepend" }), 800);
+  assert.equal(resolveScrollAnchor(2100, 600, { top: 1380, bottomDistance: 20, mode: "live" }), 1500);
 });

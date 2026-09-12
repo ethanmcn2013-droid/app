@@ -39,6 +39,12 @@ export function shouldSendComposerKey(input: Readonly<{ key: string; shiftKey: b
 export function anchoredScrollTop(scrollHeight: number, clientHeight: number, bottomDistance: number): number {
   return Math.max(0, scrollHeight - clientHeight - bottomDistance);
 }
+export type ScrollAnchor = Readonly<{ top: number; bottomDistance: number; mode: "live" | "prepend" }>;
+export function resolveScrollAnchor(scrollHeight: number, clientHeight: number, anchor: ScrollAnchor): number {
+  if (anchor.mode === "prepend") return anchoredScrollTop(scrollHeight, clientHeight, anchor.bottomDistance);
+  if (anchor.bottomDistance < 80) return anchoredScrollTop(scrollHeight, clientHeight, 0);
+  return Math.max(0, Math.min(anchor.top, scrollHeight - clientHeight));
+}
 
 /** The synthetic identity header exists only when the lab explicitly supplies it. */
 export function conversationHeaders(fixtureActor: string | undefined, hasBody: boolean): Headers {

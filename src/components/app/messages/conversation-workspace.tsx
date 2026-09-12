@@ -7,7 +7,7 @@ import { CONVERSATION_LIMITS, normalizeMessageBody, validMessageBody } from "@/l
 import { conversationReducer, emptyConversationState, type PendingSend } from "@/lib/conversations/reducer";
 import { ConversationPoller } from "@/lib/conversations/polling";
 import { AudienceHeader, Icon } from "./prototype-panels";
-import { anchoredScrollTop, audienceResponseMatches, conversationHeaders, draftKey, forgetProjectDrafts, needsFreshAudienceSend, rememberDraft, shouldSendComposerKey, type DraftCache, type ScrollCache } from "./conversation-client-model";
+import { anchoredScrollTop, resolveScrollAnchor, type ScrollAnchor, audienceResponseMatches, conversationHeaders, draftKey, forgetProjectDrafts, needsFreshAudienceSend, rememberDraft, shouldSendComposerKey, type DraftCache, type ScrollCache } from "./conversation-client-model";
 import styles from "./conversation-workspace.module.css";
 
 type ProjectOption = Readonly<{ id: ProjectId; name: string }>;
@@ -90,7 +90,7 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
   const pollerRef = useRef<ConversationPoller<ConversationResult<ConversationDelta>> | null>(null);
   const draftLoadedFor = useRef<string | null>(null);
   const scrollLoadedFor = useRef<string | null>(null);
-  const scrollAnchorRef = useRef<number | null>(null);
+  const scrollAnchorRef = useRef<ScrollAnchor | null>(null);
   const feedRef = useRef<HTMLDivElement | null>(null);
   const catchupRef = useRef<number | null>(null);
   const dispatchAt = (generation: number, action: GeneratedAction) => dispatch({ ...action, generation });
@@ -103,9 +103,9 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
     const node = feedRef.current;
     if (node && currentScope) scrollCache.set(scopeCacheKey(currentScope), { top: node.scrollTop, bottomDistance: Math.max(0, node.scrollHeight - node.clientHeight - node.scrollTop) });
   }
-  function captureScrollAnchor() {
+  function captureScrollAnchor(mode: "live" | "prepend" = "live") {
     const node = feedRef.current;
-    if (node) scrollAnchorRef.current = Math.max(0, node.scrollHeight - node.clientHeight - node.scrollTop);
+    if (node) scrollAnchorRef.current = { top: node.scrollTop, bottomDistance: Math.max(0, node.scrollHeight - node.clientHeight - node.scrollTop), mode };
   }
   function clearAudience() { audienceRef.current = null; setAudience(null); }
   function advanceSession(scopeKey: string) {
@@ -154,7 +154,7 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
   async function refreshAudience(expectedEpoch: number, generation: number, signal?: AbortSignal) {
     const result = await requestAudience(signal);
     if (!isCurrent(generation, signal)) return;
-    if (result.ok) acceptAudience(result.value, generation, expectedEpoch); else handleFailure(result, generation);
+    if (result.ok) acceptAudience(result.value, generation, expectedEpoch); else { handleFailure(result, generation); if (result.code === "temporarily_unavailable") throw new Error("retryable_audience_failure"); }
   }
 
   async function loadThroughCurrent(currentScope: ConversationScope, generation: number, signal: AbortSignal, first?: ConversationDelta): Promise<{ finalPage: ConversationDelta | null; caughtUp: boolean }> {
@@ -164,7 +164,7 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
     for (let pageCount = 0; pageCount < 10 && isCurrent(generation, signal); pageCount++) {
       if (!page) {
         const result = await loadHistory(currentScope, cursor, signal);
-        if (!result.ok) { handleFailure(result, generation); return { finalPage: null, caughtUp: false }; }
+        if (!result.ok) { handleFailure(result, generation); if (result.code === "temporarily_unavailable") throw new Error("retryable_history_failure"); return { finalPage: null, caughtUp: false }; }
         page = result.value;
       }
       lastPage = page;
@@ -188,7 +188,7 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
       if (!result.value) return;
       const [page, audienceResult] = await Promise.all([loadMessages(result.value, undefined, controller.signal), requestAudience(controller.signal)]);
       if (!isCurrent(generation, controller.signal)) return;
-      if (!page.ok) { handleFailure(page, generation); return; }
+      if (!page.ok) { handleFailure(page, generation); if (page.code === "temporarily_unavailable") throw new Error("retryable_page_failure"); return; }
       historyEpochRef.current = page.value.audienceEpoch;
       dispatchAt(generation, { type: "page", page: page.value, initialize: true });
       setHasOlder(page.value.hasOlder); setOlderCursor(page.value.beforeCreateSeq); setCatchingUp(false);
@@ -207,6 +207,7 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
     if (!scope) return;
     const generation = generationRef.current;
     const poller = new ConversationPoller<ConversationResult<ConversationDelta>>({
+      isRetryable: (result) => !result.ok && result.code === "temporarily_unavailable",
       poll: ({ conversationId }, signal) => loadHistory({ ...scope, conversationId }, stateRef.current.cursor, signal),
       apply: async (result) => {
         if (!isCurrent(generation)) return;
@@ -228,7 +229,7 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
           try {
             const page = await loadMessages(scope, undefined, signal);
             if (!isCurrent(generation, signal)) return;
-            if (!page.ok) { handleFailure(page, generation); return; }
+            if (!page.ok) { handleFailure(page, generation); if (page.code === "temporarily_unavailable") throw new Error("retryable_page_failure"); return; }
             historyEpochRef.current = page.value.audienceEpoch;
             if (audienceRef.current?.audienceEpoch !== page.value.audienceEpoch) {
               clearAudience();
@@ -270,7 +271,7 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
       if (saved) node.scrollTop = saved.bottomDistance < 80 ? anchoredScrollTop(node.scrollHeight, node.clientHeight, saved.bottomDistance) : saved.top;
       else node.scrollTop = node.scrollHeight;
     } else if (scrollAnchorRef.current !== null) {
-      node.scrollTop = anchoredScrollTop(node.scrollHeight, node.clientHeight, scrollAnchorRef.current);
+      node.scrollTop = resolveScrollAnchor(node.scrollHeight, node.clientHeight, scrollAnchorRef.current);
       scrollAnchorRef.current = null;
     }
   // scopeCacheKey is a pure tuple builder scoped to this keyed session.
@@ -288,7 +289,7 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
       const { generation, controller } = advanceSession(`${project.id}:${result.value.conversationId}`); requestGeneration = generation; signal = controller.signal; setScope(result.value);
       const [page, audienceResult] = await Promise.all([loadMessages(result.value, undefined, controller.signal), requestAudience(controller.signal)]);
       if (!isCurrent(generation, controller.signal)) return;
-      if (!page.ok) { handleFailure(page, generation); return; }
+      if (!page.ok) { handleFailure(page, generation); if (page.code === "temporarily_unavailable") throw new Error("retryable_page_failure"); return; }
       historyEpochRef.current = page.value.audienceEpoch;
       dispatchAt(generation, { type: "page", page: page.value, initialize: true });
       setHasOlder(page.value.hasOlder); setOlderCursor(page.value.beforeCreateSeq); setCatchingUp(false);
@@ -301,12 +302,12 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
   async function loadOlder() {
     if (!scope || !hasOlder || olderCursor === null || loadingOlder) return;
     const generation = generationRef.current; const signal = sessionControllerRef.current?.signal;
-    setLoadingOlder(true); captureScrollAnchor();
+    setLoadingOlder(true);
     try {
       const page = await loadMessages(scope, olderCursor, signal);
       if (!isCurrent(generation, signal)) return;
-      if (!page.ok) { handleFailure(page, generation); return; }
-      dispatchAt(generation, { type: "page", page: page.value, initialize: false });
+      if (!page.ok) { handleFailure(page, generation); if (page.code === "temporarily_unavailable") throw new Error("retryable_page_failure"); return; }
+      captureScrollAnchor("prepend"); dispatchAt(generation, { type: "page", page: page.value, initialize: false });
       setHasOlder(page.value.hasOlder); setOlderCursor(page.value.beforeCreateSeq);
     } catch { if (isCurrent(generation, signal)) dispatchAt(generation, { type: "offline" }); }
     finally { if (isCurrent(generation, signal)) setLoadingOlder(false); }
@@ -339,7 +340,7 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
     const input: SendInput = { projectId: project.id, conversationId: scope.conversationId, clientRequestId: newRequestId(), expectedAudienceEpoch: state.audienceEpoch, body: normalizeMessageBody(state.draft), rootId: null, mentionUserIds: [] };
     const next = conversationReducer(state, { type: "submit", input });
     if (next === state) return;
-    scrollAnchorRef.current = 0; dispatch({ type: "submit", input }); rememberDraft(draftCache, scopeCacheKey(scope), ""); await resolveSend(next.pending[next.pending.length - 1]);
+    scrollAnchorRef.current = { top: 0, bottomDistance: 0, mode: "live" }; dispatch({ type: "submit", input }); rememberDraft(draftCache, scopeCacheKey(scope), ""); await resolveSend(next.pending[next.pending.length - 1]);
   }
 
   async function mutate(action: "edit" | "tombstone", message: MessageRecord, body?: string) {
@@ -375,7 +376,7 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
     {scope.lifecycle === "archived" ? <div className={styles.notice}><strong>Read-only history</strong><span>Restore the Project before sending or changing messages.</span></div> : null}
     {sendsOff ? <div className={styles.notice}><strong>Sends are off</strong><span>Existing history remains available.</span></div> : null}
     {mutationError ? <div className={styles.errorNotice} role="alert">{mutationError}</div> : null}
-    <div className={styles.feedScroller} onScroll={() => rememberScroll(scope)} ref={feedRef}><ol aria-label="Conversation history" className={styles.feed}>
+    <div aria-label="Message reading area" role="region" tabIndex={0} className={styles.feedScroller} onScroll={() => rememberScroll(scope)} ref={feedRef}><ol aria-label="Conversation history" className={styles.feed}>
       {hasOlder ? <li className={styles.olderHistory}><button disabled={loadingOlder} onClick={() => void loadOlder()} type="button">{loadingOlder ? "Loading earlier messages…" : "Load earlier messages"}</button></li> : null}
       {state.messages.length === 0 && state.pending.length === 0 ? <li className={styles.emptyHistory}>No messages yet. Start with the decision or question the Project needs.</li> : null}
       {state.messages.map((message) => <LiveMessage actorId={actorId} editing={editing} key={message.id} members={members} message={message} onCancelEdit={() => setEditing(null)} onDelete={() => void mutate("tombstone", message)} onEdit={(body) => void mutate("edit", message, body)} onStartEdit={() => message.body && setEditing({ id: message.id, body: message.body, revision: message.revision })} setEditing={setEditing} />)}

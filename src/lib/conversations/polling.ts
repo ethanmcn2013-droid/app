@@ -20,6 +20,7 @@ export class ConversationPoller<T> {
   constructor(private readonly options: Readonly<{
     poll: (scope: PollScope, signal: AbortSignal) => Promise<T>;
     apply: (value: T, scope: PollScope) => void | Promise<void>;
+    isRetryable?: (value: T) => boolean;
     onFailure?: (consecutiveFailures: number) => void;
     random?: () => number;
     clock?: PollClock;
@@ -64,6 +65,7 @@ export class ConversationPoller<T> {
       const value = await this.options.poll(scope, controller.signal);
       if (generation === this.generation && !controller.signal.aborted) {
         await this.options.apply(value, scope);
+        if (this.options.isRetryable?.(value)) throw new Error("retryable_poll_result");
         this.failures = 0;
       }
     } catch {
