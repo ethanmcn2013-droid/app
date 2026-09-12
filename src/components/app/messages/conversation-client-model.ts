@@ -1,7 +1,9 @@
 import type { ProjectId } from "@/lib/projects/project-ref";
+import type { PendingSend, RecoveredDraft } from "@/lib/conversations/reducer";
 
 export type DraftCache = Map<string, string>;
 export type ScrollCache = Map<string, Readonly<{ top: number; bottomDistance: number }>>;
+export type OutgoingCache = Map<string, Readonly<{ pending: readonly PendingSend[]; recoveredDrafts: readonly RecoveredDraft[]; reviewedAudienceEpoch: number | null }>>;
 
 export function rememberDraft(cache: DraftCache, key: string, value: string, limit = 20): void {
   cache.delete(key);
@@ -13,7 +15,7 @@ export function draftKey(actorId: string, projectId: ProjectId, conversationId: 
   return JSON.stringify([actorId, projectId, conversationId, rootId]);
 }
 
-export function forgetProjectDrafts(cache: DraftCache, actorId: string, projectId: ProjectId): void {
+export function forgetProjectDrafts(cache: Map<string, unknown>, actorId: string, projectId: ProjectId): void {
   for (const key of cache.keys()) {
     try {
       const value: unknown = JSON.parse(key);

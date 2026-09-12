@@ -53,13 +53,15 @@
 .messageMeta time, .messageMeta span { color: var(--cw-soft); font-size: 10px; font-variant-numeric: tabular-nums; }
 .message p { font-size: 14px; line-height: 1.6; margin: 5px 0 0; max-width: 68ch; overflow-wrap: anywhere; white-space: pre-wrap; }
 .deleted { color: var(--cw-soft); font-style: italic; }
-.messageActions { display: flex; gap: 12px; margin-top: 4px; }
-.messageActions button { background: transparent; border: 0; color: var(--cw-indigo); cursor: pointer; font-size: 10px; padding: 4px 0; }
+.messageActions { align-items: center; display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px; }
+.messageActions button { background: transparent; border: 0; color: var(--cw-indigo); cursor: pointer; font-size: 11px; min-height: 28px; padding: 4px 0; }
+.messageActions span { color: var(--cw-soft); font-size: 11px; }
 .pendingMessage { margin: 0 0 22px 45px; }
 .pendingMessage strong, .pendingMessage p { font-size: 13px; }
 .pendingMessage p { line-height: 1.55; margin: 4px 0; white-space: pre-wrap; }
 .pendingMessage span { color: var(--cw-soft); font-size: 10px; }
 .pendingMessage button { background: transparent; border: 0; color: var(--cw-indigo); cursor: pointer; font-size: 10px; margin-left: 9px; }
+.pendingMessage button:disabled { cursor: default; opacity: .45; }
 .emptyHistory { color: var(--cw-soft); font-size: 13px; line-height: 1.55; padding: 48px 20px; text-align: center; }
 .olderHistory { display: flex; justify-content: center; padding: 0 0 28px; }
 .olderHistory button { background: var(--cw-white); border: 1px solid var(--cw-line); border-radius: 999px; color: var(--cw-indigo); cursor: pointer; font-size: 11px; min-height: 32px; padding: 0 13px; }

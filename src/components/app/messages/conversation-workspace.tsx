@@ -9,7 +9,7 @@ import { ConversationPoller } from "@/lib/conversations/polling";
 import { AudienceHeader, Icon } from "./prototype-panels";
 import { resolveTaskOutcome, type TaskOutcomeSubmission } from "./task-outcome-client";
 import { TaskOutcomeForm, type TaskOutcomeRequest, type TaskOutcomeResult } from "./task-outcome-form";
-import { anchoredScrollTop, resolveScrollAnchor, type ScrollAnchor, audienceResponseMatches, conversationHeaders, draftKey, forgetProjectDrafts, needsFreshAudienceSend, rememberDraft, shouldSendComposerKey, type DraftCache, type ScrollCache } from "./conversation-client-model";
+import { anchoredScrollTop, resolveScrollAnchor, type ScrollAnchor, audienceResponseMatches, conversationHeaders, draftKey, forgetProjectDrafts, needsFreshAudienceSend, rememberDraft, shouldSendComposerKey, type DraftCache, type OutgoingCache, type ScrollCache } from "./conversation-client-model";
 import styles from "./conversation-workspace.module.css";
 
 type ProjectOption = Readonly<{ id: ProjectId; name: string }>;
@@ -59,6 +59,7 @@ function ConversationWorkspaceActor({ actorId, projects, initialProjectId, fixtu
   const [view, setView] = useState<"full" | "context">("full");
   const [draftCache] = useState<DraftCache>(() => new Map());
   const [scrollCache] = useState<ScrollCache>(() => new Map());
+  const [outgoingCache] = useState<OutgoingCache>(() => new Map());
   if (!projectId || projects.length === 0) return <main className={styles.noProjects}><h1>Messages</h1><p>Add a Project before starting a Project conversation.</p></main>;
   const selected = projects.find((project) => project.id === projectId) ?? projects[0];
   return <section className={styles.workspace} data-view={view}>
@@ -67,16 +68,19 @@ function ConversationWorkspaceActor({ actorId, projects, initialProjectId, fixtu
       {projects.map((project) => <button aria-current={project.id === selected.id ? "page" : undefined} aria-label={project.name} key={project.id} onClick={() => setProjectId(project.id)} type="button"><span>{project.name.slice(0, 2).toUpperCase()}</span><strong>{project.name}</strong></button>)}
       <p>Messages stay inside their named Project.</p>
     </aside>
-    <ProjectConversationSession actorId={actorId} draftCache={draftCache} fixtureActor={fixtureActor} key={`${actorId}:${selected.id}`} onToggleView={() => setView((current) => current === "full" ? "context" : "full")} project={selected} projects={projects} scrollCache={scrollCache} view={view} />
+    <ProjectConversationSession actorId={actorId} outgoingCache={outgoingCache} draftCache={draftCache} fixtureActor={fixtureActor} key={`${actorId}:${selected.id}`} onToggleView={() => setView((current) => current === "full" ? "context" : "full")} project={selected} projects={projects} scrollCache={scrollCache} view={view} />
   </section>;
 }
 
-function ProjectConversationSession({ actorId, project, projects, fixtureActor, draftCache, scrollCache, view, onToggleView }: Readonly<{ actorId: string; project: ProjectOption; projects: readonly ProjectOption[]; fixtureActor?: string; draftCache: DraftCache; scrollCache: ScrollCache; view: "full" | "context"; onToggleView: () => void }>) {
+function ProjectConversationSession({ actorId, project, projects, fixtureActor, draftCache, outgoingCache, scrollCache, view, onToggleView }: Readonly<{ actorId: string; project: ProjectOption; projects: readonly ProjectOption[]; fixtureActor?: string; draftCache: DraftCache; outgoingCache: OutgoingCache; scrollCache: ScrollCache; view: "full" | "context"; onToggleView: () => void }>) {
   const [state, dispatch] = useReducer(conversationReducer, undefined, () => emptyConversationState(actorId, `${project.id}:pending`, 1));
   const [scope, setScope] = useState<ConversationScope | null | undefined>(undefined);
   const [audience, setAudience] = useState<Audience | null>(null);
   const [startFailure, setStartFailure] = useState<ConversationFailure["code"] | null>(null);
   const [bootstrapAttempt, setBootstrapAttempt] = useState(0);
+  const [bootstrapReady, setBootstrapReady] = useState(false);
+  const [outgoingHydrated, setOutgoingHydrated] = useState(false);
+  const taskTriggerRef = useRef<HTMLElement | null>(null);
   const [sendsOff, setSendsOff] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [catchingUp, setCatchingUp] = useState(false);
@@ -92,7 +96,6 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
   const audienceRef = useRef<Audience | null>(null);
   const sessionControllerRef = useRef<AbortController | null>(null);
   const pollerRef = useRef<ConversationPoller<ConversationResult<ConversationDelta>> | null>(null);
-  const draftLoadedFor = useRef<string | null>(null);
   const scrollLoadedFor = useRef<string | null>(null);
   const scrollAnchorRef = useRef<ScrollAnchor | null>(null);
   const feedRef = useRef<HTMLDivElement | null>(null);
@@ -103,6 +106,14 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
   useEffect(() => { stateRef.current = state; }, [state]);
 
   const scopeCacheKey = (currentScope: ConversationScope) => draftKey(actorId, project.id, currentScope.conversationId, null);
+  function restoreScopedOutgoing(currentScope: ConversationScope, generation: number) {
+    const key = scopeCacheKey(currentScope);
+    const draft = draftCache.get(key);
+    if (draft) dispatch({ type: "draft", value: draft });
+    const outgoing = outgoingCache.get(key);
+    if (outgoing) dispatch({ type: "resume_outgoing", generation, ...outgoing });
+    setOutgoingHydrated(true);
+  }
   function rememberScroll(currentScope = scope) {
     const node = feedRef.current;
     if (node && currentScope) scrollCache.set(scopeCacheKey(currentScope), { top: node.scrollTop, bottomDistance: Math.max(0, node.scrollHeight - node.clientHeight - node.scrollTop) });
@@ -120,7 +131,7 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
     const controller = new AbortController();
     generationRef.current = generation;
     sessionControllerRef.current = controller;
-    historyEpochRef.current = null;
+    historyEpochRef.current = null; setBootstrapReady(false); setOutgoingHydrated(false);
     clearAudience(); setEditing(null); setTaskSource(null); setCreatedTasks({}); setMutationError(null); setSendsOff(false); setHasOlder(false); setOlderCursor(null); setCatchingUp(false);
     dispatch({ type: "reset", actorId, scopeKey, generation });
     return { generation, controller };
@@ -131,6 +142,7 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
     generationRef.current = generation + 1;
     sessionControllerRef.current?.abort(); pollerRef.current?.stop();
     forgetProjectDrafts(draftCache, actorId, project.id);
+    forgetProjectDrafts(outgoingCache, actorId, project.id);
     if (scope) scrollCache.delete(scopeCacheKey(scope));
     historyEpochRef.current = null; clearAudience(); setEditing(null); setTaskSource(null); setCreatedTasks({}); setMutationError(null); setScope(undefined);
   }
@@ -190,11 +202,13 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
       if (!result.ok) { setStartFailure(result.code); handleFailure(result, generation); return; }
       setScope(result.value);
       if (!result.value) return;
+      restoreScopedOutgoing(result.value, generation);
       const [page, audienceResult] = await Promise.all([loadMessages(result.value, undefined, controller.signal), requestAudience(controller.signal)]);
       if (!isCurrent(generation, controller.signal)) return;
       if (!page.ok) { handleFailure(page, generation); if (page.code === "temporarily_unavailable") throw new Error("retryable_page_failure"); return; }
       historyEpochRef.current = page.value.audienceEpoch;
       dispatchAt(generation, { type: "page", page: page.value, initialize: true });
+      setBootstrapReady(true);
       setHasOlder(page.value.hasOlder); setOlderCursor(page.value.beforeCreateSeq); setCatchingUp(false);
       if (audienceResult.ok) {
         if (!acceptAudience(audienceResult.value, generation, page.value.audienceEpoch)) await refreshAudience(page.value.audienceEpoch, generation, controller.signal);
@@ -208,7 +222,7 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
   function retryBootstrap() { advanceSession(`${project.id}:pending`); setScope(undefined); setStartFailure(null); setBootstrapAttempt((current) => current + 1); }
 
   useEffect(() => {
-    if (!scope) return;
+    if (!scope || !bootstrapReady) return;
     const generation = generationRef.current;
     const poller = new ConversationPoller<ConversationResult<ConversationDelta>>({
       isRetryable: (result) => !result.ok && result.code === "temporarily_unavailable",
@@ -227,21 +241,9 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
             await refreshAudience(catchup.finalPage.audienceEpoch, generation, signal);
           } finally { if (catchupRef.current === generation) catchupRef.current = null; }
         } else if (result.code === "resync_required") {
-          if (catchupRef.current !== null) return;
-          catchupRef.current = generation;
-          const signal = sessionControllerRef.current?.signal ?? new AbortController().signal;
-          try {
-            const page = await loadMessages(scope, undefined, signal);
-            if (!isCurrent(generation, signal)) return;
-            if (!page.ok) { handleFailure(page, generation); if (page.code === "temporarily_unavailable") throw new Error("retryable_page_failure"); return; }
-            historyEpochRef.current = page.value.audienceEpoch;
-            if (audienceRef.current?.audienceEpoch !== page.value.audienceEpoch) {
-              clearAudience();
-              await refreshAudience(page.value.audienceEpoch, generation, signal);
-            }
-            captureScrollAnchor(); dispatchAt(generation, { type: "page", page: page.value, initialize: true });
-            setHasOlder(page.value.hasOlder); setOlderCursor(page.value.beforeCreateSeq); setCatchingUp(false);
-          } finally { if (catchupRef.current === generation) catchupRef.current = null; }
+          // A server-directed new baseline is a new generation, never a
+          // lower-cursor page mixed into the current generation's records.
+          retryBootstrap();
         } else handleFailure(result, generation);
       },
       onFailure: () => { if (isCurrent(generation)) dispatchAt(generation, { type: "offline" }); },
@@ -252,16 +254,17 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
     return () => { document.removeEventListener("visibilitychange", configure); window.removeEventListener("focus", configure); window.removeEventListener("blur", configure); poller.stop(); if (pollerRef.current === poller) pollerRef.current = null; };
   // Scope and generation are captured; changing them stops the poller.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scope?.conversationId]);
+  }, [scope?.conversationId, bootstrapReady]);
 
   useEffect(() => {
-    if (!scope || draftLoadedFor.current === scope.conversationId) return;
-    draftLoadedFor.current = scope.conversationId;
-    const saved = draftCache.get(scopeCacheKey(scope));
-    if (saved) dispatch({ type: "draft", value: saved });
-  // scopeCacheKey is a pure tuple builder scoped to this keyed session.
+    if (!scope || !outgoingHydrated || state.status === "unavailable") return;
+    const key = scopeCacheKey(scope);
+    rememberDraft(draftCache, key, state.draft);
+    if (state.draft || state.pending.length || state.recoveredDrafts.length) outgoingCache.set(key, { pending: state.pending, recoveredDrafts: state.recoveredDrafts, reviewedAudienceEpoch: state.reviewedAudienceEpoch });
+    else outgoingCache.delete(key);
+  // Only this session owns the scope tuple.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draftCache, scope]);
+  }, [scope, outgoingHydrated, outgoingCache, draftCache, state.draft, state.pending, state.recoveredDrafts, state.reviewedAudienceEpoch, state.status]);
   // Save this exact scope's scroll position as the keyed session unmounts.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => () => rememberScroll(), [scope]);
@@ -291,11 +294,13 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
       if (!isCurrent(requestGeneration, signal)) return;
       if (!result.ok) { setStartFailure(result.code); handleFailure(result, requestGeneration); return; }
       const { generation, controller } = advanceSession(`${project.id}:${result.value.conversationId}`); requestGeneration = generation; signal = controller.signal; setScope(result.value);
+      restoreScopedOutgoing(result.value, generation);
       const [page, audienceResult] = await Promise.all([loadMessages(result.value, undefined, controller.signal), requestAudience(controller.signal)]);
       if (!isCurrent(generation, controller.signal)) return;
       if (!page.ok) { handleFailure(page, generation); if (page.code === "temporarily_unavailable") throw new Error("retryable_page_failure"); return; }
       historyEpochRef.current = page.value.audienceEpoch;
       dispatchAt(generation, { type: "page", page: page.value, initialize: true });
+      setBootstrapReady(true);
       setHasOlder(page.value.hasOlder); setOlderCursor(page.value.beforeCreateSeq); setCatchingUp(false);
       if (audienceResult.ok) {
         if (!acceptAudience(audienceResult.value, generation, page.value.audienceEpoch)) await refreshAudience(page.value.audienceEpoch, generation, controller.signal);
@@ -319,7 +324,7 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
 
   function restoreForFreshAudience(pending: PendingSend, generation: number) {
     if (!isCurrent(generation) || !scope) return;
-    clearAudience(); rememberDraft(draftCache, scopeCacheKey(scope), pending.input.body); dispatchAt(generation, { type: "restore_absent", requestId: pending.input.clientRequestId });
+    clearAudience(); dispatchAt(generation, { type: "restore_absent", requestId: pending.input.clientRequestId });
   }
   async function resolveSend(pending: PendingSend) {
     if (!scope) return;
@@ -334,6 +339,7 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
       if (!isCurrent(generation, signal)) return;
       if (result.ok) { captureScrollAnchor(); dispatchAt(generation, { type: "receipt", receipt: result.value }); }
       else if (result.code === "audience_changed") restoreForFreshAudience(pending, generation);
+      else if (result.code === "temporarily_unavailable" || result.code === "rate_limited") dispatchAt(generation, { type: "uncertain", requestId: pending.input.clientRequestId });
       else handleFailure(result, generation, pending.input.clientRequestId);
     } catch { if (isCurrent(generation, signal)) dispatchAt(generation, { type: "uncertain", requestId: pending.input.clientRequestId }); }
   }
@@ -372,6 +378,12 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
     });
   }
 
+  function closeTaskOutcome() {
+    setTaskSource(null);
+    const trigger = taskTriggerRef.current;
+    requestAnimationFrame(() => { if (trigger?.isConnected) trigger.focus(); else feedRef.current?.focus(); });
+  }
+
   const members = audience?.members ?? [];
   const audienceReady = audience !== null && state.audienceEpoch !== null && audience.audienceEpoch === state.audienceEpoch;
   const audienceNeedsReview = state.audienceEpoch !== null && (!audienceReady || state.reviewedAudienceEpoch !== state.audienceEpoch);
@@ -393,14 +405,15 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
     <div aria-label="Message reading area" role="region" tabIndex={0} className={styles.feedScroller} onScroll={() => rememberScroll(scope)} ref={feedRef}><ol aria-label="Conversation history" className={styles.feed}>
       {hasOlder ? <li className={styles.olderHistory}><button disabled={loadingOlder} onClick={() => void loadOlder()} type="button">{loadingOlder ? "Loading earlier messages…" : "Load earlier messages"}</button></li> : null}
       {state.messages.length === 0 && state.pending.length === 0 ? <li className={styles.emptyHistory}>No messages yet. Start with the decision or question the Project needs.</li> : null}
-      {state.messages.map((message) => <LiveMessage actorId={actorId} editing={editing} key={message.id} members={members} message={message} taskCreated={Boolean(createdTasks[message.id])} onCreateTask={audienceReady && !audienceNeedsReview && !sendsOff && scope.lifecycle === "active" ? () => setTaskSource({ sourceProjectId: project.id, conversationId: scope.conversationId, messageId: message.id, expectedRevision: message.revision, expectedAudienceEpoch: state.audienceEpoch! }) : undefined} onCancelEdit={() => setEditing(null)} onDelete={() => void mutate("tombstone", message)} onEdit={(body) => void mutate("edit", message, body)} onStartEdit={() => message.body && setEditing({ id: message.id, body: message.body, revision: message.revision })} setEditing={setEditing} />)}
+      {state.messages.map((message) => <LiveMessage actorId={actorId} editing={editing} key={message.id} members={members} message={message} taskCreated={Boolean(createdTasks[message.id])} onCreateTask={audienceReady && !audienceNeedsReview && !sendsOff && scope.lifecycle === "active" ? () => { taskTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setTaskSource({ sourceProjectId: project.id, conversationId: scope.conversationId, messageId: message.id, expectedRevision: message.revision, expectedAudienceEpoch: state.audienceEpoch! }); } : undefined} onCancelEdit={() => setEditing(null)} onDelete={() => void mutate("tombstone", message)} onEdit={(body) => void mutate("edit", message, body)} onStartEdit={() => message.body && setEditing({ id: message.id, body: message.body, revision: message.revision })} setEditing={setEditing} />)}
       {state.pending.map((pending) => <li className={styles.pendingMessage} key={pending.input.clientRequestId}><strong>You</strong><p>{pending.input.body}</p><span>{pending.state === "pending" ? "Sending…" : pending.state === "uncertain" ? "Checking whether this sent" : `Not sent · ${pending.error ? failureCopy[pending.error] : "try again"}`}</span>{pending.state !== "pending" ? <button onClick={() => void resolveSend(pending)} type="button">Check receipt, then retry</button> : null}</li>)}
+      {state.recoveredDrafts.map((draft) => <li className={styles.pendingMessage} key={`recovered:${draft.requestId}`}><strong>Earlier message was not sent</strong><p>{draft.body}</p><span>{state.draft ? "Your current draft is kept. Send or save it before restoring this text." : "Restore this text to review it with the current audience."}</span><button disabled={state.draft !== ""} onClick={() => dispatch({ type: "restore_recovered", requestId: draft.requestId })} type="button">Restore draft</button><button onClick={() => dispatch({ type: "discard_recovered", requestId: draft.requestId })} type="button">Discard earlier draft</button></li>)}
     </ol></div>
     <section aria-label="Message composer" className={styles.composer}>{state.status === "offline" ? <p>Offline. Your draft stays here; nothing will send automatically.</p> : scope.lifecycle === "archived" || sendsOff ? <p>{scope.lifecycle === "archived" ? "This conversation is read only." : "Sending is currently turned off."}</p> : <>
       <textarea aria-label={`Message ${project.name}`} maxLength={CONVERSATION_LIMITS.bodyCharacters} onChange={(event) => updateDraft(event.target.value)} onKeyDown={(event) => { const mobileReturn = window.matchMedia("(max-width: 760px), (pointer: coarse)").matches; if (shouldSendComposerKey({ key: event.key, shiftKey: event.shiftKey, composing: event.nativeEvent.isComposing, mobileReturn })) { event.preventDefault(); void send(); } }} placeholder={`Message ${project.name}`} rows={3} value={state.draft} />
       <div><span data-invalid={state.draft.length > 0 && (!bodyValid || bodyBytes > CONVERSATION_LIMITS.bodyBytes) || undefined}>{Array.from(state.draft).length.toLocaleString()} / {CONVERSATION_LIMITS.bodyCharacters.toLocaleString()}</span><button disabled={!bodyValid || bodyBytes > CONVERSATION_LIMITS.bodyBytes || audienceNeedsReview} onClick={() => void send()} type="button">Send</button></div>
     </>}</section>
-    {taskSource ? <TaskOutcomeForm open actorId={actorId} fixture={Boolean(fixtureActor)} source={taskSource} projects={projects} onClose={() => setTaskSource(null)} loadDestination={(destinationId, signal) => apiResult(apiUrl("task-destination", destinationId), fixtureActor, { signal })} submit={submitTask} onCreated={(result) => { if (result.taskAvailable !== false) setCreatedTasks((current) => ({ ...current, [taskSource.messageId]: result.taskId })); }} /> : null}
+    {taskSource ? <TaskOutcomeForm open actorId={actorId} fixture={Boolean(fixtureActor)} source={taskSource} projects={projects} onClose={closeTaskOutcome} loadDestination={(destinationId, signal) => apiResult(apiUrl("task-destination", destinationId), fixtureActor, { signal })} submit={submitTask} onCreated={(result) => { if (result.taskAvailable !== false) setCreatedTasks((current) => ({ ...current, [taskSource.messageId]: result.taskId })); }} /> : null}
   </main>;
 }
 

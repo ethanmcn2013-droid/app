@@ -24,6 +24,20 @@ test("a delayed receipt or earlier replay cannot resurrect a tombstone", () => {
   state = reduce(state, { type: "delta", generation: 0, delta: { audienceEpoch: 1, throughChangeSeq: 1, hasMore: false, messages: [{ ...deleted, revision: 1, body: input.body, deletedAt: null }] } });
   assert.deepEqual(state.messages, [deleted]); assert.equal(state.cursor, 3);
 });
+
+test("a delayed initializing page preserves newer tombstones, cursor and audience while adding older history", () => {
+  const deleted: MessageRecord = { id: "deleted", authorId: "alice", rootId: null, createSeq: 2, revision: 2, body: null, createdAt: 2, editedAt: null, deletedAt: 4 };
+  let state = reduce(ready(), { type: "delta", generation: 0, delta: { audienceEpoch: 2, throughChangeSeq: 4, hasMore: false, messages: [deleted] } });
+  const older: MessageRecord = { ...deleted, id: "older", createSeq: 1, revision: 1, body: "Earlier history", deletedAt: null };
+  state = reduce(state, { type: "page", generation: 0, initialize: true, page: { audienceEpoch: 1, throughChangeSeq: 2, hasOlder: false, beforeCreateSeq: 1, messages: [older, { ...deleted, revision: 1, body: "Removed text", deletedAt: null }] } });
+  assert.equal(state.cursor, 4); assert.equal(state.audienceEpoch, 2);
+  assert.deepEqual(state.messages, [older, deleted]);
+  // A deliberate server resync gets a fresh generation; its baseline can be lower.
+  state = reduce(state, { type: "reset", actorId: "alice", scopeKey: "resync", generation: 1 });
+  state = reduce(state, { type: "page", generation: 1, initialize: true, page: { audienceEpoch: 1, throughChangeSeq: 1, hasOlder: false, beforeCreateSeq: 1, messages: [older] } });
+  assert.equal(state.cursor, 1); assert.deepEqual(state.messages, [older]);
+  assert.equal(reduce(state, { type: "delta", generation: 0, delta: { audienceEpoch: 3, throughChangeSeq: 9, hasMore: false, messages: [deleted] } }), state);
+});
 test("revocation clears history, drafts and queued sends; stale responses cannot refill the screen", () => {
   let state = reduce(ready(), { type: "submit", input });
   state = reduce(state, { type: "draft", value: "Private unsent text" });
@@ -48,6 +62,36 @@ test("an absent old-audience request restores the exact body once", () => {
   assert.deepEqual(state.pending, []);
   assert.equal(state.error, "audience_changed");
   assert.equal(reduce(state, { type: "restore_absent", generation: 0, requestId: input.clientRequestId }), state);
+});
+
+test("an absent older send keeps the occupied composer and a separately recoverable earlier draft", () => {
+  let state = reduce(ready(), { type: "submit", input });
+  state = reduce(state, { type: "uncertain", generation: 0, requestId: input.clientRequestId });
+  state = reduce(state, { type: "draft", value: "Newer composer text" });
+  state = reduce(state, { type: "restore_absent", generation: 0, requestId: input.clientRequestId });
+  assert.equal(state.draft, "Newer composer text"); assert.deepEqual(state.pending, []);
+  assert.deepEqual(state.recoveredDrafts, [{ requestId: input.clientRequestId, body: input.body }]);
+  assert.equal(reduce(state, { type: "restore_recovered", requestId: input.clientRequestId }), state);
+  state = reduce(state, { type: "draft", value: "" });
+  state = reduce(state, { type: "restore_recovered", requestId: input.clientRequestId });
+  assert.equal(state.draft, input.body); assert.deepEqual(state.recoveredDrafts, []); assert.deepEqual(state.pending, []);
+});
+
+test("navigation restores outgoing work as uncertain without sending and revocation clears recovered text", () => {
+  let state = reduce(ready(), { type: "resume_outgoing", generation: 0, pending: [{ input, state: "pending" }], recoveredDrafts: [{ requestId: "older", body: "Retained text" }] });
+  assert.equal(state.pending[0].state, "uncertain"); assert.equal(state.recoveredDrafts.length, 1);
+  state = reduce(state, { type: "refused", generation: 0, failure: { ok: false, code: "unavailable" } });
+  assert.deepEqual(state.pending, []); assert.deepEqual(state.recoveredDrafts, []);
+  assert.equal(reduce(state, { type: "resume_outgoing", generation: 0, pending: [{ input, state: "pending" }], recoveredDrafts: [] }), state);
+});
+
+test("restored draft audience consent remains tied to the previously reviewed epoch", () => {
+  let state = emptyConversationState("alice", "project-a:room-a");
+  state = reduce(state, { type: "resume_outgoing", generation: 0, pending: [], recoveredDrafts: [], reviewedAudienceEpoch: 1 });
+  state = reduce(state, { type: "draft", value: "Draft written for the old audience" });
+  state = reduce(state, { type: "page", generation: 0, initialize: true, page: { audienceEpoch: 2, throughChangeSeq: 2, hasOlder: false, beforeCreateSeq: null, messages: [] } });
+  assert.equal(state.reviewedAudienceEpoch, 1); assert.equal(state.audienceEpoch, 2);
+  assert.equal(reduce(state, { type: "submit", input: { ...input, expectedAudienceEpoch: 2 } }), state);
 });
 test("older message pages merge without moving the live delta cursor or dropping requested history", () => {
   const recent = ready();
