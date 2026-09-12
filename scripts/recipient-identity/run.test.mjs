@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createRequire } from "node:module";
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -7,8 +8,13 @@ import {
   buildChildEnvironment,
   buildReceipt,
   LOCAL_DATABASE_AUTH_SENTINEL,
+  RECIPIENT_IDENTITY_PROOF_MARKER,
   resetRunOutput,
 } from "./run.mjs";
+
+const require = createRequire(import.meta.url);
+const { NextRequest } = require("next/server");
+const { getRelativeURL } = require("next/dist/shared/lib/router/utils/relativize-url");
 
 test("run reset invalidates stale receipt and browser output", () => {
   const allowedRoot = path.resolve("experience", "output", "recipient-identity");
@@ -34,11 +40,13 @@ test("child process receives no arbitrary repository or provider credentials", (
     CLERK_SECRET_KEY: declaredSecret,
     SIGNAL_RECIPIENT_CLERK_INSTANCE: "declared.clerk.accounts.dev",
     SIGNAL_RECIPIENT_CLERK_SECRET_INSTANCE: "declared.clerk.accounts.dev",
+    SIGNAL_RECIPIENT_IDENTITY_PROOF: "dedicated-marker-must-not-cross",
+    SIGNAL_RECIPIENT_PROOF_ORIGIN: "https://dedicated.example.test/path",
   }, {
     creatorEmail: "creator+clerk_test@example.test",
     recipientEmail: "recipient+clerk_test@example.test",
     port: 4389,
-    baseURL: "http://127.0.0.1:4389",
+    baseURL: "http://localhost:4389",
     sourceRevision: "0000000000000000000000000000000000000000",
   }, {
     PATH: "safe-path",
@@ -49,6 +57,10 @@ test("child process receives no arbitrary repository or provider credentials", (
     NOTES_AUTH_TOKEN: "must-not-cross",
     TIMELINE_AUTH_TOKEN: "must-not-cross",
     SIGNAL_AUTH_TOKEN: "must-not-cross",
+    SIGNAL_RECIPIENT_IDENTITY_PROOF: "caller-marker-must-not-cross",
+    SIGNAL_RECIPIENT_PROOF_ORIGIN: "https://caller.example.test/path",
+    SIGNAL_RECIPIENT_PORT: "9999",
+    NEXT_PUBLIC_SITE_URL: "https://caller.example.test",
   });
   assert.equal(child.PATH, "safe-path");
   assert.equal(child.CLERK_SECRET_KEY, declaredSecret);
@@ -61,6 +73,23 @@ test("child process receives no arbitrary repository or provider credentials", (
   assert.equal(child.NOTES_AUTH_TOKEN, undefined);
   assert.equal(child.TIMELINE_AUTH_TOKEN, undefined);
   assert.equal(child.SIGNAL_AUTH_TOKEN, undefined);
+  assert.equal(child.SIGNAL_RECIPIENT_IDENTITY_PROOF, RECIPIENT_IDENTITY_PROOF_MARKER);
+  assert.equal(child.SIGNAL_RECIPIENT_PROOF_ORIGIN, "http://localhost:4389");
+  assert.equal(child.SIGNAL_RECIPIENT_PORT, "4389");
+  assert.equal(child.NEXT_PUBLIC_SITE_URL, "http://localhost:4389");
+});
+
+test("localhost keeps Clerk's absolute continuation rewrite internal to Next", () => {
+  const normalized = new NextRequest("http://127.0.0.1:4389/sign-in").url;
+  assert.equal(normalized, "http://localhost:4389/sign-in");
+  assert.match(
+    getRelativeURL(normalized, "http://127.0.0.1:4389/sign-in"),
+    /^http:/,
+  );
+  assert.equal(
+    getRelativeURL(normalized, "http://localhost:4389/sign-in"),
+    "/sign-in",
+  );
 });
 
 test("failed preflight receipt cannot claim an unvalidated deployment guard", () => {

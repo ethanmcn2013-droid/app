@@ -3,7 +3,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { defineConfig, devices } from "@playwright/test";
 
 const port = Number(process.env.SIGNAL_RECIPIENT_PORT ?? "4389");
-const baseURL = `http://127.0.0.1:${port}`;
+const proofHostname = "localhost";
+const baseURL = `http://${proofHostname}:${port}`;
 const sourceRevision = process.env.SIGNAL_RECIPIENT_SOURCE_REVISION ?? "0000000000000000000000000000000000000000";
 if (!/^[a-f0-9]{40}$/.test(sourceRevision)) throw new Error("Recipient source revision must be a full commit SHA.");
 function localDatabaseUrl(name: string): string {
@@ -33,6 +34,9 @@ const serverEnvironment = Object.fromEntries(
     TIMELINE_DATABASE_URL: process.env.TIMELINE_DATABASE_URL,
     SIGNAL_DATABASE_URL: process.env.SIGNAL_DATABASE_URL,
     ENTITLEMENTS_DATABASE_URL: process.env.ENTITLEMENTS_DATABASE_URL,
+    SIGNAL_RECIPIENT_IDENTITY_PROOF: process.env.SIGNAL_RECIPIENT_IDENTITY_PROOF,
+    SIGNAL_RECIPIENT_PROOF_ORIGIN: process.env.SIGNAL_RECIPIENT_PROOF_ORIGIN,
+    SIGNAL_RECIPIENT_PORT: process.env.SIGNAL_RECIPIENT_PORT,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
     SIGNAL_ACCESS_MODE: "production",
     NEXT_PUBLIC_SIGNAL_ACCESS_MODE: "production",
@@ -76,7 +80,7 @@ export default defineConfig({
       `node scripts/db/timeline-migrate.mjs migrate --database-url=${timelineDatabaseUrl} --environment=test --release-sha=${sourceRevision}`,
       `node scripts/db/signal-migrate.mjs migrate --database-url=${signalDatabaseUrl} --environment=test --release-sha=${sourceRevision} --create`,
       "corepack pnpm exec next build",
-      `corepack pnpm exec next start -H 127.0.0.1 -p ${port}`,
+      `corepack pnpm exec next start -H ${proofHostname} -p ${port}`,
     ].join(" && "),
     cwd: process.cwd(),
     url: `${baseURL}/sign-in`,

@@ -175,7 +175,7 @@ export function validateRecipientIdentityEnv(env, options = {}) {
     recipientEmail,
     clerkInstance: parsed.frontendApi,
     port,
-    baseURL: `http://127.0.0.1:${port}`,
+    baseURL: `http://localhost:${port}`,
   });
 }
 

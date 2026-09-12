@@ -82,7 +82,7 @@
     "test:notes-recovery:browser": "node experience/notes-recovery-context/run.mjs browser",
     "test:module-lifecycle": "node --import tsx --import ./src/test/register-server-only.mjs --test --test-concurrency=1 src/server/notes-extract-identity.test.ts src/modules/signal/lib/planning-periods/scope.test.ts src/modules/timeline/server/timeline-gdpr.test.ts src/modules/timeline/server/sync/sync-erasure-regression.test.ts",
     "test:recipient-golden": "pnpm test:floor-theme && pnpm test:floor-calendar && node --test --test-concurrency=1 experience/recipient-project-work/archive.test.cjs experience/recipient-project-work/room.test.cjs experience/recipient-project-work/realtime.test.cjs && node experience/recipient-project-work/golden.cjs",
-    "test:recipient-identity:guard": "node --test scripts/recipient-identity/preflight.test.mjs scripts/recipient-identity/run.test.mjs",
+    "test:recipient-identity:guard": "node --import tsx --test scripts/recipient-identity/preflight.test.mjs scripts/recipient-identity/run.test.mjs src/lib/auth/recipient-proof-authorized-parties.test.ts",
     "test:recipient-identity:preflight": "node scripts/recipient-identity/preflight.mjs",
     "test:recipient-identity": "node scripts/recipient-identity/run.mjs",
     "test:recipient-context:browser": "node experience/recipient-project-work/realtime-react.mjs && node experience/recipient-project-work/route-browser.mjs --capture && node experience/recipient-project-work/floor-theme-browser.mjs && node experience/recipient-project-work/floor-calendar-browser.mjs && pnpm test:wedding-date-readback:browser",

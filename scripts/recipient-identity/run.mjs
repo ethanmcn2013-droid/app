@@ -34,6 +34,7 @@ const SAFE_OS_KEYS = [
 // is created inside the isolated child boundary; caller-supplied database
 // credentials remain forbidden by preflight and never cross into the child.
 export const LOCAL_DATABASE_AUTH_SENTINEL = "recipient-identity-local-file-sentinel";
+export const RECIPIENT_IDENTITY_PROOF_MARKER = "local-clerk-recipient-proof-v1";
 
 const REQUIRED_STAGES = [
   "testingTokenIssued", "twoSessionsIssued", "signedOutInviteShown", "wrongAccountRefused",
@@ -60,11 +61,11 @@ function git(...args) {
   return run("git", args, { capture: true }).stdout.trim();
 }
 
-async function assertPortFree(port) {
+async function assertPortFree(port, hostname) {
   await new Promise((resolve, reject) => {
     const server = createServer();
     server.once("error", () => reject(new Error(`Loopback port ${port} is already in use.`)));
-    server.listen(port, "127.0.0.1", () => server.close(resolve));
+    server.listen(port, hostname, () => server.close(resolve));
   });
 }
 
@@ -150,6 +151,8 @@ export function buildChildEnvironment(merged, config, osEnvironment = process.en
     SIGNAL_RECIPIENT_RECIPIENT_EMAIL: config.recipientEmail,
     SIGNAL_RECIPIENT_EVIDENCE_PATH: evidencePath,
     SIGNAL_RECIPIENT_SOURCE_REVISION: config.sourceRevision,
+    SIGNAL_RECIPIENT_IDENTITY_PROOF: RECIPIENT_IDENTITY_PROOF_MARKER,
+    SIGNAL_RECIPIENT_PROOF_ORIGIN: config.baseURL,
     TASKS_DATABASE_URL: localDatabaseUrl("tasks"),
     TASKS_AUTH_TOKEN: LOCAL_DATABASE_AUTH_SENTINEL,
     NOTES_DATABASE_URL: localDatabaseUrl("notes"),
@@ -198,7 +201,7 @@ async function main() {
     sourceTree = git("rev-parse", "HEAD^{tree}");
     vercelBlob = git("rev-parse", "HEAD:vercel.json");
     deploymentGuardValidated = true;
-    await assertPortFree(config.port);
+    await assertPortFree(config.port, new URL(config.baseURL).hostname);
     mkdirSync(runtimeRoot, { recursive: true });
 
     const pnpmCli = process.env.npm_execpath;

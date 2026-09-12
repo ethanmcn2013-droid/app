@@ -8,6 +8,7 @@ import {
   isBareChromePath,
 } from "@/lib/bare-artifact-path";
 import { APP_ORIGIN, STUDIO_ORIGIN } from "@/lib/product-urls";
+import { clerkAuthorizedParties } from "@/lib/auth/recipient-proof-authorized-parties";
 
 /**
  * Next.js 16 renamed middleware → proxy. Same shape, same matcher
@@ -231,13 +232,10 @@ const productionProxy = clerkMiddleware(async (auth, req) => {
   // visitor, so this cannot leak an unauthenticated render.
   return bareChromeContinue(req);
 }, {
-  // Clerk's dashboard allowlist mirrors these two production origins.
-  // app.signalstudio.ie is canonical; tasks.signalstudio.ie remains a
-  // temporary compatibility/service host while its app URLs redirect.
-  authorizedParties: [
-    "https://app.signalstudio.ie",
-    "https://tasks.signalstudio.ie",
-  ],
+  // Clerk's dashboard allowlist mirrors the two production origins retained
+  // by the helper. The controlled, non-Vercel recipient proof may append its
+  // validated localhost origin; every deployed runtime keeps this pair exact.
+  authorizedParties: clerkAuthorizedParties(process.env),
 });
 
 /**

@@ -31,7 +31,7 @@ const noFiles = () => false;
 test("accepts one declared development instance and two controlled local-only accounts", () => {
   const result = validateRecipientIdentityEnv(valid(), { cwd: "/proof", exists: noFiles });
   assert.equal(result.clerkInstance, instance);
-  assert.equal(result.baseURL, "http://127.0.0.1:4389");
+  assert.equal(result.baseURL, "http://localhost:4389");
   assert.deepEqual(configurationReport(result), {
     ok: true,
     scope: "configuration only; provider not contacted",

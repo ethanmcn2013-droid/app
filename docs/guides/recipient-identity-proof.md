@@ -49,6 +49,8 @@ The runner also requires the exact recipient-proof branch, both pinned source an
 
 The production-mode boot contract requires a Tasks database auth-token value. For this local file target, the runner creates a fixed public sentinel inside the child environment; libSQL does not use it to authenticate the file database. Preflight still refuses every caller-supplied database auth token, and no remote database URL is allowed.
 
+The child also fixes one canonical `http://localhost:<port>` origin. This keeps Clerk's absolute continuation rewrite internal to Next and adds that origin to Clerk's two production authorized parties only for the marked, non-Vercel development proof. Malformed proof origins fail before the app starts; ordinary and Vercel runtimes retain the exact production list.
+
 ## What the journey proves
 
 The test uses Clerk's supported Playwright ticket helper to establish real development-instance sessions for the two controlled accounts. Ticket sign-in bypasses credential entry, verification, and MFA. The test therefore checks the signed-out invitation and its exact sign-in redirect intent, but does not claim that sign-in form interaction was exercised.
