@@ -23,9 +23,8 @@ import type { Task } from "@/lib/data";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
 import { useDomain, useColumnConfig } from "@/lib/domain-context";
 import { isTaskDone } from "@/lib/board-columns";
-import { getTaskConversationAction } from "@/server/actions/conversation";
-import { openTaskDiscussionAction } from "@/server/actions/comments";
-import type { TaskDiscussionSnapshot } from "@/lib/conversations/task-discussion-contracts";
+import { loadTaskConversationAction } from "@/server/actions/task-conversation";
+import type { TaskConversationSurface } from "@/server/conversations/task-history-loader";
 
 import { TaskIdChip, EditedStamp } from "@/components/app/detail-panel/panel-header";
 import { DescriptionEditor } from "@/components/app/detail-panel/description-editor";
@@ -37,6 +36,7 @@ import { hasOpenLayer } from "@/components/primitives/open-layer";
 import { MetadataRail } from "./metadata-rail";
 import { buildTaskDetailActions } from "./task-detail-actions";
 import { TipCard } from "@/components/app/tip-card";
+import { ExistingTaskHistory } from "./existing-task-history";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -53,8 +53,7 @@ export type TaskDetailProps = {
 // ─── Conversation logic (moved from task-detail-panel.tsx) ───────────────────
 
 function useConversation(task: Task) {
-  const [discussion, setDiscussion] = useState<TaskDiscussionSnapshot | null>(null);
-  const [activities, setActivities] = useState<import("@/lib/data").Activity[]>([]);
+  const [surface, setSurface] = useState<TaskConversationSurface | null>(null);
   const [loading, setLoading] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
 
@@ -69,22 +68,17 @@ function useConversation(task: Task) {
         setTimeout(() => reject(new Error("timeout")), 5000),
       );
 
-      Promise.race([Promise.all([
-        openTaskDiscussionAction(taskId),
-        getTaskConversationAction(taskId),
-      ]), timeout])
-        .then(([result, rows]) => {
+      Promise.race([loadTaskConversationAction(taskId), timeout])
+        .then((result) => {
           if (signal.ignored) return;
           if (!result.ok) throw new Error(result.code);
-          setDiscussion(result.value);
-          setActivities(rows.filter((row) => row.kind === "activity").map((row) => row.activity));
+          setSurface(result.value);
         })
         .catch((err) => {
           if (!signal.ignored) {
             const isTimeout = err instanceof Error && err.message === "timeout";
             console.warn("conversation: fetch failed", err);
-            setDiscussion(null);
-            setActivities([]);
+            setSurface(null);
             if (isTimeout) setTimedOut(true);
           }
         })
@@ -107,7 +101,38 @@ function useConversation(task: Task) {
     };
   }, [task.id, refreshKey, fetchConversation]);
 
-  return { discussion, activities, loading, timedOut, retry: () => {
+  // Compatibility history is read-only, but authorization is still live.
+  // Re-read only this mode so a removed Project member does not retain a
+  // mounted copy. Canonical Discussion owns its own epoch-aware poller.
+  useEffect(() => {
+    if (surface?.mode !== "existing_history") return;
+    const signal = { ignored: false };
+    let inFlight = false;
+    const refresh = async () => {
+      if (inFlight) return;
+      inFlight = true;
+      try {
+        const result = await loadTaskConversationAction(task.id);
+        if (signal.ignored) return;
+        if (result.ok) setSurface(result.value);
+        else if (result.code === "unavailable" || result.code === "unauthenticated") {
+          setSurface(null);
+        }
+      } catch {
+        // Keep the authorized snapshot across a transient read failure. The
+        // next tick rechecks access; denials above clear it immediately.
+      } finally {
+        inFlight = false;
+      }
+    };
+    const timer = window.setInterval(() => void refresh(), 2_500);
+    return () => {
+      signal.ignored = true;
+      window.clearInterval(timer);
+    };
+  }, [surface?.mode, task.id]);
+
+  return { surface, loading, timedOut, retry: () => {
     const signal = { ignored: false };
     fetchConversation(task.id, signal);
   }};
@@ -437,7 +462,7 @@ function PrimaryContent({
   conversation: ReturnType<typeof useConversation>;
   showTip: boolean;
 }) {
-  const { discussion, activities, loading, timedOut, retry } = conversation;
+  const { surface, loading, timedOut, retry } = conversation;
   return (
     <div className="min-w-0">
       {/* Description */}
@@ -463,13 +488,14 @@ function PrimaryContent({
           <ConversationSkeleton />
         ) : timedOut ? (
           <ConversationTimeout onRetry={retry} />
-        ) : discussion ? (
+        ) : surface?.mode === "discussion" ? (
           <ConversationFeed
             key={task.id}
             taskId={task.id}
-            initialDiscussion={discussion}
-            initialActivities={activities}
+            initialDiscussion={surface.discussion}
           />
+        ) : surface?.mode === "existing_history" ? (
+          <ExistingTaskHistory history={surface.history} />
         ) : (
           <div className="rounded-lg bg-bg-sunken px-3 py-2 text-[12px] text-ink-quiet">
             Discussion is unavailable right now.
