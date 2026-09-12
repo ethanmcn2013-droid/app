@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import styles from "./prototype.module.css";
 
 export type DeliveryState = "sent" | "pending" | "failed" | "uncertain";
@@ -36,24 +36,34 @@ export function AudienceHeader({
   title,
   description,
   status,
+  relatedOpen,
+  onToggleRelated,
 }: {
   title: string;
   description: string;
   status: "active" | "pending" | "blocked" | "archived" | "unavailable";
+  relatedOpen: boolean;
+  onToggleRelated: () => void;
 }) {
   const label = status === "active" ? "Can send" : status.replace("_", " ");
   return (
     <header className={styles.audienceHeader}>
-      <div>
-        <div className={styles.titleLine}>
-          <h1>{title}</h1>
-          <span className={styles.audiencePill} data-status={status}>{label}</span>
+      <div className={styles.headerMain}>
+        <div>
+          <div className={styles.titleLine}>
+            <h1>{title}</h1>
+            <span className={styles.audiencePill} data-status={status}>{label}</span>
+          </div>
+          <p>{description}</p>
         </div>
-        <p>{description}</p>
+        <button aria-label="Conversation details" className={styles.iconButton} type="button">
+          <Icon><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></Icon>
+        </button>
       </div>
-      <button aria-label="Conversation details" className={styles.iconButton} type="button">
-        <Icon><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></Icon>
-      </button>
+      <nav aria-label="Conversation views" className={styles.headerTabs}>
+        <button aria-current="page" type="button">Conversation</button>
+        <button aria-pressed={relatedOpen} onClick={onToggleRelated} type="button">Related work <span>2</span></button>
+      </nav>
     </header>
   );
 }
@@ -79,12 +89,13 @@ export function ConversationList({
       </div>
       <p className={styles.projectLabel}>{projectName}</p>
       {items.map((item) => (
-        <button
+        <Fragment key={item.id}>
+          <p className={styles.groupLabel}>{item.kind === "project" ? "Project" : item.kind === "dm" ? "Private" : "Task discussion"}</p>
+          <button
           aria-current={activeId === item.id ? "page" : undefined}
           aria-label={`${item.title}, ${item.detail}`}
           className={styles.conversationRow}
           data-active={activeId === item.id || undefined}
-          key={item.id}
           onClick={() => onSelect(item.id)}
           type="button"
         >
@@ -94,13 +105,28 @@ export function ConversationList({
             <small>{item.detail}</small>
           </span>
           {item.unread ? <span aria-label={`${item.unread} unread`} className={styles.unread}>{item.unread}</span> : null}
-        </button>
+          </button>
+        </Fragment>
       ))}
       <div className={styles.quietNotice}>
         <Icon size={16}><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></Icon>
         <span><strong>Quiet until 12:30</strong><small>Directed messages stay in your inbox.</small></span>
       </div>
     </nav>
+  );
+}
+
+export function RelatedWorkPanel({ onClose, onOpenTask, onOpenNote }: { onClose: () => void; onOpenTask: () => void; onOpenNote: () => void }) {
+  return (
+    <aside className={styles.relatedPanel} id="prototype-related-work">
+      <div className={styles.relatedHeading}>
+        <div><h2>Related work</h2><p>Synthetic links from this conversation</p></div>
+        <button aria-label="Hide related work" className={styles.iconButton} onClick={onClose} type="button"><Icon><path d="m6 6 12 12M18 6 6 18" /></Icon></button>
+      </div>
+      <button className={styles.relatedItem} onClick={onOpenTask} type="button"><span className={styles.relatedIcon}><Icon size={16}><path d="M5 6h14M5 12h14M5 18h9" /></Icon></span><span><strong>Confirm launch copy</strong><small>Task · due 18 September</small></span></button>
+      <button className={styles.relatedItem} onClick={onOpenNote} type="button"><span className={styles.relatedIcon}><Icon size={16}><path d="M6 3h12v18H6zM9 8h6M9 12h6" /></Icon></span><span><strong>Launch decision</strong><small>Private note preview</small></span></button>
+      <p className={styles.relatedTruth}>Preview only. Nothing here is saved or shared.</p>
+    </aside>
   );
 }
 

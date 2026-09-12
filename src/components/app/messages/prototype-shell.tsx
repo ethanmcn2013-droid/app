@@ -6,6 +6,7 @@ import {
   ConversationList,
   Icon,
   MessageFeed,
+  RelatedWorkPanel,
   ThreadPanel,
   WorkPreview,
   type ConversationSummary,
@@ -76,6 +77,7 @@ export function ProjectConversationPrototype() {
   const [preview, setPreview] = useState<"task" | "note" | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [view, setView] = useState<"full" | "context">("full");
+  const [relatedOpen, setRelatedOpen] = useState(true);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const workButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -162,10 +164,10 @@ export function ProjectConversationPrototype() {
         <button className={styles.viewSwitch} onClick={() => setView((current) => current === "full" ? "context" : "full")} type="button">{view === "full" ? "Context panel" : "Full view"}</button>
       </div>
 
-      <div className={styles.workspace} data-view={view}>
+      <div className={styles.workspace} data-related={relatedOpen || undefined} data-view={view}>
         <ConversationList activeId={effectiveId} items={fixture.conversations} onSelect={chooseConversation} projectName={fixture.name} />
         <main className={styles.main}>
-          <AudienceHeader {...copy} />
+          <AudienceHeader {...copy} onToggleRelated={() => setRelatedOpen((open) => !open)} relatedOpen={relatedOpen} />
           {copy.status === "unavailable" ? (
             <div className={styles.emptyState}><span>?</span><h2>This conversation isn’t available</h2><p>Return to Messages and choose another conversation. No other project has been substituted.</p><button onClick={() => setScenario("project")} type="button">Back to project messages</button></div>
           ) : (
@@ -202,6 +204,7 @@ export function ProjectConversationPrototype() {
             </>
           )}
         </main>
+        {relatedOpen ? <RelatedWorkPanel onClose={() => setRelatedOpen(false)} onOpenNote={() => setPreview("note")} onOpenTask={() => setPreview("task")} /> : null}
       </div>
       {replyingTo && !blocked ? <ThreadPanel draft={threadDrafts[replyingTo.id] ?? ""} onClose={() => setReplyingTo(null)} onDraftChange={(value) => setThreadDrafts((current) => ({ ...current, [replyingTo.id]: value }))} onSend={() => {
         const body = threadDrafts[replyingTo.id]?.trim();
