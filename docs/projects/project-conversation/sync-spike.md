@@ -1,10 +1,10 @@
 # PC-05 two-process synchronization experiment
 
-12 September 2026. Final tested code: `dd93297e`. Local synthetic EX-02 passes the stated local latency and retrieval checks. This is a feasibility result, not an authenticated product or deployed-performance claim. Independent architecture disposition is recorded in STATE.
+12 September 2026. Final tested code: `85963f762fd07861608554e8f8bbd67413c75829`. Local synthetic EX-02 passes the stated local latency and retrieval checks. A fresh Astra reviewer accepted the source and evidence. This is a feasibility result, not an authenticated product or deployed-performance claim.
 
 ## What actually ran
 
-`node scripts/conversations/sync-experiment.mjs C:/Users/ethan/Documents/Codex/2026-09-12/plea/work/conversation-sync-final` created one fresh synthetic file database from the supported 0014–0027 baseline plus the proposed isolated schema. It launched two real Node v22.23.2 child processes, each binding a different loopback port and opening its own connection to the same WAL file. Both processes exited after the test; the separate prototype preview remains available.
+`node scripts/conversations/sync-experiment.mjs C:/Users/ethan/Documents/Codex/2026-09-12/plea/work/conversation-sync-accepted` created one fresh synthetic file database from the supported 0014–0027 baseline plus the proposed isolated schema. It launched two real Node v22.23.2 child processes, each binding a different loopback port and opening its own connection to the same WAL file. Both processes exited after the test; the separate prototype preview remains available.
 
 Each profile creates distinct synthetic users with canonical membership rows, then sends ten distinct messages while readers independently poll across both instances. The 200-viewer profile is a stress profile, not a proposed audience-limit increase. Each message directs attention to at most 50 explicit mentions. The experiment checks actual attention-row counts against that intended fan-out. It retains first-observed timestamps independently of send acknowledgment so early readers are not lost from the measurement. All 2,600 expected message/viewer observations occurred, and final paginated histories contained every acknowledged source ID. Six post-removal probes across both instances returned only `unavailable`.
 
@@ -14,13 +14,13 @@ The HTTP identity header is an explicit fixture input, **not authentication**. T
 
 | Distinct viewers | Directed recipients/message | Send p95 | Other-client visibility p95 | Warm first-page p95 | Poll p95 | Observed/expected |
 |---:|---:|---:|---:|---:|---:|---:|
-| 10 | 10 | 29.22 ms | 977 ms | 25.21 ms | 18.63 ms | 100/100 |
-| 50 | 50 | 50.99 ms | 979 ms | 66.71 ms | 19.46 ms | 500/500 |
-| 200 | 50 | 58.25 ms | 991 ms | 305.09 ms | 49.34 ms | 2,000/2,000 |
+| 10 | 10 | 33.78 ms | 976 ms | 28.53 ms | 20.01 ms | 100/100 |
+| 50 | 50 | 45.94 ms | 990 ms | 68.25 ms | 20.17 ms | 500/500 |
+| 200 | 50 | 57.71 ms | 991 ms | 264.78 ms | 44.49 ms | 2,000/2,000 |
 
 Targets checked: send p95 ≤800 ms; other-client visibility p95 ≤1,500 ms; warm first-page p95 ≤1,000 ms. Visibility uses the persisted transaction timestamp, which is sampled before commit, so it also includes the committing transaction's remaining time. Local clocks share one host. Profile duration includes verification/pagination overhead; it is not a steady-state benchmark window. Warm first-page timings do not mean complete-history transfer time.
 
-Final run: 10:34:02.530–10:34:19.330 UTC. Runtime processes 23520 and 14756; now closed. 2,336 total history requests and 30 sends, six intentional authorization refusals, zero HTTP failures and zero send busy retries. Polled change pages carry `private, no-store, max-age=0`. Raw result is committed as [sync-result.json](evidence/sync-result.json).
+Final run: 10:44:59.834–10:45:17.030 UTC, exit 0. Runtime processes 17904 and 5132; now closed. 2,339 total history requests and 30 sends, six intentional authorization refusals, zero HTTP failures and zero send busy retries. Polled change pages carry `private, no-store, max-age=0`. Raw result is committed as [sync-result.json](evidence/sync-result.json). The harness now asserts every profile's `withinTargets` result, so a latency or delivery miss produces a nonzero exit instead of merely recording false. EX-01 ran concurrently in separate synthetic databases during this final host-local measurement.
 
 ## Demand and practical limits
 

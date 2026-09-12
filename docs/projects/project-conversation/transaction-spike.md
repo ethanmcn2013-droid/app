@@ -1,10 +1,10 @@
 # PC-04 local transaction and revocation spike
 
-12 September 2026 · Local synthetic evidence · Source branch `spike/project-conversation-transactions`
+12 September 2026 · Local synthetic evidence · Accepted integration code `85963f762fd07861608554e8f8bbd67413c75829`
 
 ## Disposition
 
-The bounded local-file EX-01 suite passes O01–O13: 14 assertions passed, zero failed, in 6,762.3768 ms. This is sufficient local evidence that the proposed source/change/attention/outbox/receipt ordering, audience invalidation and same-snapshot authorization can be implemented in one libSQL file database. It is not acceptance of a production schema or adapter. PC-03 remains the human gate before backend integration, and remote primary/replica evidence remains unavailable.
+The final integrated local-file EX-01 suite passes O01–O13: 17 tests passed, zero failed, exit 0, in 8,193.4299 ms. A fresh Astra reviewer accepted the frozen correction and inspected the final evidence without rerunning tests. This establishes bounded local feasibility of source/change/attention/outbox/receipt ordering, audience invalidation and same-snapshot authorization in one libSQL file database. It is not acceptance of a production schema or adapter. PC-03 remains the human gate before backend integration unless explicitly amended, and remote primary/replica evidence remains unavailable.
 
 The spike is isolated to `scripts/conversations/`; `proposed-schema.sql` is deliberately outside the active Drizzle migration ledger. It imports no ambient database module, reads no `.env`, uses no credentials, and performs no network calls. Every identity and record is synthetic.
 
@@ -13,11 +13,11 @@ The spike is isolated to `scripts/conversations/`; `proposed-schema.sql` is deli
 Command:
 
 ```powershell
-$env:PC04_WORK_DIR='C:\Users\ethan\Documents\Codex\2026-09-12\plea\work\transaction-spike'
+$env:PC04_WORK_DIR='C:\Users\ethan\Documents\Codex\2026-09-12\plea\work\transaction-spike-accepted'
 node --test scripts/conversations/transaction-spike.test.mjs
 ```
 
-Final evidence: `C:\Users\ethan\Documents\Codex\2026-09-12\plea\work\transaction-spike\run-2026-09-12T10-29-02.668Z-7180\evidence.json`. The disposable run directory contains 14 uniquely named file databases. This path is local scratch evidence and is not the sole durable evidence; the executable assertions and this record are committed.
+Final evidence: `C:\Users\ethan\Documents\Codex\2026-09-12\plea\work\transaction-spike-accepted\run-2026-09-12T10-44-59.459Z-22000\evidence.json`. The disposable run directory contains 18 uniquely named file databases. A durable JSON copy is committed as [transaction-result.json](evidence/transaction-result.json), alongside the executable tests and this record.
 
 | Setting | Observed value |
 |---|---|
@@ -47,10 +47,10 @@ Installed source inspection found that `@libsql/core` 0.17.3 maps transaction mo
 | O06 | Pass | Raw membership removal committed first. The second client refused send, read and receipt recovery, including the fast receipt path. |
 | O07 | Pass | Send committed first and returned one receipt. Removal then prevented the departed sender's later reads/recovery while the remaining member retained the committed source. |
 | O08 | Pass | Raw membership INSERT, role UPDATE, key UPDATE for a non-DM member, DELETE, account deletion, archive/restore, participant consent and DM state updates advanced matching epochs and wrote audience changes. Unrelated Project epochs stayed unchanged; stale send refused. Membership key mutation for a DM identity was rejected. |
-| O09 | Pass | Block/leave prevented sends while retained history remained readable. Membership loss denied the departed member and left the unaffected member's history readable. Rejoin reset both consents; one confirmation did not reactivate, two did. A third person remained unavailable. |
+| O09 | Pass | Block/leave prevented sends and confirmation, including after membership removal/rejoin. Both restrictive pair states survive churn. Normal rejoin resets both consents; one fresh confirmation does not reactivate, two do. Stale confirmation epochs and archived-room confirmation refuse. Membership loss denies departed history; unaffected entitled history remains readable. A third person remains unavailable. No owner-directed unblock operation is implemented in this spike. |
 | O10 | Pass | Create/edit/delete kept one source ID with revisions 1/2/3. Stale revision refused. Duplicate, cursor-0 and reverse replay converged on revision 3 tombstone. The change ledger has no body column, the canonical message body is NULL, and no old body appeared in the response. |
 | O11 | Pass | With foreign keys both OFF and ON, SQL guards rejected null/foreign tenants, missing/cross/reply roots, malformed/reversed/foreign DM pairs, participant identity mutation, third-member DM source/attention/outbox injection, bad revision change and bad receipt source. Explicit workspace cleanup removed all owned messaging rows with FK OFF. |
-| O12 | Pass | Directed attention and pending outbox existed immediately without a worker. Observing the root stream marked only the root event; the hidden reply remained unobserved. |
+| O12 | Pass | Directed attention and pending outbox exist without a worker. An unmentioned Project member receives no directed event. Observing the root stream marks only the root event; the hidden reply remains unobserved. |
 | O13 | Pass | The second client read one source before removal, then a new read transaction after removal returned only `unavailable` and no content. Authorization and content query ran in the same read snapshot. |
 
 Final O03 measurements:
@@ -60,12 +60,12 @@ Final O03 measurements:
 | Submissions | 10,000 |
 | Logical submission workers | 40 |
 | Maximum active transactions per client | 1 |
-| Total time | 3,410.404 ms |
-| Throughput | 2,932.20 submissions/s |
-| Latency p50 | 6.185 ms |
-| Latency p95 | 8.018 ms |
-| Latency p99 | 12.198 ms |
-| Maximum latency | 1,895.056 ms |
+| Total time | 3,667.183 ms |
+| Throughput | 2,726.89 submissions/s |
+| Latency p50 | 6.271 ms |
+| Latency p95 | 10.127 ms |
+| Latency p99 | 14.551 ms |
+| Maximum latency | 2,132.540 ms |
 | Write transaction attempts | 3 |
 | Explicit busy retries | 1 |
 | Committed source/change/attention/outbox/receipt | 1 / 1 / 1 / 1 / 1 |
@@ -85,7 +85,10 @@ Subsequent failed runs were retained as engineering evidence:
 | Schema correction run | 0 pass, 14 fail | Reserved alias `returning` caused setup syntax failure; renamed before further evidence. |
 | Bounded interactive full run | 14 assertions passed, process exit failure | Native access violation occurred during teardown after all assertions, consistent with detached interactive handles. |
 | First persistent-connection run | 13 pass, 1 fail | O03 duplicate transaction attempted `COMMIT` with a just-read statement in progress. The no-write duplicate branch now ends its snapshot with `ROLLBACK`. |
-| Final run | 14 pass, 0 fail | Exit 0; no skipped, cancelled or todo tests. |
+| Earlier worker run | 14 pass, 0 fail | Superseded by integrated attention and DM correction evidence. |
+| Directed-attention regression | New test failed before correction | Unmentioned Project member received one directed event; recipient filtering corrected. Integrated suite then passed 15 tests. |
+| DM correction red run | 0/3 O09 tests passed | Direct confirmation and membership churn could erase restrictive states; fresh-epoch/archive tests also introduced. |
+| Final integrated run | 17 pass, 0 fail | Exit 0; no skipped, cancelled or todo tests. Block/left preservation, fresh consent and directed-attention regressions pass. |
 
 Two review findings were also fixed before the first full suite: change rows initially duplicated message bodies, which could retain deleted text, and payload-derived source IDs collided for intentional same-body requests. The final ledger stores references only and joins current canonical state inside the authorized read snapshot; source/event IDs derive from conversation, actor and request ID while the separate payload hash detects conflicts.
 
@@ -97,4 +100,4 @@ Receipt recovery is an authorized read. A committed receipt may be recovered aft
 
 ## Evidence boundary
 
-This local result does not prove Turso primary forwarding, remote transaction timeouts, deployed replica freshness, cross-process or multi-region ordering, Clerk session-revocation timing, HTTP `no-store` behavior, Resend/provider acceptance, external delivery worker behavior, scheduler availability, production performance, or provider cost. No remote or provider test ran. Local WAL locking is not evidence of Turso primary consistency. EX-02 and a designated isolated remote test environment remain required before G2; no production or real-data authorization follows from this result.
+This suite does not prove Turso primary forwarding, remote transaction timeouts, deployed replica freshness, multi-region ordering, Clerk session-revocation timing, Resend/provider acceptance, external delivery worker behavior, production performance, or provider cost. The separate accepted [EX-02](sync-spike.md) proves bounded cross-process local visibility and fixture HTTP cache headers. No remote or provider test ran. Local WAL locking is not evidence of Turso primary consistency; the designated remote environment remains a deployability gate. No production or real-data authorization follows from these results.
