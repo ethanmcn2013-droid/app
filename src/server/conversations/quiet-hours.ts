@@ -19,7 +19,7 @@ type LocalClock = Readonly<{
 }>;
 
 const MINUTE_MS = 60_000;
-const HOUR_MS = 60 * MINUTE_MS;
+const MAX_SEARCH_MINUTES = 72 * 60;
 
 function localClock(formatter: Intl.DateTimeFormat, instantMs: number): LocalClock | null {
   try {
@@ -46,47 +46,6 @@ function quietAt(minute: number, startMinute: number, endMinute: number): boolea
   return startMinute < endMinute
     ? minute >= startMinute && minute < endMinute
     : minute >= startMinute || minute < endMinute;
-}
-
-function addLocalDays(clock: LocalClock, days: number): Omit<LocalClock, "minute"> {
-  const value = new Date(Date.UTC(clock.year, clock.month - 1, clock.day + days));
-  return { year: value.getUTCFullYear(), month: value.getUTCMonth() + 1, day: value.getUTCDate() };
-}
-
-function sameLocalMinute(left: LocalClock, right: LocalClock): boolean {
-  return left.year === right.year && left.month === right.month && left.day === right.day && left.minute === right.minute;
-}
-
-/**
- * Resolve every UTC instant representing one local wall-clock minute. Most
- * minutes have one result, a repeated DST minute has two, and a skipped minute
- * has none. Sampling offsets avoids assuming a fixed offset for the zone.
- */
-function wallClockInstants(formatter: Intl.DateTimeFormat, target: LocalClock): number[] {
-  const hour = Math.floor(target.minute / 60);
-  const minute = target.minute % 60;
-  const nominalUtc = Date.UTC(target.year, target.month - 1, target.day, hour, minute);
-  const offsets = new Set<number>();
-  for (let distance = -36; distance <= 36; distance += 3) {
-    const sample = nominalUtc + distance * HOUR_MS;
-    const local = localClock(formatter, sample);
-    if (!local) continue;
-    const localAsUtc = Date.UTC(
-      local.year,
-      local.month - 1,
-      local.day,
-      Math.floor(local.minute / 60),
-      local.minute % 60,
-    );
-    offsets.add(localAsUtc - sample);
-  }
-  return [...offsets]
-    .map((offset) => nominalUtc - offset)
-    .filter((candidate) => {
-      const local = localClock(formatter, candidate);
-      return local !== null && sameLocalMinute(local, target);
-    })
-    .sort((left, right) => left - right);
 }
 
 /**
@@ -133,16 +92,13 @@ export function resolveDeliveryEligibility(input: QuietHoursInput): DeliveryElig
     return { ok: true, eligible: true, nextEligibleAtMs: null };
   }
 
-  const endDayOffset = startMinute > endMinute && now.minute >= startMinute ? 1 : 0;
-  const endDate = addLocalDays(now, endDayOffset);
-  const target: LocalClock = { ...endDate, minute: endMinute };
-  const exact = wallClockInstants(formatter, target).find((candidate) => candidate > input.nowMs);
-  if (exact !== undefined) return { ok: true, eligible: false, nextEligibleAtMs: exact };
-
-  // A DST jump can skip the configured end minute. In that uncommon case,
-  // walk UTC minute boundaries until the local quiet predicate first clears.
+  // Walk absolute minute boundaries rather than jumping straight to the
+  // configured wall-clock end. A DST transition can itself exit the predicate
+  // before that end (for example when a repeated hour moves back before the
+  // quiet start), and the contract requires the first eligible instant.
   const firstBoundary = Math.floor(input.nowMs / MINUTE_MS) * MINUTE_MS + MINUTE_MS;
-  for (let candidate = firstBoundary; candidate <= input.nowMs + 72 * HOUR_MS; candidate += MINUTE_MS) {
+  for (let offset = 0; offset < MAX_SEARCH_MINUTES; offset++) {
+    const candidate = firstBoundary + offset * MINUTE_MS;
     const local = localClock(formatter, candidate);
     if (local && !quietAt(local.minute, startMinute, endMinute)) {
       return { ok: true, eligible: false, nextEligibleAtMs: candidate };

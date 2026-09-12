@@ -65,3 +65,28 @@ test("skipped and repeated Dublin end minutes resolve to the first future eligib
     ok: true, eligible: false, nextEligibleAtMs: at("2026-10-25T01:30:00.000Z"),
   });
 });
+
+test("a Dublin fallback that moves before the quiet start becomes eligible at the transition", () => {
+  assert.deepEqual(decide({
+    timeZone: "Europe/Dublin",
+    startMinute: minute(1, 30),
+    endMinute: minute(2, 30),
+    nowMs: at("2026-10-25T00:40:00.000Z"), // first local 01:40
+  }), {
+    ok: true,
+    eligible: false,
+    nextEligibleAtMs: at("2026-10-25T01:00:00.000Z"), // fallback to local 01:00
+  });
+
+  // The ordinary overnight schedule remains quiet across the same transition.
+  assert.deepEqual(decide({
+    timeZone: "Europe/Dublin",
+    startMinute: minute(22),
+    endMinute: minute(7),
+    nowMs: at("2026-10-25T00:40:00.000Z"),
+  }), {
+    ok: true,
+    eligible: false,
+    nextEligibleAtMs: at("2026-10-25T07:00:00.000Z"),
+  });
+});
