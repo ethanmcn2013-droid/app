@@ -101,15 +101,54 @@ function atomicJson(filePath, value) {
 }
 
 function readEvidence() {
+  let value = {};
   try {
-    const value = JSON.parse(readFileSync(evidencePath, "utf8"));
-    return Object.fromEntries(REQUIRED_STAGES.map((stage) => [stage, value?.stages?.[stage] === true]));
-  } catch {
-    return Object.fromEntries(REQUIRED_STAGES.map((stage) => [stage, false]));
-  }
+    value = JSON.parse(readFileSync(evidencePath, "utf8"));
+  } catch {}
+  return {
+    stages: Object.fromEntries(REQUIRED_STAGES.map((stage) => [stage, value?.stages?.[stage] === true])),
+    wrongAccountDiagnostic: sanitizeWrongAccountDiagnostic(value?.wrongAccountDiagnostic),
+  };
+}
+
+const ROUTE_CLASSES = new Set(["invite", "sign-in", "sign-up", "app", "other"]);
+const SERVER_STATES = new Set([
+  "signedOut", "wrongVerified", "wrongUnverified", "matchingAccount",
+  "missing", "expired", "accepted", "unclassified",
+]);
+const IDENTITY_DIAGNOSTIC_KEYS = [
+  "clerkLoaded", "signedIn", "primaryVerified", "expectedCreator",
+];
+
+export function sanitizeWrongAccountDiagnostic(value) {
+  if (!value || typeof value !== "object") return null;
+  const browserIdentity = Object.fromEntries(
+    IDENTITY_DIAGNOSTIC_KEYS.map((key) => [key, value.browserIdentity?.[key] === true]),
+  );
+  const safeCount = (candidate) => Number.isSafeInteger(candidate) && candidate >= 0
+    ? Math.min(candidate, 999)
+    : 0;
+  return {
+    routeClass: ROUTE_CLASSES.has(value.routeClass) ? value.routeClass : "other",
+    rendered: {
+      serverState: SERVER_STATES.has(value.rendered?.serverState)
+        ? value.rendered.serverState
+        : "unclassified",
+      genericError: value.rendered?.genericError === true,
+      clerkUi: value.rendered?.clerkUi === true,
+    },
+    browserIdentity,
+    errors: {
+      consoleCount: safeCount(value.errors?.consoleCount),
+      pageCount: safeCount(value.errors?.pageCount),
+    },
+  };
 }
 
 export function buildReceipt({ status, errorCode, sourceRevision, sourceTree, vercelBlob, deploymentGuardValidated, startedAt, evidence }) {
+  const stages = evidence?.stages ?? Object.fromEntries(
+    REQUIRED_STAGES.map((stage) => [stage, evidence?.[stage] === true]),
+  );
   return {
     schemaVersion: 2,
     status,
@@ -124,10 +163,11 @@ export function buildReceipt({ status, errorCode, sourceRevision, sourceTree, ve
     target: "loopback Next production build with fresh local file databases",
     intendedIdentityBoundary: "two controlled accounts in one declared Clerk development instance; key-pair usability is observed only after ticket consumption and verified-user readback; ticket sign-in bypasses sign-in UI and MFA",
     fixtureBoundary: "project, pending invitation, assigned task and membership removal are isolated local database fixtures; creator invitation authoring and removal UI are not exercised",
-    observedStages: evidence,
+    observedStages: stages,
+    wrongAccountDiagnostic: sanitizeWrongAccountDiagnostic(evidence?.wrongAccountDiagnostic),
     signInUi: "signed-out invitation, exact redirect intent and automatic return are required; credential-entry UI is not exercised",
     providers: { clerk: "bounded testing-token and ticket-session requests only", mail: "disabled", drive: "disabled", stripe: "disabled" },
-    custody: "sanitized receipt and stage booleans remain in ignored local output; databases, browser output, auth state, account labels, invite tokens, traces and screenshots are removed",
+    custody: "sanitized receipt, stage booleans and fixed wrong-account diagnostic enums/counts remain in ignored local output; databases, browser output, auth state, account labels, invite tokens, traces and screenshots are removed",
     startedAt,
     completedAt: new Date().toISOString(),
   };
@@ -210,7 +250,7 @@ async function main() {
     const result = run(process.execPath, [pnpmCli, "exec", "playwright", "test", "--config", "experience/recipient-identity/playwright.config.ts"], { env: buildChildEnvironment(merged, { ...config, sourceRevision }) });
     exitCode = result.status ?? 1;
     const evidence = readEvidence();
-    if (exitCode === 0 && REQUIRED_STAGES.every((stage) => evidence[stage])) {
+    if (exitCode === 0 && REQUIRED_STAGES.every((stage) => evidence.stages[stage])) {
       status = "passed";
       errorCode = null;
     } else if (exitCode === 0) {

@@ -110,3 +110,45 @@ test("failed preflight receipt cannot claim an unvalidated deployment guard", ()
     deploymentEnabled: null,
   });
 });
+
+test("wrong-account diagnostics retain only boolean, enum and bounded count fields", () => {
+  const receipt = buildReceipt({
+    status: "failed",
+    errorCode: "journey_failed",
+    sourceRevision: "a".repeat(40),
+    sourceTree: "b".repeat(40),
+    vercelBlob: "c".repeat(40),
+    deploymentGuardValidated: true,
+    startedAt: "2026-09-12T00:00:00.000Z",
+    evidence: {
+      stages: {},
+      wrongAccountDiagnostic: {
+        routeClass: "invite",
+        rendered: { serverState: "wrongVerified", genericError: false, rawText: "private page text" },
+        browserIdentity: { signedIn: true, email: "private@example.test" },
+        errors: { consoleCount: 1001, pageCount: 1, message: "private error" },
+        url: "https://private.example/invite/private-token",
+        token: "private-token",
+      },
+    },
+  });
+  assert.deepEqual(receipt.wrongAccountDiagnostic, {
+    routeClass: "invite",
+    rendered: {
+      serverState: "wrongVerified",
+      genericError: false,
+      clerkUi: false,
+    },
+    browserIdentity: {
+      clerkLoaded: false,
+      signedIn: true,
+      primaryVerified: false,
+      expectedCreator: false,
+    },
+    errors: { consoleCount: 999, pageCount: 1 },
+  });
+  const serialized = JSON.stringify(receipt);
+  for (const forbidden of ["private page text", "private@example.test", "private error", "private-token", "private.example"]) {
+    assert.equal(serialized.includes(forbidden), false);
+  }
+});

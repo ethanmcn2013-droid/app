@@ -1,6 +1,10 @@
 import { clerk } from "@clerk/testing/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { observe } from "./evidence";
+import {
+  observe,
+  observeWrongAccountDiagnostic,
+  type WrongAccountDiagnostic,
+} from "./evidence";
 import {
   PRIVATE_TASK_TITLE,
   RECIPIENT_PROJECT_ID,
@@ -41,6 +45,84 @@ async function ticketSignIn(page: Page, email: string): Promise<ClerkIdentity> {
   return identity;
 }
 
+async function wrongAccountDiagnostic(
+  page: Page,
+  invitePath: string,
+  creatorEmail: string,
+  errors: Readonly<{ consoleCount: number; pageCount: number }>,
+): Promise<WrongAccountDiagnostic> {
+  const currentPath = new URL(page.url()).pathname;
+  const routeClass = currentPath === invitePath
+    ? "invite"
+    : currentPath === "/sign-in"
+      ? "sign-in"
+      : currentPath === "/sign-up"
+        ? "sign-up"
+        : currentPath.startsWith("/app")
+          ? "app"
+          : "other";
+  const browserIdentity = await page.evaluate((expectedEmail) => {
+    const runtime = window.Clerk;
+    const user = runtime?.user;
+    const primary = user?.emailAddresses.find(
+      (email) => email.id === user.primaryEmailAddressId,
+    );
+    return {
+      clerkLoaded: Boolean(runtime?.loaded),
+      signedIn: Boolean(user),
+      primaryVerified: primary?.verification?.status === "verified",
+      expectedCreator:
+        primary?.emailAddress?.toLowerCase() === expectedEmail.toLowerCase(),
+    };
+  }, creatorEmail);
+  const switchAccount = await page.getByRole("button", {
+    name: "Sign out and use the invited account",
+  }).isVisible();
+  const branches = [
+    {
+      state: "signedOut" as const,
+      visible: await page.getByRole("link", { name: "Sign in to accept" }).isVisible(),
+    },
+    {
+      state: "wrongVerified" as const,
+      visible: switchAccount && await page.getByText(/Use the email address this invite was sent to/).isVisible(),
+    },
+    {
+      state: "wrongUnverified" as const,
+      visible: switchAccount && await page.getByText(/Verify the invited email address before accepting/).isVisible(),
+    },
+    {
+      state: "matchingAccount" as const,
+      visible: await page.getByRole("button", { name: "Accept invite" }).isVisible(),
+    },
+    {
+      state: "accepted" as const,
+      visible: await page.getByRole("heading", { name: "This invite has already been accepted." }).isVisible(),
+    },
+    {
+      state: "expired" as const,
+      visible: await page.getByRole("heading", { name: "This invite has expired." }).isVisible(),
+    },
+    {
+      state: "missing" as const,
+      visible: await page.getByRole("heading", { name: "This invite link doesn’t exist." }).isVisible(),
+    },
+  ];
+  const visibleBranches = branches.filter((branch) => branch.visible);
+  return {
+    routeClass,
+    rendered: {
+      serverState: visibleBranches.length === 1
+        ? visibleBranches[0]!.state
+        : "unclassified",
+      genericError: await page.getByText(/Application error|Something went wrong/).isVisible(),
+      clerkUi: await page.locator(".cl-rootBox").isVisible(),
+    },
+    browserIdentity,
+    errors,
+  };
+}
+
 test("controlled recipient accepts B, completes assigned work, and loses B after removal", async ({ browser }) => {
   const creatorEmail = required("SIGNAL_RECIPIENT_CREATOR_EMAIL");
   const recipientEmail = required("SIGNAL_RECIPIENT_RECIPIENT_EMAIL");
@@ -48,6 +130,13 @@ test("controlled recipient accepts B, completes assigned work, and loses B after
   const recipientContext = await browser.newContext();
   const creatorPage = await creatorContext.newPage();
   const recipientPage = await recipientContext.newPage();
+  const creatorErrors = { consoleCount: 0, pageCount: 0 };
+  creatorPage.on("console", (message) => {
+    if (message.type() === "error") creatorErrors.consoleCount += 1;
+  });
+  creatorPage.on("pageerror", () => {
+    creatorErrors.pageCount += 1;
+  });
 
   try {
     const creator = await ticketSignIn(creatorPage, creatorEmail);
@@ -69,6 +158,32 @@ test("controlled recipient accepts B, completes assigned work, and loses B after
     observe("signedOutInviteShown");
 
     await creatorPage.goto(invitePath);
+    try {
+      await clerk.loaded({ page: creatorPage });
+    } catch {
+      // The fixed classifier below records that the client runtime did not load.
+    }
+    await expect.poll(async () => {
+      const diagnostic = await wrongAccountDiagnostic(
+        creatorPage,
+        invitePath,
+        creatorEmail,
+        creatorErrors,
+      );
+      observeWrongAccountDiagnostic(diagnostic);
+      return diagnostic;
+    }).toMatchObject({
+      routeClass: "invite",
+      rendered: {
+        serverState: "wrongVerified",
+      },
+      browserIdentity: {
+        clerkLoaded: true,
+        signedIn: true,
+        primaryVerified: true,
+        expectedCreator: true,
+      },
+    });
     await expect(creatorPage.getByText(/Use the email address this invite was sent to/)).toBeVisible();
     await expect(creatorPage.getByRole("button", { name: "Accept invite" })).toHaveCount(0);
     await creatorPage.getByRole("button", { name: "Sign out and use the invited account" }).click();
