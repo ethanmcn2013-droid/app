@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { conversationReducer as reduce, emptyConversationState } from "./reducer";
 import { parseProjectId } from "../projects/project-ref";
-import type { MessageRecord, SendInput } from "./contracts";
+import type { MessagePage, MessageRecord, SendInput } from "./contracts";
 
 const input: SendInput = { projectId: parseProjectId("project-a")!, conversationId: "room-a", clientRequestId: "request_reducer_00001", expectedAudienceEpoch: 1, body: "Original reviewed text", rootId: null, mentionUserIds: [] };
 const receipt = { messageId: "message-a", clientRequestId: input.clientRequestId, createSeq: 1, changeSeq: 1, revision: 1, committedAt: 1000 };
@@ -48,6 +48,14 @@ test("an absent old-audience request restores the exact body once", () => {
   assert.deepEqual(state.pending, []);
   assert.equal(state.error, "audience_changed");
   assert.equal(reduce(state, { type: "restore_absent", generation: 0, requestId: input.clientRequestId }), state);
+});
+test("older message pages merge without moving the live delta cursor or dropping requested history", () => {
+  const recent = ready();
+  const olderMessages = Array.from({ length: 205 }, (_, index): MessageRecord => ({ id: `older-${index}`, authorId: "alice", rootId: null, createSeq: index + 1, revision: 1, body: `message ${index}`, createdAt: index, editedAt: null, deletedAt: null }));
+  const page: MessagePage = { audienceEpoch: 1, throughChangeSeq: 999, messages: olderMessages, hasOlder: false, beforeCreateSeq: 1 };
+  const state = reduce(recent, { type: "page", generation: 0, page, initialize: false });
+  assert.equal(state.cursor, recent.cursor);
+  assert.equal(state.messages.length, 205);
 });
 test("audience change prevents silently sending the previous draft epoch", () => {
   let state = reduce(ready(), { type: "draft", value: input.body });

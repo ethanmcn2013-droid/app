@@ -2,12 +2,12 @@
 
 import { useEffect, useLayoutEffect, useReducer, useRef, useState } from "react";
 import type { ProjectId } from "@/lib/projects/project-ref";
-import type { ConversationDelta, ConversationFailure, ConversationResult, MessageReceipt, MessageRecord, SendInput } from "@/lib/conversations/contracts";
+import type { ConversationDelta, ConversationFailure, ConversationResult, MessagePage, MessageReceipt, MessageRecord, SendInput } from "@/lib/conversations/contracts";
 import { CONVERSATION_LIMITS, normalizeMessageBody, validMessageBody } from "@/lib/conversations/contracts";
 import { conversationReducer, emptyConversationState, type PendingSend } from "@/lib/conversations/reducer";
 import { ConversationPoller } from "@/lib/conversations/polling";
 import { AudienceHeader, Icon } from "./prototype-panels";
-import { audienceResponseMatches, conversationHeaders, draftKey, forgetProjectDrafts, needsFreshAudienceSend, rememberDraft, type DraftCache, type ScrollCache } from "./conversation-client-model";
+import { anchoredScrollTop, audienceResponseMatches, conversationHeaders, draftKey, forgetProjectDrafts, needsFreshAudienceSend, rememberDraft, shouldSendComposerKey, type DraftCache, type ScrollCache } from "./conversation-client-model";
 import styles from "./conversation-workspace.module.css";
 
 type ProjectOption = Readonly<{ id: ProjectId; name: string }>;
@@ -16,6 +16,7 @@ type Audience = Readonly<{ audienceEpoch: number; members: readonly Readonly<{ i
 type MutationReceipt = Readonly<{ messageId: string; clientRequestId: string; changeSeq: number; revision: number; committedAt: number }>;
 type GeneratedAction =
   | Readonly<{ type: "delta"; delta: ConversationDelta }>
+  | Readonly<{ type: "page"; page: MessagePage; initialize: boolean }>
   | Readonly<{ type: "receipt"; receipt: MessageReceipt }>
   | Readonly<{ type: "uncertain" | "restore_absent"; requestId: string }>
   | Readonly<{ type: "refused"; failure: ConversationFailure; requestId?: string }>
@@ -77,6 +78,9 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
   const [sendsOff, setSendsOff] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [catchingUp, setCatchingUp] = useState(false);
+  const [olderCursor, setOlderCursor] = useState<number | null>(null);
+  const [hasOlder, setHasOlder] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const [editing, setEditing] = useState<{ id: string; body: string; revision: number } | null>(null);
   const stateRef = useRef(state);
   const generationRef = useRef(1);
@@ -88,7 +92,7 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
   const scrollLoadedFor = useRef<string | null>(null);
   const scrollAnchorRef = useRef<number | null>(null);
   const feedRef = useRef<HTMLDivElement | null>(null);
-  const catchupRef = useRef(false);
+  const catchupRef = useRef<number | null>(null);
   const dispatchAt = (generation: number, action: GeneratedAction) => dispatch({ ...action, generation });
   const isCurrent = (generation: number, signal?: AbortSignal) => generation === generationRef.current && !signal?.aborted;
 
@@ -113,7 +117,7 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
     generationRef.current = generation;
     sessionControllerRef.current = controller;
     historyEpochRef.current = null;
-    clearAudience(); setEditing(null); setMutationError(null); setSendsOff(false);
+    clearAudience(); setEditing(null); setMutationError(null); setSendsOff(false); setHasOlder(false); setOlderCursor(null); setCatchingUp(false);
     dispatch({ type: "reset", actorId, scopeKey, generation });
     return { generation, controller };
   }
@@ -146,6 +150,12 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
   }
   const requestAudience = (signal?: AbortSignal) => apiResult<Audience>(apiUrl("audience", project.id), fixtureActor, { signal });
   const loadHistory = (currentScope: ConversationScope, afterChangeSeq: number, signal?: AbortSignal) => apiResult<ConversationDelta>(apiUrl("history", project.id, { conversationId: currentScope.conversationId, afterChangeSeq, limit: 100 }), fixtureActor, { signal });
+  const loadMessages = (currentScope: ConversationScope, beforeCreateSeq?: number, signal?: AbortSignal) => apiResult<MessagePage>(apiUrl("messages", project.id, { conversationId: currentScope.conversationId, limit: 100, ...(beforeCreateSeq === undefined ? {} : { beforeCreateSeq }) }), fixtureActor, { signal });
+  async function refreshAudience(expectedEpoch: number, generation: number, signal?: AbortSignal) {
+    const result = await requestAudience(signal);
+    if (!isCurrent(generation, signal)) return;
+    if (result.ok) acceptAudience(result.value, generation, expectedEpoch); else handleFailure(result, generation);
+  }
 
   async function loadThroughCurrent(currentScope: ConversationScope, generation: number, signal: AbortSignal, first?: ConversationDelta): Promise<{ finalPage: ConversationDelta | null; caughtUp: boolean }> {
     let page = first ?? null;
@@ -168,6 +178,7 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
 
   useEffect(() => {
     const generation = generationRef.current;
+    sessionControllerRef.current?.abort();
     const controller = new AbortController();
     sessionControllerRef.current = controller;
     void apiResult<ConversationScope | null>(apiUrl("project", project.id), fixtureActor, { signal: controller.signal }).then(async (result) => {
@@ -175,13 +186,15 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
       if (!result.ok) { setStartFailure(result.code); handleFailure(result, generation); return; }
       setScope(result.value);
       if (!result.value) return;
-      const [history, audienceResult] = await Promise.all([loadHistory(result.value, 0, controller.signal), requestAudience(controller.signal)]);
+      const [page, audienceResult] = await Promise.all([loadMessages(result.value, undefined, controller.signal), requestAudience(controller.signal)]);
       if (!isCurrent(generation, controller.signal)) return;
-      if (!history.ok) { handleFailure(history, generation); return; }
-      const catchup = await loadThroughCurrent(result.value, generation, controller.signal, history.value);
-      if (!catchup.finalPage || !isCurrent(generation, controller.signal)) return;
-      setCatchingUp(!catchup.caughtUp);
-      if (audienceResult.ok) acceptAudience(audienceResult.value, generation, catchup.finalPage.audienceEpoch); else handleFailure(audienceResult, generation);
+      if (!page.ok) { handleFailure(page, generation); return; }
+      historyEpochRef.current = page.value.audienceEpoch;
+      dispatchAt(generation, { type: "page", page: page.value, initialize: true });
+      setHasOlder(page.value.hasOlder); setOlderCursor(page.value.beforeCreateSeq); setCatchingUp(false);
+      if (audienceResult.ok) {
+        if (!acceptAudience(audienceResult.value, generation, page.value.audienceEpoch)) await refreshAudience(page.value.audienceEpoch, generation, controller.signal);
+      } else handleFailure(audienceResult, generation);
     }).catch(() => { if (isCurrent(generation, controller.signal)) { setStartFailure("temporarily_unavailable"); dispatchAt(generation, { type: "offline" }); } });
     return () => { controller.abort(); if (sessionControllerRef.current === controller) sessionControllerRef.current = null; };
   // Project-keyed session reruns only for an explicit retry.
@@ -195,23 +208,35 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
     const generation = generationRef.current;
     const poller = new ConversationPoller<ConversationResult<ConversationDelta>>({
       poll: ({ conversationId }, signal) => loadHistory({ ...scope, conversationId }, stateRef.current.cursor, signal),
-      apply: (result) => {
+      apply: async (result) => {
         if (!isCurrent(generation)) return;
         if (result.ok) {
-          if (catchupRef.current) return;
-          catchupRef.current = true;
+          if (catchupRef.current !== null) return;
+          catchupRef.current = generation;
           const signal = sessionControllerRef.current?.signal ?? new AbortController().signal;
-          void loadThroughCurrent(scope, generation, signal, result.value).then((catchup) => {
-            if (!catchup.finalPage || !isCurrent(generation) || audienceRef.current?.audienceEpoch === catchup.finalPage.audienceEpoch) return;
+          try {
+            const catchup = await loadThroughCurrent(scope, generation, signal, result.value);
+            if (!catchup.finalPage || !isCurrent(generation)) return;
             setCatchingUp(!catchup.caughtUp);
-            const expectedEpoch = catchup.finalPage.audienceEpoch;
-            void requestAudience().then((next) => { if (!isCurrent(generation)) return; if (next.ok) acceptAudience(next.value, generation, expectedEpoch); else handleFailure(next, generation); }).catch(() => { if (isCurrent(generation)) dispatchAt(generation, { type: "offline" }); });
-          }).finally(() => { catchupRef.current = false; });
+            if (audienceRef.current?.audienceEpoch === catchup.finalPage.audienceEpoch) return;
+            await refreshAudience(catchup.finalPage.audienceEpoch, generation, signal);
+          } finally { if (catchupRef.current === generation) catchupRef.current = null; }
         } else if (result.code === "resync_required") {
-          if (catchupRef.current) return;
-          catchupRef.current = true;
+          if (catchupRef.current !== null) return;
+          catchupRef.current = generation;
           const signal = sessionControllerRef.current?.signal ?? new AbortController().signal;
-          void loadThroughCurrent(scope, generation, signal).then((catchup) => setCatchingUp(!catchup.caughtUp)).catch(() => { if (isCurrent(generation)) dispatchAt(generation, { type: "offline" }); }).finally(() => { catchupRef.current = false; });
+          try {
+            const page = await loadMessages(scope, undefined, signal);
+            if (!isCurrent(generation, signal)) return;
+            if (!page.ok) { handleFailure(page, generation); return; }
+            historyEpochRef.current = page.value.audienceEpoch;
+            if (audienceRef.current?.audienceEpoch !== page.value.audienceEpoch) {
+              clearAudience();
+              await refreshAudience(page.value.audienceEpoch, generation, signal);
+            }
+            captureScrollAnchor(); dispatchAt(generation, { type: "page", page: page.value, initialize: true });
+            setHasOlder(page.value.hasOlder); setOlderCursor(page.value.beforeCreateSeq); setCatchingUp(false);
+          } finally { if (catchupRef.current === generation) catchupRef.current = null; }
         } else handleFailure(result, generation);
       },
       onFailure: () => { if (isCurrent(generation)) dispatchAt(generation, { type: "offline" }); },
@@ -237,37 +262,54 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
   useEffect(() => () => rememberScroll(), [scope]);
   useLayoutEffect(() => {
     const node = feedRef.current;
-    if (!node || !scope) return;
+    if (!node || !scope || state.status !== "ready") return;
     const key = scopeCacheKey(scope);
     if (scrollLoadedFor.current !== key) {
       scrollLoadedFor.current = key;
       const saved = scrollCache.get(key);
-      if (saved) node.scrollTop = saved.bottomDistance < 80 ? node.scrollHeight - node.clientHeight - saved.bottomDistance : saved.top;
+      if (saved) node.scrollTop = saved.bottomDistance < 80 ? anchoredScrollTop(node.scrollHeight, node.clientHeight, saved.bottomDistance) : saved.top;
+      else node.scrollTop = node.scrollHeight;
     } else if (scrollAnchorRef.current !== null) {
-      node.scrollTop = Math.max(0, node.scrollHeight - node.clientHeight - scrollAnchorRef.current);
+      node.scrollTop = anchoredScrollTop(node.scrollHeight, node.clientHeight, scrollAnchorRef.current);
       scrollAnchorRef.current = null;
     }
   // scopeCacheKey is a pure tuple builder scoped to this keyed session.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scope, scrollCache, state.cursor, state.messages.length, state.pending.length]);
+  }, [scope, scrollCache, state.cursor, state.messages.length, state.pending.length, state.status]);
 
   function updateDraft(value: string) { if (scope) { dispatch({ type: "draft", value }); rememberDraft(draftCache, scopeCacheKey(scope), value); } }
 
   async function startConversation() {
-    const requestGeneration = generationRef.current; const signal = sessionControllerRef.current?.signal; setStartFailure(null);
+    let requestGeneration = generationRef.current; let signal = sessionControllerRef.current?.signal; setStartFailure(null);
     try {
       const result = await apiResult<ConversationScope>("/api/conversations", fixtureActor, { method: "POST", body: JSON.stringify({ action: "ensure", projectId: project.id }), signal });
       if (!isCurrent(requestGeneration, signal)) return;
       if (!result.ok) { setStartFailure(result.code); handleFailure(result, requestGeneration); return; }
-      const { generation, controller } = advanceSession(`${project.id}:${result.value.conversationId}`); setScope(result.value);
-      const [history, audienceResult] = await Promise.all([loadHistory(result.value, 0, controller.signal), requestAudience(controller.signal)]);
+      const { generation, controller } = advanceSession(`${project.id}:${result.value.conversationId}`); requestGeneration = generation; signal = controller.signal; setScope(result.value);
+      const [page, audienceResult] = await Promise.all([loadMessages(result.value, undefined, controller.signal), requestAudience(controller.signal)]);
       if (!isCurrent(generation, controller.signal)) return;
-      if (!history.ok) { handleFailure(history, generation); return; }
-      const catchup = await loadThroughCurrent(result.value, generation, controller.signal, history.value);
-      if (!catchup.finalPage) return;
-      setCatchingUp(!catchup.caughtUp);
-      if (audienceResult.ok) acceptAudience(audienceResult.value, generation, catchup.finalPage.audienceEpoch); else handleFailure(audienceResult, generation);
+      if (!page.ok) { handleFailure(page, generation); return; }
+      historyEpochRef.current = page.value.audienceEpoch;
+      dispatchAt(generation, { type: "page", page: page.value, initialize: true });
+      setHasOlder(page.value.hasOlder); setOlderCursor(page.value.beforeCreateSeq); setCatchingUp(false);
+      if (audienceResult.ok) {
+        if (!acceptAudience(audienceResult.value, generation, page.value.audienceEpoch)) await refreshAudience(page.value.audienceEpoch, generation, controller.signal);
+      } else handleFailure(audienceResult, generation);
     } catch { if (isCurrent(requestGeneration, signal)) { setStartFailure("temporarily_unavailable"); dispatchAt(requestGeneration, { type: "offline" }); } }
+  }
+
+  async function loadOlder() {
+    if (!scope || !hasOlder || olderCursor === null || loadingOlder) return;
+    const generation = generationRef.current; const signal = sessionControllerRef.current?.signal;
+    setLoadingOlder(true); captureScrollAnchor();
+    try {
+      const page = await loadMessages(scope, olderCursor, signal);
+      if (!isCurrent(generation, signal)) return;
+      if (!page.ok) { handleFailure(page, generation); return; }
+      dispatchAt(generation, { type: "page", page: page.value, initialize: false });
+      setHasOlder(page.value.hasOlder); setOlderCursor(page.value.beforeCreateSeq);
+    } catch { if (isCurrent(generation, signal)) dispatchAt(generation, { type: "offline" }); }
+    finally { if (isCurrent(generation, signal)) setLoadingOlder(false); }
   }
 
   function restoreForFreshAudience(pending: PendingSend, generation: number) {
@@ -334,12 +376,13 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
     {sendsOff ? <div className={styles.notice}><strong>Sends are off</strong><span>Existing history remains available.</span></div> : null}
     {mutationError ? <div className={styles.errorNotice} role="alert">{mutationError}</div> : null}
     <div className={styles.feedScroller} onScroll={() => rememberScroll(scope)} ref={feedRef}><ol aria-label="Conversation history" className={styles.feed}>
+      {hasOlder ? <li className={styles.olderHistory}><button disabled={loadingOlder} onClick={() => void loadOlder()} type="button">{loadingOlder ? "Loading earlier messages…" : "Load earlier messages"}</button></li> : null}
       {state.messages.length === 0 && state.pending.length === 0 ? <li className={styles.emptyHistory}>No messages yet. Start with the decision or question the Project needs.</li> : null}
       {state.messages.map((message) => <LiveMessage actorId={actorId} editing={editing} key={message.id} members={members} message={message} onCancelEdit={() => setEditing(null)} onDelete={() => void mutate("tombstone", message)} onEdit={(body) => void mutate("edit", message, body)} onStartEdit={() => message.body && setEditing({ id: message.id, body: message.body, revision: message.revision })} setEditing={setEditing} />)}
       {state.pending.map((pending) => <li className={styles.pendingMessage} key={pending.input.clientRequestId}><strong>You</strong><p>{pending.input.body}</p><span>{pending.state === "pending" ? "Sending…" : pending.state === "uncertain" ? "Checking whether this sent" : `Not sent · ${pending.error ? failureCopy[pending.error] : "try again"}`}</span>{pending.state !== "pending" ? <button onClick={() => void resolveSend(pending)} type="button">Check receipt, then retry</button> : null}</li>)}
     </ol></div>
     <section aria-label="Message composer" className={styles.composer}>{state.status === "offline" ? <p>Offline. Your draft stays here; nothing will send automatically.</p> : scope.lifecycle === "archived" || sendsOff ? <p>{scope.lifecycle === "archived" ? "This conversation is read only." : "Sending is currently turned off."}</p> : <>
-      <textarea aria-label={`Message ${project.name}`} maxLength={CONVERSATION_LIMITS.bodyCharacters} onChange={(event) => updateDraft(event.target.value)} onKeyDown={(event) => { const mobileReturn = window.matchMedia("(max-width: 760px), (pointer: coarse)").matches; if (!event.nativeEvent.isComposing && event.key === "Enter" && !event.shiftKey && !mobileReturn) { event.preventDefault(); void send(); } }} placeholder={`Message ${project.name}`} rows={3} value={state.draft} />
+      <textarea aria-label={`Message ${project.name}`} maxLength={CONVERSATION_LIMITS.bodyCharacters} onChange={(event) => updateDraft(event.target.value)} onKeyDown={(event) => { const mobileReturn = window.matchMedia("(max-width: 760px), (pointer: coarse)").matches; if (shouldSendComposerKey({ key: event.key, shiftKey: event.shiftKey, composing: event.nativeEvent.isComposing, mobileReturn })) { event.preventDefault(); void send(); } }} placeholder={`Message ${project.name}`} rows={3} value={state.draft} />
       <div><span data-invalid={state.draft.length > 0 && (!bodyValid || bodyBytes > CONVERSATION_LIMITS.bodyBytes) || undefined}>{Array.from(state.draft).length.toLocaleString()} / {CONVERSATION_LIMITS.bodyCharacters.toLocaleString()}</span><button disabled={!bodyValid || bodyBytes > CONVERSATION_LIMITS.bodyBytes || audienceNeedsReview} onClick={() => void send()} type="button">Send</button></div>
     </>}</section>
   </main>;

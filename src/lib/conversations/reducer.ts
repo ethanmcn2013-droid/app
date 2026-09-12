@@ -1,4 +1,4 @@
-import type { ConversationDelta, ConversationFailure, MessageReceipt, MessageRecord, SendInput } from "./contracts";
+import type { ConversationDelta, ConversationFailure, MessagePage, MessageReceipt, MessageRecord, SendInput } from "./contracts";
 
 export type PendingSend = { input: SendInput; state: "pending" | "uncertain" | "failed"; error?: ConversationFailure["code"] };
 export type ConversationClientState = {
@@ -24,6 +24,7 @@ export type ConversationClientAction =
   | { type: "submit"; input: SendInput }
   | { type: "discard"; requestId: string }
   | { type: "delta"; generation: number; delta: ConversationDelta }
+  | { type: "page"; generation: number; page: MessagePage; initialize: boolean }
   | { type: "receipt"; generation: number; receipt: MessageReceipt }
   | { type: "uncertain"; generation: number; requestId: string }
   | { type: "restore_absent"; generation: number; requestId: string }
@@ -39,7 +40,7 @@ function mergeMessages(current: readonly MessageRecord[], incoming: readonly Mes
       records.set(candidate.id, candidate.deletedAt !== null ? { ...candidate, body: null } : candidate);
     }
   }
-  return [...records.values()].sort((a, b) => a.createSeq - b.createSeq).slice(-200);
+  return [...records.values()].sort((a, b) => a.createSeq - b.createSeq);
 }
 
 /** In-memory only. Parent session owns scoped draft continuity and clears on identity change. */
@@ -70,6 +71,12 @@ export function conversationReducer(state: ConversationClientState, action: Conv
   if (action.type === "restore_absent") {
     const pending = state.pending.find((send) => send.input.clientRequestId === action.requestId);
     return pending ? { ...state, draft: pending.input.body, pending: state.pending.filter((send) => send !== pending), error: "audience_changed", status: "loading" } : state;
+  }
+  if (action.type === "page") {
+    if (state.status === "unavailable") return state;
+    const messages = mergeMessages(action.initialize ? [] : state.messages, action.page.messages);
+    if (!action.initialize) return { ...state, messages };
+    return { ...state, status: "ready", audienceEpoch: action.page.audienceEpoch, reviewedAudienceEpoch: state.reviewedAudienceEpoch ?? action.page.audienceEpoch, cursor: action.page.throughChangeSeq, messages };
   }
   if (action.type === "offline") return state.status === "unavailable" ? state : { ...state, status: "offline" };
   if (action.type === "refused") {

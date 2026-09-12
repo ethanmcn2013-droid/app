@@ -32,6 +32,14 @@ export function needsFreshAudienceSend(requestEpoch: number, historyEpoch: numbe
   return historyEpoch === null || requestEpoch !== historyEpoch;
 }
 
+export function shouldSendComposerKey(input: Readonly<{ key: string; shiftKey: boolean; composing: boolean; mobileReturn: boolean }>): boolean {
+  return input.key === "Enter" && !input.shiftKey && !input.composing && !input.mobileReturn;
+}
+
+export function anchoredScrollTop(scrollHeight: number, clientHeight: number, bottomDistance: number): number {
+  return Math.max(0, scrollHeight - clientHeight - bottomDistance);
+}
+
 /** The synthetic identity header exists only when the lab explicitly supplies it. */
 export function conversationHeaders(fixtureActor: string | undefined, hasBody: boolean): Headers {
   const headers = new Headers();

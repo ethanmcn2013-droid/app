@@ -19,7 +19,7 @@ export class ConversationPoller<T> {
 
   constructor(private readonly options: Readonly<{
     poll: (scope: PollScope, signal: AbortSignal) => Promise<T>;
-    apply: (value: T, scope: PollScope) => void;
+    apply: (value: T, scope: PollScope) => void | Promise<void>;
     onFailure?: (consecutiveFailures: number) => void;
     random?: () => number;
     clock?: PollClock;
@@ -63,7 +63,7 @@ export class ConversationPoller<T> {
     try {
       const value = await this.options.poll(scope, controller.signal);
       if (generation === this.generation && !controller.signal.aborted) {
-        this.options.apply(value, scope);
+        await this.options.apply(value, scope);
         this.failures = 0;
       }
     } catch {

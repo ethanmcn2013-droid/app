@@ -32,7 +32,7 @@ test("scope change aborts stale response and never overlaps even when transport 
   let release: (value: number) => void = () => {};
   const poller = new ConversationPoller({ clock: fixture.clock,
     poll: async (_scope, requestSignal) => { reads++; signal = requestSignal; return await new Promise<number>((resolve) => { release = resolve; }); },
-    apply: (value) => applied.push(value),
+    apply: (value) => { applied.push(value); },
   });
   poller.configure(scope, true); await fixture.fire();
   poller.configure({ ...scope, actorId: "bob" }, true); await fixture.fire();
@@ -54,4 +54,18 @@ test("failed requests back off with a hard 30-second ceiling; success resets", a
   for (const delay of [2_000, 4_000, 8_000, 16_000, 30_000, 30_000]) { await fixture.fire(); assert.equal(fixture.delay(), delay); }
   assert.deepEqual(failures, [1, 2, 3, 4, 5, 6]);
   failing = false; await fixture.fire(); assert.equal(fixture.delay(), 1_000); poller.stop();
+});
+
+test("an asynchronous page application completes before another poll is scheduled", async () => {
+  const fixture = clockFixture(); let releaseApply: () => void = () => {}; let applications = 0;
+  const poller = new ConversationPoller({ clock: fixture.clock, random: () => 0.5,
+    poll: async () => 1,
+    apply: async () => { applications++; await new Promise<void>((resolve) => { releaseApply = resolve; }); },
+  });
+  poller.configure(scope, true);
+  await fixture.fire();
+  assert.equal(applications, 1); assert.equal(fixture.delay(), -1);
+  releaseApply();
+  await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
+  assert.equal(fixture.delay(), 1_000); poller.stop();
 });

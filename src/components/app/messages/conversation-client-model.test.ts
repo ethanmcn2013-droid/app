@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { parseProjectId } from "@/lib/projects/project-ref";
-import { audienceResponseMatches, conversationHeaders, draftKey, forgetProjectDrafts, needsFreshAudienceSend, rememberDraft } from "./conversation-client-model";
+import { anchoredScrollTop, audienceResponseMatches, conversationHeaders, draftKey, forgetProjectDrafts, needsFreshAudienceSend, rememberDraft, shouldSendComposerKey } from "./conversation-client-model";
 
 const project = parseProjectId("synthetic_project_a")!;
 
@@ -44,4 +44,12 @@ test("audience responses require the captured session and current history epoch"
   assert.equal(audienceResponseMatches(3, 3, 7, 7, 6), false);
   assert.equal(needsFreshAudienceSend(6, 7), true);
   assert.equal(needsFreshAudienceSend(7, 7), false);
+});
+
+test("composer Enter and scroll anchoring follow desktop and mobile interaction rules", () => {
+  assert.equal(shouldSendComposerKey({ key: "Enter", shiftKey: false, composing: false, mobileReturn: false }), true);
+  assert.equal(shouldSendComposerKey({ key: "Enter", shiftKey: true, composing: false, mobileReturn: false }), false);
+  assert.equal(shouldSendComposerKey({ key: "Enter", shiftKey: false, composing: true, mobileReturn: false }), false);
+  assert.equal(shouldSendComposerKey({ key: "Enter", shiftKey: false, composing: false, mobileReturn: true }), false);
+  assert.equal(anchoredScrollTop(1_400, 600, 75), 725);
 });
