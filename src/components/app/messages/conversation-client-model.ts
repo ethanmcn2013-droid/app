@@ -41,6 +41,15 @@ export function shouldSendComposerKey(input: Readonly<{ key: string; shiftKey: b
 export function anchoredScrollTop(scrollHeight: number, clientHeight: number, bottomDistance: number): number {
   return Math.max(0, scrollHeight - clientHeight - bottomDistance);
 }
+
+export function forgetConversationDrafts(cache: Map<string, unknown>, actorId: string, projectId: ProjectId, conversationId: string): void {
+  for (const key of cache.keys()) {
+    try {
+      const value: unknown = JSON.parse(key);
+      if (Array.isArray(value) && value[0] === actorId && value[1] === projectId && value[2] === conversationId) cache.delete(key);
+    } catch { /* Keys outside the scoped tuple are not owned here. */ }
+  }
+}
 export type ScrollAnchor = Readonly<{ top: number; bottomDistance: number; mode: "live" | "prepend" }>;
 export function resolveScrollAnchor(scrollHeight: number, clientHeight: number, anchor: ScrollAnchor): number {
   if (anchor.mode === "prepend") return anchoredScrollTop(scrollHeight, clientHeight, anchor.bottomDistance);

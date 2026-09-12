@@ -14,18 +14,20 @@ export type ConversationClientState = {
   pending: readonly PendingSend[];
   recoveredDrafts: readonly RecoveredDraft[];
   draft: string;
+  draftMentionUserIds: readonly string[];
   error: ConversationFailure["code"] | null;
 };
 export function emptyConversationState(actorId: string, scopeKey: string, generation = 0): ConversationClientState {
-  return { actorId, scopeKey, generation, status: "loading", audienceEpoch: null, reviewedAudienceEpoch: null, cursor: 0, messages: [], pending: [], recoveredDrafts: [], draft: "", error: null };
+  return { actorId, scopeKey, generation, status: "loading", audienceEpoch: null, reviewedAudienceEpoch: null, cursor: 0, messages: [], pending: [], recoveredDrafts: [], draft: "", draftMentionUserIds: [], error: null };
 }
 export type ConversationClientAction =
   | { type: "reset"; actorId: string; scopeKey: string; generation: number }
   | { type: "draft"; value: string }
+  | { type: "draft_mentions"; ids: readonly string[] }
   | { type: "review_audience"; audienceEpoch: number }
   | { type: "submit"; input: SendInput }
   | { type: "discard"; requestId: string }
-  | { type: "resume_outgoing"; generation: number; pending: readonly PendingSend[]; recoveredDrafts: readonly RecoveredDraft[]; reviewedAudienceEpoch?: number | null }
+  | { type: "resume_outgoing"; generation: number; pending: readonly PendingSend[]; recoveredDrafts: readonly RecoveredDraft[]; reviewedAudienceEpoch?: number | null; draftMentionUserIds?: readonly string[] }
   | { type: "restore_recovered" | "discard_recovered"; requestId: string }
   | { type: "delta"; generation: number; delta: ConversationDelta }
   | { type: "page"; generation: number; page: MessagePage; initialize: boolean }
@@ -60,17 +62,18 @@ export function conversationReducer(state: ConversationClientState, action: Conv
   if (action.type === "reset") return action.generation > state.generation ? emptyConversationState(action.actorId, action.scopeKey, action.generation) : state;
   if ("generation" in action && action.generation !== state.generation) return state;
   if (action.type === "draft") return state.status === "unavailable" ? state : { ...state, draft: action.value };
+  if (action.type === "draft_mentions") return state.status === "unavailable" ? state : { ...state, draftMentionUserIds: [...new Set(action.ids)].sort() };
   if (action.type === "review_audience") return state.status === "ready" && action.audienceEpoch === state.audienceEpoch ? { ...state, reviewedAudienceEpoch: action.audienceEpoch, error: null } : state;
   if (action.type === "discard") return { ...state, pending: state.pending.filter((send) => send.input.clientRequestId !== action.requestId) };
-  if (action.type === "resume_outgoing") return state.status === "unavailable" ? state : { ...state, reviewedAudienceEpoch: action.reviewedAudienceEpoch ?? state.reviewedAudienceEpoch, pending: action.pending.map((send) => ({ ...send, state: send.state === "pending" ? "uncertain" : send.state })), recoveredDrafts: [...action.recoveredDrafts] };
+  if (action.type === "resume_outgoing") return state.status === "unavailable" ? state : { ...state, reviewedAudienceEpoch: action.reviewedAudienceEpoch ?? state.reviewedAudienceEpoch, draftMentionUserIds: [...new Set(action.draftMentionUserIds ?? [])].sort(), pending: action.pending.map((send) => ({ ...send, state: send.state === "pending" ? "uncertain" : send.state })), recoveredDrafts: [...action.recoveredDrafts] };
   if (action.type === "restore_recovered" || action.type === "discard_recovered") {
     const saved = state.recoveredDrafts.find((draft) => draft.requestId === action.requestId);
-    if (!saved || (action.type === "restore_recovered" && state.draft !== "")) return state;
-    return { ...state, draft: action.type === "restore_recovered" ? saved.body : state.draft, recoveredDrafts: state.recoveredDrafts.filter((draft) => draft !== saved) };
+    if (!saved || (action.type === "restore_recovered" && (state.draft !== "" || state.draftMentionUserIds.length > 0))) return state;
+    return { ...state, draft: action.type === "restore_recovered" ? saved.body : state.draft, draftMentionUserIds: action.type === "restore_recovered" ? [...new Set(saved.mentionUserIds ?? [])].sort() : state.draftMentionUserIds, recoveredDrafts: state.recoveredDrafts.filter((draft) => draft !== saved) };
   }
   if (action.type === "submit") {
     if (state.status !== "ready" || state.audienceEpoch !== action.input.expectedAudienceEpoch || state.reviewedAudienceEpoch !== state.audienceEpoch || state.pending.some((send) => send.input.clientRequestId === action.input.clientRequestId)) return state;
-    return { ...state, draft: "", error: null, pending: [...state.pending, { input: { ...action.input, mentionUserIds: [...action.input.mentionUserIds] }, state: "pending" }] };
+    return { ...state, draft: "", draftMentionUserIds: [], error: null, pending: [...state.pending, { input: { ...action.input, mentionUserIds: [...action.input.mentionUserIds] }, state: "pending" }] };
   }
   if (action.type === "delta") {
     if (state.status === "unavailable") return state;
@@ -89,8 +92,10 @@ export function conversationReducer(state: ConversationClientState, action: Conv
   if (action.type === "restore_absent") {
     const pending = state.pending.find((send) => send.input.clientRequestId === action.requestId);
     if (!pending) return state;
-    const occupied = state.draft !== "" && state.draft !== pending.input.body;
+    const sameMentions = JSON.stringify([...new Set(state.draftMentionUserIds)].sort()) === JSON.stringify([...new Set(pending.input.mentionUserIds)].sort());
+    const occupied = (state.draft !== "" || state.draftMentionUserIds.length > 0) && (state.draft !== pending.input.body || !sameMentions);
     return { ...state, draft: occupied ? state.draft : pending.input.body,
+      draftMentionUserIds: occupied ? state.draftMentionUserIds : [...new Set(pending.input.mentionUserIds)].sort(),
       recoveredDrafts: occupied ? [...state.recoveredDrafts.filter((draft) => draft.requestId !== action.requestId), { requestId: action.requestId, body: pending.input.body, mentionUserIds: [...pending.input.mentionUserIds] }] : state.recoveredDrafts,
       pending: state.pending.filter((send) => send !== pending), error: "audience_changed", status: "loading" };
   }

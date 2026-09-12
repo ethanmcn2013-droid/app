@@ -61,3 +61,16 @@ test("live arrivals preserve the current reading position while prepends preserv
   assert.equal(resolveScrollAnchor(2300, 600, { ...reader, mode: "prepend" }), 800);
   assert.equal(resolveScrollAnchor(2100, 600, { top: 1380, bottomDistance: 20, mode: "live" }), 1500);
 });
+
+test("losing one DM clears only its root and thread drafts, preserving other rooms and actors", async () => {
+  const { forgetConversationDrafts } = await import("./conversation-client-model");
+  const cache = new Map<string, string>([
+    [draftKey("alice", project, "dm_a", null), "clear root"],
+    [draftKey("alice", project, "dm_a", "thread"), "clear reply"],
+    [draftKey("alice", project, "project_room", null), "keep project"],
+    [draftKey("alice", project, "dm_b", null), "keep other DM"],
+    [draftKey("bob", project, "dm_a", null), "keep other actor"],
+  ]);
+  forgetConversationDrafts(cache, "alice", project, "dm_a");
+  assert.deepEqual([...cache.values()], ["keep project", "keep other DM", "keep other actor"]);
+});

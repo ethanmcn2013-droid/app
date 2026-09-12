@@ -37,18 +37,20 @@ export function DirectMessageDirectory({ actorId, projectId, fixtureActor, selec
   const [busy, setBusy] = useState(false);
   const [attempt, setAttempt] = useState<{ recipientId: string; clientRequestId: string } | null>(null);
   const mounted = useRef(true);
+  const listRevision = useRef(0);
   useEffect(() => {
     mounted.current = true;
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout>;
     async function refresh() {
+      const capturedRevision = listRevision.current;
       try {
         const result = await request<readonly DirectMessageScope[]>(fixtureActor, { action: "dm-list", projectId }, controller.signal);
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted || capturedRevision !== listRevision.current) return;
         if (result.ok) { setPairs(result.value); setError(null); }
         else if (result.code === "unavailable" || result.code === "unauthenticated") { setPairs([]); setMembers([]); setChoosing(false); }
         else setError("Private conversations could not be refreshed.");
-      } catch { if (!controller.signal.aborted) setError("Private conversations are offline."); }
+      } catch { if (!controller.signal.aborted && capturedRevision === listRevision.current) setError("Private conversations are offline."); }
       finally { if (!controller.signal.aborted) timer = setTimeout(refresh, 5000); }
     }
     void refresh();
@@ -71,6 +73,7 @@ export function DirectMessageDirectory({ actorId, projectId, fixtureActor, selec
       const result = await request<{ scope: DirectMessageScope }>(fixtureActor, { action: "dm-request", projectId, ...current }, undefined, true);
       if (!mounted.current) return;
       if (result.ok) {
+        listRevision.current += 1;
         setPairs((existing) => [...existing.filter((pair) => pair.conversationId !== result.value.scope.conversationId), result.value.scope]);
         setChoosing(false); setRecipientId(""); setAttempt(null); onSelect(result.value.scope);
       } else if (result.code === "temporarily_unavailable") setError("The request outcome is unknown. Retry to check the same request.");
@@ -115,7 +118,7 @@ export function DirectMessageControls({ actorId, scope, fixtureActor, onChange }
   }
   if (!scope.blockOwnerId && scope.pairState !== "declined" && scope.pairState !== "left") actions.push(["block", "Block"]);
   if (scope.canRead && scope.pairState !== "left" && scope.pairState !== "membership_lost") actions.push(["leave", "Leave conversation"]);
-  const description = scope.canWrite ? "Only the two of you can read this conversation." : scope.pairState === "pending" ? (scope.requesterId === actorId ? "Your request is waiting for acceptance. No message has been sent." : "You have a request for a private conversation in this Project. Accept to begin exchanging messages.") : scope.pairState === "rejoin_pending" ? "Both people must confirm reopening. Restoring Project membership does not restart this conversation." : scope.pairState === "blocked" ? "This conversation is blocked. Previously available history remains read only." : scope.pairState === "declined" ? "This request was declined." : "This conversation is read only. Participation must be restored before messages can resume.";
+  const description = !scope.canRead && scope.pairState !== "pending" ? "You no longer have access to messages here." : scope.canWrite ? "Only the two of you can read this conversation." : scope.pairState === "pending" ? (scope.requesterId === actorId ? "Your request is waiting for acceptance. No message has been sent." : "You have a request for a private conversation in this Project. Accept to begin exchanging messages.") : scope.pairState === "rejoin_pending" ? "Both people must confirm reopening. Restoring Project membership does not restart this conversation." : scope.pairState === "blocked" ? "This conversation is blocked. Previously available history remains read only." : "This conversation is read only. Participation must be restored before messages can resume.";
   // The mapped click handlers read the request controller only when invoked, never during render.
   // eslint-disable-next-line react-hooks/refs
   return <section className={styles.pairControls} aria-label="Private conversation participation"><p>{description}</p><div>{attempt ? <button disabled={busy} onClick={() => void change(attempt!.operation)} type="button">Retry change</button> : actions.map(([operation, label]) => <button disabled={busy} key={operation} onClick={() => void change(operation)} type="button">{label}</button>)}</div>{error ? <p role="alert">{error}</p> : null}</section>;

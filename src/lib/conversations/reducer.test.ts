@@ -133,3 +133,31 @@ test("an uncertain directed message retains selected member IDs in its separatel
   assert.equal(state.draft, "New draft");
   assert.deepEqual(state.recoveredDrafts[0].mentionUserIds, ["bob"]);
 });
+
+test("identical text with a different notification audience is a distinct draft during recovery", () => {
+  const pending = { ...input, mentionUserIds: ["bob"] };
+  let state = reduce(ready(), { type: "submit", input: pending });
+  state = reduce(state, { type: "draft", value: input.body });
+  state = reduce(state, { type: "draft_mentions", ids: ["maya"] });
+  state = reduce(state, { type: "restore_absent", generation: 0, requestId: input.clientRequestId });
+  assert.equal(state.draft, input.body);
+  assert.deepEqual(state.draftMentionUserIds, ["maya"]);
+  assert.deepEqual(state.recoveredDrafts[0].mentionUserIds, ["bob"]);
+  state = reduce(state, { type: "draft", value: "" });
+  // Clearing text alone does not discard a newly selected audience.
+  assert.equal(reduce(state, { type: "restore_recovered", requestId: input.clientRequestId }), state);
+  state = reduce(state, { type: "draft_mentions", ids: [] });
+  state = reduce(state, { type: "restore_recovered", requestId: input.clientRequestId });
+  assert.equal(state.draft, input.body);
+  assert.deepEqual(state.draftMentionUserIds, ["bob"]);
+});
+
+test("draft audience normalization ignores ordering and restores body plus IDs atomically", () => {
+  const pending = { ...input, mentionUserIds: ["maya", "bob"] };
+  let state = reduce(ready(), { type: "submit", input: pending });
+  state = reduce(state, { type: "draft", value: input.body });
+  state = reduce(state, { type: "draft_mentions", ids: ["bob", "maya", "bob"] });
+  state = reduce(state, { type: "restore_absent", generation: 0, requestId: input.clientRequestId });
+  assert.deepEqual(state.recoveredDrafts, []);
+  assert.deepEqual(state.draftMentionUserIds, ["bob", "maya"]);
+});
