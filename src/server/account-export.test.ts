@@ -36,10 +36,12 @@ test("export captures owned content + footprint, scoped to the caller", async ()
       UPDATE tasks
       SET description='PRIVATE WORKSPACE EDIT', external_contact_email='private@example.test', cents=9900
       WHERE id='task-b1';
-      INSERT INTO comments (id, workspace_id, task_id, user_id, body) VALUES
-        ('c-a1','ws-a','task-a1','u-target','mine in a'),
-        ('c-binb','ws-b','task-b1','u-target','mine in b'),
-        ('c-b1','ws-b','task-b1','u-bystander','theirs');
+      INSERT INTO task_discussion_state (task_id,workspace_id,next_create_seq,next_change_seq) VALUES
+        ('task-a1','ws-a',2,2), ('task-b1','ws-b',3,3);
+      INSERT INTO comments (id, workspace_id, task_id, user_id, body, client_request_id, request_hash, revision, create_seq) VALUES
+        ('c-a1','ws-a','task-a1','u-target','mine in a','request_export_a1','hash-a1',1,1),
+        ('c-binb','ws-b','task-b1','u-target','mine in b','request_export_b1','hash-b1',1,1),
+        ('c-b1','ws-b','task-b1','u-bystander','theirs','request_export_b2','hash-b2',1,2);
       INSERT INTO attachments (id, workspace_id, task_id, uploader_user_id, filename, stored_path, mime_type, size_bytes) VALUES
         ('att-a1','ws-a','task-a1','u-target','f.png','.data/uploads/SECRET-PATH.png','image/png',3);
       INSERT INTO notification_prefs (user_id) VALUES ('u-target');

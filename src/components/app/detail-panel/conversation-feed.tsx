@@ -3,24 +3,21 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Activity, UserId } from "@/lib/data";
+import type { ConversationResult } from "@/lib/conversations/contracts";
 import type { TaskCommentRecord, TaskDiscussionSnapshot } from "@/lib/conversations/task-discussion-contracts";
 import { useCurrentUser } from "@/lib/auth-context";
 import { Avatar } from "@/components/showcase/avatar";
 import { MentionField, type MentionPerson } from "@/components/ui/mention-field";
 import { formatRelativeTime } from "@/lib/utils";
-import {
-  addCommentAction,
-  editCommentAction,
-  getCommentReceiptAction,
-  openTaskDiscussionAction,
-  removeCommentAction,
-} from "@/server/actions/comments";
 import { beginTaskSync } from "@/lib/tasks/delight-events";
+import { conversationHeaders } from "@/components/app/messages/conversation-client-model";
 
 export type ConversationFeedProps = {
   taskId: string;
   initialDiscussion: TaskDiscussionSnapshot;
   initialActivities?: readonly Activity[];
+  /** Explicit lab-only actor forwarded to the local preview interceptor. */
+  fixtureActor?: string;
 };
 
 type PendingComment = Readonly<{
@@ -34,6 +31,18 @@ function newRequestId(kind: string) {
   return `${kind}_${crypto.randomUUID().replaceAll("-", "")}`;
 }
 
+async function apiResult<T>(url: string, fixtureActor: string | undefined, init?: RequestInit) {
+  const headers = conversationHeaders(fixtureActor, Boolean(init?.body));
+  new Headers(init?.headers).forEach((value, key) => headers.set(key, value));
+  const response = await fetch(url, { ...init, cache: "no-store", credentials: "same-origin", headers });
+  return await response.json() as ConversationResult<T>;
+}
+
+function discussionUrl(action: string, values: Record<string, string | number>) {
+  return `/api/task-discussion?${new URLSearchParams({ action,
+    ...Object.fromEntries(Object.entries(values).map(([key, value]) => [key, String(value)])) })}`;
+}
+
 function mergeComments(current: readonly TaskCommentRecord[], incoming: readonly TaskCommentRecord[]) {
   const byId = new Map(current.map((comment) => [comment.id, comment]));
   for (const comment of incoming) {
@@ -44,10 +53,18 @@ function mergeComments(current: readonly TaskCommentRecord[], incoming: readonly
 }
 
 /** Canonical task comments plus the task's existing body-free activity history. */
-export function ConversationFeed({
+export function ConversationFeed(props: ConversationFeedProps) {
+  return <ConversationFeedState
+    key={`${props.taskId}:${props.initialDiscussion.audienceEpoch}:${props.initialDiscussion.throughChangeSeq}`}
+    {...props}
+  />;
+}
+
+function ConversationFeedState({
   taskId,
   initialDiscussion,
   initialActivities = [],
+  fixtureActor,
 }: ConversationFeedProps) {
   const [discussion, setDiscussion] = useState(initialDiscussion);
   const [comments, setComments] = useState(initialDiscussion.comments);
@@ -55,31 +72,25 @@ export function ConversationFeed({
   const [notice, setNotice] = useState<string | null>(null);
   const me = useCurrentUser();
 
-  useEffect(() => {
-    setDiscussion(initialDiscussion);
-    setComments(initialDiscussion.comments);
-    setPending([]);
-    setNotice(null);
-  }, [initialDiscussion]);
-
   const refresh = useCallback(async () => {
-    const fresh = await openTaskDiscussionAction(taskId);
+    const fresh = await apiResult<TaskDiscussionSnapshot>(
+      discussionUrl("open", { taskId }), fixtureActor,
+    );
     if (!fresh.ok) return false;
     setDiscussion(fresh.value);
     setComments((current) => mergeComments(current, fresh.value.comments));
     setPending([]);
     return true;
-  }, [taskId]);
+  }, [fixtureActor, taskId]);
 
   useEffect(() => {
     let cancelled = false;
     let cursor = discussion.throughChangeSeq;
     const poll = async () => {
       try {
-        const result = await fetch(
-          `/api/task-discussion?action=history&taskId=${encodeURIComponent(taskId)}&afterChangeSeq=${cursor}&limit=100`,
-          { cache: "no-store" },
-        ).then((response) => response.json());
+        const result = await apiResult<import("@/lib/conversations/task-discussion-contracts").TaskDiscussionDelta>(
+          discussionUrl("history", { taskId, afterChangeSeq: cursor, limit: 100 }), fixtureActor,
+        );
         if (cancelled) return;
         if (result.ok) {
           setComments((current) => mergeComments(current, result.value.comments));
@@ -97,7 +108,7 @@ export function ConversationFeed({
     };
     const timer = window.setInterval(poll, 2_500);
     return () => { cancelled = true; window.clearInterval(timer); };
-  }, [discussion.audienceEpoch, discussion.throughChangeSeq, refresh, taskId]);
+  }, [discussion.audienceEpoch, discussion.throughChangeSeq, fixtureActor, refresh, taskId]);
 
   const people = useMemo<MentionPerson[]>(() => discussion.members.map((member) => ({
     id: member.id,
@@ -115,11 +126,14 @@ export function ConversationFeed({
     setNotice(null);
     const finishSync = beginTaskSync();
     try {
-      const result = await addCommentAction({
-        taskId, clientRequestId, expectedAudienceEpoch: discussion.audienceEpoch,
-        body, rootCommentId, mentionUserIds,
-      });
+      const result = await apiResult<import("@/lib/conversations/task-discussion-contracts").TaskCommentReceipt>(
+        "/api/task-discussion", fixtureActor, { method: "POST", body: JSON.stringify({
+          action: "send", taskId, clientRequestId, expectedAudienceEpoch: discussion.audienceEpoch,
+          body, rootCommentId, mentionUserIds,
+        }) },
+      );
       if (!result.ok) {
+        if (result.code === "temporarily_unavailable") throw new Error(result.code);
         setPending((current) => current.filter((item) => item.clientRequestId !== clientRequestId));
         if (result.code === "audience_changed") {
           setNotice("The people with access changed. Review recipients and send again.");
@@ -135,11 +149,20 @@ export function ConversationFeed({
       return true;
     } catch (error) {
       try {
-        const lookup = await getCommentReceiptAction(taskId, clientRequestId);
+        const lookup = await apiResult<
+          { state: "committed"; receipt: import("@/lib/conversations/task-discussion-contracts").TaskCommentReceipt } |
+          { state: "absent" }
+        >(discussionUrl("receipt", { taskId, clientRequestId }), fixtureActor);
         if (lookup.ok && lookup.value.state === "committed") {
           await refresh();
           finishSync();
           return true;
+        }
+        if (lookup.ok && lookup.value.state === "absent") {
+          setPending((current) => current.filter((item) => item.clientRequestId !== clientRequestId));
+          setNotice("Comment not sent. Your draft is still here.");
+          finishSync(error);
+          return false;
         }
       } catch {
         // The receipt lookup is also uncertain, so keep the local row.
@@ -150,41 +173,63 @@ export function ConversationFeed({
       finishSync(error);
       return true;
     }
-  }, [discussion.audienceEpoch, refresh, taskId]);
+  }, [discussion.audienceEpoch, fixtureActor, refresh, taskId]);
 
   const edit = useCallback(async (
     comment: TaskCommentRecord,
     body: string,
     mentionUserIds: readonly string[],
   ) => {
-    const result = await editCommentAction({
-      taskId, commentId: comment.id, clientRequestId: newRequestId("task_comment_edit"),
-      expectedRevision: comment.revision, expectedAudienceEpoch: discussion.audienceEpoch,
-      body, mentionUserIds,
-    });
-    if (!result.ok) {
-      setNotice(result.code === "revision_conflict"
-        ? "This comment changed. Review the latest version."
-        : "Edit not saved.");
-      await refresh();
-      return false;
-    }
-    await refresh();
-    return true;
-  }, [discussion.audienceEpoch, refresh, taskId]);
+    const clientRequestId = newRequestId("task_comment_edit");
+    try {
+      const result = await apiResult<import("@/lib/conversations/task-discussion-contracts").TaskCommentMutationReceipt>(
+        "/api/task-discussion", fixtureActor, { method: "POST", body: JSON.stringify({
+          action: "edit", taskId, commentId: comment.id, clientRequestId,
+          expectedRevision: comment.revision, expectedAudienceEpoch: discussion.audienceEpoch,
+          body, mentionUserIds,
+        }) },
+      );
+      if (result.ok) { await refresh(); return true; }
+      if (result.code !== "temporarily_unavailable") {
+        setNotice(result.code === "revision_conflict"
+          ? "This comment changed. Review the latest version."
+          : "Edit not saved.");
+        await refresh();
+        return false;
+      }
+    } catch { /* resolve the exact mutation receipt below */ }
+    const receipt = await apiResult<{ state: "committed"; receipt: unknown } | { state: "absent" }>(
+      discussionUrl("receipt", { taskId, clientRequestId }), fixtureActor,
+    ).catch(() => null);
+    if (receipt?.ok && receipt.value.state === "committed") { await refresh(); return true; }
+    setNotice(receipt?.ok ? "Edit not saved. Your text is still here." : "The edit receipt could not be checked.");
+    return false;
+  }, [discussion.audienceEpoch, fixtureActor, refresh, taskId]);
 
   const tombstone = useCallback(async (comment: TaskCommentRecord) => {
-    const result = await removeCommentAction({
-      taskId, commentId: comment.id, clientRequestId: newRequestId("task_comment_delete"),
-      expectedRevision: comment.revision, expectedAudienceEpoch: discussion.audienceEpoch,
-    });
-    if (!result.ok) {
-      setNotice(result.code === "revision_conflict"
-        ? "This comment changed. Review the latest version."
-        : "Comment not deleted.");
-    }
-    await refresh();
-  }, [discussion.audienceEpoch, refresh, taskId]);
+    const clientRequestId = newRequestId("task_comment_delete");
+    try {
+      const result = await apiResult<import("@/lib/conversations/task-discussion-contracts").TaskCommentMutationReceipt>(
+        "/api/task-discussion", fixtureActor, { method: "POST", body: JSON.stringify({
+          action: "tombstone", taskId, commentId: comment.id, clientRequestId,
+          expectedRevision: comment.revision, expectedAudienceEpoch: discussion.audienceEpoch,
+        }) },
+      );
+      if (result.ok) { await refresh(); return; }
+      if (result.code !== "temporarily_unavailable") {
+        setNotice(result.code === "revision_conflict"
+          ? "This comment changed. Review the latest version."
+          : "Comment not deleted.");
+        await refresh();
+        return;
+      }
+    } catch { /* resolve the exact mutation receipt below */ }
+    const receipt = await apiResult<{ state: "committed"; receipt: unknown } | { state: "absent" }>(
+      discussionUrl("receipt", { taskId, clientRequestId }), fixtureActor,
+    ).catch(() => null);
+    if (receipt?.ok && receipt.value.state === "committed") { await refresh(); return; }
+    setNotice(receipt?.ok ? "Comment was not deleted." : "The delete receipt could not be checked.");
+  }, [discussion.audienceEpoch, fixtureActor, refresh, taskId]);
 
   const rows = useMemo(() => [
     ...comments.map((comment) => ({ kind: "comment" as const, at: comment.createdAt, comment })),
@@ -200,13 +245,13 @@ export function ConversationFeed({
       {rows.length === 0 && pending.length === 0 ? <EmptyState /> : (
         <AnimatePresence initial={false}>
           {rows.map((row) => row.kind === "comment" ? (
-            <CommentRow key={row.comment.id} comment={row.comment} currentActorId={me}
+            <CommentRow key={row.comment.id} comment={row.comment} currentActorId={fixtureActor ?? me}
               members={people} onEdit={edit} onDelete={tombstone} />
           ) : <ActivityRow key={row.activity.id} activity={row.activity} />)}
           {pending.map((item) => <PendingRow key={item.clientRequestId} item={item} />)}
         </AnimatePresence>
       )}
-      <Composer taskId={taskId} me={me} people={people}
+      <Composer key={taskId} taskId={taskId} me={me} people={people}
         disabled={discussion.lifecycle === "archived"} onSubmit={submit} comments={comments} />
     </div>
   );

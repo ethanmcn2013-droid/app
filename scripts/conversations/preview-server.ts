@@ -9,6 +9,8 @@ import { createLocalConversationDatabaseAdapter, type ConversationSqlExecutor } 
 import { createConversationService } from "../../src/server/conversations/service";
 import { createConversationTaskOutcomeService } from "../../src/server/conversations/work-links";
 import { createConversationHttp } from "../../src/server/conversations/http";
+import { createTaskDiscussionService } from "../../src/server/conversations/task-discussion";
+import { createTaskDiscussionHttp } from "../../src/server/conversations/task-discussion-http";
 import { resolveConversationControls } from "../../src/lib/conversations/flags";
 
 async function main() {
@@ -32,9 +34,18 @@ for (const [id, name] of [["synthetic_project_a", "Website launch"], ["synthetic
   await client.execute({ sql: "INSERT INTO workspaces(id,slug,name,owner_user_id,context_type,created_at,updated_at) VALUES(?,?,?,'synthetic_alice','project',?,?)", args: [id, id, name, Date.now(), Date.now()] });
   for (const [actor] of people) await client.execute({ sql: "INSERT INTO workspace_members(workspace_id,user_id,role,joined_at) VALUES(?,?,?,?)", args: [id, actor, actor === "synthetic_alice" ? "owner" : "member", Date.now()] });
 }
+for (const [id, workspaceId, title] of [
+  ["synthetic_task_a", "synthetic_project_a", "Prepare the launch brief"],
+  ["synthetic_task_b", "synthetic_project_b", "Confirm exhibition lighting"],
+]) await client.execute({
+  sql: `INSERT INTO tasks(id,workspace_id,title,lane,priority,assignees,created_at,updated_at)
+    VALUES (?,?,?,'backlog','p2','[]',unixepoch(),unixepoch())`,
+  args: [id, workspaceId, title],
+});
 const adapter = createLocalConversationDatabaseAdapter({ client: client as unknown as ConversationSqlExecutor });
 const service = createConversationService(adapter);
 const taskOutcomes = createConversationTaskOutcomeService(adapter);
+const taskDiscussion = createTaskDiscussionService(adapter);
 let sendsEnabled = true;
 const dropNextResponse = new Set<string>();
 const withholdNextReceipt = new Set<string>();
@@ -58,19 +69,20 @@ const server = createServer(async (incoming, outgoing) => {
     } catch { outgoing.writeHead(500); outgoing.end(); }
     return;
   }
-  if (path.pathname === "/api/conversations") {
+  if (path.pathname === "/api/conversations" || path.pathname === "/api/task-discussion") {
     const fixtureActor = typeof incoming.headers["x-fixture-actor"] === "string" ? incoming.headers["x-fixture-actor"] : null;
     if (incoming.method === "POST" && fixtureActor && refuseNextWrite.delete(fixtureActor)) {
       incoming.resume();
       outgoing.writeHead(503, { "content-type": "application/json", "cache-control": "no-store" });
       outgoing.end('{"ok":false,"code":"temporarily_unavailable"}'); return;
     }
-    const handle = createConversationHttp({
+    const dependencies = {
       authenticate: async () => people.some(([id]) => id === fixtureActor) ? fixtureActor : null,
       controls: () => resolveConversationControls({ SIGNAL_CONVERSATION_INTERNAL_ENABLED: "true", SIGNAL_CONVERSATION_INTERNAL_ACTOR_IDS: people.map(([id]) => id).join(","), SIGNAL_CONVERSATION_SEND_ENABLED: String(sendsEnabled) }),
-      service: async () => service,
-      taskOutcomes: async () => taskOutcomes,
-    });
+    };
+    const handle = path.pathname === "/api/task-discussion"
+      ? createTaskDiscussionHttp({ ...dependencies, service: async () => taskDiscussion })
+      : createConversationHttp({ ...dependencies, service: async () => service, taskOutcomes: async () => taskOutcomes });
     const requestHeaders = new Headers();
     for (const [name, value] of Object.entries(incoming.headers)) if (value) requestHeaders.set(name, Array.isArray(value) ? value.join(", ") : value);
     const request = new Request(path, { method: incoming.method, headers: requestHeaders,

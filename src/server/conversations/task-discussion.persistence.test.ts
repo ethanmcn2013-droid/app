@@ -135,9 +135,15 @@ test("same-task top-level roots, edits, tombstones and raw SQL guards preserve i
       clientRequestId: "request_task_edit_0001", expectedRevision: 1, expectedAudienceEpoch: opened.value.audienceEpoch,
       body: "Edited body", mentionUserIds: ["synthetic_bob"] });
     assert.equal(edit.ok && edit.value.revision, 2);
+    const removeMention = await service.editComment({ actorId: "synthetic_alice", taskId: "task_a", commentId: root.value.commentId,
+      clientRequestId: "request_task_edit_0002", expectedRevision: 2, expectedAudienceEpoch: opened.value.audienceEpoch,
+      body: "Edited without a mention", mentionUserIds: [] });
+    assert.equal(removeMention.ok && removeMention.value.revision, 3);
+    assert.equal(Number((await fixture.client.execute("SELECT COUNT(*) AS n FROM task_comment_attention")).rows[0].n), 0);
+    assert.equal((await fixture.client.execute("SELECT state FROM task_comment_outbox")).rows[0].state, "dropped");
     const deleted = await service.tombstoneComment({ actorId: "synthetic_alice", taskId: "task_a", commentId: root.value.commentId,
-      clientRequestId: "request_task_delete_01", expectedRevision: 2, expectedAudienceEpoch: opened.value.audienceEpoch });
-    assert.equal(deleted.ok && deleted.value.revision, 3);
+      clientRequestId: "request_task_delete_01", expectedRevision: 3, expectedAudienceEpoch: opened.value.audienceEpoch });
+    assert.equal(deleted.ok && deleted.value.revision, 4);
     const row = (await fixture.client.execute({ sql: "SELECT id,body,deleted_at,create_seq FROM comments WHERE id=?", args: [root.value.commentId] })).rows[0];
     assert.equal(row.id, root.value.commentId); assert.equal(row.body, null); assert.equal(row.create_seq, 1);
     assert.equal(Number((await fixture.client.execute("SELECT COUNT(*) AS n FROM task_comment_attention")).rows[0].n), 0);

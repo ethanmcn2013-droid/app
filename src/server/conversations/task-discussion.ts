@@ -514,6 +514,12 @@ export function createTaskDiscussionService(adapter: ConversationDatabaseAdapter
         if (rootAuthorId && rootAuthorId !== args.actorId) reasons.set(rootAuthorId, (reasons.get(rootAuthorId) ?? 0) | 2);
         const recipients = [...reasons.keys()];
         await executor.execute({
+          sql: `UPDATE task_comment_outbox SET state='dropped',lease_until=NULL,lease_token=NULL
+            WHERE task_id=? AND comment_id=? AND state IN ('pending','leased')
+            ${recipients.length ? `AND recipient_id NOT IN (${recipients.map(() => "?").join(",")})` : ""}`,
+          args: [args.taskId, args.commentId, ...recipients],
+        });
+        await executor.execute({
           sql: `DELETE FROM task_comment_attention WHERE task_id=? AND comment_id=?
             ${recipients.length ? `AND recipient_id NOT IN (${recipients.map(() => "?").join(",")})` : ""}`,
           args: [args.taskId, args.commentId, ...recipients],

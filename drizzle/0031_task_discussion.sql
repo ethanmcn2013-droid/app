@@ -219,6 +219,8 @@ END;
 CREATE TRIGGER task_comments_guard_update
 BEFORE UPDATE ON comments
 BEGIN
+  SELECT CASE WHEN OLD.revision IS NULL
+    THEN RAISE(ABORT,'quarantined_task_comment') END;
   SELECT CASE WHEN NEW.id<>OLD.id OR NEW.workspace_id<>OLD.workspace_id OR NEW.task_id<>OLD.task_id
       OR NEW.user_id<>OLD.user_id OR NEW.client_request_id IS NOT OLD.client_request_id
       OR NEW.request_hash IS NOT OLD.request_hash OR NEW.root_id IS NOT OLD.root_id
