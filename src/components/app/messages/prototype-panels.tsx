@@ -38,12 +38,14 @@ export function AudienceHeader({
   status,
   relatedOpen,
   onToggleRelated,
+  showRelatedWork = true,
 }: {
   title: string;
   description: string;
   status: "active" | "pending" | "blocked" | "archived" | "unavailable";
   relatedOpen: boolean;
   onToggleRelated: () => void;
+  showRelatedWork?: boolean;
 }) {
   const label = status === "active" ? "Can send" : status.replace("_", " ");
   return (
@@ -62,7 +64,7 @@ export function AudienceHeader({
       </div>
       <nav aria-label="Conversation views" className={styles.headerTabs}>
         <button aria-current="page" onClick={() => { if (relatedOpen) onToggleRelated(); }} type="button">Conversation</button>
-        <button aria-pressed={relatedOpen} onClick={onToggleRelated} type="button">Related work <span>2</span></button>
+        {showRelatedWork ? <button aria-pressed={relatedOpen} onClick={onToggleRelated} type="button">Related work <span>2</span></button> : null}
       </nav>
     </header>
   );
