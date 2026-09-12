@@ -71,6 +71,12 @@ test("controlled recipient accepts B, completes assigned work, and loses B after
     await creatorPage.goto(invitePath);
     await expect(creatorPage.getByText(/Use the email address this invite was sent to/)).toBeVisible();
     await expect(creatorPage.getByRole("button", { name: "Accept invite" })).toHaveCount(0);
+    await creatorPage.getByRole("button", { name: "Sign out and use the invited account" }).click();
+    await expect(creatorPage).toHaveURL((url) =>
+      url.pathname === "/sign-in" && url.searchParams.get("redirect_url") === invitePath,
+    );
+    const restoredCreator = await ticketSignIn(creatorPage, creatorEmail);
+    expect(restoredCreator).toEqual(creator);
     observe("wrongAccountRefused");
 
     await signIn.click();

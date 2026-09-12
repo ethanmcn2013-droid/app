@@ -4,6 +4,13 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-09-12 · January candidate · Invites keep account switching available
+
+An invite opened with the wrong account now keeps its account-switch control
+inside the authenticated runtime. Signing out preserves the same invite as the
+destination for the next sign-in. The controlled recipient journey remains in
+progress.
+
 ## 2026-09-06 · January candidate · Keep recovery within reach
 
 Project recovery brings file downloads and published-link controls together in
