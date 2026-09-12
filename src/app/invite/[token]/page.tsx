@@ -6,7 +6,6 @@ import { db } from "@/server/db";
 import { pendingInvites, workspaces, workspaceMembers, users } from "@/server/db/schema";
 import { SiteNav } from "@/components/marketing/site-nav";
 import { SiteFooter } from "@/components/marketing/site-footer";
-import { ClerkRuntimeProvider } from "@/components/clerk-runtime-provider";
 import { AcceptInviteButton } from "./accept-button";
 import { isDemoMode } from "@/lib/access-mode";
 import { inviteAuthUrl } from "@/lib/auth/invite-intent";
@@ -272,13 +271,11 @@ export default async function InviteAcceptPage({
                         ? " Use the email address this invite was sent to."
                         : " Verify the invited email address before accepting."}
                     </p>
-                    <ClerkRuntimeProvider>
-                      <SignOutButton redirectUrl={inviteAuthUrl("sign-in", `/invite/${token}`)}>
-                        <button type="button" className="mt-3 min-h-[44px] font-medium underline">
-                          Sign out and use the invited account
-                        </button>
-                      </SignOutButton>
-                    </ClerkRuntimeProvider>
+                    <SignOutButton redirectUrl={inviteAuthUrl("sign-in", `/invite/${token}`)}>
+                      <button type="button" className="mt-3 min-h-[44px] font-medium underline">
+                        Sign out and use the invited account
+                      </button>
+                    </SignOutButton>
                   </div>
                 ) : (
                   <div className="mt-7">

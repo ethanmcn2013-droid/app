@@ -213,6 +213,10 @@ test("controlled recipient accepts B, completes assigned work, and loses B after
         primaryVerified: true,
         expectedCreator: true,
       },
+      errors: {
+        pageCount: 0,
+        pageClass: "none",
+      },
     });
     await expect(creatorPage.getByText(/Use the email address this invite was sent to/)).toBeVisible();
     await expect(creatorPage.getByRole("button", { name: "Accept invite" })).toHaveCount(0);
