@@ -377,7 +377,7 @@
             {
               "kind": "role",
               "role": "heading",
-              "name": "Execution clarity for live work.",
+              "name": "Project management for people not in tech.",
               "proves": [
                 "default"
               ]
