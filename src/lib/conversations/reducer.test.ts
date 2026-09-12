@@ -30,8 +30,24 @@ test("revocation clears history, drafts and queued sends; stale responses cannot
   state = reduce(state, { type: "refused", generation: 0, failure: { ok: false, code: "unavailable" } });
   assert.equal(state.status, "unavailable"); assert.equal(state.draft, ""); assert.deepEqual(state.pending, []);
   assert.equal(reduce(state, { type: "receipt", generation: 0, receipt }), state);
-  const switched = reduce(state, { type: "reset", actorId: "bob", scopeKey: "project-b:room-b" });
+  const switched = reduce(state, { type: "reset", actorId: "bob", scopeKey: "project-b:room-b", generation: 1 });
   assert.equal(switched.actorId, "bob"); assert.deepEqual(switched.messages, []);
+});
+test("one monotonic generation rejects every stale callback and reset", () => {
+  const state = reduce(ready(), { type: "reset", actorId: "alice", scopeKey: "project-a:room-b", generation: 4 });
+  assert.equal(state.generation, 4);
+  assert.equal(reduce(state, { type: "reset", actorId: "alice", scopeKey: "stale", generation: 3 }), state);
+  assert.equal(reduce(state, { type: "delta", generation: 3, delta: { audienceEpoch: 9, throughChangeSeq: 9, hasMore: false, messages: [] } }), state);
+  assert.equal(reduce(state, { type: "offline", generation: 3 }), state);
+});
+test("an absent old-audience request restores the exact body once", () => {
+  let state = reduce(ready(), { type: "submit", input });
+  state = reduce(state, { type: "uncertain", generation: 0, requestId: input.clientRequestId });
+  state = reduce(state, { type: "restore_absent", generation: 0, requestId: input.clientRequestId });
+  assert.equal(state.draft, input.body);
+  assert.deepEqual(state.pending, []);
+  assert.equal(state.error, "audience_changed");
+  assert.equal(reduce(state, { type: "restore_absent", generation: 0, requestId: input.clientRequestId }), state);
 });
 test("audience change prevents silently sending the previous draft epoch", () => {
   let state = reduce(ready(), { type: "draft", value: input.body });

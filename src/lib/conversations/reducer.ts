@@ -18,7 +18,7 @@ export function emptyConversationState(actorId: string, scopeKey: string, genera
   return { actorId, scopeKey, generation, status: "loading", audienceEpoch: null, reviewedAudienceEpoch: null, cursor: 0, messages: [], pending: [], draft: "", error: null };
 }
 export type ConversationClientAction =
-  | { type: "reset"; actorId: string; scopeKey: string }
+  | { type: "reset"; actorId: string; scopeKey: string; generation: number }
   | { type: "draft"; value: string }
   | { type: "review_audience"; audienceEpoch: number }
   | { type: "submit"; input: SendInput }
@@ -26,6 +26,7 @@ export type ConversationClientAction =
   | { type: "delta"; generation: number; delta: ConversationDelta }
   | { type: "receipt"; generation: number; receipt: MessageReceipt }
   | { type: "uncertain"; generation: number; requestId: string }
+  | { type: "restore_absent"; generation: number; requestId: string }
   | { type: "refused"; generation: number; failure: ConversationFailure; requestId?: string }
   | { type: "offline"; generation: number };
 
@@ -43,7 +44,7 @@ function mergeMessages(current: readonly MessageRecord[], incoming: readonly Mes
 
 /** In-memory only. Parent session owns scoped draft continuity and clears on identity change. */
 export function conversationReducer(state: ConversationClientState, action: ConversationClientAction): ConversationClientState {
-  if (action.type === "reset") return emptyConversationState(action.actorId, action.scopeKey, state.generation + 1);
+  if (action.type === "reset") return action.generation > state.generation ? emptyConversationState(action.actorId, action.scopeKey, action.generation) : state;
   if ("generation" in action && action.generation !== state.generation) return state;
   if (action.type === "draft") return state.status === "unavailable" ? state : { ...state, draft: action.value };
   if (action.type === "review_audience") return state.status === "ready" && action.audienceEpoch === state.audienceEpoch ? { ...state, reviewedAudienceEpoch: action.audienceEpoch, error: null } : state;
@@ -66,10 +67,14 @@ export function conversationReducer(state: ConversationClientState, action: Conv
     return { ...state, messages: mergeMessages(state.messages, [record]), pending: state.pending.filter((send) => send !== pending) };
   }
   if (action.type === "uncertain") return { ...state, pending: state.pending.map((send) => send.input.clientRequestId === action.requestId ? { ...send, state: "uncertain" } : send) };
+  if (action.type === "restore_absent") {
+    const pending = state.pending.find((send) => send.input.clientRequestId === action.requestId);
+    return pending ? { ...state, draft: pending.input.body, pending: state.pending.filter((send) => send !== pending), error: "audience_changed", status: "loading" } : state;
+  }
   if (action.type === "offline") return state.status === "unavailable" ? state : { ...state, status: "offline" };
   if (action.type === "refused") {
     if (action.failure.code === "unavailable" || action.failure.code === "unauthenticated") {
-      return { ...emptyConversationState(state.actorId, state.scopeKey, state.generation + 1), status: "unavailable", error: action.failure.code };
+      return { ...emptyConversationState(state.actorId, state.scopeKey, state.generation), status: "unavailable", error: action.failure.code };
     }
     return { ...state, error: action.failure.code,
       status: action.failure.code === "audience_changed" ? "loading" : state.status,

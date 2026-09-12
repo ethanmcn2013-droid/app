@@ -1,6 +1,7 @@
 import type { ProjectId } from "@/lib/projects/project-ref";
 
 export type DraftCache = Map<string, string>;
+export type ScrollCache = Map<string, Readonly<{ top: number; bottomDistance: number }>>;
 
 export function rememberDraft(cache: DraftCache, key: string, value: string, limit = 20): void {
   cache.delete(key);
@@ -10,6 +11,25 @@ export function rememberDraft(cache: DraftCache, key: string, value: string, lim
 
 export function draftKey(actorId: string, projectId: ProjectId, conversationId: string, rootId: string | null): string {
   return JSON.stringify([actorId, projectId, conversationId, rootId]);
+}
+
+export function forgetProjectDrafts(cache: DraftCache, actorId: string, projectId: ProjectId): void {
+  for (const key of cache.keys()) {
+    try {
+      const value: unknown = JSON.parse(key);
+      if (Array.isArray(value) && value[0] === actorId && value[1] === projectId) cache.delete(key);
+    } catch {
+      // Ignore keys outside this module's tuple format.
+    }
+  }
+}
+
+export function audienceResponseMatches(capturedGeneration: number, currentGeneration: number, expectedEpoch: number, historyEpoch: number | null, responseEpoch: number): boolean {
+  return capturedGeneration === currentGeneration && expectedEpoch === historyEpoch && responseEpoch === historyEpoch;
+}
+
+export function needsFreshAudienceSend(requestEpoch: number, historyEpoch: number | null): boolean {
+  return historyEpoch === null || requestEpoch !== historyEpoch;
 }
 
 /** The synthetic identity header exists only when the lab explicitly supplies it. */
