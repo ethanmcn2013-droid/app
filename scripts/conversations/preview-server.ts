@@ -7,6 +7,7 @@ import { resolve, join } from "node:path";
 import { createClient } from "@libsql/client";
 import { createLocalConversationDatabaseAdapter, type ConversationSqlExecutor } from "../../src/server/conversations/database";
 import { createConversationService } from "../../src/server/conversations/service";
+import { createConversationTaskOutcomeService } from "../../src/server/conversations/work-links";
 import { createConversationHttp } from "../../src/server/conversations/http";
 import { resolveConversationControls } from "../../src/lib/conversations/flags";
 
@@ -33,6 +34,7 @@ for (const [id, name] of [["synthetic_project_a", "Website launch"], ["synthetic
 }
 const adapter = createLocalConversationDatabaseAdapter({ client: client as unknown as ConversationSqlExecutor });
 const service = createConversationService(adapter);
+const taskOutcomes = createConversationTaskOutcomeService(adapter);
 let sendsEnabled = true;
 const dropNextResponse = new Set<string>();
 const origin = `http://127.0.0.1:${port}`;
@@ -58,6 +60,7 @@ const server = createServer(async (incoming, outgoing) => {
       authenticate: async () => people.some(([id]) => id === fixtureActor) ? fixtureActor : null,
       controls: () => resolveConversationControls({ SIGNAL_CONVERSATION_INTERNAL_ENABLED: "true", SIGNAL_CONVERSATION_INTERNAL_ACTOR_IDS: people.map(([id]) => id).join(","), SIGNAL_CONVERSATION_SEND_ENABLED: String(sendsEnabled) }),
       service: async () => service,
+      taskOutcomes: async () => taskOutcomes,
     });
     const requestHeaders = new Headers();
     for (const [name, value] of Object.entries(incoming.headers)) if (value) requestHeaders.set(name, Array.isArray(value) ? value.join(", ") : value);

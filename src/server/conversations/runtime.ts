@@ -3,32 +3,45 @@ import { createClient } from "@libsql/client";
 import { auth } from "@clerk/nextjs/server";
 import { resolveConversationControls } from "../../lib/conversations/flags";
 import { createConversationService } from "./service";
+import { createConversationTaskOutcomeService } from "./work-links";
 import { createLocalConversationDatabaseAdapter, createUnavailableConversationDatabaseAdapter } from "./database";
 
 type Service = ReturnType<typeof createConversationService>;
-const runtimeGlobal = globalThis as typeof globalThis & { conversationLocalRuntime?: { url: string; service: Service } };
+type TaskOutcomes = ReturnType<typeof createConversationTaskOutcomeService>;
+type RuntimeServices = Readonly<{ conversation: Service; taskOutcomes: TaskOutcomes }>;
+const runtimeGlobal = globalThis as typeof globalThis & { conversationLocalRuntime?: { url: string; services: RuntimeServices } };
 
-/** Explicit local candidate only. Remote primary/session evidence is a release dependency. */
-export async function getConversationService(): Promise<Service> {
+function unavailableServices(reason: string): RuntimeServices {
+  const adapter = createUnavailableConversationDatabaseAdapter(reason);
+  return { conversation: createConversationService(adapter), taskOutcomes: createConversationTaskOutcomeService(adapter) };
+}
+
+async function getRuntimeServices(): Promise<RuntimeServices> {
   const url = process.env.TASKS_DATABASE_URL;
   if (!resolveConversationControls(process.env).internalEnabled ||
     process.env.SIGNAL_CONVERSATION_DATABASE_MODE !== "local" ||
     process.env.NODE_ENV === "production" || process.env.VERCEL === "1" ||
-    !url?.startsWith("file:") || url.includes(":memory:")) {
-    return createConversationService(createUnavailableConversationDatabaseAdapter("unverified_environment"));
-  }
+    !url?.startsWith("file:") || url.includes(":memory:")) return unavailableServices("unverified_environment");
   const cached = runtimeGlobal.conversationLocalRuntime;
-  if (cached) {
-    // A running process never changes its database underneath in-flight operations.
-    if (cached.url !== url) return createConversationService(createUnavailableConversationDatabaseAdapter("runtime_configuration_changed"));
-    return cached.service;
-  }
+  if (cached) return cached.url === url ? cached.services : unavailableServices("runtime_configuration_changed");
   const client = createClient({ url });
-  const service = createConversationService(createLocalConversationDatabaseAdapter({ client: {
+  // Both services receive this exact adapter. Local serialization therefore
+  // covers one connection and one queue across message and task operations.
+  const adapter = createLocalConversationDatabaseAdapter({ client: {
     execute: (statement) => client.execute(typeof statement === "string" ? statement : { sql: statement.sql, args: [...(statement.args ?? [])] }),
-  } }));
-  runtimeGlobal.conversationLocalRuntime = { url, service };
-  return service;
+  } });
+  const services = { conversation: createConversationService(adapter), taskOutcomes: createConversationTaskOutcomeService(adapter) };
+  runtimeGlobal.conversationLocalRuntime = { url, services };
+  return services;
+}
+
+/** Explicit local candidate only. Remote primary/session evidence is a release dependency. */
+export async function getConversationService(): Promise<Service> {
+  return (await getRuntimeServices()).conversation;
+}
+
+export async function getConversationTaskOutcomeService(): Promise<TaskOutcomes> {
+  return (await getRuntimeServices()).taskOutcomes;
 }
 
 export async function authenticateConversationActor(): Promise<string | null> {

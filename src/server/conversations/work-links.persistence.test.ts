@@ -127,7 +127,12 @@ test("committed receipt recovery precedes changed source, epoch, archive, and fo
     assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: f.input }), committed);
     assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: { ...f.input, title: "Changed after commit" } }), { ok: false, code: "request_conflict" });
     const lookup = await service.getTaskReceipt({ actorId: "alice", clientRequestId: f.input.clientRequestId });
-    assert.equal(lookup.ok && lookup.value.state === "committed" && lookup.value.taskAvailable, true);
+    assert.equal(lookup.ok, true);
+    if (!lookup.ok) return;
+    assert.equal(lookup.value.state, "committed");
+    if (lookup.value.state !== "committed") return;
+    assert.equal(lookup.value.taskAvailable, true);
+    assert.deepEqual(lookup.value.receipt, committed.ok ? committed.value : null);
 
     await f.client.execute({ sql: "DELETE FROM workspace_members WHERE workspace_id=? AND user_id='alice'", args: [sourceProject] });
     assert.deepEqual(await service.getTaskReceipt({ actorId: "alice", clientRequestId: f.input.clientRequestId }), { ok: false, code: "unavailable" });
@@ -163,7 +168,12 @@ test("usable links require current source, destination, message, and task relati
       assert.equal(Number(receiptRows.rows[0].n), 1, `receipt retained:${mutation}`);
       if (mutation === "task-move" || mutation === "task-delete") {
         const lookup = await service.getTaskReceipt({ actorId: "alice", clientRequestId: f.input.clientRequestId });
-        assert.equal(lookup.ok && lookup.value.state === "committed" && lookup.value.taskAvailable, false);
+        assert.equal(lookup.ok, true);
+        if (!lookup.ok) continue;
+        assert.equal(lookup.value.state, "committed");
+        if (lookup.value.state !== "committed") continue;
+        assert.equal(lookup.value.taskAvailable, false);
+        assert.deepEqual(lookup.value.receipt, committed.value);
         assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: f.input }), committed);
       }
     } finally { f.client.close(); }

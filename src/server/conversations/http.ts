@@ -1,13 +1,17 @@
 import { parseProjectId } from "../../lib/projects/project-ref";
 import { conversationAvailability, type ConversationControls } from "../../lib/conversations/flags";
 import { validMessageBody, validRequestId, validSequence, type ConversationFailure } from "../../lib/conversations/contracts";
+import { isCalendarDate } from "../../lib/planning/dates";
 import type { createConversationService } from "./service";
+import type { createConversationTaskOutcomeService } from "./work-links";
 
 type Service = ReturnType<typeof createConversationService>;
+type TaskOutcomes = ReturnType<typeof createConversationTaskOutcomeService>;
 type Dependencies = {
   authenticate: () => Promise<string | null>;
   controls: () => ConversationControls;
   service: () => Promise<Service>;
+  taskOutcomes?: () => Promise<TaskOutcomes>;
 };
 const MAX_JSON_BYTES = 48_000;
 const headers = {
@@ -31,6 +35,10 @@ function response(result: { ok: boolean; code?: ConversationFailure["code"]; ret
 const fail = (code: ConversationFailure["code"]) => response({ ok: false, code });
 const id = (value: unknown): value is string => typeof value === "string" && value.length > 0 && value.length <= 256 && !/[\u0000-\u001f]/.test(value);
 const positive = (value: unknown): value is number => validSequence(value) && value > 0;
+const taskTitle = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0 &&
+  Array.from(value).length <= 1_000 && new TextEncoder().encode(value).byteLength <= 4_000 && !/[\u0000-\u001f]/.test(value);
+const PROMOTE_FIELDS = new Set(["action", "projectId", "conversationId", "messageId", "clientRequestId",
+  "expectedRevision", "expectedAudienceEpoch", "destinationProjectId", "title", "ownerUserId", "dueDate"]);
 
 async function boundedJson(request: Request): Promise<Record<string, unknown> | null> {
   if (request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") return null;
@@ -64,9 +72,23 @@ export function createConversationHttp(deps: Dependencies) {
       if (!availability.read) return fail("unavailable");
       const url = new URL(request.url);
       if (request.method === "GET") {
+        const action = url.searchParams.get("action");
+        if (action === "task-receipt") {
+          const clientRequestId = url.searchParams.get("clientRequestId");
+          if (!validRequestId(clientRequestId) || !deps.taskOutcomes) return fail("invalid_input");
+          return response(await (await deps.taskOutcomes()).getTaskReceipt({ actorId, clientRequestId }));
+        }
+        if (action === "task-outcome") {
+          const taskId = url.searchParams.get("taskId");
+          if (!id(taskId) || !deps.taskOutcomes) return fail("invalid_input");
+          return response(await (await deps.taskOutcomes()).getTaskOutcome({ actorId, taskId }));
+        }
         const projectId = parseProjectId(url.searchParams.get("projectId"));
         if (!projectId) return fail("invalid_input");
-        const action = url.searchParams.get("action");
+        if (action === "task-destination") {
+          if (!deps.taskOutcomes) return fail("invalid_input");
+          return response(await (await deps.taskOutcomes()).getTaskDestination({ actorId, projectId }));
+        }
         const service = await deps.service();
         if (action === "project") return response(await service.getProjectConversation({ actorId, projectId }));
         if (action === "audience") return response(await service.listProjectAudience({ actorId, projectId }));
@@ -98,6 +120,20 @@ export function createConversationHttp(deps: Dependencies) {
       if (!body || "actorId" in body || "userId" in body) return fail("invalid_input");
       const projectId = typeof body.projectId === "string" ? parseProjectId(body.projectId) : null;
       if (!projectId) return fail("invalid_input");
+      if (body.action === "promote-task") {
+        if (!deps.taskOutcomes || Object.keys(body).some((key) => !PROMOTE_FIELDS.has(key)) ||
+          !id(body.conversationId) || !id(body.messageId) || !validRequestId(body.clientRequestId) ||
+          !positive(body.expectedRevision) || !positive(body.expectedAudienceEpoch) ||
+          typeof body.destinationProjectId !== "string" || !parseProjectId(body.destinationProjectId) ||
+          !taskTitle(body.title) || !id(body.ownerUserId) || !isCalendarDate(body.dueDate)) return fail("invalid_input");
+        return response(await (await deps.taskOutcomes()).promoteMessageToTask({ actorId, input: {
+          clientRequestId: body.clientRequestId, sourceProjectId: projectId,
+          conversationId: body.conversationId, messageId: body.messageId,
+          expectedRevision: body.expectedRevision, expectedAudienceEpoch: body.expectedAudienceEpoch,
+          destinationProjectId: parseProjectId(body.destinationProjectId)!, title: body.title,
+          ownerUserId: body.ownerUserId, dueDate: body.dueDate,
+        } }));
+      }
       const service = await deps.service();
       if (body.action === "ensure") return response(await service.ensureProjectConversation({ actorId, projectId }));
       const { conversationId, clientRequestId, expectedAudienceEpoch } = body;
