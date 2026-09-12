@@ -170,7 +170,7 @@ WHERE legacy.revision IS NULL;
 --> statement-breakpoint
 
 INSERT INTO task_discussion_state(task_id,workspace_id,audience_epoch,next_create_seq,next_change_seq)
-SELECT task_id,workspace_id,1,MAX(create_seq)+1,COUNT(*)+1
+SELECT task_id,workspace_id,1,MAX(create_seq)+1,MAX(create_seq)+1
 FROM comments WHERE revision IS NOT NULL GROUP BY task_id,workspace_id;
 --> statement-breakpoint
 INSERT INTO task_comment_changes(task_id,change_seq,kind,comment_id,revision,audience_epoch,happened_at_ms)
@@ -221,11 +221,13 @@ BEFORE UPDATE ON comments
 BEGIN
   SELECT CASE WHEN OLD.revision IS NULL
     THEN RAISE(ABORT,'quarantined_task_comment') END;
-  SELECT CASE WHEN NEW.id<>OLD.id OR NEW.workspace_id<>OLD.workspace_id OR NEW.task_id<>OLD.task_id
-      OR NEW.user_id<>OLD.user_id OR NEW.client_request_id IS NOT OLD.client_request_id
+  SELECT CASE WHEN OLD.deleted_at IS NOT NULL AND (NEW.deleted_at IS NOT OLD.deleted_at OR NEW.body IS NOT NULL)
+    THEN RAISE(ABORT,'task_comment_tombstone_immutable') END;
+  SELECT CASE WHEN NEW.id IS NOT OLD.id OR NEW.workspace_id IS NOT OLD.workspace_id OR NEW.task_id IS NOT OLD.task_id
+      OR NEW.user_id IS NOT OLD.user_id OR NEW.client_request_id IS NOT OLD.client_request_id
       OR NEW.request_hash IS NOT OLD.request_hash OR NEW.root_id IS NOT OLD.root_id
-      OR NEW.create_seq<>OLD.create_seq OR NEW.created_at<>OLD.created_at
-      OR NEW.revision<>OLD.revision+1
+      OR NEW.create_seq IS NOT OLD.create_seq OR NEW.created_at IS NOT OLD.created_at
+      OR NEW.revision IS NOT OLD.revision+1
     THEN RAISE(ABORT,'invalid_task_comment_update') END;
   SELECT CASE WHEN NOT EXISTS (
     SELECT 1 FROM workspace_members wm JOIN users u ON u.id=wm.user_id

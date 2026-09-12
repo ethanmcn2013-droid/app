@@ -431,6 +431,12 @@ test("demo and review actions exit before tenant, database, or disk access", () 
     assertDemoGuardBefore(commentActions, action, "authenticateConversationActor");
     assertDemoGuardBefore(commentActions, action, "getTaskDiscussionService");
   }
+  assert.doesNotMatch(commentActions, /\{\s*actorId\s*,\s*\.\.\.input\s*\}/,
+    "authenticated Task Discussion actor must not be overwritten by request input");
+  assert.match(commentActions, /exactKeys\(input,/,
+    "Task Discussion server actions must reject unexpected runtime fields");
+  assert.match(commentActions, /authenticateConversationActor\("write"\)/,
+    "Task Discussion mutations must apply the write availability gate");
   // WP3 renegotiation (ADR 0001 §9). duplicateTaskAction derives the source
   // task's own Project; the cross-Project refusal it already carried is now an
   // assertion against the proved id rather than against the cookie.

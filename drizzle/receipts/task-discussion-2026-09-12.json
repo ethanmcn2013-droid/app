@@ -7,7 +7,7 @@
   "migrations": [
     {
       "id": "0031_task_discussion",
-      "sha256": "eb0352b3e749ae889baefbce487499a2c50690c4e965b174e7aed0c666c9d6e2",
+      "sha256": "f547d3e9251015de89c6da20c2121ab53ce582413c8685210f3253312345f48e",
       "reviewedAt": "2026-09-12T00:00:00.000Z",
       "risk": "Application-integrity risk: upgrades canonical comments in place with receipt-backed revisions, tombstones, task-local ordering and body-free directed effects. Ambiguous legacy tenants are quarantined rather than assigned.",
       "rollbackPlan": "Disable Task Discussion writes while retaining canonical comments, receipts, tombstones, ordering and migration reports. Do not drop or rewrite acknowledged comment history.",

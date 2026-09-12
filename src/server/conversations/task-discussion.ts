@@ -278,12 +278,14 @@ export function createTaskDiscussionService(adapter: ConversationDatabaseAdapter
       let rootAuthorId: string | null = null;
       if (input.rootCommentId !== null) {
         const root = await executor.execute({
-          sql: `SELECT user_id FROM comments WHERE id=? AND task_id=? AND workspace_id=?
-            AND root_id IS NULL AND deleted_at IS NULL AND revision IS NOT NULL`,
+          sql: `SELECT c.user_id,wm.user_id AS current_member_id FROM comments c
+            LEFT JOIN workspace_members wm ON wm.workspace_id=c.workspace_id AND wm.user_id=c.user_id
+            WHERE c.id=? AND c.task_id=? AND c.workspace_id=?
+              AND c.root_id IS NULL AND c.deleted_at IS NULL AND c.revision IS NOT NULL`,
           args: [input.rootCommentId, input.taskId, authorized.value.projectId],
         });
         if (!root.rows[0]) return failure("invalid_input");
-        rootAuthorId = text(root.rows[0].user_id);
+        rootAuthorId = root.rows[0].current_member_id ? text(root.rows[0].user_id) : null;
       }
       const createSeq = authorized.value.nextCreateSeq;
       const changeSeq = authorized.value.nextChangeSeq;
@@ -506,7 +508,12 @@ export function createTaskDiscussionService(adapter: ConversationDatabaseAdapter
       } else {
         let rootAuthorId: string | null = null;
         if (row.root_id != null) {
-          const root = await executor.execute({ sql: "SELECT user_id FROM comments WHERE id=? AND task_id=?", args: [row.root_id as string, args.taskId] });
+          const root = await executor.execute({
+            sql: `SELECT c.user_id FROM comments c JOIN workspace_members wm
+              ON wm.workspace_id=c.workspace_id AND wm.user_id=c.user_id
+              WHERE c.id=? AND c.task_id=?`,
+            args: [row.root_id as string, args.taskId],
+          });
           rootAuthorId = root.rows[0] ? text(root.rows[0].user_id) : null;
         }
         const reasons = new Map<string, number>();

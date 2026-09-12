@@ -1,7 +1,7 @@
 import "server-only";
 import { createClient } from "@libsql/client";
 import { auth } from "@clerk/nextjs/server";
-import { resolveConversationControls } from "../../lib/conversations/flags";
+import { conversationAvailability, resolveConversationControls } from "../../lib/conversations/flags";
 import { createConversationService } from "./service";
 import { createConversationTaskOutcomeService } from "./work-links";
 import { createTaskDiscussionService } from "./task-discussion";
@@ -58,10 +58,14 @@ export async function getTaskDiscussionService(): Promise<TaskDiscussion> {
   return (await getRuntimeServices()).taskDiscussion;
 }
 
-export async function authenticateConversationActor(): Promise<string | null> {
-  if (!resolveConversationControls(process.env).internalEnabled ||
+export async function authenticateConversationActor(mode: "read" | "write" = "read"): Promise<string | null> {
+  const controls = resolveConversationControls(process.env);
+  if (!controls.internalEnabled ||
     !process.env.CLERK_SECRET_KEY || !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) return null;
   const { userId } = await auth();
   if (!userId) return null;
-  return (await getConversationService()).resolveActor(userId);
+  const actorId = await (await getConversationService()).resolveActor(userId);
+  if (!actorId) return null;
+  const availability = conversationAvailability(controls, actorId);
+  return availability.read && (mode === "read" || availability.send) ? actorId : null;
 }

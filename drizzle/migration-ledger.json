@@ -329,10 +329,10 @@
       "id": "0031_task_discussion",
       "file": "drizzle/0031_task_discussion.sql",
       "when": 1789142403000,
-      "sha256": "eb0352b3e749ae889baefbce487499a2c50690c4e965b174e7aed0c666c9d6e2",
+      "sha256": "f547d3e9251015de89c6da20c2121ab53ce582413c8685210f3253312345f48e",
       "policy": "forward",
       "receipt": "drizzle/receipts/task-discussion-2026-09-12.json",
-      "receiptSha256": "8a6703d67b88d1f5381a539f2a1dc95af63433ea24a1c4558673d4272ccfec04"
+      "receiptSha256": "439255cac48d07e314c61476377fed633f2144232d29de73a06081b107d0cf49"
     }
   ]
 }

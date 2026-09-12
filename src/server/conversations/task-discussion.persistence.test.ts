@@ -65,16 +65,25 @@ test("0031 preserves canonical legacy ids and quarantines only unprovable tenant
     await client.batch([
       { sql: "INSERT INTO users(id,handle,name,color,initials) VALUES ('legacy_author','legacy','Legacy','#444','LA')" },
       { sql: "INSERT INTO workspaces(id,slug,name,owner_user_id,context_type,created_at,updated_at) VALUES ('legacy_project','legacy','Legacy','legacy_author','project',?,?)", args: [now,now] },
+      { sql: "INSERT INTO workspace_members(workspace_id,user_id,role,joined_at) VALUES ('legacy_project','legacy_author','owner',?)", args: [now] },
       { sql: "INSERT INTO tasks(id,workspace_id,title,lane,priority,assignees,created_at,updated_at) VALUES ('legacy_task','legacy_project','Legacy task','backlog','p2','[]',?,?)", args: [now,now] },
       { sql: "INSERT INTO comments(id,workspace_id,task_id,user_id,body,created_at) VALUES ('legacy-stable-id',NULL,'legacy_task','legacy_author','kept',?)", args: [now] },
-      { sql: "INSERT INTO comments(id,workspace_id,task_id,user_id,body,created_at) VALUES ('legacy-mismatch','wrong','legacy_task','legacy_author','quarantine',?)", args: [now+1] },
+      { sql: "INSERT INTO comments(id,workspace_id,task_id,user_id,body,created_at) VALUES ('legacy-mismatch','wrong','legacy_task','legacy_author','quarantine',?)", args: [now-1] },
     ], "write");
     await client.executeMultiple(await readFile(join(repoRoot, "drizzle", migration31), "utf8"));
     const kept = (await client.execute("SELECT id,workspace_id,revision,create_seq FROM comments WHERE id='legacy-stable-id'")).rows[0];
-    assert.deepEqual({ ...kept }, { id: "legacy-stable-id", workspace_id: "legacy_project", revision: 1, create_seq: 1 });
+    assert.deepEqual({ ...kept }, { id: "legacy-stable-id", workspace_id: "legacy_project", revision: 1, create_seq: 2 });
     const quarantined = (await client.execute("SELECT workspace_id,revision,create_seq FROM comments WHERE id='legacy-mismatch'")).rows[0];
     assert.deepEqual({ ...quarantined }, { workspace_id: null, revision: null, create_seq: null });
     assert.equal((await client.execute("SELECT reason FROM task_comment_migration_report WHERE comment_id='legacy-mismatch'")).rows[0].reason, "tenant_mismatch");
+    const service = serviceFor(client);
+    const opened = await service.openTaskDiscussion({ actorId: "legacy_author", taskId: "legacy_task" });
+    if (!opened.ok) assert.fail("legacy discussion did not open");
+    const sent = await service.sendComment({ actorId: "legacy_author", input: {
+      taskId: "legacy_task", clientRequestId: "request_after_mixed_upgrade", expectedAudienceEpoch: opened.value.audienceEpoch,
+      body: "after upgrade", rootCommentId: null, mentionUserIds: [],
+    } });
+    assert.equal(sent.ok && sent.value.createSeq, 3);
   } finally { client.close(); }
 });
 
@@ -147,6 +156,14 @@ test("same-task top-level roots, edits, tombstones and raw SQL guards preserve i
     const row = (await fixture.client.execute({ sql: "SELECT id,body,deleted_at,create_seq FROM comments WHERE id=?", args: [root.value.commentId] })).rows[0];
     assert.equal(row.id, root.value.commentId); assert.equal(row.body, null); assert.equal(row.create_seq, 1);
     assert.equal(Number((await fixture.client.execute("SELECT COUNT(*) AS n FROM task_comment_attention")).rows[0].n), 0);
+    await assert.rejects(fixture.client.execute({
+      sql: "UPDATE comments SET body='Resurrected',deleted_at=NULL,revision=revision+1 WHERE id=?",
+      args: [root.value.commentId],
+    }), /task_comment_tombstone_immutable/);
+    await assert.rejects(fixture.client.execute({
+      sql: "UPDATE comments SET revision=NULL WHERE id=?",
+      args: [root.value.commentId],
+    }), /invalid_task_comment_update/);
     await assert.rejects(fixture.client.execute({ sql: `INSERT INTO comments
       (id,workspace_id,task_id,user_id,body,created_at,client_request_id,request_hash,revision,create_seq)
       VALUES ('forged','synthetic_project_b','task_a','synthetic_alice','x',unixepoch(),'request_forged_0001','h',1,2)` }));
@@ -175,6 +192,36 @@ test("a failure after canonical source insertion rolls back every effect and seq
       assert.equal(Number((await base.execute(`SELECT COUNT(*) AS n FROM ${table}`)).rows[0].n), 0, table);
     }
     assert.equal((await base.execute("SELECT next_create_seq||':'||next_change_seq AS seq FROM task_discussion_state WHERE task_id='task_a'")).rows[0].seq, "1:1");
+  } finally { fixture.client.close(); }
+});
+
+test("current members can reply to retained roots by departed authors without directed effects", async () => {
+  const fixture = await freshDatabase();
+  try {
+    const service = serviceFor(fixture.client);
+    const opened = await service.openTaskDiscussion({ actorId: "synthetic_bob", taskId: "task_a" });
+    if (!opened.ok) assert.fail("open failed");
+    const root = await service.sendComment({ actorId: "synthetic_bob", input: {
+      ...sendInput(opened.value.audienceEpoch, "request_departed_root_01", "Bob root"), mentionUserIds: [],
+    } });
+    if (!root.ok) assert.fail("root failed");
+    await fixture.client.execute("DELETE FROM workspace_members WHERE workspace_id='synthetic_project_a' AND user_id='synthetic_bob'");
+    const current = await service.openTaskDiscussion({ actorId: "synthetic_alice", taskId: "task_a" });
+    if (!current.ok) assert.fail("current member lost access");
+    const reply = await service.sendComment({ actorId: "synthetic_alice", input: {
+      ...sendInput(current.value.audienceEpoch, "request_departed_reply_01", "Alice reply"),
+      rootCommentId: root.value.commentId, mentionUserIds: [],
+    } });
+    assert.equal(reply.ok, true);
+    if (!reply.ok) assert.fail("reply failed");
+    const edit = await service.editComment({ actorId: "synthetic_alice", taskId: "task_a",
+      commentId: reply.value.commentId, clientRequestId: "request_departed_edit_01",
+      expectedRevision: 1, expectedAudienceEpoch: current.value.audienceEpoch,
+      body: "Alice edited reply", mentionUserIds: [],
+    });
+    assert.equal(edit.ok && edit.value.revision, 2);
+    assert.equal(Number((await fixture.client.execute("SELECT COUNT(*) AS n FROM task_comment_attention WHERE recipient_id='synthetic_bob'")).rows[0].n), 0);
+    assert.equal(Number((await fixture.client.execute("SELECT COUNT(*) AS n FROM task_comment_outbox WHERE recipient_id='synthetic_bob'")).rows[0].n), 0);
   } finally { fixture.client.close(); }
 });
 
