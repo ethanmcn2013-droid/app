@@ -1,6 +1,6 @@
 # Local execution and rollback controls
 
-12 September 2026. Preparatory PC-20 work; integration and provider controls remain unverified. No deployment, remote migration or notification was performed.
+12 September 2026. PC-20 local controls in progress; backend rollback and runtime-denial checks passed, delivery controls remain pending PC-11. No deployment, remote migration or notification was performed.
 
 ## Availability switches
 
@@ -29,7 +29,7 @@ Data-preserving rollback means disabling sends and delivery while keeping intern
 4. Apply supported baseline plus approved additive migration to a fresh synthetic DB through the declared receipt runner. Record schema contract, receipt identity and preserved rows. No direct production Drizzle command.
 5. Scrub message text, recipients, session credentials, content-bearing URLs and read timestamps from logs/traces. Operational evidence records IDs, error codes, counts and latency only.
 
-None of these integrated checks is claimed complete by the current pure switch tests. Native libSQL stress crashes must remain in the experiment report, alongside the bounded connection configuration that passes; a local driver workaround is not a deployed scalability proof.
+At backend revision 57c16c36, actual HTTP plus file DB tests prove sends-off refuses writes while entitled receipts/history remain, then membership removal refuses reads and replay. Migration runner tests prove fresh application and no-op rerun. Five runtime/flag checks subsequently prove unsupported configurations refuse storage and missing Clerk configuration produces no synthetic actor. Delivery drain, process restart and final-candidate checks remain pending; these partial results do not close PC-20. Native libSQL stress crashes must remain in the experiment report, alongside the bounded connection configuration that passes; a local driver workaround is not a deployed scalability proof.
 
 ## Owned preview
 
@@ -40,3 +40,11 @@ Root launcher: `C:/Users/ethan/Documents/Codex/2026-09-12/plea/work/start-conver
 HTTP 200 and browser rendering verified. Known existing server-build warning: OpenTelemetry/Sentry dynamic dependency expression; DSNs are unset and no runtime/browser error was observed. The initial cold compile caused one browser navigation timeout before HTTP 200; subsequent warm navigation succeeded. Cold development compile time is not a production performance measure.
 
 Required final artifact record: canonical commit, checks against final source, screenshot hashes, 1440×1000 and 390×844 evidence, design/human disposition, and remaining remote/provider gates. Screenshots are retained beside this document under `evidence/` and copied to the user-facing output directory.
+
+## Connected browser verification checkpoint
+
+Integration source 9db7f08 plus later local runtime tests. Owned Next session 20798 uses the isolated launcher `work/start-conversation-live-preview.ps1` at port 3188; owned fixture proxy session 83774 at port 3189 creates `work/pc07-live/browser-fixture-WYXvTd/tasks.db`. Only these task-owned processes may be stopped. The proxy script uses an async main wrapper because this repository transforms .ts entrypoints as CommonJS.
+
+Actual browser actions: Alice created a room and sent; Bob saw it and sent through a dropped response after commit. Direct fixture inspection found two message rows, two receipt rows and zero directed effects for the unmentioned messages. Browser returned between Projects with a draft intact, edited and tombstoned an own message, disabled Send after a membership epoch change, enabled after explicit audience review, and cleared history/composer when Bob was removed. Phone viewport 390×844 was rendered. Project switching initially exposed unbound browser clearTimeout; a wrapper corrected it and the action passed on recheck.
+
+Fresh client review found delayed-audience, old-epoch retry, session-generation and scroll/keyboard gaps; correction is active. These exploratory browser passes are not final PC-07 acceptance and must be repeated on the corrected source. No real Clerk/session, production deployment, physical IME/mobile keyboard, remote transaction or provider delivery proof is implied.
