@@ -109,6 +109,12 @@ test("failed preflight receipt cannot claim an unvalidated deployment guard", ()
     blob: null,
     deploymentEnabled: null,
   });
+  assert.match(receipt.intendedIdentityBoundary, /setup sessions and creator restoration use Clerk's ticket helper/);
+  assert.match(receipt.signInUi, /visible email-code form/);
+  assert.match(receipt.signInUi, /fixed test OTP/);
+  assert.match(receipt.signInUi, /real email delivery and MFA are not exercised/);
+  assert.equal(receipt.providers.mail, "Clerk test mailbox only; no real email delivery");
+  assert.doesNotMatch(receipt.signInUi, /credential-entry UI is not exercised/);
 });
 
 test("wrong-account diagnostics retain only boolean, enum and bounded count fields", () => {

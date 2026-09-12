@@ -1,5 +1,5 @@
 import { clerk } from "@clerk/testing/playwright";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import {
   observe,
   observeWrongAccountDiagnostic,
@@ -28,12 +28,7 @@ function required(name: string): string {
   return value;
 }
 
-async function ticketSignIn(page: Page, email: string): Promise<ClerkIdentity> {
-  await page.goto("/sign-in");
-  await clerk.loaded({ page });
-  // Clerk's supported ticket helper creates a real development-instance
-  // session. It intentionally bypasses credential entry, verification and MFA.
-  await clerk.signIn({ page, emailAddress: email });
+async function readVerifiedIdentity(page: Page, email: string): Promise<ClerkIdentity> {
   await clerk.loaded({ page });
   const identity = await page.evaluate(() => {
     const user = window.Clerk.user;
@@ -48,6 +43,67 @@ async function ticketSignIn(page: Page, email: string): Promise<ClerkIdentity> {
   expect(identity.email.toLowerCase()).toBe(email.toLowerCase());
   expect(identity.verified).toBe(true);
   return identity;
+}
+
+async function ticketSignIn(page: Page, email: string): Promise<ClerkIdentity> {
+  await page.goto("/sign-in");
+  await clerk.loaded({ page });
+  // Clerk's supported ticket helper creates a real development-instance
+  // session. It intentionally bypasses credential entry, verification and MFA.
+  await clerk.signIn({ page, emailAddress: email });
+  return readVerifiedIdentity(page, email);
+}
+
+async function firstVisibleMatch(locator: Locator): Promise<Locator> {
+  for (const match of await locator.all()) {
+    if (await match.isVisible()) return match;
+  }
+  throw new Error("Expected one visible Clerk sign-in control.");
+}
+
+async function recipientEmailCodeSignIn(
+  page: Page,
+  email: string,
+  invitePath: string,
+): Promise<ClerkIdentity> {
+  const identifier = page.locator("input[name=identifier]");
+  await expect(identifier).toBeVisible();
+  await identifier.fill(email);
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+
+  const digitOne = page.getByRole("textbox", {
+    name: "Enter verification code. Digit 1",
+  });
+  const singleCode = page.getByLabel("Enter verification code", { exact: true });
+  const useAnotherMethod = page.getByRole("link", { name: /use another method/i });
+  const codeVisible = async () =>
+    await anyMatchVisible(digitOne) || await anyMatchVisible(singleCode);
+
+  await expect.poll(async () =>
+    await codeVisible() || await anyMatchVisible(useAnotherMethod),
+  ).toBe(true);
+
+  if (!(await codeVisible())) {
+    await (await firstVisibleMatch(useAnotherMethod)).click();
+    const emailCodeMethod = page.getByRole("button", { name: /email code to/i });
+    await expect.poll(async () => await anyMatchVisible(emailCodeMethod)).toBe(true);
+    await (await firstVisibleMatch(emailCodeMethod)).click();
+  }
+
+  await expect.poll(codeVisible).toBe(true);
+  if (await anyMatchVisible(digitOne)) {
+    await (await firstVisibleMatch(digitOne)).click();
+    await page.keyboard.type("424242", { delay: 100 });
+  } else {
+    await (await firstVisibleMatch(singleCode)).fill("424242");
+  }
+
+  // The mounted SignIn component must consume its forceRedirectUrl. No helper
+  // navigation or forced page.goto is allowed across this proof boundary.
+  await expect(page).toHaveURL((url) =>
+    url.pathname === invitePath && url.search === "" && url.hash === "",
+  );
+  return readVerifiedIdentity(page, email);
 }
 
 async function wrongAccountDiagnostic(
@@ -231,10 +287,13 @@ test("controlled recipient accepts B, completes assigned work, and loses B after
     await signIn.click();
     await expect(recipientPage).toHaveURL((url) => url.pathname === "/sign-in" && url.searchParams.get("redirect_url") === invitePath);
     await clerk.loaded({ page: recipientPage });
-    await clerk.signIn({ page: recipientPage, emailAddress: recipientEmail });
-    // Do not force this navigation: the proof fails if the signed-out intent
-    // is lost and Clerk does not return the real session to the exact invite.
-    await expect(recipientPage).toHaveURL((url) => url.pathname === invitePath);
+    const uiRecipient = await recipientEmailCodeSignIn(
+      recipientPage,
+      recipientEmail,
+      invitePath,
+    );
+    expect(uiRecipient).toEqual(recipient);
+    observe("recipientUiSignInReturned");
     await recipientPage.getByRole("button", { name: "Accept invite" }).click();
     await expect(recipientPage).toHaveURL(new RegExp(`/app/my-tasks\\?workspaceId=${RECIPIENT_PROJECT_ID}$`));
     await expect(recipientPage.getByText(RECIPIENT_TASK_TITLE, { exact: true })).toBeVisible();

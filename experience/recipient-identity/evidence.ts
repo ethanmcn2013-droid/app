@@ -5,6 +5,7 @@ type Stage =
   | "twoSessionsIssued"
   | "signedOutInviteShown"
   | "wrongAccountRefused"
+  | "recipientUiSignInReturned"
   | "inviteAccepted"
   | "recipientTaskCompleted"
   | "homeReturned"

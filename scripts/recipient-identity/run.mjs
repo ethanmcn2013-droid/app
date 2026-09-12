@@ -38,7 +38,7 @@ export const RECIPIENT_IDENTITY_PROOF_MARKER = "local-clerk-recipient-proof-v1";
 
 const REQUIRED_STAGES = [
   "testingTokenIssued", "twoSessionsIssued", "signedOutInviteShown", "wrongAccountRefused",
-  "inviteAccepted", "recipientTaskCompleted", "homeReturned", "creatorReadback",
+  "recipientUiSignInReturned", "inviteAccepted", "recipientTaskCompleted", "homeReturned", "creatorReadback",
   "replayRefused", "removedMemberRefused",
 ];
 
@@ -170,12 +170,12 @@ export function buildReceipt({ status, errorCode, sourceRevision, sourceTree, ve
       deploymentEnabled: deploymentGuardValidated ? false : null,
     },
     target: "loopback Next production build with fresh local file databases",
-    intendedIdentityBoundary: "two controlled accounts in one declared Clerk development instance; key-pair usability is observed only after ticket consumption and verified-user readback; ticket sign-in bypasses sign-in UI and MFA",
+    intendedIdentityBoundary: "two controlled accounts in one declared Clerk development instance; setup sessions and creator restoration use Clerk's ticket helper, while recipient continuation uses the visible Clerk email-code form; every session is bound to verified-user readback",
     fixtureBoundary: "project, pending invitation, assigned task and membership removal are isolated local database fixtures; creator invitation authoring and removal UI are not exercised",
     observedStages: stages,
     wrongAccountDiagnostic: sanitizeWrongAccountDiagnostic(evidence?.wrongAccountDiagnostic),
-    signInUi: "signed-out invitation, exact redirect intent and automatic return are required; credential-entry UI is not exercised",
-    providers: { clerk: "bounded testing-token and ticket-session requests only", mail: "disabled", drive: "disabled", stripe: "disabled" },
+    signInUi: "recipient enters the controlled Clerk test address and fixed test OTP in the visible email-code form; exact automatic return to the invitation is required; password, real email delivery and MFA are not exercised",
+    providers: { clerk: "bounded testing-token, ticket-session and development test email-code requests", mail: "Clerk test mailbox only; no real email delivery", drive: "disabled", stripe: "disabled" },
     custody: "sanitized receipt, stage booleans and fixed wrong-account diagnostic enums/counts remain in ignored local output; databases, browser output, auth state, account labels, invite tokens, traces and screenshots are removed",
     startedAt,
     completedAt: new Date().toISOString(),
