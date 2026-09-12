@@ -196,6 +196,35 @@ test("committed receipt recovery precedes changed source, epoch, archive, and fo
   } finally { f.client.close(); }
 });
 
+test("legacy receipts without source conversation retain project entitlement checks", async () => {
+  const f = await fixture();
+  try {
+    const service = createConversationTaskOutcomeService(f.adapter);
+    await f.client.execute("DROP TRIGGER work_operation_receipts_source_conversation_required");
+    await f.client.execute("DROP TRIGGER work_operation_receipts_guard_insert");
+    await f.client.execute({
+      sql: `INSERT INTO work_operation_receipts(actor_id, client_request_id, operation, payload_hash,
+        source_project_id, source_conversation_id, destination_project_id, task_id, work_link_id, committed_at)
+        VALUES ('alice', 'legacy_receipt_0001', 'conversation_task', 'legacy-hash', ?, NULL, ?,
+          'legacy-task', 'deleted-work-link', 1)`,
+      args: [sourceProject, destinationProject],
+    });
+    const authorized = await service.getTaskReceipt({ actorId: "alice", clientRequestId: "legacy_receipt_0001" });
+    assert.equal(authorized.ok, true);
+    if (!authorized.ok) return;
+    assert.equal(authorized.value.state, "committed");
+    if (authorized.value.state !== "committed") return;
+    assert.equal(authorized.value.taskAvailable, false);
+    assert.equal(authorized.value.receipt.taskId, "legacy-task");
+
+    await f.client.execute({ sql: "DELETE FROM workspace_members WHERE workspace_id=? AND user_id='alice'", args: [sourceProject] });
+    assert.deepEqual(await service.getTaskReceipt({ actorId: "alice", clientRequestId: "legacy_receipt_0001" }), { ok: false, code: "unavailable" });
+    await f.client.execute({ sql: "INSERT INTO workspace_members(workspace_id,user_id,role,joined_at) VALUES (?,'alice','owner',?)", args: [sourceProject, Date.now()] });
+    await f.client.execute({ sql: "DELETE FROM workspace_members WHERE workspace_id=? AND user_id='alice'", args: [destinationProject] });
+    assert.deepEqual(await service.getTaskReceipt({ actorId: "alice", clientRequestId: "legacy_receipt_0001" }), { ok: false, code: "unavailable" });
+  } finally { f.client.close(); }
+});
+
 test("orphan destination owner membership cannot create any durable effect", async () => {
   const f = await fixture();
   try {

@@ -172,19 +172,22 @@ async function actorCanRecoverReceipt(
   actorId: string,
   receipt: Record<string, unknown>,
 ): Promise<boolean> {
+  const sourceConversationId = receipt.source_conversation_id == null
+    ? null
+    : String(receipt.source_conversation_id);
   const result = await executor.execute({
     sql: `SELECT actor.id FROM users actor
       JOIN workspaces source_project ON source_project.id = ?
       JOIN workspaces destination_project ON destination_project.id = ?
       JOIN workspace_members source_member ON source_member.user_id = actor.id AND source_member.workspace_id = ?
       JOIN workspace_members destination_member ON destination_member.user_id = actor.id AND destination_member.workspace_id = ?
-      JOIN conversations source_conversation ON source_conversation.id=? AND source_conversation.workspace_id=source_project.id
+      LEFT JOIN conversations source_conversation ON source_conversation.id=? AND source_conversation.workspace_id=source_project.id
       LEFT JOIN conversation_participants participant ON participant.conversation_id=source_conversation.id AND participant.user_id=actor.id
-      WHERE actor.id = ? AND (source_conversation.kind='project' OR (source_conversation.kind='dm'
+      WHERE actor.id = ? AND (? IS NULL OR source_conversation.kind='project' OR (source_conversation.kind='dm'
         AND actor.id IN(source_conversation.dm_low_user_id,source_conversation.dm_high_user_id)
         AND participant.status='active' AND participant.retains_history=1 AND source_conversation.pair_state NOT IN('pending','declined')))`,
     args: [String(receipt.source_project_id), String(receipt.destination_project_id), String(receipt.source_project_id),
-      String(receipt.destination_project_id), String(receipt.source_conversation_id), actorId],
+      String(receipt.destination_project_id), sourceConversationId, actorId, sourceConversationId],
   });
   return Boolean(result.rows[0]);
 }
