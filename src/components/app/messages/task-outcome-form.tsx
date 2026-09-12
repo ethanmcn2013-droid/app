@@ -13,7 +13,7 @@ export type TaskOutcomeRequest = Readonly<{
   expectedRevision: number; expectedAudienceEpoch: number; destinationProjectId: ProjectId;
   title: string; ownerUserId: string; dueDate: CalendarDate;
 }>;
-export type TaskOutcomeResult = Readonly<{ taskId: string; workLinkId: string; clientRequestId: string; committedAt: number }>;
+export type TaskOutcomeResult = Readonly<{ taskId: string; workLinkId: string; clientRequestId: string; committedAt: number; taskAvailable?: boolean }>;
 type Props = Readonly<{
   open: boolean; actorId: string; onClose: () => void;
   source: Pick<TaskOutcomeRequest, "sourceProjectId" | "conversationId" | "messageId" | "expectedRevision" | "expectedAudienceEpoch">;
@@ -92,7 +92,7 @@ export function TaskOutcomeForm(props: Props) {
   const locked = busy || attempt !== null;
   return <dialog ref={dialog} className={styles.dialog} aria-label="Create a task from this message" onCancel={(event) => { event.preventDefault(); if (!locked) props.onClose(); }}>
     <form onSubmit={(event) => { event.preventDefault(); void create(); }}>
-      <header><span>Discussion → action</span><h2>{result ? "Task created" : "Give the outcome a next step"}</h2><p>{result ? "The task and its source link are saved together." : "Write the task you want to create, then choose its Project, owner and date."}</p></header>
+      <header><span>Discussion → action</span><h2>{result ? "Task created" : "Give the outcome a next step"}</h2><p>{result ? result.taskAvailable === false ? "This request created a task earlier. That task is no longer available; another task has not been created." : "The task and its source link are saved together." : "Write the task you want to create, then choose its Project, owner and date."}</p></header>
       {!result ? <fieldset disabled={locked}>
         <label>Task name<input autoComplete="off" maxLength={1000} required value={title} onChange={(event) => setTitle(event.target.value)} placeholder="What needs to happen?" /></label>
         <label>Project<select value={destinationId} onChange={(event) => { setDestination(null); setOwner(""); setError(null); setDestinationId(event.target.value as ProjectId); }}>{props.projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select></label>
@@ -100,7 +100,7 @@ export function TaskOutcomeForm(props: Props) {
         <div className={styles.fields}><label>Owner<select required value={owner} onChange={(event) => setOwner(event.target.value)}><option value="">Choose a person</option>{destination?.members.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}</select></label><label>Due date<input type="date" required value={date} onChange={(event) => setDate(event.target.value)} /></label></div>
       </fieldset> : <p className={styles.saved}>{attempt?.title ?? title}</p>}
       {error ? <p role="alert" className={styles.error}>{error}</p> : null}
-      <footer><button type="button" onClick={props.onClose} disabled={locked && !result}>{result ? "Done" : "Cancel"}</button>{result ? (!props.fixture ? <a href={taskFocusPath(result.taskId)}>Open task</a> : null) : <button className={styles.primary} type="submit" disabled={busy || sourceChanged || (!attempt && (!destination || !title.trim() || !owner || !isCalendarDate(date)))}>{busy ? "Checking…" : attempt ? "Check outcome" : "Create task"}</button>}</footer>
+      <footer><button type="button" onClick={props.onClose} disabled={locked && !result}>{result ? "Done" : "Cancel"}</button>{result ? (!props.fixture && result.taskAvailable !== false ? <a href={taskFocusPath(result.taskId)}>Open task</a> : null) : <button className={styles.primary} type="submit" disabled={busy || sourceChanged || (!attempt && (!destination || !title.trim() || !owner || !isCalendarDate(date)))}>{busy ? "Checking…" : attempt ? "Check outcome" : "Create task"}</button>}</footer>
     </form>
   </dialog>;
 }

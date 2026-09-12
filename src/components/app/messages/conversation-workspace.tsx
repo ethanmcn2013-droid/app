@@ -7,6 +7,7 @@ import { CONVERSATION_LIMITS, normalizeMessageBody, validMessageBody } from "@/l
 import { conversationReducer, emptyConversationState, type PendingSend } from "@/lib/conversations/reducer";
 import { ConversationPoller } from "@/lib/conversations/polling";
 import { AudienceHeader, Icon } from "./prototype-panels";
+import { TaskOutcomeForm, type TaskOutcomeRequest, type TaskOutcomeResult } from "./task-outcome-form";
 import { anchoredScrollTop, resolveScrollAnchor, type ScrollAnchor, audienceResponseMatches, conversationHeaders, draftKey, forgetProjectDrafts, needsFreshAudienceSend, rememberDraft, shouldSendComposerKey, type DraftCache, type ScrollCache } from "./conversation-client-model";
 import styles from "./conversation-workspace.module.css";
 
@@ -65,11 +66,11 @@ function ConversationWorkspaceActor({ actorId, projects, initialProjectId, fixtu
       {projects.map((project) => <button aria-current={project.id === selected.id ? "page" : undefined} aria-label={project.name} key={project.id} onClick={() => setProjectId(project.id)} type="button"><span>{project.name.slice(0, 2).toUpperCase()}</span><strong>{project.name}</strong></button>)}
       <p>Messages stay inside their named Project.</p>
     </aside>
-    <ProjectConversationSession actorId={actorId} draftCache={draftCache} fixtureActor={fixtureActor} key={`${actorId}:${selected.id}`} onToggleView={() => setView((current) => current === "full" ? "context" : "full")} project={selected} scrollCache={scrollCache} view={view} />
+    <ProjectConversationSession actorId={actorId} draftCache={draftCache} fixtureActor={fixtureActor} key={`${actorId}:${selected.id}`} onToggleView={() => setView((current) => current === "full" ? "context" : "full")} project={selected} projects={projects} scrollCache={scrollCache} view={view} />
   </section>;
 }
 
-function ProjectConversationSession({ actorId, project, fixtureActor, draftCache, scrollCache, view, onToggleView }: Readonly<{ actorId: string; project: ProjectOption; fixtureActor?: string; draftCache: DraftCache; scrollCache: ScrollCache; view: "full" | "context"; onToggleView: () => void }>) {
+function ProjectConversationSession({ actorId, project, projects, fixtureActor, draftCache, scrollCache, view, onToggleView }: Readonly<{ actorId: string; project: ProjectOption; projects: readonly ProjectOption[]; fixtureActor?: string; draftCache: DraftCache; scrollCache: ScrollCache; view: "full" | "context"; onToggleView: () => void }>) {
   const [state, dispatch] = useReducer(conversationReducer, undefined, () => emptyConversationState(actorId, `${project.id}:pending`, 1));
   const [scope, setScope] = useState<ConversationScope | null | undefined>(undefined);
   const [audience, setAudience] = useState<Audience | null>(null);
@@ -82,6 +83,8 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
   const [hasOlder, setHasOlder] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [editing, setEditing] = useState<{ id: string; body: string; revision: number } | null>(null);
+  const [taskSource, setTaskSource] = useState<Pick<TaskOutcomeRequest, "sourceProjectId" | "conversationId" | "messageId" | "expectedRevision" | "expectedAudienceEpoch"> | null>(null);
+  const [createdTasks, setCreatedTasks] = useState<Record<string, string>>({});
   const stateRef = useRef(state);
   const generationRef = useRef(1);
   const historyEpochRef = useRef<number | null>(null);
@@ -117,7 +120,7 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
     generationRef.current = generation;
     sessionControllerRef.current = controller;
     historyEpochRef.current = null;
-    clearAudience(); setEditing(null); setMutationError(null); setSendsOff(false); setHasOlder(false); setOlderCursor(null); setCatchingUp(false);
+    clearAudience(); setEditing(null); setTaskSource(null); setCreatedTasks({}); setMutationError(null); setSendsOff(false); setHasOlder(false); setOlderCursor(null); setCatchingUp(false);
     dispatch({ type: "reset", actorId, scopeKey, generation });
     return { generation, controller };
   }
@@ -128,7 +131,7 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
     sessionControllerRef.current?.abort(); pollerRef.current?.stop();
     forgetProjectDrafts(draftCache, actorId, project.id);
     if (scope) scrollCache.delete(scopeCacheKey(scope));
-    historyEpochRef.current = null; clearAudience(); setEditing(null); setMutationError(null); setScope(undefined);
+    historyEpochRef.current = null; clearAudience(); setEditing(null); setTaskSource(null); setCreatedTasks({}); setMutationError(null); setScope(undefined);
   }
   function handleFailure(failure: ConversationFailure, generation: number, requestId?: string) {
     if (!isCurrent(generation)) return;
@@ -358,6 +361,20 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
     } catch { if (isCurrent(generation, signal)) setMutationError("The change outcome is unknown. Refresh history before trying again."); }
   }
 
+  async function submitTask(input: TaskOutcomeRequest): Promise<ConversationResult<TaskOutcomeResult>> {
+    const generation = generationRef.current;
+    const signal = sessionControllerRef.current?.signal;
+    type Receipt = { state: "absent" } | { state: "committed"; receipt: TaskOutcomeResult; taskAvailable: boolean };
+    const lookup = await apiResult<Receipt>(apiUrl("task-receipt", project.id, { clientRequestId: input.clientRequestId }), fixtureActor, { signal });
+    if (!isCurrent(generation, signal)) return { ok: false, code: "unavailable" };
+    if (!lookup.ok) return lookup;
+    if (lookup.value.state === "committed") return { ok: true, value: { ...lookup.value.receipt, taskAvailable: lookup.value.taskAvailable } };
+    const { sourceProjectId, ...fields } = input;
+    const result = await apiResult<TaskOutcomeResult>("/api/conversations", fixtureActor, { method: "POST", body: JSON.stringify({ action: "promote-task", projectId: sourceProjectId, ...fields }), signal });
+    if (!isCurrent(generation, signal)) return { ok: false, code: "unavailable" };
+    return result;
+  }
+
   const members = audience?.members ?? [];
   const audienceReady = audience !== null && state.audienceEpoch !== null && audience.audienceEpoch === state.audienceEpoch;
   const audienceNeedsReview = state.audienceEpoch !== null && (!audienceReady || state.reviewedAudienceEpoch !== state.audienceEpoch);
@@ -379,22 +396,23 @@ function ProjectConversationSession({ actorId, project, fixtureActor, draftCache
     <div aria-label="Message reading area" role="region" tabIndex={0} className={styles.feedScroller} onScroll={() => rememberScroll(scope)} ref={feedRef}><ol aria-label="Conversation history" className={styles.feed}>
       {hasOlder ? <li className={styles.olderHistory}><button disabled={loadingOlder} onClick={() => void loadOlder()} type="button">{loadingOlder ? "Loading earlier messages…" : "Load earlier messages"}</button></li> : null}
       {state.messages.length === 0 && state.pending.length === 0 ? <li className={styles.emptyHistory}>No messages yet. Start with the decision or question the Project needs.</li> : null}
-      {state.messages.map((message) => <LiveMessage actorId={actorId} editing={editing} key={message.id} members={members} message={message} onCancelEdit={() => setEditing(null)} onDelete={() => void mutate("tombstone", message)} onEdit={(body) => void mutate("edit", message, body)} onStartEdit={() => message.body && setEditing({ id: message.id, body: message.body, revision: message.revision })} setEditing={setEditing} />)}
+      {state.messages.map((message) => <LiveMessage actorId={actorId} editing={editing} key={message.id} members={members} message={message} taskCreated={Boolean(createdTasks[message.id])} onCreateTask={audienceReady && !audienceNeedsReview && !sendsOff && scope.lifecycle === "active" ? () => setTaskSource({ sourceProjectId: project.id, conversationId: scope.conversationId, messageId: message.id, expectedRevision: message.revision, expectedAudienceEpoch: state.audienceEpoch! }) : undefined} onCancelEdit={() => setEditing(null)} onDelete={() => void mutate("tombstone", message)} onEdit={(body) => void mutate("edit", message, body)} onStartEdit={() => message.body && setEditing({ id: message.id, body: message.body, revision: message.revision })} setEditing={setEditing} />)}
       {state.pending.map((pending) => <li className={styles.pendingMessage} key={pending.input.clientRequestId}><strong>You</strong><p>{pending.input.body}</p><span>{pending.state === "pending" ? "Sending…" : pending.state === "uncertain" ? "Checking whether this sent" : `Not sent · ${pending.error ? failureCopy[pending.error] : "try again"}`}</span>{pending.state !== "pending" ? <button onClick={() => void resolveSend(pending)} type="button">Check receipt, then retry</button> : null}</li>)}
     </ol></div>
     <section aria-label="Message composer" className={styles.composer}>{state.status === "offline" ? <p>Offline. Your draft stays here; nothing will send automatically.</p> : scope.lifecycle === "archived" || sendsOff ? <p>{scope.lifecycle === "archived" ? "This conversation is read only." : "Sending is currently turned off."}</p> : <>
       <textarea aria-label={`Message ${project.name}`} maxLength={CONVERSATION_LIMITS.bodyCharacters} onChange={(event) => updateDraft(event.target.value)} onKeyDown={(event) => { const mobileReturn = window.matchMedia("(max-width: 760px), (pointer: coarse)").matches; if (shouldSendComposerKey({ key: event.key, shiftKey: event.shiftKey, composing: event.nativeEvent.isComposing, mobileReturn })) { event.preventDefault(); void send(); } }} placeholder={`Message ${project.name}`} rows={3} value={state.draft} />
       <div><span data-invalid={state.draft.length > 0 && (!bodyValid || bodyBytes > CONVERSATION_LIMITS.bodyBytes) || undefined}>{Array.from(state.draft).length.toLocaleString()} / {CONVERSATION_LIMITS.bodyCharacters.toLocaleString()}</span><button disabled={!bodyValid || bodyBytes > CONVERSATION_LIMITS.bodyBytes || audienceNeedsReview} onClick={() => void send()} type="button">Send</button></div>
     </>}</section>
+    {taskSource ? <TaskOutcomeForm open actorId={actorId} fixture={Boolean(fixtureActor)} source={taskSource} projects={projects} onClose={() => setTaskSource(null)} loadDestination={(destinationId, signal) => apiResult(apiUrl("task-destination", destinationId), fixtureActor, { signal })} submit={submitTask} onCreated={(result) => { if (result.taskAvailable !== false) setCreatedTasks((current) => ({ ...current, [taskSource.messageId]: result.taskId })); }} /> : null}
   </main>;
 }
 
-function LiveMessage({ actorId, message, members, editing, setEditing, onStartEdit, onCancelEdit, onEdit, onDelete }: Readonly<{ actorId: string; message: MessageRecord; members: Audience["members"]; editing: { id: string; body: string; revision: number } | null; setEditing: (value: { id: string; body: string; revision: number } | null) => void; onStartEdit: () => void; onCancelEdit: () => void; onEdit: (body: string) => void; onDelete: () => void }>) {
+function LiveMessage({ actorId, message, members, editing, setEditing, onStartEdit, onCancelEdit, onEdit, onDelete, onCreateTask, taskCreated }: Readonly<{ onCreateTask?: () => void; taskCreated: boolean; actorId: string; message: MessageRecord; members: Audience["members"]; editing: { id: string; body: string; revision: number } | null; setEditing: (value: { id: string; body: string; revision: number } | null) => void; onStartEdit: () => void; onCancelEdit: () => void; onEdit: (body: string) => void; onDelete: () => void }>) {
   const editButtonRef = useRef<HTMLButtonElement | null>(null);
   const name = members.find((member) => member.id === message.authorId)?.name ?? (message.authorId === actorId ? "You" : "Project member");
   const initials = name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
   const cancelAndRestoreFocus = () => { onCancelEdit(); requestAnimationFrame(() => editButtonRef.current?.focus()); };
-  return <li className={styles.message}><span className={styles.avatar}>{initials}</span><div><div className={styles.messageMeta}><strong>{name}</strong><time dateTime={new Date(message.createdAt).toISOString()}>{new Date(message.createdAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}</time>{message.editedAt ? <span>Edited</span> : null}</div>{message.body === null ? <p className={styles.deleted}>Message removed</p> : editing?.id === message.id ? <div className={styles.editForm}><textarea aria-label="Edit message" autoFocus onChange={(event) => setEditing({ ...editing, body: event.target.value })} onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); cancelAndRestoreFocus(); } }} value={editing.body} /><div><button onClick={cancelAndRestoreFocus} type="button">Cancel</button><button disabled={!validMessageBody(editing.body)} onClick={() => onEdit(editing.body)} type="button">Save edit</button></div></div> : <p>{message.body}</p>}{message.authorId === actorId && message.body !== null && editing?.id !== message.id ? <div className={styles.messageActions}><button onClick={onStartEdit} ref={editButtonRef} type="button">Edit</button><button onClick={onDelete} type="button">Delete</button></div> : null}</div></li>;
+  return <li className={styles.message}><span className={styles.avatar}>{initials}</span><div><div className={styles.messageMeta}><strong>{name}</strong><time dateTime={new Date(message.createdAt).toISOString()}>{new Date(message.createdAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}</time>{message.editedAt ? <span>Edited</span> : null}</div>{message.body === null ? <p className={styles.deleted}>Message removed</p> : editing?.id === message.id ? <div className={styles.editForm}><textarea aria-label="Edit message" autoFocus onChange={(event) => setEditing({ ...editing, body: event.target.value })} onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); cancelAndRestoreFocus(); } }} value={editing.body} /><div><button onClick={cancelAndRestoreFocus} type="button">Cancel</button><button disabled={!validMessageBody(editing.body)} onClick={() => onEdit(editing.body)} type="button">Save edit</button></div></div> : <p>{message.body}</p>}{message.body !== null && editing?.id !== message.id ? <div className={styles.messageActions}>{onCreateTask ? <button onClick={onCreateTask} type="button">Create task</button> : null}{taskCreated ? <span>Task created</span> : null}{message.authorId === actorId ? <><button onClick={onStartEdit} ref={editButtonRef} type="button">Edit</button><button onClick={onDelete} type="button">Delete</button></> : null}</div> : null}</div></li>;
 }
 
 function ConversationStatus({ title, message, action, actionLabel, error }: Readonly<{ title: string; message: string; action?: () => void; actionLabel?: string; error?: string | null }>) {
