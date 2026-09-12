@@ -1,6 +1,6 @@
 # Active execution checkpoint
 
-2026-09-12 13:04 UTC · Founder explicitly approved EXECUTE and requested continuous completion with approximately 30-minute updates. This checkpoint supersedes the historical planning-only status below.
+2026-09-12 14:36 UTC · Founder explicitly approved EXECUTE and requested continuous completion with approximately 30-minute updates. This checkpoint supersedes the historical planning-only status below.
 
 Canonical execution worktree: C:/Users/ethan/signal-studio-workspace/worktrees/app/feat-project-conversation-integration
 Branch: feat/project-conversation-integration; source base a709e22a9f19ffb4c45b1c420815f2edf6bfbf30. Original planning copy in app/main is preserved.
@@ -23,7 +23,8 @@ Agent use: root owns architecture/integration; explicit Luna low for PC-00 read-
 | PC-07 client | Accepted at local scope | Fresh Sol narrow acceptance at 5a22b2af; 52/52 conversation checks, full TypeScript and scoped lint pass. Actual live arrival preserved top513 while height6442→6505; earlier history reachable, lost acknowledgment one Bob message, draft return verified. Final integrated responsive matrix remains PC-14 evidence. |
 | PC-08 task outcomes | Accepted at local scope | Fresh Astra accepted 3c705509 after receipt-denial correction; 65/65 isolated checks, full TypeScript and scoped lint pass. Actual browser commit/withheld receipt/destination removal/restoration/sends-off recovery: exactly one task/link/receipt, chosen due date, non-milestone. |
 | PC-09 integrated first slice | Accepted at local scope | Fresh Sol verification and Astra acceptance at 092ced53; 69/69 checks, full TypeScript and scoped lint. Initial-page/delta and older-message/newer-draft counterexamples corrected and independently green. Actual actor-scoped recovery, audience review and task-dialog focus verified. |
-| PC-10 | In progress | Sol high DM backend owns feat-project-conversation-dms at 092ced53; root owns client integration. Canonical Task Discussion follows in a separate migration packet. |
+| PC-10 | In progress; Discussion correction required | DM backend accepted by fresh Astra at 0c1b901ec31c9b849e779e506207c410156c7b57; DM/reply UI accepted by independent Sol at 856abd41. Integrated suite 90/90 and TypeScript pass, but fresh Astra rejected Discussion 59cb6e7d with seven reproduced action/migration/access/recovery/consent findings. Author is correcting these in its owned Discussion tree. Milestone remains open. |
+| PC-14 draft continuity subtask | Accepted subtask; milestone remains open | Independent Sol accepted 6d411c72: authenticated actor-scoped layout provider, no silent eviction, union recovery inventory with exact Project/DM/root reopening and protected uncertain work. Root browser verified text plus recipient across route navigation, all 20 scopes at capacity, exact reply reopening, explicit discard freeing a slot. Phone polish 115344b8 and screenshot show 390×844 with no page overflow. PC-14 is not counted. |
 | PC-11–14, PC-20 | Pending dependencies / controls in progress | Build and verify in order; no partial-completion claim |
 
 Environment: dependency node_modules junction reuses already installed App modules read-only. No env files copied. An isolated Next prototype preview runs on loopback port 3187 with synthetic state and provider settings removed in the child process; see operations-local.md. New-worktree helper inspected; direct git worktree add at pinned base avoids its unconditional fetch/prune. Local commits use inspected hook (no production side effect). No push/PR.
@@ -94,8 +95,3 @@ Input hashes and structural validation results are appended by the final local c
 Final planning check: seven expected Markdown artifacts present; all T01–T24, R01–R14, WP01–WP12 and D01–D12 identifiers mapped; PC-00–PC-20 present; local Markdown document links resolve; code fences balanced. These are document checks, not product tests.
 
 Final Git observation: HEAD remains a709e22a9f19ffb4c45b1c420815f2edf6bfbf30; tracked-file diff empty; only docs/projects/project-conversation/ is newly untracked. No pre-existing source file was edited. One bounded cross-check completed, its six findings incorporated; implementation/participant/provider gates remain open.
-
-
-
-
-
