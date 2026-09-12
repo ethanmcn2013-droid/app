@@ -1,13 +1,13 @@
 # Active execution checkpoint
 
-2026-09-12 12:34 UTC · Founder explicitly approved EXECUTE and requested continuous completion with approximately 30-minute updates. This checkpoint supersedes the historical planning-only status below.
+2026-09-12 13:04 UTC · Founder explicitly approved EXECUTE and requested continuous completion with approximately 30-minute updates. This checkpoint supersedes the historical planning-only status below.
 
 Canonical execution worktree: C:/Users/ethan/signal-studio-workspace/worktrees/app/feat-project-conversation-integration
 Branch: feat/project-conversation-integration; source base a709e22a9f19ffb4c45b1c420815f2edf6bfbf30. Original planning copy in app/main is preserved.
 
 Approved local scope: PC-00–PC-14 and local PC-20, with proposed scope corrections accepted by EXECUTE. External/live-data, guest/AI expansion, paid services and destructive actions retain their explicit gates. Continue all independent safe work while awaiting concrete human/environment gates. Never claim human research passed without participants.
 
-Progress denominator: 16 accepted local milestones (PC-00 through PC-14 plus PC-20). Current accepted: 9/16 = 56.25% (PC-00–PC-08, with PC-03 accepted only as the amended local-continuation gate). Participant study remains a separate release dependency with zero sessions. This is task acceptance, not an estimate of elapsed effort, launch readiness or a passed live pilot. Do not count partially implemented work as accepted. Progress automation: project-conversation-progress, 30-minute thread heartbeat; pause at completion/cancellation; remain quiet while an external gate is unchanged.
+Progress denominator: 16 accepted local milestones (PC-00 through PC-14 plus PC-20). Current accepted: 10/16 = 62.5% (PC-00–PC-09, with PC-03 accepted only as the amended local-continuation gate). Participant study remains a separate release dependency with zero sessions. This is task acceptance, not an estimate of elapsed effort, launch readiness or a passed live pilot. Do not count partially implemented work as accepted. Progress automation: project-conversation-progress, 30-minute thread heartbeat; pause at completion/cancellation; remain quiet while an external gate is unchanged.
 
 Agent use: root owns architecture/integration; explicit Luna low for PC-00 read-only reference inventory; Sol medium for PC-02 frontend prototype; Sol high for bounded database feasibility after contracts. One writer per owned worktree, at most two useful concurrent workers, no nested delegation. Requested worker model/effort is recorded separately from unverified effective worker runtime identity. Parent turn_context metadata verifies gpt-6-astra, effort high; this does not verify worker settings.
 
@@ -22,13 +22,15 @@ Agent use: root owns architecture/integration; explicit Luna low for PC-00 read-
 | PC-06 backend | Accepted at local scope | Fresh Astra narrow acceptance at 57c16c362b6780869fe57b89217b2b374a4cf0d7; red-to-green directed fanout/account deletion regressions, 19/19 focused tests, 20/20 migration ledger tests, contract and full TypeScript pass |
 | PC-07 client | Accepted at local scope | Fresh Sol narrow acceptance at 5a22b2af; 52/52 conversation checks, full TypeScript and scoped lint pass. Actual live arrival preserved top513 while height6442→6505; earlier history reachable, lost acknowledgment one Bob message, draft return verified. Final integrated responsive matrix remains PC-14 evidence. |
 | PC-08 task outcomes | Accepted at local scope | Fresh Astra accepted 3c705509 after receipt-denial correction; 65/65 isolated checks, full TypeScript and scoped lint pass. Actual browser commit/withheld receipt/destination removal/restoration/sends-off recovery: exactly one task/link/receipt, chosen due date, non-milestone. |
-| PC-09–14, PC-20 | Pending dependencies / controls in progress | Build and verify in order; no partial-completion claim |
+| PC-09 integrated first slice | Accepted at local scope | Fresh Sol verification and Astra acceptance at 092ced53; 69/69 checks, full TypeScript and scoped lint. Initial-page/delta and older-message/newer-draft counterexamples corrected and independently green. Actual actor-scoped recovery, audience review and task-dialog focus verified. |
+| PC-10 | In progress | Sol high DM backend owns feat-project-conversation-dms at 092ced53; root owns client integration. Canonical Task Discussion follows in a separate migration packet. |
+| PC-11–14, PC-20 | Pending dependencies / controls in progress | Build and verify in order; no partial-completion claim |
 
 Environment: dependency node_modules junction reuses already installed App modules read-only. No env files copied. An isolated Next prototype preview runs on loopback port 3187 with synthetic state and provider settings removed in the child process; see operations-local.md. New-worktree helper inspected; direct git worktree add at pinned base avoids its unconditional fetch/prune. Local commits use inspected hook (no production side effect). No push/PR.
 
 Latest receiving evidence: code revision `85963f762fd07861608554e8f8bbd67413c75829`, 12 September 2026 10:47 UTC. EX-01 run `run-2026-09-12T10-44-59.459Z-22000`; EX-02 10:44:59.834–10:45:17.030 UTC. JSON copies and reports are committed in this package. Final prototype source `e7eed757` is equivalent to integrated UI `a8207004`; screenshots show 1440×1000 and 390×844. Desktop SHA-256 `ebb7c45c71388ecb8508fe7eb6bdbf06a4d4430bcd2e3efdb0dd6cc49eddeb43`; mobile `bb1e5b298e954f1ff17ba475640614c19c09d8310d54d19294dda50753e976b1`.
 
-Current next proof: fresh frozen VS1 acceptance PC-09 against 3c705509 plus this evidence receipt, before PC-10 breadth. White/stone-black/indigo remains the accepted direction. Human formative study remains a separate release gate with zero participant sessions. The private delivery authority is active (workspace cutover 2c22c8eccfaaa8703f42b1222fa0ab05ea4ab8a5). Execution claim and next proof belong to private workspace issue #13, under parent #12; issue and board read back OPEN / In progress. Root remains the integration writer. This repository owns implementation evidence; no tracker acceptance is claimed. This branch is local and unpushed.
+Current next proof: PC-10 exact-pair consent, raw membership/rejoin/block guards, one-level replies and canonical Task Discussion at a frozen integrated revision. PC-09 accepted at 092ced53 by independent Sol and Astra review. White/stone-black/indigo remains the accepted direction. Human formative study remains a separate release gate with zero participant sessions. The private delivery authority is active (workspace cutover 2c22c8eccfaaa8703f42b1222fa0ab05ea4ab8a5). Execution claim and next proof belong to private workspace issue #13, under parent #12; issue and board read back OPEN / In progress. Root remains the integration writer. This repository owns implementation evidence; no tracker acceptance is claimed. This branch is local and unpushed.
 
 ---
 # Project Conversation state
@@ -92,6 +94,7 @@ Input hashes and structural validation results are appended by the final local c
 Final planning check: seven expected Markdown artifacts present; all T01–T24, R01–R14, WP01–WP12 and D01–D12 identifiers mapped; PC-00–PC-20 present; local Markdown document links resolve; code fences balanced. These are document checks, not product tests.
 
 Final Git observation: HEAD remains a709e22a9f19ffb4c45b1c420815f2edf6bfbf30; tracked-file diff empty; only docs/projects/project-conversation/ is newly untracked. No pre-existing source file was edited. One bounded cross-check completed, its six findings incorporated; implementation/participant/provider gates remain open.
+
 
 
 
