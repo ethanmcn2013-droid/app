@@ -6,6 +6,7 @@ import { useSuiteContext } from "@/components/app/use-suite-context";
 import { RailIcon } from "@/components/studio-bar/rail-icons";
 import {
   HOME_APP_PATH,
+  MESSAGES_APP_PATH,
   PRODUCT_APP_PATHS,
   suiteSurfaceFromAppPath,
 } from "@/lib/product-urls";
@@ -31,7 +32,7 @@ const DESTINATIONS: readonly Readonly<{
 ]);
 
 function activeMobileKey(pathname: string): string {
-  if (pathname === "/app/messages" || pathname.startsWith("/app/messages/")) return "messages";
+  if (pathname === MESSAGES_APP_PATH || pathname.startsWith(`${MESSAGES_APP_PATH}/`)) return "messages";
   return suiteSurfaceFromAppPath(pathname);
 }
 
@@ -85,7 +86,7 @@ export function MobileSuiteNav({ messagesEnabled = false }: { messagesEnabled?: 
           </Link>
         );
       })}
-      {messagesEnabled ? <Link href="/app/messages" aria-current={pathname.startsWith("/app/messages") ? "page" : undefined} className="flex min-h-[54px] min-w-0 flex-1 flex-col items-center justify-center gap-1 text-[var(--x-studio-ink-strong)] focus-visible:outline-2 focus-visible:outline-indigo-500"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M5 4h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6 3V6a2 2 0 0 1 2-2Z" /></svg><span className="text-[10px] font-medium">Messages</span></Link> : null}
+      {messagesEnabled ? <Link href={MESSAGES_APP_PATH} aria-current={(pathname === MESSAGES_APP_PATH || pathname.startsWith(`${MESSAGES_APP_PATH}/`)) ? "page" : undefined} className="flex min-h-[54px] min-w-0 flex-1 flex-col items-center justify-center gap-1 text-[var(--x-studio-ink-strong)] focus-visible:outline-2 focus-visible:outline-indigo-500"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M5 4h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6 3V6a2 2 0 0 1 2-2Z" /></svg><span className="text-[10px] font-medium">Messages</span></Link> : null}
     </nav>
   );
 }

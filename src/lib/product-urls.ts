@@ -104,6 +104,8 @@ export const BRIEFING_APP_PATH = `${HOME_APP_PATH}/briefing`;
  */
 export const PROJECT_APP_PATH = "/app/project";
 export const YOUR_WORK_APP_PATH = "/app/your-work";
+/** Optional Project communication utility, outside the three-product map. */
+export const MESSAGES_APP_PATH = "/app/messages";
 
 /** The authenticated suite surfaces the shell can mark as current. */
 export type SuiteSurfaceId = "home" | ProductId;

@@ -27,6 +27,7 @@ import { useSuiteContext } from "@/components/app/use-suite-context";
 import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
 import {
   PRODUCT_APP_PATHS,
+  MESSAGES_APP_PATH,
   STUDIO_URL,
   suiteSurfaceFromAppPath,
 } from "@/lib/product-urls";
@@ -194,7 +195,7 @@ export function StudioRail({ messagesEnabled = false }: { messagesEnabled?: bool
         <span className={styles.railLabel}>More</span>
       </a>
       <span className={styles.railSpacer} />
-      {messagesEnabled ? <Link aria-label="Messages" aria-current={pathname.startsWith("/app/messages") ? "page" : undefined} className={styles.railUtility} data-tip="Messages" href="/app/messages"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M5 4h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6 3V6a2 2 0 0 1 2-2Z" /></svg></Link> : null}
+      {messagesEnabled ? <Link aria-label="Messages" aria-current={(pathname === MESSAGES_APP_PATH || pathname.startsWith(`${MESSAGES_APP_PATH}/`)) ? "page" : undefined} className={styles.railUtility} data-tip="Messages" href={MESSAGES_APP_PATH}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M5 4h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6 3V6a2 2 0 0 1 2-2Z" /></svg></Link> : null}
       <Link aria-label="Inbox" className={styles.railUtility} data-tip="Inbox · daily digest" href="/app/inbox">
         <RailIcon name="updates" size={18} />
       </Link>

@@ -5,6 +5,7 @@ import { parseProjectId } from "@/lib/projects/project-ref";
 import { authenticateConversationActor, getConversationService } from "@/server/conversations/runtime";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Messages · Signal Studio" };
 
 export default async function MessagesPage({ searchParams }: { searchParams: Promise<{ projectId?: string | string[] }> }) {
   const actorId = await authenticateConversationActor();
