@@ -55,8 +55,11 @@ test("DM consent, third party and departed-history restrictions are independent"
 
 test("immutable DM identity is scoped and collision-free; payload limits cover Unicode", () => {
   const a = parseProjectId("project-a");
+  const b = parseProjectId("project-b");
+  assert.ok(a);
+  assert.ok(b);
   assert.equal(pairIdentity(a, "alice", "bob"), pairIdentity(a, "bob", "alice"));
-  assert.notEqual(pairIdentity(a, "alice", "bob"), pairIdentity(parseProjectId("project-b"), "alice", "bob"));
+  assert.notEqual(pairIdentity(a, "alice", "bob"), pairIdentity(b, "alice", "bob"));
   assert.throws(() => pairIdentity(a, "alice", "alice"));
   assert.ok(validMessageBody("😀".repeat(8_000)));
   assert.equal(normalizeMessageBody(" one\r\ntwo\rthree "), " one\ntwo\nthree ");
