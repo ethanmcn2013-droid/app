@@ -17,7 +17,7 @@ The dark lab frame identifies the prototype and contains the scenario selector. 
 5. Choose **Project archived** and **Conversation unavailable** to review read-only and neutral-denial recovery. The unavailable state never substitutes a different Project.
 6. Use **Reply** on a message. A dedicated one-level thread opens with its root and replies; sending there does not add a duplicate top-level row. Escape in its composer closes the thread.
 7. Open **Turn into work**. Arrow keys and Escape work within its menu. **Create dated task** previews an explicit Tasks · Schedule handoff and states that it does not publish to Timeline. **Save to my Notes** states that the result is private to the current user. Confirming either closes a preview and writes nothing.
-8. Review at 1440px and 390px. The compact rail becomes a bottom navigation bar, the conversation list becomes an avatar switcher, the audience header remains visible, and composer controls retain touch-sized targets.
+8. Review at 1440px and 390px. The phone view keeps a compact 66px rail beside the 324px working surface. The conversation list becomes an avatar switcher, the audience header remains visible, and composer controls retain touch-sized targets. The selected mobile conversation has a complete ink outline and exposes `aria-current` with its conversation name.
 
 ## Attention and accessibility
 
@@ -30,6 +30,7 @@ All actions use native buttons, inputs or selects. The composer sends with Contr
 - TypeScript: `node node_modules/typescript/bin/tsc --noEmit --pretty false` — passed.
 - Targeted ESLint: route plus both prototype TSX files — passed.
 - Impeccable detector: route, TSX and CSS module — no findings.
-- Browser rendering and interaction capture are intentionally left to the coordinated root verification pass; this task did not start a server or claim visual approval.
+- Root browser verification completed against the final prototype at `e7eed757` (equivalent UI in integration `a8207004`): desktop and mobile rendering, scoped draft retention, Project/DM/Discussion selection, pending consent, one-row uncertain retry, separate thread replies, archive refusal, explicit task/private Notes previews, Control+Enter, and reduced motion. Browser console errors/warnings: none. Final screenshots are in `evidence/`. A fresh finish reviewer accepted the prototype after the mobile selection correction.
+- Physical IME input was unavailable in this browser interface; the composition guard was inspected in both composers. Real phone hardware and human comprehension remain unverified. Agent review is not founder or participant acceptance.
 - `pnpm exec` attempted to reconcile the pre-created `node_modules` junction and stopped at its noninteractive purge guard. Direct linked binaries ran successfully without changing dependencies.
 - This is in-memory UI evidence only. It does not prove authorization, atomic writes, synchronization, external delivery, canonical task creation, Notes reconciliation, persistence or lifecycle policy.

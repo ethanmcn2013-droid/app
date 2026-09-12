@@ -14,7 +14,7 @@ Give each scenario one at a time without explaining navigation or naming the con
 
 | Journey | Neutral task prompt | Success and dangerous confusion to observe |
 |---|---|---|
-| A Project coordination | You need everyone working on the Riverside launch to know the review time changed. Tell them, then leave and return to check it. | Finds correct Project/audience, sends once, distinguishes pending from sent; never assumes another Project or outsider received it. |
+| A Project coordination | You need everyone working on the Website launch to know the review time changed. Tell them, then leave and return to check it. | Finds correct Project/audience, sends once, distinguishes pending from sent; never assumes another Project or outsider received it. |
 | B Private pair | You need to ask one colleague a sensitive planning question. Decide where it belongs and who can read it. | Identifies exactly two-person Project DM and recipient acceptance; no third-party or project-wide privacy assumption. |
 | C Outcome | This discussion has led to a job for next Tuesday. Record the work so it can be followed up. | Reviews destination, task title/owner/date and source visibility before confirming; understands date does not automatically publish Timeline. |
 | E Recovery | You pressed send and the connection dropped. Find out what happened and finish safely. | Recognizes uncertain state, checks/retries original request, no duplicate success or loss of draft; understands simulated result. |
