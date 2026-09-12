@@ -66,6 +66,7 @@ async function recipientEmailCodeSignIn(
   email: string,
   invitePath: string,
 ): Promise<ClerkIdentity> {
+  const expectedOrigin = new URL(page.url()).origin;
   const identifier = page.locator("input[name=identifier]");
   await expect(identifier).toBeVisible();
   await identifier.fill(email);
@@ -101,7 +102,10 @@ async function recipientEmailCodeSignIn(
   // The mounted SignIn component must consume its forceRedirectUrl. No helper
   // navigation or forced page.goto is allowed across this proof boundary.
   await expect(page).toHaveURL((url) =>
-    url.pathname === invitePath && url.search === "" && url.hash === "",
+    url.origin === expectedOrigin &&
+    url.pathname === invitePath &&
+    url.search === "" &&
+    url.hash === "",
   );
   return readVerifiedIdentity(page, email);
 }
