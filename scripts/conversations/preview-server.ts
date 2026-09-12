@@ -50,6 +50,7 @@ let sendsEnabled = true;
 const dropNextResponse = new Set<string>();
 const withholdNextReceipt = new Set<string>();
 const refuseNextWrite = new Set<string>();
+const unavailableReceipts = new Set<string>();
 const origin = `http://127.0.0.1:${port}`;
 const server = createServer(async (incoming, outgoing) => {
   const path = new URL(incoming.url ?? "/", origin);
@@ -63,6 +64,8 @@ const server = createServer(async (incoming, outgoing) => {
       else if (action === "lose-response" && people.some(([id]) => id === actorId)) dropNextResponse.add(actorId!);
       else if (action === "withhold-receipt" && people.some(([id]) => id === actorId)) withholdNextReceipt.add(actorId!);
       else if (action === "refuse-write" && people.some(([id]) => id === actorId)) refuseNextWrite.add(actorId!);
+      else if (action === "receipts-off" && people.some(([id]) => id === actorId)) unavailableReceipts.add(actorId!);
+      else if (action === "receipts-on" && people.some(([id]) => id === actorId)) unavailableReceipts.delete(actorId!);
       else if (action === "remove" && people.some(([id]) => id === actorId)) await adapter.transaction("write", (tx) => tx.execute({ sql: "DELETE FROM workspace_members WHERE workspace_id='synthetic_project_a' AND user_id=?", args: [actorId!] }));
       else { outgoing.writeHead(400); outgoing.end(); return; }
       outgoing.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" }); outgoing.end('{"ok":true}');
@@ -71,6 +74,10 @@ const server = createServer(async (incoming, outgoing) => {
   }
   if (path.pathname === "/api/conversations" || path.pathname === "/api/task-discussion") {
     const fixtureActor = typeof incoming.headers["x-fixture-actor"] === "string" ? incoming.headers["x-fixture-actor"] : null;
+    if (incoming.method === "GET" && path.searchParams.get("action") === "receipt" && fixtureActor && unavailableReceipts.has(fixtureActor)) {
+      outgoing.writeHead(503, { "content-type": "application/json", "cache-control": "no-store" });
+      outgoing.end('{"ok":false,"code":"temporarily_unavailable"}'); return;
+    }
     if (incoming.method === "POST" && fixtureActor && refuseNextWrite.delete(fixtureActor)) {
       incoming.resume();
       outgoing.writeHead(503, { "content-type": "application/json", "cache-control": "no-store" });
