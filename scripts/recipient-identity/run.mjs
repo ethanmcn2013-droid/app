@@ -1,4 +1,5 @@
 import { createServer } from "node:net";
+import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -9,6 +10,11 @@ import {
   validateDeploymentConfig,
   validateRecipientIdentityEnv,
 } from "./preflight.mjs";
+import {
+  createTemporaryRecipient,
+  deleteTemporaryRecipient,
+  temporaryRecipientEmail,
+} from "./temporary-recipient.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const outputRoot = path.join(root, "experience", "output", "recipient-identity");
@@ -16,6 +22,7 @@ const runtimeRoot = path.join(outputRoot, "runtime");
 const playwrightRoot = path.join(outputRoot, "playwright");
 const evidencePath = path.join(outputRoot, "journey-result.json");
 const receiptPath = path.join(outputRoot, "receipt.json");
+const ownershipPath = path.join(outputRoot, "owned-clerk-recipient.json");
 const allowedUntrackedHooks = new Set([
   "?? .githooks/post-checkout",
   "?? .githooks/post-commit",
@@ -80,6 +87,9 @@ function assertInsideOutput(target) {
 
 export function resetRunOutput(target = outputRoot) {
   const resolved = assertInsideOutput(target);
+  if (resolved === outputRoot && existsSync(ownershipPath)) {
+    throw new Error("Previous temporary recipient cleanup is unresolved; preserve its ignored ownership record.");
+  }
   rmSync(resolved, { recursive: true, force: true });
   mkdirSync(resolved, { recursive: true });
 }
@@ -154,7 +164,7 @@ export function sanitizeWrongAccountDiagnostic(value) {
   };
 }
 
-export function buildReceipt({ status, errorCode, sourceRevision, sourceTree, vercelBlob, deploymentGuardValidated, startedAt, evidence }) {
+export function buildReceipt({ status, errorCode, sourceRevision, sourceTree, vercelBlob, deploymentGuardValidated, startedAt, evidence, temporaryRecipientState = "not_started" }) {
   const stages = evidence?.stages ?? Object.fromEntries(
     REQUIRED_STAGES.map((stage) => [stage, evidence?.[stage] === true]),
   );
@@ -170,13 +180,14 @@ export function buildReceipt({ status, errorCode, sourceRevision, sourceTree, ve
       deploymentEnabled: deploymentGuardValidated ? false : null,
     },
     target: "loopback Next production build with fresh local file databases",
-    intendedIdentityBoundary: "two controlled accounts in one declared Clerk development instance; setup sessions and creator restoration use Clerk's ticket helper, while recipient continuation uses the visible Clerk email-code form; every session is bound to verified-user readback",
+    intendedIdentityBoundary: "one controlled creator and one fixture-owned temporary recipient in the declared Clerk development instance; setup sessions and creator restoration use Clerk's ticket helper, while recipient continuation uses the visible Clerk password form; every session is bound to verified-user readback",
     fixtureBoundary: "project, pending invitation, assigned task and membership removal are isolated local database fixtures; creator invitation authoring and removal UI are not exercised",
     observedStages: stages,
     wrongAccountDiagnostic: sanitizeWrongAccountDiagnostic(evidence?.wrongAccountDiagnostic),
-    signInUi: "recipient enters the controlled Clerk test address and fixed test OTP in the visible email-code form; exact automatic return to the invitation is required; password, real email delivery and MFA are not exercised",
-    providers: { clerk: "bounded testing-token, ticket-session and development test email-code requests", mail: "Clerk test mailbox only; no real email delivery", drive: "disabled", stripe: "disabled" },
-    custody: "sanitized receipt, stage booleans and fixed wrong-account diagnostic enums/counts remain in ignored local output; databases, browser output, auth state, account labels, invite tokens, traces and screenshots are removed",
+    signInUi: "recipient enters a runner-generated password in Clerk's visible form; exact automatic return to the invitation is required; email delivery and MFA are not exercised",
+    providers: { clerk: "bounded testing-token, ticket-session and temporary development-user create/delete requests", mail: "Clerk test address only; no real email delivery", drive: "disabled", stripe: "disabled" },
+    temporaryRecipient: { state: temporaryRecipientState, identity: "fixture-owned only; no existing account is reset or deleted" },
+    custody: "sanitized receipt and stage booleans remain in ignored local output; databases, browser output, auth state, password, account labels, invite tokens, traces and screenshots are removed after verified cleanup; unresolved user cleanup retains an ignored ownership record",
     startedAt,
     completedAt: new Date().toISOString(),
   };
@@ -198,6 +209,7 @@ export function buildChildEnvironment(merged, config, osEnvironment = process.en
     SIGNAL_RECIPIENT_CLERK_SECRET_INSTANCE: merged.SIGNAL_RECIPIENT_CLERK_SECRET_INSTANCE,
     SIGNAL_RECIPIENT_CREATOR_EMAIL: config.creatorEmail,
     SIGNAL_RECIPIENT_RECIPIENT_EMAIL: config.recipientEmail,
+    SIGNAL_RECIPIENT_RECIPIENT_PASSWORD: config.recipientPassword,
     SIGNAL_RECIPIENT_EVIDENCE_PATH: evidencePath,
     SIGNAL_RECIPIENT_SOURCE_REVISION: config.sourceRevision,
     SIGNAL_RECIPIENT_IDENTITY_PROOF: RECIPIENT_IDENTITY_PROOF_MARKER,
@@ -229,9 +241,14 @@ async function main() {
   let status = "failed";
   let errorCode = "preflight_failed";
   let exitCode = 1;
-  resetRunOutput();
+  let outputReady = false;
+  let temporarySecretKey = null;
+  let ownedRecipient = null;
+  let temporaryRecipientState = "not_started";
 
   try {
+    resetRunOutput();
+    outputReady = true;
     const dedicatedPath = path.join(root, ".env.recipient-identity.local");
     const merged = mergeDedicatedEnv(process.env, readDedicatedEnv(dedicatedPath));
     const config = validateRecipientIdentityEnv(merged, { cwd: root });
@@ -255,8 +272,21 @@ async function main() {
 
     const pnpmCli = process.env.npm_execpath;
     if (!pnpmCli || !existsSync(pnpmCli)) throw new Error("Run this target through pnpm.");
+    temporarySecretKey = merged.CLERK_SECRET_KEY;
+    const temporaryEmail = temporaryRecipientEmail(config.recipientEmail, randomBytes(8).toString("hex"));
+    const temporaryPassword = `${randomBytes(32).toString("base64url")}!aA1`;
+    atomicJson(ownershipPath, { schemaVersion: 1, sourceRevision, email: temporaryEmail, userId: null });
+    temporaryRecipientState = "creation_unresolved";
+    errorCode = "temporary_recipient_creation_failed";
+    ownedRecipient = await createTemporaryRecipient({
+      secretKey: temporarySecretKey,
+      email: temporaryEmail,
+      password: temporaryPassword,
+    });
+    atomicJson(ownershipPath, { schemaVersion: 1, sourceRevision, email: temporaryEmail, userId: ownedRecipient.id });
+    temporaryRecipientState = "created";
     errorCode = "journey_failed";
-    const result = run(process.execPath, [pnpmCli, "exec", "playwright", "test", "--config", "experience/recipient-identity/playwright.config.ts"], { env: buildChildEnvironment(merged, { ...config, sourceRevision }) });
+    const result = run(process.execPath, [pnpmCli, "exec", "playwright", "test", "--config", "experience/recipient-identity/playwright.config.ts"], { env: buildChildEnvironment(merged, { ...config, recipientEmail: temporaryEmail, recipientPassword: temporaryPassword, sourceRevision }) });
     exitCode = result.status ?? 1;
     const evidence = readEvidence();
     if (exitCode === 0 && REQUIRED_STAGES.every((stage) => evidence.stages[stage])) {
@@ -269,9 +299,24 @@ async function main() {
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
   } finally {
-    const evidence = readEvidence();
-    scrubSensitiveRunState();
-    writeReceipt({ status, errorCode, sourceRevision, sourceTree, vercelBlob, deploymentGuardValidated, startedAt, evidence });
+    if (outputReady) {
+      const evidence = readEvidence();
+      if (ownedRecipient) {
+        try {
+          await deleteTemporaryRecipient({ secretKey: temporarySecretKey, userId: ownedRecipient.id });
+          rmSync(ownershipPath);
+          temporaryRecipientState = "deleted";
+        } catch (error) {
+          console.error(error instanceof Error ? error.message : String(error));
+          temporaryRecipientState = "cleanup_unresolved";
+          status = "failed";
+          errorCode = "temporary_recipient_cleanup_failed";
+          exitCode = 1;
+        }
+      }
+      scrubSensitiveRunState();
+      writeReceipt({ status, errorCode, sourceRevision, sourceTree, vercelBlob, deploymentGuardValidated, startedAt, evidence, temporaryRecipientState });
+    }
     process.exitCode = exitCode;
   }
 }

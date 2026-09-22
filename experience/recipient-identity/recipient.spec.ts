@@ -1,5 +1,5 @@
 import { clerk } from "@clerk/testing/playwright";
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import {
   observe,
   observeWrongAccountDiagnostic,
@@ -54,16 +54,10 @@ async function ticketSignIn(page: Page, email: string): Promise<ClerkIdentity> {
   return readVerifiedIdentity(page, email);
 }
 
-async function firstVisibleMatch(locator: Locator): Promise<Locator> {
-  for (const match of await locator.all()) {
-    if (await match.isVisible()) return match;
-  }
-  throw new Error("Expected one visible Clerk sign-in control.");
-}
-
-async function recipientEmailCodeSignIn(
+async function recipientPasswordSignIn(
   page: Page,
   email: string,
+  password: string,
   invitePath: string,
 ): Promise<ClerkIdentity> {
   const expectedOrigin = new URL(page.url()).origin;
@@ -72,21 +66,9 @@ async function recipientEmailCodeSignIn(
   await identifier.fill(email);
   await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-  const digitOne = page.getByRole("textbox", {
-    name: "Enter verification code. Digit 1",
-  });
-  const singleCode = page.getByLabel("Enter verification code", { exact: true });
-  // Clerk renders this choice as a button in some sign-in steps and a link in
-  // others. Both are the visible UI path to the configured email-code method.
-  const useAnotherMethod = page.getByRole("button", { name: /use another method/i })
-    .or(page.getByRole("link", { name: /use another method/i }));
-  const codeVisible = async () =>
-    await anyMatchVisible(digitOne) || await anyMatchVisible(singleCode);
-
+  const passwordInput = page.locator('input[type="password"]');
   try {
-    await expect.poll(async () =>
-      await codeVisible() || await anyMatchVisible(useAnotherMethod),
-    ).toBe(true);
+    await expect(passwordInput).toBeVisible();
   } catch {
     // Fixed booleans and control classes only: no account label, invitation
     // URL or Clerk DOM is copied into the retained private log.
@@ -110,31 +92,14 @@ async function recipientEmailCodeSignIn(
       origin: current.origin === expectedOrigin ? "local" : "external",
       route: path === "/sign-in" ? "sign-in" : path.startsWith("/sign-in/") ? "sign-in-step" : path === "/sign-up" ? "sign-up" : path === invitePath ? "invite" : "other",
       passwordVisible: await anyMatchVisible(page.locator('input[type="password"]')),
-      codeVisible: await codeVisible(),
       anotherMethodButtonVisible: await anyMatchVisible(page.getByRole("button", { name: /use another method/i })),
       anotherMethodLinkVisible: await anyMatchVisible(page.getByRole("link", { name: /use another method/i })),
-      emailCodeButtonVisible: await anyMatchVisible(page.getByRole("button", { name: /email code to/i })),
-      emailCodeLinkVisible: await anyMatchVisible(page.getByRole("link", { name: /email code to/i })),
       controls,
     };
-    throw new Error(`Recipient sign-in method step unavailable: ${JSON.stringify(diagnostic)}`);
+    throw new Error(`Recipient password step unavailable: ${JSON.stringify(diagnostic)}`);
   }
-
-  if (!(await codeVisible())) {
-    await (await firstVisibleMatch(useAnotherMethod)).click();
-    const emailCodeMethod = page.getByRole("button", { name: /email code to/i })
-      .or(page.getByRole("link", { name: /email code to/i }));
-    await expect.poll(async () => await anyMatchVisible(emailCodeMethod)).toBe(true);
-    await (await firstVisibleMatch(emailCodeMethod)).click();
-  }
-
-  await expect.poll(codeVisible).toBe(true);
-  if (await anyMatchVisible(digitOne)) {
-    await (await firstVisibleMatch(digitOne)).click();
-    await page.keyboard.type("424242", { delay: 100 });
-  } else {
-    await (await firstVisibleMatch(singleCode)).fill("424242");
-  }
+  await passwordInput.fill(password);
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
 
   // The mounted SignIn component must consume its forceRedirectUrl. No helper
   // navigation or forced page.goto is allowed across this proof boundary.
@@ -241,7 +206,8 @@ async function wrongAccountDiagnostic(
 
 test("controlled recipient accepts B, completes assigned work, and loses B after removal", async ({ browser }) => {
   const creatorEmail = required("SIGNAL_RECIPIENT_CREATOR_EMAIL");
-  const recipientEmail = required("SIGNAL_RECIPIENT_RECIPIENT_EMAIL");
+    const recipientEmail = required("SIGNAL_RECIPIENT_RECIPIENT_EMAIL");
+    const recipientPassword = required("SIGNAL_RECIPIENT_RECIPIENT_PASSWORD");
   const creatorContext = await browser.newContext();
   const recipientContext = await browser.newContext();
   const creatorPage = await creatorContext.newPage();
@@ -328,9 +294,10 @@ test("controlled recipient accepts B, completes assigned work, and loses B after
     await signIn.click();
     await expect(recipientPage).toHaveURL((url) => url.pathname === "/sign-in" && url.searchParams.get("redirect_url") === invitePath);
     await clerk.loaded({ page: recipientPage });
-    const uiRecipient = await recipientEmailCodeSignIn(
+    const uiRecipient = await recipientPasswordSignIn(
       recipientPage,
       recipientEmail,
+      recipientPassword,
       invitePath,
     );
     expect(uiRecipient).toEqual(recipient);

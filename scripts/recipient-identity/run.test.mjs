@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -33,6 +33,20 @@ test("run reset refuses paths outside the ignored recipient root", () => {
   assert.throws(() => resetRunOutput(outside), /escaped/);
 });
 
+test("run reset preserves an unresolved temporary Clerk user locator", () => {
+  const output = path.resolve("experience", "output", "recipient-identity");
+  const ownership = path.join(output, "owned-clerk-recipient.json");
+  assert.equal(existsSync(ownership), false, "a real temporary user requires manual cleanup first");
+  mkdirSync(output, { recursive: true });
+  writeFileSync(ownership, '{"userId":"user_fixture"}\n');
+  try {
+    assert.throws(() => resetRunOutput(), /cleanup is unresolved/);
+    assert.equal(existsSync(ownership), true);
+  } finally {
+    rmSync(ownership);
+  }
+});
+
 test("child process receives no arbitrary repository or provider credentials", () => {
   const declaredSecret = "sk_test_short-sentinel";
   const child = buildChildEnvironment({
@@ -45,6 +59,7 @@ test("child process receives no arbitrary repository or provider credentials", (
   }, {
     creatorEmail: "creator+clerk_test@example.test",
     recipientEmail: "recipient+clerk_test@example.test",
+    recipientPassword: "runner-generated-only",
     port: 4389,
     baseURL: "http://localhost:4389",
     sourceRevision: "0000000000000000000000000000000000000000",
@@ -65,6 +80,7 @@ test("child process receives no arbitrary repository or provider credentials", (
   assert.equal(child.PATH, "safe-path");
   assert.equal(child.CLERK_SECRET_KEY, declaredSecret);
   assert.equal(child.SIGNAL_RECIPIENT_SOURCE_REVISION, "0000000000000000000000000000000000000000");
+  assert.equal(child.SIGNAL_RECIPIENT_RECIPIENT_PASSWORD, "runner-generated-only");
   assert.equal(child.GITHUB_TOKEN, undefined);
   assert.equal(child.RESEND_API_KEY, undefined);
   assert.equal(child.TURSO_AUTH_TOKEN, undefined);
@@ -110,10 +126,11 @@ test("failed preflight receipt cannot claim an unvalidated deployment guard", ()
     deploymentEnabled: null,
   });
   assert.match(receipt.intendedIdentityBoundary, /setup sessions and creator restoration use Clerk's ticket helper/);
-  assert.match(receipt.signInUi, /visible email-code form/);
-  assert.match(receipt.signInUi, /fixed test OTP/);
-  assert.match(receipt.signInUi, /real email delivery and MFA are not exercised/);
-  assert.equal(receipt.providers.mail, "Clerk test mailbox only; no real email delivery");
+  assert.match(receipt.signInUi, /visible form/);
+  assert.match(receipt.signInUi, /runner-generated password/);
+  assert.match(receipt.signInUi, /email delivery and MFA are not exercised/);
+  assert.equal(receipt.providers.mail, "Clerk test address only; no real email delivery");
+  assert.equal(receipt.temporaryRecipient.state, "not_started");
   assert.doesNotMatch(receipt.signInUi, /credential-entry UI is not exercised/);
 });
 

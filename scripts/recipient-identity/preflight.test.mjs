@@ -88,6 +88,10 @@ test("refuses remote databases, provider credentials and production targets", ()
     () => validateRecipientIdentityEnv(valid({ TASKS_AUTH_TOKEN: "configured" }), { exists: noFiles }),
     /must be unset/,
   );
+  assert.throws(
+    () => validateRecipientIdentityEnv(valid({ SIGNAL_RECIPIENT_RECIPIENT_PASSWORD: "caller-supplied" }), { exists: noFiles }),
+    /must be unset/,
+  );
 });
 
 test("refuses account reuse, non-test mailboxes and undeclared deployment state", () => {
