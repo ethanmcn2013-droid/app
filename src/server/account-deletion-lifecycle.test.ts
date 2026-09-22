@@ -19,6 +19,7 @@ import {
 } from "./account-deletion-lifecycle";
 import { ensureUserProvisionedWith } from "./db/ensure-user";
 import { provisionCreatedClerkUserWith } from "./db/clerk-user-provision";
+import { retryImmediateProvisioning } from "./db/immediate-transaction-retry";
 import * as schema from "./db/schema";
 
 async function freshDb() {
@@ -127,6 +128,24 @@ test("provisioning that wins first cannot recur after the tombstone", async () =
   }
 });
 
+test("a deletion tombstone also blocks delayed Clerk creation", async () => {
+  const { client, db, cleanup } = await freshDb();
+  try {
+    const clerkId = "user_deleted_before_webhook";
+    await beginAccountDeletionWith(db, clerkId);
+    assert.equal(await provisionCreatedClerkUserWith(db, {
+      clerkId, email: "deleted-webhook@example.test", handle: "deletedwebhook",
+      name: "Deleted Account", color: "#456", initials: "DA",
+    }), null);
+    assert.equal(await countRows(client, "users"), 0);
+    assert.equal(await countRows(client, "planning_periods"), 0);
+    assert.equal(await countRows(client, "workspaces"), 0);
+    assert.equal(await countRows(client, "workspace_members"), 0);
+  } finally {
+    cleanup();
+  }
+});
+
 test("fallback and delayed webhook keep the persisted internal id and replay once", async () => {
   const { client, db, cleanup } = await freshDb();
   try {
@@ -199,4 +218,71 @@ test("webhook-first preserves a pre-existing mapped identity", async () => {
   } finally {
     cleanup();
   }
+});
+
+test("parallel authenticated entries provision one mapped user on a local file database", async () => {
+  const { client, db, cleanup } = await freshDb();
+  try {
+    const clerkId = "user_parallel_mapping";
+    const internalId = "parallel-internal";
+    await client.execute({
+      sql: "INSERT INTO users (id, clerk_id, color, initials) VALUES (?, ?, '#123', 'PI')",
+      args: [internalId, clerkId],
+    });
+    const results = await Promise.all(Array.from({ length: 8 }, () =>
+      ensureUserProvisionedWith(db, clerkId, "parallel@example.test")));
+    assert.deepEqual(results, Array(8).fill(true));
+    assert.equal(await countRows(client, "users"), 1);
+    assert.equal(await countRows(client, "planning_periods"), 1);
+    assert.equal(await countRows(client, "workspaces"), 1);
+    assert.equal(await countRows(client, "workspace_members"), 1);
+  } finally {
+    cleanup();
+  }
+});
+
+test("parallel distinct local users complete without weakening the deletion fence", async () => {
+  const { client, db, cleanup } = await freshDb();
+  try {
+    const clerkIds = ["user_alpha_distinct", "user_bravo_distinct", "user_charlie_distinct", "user_delta_distinct"];
+    const results = await Promise.all(clerkIds.map((id) => ensureUserProvisionedWith(db, id)));
+    assert.deepEqual(results, Array(4).fill(true));
+    assert.equal(await countRows(client, "users"), 4);
+    assert.equal(await countRows(client, "planning_periods"), 4);
+    assert.equal(await countRows(client, "workspaces"), 4);
+    assert.equal(await countRows(client, "workspace_members"), 4);
+  } finally {
+    cleanup();
+  }
+});
+
+test("provisioning retry is bounded to SQLite lock errors", async () => {
+  const database = {};
+  let attempts = 0;
+  await assert.rejects(
+    retryImmediateProvisioning(database, "user_constraint", async () => {
+      attempts += 1;
+      throw Object.assign(new Error("constraint"), { code: "SQLITE_CONSTRAINT" });
+    }),
+    (error: unknown) => (error as { code?: string }).code === "SQLITE_CONSTRAINT",
+  );
+  assert.equal(attempts, 1);
+
+  attempts = 0;
+  assert.equal(await retryImmediateProvisioning(database, "user_busy", async () => {
+    attempts += 1;
+    if (attempts === 1) throw Object.assign(new Error("locked"), { code: "SQLITE_BUSY" });
+    return "committed";
+  }), "committed");
+  assert.equal(attempts, 2);
+
+  attempts = 0;
+  await assert.rejects(
+    retryImmediateProvisioning(database, "user_persistently_busy", async () => {
+      attempts += 1;
+      throw Object.assign(new Error("locked"), { code: "SQLITE_BUSY" });
+    }),
+    (error: unknown) => (error as { code?: string }).code === "SQLITE_BUSY",
+  );
+  assert.equal(attempts, 8);
 });

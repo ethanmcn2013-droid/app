@@ -17,18 +17,20 @@ test("the in-app route fences identity before product and Clerk deletion", () =>
 
 test("fallback provisioning checks the tombstone in its writer transaction", () => {
   const source = read("src/server/db/ensure-user.ts");
-  const transaction = source.indexOf("return database.transaction");
+  const transaction = source.indexOf("database.transaction");
   const fence = source.indexOf("hasAccountDeletionStartedWith(tx, clerkUserId)");
   const userInsert = source.indexOf("INSERT OR IGNORE INTO users");
 
   assert.ok(transaction >= 0);
   assert.ok(fence > transaction);
   assert.ok(userInsert > fence);
+  assert.match(source, /retryImmediateProvisioning\(database, clerkUserId/);
   assert.match(source, /\{ behavior: "immediate" \}/);
 });
 
 test("Clerk creation and deletion share the same durable lifecycle", () => {
   const source = read("src/app/api/webhooks/clerk/route.ts");
+  const creation = read("src/server/db/clerk-user-provision.ts");
   const createHandler = source.slice(
     source.indexOf("async function handleUserCreated"),
     source.indexOf("function isEduEmail"),
@@ -37,11 +39,15 @@ test("Clerk creation and deletion share the same durable lifecycle", () => {
     source.indexOf("async function handleUserDeleted"),
   );
 
-  assert.ok(
-    createHandler.indexOf("hasAccountDeletionStartedWith(tx, userId)") <
-      createHandler.indexOf("INSERT INTO users"),
-  );
-  assert.match(createHandler, /\{ behavior: "immediate" \}/);
+  assert.match(createHandler, /provisionCreatedClerkUserWith\(db/);
+  const transaction = creation.indexOf("database.transaction");
+  const fence = creation.indexOf("hasAccountDeletionStartedWith(tx, user.clerkId)");
+  const userInsert = creation.indexOf("tx.insert(users).values");
+  assert.ok(transaction >= 0);
+  assert.ok(fence > transaction);
+  assert.ok(userInsert > fence);
+  assert.match(creation, /retryImmediateProvisioning\(database, user.clerkId/);
+  assert.match(creation, /\{ behavior: "immediate" \}/);
   assert.ok(
     deleteHandler.indexOf("await beginAccountDeletion(u.id)") <
       deleteHandler.indexOf("await deleteAccountForUser(u.id)"),

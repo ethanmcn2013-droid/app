@@ -3,6 +3,7 @@ import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { db } from "@/server/db";
 import * as schema from "@/server/db/schema";
 import { hasAccountDeletionStartedWith } from "@/server/account-deletion-lifecycle";
+import { retryImmediateProvisioning } from "@/server/db/immediate-transaction-retry";
 
 type ProvisioningDb = LibSQLDatabase<typeof schema>;
 
@@ -69,7 +70,7 @@ export async function ensureUserProvisionedWith(
     : null;
   const initials = initialsFromName ?? (handle.slice(0, 2).toUpperCase() || "??");
 
-  return database.transaction(async (tx) => {
+  return retryImmediateProvisioning(database, clerkUserId, () => database.transaction(async (tx) => {
     // This read and every provisioning write share one immediate transaction.
     // If deletion commits first, no row is recreated. If provisioning commits
     // first, deletion observes and erases that row after installing its fence.
@@ -145,7 +146,7 @@ export async function ensureUserProvisionedWith(
       VALUES (${workspaceId}, ${userId}, 'owner')
     `);
     return true;
-  }, { behavior: "immediate" });
+  }, { behavior: "immediate" }));
 }
 
 // Matches the webhook handler's PALETTE + hash for visual stability.

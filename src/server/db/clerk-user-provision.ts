@@ -2,6 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { hasAccountDeletionStartedWith } from "@/server/account-deletion-lifecycle";
 import { users } from "@/server/db/schema";
+import { retryImmediateProvisioning } from "@/server/db/immediate-transaction-retry";
 import * as schema from "@/server/db/schema";
 
 type ProvisioningDb = LibSQLDatabase<typeof schema>;
@@ -25,7 +26,7 @@ export async function provisionCreatedClerkUserWith(
   const planningPeriodId = `planning-${workspaceId}`;
   const slug = `personal-${tail.slice(0, 8)}`;
 
-  return database.transaction(async (tx) => {
+  return retryImmediateProvisioning(database, user.clerkId, () => database.transaction(async (tx) => {
     if (await hasAccountDeletionStartedWith(tx, user.clerkId)) return null;
 
     await tx.insert(users).values({
@@ -77,5 +78,5 @@ export async function provisionCreatedClerkUserWith(
       VALUES (${workspaceId}, ${userId}, 'owner')
     `);
     return userId;
-  }, { behavior: "immediate" });
+  }, { behavior: "immediate" }));
 }
