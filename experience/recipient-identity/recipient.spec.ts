@@ -88,17 +88,34 @@ async function recipientEmailCodeSignIn(
       await codeVisible() || await anyMatchVisible(useAnotherMethod),
     ).toBe(true);
   } catch {
-    // Fixed booleans only: no account label, invitation URL or Clerk DOM is
-    // copied into the retained private log when this provider step changes.
-    const path = new URL(page.url()).pathname;
+    // Fixed booleans and control classes only: no account label, invitation
+    // URL or Clerk DOM is copied into the retained private log.
+    const current = new URL(page.url());
+    const path = current.pathname;
+    const controls = await page.locator("button, a, [role=button]").evaluateAll((elements) =>
+      elements.filter((element) => element.getClientRects().length > 0).slice(0, 30).map((element) => {
+        const label = `${element.getAttribute("aria-label") ?? ""} ${element.textContent ?? ""}`.toLowerCase();
+        const kind = /another|other|different|alternative|try another/.test(label) ? "method-choice"
+          : /forgot|reset/.test(label) ? "recovery"
+          : /password/.test(label) ? "password"
+          : /email|code/.test(label) ? "email-code"
+          : /continue|next/.test(label) ? "continue"
+          : /sign in|log in/.test(label) ? "sign-in"
+          : /back/.test(label) ? "back"
+          : "other";
+        return { tag: element.tagName.toLowerCase(), role: element.getAttribute("role") ?? "native", kind };
+      }),
+    );
     const diagnostic = {
-      route: path === "/sign-in" ? "sign-in" : path === "/sign-up" ? "sign-up" : path === invitePath ? "invite" : "other",
+      origin: current.origin === expectedOrigin ? "local" : "external",
+      route: path === "/sign-in" ? "sign-in" : path.startsWith("/sign-in/") ? "sign-in-step" : path === "/sign-up" ? "sign-up" : path === invitePath ? "invite" : "other",
       passwordVisible: await anyMatchVisible(page.locator('input[type="password"]')),
       codeVisible: await codeVisible(),
       anotherMethodButtonVisible: await anyMatchVisible(page.getByRole("button", { name: /use another method/i })),
       anotherMethodLinkVisible: await anyMatchVisible(page.getByRole("link", { name: /use another method/i })),
       emailCodeButtonVisible: await anyMatchVisible(page.getByRole("button", { name: /email code to/i })),
       emailCodeLinkVisible: await anyMatchVisible(page.getByRole("link", { name: /email code to/i })),
+      controls,
     };
     throw new Error(`Recipient sign-in method step unavailable: ${JSON.stringify(diagnostic)}`);
   }
