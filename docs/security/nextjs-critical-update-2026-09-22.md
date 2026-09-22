@@ -1,6 +1,6 @@
 # Next.js critical security update — 2026-09-22
 
-Status: dependency and lockfile checkpoint; verification pending.
+Status: dependency checkpoint and gates recorded; no release or deployment.
 
 ## Change
 
@@ -40,12 +40,20 @@ Next.js criticals.
   `eslint-config-next` latest stable 16.3.6. Next 16.3.6 accepts React
   `^19.0.0`; keeping the existing React 19.2.4 avoids an unrelated React
   upgrade. `eslint-config-next` 16.3.6 requires ESLint >=9.
-- `pnpm install --lockfile-only --ignore-scripts` completed with pnpm 11.9.0
-  and refreshed the lockfile without installing packages or running scripts.
-- `pnpm audit --prod` against the refreshed lockfile reports 6 remaining
-  production vulnerabilities (2 low, 4 moderate): three `undici`, one
-  `@opentelemetry/core`, one `@babel/core`, and one
-  `@ai-sdk/provider-utils`. No critical production advisories were reported;
-  no zero-advisory claim is made. Dev audit and build/type/test verification
-  remain pending.
+- `pnpm install --lockfile-only --ignore-scripts` regenerated the lockfile;
+  then `pnpm install --frozen-lockfile` completed successfully with pnpm
+  11.9.0.
+- `pnpm typecheck` passed. `pnpm lint` passed with 70 existing warnings and
+  zero errors. `pnpm build` passed on Next.js 16.3.6; it emitted the existing
+  dynamic-filesystem tracing warning at `src/server/account-erasure.ts:218`.
+- `pnpm test` ran 54 passing tests but exited 1 on two Windows teardown-hook
+  failures: `scripts/db/backup-restore.test.mjs:81` and
+  `scripts/db/integrity-check.test.mjs:103` could not unlink temporary SQLite
+  files (`EBUSY`). The targeted rerun had 27 passing assertions and the same
+  two cleanup-hook failures; no assertion failed.
+- `pnpm audit --prod` reports 6 remaining production findings (2 low, 4
+  moderate): three `undici`, one `@opentelemetry/core`, one `@babel/core`, and
+  one `@ai-sdk/provider-utils`. Full `pnpm audit` reports 15 total findings
+  (3 low, 6 moderate, 6 high; nine are development-scope). No criticals were
+  reported after this lock update; no zero-advisory claim is made.
 - No application source, production environment, or database was changed.
