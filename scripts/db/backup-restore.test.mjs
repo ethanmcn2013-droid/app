@@ -17,7 +17,7 @@ import os from "node:os";
 import path from "node:path";
 import { after, before, describe, it } from "node:test";
 import { createClient } from "@libsql/client";
-import { takeBackup, tableHash } from "./backup.mjs";
+import { decodeValue, encodeValue, takeBackup, tableHash } from "./backup.mjs";
 import { compare, compareDdl, measure, restoreInto } from "./restore-verify.mjs";
 
 const DDL = [
@@ -93,6 +93,82 @@ after(async () => {
 });
 
 describe("backup and restore", () => {
+  it("round-trips only the visible bytes of offset and empty views, and BigInts", () => {
+    const bytes = Uint8Array.from([11, 22, 33, 44, 55]);
+    const views = [
+      bytes.subarray(1, 4),
+      Buffer.from(bytes.buffer, 1, 3),
+      new DataView(bytes.buffer, 1, 3),
+    ];
+    for (const view of views) {
+      const encoded = encodeValue(view);
+      assert.deepEqual(encoded, { $blob: Buffer.from([22, 33, 44]).toString("base64") });
+      assert.deepEqual(decodeValue(encoded), Buffer.from([22, 33, 44]));
+    }
+
+    const empty = bytes.subarray(2, 2);
+    assert.deepEqual(encodeValue(empty), { $blob: "" });
+    assert.deepEqual(decodeValue(encodeValue(empty)), Buffer.alloc(0));
+    assert.deepEqual(encodeValue(bytes.buffer), {
+      $blob: Buffer.from(bytes).toString("base64"),
+    });
+
+    const integer = 9_007_199_254_740_993n;
+    assert.deepEqual(encodeValue(integer), { $int: integer.toString() });
+    assert.equal(decodeValue(encodeValue(integer)), integer);
+  });
+
+  it("backs up offset and empty BLOB views and verifies their restored bytes", async () => {
+    const values = [
+      [1, Uint8Array.from([11, 22, 33, 44, 55]).subarray(1, 4)],
+      [2, Buffer.from([9, 8, 7, 6]).subarray(1, 3)],
+      [3, Uint8Array.from([1, 2, 3]).subarray(1, 1)],
+    ];
+    const sourceWithViews = {
+      async execute(sql) {
+        if (sql.startsWith("SELECT type, name, tbl_name, sql FROM sqlite_schema")) {
+          return {
+            rows: [{
+              type: "table",
+              name: "binary_views",
+              tbl_name: "binary_views",
+              sql: "CREATE TABLE binary_views (id integer PRIMARY KEY, payload blob)",
+            }],
+          };
+        }
+        assert.equal(sql, 'SELECT * FROM "binary_views"');
+        return { columns: ["id", "payload"], rows: values };
+      },
+    };
+    const { body, manifest } = await takeBackup(sourceWithViews, {
+      label: "views",
+      url: "file:binary-views-source.db",
+    });
+    const saved = body.trim().split("\n")
+      .map((line) => JSON.parse(line))
+      .filter((entry) => entry.kind === "row");
+    assert.deepEqual(saved.map((entry) => entry.values[1].$blob), [
+      Buffer.from([22, 33, 44]).toString("base64"),
+      Buffer.from([8, 7]).toString("base64"),
+      "",
+    ]);
+    assert.deepEqual(await measure(sourceWithViews, ["binary_views"]), manifest.tables);
+
+    const target = path.join(workDir, `restore-views-${Date.now()}.db`);
+    const { client } = await restoreInto(`file:${target}`, body);
+    try {
+      assert.deepEqual(compare(manifest, await measure(client, ["binary_views"])).differences, []);
+      const restored = await client.execute("SELECT payload FROM binary_views ORDER BY id");
+      assert.deepEqual(restored.rows.map((row) => Buffer.from(row.payload)), [
+        Buffer.from([22, 33, 44]),
+        Buffer.from([8, 7]),
+        Buffer.alloc(0),
+      ]);
+    } finally {
+      client.close();
+    }
+  });
+
   it("restores every row, including blobs, into a fresh database", async () => {
     const { body, manifest } = await takeBackup(source, {
       label: "test",

@@ -34,7 +34,7 @@ import os from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { createClient } from "@libsql/client";
-import { decodeValue, tableHash } from "./backup.mjs";
+import { decodeValue, encodeValue, tableHash } from "./backup.mjs";
 
 /**
  * Restore a backup body into a local file database.
@@ -96,18 +96,7 @@ export async function measure(client, tables) {
     const result = await client.execute(`SELECT * FROM "${table}"`);
     const columns = result.columns.slice();
     const values = result.rows.map((row) =>
-      columns.map((_, index) => {
-        const value = row[index];
-        if (value === null || value === undefined) return null;
-        if (value instanceof ArrayBuffer || ArrayBuffer.isView(value)) {
-          const buffer = Buffer.from(
-            value instanceof ArrayBuffer ? value : value.buffer,
-          );
-          return { $blob: buffer.toString("base64") };
-        }
-        if (typeof value === "bigint") return { $int: value.toString() };
-        return value;
-      }),
+      columns.map((_, index) => encodeValue(row[index])),
     );
     out.push({
       name: table,

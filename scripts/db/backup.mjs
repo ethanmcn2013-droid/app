@@ -64,10 +64,11 @@ export function databaseIdentity(url) {
 /** libSQL returns Buffers and BigInts; JSONL has neither. */
 export function encodeValue(value) {
   if (value === null || value === undefined) return null;
-  if (value instanceof ArrayBuffer || ArrayBuffer.isView(value)) {
-    const buffer = Buffer.from(
-      value instanceof ArrayBuffer ? value : value.buffer,
-    );
+  if (value instanceof ArrayBuffer) {
+    return { $blob: Buffer.from(value).toString("base64") };
+  }
+  if (ArrayBuffer.isView(value)) {
+    const buffer = Buffer.from(value.buffer, value.byteOffset, value.byteLength);
     return { $blob: buffer.toString("base64") };
   }
   if (typeof value === "bigint") return { $int: value.toString() };
