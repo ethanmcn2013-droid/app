@@ -76,17 +76,37 @@ async function recipientEmailCodeSignIn(
     name: "Enter verification code. Digit 1",
   });
   const singleCode = page.getByLabel("Enter verification code", { exact: true });
-  const useAnotherMethod = page.getByRole("link", { name: /use another method/i });
+  // Clerk renders this choice as a button in some sign-in steps and a link in
+  // others. Both are the visible UI path to the configured email-code method.
+  const useAnotherMethod = page.getByRole("button", { name: /use another method/i })
+    .or(page.getByRole("link", { name: /use another method/i }));
   const codeVisible = async () =>
     await anyMatchVisible(digitOne) || await anyMatchVisible(singleCode);
 
-  await expect.poll(async () =>
-    await codeVisible() || await anyMatchVisible(useAnotherMethod),
-  ).toBe(true);
+  try {
+    await expect.poll(async () =>
+      await codeVisible() || await anyMatchVisible(useAnotherMethod),
+    ).toBe(true);
+  } catch {
+    // Fixed booleans only: no account label, invitation URL or Clerk DOM is
+    // copied into the retained private log when this provider step changes.
+    const path = new URL(page.url()).pathname;
+    const diagnostic = {
+      route: path === "/sign-in" ? "sign-in" : path === "/sign-up" ? "sign-up" : path === invitePath ? "invite" : "other",
+      passwordVisible: await anyMatchVisible(page.locator('input[type="password"]')),
+      codeVisible: await codeVisible(),
+      anotherMethodButtonVisible: await anyMatchVisible(page.getByRole("button", { name: /use another method/i })),
+      anotherMethodLinkVisible: await anyMatchVisible(page.getByRole("link", { name: /use another method/i })),
+      emailCodeButtonVisible: await anyMatchVisible(page.getByRole("button", { name: /email code to/i })),
+      emailCodeLinkVisible: await anyMatchVisible(page.getByRole("link", { name: /email code to/i })),
+    };
+    throw new Error(`Recipient sign-in method step unavailable: ${JSON.stringify(diagnostic)}`);
+  }
 
   if (!(await codeVisible())) {
     await (await firstVisibleMatch(useAnotherMethod)).click();
-    const emailCodeMethod = page.getByRole("button", { name: /email code to/i });
+    const emailCodeMethod = page.getByRole("button", { name: /email code to/i })
+      .or(page.getByRole("link", { name: /email code to/i }));
     await expect.poll(async () => await anyMatchVisible(emailCodeMethod)).toBe(true);
     await (await firstVisibleMatch(emailCodeMethod)).click();
   }
