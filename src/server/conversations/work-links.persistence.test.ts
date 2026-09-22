@@ -344,7 +344,17 @@ test("usable links require current source, destination, message, and task relati
       if (mutation === "task-delete") await f.client.execute({ sql: "DELETE FROM tasks WHERE id=?", args: [committed.value.taskId] });
       assert.deepEqual(await service.getTaskOutcome({ actorId: "alice", taskId: committed.value.taskId }), { ok: true, value: null }, mutation);
       const receiptRows = await f.client.execute("SELECT COUNT(*) AS n FROM work_operation_receipts");
-      assert.equal(Number(receiptRows.rows[0].n), 1, `receipt retained:${mutation}`);
+      assert.equal(Number(receiptRows.rows[0].n), mutation === "source-delete" || mutation === "destination-delete" ? 0 : 1,
+        `Project deletion erases source custody; ordinary source or Task loss retains its receipt:${mutation}`);
+      if (mutation === "source-delete" || mutation === "destination-delete") {
+        const survivingProject = mutation === "source-delete" ? destinationProject : sourceProject;
+        const projectRows = await f.client.execute({ sql: "SELECT COUNT(*) AS n FROM workspaces WHERE id=?", args: [survivingProject] });
+        assert.equal(Number(projectRows.rows[0].n), 1, `unrelated Project survives:${mutation}`);
+        const survivingSource = await f.client.execute(mutation === "source-delete"
+          ? { sql: "SELECT COUNT(*) AS n FROM tasks WHERE id=?", args: [committed.value.taskId] }
+          : { sql: "SELECT COUNT(*) AS n FROM conversation_messages WHERE id=?", args: [f.input.messageId] });
+        assert.equal(Number(survivingSource.rows[0].n), 1, `unrelated content survives:${mutation}`);
+      }
       if (mutation === "task-move" || mutation === "task-delete") {
         const lookup = await service.getTaskReceipt({ actorId: "alice", clientRequestId: f.input.clientRequestId });
         assert.equal(lookup.ok, true);

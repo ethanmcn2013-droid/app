@@ -46,7 +46,7 @@ async function withClient(operation) {
 
 test("authoritative ledger registers every SQL file with receipt and journal parity", () => {
   const context = loadAndValidateLedger();
-  assert.equal(context.entries.length, 36);
+  assert.equal(context.entries.length, 37);
   assert.equal(context.baseline.id, "0014_current_schema_baseline");
   assert.deepEqual(context.forward.map((entry) => entry.id), [
     "0015_notes_extract_exact_identity",
@@ -70,6 +70,7 @@ test("authoritative ledger registers every SQL file with receipt and journal par
     "0033_conversation_task_outcomes",
     "0034_project_direct_messages",
     "0035_task_discussion",
+    "0036_conversation_erasure_tombstones",
   ]);
   assert.equal(context.entries.filter((entry) => entry.policy === "legacy-adopt-only").length, 14);
 });
@@ -142,14 +143,15 @@ test("fresh databases apply the canonical baseline plus forwards and rerun as a 
     "0033_conversation_task_outcomes",
     "0034_project_direct_messages",
     "0035_task_discussion",
+    "0036_conversation_erasure_tombstones",
   ]);
-  assert.equal(first.proofs.length, 197);
+  assert.equal(first.proofs.length, 203);
 
   const objectCounts = await client.execute("SELECT type, COUNT(*) AS value FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' AND name NOT IN ('signal_schema_migrations', '__drizzle_migrations') GROUP BY type ORDER BY type");
   assert.deepEqual(objectCounts.rows.map((row) => [row.type, Number(row.value)]), [
     ["index", 64],
     ["table", 46],
-    ["trigger", 55],
+    ["trigger", 59],
   ]);
 
   const second = await runMigrations({ client, releaseSha: "test-release" });
@@ -166,11 +168,12 @@ test("populated 0027 production-shaped ledger upgrades through January and conve
   await client.execute("INSERT INTO workspace_members(workspace_id,user_id,role) VALUES ('historic_project','historic_actor','owner')");
   await client.execute("INSERT INTO tasks(id,workspace_id,seq,title,lane,priority,assignees) VALUES ('historic_task','historic_project',1,'Preserved task','todo','p2','[]')");
   await client.execute("INSERT INTO comments(id,task_id,user_id,body,created_at) VALUES ('historic_comment','historic_task','historic_actor','Preserved comment',1)");
-  const upgraded = await runMigrations({ client, releaseSha: "synthetic-0035" });
+  const upgraded = await runMigrations({ client, releaseSha: "synthetic-0036" });
   assert.deepEqual(upgraded.applied, [
     "0028_project_drive", "0029_project_drive_operations", "0030_sponsored_use_intents",
     "0031_event_purchase_designations", "0032_project_conversations",
     "0033_conversation_task_outcomes", "0034_project_direct_messages", "0035_task_discussion",
+    "0036_conversation_erasure_tombstones",
   ]);
   assert.equal((await client.execute("SELECT title FROM tasks WHERE id='historic_task'")).rows[0].title, "Preserved task");
   const comment = (await client.execute("SELECT id,body,workspace_id,revision FROM comments WHERE id='historic_comment'")).rows[0];
@@ -1016,7 +1019,7 @@ test("usage migration proof failure rolls back both new tables and its ledger re
   assert.deepEqual(applied.applied, [
     "0030_sponsored_use_intents", "0031_event_purchase_designations",
     "0032_project_conversations", "0033_conversation_task_outcomes",
-    "0034_project_direct_messages", "0035_task_discussion",
+    "0034_project_direct_messages", "0035_task_discussion", "0036_conversation_erasure_tombstones",
   ]);
   assert.equal((await runMigrations({ client, releaseSha: "usage-no-op" })).status, "no-op");
 }));

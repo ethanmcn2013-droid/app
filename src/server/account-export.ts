@@ -1,9 +1,12 @@
-import { and, eq, inArray, like, notInArray, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, like, notInArray, or, sql } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import {
   activities,
   attachments,
   comments,
+  conversationAttention,
+  conversationMessages,
+  conversations,
   driveFolderGrants,
   entitlements,
   eventPurchaseDesignations,
@@ -20,6 +23,7 @@ import {
   users,
   workspaceMembers,
   workspaceStorage,
+  workLinks,
   workspaces,
 } from "./db/schema";
 import * as schema from "./db/schema";
@@ -220,6 +224,43 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
     .where(eq(workspaces.ownerUserId, userId));
   const slugs = ownedWorkspaces.map((w) => w.id);
 
+  // Conversation portability is subject-only and requires current Project
+  // membership. Ownership does not confer another person's private state.
+  const [authoredProjectMessages, authoredTaskDiscussion, projectAttention, authoredWorkLinks] = await Promise.all([
+    database.select({
+      id: conversationMessages.id, projectId: conversationMessages.workspaceId,
+      conversationId: conversationMessages.conversationId, rootId: conversationMessages.rootId,
+      body: conversationMessages.body, createdAt: conversationMessages.createdAt,
+      editedAt: conversationMessages.editedAt, deletedAt: conversationMessages.deletedAt,
+    }).from(conversationMessages)
+      .innerJoin(conversations, and(eq(conversations.id, conversationMessages.conversationId), eq(conversations.kind, "project")))
+      .innerJoin(workspaceMembers, and(eq(workspaceMembers.workspaceId, conversationMessages.workspaceId), eq(workspaceMembers.userId, userId)))
+      .where(eq(conversationMessages.authorId, userId)),
+    database.select({
+      id: comments.id, taskId: comments.taskId, projectId: comments.workspaceId,
+      rootId: comments.rootId, body: comments.body, createdAt: comments.createdAt,
+      editedAt: comments.editedAt, deletedAt: comments.deletedAt,
+    }).from(comments)
+      .innerJoin(workspaceMembers, and(eq(workspaceMembers.workspaceId, comments.workspaceId), eq(workspaceMembers.userId, userId)))
+      .where(and(eq(comments.userId, userId), isNotNull(comments.revision))),
+    database.select({
+      projectId: conversationAttention.workspaceId, conversationId: conversationAttention.conversationId,
+      messageId: conversationAttention.messageId, observedAt: conversationAttention.observedAt,
+    }).from(conversationAttention)
+      .innerJoin(conversations, and(eq(conversations.id, conversationAttention.conversationId), eq(conversations.kind, "project")))
+      .innerJoin(workspaceMembers, and(eq(workspaceMembers.workspaceId, conversationAttention.workspaceId), eq(workspaceMembers.userId, userId)))
+      .where(eq(conversationAttention.recipientId, userId)),
+    database.select({
+      id: workLinks.id, sourceProjectId: workLinks.sourceProjectId,
+      sourceConversationId: workLinks.sourceConversationId, sourceMessageId: workLinks.sourceMessageId,
+      destinationProjectId: workLinks.destinationProjectId, taskId: workLinks.taskId, createdAt: workLinks.createdAt,
+    }).from(workLinks)
+      .innerJoin(conversations, and(eq(conversations.id, workLinks.sourceConversationId), eq(conversations.kind, "project")))
+      .where(and(eq(workLinks.createdBy, userId),
+        sql`EXISTS (SELECT 1 FROM workspace_members sm WHERE sm.workspace_id=${workLinks.sourceProjectId} AND sm.user_id=${userId})`,
+        sql`EXISTS (SELECT 1 FROM workspace_members dm WHERE dm.workspace_id=${workLinks.destinationProjectId} AND dm.user_id=${userId})`)),
+  ]);
+
   const myProviderConnections = await database
     .select(providerConnectionMeta)
     .from(providerConnections)
@@ -379,7 +420,7 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
     ownedWorkspaces: {
       workspaces: ownedWorkspaces,
       tasks: ownedTasks,
-      comments: ownedComments,
+      comments: ownedComments.filter((comment) => comment.revision == null || comment.userId === userId),
       activities: ownedActivities,
       attachments: ownedAttachments,
       resources: ownedResources,
@@ -397,8 +438,10 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
       ),
     },
     footprintElsewhere: {
+      collaboration: { authoredProjectMessages, authoredTaskDiscussion, projectAttention, authoredWorkLinks },
       memberships: myMemberships,
-      authoredComments: myAuthoredComments,
+      authoredComments: myAuthoredComments.filter((comment) =>
+        comment.revision == null || myMemberships.some((membership) => membership.workspaceId === comment.workspaceId)),
       authoredActivities: myAuthoredActivities,
       uploadedAttachments: myUploadedAttachments,
       notificationPrefs: myNotificationPrefs[0] ?? null,

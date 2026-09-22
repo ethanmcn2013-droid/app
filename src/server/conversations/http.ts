@@ -70,7 +70,8 @@ export function createConversationHttp(deps: Dependencies) {
     try {
       const actorId = await deps.authenticate();
       if (!actorId) return fail("unauthenticated");
-      const availability = conversationAvailability(deps.controls(), actorId);
+      const controls = deps.controls();
+      const availability = conversationAvailability(controls, actorId);
       if (!availability.read) return fail("unavailable");
       const url = new URL(request.url);
       if (request.method === "GET") {
@@ -92,13 +93,16 @@ export function createConversationHttp(deps: Dependencies) {
           return response(await (await deps.taskOutcomes()).getTaskDestination({ actorId, projectId }));
         }
         const service = await deps.service();
-        if (action === "dm-list") return response(await service.listDirectMessages({ actorId, projectId }));
+        if (action === "dm-list") return controls.directMessagesEnabled
+          ? response(await service.listDirectMessages({ actorId, projectId })) : fail("unavailable");
         if (action === "project") return response(await service.getProjectConversation({ actorId, projectId }));
         if (action === "audience") return response(await service.listProjectAudience({ actorId, projectId }));
         const conversationId = url.searchParams.get("conversationId");
         if (!id(conversationId)) return fail("invalid_input");
-        if (action === "dm-scope") return response(await service.getDirectMessage({ actorId, projectId, conversationId }));
-        if (action === "dm-audience") return response(await service.listDirectMessageAudience({ actorId, projectId, conversationId }));
+        if (action === "dm-scope") return controls.directMessagesEnabled
+          ? response(await service.getDirectMessage({ actorId, projectId, conversationId })) : fail("unavailable");
+        if (action === "dm-audience") return controls.directMessagesEnabled
+          ? response(await service.listDirectMessageAudience({ actorId, projectId, conversationId })) : fail("unavailable");
         if (action === "receipt") {
           const clientRequestId = url.searchParams.get("clientRequestId");
           if (!validRequestId(clientRequestId)) return fail("invalid_input");
@@ -144,10 +148,12 @@ export function createConversationHttp(deps: Dependencies) {
       }
       const service = await deps.service();
       if (body.action === "dm-request") {
+        if (!controls.directMessagesEnabled) return fail("unavailable");
         if (Object.keys(body).some((key) => !DM_REQUEST_FIELDS.has(key)) || !id(body.recipientId) || !validRequestId(body.clientRequestId)) return fail("invalid_input");
         return response(await service.requestDirectMessage({ actorId, projectId, recipientId: body.recipientId, clientRequestId: body.clientRequestId }));
       }
       if (body.action === "dm-transition") {
+        if (!controls.directMessagesEnabled) return fail("unavailable");
         if (Object.keys(body).some((key) => !DM_TRANSITION_FIELDS.has(key)) || !id(body.conversationId) || !validRequestId(body.clientRequestId) ||
           !positive(body.expectedAudienceEpoch) || typeof body.operation !== "string" || !["accept","decline","block","unblock","leave","reopen"].includes(body.operation)) return fail("invalid_input");
         return response(await service.transitionDirectMessage({ actorId, projectId, conversationId: body.conversationId,

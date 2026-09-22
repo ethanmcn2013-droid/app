@@ -484,7 +484,6 @@ export const comments = sqliteTable("comments", {
     .notNull()
     .references(() => tasks.id, { onDelete: "cascade" }),
   userId: text("user_id")
-    .notNull()
     .references(() => users.id),
   body: text("body"),
   createdAt: integer("created_at", { mode: "timestamp" })
@@ -606,7 +605,7 @@ export const conversations = sqliteTable("conversations", {
   dmRequesterId: text("dm_requester_id"),
   dmBlockedByUserId: text("dm_blocked_by_user_id"),
   dmStateBeforeBlock: text("dm_state_before_block").$type<"pending" | "active" | "declined" | "left" | "membership_lost" | "rejoin_pending">(),
-  createdBy: text("created_by").notNull().references(() => users.id),
+  createdBy: text("created_by").references(() => users.id),
   createdAt: integer("created_at").notNull(),
 }, (t) => [
   uniqueIndex("conversations_one_project_room").on(t.workspaceId).where(sql`${t.kind} = 'project'`),
@@ -650,9 +649,9 @@ export const conversationMessages = sqliteTable("conversation_messages", {
   id: text("id").primaryKey(),
   conversationId: text("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
   workspaceId: text("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
-  authorId: text("author_id").notNull().references(() => users.id),
-  clientRequestId: text("client_request_id").notNull(),
-  requestHash: text("request_hash").notNull(),
+  authorId: text("author_id").references(() => users.id),
+  clientRequestId: text("client_request_id"),
+  requestHash: text("request_hash"),
   rootId: text("root_id"),
   createSeq: integer("create_seq").notNull(),
   revision: integer("revision").notNull(),

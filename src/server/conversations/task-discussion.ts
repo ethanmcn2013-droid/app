@@ -57,8 +57,8 @@ function taskCommentFromRow(row: Record<string, unknown>): TaskCommentRecord {
   return {
     id: text(row.id),
     taskId: text(row.task_id),
-    authorId: text(row.user_id),
-    authorName: text(row.author_name),
+    authorId: row.user_id == null ? null : text(row.user_id),
+    authorName: row.user_id == null ? "Deleted account" : text(row.author_name),
     rootCommentId: row.root_id == null ? null : text(row.root_id),
     createSeq: integer(row.create_seq),
     revision: integer(row.revision),
@@ -220,7 +220,7 @@ export function createTaskDiscussionService(adapter: ConversationDatabaseAdapter
             COALESCE(u.name,u.handle,substr(u.email,1,instr(u.email,'@')-1),'Someone') AS author_name,
             COALESCE((SELECT json_group_array(a.recipient_id) FROM task_comment_attention a
               WHERE a.task_id=c.task_id AND a.comment_id=c.id AND (a.reason_bits & 1)=1),'[]') AS mention_user_ids
-          FROM comments c JOIN users u ON u.id=c.user_id
+          FROM comments c LEFT JOIN users u ON u.id=c.user_id
           WHERE c.task_id=? AND c.workspace_id=? AND c.revision IS NOT NULL AND c.create_seq IS NOT NULL
           ORDER BY c.create_seq DESC LIMIT ?`,
         args: [input.taskId, authorized.value.projectId, limit + 1],
@@ -397,7 +397,7 @@ export function createTaskDiscussionService(adapter: ConversationDatabaseAdapter
             COALESCE(u.name,u.handle,substr(u.email,1,instr(u.email,'@')-1),'Someone') AS author_name,
             COALESCE((SELECT json_group_array(a.recipient_id) FROM task_comment_attention a
               WHERE a.task_id=c.task_id AND a.comment_id=c.id AND (a.reason_bits & 1)=1),'[]') AS mention_user_ids
-          FROM comments c JOIN users u ON u.id=c.user_id
+          FROM comments c LEFT JOIN users u ON u.id=c.user_id
           WHERE c.task_id=? AND c.workspace_id=? AND c.revision IS NOT NULL AND c.create_seq IS NOT NULL
             AND (? IS NULL OR c.create_seq < ?)
           ORDER BY c.create_seq DESC LIMIT ?`,
@@ -435,7 +435,7 @@ export function createTaskDiscussionService(adapter: ConversationDatabaseAdapter
               COALESCE(u.name,u.handle,substr(u.email,1,instr(u.email,'@')-1),'Someone') AS author_name,
               COALESCE((SELECT json_group_array(a.recipient_id) FROM task_comment_attention a
                 WHERE a.task_id=c.task_id AND a.comment_id=c.id AND (a.reason_bits & 1)=1),'[]') AS mention_user_ids
-            FROM comments c JOIN users u ON u.id=c.user_id
+            FROM comments c LEFT JOIN users u ON u.id=c.user_id
             WHERE c.task_id=? AND c.workspace_id=? AND c.id IN (${ids.map(() => "?").join(",")})
             ORDER BY c.create_seq`,
           args: [input.taskId, authorized.value.projectId, ...ids],

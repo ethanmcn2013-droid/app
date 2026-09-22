@@ -13,7 +13,7 @@ export type TaskDiscussionMember = Readonly<{ id: string; name: string }>;
 export type TaskCommentRecord = Readonly<{
   id: string;
   taskId: string;
-  authorId: string;
+  authorId: string | null;
   authorName: string;
   rootCommentId: string | null;
   createSeq: number;

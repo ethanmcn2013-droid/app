@@ -30,7 +30,7 @@ type GeneratedAction =
   | Readonly<{ type: "refused"; failure: ConversationFailure; requestId?: string }>
   | Readonly<{ type: "offline" }>;
 
-export type ConversationWorkspaceProps = Readonly<{ actorId: string; projects: readonly ProjectOption[]; initialProjectId?: ProjectId; fixtureActor?: string }>;
+export type ConversationWorkspaceProps = Readonly<{ actorId: string; projects: readonly ProjectOption[]; initialProjectId?: ProjectId; fixtureActor?: string; directMessagesEnabled?: boolean }>;
 
 const failureCopy: Record<ConversationFailure["code"], string> = {
   unauthenticated: "Your session is no longer available.", unavailable: "This conversation is unavailable.",
@@ -59,7 +59,7 @@ export function ConversationWorkspace(props: ConversationWorkspaceProps) {
   return <ConversationWorkspaceActor key={props.actorId} {...props} />;
 }
 
-function ConversationWorkspaceActor({ actorId, projects, initialProjectId, fixtureActor }: ConversationWorkspaceProps) {
+function ConversationWorkspaceActor({ actorId, projects, initialProjectId, fixtureActor, directMessagesEnabled = Boolean(fixtureActor) }: ConversationWorkspaceProps) {
   const initial = projects.some((project) => project.id === initialProjectId) ? initialProjectId! : projects[0]?.id;
   const [projectId, setProjectId] = useState<ProjectId | undefined>(initial);
   const [view, setView] = useState<"full" | "context">("full");
@@ -68,13 +68,13 @@ function ConversationWorkspaceActor({ actorId, projects, initialProjectId, fixtu
   const { drafts: draftCache, scroll: scrollCache, outgoing: outgoingCache } = useConversationCaches(actorId);
   if (!projectId || projects.length === 0) return <main className={styles.noProjects}><h1>Messages</h1><p>Add a Project before starting a Project conversation.</p></main>;
   const selected = projects.find((project) => project.id === projectId) ?? { id: projectId, name: "Project" };
-  const directId = savedScope?.kind === "dm" ? savedScope.conversationId : direct?.conversationId;
-  const openSavedScope = (next: SavedConversationScope) => { setDirect(null); setProjectId(next.projectId); setSavedScope(next); };
+  const directId = directMessagesEnabled ? (savedScope?.kind === "dm" ? savedScope.conversationId : direct?.conversationId) : undefined;
+  const openSavedScope = (next: SavedConversationScope) => { if (next.kind === "dm" && !directMessagesEnabled) return; setDirect(null); setProjectId(next.projectId); setSavedScope(next); };
   return <section className={styles.workspace} data-view={view}>
     <aside className={styles.projectList}>
       <div className={styles.listHeading}><h1>Messages</h1><span>Project conversations</span></div>
       {projects.map((project) => <button aria-current={project.id === selected.id ? "page" : undefined} aria-label={project.name} key={project.id} onClick={() => { setSavedScope(null); setDirect(null); setProjectId(project.id); }} type="button"><span>{project.name.slice(0, 2).toUpperCase()}</span><strong>{project.name}</strong></button>)}
-      <DirectMessageDirectory key={selected.id} actorId={actorId} projectId={selected.id} fixtureActor={fixtureActor} selectedId={directId} onSelect={(next) => { setSavedScope(null); setDirect(next); }} />
+      {directMessagesEnabled ? <DirectMessageDirectory key={selected.id} actorId={actorId} projectId={selected.id} fixtureActor={fixtureActor} selectedId={directId} onSelect={(next) => { setSavedScope(null); setDirect(next); }} /> : null}
       <TaskDiscussionDirectory key={`tasks:${selected.id}`} projectId={selected.id} fixtureActor={fixtureActor} />
       <p>Messages stay inside their named Project.</p>
     </aside>
@@ -479,7 +479,7 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
 
 function LiveMessage({ canMutate, onReply, actorId, message, members, editing, setEditing, onStartEdit, onCancelEdit, onEdit, onDelete, onCreateTask, taskCreated }: Readonly<{ canMutate: boolean; onReply?: () => void; onCreateTask?: () => void; taskCreated: boolean; actorId: string; message: MessageRecord & { replyCount?: number }; members: Audience["members"]; editing: { id: string; body: string; revision: number } | null; setEditing: (value: { id: string; body: string; revision: number } | null) => void; onStartEdit: () => void; onCancelEdit: () => void; onEdit: (body: string) => void; onDelete: () => void }>) {
   const editButtonRef = useRef<HTMLButtonElement | null>(null);
-  const name = members.find((member) => member.id === message.authorId)?.name ?? (message.authorId === actorId ? "You" : "Project member");
+  const name = message.authorId === null ? "Deleted account" : members.find((member) => member.id === message.authorId)?.name ?? (message.authorId === actorId ? "You" : "Project member");
   const initials = name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
   const cancelAndRestoreFocus = () => { onCancelEdit(); requestAnimationFrame(() => editButtonRef.current?.focus()); };
   return <li className={styles.message}><span className={styles.avatar}>{initials}</span><div><div className={styles.messageMeta}><strong>{name}</strong><time dateTime={new Date(message.createdAt).toISOString()}>{new Date(message.createdAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}</time>{message.editedAt ? <span>Edited</span> : null}</div>{message.body === null ? <p className={styles.deleted}>Message removed</p> : editing?.id === message.id ? <div className={styles.editForm}><textarea aria-label="Edit message" autoFocus onChange={(event) => setEditing({ ...editing, body: event.target.value })} onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); cancelAndRestoreFocus(); } }} value={editing.body} /><div><button onClick={cancelAndRestoreFocus} type="button">Cancel</button><button disabled={!validMessageBody(editing.body)} onClick={() => onEdit(editing.body)} type="button">Save edit</button></div></div> : <p>{message.body}</p>}{message.body === null && onReply ? <div className={styles.messageActions}><button onClick={onReply} type="button">View replies</button></div> : null}{message.body !== null && editing?.id !== message.id ? <div className={styles.messageActions}>{onReply ? <button onClick={onReply} type="button">{message.replyCount ? `${message.replyCount} ${message.replyCount === 1 ? "reply" : "replies"}` : "Reply"}</button> : null}{onCreateTask ? <button onClick={onCreateTask} type="button">Create task</button> : null}{taskCreated ? <span>Task created</span> : null}{canMutate && message.authorId === actorId ? <><button onClick={onStartEdit} ref={editButtonRef} type="button">Edit</button><button onClick={onDelete} type="button">Delete</button></> : null}</div> : null}</div></li>;

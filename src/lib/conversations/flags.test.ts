@@ -38,3 +38,10 @@ test("unapproved expansion cannot be enabled with ambient environment variables"
   assert.equal(controls.attachmentsEnabled, false);
   assert.equal(controls.aiEnabled, false);
 });
+
+test("DMs remain off when Project rooms are enabled", () => {
+  const base = { SIGNAL_CONVERSATION_INTERNAL_ENABLED: "true", SIGNAL_CONVERSATION_SEND_ENABLED: "true" };
+  assert.equal(resolveConversationControls(base).directMessagesEnabled, false);
+  assert.equal(resolveConversationControls({ ...base, SIGNAL_CONVERSATION_DM_ENABLED: "TRUE" }).directMessagesEnabled, false);
+  assert.equal(resolveConversationControls({ ...base, SIGNAL_CONVERSATION_DM_ENABLED: "true" }).directMessagesEnabled, true);
+});

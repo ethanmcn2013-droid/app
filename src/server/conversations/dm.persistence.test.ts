@@ -23,10 +23,24 @@ async function fixture() {
   for(const [id,role] of [["alice","owner"],["bob","member"],["mallory","member"]])
     await client.execute({sql:"INSERT INTO workspace_members(workspace_id,user_id,role,joined_at) VALUES(?,?,?,?)",args:[projectId,id,role,now]});
   const adapter=createLocalConversationDatabaseAdapter({client});
-  return {client,service:createConversationService(adapter)};
+  return {client,service:createConversationService(adapter),adapter};
 }
 const request=(service:ReturnType<typeof createConversationService>,actorId="alice",recipientId="bob",clientRequestId="dm_request_0000001") =>
   service.requestDirectMessage({actorId,projectId,recipientId,clientRequestId});
+test("disabled DM service refuses direct bypass while Project rooms remain available",async()=>{
+  const f=await fixture(); try {
+    const made=await request(f.service); assert.equal(made.ok,true); if(!made.ok) return;
+    const conversationId=made.value.scope.conversationId;
+    const gated=createConversationService(f.adapter,{directMessagesEnabled:false});
+    assert.deepEqual(await gated.getDirectMessage({actorId:"alice",projectId,conversationId}),{ok:false,code:"unavailable"});
+    assert.deepEqual(await gated.listDirectMessages({actorId:"alice",projectId}),{ok:false,code:"unavailable"});
+    assert.deepEqual(await gated.requestDirectMessage({actorId:"alice",projectId,recipientId:"bob",clientRequestId:"dm_request_disabled_1"}),{ok:false,code:"unavailable"});
+    assert.deepEqual(await gated.getMessagePage({actorId:"alice",projectId,conversationId}),{ok:false,code:"unavailable"});
+    assert.deepEqual(await gated.getHistory({actorId:"alice",projectId,conversationId,afterChangeSeq:0}),{ok:false,code:"unavailable"});
+    assert.deepEqual(await gated.getReceipt({actorId:"alice",projectId,conversationId,clientRequestId:"dm_request_0000001"}),{ok:false,code:"unavailable"});
+    assert.equal((await gated.ensureProjectConversation({actorId:"alice",projectId})).ok,true);
+  } finally {f.client.close();}
+});
 async function transition(service:ReturnType<typeof createConversationService>,actorId:string,conversationId:string,operation:"accept"|"decline"|"block"|"unblock"|"leave"|"reopen",clientRequestId:string){
   const scope=await service.getDirectMessage({actorId,projectId,conversationId}); assert.equal(scope.ok,true); if(!scope.ok) throw new Error("scope");
   return service.transitionDirectMessage({actorId,projectId,conversationId,operation,clientRequestId,expectedAudienceEpoch:scope.value.audienceEpoch});

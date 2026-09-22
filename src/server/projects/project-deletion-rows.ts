@@ -26,10 +26,11 @@ import {
 import * as schema from "@/server/db/schema";
 import { deleteNativeAttachmentRowsInTransaction } from "@/server/attachments/native-upload-custody";
 import { eraseEntitlementsInTransaction } from "@/server/venue-issuance/erasure";
+import { eraseProjectConversationRows } from "@/server/conversations/account-lifecycle";
 
 type ProjectRowsExecutor = Pick<
   LibSQLDatabase<typeof schema>,
-  "delete" | "get" | "insert" | "select" | "update"
+  "delete" | "get" | "insert" | "run" | "select" | "update"
 >;
 
 /**
@@ -44,6 +45,7 @@ export async function deleteProjectRowsInTransaction(
   transaction: ProjectRowsExecutor,
   workspaceId: string,
 ): Promise<readonly string[]> {
+  await eraseProjectConversationRows(transaction, workspaceId);
   const taskRows = await transaction
     .select({ id: tasks.id })
     .from(tasks)

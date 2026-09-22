@@ -9,7 +9,8 @@ export const metadata = { title: "Messages · Signal Studio" };
 
 export default async function MessagesPage({ searchParams }: { searchParams: Promise<{ projectId?: string | string[] }> }) {
   const actorId = await authenticateConversationActor();
-  if (!actorId || !conversationAvailability(resolveConversationControls(process.env), actorId).read) notFound();
+  const controls = resolveConversationControls(process.env);
+  if (!actorId || !conversationAvailability(controls, actorId).read) notFound();
   const requested = (await searchParams).projectId;
   const initialProjectId = typeof requested === "string" ? parseProjectId(requested) : null;
   if (requested !== undefined && !initialProjectId) notFound();
@@ -22,5 +23,5 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
     if (!scope.ok || !scope.value) notFound();
     projects.push({ id: initialProjectId, name: scope.value.projectName });
   }
-  return <div id="app-main-content" className="min-h-0 min-w-0 flex-1"><ConversationWorkspace actorId={actorId} projects={projects} initialProjectId={initialProjectId ?? undefined} /></div>;
+  return <div id="app-main-content" className="min-h-0 min-w-0 flex-1"><ConversationWorkspace actorId={actorId} projects={projects} initialProjectId={initialProjectId ?? undefined} directMessagesEnabled={controls.directMessagesEnabled} /></div>;
 }

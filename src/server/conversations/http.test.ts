@@ -5,7 +5,7 @@ import { resolveConversationControls } from "../../lib/conversations/flags";
 
 const base = "https://app.example.test/api/conversations";
 const input = { action: "send", projectId: "project-a", conversationId: "room-a", clientRequestId: "request_http_00000001", expectedAudienceEpoch: 1, body: "Reviewed message", rootId: null, mentionUserIds: [] };
-function fixture(options: { actor?: string | null; sends?: boolean; enabled?: boolean; throwService?: boolean } = {}) {
+function fixture(options: { actor?: string | null; sends?: boolean; enabled?: boolean; dm?: boolean; throwService?: boolean } = {}) {
   const calls: { method: string; value: unknown }[] = [];
   const service = Object.fromEntries(["ensureProjectConversation", "getProjectConversation", "listProjectAudience", "getDirectMessage", "listDirectMessages", "listDirectMessageAudience", "requestDirectMessage", "transitionDirectMessage", "sendMessage", "getReceipt", "getHistory", "getMessagePage", "editMessage", "tombstoneMessage"].map((method) => [method, async (value: unknown) => {
     calls.push({ method, value });
@@ -19,7 +19,7 @@ function fixture(options: { actor?: string | null; sends?: boolean; enabled?: bo
   }])) as unknown as Awaited<ReturnType<NonNullable<Parameters<typeof createConversationHttp>[0]["taskOutcomes"]>>>;
   const handle = createConversationHttp({
     authenticate: async () => options.actor === undefined ? "canonical-alice" : options.actor,
-    controls: () => resolveConversationControls({ SIGNAL_CONVERSATION_INTERNAL_ENABLED: options.enabled === false ? "false" : "true", SIGNAL_CONVERSATION_SEND_ENABLED: options.sends === false ? "false" : "true", SIGNAL_CONVERSATION_INTERNAL_ACTOR_IDS: "canonical-alice" }),
+    controls: () => resolveConversationControls({ SIGNAL_CONVERSATION_INTERNAL_ENABLED: options.enabled === false ? "false" : "true", SIGNAL_CONVERSATION_SEND_ENABLED: options.sends === false ? "false" : "true", SIGNAL_CONVERSATION_DM_ENABLED: options.dm === false ? "false" : "true", SIGNAL_CONVERSATION_INTERNAL_ACTOR_IDS: "canonical-alice" }),
     service: async () => service,
     taskOutcomes: async () => taskOutcomes,
   });
@@ -36,6 +36,20 @@ test("session and allowlist failures never reach the service and are uncacheable
     assert.match(result.headers.get("cache-control")!, /private, no-store/);
     assert.equal(f.calls.length, 0);
   }
+});
+test("DM endpoints stay unavailable under the independent runtime gate", async () => {
+  const f = fixture({ dm: false });
+  for (const query of [
+    "action=dm-list&projectId=project-a",
+    "action=dm-scope&projectId=project-a&conversationId=room-a",
+    "action=dm-audience&projectId=project-a&conversationId=room-a",
+  ]) assert.equal((await f.handle(new Request(`${base}?${query}`))).status, 404);
+  for (const body of [
+    { action: "dm-request", projectId: "project-a", recipientId: "canonical-bob", clientRequestId: "dm_http_request_001" },
+    { action: "dm-transition", projectId: "project-a", conversationId: "room-a", clientRequestId: "dm_http_accept_0001", expectedAudienceEpoch: 1, operation: "accept" },
+  ]) assert.equal((await f.handle(post(body))).status, 404);
+  assert.equal(f.calls.length, 0);
+  assert.equal((await f.handle(new Request(`${base}?action=project&projectId=project-a`))).status, 200);
 });
 test("cross-origin writes, forged actor fields and malformed bodies are refused without side effects", async () => {
   const requests = [post(input, { origin: "https://evil.example" }), post(input, { "sec-fetch-site": "cross-site" }), post({ ...input, actorId: "canonical-bob" }), post({ ...input, userId: "canonical-bob" }), post("{broken"), post(input, { "content-type": "text/plain" }), post({ ...input, body: "x".repeat(48_001) }), post({ ...input, expectedAudienceEpoch: 0 })];

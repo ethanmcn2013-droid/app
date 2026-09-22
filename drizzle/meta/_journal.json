@@ -253,6 +253,13 @@
       "when": 1789142403000,
       "tag": "0035_task_discussion",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "6",
+      "when": 1790121600000,
+      "tag": "0036_conversation_erasure_tombstones",
+      "breakpoints": true
     }
   ]
 }

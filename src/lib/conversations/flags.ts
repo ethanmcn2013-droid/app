@@ -3,6 +3,7 @@ export type ConversationControls = Readonly<{
   internalEnabled: boolean;
   sendsEnabled: boolean;
   deliveryEnabled: boolean;
+  directMessagesEnabled: boolean;
   allowedActorIds: ReadonlySet<string>;
   guestsEnabled: false;
   attachmentsEnabled: false;
@@ -16,6 +17,8 @@ export function resolveConversationControls(env: Readonly<Record<string, string 
     internalEnabled,
     sendsEnabled: internalEnabled && env.SIGNAL_CONVERSATION_SEND_ENABLED === "true",
     deliveryEnabled: internalEnabled && env.SIGNAL_CONVERSATION_DELIVERY_ENABLED === "true",
+    // DMs need their own lifecycle decision. Room sends never imply DM access.
+    directMessagesEnabled: internalEnabled && env.SIGNAL_CONVERSATION_DM_ENABLED === "true",
     allowedActorIds: new Set((env.SIGNAL_CONVERSATION_INTERNAL_ACTOR_IDS ?? "").split(",").map((id) => id.trim()).filter(Boolean)),
     guestsEnabled: false,
     attachmentsEnabled: false,

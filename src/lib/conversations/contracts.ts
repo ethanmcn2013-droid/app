@@ -45,7 +45,7 @@ export type ReceiptLookup = ConversationResult<
 >;
 export type MessageRecord = Readonly<{
   id: string;
-  authorId: string;
+  authorId: string | null;
   rootId: string | null;
   createSeq: number;
   revision: number;

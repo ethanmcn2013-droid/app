@@ -287,7 +287,7 @@ test("erasure removes every target row across every table, leaves the bystander 
       ["tasks", "tasks WHERE workspace_id='ws-a'"],
       ["comments", "comments WHERE user_id='u-target' OR workspace_id='ws-a' OR task_id='task-a1'"],
       ["task_discussion_state", "task_discussion_state WHERE workspace_id='ws-a' OR task_id='task-a1'"],
-      ["task_comment_changes", "task_comment_changes WHERE task_id='task-a1' OR comment_id='c-b1'"],
+      ["task_comment_changes", "task_comment_changes WHERE task_id='task-a1' OR (comment_id='c-b1' AND kind<>'delete')"],
       ["task_comment_receipts", "task_comment_receipts WHERE actor_id='u-target' OR task_id='task-a1' OR comment_id='c-b1'"],
       ["task_comment_attention", "task_comment_attention WHERE recipient_id='u-target' OR workspace_id='ws-a' OR comment_id='c-b1'"],
       ["task_comment_outbox", "task_comment_outbox WHERE recipient_id='u-target' OR workspace_id='ws-a' OR comment_id='c-b1'"],
@@ -322,9 +322,9 @@ test("erasure removes every target row across every table, leaves the bystander 
       ["users", 1], // only u-bystander
       ["workspaces", 1], // only ws-b
       ["tasks", 2], // shared artifact + unrelated Notes task
-      ["comments", 1], // only c-b2
+      ["comments", 2], // c-b2 and an identity-free c-b1 structural tombstone
       ["task_discussion_state", 1], // task-b1 remains
-      ["task_comment_changes", 2], // c-b2 create + audience delta for erased member
+      ["task_comment_changes", 3], // c-b2 create, c-b1 tombstone, and member audience delta
       ["task_comment_receipts", 1], // only c-b2 send receipt remains
       ["task_comment_attention", 0],
       ["task_comment_outbox", 0],
@@ -357,6 +357,12 @@ test("erasure removes every target row across every table, leaves the bystander 
     // Spot-check identity, not just counts.
     assert.equal(await count(client, "users WHERE id='u-bystander'"), 1);
     assert.equal(await count(client, "comments WHERE id='c-b2'"), 1);
+    const erasedComment = (await client.execute("SELECT user_id,body,client_request_id,request_hash,deleted_at FROM comments WHERE id='c-b1'")).rows[0];
+    assert.equal(erasedComment?.user_id, null);
+    assert.equal(erasedComment?.body, null);
+    assert.equal(erasedComment?.client_request_id, null);
+    assert.equal(erasedComment?.request_hash, null);
+    assert.notEqual(erasedComment?.deleted_at, null);
     assert.equal(
       await count(client, "provider_connections WHERE id='conn-bystander'"),
       1,
@@ -408,7 +414,7 @@ test("erasure removes every target row across every table, leaves the bystander 
     // ── Idempotent: a retry after a partial failure is safe ─────────────
     await eraseAccountData(db, "clerk_target");
     assert.equal(await count(client, "users"), 1);
-    assert.equal(await count(client, "comments"), 1);
+    assert.equal(await count(client, "comments"), 2);
   } finally {
     rmSync(probeDir, { recursive: true, force: true });
     cleanup();

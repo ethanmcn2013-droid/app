@@ -16,9 +16,10 @@ type RuntimeServices = Readonly<{ conversation: Service; taskOutcomes: TaskOutco
 const runtimeGlobal = globalThis as typeof globalThis & { conversationRuntime?: { cacheKey: string; services: RuntimeServices } };
 
 function servicesFor(adapter: ConversationDatabaseAdapter): RuntimeServices {
+  const directMessagesEnabled = resolveConversationControls(process.env).directMessagesEnabled;
   return {
-    conversation: createConversationService(adapter),
-    taskOutcomes: createConversationTaskOutcomeService(adapter),
+    conversation: createConversationService(adapter, { directMessagesEnabled }),
+    taskOutcomes: createConversationTaskOutcomeService(adapter, { directMessagesEnabled }),
     taskDiscussion: createTaskDiscussionService(adapter),
   };
 }
@@ -31,8 +32,9 @@ function unavailableServices(reason: string): RuntimeServices {
 async function getRuntimeServices(): Promise<RuntimeServices> {
   const target = resolveConversationRuntimeTarget(process.env, isDemoMode());
   if (target.mode === "unavailable") return unavailableServices(target.reason);
+  const cacheKey = `${target.cacheKey}:dm=${resolveConversationControls(process.env).directMessagesEnabled}`;
   const cached = runtimeGlobal.conversationRuntime;
-  if (cached) return cached.cacheKey === target.cacheKey ? cached.services : unavailableServices("runtime_configuration_changed");
+  if (cached) return cached.cacheKey === cacheKey ? cached.services : unavailableServices("runtime_configuration_changed");
   const client = createClient(target.mode === "remote"
     ? { url: target.url, authToken: target.authToken }
     : { url: target.url });
@@ -53,7 +55,7 @@ async function getRuntimeServices(): Promise<RuntimeServices> {
       } })
     : createLocalConversationDatabaseAdapter({ client: { execute } });
   const services = servicesFor(adapter);
-  runtimeGlobal.conversationRuntime = { cacheKey: target.cacheKey, services };
+  runtimeGlobal.conversationRuntime = { cacheKey, services };
   return services;
 }
 

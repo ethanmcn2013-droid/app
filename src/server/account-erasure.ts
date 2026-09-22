@@ -6,6 +6,7 @@ import {
   activities,
   attachments,
   comments,
+  conversations,
   driveFolderGrants,
   entitlements,
   meta,
@@ -51,6 +52,7 @@ import {
   deleteNativeAttachmentRowsAcrossProjectsInTransaction,
   NativeUploadInProgressError,
 } from "./attachments/native-upload-custody";
+import { eraseConversationUserFootprint, eraseProjectConversationRows } from "./conversations/account-lifecycle";
 
 /**
  * Database handle accepted by {@link eraseAccountData}. Typed against the
@@ -164,6 +166,12 @@ export async function eraseAccountData(
   if (!user) return { googleRefreshTokens: [] };
 
   const userId = user.id;
+  // DM retention is separately unresolved. Production DM writes are gated
+  // off; fail before provider effects if legacy/private DM rows nevertheless
+  // exist for this person.
+  const directMessage = await database.select({ id: conversations.id }).from(conversations)
+    .where(sql`${userId} IN (${conversations.dmLowUserId}, ${conversations.dmHighUserId})`).limit(1);
+  if (directMessage.length) throw new Error("account erasure blocked: existing DM requires its separate retention decision");
 
   // Collect and open every credential generation BEFORE the first delete.
   // If key custody is broken, fail closed while the rows still preserve the
@@ -842,6 +850,7 @@ export async function eraseAccountData(
   // project-deletion retry right up to the atomic lifecycle handoff.
 
   for (const { id: wsId } of ownedWorkspaces) {
+    await eraseProjectConversationRows(database, wsId);
     const wsTasks = await database
       .select({ id: tasks.id })
       .from(tasks)
@@ -916,22 +925,14 @@ export async function eraseAccountData(
   // they're a member of but don't own: comments/activities they authored,
   // attachments they uploaded, notifications addressed to them, their prefs,
   // entitlements, invites they minted or accepted, and their memberships.
-  const authoredCommentRows = await database
-    .select({ id: comments.id })
-    .from(comments)
-    .where(eq(comments.userId, userId));
-  const authoredCommentIds = authoredCommentRows.map((comment) => comment.id);
-  if (authoredCommentIds.length) {
-    await database.delete(taskCommentOutbox).where(inArray(taskCommentOutbox.commentId, authoredCommentIds));
-    await database.delete(taskCommentAttention).where(inArray(taskCommentAttention.commentId, authoredCommentIds));
-    await database.delete(taskCommentReceipts).where(inArray(taskCommentReceipts.commentId, authoredCommentIds));
-    await database.delete(taskCommentChanges).where(inArray(taskCommentChanges.commentId, authoredCommentIds));
-  }
+  // Canonical Project/Task sources are sanitized to identity-free structural
+  // tombstones so other members' replies remain intact. Legacy comments are
+  // removed by the same helper; its work-link cleanup preserves destination Tasks.
+  await eraseConversationUserFootprint(database, userId);
   await database.delete(taskCommentOutbox).where(eq(taskCommentOutbox.recipientId, userId));
   await database.delete(taskCommentAttention).where(eq(taskCommentAttention.recipientId, userId));
   await database.delete(taskCommentReceipts).where(eq(taskCommentReceipts.actorId, userId));
   await database.delete(activities).where(eq(activities.userId, userId));
-  await database.delete(comments).where(eq(comments.userId, userId));
   await database
     .delete(resources)
     .where(eq(resources.addedByUserId, userId));

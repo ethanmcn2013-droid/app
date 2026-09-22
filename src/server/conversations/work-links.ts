@@ -81,6 +81,7 @@ async function sourceAndDestination(
   executor: ConversationSqlExecutor,
   actorId: string,
   input: PromoteMessageToTaskInput,
+  directMessagesEnabled: boolean,
 ): Promise<"ok" | "unavailable" | "archived" | "audience_changed" | "revision_conflict"> {
   const source = await executor.execute({
     sql: `SELECT c.audience_epoch, c.lifecycle, c.kind, sw.archived_at, m.revision, m.deleted_at
@@ -91,9 +92,9 @@ async function sourceAndDestination(
       LEFT JOIN conversation_participants participant ON participant.conversation_id=c.id AND participant.user_id=actor.id
       JOIN conversation_messages m ON m.id = ? AND m.conversation_id = c.id AND m.workspace_id = c.workspace_id
       WHERE c.id = ? AND c.workspace_id = ? AND (c.kind='project' OR
-        (c.kind='dm' AND actor.id IN(c.dm_low_user_id,c.dm_high_user_id) AND participant.retains_history=1
+        (?=1 AND c.kind='dm' AND actor.id IN(c.dm_low_user_id,c.dm_high_user_id) AND participant.retains_history=1
           AND participant.status='active' AND c.pair_state NOT IN('pending','declined')))`,
-    args: [actorId, input.messageId, input.conversationId, input.sourceProjectId],
+    args: [actorId, input.messageId, input.conversationId, input.sourceProjectId, directMessagesEnabled ? 1 : 0],
   });
   const row = source.rows[0];
   if (!row) return "unavailable";
@@ -176,6 +177,7 @@ async function actorCanRecoverReceipt(
   executor: ConversationSqlExecutor,
   actorId: string,
   receipt: Record<string, unknown>,
+  directMessagesEnabled: boolean,
 ): Promise<boolean> {
   const sourceConversationId = receipt.source_conversation_id == null
     ? null
@@ -188,11 +190,11 @@ async function actorCanRecoverReceipt(
       JOIN workspace_members destination_member ON destination_member.user_id = actor.id AND destination_member.workspace_id = ?
       LEFT JOIN conversations source_conversation ON source_conversation.id=? AND source_conversation.workspace_id=source_project.id
       LEFT JOIN conversation_participants participant ON participant.conversation_id=source_conversation.id AND participant.user_id=actor.id
-      WHERE actor.id = ? AND (? IS NULL OR source_conversation.kind='project' OR (source_conversation.kind='dm'
+      WHERE actor.id = ? AND (? IS NULL OR source_conversation.kind='project' OR (?=1 AND source_conversation.kind='dm'
         AND actor.id IN(source_conversation.dm_low_user_id,source_conversation.dm_high_user_id)
         AND participant.status='active' AND participant.retains_history=1 AND source_conversation.pair_state NOT IN('pending','declined')))`,
     args: [String(receipt.source_project_id), String(receipt.destination_project_id), String(receipt.source_project_id),
-      String(receipt.destination_project_id), sourceConversationId, actorId, sourceConversationId],
+      String(receipt.destination_project_id), sourceConversationId, actorId, sourceConversationId, directMessagesEnabled ? 1 : 0],
   });
   return Boolean(result.rows[0]);
 }
@@ -212,8 +214,9 @@ async function taskIsAvailable(executor: ConversationSqlExecutor, receipt: Recor
 
 export function createConversationTaskOutcomeService(
   adapter: ConversationDatabaseAdapter,
-  options: Readonly<{ afterWrite?: (seam: Seam) => void | Promise<void>; captureConfig?: CaptureConfig }> = {},
+  options: Readonly<{ afterWrite?: (seam: Seam) => void | Promise<void>; captureConfig?: CaptureConfig; directMessagesEnabled?: boolean }> = {},
 ) {
+  const directMessagesEnabled = options.directMessagesEnabled ?? true;
   async function promoteMessageToTask(args: Readonly<{ actorId: string; input: PromoteMessageToTaskInput }>): Promise<ConversationResult<TaskOutcomeReceipt>> {
     const input = normalizedInput(args.input);
     if (!validIdentity(args.actorId) || !input) return fail("invalid_input");
@@ -225,11 +228,11 @@ export function createConversationTaskOutcomeService(
       return await adapter.transaction("write", async (executor) => {
         const existing = await findStoredReceipt(executor, args.actorId, input.clientRequestId);
         if (existing) {
-          if (!await actorCanRecoverReceipt(executor, args.actorId, existing)) return fail("unavailable");
+          if (!await actorCanRecoverReceipt(executor, args.actorId, existing, directMessagesEnabled)) return fail("unavailable");
           if (existing.payload_hash !== payloadHash) return fail("request_conflict");
           return { ok: true, value: receiptValue(existing, input.clientRequestId) };
         }
-        const access = await sourceAndDestination(executor, args.actorId, input);
+        const access = await sourceAndDestination(executor, args.actorId, input, directMessagesEnabled);
         if (access !== "ok") return fail(access);
         if (!await conversationWriteFencesClear(executor, args.actorId, input.sourceProjectId) ||
             !await conversationWriteFencesClear(executor, args.actorId, input.destinationProjectId)) return fail("unavailable");
@@ -287,7 +290,7 @@ export function createConversationTaskOutcomeService(
     return adapter.transaction("read", async (executor) => {
       const receipt = await findStoredReceipt(executor, args.actorId, args.clientRequestId);
       if (!receipt) return { ok: true, value: { state: "absent" } };
-      if (!await actorCanRecoverReceipt(executor, args.actorId, receipt)) return fail("unavailable");
+      if (!await actorCanRecoverReceipt(executor, args.actorId, receipt, directMessagesEnabled)) return fail("unavailable");
       return { ok: true, value: { state: "committed", receipt: receiptValue(receipt, args.clientRequestId),
         taskAvailable: await taskIsAvailable(executor, receipt) } };
     });
@@ -312,10 +315,10 @@ export function createConversationTaskOutcomeService(
             AND source_message.workspace_id = l.source_project_id AND source_message.deleted_at IS NULL
           JOIN tasks destination_task ON destination_task.id = l.task_id
             AND destination_task.workspace_id = l.destination_project_id
-          WHERE l.task_id = ? AND (source_conversation.kind='project' OR (source_conversation.kind='dm'
+          WHERE l.task_id = ? AND (source_conversation.kind='project' OR (?=1 AND source_conversation.kind='dm'
             AND actor.id IN(source_conversation.dm_low_user_id,source_conversation.dm_high_user_id)
             AND participant.status='active' AND participant.retains_history=1
-            AND source_conversation.pair_state NOT IN('pending','declined')))`, args: [args.actorId, args.taskId],
+            AND source_conversation.pair_state NOT IN('pending','declined')))`, args: [args.actorId, args.taskId, directMessagesEnabled ? 1 : 0],
       });
       const row = result.rows[0];
       if (!row) return { ok: true, value: null };
