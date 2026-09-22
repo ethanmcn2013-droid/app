@@ -125,7 +125,7 @@ test("promotion is atomic, body-free, dated, non-milestone, and exactly replayab
 
 test("DM task provenance and receipts reauthorize the immutable source conversation for every reader",async()=>{
   const f=await fixture(); try{
-    const conversations=createConversationService(f.adapter);
+    const conversations=createConversationService(f.adapter,{directMessagesEnabled:true});
     const requested=await conversations.requestDirectMessage({actorId:"alice",projectId:sourceProject,recipientId:"bob",clientRequestId:"dm_task_request_001"});
     if(!requested.ok) assert.fail("DM request failed"); const conversationId=requested.value.scope.conversationId;
     const accepted=await conversations.transitionDirectMessage({actorId:"bob",projectId:sourceProject,conversationId,clientRequestId:"dm_task_accept_0001",expectedAudienceEpoch:requested.value.scope.audienceEpoch,operation:"accept"});
@@ -133,11 +133,14 @@ test("DM task provenance and receipts reauthorize the immutable source conversat
     const sent=await conversations.sendMessage({actorId:"alice",input:{projectId:sourceProject,conversationId,clientRequestId:"dm_task_source_0001",expectedAudienceEpoch:accepted.value.scope.audienceEpoch,body:"private source body",rootId:null,mentionUserIds:[]}});
     if(!sent.ok) assert.fail("DM source failed");
     const input={...f.input,clientRequestId:"dm_promotion_000001",conversationId,messageId:sent.value.messageId,expectedRevision:1,expectedAudienceEpoch:accepted.value.scope.audienceEpoch};
-    const outcomes=createConversationTaskOutcomeService(f.adapter); const promoted=await outcomes.promoteMessageToTask({actorId:"alice",input});
+    const outcomes=createConversationTaskOutcomeService(f.adapter,{directMessagesEnabled:true}); const promoted=await outcomes.promoteMessageToTask({actorId:"alice",input});
     if(!promoted.ok) assert.fail("DM promotion failed");
     const stored=(await f.client.execute({sql:"SELECT source_conversation_id FROM work_operation_receipts WHERE actor_id='alice' AND client_request_id=?",args:[input.clientRequestId]})).rows[0];
     assert.equal(stored.source_conversation_id,conversationId);
     assert.equal((await outcomes.getTaskOutcome({actorId:"bob",taskId:promoted.value.taskId})).ok,true);
+    const gatedOutcomes=createConversationTaskOutcomeService(f.adapter);
+    assert.deepEqual(await gatedOutcomes.getTaskOutcome({actorId:"bob",taskId:promoted.value.taskId}),{ok:true,value:null});
+    assert.deepEqual(await gatedOutcomes.getTaskReceipt({actorId:"alice",clientRequestId:input.clientRequestId}),{ok:false,code:"unavailable"});
     await f.client.execute({sql:"INSERT INTO workspace_members(workspace_id,user_id,role,joined_at) VALUES (?,'mallory','member',?)",args:[destinationProject,Date.now()]});
     assert.deepEqual(await outcomes.getTaskOutcome({actorId:"mallory",taskId:promoted.value.taskId}),{ok:true,value:null});
     await f.client.execute({sql:"DELETE FROM workspace_members WHERE workspace_id=? AND user_id='alice'",args:[sourceProject]});

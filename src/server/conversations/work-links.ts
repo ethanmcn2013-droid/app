@@ -216,7 +216,7 @@ export function createConversationTaskOutcomeService(
   adapter: ConversationDatabaseAdapter,
   options: Readonly<{ afterWrite?: (seam: Seam) => void | Promise<void>; captureConfig?: CaptureConfig; directMessagesEnabled?: boolean }> = {},
 ) {
-  const directMessagesEnabled = options.directMessagesEnabled ?? true;
+  const directMessagesEnabled = options.directMessagesEnabled ?? false;
   async function promoteMessageToTask(args: Readonly<{ actorId: string; input: PromoteMessageToTaskInput }>): Promise<ConversationResult<TaskOutcomeReceipt>> {
     const input = normalizedInput(args.input);
     if (!validIdentity(args.actorId) || !input) return fail("invalid_input");

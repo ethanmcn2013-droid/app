@@ -43,8 +43,8 @@ for (const [id, workspaceId, title] of [
   args: [id, workspaceId, title],
 });
 const adapter = createLocalConversationDatabaseAdapter({ client: client as unknown as ConversationSqlExecutor });
-const service = createConversationService(adapter);
-const taskOutcomes = createConversationTaskOutcomeService(adapter);
+const service = createConversationService(adapter, { directMessagesEnabled: true });
+const taskOutcomes = createConversationTaskOutcomeService(adapter, { directMessagesEnabled: true });
 const taskDiscussion = createTaskDiscussionService(adapter);
 let sendsEnabled = true;
 const dropNextResponse = new Set<string>();

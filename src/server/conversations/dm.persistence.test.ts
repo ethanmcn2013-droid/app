@@ -23,7 +23,7 @@ async function fixture() {
   for(const [id,role] of [["alice","owner"],["bob","member"],["mallory","member"]])
     await client.execute({sql:"INSERT INTO workspace_members(workspace_id,user_id,role,joined_at) VALUES(?,?,?,?)",args:[projectId,id,role,now]});
   const adapter=createLocalConversationDatabaseAdapter({client});
-  return {client,service:createConversationService(adapter),adapter};
+  return {client,service:createConversationService(adapter,{directMessagesEnabled:true}),adapter};
 }
 const request=(service:ReturnType<typeof createConversationService>,actorId="alice",recipientId="bob",clientRequestId="dm_request_0000001") =>
   service.requestDirectMessage({actorId,projectId,recipientId,clientRequestId});
@@ -31,7 +31,7 @@ test("disabled DM service refuses direct bypass while Project rooms remain avail
   const f=await fixture(); try {
     const made=await request(f.service); assert.equal(made.ok,true); if(!made.ok) return;
     const conversationId=made.value.scope.conversationId;
-    const gated=createConversationService(f.adapter,{directMessagesEnabled:false});
+    const gated=createConversationService(f.adapter);
     assert.deepEqual(await gated.getDirectMessage({actorId:"alice",projectId,conversationId}),{ok:false,code:"unavailable"});
     assert.deepEqual(await gated.listDirectMessages({actorId:"alice",projectId}),{ok:false,code:"unavailable"});
     assert.deepEqual(await gated.requestDirectMessage({actorId:"alice",projectId,recipientId:"bob",clientRequestId:"dm_request_disabled_1"}),{ok:false,code:"unavailable"});

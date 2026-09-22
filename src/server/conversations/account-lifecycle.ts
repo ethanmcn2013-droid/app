@@ -47,8 +47,6 @@ export async function eraseConversationUserFootprint(database: Database, userId:
     WHERE l.created_by=${userId} OR m.author_id=${userId})`);
   await database.run(sql`DELETE FROM work_links WHERE created_by=${userId} OR source_message_id IN (
     SELECT id FROM conversation_messages WHERE author_id=${userId})`);
-  await database.run(sql`DELETE FROM work_operation_receipts WHERE NOT EXISTS (
-    SELECT 1 FROM work_links l WHERE l.id=work_operation_receipts.work_link_id)`);
   await database.run(sql`DELETE FROM conversation_dm_receipts WHERE actor_id=${userId}`);
   await database.run(sql`DELETE FROM conversation_participants WHERE user_id=${userId}`);
   await database.run(sql`DELETE FROM conversation_attention WHERE recipient_id=${userId}`);

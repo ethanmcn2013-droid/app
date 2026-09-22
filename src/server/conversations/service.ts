@@ -272,7 +272,7 @@ export function createConversationService(
   options: Readonly<{ directMessagesEnabled?: boolean }> = {},
 ) {
   // Fixtures opt in by default; the real runtime supplies the independent DM flag.
-  const directMessagesEnabled = options.directMessagesEnabled ?? true;
+  const directMessagesEnabled = options.directMessagesEnabled ?? false;
   const authorize = (executor: ConversationSqlExecutor, input: ActorConversation) =>
     authorizeConversation(executor, input, directMessagesEnabled);
   async function inTransaction<T>(

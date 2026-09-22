@@ -114,6 +114,15 @@ for (const foreignKeys of [false, true]) test(`erasure preserves bystander repli
   try {
     await seed(f.client);
     await f.client.execute(`PRAGMA foreign_keys=${foreignKeys ? "ON" : "OFF"}`);
+    await f.client.executeMultiple(`
+      INSERT INTO tasks(id,workspace_id,seq,title,lane,priority,assignees)
+        VALUES('task-peer','shared',2,'Peer task','todo','p2','[]');
+      INSERT INTO work_links(id,source_project_id,source_conversation_id,source_message_id,source_revision,source_audience_epoch,destination_project_id,task_id,created_by,created_at)
+        VALUES('peer-link','shared','room-shared','peer-root',1,1,'shared','task-peer','peer',1000);
+      INSERT INTO work_operation_receipts(actor_id,client_request_id,operation,payload_hash,source_project_id,source_conversation_id,destination_project_id,task_id,work_link_id,committed_at)
+      VALUES('peer','peer_prior_task_loss','conversation_task','peer-retry-hash','shared','room-shared','shared','task-peer','peer-link',1000);
+      DELETE FROM work_links WHERE id='peer-link';
+    `);
     assert.equal((await f.client.execute("PRAGMA foreign_key_check")).rows.length, 0);
     await assert.rejects(() => f.client.execute("UPDATE conversation_messages SET author_id=NULL,body=NULL,deleted_at=1,client_request_id=NULL,request_hash=NULL,revision=2 WHERE id='target-root'"), /invalid_message_update/);
     await eraseAccountData(f.db, "clerk_target");
@@ -133,8 +142,12 @@ for (const foreignKeys of [false, true]) test(`erasure preserves bystander repli
     assert.equal(comments.find((row) => row.id === "peer-comment")?.root_id, "target-comment");
     assert.equal(comments.find((row) => row.id === "peer-comment")?.body, "Peer Discussion reply");
     assert.equal((await f.client.execute("SELECT created_by FROM conversations WHERE id='room-shared'")).rows[0]?.created_by, null);
-    for (const table of ["work_links", "work_operation_receipts", "suite_outbox", "conversation_attention", "conversation_outbox"])
+    for (const table of ["work_links", "suite_outbox", "conversation_attention", "conversation_outbox"])
       assert.equal(Number((await f.client.execute(`SELECT count(*) AS n FROM ${table} WHERE 1=1`)).rows[0]?.n ?? 0), 0, `${table} left private derivatives`);
+    const retainedReceipts = (await f.client.execute("SELECT actor_id,client_request_id,payload_hash FROM work_operation_receipts")).rows;
+    assert.deepEqual(retainedReceipts.map((row) => row.actor_id), ["peer"]);
+    assert.equal(retainedReceipts[0]?.client_request_id, "peer_prior_task_loss");
+    assert.equal(retainedReceipts[0]?.payload_hash, "peer-retry-hash");
     assert.equal((await f.client.execute("SELECT COUNT(*) AS n FROM conversation_receipts WHERE actor_id='target'")).rows[0]?.n, 0);
     assert.equal((await f.client.execute("SELECT COUNT(*) AS n FROM task_comment_receipts WHERE actor_id='target'")).rows[0]?.n, 0);
     assert.equal((await f.client.execute("SELECT COUNT(*) AS n FROM tasks WHERE id='task-shared'")).rows[0]?.n, 1);
