@@ -101,6 +101,9 @@ receipt.origin=origin;
     await page.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
     await page.addInitScript(()=>{const NativeDate=Date;window.Date=class extends NativeDate{constructor(...args){super(...(args.length?args:['2027-01-21T12:00:00Z']))}static now(){return new NativeDate('2027-01-21T12:00:00Z').getTime()}};});
     await page.goto(origin+'/app/tasks');await page.evaluate(theme=>document.documentElement.dataset.theme=theme,theme);await page.getByRole('heading',{name:'January arrival plan'}).waitFor({timeout:10000});await page.evaluate(()=>document.fonts.ready);
+    const doneCard=page.locator('article[data-id="done"][data-done]');
+    await doneCard.getByText('Confirm the venue booking',{exact:true}).waitFor();
+    assert.equal(await doneCard.getByRole('checkbox',{name:'Mark not done'}).getAttribute('aria-checked'),'true');
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
     const result={theme,viewport,checks:[],failures:[]};
     const measure=async()=>page.evaluate(()=>{

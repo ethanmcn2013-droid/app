@@ -319,9 +319,9 @@ test("controlled recipient accepts B, completes assigned work, and loses B after
     observe("homeReturned");
 
     await creatorPage.goto(`/app/tasks?workspaceId=${RECIPIENT_PROJECT_ID}`);
-    const completedCard = creatorPage.locator(`article[data-task-id="${RECIPIENT_TASK_ID}"][data-board-lane="done"][data-completed]`);
+    const completedCard = creatorPage.locator(`article[data-id="${RECIPIENT_TASK_ID}"][data-done]`);
     await expect(completedCard.getByText(RECIPIENT_TASK_TITLE, { exact: true })).toBeVisible();
-    await expect(completedCard.getByRole("checkbox", { name: "Reopen this task" })).toBeChecked();
+    await expect(completedCard.getByRole("checkbox", { name: "Mark not done" })).toHaveAttribute("aria-checked", "true");
     observe("creatorReadback");
 
     const accepted = (await readRecipientJourneyState()).invite;
