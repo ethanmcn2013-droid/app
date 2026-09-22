@@ -1,5 +1,5 @@
 import { clerk } from "@clerk/testing/playwright";
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import {
   observe,
   observeWrongAccountDiagnostic,
@@ -14,6 +14,7 @@ import {
   PRIVATE_TASK_TITLE,
   RECIPIENT_PROJECT_ID,
   RECIPIENT_PROJECT_NAME,
+  RECIPIENT_TASK_ID,
   RECIPIENT_TASK_TITLE,
   readRecipientJourneyState,
   removeRecipientMembership,
@@ -54,16 +55,10 @@ async function ticketSignIn(page: Page, email: string): Promise<ClerkIdentity> {
   return readVerifiedIdentity(page, email);
 }
 
-async function firstVisibleMatch(locator: Locator): Promise<Locator> {
-  for (const match of await locator.all()) {
-    if (await match.isVisible()) return match;
-  }
-  throw new Error("Expected one visible Clerk sign-in control.");
-}
-
-async function recipientEmailCodeSignIn(
+async function recipientPasswordSignIn(
   page: Page,
   email: string,
+  password: string,
   invitePath: string,
 ): Promise<ClerkIdentity> {
   const expectedOrigin = new URL(page.url()).origin;
@@ -72,32 +67,40 @@ async function recipientEmailCodeSignIn(
   await identifier.fill(email);
   await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-  const digitOne = page.getByRole("textbox", {
-    name: "Enter verification code. Digit 1",
-  });
-  const singleCode = page.getByLabel("Enter verification code", { exact: true });
-  const useAnotherMethod = page.getByRole("link", { name: /use another method/i });
-  const codeVisible = async () =>
-    await anyMatchVisible(digitOne) || await anyMatchVisible(singleCode);
-
-  await expect.poll(async () =>
-    await codeVisible() || await anyMatchVisible(useAnotherMethod),
-  ).toBe(true);
-
-  if (!(await codeVisible())) {
-    await (await firstVisibleMatch(useAnotherMethod)).click();
-    const emailCodeMethod = page.getByRole("button", { name: /email code to/i });
-    await expect.poll(async () => await anyMatchVisible(emailCodeMethod)).toBe(true);
-    await (await firstVisibleMatch(emailCodeMethod)).click();
+  const passwordInput = page.locator('input[type="password"]');
+  try {
+    await expect(passwordInput).toBeVisible();
+  } catch {
+    // Fixed booleans and control classes only: no account label, invitation
+    // URL or Clerk DOM is copied into the retained private log.
+    const current = new URL(page.url());
+    const path = current.pathname;
+    const controls = await page.locator("button, a, [role=button]").evaluateAll((elements) =>
+      elements.filter((element) => element.getClientRects().length > 0).slice(0, 30).map((element) => {
+        const label = `${element.getAttribute("aria-label") ?? ""} ${element.textContent ?? ""}`.toLowerCase();
+        const kind = /another|other|different|alternative|try another/.test(label) ? "method-choice"
+          : /forgot|reset/.test(label) ? "recovery"
+          : /password/.test(label) ? "password"
+          : /email|code/.test(label) ? "email-code"
+          : /continue|next/.test(label) ? "continue"
+          : /sign in|log in/.test(label) ? "sign-in"
+          : /back/.test(label) ? "back"
+          : "other";
+        return { tag: element.tagName.toLowerCase(), role: element.getAttribute("role") ?? "native", kind };
+      }),
+    );
+    const diagnostic = {
+      origin: current.origin === expectedOrigin ? "local" : "external",
+      route: path === "/sign-in" ? "sign-in" : path.startsWith("/sign-in/") ? "sign-in-step" : path === "/sign-up" ? "sign-up" : path === invitePath ? "invite" : "other",
+      passwordVisible: await anyMatchVisible(page.locator('input[type="password"]')),
+      anotherMethodButtonVisible: await anyMatchVisible(page.getByRole("button", { name: /use another method/i })),
+      anotherMethodLinkVisible: await anyMatchVisible(page.getByRole("link", { name: /use another method/i })),
+      controls,
+    };
+    throw new Error(`Recipient password step unavailable: ${JSON.stringify(diagnostic)}`);
   }
-
-  await expect.poll(codeVisible).toBe(true);
-  if (await anyMatchVisible(digitOne)) {
-    await (await firstVisibleMatch(digitOne)).click();
-    await page.keyboard.type("424242", { delay: 100 });
-  } else {
-    await (await firstVisibleMatch(singleCode)).fill("424242");
-  }
+  await passwordInput.fill(password);
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
 
   // The mounted SignIn component must consume its forceRedirectUrl. No helper
   // navigation or forced page.goto is allowed across this proof boundary.
@@ -204,7 +207,8 @@ async function wrongAccountDiagnostic(
 
 test("controlled recipient accepts B, completes assigned work, and loses B after removal", async ({ browser }) => {
   const creatorEmail = required("SIGNAL_RECIPIENT_CREATOR_EMAIL");
-  const recipientEmail = required("SIGNAL_RECIPIENT_RECIPIENT_EMAIL");
+    const recipientEmail = required("SIGNAL_RECIPIENT_RECIPIENT_EMAIL");
+    const recipientPassword = required("SIGNAL_RECIPIENT_RECIPIENT_PASSWORD");
   const creatorContext = await browser.newContext();
   const recipientContext = await browser.newContext();
   const creatorPage = await creatorContext.newPage();
@@ -291,9 +295,10 @@ test("controlled recipient accepts B, completes assigned work, and loses B after
     await signIn.click();
     await expect(recipientPage).toHaveURL((url) => url.pathname === "/sign-in" && url.searchParams.get("redirect_url") === invitePath);
     await clerk.loaded({ page: recipientPage });
-    const uiRecipient = await recipientEmailCodeSignIn(
+    const uiRecipient = await recipientPasswordSignIn(
       recipientPage,
       recipientEmail,
+      recipientPassword,
       invitePath,
     );
     expect(uiRecipient).toEqual(recipient);
@@ -314,8 +319,9 @@ test("controlled recipient accepts B, completes assigned work, and loses B after
     observe("homeReturned");
 
     await creatorPage.goto(`/app/tasks?workspaceId=${RECIPIENT_PROJECT_ID}`);
-    await expect(creatorPage.getByText(RECIPIENT_TASK_TITLE, { exact: true })).toBeVisible();
-    await expect(creatorPage.getByRole("button", { name: `Mark "${RECIPIENT_TASK_TITLE}" not done` })).toBeVisible();
+    const completedCard = creatorPage.locator(`article[data-id="${RECIPIENT_TASK_ID}"][data-done]`);
+    await expect(completedCard.getByText(RECIPIENT_TASK_TITLE, { exact: true })).toBeVisible();
+    await expect(completedCard.getByRole("checkbox", { name: "Mark not done" })).toHaveAttribute("aria-checked", "true");
     observe("creatorReadback");
 
     const accepted = (await readRecipientJourneyState()).invite;

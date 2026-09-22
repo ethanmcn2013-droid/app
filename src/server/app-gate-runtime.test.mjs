@@ -44,6 +44,7 @@ const FOUNDER = {
 const MEMBER = {
   label: "invited collaborator, not allowlisted, has a workspace_members row",
   id: "user_invited_collaborator",
+  internalId: "persisted-invitee",
   email: "hello@invited-collaborator.test",
 };
 const STRANGER = {
@@ -66,7 +67,7 @@ before(async () => {
   const { db } = await import("./db/index.ts");
 
   // The real workspace_members shape, from drizzle/0014_current_schema_baseline.sql.
-  await db.run(sql`CREATE TABLE users (id text PRIMARY KEY NOT NULL, email text)`);
+  await db.run(sql`CREATE TABLE users (id text PRIMARY KEY NOT NULL, clerk_id text UNIQUE, email text)`);
   await db.run(sql`
     CREATE TABLE workspaces (
       id text PRIMARY KEY NOT NULL,
@@ -90,13 +91,13 @@ before(async () => {
   // An owner invited this person and they accepted: users row, workspace, and
   // the membership row that acceptance writes.
   await db.run(
-    sql`INSERT INTO users (id, email) VALUES (${MEMBER.id}, ${MEMBER.email})`,
+    sql`INSERT INTO users (id, clerk_id, email) VALUES (${MEMBER.internalId}, ${MEMBER.id}, ${MEMBER.email})`,
   );
   await db.run(
     sql`INSERT INTO workspaces (id, slug, name) VALUES ('ws_owner', 'owner-workspace', 'Owner workspace')`,
   );
   await db.run(
-    sql`INSERT INTO workspace_members (workspace_id, user_id, role) VALUES ('ws_owner', ${MEMBER.id}, 'member')`,
+    sql`INSERT INTO workspace_members (workspace_id, user_id, role) VALUES ('ws_owner', ${MEMBER.internalId}, 'member')`,
   );
 
   ({ requireAppAccess } = await import("./require-app-access.ts"));
@@ -133,7 +134,7 @@ async function land(gate, identity) {
 test("the fixture is real: the membership row the gate depends on exists", async () => {
   const { db } = await import("./db/index.ts");
   const rows = await db.all(
-    sql`SELECT user_id FROM workspace_members WHERE user_id = ${MEMBER.id}`,
+    sql`SELECT user_id FROM workspace_members WHERE user_id = ${MEMBER.internalId}`,
   );
   assert.equal(
     rows.length,

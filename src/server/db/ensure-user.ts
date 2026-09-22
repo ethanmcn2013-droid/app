@@ -1,8 +1,9 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { db } from "@/server/db";
 import * as schema from "@/server/db/schema";
 import { hasAccountDeletionStartedWith } from "@/server/account-deletion-lifecycle";
+import { serializeProvisioning } from "@/server/db/serialized-provisioning";
 
 type ProvisioningDb = LibSQLDatabase<typeof schema>;
 
@@ -69,7 +70,7 @@ export async function ensureUserProvisionedWith(
     : null;
   const initials = initialsFromName ?? (handle.slice(0, 2).toUpperCase() || "??");
 
-  return database.transaction(async (tx) => {
+  return serializeProvisioning(database, clerkUserId, () => database.transaction(async (tx) => {
     // This read and every provisioning write share one immediate transaction.
     // If deletion commits first, no row is recreated. If provisioning commits
     // first, deletion observes and erases that row after installing its fence.
@@ -79,6 +80,15 @@ export async function ensureUserProvisionedWith(
       INSERT OR IGNORE INTO users (id, clerk_id, handle, color, initials)
       VALUES (${clerkUserId}, ${clerkUserId}, ${handle}, ${color}, ${initials})
     `);
+    // A pre-existing row can have a stable internal id that differs from its
+    // Clerk id. INSERT OR IGNORE above then leaves that row in place; every
+    // dependent FK must use the persisted id, not the proposed insert id.
+    const [persistedUser] = await tx.select({ id: schema.users.id })
+      .from(schema.users)
+      .where(eq(schema.users.clerkId, clerkUserId))
+      .limit(1);
+    if (!persistedUser) throw new Error("Clerk identity could not be provisioned.");
+    const userId = persistedUser.id;
 
     // C2: backfill name when the row exists but name is NULL.
     // INSERT OR IGNORE leaves name NULL on existing rows; this UPDATE
@@ -87,7 +97,7 @@ export async function ensureUserProvisionedWith(
     if (name) {
       await tx.run(sql`
         UPDATE users SET name = ${name}, initials = ${initials}
-        WHERE (id = ${clerkUserId} OR clerk_id = ${clerkUserId})
+        WHERE id = ${userId} AND clerk_id = ${clerkUserId}
           AND name IS NULL
       `);
     }
@@ -98,7 +108,7 @@ export async function ensureUserProvisionedWith(
     if (email) {
       await tx.run(sql`
         UPDATE users SET email = ${email}
-        WHERE (id = ${clerkUserId} OR clerk_id = ${clerkUserId})
+        WHERE id = ${userId} AND clerk_id = ${clerkUserId}
           AND email IS NULL
       `);
     }
@@ -109,7 +119,7 @@ export async function ensureUserProvisionedWith(
         timezone, position, revision
       )
       VALUES (
-        ${planningPeriodId}, ${clerkUserId}, 'Active work', 'general',
+        ${planningPeriodId}, ${userId}, 'Active work', 'general',
         date('now'), date('now', '+1 year', '-1 day'), 'UTC', 1000, 1
       )
     `);
@@ -120,7 +130,7 @@ export async function ensureUserProvisionedWith(
         planning_period_id, context_type, position, updated_at
       )
       VALUES (
-        ${workspaceId}, ${slug}, 'Personal', ${clerkUserId}, NULL,
+        ${workspaceId}, ${slug}, 'Personal', ${userId}, NULL,
         ${planningPeriodId}, 'project', 1000, unixepoch()
       )
     `);
@@ -133,10 +143,10 @@ export async function ensureUserProvisionedWith(
     `);
     await tx.run(sql`
       INSERT OR IGNORE INTO workspace_members (workspace_id, user_id, role)
-      VALUES (${workspaceId}, ${clerkUserId}, 'owner')
+      VALUES (${workspaceId}, ${userId}, 'owner')
     `);
     return true;
-  }, { behavior: "immediate" });
+  }, { behavior: "immediate" }));
 }
 
 // Matches the webhook handler's PALETTE + hash for visual stability.
