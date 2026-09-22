@@ -16,6 +16,18 @@ The `/about` page is the voice ground truth. The `/principles` refusal list is t
 
 The dot is load-bearing. Don't replace it with a swoosh, a checkmark, or a square.
 
+## App icon
+
+The icon is that same dot and nothing else: a single indigo dot centred on ink, no ring, no glyph, no wordmark. Source of truth is `src/lib/brand/suite-mark.tsx`: `/icon` (32), `/icon1` (512, maskable) and `/apple-icon` (180) render from it at request time, and `src/app/favicon.ico` is regenerated from the same component by `pnpm brand:icons`. A contract test in the default gate fails if any of the four drifts — see `docs/FAVICONS.md`.
+
+| | Value | Why |
+|---|---|---|
+| Field | `#17171a` (`--x-studio-chrome`) | The Studio Bar charcoal — the one surface colour identical in both themes, and already the manifest's `theme_color`. |
+| Dot | `#6366f1` (indigo-500, `--x-studio-accent`) | The brand's indigo-600 measures 2.84:1 on this charcoal and fails WCAG 1.4.11's 3:1 floor for a non-text graphic. indigo-500 measures 4.00:1 and is already the repo's indigo-on-charcoal. |
+| Diameter | 40% of canvas | Reads at 16px, and sits far inside the 80% safe zone Android's adaptive masks clip to. |
+
+Do not spend indigo-600 on the icon, and do not put the mark back on paper — a white tile is the brightest object in a dark tab strip, which is the opposite of what a signal should do.
+
 ## Type
 
 | Use | Family | Source |
@@ -111,6 +123,10 @@ Reduced-motion users get the same content with motion gated off via `prefers-red
 | Asset | Path | Size |
 |---|---|---|
 | Wordmark SVG (animated) | `src/components/brand/wordmark.tsx` (export via Playwright) | vector |
+| App icon (tab) | `/icon` | 32×32 PNG |
+| App icon (maskable) | `/icon1` | 512×512 PNG |
+| Apple touch icon | `/apple-icon` | 180×180 PNG |
+| favicon.ico | `src/app/favicon.ico` (generated) | 16/32/48/256 ICO |
 | OG default | `/opengraph-image` | 1200×630 PNG |
 | X banner | `/social/x-banner/opengraph-image` | 1500×500 PNG |
 | Bluesky banner | `/social/bluesky-banner/opengraph-image` | 1500×500 PNG |

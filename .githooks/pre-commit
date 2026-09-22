@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Atlas drift-check pre-commit hook.
 # Runs scripts/atlas-drift-check.ts against the staged files. Records
-# drift in studio's canonical sidecar (~/Projects/personal/studio/
-# content/atlas/_drift.json). NEVER blocks the commit — drift is a
-# signal, not a gate.
+# drift in studio's canonical sidecar
+# (<workspace>/studio/content/atlas/_drift.json). NEVER blocks the commit —
+# drift is a signal, not a gate.
 #
 # Same hook ships in all five Signal product repos. Activation in each:
 #   git config core.hooksPath .githooks
@@ -12,9 +12,15 @@
 
 set -e
 
-# Skip if studio's atlas content isn't present on this machine
-# (CI clone, fresh dev box, etc.) — the hook is a signal, not a gate.
-if [ ! -d "$HOME/Projects/personal/studio/content/atlas" ]; then
+# Resolve the workspace through this repo's primary clone. This works from
+# both the primary checkout and linked worktrees without a machine-specific path.
+git_common_dir="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
+primary_repo_root="$(dirname "$git_common_dir")"
+workspace_root="$(dirname "$primary_repo_root")"
+atlas_dir="$workspace_root/studio/content/atlas"
+
+# Skip if the canonical Studio Atlas is not a sibling in this workspace.
+if [ ! -d "$atlas_dir" ]; then
   exit 0
 fi
 

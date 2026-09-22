@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { Webhook } from "svix";
 import { headers } from "next/headers";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import * as Sentry from "@sentry/nextjs";
 import { db } from "@/server/db";
 import { users } from "@/server/db/schema";
@@ -11,6 +11,7 @@ import {
   hasAccountDeletionStartedWith,
 } from "@/server/account-deletion-lifecycle";
 import { trackOnboardingEventServer } from "@/lib/onboarding/analytics-server";
+import { provisionCreatedClerkUserWith } from "@/server/db/clerk-user-provision";
 import type { WebhookEvent } from "@clerk/nextjs/server";
 
 // Student Edition requires the canonical paid offer and verified eligibility.
@@ -23,7 +24,7 @@ export const dynamic = "force-dynamic";
  * Clerk → DB sync via Svix-verified webhook.
  *
  * On `user.created` we provision the trio in a single transaction:
- *   1. `users` row keyed by Clerk id
+ *   1. `users` row resolved by Clerk id (retaining an existing internal id)
  *   2. `workspaces` row (the user's personal workspace)
  *   3. `workspace_members` row giving them owner role
  *
@@ -163,68 +164,12 @@ async function handleUserCreated(u: ClerkUser): Promise<void> {
   const color = deriveColor(u.id);
   const initials = deriveInitials(u);
 
-  // Internal user id = Clerk id. Skipping the dual-id indirection
-  // simplifies every callsite that holds a "user id", there's only
-  // one. Clerk ids are URL-safe and DB-safe.
-  const userId = u.id;
-
-  // Build a slug that won't collide. Tail of the Clerk id is unique
-  // by construction.
-  const slug = `personal-${u.id.replace(/^user_/, "").slice(0, 8).toLowerCase()}`;
-  const workspaceId = `ws-${u.id.replace(/^user_/, "").slice(0, 12).toLowerCase()}`;
-  const planningPeriodId = `planning-${workspaceId}`;
-
-  // All three writes inside one BEGIN…COMMIT so a crash mid-flight
-  // can't leave a user without a workspace.
-  const provisioned = await db.transaction(async (tx) => {
-    // `user.created` can be delayed or retried after an in-app erasure starts.
-    // The suppression read and provisioning writes must share this immediate
-    // transaction so creation and deletion have one deterministic winner.
-    if (await hasAccountDeletionStartedWith(tx, userId)) return false;
-
-    await tx.run(sql`
-      INSERT INTO users (id, clerk_id, email, handle, name, color, initials)
-      VALUES (${userId}, ${u.id}, ${email}, ${handle}, ${name}, ${color}, ${initials})
-      ON CONFLICT(id) DO UPDATE SET
-        email = excluded.email,
-        handle = excluded.handle,
-        name = excluded.name
-    `);
-    await tx.run(sql`
-      INSERT OR IGNORE INTO planning_periods (
-        id, owner_user_id, name, context_type, start_date, end_date,
-        timezone, position, revision
-      )
-      VALUES (
-        ${planningPeriodId}, ${userId}, 'Active work', 'general',
-        date('now'), date('now', '+1 year', '-1 day'), 'UTC', 1000, 1
-      )
-    `);
-    await tx.run(sql`
-      INSERT OR IGNORE INTO workspaces (
-        id, slug, name, owner_user_id, active_domain,
-        planning_period_id, context_type, position, updated_at
-      )
-      VALUES (
-        ${workspaceId}, ${slug}, ${name ?? "Personal"}, ${userId}, NULL,
-        ${planningPeriodId}, 'project', 1000, unixepoch()
-      )
-    `);
-    await tx.run(sql`
-      UPDATE workspaces
-      SET planning_period_id = COALESCE(planning_period_id, ${planningPeriodId}),
-          context_type = COALESCE(context_type, 'project'),
-          updated_at = COALESCE(updated_at, unixepoch())
-      WHERE id = ${workspaceId}
-    `);
-    await tx.run(sql`
-      INSERT OR IGNORE INTO workspace_members (workspace_id, user_id, role)
-      VALUES (${workspaceId}, ${userId}, 'owner')
-    `);
-    return true;
-  }, { behavior: "immediate" });
-
-  if (!provisioned) return;
+  // A delayed webhook may follow fallback provisioning or a legacy account
+  // with a distinct internal id. Use the persisted id for every dependent row.
+  const userId = await provisionCreatedClerkUserWith(db, {
+    clerkId: u.id, email, handle, name, color, initials,
+  });
+  if (!userId) return;
 
   const emailDomain = email?.split("@")[1]?.toLowerCase() ?? null;
   await trackOnboardingEventServer(userId, "signup_completed", {
