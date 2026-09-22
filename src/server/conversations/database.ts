@@ -16,7 +16,7 @@ export interface ConversationSqlExecutor {
   execute(statement: ConversationSqlStatement | string): Promise<ConversationSqlResult>;
 }
 
-export interface ConversationTransactionalClient extends ConversationSqlExecutor {
+export interface ConversationTransactionalClient {
   transaction(mode: "read" | "write"): Promise<ConversationTransaction>;
 }
 

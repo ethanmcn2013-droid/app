@@ -1,20 +1,21 @@
 import "server-only";
 import { createClient } from "@libsql/client";
 import { auth } from "@clerk/nextjs/server";
+import { isDemoMode } from "../../lib/access-mode";
 import { conversationAvailability, resolveConversationControls } from "../../lib/conversations/flags";
 import { createConversationService } from "./service";
 import { createConversationTaskOutcomeService } from "./work-links";
 import { createTaskDiscussionService } from "./task-discussion";
-import { createLocalConversationDatabaseAdapter, createUnavailableConversationDatabaseAdapter } from "./database";
+import { createLocalConversationDatabaseAdapter, createRemoteConversationDatabaseAdapter, createUnavailableConversationDatabaseAdapter, type ConversationDatabaseAdapter } from "./database";
+import { resolveConversationRuntimeTarget } from "./runtime-target";
 
 type Service = ReturnType<typeof createConversationService>;
 type TaskOutcomes = ReturnType<typeof createConversationTaskOutcomeService>;
 type TaskDiscussion = ReturnType<typeof createTaskDiscussionService>;
 type RuntimeServices = Readonly<{ conversation: Service; taskOutcomes: TaskOutcomes; taskDiscussion: TaskDiscussion }>;
-const runtimeGlobal = globalThis as typeof globalThis & { conversationLocalRuntime?: { url: string; services: RuntimeServices } };
+const runtimeGlobal = globalThis as typeof globalThis & { conversationRuntime?: { cacheKey: string; services: RuntimeServices } };
 
-function unavailableServices(reason: string): RuntimeServices {
-  const adapter = createUnavailableConversationDatabaseAdapter(reason);
+function servicesFor(adapter: ConversationDatabaseAdapter): RuntimeServices {
   return {
     conversation: createConversationService(adapter),
     taskOutcomes: createConversationTaskOutcomeService(adapter),
@@ -22,30 +23,41 @@ function unavailableServices(reason: string): RuntimeServices {
   };
 }
 
+function unavailableServices(reason: string): RuntimeServices {
+  const adapter = createUnavailableConversationDatabaseAdapter(reason);
+  return servicesFor(adapter);
+}
+
 async function getRuntimeServices(): Promise<RuntimeServices> {
-  const url = process.env.TASKS_DATABASE_URL;
-  if (!resolveConversationControls(process.env).internalEnabled ||
-    process.env.SIGNAL_CONVERSATION_DATABASE_MODE !== "local" ||
-    process.env.NODE_ENV === "production" || process.env.VERCEL === "1" ||
-    !url?.startsWith("file:") || url.includes(":memory:")) return unavailableServices("unverified_environment");
-  const cached = runtimeGlobal.conversationLocalRuntime;
-  if (cached) return cached.url === url ? cached.services : unavailableServices("runtime_configuration_changed");
-  const client = createClient({ url });
-  // Both services receive this exact adapter. Local serialization therefore
-  // covers one connection and one queue across message and task operations.
-  const adapter = createLocalConversationDatabaseAdapter({ client: {
-    execute: (statement) => client.execute(typeof statement === "string" ? statement : { sql: statement.sql, args: [...(statement.args ?? [])] }),
-  } });
-  const services = {
-    conversation: createConversationService(adapter),
-    taskOutcomes: createConversationTaskOutcomeService(adapter),
-    taskDiscussion: createTaskDiscussionService(adapter),
-  };
-  runtimeGlobal.conversationLocalRuntime = { url, services };
+  const target = resolveConversationRuntimeTarget(process.env, isDemoMode());
+  if (target.mode === "unavailable") return unavailableServices(target.reason);
+  const cached = runtimeGlobal.conversationRuntime;
+  if (cached) return cached.cacheKey === target.cacheKey ? cached.services : unavailableServices("runtime_configuration_changed");
+  const client = createClient(target.mode === "remote"
+    ? { url: target.url, authToken: target.authToken }
+    : { url: target.url });
+  const execute = (statement: string | { sql: string; args?: readonly (string | number | bigint | null | Uint8Array)[] }) =>
+    client.execute(typeof statement === "string" ? statement : { sql: statement.sql, args: [...(statement.args ?? [])] });
+  // Every service shares this exact adapter. A remote transaction handle is
+  // also the executor for its membership proof and subsequent source write.
+  const adapter = target.mode === "remote"
+    ? createRemoteConversationDatabaseAdapter({ client: {
+        transaction: async (mode) => {
+          const transaction = await client.transaction(mode);
+          return {
+            execute: (statement) => transaction.execute(typeof statement === "string" ? statement : { sql: statement.sql, args: [...(statement.args ?? [])] }),
+            commit: () => transaction.commit(),
+            rollback: () => transaction.rollback(),
+          };
+        },
+      } })
+    : createLocalConversationDatabaseAdapter({ client: { execute } });
+  const services = servicesFor(adapter);
+  runtimeGlobal.conversationRuntime = { cacheKey: target.cacheKey, services };
   return services;
 }
 
-/** Explicit local candidate only. Remote primary/session evidence is a release dependency. */
+/** Remote operation is explicitly pinned; provider acceptance remains separate. */
 export async function getConversationService(): Promise<Service> {
   return (await getRuntimeServices()).conversation;
 }
