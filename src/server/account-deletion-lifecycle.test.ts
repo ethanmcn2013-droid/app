@@ -18,6 +18,7 @@ import {
   hasAccountDeletionStartedWith,
 } from "./account-deletion-lifecycle";
 import { ensureUserProvisionedWith } from "./db/ensure-user";
+import { provisionCreatedClerkUserWith } from "./db/clerk-user-provision";
 import * as schema from "./db/schema";
 
 async function freshDb() {
@@ -121,6 +122,80 @@ test("provisioning that wins first cannot recur after the tombstone", async () =
     assert.equal(await ensureUserProvisionedWith(db, clerkId), false);
     assert.equal(await countRows(client, "users"), 0);
     assert.equal(await countRows(client, "workspaces"), 0);
+  } finally {
+    cleanup();
+  }
+});
+
+test("fallback and delayed webhook keep the persisted internal id and replay once", async () => {
+  const { client, db, cleanup } = await freshDb();
+  try {
+    const clerkId = "user_existing_mapping";
+    const internalId = "legacy-internal-id";
+    await client.execute({
+      sql: "INSERT INTO users (id, clerk_id, color, initials) VALUES (?, ?, '#123', 'LI')",
+      args: [internalId, clerkId],
+    });
+    assert.equal(await ensureUserProvisionedWith(db, clerkId, "mapped@example.test"), true);
+    assert.equal(await ensureUserProvisionedWith(db, clerkId, "mapped@example.test"), true);
+    const profile = {
+      clerkId, email: "mapped@example.test", handle: "mapped", name: "Mapped Person",
+      color: "#456", initials: "MP",
+    };
+    assert.equal(await provisionCreatedClerkUserWith(db, profile), internalId);
+    assert.equal(await provisionCreatedClerkUserWith(db, profile), internalId);
+    assert.deepEqual((await client.execute("SELECT id, clerk_id FROM users")).rows.map((row) => ({ ...row })), [
+      { id: internalId, clerk_id: clerkId },
+    ]);
+    assert.deepEqual((await client.execute("SELECT owner_user_id FROM planning_periods")).rows.map((row) => row.owner_user_id), [internalId]);
+    assert.deepEqual((await client.execute("SELECT owner_user_id FROM workspaces")).rows.map((row) => row.owner_user_id), [internalId]);
+    assert.deepEqual((await client.execute("SELECT user_id FROM workspace_members")).rows.map((row) => row.user_id), [internalId]);
+  } finally {
+    cleanup();
+  }
+});
+
+test("webhook-first and fallback replay provision one canonical Clerk account", async () => {
+  const { client, db, cleanup } = await freshDb();
+  try {
+    const clerkId = "user_fresh_mapping";
+    const profile = {
+      clerkId, email: "fresh@example.test", handle: "fresh", name: "Fresh Person",
+      color: "#456", initials: "FP",
+    };
+    assert.equal(await provisionCreatedClerkUserWith(db, profile), clerkId);
+    assert.equal(await ensureUserProvisionedWith(db, clerkId), true);
+    assert.equal(await provisionCreatedClerkUserWith(db, profile), clerkId);
+    assert.equal(await countRows(client, "users"), 1);
+    assert.equal(await countRows(client, "planning_periods"), 1);
+    assert.equal(await countRows(client, "workspaces"), 1);
+    assert.equal(await countRows(client, "workspace_members"), 1);
+    assert.deepEqual((await client.execute("SELECT owner_user_id FROM planning_periods")).rows.map((row) => row.owner_user_id), [clerkId]);
+  } finally {
+    cleanup();
+  }
+});
+
+test("webhook-first preserves a pre-existing mapped identity", async () => {
+  const { client, db, cleanup } = await freshDb();
+  try {
+    const clerkId = "user_mapped_first";
+    const internalId = "persisted-mapped-user";
+    await client.execute({
+      sql: "INSERT INTO users (id, clerk_id, color, initials) VALUES (?, ?, '#123', 'PM')",
+      args: [internalId, clerkId],
+    });
+    const profile = {
+      clerkId, email: "mapped-first@example.test", handle: "mappedfirst",
+      name: "Mapped First", color: "#456", initials: "MF",
+    };
+    assert.equal(await provisionCreatedClerkUserWith(db, profile), internalId);
+    assert.equal(await ensureUserProvisionedWith(db, clerkId), true);
+    assert.equal(await provisionCreatedClerkUserWith(db, profile), internalId);
+    assert.deepEqual((await client.execute("SELECT id FROM users")).rows.map((row) => row.id), [internalId]);
+    assert.deepEqual((await client.execute("SELECT owner_user_id FROM planning_periods")).rows.map((row) => row.owner_user_id), [internalId]);
+    assert.deepEqual((await client.execute("SELECT owner_user_id FROM workspaces")).rows.map((row) => row.owner_user_id), [internalId]);
+    assert.deepEqual((await client.execute("SELECT user_id FROM workspace_members")).rows.map((row) => row.user_id), [internalId]);
   } finally {
     cleanup();
   }
