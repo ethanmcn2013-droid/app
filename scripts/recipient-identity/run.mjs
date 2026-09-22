@@ -43,6 +43,23 @@ const SAFE_OS_KEYS = [
 export const LOCAL_DATABASE_AUTH_SENTINEL = "recipient-identity-local-file-sentinel";
 export const RECIPIENT_IDENTITY_PROOF_MARKER = "local-clerk-recipient-proof-v1";
 
+const originalRecipientAncestors = ["5150171bad448c31f2c741a0d4f61b1e379e73fd", "639be07e855e3e625038a7ba8f660110da836f19"];
+const integrationAncestors = [
+  ...originalRecipientAncestors,
+  "aee169662f4a429d612f104c8bcd642005732155", // frozen conversation privacy checkpoint
+  "e7ad29d4d390fcebaa5ee059e07e7a1a4fae6ecf", // accepted real-recipient proof
+  "6ae877710c49c4b8a69c0de7e068442c3af4eb23", // patched framework baseline
+  "ef115d293cd35e140799c49bfab0a1889d7833a7", // accepted backup fix
+];
+
+/** A detached verification target must be explicitly pinned to its exact HEAD. */
+export function recipientProofAncestors({ branch, head, verificationHead }) {
+  if (branch === "ops/recipient-identity-proof") return originalRecipientAncestors;
+  if (branch === "feat/production-sprint-integration") return integrationAncestors;
+  if (branch === "" && /^[a-f0-9]{40}$/.test(head) && verificationHead === head) return integrationAncestors;
+  throw new Error(`Wrong recipient proof source: ${branch || "detached"}.`);
+}
+
 const REQUIRED_STAGES = [
   "testingTokenIssued", "twoSessionsIssued", "signedOutInviteShown", "wrongAccountRefused",
   "recipientUiSignInReturned", "inviteAccepted", "recipientTaskCompleted", "homeReturned", "creatorReadback",
@@ -255,8 +272,8 @@ async function main() {
     validateDeploymentConfig({ cwd: root });
 
     const branch = git("branch", "--show-current");
-    if (branch !== "ops/recipient-identity-proof") throw new Error(`Wrong branch: ${branch || "detached"}.`);
-    for (const ancestor of ["5150171bad448c31f2c741a0d4f61b1e379e73fd", "639be07e855e3e625038a7ba8f660110da836f19"]) {
+    const head = git("rev-parse", "HEAD");
+    for (const ancestor of recipientProofAncestors({ branch, head, verificationHead: merged.SIGNAL_RECIPIENT_VERIFICATION_HEAD })) {
       const check = run("git", ["merge-base", "--is-ancestor", ancestor, "HEAD"], { capture: true, allowFailure: true });
       if (check.status !== 0) throw new Error(`Required source ${ancestor} is not composed into HEAD.`);
     }

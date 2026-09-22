@@ -9,8 +9,20 @@ import {
   buildReceipt,
   LOCAL_DATABASE_AUTH_SENTINEL,
   RECIPIENT_IDENTITY_PROOF_MARKER,
+  recipientProofAncestors,
   resetRunOutput,
 } from "./run.mjs";
+
+test("recipient proof accepts only its bounded source or an explicitly pinned integration checkout", () => {
+  const head = "a".repeat(40);
+  assert.equal(recipientProofAncestors({ branch: "ops/recipient-identity-proof", head }).length, 2);
+  const combined = recipientProofAncestors({ branch: "feat/production-sprint-integration", head });
+  for (const required of ["aee169662f4a429d612f104c8bcd642005732155", "e7ad29d4d390fcebaa5ee059e07e7a1a4fae6ecf", "6ae877710c49c4b8a69c0de7e068442c3af4eb23", "ef115d293cd35e140799c49bfab0a1889d7833a7"])
+    assert.ok(combined.includes(required));
+  assert.deepEqual(recipientProofAncestors({ branch: "", head, verificationHead: head }), combined);
+  assert.throws(() => recipientProofAncestors({ branch: "", head, verificationHead: "b".repeat(40) }), /Wrong recipient proof source/);
+  assert.throws(() => recipientProofAncestors({ branch: "unreviewed-branch", head, verificationHead: head }), /Wrong recipient proof source/);
+});
 
 const require = createRequire(import.meta.url);
 const { NextRequest } = require("next/server");

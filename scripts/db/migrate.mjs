@@ -284,14 +284,20 @@ function proofGuardStatements(proofs) {
   return statements;
 }
 
-async function atomicWrite(client, { sql = [], proofs = [], metadata = [] }) {
+async function atomicWrite(client, { sql = [], proofs = [], metadata = [], migrationEnvelope = undefined }) {
   const guards = proofGuardStatements(proofs);
   try {
-    await client.batch([
+    const statements = [
       ...sql,
       ...guards,
       ...metadata,
-    ], "write");
+    ];
+    if (migrationEnvelope === "libsql-migrate") {
+      invariant(typeof client.migrate === "function", "db:migrate: client lacks the required foreign-key-safe migration envelope");
+      await client.migrate(statements);
+    } else {
+      await client.batch(statements, "write");
+    }
   } catch (error) {
     const proofIndex = Number(error.statementIndex) - sql.length - 2;
     if (Number.isInteger(proofIndex) && proofIndex >= 0 && proofIndex < proofs.length) {
@@ -348,6 +354,7 @@ export async function runMigrations({
     for (const entry of context.forward) {
       const result = await atomicWrite(client, {
         sql: migrationStatements(entry.sql),
+        migrationEnvelope: entry.migrationEnvelope,
         proofs: entry.receipt.record.proofs,
         metadata: ledgerInsertStatements(context, entry, {
           status: "applied",
@@ -381,6 +388,7 @@ export async function runMigrations({
   for (const entry of pending) {
     const result = await atomicWrite(client, {
       sql: migrationStatements(entry.sql),
+      migrationEnvelope: entry.migrationEnvelope,
       proofs: entry.receipt.record.proofs,
       metadata: ledgerInsertStatements(context, entry, {
         status: "applied",

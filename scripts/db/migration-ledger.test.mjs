@@ -118,6 +118,14 @@ test("journal omission fails even when the SQL and receipt exist", () => withFix
   assert.throws(() => loadAndValidateLedger({ root }), /same entries/);
 }));
 
+test("0036 cannot be relabeled as an ordinary FK-enforcing batch", () => withFixture((root) => {
+  const ledgerPath = path.join(root, "drizzle", "migration-ledger.json");
+  const ledger = JSON.parse(fs.readFileSync(ledgerPath, "utf8"));
+  delete ledger.entries.find((entry) => entry.id === "0036_conversation_erasure_tombstones").migrationEnvelope;
+  fs.writeFileSync(ledgerPath, `${JSON.stringify(ledger, null, 2)}\n`);
+  assert.throws(() => loadAndValidateLedger({ root }), /requires the libSQL migration envelope/);
+}));
+
 test("fresh databases apply the canonical baseline plus forwards and rerun as a no-op", async () => withClient(async (client) => {
   const first = await runMigrations({ client, releaseSha: "test-release", now: () => 1_784_156_994_451 });
   assert.deepEqual(first.applied, [
@@ -180,6 +188,77 @@ test("populated 0027 production-shaped ledger upgrades through January and conve
   assert.deepEqual({ ...comment }, { id: "historic_comment", body: "Preserved comment", workspace_id: "historic_project", revision: 1 });
   assert.equal((await client.execute("SELECT task_id FROM task_discussion_state WHERE task_id='historic_task'")).rows[0].task_id, "historic_task");
   assert.deepEqual(await runMigrations({ client, releaseSha: "synthetic-noop" }), { status: "no-op", applied: [] });
+}));
+
+test("0036 migrates populated conversation dependents with FK ON and rolls back a failed proof", async () => withClient(async (client) => {
+  const before = loadAndValidateLedger();
+  before.forward = before.forward.filter((entry) => entry.ordinal <= 35);
+  await runMigrations({ client, context: before, releaseSha: "erasure-before" });
+  assert.equal(Number((await client.execute("PRAGMA foreign_keys")).rows[0].foreign_keys), 1);
+  await client.executeMultiple(`
+    INSERT INTO users(id,clerk_id,name,color,initials) VALUES
+      ('erasure_actor','clerk_erasure_actor','Actor','#111','AA'),
+      ('erasure_peer','clerk_erasure_peer','Peer','#222','PP');
+    INSERT INTO workspaces(id,slug,name,owner_user_id) VALUES('erasure_project','erasure-project','Erasure','erasure_actor');
+    INSERT INTO workspace_members(workspace_id,user_id,role) VALUES
+      ('erasure_project','erasure_actor','owner'),('erasure_project','erasure_peer','member');
+    INSERT INTO tasks(id,workspace_id,seq,title,lane,priority,assignees)
+      VALUES('erasure_task','erasure_project',1,'Preserved task','todo','p2','[]');
+    INSERT INTO conversations(id,workspace_id,kind,created_by,created_at) VALUES
+      ('erasure_room','erasure_project','project','erasure_actor',1000);
+    INSERT INTO conversations(id,workspace_id,kind,dm_low_user_id,dm_high_user_id,pair_state,dm_requester_id,created_by,created_at)
+      VALUES('erasure_dm','erasure_project','dm','erasure_actor','erasure_peer','pending','erasure_actor','erasure_actor',1000);
+    INSERT INTO conversation_participants(conversation_id,user_id,status)
+      VALUES('erasure_dm','erasure_actor','active'),('erasure_dm','erasure_peer','active');
+    INSERT INTO conversation_dm_receipts(actor_id,client_request_id,operation,payload_hash,conversation_id,resulting_state,committed_at)
+      VALUES('erasure_actor','dm_request_000001','request','dm-hash','erasure_dm','pending',1000);
+    INSERT INTO conversation_messages(id,conversation_id,workspace_id,author_id,client_request_id,request_hash,root_id,create_seq,revision,body,created_at)
+      VALUES('erasure_root','erasure_room','erasure_project','erasure_actor','room_request_0001','root-hash',NULL,1,1,'Preserved root',1000),
+        ('erasure_reply','erasure_room','erasure_project','erasure_peer','room_request_0002','reply-hash','erasure_root',2,1,'Preserved reply',2000);
+    INSERT INTO conversation_changes(conversation_id,change_seq,kind,message_id,revision,audience_epoch,happened_at)
+      VALUES('erasure_room',1,'create','erasure_root',1,1,1000),('erasure_room',2,'create','erasure_reply',1,1,2000);
+    INSERT INTO conversation_receipts(conversation_id,actor_id,client_request_id,operation,payload_hash,message_id,create_seq,change_seq,revision,committed_at)
+      VALUES('erasure_room','erasure_actor','room_request_0001','send','root-hash','erasure_root',1,1,1,1000);
+    INSERT INTO conversation_attention(id,conversation_id,workspace_id,recipient_id,message_id,create_seq)
+      VALUES('erasure_attention','erasure_room','erasure_project','erasure_peer','erasure_root',1);
+    INSERT INTO conversation_outbox(id,conversation_id,workspace_id,recipient_id,message_id,created_at)
+      VALUES('erasure_outbox','erasure_room','erasure_project','erasure_peer','erasure_root',1000);
+    INSERT INTO work_links(id,source_project_id,source_conversation_id,source_message_id,source_revision,source_audience_epoch,destination_project_id,task_id,created_by,created_at)
+      VALUES('erasure_link','erasure_project','erasure_room','erasure_root',1,1,'erasure_project','erasure_task','erasure_actor',1000);
+    INSERT INTO work_operation_receipts(actor_id,client_request_id,operation,payload_hash,source_project_id,source_conversation_id,destination_project_id,task_id,work_link_id,committed_at)
+      VALUES('erasure_actor','work_request_0001','conversation_task','work-hash','erasure_project','erasure_room','erasure_project','erasure_task','erasure_link',1000);
+    INSERT INTO task_discussion_state(task_id,workspace_id) VALUES('erasure_task','erasure_project');
+    INSERT INTO comments(id,workspace_id,task_id,user_id,body,client_request_id,request_hash,revision,root_id,create_seq)
+      VALUES('erasure_comment','erasure_project','erasure_task','erasure_actor','Preserved comment','comment_request_1','comment-hash',1,NULL,1),
+        ('erasure_comment_reply','erasure_project','erasure_task','erasure_peer','Preserved comment reply','comment_request_2','comment-reply-hash',1,'erasure_comment',2);
+    INSERT INTO task_comment_changes(task_id,change_seq,kind,comment_id,revision,audience_epoch,happened_at_ms)
+      VALUES('erasure_task',1,'create','erasure_comment',1,1,1000);
+    INSERT INTO task_comment_receipts(task_id,actor_id,client_request_id,operation,payload_hash,comment_id,create_seq,change_seq,revision,committed_at_ms)
+      VALUES('erasure_task','erasure_actor','comment_request_1','send','comment-hash','erasure_comment',1,1,1,1000);
+    INSERT INTO task_comment_attention(id,event_id,task_id,workspace_id,recipient_id,comment_id,source_revision,create_seq,reason_bits)
+      VALUES('erasure_comment_attention','erasure_attention_event','erasure_task','erasure_project','erasure_peer','erasure_comment',1,1,1);
+    INSERT INTO task_comment_outbox(id,event_id,task_id,workspace_id,recipient_id,comment_id,source_revision,audience_epoch,created_at_ms)
+      VALUES('erasure_comment_outbox','erasure_outbox_event','erasure_task','erasure_project','erasure_peer','erasure_comment',1,1,1000);
+  `);
+  const tables = ["conversations", "conversation_participants", "conversation_dm_receipts", "conversation_messages",
+    "conversation_changes", "conversation_receipts", "conversation_attention", "conversation_outbox", "work_links",
+    "work_operation_receipts", "comments", "task_comment_changes", "task_comment_receipts", "task_comment_attention", "task_comment_outbox"];
+  const counts = async () => Promise.all(tables.map(async (table) => Number((await client.execute(`SELECT count(*) AS n FROM ${table}`)).rows[0].n)));
+  const initial = await counts();
+  const broken = loadAndValidateLedger();
+  broken.forward.at(-1).receipt.record.proofs.push({ id: "erasure-forced-rollback", sql: "SELECT 0 AS value", expected: 1 });
+  await assert.rejects(() => runMigrations({ client, context: broken, releaseSha: "erasure-rollback" }), /erasure-forced-rollback/);
+  assert.equal(Number((await client.execute("PRAGMA foreign_keys")).rows[0].foreign_keys), 1);
+  assert.deepEqual(await counts(), initial);
+  assert.equal(Number((await client.execute("SELECT count(*) AS n FROM signal_schema_migrations WHERE id='0036_conversation_erasure_tombstones'")).rows[0].n), 0);
+  const upgraded = await runMigrations({ client, releaseSha: "erasure-upgrade" });
+  assert.deepEqual(upgraded.applied, ["0036_conversation_erasure_tombstones"]);
+  assert.deepEqual(await counts(), initial);
+  assert.equal((await client.execute("SELECT body FROM conversation_messages WHERE id='erasure_reply'")).rows[0].body, "Preserved reply");
+  assert.equal((await client.execute("SELECT body FROM comments WHERE id='erasure_comment_reply'")).rows[0].body, "Preserved comment reply");
+  assert.equal((await client.execute("PRAGMA foreign_key_check")).rows.length, 0);
+  assert.equal(Number((await client.execute("PRAGMA foreign_keys")).rows[0].foreign_keys), 1);
+  assert.deepEqual(await runMigrations({ client, releaseSha: "erasure-noop" }), { status: "no-op", applied: [] });
 }));
 
 test("Project Drive preserves credential, folder, and grant generations", async () => withClient(async (client) => {
