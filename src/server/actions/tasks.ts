@@ -6,6 +6,7 @@ import { db } from "@/server/db";
 import { readWorkspaceColumnConfig } from "@/server/db/board-config-read";
 import { isDoneColumnKey, isTaskDone } from "@/lib/board-columns";
 import { nextTaskSeq } from "@/server/db/task-seq";
+import { createTaskInTransaction, prepareCanonicalTaskCreate } from "@/server/tasks/create-task-core";
 import {
   activities,
   attachments,
@@ -611,9 +612,6 @@ export async function addTaskAction(input: {
   const id =
     input.id ??
     `t-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).slice(0, 8)}`;
-  const lane = input.lane ?? "todo";
-  // Creating straight into a done column is a completion (T·122).
-  const createdDone = isDoneColumnKey(lane, await readWorkspaceColumnConfig(ws));
   const created = await db.transaction(async (tx) => {
     const current = await authorizeStoredProject({
       storedProjectId: ws, actorUserId: me, capability: "createOrEditTasks",
@@ -646,35 +644,45 @@ export async function addTaskAction(input: {
         );
       }
     }
-    const [last] = await tx.select({ position: sql<number>`coalesce(max(${tasks.position}), 0)` })
-      .from(tasks).where(and(eq(tasks.workspaceId, ws), eq(tasks.lane, lane)));
-    const position = Number(last?.position ?? 0) + 1;
-    await tx.insert(tasks).values({
-      id,
-      workspaceId: ws,
-      seq: nextTaskSeq(ws),
-      title: input.title,
-      description: input.description,
-      lane,
+    const lane = input.lane ?? "todo";
+    // Column truth and completion must use the same transaction as creation.
+    const createdDone = isDoneColumnKey(lane, await readWorkspaceColumnConfig(ws, tx));
+    const task = prepareCanonicalTaskCreate({
+      id, workspaceId: ws, title: input.title, description: input.description, lane,
+      priority: input.priority, assignees: input.assignees, estimate: input.estimate,
+      due: input.due, dueAt: input.dueAt, tags: input.tags, recurrence: input.recurrence,
+      externalContactName: input.externalContactName, externalContactEmail: input.externalContactEmail,
+      cents: sanitizeCents(input.cents ?? null), parentTaskId: input.parentTaskId,
       completedAt: createdDone ? new Date() : null,
-      priority: input.priority ?? "p2",
-      assignees: input.assignees ?? [],
-      estimate: input.estimate,
-      due: input.due,
-      position,
-      dueAt: input.dueAt,
-      tags: input.tags,
-      recurrence: input.recurrence,
-      externalContactName: input.externalContactName ?? null,
-      externalContactEmail: input.externalContactEmail ?? null,
-      cents: sanitizeCents(input.cents ?? null),
-      parentTaskId: input.parentTaskId ?? null,
-      ...bump(),
     });
-    await tx.insert(activities).values({
-      id: `a-${globalThis.crypto.randomUUID()}`, workspaceId: ws, taskId: id, userId: me,
-      kind: "taskAdd", payload: { kind: "taskAdd", lane }, createdAt: new Date(),
-    });
+    await createTaskInTransaction({
+      async nextPosition(value) {
+        const [row] = await tx.select({ max: sql<number | null>`MAX(${tasks.position})` }).from(tasks)
+          .where(and(eq(tasks.lane, value.lane), eq(tasks.workspaceId, value.workspaceId)));
+        return (row?.max ?? 0) + 1;
+      },
+      async insertTask(value) {
+        const [row] = await tx.insert(tasks).values({
+          id: value.id, workspaceId: value.workspaceId, seq: nextTaskSeq(value.workspaceId), title: value.title,
+          description: value.description, lane: value.lane, priority: value.priority,
+          assignees: [...value.assignees], estimate: value.estimate, due: value.due,
+          dueAt: value.dueAtSeconds == null ? null : new Date(value.dueAtSeconds * 1000),
+          tags: value.tags == null ? null : [...value.tags], recurrence: value.recurrence,
+          externalContactName: value.externalContactName, externalContactEmail: value.externalContactEmail,
+          cents: value.cents, parentTaskId: value.parentTaskId, position: value.position,
+          completedAt: value.completedAtSeconds == null ? null : new Date(value.completedAtSeconds * 1000),
+          isMilestone: value.isMilestone, updatedAt: new Date(value.createdAtSeconds * 1000),
+        }).returning({ seq: tasks.seq });
+        return { seq: row?.seq ?? 0 };
+      },
+      async insertActivity(value) {
+        await tx.insert(activities).values({
+          id: `a-${globalThis.crypto.randomUUID()}`,
+          workspaceId: value.workspaceId, taskId: value.id, userId: me, kind: "taskAdd",
+          payload: { kind: "taskAdd", lane: value.lane }, createdAt: new Date(value.createdAtSeconds * 1000),
+        });
+      },
+    }, task);
     await captureTaskCreated(tx, { actorUserId: me, projectId: ws });
     return true;
   }, { behavior: "immediate" });

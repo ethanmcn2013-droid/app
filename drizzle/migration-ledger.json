@@ -434,6 +434,46 @@
         "integrity",
         "foreign-keys"
       ]
+    },
+    {
+      "ordinal": 32,
+      "id": "0032_project_conversations",
+      "file": "drizzle/0032_project_conversations.sql",
+      "when": 1789142400000,
+      "sha256": "ebd7067120118c9757a143303a66fa2defb7d98462c7036ce25f674eb91afd6b",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/project-conversations-2026-09-12.json",
+      "receiptSha256": "5582aa76b4683965ba12ed263fb90d777f7e978df07b6dc82a460aada141325b"
+    },
+    {
+      "ordinal": 33,
+      "id": "0033_conversation_task_outcomes",
+      "file": "drizzle/0033_conversation_task_outcomes.sql",
+      "when": 1789142401000,
+      "sha256": "28477c279dc45b8c7c26a5bfeec10fee7754f5c7c89638d61d61b9f3b2f22b7a",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/conversation-task-outcomes-2026-09-12.json",
+      "receiptSha256": "de0460648f73b70384828de0210619fbf8aedddad91730cf21779737a79c2c75"
+    },
+    {
+      "ordinal": 34,
+      "id": "0034_project_direct_messages",
+      "file": "drizzle/0034_project_direct_messages.sql",
+      "when": 1789142402000,
+      "sha256": "e384172282c5c908ee7834a1c52b53b1fd9441f3cd5571065c8a3a3180d79948",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/project-direct-messages-2026-09-12.json",
+      "receiptSha256": "55fb76d6c30cbdaa42a40c29a1881bc8b8c2ddce0c09301640a10e37205f4251"
+    },
+    {
+      "ordinal": 35,
+      "id": "0035_task_discussion",
+      "file": "drizzle/0035_task_discussion.sql",
+      "when": 1789142403000,
+      "sha256": "f547d3e9251015de89c6da20c2121ab53ce582413c8685210f3253312345f48e",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/task-discussion-2026-09-12.json",
+      "receiptSha256": "1d825a269d00207a63360f58b5f2f982f6ca7cbb0f926e2f9b20b324c0f5f227"
     }
   ]
 }

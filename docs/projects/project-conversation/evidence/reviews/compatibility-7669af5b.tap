@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: older compatibility bootstrap cannot restore history after a newer revocation refusal
+ok 1 - older compatibility bootstrap cannot restore history after a newer revocation refusal
+  ---
+  duration_ms: 146.8849
+  type: 'test'
+  ...
+# Subtest: old-task retry cannot overwrite or re-read a different task
+ok 2 - old-task retry cannot overwrite or re-read a different task
+  ---
+  duration_ms: 146.0523
+  type: 'test'
+  ...
+# Subtest: unmounted retry cannot commit or issue reads
+ok 3 - unmounted retry cannot commit or issue reads
+  ---
+  duration_ms: 142.4185
+  type: 'test'
+  ...
+# Subtest: read-only history orders rows and renders no mutation controls
+ok 4 - read-only history orders rows and renders no mutation controls
+  ---
+  duration_ms: 69.8045
+  type: 'test'
+  ...
+# Subtest: reader binds exact Clerk identity and current task-derived Project membership
+ok 5 - reader binds exact Clerk identity and current task-derived Project membership
+  ---
+  duration_ms: 14.2193
+  type: 'test'
+  ...
+# Subtest: default controls explicitly select authenticated existing history
+ok 6 - default controls explicitly select authenticated existing history
+  ---
+  duration_ms: 3.6756
+  type: 'test'
+  ...
+# Subtest: sends-off keeps canonical read mode when the experiment is available
+ok 7 - sends-off keeps canonical read mode when the experiment is available
+  ---
+  duration_ms: 0.7193
+  type: 'test'
+  ...
+# Subtest: canonical authorization refusal never falls through to existing history
+ok 8 - canonical authorization refusal never falls through to existing history
+  ---
+  duration_ms: 0.5873
+  type: 'test'
+  ...
+# Subtest: missing authenticated identity fails closed without calling either reader
+ok 9 - missing authenticated identity fails closed without calling either reader
+  ---
+  duration_ms: 1.0777
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2321.4359

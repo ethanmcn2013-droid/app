@@ -1,26 +1,19 @@
 import "server-only";
 
-import { createHash } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { db } from "@/server/db";
 import { meta } from "@/server/db/schema";
 import * as schema from "@/server/db/schema";
 import { queueUsageErasure } from "@/server/sponsored-use/erasure";
+import { accountDeletionTombstoneKey } from "@/server/account-deletion-key";
+export { accountDeletionTombstoneKey } from "@/server/account-deletion-key";
 
 type AccountDeletionDb = LibSQLDatabase<typeof schema>;
 type AccountDeletionReader = Pick<AccountDeletionDb, "select">;
 type AccountDeletionWriter = Pick<AccountDeletionDb, "select" | "insert" | "update" | "delete">;
 
-const ACCOUNT_DELETION_TOMBSTONE_PREFIX =
-  "account-deletion:tombstone:sha256:v1:";
 const ACCOUNT_DELETION_TOMBSTONE_VALUE = "erasure-requested:v1";
-
-function requireClerkId(clerkId: string): string {
-  const canonical = clerkId.trim();
-  if (!canonical) throw new TypeError("clerkId is required");
-  return canonical;
-}
 
 /**
  * Stable, data-minimised suppression key for an account that requested
@@ -30,12 +23,6 @@ function requireClerkId(clerkId: string): string {
  * It prevents an already-authenticated request or delayed `user.created`
  * delivery from recreating the account while identity deletion is in flight.
  */
-export function accountDeletionTombstoneKey(clerkId: string): string {
-  const digest = createHash("sha256")
-    .update(requireClerkId(clerkId), "utf8")
-    .digest("hex");
-  return `${ACCOUNT_DELETION_TOMBSTONE_PREFIX}${digest}`;
-}
 
 export async function hasAccountDeletionStartedWith(
   database: AccountDeletionReader,

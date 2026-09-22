@@ -225,6 +225,34 @@
       "when": 1788602400000,
       "tag": "0031_event_purchase_designations",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1789142400000,
+      "tag": "0032_project_conversations",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "6",
+      "when": 1789142401000,
+      "tag": "0033_conversation_task_outcomes",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "6",
+      "when": 1789142402000,
+      "tag": "0034_project_direct_messages",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "6",
+      "when": 1789142403000,
+      "tag": "0035_task_discussion",
+      "breakpoints": true
     }
   ]
 }

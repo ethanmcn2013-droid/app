@@ -11,6 +11,7 @@ import type { ColumnConfig } from "@/lib/board-config";
  *  surfaces that need column semantics without the client context. */
 export async function readWorkspaceColumnConfig(
   workspaceId: string,
+  executor: Pick<typeof db, "select"> = db,
 ): Promise<ColumnConfig | null> {
   // The demo path never touches Turso (DEMO_MODE.md's safety invariant).
   // Guarding HERE rather than at each call site: this read has three
@@ -19,7 +20,7 @@ export async function readWorkspaceColumnConfig(
   // in one click. A boundary that can only be used safely by remembering
   // is a boundary that will be used unsafely.
   if (isDemoMode()) return null;
-  const [row] = await db
+  const [row] = await executor
     .select({ value: meta.value })
     .from(meta)
     .where(eq(meta.key, `board:${workspaceId}:columns`));

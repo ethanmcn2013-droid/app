@@ -145,11 +145,28 @@ async function seed(client: Client, probePath: string) {
       ('task-b1','ws-b','B task','todo','med','clerk_target:note-shared','Exact private wording','${"a".repeat(64)}'),
       ('task-b2','ws-b','Unrelated note task','todo','med','clerkXtarget:note-safe','Keep unrelated wording','${"b".repeat(64)}');
 
-    INSERT INTO comments (id, workspace_id, task_id, user_id, body) VALUES
-      ('c-a1','ws-a','task-a1','u-target','t on own'),
-      ('c-a1-null',NULL,'task-a1','u-bystander','legacy null-ws on owned task'),
-      ('c-b1','ws-b','task-b1','u-target','t on bystander task'),
-      ('c-b2','ws-b','task-b1','u-bystander','bystander on own task');
+    INSERT INTO task_discussion_state (task_id,workspace_id,next_create_seq,next_change_seq) VALUES
+      ('task-a1','ws-a',3,3), ('task-b1','ws-b',3,3);
+    INSERT INTO comments (id, workspace_id, task_id, user_id, body, client_request_id, request_hash, revision, create_seq) VALUES
+      ('c-a1','ws-a','task-a1','u-target','t on own','request_erasure_a1','hash-a1',1,1),
+      ('c-a1-null','ws-a','task-a1','u-bystander','validated legacy on owned task','request_erasure_a2','hash-a2',1,2),
+      ('c-b1','ws-b','task-b1','u-target','t on bystander task','request_erasure_b1','hash-b1',1,1),
+      ('c-b2','ws-b','task-b1','u-bystander','bystander on own task','request_erasure_b2','hash-b2',1,2);
+
+    INSERT INTO task_comment_changes(task_id,change_seq,kind,comment_id,revision,audience_epoch,happened_at_ms) VALUES
+      ('task-a1',1,'create','c-a1',1,1,1000), ('task-a1',2,'create','c-a1-null',1,1,2000),
+      ('task-b1',1,'create','c-b1',1,1,1000), ('task-b1',2,'create','c-b2',1,1,2000);
+    INSERT INTO task_comment_receipts(task_id,actor_id,client_request_id,operation,payload_hash,comment_id,create_seq,change_seq,revision,committed_at_ms) VALUES
+      ('task-a1','u-target','request_erasure_a1','send','hash-a1','c-a1',1,1,1,1000),
+      ('task-a1','u-bystander','request_erasure_a2','send','hash-a2','c-a1-null',2,2,1,2000),
+      ('task-b1','u-target','request_erasure_b1','send','hash-b1','c-b1',1,1,1,1000),
+      ('task-b1','u-bystander','request_erasure_b2','send','hash-b2','c-b2',2,2,1,2000);
+    INSERT INTO task_comment_attention(id,event_id,task_id,workspace_id,recipient_id,comment_id,source_revision,root_id,create_seq,reason_bits) VALUES
+      ('attn-b1','event-b1','task-b1','ws-b','u-bystander','c-b1',1,NULL,1,1),
+      ('attn-b2','event-b2','task-b1','ws-b','u-target','c-b2',1,NULL,2,1);
+    INSERT INTO task_comment_outbox(id,event_id,task_id,workspace_id,recipient_id,comment_id,source_revision,audience_epoch,state,created_at_ms) VALUES
+      ('out-b1','out-event-b1','task-b1','ws-b','u-bystander','c-b1',1,1,'pending',1000),
+      ('out-b2','out-event-b2','task-b1','ws-b','u-target','c-b2',1,1,'pending',2000);
 
     INSERT INTO activities (id, workspace_id, task_id, user_id, kind, payload) VALUES
       ('act-a1','ws-a','task-a1','u-target','created','{}'),
@@ -269,6 +286,11 @@ test("erasure removes every target row across every table, leaves the bystander 
       ["workspaces", "workspaces WHERE id='ws-a' OR owner_user_id='u-target'"],
       ["tasks", "tasks WHERE workspace_id='ws-a'"],
       ["comments", "comments WHERE user_id='u-target' OR workspace_id='ws-a' OR task_id='task-a1'"],
+      ["task_discussion_state", "task_discussion_state WHERE workspace_id='ws-a' OR task_id='task-a1'"],
+      ["task_comment_changes", "task_comment_changes WHERE task_id='task-a1' OR comment_id='c-b1'"],
+      ["task_comment_receipts", "task_comment_receipts WHERE actor_id='u-target' OR task_id='task-a1' OR comment_id='c-b1'"],
+      ["task_comment_attention", "task_comment_attention WHERE recipient_id='u-target' OR workspace_id='ws-a' OR comment_id='c-b1'"],
+      ["task_comment_outbox", "task_comment_outbox WHERE recipient_id='u-target' OR workspace_id='ws-a' OR comment_id='c-b1'"],
       ["activities", "activities WHERE user_id='u-target' OR workspace_id='ws-a' OR task_id='task-a1'"],
       ["attachments", "attachments WHERE uploader_user_id='u-target' OR workspace_id='ws-a' OR task_id='task-a1'"],
       ["resources", "resources WHERE workspace_id='ws-a'"],
@@ -301,6 +323,11 @@ test("erasure removes every target row across every table, leaves the bystander 
       ["workspaces", 1], // only ws-b
       ["tasks", 2], // shared artifact + unrelated Notes task
       ["comments", 1], // only c-b2
+      ["task_discussion_state", 1], // task-b1 remains
+      ["task_comment_changes", 2], // c-b2 create + audience delta for erased member
+      ["task_comment_receipts", 1], // only c-b2 send receipt remains
+      ["task_comment_attention", 0],
+      ["task_comment_outbox", 0],
       ["activities", 1], // only act-b2
       ["attachments", 1], // only att-b2
       ["resources", 1], // only res-b1 (ws-b link resource)

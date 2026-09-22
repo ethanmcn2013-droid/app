@@ -18,6 +18,11 @@ import {
   shareLinkVisits,
   shareLinks,
   tasks,
+  taskCommentAttention,
+  taskCommentChanges,
+  taskCommentOutbox,
+  taskCommentReceipts,
+  taskDiscussionState,
   userPreferences,
   users,
   workspaceMembers,
@@ -868,6 +873,13 @@ export async function eraseAccountData(
     await database
       .delete(activities)
       .where(byTaskOrWs(activities.taskId, activities.workspaceId));
+    await database.delete(taskCommentOutbox).where(byTaskOrWs(taskCommentOutbox.taskId, taskCommentOutbox.workspaceId));
+    await database.delete(taskCommentAttention).where(byTaskOrWs(taskCommentAttention.taskId, taskCommentAttention.workspaceId));
+    if (taskIds.length) {
+      await database.delete(taskCommentReceipts).where(inArray(taskCommentReceipts.taskId, taskIds));
+      await database.delete(taskCommentChanges).where(inArray(taskCommentChanges.taskId, taskIds));
+      await database.delete(taskDiscussionState).where(inArray(taskDiscussionState.taskId, taskIds));
+    }
     await database
       .delete(comments)
       .where(byTaskOrWs(comments.taskId, comments.workspaceId));
@@ -904,6 +916,20 @@ export async function eraseAccountData(
   // they're a member of but don't own: comments/activities they authored,
   // attachments they uploaded, notifications addressed to them, their prefs,
   // entitlements, invites they minted or accepted, and their memberships.
+  const authoredCommentRows = await database
+    .select({ id: comments.id })
+    .from(comments)
+    .where(eq(comments.userId, userId));
+  const authoredCommentIds = authoredCommentRows.map((comment) => comment.id);
+  if (authoredCommentIds.length) {
+    await database.delete(taskCommentOutbox).where(inArray(taskCommentOutbox.commentId, authoredCommentIds));
+    await database.delete(taskCommentAttention).where(inArray(taskCommentAttention.commentId, authoredCommentIds));
+    await database.delete(taskCommentReceipts).where(inArray(taskCommentReceipts.commentId, authoredCommentIds));
+    await database.delete(taskCommentChanges).where(inArray(taskCommentChanges.commentId, authoredCommentIds));
+  }
+  await database.delete(taskCommentOutbox).where(eq(taskCommentOutbox.recipientId, userId));
+  await database.delete(taskCommentAttention).where(eq(taskCommentAttention.recipientId, userId));
+  await database.delete(taskCommentReceipts).where(eq(taskCommentReceipts.actorId, userId));
   await database.delete(activities).where(eq(activities.userId, userId));
   await database.delete(comments).where(eq(comments.userId, userId));
   await database

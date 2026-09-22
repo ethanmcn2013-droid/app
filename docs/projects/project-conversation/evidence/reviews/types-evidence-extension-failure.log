@@ -1,0 +1,37 @@
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(7,45): error TS5097: An import path can only end with a '.ts' extension when 'allowImportingTsExtensions' is enabled.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(8,56): error TS5097: An import path can only end with a '.ts' extension when 'allowImportingTsExtensions' is enabled.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(22,21): error TS7006: Parameter 'f' implicitly has an 'any' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(42,65): error TS7006: Parameter 'id' implicitly has an 'any' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(43,29): error TS2339: Property 'editCommentAction' does not exist on type '{}'.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(49,40): error TS7034: Variable 'states' implicitly has type 'any[]' in some locations where its type cannot be determined.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(49,50): error TS7034: Variable 'effects' implicitly has type 'any[]' in some locations where its type cannot be determined.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(51,20): error TS7006: Parameter 'callback' implicitly has an 'any' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(51,96): error TS7006: Parameter 'id' implicitly has an 'any' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(52,77): error TS7006: Parameter 'options' implicitly has an 'any' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(54,17): error TS7006: Parameter 'type' implicitly has an 'any' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(54,22): error TS7006: Parameter 'props' implicitly has an 'any' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(54,68): error TS7006: Parameter 'initial' implicitly has an 'any' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(54,112): error TS7005: Variable 'states' implicitly has an 'any[]' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(54,150): error TS7005: Variable 'states' implicitly has an 'any[]' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(54,165): error TS7006: Parameter 'value' implicitly has an 'any' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(54,220): error TS7005: Variable 'states' implicitly has an 'any[]' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(54,258): error TS7006: Parameter 'fn' implicitly has an 'any' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(54,275): error TS7006: Parameter 'fn' implicitly has an 'any' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(54,293): error TS7006: Parameter 'value' implicitly has an 'any' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(54,330): error TS7006: Parameter 'fn' implicitly has an 'any' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(55,143): error TS7019: Rest parameter 'args' implicitly has an 'any[]' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(55,163): error TS2556: A spread argument must either have a tuple type or be passed to a rest parameter.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(55,347): error TS7006: Parameter 'id' implicitly has an 'any' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(60,77): error TS2339: Property 'ConversationFeed' does not exist on type '{}'.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(61,73): error TS7005: Variable 'effects' implicitly has an 'any[]' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(62,11): error TS7023: 'composer' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of its return expressions.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(62,20): error TS7006: Parameter 'node' implicitly has an 'any' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(62,102): error TS7022: 'found' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(63,10): error TS7005: Variable 'states' implicitly has an 'any[]' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(63,63): error TS7006: Parameter 'fn' implicitly has an 'any' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(67,23): error TS7006: Parameter 'url' implicitly has an 'any' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(69,23): error TS7006: Parameter 'url' implicitly has an 'any' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(73,69): error TS7006: Parameter 'url' implicitly has an 'any' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(75,23): error TS7006: Parameter 'url' implicitly has an 'any' type.
+docs/projects/project-conversation/evidence/reviews/counterexamples-real-poller.test.ts(75,27): error TS7006: Parameter 'init' implicitly has an 'any' type.
+Exit code: 2

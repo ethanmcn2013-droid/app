@@ -46,7 +46,7 @@ async function withClient(operation) {
 
 test("authoritative ledger registers every SQL file with receipt and journal parity", () => {
   const context = loadAndValidateLedger();
-  assert.equal(context.entries.length, 32);
+  assert.equal(context.entries.length, 36);
   assert.equal(context.baseline.id, "0014_current_schema_baseline");
   assert.deepEqual(context.forward.map((entry) => entry.id), [
     "0015_notes_extract_exact_identity",
@@ -66,6 +66,10 @@ test("authoritative ledger registers every SQL file with receipt and journal par
     "0029_project_drive_operations",
     "0030_sponsored_use_intents",
     "0031_event_purchase_designations",
+    "0032_project_conversations",
+    "0033_conversation_task_outcomes",
+    "0034_project_direct_messages",
+    "0035_task_discussion",
   ]);
   assert.equal(context.entries.filter((entry) => entry.policy === "legacy-adopt-only").length, 14);
 });
@@ -134,19 +138,45 @@ test("fresh databases apply the canonical baseline plus forwards and rerun as a 
     "0029_project_drive_operations",
     "0030_sponsored_use_intents",
     "0031_event_purchase_designations",
+    "0032_project_conversations",
+    "0033_conversation_task_outcomes",
+    "0034_project_direct_messages",
+    "0035_task_discussion",
   ]);
-  assert.equal(first.proofs.length, 169);
+  assert.equal(first.proofs.length, 197);
 
   const objectCounts = await client.execute("SELECT type, COUNT(*) AS value FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' AND name NOT IN ('signal_schema_migrations', '__drizzle_migrations') GROUP BY type ORDER BY type");
   assert.deepEqual(objectCounts.rows.map((row) => [row.type, Number(row.value)]), [
-    ["index", 51],
-    ["table", 30],
-    ["trigger", 7],
+    ["index", 64],
+    ["table", 46],
+    ["trigger", 55],
   ]);
 
   const second = await runMigrations({ client, releaseSha: "test-release" });
   assert.deepEqual(second, { status: "no-op", applied: [] });
   assert.equal((await migrationStatus({ client })).state, "current");
+}));
+
+test("populated 0027 production-shaped ledger upgrades through January and conversations, then no-ops", async () => withClient(async (client) => {
+  const through27 = loadAndValidateLedger();
+  through27.forward = through27.forward.filter((entry) => entry.ordinal <= 27);
+  await runMigrations({ client, context: through27, releaseSha: "synthetic-0027" });
+  await client.execute("INSERT INTO users(id,clerk_id,name,color,initials) VALUES ('historic_actor','clerk_historic_actor','Historic','#111','HA')");
+  await client.execute("INSERT INTO workspaces(id,slug,name,owner_user_id,context_type) VALUES ('historic_project','historic','Historic','historic_actor','project')");
+  await client.execute("INSERT INTO workspace_members(workspace_id,user_id,role) VALUES ('historic_project','historic_actor','owner')");
+  await client.execute("INSERT INTO tasks(id,workspace_id,seq,title,lane,priority,assignees) VALUES ('historic_task','historic_project',1,'Preserved task','todo','p2','[]')");
+  await client.execute("INSERT INTO comments(id,task_id,user_id,body,created_at) VALUES ('historic_comment','historic_task','historic_actor','Preserved comment',1)");
+  const upgraded = await runMigrations({ client, releaseSha: "synthetic-0035" });
+  assert.deepEqual(upgraded.applied, [
+    "0028_project_drive", "0029_project_drive_operations", "0030_sponsored_use_intents",
+    "0031_event_purchase_designations", "0032_project_conversations",
+    "0033_conversation_task_outcomes", "0034_project_direct_messages", "0035_task_discussion",
+  ]);
+  assert.equal((await client.execute("SELECT title FROM tasks WHERE id='historic_task'")).rows[0].title, "Preserved task");
+  const comment = (await client.execute("SELECT id,body,workspace_id,revision FROM comments WHERE id='historic_comment'")).rows[0];
+  assert.deepEqual({ ...comment }, { id: "historic_comment", body: "Preserved comment", workspace_id: "historic_project", revision: 1 });
+  assert.equal((await client.execute("SELECT task_id FROM task_discussion_state WHERE task_id='historic_task'")).rows[0].task_id, "historic_task");
+  assert.deepEqual(await runMigrations({ client, releaseSha: "synthetic-noop" }), { status: "no-op", applied: [] });
 }));
 
 test("Project Drive preserves credential, folder, and grant generations", async () => withClient(async (client) => {
@@ -983,13 +1013,19 @@ test("usage migration proof failure rolls back both new tables and its ledger re
   assert.equal(Number((await client.execute("SELECT count(*) AS n FROM sqlite_schema WHERE name IN ('sponsored_use_intents','sponsored_use_subjects')")).rows[0].n), 0);
   assert.equal(Number((await client.execute("SELECT count(*) AS n FROM signal_schema_migrations WHERE id='0030_sponsored_use_intents'")).rows[0].n), 0);
   const applied = await runMigrations({ client, releaseSha: "usage-retry" });
-  assert.deepEqual(applied.applied, ["0030_sponsored_use_intents", "0031_event_purchase_designations"]);
+  assert.deepEqual(applied.applied, [
+    "0030_sponsored_use_intents", "0031_event_purchase_designations",
+    "0032_project_conversations", "0033_conversation_task_outcomes",
+    "0034_project_direct_messages", "0035_task_discussion",
+  ]);
   assert.equal((await runMigrations({ client, releaseSha: "usage-no-op" })).status, "no-op");
 }));
 
 test("Event additive migration preserves populated history; failed proof rolls back all objects and its receipt before a successful retry/no-op", async () => withClient(async (client) => {
   const before = loadAndValidateLedger();
   before.forward = before.forward.filter(entry => entry.ordinal < 31);
+  const eventOnly = loadAndValidateLedger();
+  eventOnly.forward = eventOnly.forward.filter(entry => entry.ordinal <= 31);
   await runMigrations({ client, context: before, releaseSha: "event-before" });
   await client.execute("INSERT INTO users(id,initials,color) VALUES ('historic-owner','HO','#000')");
   await client.execute("INSERT INTO workspaces(id,slug,name,owner_user_id) VALUES ('historic-project','historic-project','Preserved','historic-owner')");
@@ -1007,11 +1043,11 @@ test("Event additive migration preserves populated history; failed proof rolls b
   await assert.rejects(runMigrations({ client, context: broken, releaseSha: "event-failed" }), /event-forced-failure/);
   assert.deepEqual(await snapshot(), original);
   assert.equal(Number((await client.execute("SELECT count(*) AS n FROM signal_schema_migrations WHERE id='0031_event_purchase_designations'")).rows[0].n), 0);
-  assert.deepEqual((await runMigrations({ client, releaseSha: "event-retry" })).applied, ["0031_event_purchase_designations"]);
+  assert.deepEqual((await runMigrations({ client, context: eventOnly, releaseSha: "event-retry" })).applied, ["0031_event_purchase_designations"]);
   assert.deepEqual((await client.execute("SELECT * FROM entitlements ORDER BY id")).rows, original.grants);
   assert.deepEqual((await client.execute("SELECT * FROM workspaces ORDER BY id")).rows, original.projects);
   assert.equal(Number((await client.execute("SELECT count(*) AS n FROM event_purchase_designations")).rows[0].n), 0);
-  assert.equal((await runMigrations({ client, releaseSha: "event-no-op" })).status, "no-op");
+  assert.equal((await runMigrations({ client, context: eventOnly, releaseSha: "event-no-op" })).status, "no-op");
   // Explicitly local, empty-table rollback. This is NOT a production downgrade
   // runner or permission to discard paid designation/reconciliation history.
   await client.batch([
@@ -1025,5 +1061,5 @@ test("Event additive migration preserves populated history; failed proof rolls b
     "DELETE FROM __drizzle_migrations WHERE created_at=1788602400000",
   ], "write");
   assert.deepEqual(await snapshot(), original);
-  assert.deepEqual((await runMigrations({ client, releaseSha: "event-reapply-local" })).applied, ["0031_event_purchase_designations"]);
+  assert.deepEqual((await runMigrations({ client, context: eventOnly, releaseSha: "event-reapply-local" })).applied, ["0031_event_purchase_designations"]);
 }));

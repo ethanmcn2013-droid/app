@@ -498,41 +498,25 @@ test("demo and review actions exit before tenant, database, or disk access", () 
     "searchAcrossWorkspacesAction",
     "getCurrentUser",
   );
-  for (const boundary of [
-    "resolveCallerTaskWorkspace",
-    "return getCommentsForTask",
+  // PC10 replaces the independently committed comment actions with one
+  // receipt-backed service. Demo/review exits before authentication or the
+  // shared local adapter can be opened; no sample identity is invented.
+  for (const action of [
+    "openTaskDiscussionAction",
+    "addCommentAction",
+    "editCommentAction",
+    "removeCommentAction",
+    "getCommentReceiptAction",
   ]) {
-    assertDemoGuardBefore(commentActions, "getCommentsForTaskAction", boundary);
+    assertDemoGuardBefore(commentActions, action, "authenticateConversationActor");
+    assertDemoGuardBefore(commentActions, action, "getTaskDiscussionService");
   }
-  for (const boundary of [
-    "getCurrentUser",
-    "resolveCallerTaskWorkspace",
-    "db.insert",
-    "touchTask",
-    "recordActivity",
-    "notify",
-    "revalidatePath",
-    "emitTasksChanged",
-  ]) {
-    assertDemoGuardBefore(commentActions, "addCommentAction", boundary);
-  }
-  // WP3 renegotiation (ADR 0001 §9). removeCommentAction is an object
-  // operation: it proves the parent task's own Project rather than resolving
-  // one ambiently, so `scopeForTask` is the tenant-resolution boundary. The
-  // author match (`comments.userId === me`) is unchanged and still precedes
-  // the delete — this guard's other seven boundaries pin that ordering.
-  for (const boundary of [
-    "getCurrentUser",
-    "scopeForTask",
-    ".select(",
-    ".delete(",
-    "touchTask",
-    "recordActivity",
-    "revalidatePath",
-    "emitTasksChanged",
-  ]) {
-    assertDemoGuardBefore(commentActions, "removeCommentAction", boundary);
-  }
+  assert.doesNotMatch(commentActions, /\{\s*actorId\s*,\s*\.\.\.input\s*\}/,
+    "authenticated Task Discussion actor must not be overwritten by request input");
+  assert.match(commentActions, /exactKeys\(input,/,
+    "Task Discussion server actions must reject unexpected runtime fields");
+  assert.match(commentActions, /authenticateConversationActor\("write"\)/,
+    "Task Discussion mutations must apply the write availability gate");
   // WP3 renegotiation (ADR 0001 §9). duplicateTaskAction derives the source
   // task's own Project; the cross-Project refusal it already carried is now an
   // assertion against the proved id rather than against the cookie.

@@ -1,0 +1,90 @@
+TAP version 13
+# Subtest: older compatibility bootstrap cannot restore history after a newer revocation refusal
+not ok 1 - older compatibility bootstrap cannot restore history after a newer revocation refusal
+  ---
+  duration_ms: 135.5748
+  type: 'test'
+  location: 'C:\\Users\\ethan\\Documents\\Codex\\2026-09-12\\plea\\work\\discussion-acceptance\\compatibility-ordering.test.cjs:9:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    revoked content must remain cleared when an older authorized response arrives
+    + actual - expected
+    
+    + {
+    +   history: {
+    +     activities: [],
+    +     comments: [
+    +       {
+    +         body: 'Private history'
+    +       }
+    +     ],
+    +     projectId: 'project_a',
+    +     taskId: 'task_a'
+    +   },
+    +   mode: 'existing_history'
+    + }
+    - null
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: ~
+  actual:
+    mode: 'existing_history'
+    history:
+      taskId: 'task_a'
+      projectId: 'project_a'
+      comments:
+        0:
+          body: 'Private history'
+      activities:
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (C:\Users\ethan\Documents\Codex\2026-09-12\plea\work\discussion-acceptance\compatibility-ordering.test.cjs:42:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: read-only history orders rows and renders no mutation controls
+ok 2 - read-only history orders rows and renders no mutation controls
+  ---
+  duration_ms: 58.7937
+  type: 'test'
+  ...
+# Subtest: reader binds exact Clerk identity and current task-derived Project membership
+ok 3 - reader binds exact Clerk identity and current task-derived Project membership
+  ---
+  duration_ms: 13.5159
+  type: 'test'
+  ...
+# Subtest: default controls explicitly select authenticated existing history
+ok 4 - default controls explicitly select authenticated existing history
+  ---
+  duration_ms: 3.5474
+  type: 'test'
+  ...
+# Subtest: sends-off keeps canonical read mode when the experiment is available
+ok 5 - sends-off keeps canonical read mode when the experiment is available
+  ---
+  duration_ms: 0.8369
+  type: 'test'
+  ...
+# Subtest: canonical authorization refusal never falls through to existing history
+ok 6 - canonical authorization refusal never falls through to existing history
+  ---
+  duration_ms: 0.4216
+  type: 'test'
+  ...
+# Subtest: missing authenticated identity fails closed without calling either reader
+ok 7 - missing authenticated identity fails closed without calling either reader
+  ---
+  duration_ms: 0.4585
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 6
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2486.1298

@@ -23,7 +23,7 @@ async function usageFixture(options = {}) {
     if (file === "src/server/auth.ts") return { getCurrentUser: async () => state.actor, getActiveWorkspaceOrNull: async () => state.ambient };
     if (file === "src/lib/access-mode.ts") return { isDemoMode: () => state.demo };
     if (file === "src/server/db/queries.ts") return { getTasks: async ws => db.select().from(schema.tasks).where(eq(schema.tasks.workspaceId, ws)) };
-    if (file === "src/server/db/board-config-read.ts") return { readWorkspaceColumnConfig: async () => { if(state.afterAuth) await state.afterAuth(); return null; } };
+    if (file === "src/server/db/board-config-read.ts") return { readWorkspaceColumnConfig: async () => null };
     if (file === "src/lib/board-columns.ts") return { isDoneColumnKey: lane => lane === "done" };
     if (file === "src/server/db/seed.ts") return { LEGACY_WORKSPACE_ID: "legacy" };
     if (file === "src/server/events.ts") return { emitTasksChanged: () => {} };
@@ -42,6 +42,20 @@ async function usageFixture(options = {}) {
       return dep(spec);
     };
     new Function("require", "module", "exports", "fetch", js)(req, mod, mod.exports, () => { throw Error("Real network forbidden"); });
+    if (file === "src/server/actions/project-authz.ts") {
+      const original = mod.exports.authorizeProjectCandidate;
+      mod.exports.authorizeProjectCandidate = async (...args) => {
+        const candidate = await original(...args);
+        // The fixture removes membership after preflight but before the
+        // action's immediate writer transaction reauthorizes stored truth.
+        if (state.afterAuth) {
+          const afterAuth = state.afterAuth;
+          state.afterAuth = null;
+          await afterAuth();
+        }
+        return candidate;
+      };
+    }
     return mod.exports;
   }
   const schema = load("src/server/db/schema.ts"); db = drizzle(client, { schema });

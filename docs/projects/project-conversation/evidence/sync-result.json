@@ -1,0 +1,102 @@
+{
+  "experiment": "EX-02",
+  "runtime": "v22.23.2",
+  "startedAt": "2026-09-12T10:44:59.834Z",
+  "settings": {
+    "databasePath": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-12\\plea\\work\\conversation-sync-accepted\\sync-b7d85eb7-8dfd-430e-8584-28922c90791d.db",
+    "foreignKeys": false,
+    "busyTimeoutMs": 250,
+    "journalMode": "wal"
+  },
+  "profiles": [
+    {
+      "viewers": 10,
+      "directedRecipientsPerMessage": 10,
+      "messages": 10,
+      "durationMs": 2300,
+      "pollingRequests": 28,
+      "warmP95Ms": 28.530599999999936,
+      "sendP95Ms": 33.78219999999999,
+      "visibilityP95Ms": 976,
+      "observedDeliveries": 100,
+      "expectedDeliveries": 100,
+      "pollP95Ms": 20.006399999999985,
+      "withinTargets": true
+    },
+    {
+      "viewers": 50,
+      "directedRecipientsPerMessage": 50,
+      "messages": 10,
+      "durationMs": 2491,
+      "pollingRequests": 119,
+      "warmP95Ms": 68.2473,
+      "sendP95Ms": 45.9363000000003,
+      "visibilityP95Ms": 990,
+      "observedDeliveries": 500,
+      "expectedDeliveries": 500,
+      "pollP95Ms": 20.166600000000017,
+      "withinTargets": true
+    },
+    {
+      "viewers": 200,
+      "directedRecipientsPerMessage": 50,
+      "messages": 10,
+      "durationMs": 11188,
+      "pollingRequests": 1063,
+      "warmP95Ms": 264.78120000000035,
+      "sendP95Ms": 57.71389999999974,
+      "visibilityP95Ms": 991,
+      "observedDeliveries": 2000,
+      "expectedDeliveries": 2000,
+      "pollP95Ms": 44.49079999999958,
+      "withinTargets": true
+    }
+  ],
+  "claims": [
+    "Two independent local Node processes read the same local file store",
+    "Fresh membership denial checked on both processes after raw SQL removal",
+    "Synthetic HTTP identity only; Clerk and deployed Turso consistency unverified",
+    "Local demand measured; hosted monetary cost and network latency unverified",
+    "No production route or migration installed"
+  ],
+  "failures": [],
+  "instances": [
+    {
+      "url": "http://127.0.0.1:56655",
+      "pid": 17904
+    },
+    {
+      "url": "http://127.0.0.1:56656",
+      "pid": 5132
+    }
+  ],
+  "instanceStats": [
+    {
+      "readRequests": 1171,
+      "sendRequests": 15,
+      "refused": 3,
+      "failures": 0,
+      "store": {
+        "submissions": 15,
+        "transactionAttempts": 15,
+        "busyRetries": 0,
+        "activeWriteTransactions": 0,
+        "maxActiveWriteTransactions": 1
+      }
+    },
+    {
+      "readRequests": 1168,
+      "sendRequests": 15,
+      "refused": 3,
+      "failures": 0,
+      "store": {
+        "submissions": 15,
+        "transactionAttempts": 15,
+        "busyRetries": 0,
+        "activeWriteTransactions": 0,
+        "maxActiveWriteTransactions": 1
+      }
+    }
+  ],
+  "finishedAt": "2026-09-12T10:45:17.030Z"
+}

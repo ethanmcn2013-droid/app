@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: populated upgrade with an early quarantined comment can accept a new send
+ok 1 - populated upgrade with an early quarantined comment can accept a new send
+  ---
+  duration_ms: 983.5458
+  type: 'test'
+  ...
+# Subtest: remaining member may reply to a departed member retained root
+ok 2 - remaining member may reply to a departed member retained root
+  ---
+  duration_ms: 940.5841
+  type: 'test'
+  ...
+# Subtest: raw canonical update cannot resurrect a tombstone
+ok 3 - raw canonical update cannot resurrect a tombstone
+  ---
+  duration_ms: 877.6624
+  type: 'test'
+  ...
+# Subtest: exported edit action cannot override authenticated actor with an input field
+ok 4 - exported edit action cannot override authenticated actor with an input field
+  ---
+  duration_ms: 1340.8848
+  type: 'test'
+  ...
+# Subtest: feed clears private comments after the history API revokes access
+ok 5 - feed clears private comments after the history API revokes access
+  ---
+  duration_ms: 144.0478
+  type: 'test'
+  ...
+# Subtest: audience refresh retains an unresolved send instead of discarding its key and body
+ok 6 - audience refresh retains an unresolved send instead of discarding its key and body
+  ---
+  duration_ms: 71.5847
+  type: 'test'
+  ...
+# Subtest: draft composed before audience expansion requires review before send
+ok 7 - draft composed before audience expansion requires review before send
+  ---
+  duration_ms: 58.4659
+  type: 'test'
+  ...
+# Subtest: the real poller path clears canonical content after access revocation
+ok 8 - the real poller path clears canonical content after access revocation
+  ---
+  duration_ms: 664.7986
+  type: 'test'
+  ...
+# Subtest: the real poller path requires review after an audience expansion
+ok 9 - the real poller path requires review after an audience expansion
+  ---
+  duration_ms: 113.6865
+  type: 'test'
+  ...
+# Subtest: task navigation restores cached in-flight work as uncertain without replay
+ok 10 - task navigation restores cached in-flight work as uncertain without replay
+  ---
+  duration_ms: 73.0235
+  type: 'test'
+  ...
+# Subtest: uncertain send retries its exact request id, body, root and structured mention ids
+ok 11 - uncertain send retries its exact request id, body, root and structured mention ids
+  ---
+  duration_ms: 58.1891
+  type: 'test'
+  ...
+# Subtest: uncertain edit retains one exact mutation for receipt-first recovery
+ok 12 - uncertain edit retains one exact mutation for receipt-first recovery
+  ---
+  duration_ms: 53.4495
+  type: 'test'
+  ...
+# Subtest: uncertain tombstone retains one exact mutation for receipt-first recovery
+ok 13 - uncertain tombstone retains one exact mutation for receipt-first recovery
+  ---
+  duration_ms: 47.8382
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5262.4276
