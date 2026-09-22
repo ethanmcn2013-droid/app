@@ -3,7 +3,7 @@ import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { db } from "@/server/db";
 import * as schema from "@/server/db/schema";
 import { hasAccountDeletionStartedWith } from "@/server/account-deletion-lifecycle";
-import { retryImmediateProvisioning } from "@/server/db/immediate-transaction-retry";
+import { serializeProvisioning } from "@/server/db/serialized-provisioning";
 
 type ProvisioningDb = LibSQLDatabase<typeof schema>;
 
@@ -70,7 +70,7 @@ export async function ensureUserProvisionedWith(
     : null;
   const initials = initialsFromName ?? (handle.slice(0, 2).toUpperCase() || "??");
 
-  return retryImmediateProvisioning(database, clerkUserId, () => database.transaction(async (tx) => {
+  return serializeProvisioning(database, clerkUserId, () => database.transaction(async (tx) => {
     // This read and every provisioning write share one immediate transaction.
     // If deletion commits first, no row is recreated. If provisioning commits
     // first, deletion observes and erases that row after installing its fence.

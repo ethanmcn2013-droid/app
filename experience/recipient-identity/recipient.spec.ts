@@ -14,6 +14,7 @@ import {
   PRIVATE_TASK_TITLE,
   RECIPIENT_PROJECT_ID,
   RECIPIENT_PROJECT_NAME,
+  RECIPIENT_TASK_ID,
   RECIPIENT_TASK_TITLE,
   readRecipientJourneyState,
   removeRecipientMembership,
@@ -318,8 +319,9 @@ test("controlled recipient accepts B, completes assigned work, and loses B after
     observe("homeReturned");
 
     await creatorPage.goto(`/app/tasks?workspaceId=${RECIPIENT_PROJECT_ID}`);
-    await expect(creatorPage.getByText(RECIPIENT_TASK_TITLE, { exact: true })).toBeVisible();
-    await expect(creatorPage.getByRole("button", { name: `Mark "${RECIPIENT_TASK_TITLE}" not done` })).toBeVisible();
+    const completedCard = creatorPage.locator(`article[data-task-id="${RECIPIENT_TASK_ID}"][data-board-lane="done"][data-completed]`);
+    await expect(completedCard.getByText(RECIPIENT_TASK_TITLE, { exact: true })).toBeVisible();
+    await expect(completedCard.getByRole("checkbox", { name: "Reopen this task" })).toBeChecked();
     observe("creatorReadback");
 
     const accepted = (await readRecipientJourneyState()).invite;

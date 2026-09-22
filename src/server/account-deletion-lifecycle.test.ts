@@ -19,7 +19,6 @@ import {
 } from "./account-deletion-lifecycle";
 import { ensureUserProvisionedWith } from "./db/ensure-user";
 import { provisionCreatedClerkUserWith } from "./db/clerk-user-provision";
-import { retryImmediateProvisioning } from "./db/immediate-transaction-retry";
 import * as schema from "./db/schema";
 
 async function freshDb() {
@@ -254,35 +253,4 @@ test("parallel distinct local users complete without weakening the deletion fenc
   } finally {
     cleanup();
   }
-});
-
-test("provisioning retry is bounded to SQLite lock errors", async () => {
-  const database = {};
-  let attempts = 0;
-  await assert.rejects(
-    retryImmediateProvisioning(database, "user_constraint", async () => {
-      attempts += 1;
-      throw Object.assign(new Error("constraint"), { code: "SQLITE_CONSTRAINT" });
-    }),
-    (error: unknown) => (error as { code?: string }).code === "SQLITE_CONSTRAINT",
-  );
-  assert.equal(attempts, 1);
-
-  attempts = 0;
-  assert.equal(await retryImmediateProvisioning(database, "user_busy", async () => {
-    attempts += 1;
-    if (attempts === 1) throw Object.assign(new Error("locked"), { code: "SQLITE_BUSY" });
-    return "committed";
-  }), "committed");
-  assert.equal(attempts, 2);
-
-  attempts = 0;
-  await assert.rejects(
-    retryImmediateProvisioning(database, "user_persistently_busy", async () => {
-      attempts += 1;
-      throw Object.assign(new Error("locked"), { code: "SQLITE_BUSY" });
-    }),
-    (error: unknown) => (error as { code?: string }).code === "SQLITE_BUSY",
-  );
-  assert.equal(attempts, 8);
 });

@@ -24,7 +24,7 @@ test("fallback provisioning checks the tombstone in its writer transaction", () 
   assert.ok(transaction >= 0);
   assert.ok(fence > transaction);
   assert.ok(userInsert > fence);
-  assert.match(source, /retryImmediateProvisioning\(database, clerkUserId/);
+  assert.match(source, /serializeProvisioning\(database, clerkUserId/);
   assert.match(source, /\{ behavior: "immediate" \}/);
 });
 
@@ -46,7 +46,7 @@ test("Clerk creation and deletion share the same durable lifecycle", () => {
   assert.ok(transaction >= 0);
   assert.ok(fence > transaction);
   assert.ok(userInsert > fence);
-  assert.match(creation, /retryImmediateProvisioning\(database, user.clerkId/);
+  assert.match(creation, /serializeProvisioning\(database, user.clerkId/);
   assert.match(creation, /\{ behavior: "immediate" \}/);
   assert.ok(
     deleteHandler.indexOf("await beginAccountDeletion(u.id)") <
