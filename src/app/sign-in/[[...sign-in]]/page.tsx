@@ -6,6 +6,7 @@ import { DemoAuthCard } from "@/components/auth/demo-auth-card";
 import { isDemoMode } from "@/lib/access-mode";
 import { authRouteRobots } from "@/lib/launch";
 import { inviteAuthUrl, inviteReturnPath } from "@/lib/auth/invite-intent";
+import { appAuthReturnPath } from "@/lib/auth/app-return";
 
 /**
  * The route stays live and working before launch. It is unlinked and
@@ -24,7 +25,9 @@ export default async function SignInPage({
 }: {
   searchParams: Promise<{ redirect_url?: string | string[] }>;
 }) {
-  const invitePath = inviteReturnPath((await searchParams).redirect_url);
+  const requestedPath = (await searchParams).redirect_url;
+  const invitePath = inviteReturnPath(requestedPath);
+  const appPath = invitePath ? null : appAuthReturnPath(requestedPath);
   if (isDemoMode()) {
     return (
       <AuthStage headline="You’re already signed in here.">
@@ -41,7 +44,7 @@ export default async function SignInPage({
           forceRedirectUrl: invitePath,
           signUpForceRedirectUrl: invitePath,
           signUpUrl: inviteAuthUrl("sign-up", invitePath),
-        } : {})}
+        } : appPath ? { forceRedirectUrl: appPath } : {})}
       />
     </AuthStage>
   );

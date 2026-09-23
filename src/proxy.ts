@@ -9,6 +9,7 @@ import {
 } from "@/lib/bare-artifact-path";
 import { APP_ORIGIN, STUDIO_ORIGIN } from "@/lib/product-urls";
 import { clerkAuthorizedParties } from "@/lib/auth/recipient-proof-authorized-parties";
+import { signInUrlForAppReturn } from "@/lib/auth/app-return";
 
 /**
  * Next.js 16 renamed middleware → proxy. Same shape, same matcher
@@ -218,12 +219,15 @@ const productionProxy = clerkMiddleware(async (auth, req) => {
   if (redirect) return redirect;
 
   if (!isPublicRoute(req)) {
-    // Explicit unauthenticatedUrl ensures `/app/*` redirects to `/sign-in`
-    // for signed-out visitors instead of falling through to a 404 / 401.
+    // Explicit unauthenticatedUrl sends signed-out App visitors through
+    // sign-in with only a validated local return route, rather than losing
+    // their Project/Task selection or falling through to a 404 / 401.
     // Survives env-var drift (the Clerk SDK otherwise uses
     // NEXT_PUBLIC_CLERK_SIGN_IN_URL, which can be unset in deploys).
     await auth.protect({
-      unauthenticatedUrl: new URL("/sign-in", req.url).toString(),
+      unauthenticatedUrl: new URL(
+        signInUrlForAppReturn(req.nextUrl.pathname + req.nextUrl.search), req.url,
+      ).toString(),
     });
   }
 
