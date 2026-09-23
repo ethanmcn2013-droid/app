@@ -46,6 +46,7 @@ import styles from "../a/option-a.module.css";
 const BoardView = dynamic(() => import("../a/board-view").then((m) => m.BoardView));
 import { FloorWorkspace } from "@/components/floor/floor-workspace";
 import { useDomain, useWorkspaceMembers } from "@/lib/domain-context";
+import { floorProjectName as floorProjectNameForDomain } from "@/lib/projects/floor-project-name";
 const ListView = dynamic(() => import("../a/list-view").then((m) => m.ListView));
 const TimelineView = dynamic(() => import("../a/timeline-view").then((m) => m.TimelineView));
 const BCalendarView = dynamic(() => import("../b/calendar-view").then((m) => m.CalendarView));
@@ -207,7 +208,11 @@ export function OptionHybrid({ route, onRouteChange }: TasksOptionProps) {
 
   const domain = useDomain();
   const members = useWorkspaceMembers();
-  const floorProjectName = domain.boardName ?? domain.workspaceTitle ?? "This project";
+  const floorProjectName = floorProjectNameForDomain({
+    boardName: domain.boardName,
+    workspaceName: domain.workspaceName,
+    domainExample: domain.workspaceTitle,
+  });
   const operatorInitials = members[0]?.initials ?? "—";
 
   return (

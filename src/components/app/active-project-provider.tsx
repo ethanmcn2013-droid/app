@@ -64,12 +64,13 @@ import {
 import { usePathname, useSearchParams } from "next/navigation";
 import type { ProjectId, ProjectSummary } from "@/lib/projects/project-ref";
 import { parseProjectId } from "@/lib/projects/project-ref";
-import { PROJECT_URL_PARAM, type ProjectDestination } from "@/lib/projects/project-url";
+import { buildProjectUrl, PROJECT_URL_PARAM, type ProjectDestination } from "@/lib/projects/project-url";
 import {
   chromeFor,
   initialActiveProjectState,
   reduceActiveProject,
   routeKey,
+  selectionVerified,
   type ActiveProjectPending,
   type ChromeProjection,
   type LiveTransition,
@@ -201,7 +202,41 @@ export function ActiveProjectProvider({
    * mutated in the event handler, before any `await`, is the only thing that
    * serializes them. It is never read or written during render.
    */
-  const pendingRef = useRef(false);
+  const pendingRef = useRef<{
+    token: number;
+    routeKey: string;
+    projectId: ProjectId;
+    projectName: string;
+    timeout?: ReturnType<typeof setTimeout>;
+  } | null>(null);
+  const selectionTokenRef = useRef(0);
+
+  // A switch is complete only when this exact destination has published a
+  // server-verified snapshot. Releasing the synchronous guard on a mere URL
+  // change would let an unverified Project become the next selection source.
+  useEffect(() => {
+    const selection = pendingRef.current;
+    if (selection && selectionVerified(state, selection)) {
+      if (selection.timeout) clearTimeout(selection.timeout);
+      pendingRef.current = null;
+    } else if (
+      selection &&
+      state.live.routeKey === selection.routeKey &&
+      state.pending === null &&
+      state.committed === null
+    ) {
+      // The target page explicitly published an unavailable result after
+      // redirect (for example, membership changed in flight). Do not leave
+      // the selector locked or claim the URL change was a verified success.
+      if (selection.timeout) clearTimeout(selection.timeout);
+      pendingRef.current = null;
+      dispatch({ type: "select-failed", message: `Couldn't open ${selection.projectName}. You're still in the current project.` });
+    }
+  }, [state]);
+
+  useEffect(() => () => {
+    if (pendingRef.current?.timeout) clearTimeout(pendingRef.current.timeout);
+  }, []);
 
   const onRoute = useCallback(
     (pathname: string, workspaceId: ProjectId | null) => {
@@ -238,17 +273,27 @@ export function ActiveProjectProvider({
         return refusal;
       }
 
-      pendingRef.current = true;
+      const target = new URL(buildProjectUrl(destination, project.id), "https://signalstudio.invalid");
+      const token = ++selectionTokenRef.current;
+      pendingRef.current = {
+        token,
+        routeKey: routeKey(target.pathname, project.id),
+        projectId: project.id,
+        projectName: project.name,
+      };
 
       // Step 2: the trigger reads `Opening <B>…` while committed A stays
       // visibly A. The provider never relabels A's data as B.
       dispatch({
         type: "select-started",
-        pending: { projectId: project.id, label: `Opening ${project.name}…` },
+        pending: { projectId: project.id, label: `Opening ${project.name}…`, destinationRouteKey: pendingRef.current.routeKey },
       });
 
       const fail = (message: string) => {
-        pendingRef.current = false;
+        // An old action result cannot fail a newer, already-verified switch.
+        if (pendingRef.current?.token !== token) return;
+        if (pendingRef.current.timeout) clearTimeout(pendingRef.current.timeout);
+        pendingRef.current = null;
         dispatch({ type: "select-failed", message });
       };
 
@@ -259,7 +304,20 @@ export function ActiveProjectProvider({
               workspaceId: project.id,
               destination,
             });
-            // A successful switch redirects and never returns.
+            // Next's client-side Server Action redirect can resolve the
+            // calling promise with no value. That is navigation in progress,
+            // not a failed switch. The verified route snapshot above is the
+            // only event that releases the selection guard on this path.
+            if (!result) {
+              // A failed destination may never publish a snapshot. Keep the
+              // guard bounded; a timeout reports failure, never success.
+              if (pendingRef.current?.token === token) {
+                pendingRef.current.timeout = setTimeout(() => {
+                  fail(`Couldn't open ${project.name}. You're still in the current project.`);
+                }, 30_000);
+              }
+              return;
+            }
             fail(
               result.reason === "archived"
                 ? `${project.name} is archived. Open it read-only from Archived.`
