@@ -89,9 +89,23 @@ async function seedTwoTenants() {
       ('task-a', '${WS_A}', 1, 'Alpha private task', '', 'todo', 'normal', '[]', 0, 0, 0, 0),
       ('task-b', '${WS_B}', 1, 'Beta private task',  '', 'todo', 'normal', '[]', 0, 0, 0, 0);
 
-    INSERT INTO comments (id, workspace_id, task_id, user_id, body, created_at) VALUES
-      ('comment-a', '${WS_A}', 'task-a', 'user-a', 'Alpha private comment', 0),
-      ('comment-b', '${WS_B}', 'task-b', 'user-b', 'Beta private comment', 0);
+    INSERT INTO task_discussion_state
+      (task_id, workspace_id, audience_epoch, next_create_seq, next_change_seq) VALUES
+      ('task-a', '${WS_A}', 1, 2, 2),
+      ('task-b', '${WS_B}', 1, 2, 2);
+
+    INSERT INTO comments
+      (id, workspace_id, task_id, user_id, body, created_at, client_request_id,
+       request_hash, revision, root_id, create_seq) VALUES
+      ('comment-a', '${WS_A}', 'task-a', 'user-a', 'Alpha private comment', 0,
+       'comment-a-request', '${"a".repeat(64)}', 1, NULL, 1),
+      ('comment-b', '${WS_B}', 'task-b', 'user-b', 'Beta private comment', 0,
+       'comment-b-request', '${"b".repeat(64)}', 1, NULL, 1);
+
+    INSERT INTO task_comment_changes
+      (task_id, change_seq, kind, comment_id, revision, audience_epoch, happened_at_ms) VALUES
+      ('task-a', 1, 'create', 'comment-a', 1, 1, 0),
+      ('task-b', 1, 'create', 'comment-b', 1, 1, 0);
 
     INSERT INTO attachments (id, workspace_id, task_id, uploader_user_id, filename, stored_path, mime_type, size_bytes, created_at)
     VALUES
