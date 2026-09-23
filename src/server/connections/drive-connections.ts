@@ -284,7 +284,7 @@ export function createGoogleDriveConnectionService(
     const [pending] = await deps.database
       .select({ id: providerConnections.id })
       .from(providerConnections)
-      .where(pendingRevocationFor(actorUserId))
+      .where(and(eq(providerConnections.userId, actorUserId), pendingRevocationFor(actorUserId)))
       .limit(1);
     if (pending) throw new GoogleDriveConnectionError("revocation-pending");
   }
@@ -475,7 +475,10 @@ export function createGoogleDriveConnectionService(
         const [pendingRevoke] = await tx
           .select({ id: providerConnections.id })
           .from(providerConnections)
-          .where(pendingRevocationFor(authorization.actorUserId))
+          .where(and(
+            eq(providerConnections.userId, authorization.actorUserId),
+            pendingRevocationFor(authorization.actorUserId),
+          ))
           .limit(1);
         if (erasureFence || pendingRevoke) {
           throw new GoogleDriveConnectionError(
@@ -644,7 +647,10 @@ export function createGoogleDriveConnectionService(
       deps.database
         .select({ id: providerConnections.id })
         .from(providerConnections)
-        .where(pendingRevocationFor(authorization.actorUserId))
+        .where(and(
+          eq(providerConnections.userId, authorization.actorUserId),
+          pendingRevocationFor(authorization.actorUserId),
+        ))
         .limit(1),
     ]);
     if (!current) {
@@ -717,7 +723,10 @@ export function createGoogleDriveConnectionService(
       const pending = await tx
         .select()
         .from(providerConnections)
-        .where(pendingRevocationFor(authorization.actorUserId))
+        .where(and(
+          eq(providerConnections.userId, authorization.actorUserId),
+          pendingRevocationFor(authorization.actorUserId),
+        ))
         .orderBy(providerConnections.connectedAt);
       // A prior in-flight revocation must never target a newly connected
       // same-account grant. New code fences both OAuth entry and completion;
@@ -840,7 +849,10 @@ export function createGoogleDriveConnectionService(
       )).returning({ id: providerConnections.id });
       const [stillPending] = await deps.database.select({ id: providerConnections.id })
         .from(providerConnections)
-        .where(pendingRevocationFor(authorization.actorUserId)).limit(1);
+        .where(and(
+          eq(providerConnections.userId, authorization.actorUserId),
+          pendingRevocationFor(authorization.actorUserId),
+        )).limit(1);
       return Object.freeze({
         disconnected: true,
         affectedProjectCount: claim.affectedProjectCount,
