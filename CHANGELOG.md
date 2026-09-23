@@ -10,7 +10,7 @@ Home, Projects, Tasks and Timeline now lead the signed-in navigation on desktop 
 
 The candidate carries an open Task through Floor view switches while keeping the Project explicit in each view link. Nested Task controls receive pointer clicks inside reorderable lists, with dragging on the explicit grip. Both behaviors passed controlled isolated-preview browser checks on the received source; canonical production receiving remains open.
 
-Add project now offers Monthly business rhythm: one separate, owned Project with 18 starter Tasks and no assumed due dates. A saved request opens the same Project after an uncertain reply. Local backend and touch-browser checks passed; real-account template receiving is tracked separately and is not a production claim.
+Add project now offers Monthly business rhythm: one separate, owned Project with 18 starter Tasks and no assumed due dates. A saved request opens the same Project after an uncertain reply. Controlled preview verified creation through Settings, recovery without duplication, and readback from a separate signed-in phone session. On narrow screens, the Projects page now opens its folder drawer so Add project remains reachable, and long Project names wrap. That entry repair has rendered local evidence and awaits deployed receiving; none of these results is a production claim.
 
 Timeline and the Home briefing now convert raw Tasks due timestamps from SQLite seconds at their adapter boundaries. Local SQLite checks cover day boundaries, daylight-saving dates, undated values and pre-1970 dates. A controlled milestone sync retained 25 October 2026 through fresh Dublin and Kiritimati desktop readbacks. The briefing change has local regression evidence, not production cron evidence.
 
