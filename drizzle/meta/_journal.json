@@ -260,6 +260,13 @@
       "when": 1790121600000,
       "tag": "0036_conversation_erasure_tombstones",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "6",
+      "when": 1790150400000,
+      "tag": "0037_message_read_coverage",
+      "breakpoints": true
     }
   ]
 }

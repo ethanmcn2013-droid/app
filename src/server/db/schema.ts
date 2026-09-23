@@ -715,6 +715,20 @@ export const conversationAttention = sqliteTable("conversation_attention", {
   index("conversation_attention_recipient").on(t.recipientId, t.observedAt, t.createSeq),
 ]);
 
+/** Reader-private coverage of ordinary conversation roots and opened replies. */
+export const messageReadCoverage = sqliteTable("message_read_coverage", {
+  userId: text("user_id").notNull(),
+  sourceKind: text("source_kind").$type<"conversation" | "task_discussion">().notNull(),
+  scopeId: text("scope_id").notNull(),
+  rootKey: text("root_key").notNull().default(""),
+  rangeStart: integer("range_start").notNull(),
+  rangeEnd: integer("range_end").notNull(),
+  observedAtMs: integer("observed_at_ms").notNull(),
+}, (t) => [
+  primaryKey({ columns: [t.userId, t.sourceKind, t.scopeId, t.rootKey, t.rangeStart, t.rangeEnd] }),
+  index("message_read_coverage_scope").on(t.userId, t.sourceKind, t.scopeId, t.rootKey, t.rangeStart, t.rangeEnd),
+]);
+
 export const conversationOutbox = sqliteTable("conversation_outbox", {
   id: text("id").primaryKey(),
   conversationId: text("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),

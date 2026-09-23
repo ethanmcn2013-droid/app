@@ -46,7 +46,7 @@ async function withClient(operation) {
 
 test("authoritative ledger registers every SQL file with receipt and journal parity", () => {
   const context = loadAndValidateLedger();
-  assert.equal(context.entries.length, 37);
+  assert.equal(context.entries.length, 38);
   assert.equal(context.baseline.id, "0014_current_schema_baseline");
   assert.deepEqual(context.forward.map((entry) => entry.id), [
     "0015_notes_extract_exact_identity",
@@ -71,6 +71,7 @@ test("authoritative ledger registers every SQL file with receipt and journal par
     "0034_project_direct_messages",
     "0035_task_discussion",
     "0036_conversation_erasure_tombstones",
+    "0037_message_read_coverage",
   ]);
   assert.equal(context.entries.filter((entry) => entry.policy === "legacy-adopt-only").length, 14);
 });
@@ -152,14 +153,15 @@ test("fresh databases apply the canonical baseline plus forwards and rerun as a 
     "0034_project_direct_messages",
     "0035_task_discussion",
     "0036_conversation_erasure_tombstones",
+    "0037_message_read_coverage",
   ]);
-  assert.equal(first.proofs.length, 203);
+  assert.equal(first.proofs.length, 208);
 
   const objectCounts = await client.execute("SELECT type, COUNT(*) AS value FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' AND name NOT IN ('signal_schema_migrations', '__drizzle_migrations') GROUP BY type ORDER BY type");
   assert.deepEqual(objectCounts.rows.map((row) => [row.type, Number(row.value)]), [
-    ["index", 64],
-    ["table", 46],
-    ["trigger", 59],
+    ["index", 65],
+    ["table", 47],
+    ["trigger", 63],
   ]);
 
   const second = await runMigrations({ client, releaseSha: "test-release" });
@@ -205,12 +207,12 @@ test("populated 0027 production-shaped ledger upgrades through January and conve
   await client.execute("INSERT INTO workspace_members(workspace_id,user_id,role) VALUES ('historic_project','historic_actor','owner')");
   await client.execute("INSERT INTO tasks(id,workspace_id,seq,title,lane,priority,assignees) VALUES ('historic_task','historic_project',1,'Preserved task','todo','p2','[]')");
   await client.execute("INSERT INTO comments(id,task_id,user_id,body,created_at) VALUES ('historic_comment','historic_task','historic_actor','Preserved comment',1)");
-  const upgraded = await runMigrations({ client, releaseSha: "synthetic-0036" });
+  const upgraded = await runMigrations({ client, releaseSha: "synthetic-0037" });
   assert.deepEqual(upgraded.applied, [
     "0028_project_drive", "0029_project_drive_operations", "0030_sponsored_use_intents",
     "0031_event_purchase_designations", "0032_project_conversations",
     "0033_conversation_task_outcomes", "0034_project_direct_messages", "0035_task_discussion",
-    "0036_conversation_erasure_tombstones",
+    "0036_conversation_erasure_tombstones", "0037_message_read_coverage",
   ]);
   assert.equal((await client.execute("SELECT title FROM tasks WHERE id='historic_task'")).rows[0].title, "Preserved task");
   const comment = (await client.execute("SELECT id,body,workspace_id,revision FROM comments WHERE id='historic_comment'")).rows[0];
@@ -275,19 +277,70 @@ test("0036 migrates populated conversation dependents with FK ON and rolls back 
   const counts = async () => Promise.all(tables.map(async (table) => Number((await client.execute(`SELECT count(*) AS n FROM ${table}`)).rows[0].n)));
   const initial = await counts();
   const broken = loadAndValidateLedger();
+  broken.forward = broken.forward.filter(entry => entry.ordinal <= 36);
   broken.forward.at(-1).receipt.record.proofs.push({ id: "erasure-forced-rollback", sql: "SELECT 0 AS value", expected: 1 });
   await assert.rejects(() => runMigrations({ client, context: broken, releaseSha: "erasure-rollback" }), /erasure-forced-rollback/);
   assert.equal(Number((await client.execute("PRAGMA foreign_keys")).rows[0].foreign_keys), 1);
   assert.deepEqual(await counts(), initial);
   assert.equal(Number((await client.execute("SELECT count(*) AS n FROM signal_schema_migrations WHERE id='0036_conversation_erasure_tombstones'")).rows[0].n), 0);
-  const upgraded = await runMigrations({ client, releaseSha: "erasure-upgrade" });
+  const through36 = loadAndValidateLedger();
+  through36.forward = through36.forward.filter(entry => entry.ordinal <= 36);
+  const upgraded = await runMigrations({ client, context: through36, releaseSha: "erasure-upgrade" });
   assert.deepEqual(upgraded.applied, ["0036_conversation_erasure_tombstones"]);
   assert.deepEqual(await counts(), initial);
   assert.equal((await client.execute("SELECT body FROM conversation_messages WHERE id='erasure_reply'")).rows[0].body, "Preserved reply");
   assert.equal((await client.execute("SELECT body FROM comments WHERE id='erasure_comment_reply'")).rows[0].body, "Preserved comment reply");
   assert.equal((await client.execute("PRAGMA foreign_key_check")).rows.length, 0);
   assert.equal(Number((await client.execute("PRAGMA foreign_keys")).rows[0].foreign_keys), 1);
-  assert.deepEqual(await runMigrations({ client, releaseSha: "erasure-noop" }), { status: "no-op", applied: [] });
+  assert.deepEqual(await runMigrations({ client, context: through36, releaseSha: "erasure-noop" }), { status: "no-op", applied: [] });
+}));
+
+test("0037 preserves populated conversation and Task Discussion history; failed proof rolls back cleanly", async () => withClient(async (client) => {
+  const through36 = loadAndValidateLedger();
+  through36.forward = through36.forward.filter(entry => entry.ordinal <= 36);
+  await runMigrations({ client, context: through36, releaseSha: "coverage-before" });
+  await client.executeMultiple(`
+    INSERT INTO users(id,clerk_id,name,color,initials) VALUES
+      ('coverage_owner','clerk_coverage_owner','Owner','#111','OW'),
+      ('coverage_reader','clerk_coverage_reader','Reader','#222','RE');
+    INSERT INTO workspaces(id,slug,name,owner_user_id) VALUES('coverage_project','coverage-project','Coverage','coverage_owner');
+    INSERT INTO workspace_members(workspace_id,user_id,role) VALUES
+      ('coverage_project','coverage_owner','owner'),('coverage_project','coverage_reader','member');
+    INSERT INTO tasks(id,workspace_id,seq,title,lane,priority,assignees)
+      VALUES('coverage_task','coverage_project',1,'Existing task','todo','p2','[]');
+    INSERT INTO conversations(id,workspace_id,kind,created_by,created_at)
+      VALUES('coverage_room','coverage_project','project','coverage_owner',1000);
+    INSERT INTO conversation_messages(id,conversation_id,workspace_id,author_id,client_request_id,request_hash,root_id,create_seq,revision,body,created_at)
+      VALUES('coverage_message','coverage_room','coverage_project','coverage_owner','coverage_request_0001','hash',NULL,1,1,'Existing message',1000);
+    INSERT INTO conversation_attention(id,conversation_id,workspace_id,recipient_id,message_id,create_seq)
+      VALUES('coverage_event','coverage_room','coverage_project','coverage_reader','coverage_message',1);
+    INSERT INTO task_discussion_state(task_id,workspace_id) VALUES('coverage_task','coverage_project');
+    INSERT INTO comments(id,workspace_id,task_id,user_id,body,client_request_id,request_hash,revision,root_id,create_seq)
+      VALUES('coverage_comment','coverage_project','coverage_task','coverage_owner','Existing comment','coverage_comment_request','hash',1,NULL,1);
+    INSERT INTO task_comment_attention(id,event_id,task_id,workspace_id,recipient_id,comment_id,source_revision,create_seq,reason_bits)
+      VALUES('coverage_comment_event','coverage_event_2','coverage_task','coverage_project','coverage_reader','coverage_comment',1,1,1);
+  `);
+  const original = {
+    messages: (await client.execute("SELECT id,body,create_seq FROM conversation_messages WHERE conversation_id='coverage_room'")).rows,
+    comments: (await client.execute("SELECT id,body,create_seq FROM comments WHERE task_id='coverage_task'")).rows,
+    directed: (await client.execute("SELECT id,message_id,observed_at FROM conversation_attention WHERE id='coverage_event'")).rows,
+    taskDirected: (await client.execute("SELECT id,comment_id,seen_at_ms FROM task_comment_attention WHERE id='coverage_comment_event'")).rows,
+  };
+  const broken = loadAndValidateLedger();
+  broken.forward.find(entry => entry.ordinal === 37).receipt.record.proofs.push({
+    id: "coverage-forced-rollback", sql: "SELECT 0 AS value", expected: 1,
+  });
+  await assert.rejects(() => runMigrations({ client, context: broken, releaseSha: "coverage-failed" }), /coverage-forced-rollback/);
+  assert.equal(Number((await client.execute("SELECT count(*) AS n FROM sqlite_schema WHERE name='message_read_coverage'")).rows[0].n), 0);
+  assert.equal(Number((await client.execute("SELECT count(*) AS n FROM signal_schema_migrations WHERE id='0037_message_read_coverage'")).rows[0].n), 0);
+  const applied = await runMigrations({ client, releaseSha: "coverage-upgrade" });
+  assert.deepEqual(applied.applied, ["0037_message_read_coverage"]);
+  assert.deepEqual((await client.execute("SELECT id,body,create_seq FROM conversation_messages WHERE conversation_id='coverage_room'")).rows, original.messages);
+  assert.deepEqual((await client.execute("SELECT id,body,create_seq FROM comments WHERE task_id='coverage_task'")).rows, original.comments);
+  assert.deepEqual((await client.execute("SELECT id,message_id,observed_at FROM conversation_attention WHERE id='coverage_event'")).rows, original.directed);
+  assert.deepEqual((await client.execute("SELECT id,comment_id,seen_at_ms FROM task_comment_attention WHERE id='coverage_comment_event'")).rows, original.taskDirected);
+  assert.equal((await client.execute("PRAGMA foreign_key_check")).rows.length, 0);
+  assert.deepEqual(await runMigrations({ client, releaseSha: "coverage-no-op" }), { status: "no-op", applied: [] });
 }));
 
 test("Project Drive preserves credential, folder, and grant generations", async () => withClient(async (client) => {
@@ -1127,7 +1180,7 @@ test("usage migration proof failure rolls back both new tables and its ledger re
   assert.deepEqual(applied.applied, [
     "0030_sponsored_use_intents", "0031_event_purchase_designations",
     "0032_project_conversations", "0033_conversation_task_outcomes",
-    "0034_project_direct_messages", "0035_task_discussion", "0036_conversation_erasure_tombstones",
+    "0034_project_direct_messages", "0035_task_discussion", "0036_conversation_erasure_tombstones", "0037_message_read_coverage",
   ]);
   assert.equal((await runMigrations({ client, releaseSha: "usage-no-op" })).status, "no-op");
 }));
