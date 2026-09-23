@@ -132,6 +132,21 @@ for (const version of [1, 2] as const) {
       assert.equal((await f.client.execute("PRAGMA foreign_key_check")).rows.length, 0);
     } finally { f.cleanup(); }
   }));
+
+  test(`signed Notes v${version} does not expose approved wording when the task insert fails`, async () => configured(async () => {
+    const f = await fixture();
+    try {
+      await f.client.execute("CREATE TRIGGER synthetic_notes_insert_failure BEFORE INSERT ON tasks BEGIN SELECT RAISE(FAIL, 'synthetic insert failure'); END");
+      const route = receiver(`../app/api/notes-extract/${version === 2 ? "v2/" : ""}route.ts`, f.db);
+      const privateBody = "Synthetic private approved wording: exact café";
+      const response = await route.POST(request(version, SUBJECT_A, "project-a", `note-failed-${version}`, privateBody));
+      assert.equal(response.status, 503);
+      const payload = await response.json();
+      assert.deepEqual(payload, { error: "Tasks could not store the approved action. Retry the same wording." });
+      assert.equal(JSON.stringify(payload).includes(privateBody), false);
+      assert.equal(Number((await f.client.execute("SELECT count(*) n FROM tasks")).rows[0].n), 0);
+    } finally { f.cleanup(); }
+  }));
 }
 
 test("signed Notes v2 retains exact body/workspace checks before metadata and preserves normal identity", async () => configured(async () => {

@@ -7,15 +7,17 @@
  */
 export async function privateNotesDbWrite<T>(
   write: () => Promise<T>,
-  kind: "capture" | "edit",
+  kind: "capture" | "edit" | "extract" | "send",
 ): Promise<T> {
   try {
     return await write();
   } catch {
-    throw new Error(
-      kind === "capture"
-        ? "That did not save. Your exact words are still here."
-        : "That edit could not be saved.",
-    );
+    const message = {
+      capture: "That did not save. Your exact words are still here.",
+      edit: "That edit could not be saved.",
+      extract: "That action draft could not be saved.",
+      send: "That Tasks send could not be stored. Retry the same approved wording.",
+    }[kind];
+    throw new Error(message);
   }
 }

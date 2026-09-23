@@ -15,6 +15,13 @@ const identitySelection = {
   sourceNoteExtractSha256: tasks.sourceNoteExtractSha256,
 };
 
+export class ApprovedExtractStorageError extends Error {
+  constructor() {
+    super("Tasks could not store the approved action. Retry the same wording.");
+    this.name = "ApprovedExtractStorageError";
+  }
+}
+
 /**
  * Insert once, then converge on the canonical source-note row if another
  * request won the unique-index race. No uniqueness error escapes as a false
@@ -37,11 +44,19 @@ export async function insertOrReadNotesExtractTask(
     throw new TypeError("Source note identity does not match task values");
   }
 
-  const inserted = await database
-    .insert(tasks)
-    .values(input.values)
-    .onConflictDoNothing()
-    .returning(identitySelection);
+  // Drizzle embeds the approved extract in failed INSERT parameters. Never
+  // let that driver exception reach the route's framework error logger.
+  const inserted = await (async () => {
+    try {
+      return await database
+        .insert(tasks)
+        .values(input.values)
+        .onConflictDoNothing()
+        .returning(identitySelection);
+    } catch {
+      throw new ApprovedExtractStorageError();
+    }
+  })();
   if (inserted[0]) {
     return { created: true, task: inserted[0] };
   }

@@ -472,28 +472,31 @@ export async function setNoteExtract(
 
   const now = Date.now();
 
-  const result = await db
-    .update(notes)
-    .set({ extractBody: trimmed, updatedAt: now })
-    .where(
-      and(
-        eq(notes.id, id),
-        eq(notes.userId, userId),
-        noTasksSendBinding(userId, id),
-      ),
-    )
-    .returning({
-      id: notes.id,
-      body: notes.body,
-      createdAt: notes.createdAt,
-      updatedAt: notes.updatedAt,
-      extractBody: notes.extractBody,
-      promotedTaskId: notes.promotedTaskId,
-      archivedAt: notes.archivedAt,
-      reviewedAt: notes.reviewedAt,
-      source: notes.source,
-      workspaceId: notes.workspaceId,
-    });
+  const result = await privateNotesDbWrite(
+    async () => db
+      .update(notes)
+      .set({ extractBody: trimmed, updatedAt: now })
+      .where(
+        and(
+          eq(notes.id, id),
+          eq(notes.userId, userId),
+          noTasksSendBinding(userId, id),
+        ),
+      )
+      .returning({
+        id: notes.id,
+        body: notes.body,
+        createdAt: notes.createdAt,
+        updatedAt: notes.updatedAt,
+        extractBody: notes.extractBody,
+        promotedTaskId: notes.promotedTaskId,
+        archivedAt: notes.archivedAt,
+        reviewedAt: notes.reviewedAt,
+        source: notes.source,
+        workspaceId: notes.workspaceId,
+      }),
+    "extract",
+  );
 
   const row = result[0];
   if (!row) {
@@ -828,33 +831,36 @@ export async function promoteNoteToTasks(
   // in a single atomic write. All three fields are written together so a
   // Tasks-fetch failure (above) leaves the note completely untouched.
   const archiveTs = Date.now();
-  const updated = await db
-    .update(notes)
-    .set({
-      extractBody: taskTitle,
-      promotedTaskId: result.taskId,
-      archivedAt: archiveTs,
-      updatedAt: archiveTs,
-    })
-    .where(
-      and(
-        eq(notes.id, noteId),
-        eq(notes.userId, userId),
-        noTasksSendBinding(userId, noteId),
-      ),
-    )
-    .returning({
-      id: notes.id,
-      body: notes.body,
-      createdAt: notes.createdAt,
-      updatedAt: notes.updatedAt,
-      extractBody: notes.extractBody,
-      promotedTaskId: notes.promotedTaskId,
-      archivedAt: notes.archivedAt,
-      reviewedAt: notes.reviewedAt,
-      source: notes.source,
-      workspaceId: notes.workspaceId,
-    });
+  const updated = await privateNotesDbWrite(
+    async () => db
+      .update(notes)
+      .set({
+        extractBody: taskTitle,
+        promotedTaskId: result.taskId,
+        archivedAt: archiveTs,
+        updatedAt: archiveTs,
+      })
+      .where(
+        and(
+          eq(notes.id, noteId),
+          eq(notes.userId, userId),
+          noTasksSendBinding(userId, noteId),
+        ),
+      )
+      .returning({
+        id: notes.id,
+        body: notes.body,
+        createdAt: notes.createdAt,
+        updatedAt: notes.updatedAt,
+        extractBody: notes.extractBody,
+        promotedTaskId: notes.promotedTaskId,
+        archivedAt: notes.archivedAt,
+        reviewedAt: notes.reviewedAt,
+        source: notes.source,
+        workspaceId: notes.workspaceId,
+      }),
+    "send",
+  );
 
   const noteRow = updated[0];
   if (!noteRow) {
@@ -1897,21 +1903,24 @@ export async function sendApprovedExtractToTasks(
 
     const now = Date.now();
     const leaseToken = makeTasksSendLeaseToken();
-    const inserted = await tx
-      .insert(noteTaskSendOutbox)
-      .values({
-        operationId: makeTasksSendOperationId(),
-        ...immutableRequest,
-        baseUpdatedAt: expectedUpdatedAt,
-        reservedUpdatedAt,
-        status: "pending",
-        leaseToken,
-        leaseExpiresAt: now + TASKS_SEND_LEASE_MS,
-        attemptCount: 1,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .returning(tasksSendOutboxSelection);
+    const inserted = await privateNotesDbWrite(
+      async () => tx
+        .insert(noteTaskSendOutbox)
+        .values({
+          operationId: makeTasksSendOperationId(),
+          ...immutableRequest,
+          baseUpdatedAt: expectedUpdatedAt,
+          reservedUpdatedAt,
+          status: "pending",
+          leaseToken,
+          leaseExpiresAt: now + TASKS_SEND_LEASE_MS,
+          attemptCount: 1,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning(tasksSendOutboxSelection),
+      "send",
+    );
     if (!inserted[0]) throw new Error("Could not reserve the Tasks send");
     return {
       kind: "pending" as const,
@@ -2061,25 +2070,28 @@ export async function sendApprovedExtractToTasks(
     }
 
     const finalUpdatedAt = nextUpdatedAt(completedAt, outbox.reservedUpdatedAt);
-    const stored = await tx
-      .update(notes)
-      .set({
-        extractBody: approvedBody,
-        promotedTaskId: result.taskId,
-        workspaceId,
-        archivedAt: null,
-        updatedAt: finalUpdatedAt,
-      })
-      .where(
-        and(
-          eq(notes.id, noteId),
-          eq(notes.userId, userId),
-          eq(notes.updatedAt, outbox.reservedUpdatedAt),
-          isNull(notes.archivedAt),
-          isNull(notes.promotedTaskId),
-        ),
-      )
-      .returning(await noteSelection());
+    const stored = await privateNotesDbWrite(
+      async () => tx
+        .update(notes)
+        .set({
+          extractBody: approvedBody,
+          promotedTaskId: result.taskId,
+          workspaceId,
+          archivedAt: null,
+          updatedAt: finalUpdatedAt,
+        })
+        .where(
+          and(
+            eq(notes.id, noteId),
+            eq(notes.userId, userId),
+            eq(notes.updatedAt, outbox.reservedUpdatedAt),
+            isNull(notes.archivedAt),
+            isNull(notes.promotedTaskId),
+          ),
+        )
+        .returning(await noteSelection()),
+      "send",
+    );
     if (!stored[0]) {
       throw new Error("The source note changed while storing the Tasks receipt");
     }
