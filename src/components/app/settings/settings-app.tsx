@@ -120,6 +120,7 @@ export function SettingsApp({
     createdAt: string;
     expiresAt: string;
     invitedByUserId: string;
+    lastSentAt: number | null;
   }>;
   recentActivity: Array<{
     id: string;

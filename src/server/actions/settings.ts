@@ -30,7 +30,7 @@ import { deleteProject, renameProject } from "@/server/projects/service";
 import { unpublishProjectWith } from "@/server/projects/recovery";
 import { currentUser as clerkCurrentUser } from "@clerk/nextjs/server";
 import { canAddMember } from "@/server/db/membership";
-import { inviteEmailHtml, sendEmail } from "@/server/email";
+import { emailConfigured, inviteEmailHtml, sendEmail } from "@/server/email";
 import { seedDomainAction } from "@/server/actions/seed";
 import type { DomainId } from "@/lib/domains";
 import type { ActivityPayload } from "@/lib/data";
@@ -492,7 +492,7 @@ function nowMs(): number {
   return Date.now();
 }
 
-/** Mint an invite token + send the email.
+/** Mint an email-bound invite token and send it when delivery is configured.
  *
  *  Changes in the Phase 2 invite-hardening pack:
  *  - Accepts a validated `role` param clamped server-side to 'member'|'owner'.
@@ -513,7 +513,8 @@ export async function inviteMemberByEmailAction(
   ok: true;
   email: string;
   sent: boolean;
-  reason?: "already-member" | "cooldown";
+  reason?: "already-member" | "cooldown" | "email-unavailable" | "delivery-unconfirmed";
+  acceptUrl?: string;
 }> {
   const trimmed = email.trim().toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmed)) {
@@ -618,8 +619,13 @@ export async function inviteMemberByEmailAction(
     );
   }
 
-  // Send. Dev path (no Resend key) logs and returns ok.
+  // The invite is durable and email-bound even without a mail provider. Do not
+  // call sendEmail's legacy no-key success shim or record delivery evidence.
   const acceptUrl = `${siteUrl()}/invite/${encodeURIComponent(token)}`;
+  if (!emailConfigured) {
+    revalidatePath("/app/settings");
+    return { ok: true, email: trimmed, sent: false, reason: "email-unavailable", acceptUrl };
+  }
   const html = inviteEmailHtml({
     workspaceName,
     inviterName,
@@ -636,8 +642,9 @@ export async function inviteMemberByEmailAction(
     html,
     text: `${inviterName} added you to ${workspaceName}. Accept the invite: ${acceptUrl}`,
   });
-  if (!result.ok) {
-    throw new Error(result.error ?? "Couldn’t send the invite email.");
+  if (!result.ok || !result.id || result.id === "dev-no-resend") {
+    revalidatePath("/app/settings");
+    return { ok: true, email: trimmed, sent: false, reason: "delivery-unconfirmed", acceptUrl };
   }
 
   // Update delivery evidence atomically unless deletion already owns the
@@ -664,6 +671,7 @@ export async function inviteMemberByEmailAction(
     { behavior: "immediate" },
   );
 
+  revalidatePath("/app/settings");
   return { ok: true, email: trimmed, sent: true };
 }
 
@@ -893,9 +901,9 @@ export async function acceptInviteAction(token: string): Promise<{
 }
 
 /**
- * Server action: list pending invites for the active workspace. Used
- * by the settings members panel so the owner can see who's been
- * invited and hasn't accepted yet, and resend or revoke.
+ * Server action: list pending invites for a proved owner. The rows include
+ * bearer tokens for copying links, so ordinary readable membership is not
+ * sufficient. Used by the settings members panel for send, copy and revoke.
  * Scopes to invites that are unaccepted AND unexpired.
  */
 export type PendingInviteRead = {
@@ -905,6 +913,7 @@ export type PendingInviteRead = {
   createdAt: string;
   expiresAt: string;
   invitedByUserId: string;
+  lastSentAt: number | null;
 };
 
 export async function listPendingInvitesAction(
@@ -914,8 +923,14 @@ export async function listPendingInvitesAction(
   // returns it *because it was refused* rather than by running a query that
   // matched nothing (D-018). Which of the two happened is never told apart to
   // the caller — that would be an existence leak (ADR 0001 §4).
-  const ws = await readableSettingsProject(projectId);
-  if (ws === null) return [];
+  const [me, ambient] = await Promise.all([getCurrentUser(), getActiveWorkspaceOrNull()]);
+  const grant = await authorizeProjectCandidate({
+    candidateProjectId: projectId ?? ambient,
+    capability: "manageProject",
+    actorUserId: me,
+  });
+  if (!grant.ok) return [];
+  const ws = grant.projectId;
   const now = new Date();
   const rows = await db
     .select({
@@ -925,6 +940,7 @@ export async function listPendingInvitesAction(
       createdAt: pendingInvites.createdAt,
       expiresAt: pendingInvites.expiresAt,
       invitedByUserId: pendingInvites.invitedByUserId,
+      lastSentAt: pendingInvites.lastSentAt,
       acceptedAt: pendingInvites.acceptedAt,
     })
     .from(pendingInvites)
@@ -939,6 +955,7 @@ export async function listPendingInvitesAction(
       createdAt: r.createdAt.toISOString(),
       expiresAt: r.expiresAt.toISOString(),
       invitedByUserId: r.invitedByUserId,
+      lastSentAt: r.lastSentAt,
     }));
 }
 

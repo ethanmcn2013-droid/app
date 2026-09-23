@@ -40,6 +40,7 @@ type PendingInvite = {
   createdAt: string;
   expiresAt: string;
   invitedByUserId: string;
+  lastSentAt: number | null;
 };
 
 type ActivityLine = {
@@ -97,6 +98,7 @@ export function MembersSection({
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"member" | "owner">("member");
   const [inviteNotice, setInviteNotice] = useState<string | null>(null);
+  const [manualInvite, setManualInvite] = useState<{ email: string; url: string } | null>(null);
   const canEdit = myRole === "owner";
   const isCapped =
     memberCapacity.max !== null &&
@@ -164,12 +166,21 @@ export function MembersSection({
           );
           return;
         }
+        if ((result.reason === "email-unavailable" || result.reason === "delivery-unconfirmed") && result.acceptUrl) {
+          setManualInvite({ email: result.email, url: result.acceptUrl });
+          setInviteEmail("");
+          setInviteNotice(result.reason === "email-unavailable"
+            ? "Invite created. Email isn’t available right now, so no message was sent."
+            : "Invite created. We couldn’t confirm email delivery; check with them before sending again.");
+          return;
+        }
         toast(`Invite sent to ${email}`, {
           tone: "success",
           body: "Good for 7 days. They click the link, sign in with this address, and they’re in.",
         });
         setInviteEmail("");
         setInviteNotice(null);
+        setManualInvite(null);
       } catch (err) {
         toast("Couldn’t invite", {
           tone: "error",
@@ -183,6 +194,7 @@ export function MembersSection({
     startTransition(async () => {
       try {
         await revokePendingInviteAction(invite.token, projectId ?? undefined);
+        setManualInvite((current) => current?.url.endsWith(`/invite/${encodeURIComponent(invite.token)}`) ? null : current);
         toast(`Invite to ${invite.email} revoked`, { tone: "success" });
       } catch (err) {
         toast("Couldn’t revoke", {
@@ -215,6 +227,16 @@ export function MembersSection({
           });
           return;
         }
+        if ((result.reason === "email-unavailable" || result.reason === "delivery-unconfirmed") && result.acceptUrl) {
+          setManualInvite({ email: result.email, url: result.acceptUrl });
+          toast("Invite ready to share", {
+            tone: "info",
+            body: result.reason === "email-unavailable"
+              ? "Email isn’t available right now. No message was sent; copy the link below instead."
+              : "We couldn’t confirm email delivery. Check with them before sending again, or copy the link below.",
+          });
+          return;
+        }
         toast(`Resent to ${invite.email}`, {
           tone: "success",
           body: "Same link, same expiry. Worth a follow-up if it’s been days.",
@@ -226,6 +248,19 @@ export function MembersSection({
         });
       }
     });
+  }
+
+  async function handleCopyLink(invite: PendingInvite) {
+    const origin = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
+    const url = new URL(`/invite/${encodeURIComponent(invite.token)}`, origin).toString();
+    setManualInvite({ email: invite.email, url });
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(url);
+      toast("Invite link copied", { tone: "success" });
+    } catch {
+      toast("Select and copy the link below", { tone: "info" });
+    }
   }
 
   return (
@@ -247,9 +282,9 @@ export function MembersSection({
               Invite by email
             </div>
             <p className="mt-1 max-w-[520px] text-[12.5px] leading-[1.55] text-ink-soft">
-              Drop an email and we send them a link. They click it, sign
-              in with that address, and they&apos;re in, no setup, no
-              tool tour. Invites are good for seven days.
+              Add their email to create a seven-day invite. If email delivery is
+              available, we&apos;ll send the link. Otherwise, copy it below and
+              share it with them. Only that email address can accept.
             </p>
           </div>
           {showCounter ? (
@@ -273,13 +308,13 @@ export function MembersSection({
             onChange={(e) => { setInviteEmail(e.target.value); setInviteNotice(null); }}
             placeholder="teammate@yourdomain.com"
             disabled={!canEdit || pending || isCapped}
-            className="flex-1 rounded-md border border-line bg-white px-3 py-1.5 text-[13px] text-ink shadow-sm focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/15 disabled:opacity-60"
+            className="min-h-11 flex-1 rounded-md border border-line bg-white px-3 py-1.5 text-[13px] text-ink shadow-sm focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/15 disabled:opacity-60"
           />
           <select
             value={inviteRole}
             onChange={(e) => setInviteRole(e.target.value as "member" | "owner")}
             disabled={!canEdit || pending || isCapped}
-            className="rounded-md border border-line bg-white px-2 py-1.5 text-[13px] text-ink shadow-sm focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/15 disabled:opacity-60"
+            className="min-h-11 rounded-md border border-line bg-white px-2 py-1.5 text-[13px] text-ink shadow-sm focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/15 disabled:opacity-60"
             aria-label="Role for invited member"
           >
             <option value="member">Member</option>
@@ -288,15 +323,29 @@ export function MembersSection({
           <button
             type="submit"
             disabled={!canEdit || pending || isCapped || !inviteEmail.trim()}
-            className="rounded-full bg-ink px-4 py-1.5 text-[12.5px] font-medium text-white shadow-sm hover:bg-ink-soft disabled:opacity-50"
+            className="min-h-11 rounded-full bg-ink px-4 py-1.5 text-[12.5px] font-medium text-white shadow-sm hover:bg-ink-soft disabled:opacity-50"
           >
-            Send invite
+            Create invite
           </button>
         </div>
         {inviteNotice ? (
           <p className="mt-2 text-[12px] leading-[1.5] text-ink-soft">
             {inviteNotice}
           </p>
+        ) : null}
+        {canEdit && manualInvite ? (
+          <div className="mt-3 rounded-lg border border-line-soft bg-bg-sunken/40 p-3">
+            <label htmlFor="manual-invite-link" className="block text-[12px] font-medium text-ink">
+              Link for {manualInvite.email}
+            </label>
+            <p className="mt-1 text-[11.5px] text-ink-soft">
+              Only someone signed in with this verified email can accept. The link expires with the invite.
+            </p>
+            <input id="manual-invite-link" type="text" readOnly value={manualInvite.url}
+              onFocus={(event) => event.currentTarget.select()}
+              aria-label={`Invite link for ${manualInvite.email}`}
+              className="mt-2 min-h-11 w-full rounded-md border border-line bg-white px-3 text-[12px] text-ink focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/15" />
+          </div>
         ) : null}
         {!canEdit ? (
           <p className="mt-2 text-[11.5px] text-ink-quiet">
@@ -340,42 +389,47 @@ export function MembersSection({
             </div>
             <div className="text-[11px] text-ink-quiet tabular-nums">
               {pendingInvites.length}{" "}
-              {pendingInvites.length === 1 ? "out" : "out"}
+              awaiting
             </div>
           </div>
           <ul>
             {pendingInvites.map((invite) => (
               <li
                 key={invite.token}
-                className="grid grid-cols-[1fr_auto_auto] items-center gap-4 border-b border-line-soft/60 px-5 py-3 last:border-b-0"
+                className="flex flex-wrap items-center gap-2 border-b border-line-soft/60 px-5 py-3 last:border-b-0"
               >
-                <div className="min-w-0">
+                <div className="min-w-[180px] flex-1">
                   <div className="truncate text-[13px] font-medium text-ink">
                     {invite.email}
                   </div>
                   <div className="text-[11.5px] text-ink-quiet">
-                    Sent {fmtAgo(invite.createdAt)} &middot;{" "}
+                    {invite.lastSentAt === null ? "Created" : "Sent"}{" "}
+                    {fmtAgo(invite.lastSentAt === null ? invite.createdAt : new Date(invite.lastSentAt).toISOString())} &middot;{" "}
                     {fmtUntil(invite.expiresAt)}
                   </div>
                 </div>
+                {canEdit ? (
+                  <button type="button" onClick={() => void handleCopyLink(invite)}
+                    className="min-h-11 rounded-full border border-line bg-white px-3 text-[11.5px] font-medium text-ink-soft hover:border-ink-soft/30 hover:text-ink">
+                    Copy link
+                  </button>
+                ) : null}
                 {canEdit ? (
                   <button
                     type="button"
                     onClick={() => handleResend(invite)}
                     disabled={pending}
-                    className="rounded-full border border-line bg-white px-2.5 py-0.5 text-[11.5px] font-medium text-ink-soft hover:border-ink-soft/30 hover:text-ink disabled:opacity-60"
+                    className="min-h-11 rounded-full border border-line bg-white px-3 text-[11.5px] font-medium text-ink-soft hover:border-ink-soft/30 hover:text-ink disabled:opacity-60"
                   >
-                    Resend
+                    {invite.lastSentAt === null ? "Send email" : "Resend"}
                   </button>
-                ) : (
-                  <span />
-                )}
+                ) : null}
                 {canEdit ? (
                   <button
                     type="button"
                     onClick={() => handleRevoke(invite)}
                     disabled={pending}
-                    className="rounded-md p-1.5 text-ink-quiet transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:opacity-60"
+                    className="min-h-11 min-w-11 rounded-md p-1.5 text-ink-quiet transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:opacity-60"
                     aria-label={`Revoke invite for ${invite.email}`}
                     title="Revoke invite"
                   >
@@ -391,9 +445,7 @@ export function MembersSection({
                       <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
                     </svg>
                   </button>
-                ) : (
-                  <span />
-                )}
+                ) : null}
               </li>
             ))}
           </ul>

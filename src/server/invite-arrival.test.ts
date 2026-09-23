@@ -27,6 +27,7 @@ const fixture = {
   db: harness.db,
   user: null as null | { id: string; primaryEmailAddressId: string; emailAddresses: { id: string; emailAddress: string; verification: { status: string } }[] },
   beforeIdentity: null as null | (() => Promise<void>),
+  allowAmbient: false,
   cookies: new Map<string, string>(),
   writes: [] as { name: string; value: string; options: Record<string, unknown> }[],
   invalidations: [] as string[],
@@ -56,6 +57,7 @@ beforeEach(async () => {
     emailAddresses: [{ id: "primary", emailAddress: "Invitee@example.test", verification: { status: "verified" } }],
   };
   fixture.beforeIdentity = null;
+  fixture.allowAmbient = false;
   fixture.cookies = new Map([["signal_active_project", "project-a"], ["tasks_active_ws", "project-a"]]);
   fixture.writes = [];
   fixture.invalidations = [];
@@ -95,6 +97,40 @@ async function assertNoAcceptance() {
   assert.deepEqual(fixture.writes, []);
   assert.equal(fixture.cookies.get("signal_active_project"), "project-a");
 }
+
+test("owner creates an email-bound invite without a mail provider, with no delivery evidence or member token read", async () => {
+  fixture.user = {
+    id: "owner", primaryEmailAddressId: "owner-primary",
+    emailAddresses: [{ id: "owner-primary", emailAddress: "owner@example.test", verification: { status: "verified" } }],
+  };
+  fixture.allowAmbient = true;
+  fixture.cookies.set("signal_active_project", "project-b");
+  const { inviteMemberByEmailAction, listPendingInvitesAction } = await import("./actions/settings");
+  const result = await inviteMemberByEmailAction("Fresh@EXAMPLE.test", "member", "project-b");
+  assert.equal(result.sent, false);
+  assert.equal(result.reason, "email-unavailable");
+  assert.equal(result.email, "fresh@example.test");
+  const persisted = await rows("SELECT token,workspace_id,email,role,last_sent_at,accepted_at FROM pending_invites WHERE email='fresh@example.test'");
+  assert.equal(persisted.length, 1);
+  assert.equal(persisted[0].workspace_id, "project-b");
+  assert.equal(persisted[0].role, "member");
+  assert.equal(persisted[0].last_sent_at, null);
+  assert.equal(persisted[0].accepted_at, null);
+  assert.equal(result.acceptUrl?.endsWith(`/invite/${persisted[0].token}`), true);
+  assert.deepEqual(await rows("SELECT kind FROM workspace_events"), []);
+  assert.ok(fixture.invalidations.includes("/app/settings"));
+  assert.equal((await listPendingInvitesAction("project-b")).length, 2);
+  const retry = await inviteMemberByEmailAction("fresh@example.test", "member", "project-b");
+  assert.equal(retry.reason, "email-unavailable");
+  assert.equal(retry.acceptUrl, result.acceptUrl);
+  assert.equal((await rows("SELECT token FROM pending_invites WHERE email='fresh@example.test'")).length, 1);
+  assert.deepEqual(await rows("SELECT kind FROM workspace_events"), []);
+
+  // A member may view Settings but cannot read or copy bearer invite tokens.
+  await harness.client.execute("INSERT INTO workspace_members(workspace_id,user_id,role) VALUES('project-b','invitee','member')");
+  fixture.user!.id = "invitee";
+  assert.deepEqual(await listPendingInvitesAction("project-b"), []);
+});
 
 test("accept B replaces stale A preferences and returns canonical My work in B", async () => {
   const result = await acceptInviteAction("invite-b");

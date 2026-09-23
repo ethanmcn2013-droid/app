@@ -9,7 +9,10 @@ exports.getCurrentUser = async () => {
   return fixture().user?.id;
 };
 exports.getCurrentUserOrNull = async () => fixture().user?.id ?? null;
-exports.getActiveWorkspaceOrNull = async () => { throw Error("Ambient project lookup"); };
+exports.getActiveWorkspaceOrNull = async () => {
+  if (!fixture().allowAmbient) throw Error("Ambient project lookup");
+  return fixture().cookies.get("signal_active_project") ?? null;
+};
 exports.cookies = async () => ({
   get: name => ({ value: fixture().cookies.get(name) }),
   set: (name, value, options) => {
@@ -21,6 +24,7 @@ exports.cookies = async () => ({
 exports.revalidatePath = path => fixture().invalidations.push(path);
 exports.sendEmail = () => { throw Error("Email must not be sent"); };
 exports.inviteEmailHtml = () => { throw Error("Email must not be composed"); };
+exports.emailConfigured = false;
 exports.executeProjectDriveGrantOperation = async input => {
   fixture().driveCalls.push(input);
   throw Error("Fixture provider unavailable");
