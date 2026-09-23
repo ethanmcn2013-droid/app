@@ -70,3 +70,30 @@ test('failed activity INSERT logs a fixed category while the authorized Task edi
     f.close();
   }
 });
+
+test('failed share visit INSERT logs no private user-agent while retaining the visit counter', async () => {
+  const f=await usageFixture({seedClaim:false});
+  const privateAgent='PRIVATE_SHARE_USER_AGENT_SYNTHETIC';
+  const originalWarn=console.warn;
+  const warnings=[];
+  try {
+    await f.db.insert(f.schema.shareLinks).values({
+      token:'sl_fixture_share',workspaceId:'a',view:'board',mode:'view',
+    });
+    await f.client.execute("CREATE TRIGGER fail_private_share_visit BEFORE INSERT ON share_link_visits BEGIN SELECT RAISE(ABORT,'synthetic write failure'); END");
+    await assert.rejects(
+      () => f.load('src/server/db/queries.ts').recordShareLinkVisit('sl_fixture_share',privateAgent),
+      error => error.message.includes(privateAgent),
+    );
+    console.warn=(...args)=>{warnings.push(args);};
+    await f.load('src/server/actions/share.ts').bumpShareLinkVisitAction('sl_fixture_share',privateAgent);
+    const link=(await f.db.select().from(f.schema.shareLinks).where(eq(f.schema.shareLinks.token,'sl_fixture_share')))[0];
+    assert.equal(link.visits,1);
+    assert.equal(Number((await f.client.execute('SELECT count(*) AS n FROM share_link_visits')).rows[0].n),0);
+    assert.deepEqual(warnings,[['share: visit-log insert failed']]);
+    assert.equal(JSON.stringify(warnings).includes(privateAgent),false);
+  } finally {
+    console.warn=originalWarn;
+    f.close();
+  }
+});

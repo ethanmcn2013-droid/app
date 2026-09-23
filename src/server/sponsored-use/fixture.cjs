@@ -17,12 +17,22 @@ async function usageFixture(options = {}) {
   let db;
   const state = { actor: "owner", ambient: "a", demo: false, afterAuth: null };
   const cache = new Map();
+  let visitSequence = 0;
   function load(name) {
     const file = [name, name + ".ts", name + ".tsx", name + "/index.ts"].find(f => fs.existsSync(root + "/" + f) && fs.statSync(root + "/" + f).isFile()) ?? name;
     if (file === "src/server/db/index.ts") return { db };
     if (file === "src/server/auth.ts") return { getCurrentUser: async () => state.actor, getActiveWorkspaceOrNull: async () => state.ambient };
     if (file === "src/lib/access-mode.ts") return { isDemoMode: () => state.demo };
-    if (file === "src/server/db/queries.ts") return { getTasks: async ws => db.select().from(schema.tasks).where(eq(schema.tasks.workspaceId, ws)) };
+    if (file === "src/server/db/queries.ts") return {
+      getTasks: async ws => db.select().from(schema.tasks).where(eq(schema.tasks.workspaceId, ws)),
+      // Exercise the share action's actual Drizzle visit write against the
+      // disposable store, including a failing INSERT carrying user-agent text.
+      recordShareLinkVisit: async (token, userAgent) => db.insert(schema.shareLinkVisits).values({
+        id: `fixture-visit-${++visitSequence}`,
+        token,
+        userAgentHint: userAgent ? userAgent.slice(0, 60) : null,
+      }),
+    };
     if (file === "src/server/db/board-config-read.ts") return { readWorkspaceColumnConfig: async () => null };
     if (file === "src/lib/board-columns.ts") return { isDoneColumnKey: lane => lane === "done" };
     if (file === "src/server/db/seed.ts") return { LEGACY_WORKSPACE_ID: "legacy" };

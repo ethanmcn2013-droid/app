@@ -204,8 +204,10 @@ export async function bumpShareLinkVisitAction(
   // Best-effort visit log, never blocks the read-only render path.
   try {
     await recordShareLinkVisit(publicId, userAgent ?? null);
-  } catch (e) {
-    console.warn("share: visit-log insert failed", e);
+  } catch {
+    // A failed Drizzle statement can include the supplied user-agent hint in
+    // its error parameters. The visit row is best-effort; log no bound data.
+    console.warn("share: visit-log insert failed");
   }
   // The manage-links popover surfaces visit counts; revalidate so an
   // open admin window picks up the new total on its next hit.
