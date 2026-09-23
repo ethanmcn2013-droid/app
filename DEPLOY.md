@@ -243,9 +243,16 @@ then rechecks the target URL, source revision, schema and migration-ledger
 baseline before invoking the existing atomic migration runner. Missing
 encryption or upload blocks apply. A separate allowlisted result artifact
 records a verified apply or a failed/possibly partial state. The matching
-private age identity stays outside GitHub; a downloaded-artifact decryption and restore rehearsal is
-required before calling the off-device backup recoverable. Current custody is
-bound to one Windows account/host; portable key escrow remains open.
+private age identity is never supplied to this App migration workflow. It is also
+held in the separate private workspace repository’s `recovery-key-custody`
+Actions environment, restricted to `main`; it is not committed in either
+repository. Hosted run `35838321983` at workspace source `fd6d10e` restored
+all five stores and cleaned up plaintext, proving recovery after loss of this
+Windows machine/account for the historical 04:02 snapshots. GitHub account
+and service access remain a shared trust boundary. This is not separate-custodian
+escrow, live-provider restoration, cross-store atomicity, or a fresh quiescent
+cutover backup. Each production apply still requires its own fresh verified
+backup and exact source/target evidence.
 
 For an offline rehearsal, download the exact run's
 `tasks-encrypted-backup-RUN_ID` artifact. Record the trusted

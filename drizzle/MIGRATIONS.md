@@ -121,8 +121,11 @@ disabled. The new `db-migrate-encrypted` workflow uploads only an age-encrypted
 bundle of the backup body and full verification manifest with a sanitized
 receipt, and requires upload acknowledgment before production apply. It retains
 a separate sanitized final result even if apply fails after mutation starts.
-The private decryption identity is held outside GitHub; see `DEPLOY.md` §4
-for the trusted-hash offline restore rehearsal.
+The App migration workflow does not receive the private decryption identity.
+A separate main-only environment in the private workspace repository holds
+the key for the accepted hosted five-store Windows-loss recovery drill.
+See `DEPLOY.md` §4 for custody limits and the trusted-hash offline rehearsal;
+App Actions never receives the workspace recovery secret.
 
 
 ## 4 September 2026 — resource backfill proof lifecycle

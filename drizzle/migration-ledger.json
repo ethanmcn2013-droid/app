@@ -502,6 +502,16 @@
       "policy": "forward",
       "receipt": "drizzle/receipts/message-read-coverage-2026-09-23.json",
       "receiptSha256": "e261673ae15591b818d7b8d4e8416e0ddbd6d23f7660bdf211329619141c9663"
+    },
+    {
+      "ordinal": 38,
+      "id": "0038_project_drive_token_revocation",
+      "file": "drizzle/0038_project_drive_token_revocation.sql",
+      "when": 1790150401000,
+      "sha256": "054f3aa69d775f6b4ab59e40811cef209dcb12d886944ccef92ad9316ccd16c8",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/project-drive-token-revocation-2026-09-23.json",
+      "receiptSha256": "8e00d888797df1b0c208a703fb9a035a0ef4aac51d481b76b1df9b767accfbad"
     }
   ]
 }

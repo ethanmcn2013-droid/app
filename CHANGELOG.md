@@ -4,17 +4,15 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
-<<<<<<< HEAD
 ## 2026-09-23 · Production Sprint candidate · Project attention in Inbox
 
 The candidate brings directed Project messages and Task Discussion comments into the shared Inbox with current-membership links back to their source. Opening visible content records private per-reader coverage; hidden replies remain unread, and an explicit Mark all seen action captures a committed source boundary. The additive 0037 Tasks migration stores only read ranges and cleans them on account, conversation, and Task deletion, including foreign-key-off recovery paths. Local persistence and migration tests passed; controlled two-session receiving and production migration are still required before a release claim.
-=======
+
 ## 2026-09-23 · January candidate · Drive disconnect keeps its evidence
 
 A Drive disconnect now saves the exact credential generation before asking Google to revoke it. If Google cannot confirm the request, Settings keeps the warning after reload and offers a retry; reconnecting stays unavailable until confirmation. A late OAuth callback cannot replace a connection while its previous disconnect is unresolved. Existing retired credentials remain unknown rather than being labelled confirmed from local status alone.
 
 The additive 0038 migration is reserved after the separate 0037 candidate. Local tests cover failure, crash recovery, account erasure, same-account races and the flags-off production schema; no provider journey or production migration is claimed by this entry.
->>>>>>> d64c1f6f (Keep Google Drive disconnect requests durable until provider confirmation)
 
 ## 2026-09-23 · January candidate · Core work is easier to find
 
