@@ -21,6 +21,7 @@ import { getSubtasks, getTasks } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
 import { getActiveWorkspaceOrNull, getCurrentUser } from "@/server/auth";
+import { privateTaskDbWrite } from "@/server/actions/private-task-db-write";
 import {
   authorizeProjectCandidate,
   authorizeStoredProject,
@@ -508,10 +509,10 @@ export async function updateTaskAction(
   // Workspace guard: a write only lands when the row belongs to the
   // caller's active workspace. Without this clause an authenticated
   // user who knows any task id could overwrite cross-tenant rows.
-  await db
+  await privateTaskDbWrite(() => db
     .update(tasks)
     .set({ ...cleaned, ...bump() })
-    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
+    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws))));
 
   // Emit one activity per tracked field (parallel; observability,
   // not transactional). Untracked fields like `idleDays` are skipped.
@@ -667,7 +668,7 @@ export async function addTaskAction(input: {
         return (row?.max ?? 0) + 1;
       },
       async insertTask(value) {
-        const [row] = await tx.insert(tasks).values({
+        const [row] = await privateTaskDbWrite(() => tx.insert(tasks).values({
           id: value.id, workspaceId: value.workspaceId, seq: nextTaskSeq(value.workspaceId), title: value.title,
           description: value.description, lane: value.lane, priority: value.priority,
           assignees: [...value.assignees], estimate: value.estimate, due: value.due,
@@ -677,7 +678,7 @@ export async function addTaskAction(input: {
           cents: value.cents, parentTaskId: value.parentTaskId, position: value.position,
           completedAt: value.completedAtSeconds == null ? null : new Date(value.completedAtSeconds * 1000),
           isMilestone: value.isMilestone, updatedAt: new Date(value.createdAtSeconds * 1000),
-        }).returning({ seq: tasks.seq });
+        }).returning({ seq: tasks.seq }));
         return { seq: row?.seq ?? 0 };
       },
       async insertActivity(value) {
@@ -962,7 +963,7 @@ export async function duplicateTaskAction(id: string): Promise<Task[]> {
       ? source.position + 0.0001
       : await nextPositionForLane(source.lane as LaneId, ws);
 
-  await db.insert(tasks).values({
+  await privateTaskDbWrite(() => db.insert(tasks).values({
     id: newId,
     workspaceId: ws,
     seq: nextTaskSeq(ws),
@@ -988,12 +989,12 @@ export async function duplicateTaskAction(id: string): Promise<Task[]> {
     completedAt: source.completedAt ?? null,
     parentTaskId: null,
     ...bump(),
-  });
+  }));
 
   // Copy every subtask as a child of the new task.
   const children = await getSubtasks(id, ws);
   for (const child of children) {
-    await db.insert(tasks).values({
+    await privateTaskDbWrite(() => db.insert(tasks).values({
       id: freshTaskId(),
       workspaceId: ws,
       seq: nextTaskSeq(ws),
@@ -1009,7 +1010,7 @@ export async function duplicateTaskAction(id: string): Promise<Task[]> {
       cents: sanitizeCents(child.cents ?? null),
       parentTaskId: newId,
       ...bump(),
-    });
+    }));
   }
 
   await recordActivity(newId, { kind: "taskAdd", lane: source.lane }, { workspaceId: ws });

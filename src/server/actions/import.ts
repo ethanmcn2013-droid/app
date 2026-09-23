@@ -4,6 +4,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
 import { nextTaskSeq } from "@/server/db/task-seq";
+import { privateTaskDbWrite } from "@/server/actions/private-task-db-write";
 import { tasks, workspaces } from "@/server/db/schema";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
@@ -167,7 +168,7 @@ export async function importCsvAction(
       positions[lane] = (positions[lane] ?? 0) + 1;
       const id = freshId();
       const dueAt = coerceDate(raw.dueAt);
-      await tx.insert(tasks)
+      await privateTaskDbWrite(() => tx.insert(tasks)
         .values({
           id,
           workspaceId: ws,
@@ -182,7 +183,7 @@ export async function importCsvAction(
           position: positions[lane],
           ...bump(),
         })
-        .run();
+        .run());
       newIds.push(id);
     }
   });
