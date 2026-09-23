@@ -1,0 +1,61 @@
+{
+  "kind": "original-defect-reproduction",
+  "head": "2fdd06c404e6833dc3110fab2643084a3cd5785d",
+  "response": {
+    "extended": 2,
+    "unchanged": 0
+  },
+  "before": [
+    {
+      "id": "revoked-old",
+      "workspaceId": "previous-project",
+      "userId": "actor",
+      "tier": "wedding",
+      "source": "comp",
+      "startedAt": "2026-09-01T00:00:00.000Z",
+      "expiresAt": "1970-01-01T00:00:00.000Z",
+      "notes": "comp:FIXTURE-ABCDE-FGHJK",
+      "reachedBoardAt": null
+    },
+    {
+      "id": "unrelated-active",
+      "workspaceId": "previous-project",
+      "userId": "actor",
+      "tier": "wedding",
+      "source": "comp",
+      "startedAt": "2026-09-01T00:00:00.000Z",
+      "expiresAt": "2028-03-02T00:00:00.000Z",
+      "notes": "comp:FIXTURE-ABCDE-FGHJK",
+      "reachedBoardAt": null
+    }
+  ],
+  "after": [
+    {
+      "id": "revoked-old",
+      "workspaceId": "previous-project",
+      "userId": "actor",
+      "tier": "wedding",
+      "source": "comp",
+      "startedAt": "2026-09-01T00:00:00.000Z",
+      "expiresAt": "2029-08-30T00:00:00.000Z",
+      "notes": "comp:FIXTURE-ABCDE-FGHJK",
+      "reachedBoardAt": null
+    },
+    {
+      "id": "unrelated-active",
+      "workspaceId": "previous-project",
+      "userId": "actor",
+      "tier": "wedding",
+      "source": "comp",
+      "startedAt": "2026-09-01T00:00:00.000Z",
+      "expiresAt": "2029-08-30T00:00:00.000Z",
+      "notes": "comp:FIXTURE-ABCDE-FGHJK",
+      "reachedBoardAt": null
+    }
+  ],
+  "sourceHashes": {
+    "src/server/db/couple-access-term.ts": "09d8dc7b3ec46725d63116c5737a5948212388fafe6aab30dadd8fb38d66dff0",
+    "src/server/actions/planning.ts": "5b4962f64680853332195441d3db9e9811ebeb69ff1c8519801a49ec0f0756c2"
+  },
+  "limit": "Actual old helper with isolated in-memory SQLite. The two production callers are source-traced; no full HTTP, deployed flag or provider execution. Exit0 establishes these original mutations occurred, not a passing invariant."
+}

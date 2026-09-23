@@ -87,9 +87,7 @@ const SINK = "src/server/operational-log.ts";
  * without a reviewer seeing the call is the thing this stops.
  */
 const ALLOWED = Object.freeze({
-  "src/server/account-unified-erasure.ts": 5,
   "src/server/actions/ai.ts": 4,
-  "src/server/actions/billing.ts": 2,
   "src/server/actions/import.ts": 1,
   "src/server/actions/nudge.ts": 1,
   "src/server/actions/security.ts": 1,
@@ -106,7 +104,7 @@ const ALLOWED = Object.freeze({
   "src/app/api/checkout/route.ts": 1,
   "src/app/api/cron/digest/route.ts": 1,
   "src/app/api/cron/weekly-digest/route.ts": 1,
-  "src/app/api/webhooks/clerk/route.ts": 3,
+  "src/app/api/webhooks/clerk/route.ts": 2,
   "src/app/api/webhooks/stripe/route.ts": 2,
   "src/lib/ops/ping-studio.ts": 1,
   "src/lib/analytics/posthog.ts": 3,

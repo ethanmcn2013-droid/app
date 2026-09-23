@@ -8,6 +8,8 @@ export type WorkspaceMemberMeta = {
   /** users.id — the value stored in tasks.assignees. */
   id: string;
   name: string;
+  /** Known profile name, or null when `name` is a neutral display fallback. */
+  knownName: string | null;
   initials: string;
   /** CSS color value for the avatar chip. */
   color: string;

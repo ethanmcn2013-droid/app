@@ -25,7 +25,7 @@ import { isValidSlug, slugify } from "@/modules/timeline/lib/reserved-slugs";
 import { planMilestoneReconciliation } from "@/modules/timeline/lib/milestone-reconciliation";
 import { checkRateLimit, getClientIp, type RateLimitResult } from "@/modules/timeline/lib/rate-limit";
 import { getSyncedTemplateRoadmap } from "@/modules/timeline/lib/templates.generated";
-import { resolveEntitlement } from "@/lib/entitlements-shared/reads";
+import { getPersonalFeatureTier } from "@/server/db/entitlements";
 import { tierAtLeast } from "@/lib/entitlements-shared/tiers";
 import { isDemoMode } from "@/lib/access-mode";
 import { demoEffectiveNodes } from "@/modules/timeline/lib/roadmap/demo-data";
@@ -34,6 +34,7 @@ import type {
   Status,
 } from "@/modules/timeline/server/db/timeline-schema";
 import { recordSponsoredUse } from "@/lib/account/instrumentation/call-site";
+import { isCurrentSyncTarget } from "@/modules/timeline/server/sync/sync-target";
 
 /** Translate a denied RateLimitResult into the correct user-facing error string. */
 function rateLimitError(result: RateLimitResult & { allowed: false }): string {
@@ -141,10 +142,10 @@ export async function createWorkspaceAction(
     return { error: "That slug is already taken. Try another." };
   }
 
-  // Workspace-count cap. Read the canonical tier from
-  // signal-entitlements; only Workspace+ bypasses. Event and Wedding
-  // are one-workspace-by-design (matches /pricing).
-  const { tier } = await resolveEntitlement(userId);
+  // January Pro retains an unlimited workspace count. This personal allowance
+  // checks local revocations too; it does not grant another project's features.
+  // Event and Wedding retain the existing one-workspace creation cap.
+  const tier = await getPersonalFeatureTier(userId);
   if (!tierAtLeast(tier, "workspace")) {
     const owned = await getWorkspacesForUser(userId);
     if (owned.length >= FREE_WORKSPACE_CAP) {
@@ -416,20 +417,37 @@ export async function syncMilestonesAction(
   // safety property that only applies once the binding exists.
   const { acquireSyncLease, commitSyncGeneration, ensureSuiteProjectBinding } =
     await import("@/modules/timeline/server/sync/sync-state");
-  const bound = await ensureSuiteProjectBinding({
+  const syncTarget = {
+    ownerUserId: userId,
+    workspaceSlug,
+    projectSlug: targetProject.slug,
     tasksWorkspaceId: canonicalWorkspaceId,
-    timelineWorkspaceSlug: workspaceSlug,
-    primaryTimelineSlug: targetProject.slug,
-    authority: { kind: "inherits-workspace-binding" },
-  });
-  const lease =
-    bound.kind === "bound"
+  };
+  const unavailableTarget = {
+    error: "This timeline is no longer available for this refresh. Reload and try again.",
+    retryable: false,
+  };
+  // Binding/lease creation can itself race erasure when FKs are off. Guard
+  // those writes too, using one executor for every preparation read and write.
+  const preparation = await db.transaction(async (tx) => {
+    if (!await isCurrentSyncTarget(tx, syncTarget)) return null;
+    const bound = await ensureSuiteProjectBinding({
+      tasksWorkspaceId: canonicalWorkspaceId,
+      timelineWorkspaceSlug: workspaceSlug,
+      primaryTimelineSlug: targetProject.slug,
+      authority: { kind: "inherits-workspace-binding" },
+    }, tx);
+    const lease = bound.kind === "bound"
       ? await acquireSyncLease({
           tasksWorkspaceId: canonicalWorkspaceId,
           timelineWorkspaceSlug: workspaceSlug,
           timelineSlug: targetProject.slug,
-        })
+        }, tx)
       : null;
+    return { lease };
+  });
+  if (!preparation) return unavailableTarget;
+  const { lease } = preparation;
 
   const snapshot = await source.getMilestonesForClerkId(
     userId,
@@ -465,26 +483,6 @@ export async function syncMilestonesAction(
       retryable: true,
     };
   }
-
-  // Persist the provenance mapping before writing synced rows. This turns
-  // future publication checks into an exact project-level proof and prevents
-  // old mixed-workspace rows from being promoted via a workspace fallback.
-  //
-  // INHERITED, not owner-proved, and the distinction is real. This actor is
-  // authorized as the TIMELINE's owner; after a Signal Tasks ownership
-  // transfer they may no longer own the Project at all, so they cannot mint an
-  // ownership proof and refusing them would break sync for a legitimate owner
-  // of a legitimate timeline. What this write does is propagate a binding the
-  // parent workspace already carries — and `bindProjectToTasksWorkspace`
-  // verifies that itself, in its own database, rather than taking this
-  // caller's word for it. It can never introduce a Project the Timeline was
-  // not already bound to.
-  await bindProjectToTasksWorkspace(
-    workspaceSlug,
-    targetProject.slug,
-    canonicalWorkspaceId,
-    { kind: "inherits-workspace-binding" },
-  );
 
   // One canonical Tasks workspace maps to this one explicitly selected
   // Timeline project. Never pool every member workspace into a first project.
@@ -524,35 +522,34 @@ export async function syncMilestonesAction(
     lease.previousDigest !== null &&
     lease.previousDigest === snapshot.digest;
 
-  if (lease) {
-    // ── COMPARE-AND-SET, THEN WRITE, IN ONE TRANSACTION ──────────────────
-    // The order is the correctness. A CAS after the node write would report
-    // the race accurately and have already lost it.
-    const committed = await db.transaction(async (tx) => {
+  const committed = await db.transaction(async (tx) => {
+    // The source read awaited another store. Revalidate this exact local
+    // owner/project/binding even for an unchanged digest or a held lease.
+    if (!await isCurrentSyncTarget(tx, syncTarget)) return "unavailable";
+    if (lease) {
       const current = await commitSyncGeneration(tx, lease, outcome, refreshedAt);
-      if (!current) return false;
-      if (unchanged) return true;
-      await writeRoadmapNodes(workspaceSlug, targetProject.slug, milestones, {
-        reconcile: plan.reconcile,
-        executor: tx,
-      });
-      return true;
-    });
-    if (!committed) {
-      // A newer refresh already committed. Nothing was written and nothing is
-      // stale: the newer snapshot is on screen. This is not an error and must
-      // not offer Retry.
-      return {
-        ok: true,
-        count: milestones.length,
-        complete: plan.reconcile === "destructive",
-        superseded: true,
-      };
+      if (!current) return "superseded";
     }
-  } else {
+    // A legacy null child inherits only from the still-current exact parent.
+    await bindProjectToTasksWorkspace(
+      workspaceSlug, targetProject.slug, canonicalWorkspaceId,
+      { kind: "inherits-workspace-binding" }, tx,
+    );
+    if (unchanged) return "applied";
     await writeRoadmapNodes(workspaceSlug, targetProject.slug, milestones, {
       reconcile: plan.reconcile,
+      executor: tx,
     });
+    return "applied";
+  });
+  if (committed === "unavailable") return unavailableTarget;
+  if (committed === "superseded") {
+    return {
+      ok: true,
+      count: milestones.length,
+      complete: plan.reconcile === "destructive",
+      superseded: true,
+    };
   }
 
   // Revalidate private draft only, NOT the public URL (D6 two-gate).

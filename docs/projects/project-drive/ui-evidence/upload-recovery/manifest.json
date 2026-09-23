@@ -1,0 +1,34 @@
+{
+  "baseCommit": "6a8095dbe1307183c99b2c464a50284b37db3672",
+  "branch": "fix/january-drive-upload-recovery",
+  "sourceState": "Final implementation before commit; exact source hashes below",
+  "capturedAt": "2026-09-04T21:13:24.569Z",
+  "route": "http://127.0.0.1:3142/app/tasks?task=demo-t-01",
+  "mode": "Synthetic review, no provider requests",
+  "viewports": [
+    "1440x1000",
+    "390x844",
+    "768x1024",
+    "1920x1080"
+  ],
+  "states": [
+    "incomplete remains pending",
+    "finished becomes attached",
+    "unavailable retains claim"
+  ],
+  "browserWarningOrErrorLogs": [],
+  "sources": {
+    "src/components/app/detail-panel/resources-section.tsx": "1db50c9a5126230ab27a0b5805dbc3f1b1ec0959ef01af64c57e556a989decf9",
+    "src/components/app/detail-panel/drive-upload-review.tsx": "d5ff28643f2eff9d65f54165b74dd37072336b0a4bba7d22926ca0028b0aabe9",
+    "src/components/app/detail-panel/drive-reload-notice.tsx": "7f4300daa34c292b0e43ca0864a1fbd09d18cfceb2d8c9f9a8fafee75e02322a",
+    "src/lib/project-drive-upload-recovery.ts": "1bf921a448015fca7bf9a55a7533cefc707ded46f651d6f88ef8907a146edc02",
+    "src/lib/project-drive-reload.ts": "2b172d5fd7b297ede93358ab20990559f35c9a202b5ebcdc5f1ef259b55832ed"
+  },
+  "screenshots": {
+    "desktop-complete.png": "cf08f95eccf8fedcbdc326a967a35807819869e5baf37c13cf7a8bec087b6592",
+    "desktop-pending.png": "7a7c76fcf0431349c521d2e610607192c64e8d365c46b063a3b5527158b9f9b8",
+    "mobile-unavailable.png": "94659704e784e5cbdb8f4d55afea56a99a157f42ddc19fa112cf4f30949f7202",
+    "tablet-pending.png": "6ff0484dd52f4aae89e3478c465e6c4b1ee7377d7fd0d3a54070c1628795f5f0",
+    "wide-complete.png": "4ac710703ec3a113307a67d2b59236751a432457f8c995164246e800c1140175"
+  }
+}

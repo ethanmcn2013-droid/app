@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { SERVER_ACTION_BODY_LIMIT } from "./src/lib/upload-limit";
 
 /**
  * ── Security headers ───────────────────────────────────────────────
@@ -30,6 +31,20 @@ const clerkHosts =
   "https://*.signalstudio.ie https://*.clerk.accounts.dev https://*.clerk.com https://clerk-telemetry.com";
 const turnstile = "https://challenges.cloudflare.com";
 
+// WP-0: attachment bytes go from the browser straight to Vercel Blob, so
+// the browser now originates two requests it never used to. `vercel.com`
+// is the control-plane host a presigned PUT is signed against; the
+// `*.blob.vercel-storage.com` wildcard covers the object host the response
+// names. Both are browser-originated, so both belong in the policy — the
+// server-side calls in src/server/storage.ts do not.
+const blobUpload =
+  "https://vercel.com https://*.blob.vercel-storage.com";
+
+// Project Drive delegates attachment bytes straight from the signed-in
+// browser to a server-minted Google resumable session. This exact API origin
+// is sufficient; Drive pages are opened in a new tab and are never framed.
+const googleDriveApi = "https://www.googleapis.com";
+
 const googleTag = "https://www.googletagmanager.com";
 const googleAnalytics =
   "https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com";
@@ -57,7 +72,7 @@ function buildCsp({
     `style-src 'self' 'unsafe-inline'`,
     `img-src 'self' data: blob: https:`,
     `font-src 'self' data:`,
-    `connect-src 'self' https://va.vercel-scripts.com ${clerkHosts} https://accounts.clerk.com https://api.stripe.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://eu.i.posthog.com https://us.i.posthog.com${tagConnect}`,
+    `connect-src 'self' https://va.vercel-scripts.com ${clerkHosts} https://accounts.clerk.com https://api.stripe.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://eu.i.posthog.com https://us.i.posthog.com ${blobUpload} ${googleDriveApi}${tagConnect}`,
     `frame-src 'self' ${turnstile} https://*.clerk.accounts.dev https://js.stripe.com https://hooks.stripe.com`,
     `worker-src 'self' blob:`,
     `frame-ancestors ${frameAncestors}`,
@@ -308,12 +323,18 @@ const nextConfig: NextConfig = {
     // Roadmap's next.config carries the same shape (Phase 6.2).
     optimizePackageImports: ["@clerk/nextjs", "motion"],
     serverActions: {
-      // Photo capture in Notes posts image bytes to a server action. The
-      // framework default is 1 MB, and base64 inflates by about 1.37x, so
-      // anything over roughly 730 KB was rejected by Next before the
-      // product's own 5 MB limit was ever consulted — with a generic error.
-      // 8 MB clears a 5 MB photo with room for the encoding.
-      bodySizeLimit: "8mb",
+      // Photo capture in Notes posts image bytes to a server action, and
+      // base64 inflates them by about 1.37x, so the framework's 1 MB
+      // default rejects anything over roughly 730 KB with a generic error.
+      //
+      // WP-0: this was 8 MB, which is ABOVE Vercel's own 4.5 MB cap on a
+      // function request body — so it never fired, and bodies between the
+      // two got an opaque platform 413 instead. The value now comes from
+      // src/lib/upload-limit.ts, sits under the platform cap on purpose,
+      // and is asserted against it by
+      // src/server/upload-limit-contract.test.ts. Attachment bytes no
+      // longer travel this way at all; they go browser → Vercel Blob.
+      bodySizeLimit: SERVER_ACTION_BODY_LIMIT,
     },
   },
   async headers() {

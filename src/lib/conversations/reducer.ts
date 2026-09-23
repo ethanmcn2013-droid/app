@@ -1,0 +1,120 @@
+import type { ConversationDelta, ConversationFailure, MessagePage, MessageReceipt, MessageRecord, SendInput } from "./contracts";
+
+export type PendingSend = { input: SendInput; state: "pending" | "uncertain" | "failed"; error?: ConversationFailure["code"] };
+export type RecoveredDraft = Readonly<{ requestId: string; body: string; mentionUserIds?: readonly string[] }>;
+export type ConversationClientState = {
+  generation: number;
+  actorId: string;
+  scopeKey: string;
+  status: "loading" | "ready" | "offline" | "unavailable";
+  audienceEpoch: number | null;
+  reviewedAudienceEpoch: number | null;
+  cursor: number;
+  messages: readonly MessageRecord[];
+  pending: readonly PendingSend[];
+  recoveredDrafts: readonly RecoveredDraft[];
+  draft: string;
+  draftMentionUserIds: readonly string[];
+  error: ConversationFailure["code"] | null;
+};
+export function emptyConversationState(actorId: string, scopeKey: string, generation = 0): ConversationClientState {
+  return { actorId, scopeKey, generation, status: "loading", audienceEpoch: null, reviewedAudienceEpoch: null, cursor: 0, messages: [], pending: [], recoveredDrafts: [], draft: "", draftMentionUserIds: [], error: null };
+}
+export type ConversationClientAction =
+  | { type: "reset"; actorId: string; scopeKey: string; generation: number }
+  | { type: "draft"; value: string }
+  | { type: "draft_mentions"; ids: readonly string[] }
+  | { type: "review_audience"; audienceEpoch: number }
+  | { type: "submit"; input: SendInput }
+  | { type: "discard"; requestId: string }
+  | { type: "resume_outgoing"; generation: number; pending: readonly PendingSend[]; recoveredDrafts: readonly RecoveredDraft[]; reviewedAudienceEpoch?: number | null; draftMentionUserIds?: readonly string[] }
+  | { type: "restore_recovered" | "discard_recovered"; requestId: string }
+  | { type: "delta"; generation: number; delta: ConversationDelta }
+  | { type: "page"; generation: number; page: MessagePage; initialize: boolean }
+  | { type: "receipt"; generation: number; receipt: MessageReceipt }
+  | { type: "uncertain"; generation: number; requestId: string }
+  | { type: "restore_absent"; generation: number; requestId: string }
+  | { type: "refused"; generation: number; failure: ConversationFailure; requestId?: string }
+  | { type: "offline"; generation: number };
+
+/** Revision ordering prevents delayed pages or receipts from resurrecting deleted text. */
+function mergeMessages(current: readonly MessageRecord[], incoming: readonly MessageRecord[]): MessageRecord[] {
+  const records = new Map(current.map((message) => [message.id, message]));
+  for (const candidate of incoming) {
+    const prior = records.get(candidate.id);
+    if (!prior || candidate.revision > prior.revision || (candidate.revision === prior.revision && candidate.deletedAt !== null)) {
+      records.set(candidate.id, candidate.deletedAt !== null ? { ...candidate, body: null } : candidate);
+    }
+    // A reply changes a root's count without editing its body. These two
+    // independently ordered values must survive out-of-order page delivery.
+    const oldCount = prior as (MessageRecord & { replyCount?: number; replyCountChangeSeq?: number }) | undefined;
+    const newCount = candidate as MessageRecord & { replyCount?: number; replyCountChangeSeq?: number };
+    const count = (newCount.replyCountChangeSeq ?? -1) > (oldCount?.replyCountChangeSeq ?? -1) ? newCount : oldCount;
+    if (count?.replyCountChangeSeq !== undefined) {
+      records.set(candidate.id, { ...records.get(candidate.id)!, replyCount: count.replyCount, replyCountChangeSeq: count.replyCountChangeSeq } as MessageRecord);
+    }
+  }
+  return [...records.values()].sort((a, b) => a.createSeq - b.createSeq);
+}
+
+/** In-memory only. Parent session owns scoped draft continuity and clears on identity change. */
+export function conversationReducer(state: ConversationClientState, action: ConversationClientAction): ConversationClientState {
+  if (action.type === "reset") return action.generation > state.generation ? emptyConversationState(action.actorId, action.scopeKey, action.generation) : state;
+  if ("generation" in action && action.generation !== state.generation) return state;
+  if (action.type === "draft") return state.status === "unavailable" ? state : { ...state, draft: action.value };
+  if (action.type === "draft_mentions") return state.status === "unavailable" ? state : { ...state, draftMentionUserIds: [...new Set(action.ids)].sort() };
+  if (action.type === "review_audience") return state.status === "ready" && action.audienceEpoch === state.audienceEpoch ? { ...state, reviewedAudienceEpoch: action.audienceEpoch, error: null } : state;
+  if (action.type === "discard") return { ...state, pending: state.pending.filter((send) => send.input.clientRequestId !== action.requestId) };
+  if (action.type === "resume_outgoing") return state.status === "unavailable" ? state : { ...state, reviewedAudienceEpoch: action.reviewedAudienceEpoch ?? state.reviewedAudienceEpoch, draftMentionUserIds: [...new Set(action.draftMentionUserIds ?? [])].sort(), pending: action.pending.map((send) => ({ ...send, state: send.state === "pending" ? "uncertain" : send.state })), recoveredDrafts: [...action.recoveredDrafts] };
+  if (action.type === "restore_recovered" || action.type === "discard_recovered") {
+    const saved = state.recoveredDrafts.find((draft) => draft.requestId === action.requestId);
+    if (!saved || (action.type === "restore_recovered" && (state.draft !== "" || state.draftMentionUserIds.length > 0))) return state;
+    return { ...state, draft: action.type === "restore_recovered" ? saved.body : state.draft, draftMentionUserIds: action.type === "restore_recovered" ? [...new Set(saved.mentionUserIds ?? [])].sort() : state.draftMentionUserIds, recoveredDrafts: state.recoveredDrafts.filter((draft) => draft !== saved) };
+  }
+  if (action.type === "submit") {
+    if (state.status !== "ready" || state.audienceEpoch !== action.input.expectedAudienceEpoch || state.reviewedAudienceEpoch !== state.audienceEpoch || state.pending.some((send) => send.input.clientRequestId === action.input.clientRequestId)) return state;
+    return { ...state, draft: "", draftMentionUserIds: [], error: null, pending: [...state.pending, { input: { ...action.input, mentionUserIds: [...action.input.mentionUserIds] }, state: "pending" }] };
+  }
+  if (action.type === "delta") {
+    if (state.status === "unavailable") return state;
+    // A page from the same generation can still arrive out of order.
+    if (action.delta.throughChangeSeq < state.cursor || (state.audienceEpoch !== null && action.delta.audienceEpoch < state.audienceEpoch)) return state;
+    const audienceChanged = state.reviewedAudienceEpoch !== null && state.reviewedAudienceEpoch !== action.delta.audienceEpoch;
+    return { ...state, status: "ready", audienceEpoch: action.delta.audienceEpoch, reviewedAudienceEpoch: state.reviewedAudienceEpoch ?? action.delta.audienceEpoch, cursor: action.delta.throughChangeSeq, messages: mergeMessages(state.messages, action.delta.messages), error: audienceChanged ? "audience_changed" : null };
+  }
+  if (action.type === "receipt") {
+    const pending = state.pending.find((send) => send.input.clientRequestId === action.receipt.clientRequestId);
+    if (!pending || state.status === "unavailable") return state;
+    const record: MessageRecord = { id: action.receipt.messageId, authorId: state.actorId, rootId: pending.input.rootId, body: pending.input.body, createSeq: action.receipt.createSeq, revision: action.receipt.revision, createdAt: action.receipt.committedAt, editedAt: null, deletedAt: null };
+    return { ...state, messages: mergeMessages(state.messages, [record]), pending: state.pending.filter((send) => send !== pending) };
+  }
+  if (action.type === "uncertain") return { ...state, pending: state.pending.map((send) => send.input.clientRequestId === action.requestId ? { ...send, state: "uncertain" } : send) };
+  if (action.type === "restore_absent") {
+    const pending = state.pending.find((send) => send.input.clientRequestId === action.requestId);
+    if (!pending) return state;
+    const sameMentions = JSON.stringify([...new Set(state.draftMentionUserIds)].sort()) === JSON.stringify([...new Set(pending.input.mentionUserIds)].sort());
+    const occupied = (state.draft !== "" || state.draftMentionUserIds.length > 0) && (state.draft !== pending.input.body || !sameMentions);
+    return { ...state, draft: occupied ? state.draft : pending.input.body,
+      draftMentionUserIds: occupied ? state.draftMentionUserIds : [...new Set(pending.input.mentionUserIds)].sort(),
+      recoveredDrafts: occupied ? [...state.recoveredDrafts.filter((draft) => draft.requestId !== action.requestId), { requestId: action.requestId, body: pending.input.body, mentionUserIds: [...pending.input.mentionUserIds] }] : state.recoveredDrafts,
+      pending: state.pending.filter((send) => send !== pending), error: "audience_changed", status: "loading" };
+  }
+  if (action.type === "page") {
+    if (state.status === "unavailable") return state;
+    const messages = mergeMessages(state.messages, action.page.messages);
+    const olderSnapshot = action.page.throughChangeSeq < state.cursor || (state.audienceEpoch !== null && action.page.audienceEpoch < state.audienceEpoch);
+    if (!action.initialize || olderSnapshot) return { ...state, messages };
+    return { ...state, status: "ready", audienceEpoch: action.page.audienceEpoch, reviewedAudienceEpoch: state.reviewedAudienceEpoch ?? action.page.audienceEpoch, cursor: action.page.throughChangeSeq, messages };
+  }
+  if (action.type === "offline") return state.status === "unavailable" ? state : { ...state, status: "offline" };
+  if (action.type === "refused") {
+    if (action.failure.code === "unavailable" || action.failure.code === "unauthenticated") {
+      return { ...emptyConversationState(state.actorId, state.scopeKey, state.generation), status: "unavailable", error: action.failure.code };
+    }
+    return { ...state, error: action.failure.code,
+      status: action.failure.code === "audience_changed" ? "loading" : state.status,
+      pending: state.pending.map((send) => send.input.clientRequestId === action.requestId ? { ...send, state: "failed", error: action.failure.code } : send),
+    };
+  }
+  return state;
+}

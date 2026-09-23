@@ -1,0 +1,555 @@
+TAP version 13
+# Subtest: the pathname is ours, not the browser's
+    # Subtest: composes a claim from the proved workspace, task and a fresh id
+    ok 1 - composes a claim from the proved workspace, task and a fresh id
+      ---
+      duration_ms: 2.4013
+      type: 'test'
+      ...
+    # Subtest: strips separators so a filename cannot climb out of its board
+    ok 2 - strips separators so a filename cannot climb out of its board
+      ---
+      duration_ms: 9.0614
+      type: 'test'
+      ...
+    # Subtest: mints an id per claim, so two uploads never share a pathname
+    ok 3 - mints an id per claim, so two uploads never share a pathname
+      ---
+      duration_ms: 6.2594
+      type: 'test'
+      ...
+    # Subtest: accepts only a URL whose pathname is exactly the claim
+    ok 4 - accepts only a URL whose pathname is exactly the claim
+      ---
+      duration_ms: 167.9871
+      type: 'test'
+      ...
+    # Subtest: refuses a blob that sits anywhere else
+    ok 5 - refuses a blob that sits anywhere else
+      ---
+      duration_ms: 4.6798
+      type: 'test'
+      ...
+    # Subtest: refuses an escaped separator smuggling a different prefix
+    ok 6 - refuses an escaped separator smuggling a different prefix
+      ---
+      duration_ms: 2.3029
+      type: 'test'
+      ...
+    # Subtest: refuses anything that is not https, and anything unparseable
+    ok 7 - refuses anything that is not https, and anything unparseable
+      ---
+      duration_ms: 1.518
+      type: 'test'
+      ...
+    # Subtest: refuses non-Vercel hosts, credentials, and custom ports
+    ok 8 - refuses non-Vercel hosts, credentials, and custom ports
+      ---
+      duration_ms: 0.9924
+      type: 'test'
+      ...
+    # Subtest: never probes an unapproved host or follows a redirect
+    ok 9 - never probes an unapproved host or follows a redirect
+      ---
+      duration_ms: 309.6582
+      type: 'test'
+      ...
+    1..9
+ok 1 - the pathname is ours, not the browser's
+  ---
+  duration_ms: 510.8699
+  type: 'suite'
+  ...
+# Subtest: the bytes are the file they claim to be
+    # Subtest: accepts a file whose bytes match its declared type
+    ok 1 - accepts a file whose bytes match its declared type
+      ---
+      duration_ms: 1.2898
+      type: 'test'
+      ...
+    # Subtest: refuses bytes that disagree with the declared type
+    ok 2 - refuses bytes that disagree with the declared type
+      ---
+      duration_ms: 1.3743
+      type: 'test'
+      ...
+    # Subtest: refuses a size the store disagrees with
+    ok 3 - refuses a size the store disagrees with
+      ---
+      duration_ms: 0.6887
+      type: 'test'
+      ...
+    # Subtest: refuses anything past the ceiling, whatever was declared
+    ok 4 - refuses anything past the ceiling, whatever was declared
+      ---
+      duration_ms: 0.2892
+      type: 'test'
+      ...
+    # Subtest: refuses a blob with nothing readable in it
+    ok 5 - refuses a blob with nothing readable in it
+      ---
+      duration_ms: 0.2712
+      type: 'test'
+      ...
+    1..5
+ok 2 - the bytes are the file they claim to be
+  ---
+  duration_ms: 4.9892
+  type: 'suite'
+  ...
+# Subtest: the path proves itself before it does anything
+    # Subtest: the signing route refuses demo before it reads a body
+    ok 1 - the signing route refuses demo before it reads a body
+      ---
+      duration_ms: 0.5052
+      type: 'test'
+      ...
+    # Subtest: the route proves the caller before it signs anything
+    ok 2 - the route proves the caller before it signs anything
+      ---
+      duration_ms: 1.0968
+      type: 'test'
+      ...
+    # Subtest: a failure to sign does not leave a claim holding quota
+    ok 3 - a failure to sign does not leave a claim holding quota
+      ---
+      duration_ms: 1.1617
+      type: 'test'
+      ...
+    # Subtest: every action on this path early-returns under demo
+    ok 4 - every action on this path early-returns under demo
+      ---
+      duration_ms: 0.3332
+      type: 'test'
+      ...
+    # Subtest: the claim proves the task's own Project before it reserves a row
+    ok 5 - the claim proves the task's own Project before it reserves a row
+      ---
+      duration_ms: 0.2188
+      type: 'test'
+      ...
+    # Subtest: finalize re-authorizes rather than trusting the call
+    ok 6 - finalize re-authorizes rather than trusting the call
+      ---
+      duration_ms: 0.3076
+      type: 'test'
+      ...
+    # Subtest: an exact finalized replay succeeds after authorization without duplicate activity
+    ok 7 - an exact finalized replay succeeds after authorization without duplicate activity
+      ---
+      duration_ms: 0.2277
+      type: 'test'
+      ...
+    # Subtest: finalize checks all three properties before the row becomes real
+    ok 8 - finalize checks all three properties before the row becomes real
+      ---
+      duration_ms: 0.2745
+      type: 'test'
+      ...
+    # Subtest: a refused upload retains live authority and gives trusted bytes cleanup custody
+    ok 9 - a refused upload retains live authority and gives trusted bytes cleanup custody
+      ---
+      duration_ms: 0.4444
+      type: 'test'
+      ...
+    # Subtest: the signed URL is scoped to one pathname, size and type set
+    ok 10 - the signed URL is scoped to one pathname, size and type set
+      ---
+      duration_ms: 0.3899
+      type: 'test'
+      ...
+    # Subtest: the destination is the server's, never the browser's
+    ok 11 - the destination is the server's, never the browser's
+      ---
+      duration_ms: 5.1515
+      type: 'test'
+      ...
+    # Subtest: the browser cannot ask for a world-readable object
+    ok 12 - the browser cannot ask for a world-readable object
+      ---
+      duration_ms: 0.3322
+      type: 'test'
+      ...
+    # Subtest: no upload library is shipped to the browser
+    ok 13 - no upload library is shipped to the browser
+      ---
+      duration_ms: 1.0011
+      type: 'test'
+      ...
+    # Subtest: the hosts the browser now calls are allowed by the policy
+    ok 14 - the hosts the browser now calls are allowed by the policy
+      ---
+      duration_ms: 0.7742
+      type: 'test'
+      ...
+    1..14
+ok 3 - the path proves itself before it does anything
+  ---
+  duration_ms: 13.1407
+  type: 'suite'
+  ...
+# Subtest: Project Drive operation dedupe keys
+    # Subtest: is a deterministic lowercase SHA-256 key
+    ok 1 - is a deterministic lowercase SHA-256 key
+      ---
+      duration_ms: 2.2534
+      type: 'test'
+      ...
+    # Subtest: separates tuple boundaries and operation kinds
+    ok 2 - separates tuple boundaries and operation kinds
+      ---
+      duration_ms: 0.7506
+      type: 'test'
+      ...
+    # Subtest: normalizes a grant email before hashing
+    ok 3 - normalizes a grant email before hashing
+      ---
+      duration_ms: 0.7823
+      type: 'test'
+      ...
+    # Subtest: changes when a logical operation identity changes
+    ok 4 - changes when a logical operation identity changes
+      ---
+      duration_ms: 0.4197
+      type: 'test'
+      ...
+    # Subtest: rejects invalid operation identities
+    ok 5 - rejects invalid operation identities
+      ---
+      duration_ms: 1.9204
+      type: 'test'
+      ...
+    1..5
+ok 4 - Project Drive operation dedupe keys
+  ---
+  duration_ms: 8.6401
+  type: 'suite'
+  ...
+# Subtest: §2.1 · the OAuth scope is drive.file, and nothing else
+    # Subtest: no source anywhere requests a wider Drive scope
+    ok 1 - no source anywhere requests a wider Drive scope
+      ---
+      duration_ms: 799.5707
+      type: 'test'
+      ...
+    # Subtest: the scope constant, once it exists, is exactly the one scope
+    ok 2 - the scope constant, once it exists, is exactly the one scope
+      ---
+      duration_ms: 58.4081
+      type: 'test'
+      ...
+    1..2
+ok 5 - §2.1 · the OAuth scope is drive.file, and nothing else
+  ---
+  duration_ms: 858.9525
+  type: 'suite'
+  ...
+# Subtest: §2.2 §2.4 · the root folder is never a grant target
+    # Subtest: every SDK or raw REST permission call lives behind one guard
+    ok 1 - every SDK or raw REST permission call lives behind one guard
+      ---
+      duration_ms: 297.1414
+      type: 'test'
+      ...
+    # Subtest: the permission discovery ratchet sees SDK and raw REST spellings
+    ok 2 - the permission discovery ratchet sees SDK and raw REST spellings
+      ---
+      duration_ms: 1.5564
+      type: 'test'
+      ...
+    # Subtest: every permission mutation is generation-leased and bounded
+    ok 3 - every permission mutation is generation-leased and bounded
+      ---
+      duration_ms: 2.9537
+      type: 'test'
+      ...
+    # Subtest: the guard refuses the root folder and a foreign folder
+    ok 4 - the guard refuses the root folder and a foreign folder
+      ---
+      duration_ms: 9079.8819
+      type: 'test'
+      ...
+    1..4
+ok 6 - §2.2 §2.4 · the root folder is never a grant target
+  ---
+  duration_ms: 9382.469
+  type: 'suite'
+  ...
+# Subtest: §2.3 · a board folder can never become a public link
+    # Subtest: no Drive code names anyone, domain or group as a grantee type
+    ok 1 - no Drive code names anyone, domain or group as a grantee type
+      ---
+      duration_ms: 25.1806
+      type: 'test'
+      ...
+    # Subtest: the guard rejects every grantee type but user
+    ok 2 - the guard rejects every grantee type but user
+      ---
+      duration_ms: 15.4776
+      type: 'test'
+      ...
+    1..2
+ok 7 - §2.3 · a board folder can never become a public link
+  ---
+  duration_ms: 40.9415
+  type: 'suite'
+  ...
+# Subtest: §2.5 · a bearer token is not a person
+    # Subtest: no Drive grant path reads a share link or its token
+    ok 1 - no Drive grant path reads a share link or its token
+      ---
+      duration_ms: 15.9751
+      type: 'test'
+      ...
+    1..1
+ok 8 - §2.5 · a bearer token is not a person
+  ---
+  duration_ms: 16.3263
+  type: 'suite'
+  ...
+# Subtest: §2.6 · removing an attachment never destroys someone's file
+    # Subtest: no Drive code calls a destructive files delete
+    ok 1 - no Drive code calls a destructive files delete
+      ---
+      duration_ms: 29.3445
+      type: 'test'
+      ...
+    1..1
+ok 9 - §2.6 · removing an attachment never destroys someone's file
+  ---
+  duration_ms: 29.5479
+  type: 'suite'
+  ...
+# Subtest: §2.7 · only refresh tokens rest, and only as ciphertext
+    # Subtest: no table column stores an access token
+    ok 1 - no table column stores an access token
+      ---
+      duration_ms: 1.7725
+      type: 'test'
+      ...
+    # Subtest: a stored refresh token is named as ciphertext
+    ok 2 - a stored refresh token is named as ciphertext
+      ---
+      duration_ms: 1.7519
+      type: 'test'
+      ...
+    1..2
+ok 10 - §2.7 · only refresh tokens rest, and only as ciphertext
+  ---
+  duration_ms: 3.7808
+  type: 'suite'
+  ...
+# Subtest: §2.8 · the caller is proved before any provider is called
+    # Subtest: WP-0's own upload path proves before it reserves or writes
+    ok 1 - WP-0's own upload path proves before it reserves or writes
+      ---
+      duration_ms: 0.7822
+      type: 'test'
+      ...
+    # Subtest: keeps raw REST in the explicitly authorization-agnostic transport
+    ok 2 - keeps raw REST in the explicitly authorization-agnostic transport
+      ---
+      duration_ms: 296.5452
+      type: 'test'
+      ...
+    # Subtest: mints one unforgeable Drive context from fresh Project authorization
+    ok 3 - mints one unforgeable Drive context from fresh Project authorization
+      ---
+      duration_ms: 673.6643
+      type: 'test'
+      ...
+    # Subtest: pins Drive management operations to manageProject at both boundaries
+    ok 4 - pins Drive management operations to manageProject at both boundaries
+      ---
+      duration_ms: 4.9487
+      type: 'test'
+      ...
+    # Subtest: keeps durable folder provider work behind account-fenced journal claims
+    ok 5 - keeps durable folder provider work behind account-fenced journal claims
+      ---
+      duration_ms: 5.2983
+      type: 'test'
+      ...
+    # Subtest: requires the branded context on every higher-level Drive helper
+    ok 6 - requires the branded context on every higher-level Drive helper
+      ---
+      duration_ms: 47.9143
+      type: 'test'
+      ...
+    # Subtest: freshly authorizes every public Drive action and route
+    ok 7 - freshly authorizes every public Drive action and route
+      ---
+      duration_ms: 376.6744
+      type: 'test'
+      ...
+    # Subtest: the entry-point ratchet catches late demo, missing auth, and forgery
+    ok 8 - the entry-point ratchet catches late demo, missing auth, and forgery
+      ---
+      duration_ms: 0.8825
+      type: 'test'
+      ...
+    1..8
+ok 11 - §2.8 · the caller is proved before any provider is called
+  ---
+  duration_ms: 1407.4954
+  type: 'suite'
+  ...
+# Subtest: §2.9 · a finalize verifies, it does not believe
+    # Subtest: WP-0's finalize proves the object before recording it
+    ok 1 - WP-0's finalize proves the object before recording it
+      ---
+      duration_ms: 1.0419
+      type: 'test'
+      ...
+    # Subtest: a Drive finalize checks BOTH the stamp and the parent folder
+    ok 2 - a Drive finalize checks BOTH the stamp and the parent folder
+      ---
+      duration_ms: 342.4115
+      type: 'test'
+      ...
+    1..2
+ok 12 - §2.9 · a finalize verifies, it does not believe
+  ---
+  duration_ms: 343.8547
+  type: 'suite'
+  ...
+# Subtest: §2.10 · demo mode stops at the door
+    # Subtest: every server action on the upload path early-returns under demo
+    ok 1 - every server action on the upload path early-returns under demo
+      ---
+      duration_ms: 0.9325
+      type: 'test'
+      ...
+    # Subtest: every public Drive action and route refuses demo before input or auth
+    ok 2 - every public Drive action and route refuses demo before input or auth
+      ---
+      duration_ms: 375.0454
+      type: 'test'
+      ...
+    # Subtest: the token route refuses demo before it reads anything
+    ok 3 - the token route refuses demo before it reads anything
+      ---
+      duration_ms: 0.7664
+      type: 'test'
+      ...
+    1..3
+ok 13 - §2.10 · demo mode stops at the door
+  ---
+  duration_ms: 377.5327
+  type: 'suite'
+  ...
+# Subtest: Project deletion lifecycle · the intent is a durable tombstone
+    # Subtest: every production Project Drive mutation boundary uses the central fence
+    ok 1 - every production Project Drive mutation boundary uses the central fence
+      ---
+      duration_ms: 10.0051
+      type: 'test'
+      ...
+    # Subtest: re-proves delete authority in the intent transaction and exposes no provider-file deletion
+    ok 2 - re-proves delete authority in the intent transaction and exposes no provider-file deletion
+      ---
+      duration_ms: 2.1425
+      type: 'test'
+      ...
+    1..2
+ok 14 - Project deletion lifecycle · the intent is a durable tombstone
+  ---
+  duration_ms: 12.4244
+  type: 'suite'
+  ...
+# Subtest: upload limits: one source
+    # Subtest: next.config.ts imports the limit instead of restating it
+    ok 1 - next.config.ts imports the limit instead of restating it
+      ---
+      duration_ms: 4.571
+      type: 'test'
+      ...
+    # Subtest: storage-config re-exports the ceiling rather than declaring one
+    ok 2 - storage-config re-exports the ceiling rather than declaring one
+      ---
+      duration_ms: 1.0059
+      type: 'test'
+      ...
+    # Subtest: the client hint and its toast both read the constant
+    ok 3 - the client hint and its toast both read the constant
+      ---
+      duration_ms: 5.261
+      type: 'test'
+      ...
+    # Subtest: the settings panel shows what can actually be attached
+    ok 4 - the settings panel shows what can actually be attached
+      ---
+      duration_ms: 1.1836
+      type: 'test'
+      ...
+    1..4
+ok 15 - upload limits: one source
+  ---
+  duration_ms: 15.583
+  type: 'suite'
+  ...
+# Subtest: upload limits: reachable on the platform
+    # Subtest: the server-action body budget sits under Vercel's own cap
+    ok 1 - the server-action body budget sits under Vercel's own cap
+      ---
+      duration_ms: 0.858
+      type: 'test'
+      ...
+    # Subtest: the string and byte forms of the body budget are the same number
+    ok 2 - the string and byte forms of the body budget are the same number
+      ---
+      duration_ms: 0.5752
+      type: 'test'
+      ...
+    # Subtest: a file sent through a server action leaves room for its framing
+    ok 3 - a file sent through a server action leaves room for its framing
+      ---
+      duration_ms: 0.8534
+      type: 'test'
+      ...
+    # Subtest: the product ceiling exceeds the platform cap, because it must
+    ok 4 - the product ceiling exceeds the platform cap, because it must
+      ---
+      duration_ms: 1.386
+      type: 'test'
+      ...
+    1..4
+ok 16 - upload limits: reachable on the platform
+  ---
+  duration_ms: 4.6395
+  type: 'suite'
+  ...
+# Subtest: upload limits: the tiers still mean something
+    # Subtest: the free plan's own per-file limit is the one it advertises
+    ok 1 - the free plan's own per-file limit is the one it advertises
+      ---
+      duration_ms: 1.1788
+      type: 'test'
+      ...
+    # Subtest: a paid plan is constrained by transport, and says so
+    ok 2 - a paid plan is constrained by transport, and says so
+      ---
+      duration_ms: 0.8417
+      type: 'test'
+      ...
+    # Subtest: limits are rendered the way a person says them
+    ok 3 - limits are rendered the way a person says them
+      ---
+      duration_ms: 0.4184
+      type: 'test'
+      ...
+    1..3
+ok 17 - upload limits: the tiers still mean something
+  ---
+  duration_ms: 2.9942
+  type: 'suite'
+  ...
+1..17
+# tests 71
+# suites 17
+# pass 71
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 19827.7998

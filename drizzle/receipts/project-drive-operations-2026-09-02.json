@@ -1,0 +1,178 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "project-drive-operations-2026-09-02",
+  "authorizedBy": "NOT AUTHORIZED FOR PRODUCTION. The founder authorized continued local implementation of Project Drive on 2026-09-02, but no production migration execution was authorized. This receipt authorizes local and CI review only; a target-bound tasks-migration-execution/1 receipt remains mandatory.",
+  "reviewedBy": "Codex, Project Drive WP-5 operation-journal implementation review, 2026-09-02",
+  "authorizationSource": "Project Drive PROJECT.md WP-5 and WP-8, generation-aware custody decision D12, and the 2026-09-02 instruction to add an additive durable operation journal without touching migration 0028 or any production database.",
+  "migrations": [
+    {
+      "id": "0029_project_drive_operations",
+      "sha256": "332c40bf70ad206f247cb12793b3a49ecf7d20f47b3a16b93cacb519ee13b79a",
+      "reviewedAt": "2026-09-02T21:59:00Z",
+      "risk": "low at apply time and medium once runtime operations begin. The migration creates one empty table and seven named indexes; it does not rewrite existing users, workspaces, resources, credentials, generations or grants. The table becomes durable recovery evidence once used: it can retain an intended folder generation, the exact grantee email and writer/reader role, an exact permission or folder receipt, retry lease and normalized failure state across a provider/database split. Four RESTRICT relationships deliberately stop a workspace, provider connection, existing storage generation or subject user from being removed while unresolved recovery work still depends on it. The target storage generation is intentionally not a foreign key because folder provision and handover must reserve that immutable id before Google returns the required folder fields for workspace_storage. Failed permission deletion remains solely in drive_folder_grants.revoke_pending beside the exact permission_id rather than being duplicated into two repair queues. A project-delete row is operational intent, not a tombstone: lifecycle code must consume it in the final workspace-delete transaction only after provider and grant cleanup. The residual risk is lifecycle code that fails to resolve or surface a manual_attention or revoke_pending row; this schema preserves that evidence rather than guessing that an ambiguous provider side effect did not happen.",
+      "rollbackPlan": "Before any operation row exists: drop idx_project_drive_operations_subject_user, idx_project_drive_operations_storage, idx_project_drive_operations_connection, idx_project_drive_operations_ready, idx_project_drive_operations_workspace_status, idx_project_drive_operations_target_generation and idx_project_drive_operations_dedupe, then drop project_drive_operations. After runtime use, do not drop the journal merely to unblock a restricted delete: first stop Drive mutations, inspect every non-terminal and receipt-bearing row, reconcile the exact folder or permission at Google, complete or explicitly cancel only receipt-free intent, then remove resolved rows through a separately reviewed lifecycle operation. No rollback may delete a user's Drive file or discard a provider receipt that is still needed for repair.",
+      "postconditions": [
+        "project_drive_operations exists with typed intent, provider receipt, retry, lease, bounded-error and lifecycle timestamp fields",
+        "folder provision, grant creation, rename repair, project deletion and storage handover are the only operation kinds",
+        "failed grant deletion remains in the single drive_folder_grants.revoke_pending queue with its exact permission id, not a duplicate operation kind",
+        "pending, running, retry wait, manual attention, success and safe cancellation are the only lifecycle states",
+        "dedupe keys are unique lowercase SHA-256 values and a reserved target generation can belong to only one operation",
+        "an existing storage generation is coupled to the operation workspace by a composite RESTRICT foreign key",
+        "workspace, target connection and subject-user lifecycle relationships use RESTRICT",
+        "a project-delete marker must be explicitly consumed in the final workspace-delete transaction after provider and grant cleanup",
+        "target_storage_generation_id has no premature foreign key and can be reserved before workspace_storage exists",
+        "folder and permission receipts are operation-shaped and required before their provider operations can be marked successful",
+        "grant creation retains the normalized target email and exact writer or reader role needed to recover a provider-success/database-crash split",
+        "cancelled rows cannot hide a provider receipt that requires cleanup",
+        "attempt, lease, backoff, terminal and manual-attention timestamps have consistent shapes",
+        "the table has no token, session, secret, cipher, raw-response or provider-error payload column",
+        "all tenant and recovery lookup indexes exist",
+        "the table is empty at migration time",
+        "integrity check passes",
+        "foreign keys remain clean"
+      ],
+      "proofs": [
+        {
+          "id": "project-drive-operations-columns",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('project_drive_operations') WHERE name IN ('id','workspace_id','operation_kind','status','dedupe_key','connection_id','storage_generation_id','target_storage_generation_id','subject_user_id','grantee_email','grant_role','workspace_revision','provider_folder_id','provider_folder_web_view_link','provider_permission_id','attempt_count','last_attempt_at','next_attempt_at','lease_expires_at','last_error_code','created_at','updated_at','completed_at')",
+          "expected": 23
+        },
+        {
+          "id": "project-drive-operations-primary-key",
+          "sql": "SELECT group_concat(name, ',') AS value FROM (SELECT name FROM pragma_table_info('project_drive_operations') WHERE pk > 0 ORDER BY pk)",
+          "expected": "id"
+        },
+        {
+          "id": "project-drive-operations-core-types",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('project_drive_operations') WHERE name IN ('workspace_id','operation_kind','status','dedupe_key','attempt_count','created_at','updated_at') AND \"notnull\" = 1",
+          "expected": 7
+        },
+        {
+          "id": "project-drive-operations-defaults",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('project_drive_operations') WHERE (name = 'status' AND dflt_value = '''pending''') OR (name = 'attempt_count' AND dflt_value = '0') OR (name IN ('created_at','updated_at') AND dflt_value IS NOT NULL)",
+          "expected": 4
+        },
+        {
+          "id": "project-drive-operations-receipt-columns",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('project_drive_operations') WHERE name IN ('provider_folder_id','provider_folder_web_view_link','provider_permission_id') AND lower(type) = 'text' AND \"notnull\" = 0",
+          "expected": 3
+        },
+        {
+          "id": "project-drive-operations-no-credential-columns",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('project_drive_operations') WHERE lower(name) GLOB '*token*' OR lower(name) GLOB '*session*' OR lower(name) GLOB '*secret*' OR lower(name) GLOB '*cipher*' OR lower(name) GLOB '*raw*' OR lower(name) GLOB '*response*'",
+          "expected": 0
+        },
+        {
+          "id": "project-drive-operations-foreign-key-count",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_list('project_drive_operations')",
+          "expected": 5
+        },
+        {
+          "id": "project-drive-operations-workspace-foreign-key",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_list('project_drive_operations') WHERE \"table\" = 'workspaces' AND \"from\" = 'workspace_id' AND \"to\" = 'id' AND on_update = 'CASCADE' AND on_delete = 'RESTRICT'",
+          "expected": 1
+        },
+        {
+          "id": "project-drive-operations-connection-foreign-key",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_list('project_drive_operations') WHERE \"table\" = 'provider_connections' AND \"from\" = 'connection_id' AND \"to\" = 'id' AND on_update = 'CASCADE' AND on_delete = 'RESTRICT'",
+          "expected": 1
+        },
+        {
+          "id": "project-drive-operations-storage-foreign-key",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_list('project_drive_operations') WHERE \"table\" = 'workspace_storage' AND on_update = 'CASCADE' AND on_delete = 'RESTRICT' AND ((\"from\" = 'storage_generation_id' AND \"to\" = 'id') OR (\"from\" = 'workspace_id' AND \"to\" = 'workspace_id'))",
+          "expected": 2
+        },
+        {
+          "id": "project-drive-operations-subject-user-foreign-key",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_list('project_drive_operations') WHERE \"table\" = 'users' AND \"from\" = 'subject_user_id' AND \"to\" = 'id' AND on_update = 'CASCADE' AND on_delete = 'RESTRICT'",
+          "expected": 1
+        },
+        {
+          "id": "project-drive-operations-target-generation-unlinked",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_list('project_drive_operations') WHERE \"from\" = 'target_storage_generation_id'",
+          "expected": 0
+        },
+        {
+          "id": "project-drive-operations-dedupe-index-columns",
+          "sql": "SELECT group_concat(name, ',') AS value FROM (SELECT name FROM pragma_index_info('idx_project_drive_operations_dedupe') ORDER BY seqno)",
+          "expected": "dedupe_key"
+        },
+        {
+          "id": "project-drive-operations-dedupe-index-unique",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_index_list('project_drive_operations') WHERE name = 'idx_project_drive_operations_dedupe' AND \"unique\" = 1 AND partial = 0",
+          "expected": 1
+        },
+        {
+          "id": "project-drive-operations-target-index-columns",
+          "sql": "SELECT group_concat(name, ',') AS value FROM (SELECT name FROM pragma_index_info('idx_project_drive_operations_target_generation') ORDER BY seqno)",
+          "expected": "target_storage_generation_id"
+        },
+        {
+          "id": "project-drive-operations-target-index-guard",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_index_list('project_drive_operations') indexes JOIN (SELECT name, lower(replace(replace(replace(replace(COALESCE(sql, ''), char(9), ''), char(10), ''), '`', ''), ' ', '')) AS definition FROM sqlite_schema WHERE type = 'index') schema ON schema.name = indexes.name WHERE indexes.name = 'idx_project_drive_operations_target_generation' AND indexes.\"unique\" = 1 AND indexes.partial = 1 AND schema.definition LIKE '%wheretarget_storage_generation_idisnotnull%'",
+          "expected": 1
+        },
+        {
+          "id": "project-drive-operations-workspace-index-columns",
+          "sql": "SELECT group_concat(name, ',') AS value FROM (SELECT name FROM pragma_index_info('idx_project_drive_operations_workspace_status') ORDER BY seqno)",
+          "expected": "workspace_id,status,operation_kind"
+        },
+        {
+          "id": "project-drive-operations-ready-index-columns",
+          "sql": "SELECT group_concat(name, ',') AS value FROM (SELECT name FROM pragma_index_info('idx_project_drive_operations_ready') ORDER BY seqno)",
+          "expected": "status,next_attempt_at,lease_expires_at,created_at"
+        },
+        {
+          "id": "project-drive-operations-ready-index-guard",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_index_list('project_drive_operations') indexes JOIN (SELECT name, lower(replace(replace(replace(replace(COALESCE(sql, ''), char(9), ''), char(10), ''), '`', ''), ' ', '')) AS definition FROM sqlite_schema WHERE type = 'index') schema ON schema.name = indexes.name WHERE indexes.name = 'idx_project_drive_operations_ready' AND indexes.partial = 1 AND schema.definition LIKE '%wherestatusin(''pending'',''running'',''retry_wait'')%'",
+          "expected": 1
+        },
+        {
+          "id": "project-drive-operations-connection-index",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_index_list('project_drive_operations') indexes JOIN (SELECT name, lower(replace(replace(replace(replace(COALESCE(sql, ''), char(9), ''), char(10), ''), '`', ''), ' ', '')) AS definition FROM sqlite_schema WHERE type = 'index') schema ON schema.name = indexes.name WHERE indexes.name = 'idx_project_drive_operations_connection' AND indexes.partial = 1 AND schema.definition LIKE '%whereconnection_idisnotnull%' AND (SELECT group_concat(name, ',') FROM (SELECT name FROM pragma_index_info('idx_project_drive_operations_connection') ORDER BY seqno)) = 'connection_id'",
+          "expected": 1
+        },
+        {
+          "id": "project-drive-operations-storage-index",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_index_list('project_drive_operations') indexes JOIN (SELECT name, lower(replace(replace(replace(replace(COALESCE(sql, ''), char(9), ''), char(10), ''), '`', ''), ' ', '')) AS definition FROM sqlite_schema WHERE type = 'index') schema ON schema.name = indexes.name WHERE indexes.name = 'idx_project_drive_operations_storage' AND indexes.partial = 1 AND schema.definition LIKE '%wherestorage_generation_idisnotnull%' AND (SELECT group_concat(name, ',') FROM (SELECT name FROM pragma_index_info('idx_project_drive_operations_storage') ORDER BY seqno)) = 'storage_generation_id,workspace_id'",
+          "expected": 1
+        },
+        {
+          "id": "project-drive-operations-subject-index",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_index_list('project_drive_operations') indexes JOIN (SELECT name, lower(replace(replace(replace(replace(COALESCE(sql, ''), char(9), ''), char(10), ''), '`', ''), ' ', '')) AS definition FROM sqlite_schema WHERE type = 'index') schema ON schema.name = indexes.name WHERE indexes.name = 'idx_project_drive_operations_subject_user' AND indexes.partial = 1 AND schema.definition LIKE '%wheresubject_user_idisnotnull%' AND (SELECT group_concat(name, ',') FROM (SELECT name FROM pragma_index_info('idx_project_drive_operations_subject_user') ORDER BY seqno)) = 'subject_user_id'",
+          "expected": 1
+        },
+        {
+          "id": "project-drive-operations-core-checks",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_schema WHERE type = 'table' AND name = 'project_drive_operations' AND instr(sql, 'project_drive_operations_kind_check') > 0 AND instr(sql, 'project_drive_operations_status_check') > 0 AND instr(sql, 'project_drive_operations_dedupe_key_check') > 0 AND instr(sql, 'project_drive_operations_error_code_check') > 0",
+          "expected": 1
+        },
+        {
+          "id": "project-drive-operations-lifecycle-checks",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_schema WHERE type = 'table' AND name = 'project_drive_operations' AND instr(sql, 'project_drive_operations_attempt_check') > 0 AND instr(sql, 'project_drive_operations_integer_type_check') > 0 AND instr(sql, 'project_drive_operations_status_time_check') > 0 AND instr(sql, 'project_drive_operations_timestamp_check') > 0",
+          "expected": 1
+        },
+        {
+          "id": "project-drive-operations-payload-checks",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_schema WHERE type = 'table' AND name = 'project_drive_operations' AND instr(sql, 'project_drive_operations_folder_receipt_check') > 0 AND instr(sql, 'project_drive_operations_email_check') > 0 AND instr(sql, 'project_drive_operations_grant_role_check') > 0 AND instr(sql, 'project_drive_operations_revision_check') > 0 AND instr(sql, 'project_drive_operations_kind_shape_check') > 0 AND instr(sql, 'project_drive_operations_terminal_receipt_check') > 0 AND instr(sql, 'project_drive_operations_cancelled_receipt_check') > 0",
+          "expected": 1
+        },
+        {
+          "id": "project-drive-operations-empty-at-apply",
+          "sql": "SELECT COUNT(*) AS value FROM project_drive_operations",
+          "expected": 0
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

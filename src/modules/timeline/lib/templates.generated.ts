@@ -1,5 +1,6 @@
 // AUTO-GENERATED, do not edit by hand.
 // Source: studio/src/lib/templates/ (canonical workspace templates).
+// Canonical revision: studio@ed02bc831894eb93b36f69f5b820a4727a9e2bb3
 // Refresh: pnpm sync:templates
 // Strategy: studio/docs/TEMPLATES_STRATEGY.md (locked 2026-05-12)
 

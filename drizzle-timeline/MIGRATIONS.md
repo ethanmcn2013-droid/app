@@ -1,5 +1,11 @@
 # Timeline database migrations
 
+New adoption receipts require `schemaFingerprintVersion: "sqlite-schema/2"`
+and the complete current schema fingerprint. Existing unversioned receipts stay
+immutable and may only replay an exactly recorded adoption. The no-op result
+labels any historical fallback and reports the complete current fingerprint
+separately. See [compatibility and operator limits](../drizzle/receipts/local-schema-enumeration-2026-09-05/REPLAY.md).
+
 `drizzle-timeline/migration-ledger.json` is the migration authority for the
 Timeline database. It binds every SQL file to an order, a canonical LF
 SHA-256, an execution policy, a Drizzle journal entry, a content-addressed

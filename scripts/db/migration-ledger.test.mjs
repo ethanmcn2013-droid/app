@@ -46,7 +46,7 @@ async function withClient(operation) {
 
 test("authoritative ledger registers every SQL file with receipt and journal parity", () => {
   const context = loadAndValidateLedger();
-  assert.equal(context.entries.length, 28);
+  assert.equal(context.entries.length, 37);
   assert.equal(context.baseline.id, "0014_current_schema_baseline");
   assert.deepEqual(context.forward.map((entry) => entry.id), [
     "0015_notes_extract_exact_identity",
@@ -62,6 +62,15 @@ test("authoritative ledger registers every SQL file with receipt and journal par
     "0025_tasks_completed_at",
     "0026_workspace_money",
     "0027_share_link_token_hash",
+    "0028_project_drive",
+    "0029_project_drive_operations",
+    "0030_sponsored_use_intents",
+    "0031_event_purchase_designations",
+    "0032_project_conversations",
+    "0033_conversation_task_outcomes",
+    "0034_project_direct_messages",
+    "0035_task_discussion",
+    "0036_conversation_erasure_tombstones",
   ]);
   assert.equal(context.entries.filter((entry) => entry.policy === "legacy-adopt-only").length, 14);
 });
@@ -109,6 +118,14 @@ test("journal omission fails even when the SQL and receipt exist", () => withFix
   assert.throws(() => loadAndValidateLedger({ root }), /same entries/);
 }));
 
+test("0036 cannot be relabeled as an ordinary FK-enforcing batch", () => withFixture((root) => {
+  const ledgerPath = path.join(root, "drizzle", "migration-ledger.json");
+  const ledger = JSON.parse(fs.readFileSync(ledgerPath, "utf8"));
+  delete ledger.entries.find((entry) => entry.id === "0036_conversation_erasure_tombstones").migrationEnvelope;
+  fs.writeFileSync(ledgerPath, `${JSON.stringify(ledger, null, 2)}\n`);
+  assert.throws(() => loadAndValidateLedger({ root }), /requires the libSQL migration envelope/);
+}));
+
 test("fresh databases apply the canonical baseline plus forwards and rerun as a no-op", async () => withClient(async (client) => {
   const first = await runMigrations({ client, releaseSha: "test-release", now: () => 1_784_156_994_451 });
   assert.deepEqual(first.applied, [
@@ -126,19 +143,683 @@ test("fresh databases apply the canonical baseline plus forwards and rerun as a 
     "0025_tasks_completed_at",
     "0026_workspace_money",
     "0027_share_link_token_hash",
+    "0028_project_drive",
+    "0029_project_drive_operations",
+    "0030_sponsored_use_intents",
+    "0031_event_purchase_designations",
+    "0032_project_conversations",
+    "0033_conversation_task_outcomes",
+    "0034_project_direct_messages",
+    "0035_task_discussion",
+    "0036_conversation_erasure_tombstones",
   ]);
-  assert.equal(first.proofs.length, 79);
+  assert.equal(first.proofs.length, 203);
 
   const objectCounts = await client.execute("SELECT type, COUNT(*) AS value FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' AND name NOT IN ('signal_schema_migrations', '__drizzle_migrations') GROUP BY type ORDER BY type");
   assert.deepEqual(objectCounts.rows.map((row) => [row.type, Number(row.value)]), [
-    ["index", 32],
-    ["table", 23],
-    ["trigger", 2],
+    ["index", 64],
+    ["table", 46],
+    ["trigger", 59],
   ]);
 
   const second = await runMigrations({ client, releaseSha: "test-release" });
   assert.deepEqual(second, { status: "no-op", applied: [] });
   assert.equal((await migrationStatus({ client })).state, "current");
+}));
+
+test("0021 backfills existing tasks once, then permits later nullable legacy rows without losing schema guards", async () => withClient(async (client) => {
+  const through20 = loadAndValidateLedger();
+  through20.forward = through20.forward.filter((entry) => entry.ordinal <= 20);
+  await runMigrations({ client, context: through20, releaseSha: "before-task-seq" });
+  await client.execute("INSERT INTO users(id,clerk_id,name,color,initials) VALUES ('seq_actor','clerk_seq_actor','Actor','#111','SA')");
+  await client.execute("INSERT INTO workspaces(id,slug,name,owner_user_id,context_type) VALUES ('seq_project','seq-project','Project','seq_actor','project')");
+  await client.execute("INSERT INTO workspace_members(workspace_id,user_id,role) VALUES ('seq_project','seq_actor','owner')");
+  await client.execute("INSERT INTO tasks(id,workspace_id,title,lane,priority,assignees,created_at) VALUES ('seq_older','seq_project','Older','todo','p2','[]',1),('seq_newer','seq_project','Newer','todo','p2','[]',2)");
+
+  const through21 = loadAndValidateLedger();
+  through21.forward = through21.forward.filter((entry) => entry.ordinal <= 21);
+  const backfill = await runMigrations({ client, context: through21, releaseSha: "task-seq-backfill" });
+  assert.deepEqual(backfill.applied, ["0021_tasks_seq"]);
+  const numbered = await client.execute("SELECT id,seq FROM tasks WHERE workspace_id='seq_project' ORDER BY created_at");
+  assert.deepEqual(numbered.rows.map((row) => [row.id, Number(row.seq)]), [["seq_older", 1], ["seq_newer", 2]]);
+
+  // The migration explicitly permits later writers that do not allocate seq.
+  await client.execute("INSERT INTO tasks(id,workspace_id,title,lane,priority,assignees,created_at) VALUES ('seq_legacy','seq_project','Legacy','todo','p2','[]',3)");
+  assert.equal((await client.execute("SELECT seq FROM tasks WHERE id='seq_legacy'")).rows[0].seq, null);
+  assert.equal((await migrationStatus({ client, context: through21 })).state, "current");
+  const remaining = await runMigrations({ client, releaseSha: "after-task-seq" });
+  assert.equal(remaining.applied[0], "0022_workspaces_description");
+  assert.equal((await migrationStatus({ client })).state, "current");
+
+  await assert.rejects(client.execute("INSERT INTO tasks(id,workspace_id,seq,title,lane,priority,assignees) VALUES ('seq_duplicate','seq_project',1,'Duplicate','todo','p2','[]')"));
+  await client.execute("DROP INDEX tasks_workspace_seq_unique");
+  await assert.rejects(migrationStatus({ client }), /proof unique-index-exists/);
+}));
+
+test("populated 0027 production-shaped ledger upgrades through January and conversations, then no-ops", async () => withClient(async (client) => {
+  const through27 = loadAndValidateLedger();
+  through27.forward = through27.forward.filter((entry) => entry.ordinal <= 27);
+  await runMigrations({ client, context: through27, releaseSha: "synthetic-0027" });
+  await client.execute("INSERT INTO users(id,clerk_id,name,color,initials) VALUES ('historic_actor','clerk_historic_actor','Historic','#111','HA')");
+  await client.execute("INSERT INTO workspaces(id,slug,name,owner_user_id,context_type) VALUES ('historic_project','historic','Historic','historic_actor','project')");
+  await client.execute("INSERT INTO workspace_members(workspace_id,user_id,role) VALUES ('historic_project','historic_actor','owner')");
+  await client.execute("INSERT INTO tasks(id,workspace_id,seq,title,lane,priority,assignees) VALUES ('historic_task','historic_project',1,'Preserved task','todo','p2','[]')");
+  await client.execute("INSERT INTO comments(id,task_id,user_id,body,created_at) VALUES ('historic_comment','historic_task','historic_actor','Preserved comment',1)");
+  const upgraded = await runMigrations({ client, releaseSha: "synthetic-0036" });
+  assert.deepEqual(upgraded.applied, [
+    "0028_project_drive", "0029_project_drive_operations", "0030_sponsored_use_intents",
+    "0031_event_purchase_designations", "0032_project_conversations",
+    "0033_conversation_task_outcomes", "0034_project_direct_messages", "0035_task_discussion",
+    "0036_conversation_erasure_tombstones",
+  ]);
+  assert.equal((await client.execute("SELECT title FROM tasks WHERE id='historic_task'")).rows[0].title, "Preserved task");
+  const comment = (await client.execute("SELECT id,body,workspace_id,revision FROM comments WHERE id='historic_comment'")).rows[0];
+  assert.deepEqual({ ...comment }, { id: "historic_comment", body: "Preserved comment", workspace_id: "historic_project", revision: 1 });
+  assert.equal((await client.execute("SELECT task_id FROM task_discussion_state WHERE task_id='historic_task'")).rows[0].task_id, "historic_task");
+  assert.deepEqual(await runMigrations({ client, releaseSha: "synthetic-noop" }), { status: "no-op", applied: [] });
+}));
+
+test("0036 migrates populated conversation dependents with FK ON and rolls back a failed proof", async () => withClient(async (client) => {
+  const before = loadAndValidateLedger();
+  before.forward = before.forward.filter((entry) => entry.ordinal <= 35);
+  await runMigrations({ client, context: before, releaseSha: "erasure-before" });
+  assert.equal(Number((await client.execute("PRAGMA foreign_keys")).rows[0].foreign_keys), 1);
+  await client.executeMultiple(`
+    INSERT INTO users(id,clerk_id,name,color,initials) VALUES
+      ('erasure_actor','clerk_erasure_actor','Actor','#111','AA'),
+      ('erasure_peer','clerk_erasure_peer','Peer','#222','PP');
+    INSERT INTO workspaces(id,slug,name,owner_user_id) VALUES('erasure_project','erasure-project','Erasure','erasure_actor');
+    INSERT INTO workspace_members(workspace_id,user_id,role) VALUES
+      ('erasure_project','erasure_actor','owner'),('erasure_project','erasure_peer','member');
+    INSERT INTO tasks(id,workspace_id,seq,title,lane,priority,assignees)
+      VALUES('erasure_task','erasure_project',1,'Preserved task','todo','p2','[]');
+    INSERT INTO conversations(id,workspace_id,kind,created_by,created_at) VALUES
+      ('erasure_room','erasure_project','project','erasure_actor',1000);
+    INSERT INTO conversations(id,workspace_id,kind,dm_low_user_id,dm_high_user_id,pair_state,dm_requester_id,created_by,created_at)
+      VALUES('erasure_dm','erasure_project','dm','erasure_actor','erasure_peer','pending','erasure_actor','erasure_actor',1000);
+    INSERT INTO conversation_participants(conversation_id,user_id,status)
+      VALUES('erasure_dm','erasure_actor','active'),('erasure_dm','erasure_peer','active');
+    INSERT INTO conversation_dm_receipts(actor_id,client_request_id,operation,payload_hash,conversation_id,resulting_state,committed_at)
+      VALUES('erasure_actor','dm_request_000001','request','dm-hash','erasure_dm','pending',1000);
+    INSERT INTO conversation_messages(id,conversation_id,workspace_id,author_id,client_request_id,request_hash,root_id,create_seq,revision,body,created_at)
+      VALUES('erasure_root','erasure_room','erasure_project','erasure_actor','room_request_0001','root-hash',NULL,1,1,'Preserved root',1000),
+        ('erasure_reply','erasure_room','erasure_project','erasure_peer','room_request_0002','reply-hash','erasure_root',2,1,'Preserved reply',2000);
+    INSERT INTO conversation_changes(conversation_id,change_seq,kind,message_id,revision,audience_epoch,happened_at)
+      VALUES('erasure_room',1,'create','erasure_root',1,1,1000),('erasure_room',2,'create','erasure_reply',1,1,2000);
+    INSERT INTO conversation_receipts(conversation_id,actor_id,client_request_id,operation,payload_hash,message_id,create_seq,change_seq,revision,committed_at)
+      VALUES('erasure_room','erasure_actor','room_request_0001','send','root-hash','erasure_root',1,1,1,1000);
+    INSERT INTO conversation_attention(id,conversation_id,workspace_id,recipient_id,message_id,create_seq)
+      VALUES('erasure_attention','erasure_room','erasure_project','erasure_peer','erasure_root',1);
+    INSERT INTO conversation_outbox(id,conversation_id,workspace_id,recipient_id,message_id,created_at)
+      VALUES('erasure_outbox','erasure_room','erasure_project','erasure_peer','erasure_root',1000);
+    INSERT INTO work_links(id,source_project_id,source_conversation_id,source_message_id,source_revision,source_audience_epoch,destination_project_id,task_id,created_by,created_at)
+      VALUES('erasure_link','erasure_project','erasure_room','erasure_root',1,1,'erasure_project','erasure_task','erasure_actor',1000);
+    INSERT INTO work_operation_receipts(actor_id,client_request_id,operation,payload_hash,source_project_id,source_conversation_id,destination_project_id,task_id,work_link_id,committed_at)
+      VALUES('erasure_actor','work_request_0001','conversation_task','work-hash','erasure_project','erasure_room','erasure_project','erasure_task','erasure_link',1000);
+    INSERT INTO task_discussion_state(task_id,workspace_id) VALUES('erasure_task','erasure_project');
+    INSERT INTO comments(id,workspace_id,task_id,user_id,body,client_request_id,request_hash,revision,root_id,create_seq)
+      VALUES('erasure_comment','erasure_project','erasure_task','erasure_actor','Preserved comment','comment_request_1','comment-hash',1,NULL,1),
+        ('erasure_comment_reply','erasure_project','erasure_task','erasure_peer','Preserved comment reply','comment_request_2','comment-reply-hash',1,'erasure_comment',2);
+    INSERT INTO task_comment_changes(task_id,change_seq,kind,comment_id,revision,audience_epoch,happened_at_ms)
+      VALUES('erasure_task',1,'create','erasure_comment',1,1,1000);
+    INSERT INTO task_comment_receipts(task_id,actor_id,client_request_id,operation,payload_hash,comment_id,create_seq,change_seq,revision,committed_at_ms)
+      VALUES('erasure_task','erasure_actor','comment_request_1','send','comment-hash','erasure_comment',1,1,1,1000);
+    INSERT INTO task_comment_attention(id,event_id,task_id,workspace_id,recipient_id,comment_id,source_revision,create_seq,reason_bits)
+      VALUES('erasure_comment_attention','erasure_attention_event','erasure_task','erasure_project','erasure_peer','erasure_comment',1,1,1);
+    INSERT INTO task_comment_outbox(id,event_id,task_id,workspace_id,recipient_id,comment_id,source_revision,audience_epoch,created_at_ms)
+      VALUES('erasure_comment_outbox','erasure_outbox_event','erasure_task','erasure_project','erasure_peer','erasure_comment',1,1,1000);
+  `);
+  const tables = ["conversations", "conversation_participants", "conversation_dm_receipts", "conversation_messages",
+    "conversation_changes", "conversation_receipts", "conversation_attention", "conversation_outbox", "work_links",
+    "work_operation_receipts", "comments", "task_comment_changes", "task_comment_receipts", "task_comment_attention", "task_comment_outbox"];
+  const counts = async () => Promise.all(tables.map(async (table) => Number((await client.execute(`SELECT count(*) AS n FROM ${table}`)).rows[0].n)));
+  const initial = await counts();
+  const broken = loadAndValidateLedger();
+  broken.forward.at(-1).receipt.record.proofs.push({ id: "erasure-forced-rollback", sql: "SELECT 0 AS value", expected: 1 });
+  await assert.rejects(() => runMigrations({ client, context: broken, releaseSha: "erasure-rollback" }), /erasure-forced-rollback/);
+  assert.equal(Number((await client.execute("PRAGMA foreign_keys")).rows[0].foreign_keys), 1);
+  assert.deepEqual(await counts(), initial);
+  assert.equal(Number((await client.execute("SELECT count(*) AS n FROM signal_schema_migrations WHERE id='0036_conversation_erasure_tombstones'")).rows[0].n), 0);
+  const upgraded = await runMigrations({ client, releaseSha: "erasure-upgrade" });
+  assert.deepEqual(upgraded.applied, ["0036_conversation_erasure_tombstones"]);
+  assert.deepEqual(await counts(), initial);
+  assert.equal((await client.execute("SELECT body FROM conversation_messages WHERE id='erasure_reply'")).rows[0].body, "Preserved reply");
+  assert.equal((await client.execute("SELECT body FROM comments WHERE id='erasure_comment_reply'")).rows[0].body, "Preserved comment reply");
+  assert.equal((await client.execute("PRAGMA foreign_key_check")).rows.length, 0);
+  assert.equal(Number((await client.execute("PRAGMA foreign_keys")).rows[0].foreign_keys), 1);
+  assert.deepEqual(await runMigrations({ client, releaseSha: "erasure-noop" }), { status: "no-op", applied: [] });
+}));
+
+test("Project Drive preserves credential, folder, and grant generations", async () => withClient(async (client) => {
+  await runMigrations({ client, releaseSha: "test-release" });
+  await client.execute("INSERT INTO users (id, color, initials) VALUES ('owner', '#000', 'OW'), ('member', '#111', 'ME')");
+  await client.execute("INSERT INTO workspaces (id, slug, name) VALUES ('ws-a', 'ws-a', 'A'), ('ws-b', 'ws-b', 'B')");
+
+  const connection = (id, permissionId, current = 1) => ({
+    sql: `INSERT INTO provider_connections (
+      id, user_id, provider, provider_account_id, root_folder_id,
+      refresh_token_cipher, key_version, scopes, status, is_current, connected_at
+    ) VALUES (?, 'owner', 'google_drive', ?, ?, ?, 1, '["drive.file"]', 'active', ?, 1)`,
+    args: [id, permissionId, `root-${id}`, `cipher-${id}`, current],
+  });
+  await client.execute(connection("conn-a1", "permission-a"));
+  await assert.rejects(
+    () => client.execute(`INSERT INTO provider_connections (
+      id, user_id, provider, provider_account_id, root_folder_id,
+      refresh_token_cipher, key_version, scopes, status, is_current, connected_at
+    ) VALUES ('conn-invalid-scopes', 'owner', 'google_drive', 'permission-invalid',
+      'root-invalid', 'cipher-invalid', 1, 'not-json', 'active', 0, 1)`),
+    /CHECK constraint failed/,
+  );
+  await assert.rejects(
+    () => client.execute(connection("conn-b1", "permission-b")),
+    /UNIQUE constraint failed/,
+  );
+  await client.execute("UPDATE provider_connections SET is_current = 0 WHERE id = 'conn-a1'");
+  await client.execute(connection("conn-b1", "permission-b"));
+  await client.execute("UPDATE provider_connections SET is_current = 0 WHERE id = 'conn-b1'");
+  await client.execute(connection("conn-a2", "permission-a"));
+
+  const generation = (id, connectionId, folderId, current = 1) => ({
+    sql: `INSERT INTO workspace_storage (
+      id, workspace_id, connection_id, folder_id, folder_web_view_link, state, is_current
+    ) VALUES (?, 'ws-a', ?, ?, ?, 'active', ?)`,
+    args: [id, connectionId, folderId, `https://drive.example/${folderId}`, current],
+  });
+  await client.execute(generation("gen-a1", "conn-a1", "folder-a1"));
+  await assert.rejects(
+    () => client.execute(generation("gen-b1", "conn-b1", "folder-b1")),
+    /UNIQUE constraint failed/,
+  );
+  await client.execute("UPDATE workspace_storage SET is_current = 0 WHERE id = 'gen-a1'");
+  await client.execute(generation("gen-b1", "conn-b1", "folder-b1"));
+  await client.execute("UPDATE workspace_storage SET is_current = 0 WHERE id = 'gen-b1'");
+  await client.execute(generation("gen-a2", "conn-a2", "folder-a2"));
+  await client.execute("UPDATE workspace_storage SET is_current = 0 WHERE id = 'gen-a2'");
+  await client.execute(generation("gen-a3", "conn-a2", "replacement-folder"));
+
+  await client.execute(`INSERT INTO drive_folder_grants (
+    storage_generation_id, workspace_id, user_id, permission_id,
+    granted_email, role, granted_at
+  ) VALUES ('gen-a1', 'ws-a', 'member', 'grant-a1', 'member@example.com', 'writer', 1)`);
+  await client.execute(`INSERT INTO drive_folder_grants (
+    storage_generation_id, workspace_id, user_id, permission_id,
+    granted_email, role, granted_at
+  ) VALUES ('gen-b1', 'ws-a', 'member', 'grant-b1', 'member@example.com', 'writer', 2)`);
+  await assert.rejects(
+    () => client.execute(`INSERT INTO drive_folder_grants (
+      storage_generation_id, workspace_id, user_id, permission_id,
+      granted_email, role, granted_at
+    ) VALUES ('gen-a3', 'ws-b', 'member', 'wrong-workspace', 'member@example.com', 'writer', 3)`),
+  );
+
+  await client.execute(`INSERT INTO resources (
+    id, workspace_id, task_id, kind, provider, storage, storage_generation_id,
+    title, added_at, access_state, counts_against_storage
+  ) VALUES ('resource-drive', 'ws-a', 'task-a', 'upload', 'drive', 'drive',
+    'gen-a3', 'Drive file', 1, 'pending', 0)`);
+  await assert.rejects(
+    () => client.execute(`INSERT INTO resources (
+      id, workspace_id, task_id, kind, provider, storage, storage_generation_id,
+      title, added_at, access_state, counts_against_storage
+    ) VALUES ('resource-wrong-workspace', 'ws-b', 'task-a', 'upload', 'drive',
+      'drive', 'gen-a3', 'Wrong workspace', 1, 'pending', 0)`),
+    /storage generation must belong to the resource workspace/,
+  );
+  await assert.rejects(
+    () => client.execute(`INSERT INTO resources (
+      id, workspace_id, task_id, kind, provider, storage,
+      title, added_at, access_state, counts_against_storage
+    ) VALUES ('resource-drive-no-generation', 'ws-a', 'task-a', 'upload',
+      'drive', 'drive', 'Missing generation', 1, 'pending', 0)`),
+    /CHECK constraint failed/,
+  );
+  await assert.rejects(
+    () => client.execute(`INSERT INTO resources (
+      id, workspace_id, task_id, kind, provider, storage, storage_generation_id,
+      title, added_at, access_state, counts_against_storage
+    ) VALUES ('resource-signal-with-generation', 'ws-a', 'task-a', 'upload',
+      'file', 'signal', 'gen-a3', 'Wrong generation', 1, 'pending', 0)`),
+    /CHECK constraint failed/,
+  );
+  await assert.rejects(
+    () => client.execute(`INSERT INTO resources (
+      id, workspace_id, task_id, kind, provider, storage, storage_generation_id,
+      title, added_at, access_state, counts_against_storage
+    ) VALUES ('resource-missing', 'ws-a', 'task-a', 'upload', 'drive', 'drive',
+      'missing-generation', 'Missing', 1, 'pending', 0)`),
+  );
+
+  const generations = await client.execute(
+    "SELECT id, connection_id, folder_id, is_current FROM workspace_storage WHERE workspace_id = 'ws-a' ORDER BY id",
+  );
+  assert.deepEqual(
+    generations.rows.map((row) => [row.id, row.connection_id, row.folder_id, Number(row.is_current)]),
+    [
+      ["gen-a1", "conn-a1", "folder-a1", 0],
+      ["gen-a2", "conn-a2", "folder-a2", 0],
+      ["gen-a3", "conn-a2", "replacement-folder", 1],
+      ["gen-b1", "conn-b1", "folder-b1", 0],
+    ],
+  );
+  assert.equal(
+    Number((await client.execute("SELECT COUNT(*) AS value FROM drive_folder_grants WHERE user_id = 'member'")).rows[0].value),
+    2,
+  );
+  await assert.rejects(() => client.execute("DELETE FROM users WHERE id = 'owner'"), /FOREIGN KEY constraint failed/);
+  await assert.rejects(() => client.execute("DELETE FROM workspaces WHERE id = 'ws-a'"), /FOREIGN KEY constraint failed/);
+  await assert.rejects(() => client.execute("DELETE FROM provider_connections WHERE id = 'conn-a1'"), /FOREIGN KEY constraint failed/);
+  await assert.rejects(() => client.execute("DELETE FROM workspace_storage WHERE id = 'gen-a1'"), /FOREIGN KEY constraint failed/);
+  await assert.rejects(() => client.execute("DELETE FROM workspace_storage WHERE id = 'gen-a3'"), /FOREIGN KEY constraint failed/);
+}));
+
+test("Project Drive operation journal is typed, recoverable, and lifecycle-safe with foreign keys on", async () => withClient(async (client) => {
+  await runMigrations({ client, releaseSha: "test-release" });
+  assert.equal(
+    Number((await client.execute("SELECT foreign_keys AS value FROM pragma_foreign_keys")).rows[0].value),
+    1,
+    "this test must exercise real SQLite FK enforcement",
+  );
+
+  await client.execute(`INSERT INTO users (id, color, initials) VALUES
+    ('journal-owner', '#000', 'JO'),
+    ('journal-member', '#111', 'JM'),
+    ('journal-delete-member', '#333', 'DM'),
+    ('handover-owner', '#222', 'HO')`);
+  await client.execute(`INSERT INTO workspaces (id, slug, name) VALUES
+    ('journal-ws-a', 'journal-ws-a', 'Journal A'),
+    ('journal-ws-b', 'journal-ws-b', 'Journal B'),
+    ('journal-ws-delete', 'journal-ws-delete', 'Delete me')`);
+  await client.execute(`INSERT INTO provider_connections (
+    id, user_id, provider, provider_account_id, root_folder_id,
+    refresh_token_cipher, key_version, scopes, status, is_current, connected_at
+  ) VALUES
+    ('journal-conn-a', 'journal-owner', 'google_drive', 'provider-a',
+      'root-a', 'cipher-a', 1, '["drive.file"]', 'active', 1, 1),
+    ('journal-conn-b', 'handover-owner', 'google_drive', 'provider-b',
+      'root-b', 'cipher-b', 1, '["drive.file"]', 'active', 1, 1)`);
+  await client.execute(`INSERT INTO workspace_storage (
+    id, workspace_id, connection_id, folder_id, folder_web_view_link,
+    state, is_current
+  ) VALUES
+    ('journal-gen-a', 'journal-ws-a', 'journal-conn-a',
+      'folder-a', 'https://drive.example/folder-a', 'active', 1),
+    ('journal-gen-delete', 'journal-ws-delete', 'journal-conn-a',
+      'folder-delete', 'https://drive.example/folder-delete', 'active', 1)`);
+
+  const insertOperation = (input) => client.execute({
+    sql: `INSERT INTO project_drive_operations (
+      id, workspace_id, operation_kind, status, dedupe_key, connection_id,
+      storage_generation_id, target_storage_generation_id, subject_user_id,
+      grantee_email, grant_role, workspace_revision, provider_folder_id,
+      provider_folder_web_view_link, provider_permission_id, attempt_count,
+      last_attempt_at, next_attempt_at, lease_expires_at, last_error_code,
+      created_at, updated_at, completed_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [
+      input.id,
+      input.workspaceId ?? "journal-ws-a",
+      input.operationKind,
+      input.status ?? "pending",
+      input.dedupeKey,
+      input.connectionId ?? null,
+      input.storageGenerationId ?? null,
+      input.targetStorageGenerationId ?? null,
+      input.subjectUserId ?? null,
+      input.granteeEmail ?? null,
+      input.grantRole ?? null,
+      input.workspaceRevision ?? null,
+      input.providerFolderId ?? null,
+      input.providerFolderWebViewLink ?? null,
+      input.providerPermissionId ?? null,
+      input.attemptCount ?? 0,
+      input.lastAttemptAt ?? null,
+      input.nextAttemptAt ?? null,
+      input.leaseExpiresAt ?? null,
+      input.lastErrorCode ?? null,
+      input.createdAt ?? 10,
+      input.updatedAt ?? 10,
+      input.completedAt ?? null,
+    ],
+  });
+
+  await insertOperation({
+    id: "op-provision",
+    operationKind: "folder_provision",
+    dedupeKey: "a".repeat(64),
+    connectionId: "journal-conn-a",
+    targetStorageGenerationId: "journal-gen-reserved",
+  });
+  await insertOperation({
+    id: "op-grant",
+    operationKind: "grant_create",
+    dedupeKey: "b".repeat(64),
+    storageGenerationId: "journal-gen-a",
+    subjectUserId: "journal-member",
+    granteeEmail: "member@example.com",
+    grantRole: "writer",
+  });
+  await insertOperation({
+    id: "op-rename",
+    operationKind: "folder_rename",
+    dedupeKey: "c".repeat(64),
+    storageGenerationId: "journal-gen-a",
+    workspaceRevision: 2,
+  });
+  await insertOperation({
+    id: "op-delete",
+    workspaceId: "journal-ws-delete",
+    operationKind: "project_delete",
+    dedupeKey: "d".repeat(64),
+  });
+  await insertOperation({
+    id: "op-handover",
+    operationKind: "storage_handover",
+    dedupeKey: "e".repeat(64),
+    connectionId: "journal-conn-b",
+    storageGenerationId: "journal-gen-a",
+    targetStorageGenerationId: "journal-gen-b",
+  });
+  await client.execute(`INSERT INTO drive_folder_grants (
+    storage_generation_id, workspace_id, user_id, permission_id,
+    granted_email, role, granted_at, revoke_pending
+  ) VALUES
+    ('journal-gen-a', 'journal-ws-a', 'journal-member',
+      'permission-to-revoke', 'member@example.com', 'writer', 10, 1),
+    ('journal-gen-delete', 'journal-ws-delete', 'journal-delete-member',
+      'permission-delete', 'delete@example.com', 'reader', 10, 1)`);
+
+  assert.equal(
+    Number((await client.execute("SELECT COUNT(*) AS value FROM workspace_storage WHERE id = 'journal-gen-reserved'")).rows[0].value),
+    0,
+    "folder intent must be durable before its storage generation can exist",
+  );
+  assert.equal(
+    Number((await client.execute(`SELECT COUNT(*) AS value
+      FROM pragma_foreign_key_list('project_drive_operations')
+      WHERE "from" = 'target_storage_generation_id'`)).rows[0].value),
+    0,
+    "the reserved target generation must not have a premature FK",
+  );
+
+  await assert.rejects(
+    () => insertOperation({
+      id: "op-bad-key",
+      operationKind: "project_delete",
+      dedupeKey: "not-a-hash",
+    }),
+    /CHECK constraint failed/,
+  );
+  await assert.rejects(
+    () => insertOperation({
+      id: "op-revoke-duplicate-queue",
+      operationKind: "grant_revoke",
+      dedupeKey: "3".repeat(64),
+    }),
+    /CHECK constraint failed/,
+    "grant revocation must stay in drive_folder_grants.revoke_pending",
+  );
+  await assert.rejects(
+    () => insertOperation({
+      id: "op-duplicate-key",
+      workspaceId: "journal-ws-b",
+      operationKind: "project_delete",
+      dedupeKey: "d".repeat(64),
+    }),
+    /UNIQUE constraint failed/,
+  );
+  await assert.rejects(
+    () => insertOperation({
+      id: "op-duplicate-generation",
+      operationKind: "folder_provision",
+      dedupeKey: "f".repeat(64),
+      connectionId: "journal-conn-a",
+      targetStorageGenerationId: "journal-gen-reserved",
+    }),
+    /UNIQUE constraint failed/,
+  );
+  await assert.rejects(
+    () => insertOperation({
+      id: "op-cross-workspace",
+      workspaceId: "journal-ws-b",
+      operationKind: "folder_rename",
+      dedupeKey: "0".repeat(64),
+      storageGenerationId: "journal-gen-a",
+      workspaceRevision: 1,
+    }),
+    /FOREIGN KEY constraint failed/,
+  );
+  await assert.rejects(
+    () => insertOperation({
+      id: "op-wrong-shape",
+      operationKind: "grant_create",
+      dedupeKey: "1".repeat(64),
+      connectionId: "journal-conn-a",
+      storageGenerationId: "journal-gen-a",
+      subjectUserId: "journal-member",
+      granteeEmail: "member@example.com",
+      grantRole: "writer",
+    }),
+    /CHECK constraint failed/,
+  );
+  await assert.rejects(
+    () => insertOperation({
+      id: "op-running-without-attempt",
+      operationKind: "project_delete",
+      dedupeKey: "2".repeat(64),
+      status: "running",
+      leaseExpiresAt: 20,
+    }),
+    /CHECK constraint failed/,
+  );
+  await assert.rejects(
+    () => insertOperation({
+      id: "op-fractional-attempt",
+      operationKind: "project_delete",
+      dedupeKey: "4".repeat(64),
+      attemptCount: 1.5,
+      lastAttemptAt: 10,
+    }),
+    /CHECK constraint failed/,
+    "attempt fencing values must be integers",
+  );
+  await assert.rejects(
+    () => insertOperation({
+      id: "op-text-revision",
+      operationKind: "folder_rename",
+      dedupeKey: "5".repeat(64),
+      storageGenerationId: "journal-gen-a",
+      workspaceRevision: "not-an-integer",
+    }),
+    /CHECK constraint failed/,
+    "workspace revisions must retain integer affinity",
+  );
+  await assert.rejects(
+    () => insertOperation({
+      id: "op-invalid-email",
+      operationKind: "grant_create",
+      dedupeKey: "6".repeat(64),
+      storageGenerationId: "journal-gen-a",
+      subjectUserId: "journal-member",
+      granteeEmail: "member@",
+      grantRole: "writer",
+    }),
+    /CHECK constraint failed/,
+    "the database and key normalizer must reject the same incomplete email",
+  );
+  await assert.rejects(
+    () => insertOperation({
+      id: "op-invalid-role",
+      operationKind: "grant_create",
+      dedupeKey: "7".repeat(64),
+      storageGenerationId: "journal-gen-a",
+      subjectUserId: "journal-member",
+      granteeEmail: "member@example.com",
+      grantRole: "owner",
+    }),
+    /CHECK constraint failed/,
+    "only the exact writer/reader request may be journaled",
+  );
+
+  await client.execute(`UPDATE project_drive_operations SET
+    status = 'running', attempt_count = 1, last_attempt_at = 20,
+    lease_expires_at = 30, updated_at = 20
+    WHERE id = 'op-provision'`);
+  await client.execute(`UPDATE project_drive_operations SET
+    status = 'retry_wait', lease_expires_at = NULL, next_attempt_at = 40,
+    last_error_code = 'network_error', updated_at = 30
+    WHERE id = 'op-provision'`);
+  await client.execute(`UPDATE project_drive_operations SET
+    status = 'manual_attention', next_attempt_at = NULL,
+    last_error_code = 'ambiguous_provider_result', updated_at = 40
+    WHERE id = 'op-provision'`);
+  await client.execute(`UPDATE project_drive_operations SET
+    status = 'succeeded', provider_folder_id = 'folder-reserved',
+    provider_folder_web_view_link = 'https://drive.example/folder-reserved',
+    last_error_code = NULL, completed_at = 50, updated_at = 50
+    WHERE id = 'op-provision'`);
+  await assert.rejects(
+    () => client.execute(`UPDATE project_drive_operations SET
+      status = 'cancelled' WHERE id = 'op-provision'`),
+    /CHECK constraint failed/,
+    "a provider receipt must be repaired, not hidden by cancellation",
+  );
+
+  await assert.rejects(
+    () => client.execute(`UPDATE project_drive_operations SET
+      status = 'manual_attention', attempt_count = 1, last_attempt_at = 20,
+      last_error_code = '401 bearer secret response', updated_at = 20
+      WHERE id = 'op-rename'`),
+    /CHECK constraint failed/,
+    "raw provider errors are not valid journal codes",
+  );
+  await assert.rejects(
+    () => client.execute(`UPDATE project_drive_operations SET
+      status = 'succeeded', attempt_count = 1, last_attempt_at = 20,
+      completed_at = 20, updated_at = 20 WHERE id = 'op-grant'`),
+    /CHECK constraint failed/,
+    "a successful grant requires its exact permission receipt",
+  );
+  await client.execute(`UPDATE project_drive_operations SET
+    status = 'succeeded', attempt_count = 1, last_attempt_at = 20,
+    provider_permission_id = 'permission-receipt', completed_at = 20,
+    updated_at = 20 WHERE id = 'op-grant'`);
+
+  const recoveredGrant = (await client.execute(`SELECT
+    storage_generation_id, subject_user_id, grantee_email, grant_role,
+    provider_permission_id
+    FROM project_drive_operations WHERE id = 'op-grant'`)).rows[0];
+  assert.deepEqual(
+    [
+      recoveredGrant.storage_generation_id,
+      recoveredGrant.subject_user_id,
+      recoveredGrant.grantee_email,
+      recoveredGrant.grant_role,
+      recoveredGrant.provider_permission_id,
+    ],
+    [
+      "journal-gen-a",
+      "journal-member",
+      "member@example.com",
+      "writer",
+      "permission-receipt",
+    ],
+    "provider success plus a DB crash retains the complete grant request and receipt",
+  );
+
+  const revokeReceipt = (await client.execute(`SELECT permission_id, revoke_pending
+    FROM drive_folder_grants
+    WHERE storage_generation_id = 'journal-gen-a'
+      AND user_id = 'journal-member'`)).rows[0];
+  assert.equal(revokeReceipt.permission_id, "permission-to-revoke");
+  assert.equal(Number(revokeReceipt.revoke_pending), 1);
+
+  await assert.rejects(
+    () => client.execute("DELETE FROM workspaces WHERE id = 'journal-ws-delete'"),
+    /FOREIGN KEY constraint failed/,
+    "project deletion must retain its durable operation until final cleanup",
+  );
+  await assert.rejects(
+    () => client.execute("DELETE FROM users WHERE id = 'journal-member'"),
+    /FOREIGN KEY constraint failed/,
+    "account cleanup must resolve a member grant operation first",
+  );
+  await assert.rejects(
+    () => client.execute("DELETE FROM provider_connections WHERE id = 'journal-conn-b'"),
+    /FOREIGN KEY constraint failed/,
+    "handover must retain its target credential generation until resolved",
+  );
+  await assert.rejects(
+    () => client.execute("DELETE FROM workspace_storage WHERE id = 'journal-gen-a'"),
+    /FOREIGN KEY constraint failed/,
+    "rename, grant and handover repair must retain the source generation",
+  );
+
+  const projectDeleteGrant = (await client.execute(`SELECT permission_id,
+    revoke_pending FROM drive_folder_grants
+    WHERE storage_generation_id = 'journal-gen-delete'
+      AND user_id = 'journal-delete-member'`)).rows[0];
+  assert.equal(projectDeleteGrant.permission_id, "permission-delete");
+  assert.equal(Number(projectDeleteGrant.revoke_pending), 1);
+  await client.execute(`DELETE FROM drive_folder_grants
+    WHERE storage_generation_id = 'journal-gen-delete'
+      AND user_id = 'journal-delete-member' AND revoke_pending = 1`);
+  await client.execute("DELETE FROM workspace_storage WHERE id = 'journal-gen-delete'");
+  await client.execute(`UPDATE project_drive_operations SET
+    status = 'succeeded', attempt_count = 1, last_attempt_at = 20,
+    completed_at = 20, updated_at = 20 WHERE id = 'op-delete'`);
+  await client.batch([
+    "DELETE FROM project_drive_operations WHERE id = 'op-delete' AND status = 'succeeded'",
+    "DELETE FROM workspaces WHERE id = 'journal-ws-delete'",
+  ], "write");
+  assert.equal(
+    Number((await client.execute(`SELECT COUNT(*) AS value
+      FROM project_drive_operations
+      WHERE id = 'op-delete'`)).rows[0].value),
+    0,
+    "a completed project-delete marker is consumed, not left as a false tombstone",
+  );
+  await client.execute("DELETE FROM users WHERE id = 'journal-delete-member'");
+  await client.execute("DELETE FROM project_drive_operations WHERE id = 'op-grant'");
+  await assert.rejects(
+    () => client.execute("DELETE FROM users WHERE id = 'journal-member'"),
+    /FOREIGN KEY constraint failed/,
+    "the sole revoke queue retains the exact grant until provider repair succeeds",
+  );
+  await client.execute(`DELETE FROM drive_folder_grants
+    WHERE storage_generation_id = 'journal-gen-a'
+      AND user_id = 'journal-member' AND revoke_pending = 1`);
+  await client.execute("DELETE FROM users WHERE id = 'journal-member'");
+  await client.execute("DELETE FROM project_drive_operations WHERE id = 'op-handover'");
+  await client.execute("DELETE FROM provider_connections WHERE id = 'journal-conn-b'");
+  await client.execute("DELETE FROM project_drive_operations WHERE id = 'op-rename'");
+  await client.execute("DELETE FROM workspace_storage WHERE id = 'journal-gen-a'");
+}));
+
+test("Project Drive operation journal detects same-name partial-index drift", async () => withClient(async (client) => {
+  await runMigrations({ client, releaseSha: "test-release" });
+
+  await client.execute("DROP INDEX idx_project_drive_operations_target_generation");
+  await client.execute(`CREATE UNIQUE INDEX idx_project_drive_operations_target_generation
+    ON project_drive_operations (target_storage_generation_id) WHERE 0`);
+  await assert.rejects(
+    () => migrationStatus({ client }),
+    /proof project-drive-operations-target-index-guard expected 1 but received 0/,
+  );
+
+  await client.execute("DROP INDEX idx_project_drive_operations_target_generation");
+  await client.execute(`CREATE UNIQUE INDEX idx_project_drive_operations_target_generation
+    ON project_drive_operations (target_storage_generation_id)
+    WHERE target_storage_generation_id IS NOT NULL`);
+  await client.execute("DROP INDEX idx_project_drive_operations_ready");
+  await client.execute(`CREATE INDEX idx_project_drive_operations_ready
+    ON project_drive_operations (
+      status, next_attempt_at, lease_expires_at, created_at
+    ) WHERE status = 'pending'`);
+  await assert.rejects(
+    () => migrationStatus({ client }),
+    /proof project-drive-operations-ready-index-guard expected 1 but received 0/,
+  );
 }));
 
 test("a non-empty database without an exact ledger refuses migration execution", async () => withClient(async (client) => {
@@ -331,6 +1012,7 @@ test("receipt-backed adoption verifies target, shape, proofs, and is idempotent"
   const receiptPath = path.join(receiptDir, "receipt.json");
   const receipt = {
     schemaVersion: "tasks-production-adoption/1",
+    schemaFingerprintVersion: "sqlite-schema/2",
     id: "tasks-adoption-test",
     environment: "production",
     databaseIdentitySha256: databaseIdentitySha256(databaseUrl),
@@ -385,6 +1067,7 @@ test("adoption receipt for another database fails before writing metadata", asyn
   const receiptPath = path.join(receiptDir, "receipt.json");
   fs.writeFileSync(receiptPath, JSON.stringify({
     schemaVersion: "tasks-production-adoption/1",
+    schemaFingerprintVersion: "sqlite-schema/2",
     id: "wrong-target",
     environment: "production",
     databaseIdentitySha256: "f".repeat(64),
@@ -403,4 +1086,91 @@ test("adoption receipt for another database fails before writing metadata", asyn
   } finally {
     fs.rmSync(receiptDir, { recursive: true, force: true });
   }
+}));
+
+
+test("normal post-migration resources do not invalidate the historical backfill receipt", async () => withClient(async (client) => {
+  const first = await runMigrations({ client, releaseSha: "resource-lifecycle-test" });
+  assert.ok(first.proofs.some((proof) => proof.id === "backfill-upload-count-matches-attachments"));
+  await client.executeMultiple(`
+    INSERT INTO users (id, color, initials) VALUES ('resource-owner', '#111', 'RO');
+    INSERT INTO workspaces (id,slug,name,owner_user_id) VALUES ('resource-ws','resource-ws','Synthetic recovery','resource-owner');
+    INSERT INTO tasks (id,workspace_id,seq,title,lane,priority) VALUES ('resource-task','resource-ws',1,'Synthetic file','todo','normal');
+    INSERT INTO resources (id,workspace_id,task_id,kind,provider,storage,title,added_at)
+      VALUES ('resource-new','resource-ws','resource-task','upload','file','signal','Synthetic file',1788552000);
+  `);
+  assert.equal((await migrationStatus({ client })).state, "current");
+  assert.equal((await runMigrations({ client, releaseSha: "resource-lifecycle-retry" })).status, "no-op");
+  await client.execute("DROP INDEX idx_resources_task_id");
+  await assert.rejects(() => migrationStatus({ client }), /resources-task-id-index-exists/);
+}));
+
+test("the resource backfill count remains required when its migration executes", async () => withClient(async (client) => {
+  const context = loadAndValidateLedger();
+  const entry = context.forward.find((candidate) => candidate.id === "0017_resources");
+  const proof = entry.receipt.record.proofs.find((candidate) => candidate.id === "backfill-upload-count-matches-attachments");
+  proof.sql = "SELECT 0 AS value";
+  await assert.rejects(() => runMigrations({ client, context, releaseSha: "broken-backfill-test" }), /backfill-upload-count-matches-attachments/);
+}));
+
+test("usage migration proof failure rolls back both new tables and its ledger receipt", async () => withClient(async (client) => {
+  const before = loadAndValidateLedger();
+  before.forward = before.forward.filter(entry => entry.ordinal < 30);
+  await runMigrations({ client, context: before, releaseSha: "usage-before" });
+  const broken = loadAndValidateLedger();
+  const entry = broken.forward.find(row => row.id === "0030_sponsored_use_intents");
+  entry.receipt.record.proofs.push({ id: "usage-forced-failure", sql: "SELECT 0 AS value", expected: 1 });
+  await assert.rejects(() => runMigrations({ client, context: broken, releaseSha: "usage-failed" }), /usage-forced-failure/);
+  assert.equal(Number((await client.execute("SELECT count(*) AS n FROM sqlite_schema WHERE name IN ('sponsored_use_intents','sponsored_use_subjects')")).rows[0].n), 0);
+  assert.equal(Number((await client.execute("SELECT count(*) AS n FROM signal_schema_migrations WHERE id='0030_sponsored_use_intents'")).rows[0].n), 0);
+  const applied = await runMigrations({ client, releaseSha: "usage-retry" });
+  assert.deepEqual(applied.applied, [
+    "0030_sponsored_use_intents", "0031_event_purchase_designations",
+    "0032_project_conversations", "0033_conversation_task_outcomes",
+    "0034_project_direct_messages", "0035_task_discussion", "0036_conversation_erasure_tombstones",
+  ]);
+  assert.equal((await runMigrations({ client, releaseSha: "usage-no-op" })).status, "no-op");
+}));
+
+test("Event additive migration preserves populated history; failed proof rolls back all objects and its receipt before a successful retry/no-op", async () => withClient(async (client) => {
+  const before = loadAndValidateLedger();
+  before.forward = before.forward.filter(entry => entry.ordinal < 31);
+  const eventOnly = loadAndValidateLedger();
+  eventOnly.forward = eventOnly.forward.filter(entry => entry.ordinal <= 31);
+  await runMigrations({ client, context: before, releaseSha: "event-before" });
+  await client.execute("INSERT INTO users(id,initials,color) VALUES ('historic-owner','HO','#000')");
+  await client.execute("INSERT INTO workspaces(id,slug,name,owner_user_id) VALUES ('historic-project','historic-project','Preserved','historic-owner')");
+  await client.execute("INSERT INTO entitlements(id,user_id,workspace_id,tier,source,expires_at,notes) VALUES ('historic-event','historic-owner','historic-project','event','purchase',0,'stripe:cs_historical')");
+  const snapshot = async () => ({
+    schema: (await client.execute("SELECT type,name,sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name")).rows,
+    grants: (await client.execute("SELECT * FROM entitlements ORDER BY id")).rows,
+    projects: (await client.execute("SELECT * FROM workspaces ORDER BY id")).rows,
+  });
+  const original = await snapshot();
+  const broken = loadAndValidateLedger();
+  broken.forward.find(row => row.ordinal === 31).receipt.record.proofs.push({
+    id: "event-forced-failure", sql: "SELECT 0 AS value", expected: 1,
+  });
+  await assert.rejects(runMigrations({ client, context: broken, releaseSha: "event-failed" }), /event-forced-failure/);
+  assert.deepEqual(await snapshot(), original);
+  assert.equal(Number((await client.execute("SELECT count(*) AS n FROM signal_schema_migrations WHERE id='0031_event_purchase_designations'")).rows[0].n), 0);
+  assert.deepEqual((await runMigrations({ client, context: eventOnly, releaseSha: "event-retry" })).applied, ["0031_event_purchase_designations"]);
+  assert.deepEqual((await client.execute("SELECT * FROM entitlements ORDER BY id")).rows, original.grants);
+  assert.deepEqual((await client.execute("SELECT * FROM workspaces ORDER BY id")).rows, original.projects);
+  assert.equal(Number((await client.execute("SELECT count(*) AS n FROM event_purchase_designations")).rows[0].n), 0);
+  assert.equal((await runMigrations({ client, context: eventOnly, releaseSha: "event-no-op" })).status, "no-op");
+  // Explicitly local, empty-table rollback. This is NOT a production downgrade
+  // runner or permission to discard paid designation/reconciliation history.
+  await client.batch([
+    "DROP TRIGGER event_purchase_purchaser_erasure",
+    "DROP TRIGGER event_purchase_project_erasure",
+    "DROP TRIGGER event_purchase_facts_immutable",
+    "DROP INDEX event_purchase_reference_unique",
+    "DROP INDEX event_purchase_project_idx",
+    "DROP TABLE event_purchase_designations",
+    "DELETE FROM signal_schema_migrations WHERE id='0031_event_purchase_designations'",
+    "DELETE FROM __drizzle_migrations WHERE created_at=1788602400000",
+  ], "write");
+  assert.deepEqual(await snapshot(), original);
+  assert.deepEqual((await runMigrations({ client, context: eventOnly, releaseSha: "event-reapply-local" })).applied, ["0031_event_purchase_designations"]);
 }));

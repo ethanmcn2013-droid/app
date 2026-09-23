@@ -16,9 +16,10 @@ import { RailIcon } from "@/components/studio-bar/rail-icons";
 import { ProjectsSidebar } from "@/components/studio-bar/projects-sidebar";
 import { isFloorPath } from "@/lib/bare-artifact-path";
 import { useCurrentUser } from "@/lib/auth-context";
+import { activeCoreDestination, CORE_DESTINATIONS } from "@/lib/core-navigation";
 import {
-  HOME_APP_PATH,
   PRODUCT_APP_PATHS,
+  STUDIO_URL,
   TASKS_VIEW_PATHS,
 } from "@/lib/product-urls";
 import { withSuiteContext } from "@/lib/suite-context";
@@ -32,17 +33,6 @@ const VIEWS = [
   { href: TASKS_VIEW_PATHS.timeline, label: "Schedule", icon: "timeline" },
   { href: TASKS_VIEW_PATHS.calendar, label: "Calendar", icon: "calendar" },
 ] as const;
-
-const MOBILE_PRODUCTS: ReadonlyArray<{
-  id: "home" | "notes" | "tasks" | "timeline";
-  label: string;
-  path: string;
-}> = [
-  { id: "home", label: "Home", path: HOME_APP_PATH },
-  { id: "notes", label: "Notes", path: PRODUCT_APP_PATHS.notes },
-  { id: "tasks", label: "Tasks", path: PRODUCT_APP_PATHS.tasks },
-  { id: "timeline", label: "Timeline", path: PRODUCT_APP_PATHS.timeline },
-];
 
 export function AppSidebar({
   active: activeProp,
@@ -173,7 +163,6 @@ function MobileTabBar({ active }: { active: string }) {
 
   const inboxCount = openTaskCount(tasks);
   const myCount = openTaskCount(tasks, { user: me });
-  const activeView = VIEWS.find((view) => active === view.href);
 
   const closeViews = useCallback((restoreFocus: boolean) => {
     setViewsOpen(false);
@@ -265,9 +254,7 @@ function MobileTabBar({ active }: { active: string }) {
           onKeyDown={onMenuKeyDown}
           role="menu"
         >
-          <p aria-hidden="true" className="px-2.5 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-faint" role="presentation">
-            Tasks views
-          </p>
+          <p aria-hidden="true" className="px-2.5 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-faint" role="presentation">Tasks views</p>
           {VIEWS.map((view, index) => {
             const current = active === view.href;
             return (
@@ -351,12 +338,19 @@ function MobileTabBar({ active }: { active: string }) {
             <NavIcon kind="search" />
             Search tasks
           </button>
+          <div className="mx-2 my-1 h-px bg-line-soft" role="separator" />
+          <p aria-hidden="true" className="px-2.5 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-faint" role="presentation">More</p>
+          <Link ref={(element) => registerMenuItem(element, 7)} className="flex min-h-[44px] items-center gap-3 rounded-lg px-3 text-[13px] font-medium text-ink-soft hover:bg-bg-sunken focus-visible:bg-bg-sunken" href={withSuiteContext(PRODUCT_APP_PATHS.notes, suiteContext)} onClick={() => closeViews(false)} role="menuitem" tabIndex={-1}><RailIcon name="notes" size={18} />Notes</Link>
+          <Link ref={(element) => registerMenuItem(element, 8)} className="flex min-h-[44px] items-center gap-3 rounded-lg px-3 text-[13px] font-medium text-ink-soft hover:bg-bg-sunken focus-visible:bg-bg-sunken" href="/app/settings" onClick={() => closeViews(false)} role="menuitem" tabIndex={-1}><RailIcon name="settings" size={18} />Project and team</Link>
+          <Link ref={(element) => registerMenuItem(element, 9)} className="flex min-h-[44px] items-center gap-3 rounded-lg px-3 text-[13px] font-medium text-ink-soft hover:bg-bg-sunken focus-visible:bg-bg-sunken" href="/settings/profile" onClick={() => closeViews(false)} role="menuitem" tabIndex={-1}>Account settings</Link>
+          <a ref={(element) => registerMenuItem(element, 10)} className="flex min-h-[44px] items-center gap-3 rounded-lg px-3 text-[13px] font-medium text-ink-soft hover:bg-bg-sunken focus-visible:bg-bg-sunken" href={STUDIO_URL} rel="noopener noreferrer" target="_blank" role="menuitem" tabIndex={-1}>About Signal Studio ↗</a>
+          <a ref={(element) => registerMenuItem(element, 11)} className="flex min-h-[44px] items-center gap-3 rounded-lg px-3 text-[13px] font-medium text-ink-soft hover:bg-bg-sunken focus-visible:bg-bg-sunken" href="mailto:hello@signalstudio.ie?subject=Signal%20Studio%20help" role="menuitem" tabIndex={-1}>Contact support</a>
         </div>
       ) : null}
 
       <ul className="grid min-h-14 grid-cols-5 items-stretch px-1 pt-1">
-        {MOBILE_PRODUCTS.map((product) => {
-          const current = product.id === "tasks";
+        {CORE_DESTINATIONS.map((product) => {
+          const current = product.id === activeCoreDestination(active);
           return (
             <li className="min-w-0" key={product.id}>
               <Link
@@ -400,9 +394,9 @@ function MobileTabBar({ active }: { active: string }) {
             }}
             type="button"
           >
-            <NavIcon kind={activeView?.icon ?? "views"} />
+            <RailIcon name="more" size={17} />
             <span className="flex max-w-full items-center gap-0.5">
-              <span className="min-w-0 truncate">{activeView?.label ?? "Views"}</span>
+              <span className="min-w-0 truncate">More</span>
               <svg aria-hidden className="flex-none" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="6 9 12 15 18 9" />
               </svg>

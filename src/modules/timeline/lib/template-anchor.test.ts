@@ -6,6 +6,10 @@ import {
   shiftCalendarDate,
 } from "./template-anchor";
 import { getSyncedTemplateRoadmap } from "./templates.generated";
+import { SYNCED_TEMPLATE_ROADMAPS } from "./templates.generated";
+import { SYNCED_TEMPLATES } from "../../../lib/templates.generated";
+import { getTemplate } from "../../../lib/templates";
+import { withWeddingTimelinePoints } from "../../../lib/wedding-template-timeline";
 
 describe("template anchor dates", () => {
   it("accepts real calendar days and rejects impossible ones", () => {
@@ -96,5 +100,37 @@ describe("template anchor dates", () => {
       true,
       "no planning milestone may land on or after the day itself",
     );
+  });
+});
+
+describe("connected template records", () => {
+  it("Tasks and Timeline slices have the same unique identities and no orphan project references", () => {
+    assert.deepEqual(SYNCED_TEMPLATES.map((t) => t.id), SYNCED_TEMPLATE_ROADMAPS.map((t) => t.id));
+    assert.equal(new Set(SYNCED_TEMPLATES.map((t) => t.id)).size, SYNCED_TEMPLATES.length);
+    for (const template of SYNCED_TEMPLATE_ROADMAPS) {
+      assert.equal(SYNCED_TEMPLATES.find((t) => t.id === template.id)?.name, template.name);
+      const slugs = new Set(template.roadmap.projects.map((project) => project.slug));
+      assert.equal(slugs.size, template.roadmap.projects.length);
+      for (const item of template.roadmap.items) assert.ok(slugs.has(item.projectSlug), `${template.id}: ${item.title}`);
+    }
+  });
+
+  it("keeps 18 wedding tasks, six task milestones and eight separate legacy Timeline seed items distinct", () => {
+    const raw = SYNCED_TEMPLATES.find((template) => template.id === "wedding-planning-workspace")!;
+    const before = structuredClone(raw);
+    const connected = withWeddingTimelinePoints(raw);
+    assert.equal(raw.tasks.length, 18);
+    assert.equal(raw.tasks.filter((task) => task.milestone).length, 0);
+    assert.equal(connected.tasks.filter((task) => task.milestone).length, 6);
+    assert.deepEqual(withWeddingTimelinePoints(connected), connected);
+    assert.deepEqual(getTemplate(raw.id), connected);
+    assert.deepEqual(raw, before);
+    assert.equal(getSyncedTemplateRoadmap(raw.id)?.roadmap.items.length, 8);
+    const originalFields = structuredClone(connected.tasks);
+    for (const task of originalFields) {
+      delete task.milestone;
+      delete task.dueOffsetDays;
+    }
+    assert.deepEqual(originalFields, raw.tasks);
   });
 });

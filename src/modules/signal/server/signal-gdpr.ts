@@ -110,7 +110,8 @@ export async function exportForUser(clerkId: string): Promise<
  * clear `analyticsViewPreferences` and `surfacedItems`.
  *
  * Returns `{ ok: true }` on success, `{ ok: false, error }` on failure so
- * the orchestrator can log and continue rather than aborting.
+ * the orchestrator can attempt every product eraser and then fail closed
+ * before identity deletion.
  *
  * Idempotent: retrying after partial failure is safe.
  */

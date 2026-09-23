@@ -3,45 +3,11 @@
 import { motion } from "motion/react";
 import Link from "next/link";
 import type { RedeemResult } from "@/server/actions/comp";
+import { withActiveProject } from "@/lib/projects/project-url";
+import { parseProjectId } from "@/lib/projects/project-ref";
+import { PRODUCT_APP_PATHS } from "@/lib/product-urls";
 import { formatRedeemExpiryDate } from "./redeem-expiry-date";
-
-const FAILURE_COPY: Record<
-  Exclude<RedeemResult, { ok: true }>["reason"],
-  { headline: string; body: string }
-> = {
-  "not-found": {
-    headline: "We don't recognize that code.",
-    body: "Double-check the link, letter for letter, dash for dash. If it came from us and still won't unlock, send it back and we'll look it up.",
-  },
-  exhausted: {
-    headline: "All redemptions on this code are used up.",
-    body: "This was a limited batch and someone got there first. Drop us a line and we'll see if we can mint a fresh one.",
-  },
-  expired: {
-    headline: "This code has expired.",
-    body: "Some gift codes have a window. The window on this one closed. Reach out and we'll figure out a fresh one.",
-  },
-  "already-redeemed": {
-    headline: "You've already redeemed this one.",
-    body: "Your access is still active, head into the workspace.",
-  },
-  "still-provisioning": {
-    headline: "We're still setting up your account.",
-    body: "This usually takes a second or two. Refresh the page and we'll try again.",
-  },
-  "rate-limited": {
-    headline: "Too many tries in a short window.",
-    body: "Wait ten minutes and enter the code again. If it came from your venue and still won't open, send it back to us and we'll look it up.",
-  },
-};
-
-const TIER_LABEL = {
-  free: "Free",
-  event: "Event",
-  wedding: "Wedding suite",
-  workspace: "Workspace",
-  studio: "Studio",
-} as const;
+import { REDEEM_FAILURE_COPY, REDEEM_TIER_LABELS } from "./redeem-copy";
 
 export function RedeemResultCard({
   code,
@@ -61,9 +27,11 @@ export function RedeemResultCard({
     // board with the sponsor banner. The template + workspace flag
     // are already applied server-side in redeemCompCodeAction.
     // Non-venue success falls back to /welcome (picker flow).
-    const href = result.sponsorSlug
+    const destination = result.sponsorSlug
       ? `/app/tasks?welcome=venue&v=${encodeURIComponent(result.sponsorSlug)}`
       : "/welcome";
+    const projectId = parseProjectId(result.projectId);
+    const href = projectId ? withActiveProject(destination, projectId) : destination;
     return (
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -91,7 +59,7 @@ export function RedeemResultCard({
         <h1 className="mt-1.5 text-balance text-[24px] font-semibold leading-snug tracking-[-0.01em] text-ink">
           You&rsquo;re on{" "}
           <span className="text-aud-wedding">
-            {TIER_LABEL[result.tier]}
+            {REDEEM_TIER_LABELS[result.tier]}
           </span>
           {expiresLabel ? ` until ${expiresLabel}` : ""}.
         </h1>
@@ -125,7 +93,7 @@ export function RedeemResultCard({
     );
   }
 
-  const copy = FAILURE_COPY[result.reason];
+  const copy = REDEEM_FAILURE_COPY[result.reason];
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -159,8 +127,18 @@ export function RedeemResultCard({
       <div className="mt-3 font-mono text-[10.5px] tabular-nums text-ink-quiet">
         {code}
       </div>
+      <p className="mt-4 text-[12.5px] leading-[1.55] text-ink-soft">
+        <a
+          href="mailto:hello@signalstudio.ie?subject=Access%20code%20help"
+          className="font-medium underline underline-offset-4"
+        >
+          Email Signal Studio
+        </a>
+        . Tell us which account you used and what happened. Keep your original
+        invitation ready.
+      </p>
       <Link
-        href="/"
+        href={PRODUCT_APP_PATHS.tasks}
         className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-4 py-2 text-[12.5px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink"
       >
         Back to Tasks

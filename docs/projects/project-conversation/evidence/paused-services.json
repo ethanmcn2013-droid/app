@@ -1,0 +1,32 @@
+[
+  {
+    "processId": 22184,
+    "command": "\"C:\\Users\\ethan\\AppData\\Local\\Programs\\nodejs-v22\\node-v22.23.2-win-x64\\node.exe\" --import tsx --import ./src/test/register-server-only.mjs scripts/conversations/preview-server.ts C:/Users/ethan/Documents/Codex/2026-09-12/plea/work/pc10-discussion-corrected-browser 3192 3188",
+    "state": "stopped"
+  },
+  {
+    "processId": 23408,
+    "command": "\"C:\\Users\\ethan\\AppData\\Local\\Programs\\nodejs-v22\\node-v22.23.2-win-x64\\node.exe\" --import tsx --import ./src/test/register-server-only.mjs scripts/conversations/preview-server.ts C:/Users/ethan/Documents/Codex/2026-09-12/plea/work/pc10-discussion-browser 3191 3188",
+    "state": "stopped"
+  },
+  {
+    "processId": 28044,
+    "command": "\"C:\\Users\\ethan\\AppData\\Local\\Programs\\nodejs-v22\\node-v22.23.2-win-x64\\node.exe\" --import tsx --import ./src/test/register-server-only.mjs scripts/conversations/preview-server.ts C:/Users/ethan/Documents/Codex/2026-09-12/plea/work/pc10-final 3190 3188",
+    "state": "stopped"
+  },
+  {
+    "processId": 15928,
+    "command": "\"C:\\Users\\ethan\\AppData\\Local\\Programs\\nodejs-v22\\node-v22.23.2-win-x64\\node.exe\" --import tsx --import ./src/test/register-server-only.mjs scripts/conversations/preview-server.ts C:/Users/ethan/Documents/Codex/2026-09-12/plea/work/pc10-live 3189 3188",
+    "state": "stopped"
+  },
+  {
+    "processId": 8680,
+    "command": "\"C:\\Users\\ethan\\AppData\\Local\\Programs\\nodejs-v22\\node-v22.23.2-win-x64\\node.exe\" node_modules/next/dist/bin/next dev --webpack --hostname 127.0.0.1 --port 3188",
+    "state": "stopped"
+  },
+  {
+    "processId": 14916,
+    "command": "\"C:\\Users\\ethan\\AppData\\Local\\Programs\\nodejs-v22\\node-v22.23.2-win-x64\\node.exe\" node_modules/next/dist/bin/next dev --webpack --hostname 127.0.0.1 --port 3187",
+    "state": "stopped"
+  }
+]

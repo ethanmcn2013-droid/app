@@ -1,0 +1,30 @@
+{
+  "source": "6eba1335d63471237f952e37753ac45adacbf266",
+  "integration": "a6293a82955d17bc414506ab89412f8667c1cd2f",
+  "archives": [
+    {
+      "archive": "independent.zip",
+      "payloadFiles": 6,
+      "bytes": 7948,
+      "sha256": "29694a91f0b4a934c9e08807275445350ea4a39e6e66229d5c52ec95da51bff6"
+    },
+    {
+      "archive": "composition.zip",
+      "payloadFiles": 29,
+      "bytes": 582812,
+      "sha256": "68681d29a8476aee6a8e82ea3b495695dcdc22d6f758492a044cb34024c74a9a"
+    }
+  ],
+  "sourceComparisons": {
+    "src/components/settings/profile/data-privacy.tsx": "3dbddd3fd95ad154fcc610975924e60ff2b31142612e3fb78828e3c055e20829",
+    "src/components/settings/section.tsx": "96e0fd199195fcdef94cd829a785d53b06dfbc971467da839b41ff760ea32f02",
+    "src/app/globals.css": "7f8b99b2c6f13df8f1472d0c3c5a5bb262376a47f300d233300a441232cea514",
+    "src/server/account-export.ts": "714061f22a2c8b0e125494ec89b61bc3dd40443da9c01a8acba5bfc0376b980a",
+    "src/server/account-unified-export.ts": "43327ddd75ce87cd603f328f84e99d0e62c4d3e419b03f351e31032cf89b555a",
+    "src/app/api/account/export/route.ts": "fb5776030e9fcee2e815c6c6689c558b0bbf4d3bf64e865a169be379b9583fd7",
+    "src/server/db/event-designation.ts": "b611c7b3c4d2b641f8ddbaedd9796c3d67759cbbe72a3a29d0505442aa128945",
+    "src/app/settings/layout.tsx": "6e03af06540f27113a22927c2a1de76a46efbf158bc219f9f3dccf7fe707d73e",
+    "src/app/settings/profile/page.tsx": "a24a1b85fe91dad0f90d9e7ac87d66570d392e844cb713a4454918c0dc7cf3af",
+    "src/components/settings/profile/profile-panel.tsx": "4ec170cc50769400c33fa12836293a14ecfbc1b9a88eb312abbb3de06eae0cb6"
+  }
+}

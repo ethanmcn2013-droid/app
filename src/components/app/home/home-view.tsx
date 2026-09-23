@@ -1,11 +1,12 @@
 import Link from "next/link";
+import type { ProjectSummary } from "@/lib/projects/project-ref";
+import { buildProjectUrl } from "@/lib/projects/project-url";
 import type {
   HomeComingRow,
   HomeData,
   HomeReviewRow,
   HomeSignalRow,
 } from "@/app/app/home/home-data";
-import { BRIEFING_APP_PATH } from "@/lib/product-urls";
 import { HomeItemLink, HomeViewedPing } from "./home-analytics";
 
 /**
@@ -35,7 +36,7 @@ export function HomeView({ data }: { data: Extract<HomeData, { kind: "ok" }> }) 
           <p className="mt-1.5 text-[13px] text-ink-soft">{data.scopeLabel}</p>
         </header>
 
-        <TodaysSignal rows={data.signalRows} allClear={data.allClear} />
+        <TodaysSignal rows={data.signalRows} allClear={data.allClear} briefingHref={data.briefingHref} />
 
         {data.comingUp.length > 0 ? <ComingUp rows={data.comingUp} /> : null}
 
@@ -45,6 +46,21 @@ export function HomeView({ data }: { data: Extract<HomeData, { kind: "ok" }> }) 
       </div>
     </div>
   );
+}
+
+/** Tasks proved this Project exists, but Signal could not read its Home yet. */
+export function HomeProjectUnavailable({ project }: { project: ProjectSummary }) {
+  return <div className="thin-scroll flex-1 overflow-auto bg-bg px-5 py-6 md:px-10 md:py-9">
+    <div className="mx-auto flex min-h-[60dvh] max-w-[560px] flex-col justify-center">
+      <h1 className="text-[24px] font-medium tracking-tight text-ink md:text-[28px]">Home isn’t ready yet.</h1>
+      <p className="mt-3 max-w-[44ch] text-[14px] leading-relaxed text-ink-soft">
+        We couldn’t read {project.name} for Home right now. Your project is still available in Tasks.
+      </p>
+      <Link className="mt-7 w-fit rounded-lg bg-ink px-4 py-2.5 text-[13.5px] font-medium text-white" href={buildProjectUrl({ surface: "tasks" }, project.id)}>
+        Open Tasks <span aria-hidden>→</span>
+      </Link>
+    </div>
+  </div>;
 }
 
 function SectionLabel({
@@ -76,9 +92,11 @@ function SectionLabel({
 function TodaysSignal({
   rows,
   allClear,
+  briefingHref,
 }: {
   rows: HomeSignalRow[];
   allClear: Extract<HomeData, { kind: "ok" }>["allClear"];
+  briefingHref: string;
 }) {
   return (
     <section aria-labelledby="todays-signal" className="mb-10">
@@ -118,13 +136,14 @@ function TodaysSignal({
                   <span className="mt-1.5 block text-[11.5px] text-ink-quiet">
                     {row.source}
                     {row.due ? <> · {row.due}</> : null}
+                    {row.destination === "briefing" ? <span className="sr-only"> · Read full briefing</span> : null}
                   </span>
                 </span>
                 <span
                   aria-hidden
                   className="flex-shrink-0 text-[13px] text-ink-quiet transition-transform group-hover:translate-x-0.5 group-hover:text-ink"
                 >
-                  Open →
+                  {row.destination === "briefing" ? "Read →" : "Open →"}
                 </span>
               </HomeItemLink>
             </li>
@@ -134,7 +153,7 @@ function TodaysSignal({
 
       <div className="mt-4">
         <HomeItemLink
-          href={BRIEFING_APP_PATH}
+          href={briefingHref}
           event="home_briefing_opened"
           properties={{}}
           className="inline-flex items-center gap-1.5 rounded-md text-[13px] font-medium text-ink-soft outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-[color:var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--bg)]"

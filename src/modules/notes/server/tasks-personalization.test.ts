@@ -22,6 +22,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
+  parseTasksWorkspaceCatalog,
   selectAuthorizedWorkspaceHint,
   type TasksWorkspaceCatalog,
   type TasksWorkspaceDestination,
@@ -51,6 +52,49 @@ const ready = (
   status: "ready",
   planningPeriods: [],
   workspaces,
+});
+
+const catalogPeriod = {
+  id: PERIOD, name: "Year", contextType: "school_year", timezone: "UTC",
+};
+
+test("mixed catalog retains grouped, loose owner and loose member destinations", () => {
+  const catalog = parseTasksWorkspaceCatalog({
+    periods: [{ period: catalogPeriod, workspaces: [{ id: "grouped", name: "Grouped", role: "owner" }] }],
+    workspaces: [
+      { id: "owner", name: "Loose owner", role: "owner" },
+      { id: "member", name: "Loose member", role: "member" },
+      { id: "archived", name: "Archived", role: "owner", archivedAt: 1 },
+      { id: "old-archived", name: "Archived v1", role: "member", archived_at: 1 },
+      { id: "unknown-role", name: "Invalid", role: "administrator" },
+    ],
+  });
+  assert.deepEqual(catalog.workspaces.map(({ id }) => id), ["grouped", "owner", "member"]);
+  assert.equal(catalog.workspaces[0].planningPeriodId, PERIOD);
+  assert.equal(catalog.workspaces[1].planningPeriodId, null);
+  assert.equal(catalog.workspaces[2].planningPeriodId, null);
+  assert.equal(selectAuthorizedWorkspaceHint(catalog, "member", PERIOD)?.id, "member");
+  assert.equal(selectAuthorizedWorkspaceHint(catalog, "archived", PERIOD), null);
+});
+
+test("single-period compatibility does not duplicate or strip the grouped projection", () => {
+  const catalog = parseTasksWorkspaceCatalog({
+    period: catalogPeriod,
+    workspaces: [{ id: "grouped", name: "Grouped", role: "owner" }],
+  });
+  assert.equal(catalog.workspaces.length, 1);
+  assert.equal(catalog.workspaces[0].planningPeriodId, PERIOD);
+  assert.equal(catalog.workspaces[0].planningPeriodName, "Year");
+});
+
+test("v1 loose catalog still validates destinations without inventing period metadata", () => {
+  const catalog = parseTasksWorkspaceCatalog({
+    workspaces: [{ id: "loose", name: "Loose", role: "member" }, { id: "incomplete" }],
+  });
+  assert.equal(catalog.status, "ready");
+  assert.deepEqual(catalog.planningPeriods, []);
+  assert.equal(catalog.workspaces.length, 1);
+  assert.equal(catalog.workspaces[0].planningPeriodId, null);
 });
 
 test("an explicit unauthorized Project never resolves to another Project", () => {

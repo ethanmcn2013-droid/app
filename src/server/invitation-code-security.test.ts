@@ -151,7 +151,7 @@ describe("source contract: the redeem path", () => {
       comp.indexOf("export type StudentVerifyResult"),
     );
     const limiter = impl.indexOf("redeemWithinAttemptLimits");
-    const lookup = impl.indexOf(".from(compCodes)");
+    const lookup = impl.indexOf("await claimCompEntitlement(db");
     assert.ok(limiter > 0, "the redeem path must consult the attempt limiter");
     assert.ok(lookup > 0);
     assert.ok(
@@ -159,6 +159,9 @@ describe("source contract: the redeem path", () => {
       "looking the code up before spending the budget leaves an unmetered does-this-code-exist oracle",
     );
     assert.match(impl, /reason: "rate-limited"/);
+    const claim = readFileSync(new URL("./db/comp-redemption.ts", import.meta.url), "utf8");
+    assert.match(claim, /\.from\(compCodes\)/);
+    assert.doesNotMatch(impl, /\.from\(compCodes\)/);
   });
 
   it("states the limiter's failure mode in the source, not only in a document", () => {

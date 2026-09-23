@@ -1,0 +1,27 @@
+{
+  "base": "cbf40af93907a07dde82f2e8036ce84a72a92d88",
+  "branch": "feat/january-event-export",
+  "archive": "event-export-cbf40-prerequisite.zip",
+  "sha256": "e55731bb8b26b2e7359b23a42db93006196acbc72484c63684658551f6b9149b",
+  "bytes": 1754547,
+  "contents": "99 files: 98 source/evidence files plus raw-byte hash manifest; synthetic data only",
+  "status": "ready for independent review; not programme acceptance",
+  "report": "event-export-prerequisite-2026-09-05/README.md",
+  "finalBrowser": "event-export-prerequisite-2026-09-05/browser-after-final/receipt.json",
+  "originalControls": [
+    "browser-before/receipt.json: failed 4 cases as expected",
+    "retained/event-export-before.txt: initial 12 failures",
+    "retained/event-export-owner-replay.txt: confirmed immutable cbf40 privacy overlap and fixed projection"
+  ],
+  "gates": [
+    "27/27 export",
+    "1/1 existing actual Notes export",
+    "1/1 immutable owner overlap control",
+    "24/24 tenant",
+    "typecheck pass",
+    "focused lint 0 errors/12 inherited warnings",
+    "module boundaries pass",
+    "first-contact pass",
+    "4/4 final browser cases"
+  ]
+}

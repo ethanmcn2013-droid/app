@@ -9,6 +9,7 @@ import {
   type AnalyticsUrlState,
 } from "../../lib/analytics";
 import { asProjectId } from "../../lib/analytics/contracts";
+import { isBriefingReadScopeId } from "../../lib/planning-periods/read-scope-hint";
 import { getAccessMode } from "@/lib/access-mode";
 import { normalizeSuiteContextForSignal } from "@/lib/suite-context";
 import { ensureUserProvisioned } from "@/server/db/ensure-user";
@@ -44,9 +45,16 @@ type SearchParams = Record<string, string | string[] | undefined>;
 export async function resolveAnalyticsPageContext(
   searchParams: SearchParams = {},
 ): Promise<AnalyticsPageContext | null> {
+  // Validate before the legacy normalizer can trim a singular identity, and
+  // before analytics' generic list parser can select its first comma element.
+  for (const hint of [searchParams.workspace_id, searchParams.workspaceId]) {
+    if (hint !== undefined && !isBriefingReadScopeId(hint)) return null;
+  }
   const normalizedParams = normalizeSuiteContextForSignal(
     toUrlSearchParams(searchParams),
   );
+  const workspaceHints = normalizedParams.getAll("workspace_id");
+  if (workspaceHints.length > 1 || workspaceHints.some(value => !isBriefingReadScopeId(value))) return null;
   const mode = getAccessMode();
   const fixtureScenario = fixtureValue(normalizedParams.get("fixture") ?? undefined);
   if (mode === "demo" || mode === "review" || (mode === "development" && fixtureScenario)) {
@@ -97,9 +105,7 @@ export async function resolveAnalyticsPageContext(
   const linked = await resolveLinkedAnalyticsWorkspace(userId);
   const requested = normalizedParams.get("workspace_id") ?? undefined;
   const workspaceId =
-    candidates.find((item) => item.id === requested)?.id ??
-    candidates.find((item) => item.id === linked)?.id ??
-    candidates[0]?.id;
+    requested ?? candidates.find((item) => item.id === linked)?.id ?? candidates[0]?.id;
   if (!workspaceId) return null;
 
   const stateInput = parseAnalyticsUrlState(normalizedParams, {
@@ -107,6 +113,8 @@ export async function resolveAnalyticsPageContext(
     timezone: "UTC",
   });
   const parsed = parsedFromState(stateInput, null);
+  // The policy performs a fresh membership check, including projects outside
+  // the bounded navigation catalog. Preferences must use that same project.
   const authorization = await authorizeAnalyticsRequest(parsed);
   const query = publicPageQuery(
     toAnalyticsQuery(authorization.query),

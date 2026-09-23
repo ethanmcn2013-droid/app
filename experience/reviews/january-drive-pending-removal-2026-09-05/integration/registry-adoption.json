@@ -1,0 +1,14 @@
+{
+  "changes": [
+    {
+      "id": "tasks.connections.storage",
+      "keys": [
+        "materialityHash",
+        "materialityReview"
+      ],
+      "before": "a553937d6a450165",
+      "after": "31d858c47674f034"
+    }
+  ],
+  "scope": "Source review only; coverage and design approvals unchanged."
+}

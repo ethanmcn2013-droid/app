@@ -11,6 +11,8 @@ import { fileURLToPath } from "node:url";
 
 const serverDir = dirname(fileURLToPath(import.meta.url));
 const actions = readFileSync(join(serverDir, "actions", "tasks.ts"), "utf8");
+const tasksProvider = readFileSync(join(serverDir, "..", "lib", "tasks", "tasks-context.tsx"), "utf8");
+const subtasksSection = readFileSync(join(serverDir, "..", "components", "app", "detail-panel", "subtasks-section.tsx"), "utf8");
 const activity = readFileSync(join(serverDir, "db", "activity.ts"), "utf8");
 const queries = readFileSync(join(serverDir, "db", "queries.ts"), "utf8");
 const dbIndex = readFileSync(join(serverDir, "db", "index.ts"), "utf8");
@@ -68,6 +70,14 @@ const setParentActions = readFileSync(
 );
 const resourceActions = readFileSync(
   join(serverDir, "actions", "resources.ts"),
+  "utf8",
+);
+const seedActions = readFileSync(
+  join(serverDir, "actions", "seed.ts"),
+  "utf8",
+);
+const projectTaskGraph = readFileSync(
+  join(serverDir, "projects", "project-task-graph.ts"),
   "utf8",
 );
 const nudgeActions = readFileSync(
@@ -146,6 +156,77 @@ function assertDemoGuardBefore(source, name, boundary) {
   );
 }
 
+test("revoke demo-order guard rejects a missing guard or an earlier identity/storage boundary", () => {
+  const name = "revokeShareLinkAction";
+  const body = exportedActionBody(shareActions, name);
+  const guard = "if (isDemoMode()) return;";
+  assert.ok(body.includes(guard));
+  const absent = body.replace(guard, "");
+  for (const boundary of ["getCurrentUser", "revokeTaskShareByIdWith", "revalidatePath"]) {
+    assertDemoGuardBefore(body, name, boundary);
+    assert.throws(() => assertDemoGuardBefore(absent, name, boundary), /must explicitly guard/);
+    const moved = body.replace(guard, `${boundary};\n  ${guard}`);
+    assert.throws(() => assertDemoGuardBefore(moved, name, boundary), /must exit demo\/review mode before/);
+  }
+});
+
+test("destructive task graphs re-prove authority and deletion fences inside their writer transaction", () => {
+  for (const [source, name] of [
+    [attachmentActions, "deleteAttachmentAction"],
+    [resourceActions, "removeResourceAction"],
+    [actions, "removeTaskAction"],
+  ]) {
+    const body = exportedActionBody(source, name);
+    const transaction = body.indexOf("db.transaction");
+    const reproof = body.indexOf("authorizeStoredProject", transaction);
+    const fence = body.indexOf("assertProjectNotDeleting", transaction);
+    assert.ok(transaction >= 0, `${name} must use a writer transaction`);
+    assert.ok(
+      reproof > transaction,
+      `${name} must re-prove authority inside its writer transaction`,
+    );
+    assert.ok(
+      fence > reproof,
+      `${name} must check the deletion fence after transactional reproof`,
+    );
+  }
+
+  const graphFence = projectTaskGraph.indexOf("assertProjectNotDeleting");
+  const graphDelete = projectTaskGraph.indexOf(".delete(", graphFence);
+  assert.ok(
+    graphFence >= 0 && graphDelete > graphFence,
+    "the shared graph replacement must fence Project deletion before mutation",
+  );
+  for (const name of ["clearAllTasksAction", "seedDomainAction"]) {
+    const body = exportedActionBody(seedActions, name);
+    const transaction = body.indexOf("db.transaction");
+    const reproof = body.indexOf("authorizeStoredProject", transaction);
+    const graphReplacement = body.indexOf(
+      "replaceWorkspaceTaskGraphInTransaction",
+      reproof,
+    );
+    assert.ok(transaction >= 0, `${name} must use a writer transaction`);
+    assert.ok(
+      reproof > transaction,
+      `${name} must re-prove authority inside its writer transaction`,
+    );
+    assert.ok(
+      graphReplacement > reproof,
+      `${name} must enter the fenced graph replacement after transactional reproof`,
+    );
+  }
+
+  const attachmentDelete = exportedActionBody(
+    attachmentActions,
+    "deleteAttachmentAction",
+  );
+  assert.match(
+    attachmentDelete,
+    /deleteNativeAttachmentAndMirrorInTransaction\(transaction/,
+    "direct attachment deletion must atomically remove its exact Signal-upload mirror",
+  );
+});
+
 test("recordActivity requires and enforces the caller workspace", () => {
   assert.match(activity, /opts:\s*\{\s*workspaceId:\s*string/);
   assert.match(activity, /eq\(tasks\.workspaceId, opts\.workspaceId\)/);
@@ -172,6 +253,29 @@ test("addTaskAction validates parent ownership and top-level shape", () => {
   assert.match(body, /eq\(tasks\.workspaceId, ws\)/);
   assert.match(body, /isNull\(tasks\.parentTaskId\)/);
   assert.match(body, /parent task is not in the active workspace/);
+});
+
+test("routed task and subtask creation writes to the displayed Project, not an ambient cookie", () => {
+  // Regresses a real B-board/A-cookie write: the server proved A correctly,
+  // but the B board omitted its destination and silently created there.
+  const scopedCreate = /addTaskAction\(\{\s*\.\.\.input,\s*id:\s*task\.id,\s*projectId\s*\}\)/;
+  assert.match(tasksProvider, scopedCreate);
+  assert.doesNotMatch(
+    tasksProvider.replace(scopedCreate, "addTaskAction({ ...input, id: task.id })"),
+    scopedCreate,
+    "omitting the displayed Project must trip this guard",
+  );
+  assert.match(subtasksSection, /const projectId = activeWorkspace\?\.id\s*\?\?\s*task\.workspaceId/);
+  assert.match(subtasksSection, /addTaskAction\(\{[\s\S]*?parentTaskId:\s*task\.id,[\s\S]*?projectId,/);
+
+  const body = exportedActionBody(actions, "addTaskAction");
+  assert.match(body, /candidateProjectId:\s*input\.projectId\s*\?\?\s*ambient/);
+  assert.match(body, /const ws = grant\.projectId/);
+  assert.match(body, /workspaceId:\s*ws/);
+  // A refused explicit B write must reject the optimistic B card. Returning
+  // neutralTaskList(ambient) would hydrate A's tasks into the B provider.
+  assert.match(body, /if \(!grant\.ok\)\s*\{[\s\S]*?if \(input\.projectId != null\) throw/);
+  assert.match(body, /if \(!created\)\s*\{[\s\S]*?if \(input\.projectId != null\) throw/);
 });
 
 test("subtask reads include both parent id and workspace scope", () => {
@@ -213,8 +317,10 @@ test("public routes use the explicit allowlisted projection", () => {
 });
 
 test("demo and review actions exit before tenant, database, or disk access", () => {
+  // Realtime reads now require the displayed Project rather than a cookie.
+  // Preserve the same demo-before-authorization guard at the actual boundary.
+  assertDemoGuardBefore(actions, "getTasksAction", "readableProjectOrNull");
   for (const name of [
-    "getTasksAction",
     "moveTaskAction",
     "toggleCompleteAction",
     "updateTaskAction",
@@ -288,16 +394,16 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   }
   // WP3 renegotiation (ADR 0001 §9). create/list here still resolve a Project
   // ambiently — they have no object to derive one from — and keep the original
-  // token, which matches getActiveWorkspaceOrNull. revoke and email are object
-  // operations on the link row: they prove the link's own stored Project, so
-  // `authorizeStoredProject` is the boundary. That distinction is the point of
+  // token, which matches getActiveWorkspaceOrNull. Revoke now delegates to
+  // the reviewed transactional recovery writer; email continues to use
+  // authorizeStoredProject. Both prove the link's stored Project. That is the point of
   // the change. A revocation scoped to the cookie silently failed to revoke
   // when the caller's active Project had moved on, which is the worst failure
   // mode a revocation can have.
   for (const [name, boundaries] of [
     ["createShareLinkAction", ["getActiveWorkspace", "db.insert"]],
     ["listShareLinksAction", ["getActiveWorkspace", "await db"]],
-    ["revokeShareLinkAction", ["authorizeStoredProject", "await db", "revalidatePath"]],
+    ["revokeShareLinkAction", ["getCurrentUser", "revokeTaskShareByIdWith", "revalidatePath"]],
     ["bumpShareLinkVisitAction", ["db.run", "recordShareLinkVisit", "revalidatePath"]],
     ["listShareLinkAnalyticsAction", ["getActiveWorkspace", "await db", "getShareLinkVisitAnalytics"]],
     ["emailShareLinkAction", ["await db", "getCurrentUser", "authorizeStoredProject", "sendEmail"]],
@@ -320,7 +426,8 @@ test("demo and review actions exit before tenant, database, or disk access", () 
     );
   }
   for (const boundary of [
-    "getActiveWorkspace",
+    "getCurrentUser",
+    "authorizeProjectCandidate",
     "applyTemplateToWorkspace",
     "revalidatePath",
     "emitTasksChanged",
@@ -329,25 +436,23 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   }
   for (const boundary of [
     "getCurrentUser",
-    "reserveUniqueSlug",
-    "db.insert",
+    "remixTemplateIntoWorkspace",
     "cookies",
-    "recordActivity",
     "revalidatePath",
     "emitTasksChanged",
   ]) {
     assertDemoGuardBefore(templateActions, "remixTemplateAction", boundary);
   }
-  for (const boundary of ["mintCompCodeInternal", "sendEmail"]) {
-    assertDemoGuardBefore(compActions, "requestStudentCodeAction", boundary);
-  }
+  const studentRequest = compActions.slice(compActions.indexOf("export async function requestStudentCodeAction"));
+  assert.match(studentRequest, /reason: "unavailable"/);
+  assert.doesNotMatch(studentRequest, /mintCompCodeInternal|sendEmail|db\.|ok: true/);
+
   for (const boundary of ["redeemCompCodeImpl", "Sentry.captureException"]) {
     assertDemoGuardBefore(compActions, "redeemCompCodeAction", boundary);
   }
   for (const boundary of [
     "getCurrentUser",
     "getActiveWorkspace",
-    "grantEntitlement",
     "stripe.checkout.sessions.create",
   ]) {
     assertDemoGuardBefore(
@@ -418,41 +523,25 @@ test("demo and review actions exit before tenant, database, or disk access", () 
     "searchAcrossWorkspacesAction",
     "getCurrentUser",
   );
-  for (const boundary of [
-    "resolveCallerTaskWorkspace",
-    "return getCommentsForTask",
+  // PC10 replaces the independently committed comment actions with one
+  // receipt-backed service. Demo/review exits before authentication or the
+  // shared local adapter can be opened; no sample identity is invented.
+  for (const action of [
+    "openTaskDiscussionAction",
+    "addCommentAction",
+    "editCommentAction",
+    "removeCommentAction",
+    "getCommentReceiptAction",
   ]) {
-    assertDemoGuardBefore(commentActions, "getCommentsForTaskAction", boundary);
+    assertDemoGuardBefore(commentActions, action, "authenticateConversationActor");
+    assertDemoGuardBefore(commentActions, action, "getTaskDiscussionService");
   }
-  for (const boundary of [
-    "getCurrentUser",
-    "resolveCallerTaskWorkspace",
-    "db.insert",
-    "touchTask",
-    "recordActivity",
-    "notify",
-    "revalidatePath",
-    "emitTasksChanged",
-  ]) {
-    assertDemoGuardBefore(commentActions, "addCommentAction", boundary);
-  }
-  // WP3 renegotiation (ADR 0001 §9). removeCommentAction is an object
-  // operation: it proves the parent task's own Project rather than resolving
-  // one ambiently, so `scopeForTask` is the tenant-resolution boundary. The
-  // author match (`comments.userId === me`) is unchanged and still precedes
-  // the delete — this guard's other seven boundaries pin that ordering.
-  for (const boundary of [
-    "getCurrentUser",
-    "scopeForTask",
-    ".select(",
-    ".delete(",
-    "touchTask",
-    "recordActivity",
-    "revalidatePath",
-    "emitTasksChanged",
-  ]) {
-    assertDemoGuardBefore(commentActions, "removeCommentAction", boundary);
-  }
+  assert.doesNotMatch(commentActions, /\{\s*actorId\s*,\s*\.\.\.input\s*\}/,
+    "authenticated Task Discussion actor must not be overwritten by request input");
+  assert.match(commentActions, /exactKeys\(input,/,
+    "Task Discussion server actions must reject unexpected runtime fields");
+  assert.match(commentActions, /authenticateConversationActor\("write"\)/,
+    "Task Discussion mutations must apply the write availability gate");
   // WP3 renegotiation (ADR 0001 §9). duplicateTaskAction derives the source
   // task's own Project; the cross-Project refusal it already carried is now an
   // assertion against the proved id rather than against the cookie.
@@ -631,8 +720,13 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   );
   assert.match(
     settingsApp,
-    /<div inert=\{readOnly \|\| undefined\} aria-disabled=\{readOnly \|\| undefined\}>/,
+    /<div inert=\{sectionReadOnly \|\| undefined\} aria-disabled=\{sectionReadOnly \|\| undefined\}>/,
   );
+
+  // The sole interactive read-only section is the credential-free Drive
+  // review fixture. The live mode and every other settings section stay inert.
+  assert.match(settingsApp, /interactiveDriveReview = readOnly && isDemoMode\(\) && tab === "storage" && driveEnabled/);
+  assert.match(settingsApp, /sectionReadOnly = readOnly && !interactiveDriveReview/);
 
   const calendarBody = calendarRoute.slice(
     calendarRoute.indexOf("export async function GET"),
@@ -694,7 +788,10 @@ test("acceptInviteAction validates before writing membership row", () => {
 
   assert.ok(emailCheck < memberInsert, "email validation must precede membership write");
   assert.ok(capCheck < memberInsert, "cap check must precede membership write");
-  assert.ok(memberInsert < tokenBurn, "membership write must precede token burn");
+  assert.ok(body.indexOf("db.transaction(") < tokenBurn, "claim and membership must commit atomically");
+  assert.ok(tokenBurn < memberInsert, "claim a still-live invite before granting membership");
+  assert.match(body, /isNull\(pendingInvites\.acceptedAt\)/);
+  assert.match(body, /gt\(pendingInvites\.expiresAt, new Date\(\)\)/);
 });
 
 test("acceptInviteAction writes invite role not hardcoded member", () => {

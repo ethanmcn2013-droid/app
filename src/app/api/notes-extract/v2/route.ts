@@ -15,7 +15,7 @@ import {
   validateExactApprovedBody,
   type ExistingNotesExtractIdentity,
 } from "@/server/notes-extract-idempotency";
-import { insertOrReadNotesExtractTask } from "@/server/notes-extract-store";
+import { ApprovedExtractStorageError, insertOrReadNotesExtractTask } from "@/server/notes-extract-store";
 import { nextTaskSeq } from "@/server/db/task-seq";
 
 /**
@@ -197,25 +197,31 @@ export async function POST(req: Request) {
   // tagged task instead of a flat title. Keeps Notes free of date/tag
   // pickers (its anti-configuration brand) while still setting them inline.
   const parsed = parseTaskInput(body);
-  const canonical = await insertOrReadNotesExtractTask(db, {
-    sourceNoteId,
-    values: {
-      id: taskId,
-      workspaceId,
-      seq: nextTaskSeq(workspaceId),
-      title: parsed.title || body,
-      lane: "todo",
-      priority: "p2",
-      assignees: [],
-      due: parsed.dueLabel,
-      dueAt: parsed.dueAt,
-      tags: parsed.tags,
-      position,
+  let canonical: Awaited<ReturnType<typeof insertOrReadNotesExtractTask>>;
+  try {
+    canonical = await insertOrReadNotesExtractTask(db, {
       sourceNoteId,
-      sourceNoteExtractBody: body,
-      sourceNoteExtractSha256: bodySha256,
-    },
-  });
+      values: {
+        id: taskId,
+        workspaceId,
+        seq: nextTaskSeq(workspaceId),
+        title: parsed.title || body,
+        lane: "todo",
+        priority: "p2",
+        assignees: [],
+        due: parsed.dueLabel,
+        dueAt: parsed.dueAt,
+        tags: parsed.tags,
+        position,
+        sourceNoteId,
+        sourceNoteExtractBody: body,
+        sourceNoteExtractSha256: bodySha256,
+      },
+    });
+  } catch (error) {
+    if (error instanceof ApprovedExtractStorageError) return bad(error.message, 503);
+    throw error;
+  }
   const conflict = replayConflict(canonical.task, {
     workspaceId,
     body,

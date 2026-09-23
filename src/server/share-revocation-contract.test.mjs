@@ -12,6 +12,16 @@ const service = readFileSync(
   new URL("./projects/service.ts", import.meta.url),
   "utf8",
 );
+// WP6 consolidated workspace deletion behind the Drive-aware lifecycle. Follow
+// the invariant to its actual owner while also proving the service calls it.
+const deletionRows = readFileSync(
+  new URL("./projects/project-deletion-rows.ts", import.meta.url),
+  "utf8",
+);
+const deletionLifecycle = readFileSync(
+  new URL("./connections/project-drive-project-deletion.ts", import.meta.url),
+  "utf8",
+);
 // E08.06 / R-033 moved the share-link credential check out of queries.ts and
 // into its own database-injected module so it could be tested directly. The
 // workspace guard this file protects moved with it, so this file follows it
@@ -47,12 +57,25 @@ test("share resolution requires a current non-archived workspace", () => {
 });
 
 test("workspace deletion explicitly removes share capabilities and task roots first", () => {
+  const rowDeletion = deletionRows.slice(
+    deletionRows.indexOf("export async function deleteProjectRowsInTransaction("),
+  );
+  assert.match(rowDeletion, /delete\(shareLinks\)/);
+  assert.match(rowDeletion, /delete\(tasks\)/);
+
+  const lifecycle = deletionLifecycle.slice(
+    deletionLifecycle.indexOf("async function finishDeletion("),
+  );
+  const childRows = lifecycle.indexOf("deleteProjectRowsInTransaction(");
+  const workspace = lifecycle.indexOf("delete(workspaces)");
+  assert.ok(childRows >= 0 && childRows < workspace);
+
   const deletion = service.slice(
     service.indexOf("export async function deleteProject("),
   );
-  const shares = deletion.indexOf("delete(shareLinks)");
-  const taskRoots = deletion.indexOf("delete(tasks)");
-  const workspace = deletion.indexOf("delete(workspaces)");
-  assert.ok(shares >= 0 && shares < workspace);
-  assert.ok(taskRoots >= 0 && taskRoots < workspace);
+  assert.match(deletion, /createProjectDriveProjectDeletionService\(\{/);
+  assert.match(
+    deletion,
+    /\.delete\(\{\s*workspaceId:\s*grant\.projectId,\s*actorUserId:\s*input\.actorUserId,?\s*\}\)/,
+  );
 });

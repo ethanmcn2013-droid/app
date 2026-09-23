@@ -1,0 +1,27 @@
+{
+  "source": "local demo preview",
+  "origin": "http://127.0.0.1:4398",
+  "viewports": [
+    "1440x900",
+    "390x844",
+    "320x720"
+  ],
+  "routes": [
+    "home",
+    "notes",
+    "project",
+    "tasks"
+  ],
+  "abortedNavigationRequests": 68,
+  "checks": [
+    "four core destinations across shared and Floor rails",
+    "More to Notes",
+    "Escape restores focus",
+    "Project active",
+    "Tasks Floor fits the phone viewport",
+    "320px core targets fit and Add task remains in More",
+    "Tasks views retained",
+    "no page errors or non-cancelled local request failures"
+  ],
+  "result": "pass"
+}

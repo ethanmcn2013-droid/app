@@ -1,6 +1,6 @@
 import "server-only";
 
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import {
   serializeAnalyticsUrlState,
   type AnalyticsUrlState,
@@ -47,7 +47,10 @@ export async function requireAnalyticsPageContext(
 ): Promise<AnalyticsPageContext> {
   const context = await resolveAnalyticsPageContext(searchParams);
   // S1: redirect to /app/brief/onboarding instead of /app/onboarding
-  if (!context) redirect("/app/home/briefing/onboarding");
+  if (!context) {
+    if (searchParams.workspace_id !== undefined || searchParams.workspaceId !== undefined || searchParams.planningPeriodId !== undefined) notFound();
+    redirect("/app/home/briefing/onboarding");
+  }
   return context;
 }
 

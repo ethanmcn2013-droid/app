@@ -1,0 +1,23 @@
+{
+  "reviewedAt": "2026-09-23",
+  "reviewer": "Production sprint integration source review; independent receiving review pending",
+  "id": "tasks.page.sign-in-by-sign-in",
+  "source": "tasks/src/app/sign-in/[[...sign-in]]/page.tsx",
+  "materialityHash": "a7a9d61791a45714",
+  "previousMaterialityHash": "09fd1082f9dc2621",
+  "officialTool": "scripts/experience/critical-fixtures.mjs",
+  "officialToolSha256": "2105d8bea051288033c3c83bccc15b6928e1b0d81d5b1a0da0becca6c22b80e9",
+  "method": "Ran the unchanged mapped-fixture --write tool in a private disposable source mirror and applied only the exact sign-in entry hash. Historical fixture date and coverage metadata remain unchanged.",
+  "output": "experience:critical-fixtures: clean - 37/37 critical experiences mapped, 28 rendered, 9 source-contract, 33 deterministic cases x 4 breakpoints",
+  "changedIds": [
+    "tasks.page.sign-in-by-sign-in"
+  ],
+  "reviewedChange": "Rendered SignIn props now preserve a safe local App return, preserve invite return precedence, and force /app for a present rejected redirect. Proxy encodes the requested App route. Source and focused route/invite tests reviewed.",
+  "evidence": {
+    "sourceCommit": "5dfcc60b1f9bc0c135b3d41fe3e9a5a6fc2eb30c",
+    "inviteArrivalTests": "34/34 passed",
+    "realClerkReturn": "unverified",
+    "currentBrowserFixture": "demo mode only"
+  },
+  "decision": "Refresh only the sign-in page source hash for this bounded accepted auth behavior. Keep screenshot, accessibility, audit status, baseline, and human receiving claims unchanged."
+}

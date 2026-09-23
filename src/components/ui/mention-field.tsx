@@ -105,12 +105,14 @@ type Props = {
   value: string;
   onChange: (value: string) => void;
   people: MentionPerson[];
+  /** Structured identity selected from the authorized audience. */
+  onMention?: (person: MentionPerson) => void;
   /** Called when the popover is NOT consuming the key (host Enter-to-send). */
   onKeyDown?: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
 } & Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "value" | "onChange" | "onKeyDown">;
 
 export const MentionField = forwardRef<HTMLTextAreaElement, Props>(function MentionField(
-  { value, onChange, people, onKeyDown, className, ...rest },
+  { value, onChange, people, onMention, onKeyDown, className, ...rest },
   forwardedRef,
 ) {
   const innerRef = useRef<HTMLTextAreaElement>(null);
@@ -206,9 +208,10 @@ export const MentionField = forwardRef<HTMLTextAreaElement, Props>(function Ment
       pendingCaretRef.current = token.start + mention.length + 1;
       setToken(null);
       setMatches([]);
+      onMention?.(person);
       onChange(next);
     },
-    [token, value, onChange],
+    [token, value, onChange, onMention],
   );
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {

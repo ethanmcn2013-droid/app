@@ -18,6 +18,8 @@
 import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
+import { readSponsoredWeddingDate } from "@/server/db/sponsored-wedding-date";
+import type { SponsoredWeddingDate } from "@/lib/sponsored-wedding-date";
 import {
   meta,
   tasks,
@@ -152,6 +154,7 @@ export type ProjectOverviewData = {
   recentEvents: ProjectEvent[];
   declaredStatus: ProjectStatus;
   targetDate: string | null;
+  sponsoredWeddingDate?: SponsoredWeddingDate | null;
   program: ProjectProgram | null;
 };
 
@@ -204,7 +207,7 @@ function formatEventSentence(kind: string, payload: unknown): string {
  * Returns the full overview data for the caller's active workspace.
  * Demo mode returns a synthesized object; never touches the DB.
  */
-export async function getProjectOverviewData(): Promise<ProjectOverviewData> {
+export async function getProjectOverviewData(projectId?: string): Promise<ProjectOverviewData> {
   if (isDemoMode()) {
     return {
       workspaceId: DEMO_WORKSPACE_ID,
@@ -262,7 +265,7 @@ export async function getProjectOverviewData(): Promise<ProjectOverviewData> {
 
   const [me, ws] = await Promise.all([
     getCurrentUser(),
-    provedProject(await getActiveWorkspaceOrNull(), "open"),
+    provedProject(projectId === undefined ? await getActiveWorkspaceOrNull() : projectId, "open"),
   ]);
 
   // Workspace row + planning period in one read.
@@ -414,6 +417,7 @@ export async function getProjectOverviewData(): Promise<ProjectOverviewData> {
     recentEvents,
     declaredStatus,
     targetDate,
+    sponsoredWeddingDate: await readSponsoredWeddingDate(db, { projectId: ws, actorUserId: me }),
     program,
   };
 }
@@ -457,6 +461,7 @@ async function requireOwnerOrMember(ws: string, me: string): Promise<void> {
  */
 export async function setProjectStatusAction(
   status: ProjectStatus,
+  projectId?: string,
 ): Promise<{ ok: true }> {
   if (isDemoMode()) return { ok: true };
   // Server-side allow-list: the parameter type is client-asserted only.
@@ -465,7 +470,7 @@ export async function setProjectStatusAction(
   }
   const [me, ws] = await Promise.all([
     getCurrentUser(),
-    provedProject(await getActiveWorkspaceOrNull(), "createOrEditTasks"),
+    provedProject(projectId === undefined ? await getActiveWorkspaceOrNull() : projectId, "createOrEditTasks"),
   ]);
   await requireOwnerOrMember(ws, me);
 
@@ -490,6 +495,7 @@ export async function setProjectStatusAction(
  */
 export async function setProjectTargetDateAction(
   isoDate: string | null,
+  projectId?: string,
 ): Promise<{ ok: true }> {
   if (isDemoMode()) return { ok: true };
   // Server-side shape check: only a plain YYYY-MM-DD or null is stored.
@@ -498,7 +504,7 @@ export async function setProjectTargetDateAction(
   }
   const [me, ws] = await Promise.all([
     getCurrentUser(),
-    provedProject(await getActiveWorkspaceOrNull(), "createOrEditTasks"),
+    provedProject(projectId === undefined ? await getActiveWorkspaceOrNull() : projectId, "createOrEditTasks"),
   ]);
   await requireOwnerOrMember(ws, me);
 

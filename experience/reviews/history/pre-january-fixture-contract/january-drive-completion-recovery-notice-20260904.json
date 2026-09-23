@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.resources.drive-reload-recovery",
+  "source": "tasks/src/components/app/detail-panel/drive-reload-notice.tsx",
+  "materialityHash": "7f4300daa34c292b",
+  "reviewedAt": "2026-09-04",
+  "reviewer": "Codex implementer, delegated internal scope review",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-45b0a6c89756d6eb76c5daf5-2b4ccd3edf3cc860.json",
+    "attestationSha256": "1eb8a7ed0d7ac8d6aea12390358c8a826c57a32a70310ab9c29b501e750a44a4",
+    "runId": "tasks-playwright-45b0a6c89756d6eb76c5daf5",
+    "canonicalEvidenceSha256": "45b0a6c89756d6eb76c5daf59a768e981cbe7f313c39b323e48dd2ce509aca57",
+    "rawArtifactSha256": "2b4ccd3edf3cc860046b63dafe0faf13bf4bc70e1f8498d490d278b33a2eadeb",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.surface.task-detail-panel",
+    "caseName": "populated task",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Add original-uploader completion inspection and canonical Resources reload. Direct current-source browser evidence at four widths and backend/controller tests are recorded in docs/projects/project-drive/UPLOAD-RECOVERY.md and ui-evidence/upload-recovery/manifest.json. The inherited populated-task Playwright attestation is historical regression context only; it is not a new run or proof of provider recovery.",
+  "decision": "Record the bounded implementation for internal integration review. Retain preview/under-remediation, partial coverage and existing scores. Independent security review, live provider acceptance, closed-tab byte recovery and human acceptance remain open."
+}

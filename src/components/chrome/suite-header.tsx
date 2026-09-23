@@ -119,13 +119,15 @@ export function SuiteHeader({
         WebkitBackdropFilter: "saturate(150%) blur(12px)",
       }}
     >
-      <div className="mx-auto flex h-14 w-full max-w-[1240px] items-center justify-between px-6">
+      {/* Let the existing clusters wrap on narrow screens instead of shrinking
+          the identity underneath the account link. Desktop keeps its 56px bar. */}
+      <div className="mx-auto flex min-h-14 w-full max-w-[1240px] flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-1 md:h-14 md:flex-nowrap md:px-6 md:py-0">
         {/* Left lockup: launcher · / · wordmark · (breadcrumb).
             The "/" + wordmark render only when a wordmark is supplied. The
             authed app chrome passes the SuiteSwitcher as the launcher with no
             wordmark (the active pill IS the product), so the same shell serves
             both the marketing header and the app chrome. */}
-        <div className="flex min-w-0 items-center gap-3 whitespace-nowrap">
+        <div className="flex max-w-full shrink-0 items-center gap-3 whitespace-nowrap">
           <div className="inline-flex">{launcher}</div>
           {wordmark ? (
             <>
@@ -143,7 +145,7 @@ export function SuiteHeader({
             between the lockup and Sign in), then the mobile toggle (only
             when there is nav to collapse; products with no marketing nav,
             e.g. Notes, show no dead hamburger) */}
-        <div className="flex items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-2 whitespace-nowrap">
           <nav
             className="mr-4 hidden items-center gap-7 md:flex"
             style={{ fontSize: 13, color: INK_SOFT }}

@@ -94,6 +94,7 @@ const OWNER_TABLES = [
   "subtasks",
   "workspaceMembers",
   "shareLinks",
+  "projectDriveOperations",
 ];
 const OK_MARKER = "isolation-ok";
 const tableAlt = OWNER_TABLES.join("|");

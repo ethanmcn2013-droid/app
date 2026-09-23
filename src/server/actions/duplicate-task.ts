@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
 import { nextTaskSeq } from "@/server/db/task-seq";
+import { privateTaskDbWrite } from "@/server/actions/private-task-db-write";
 import { tasks } from "@/server/db/schema";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
@@ -168,7 +169,7 @@ export async function duplicateTaskAction(
   // 5. Atomic batch insert. Any throw inside rolls back.
   await db.transaction(async (tx) => {
     for (const r of rows) {
-      await tx.insert(tasks).values(r).run();
+      await privateTaskDbWrite(() => tx.insert(tasks).values(r).run());
     }
   });
 

@@ -1,0 +1,27 @@
+[
+  {
+    "archive": "principal-composition.zip",
+    "source": "day-close-principal-2026-09-06/principal-composition.zip",
+    "sha256": "2a9532c2052746dc42c4f51cdbc1aad4cd74161a3c570b9bbbb165b304beaf7b",
+    "bytes": 6428049
+  },
+  {
+    "archive": "shared-schema-independent.zip",
+    "source": "schema-replay-independent-2026-09-06-final-preservation/schema-replay-57c5-final-2026-09-06.zip",
+    "sha256": "8661988312825b22fdaf6718d8633a2a51afc5dea5eb4bbcc136eb99ad114327",
+    "bytes": 3684640
+  },
+  {
+    "archive": "recovery-independent.zip",
+    "source": "project-recovery-independent-seal-2026-09-06/project-recovery-independent-3f276ebd.zip",
+    "sha256": "cc7f028b855ebec807bdb2c7d62aea5a3b7cdf4ac26304ad0bffa9fecef68342",
+    "bytes": 4496698
+  },
+  {
+    "archive": "floor-unaccepted-review.zip",
+    "source": "floor-recovery-independent-2026-09-06",
+    "payloads": 252,
+    "sha256": "505066ed36b658c00b8081aeb8723feac52e5e374cb5c8acc7cd1082664fdd0f",
+    "bytes": 8334825
+  }
+]

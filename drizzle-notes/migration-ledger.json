@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "notes-signal-migration-ledger/1",
+  "module": "notes",
+  "dialect": "sqlite",
+  "journal": "drizzle-notes/meta/_journal.json",
+  "journalSha256": "4b7b89dc157ef456a9f321962a5ef7afad0b6d61f15d82e36d1357a3142cf249",
+  "databaseLedgerTable": "signal_notes_schema_migrations",
+  "legacyDrizzleTable": "__drizzle_migrations",
+  "entries": [
+    {
+      "ordinal": 0,
+      "id": "0000_notes_baseline",
+      "file": "drizzle-notes/0000_notes_baseline.sql",
+      "when": 1785485439524,
+      "policy": "baseline",
+      "sha256": "3cb0d9ab087e3517133c7165051f2d101530b0bf47f4e7a9a67425cade36cd72",
+      "snapshot": "drizzle-notes/meta/0000_snapshot.json",
+      "snapshotSha256": "123658e9fff2346f49ef30c02125b7979051dce521a2bdb01ba491658d25a717",
+      "receipt": "drizzle-notes/receipts/local-schema-review-mig01-2026-09-05.json",
+      "receiptSha256": "a8c85adedb72713dbb2f07f415a1cf4661e44b06c780c9fda3a3516e886964db"
+    },
+    {
+      "ordinal": 1,
+      "id": "0001_notes_reviewed_at",
+      "file": "drizzle-notes/0001_notes_reviewed_at.sql",
+      "when": 1785965536844,
+      "policy": "forward",
+      "sha256": "319c3a9769102506488ad5d7b4d78fd0a8e3aca42ad215680c5d3b2095dc4736",
+      "snapshot": "drizzle-notes/meta/0001_snapshot.json",
+      "snapshotSha256": "7a09a20505aab565d8aa82caa54e10df13d75405a718e3308c61b46e3eca02ca",
+      "receipt": "drizzle-notes/receipts/local-schema-review-mig01-2026-09-05.json",
+      "receiptSha256": "a8c85adedb72713dbb2f07f415a1cf4661e44b06c780c9fda3a3516e886964db"
+    }
+  ]
+}

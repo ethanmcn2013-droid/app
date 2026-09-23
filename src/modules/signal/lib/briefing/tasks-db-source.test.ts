@@ -1,8 +1,10 @@
 import { strict as assert } from "node:assert";
 import { describe, test } from "node:test";
+import { createClient } from "@libsql/client";
 import {
   canonicaliseLane,
   isAuthError,
+  mapTasksBriefingRow,
   parseBlockedBy,
   parsePriority,
 } from "./tasks-db-source";
@@ -12,6 +14,60 @@ test("Signal consumes the versioned Tasks briefing contract", () => {
   assert.equal(TASKS_READ_CONTRACT_VERSION, 1);
   assert.doesNotThrow(() => assertTasksBriefingQuery({ subject: "user_1" }));
   assert.throws(() => assertTasksBriefingQuery({ subject: "" }));
+});
+
+test("raw Tasks SQLite seconds become Signal milliseconds without losing null or negative dates", async () => {
+  const client = createClient({ url: ":memory:" });
+  try {
+    await client.executeMultiple(`
+      CREATE TABLE task_rows (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        lane TEXT NOT NULL,
+        priority TEXT NOT NULL,
+        due_at INTEGER,
+        idle_days INTEGER,
+        blocked_by TEXT,
+        workspace_name TEXT,
+        shipped_activity_at INTEGER
+      );
+    `);
+    const dateCases = [
+      ["modern", Date.parse("2026-09-23T00:00:00.000Z") / 1000],
+      ["dublin-dst-boundary", Date.parse("2026-03-29T00:30:00.000Z") / 1000],
+      ["negative", -1],
+      ["epoch", 0],
+      ["undated", null],
+      ["fractional-invalid", 1.5],
+      ["text-invalid", "not-a-timestamp"],
+    ] as const;
+    for (const [id, dueAt] of dateCases) {
+      await client.execute({
+        sql: `INSERT INTO task_rows
+          (id, title, lane, priority, due_at, idle_days, blocked_by, workspace_name)
+          VALUES (?, ?, 'doing', 'P1', ?, 2, '[]', 'A small project')`,
+        args: [id, `Task ${id}`, dueAt],
+      });
+    }
+
+    const result = await client.execute(`
+      SELECT id, title, lane, priority, due_at, idle_days, blocked_by,
+        workspace_name, shipped_activity_at
+      FROM task_rows ORDER BY id
+    `);
+    const signals = result.rows.map(mapTasksBriefingRow);
+    const byId = new Map(signals.map((signal) => [signal.id, signal]));
+    assert.equal(byId.get("modern")?.dueAt, Date.parse("2026-09-23T00:00:00.000Z"));
+    assert.equal(byId.get("dublin-dst-boundary")?.dueAt, Date.parse("2026-03-29T00:30:00.000Z"));
+    assert.equal(byId.get("negative")?.dueAt, -1000);
+    assert.equal(byId.get("epoch")?.dueAt, 0);
+    assert.equal(byId.get("undated")?.dueAt, null);
+    assert.equal(byId.get("fractional-invalid")?.dueAt, null);
+    assert.equal(byId.get("text-invalid")?.dueAt, null);
+    assert.equal(byId.get("modern")?.sourceLabel, "Tasks · A small project");
+  } finally {
+    client.close();
+  }
 });
 
 describe("canonicaliseLane", () => {

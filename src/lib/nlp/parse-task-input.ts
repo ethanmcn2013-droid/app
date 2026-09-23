@@ -1,4 +1,4 @@
-import * as chrono from "chrono-node";
+import * as chrono from "chrono-node/en";
 import type { RecurrenceSpec } from "@/lib/data";
 import { extractRecurrence } from "@/lib/nlp/parse-recurrence";
 

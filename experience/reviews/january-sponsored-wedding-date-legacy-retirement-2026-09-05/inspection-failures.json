@@ -1,0 +1,26 @@
+[
+  {
+    "kind": "read-only discovery",
+    "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/feat-january-sponsored-wedding-date",
+    "command": "rg -n '792|Studio|SKIPPED|differential' focused-1.log",
+    "containingCommandExitCode": 1,
+    "error": "Log lookup used the App cwd instead of the legacy scratch directory. No such file. The receipt and log were subsequently read from the correct scratch directory.",
+    "runtimeGate": false
+  },
+  {
+    "kind": "read-only discovery",
+    "cwd": "C:/Users/ethan/Documents/Codex/2026-09-04/here-are-6-prompts-i-have-2/work/sponsored-wedding-date-legacy-retirement-2026-09-05",
+    "command": "Get-Content '../sponsored-wedding-date-2026-09-05/package.cjs' -First 20",
+    "containingCommandExitCode": 1,
+    "error": "The old package helper is in repository evidence, not this scratch sibling. File lookup failed. No old packaging helper was run.",
+    "runtimeGate": false
+  },
+  {
+    "kind": "read-only discovery",
+    "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/studio/feat-january-commercial-readiness",
+    "command": "Get-Content source-identities.json; Get-Content typecheck-1.receipt.json; Get-Content lint-1.receipt.json; git diff c1dd6221634a7f6cb0559da8fcff49c6dd475023 6e74ed9e0e7818fc81bac1cc361a87a97386e05a -- src/lib/venue-edition.ts",
+    "containingCommandExitCode": 0,
+    "error": "Three nonterminating Get-Content errors: receipts are in legacy scratch, not Studio. Final read-only git diff succeeded with no term-module changes. Exit0 does not make those three lookups successful.",
+    "runtimeGate": false
+  }
+]

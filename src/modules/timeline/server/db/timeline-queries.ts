@@ -58,10 +58,10 @@ export type { NodeOverlay };
 /**
  * A drizzle handle that can write: the module client, or a transaction from it.
  *
- * Narrowed to the three verbs `writeRoadmapNodes` uses so a transaction object
+ * Narrowed to the reads and writes `writeRoadmapNodes` uses so a transaction object
  * satisfies it structurally without importing drizzle's transaction types.
  */
-export type TimelineWriteExecutor = Pick<typeof db, "insert" | "delete" | "update">;
+export type TimelineWriteExecutor = Pick<typeof db, "select" | "insert" | "delete" | "update">;
 
 /** Input shape for writeRoadmapNodes, one synced milestone from Tasks DB. */
 export type SyncedMilestone = {
@@ -505,6 +505,7 @@ export async function bindProjectToTasksWorkspace(
   projectSlug: string,
   sourceTasksWorkspaceId: string,
   authority: ProjectBindingAuthority,
+  executor: Pick<typeof db, "select" | "update"> = db,
 ): Promise<void> {
   if (authority.kind === "project-owner") {
     assertOwnershipCovers(
@@ -514,7 +515,7 @@ export async function bindProjectToTasksWorkspace(
     );
   } else {
     // Prove the inheritance rather than accepting the claim of it.
-    const [parent] = await db
+    const [parent] = await executor
       .select({ suiteWorkspaceId: workspaces.suiteWorkspaceId })
       .from(workspaces)
       .where(eq(workspaces.slug, workspaceSlug))
@@ -528,7 +529,7 @@ export async function bindProjectToTasksWorkspace(
     }
   }
 
-  const [project] = await db
+  const [project] = await executor
     .select({ sourceTasksWorkspaceId: projects.sourceTasksWorkspaceId })
     .from(projects)
     .where(
@@ -546,7 +547,7 @@ export async function bindProjectToTasksWorkspace(
     throw new TypeError("Project is already bound to another Tasks workspace");
   }
   if (!project.sourceTasksWorkspaceId) {
-    await db
+    await executor
       .update(projects)
       .set({ sourceTasksWorkspaceId })
       .where(
@@ -729,13 +730,13 @@ export async function writeRoadmapNodes(
   const executor = options.executor ?? db;
   // Step 0, milestone date history (D-026 / R4). Read the dates this upsert
   // is about to overwrite, so the change can be recorded after it lands.
-  // The read goes through the module client: the executor may be a bare
-  // write transaction, and the rows being read are committed state.
+  // Read through the owning executor so dates, history and reconciliation
+  // share the same transaction as the current sync-target authorization.
   const previousDates =
     milestoneDateHistoryEnabled() && milestones.length > 0
       ? new Map(
           (
-            await db
+            await executor
               .select({ id: tasks.id, targetDate: tasks.targetDate })
               .from(tasks)
               .where(

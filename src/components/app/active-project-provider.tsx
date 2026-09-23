@@ -64,12 +64,14 @@ import {
 import { usePathname, useSearchParams } from "next/navigation";
 import type { ProjectId, ProjectSummary } from "@/lib/projects/project-ref";
 import { parseProjectId } from "@/lib/projects/project-ref";
-import { PROJECT_URL_PARAM, type ProjectDestination } from "@/lib/projects/project-url";
+import { buildProjectUrl, PROJECT_URL_PARAM, type ProjectDestination } from "@/lib/projects/project-url";
+import { isExpectedProjectSwitchRedirect } from "@/lib/projects/project-switch-redirect";
 import {
   chromeFor,
   initialActiveProjectState,
   reduceActiveProject,
   routeKey,
+  selectionVerified,
   type ActiveProjectPending,
   type ChromeProjection,
   type LiveTransition,
@@ -108,6 +110,7 @@ export type ActiveProjectContextValue = Readonly<{
   dismissRefusal: () => void;
   /** Publish a server-verified snapshot. The reducer decides whether it commits. */
   publishSnapshot: (snapshot: RouteSnapshot) => void;
+  publishUnavailableSnapshot: (key: string, epoch: number) => void;
   /**
    * Synchronous selection guard. `started` means the guarded transition is
    * running and will redirect on success; a refusal means nothing started —
@@ -200,7 +203,41 @@ export function ActiveProjectProvider({
    * mutated in the event handler, before any `await`, is the only thing that
    * serializes them. It is never read or written during render.
    */
-  const pendingRef = useRef(false);
+  const pendingRef = useRef<{
+    token: number;
+    routeKey: string;
+    projectId: ProjectId;
+    projectName: string;
+    timeout?: ReturnType<typeof setTimeout>;
+  } | null>(null);
+  const selectionTokenRef = useRef(0);
+
+  // A switch is complete only when this exact destination has published a
+  // server-verified snapshot. Releasing the synchronous guard on a mere URL
+  // change would let an unverified Project become the next selection source.
+  useEffect(() => {
+    const selection = pendingRef.current;
+    if (selection && selectionVerified(state, selection)) {
+      if (selection.timeout) clearTimeout(selection.timeout);
+      pendingRef.current = null;
+    } else if (
+      selection &&
+      state.live.routeKey === selection.routeKey &&
+      state.pending === null &&
+      state.committed === null
+    ) {
+      // The target page explicitly published an unavailable result after
+      // redirect (for example, membership changed in flight). Do not leave
+      // the selector locked or claim the URL change was a verified success.
+      if (selection.timeout) clearTimeout(selection.timeout);
+      pendingRef.current = null;
+      dispatch({ type: "select-failed", message: `Couldn't open ${selection.projectName}. You're still in the current project.` });
+    }
+  }, [state]);
+
+  useEffect(() => () => {
+    if (pendingRef.current?.timeout) clearTimeout(pendingRef.current.timeout);
+  }, []);
 
   const onRoute = useCallback(
     (pathname: string, workspaceId: ProjectId | null) => {
@@ -211,6 +248,10 @@ export function ActiveProjectProvider({
 
   const publishSnapshot = useCallback((snapshot: RouteSnapshot) => {
     dispatch({ type: "snapshot", snapshot });
+  }, []);
+
+  const publishUnavailableSnapshot = useCallback((key: string, epoch: number) => {
+    dispatch({ type: "snapshot-unavailable", routeKey: key, epoch });
   }, []);
 
   const selectProject = useCallback(
@@ -233,18 +274,38 @@ export function ActiveProjectProvider({
         return refusal;
       }
 
-      pendingRef.current = true;
+      const target = new URL(buildProjectUrl(destination, project.id), "https://signalstudio.invalid");
+      const token = ++selectionTokenRef.current;
+      pendingRef.current = {
+        token,
+        routeKey: routeKey(target.pathname, project.id),
+        projectId: project.id,
+        projectName: project.name,
+      };
 
       // Step 2: the trigger reads `Opening <B>…` while committed A stays
       // visibly A. The provider never relabels A's data as B.
       dispatch({
         type: "select-started",
-        pending: { projectId: project.id, label: `Opening ${project.name}…` },
+        pending: { projectId: project.id, label: `Opening ${project.name}…`, destinationRouteKey: pendingRef.current.routeKey },
       });
 
       const fail = (message: string) => {
-        pendingRef.current = false;
+        // An old action result cannot fail a newer, already-verified switch.
+        if (pendingRef.current?.token !== token) return;
+        if (pendingRef.current.timeout) clearTimeout(pendingRef.current.timeout);
+        pendingRef.current = null;
         dispatch({ type: "select-failed", message });
+      };
+
+      const awaitVerifiedSnapshot = () => {
+        // Redirect has started, but only the destination's server snapshot
+        // proves the switch. Bound a missing snapshot without claiming A or B.
+        if (pendingRef.current?.token === token) {
+          pendingRef.current.timeout = setTimeout(() => {
+            fail(`Couldn't open ${project.name}. You're still in the current project.`);
+          }, 30_000);
+        }
       };
 
       startTransition(() => {
@@ -254,13 +315,23 @@ export function ActiveProjectProvider({
               workspaceId: project.id,
               destination,
             });
-            // A successful switch redirects and never returns.
+            // A redirect may resolve without a value in some runtimes. Next
+            // 16.3.6 instead rejects with NEXT_REDIRECT; both paths wait for
+            // the exact destination's server-verified route snapshot.
+            if (!result) {
+              awaitVerifiedSnapshot();
+              return;
+            }
             fail(
               result.reason === "archived"
                 ? `${project.name} is archived. Open it read-only from Archived.`
                 : `Couldn't open ${project.name}. You're still in the current project.`,
             );
-          } catch {
+          } catch (error) {
+            if (isExpectedProjectSwitchRedirect(error, `${target.pathname}${target.search}`)) {
+              awaitVerifiedSnapshot();
+              return;
+            }
             fail(
               `Couldn't open ${project.name}. You're still in the current project.`,
             );
@@ -292,6 +363,7 @@ export function ActiveProjectProvider({
       refusal: state.refusal,
       dismissRefusal,
       publishSnapshot,
+      publishUnavailableSnapshot,
       selectProject,
     }),
     [
@@ -303,6 +375,7 @@ export function ActiveProjectProvider({
       chrome,
       dismissRefusal,
       publishSnapshot,
+      publishUnavailableSnapshot,
       selectProject,
     ],
   );

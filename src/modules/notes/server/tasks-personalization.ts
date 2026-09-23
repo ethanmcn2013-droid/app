@@ -133,12 +133,18 @@ export function parseTasksWorkspaceCatalog(raw: unknown): TasksWorkspaceCatalog 
     }
   }
 
-  // v1 compatibility during ordered rollout. These workspaces remain
-  // selectable but have no Planning Period projection until Tasks is v2.
-  if (workspaces.length === 0 && Array.isArray(value.workspaces)) {
+  // v2 returns loose projects alongside grouped periods; v1 returns only
+  // this list. A member's project may also be loose because its owner's
+  // private period is not part of this actor's catalog. Keep every valid
+  // destination, without duplicating the single-period compatibility shape.
+  const seenWorkspaceIds = new Set(workspaces.map((workspace) => workspace.id));
+  if (Array.isArray(value.workspaces)) {
     for (const workspaceRaw of value.workspaces) {
       const workspace = parseWorkspace(workspaceRaw, null);
-      if (workspace) workspaces.push(workspace);
+      if (workspace && !seenWorkspaceIds.has(workspace.id)) {
+        seenWorkspaceIds.add(workspace.id);
+        workspaces.push(workspace);
+      }
     }
   }
 

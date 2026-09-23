@@ -146,8 +146,15 @@ export function ReorderList<T extends ReorderRow>({
   function handlePointerDown(event: React.PointerEvent<HTMLLIElement>, index: number) {
     if (dragRef.current) return;
     if (event.button !== undefined && event.button !== 0) return;
+    // Row children can be actions (for example, complete/open a subtask).
+    // Capturing their pointer on the row retargets the subsequent click to
+    // <li>, so the child's onClick never runs. Only the explicit grip starts
+    // a drag, and it owns capture so its own click still works without a drag.
+    const target = event.target;
+    const grip = target instanceof Element ? target.closest<HTMLElement>("[data-reorder-grip]") : null;
+    if (!grip || !event.currentTarget.contains(grip)) return;
     const row = event.currentTarget;
-    row.setPointerCapture(event.pointerId);
+    grip.setPointerCapture(event.pointerId);
     dragRef.current = { row, pointerId: event.pointerId, index, startY: event.clientY, active: false, slot: 0, to: index };
   }
 

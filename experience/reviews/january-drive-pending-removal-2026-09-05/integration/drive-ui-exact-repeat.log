@@ -1,0 +1,611 @@
+TAP version 13
+# Subtest: Drive browser resumable upload
+    # Subtest: sends a 9 MiB Blob as one 8 MiB chunk and one remainder
+    ok 1 - sends a 9 MiB Blob as one 8 MiB chunk and one remainder
+      ---
+      duration_ms: 69.5682
+      type: 'test'
+      ...
+    # Subtest: resumes from the exact provider-confirmed partial acknowledgement
+    ok 2 - resumes from the exact provider-confirmed partial acknowledgement
+      ---
+      duration_ms: 6.5823
+      type: 'test'
+      ...
+    # Subtest: probes the same capability after an uncertain network result
+    ok 3 - probes the same capability after an uncertain network result
+      ---
+      duration_ms: 6.8793
+      type: 'test'
+      ...
+    # Subtest: pauses without an offset when both upload and status are ambiguous
+    ok 4 - pauses without an offset when both upload and status are ambiguous
+      ---
+      duration_ms: 0.7075
+      type: 'test'
+      ...
+    # Subtest: reports only a confirmed provider 404 as expired
+    ok 5 - reports only a confirmed provider 404 as expired
+      ---
+      duration_ms: 1.1143
+      type: 'test'
+      ...
+    # Subtest: rejects untrusted capabilities and malformed provider acknowledgements
+    ok 6 - rejects untrusted capabilities and malformed provider acknowledgements
+      ---
+      duration_ms: 1.4539
+      type: 'test'
+      ...
+    # Subtest: aborts without treating cancellation as expiry or minting a new URI
+    ok 7 - aborts without treating cancellation as expiry or minting a new URI
+      ---
+      duration_ms: 0.8227
+      type: 'test'
+      ...
+    # Subtest: does not advance when Google acknowledges no new bytes
+    ok 8 - does not advance when Google acknowledges no new bytes
+      ---
+      duration_ms: 0.8787
+      type: 'test'
+      ...
+    # Subtest: probes for a file id if the final data PUT only acknowledges bytes
+    ok 9 - probes for a file id if the final data PUT only acknowledges bytes
+      ---
+      duration_ms: 2.4665
+      type: 'test'
+      ...
+    1..9
+ok 1 - Drive browser resumable upload
+  ---
+  duration_ms: 93.4805
+  type: 'suite'
+  ...
+# Subtest: first consent and separate board setup both disclose future file ownership and visibility
+ok 2 - first consent and separate board setup both disclose future file ownership and visibility
+  ---
+  duration_ms: 25.5643
+  type: 'test'
+  ...
+# Subtest: reloaded claims block new intake regardless of file metadata; refresh errors never mean empty
+ok 3 - reloaded claims block new intake regardless of file metadata; refresh errors never mean empty
+  ---
+  duration_ms: 0.5039
+  type: 'test'
+  ...
+# Subtest: uploader reload check offers completion inspection, never reselect/resume/remove/native controls
+ok 4 - uploader reload check offers completion inspection, never reselect/resume/remove/native controls
+  ---
+  duration_ms: 1.1507
+  type: 'test'
+  ...
+# Subtest: a non-uploader sees only saved-state refresh; a pending check disables repeated clicks
+ok 5 - a non-uploader sees only saved-state refresh; a pending check disables repeated clicks
+  ---
+  duration_ms: 1.1969
+  type: 'test'
+  ...
+# Subtest: handover blocked/error/empty states expose no executable target or misleading success
+ok 6 - handover blocked/error/empty states expose no executable target or misleading success
+  ---
+  duration_ms: 4.2361
+  type: 'test'
+  ...
+# Subtest: a choice is not preselected and a journal continuation still requires confirmation
+ok 7 - a choice is not preselected and a journal continuation still requires confirmation
+  ---
+  duration_ms: 1.7809
+  type: 'test'
+  ...
+# Subtest: UI rollout is off by default and accepts only the literal true
+ok 8 - UI rollout is off by default and accepts only the literal true
+  ---
+  duration_ms: 1.8851
+  type: 'test'
+  ...
+# Subtest: board folder links exclude roots, credentials, query strings and foreign hosts
+ok 9 - board folder links exclude roots, credentials, query strings and foreign hosts
+  ---
+  duration_ms: 0.864
+  type: 'test'
+  ...
+# Subtest: direct Drive path confirms before success and never sends native bytes
+ok 10 - direct Drive path confirms before success and never sends native bytes
+  ---
+  duration_ms: 5.6679
+  type: 'test'
+  ...
+# Subtest: fallback requires an explicit user choice and native completion is labelled
+ok 11 - fallback requires an explicit user choice and native completion is labelled
+  ---
+  duration_ms: 0.9587
+  type: 'test'
+  ...
+# Subtest: ambiguous byte transfer retries the same claim; no native fallback
+ok 12 - ambiguous byte transfer retries the same claim; no native fallback
+  ---
+  duration_ms: 0.5574
+  type: 'test'
+  ...
+# Subtest: a lost create reply cannot turn a later fallback into a second upload
+ok 13 - a lost create reply cannot turn a later fallback into a second upload
+  ---
+  duration_ms: 0.571
+  type: 'test'
+  ...
+# Subtest: lost finalize response is recovered by the server's adopted result
+ok 14 - lost finalize response is recovered by the server's adopted result
+  ---
+  duration_ms: 0.6945
+  type: 'test'
+  ...
+# Subtest: stop during session mint prevents bytes and keeps the delegated claim retryable
+ok 15 - stop during session mint prevents bytes and keeps the delegated claim retryable
+  ---
+  duration_ms: 0.6962
+  type: 'test'
+  ...
+# Subtest: double retry is serialized; disposal prevents later UI delivery
+ok 16 - double retry is serialized; disposal prevents later UI delivery
+  ---
+  duration_ms: 0.6045
+  type: 'test'
+  ...
+# Subtest: expired or malformed sessions never silently remint in the browser
+ok 17 - expired or malformed sessions never silently remint in the browser
+  ---
+  duration_ms: 0.8211
+  type: 'test'
+  ...
+# Subtest: cancel before fallback sends nothing; an uncertain native result is not retried
+ok 18 - cancel before fallback sends nothing; an uncertain native result is not retried
+  ---
+  duration_ms: 1.0764
+  type: 'test'
+  ...
+# Subtest: only original-uploader, exact-task, unmounted pending claims are checked, once each
+ok 19 - only original-uploader, exact-task, unmounted pending claims are checked, once each
+  ---
+  duration_ms: 3.4349
+  type: 'test'
+  ...
+# Subtest: complete always re-reads canonical Resources and only reports sanitized state
+ok 20 - complete always re-reads canonical Resources and only reports sanitized state
+  ---
+  duration_ms: 0.4486
+  type: 'test'
+  ...
+# Subtest: pending always re-reads canonical Resources and only reports sanitized state
+ok 21 - pending always re-reads canonical Resources and only reports sanitized state
+  ---
+  duration_ms: 0.4093
+  type: 'test'
+  ...
+# Subtest: unavailable always re-reads canonical Resources and only reports sanitized state
+ok 22 - unavailable always re-reads canonical Resources and only reports sanitized state
+  ---
+  duration_ms: 0.5181
+  type: 'test'
+  ...
+# Subtest: disabled always re-reads canonical Resources and only reports sanitized state
+ok 23 - disabled always re-reads canonical Resources and only reports sanitized state
+  ---
+  duration_ms: 0.4218
+  type: 'test'
+  ...
+# Subtest: review always re-reads canonical Resources and only reports sanitized state
+ok 24 - review always re-reads canonical Resources and only reports sanitized state
+  ---
+  duration_ms: 0.2338
+  type: 'test'
+  ...
+# Subtest: double click is serialized and a failed canonical read cannot be presented as completion
+ok 25 - double click is serialized and a failed canonical read cannot be presented as completion
+  ---
+  duration_ms: 5.429
+  type: 'test'
+  ...
+# Subtest: task disposal stops later claims, refresh and stale UI updates
+ok 26 - task disposal stops later claims, refresh and stale UI updates
+  ---
+  duration_ms: 1.0133
+  type: 'test'
+  ...
+# Subtest: a lost response re-reads saved rows without a second probe or fallback
+ok 27 - a lost response re-reads saved rows without a second probe or fallback
+  ---
+  duration_ms: 1.8242
+  type: 'test'
+  ...
+# Subtest: handover choices require server owner + exact current active scope, and expose only scoped identities
+ok 28 - handover choices require server owner + exact current active scope, and expose only scoped identities
+  ---
+  duration_ms: 1760.4733
+  type: 'test'
+  ...
+# Subtest: stale actor/source ownership, wrong capability, foreign project and archive fail closed
+ok 29 - stale actor/source ownership, wrong capability, foreign project and archive fail closed
+  ---
+  duration_ms: 1156.915
+  type: 'test'
+  ...
+# Subtest: pending receipts block handover without leaking a bearer capability; foreign receipts do not
+ok 30 - pending receipts block handover without leaking a bearer capability; foreign receipts do not
+  ---
+  duration_ms: 1169.2183
+  type: 'test'
+  ...
+# Subtest: handover continuation retains the existing journal target and operation; manual attention has no retry
+ok 31 - handover continuation retains the existing journal target and operation; manual attention has no retry
+  ---
+  duration_ms: 1243.8954
+  type: 'test'
+  ...
+# Subtest: the backend revalidates a role lost between UI allow-list and execution
+ok 32 - the backend revalidates a role lost between UI allow-list and execution
+  ---
+  duration_ms: 1618.7609
+  type: 'test'
+  ...
+# Subtest: a retired target connection cannot redirect a saved operation to its replacement
+ok 33 - a retired target connection cannot redirect a saved operation to its replacement
+  ---
+  duration_ms: 1591.5237
+  type: 'test'
+  ...
+# Subtest: only Google's current named-user email and role prove access
+ok 34 - only Google's current named-user email and role prove access
+  ---
+  duration_ms: 3.3347
+  type: 'test'
+  ...
+# Subtest: an empty live list never becomes complete membership coverage
+ok 35 - an empty live list never becomes complete membership coverage
+  ---
+  duration_ms: 0.2877
+  type: 'test'
+  ...
+# Subtest: status is project scoped, sanitized, race aware and fails closed on provider errors
+ok 36 - status is project scoped, sanitized, race aware and fails closed on provider errors
+  ---
+  duration_ms: 1617.5152
+  type: 'test'
+  ...
+# Subtest: pending permission removal: none
+ok 37 - pending permission removal: none
+  ---
+  duration_ms: 1131.9821
+  type: 'test'
+  ...
+# Subtest: pending permission removal: current
+ok 38 - pending permission removal: current
+  ---
+  duration_ms: 1125.8432
+  type: 'test'
+  ...
+# Subtest: pending permission removal: previous
+ok 39 - pending permission removal: previous
+  ---
+  duration_ms: 1120.3365
+  type: 'test'
+  ...
+# Subtest: pending permission removal: both
+ok 40 - pending permission removal: both
+  ---
+  duration_ms: 1627.8014
+  type: 'test'
+  ...
+# Subtest: pending permission removal: unavailable-current
+ok 41 - pending permission removal: unavailable-current
+  ---
+  duration_ms: 1549.8531
+  type: 'test'
+  ...
+# Subtest: pending permission removal: unavailable-both
+ok 42 - pending permission removal: unavailable-both
+  ---
+  duration_ms: 1048.6609
+  type: 'test'
+  ...
+# Subtest: pending permission removal: stale-email
+ok 43 - pending permission removal: stale-email
+  ---
+  duration_ms: 1004.9614
+  type: 'test'
+  ...
+# Subtest: pending permission removal: removed-member
+ok 44 - pending permission removal: removed-member
+  ---
+  duration_ms: 953.2107
+  type: 'test'
+  ...
+# Subtest: pending permission removal: other-project
+ok 45 - pending permission removal: other-project
+  ---
+  duration_ms: 1534.2737
+  type: 'test'
+  ...
+# Subtest: pending permission removal: non-pending
+ok 46 - pending permission removal: non-pending
+  ---
+  duration_ms: 938.9757
+  type: 'test'
+  ...
+# Subtest: pending permission removal: invalid-generation
+ok 47 - pending permission removal: invalid-generation
+  ---
+  duration_ms: 917.7063
+  type: 'test'
+  ...
+# Subtest: pending permission removal: orphan-generation
+ok 48 - pending permission removal: orphan-generation
+  ---
+  duration_ms: 931.0232
+  type: 'test'
+  ...
+# Subtest: pending permission removal: previous-no-current
+ok 49 - pending permission removal: previous-no-current
+  ---
+  duration_ms: 942.0842
+  type: 'test'
+  ...
+# Subtest: pending permission removal: appears-during-failed-live-read
+ok 50 - pending permission removal: appears-during-failed-live-read
+  ---
+  duration_ms: 1424.1859
+  type: 'test'
+  ...
+# Subtest: pending permission removal: cleared-during-live-read
+ok 51 - pending permission removal: cleared-during-live-read
+  ---
+  duration_ms: 969.7324
+  type: 'test'
+  ...
+# Subtest: pending permission removal: retired-during-live-read
+ok 52 - pending permission removal: retired-during-live-read
+  ---
+  duration_ms: 927.1253
+  type: 'test'
+  ...
+# Subtest: pending receipts do not grant project management or turn a failed receipt read into zero
+ok 53 - pending receipts do not grant project management or turn a failed receipt read into zero
+  ---
+  duration_ms: 977.3238
+  type: 'test'
+  ...
+# Subtest: original member uploader adopts provider completion into exactly the same resource; repeated checks are read-only
+ok 54 - original member uploader adopts provider completion into exactly the same resource; repeated checks are read-only
+  ---
+  duration_ms: 1556.951
+  type: 'test'
+  ...
+# Subtest: expired capability adopts the exact marker in its original historical generation
+ok 55 - expired capability adopts the exact marker in its original historical generation
+  ---
+  duration_ms: 1174.4732
+  type: 'test'
+  ...
+# Subtest: incomplete keeps the claim and cannot mint, upload bytes, fall back or delete
+ok 56 - incomplete keeps the claim and cannot mint, upload bytes, fall back or delete
+  ---
+  duration_ms: 1149.9496
+  type: 'test'
+  ...
+# Subtest: expired-empty keeps the claim and cannot mint, upload bytes, fall back or delete
+ok 57 - expired-empty keeps the claim and cannot mint, upload bytes, fall back or delete
+  ---
+  duration_ms: 1179.0926
+  type: 'test'
+  ...
+# Subtest: undelegated keeps the claim and cannot mint, upload bytes, fall back or delete
+ok 58 - undelegated keeps the claim and cannot mint, upload bytes, fall back or delete
+  ---
+  duration_ms: 1582.3786
+  type: 'test'
+  ...
+# Subtest: provider-failure keeps the claim and cannot mint, upload bytes, fall back or delete
+ok 59 - provider-failure keeps the claim and cannot mint, upload bytes, fall back or delete
+  ---
+  duration_ms: 1176.4968
+  type: 'test'
+  ...
+# Subtest: other-member is refused before any credential/provider call
+ok 60 - other-member is refused before any credential/provider call
+  ---
+  duration_ms: 1458.0053
+  type: 'test'
+  ...
+# Subtest: owner-not-uploader is refused before any credential/provider call
+ok 61 - owner-not-uploader is refused before any credential/provider call
+  ---
+  duration_ms: 980.9547
+  type: 'test'
+  ...
+# Subtest: wrong-project is refused before any credential/provider call
+ok 62 - wrong-project is refused before any credential/provider call
+  ---
+  duration_ms: 918.0524
+  type: 'test'
+  ...
+# Subtest: wrong-task is refused before any credential/provider call
+ok 63 - wrong-task is refused before any credential/provider call
+  ---
+  duration_ms: 1499.2243
+  type: 'test'
+  ...
+# Subtest: removed is refused before any credential/provider call
+ok 64 - removed is refused before any credential/provider call
+  ---
+  duration_ms: 957.798
+  type: 'test'
+  ...
+# Subtest: archived is refused before any credential/provider call
+ok 65 - archived is refused before any credential/provider call
+  ---
+  duration_ms: 922.7258
+  type: 'test'
+  ...
+# Subtest: capability is refused before any credential/provider call
+ok 66 - capability is refused before any credential/provider call
+  ---
+  duration_ms: 897.5007
+  type: 'test'
+  ...
+# Subtest: moved-task is refused before any credential/provider call
+ok 67 - moved-task is refused before any credential/provider call
+  ---
+  duration_ms: 948.285
+  type: 'test'
+  ...
+# Subtest: member-a deletion/erasure fence before provider work prevents adoption
+ok 68 - member-a deletion/erasure fence before provider work prevents adoption
+  ---
+  duration_ms: 1458.6212
+  type: 'test'
+  ...
+# Subtest: member-a deletion/erasure fence during provider work prevents adoption
+ok 69 - member-a deletion/erasure fence during provider work prevents adoption
+  ---
+  duration_ms: 1002.9591
+  type: 'test'
+  ...
+# Subtest: owner deletion/erasure fence before provider work prevents adoption
+ok 70 - owner deletion/erasure fence before provider work prevents adoption
+  ---
+  duration_ms: 916.2812
+  type: 'test'
+  ...
+# Subtest: owner deletion/erasure fence during provider work prevents adoption
+ok 71 - owner deletion/erasure fence during provider work prevents adoption
+  ---
+  duration_ms: 979.8437
+  type: 'test'
+  ...
+# Subtest: project deletion/erasure fence before provider work prevents adoption
+ok 72 - project deletion/erasure fence before provider work prevents adoption
+  ---
+  duration_ms: 720.772
+  type: 'test'
+  ...
+# Subtest: project deletion/erasure fence during provider work prevents adoption
+ok 73 - project deletion/erasure fence during provider work prevents adoption
+  ---
+  duration_ms: 773.9182
+  type: 'test'
+  ...
+# Subtest: remove-uploader between provider read and completion fails the final transaction
+ok 74 - remove-uploader between provider read and completion fails the final transaction
+  ---
+  duration_ms: 1267.674
+  type: 'test'
+  ...
+# Subtest: archive between provider read and completion fails the final transaction
+ok 75 - archive between provider read and completion fails the final transaction
+  ---
+  duration_ms: 855.6267
+  type: 'test'
+  ...
+# Subtest: move-task between provider read and completion fails the final transaction
+ok 76 - move-task between provider read and completion fails the final transaction
+  ---
+  duration_ms: 752.4484
+  type: 'test'
+  ...
+# Subtest: demote-storage-owner between provider read and completion fails the final transaction
+ok 77 - demote-storage-owner between provider read and completion fails the final transaction
+  ---
+  duration_ms: 770.3208
+  type: 'test'
+  ...
+# Subtest: replace-session between provider read and completion fails the final transaction
+ok 78 - replace-session between provider read and completion fails the final transaction
+  ---
+  duration_ms: 691.6051
+  type: 'test'
+  ...
+# Subtest: advance-lease between provider read and completion fails the final transaction
+ok 79 - advance-lease between provider read and completion fails the final transaction
+  ---
+  duration_ms: 1273.9724
+  type: 'test'
+  ...
+# Subtest: replace-uploader between provider read and completion fails the final transaction
+ok 80 - replace-uploader between provider read and completion fails the final transaction
+  ---
+  duration_ms: 842.4038
+  type: 'test'
+  ...
+# Subtest: duplicate-marker is not completion evidence
+ok 81 - duplicate-marker is not completion evidence
+  ---
+  duration_ms: 982.5766
+  type: 'test'
+  ...
+# Subtest: wrong-parent is not completion evidence
+ok 82 - wrong-parent is not completion evidence
+  ---
+  duration_ms: 737.7443
+  type: 'test'
+  ...
+# Subtest: wrong-marker is not completion evidence
+ok 83 - wrong-marker is not completion evidence
+  ---
+  duration_ms: 669.9544
+  type: 'test'
+  ...
+# Subtest: wrong-size is not completion evidence
+ok 84 - wrong-size is not completion evidence
+  ---
+  duration_ms: 597.6096
+  type: 'test'
+  ...
+# Subtest: overlapping recovery checks share the existing CAS and persist one canonical row
+ok 85 - overlapping recovery checks share the existing CAS and persist one canonical row
+  ---
+  duration_ms: 592.2458
+  type: 'test'
+  ...
+# Subtest: an original-tab finalize can win during recovery without a second row or lost completion
+ok 86 - an original-tab finalize can win during recovery without a second row or lost completion
+  ---
+  duration_ms: 645.0576
+  type: 'test'
+  ...
+# Subtest: review and flag-off status return before the DB/provider/auth graph is imported
+ok 87 - review and flag-off status return before the DB/provider/auth graph is imported
+  ---
+  duration_ms: 1105.1906
+  type: 'test'
+  ...
+# Subtest: status action proves explicit project authority before and after its read
+ok 88 - status action proves explicit project authority before and after its read
+  ---
+  duration_ms: 0.7306
+  type: 'test'
+  ...
+# Subtest: review fixtures have no production dependency or fetch path
+ok 89 - review fixtures have no production dependency or fetch path
+  ---
+  duration_ms: 0.9824
+  type: 'test'
+  ...
+# Subtest: Resources keeps one Attach intake and truthful Drive provenance
+ok 90 - Resources keeps one Attach intake and truthful Drive provenance
+  ---
+  duration_ms: 0.8374
+  type: 'test'
+  ...
+# Subtest: handover actions reauthorize explicit project and expose no provider data or errors
+ok 91 - handover actions reauthorize explicit project and expose no provider data or errors
+  ---
+  duration_ms: 0.5346
+  type: 'test'
+  ...
+1..91
+# tests 99
+# suites 1
+# pass 99
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 36475.0394

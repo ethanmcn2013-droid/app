@@ -1,0 +1,31 @@
+- complementary:
+  - strong: Isolated caller recovery fixture
+  - paragraph: Real caller components; synthetic server actions and framework boundaries.
+  - button "Allow retry to succeed"
+  - status: "Navigation: unchanged"
+  - paragraph: "Starter sets: 0"
+  - generic: "[{\"workspaceId\":\"project-caller-review\",\"kind\":\"open\",\"primaryUseCase\":\"wedding\",\"secondaryContext\":null,\"seedMode\":\"blank\",\"requestId\":\"3b6dbc13-d305-47f3-8597-0b82c0408a9c\"}]"
+- banner:
+  - link "tasks":
+    - /url: /
+    - generic: tasks
+  - progressbar "Step 4 of 4"
+- main:
+  - heading "Your wedding planning is ready." [level=2]
+  - paragraph: You chose a template before signing in. Open your workspace, or pick a different coordination type below.
+  - button "Template loaded Open wedding planning" [disabled]:
+    - generic: Template loaded
+    - generic: Open wedding planning
+  - paragraph: Or coordinate as
+  - list:
+    - listitem: Timeline
+    - listitem: Guest & vendor notes
+    - listitem: Tasks
+    - listitem: Venue checklist
+    - listitem: Day-of plan
+  - button "Open my workspace" [disabled]
+  - button "Start blank instead" [disabled]
+  - alert:
+    - paragraph: We couldn’t confirm that setup finished.
+    - paragraph: Try again to check your previous setup without adding another starter.
+    - button "Try again"

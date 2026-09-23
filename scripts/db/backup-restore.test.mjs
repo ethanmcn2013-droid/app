@@ -71,14 +71,19 @@ before(async () => {
   }
 });
 
-after(() => {
+after(async () => {
   try {
-    source?.close();
+    await source?.close();
   } catch {
     // handle already closed
   }
   try {
-    fs.rmSync(workDir, { recursive: true, force: true });
+    fs.rmSync(workDir, {
+      recursive: true,
+      force: true,
+      maxRetries: process.platform === "win32" ? 5 : 0,
+      retryDelay: 50,
+    });
   } catch (error) {
     // The local libSQL driver can retain a Windows handle after close().
     if (error?.code !== "EPERM" && !(process.platform === "win32" && error?.code === "EBUSY")) {
@@ -183,7 +188,7 @@ describe("backup and restore", () => {
       const blob = await client.execute("SELECT payload FROM ledger WHERE id = 'l-7'");
       assert.equal(Buffer.from(blob.rows[0].payload).toString(), "binary-payload-7");
     } finally {
-      client.close();
+      await client.close();
     }
   });
 
@@ -202,7 +207,7 @@ describe("backup and restore", () => {
         /append-only/,
       );
     } finally {
-      client.close();
+      await client.close();
     }
   });
 
@@ -225,7 +230,7 @@ describe("backup and restore", () => {
       assert.equal(result.ok, false);
       assert.equal(result.differences[0].reason, "row count differs");
     } finally {
-      client.close();
+      await client.close();
     }
   });
 
@@ -249,7 +254,7 @@ describe("backup and restore", () => {
       assert.equal(result.differences[0].table, "workspaces");
       assert.equal(result.differences[0].reason, "content hash differs");
     } finally {
-      client.close();
+      await client.close();
     }
   });
 

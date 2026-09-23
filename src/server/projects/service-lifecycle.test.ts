@@ -107,6 +107,11 @@ const req = createRequire(__filename);
 
 let revalidated: string[] = [];
 let emitted: Array<Record<string, unknown>> = [];
+let driveExecutions: Array<{
+  input: Record<string, unknown>;
+  observedName: string | null;
+  observedRevision: number | null;
+}> = [];
 const cookieJar = new Map<string, string>();
 
 /** The actor the stubbed auth resolves. Set per test. */
@@ -189,6 +194,24 @@ seed("@/server/email", {
 seed("@/server/actions/seed", {
   seedDomainAction: async () => ({ ok: true }),
 });
+seed("@/server/connections/project-drive-folder-operation-executor", {
+  executeProjectDriveFolderOperation: async (
+    input: Record<string, unknown>,
+  ) => {
+    const observed = await workspaceRow(full.client);
+    driveExecutions.push({
+      input,
+      observedName: typeof observed?.name === "string" ? observed.name : null,
+      observedRevision:
+        typeof observed?.revision === "number"
+          ? observed.revision
+          : observed?.revision == null
+            ? null
+            : Number(observed.revision),
+    });
+    return { outcome: "conflict" };
+  },
+});
 
 // ── Fixture cast ────────────────────────────────────────────────────────────
 
@@ -237,6 +260,32 @@ async function seedFixture(
   `);
 }
 
+async function seedDriveStorage(client: ScratchDb["client"]): Promise<void> {
+  await client.executeMultiple(`
+    INSERT INTO users (id, clerk_id, email, color, initials) VALUES
+      ('${PRIMARY}', 'clerk-primary', 'primary@example.com', '#111', 'PR'),
+      ('${CO_OWNER}', 'clerk-co-owner', 'co-owner@example.com', '#222', 'CO'),
+      ('${MEMBER}', 'clerk-member', 'member@example.com', '#333', 'ME');
+    INSERT INTO provider_connections (
+      id, user_id, provider, provider_account_id, provider_account_email,
+      root_folder_id, refresh_token_cipher, key_version, scopes, status,
+      is_current, connected_at
+    ) VALUES (
+      'conn-current', '${PRIMARY}', 'google_drive', 'account-primary',
+      'primary@example.com', 'root-current', 'ciphertext', 1,
+      '["https://www.googleapis.com/auth/drive.file"]', 'active', 1, 20
+    );
+    INSERT INTO workspace_storage (
+      id, workspace_id, connection_id, folder_id, folder_web_view_link,
+      state, is_current
+    ) VALUES
+      ('gen-old', '${WS}', 'conn-current', 'folder-old',
+       'https://drive.google.com/drive/folders/folder-old', 'active', 0),
+      ('gen-current', '${WS}', 'conn-current', 'folder-current',
+       'https://drive.google.com/drive/folders/folder-current', 'active', 1);
+  `);
+}
+
 async function seedPeriod(
   client: ScratchDb["client"],
   id: string,
@@ -279,6 +328,11 @@ let settings: typeof import("@/server/actions/settings");
 let full: ScratchDb;
 
 before(async () => {
+  // Project Drive's journal exports a production singleton at module load.
+  // Give that import-only binding a scratch database; lifecycle calls below
+  // use the transaction-compatible helper with each test's planned database.
+  const moduleLoadDb = await freshFileDb();
+  planDb(moduleLoadDb.db);
   service = await import("@/server/projects/service");
   planning = await import("@/server/actions/planning");
   settings = await import("@/server/actions/settings");
@@ -287,6 +341,7 @@ before(async () => {
 beforeEach(async () => {
   revalidated = [];
   emitted = [];
+  driveExecutions = [];
   cookieJar.clear();
   currentActor = PRIMARY;
   currentAmbient = null;
@@ -422,6 +477,69 @@ describe("renameProject", () => {
       "the proof passed (a refusal would say so); only the .returning() receipt can throw here",
     );
     assert.equal((await workspaceRow(full.client))?.name, "Alpha");
+  });
+
+  it("atomically records the exact current-generation rename intent before provider execution", async () => {
+    await seedFixture(full.client);
+    await seedDriveStorage(full.client);
+    await service.renameProject({
+      actorUserId: PRIMARY,
+      projectId: WS,
+      name: "Drive renamed",
+      refusal: REFUSAL,
+    });
+
+    const rows = await full.client.execute({
+      sql: `SELECT operation_kind, storage_generation_id, workspace_revision, status
+            FROM project_drive_operations WHERE workspace_id = ?`,
+      args: [WS],
+    });
+    assert.equal(rows.rows.length, 1);
+    assert.equal(rows.rows[0]?.operation_kind, "folder_rename");
+    assert.equal(rows.rows[0]?.storage_generation_id, "gen-current");
+    assert.equal(Number(rows.rows[0]?.workspace_revision), 2);
+    assert.equal(rows.rows[0]?.status, "pending");
+    assert.deepEqual(driveExecutions, [
+      {
+        input: {
+          workspaceId: WS,
+          operationId: driveExecutions[0]?.input.operationId,
+          operationKind: "folder_rename",
+        },
+        observedName: "Drive renamed",
+        observedRevision: 2,
+      },
+    ]);
+  });
+
+  it("rolls back the rename and intent when a related account fence wins", async () => {
+    await seedFixture(full.client);
+    await seedDriveStorage(full.client);
+    await full.client.execute({
+      sql: "INSERT INTO meta (key, value) VALUES (?, ?)",
+      args: ["google-drive:account-erasure:user:user-primary", "active:v1"],
+    });
+
+    await assert.rejects(
+      service.renameProject({
+        actorUserId: PRIMARY,
+        projectId: WS,
+        name: "Must roll back",
+        refusal: REFUSAL,
+      }),
+      new RegExp(REFUSAL),
+    );
+    const row = await workspaceRow(full.client);
+    assert.equal(row?.name, "Alpha");
+    assert.equal(Number(row?.revision), 1);
+    assert.equal(
+      await count(
+        full.client,
+        `SELECT COUNT(*) AS n FROM project_drive_operations WHERE workspace_id = '${WS}'`,
+      ),
+      0,
+    );
+    assert.deepEqual(driveExecutions, []);
   });
 });
 

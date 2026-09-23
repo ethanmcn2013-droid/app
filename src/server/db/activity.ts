@@ -49,7 +49,9 @@ export async function recordActivity(
       payload,
       createdAt: new Date(),
     });
-  } catch (err) {
-    console.warn("activity: record failed", err);
+  } catch {
+    // A failed Drizzle statement can include bound private Task values in its
+    // error. Activity is best-effort, so log only the fixed failure category.
+    console.warn("activity: record failed");
   }
 }

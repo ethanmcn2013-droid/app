@@ -1,0 +1,947 @@
+{
+  "capturedAt": "2026-09-04T19:54:46.540Z",
+  "sourceCommit": "8f5d676b",
+  "captures": [
+    {
+      "key": "valid-desktop",
+      "url": "http://127.0.0.1:4357/invite/review-valid",
+      "metrics": {
+        "document": {
+          "client": 1265,
+          "scroll": 1265
+        },
+        "heading": "Niamh O’Connell added you to The Orchard, events.",
+        "mainControls": [
+          {
+            "disabled": true,
+            "height": 44,
+            "href": null,
+            "minHeight": "44px",
+            "text": "Accept invite"
+          }
+        ],
+        "viewport": {
+          "height": 900,
+          "width": 1280
+        }
+      },
+      "logs": [
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:51:22.798Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        }
+      ]
+    },
+    {
+      "key": "valid-mobile",
+      "url": "http://127.0.0.1:4357/invite/review-valid",
+      "metrics": {
+        "document": {
+          "client": 375,
+          "scroll": 375
+        },
+        "heading": "Niamh O’Connell added you to The Orchard, events.",
+        "mainControls": [
+          {
+            "disabled": true,
+            "height": 44,
+            "href": null,
+            "minHeight": "44px",
+            "text": "Accept invite"
+          }
+        ],
+        "viewport": {
+          "height": 844,
+          "width": 390
+        }
+      },
+      "logs": [
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:51:22.798Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        }
+      ]
+    },
+    {
+      "key": "expired-mobile",
+      "url": "http://127.0.0.1:4357/invite/review-expired",
+      "metrics": {
+        "document": {
+          "client": 375,
+          "scroll": 375
+        },
+        "heading": "This invite has expired.",
+        "mainControls": [
+          {
+            "disabled": false,
+            "height": 19.5,
+            "href": "/",
+            "minHeight": "0px",
+            "text": "Back home"
+          }
+        ],
+        "viewport": {
+          "height": 844,
+          "width": 390
+        }
+      },
+      "logs": [
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:51:22.798Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        }
+      ]
+    },
+    {
+      "key": "expired-desktop",
+      "url": "http://127.0.0.1:4357/invite/review-expired",
+      "metrics": {
+        "document": {
+          "client": 1265,
+          "scroll": 1265
+        },
+        "heading": "This invite has expired.",
+        "mainControls": [
+          {
+            "disabled": false,
+            "height": 19.5,
+            "href": "/",
+            "minHeight": "0px",
+            "text": "Back home"
+          }
+        ],
+        "viewport": {
+          "height": 900,
+          "width": 1280
+        }
+      },
+      "logs": [
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:51:22.798Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        },
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:52:50.898Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        }
+      ]
+    },
+    {
+      "key": "accepted-desktop",
+      "url": "http://127.0.0.1:4357/invite/review-accepted",
+      "metrics": {
+        "document": {
+          "client": 1265,
+          "scroll": 1265
+        },
+        "heading": "This invite has already been accepted.",
+        "mainControls": [
+          {
+            "disabled": false,
+            "height": 19.5,
+            "href": "/sign-in?redirect_url=%2Finvite%2Freview-accepted",
+            "minHeight": "0px",
+            "text": "Sign in"
+          }
+        ],
+        "viewport": {
+          "height": 900,
+          "width": 1280
+        }
+      },
+      "logs": [
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:51:22.798Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        },
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:52:50.898Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        },
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:53:07.871Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        }
+      ]
+    },
+    {
+      "key": "accepted-mobile",
+      "url": "http://127.0.0.1:4357/invite/review-accepted",
+      "metrics": {
+        "document": {
+          "client": 375,
+          "scroll": 375
+        },
+        "heading": "This invite has already been accepted.",
+        "mainControls": [
+          {
+            "disabled": false,
+            "height": 19.5,
+            "href": "/sign-in?redirect_url=%2Finvite%2Freview-accepted",
+            "minHeight": "0px",
+            "text": "Sign in"
+          }
+        ],
+        "viewport": {
+          "height": 844,
+          "width": 390
+        }
+      },
+      "logs": [
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:51:22.798Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        },
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:52:50.898Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        },
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:53:07.871Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        }
+      ]
+    },
+    {
+      "key": "sign-in-mobile",
+      "url": "http://127.0.0.1:4357/sign-in?redirect_url=%2Finvite%2Freview-accepted",
+      "metrics": {
+        "document": {
+          "client": 390,
+          "scroll": 390
+        },
+        "heading": "You’re already signed in here.",
+        "mainControls": [
+          {
+            "disabled": false,
+            "height": 44,
+            "href": "/app/tasks",
+            "minHeight": "44px",
+            "text": "Open the demo workspace"
+          },
+          {
+            "disabled": false,
+            "height": 44,
+            "href": "/",
+            "minHeight": "44px",
+            "text": "Back to Signal Studio"
+          },
+          {
+            "disabled": false,
+            "height": 238,
+            "href": "https://signalstudio.ie",
+            "minHeight": "auto",
+            "text": "Signal Studio on iPhoneIn build. Scan to follow it."
+          },
+          {
+            "disabled": false,
+            "height": 18,
+            "href": "https://signalstudio.ie/privacy",
+            "minHeight": "auto",
+            "text": "Privacy"
+          },
+          {
+            "disabled": false,
+            "height": 18,
+            "href": "https://signalstudio.ie/terms",
+            "minHeight": "auto",
+            "text": "Terms"
+          },
+          {
+            "disabled": false,
+            "height": 18,
+            "href": "https://signalstudio.ie/security",
+            "minHeight": "auto",
+            "text": "Security"
+          }
+        ],
+        "viewport": {
+          "height": 844,
+          "width": 390
+        }
+      },
+      "logs": [
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:51:22.798Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        },
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:52:50.898Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        },
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:53:07.871Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        }
+      ]
+    },
+    {
+      "key": "sign-in-desktop",
+      "url": "http://127.0.0.1:4357/sign-in?redirect_url=%2Finvite%2Freview-accepted",
+      "metrics": {
+        "document": {
+          "client": 1280,
+          "scroll": 1280
+        },
+        "heading": "You’re already signed in here.",
+        "mainControls": [
+          {
+            "disabled": false,
+            "height": 44,
+            "href": "/app/tasks",
+            "minHeight": "44px",
+            "text": "Open the demo workspace"
+          },
+          {
+            "disabled": false,
+            "height": 44,
+            "href": "/",
+            "minHeight": "44px",
+            "text": "Back to Signal Studio"
+          },
+          {
+            "disabled": false,
+            "height": 238,
+            "href": "https://signalstudio.ie",
+            "minHeight": "0px",
+            "text": "Signal Studio on iPhoneIn build. Scan to follow it."
+          },
+          {
+            "disabled": false,
+            "height": 18,
+            "href": "https://signalstudio.ie/privacy",
+            "minHeight": "auto",
+            "text": "Privacy"
+          },
+          {
+            "disabled": false,
+            "height": 18,
+            "href": "https://signalstudio.ie/terms",
+            "minHeight": "auto",
+            "text": "Terms"
+          },
+          {
+            "disabled": false,
+            "height": 18,
+            "href": "https://signalstudio.ie/security",
+            "minHeight": "auto",
+            "text": "Security"
+          }
+        ],
+        "viewport": {
+          "height": 900,
+          "width": 1280
+        }
+      },
+      "logs": [
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:51:22.798Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        },
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:52:50.898Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        },
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:53:07.871Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        }
+      ]
+    },
+    {
+      "key": "sign-up-mobile",
+      "url": "http://127.0.0.1:4357/sign-up?use=wedding",
+      "metrics": {
+        "document": {
+          "client": 390,
+          "scroll": 390
+        },
+        "heading": "No account is needed here.",
+        "mainControls": [
+          {
+            "disabled": false,
+            "height": 44,
+            "href": "/app/tasks",
+            "minHeight": "44px",
+            "text": "Open the demo workspace"
+          },
+          {
+            "disabled": false,
+            "height": 44,
+            "href": "/",
+            "minHeight": "44px",
+            "text": "Back to Signal Studio"
+          },
+          {
+            "disabled": false,
+            "height": 238,
+            "href": "https://signalstudio.ie",
+            "minHeight": "auto",
+            "text": "Signal Studio on iPhoneIn build. Scan to follow it."
+          },
+          {
+            "disabled": false,
+            "height": 18,
+            "href": "https://signalstudio.ie/privacy",
+            "minHeight": "auto",
+            "text": "Privacy"
+          },
+          {
+            "disabled": false,
+            "height": 18,
+            "href": "https://signalstudio.ie/terms",
+            "minHeight": "auto",
+            "text": "Terms"
+          },
+          {
+            "disabled": false,
+            "height": 18,
+            "href": "https://signalstudio.ie/security",
+            "minHeight": "auto",
+            "text": "Security"
+          }
+        ],
+        "viewport": {
+          "height": 844,
+          "width": 390
+        }
+      },
+      "logs": [
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:51:22.798Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        },
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:52:50.898Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        },
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:53:07.871Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        },
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/sign-up\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:53:44.919Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        }
+      ]
+    },
+    {
+      "key": "sign-up-desktop",
+      "url": "http://127.0.0.1:4357/sign-up?use=wedding",
+      "metrics": {
+        "document": {
+          "client": 1280,
+          "scroll": 1280
+        },
+        "heading": "No account is needed here.",
+        "mainControls": [
+          {
+            "disabled": false,
+            "height": 44,
+            "href": "/app/tasks",
+            "minHeight": "44px",
+            "text": "Open the demo workspace"
+          },
+          {
+            "disabled": false,
+            "height": 44,
+            "href": "/",
+            "minHeight": "44px",
+            "text": "Back to Signal Studio"
+          },
+          {
+            "disabled": false,
+            "height": 238,
+            "href": "https://signalstudio.ie",
+            "minHeight": "0px",
+            "text": "Signal Studio on iPhoneIn build. Scan to follow it."
+          },
+          {
+            "disabled": false,
+            "height": 18,
+            "href": "https://signalstudio.ie/privacy",
+            "minHeight": "auto",
+            "text": "Privacy"
+          },
+          {
+            "disabled": false,
+            "height": 18,
+            "href": "https://signalstudio.ie/terms",
+            "minHeight": "auto",
+            "text": "Terms"
+          },
+          {
+            "disabled": false,
+            "height": 18,
+            "href": "https://signalstudio.ie/security",
+            "minHeight": "auto",
+            "text": "Security"
+          }
+        ],
+        "viewport": {
+          "height": 900,
+          "width": 1280
+        }
+      },
+      "logs": [
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:51:22.798Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        },
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:52:50.898Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        },
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:53:07.871Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        },
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/sign-up\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:53:44.919Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        }
+      ]
+    },
+    {
+      "key": "wrong-account-desktop",
+      "url": "http://127.0.0.1:4358/invite/review-wrong-account",
+      "metrics": {
+        "document": {
+          "client": 1265,
+          "scroll": 1265
+        },
+        "heading": "Niamh O’Connell added you to The Orchard, events.",
+        "mainControls": [
+          {
+            "disabled": false,
+            "height": 44,
+            "href": null,
+            "minHeight": "44px",
+            "text": "Sign out and use the invited account"
+          }
+        ],
+        "viewport": {
+          "height": 900,
+          "width": 1280
+        }
+      },
+      "logs": [
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:51:22.798Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        },
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:52:50.898Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        },
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:53:07.871Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        },
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/sign-up\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:53:44.919Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        }
+      ]
+    },
+    {
+      "key": "wrong-account-mobile",
+      "url": "http://127.0.0.1:4358/invite/review-wrong-account",
+      "metrics": {
+        "document": {
+          "client": 375,
+          "scroll": 375
+        },
+        "heading": "Niamh O’Connell added you to The Orchard, events.",
+        "mainControls": [
+          {
+            "disabled": false,
+            "height": 44,
+            "href": null,
+            "minHeight": "44px",
+            "text": "Sign out and use the invited account"
+          }
+        ],
+        "viewport": {
+          "height": 844,
+          "width": 390
+        }
+      },
+      "logs": [
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:51:22.798Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        },
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:52:50.898Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        },
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/invite/re...\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:53:07.871Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        },
+        {
+          "level": "error",
+          "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/sign-up\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html lang=\"en\" className=\"geist_fe37...\" suppressHydrationWarning={true}>\n                          <head>\n                            <GoogleTag>\n                            <style\n                              dangerouslySetInnerHTML={{\n+                               __html: \"html{background:#ffffff}html[data-theme=\\\"dark\\\"]{background:#0f0f10}\"\n-                               __html: \".vw-header__ads, .w-ad-box, .w-adsninja-video-player, .w-content--ad, .wAdver...\"\n                              }}\n-                             id=\"stndz-general-13\"\n                            >\n                            ...\n                          ...\n                  ...\n",
+          "timestamp": "2026-09-04T19:53:44.919Z",
+          "url": "http://127.0.0.1:4357/_next/static/chunks/0ab1_next_dist_1dysobv._.js"
+        }
+      ]
+    }
+  ],
+  "keyboard": [
+    {
+      "key": "valid-mobile-disabled-accept-skipped",
+      "focus": {
+        "boxShadow": "none",
+        "focusVisible": true,
+        "href": null,
+        "outline": "rgb(79, 70, 229) solid 2px",
+        "rect": {
+          "height": 48,
+          "width": 41.46875,
+          "x": 309.53125,
+          "y": 4
+        },
+        "tag": "BUTTON",
+        "text": ""
+      }
+    },
+    {
+      "key": "expired-desktop-back-home",
+      "focus": {
+        "boxShadow": "none",
+        "focusVisible": true,
+        "href": "/",
+        "outline": "rgb(79, 70, 229) solid 2px",
+        "rect": {
+          "height": 19.5,
+          "width": 68.21875,
+          "x": 377.5,
+          "y": 346.9375
+        },
+        "tag": "A",
+        "text": "Back home"
+      }
+    },
+    {
+      "key": "accepted-desktop-sign-in",
+      "focus": {
+        "boxShadow": "none",
+        "focusVisible": true,
+        "href": "/sign-in?redirect_url=%2Finvite%2Freview-accepted",
+        "outline": "rgb(79, 70, 229) solid 2px",
+        "rect": {
+          "height": 19.5,
+          "width": 41.671875,
+          "x": 377.5,
+          "y": 321.46875
+        },
+        "tag": "A",
+        "text": "Sign in"
+      }
+    },
+    {
+      "key": "accepted-mobile-previous-header-control",
+      "focus": {
+        "boxShadow": "none",
+        "focusVisible": true,
+        "href": null,
+        "outline": "rgb(79, 70, 229) solid 2px",
+        "rect": {
+          "height": 48,
+          "width": 41.46875,
+          "x": 309.53125,
+          "y": 4
+        },
+        "tag": "BUTTON",
+        "text": ""
+      }
+    },
+    {
+      "key": "accepted-mobile-sign-in",
+      "focus": {
+        "boxShadow": "none",
+        "focusVisible": true,
+        "href": "/sign-in?redirect_url=%2Finvite%2Freview-accepted",
+        "outline": "rgb(79, 70, 229) solid 2px",
+        "rect": {
+          "height": 19.5,
+          "width": 41.671875,
+          "x": 65,
+          "y": 418.140625
+        },
+        "tag": "A",
+        "text": "Sign in"
+      }
+    },
+    {
+      "key": "sign-in-desktop-primary",
+      "focus": {
+        "boxShadow": "none",
+        "focusVisible": true,
+        "href": "/app/tasks",
+        "outline": "rgb(79, 70, 229) solid 2px",
+        "rect": {
+          "height": 44,
+          "width": 366,
+          "x": 457,
+          "y": 461.015625
+        },
+        "tag": "A",
+        "text": "Open the demo workspace"
+      }
+    },
+    {
+      "key": "sign-in-desktop-secondary",
+      "focus": {
+        "boxShadow": "none",
+        "focusVisible": true,
+        "href": "/",
+        "outline": "rgb(63, 63, 70) solid 2px",
+        "rect": {
+          "height": 44,
+          "width": 366,
+          "x": 457,
+          "y": 513.015625
+        },
+        "tag": "A",
+        "text": "Back to Signal Studio"
+      }
+    },
+    {
+      "key": "sign-in-mobile-primary",
+      "focus": {
+        "boxShadow": "none",
+        "focusVisible": true,
+        "href": "/app/tasks",
+        "outline": "rgb(79, 70, 229) solid 2px",
+        "rect": {
+          "height": 44,
+          "width": 308,
+          "x": 41,
+          "y": 317.28125
+        },
+        "tag": "A",
+        "text": "Open the demo workspace"
+      }
+    },
+    {
+      "key": "sign-up-mobile-primary",
+      "focus": {
+        "boxShadow": "none",
+        "focusVisible": true,
+        "href": "/app/tasks",
+        "outline": "rgb(79, 70, 229) solid 2px",
+        "rect": {
+          "height": 44,
+          "width": 308,
+          "x": 41,
+          "y": 304.328125
+        },
+        "tag": "A",
+        "text": "Open the demo workspace"
+      }
+    },
+    {
+      "key": "sign-up-desktop-primary",
+      "focus": {
+        "boxShadow": "none",
+        "focusVisible": true,
+        "href": "/app/tasks",
+        "outline": "rgb(79, 70, 229) solid 2px",
+        "rect": {
+          "height": 44,
+          "width": 366,
+          "x": 457,
+          "y": 461.015625
+        },
+        "tag": "A",
+        "text": "Open the demo workspace"
+      }
+    },
+    {
+      "key": "sign-up-desktop-secondary",
+      "focus": {
+        "boxShadow": "none",
+        "focusVisible": true,
+        "href": "/",
+        "outline": "rgb(63, 63, 70) solid 2px",
+        "rect": {
+          "height": 44,
+          "width": 366,
+          "x": 457,
+          "y": 513.015625
+        },
+        "tag": "A",
+        "text": "Back to Signal Studio"
+      }
+    },
+    {
+      "key": "wrong-account-desktop-switch-account",
+      "focus": {
+        "boxShadow": "none",
+        "focusVisible": true,
+        "href": null,
+        "outline": "rgb(79, 70, 229) solid 2px",
+        "rect": {
+          "height": 44,
+          "width": 219.4375,
+          "x": 394.5,
+          "y": 541.21875
+        },
+        "tag": "BUTTON",
+        "text": "Sign out and use the invited account"
+      }
+    },
+    {
+      "key": "wrong-account-mobile-previous-header-control",
+      "focus": {
+        "boxShadow": "none",
+        "focusVisible": true,
+        "href": null,
+        "outline": "rgb(79, 70, 229) solid 2px",
+        "rect": {
+          "height": 48,
+          "width": 42.078125,
+          "x": 308.921875,
+          "y": 4
+        },
+        "tag": "BUTTON",
+        "text": ""
+      }
+    },
+    {
+      "key": "wrong-account-mobile-switch-account",
+      "focus": {
+        "boxShadow": "none",
+        "focusVisible": true,
+        "href": null,
+        "outline": "rgb(79, 70, 229) solid 2px",
+        "rect": {
+          "height": 44,
+          "width": 211,
+          "x": 82,
+          "y": 587.671875
+        },
+        "tag": "BUTTON",
+        "text": "Sign out and use the invited account"
+      }
+    },
+    {
+      "key": "valid-mobile-disabled-accept-skipped-to-footer",
+      "focus": {
+        "boxShadow": "none",
+        "focusVisible": true,
+        "href": "/",
+        "outline": "rgb(79, 70, 229) solid 2px",
+        "rect": {
+          "height": 32,
+          "width": 68.15625,
+          "x": 24,
+          "y": 470.109375
+        },
+        "tag": "A",
+        "text": "tasks"
+      }
+    },
+    {
+      "key": "valid-desktop-disabled-accept-skipped-to-footer",
+      "focus": {
+        "boxShadow": "none",
+        "focusVisible": true,
+        "href": "/",
+        "outline": "rgb(79, 70, 229) solid 2px",
+        "rect": {
+          "height": 32,
+          "width": 68.15625,
+          "x": 36.5,
+          "y": 867.9375
+        },
+        "tag": "A",
+        "text": "tasks"
+      }
+    },
+    {
+      "key": "expired-mobile-back-home",
+      "focus": {
+        "boxShadow": "none",
+        "focusVisible": true,
+        "href": "/",
+        "outline": "rgb(79, 70, 229) solid 2px",
+        "rect": {
+          "height": 19.5,
+          "width": 68.21875,
+          "x": 65,
+          "y": 393.0625
+        },
+        "tag": "A",
+        "text": "Back home"
+      }
+    }
+  ]
+}

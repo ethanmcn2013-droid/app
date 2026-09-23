@@ -1,0 +1,709 @@
+{
+  "status": "PASS — bounded component renewal",
+  "verifiedAt": "2026-09-05T09:49:28.895Z",
+  "source": "8172364e3f7ba8332b4ce7a73ae4563a34b7867c",
+  "currentHead": "8172364e3f7ba8332b4ce7a73ae4563a34b7867c",
+  "buildId": "wnk1OREKC5EKuma6I3VoO",
+  "sourceInputsUnchanged": 10,
+  "normalAssetsUnchanged": 23,
+  "cssFiles": 12,
+  "fontFiles": 11,
+  "componentStateViewportChecks": 32,
+  "keyboardChecks": 3,
+  "screenshots": 56,
+  "computedTapChecks": 59,
+  "tapTargets": [
+    {
+      "viewport": "desktop",
+      "state": "missing",
+      "tag": "INPUT",
+      "text": "Your wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] min-w-0 rounded-lg border border-line-soft bg-bg px-3 text-[14px] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    },
+    {
+      "viewport": "desktop",
+      "state": "missing",
+      "tag": "BUTTON",
+      "text": "Save wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] rounded-lg bg-brand px-4 text-[13px] font-medium text-white disabled:opacity-60"
+    },
+    {
+      "viewport": "desktop",
+      "state": "saved-later",
+      "tag": "INPUT",
+      "text": "Your wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] min-w-0 rounded-lg border border-line-soft bg-bg px-3 text-[14px] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    },
+    {
+      "viewport": "desktop",
+      "state": "saved-later",
+      "tag": "BUTTON",
+      "text": "Save wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] rounded-lg bg-brand px-4 text-[13px] font-medium text-white disabled:opacity-60"
+    },
+    {
+      "viewport": "desktop",
+      "state": "saved-later",
+      "tag": "BUTTON",
+      "text": "Clear date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] text-[13px] text-ink-soft underline underline-offset-2"
+    },
+    {
+      "viewport": "desktop",
+      "state": "saved-earlier",
+      "tag": "INPUT",
+      "text": "Your wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] min-w-0 rounded-lg border border-line-soft bg-bg px-3 text-[14px] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    },
+    {
+      "viewport": "desktop",
+      "state": "saved-earlier",
+      "tag": "BUTTON",
+      "text": "Save wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] rounded-lg bg-brand px-4 text-[13px] font-medium text-white disabled:opacity-60"
+    },
+    {
+      "viewport": "desktop",
+      "state": "saved-earlier",
+      "tag": "BUTTON",
+      "text": "Clear date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] text-[13px] text-ink-soft underline underline-offset-2"
+    },
+    {
+      "viewport": "desktop",
+      "state": "cleared",
+      "tag": "INPUT",
+      "text": "Your wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] min-w-0 rounded-lg border border-line-soft bg-bg px-3 text-[14px] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    },
+    {
+      "viewport": "desktop",
+      "state": "cleared",
+      "tag": "BUTTON",
+      "text": "Save wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] rounded-lg bg-brand px-4 text-[13px] font-medium text-white disabled:opacity-60"
+    },
+    {
+      "viewport": "desktop",
+      "state": "failure-retains-grant-and-draft",
+      "tag": "INPUT",
+      "text": "Your wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] min-w-0 rounded-lg border border-line-soft bg-bg px-3 text-[14px] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    },
+    {
+      "viewport": "desktop",
+      "state": "failure-retains-grant-and-draft",
+      "tag": "BUTTON",
+      "text": "Save wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] rounded-lg bg-brand px-4 text-[13px] font-medium text-white disabled:opacity-60"
+    },
+    {
+      "viewport": "desktop",
+      "state": "failure-retains-grant-and-draft",
+      "tag": "BUTTON",
+      "text": "Clear date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] text-[13px] text-ink-soft underline underline-offset-2"
+    },
+    {
+      "viewport": "desktop",
+      "state": "retry-repaired",
+      "tag": "INPUT",
+      "text": "Your wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] min-w-0 rounded-lg border border-line-soft bg-bg px-3 text-[14px] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    },
+    {
+      "viewport": "desktop",
+      "state": "retry-repaired",
+      "tag": "BUTTON",
+      "text": "Save wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] rounded-lg bg-brand px-4 text-[13px] font-medium text-white disabled:opacity-60"
+    },
+    {
+      "viewport": "desktop",
+      "state": "retry-repaired",
+      "tag": "BUTTON",
+      "text": "Clear date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] text-[13px] text-ink-soft underline underline-offset-2"
+    },
+    {
+      "viewport": "desktop",
+      "state": "expired",
+      "tag": "INPUT",
+      "text": "Your wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] min-w-0 rounded-lg border border-line-soft bg-bg px-3 text-[14px] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    },
+    {
+      "viewport": "desktop",
+      "state": "expired",
+      "tag": "BUTTON",
+      "text": "Save wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] rounded-lg bg-brand px-4 text-[13px] font-medium text-white disabled:opacity-60"
+    },
+    {
+      "viewport": "desktop",
+      "state": "revoked",
+      "tag": "INPUT",
+      "text": "Your wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] min-w-0 rounded-lg border border-line-soft bg-bg px-3 text-[14px] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    },
+    {
+      "viewport": "desktop",
+      "state": "revoked",
+      "tag": "BUTTON",
+      "text": "Save wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] rounded-lg bg-brand px-4 text-[13px] font-medium text-white disabled:opacity-60"
+    },
+    {
+      "viewport": "desktop",
+      "state": "revoked-date-saved",
+      "tag": "INPUT",
+      "text": "Your wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] min-w-0 rounded-lg border border-line-soft bg-bg px-3 text-[14px] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    },
+    {
+      "viewport": "desktop",
+      "state": "revoked-date-saved",
+      "tag": "BUTTON",
+      "text": "Save wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] rounded-lg bg-brand px-4 text-[13px] font-medium text-white disabled:opacity-60"
+    },
+    {
+      "viewport": "desktop",
+      "state": "revoked-date-saved",
+      "tag": "BUTTON",
+      "text": "Clear date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] text-[13px] text-ink-soft underline underline-offset-2"
+    },
+    {
+      "viewport": "desktop",
+      "state": "arrival",
+      "tag": "A",
+      "text": "Add your wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "inline-flex min-h-[44px] items-center font-medium text-brand underline underline-offset-4"
+    },
+    {
+      "viewport": "desktop",
+      "state": "arrival",
+      "tag": "A",
+      "text": "Add or update your wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "mt-2 inline-flex min-h-[44px] items-center text-[13px] font-medium text-brand underline underline-offset-4"
+    },
+    {
+      "viewport": "desktop",
+      "state": "dismissed-still-discoverable",
+      "tag": "A",
+      "text": "Add your wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "inline-flex min-h-[44px] items-center font-medium text-brand underline underline-offset-4"
+    },
+    {
+      "viewport": "desktop",
+      "state": "member-arrival-view-only",
+      "tag": "A",
+      "text": "View wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "inline-flex min-h-[44px] items-center font-medium text-brand underline underline-offset-4"
+    },
+    {
+      "viewport": "desktop",
+      "state": "member-arrival-view-only",
+      "tag": "A",
+      "text": "View wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "mt-2 inline-flex min-h-[44px] items-center text-[13px] font-medium text-brand underline underline-offset-4"
+    },
+    {
+      "viewport": "desktop",
+      "state": "member-dismissed-view-only",
+      "tag": "A",
+      "text": "View wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "inline-flex min-h-[44px] items-center font-medium text-brand underline underline-offset-4"
+    },
+    {
+      "viewport": "mobile",
+      "state": "missing",
+      "tag": "INPUT",
+      "text": "Your wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] min-w-0 rounded-lg border border-line-soft bg-bg px-3 text-[14px] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    },
+    {
+      "viewport": "mobile",
+      "state": "missing",
+      "tag": "BUTTON",
+      "text": "Save wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] rounded-lg bg-brand px-4 text-[13px] font-medium text-white disabled:opacity-60"
+    },
+    {
+      "viewport": "mobile",
+      "state": "saved-later",
+      "tag": "INPUT",
+      "text": "Your wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] min-w-0 rounded-lg border border-line-soft bg-bg px-3 text-[14px] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    },
+    {
+      "viewport": "mobile",
+      "state": "saved-later",
+      "tag": "BUTTON",
+      "text": "Save wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] rounded-lg bg-brand px-4 text-[13px] font-medium text-white disabled:opacity-60"
+    },
+    {
+      "viewport": "mobile",
+      "state": "saved-later",
+      "tag": "BUTTON",
+      "text": "Clear date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] text-[13px] text-ink-soft underline underline-offset-2"
+    },
+    {
+      "viewport": "mobile",
+      "state": "saved-earlier",
+      "tag": "INPUT",
+      "text": "Your wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] min-w-0 rounded-lg border border-line-soft bg-bg px-3 text-[14px] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    },
+    {
+      "viewport": "mobile",
+      "state": "saved-earlier",
+      "tag": "BUTTON",
+      "text": "Save wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] rounded-lg bg-brand px-4 text-[13px] font-medium text-white disabled:opacity-60"
+    },
+    {
+      "viewport": "mobile",
+      "state": "saved-earlier",
+      "tag": "BUTTON",
+      "text": "Clear date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] text-[13px] text-ink-soft underline underline-offset-2"
+    },
+    {
+      "viewport": "mobile",
+      "state": "cleared",
+      "tag": "INPUT",
+      "text": "Your wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] min-w-0 rounded-lg border border-line-soft bg-bg px-3 text-[14px] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    },
+    {
+      "viewport": "mobile",
+      "state": "cleared",
+      "tag": "BUTTON",
+      "text": "Save wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] rounded-lg bg-brand px-4 text-[13px] font-medium text-white disabled:opacity-60"
+    },
+    {
+      "viewport": "mobile",
+      "state": "failure-retains-grant-and-draft",
+      "tag": "INPUT",
+      "text": "Your wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] min-w-0 rounded-lg border border-line-soft bg-bg px-3 text-[14px] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    },
+    {
+      "viewport": "mobile",
+      "state": "failure-retains-grant-and-draft",
+      "tag": "BUTTON",
+      "text": "Save wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] rounded-lg bg-brand px-4 text-[13px] font-medium text-white disabled:opacity-60"
+    },
+    {
+      "viewport": "mobile",
+      "state": "failure-retains-grant-and-draft",
+      "tag": "BUTTON",
+      "text": "Clear date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] text-[13px] text-ink-soft underline underline-offset-2"
+    },
+    {
+      "viewport": "mobile",
+      "state": "retry-repaired",
+      "tag": "INPUT",
+      "text": "Your wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] min-w-0 rounded-lg border border-line-soft bg-bg px-3 text-[14px] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    },
+    {
+      "viewport": "mobile",
+      "state": "retry-repaired",
+      "tag": "BUTTON",
+      "text": "Save wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] rounded-lg bg-brand px-4 text-[13px] font-medium text-white disabled:opacity-60"
+    },
+    {
+      "viewport": "mobile",
+      "state": "retry-repaired",
+      "tag": "BUTTON",
+      "text": "Clear date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] text-[13px] text-ink-soft underline underline-offset-2"
+    },
+    {
+      "viewport": "mobile",
+      "state": "expired",
+      "tag": "INPUT",
+      "text": "Your wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] min-w-0 rounded-lg border border-line-soft bg-bg px-3 text-[14px] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    },
+    {
+      "viewport": "mobile",
+      "state": "expired",
+      "tag": "BUTTON",
+      "text": "Save wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] rounded-lg bg-brand px-4 text-[13px] font-medium text-white disabled:opacity-60"
+    },
+    {
+      "viewport": "mobile",
+      "state": "revoked",
+      "tag": "INPUT",
+      "text": "Your wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] min-w-0 rounded-lg border border-line-soft bg-bg px-3 text-[14px] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    },
+    {
+      "viewport": "mobile",
+      "state": "revoked",
+      "tag": "BUTTON",
+      "text": "Save wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] rounded-lg bg-brand px-4 text-[13px] font-medium text-white disabled:opacity-60"
+    },
+    {
+      "viewport": "mobile",
+      "state": "revoked",
+      "tag": "BUTTON",
+      "text": "Clear date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] text-[13px] text-ink-soft underline underline-offset-2"
+    },
+    {
+      "viewport": "mobile",
+      "state": "revoked-date-saved",
+      "tag": "INPUT",
+      "text": "Your wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] min-w-0 rounded-lg border border-line-soft bg-bg px-3 text-[14px] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    },
+    {
+      "viewport": "mobile",
+      "state": "revoked-date-saved",
+      "tag": "BUTTON",
+      "text": "Save wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] rounded-lg bg-brand px-4 text-[13px] font-medium text-white disabled:opacity-60"
+    },
+    {
+      "viewport": "mobile",
+      "state": "revoked-date-saved",
+      "tag": "BUTTON",
+      "text": "Clear date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "min-h-[44px] text-[13px] text-ink-soft underline underline-offset-2"
+    },
+    {
+      "viewport": "mobile",
+      "state": "arrival",
+      "tag": "A",
+      "text": "Add your wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "inline-flex min-h-[44px] items-center font-medium text-brand underline underline-offset-4"
+    },
+    {
+      "viewport": "mobile",
+      "state": "arrival",
+      "tag": "A",
+      "text": "Add or update your wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "mt-2 inline-flex min-h-[44px] items-center text-[13px] font-medium text-brand underline underline-offset-4"
+    },
+    {
+      "viewport": "mobile",
+      "state": "dismissed-still-discoverable",
+      "tag": "A",
+      "text": "Add your wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "inline-flex min-h-[44px] items-center font-medium text-brand underline underline-offset-4"
+    },
+    {
+      "viewport": "mobile",
+      "state": "member-arrival-view-only",
+      "tag": "A",
+      "text": "View wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "inline-flex min-h-[44px] items-center font-medium text-brand underline underline-offset-4"
+    },
+    {
+      "viewport": "mobile",
+      "state": "member-arrival-view-only",
+      "tag": "A",
+      "text": "View wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "mt-2 inline-flex min-h-[44px] items-center text-[13px] font-medium text-brand underline underline-offset-4"
+    },
+    {
+      "viewport": "mobile",
+      "state": "member-dismissed-view-only",
+      "tag": "A",
+      "text": "View wedding date",
+      "minHeight": "44px",
+      "height": 44,
+      "classes": "inline-flex min-h-[44px] items-center font-medium text-brand underline underline-offset-4"
+    }
+  ],
+  "fonts": [
+    "Geist, Geist, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+  ],
+  "geistReadyForAllStates": true,
+  "mobileAndDesktopHorizontalOverflow": "none in all32 retained assertions",
+  "browserErrorsIn32StateRun": {
+    "console": 0,
+    "page": 0,
+    "http": 0,
+    "external": 0
+  },
+  "keyboardConsoleScope": "Original keyboard helper asserts interactions and zero external requests; it does not separately collect console/page errors.",
+  "visualInspection": {
+    "method": "Read10 saved PNGs through local view_image after final capture",
+    "files": [
+      {
+        "file": "missing-desktop-form.png",
+        "sha256": "f85b2b4ab4337d3473c9369fe91c95f019b767e0ec44f1d9a74b018f5c91fe85"
+      },
+      {
+        "file": "saved-earlier-mobile-form.png",
+        "sha256": "404c8d4d935b0bd0df873a01c44d72e4fbe868e07bce3873d3cec72f9fe8746d"
+      },
+      {
+        "file": "arrival-mobile.png",
+        "sha256": "8210cd33cd8d6c9f2a41bc66b45e5754ef953f1a093c8bd7331a6a7dcbaf5430"
+      },
+      {
+        "file": "member-arrival-view-only-desktop.png",
+        "sha256": "b19e47ec17e2b43a9989fb6b832018a435b9d2e1eb283d0bda65b7c3a7c8a9ed"
+      },
+      {
+        "file": "failure-retains-grant-and-draft-mobile-form.png",
+        "sha256": "b4e8bc43a0bb8b7cf66eb0506ca92c9d05924816aec3c32650413603262b2fd5"
+      },
+      {
+        "file": "retry-repaired-desktop-form.png",
+        "sha256": "75e621d76aa21de0b34d44e71cc401cde29f69e127312a6e49571ce9cc69c2a4"
+      },
+      {
+        "file": "revoked-date-saved-mobile-form.png",
+        "sha256": "93a3e8f224a0c546f576fcbd218f485b33ea2f2a77dff004ab4eef067923c351"
+      },
+      {
+        "file": "member-entry-to-read-only-form-mobile-form.png",
+        "sha256": "190a54960ecca824b78faf44fb726d881dae39f93b279ef863fe74bdf83a9810"
+      },
+      {
+        "file": "keyboard-save-mobile.png",
+        "sha256": "89379f9e0a30cea602d79a0db50d305559dc7ec6b7e4626751e8eaa64f312b5e"
+      },
+      {
+        "file": "keyboard-view-mobile.png",
+        "sha256": "71102f1c4b8042b6980082d2ec126a659a08cefb0445169cc9e1e7bd383ce4d6"
+      }
+    ],
+    "observation": "Date controls and text are legible at both widths; mobile wrapping and visible keyboard focus are intact. Manager and member arrival labels match capabilities. Error retains draft and active receipt; revoked state stays explicit; previous generic project target is clearly separate."
+  },
+  "fixtureServer": {
+    "pid": 21944,
+    "port": 4494,
+    "stopped": true
+  },
+  "gates": {
+    "prepare-source": {
+      "exitCode": 0,
+      "receipt": "prepare-source.receipt.json"
+    },
+    "bind-build": {
+      "exitCode": 0,
+      "receipt": "bind-build.receipt.json"
+    },
+    "seed": {
+      "exitCode": 0,
+      "receipt": "seed.receipt.json"
+    },
+    "capture": {
+      "exitCode": 0,
+      "receipt": "capture.receipt.json"
+    },
+    "keyboard": {
+      "exitCode": 0,
+      "receipt": "keyboard.receipt.json"
+    },
+    "stop": {
+      "exitCode": 0,
+      "receipt": "stop.receipt.json"
+    }
+  },
+  "preserved": [
+    {
+      "root": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\outputs\\sponsored-wedding-date-2026-09-05",
+      "files": 189,
+      "manifestSha256": "c83d3427da25f5fe4d81e3cf66bb0ff997cb20da8ac201e5dbdeb51ffd5156ec",
+      "allMatch": true
+    },
+    {
+      "root": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\outputs\\sponsored-wedding-date-legacy-retirement-2026-09-05",
+      "files": 45,
+      "manifestSha256": "332206d5b759fe307f5daa0174d4e1d54c6557ea8f71f075c3d11a0504e8f58d",
+      "allMatch": true
+    },
+    {
+      "root": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\outputs\\wdate-01-fresh-access-readback-2026-09-05",
+      "files": 61,
+      "manifestSha256": "d09abf8360a4d5236d363ef6a1f9a7c10451204c6271593c430f647f8a1b8ace",
+      "allMatch": true
+    },
+    {
+      "root": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\outputs\\wdate-02-save-ordering-2026-09-05",
+      "files": 102,
+      "manifestSha256": "f0bbd78e430342c30e81d7b2be970a42250601738bae9e3571c420a75b7cc6ea",
+      "allMatch": true
+    },
+    {
+      "root": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\outputs\\sponsored-wedding-date-ffef-renewal-2026-09-05",
+      "files": 142,
+      "manifestSha256": "bc5e393ee3a4021a53708272567fef125ece7679177ef5bce0022c4f015aaca8",
+      "allMatch": true
+    },
+    {
+      "root": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\outputs\\sponsored-wedding-date-7e199-renewal-2026-09-05",
+      "files": 69,
+      "manifestSha256": "ddcdb4446db068a345e2472a6b229bae43e72070288f8a1db3451e714aab4d9e",
+      "allMatch": true
+    }
+  ],
+  "commands": [
+    {
+      "exe": "git",
+      "args": [
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/feat-january-final-journeys",
+      "exitCode": 0,
+      "stdout": "8172364e3f7ba8332b4ce7a73ae4563a34b7867c\n",
+      "stderr": ""
+    },
+    {
+      "exe": "git",
+      "args": [
+        "diff",
+        "--name-only",
+        "8172364e3f7ba8332b4ce7a73ae4563a34b7867c",
+        "--",
+        "src"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/feat-january-final-journeys",
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "limits": [
+    "Actual components and action body with explicitly retained fixture adapters; no full Next/Clerk, Flight/session, provider or customer proof.",
+    "Remote-client transaction contention remains unverified; local SQLite failure/repair control is bounded to the isolated trigger.",
+    "No new review of WDATE01/02 ordering: retained independent c1 verification remains separate.",
+    "No source or package edits and no broad gates rerun; final receiving registration, full suites and council remain principal-owned.",
+    "Original Next/Clerk fixture denial was an intentional localhost browser guard/missing configuration, not automatic approval rejection; no retry occurred. Stopped RC3 and Atlas were not retried."
+  ]
+}

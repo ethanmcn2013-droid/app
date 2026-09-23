@@ -1,0 +1,26 @@
+{
+  "date": "2026-09-12",
+  "scope": "Local Messages draft continuity and capacity subtask",
+  "acceptedLogicCommit": "6d411c72788e62ea3ac1a839f9f971cc4fdd10fe",
+  "visualCommit": "115344b8",
+  "independentReview": "Sol accepted; 10 focused model/render tests, scoped ESLint and full TypeScript passed",
+  "browser": {
+    "origin": "http://127.0.0.1:3191",
+    "synthetic": true,
+    "navigation": "Messages to canonical Task Discussion and back retained the exact draft and Maya's selected recipient ID",
+    "capacity": "One Project draft plus 19 reply drafts blocked a 21st scope without eviction; all 20 entries remained reachable",
+    "reopen": "Open saved conversation 2 selected topic 1 and restored Saved reply draft 1",
+    "discard": "Explicit discard freed one slot; the new reply draft could then be entered",
+    "phoneReturn": "Inserted a newline; isolated conversation_messages count remained 20",
+    "viewport": { "width": 390, "height": 844, "documentScrollWidth": 390, "dialogClientHeight": 844, "dialogScrollHeight": 844, "savedListClientHeight": 234, "savedListScrollHeight": 739 },
+    "screenshot": "draft-capacity-mobile.png",
+    "screenshotSha256": "31b1896aff7705ccc2dad1c5d0cba9b806778611386116b3510f0e1dc340b10d"
+  },
+  "limitations": [
+    "Real Clerk account lifecycle was inspected in code, not exercised with a live account",
+    "Task Discussion correction and its cache integration remain a separate open packet",
+    "The final combined Messages and Discussion draft inventory requires PC14 verification",
+    "No physical keyboard, IME, screen-reader or human study acceptance is implied",
+    "No production, provider or remote database acceptance is implied"
+  ]
+}

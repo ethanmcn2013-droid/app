@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.connections.storage-owner-change",
+  "source": "tasks/src/components/app/settings/sections/drive-handover-view.tsx",
+  "materialityHash": "8d7e84db7d7d8f9b",
+  "reviewedAt": "2026-09-05",
+  "reviewer": "Principal integrator under delegated implementation authority, with independent Poincare UI review",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-776b131ccc1d285f9c76fe35-32b4464d184c12d8.json",
+    "attestationSha256": "ea9f9f829defb4ca47457b3a02ea3ee6893fbf52f2a0e9ef57a233cdaf4a729d",
+    "runId": "tasks-playwright-776b131ccc1d285f9c76fe35",
+    "canonicalEvidenceSha256": "776b131ccc1d285f9c76fe35d39885f359fa005fffca90ce659cd2384a783241",
+    "rawArtifactSha256": "32b4464d184c12d8c5bfb077ae842c4dc68e39d89e3dee8403fc198652acc90c",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.surface.task-detail-panel",
+    "caseName": "populated task",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "The remounted Review owner change or Continue saved change trigger regains keyboard focus after Go back. Source8ae94ffb is merged without alteration in29193167. Actual component checks at390/1440 reproduce parent focus on BODY and confirm restored focus in the fixed source. The owning76-case matrix and14 supplemental geometry/theme/focus checks, actual source hashes and normal-build CSS/fonts are preserved in experience/reviews/january-drive-ui-acceptance-2026-09-05. Principal inspected the390px focused review trigger. Independent review passes35 focused and4 additional controls. The linked132-case artifact is the preceding8172/6eb suite regression context only; it does not exercise this handover patch or prove the new candidate built.",
+  "decision": "Accept only the source change and its scoped actual-component UI evidence. Preserve partial coverage, design scores, approvals and outstanding states. Runtime identity/actions/transfer ports are explicit synthetic adapters; no Next/Clerk/OAuth/Google/provider lifecycle is proven. Persistent unconfirmed-disconnect visibility after remount remains a separate unresolved read-model investigation. Complete current candidate Linux, receiving, human, screen-reader and council acceptance remain open. No replacement of held RC3/Atlas actions and no production activation."
+}

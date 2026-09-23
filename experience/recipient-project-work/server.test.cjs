@@ -1,0 +1,195 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- Real SQLite/source fixture, also imported by the default route contract gate. */
+const { test } = require('node:test'), assert = require('node:assert/strict');
+const { recipientFixture } = require('./fixture.cjs');
+const { createRequire } = require('node:module'), path = require('node:path');
+const dep = createRequire(path.join(__dirname, '../../package.json'));
+const { renderToStaticMarkup } = dep('react-dom/server');
+
+test('My work greets only its current member by a known profile name and keeps missing names neutral', async () => {
+  const f = await recipientFixture();
+  try {
+    await f.client.executeMultiple(`
+      UPDATE users SET name='Blair Creator' WHERE id='creator';
+      INSERT INTO tasks(id,workspace_id,title,lane,priority,assignees) VALUES
+        ('greeting-task','project-b','A useful assigned action','todo','p2','["recipient"]');
+    `);
+    const MyWork = f.load('src/components/app/my-week/my-week-app').MyWeekApp;
+    const render = () => renderToStaticMarkup(f.React.createElement(MyWork));
+    for (const [storedName, expected, knownName] of [
+      ['  Alex Recipient  ', 'Good afternoon, Alex.', 'Alex Recipient'],
+      ['Someone', 'Good afternoon, Someone.', 'Someone'],
+      [null, 'Good afternoon.', null],
+      ['   ', 'Good afternoon.', null],
+    ]) {
+      await f.client.execute({ sql: 'UPDATE users SET name=? WHERE id=?', args: [storedName, 'recipient'] });
+      await f.reload();
+      assert.equal(f.state.members.find(member => member.id === 'recipient').knownName, knownName);
+      const html = render();
+      assert.ok(html.includes(expected), expected);
+      assert.doesNotMatch(html, /Good afternoon, Blair|Good afternoon, recipient/);
+      if (!knownName) assert.doesNotMatch(html, /Good afternoon, Someone/);
+    }
+    f.state.members = f.state.members.filter(member => member.id !== 'recipient');
+    assert.ok(render().includes('Good afternoon.'), 'a missing current row cannot borrow the owner name');
+  } finally { f.close(); }
+});
+
+test('My work preserves the canonical demo name through the same member data without a database read', async () => {
+  const f = await recipientFixture();
+  try {
+    f.state.demo = true;
+    const { DEMO_USER_ID } = f.load('src/server/demo/tasks-demo');
+    const { REVIEW_SUITE_FIXTURE } = f.load('src/lib/review-suite-fixture');
+    const members = f.load('src/server/db/members');
+    f.db.select = () => { throw Error('Demo member metadata must not query the database'); };
+    f.state.actor = DEMO_USER_ID;
+    f.state.members = await members.getWorkspaceMemberMeta('demo-project');
+    f.state.tasks = [{ id: 'demo-greeting', title: 'Sample assigned action', lane: 'todo', priority: 'p2', assignees: [DEMO_USER_ID] }];
+    const MyWork = f.load('src/components/app/my-week/my-week-app').MyWeekApp;
+    const html = renderToStaticMarkup(f.React.createElement(MyWork));
+    assert.ok(html.includes(`Good afternoon, ${REVIEW_SUITE_FIXTURE.user.name.split(' ')[0]}.`));
+    assert.equal(f.state.authCalls, 0);
+  } finally { f.close(); }
+});
+
+test('actual task-focus page learns stored project before the mapped Task; Notes/Home links cannot become false not-found', async () => {
+  const f = await recipientFixture();
+  try {
+    await f.client.execute("INSERT INTO tasks(id,workspace_id,title,lane,priority) VALUES ('from-notes','project-b','Persisted linked work','todo','p2')");
+    const queries = f.load('src/server/db/queries'), detailReads = [];
+    f.overrides.set('src/server/db/queries', { ...queries, getTaskDetail: async (...args) => {
+      detailReads.push(args);return queries.getTaskDetail(...args);
+    } });
+    const page = f.load('src/app/app/task/[id]/page').default;
+    const read = () => page({ params: Promise.resolve({ id: 'from-notes' }) });
+    const renderPage = element => renderToStaticMarkup(element.props.children);
+    await assert.rejects(read(), error => {
+      const url = new URL(error.href, 'https://fixture.invalid');
+      assert.equal(url.pathname, '/app/tasks');
+      assert.equal(url.searchParams.get('workspaceId'), 'project-b');
+      assert.equal(url.searchParams.get('task'), 'from-notes');
+      return true;
+    });
+    assert.deepEqual(detailReads, [['from-notes', 'project-b']]);
+    assert.equal(f.state.cookieWrites.length, 0);
+    f.state.actor = 'outsider';
+    const forbidden = renderPage(await read());
+    const missing = renderPage(await page({ params: Promise.resolve({ id: 'absent' }) }));
+    assert.equal(forbidden, missing);assert.doesNotMatch(forbidden, /Persisted linked work/);
+    assert.equal(detailReads.length, 1, 'no content query before exact-project authorization');
+    f.state.actor = 'recipient';
+    await f.client.execute("UPDATE tasks SET archived_at=1 WHERE id='from-notes'");
+    assert.match(renderPage(await read()), /This task is archived/);
+    assert.equal(detailReads.length, 2);
+    await f.client.execute("DELETE FROM workspace_members WHERE workspace_id='project-b' AND user_id='recipient'");
+    assert.equal(renderPage(await read()), missing);
+    assert.equal(detailReads.length, 2, 'removal denies the next content query');
+    assert.equal(f.state.cookieWrites.length, 0);
+  } finally { f.close(); }
+});
+
+test('actual Tasks and My work routes consume authorized B, reject foreign/removed/malformed targets, and never write on GET', async () => {
+  const f = await recipientFixture();
+  try {
+    const guard = f.load('src/components/app/tasks-project-arrival');
+    const mount = f.load('src/components/app/tasks-runtime-mount');
+    for (const surface of ['tasks', 'my-tasks']) {
+      const page = f.load(`src/app/app/${surface}/page`).default;
+      f.state.v3 = true;
+      const element = await page({ searchParams: Promise.resolve({ workspaceId: 'project-b' }) });
+      assert.equal(element.type, mount.TasksRuntimePageMount);
+      // Execute the actual page mount. Its shell must receive explicit B;
+      // it independently proves membership before getTasks (source contract).
+      const shell = await element.type(element.props);
+      assert.equal(shell.props.requestedProjectId, 'project-b');
+      assert.equal((await guard.resolveTasksArrival('project-b')).project.project.role, 'member');
+      if (surface === 'my-tasks') assert.equal(element.props.children[1].props.canSetUpProject, false);
+      for (const requested of ['project-c', 'missing', ' bad ', ['project-b', 'project-a']]) {
+        const refused = await page({ searchParams: Promise.resolve({ workspaceId: requested }) });
+        const html = renderToStaticMarkup(refused);
+        assert.match(html, /Project unavailable/);
+        assert.doesNotMatch(html, /Private C|Project A|Project B|data-board/);
+      }
+      f.state.v3 = false;
+      const mismatch = await page({ searchParams: Promise.resolve({ workspaceId: 'project-b' }) });
+      assert.equal(mismatch.type, guard.TasksArrivalRefusal);
+      assert.match(renderToStaticMarkup(mismatch), /Open Project B/);
+      assert.equal(f.state.cookieWrites.length, 0);
+    }
+    await f.client.execute("DELETE FROM workspace_members WHERE workspace_id='project-b' AND user_id='recipient'");
+    assert.equal((await guard.resolveTasksArrival('project-b')).kind, 'unavailable');
+    assert.equal(f.state.cookieWrites.length, 0);
+  } finally { f.close(); }
+});
+
+test('explicit legacy recovery reauthorizes, writes both protected preferences, and preserves only typed task/My work destinations', async () => {
+  const f = await recipientFixture();
+  try {
+    const { openTasksProjectAction: action } = f.load('src/server/actions/tasks-project-arrival');
+    const guard = f.load('src/components/app/tasks-project-arrival');
+    const form = (id = 'project-b', surface = 'tasks', task) => { const v = new FormData(); v.set('workspaceId', id); v.set('surface', surface); if (task) v.set('task', task); return v; };
+    f.state.v3 = false;
+    for (const surface of ['tasks', 'my-work']) {
+      f.cookies();
+      const task = 'stored/task?x=1&returnTo=https://evil.invalid';
+      await assert.rejects(action(null, form('project-b', surface, task)), e => {
+        const url = new URL(e.href, 'https://fixture.invalid');
+        assert.equal(url.origin, 'https://fixture.invalid');
+        assert.equal(url.pathname, surface === 'tasks' ? '/app/tasks' : '/app/my-tasks');
+        assert.equal(url.searchParams.get('workspaceId'), 'project-b');
+        assert.equal(url.searchParams.get('task'), surface === 'tasks' ? task : null);
+        assert.equal(e.redirectType, 'push'); return true;
+      });
+      assert.equal(f.state.cookieWrites.length, 2);
+      for (const write of f.state.cookieWrites) {
+        assert.equal(write.value, 'project-b'); assert.equal(write.options.httpOnly, true);
+        assert.equal(write.options.sameSite, 'lax'); assert.equal(write.options.path, '/');
+        assert.equal(write.options.maxAge, 2592000);
+      }
+      assert.equal((await guard.resolveTasksArrival('project-b')).kind, 'ready');
+    }
+    f.cookies();
+    for (const input of [form('project-c'), form('missing'), form(' bad '), form('project-b', '//evil.invalid')]) {
+      assert.ok((await action(null, input)).error); assert.equal(f.state.cookieWrites.length, 0);
+    }
+    const duplicated = form(); duplicated.append('workspaceId', 'project-a');
+    assert.ok((await action(null, duplicated)).error);
+    // Authority may be lost after displaying the card, before the POST.
+    await f.client.execute("DELETE FROM workspace_members WHERE workspace_id='project-b' AND user_id='recipient'");
+    assert.ok((await action(null, form())).error); assert.equal(f.state.cookieWrites.length, 0);
+    f.state.actor = 'creator';
+    await f.client.execute("UPDATE workspaces SET archived_at=1 WHERE id='project-b'");
+    assert.ok((await action(null, form())).error); assert.equal(f.state.cookieWrites.length, 0);
+    f.state.demo = true; const calls = f.state.authCalls;
+    assert.ok((await action(null, form())).error); assert.equal(f.state.authCalls, calls);
+    assert.equal(f.state.cookieWrites.length, 0);
+  } finally { f.close(); }
+});
+
+test('real persisted assignments survive reload and render all open dates; personal emptiness never offers a project reset', async () => {
+  const f = await recipientFixture();
+  try {
+    const MyWork = f.load('src/components/app/my-week/my-week-app').MyWeekApp;
+    const render = canSetUpProject => renderToStaticMarkup(f.React.createElement(MyWork, { canSetUpProject }));
+    await f.client.executeMultiple(`INSERT INTO tasks(id,workspace_id,title,lane,priority,assignees,due_at) VALUES
+      ('undated','project-b','Undated assignment','todo','p2','["recipient"]',NULL),
+      ('later','project-b','Later assignment','todo','p2','["recipient"]',${Date.parse('2027-02-21T12:00:00Z') / 1000}),
+      ('soon','project-b','Due soon assignment','todo','p2','["recipient"]',${Date.parse('2027-01-23T12:00:00Z') / 1000}),
+      ('unassigned','project-b','Shared unassigned task','todo','p2','[]',NULL);`);
+    await f.reload();
+    let html = render(false);
+    for (const title of ['Undated assignment', 'Later assignment', 'Due soon assignment', 'Without a date', 'Later', 'This week']) assert.ok(html.includes(title), title);
+    assert.doesNotMatch(html, /Shared unassigned task|starter pack|Add your first task/);
+    await f.reload(); assert.equal(render(false), html);
+    f.state.actor = 'creator';
+    html = render(true);
+    assert.match(html, /No tasks assigned to you yet/); assert.match(html, /\/app\/tasks\?workspaceId=project-b/);
+    assert.doesNotMatch(html, /starter pack|Add your first task/);
+    f.state.tasks = [];
+    assert.match(render(true), /Add your first task/);
+    assert.doesNotMatch(render(true), /starter pack/);
+    assert.match(render(false), /No tasks assigned to you yet/);
+    assert.doesNotMatch(render(false), /Add your first task|starter pack/);
+    assert.equal((await f.client.execute('SELECT count(*) AS n FROM tasks')).rows[0].n, 4);
+  } finally { f.close(); }
+});

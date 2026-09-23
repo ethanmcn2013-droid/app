@@ -51,6 +51,8 @@ import {
   demoSearchNotes,
 } from "@/modules/notes/server/demo/notes-demo";
 import { recordSponsoredUse } from "@/lib/account/instrumentation/call-site";
+import { assertNotesRecoveryActor } from "@/modules/notes/server/notes-recovery-actor";
+import { privateNotesDbWrite } from "@/modules/notes/server/private-db-write";
 
 function makeId() {
   return `n_${crypto.randomUUID().replace(/-/g, "")}`;
@@ -200,14 +202,17 @@ export async function createNote(
     if (access === "allowed") workspaceId = requestedWorkspaceId;
   }
 
-  await db.insert(notes).values({
-    id,
-    userId,
-    body: trimmed,
-    createdAt: now,
-    updatedAt: now,
-    workspaceId,
-  });
+  await privateNotesDbWrite(
+    async () => db.insert(notes).values({
+      id,
+      userId,
+      body: trimmed,
+      createdAt: now,
+      updatedAt: now,
+      workspaceId,
+    }),
+    "capture",
+  );
 
   // No revalidate: the client owns the optimistic merge and reconciles
   // against this return value. Revalidating thrashes the route cache
@@ -467,28 +472,31 @@ export async function setNoteExtract(
 
   const now = Date.now();
 
-  const result = await db
-    .update(notes)
-    .set({ extractBody: trimmed, updatedAt: now })
-    .where(
-      and(
-        eq(notes.id, id),
-        eq(notes.userId, userId),
-        noTasksSendBinding(userId, id),
-      ),
-    )
-    .returning({
-      id: notes.id,
-      body: notes.body,
-      createdAt: notes.createdAt,
-      updatedAt: notes.updatedAt,
-      extractBody: notes.extractBody,
-      promotedTaskId: notes.promotedTaskId,
-      archivedAt: notes.archivedAt,
-      reviewedAt: notes.reviewedAt,
-      source: notes.source,
-      workspaceId: notes.workspaceId,
-    });
+  const result = await privateNotesDbWrite(
+    async () => db
+      .update(notes)
+      .set({ extractBody: trimmed, updatedAt: now })
+      .where(
+        and(
+          eq(notes.id, id),
+          eq(notes.userId, userId),
+          noTasksSendBinding(userId, id),
+        ),
+      )
+      .returning({
+        id: notes.id,
+        body: notes.body,
+        createdAt: notes.createdAt,
+        updatedAt: notes.updatedAt,
+        extractBody: notes.extractBody,
+        promotedTaskId: notes.promotedTaskId,
+        archivedAt: notes.archivedAt,
+        reviewedAt: notes.reviewedAt,
+        source: notes.source,
+        workspaceId: notes.workspaceId,
+      }),
+    "extract",
+  );
 
   const row = result[0];
   if (!row) {
@@ -823,33 +831,36 @@ export async function promoteNoteToTasks(
   // in a single atomic write. All three fields are written together so a
   // Tasks-fetch failure (above) leaves the note completely untouched.
   const archiveTs = Date.now();
-  const updated = await db
-    .update(notes)
-    .set({
-      extractBody: taskTitle,
-      promotedTaskId: result.taskId,
-      archivedAt: archiveTs,
-      updatedAt: archiveTs,
-    })
-    .where(
-      and(
-        eq(notes.id, noteId),
-        eq(notes.userId, userId),
-        noTasksSendBinding(userId, noteId),
-      ),
-    )
-    .returning({
-      id: notes.id,
-      body: notes.body,
-      createdAt: notes.createdAt,
-      updatedAt: notes.updatedAt,
-      extractBody: notes.extractBody,
-      promotedTaskId: notes.promotedTaskId,
-      archivedAt: notes.archivedAt,
-      reviewedAt: notes.reviewedAt,
-      source: notes.source,
-      workspaceId: notes.workspaceId,
-    });
+  const updated = await privateNotesDbWrite(
+    async () => db
+      .update(notes)
+      .set({
+        extractBody: taskTitle,
+        promotedTaskId: result.taskId,
+        archivedAt: archiveTs,
+        updatedAt: archiveTs,
+      })
+      .where(
+        and(
+          eq(notes.id, noteId),
+          eq(notes.userId, userId),
+          noTasksSendBinding(userId, noteId),
+        ),
+      )
+      .returning({
+        id: notes.id,
+        body: notes.body,
+        createdAt: notes.createdAt,
+        updatedAt: notes.updatedAt,
+        extractBody: notes.extractBody,
+        promotedTaskId: notes.promotedTaskId,
+        archivedAt: notes.archivedAt,
+        reviewedAt: notes.reviewedAt,
+        source: notes.source,
+        workspaceId: notes.workspaceId,
+      }),
+    "send",
+  );
 
   const noteRow = updated[0];
   if (!noteRow) {
@@ -955,6 +966,7 @@ export async function unPromoteNote(noteId: string): Promise<NoteRead> {
 }
 
 export type CreateNoteIdempotentInput = {
+  expectedActorScope?: string;
   id: string;
   body: string;
   workspaceId: string | null;
@@ -1000,6 +1012,7 @@ export type SetNoteReviewedInput = {
 };
 
 export type UpdateNoteWithVersionInput = {
+  expectedActorScope?: string;
   id: string;
   body: string;
   expectedUpdatedAt: number;
@@ -1292,28 +1305,44 @@ export async function createNoteIdempotent(
   const requestedWorkspaceId = normalizeOptionalWorkspaceId(input.workspaceId);
   const source = normalizeCaptureSource(input.source);
   const userId = await requireUser();
-  // Capture is the load-bearing private action. A stale membership or a
-  // temporarily unavailable sister product must never hold the writing
-  // hostage, so an unconfirmed destination falls back to Unfiled.
-  const workspaceId = requestedWorkspaceId &&
+  assertNotesRecoveryActor(userId, input.expectedActorScope);
+  // Recovery must reconcile the original identity before attempting a new
+  // association. Losing membership after a committed save cannot create a
+  // duplicate, and a new capture cannot silently change its filing Project.
+  if (input.expectedActorScope !== undefined) {
+    const existing = await readOwnedNote(userId, id);
+    if (existing) {
+      if (existing.body !== body || existing.workspaceId !== requestedWorkspaceId) {
+        throw new Error("This capture has a different saved version. Reopen Notes to review it.");
+      }
+      return existing;
+    }
+    if (requestedWorkspaceId) await requireAuthorizedTasksWorkspace(userId, requestedWorkspaceId);
+  }
+  // Older callers retain their Unfiled fallback. The actor-bound recovery
+  // caller above keeps its exact destination or refuses with words retained.
+  const workspaceId = input.expectedActorScope !== undefined ? requestedWorkspaceId : requestedWorkspaceId &&
     (await authorizeTasksWorkspace(userId, requestedWorkspaceId)) === "allowed"
       ? requestedWorkspaceId
       : null;
 
   const now = Date.now();
-  const inserted = await db
-    .insert(notes)
-    .values({
-      id,
-      userId,
-      body,
-      createdAt: now,
-      updatedAt: now,
-      workspaceId,
-      source,
-    })
-    .onConflictDoNothing()
-    .returning(await noteSelection());
+  const inserted = await privateNotesDbWrite(
+    async () => db
+      .insert(notes)
+      .values({
+        id,
+        userId,
+        body,
+        createdAt: now,
+        updatedAt: now,
+        workspaceId,
+        source,
+      })
+      .onConflictDoNothing()
+      .returning(await noteSelection()),
+    "capture",
+  );
 
   if (inserted[0]) {
     // Only a real insert counts. The replay path below reconciles a lost
@@ -1337,9 +1366,16 @@ export async function createNoteIdempotent(
   // collision and never discloses row contents.
   const existing = await readOwnedNote(userId, id);
   if (!existing) throw new Error("Capture id is already in use");
-  // The server may deliberately have fallen back to Unfiled on the first
-  // attempt. Exact body + exact stable identity is therefore sufficient to
-  // reconcile a lost response even if Tasks membership recovered meanwhile.
+  // Another request can insert after the initial read. Actor-bound recovery
+  // must reconcile the same destination here as in the early replay branch.
+  if (
+    input.expectedActorScope !== undefined &&
+    (existing.body !== body || existing.workspaceId !== requestedWorkspaceId)
+  ) {
+    throw new Error("This capture has a different saved version. Reopen Notes to review it.");
+  }
+  // Legacy callers may have fallen back to Unfiled on the first attempt.
+  // Their exact body + stable identity still reconciles that older behavior.
   if (existing.body !== body) {
     throw new Error("Capture id already belongs to different note content");
   }
@@ -1358,21 +1394,25 @@ export async function updateNoteWithVersion(
   const id = validateStableNoteId(input.id);
   const attempted = createAttemptedVersion(input.body, input.expectedUpdatedAt);
   const userId = await requireUser();
+  assertNotesRecoveryActor(userId, input.expectedActorScope);
   const updatedAt = nextUpdatedAt(Date.now(), attempted.updatedAt);
 
-  const updated = await db
-    .update(notes)
-    .set({ body: attempted.body, updatedAt })
-    .where(
-      and(
-        eq(notes.id, id),
-        eq(notes.userId, userId),
-        eq(notes.updatedAt, attempted.updatedAt),
-        isNull(notes.archivedAt),
-        noPendingTasksSend(userId, id),
-      ),
-    )
-    .returning(await noteSelection());
+  const updated = await privateNotesDbWrite(
+    async () => db
+      .update(notes)
+      .set({ body: attempted.body, updatedAt })
+      .where(
+        and(
+          eq(notes.id, id),
+          eq(notes.userId, userId),
+          eq(notes.updatedAt, attempted.updatedAt),
+          isNull(notes.archivedAt),
+          noPendingTasksSend(userId, id),
+        ),
+      )
+      .returning(await noteSelection()),
+    "edit",
+  );
 
   if (updated[0]) {
     // Only the compare-and-swap that actually wrote counts. The lost-response
@@ -1863,21 +1903,24 @@ export async function sendApprovedExtractToTasks(
 
     const now = Date.now();
     const leaseToken = makeTasksSendLeaseToken();
-    const inserted = await tx
-      .insert(noteTaskSendOutbox)
-      .values({
-        operationId: makeTasksSendOperationId(),
-        ...immutableRequest,
-        baseUpdatedAt: expectedUpdatedAt,
-        reservedUpdatedAt,
-        status: "pending",
-        leaseToken,
-        leaseExpiresAt: now + TASKS_SEND_LEASE_MS,
-        attemptCount: 1,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .returning(tasksSendOutboxSelection);
+    const inserted = await privateNotesDbWrite(
+      async () => tx
+        .insert(noteTaskSendOutbox)
+        .values({
+          operationId: makeTasksSendOperationId(),
+          ...immutableRequest,
+          baseUpdatedAt: expectedUpdatedAt,
+          reservedUpdatedAt,
+          status: "pending",
+          leaseToken,
+          leaseExpiresAt: now + TASKS_SEND_LEASE_MS,
+          attemptCount: 1,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning(tasksSendOutboxSelection),
+      "send",
+    );
     if (!inserted[0]) throw new Error("Could not reserve the Tasks send");
     return {
       kind: "pending" as const,
@@ -2027,25 +2070,28 @@ export async function sendApprovedExtractToTasks(
     }
 
     const finalUpdatedAt = nextUpdatedAt(completedAt, outbox.reservedUpdatedAt);
-    const stored = await tx
-      .update(notes)
-      .set({
-        extractBody: approvedBody,
-        promotedTaskId: result.taskId,
-        workspaceId,
-        archivedAt: null,
-        updatedAt: finalUpdatedAt,
-      })
-      .where(
-        and(
-          eq(notes.id, noteId),
-          eq(notes.userId, userId),
-          eq(notes.updatedAt, outbox.reservedUpdatedAt),
-          isNull(notes.archivedAt),
-          isNull(notes.promotedTaskId),
-        ),
-      )
-      .returning(await noteSelection());
+    const stored = await privateNotesDbWrite(
+      async () => tx
+        .update(notes)
+        .set({
+          extractBody: approvedBody,
+          promotedTaskId: result.taskId,
+          workspaceId,
+          archivedAt: null,
+          updatedAt: finalUpdatedAt,
+        })
+        .where(
+          and(
+            eq(notes.id, noteId),
+            eq(notes.userId, userId),
+            eq(notes.updatedAt, outbox.reservedUpdatedAt),
+            isNull(notes.archivedAt),
+            isNull(notes.promotedTaskId),
+          ),
+        )
+        .returning(await noteSelection()),
+      "send",
+    );
     if (!stored[0]) {
       throw new Error("The source note changed while storing the Tasks receipt");
     }

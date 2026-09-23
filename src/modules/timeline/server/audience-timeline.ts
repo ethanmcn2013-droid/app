@@ -12,6 +12,7 @@ import {
   type AudienceKind,
 } from "@/modules/timeline/server/db/timeline-schema";
 import { db } from "@/modules/timeline/server/db/timeline-client";
+import { revokeAudienceSharesInTransaction, unpublishAudiencePublicationInTransaction } from "./audience-revocation";
 import {
   assertOwnershipCovers,
   type TasksProjectOwnership,
@@ -597,53 +598,14 @@ export async function revokeAudienceShares(
   publicationId: string,
   workspaceSlug: string,
 ): Promise<void> {
-  if (!(await ownsPublication(publicationId, workspaceSlug))) {
-    throw new TypeError("Publication not found");
-  }
-  const now = new Date();
-  await db
-    .update(audienceShares)
-    .set({ state: "revoked", revokedAt: now })
-    .where(
-      and(
-        eq(audienceShares.publicationId, publicationId),
-        eq(audienceShares.state, "active"),
-      ),
-    );
+  await db.transaction(tx => revokeAudienceSharesInTransaction(tx, publicationId, workspaceSlug), { behavior: "immediate" });
 }
 
 export async function unpublishAudiencePublication(
   publicationId: string,
   workspaceSlug: string,
 ): Promise<void> {
-  if (!(await ownsPublication(publicationId, workspaceSlug))) {
-    throw new TypeError("Publication not found");
-  }
-  const now = new Date();
-  await db.transaction(async (tx) => {
-    await tx
-      .update(timelinePublications)
-      .set({ state: "unpublished", unpublishedAt: now, updatedAt: now, lastUpdatedAt: now })
-      .where(
-        and(
-          eq(timelinePublications.id, publicationId),
-          eq(timelinePublications.workspaceSlug, workspaceSlug),
-        ),
-      );
-    await tx
-      .update(timelinePublicationItems)
-      .set({ unpublishedAt: now })
-      .where(eq(timelinePublicationItems.publicationId, publicationId));
-    await tx
-      .update(audienceShares)
-      .set({ state: "revoked", revokedAt: now })
-      .where(
-        and(
-          eq(audienceShares.publicationId, publicationId),
-          eq(audienceShares.state, "active"),
-        ),
-      );
-  });
+  await db.transaction(tx => unpublishAudiencePublicationInTransaction(tx, publicationId, workspaceSlug), { behavior: "immediate" });
 }
 
 export async function updateAudiencePublicationItem(input: {

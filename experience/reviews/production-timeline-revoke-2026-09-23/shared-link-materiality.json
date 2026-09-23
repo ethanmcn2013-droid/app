@@ -1,0 +1,23 @@
+{
+  "reviewedAt": "2026-09-23",
+  "reviewer": "Production sprint integration source review; independent receiving review pending",
+  "id": "tasks.page.s-by-token",
+  "source": "tasks/src/app/s/[token]/page.tsx",
+  "materialityHash": "d0d44a5e281625a9",
+  "previousMaterialityHash": "29b91131a150d465",
+  "officialTool": "scripts/experience/critical-fixtures.mjs",
+  "officialToolSha256": "2105d8bea051288033c3c83bccc15b6928e1b0d81d5b1a0da0becca6c22b80e9",
+  "method": "Ran the unchanged mapped-fixture --write tool in a private disposable source mirror and applied only the exact shared Timeline entry hash. Historical fixture date and coverage metadata remain unchanged.",
+  "output": "experience:critical-fixtures: clean - 37/37 critical experiences mapped, 28 rendered, 9 source-contract, 33 deterministic cases x 4 breakpoints",
+  "changedIds": [
+    "tasks.page.s-by-token"
+  ],
+  "reviewedChange": "Corrected a misleading source comment: Next may stream unavailable bearer links with HTTP 200 even when metadata calls notFound. The rendered generic end-of-link shell and no-store/noindex headers are the ratified soft-404 contract; resolver and authorization behavior are unchanged.",
+  "evidence": {
+    "sourceCommit": "ff114f298ec9b08ec3fa2d583094303d6df8f4df",
+    "productFixture": "experience/tests/critical-experiences.spec.ts invalid bearer link expects HTTP 200 generic shell",
+    "providerReadback": "Exact token hash share revoked; zero active shares; fresh anonymous response generic shell, no artifact/publication title, no-store/noindex/no-referrer/CSP",
+    "providerWritesByReviewer": 0
+  },
+  "decision": "Refresh only the shared Timeline page source hash for this comment-only correction. Keep all fixture coverage, design audit status, baseline and release claims unchanged."
+}

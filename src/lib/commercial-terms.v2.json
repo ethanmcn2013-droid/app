@@ -1,6 +1,9 @@
 {
   "version": 2,
-  "accepts": [1, 2],
+  "accepts": [
+    1,
+    2
+  ],
   "supersedes": 1,
   "basis": "content/hq/decisions/venue-edition-founding-25-2026-08-03.md",
   "currency": "EUR",
@@ -11,7 +14,47 @@
     "note": "Every published venue price is the amount the venue pays. VAT at the prevailing rate comes out of it, not on top of it. Whether Signal Studio is an accountable person is unconfirmed pending a written Revenue reply; the wording discloses the position either way."
   },
   "accessState": "waitlist_first",
-  "broadLaunchDate": null,
+  "broadLaunchDate": "2027-01-21",
+  "broadLaunchPolicy": "manual_go_no_go_only",
+  "launchProgramme": {
+    "decision": "content/hq/decisions/january-2027-launch.md",
+    "index": "docs/execution/january-2027/PROGRAMME.md",
+    "firstOutreachDate": "2027-01-21",
+    "prelaunchMode": "internal_testing_only",
+    "automaticAccessOpening": false,
+    "manualGates": [
+      "user_launch",
+      "first_outreach"
+    ],
+    "guestsAndSeating": "no_build_for_january"
+  },
+  "guestSemantics": {
+    "editingMembers": [
+      "view",
+      "comment",
+      "edit"
+    ],
+    "authenticatedGuests": [
+      "view",
+      "comment"
+    ],
+    "linkViewers": [
+      "view"
+    ],
+    "inviteAuthority": "workspace_owner_or_admin_only"
+  },
+  "trialPolicy": {
+    "openPaidFeatureTrial": false,
+    "compGrants": "account_bound_time_limited_with_reason"
+  },
+  "schools": {
+    "availability": "manual_quote_pilot",
+    "publicPrice": null,
+    "seatCommitment": null
+  },
+  "retiredOffers": [
+    "committee_workspace_49_eur_year"
+  ],
   "plans": {
     "free": {
       "publicName": "Free",
@@ -23,21 +66,24 @@
     },
     "student": {
       "publicName": "Student",
+      "programmeName": "Student Edition",
       "amountCents": 999,
       "cadence": "year",
-      "workspaceLimit": null,
-      "editingGuestLimit": null,
-      "status": "price_verified_payment_unverified"
+      "workspaceLimit": 3,
+      "editingGuestLimit": 3,
+      "eligibility": "verified_student_status_with_annual_reverification",
+      "availability": "only_when_eligibility_enforcement_is_live",
+      "status": "policy_ratified_implementation_required"
     },
     "pro": {
       "publicName": "Pro",
       "internalEntitlement": "workspace",
       "monthlyAmountCents": 1200,
-      "annualAmountCents": null,
-      "annualCandidatesCents": [10000, 12000],
+      "annualAmountCents": 12000,
       "workspaceLimit": null,
       "editingGuestLimit": null,
-      "status": "monthly_verified_annual_unresolved"
+      "workspaceLimitBasis": "unlimited",
+      "status": "verified"
     },
     "event": {
       "publicName": "Event",
@@ -45,7 +91,13 @@
       "cadence": "one_time",
       "activeWindowMonths": 12,
       "postWindow": "read_only",
-      "status": "verified_price_retention_wording_pending"
+      "refundAccess": "revoked",
+      "status": "policy_ratified_implementation_required",
+      "availability": "unavailable_until_project_access_closure",
+      "newSalesAvailable": false,
+      "termsStatus": "intended_not_enforced",
+      "policyDecision": "content/hq/decisions/event-project-funding-2026-09-04.md",
+      "historicalReconciliation": "content/hq/operator-todos/event-historical-purchase-reconciliation.md"
     },
     "venue": {
       "publicName": "Venue Edition",
@@ -65,7 +117,12 @@
         "lockCondition": "continuous_renewal_without_lapse",
         "lockFollows": "property",
         "lockTransfersToNewProperties": false,
-        "forbiddenWording": ["for life", "forever", "in perpetuity", "lifetime"],
+        "forbiddenWording": [
+          "for life",
+          "forever",
+          "in perpetuity",
+          "lifetime"
+        ],
         "publicWording": "€500 a year less, for as long as you stay."
       },
       "coupleAccessMonths": 18,
@@ -82,17 +139,7 @@
       "status": "verified"
     }
   },
-  "unresolved": [
-    "pro_annual_amount",
-    "pro_workspace_limit",
-    "student_workspace_limit",
-    "student_verification_and_payment",
-    "committee_offer",
-    "editing_guest_semantics",
-    "event_retention_promise",
-    "school_pricing_and_seats",
-    "broad_launch_date"
-  ],
+  "unresolved": [],
   "resolvedSinceV1": {
     "venue_activation_allowance": "Resolved by D-020: every booked couple, unlimited, with no number in the commercial terms. The internal issuance ceiling notifies and never blocks, so it is not an entitlement.",
     "venue_calendar_month_semantics": "Resolved by D-020 and D-022. With no allowance there is no reset boundary to define, and the couple term is computed in days from the redemption instant and the wedding date, never in calendar months."

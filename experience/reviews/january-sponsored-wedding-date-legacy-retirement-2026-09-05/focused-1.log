@@ -1,0 +1,673 @@
+TAP version 13
+# Subtest: planning UI can be disabled without disabling existing workspace access
+ok 1 - planning UI can be disabled without disabling existing workspace access
+  ---
+  duration_ms: 1.7005
+  type: 'test'
+  ...
+# Subtest: new planning surfaces default off in production and on in development
+ok 2 - new planning surfaces default off in production and on in development
+  ---
+  duration_ms: 0.2592
+  type: 'test'
+  ...
+# Subtest: analytics allowlist drops names, content, tokens, emails, and ids
+ok 3 - analytics allowlist drops names, content, tokens, emails, and ids
+  ---
+  duration_ms: 1.2753
+  type: 'test'
+  ...
+# Subtest: normaliseWeddingDateMs
+    # Subtest: reads a calendar day as UTC midnight
+    ok 1 - reads a calendar day as UTC midnight
+      ---
+      duration_ms: 3.0785
+      type: 'test'
+      ...
+    # Subtest: floors an epoch to its UTC day
+    ok 2 - floors an epoch to its UTC day
+      ---
+      duration_ms: 0.3377
+      type: 'test'
+      ...
+    # Subtest: refuses anything it cannot parse rather than defaulting to today
+    ok 3 - refuses anything it cannot parse rather than defaulting to today
+      ---
+      duration_ms: 0.3475
+      type: 'test'
+      ...
+    # Subtest: rejects a rolled-over date instead of accepting the roll
+    ok 4 - rejects a rolled-over date instead of accepting the roll
+      ---
+      duration_ms: 0.3213
+      type: 'test'
+      ...
+    # Subtest: round-trips through the label helper
+    ok 5 - round-trips through the label helper
+      ---
+      duration_ms: 0.4793
+      type: 'test'
+      ...
+    1..5
+ok 4 - normaliseWeddingDateMs
+  ---
+  duration_ms: 7.3656
+  type: 'suite'
+  ...
+# Subtest: coupleAccessExpiryMs · the floor
+    # Subtest: with no wedding date, runs exactly 548 days from redemption
+    ok 1 - with no wedding date, runs exactly 548 days from redemption
+      ---
+      duration_ms: 0.379
+      type: 'test'
+      ...
+    # Subtest: treats an unparseable wedding date as no wedding date, never as shorter
+    ok 2 - treats an unparseable wedding date as no wedding date, never as shorter
+      ---
+      duration_ms: 1.3326
+      type: 'test'
+      ...
+    # Subtest: never returns less than 548 days, whatever the wedding date says
+    ok 3 - never returns less than 548 days, whatever the wedding date says
+      ---
+      duration_ms: 1.5172
+      type: 'test'
+      ...
+    # Subtest: honours a minted duration LONGER than the floor
+    ok 4 - honours a minted duration LONGER than the floor
+      ---
+      duration_ms: 0.3884
+      type: 'test'
+      ...
+    # Subtest: ignores a minted duration SHORTER than the floor
+    ok 5 - ignores a minted duration SHORTER than the floor
+      ---
+      duration_ms: 0.4815
+      type: 'test'
+      ...
+    1..5
+ok 5 - coupleAccessExpiryMs · the floor
+  ---
+  duration_ms: 4.8558
+  type: 'suite'
+  ...
+# Subtest: coupleAccessExpiryMs · the grace rule
+    # Subtest: gives three months past the wedding when that is later
+    ok 1 - gives three months past the wedding when that is later
+      ---
+      duration_ms: 0.4738
+      type: 'test'
+      ...
+    # Subtest: THE R-015 SCENARIO: signs March 2027, marries September 2028, redeems on the day
+    ok 2 - THE R-015 SCENARIO: signs March 2027, marries September 2028, redeems on the day
+      ---
+      duration_ms: 0.3251
+      type: 'test'
+      ...
+    # Subtest: has no upper cap: a three-year lead gets three years plus the grace
+    ok 3 - has no upper cap: a three-year lead gets three years plus the grace
+      ---
+      duration_ms: 0.2086
+      type: 'test'
+      ...
+    # Subtest: expressed as a mint-time duration, never dips below the floor
+    ok 4 - expressed as a mint-time duration, never dips below the floor
+      ---
+      duration_ms: 0.3554
+      type: 'test'
+      ...
+    1..4
+ok 6 - coupleAccessExpiryMs · the grace rule
+  ---
+  duration_ms: 1.6767
+  type: 'suite'
+  ...
+# Subtest: extendedCoupleAccessExpiryMs · the term only ever moves later
+    # Subtest: A WEDDING DATE ARRIVING AFTER REDEMPTION extends the term
+    ok 1 - A WEDDING DATE ARRIVING AFTER REDEMPTION extends the term
+      ---
+      duration_ms: 0.4923
+      type: 'test'
+      ...
+    # Subtest: a postponement extends it again
+    ok 2 - a postponement extends it again
+      ---
+      duration_ms: 0.3113
+      type: 'test'
+      ...
+    # Subtest: a correction that would pull the date EARLIER changes nothing
+    ok 3 - a correction that would pull the date EARLIER changes nothing
+      ---
+      duration_ms: 0.2403
+      type: 'test'
+      ...
+    # Subtest: clearing the date entirely changes nothing
+    ok 4 - clearing the date entirely changes nothing
+      ---
+      duration_ms: 0.4446
+      type: 'test'
+      ...
+    # Subtest: never introduces an end date on a row that has none
+    ok 5 - never introduces an end date on a row that has none
+      ---
+      duration_ms: 0.211
+      type: 'test'
+      ...
+    # Subtest: is monotonic across a randomised sequence of date edits
+    ok 6 - is monotonic across a randomised sequence of date edits
+      ---
+      duration_ms: 4.81
+      type: 'test'
+      ...
+    1..6
+ok 7 - extendedCoupleAccessExpiryMs · the term only ever moves later
+  ---
+  duration_ms: 7.01
+  type: 'suite'
+  ...
+# Subtest: the flat multiply this replaces
+    # Subtest: is provably a different answer, not a refactor
+    ok 1 - is provably a different answer, not a refactor
+      ---
+      duration_ms: 0.3765
+      type: 'test'
+      ...
+    1..1
+ok 8 - the flat multiply this replaces
+  ---
+  duration_ms: 0.6092
+  type: 'suite'
+  ...
+# Subtest: couple-facing wording
+    # Subtest: states the ratified term and carries no banned register
+    ok 1 - states the ratified term and carries no banned register
+      ---
+      duration_ms: 1.0074
+      type: 'test'
+      ...
+    1..1
+ok 9 - couple-facing wording
+  ---
+  duration_ms: 1.6681
+  type: 'suite'
+  ...
+# Subtest: couple-facing copy states the ratified term
+    # Subtest: carries no flat-year description of the term anywhere
+    ok 1 - carries no flat-year description of the term anywhere
+      ---
+      duration_ms: 1.2038
+      type: 'test'
+      ...
+    # Subtest: promises nothing unconditional
+    ok 2 - promises nothing unconditional
+      ---
+      duration_ms: 2.031
+      type: 'test'
+      ...
+    # Subtest: states the whole rule where it states the rule at all
+    ok 3 - states the whole rule where it states the rule at all
+      ---
+      duration_ms: 1.07
+      type: 'test'
+      ...
+    1..3
+ok 10 - couple-facing copy states the ratified term
+  ---
+  duration_ms: 4.9872
+  type: 'suite'
+  ...
+# Subtest: parity with studio/src/lib/venue-edition.ts
+    # Subtest: answers identically on every case, or says why it could not check
+    ok 1 - answers identically on every case, or says why it could not check
+      ---
+      duration_ms: 107.4315
+      type: 'test'
+      ...
+    # differential parity checked over 792 cases
+    1..1
+ok 11 - parity with studio/src/lib/venue-edition.ts
+  ---
+  duration_ms: 107.8426
+  type: 'suite'
+  ...
+# Subtest: bulk creation preserves every existing grant and old Project date, including revoked/departed/null-scope grants
+ok 12 - bulk creation preserves every existing grant and old Project date, including revoked/departed/null-scope grants
+  ---
+  duration_ms: 3933.7326
+  type: 'test'
+  ...
+# Subtest: all-skipped creation preserves every existing grant and old Project date, including revoked/departed/null-scope grants
+ok 13 - all-skipped creation preserves every existing grant and old Project date, including revoked/departed/null-scope grants
+  ---
+  duration_ms: 2033.5858
+  type: 'test'
+  ...
+# Subtest: contextual creation preserves every existing grant and old Project date, including revoked/departed/null-scope grants
+ok 14 - contextual creation preserves every existing grant and old Project date, including revoked/departed/null-scope grants
+  ---
+  duration_ms: 2042.3752
+  type: 'test'
+  ...
+# Subtest: contextual-with-sponsor creation preserves every existing grant and old Project date, including revoked/departed/null-scope grants
+ok 15 - contextual-with-sponsor creation preserves every existing grant and old Project date, including revoked/departed/null-scope grants
+  ---
+  duration_ms: 2108.8736
+  type: 'test'
+  ...
+# Subtest: new Project redemption reads its own 2029-06-01 date and preserves all older grants
+ok 16 - new Project redemption reads its own 2029-06-01 date and preserves all older grants
+  ---
+  duration_ms: 2371.2268
+  type: 'test'
+  ...
+# Subtest: new Project redemption reads its own unknown date and preserves all older grants
+ok 17 - new Project redemption reads its own unknown date and preserves all older grants
+  ---
+  duration_ms: 2155.0944
+  type: 'test'
+  ...
+# Subtest: existing missing-date validation and independently disabled flags do not create Projects or touch grants
+ok 18 - existing missing-date validation and independently disabled flags do not create Projects or touch grants
+  ---
+  duration_ms: 5442.5944
+  type: 'test'
+  ...
+# Subtest: date action gets the actual actor and carries only the explicit Project to the transaction
+ok 19 - date action gets the actual actor and carries only the explicit Project to the transaction
+  ---
+  duration_ms: 151.6113
+  type: 'test'
+  ...
+# Subtest: preview makes no identity, store or cache call and does not claim a saved date
+ok 20 - preview makes no identity, store or cache call and does not claim a saved date
+  ---
+  duration_ms: 24.1134
+  type: 'test'
+  ...
+# Subtest: a failed transaction is not reported as a successful save
+ok 21 - a failed transaction is not reported as a successful save
+  ---
+  duration_ms: 21.201
+  type: 'test'
+  ...
+# Subtest: cache failure after commit retains the confirmed durable readback
+ok 22 - cache failure after commit retains the confirmed durable readback
+  ---
+  duration_ms: 13.3943
+  type: 'test'
+  ...
+# Subtest: one venue claim includes access, 18 tasks, activities, receipt and project metadata
+ok 23 - one venue claim includes access, 18 tasks, activities, receipt and project metadata
+  ---
+  duration_ms: 2646.497
+  type: 'test'
+  ...
+# Subtest: failure at entitlements rolls back all writes and identical retry succeeds
+ok 24 - failure at entitlements rolls back all writes and identical retry succeeds
+  ---
+  duration_ms: 1630.2164
+  type: 'test'
+  ...
+# Subtest: failure at activities rolls back all writes and identical retry succeeds
+ok 25 - failure at activities rolls back all writes and identical retry succeeds
+  ---
+  duration_ms: 1930.6347
+  type: 'test'
+  ...
+# Subtest: failure at meta rolls back all writes and identical retry succeeds
+ok 26 - failure at meta rolls back all writes and identical retry succeeds
+  ---
+  duration_ms: 1902.1172
+  type: 'test'
+  ...
+# Subtest: failure at workspaces rolls back all writes and identical retry succeeds
+ok 27 - failure at workspaces rolls back all writes and identical retry succeeds
+  ---
+  duration_ms: 1818.9146
+  type: 'test'
+  ...
+# Subtest: response-loss retry preserves edits, original project and expiry despite a different active project
+ok 28 - response-loss retry preserves edits, original project and expiry despite a different active project
+  ---
+  duration_ms: 1925.7525
+  type: 'test'
+  ...
+# Subtest: removed, wrong-project and archived actors cannot claim or replay access
+ok 29 - removed, wrong-project and archived actors cannot claim or replay access
+  ---
+  duration_ms: 1806.8809
+  type: 'test'
+  ...
+# Subtest: expired code and revoked grant cannot create or revive access
+ok 30 - expired code and revoked grant cannot create or revive access
+  ---
+  duration_ms: 1951.996
+  type: 'test'
+  ...
+# Subtest: concurrent duplicate submissions on independent connections converge to one claim and starter
+ok 31 - concurrent duplicate submissions on independent connections converge to one claim and starter
+  ---
+  duration_ms: 2083.2617
+  type: 'test'
+  ...
+# Subtest: an authorized unclaimed owner cannot redeem exhausted capacity
+ok 32 - an authorized unclaimed owner cannot redeem exhausted capacity
+  ---
+  duration_ms: 1734.1654
+  type: 'test'
+  ...
+# Subtest: a task editor cannot consume a venue code or replace shared Project setup
+ok 33 - a task editor cannot consume a venue code or replace shared Project setup
+  ---
+  duration_ms: 1341.5838
+  type: 'test'
+  ...
+# Subtest: account deletion intent blocks a new claim and an existing replay
+ok 34 - account deletion intent blocks a new claim and an existing replay
+  ---
+  duration_ms: 2220.9585
+  type: 'test'
+  ...
+# Subtest: project deletion intent blocks a new claim and an existing replay
+ok 35 - project deletion intent blocks a new claim and an existing replay
+  ---
+  duration_ms: 2252.9213
+  type: 'test'
+  ...
+# Subtest: isVenueEditionCompNotes
+    # Subtest: recognises the sponsor JSON issue-codes.ts writes
+    ok 1 - recognises the sponsor JSON issue-codes.ts writes
+      ---
+      duration_ms: 1.0115
+      type: 'test'
+      ...
+    # Subtest: refuses anything else, so a student code never takes the couple term
+    ok 2 - refuses anything else, so a student code never takes the couple term
+      ---
+      duration_ms: 0.3174
+      type: 'test'
+      ...
+    1..2
+ok 36 - isVenueEditionCompNotes
+  ---
+  duration_ms: 2.5453
+  type: 'suite'
+  ...
+# Subtest: compRedemptionExpiresAtMs · the decision the redeem path makes
+    # Subtest: gives a Venue Edition couple the ratified term, not the flat duration
+    ok 1 - gives a Venue Edition couple the ratified term, not the flat duration
+      ---
+      duration_ms: 0.6333
+      type: 'test'
+      ...
+    # Subtest: falls back to 548 days when the wedding date is unknown, never shorter
+    ok 2 - falls back to 548 days when the wedding date is unknown, never shorter
+      ---
+      duration_ms: 0.1604
+      type: 'test'
+      ...
+    # Subtest: refuses to shorten even if a code was minted with a short duration
+    ok 3 - refuses to shorten even if a code was minted with a short duration
+      ---
+      duration_ms: 0.1491
+      type: 'test'
+      ...
+    # Subtest: leaves every other comp code on the flat duration it always had
+    ok 4 - leaves every other comp code on the flat duration it always had
+      ---
+      duration_ms: 0.1483
+      type: 'test'
+      ...
+    1..4
+ok 37 - compRedemptionExpiresAtMs · the decision the redeem path makes
+  ---
+  duration_ms: 1.4469
+  type: 'suite'
+  ...
+# Subtest: weddingDateMsForWorkspace
+    # Subtest: reads primary_date on a wedding workspace
+    ok 1 - reads primary_date on a wedding workspace
+      ---
+      duration_ms: 68.3063
+      type: 'test'
+      ...
+    # Subtest: ignores primary_date on a workspace that is not a wedding
+    ok 2 - ignores primary_date on a workspace that is not a wedding
+      ---
+      duration_ms: 77.7432
+      type: 'test'
+      ...
+    # Subtest: returns null for a missing workspace, an empty id and an absent date
+    ok 3 - returns null for a missing workspace, an empty id and an absent date
+      ---
+      duration_ms: 76.3588
+      type: 'test'
+      ...
+    1..3
+ok 38 - weddingDateMsForWorkspace
+  ---
+  duration_ms: 223.7276
+  type: 'suite'
+  ...
+# Subtest: source contract: src/server/actions/comp.ts
+    # Subtest: computes redemption expiry through the shared decision, not inline
+    ok 1 - computes redemption expiry through the shared decision, not inline
+      ---
+      duration_ms: 1.1408
+      type: 'test'
+      ...
+    # Subtest: has no flat duration multiply left on the redeem path
+    ok 2 - has no flat duration multiply left on the redeem path
+      ---
+      duration_ms: 1.3691
+      type: 'test'
+      ...
+    # Subtest: keeps the code-lifetime multiply, which is a different number
+    ok 3 - keeps the code-lifetime multiply, which is a different number
+      ---
+      duration_ms: 0.2157
+      type: 'test'
+      ...
+    1..3
+ok 39 - source contract: src/server/actions/comp.ts
+  ---
+  duration_ms: 3.0386
+  type: 'suite'
+  ...
+# Subtest: source contract: creation cannot extend actor-wide grants
+    # Subtest: has no obsolete extension helper or caller wiring
+    ok 1 - has no obsolete extension helper or caller wiring
+      ---
+      duration_ms: 1.3562
+      type: 'test'
+      ...
+    1..1
+ok 40 - source contract: creation cannot extend actor-wide grants
+  ---
+  duration_ms: 1.6459
+  type: 'suite'
+  ...
+# Subtest: current effective-tier reader sees the repaired term in its Project; revocation and personal/other-Project access remain unchanged
+ok 41 - current effective-tier reader sees the repaired term in its Project; revocation and personal/other-Project access remain unchanged
+  ---
+  duration_ms: 2760.5164
+  type: 'test'
+  ...
+# Subtest: real claim starts without a date; canonical save extends its grant, never imports the old generic target or retimes tasks
+ok 42 - real claim starts without a date; canonical save extends its grant, never imports the old generic target or retimes tasks
+  ---
+  duration_ms: 1548.6181
+  type: 'test'
+  ...
+# Subtest: earlier, later, missing and identical dates preserve granted time and return durable readbacks
+ok 43 - earlier, later, missing and identical dates preserve granted time and return durable readbacks
+  ---
+  duration_ms: 2118.6359
+  type: 'test'
+  ...
+# Subtest: unknown date keeps the 548-day floor; malformed dates reject without writes
+ok 44 - unknown date keeps the 548-day floor; malformed dates reject without writes
+  ---
+  duration_ms: 1916.5748
+  type: 'test'
+  ...
+# Subtest: elapsed positive terms may extend under D-022; revoked grants stay revoked
+ok 45 - elapsed positive terms may extend under D-022; revoked grants stay revoked
+  ---
+  duration_ms: 3905.8926
+  type: 'test'
+  ...
+# Subtest: an expired term remains expired when the new wedding date cannot extend it into the present
+ok 46 - an expired term remains expired when the new wedding date cannot extend it into the present
+  ---
+  duration_ms: 1752.041
+  type: 'test'
+  ...
+# Subtest: co-manager can set the project date; own-account access readback does not claim another recipient's grant
+ok 47 - co-manager can set the project date; own-account access readback does not claim another recipient's grant
+  ---
+  duration_ms: 1903.6033
+  type: 'test'
+  ...
+# Subtest: editor cannot change a date or any access
+ok 48 - editor cannot change a date or any access
+  ---
+  duration_ms: 1723.4463
+  type: 'test'
+  ...
+# Subtest: outsider cannot change a date or any access
+ok 49 - outsider cannot change a date or any access
+  ---
+  duration_ms: 2031.8435
+  type: 'test'
+  ...
+# Subtest: wrong-project cannot change a date or any access
+ok 50 - wrong-project cannot change a date or any access
+  ---
+  duration_ms: 1156.0189
+  type: 'test'
+  ...
+# Subtest: missing-project cannot change a date or any access
+ok 51 - missing-project cannot change a date or any access
+  ---
+  duration_ms: 1211.3387
+  type: 'test'
+  ...
+# Subtest: removed-manager cannot change a date or any access
+ok 52 - removed-manager cannot change a date or any access
+  ---
+  duration_ms: 1099.6771
+  type: 'test'
+  ...
+# Subtest: demoted-manager cannot change a date or any access
+ok 53 - demoted-manager cannot change a date or any access
+  ---
+  duration_ms: 1168.8741
+  type: 'test'
+  ...
+# Subtest: archived cannot change a date or any access
+ok 54 - archived cannot change a date or any access
+  ---
+  duration_ms: 944.0581
+  type: 'test'
+  ...
+# Subtest: wrong-domain cannot change a date or any access
+ok 55 - wrong-domain cannot change a date or any access
+  ---
+  duration_ms: 1155.7916
+  type: 'test'
+  ...
+# Subtest: project scope, grant provenance and recipient membership exclude independent and ineligible grants
+ok 56 - project scope, grant provenance and recipient membership exclude independent and ineligible grants
+  ---
+  duration_ms: 785.4794
+  type: 'test'
+  ...
+# Subtest: failure at workspaces rolls back date, revision and term; retry repairs all
+ok 57 - failure at workspaces rolls back date, revision and term; retry repairs all
+  ---
+  duration_ms: 1090.315
+  type: 'test'
+  ...
+# Subtest: failure at entitlements rolls back date, revision and term; retry repairs all
+ok 58 - failure at entitlements rolls back date, revision and term; retry repairs all
+  ---
+  duration_ms: 913.9568
+  type: 'test'
+  ...
+# Subtest: stale concurrent managers cannot silently overwrite a newer date
+ok 59 - stale concurrent managers cannot silently overwrite a newer date
+  ---
+  duration_ms: 811.8627
+  type: 'test'
+  ...
+# [{"status":"fulfilled","value":{"ok":true,"data":{"projectId":"a","weddingDate":"2029-06-01","revision":2,"canManage":true,"access":{"status":"active","expiresAt":"2029-08-30T00:00:00.000Z"}}}},{"status":"rejected","reason":{"code":"SQLITE_BUSY","extendedCode":"SQLITE_BUSY","rawCode":5,"name":"LibsqlError"}}]
+# Subtest: an ordinary stale revision refuses without a reconnect or writes
+ok 60 - an ordinary stale revision refuses without a reconnect or writes
+  ---
+  duration_ms: 1139.1848
+  type: 'test'
+  ...
+# Subtest: actor deletion intent refuses a save
+ok 61 - actor deletion intent refuses a save
+  ---
+  duration_ms: 821.914
+  type: 'test'
+  ...
+# Subtest: owner deletion intent refuses a save
+ok 62 - owner deletion intent refuses a save
+  ---
+  duration_ms: 1079.8064
+  type: 'test'
+  ...
+# Subtest: project deletion intent refuses a save
+ok 63 - project deletion intent refuses a save
+  ---
+  duration_ms: 753.5932
+  type: 'test'
+  ...
+# Subtest: every Your Work workspace originates from a current membership
+ok 64 - every Your Work workspace originates from a current membership
+  ---
+  duration_ms: 2.6528
+  type: 'test'
+  ...
+# Subtest: lifecycle mutations re-authorize at the data boundary
+ok 65 - lifecycle mutations re-authorize at the data boundary
+  ---
+  duration_ms: 0.6388
+  type: 'test'
+  ...
+# Subtest: bulk workspace name collisions only include current memberships
+ok 66 - bulk workspace name collisions only include current memberships
+  ---
+  duration_ms: 0.4351
+  type: 'test'
+  ...
+# Subtest: every consolidated Project mutation proves a capability, then writes with a receipt
+ok 67 - every consolidated Project mutation proves a capability, then writes with a receipt
+  ---
+  duration_ms: 0.6075
+  type: 'test'
+  ...
+# Subtest: duplication reads re-authorize inside their transaction
+ok 68 - duplication reads re-authorize inside their transaction
+  ---
+  duration_ms: 0.3566
+  type: 'test'
+  ...
+# Subtest: scenario K: teacher onboarding and planning catalog never require pupil data
+ok 69 - scenario K: teacher onboarding and planning catalog never require pupil data
+  ---
+  duration_ms: 0.6439
+  type: 'test'
+  ...
+1..69
+# tests 95
+# suites 13
+# pass 95
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 38646.1523

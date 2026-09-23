@@ -206,6 +206,8 @@ export type ActiveProjectPending = Readonly<{
   projectId: ProjectId;
   /** Shown on the trigger: `Opening 2024 school year…`. */
   label: string;
+  /** When known, only this destination route may settle the switch. */
+  destinationRouteKey?: string;
 }>;
 
 export type ActiveProjectState = Readonly<{
@@ -227,9 +229,24 @@ export type ActiveProjectState = Readonly<{
   refusal: SelectProjectRefusal | null;
 }>;
 
+/** The only proof that an explicit switch arrived at its requested route. */
+export function selectionVerified(
+  state: ActiveProjectState,
+  selection: { projectId: ProjectId; routeKey: string },
+): boolean {
+  const snapshot = state.committed;
+  return state.pending === null &&
+    state.live.routeKey === selection.routeKey &&
+    snapshot !== null &&
+    snapshot.routeKey === selection.routeKey &&
+    snapshot.epoch === state.live.epoch &&
+    snapshot.project.id === selection.projectId;
+}
+
 export type ActiveProjectEvent =
   | Readonly<{ type: "route"; routeKey: string }>
   | Readonly<{ type: "snapshot"; snapshot: RouteSnapshot }>
+  | Readonly<{ type: "snapshot-unavailable"; routeKey: string; epoch: number }>
   | Readonly<{ type: "select-started"; pending: ActiveProjectPending }>
   | Readonly<{ type: "select-failed"; message: string }>
   | Readonly<{ type: "select-refused"; refusal: SelectProjectRefusal }>
@@ -251,6 +268,10 @@ export function reduceActiveProject(
   event: ActiveProjectEvent,
 ): ActiveProjectState {
   switch (event.type) {
+    case "snapshot-unavailable":
+      if (event.routeKey !== state.live.routeKey || event.epoch !== state.live.epoch) return state;
+      if (!state.committed && !state.pending) return state;
+      return { ...state, committed: null, pending: null };
     case "route": {
       if (state.live.routeKey === event.routeKey && state.live.epoch > 0) {
         return state;
@@ -270,7 +291,9 @@ export function reduceActiveProject(
         ...state,
         committed: event.snapshot,
         pending:
-          state.pending && state.pending.projectId === event.snapshot.project.id
+          state.pending &&
+          state.pending.projectId === event.snapshot.project.id &&
+          (!state.pending.destinationRouteKey || state.pending.destinationRouteKey === event.snapshot.routeKey)
             ? null
             : state.pending,
       };

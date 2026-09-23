@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.resources.drive-reload-recovery",
+  "source": "tasks/src/components/app/detail-panel/drive-reload-notice.tsx",
+  "materialityHash": "dfeb78dab6cff98f",
+  "reviewedAt": "2026-09-04",
+  "reviewer": "Principal integrator, delegated authority",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-45b0a6c89756d6eb76c5daf5-2b4ccd3edf3cc860.json",
+    "attestationSha256": "1eb8a7ed0d7ac8d6aea12390358c8a826c57a32a70310ab9c29b501e750a44a4",
+    "runId": "tasks-playwright-45b0a6c89756d6eb76c5daf5",
+    "canonicalEvidenceSha256": "45b0a6c89756d6eb76c5daf59a768e981cbe7f313c39b323e48dd2ce509aca57",
+    "rawArtifactSha256": "2b4ccd3edf3cc860046b63dafe0faf13bf4bc70e1f8498d490d278b33a2eadeb",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.surface.task-detail-panel",
+    "caseName": "populated task",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Clarify saved upload progress versus restart. Direct built synthetic pending-state and Check for updates review: experience/reviews/january-drive-copy-20260904/README.md. The critical task-detail fixture is regression context; manual review exercises the changed pending state.",
+  "decision": "Accept scoped copy for internal integration. Synthetic pending state is not parent-intake or provider proof. Preserve quality scores and keep cross-reload byte recovery and full acceptance open."
+}

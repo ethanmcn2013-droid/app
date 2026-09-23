@@ -1,0 +1,117 @@
+{
+  "checks": [
+    "real exact B resolver overrides both A cookies",
+    "forbidden/missing exact route neutral",
+    "repeated route rejected by actual resolver",
+    "actual auth + signed catalog GET + SQLite exact create",
+    "membership removal denies fresh route and capture",
+    "exact committed capture reconciles after removal",
+    "owner private edit allowed after removal",
+    "stale actor rejected before catalog I/O",
+    "correct B actor token cannot edit A note",
+    "another actor cannot adopt existing ID",
+    "archive read-only route and new capture rejection",
+    "catalog outage refuses exact filing",
+    "concurrent different projects refuse losing claim",
+    "same-project concurrent response loss reconciles one owned row",
+    "mixed real catalog captures owner loose B with grouped A present",
+    "mixed real catalog captures member loose project without private period metadata",
+    "mixed catalog excludes archived and removed member projects without fallback",
+    "mixed catalog remains bound to authenticated actor"
+  ],
+  "observations": [
+    {
+      "name": "concurrent conflicting destination",
+      "requested": [
+        "project-a",
+        "project-b"
+      ],
+      "results": [
+        {
+          "status": "fulfilled",
+          "project": "project-a"
+        },
+        {
+          "status": "rejected",
+          "error": "This capture has a different saved version. Reopen Notes to review it."
+        }
+      ]
+    },
+    {
+      "name": "mixed grouped and loose owner projects",
+      "route": "ready",
+      "routeProject": "project-b",
+      "parsedCatalog": [
+        "project-a",
+        "project-b",
+        "project-member"
+      ],
+      "captureError": null,
+      "rowsForAttempt": 1
+    },
+    {
+      "name": "mixed grouped and member loose project",
+      "member": {
+        "id": "project-member",
+        "name": "Member loose B",
+        "role": "member",
+        "planningPeriodId": null,
+        "planningPeriodName": null,
+        "contextType": "project",
+        "primaryDate": null,
+        "primaryDateLabel": null
+      },
+      "inserted": "n_00000000000000000000000000000009"
+    }
+  ],
+  "failures": [],
+  "requests": 18,
+  "actual": [
+    "Notes actions",
+    "Notes auth",
+    "signed Tasks catalog client",
+    "Tasks internal GET",
+    "route authorization wrapper",
+    "resolver",
+    "both schemas"
+  ],
+  "adapters": [
+    "Clerk session",
+    "host actor mapping",
+    "cookies",
+    "database handles",
+    "loopback fetch",
+    "instrumentation"
+  ],
+  "providers": false,
+  "revision": "8963e9197df1d3511758101b7f4f9e85ee43452a",
+  "dirty": " M src/components/app/suite-context-publisher.tsx\n M src/components/app/use-suite-context.ts\n M src/modules/notes/app/workspace/use-notebook.ts\n M src/modules/notes/server/actions/notes.ts\n M src/modules/notes/server/tasks-personalization.test.ts\n M src/modules/notes/server/tasks-personalization.ts\n?? experience/notes-recovery-context/followup-browser.mjs\n?? experience/notes-recovery-context/followup-server.mjs\n?? outputs/notes-recovery-followup/\n?? work/\n",
+  "sourceRoot": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-notes-recovery-context",
+  "node": "v24.19.0",
+  "checkedAt": "2026-09-05T00:13:47.251Z",
+  "sourceInputs": {
+    "src/server/db/schema.ts": "c21e257b7b669da315b8b19df61bd5d66b4be9e999be1c6d1fe745b177df4385",
+    "src/app/api/internal/workspaces/route.ts": "f966376043c115f2757b668cb83c17b793af963e7a40597e2d4f5b148e9b540f",
+    "src/modules/notes/server/notes-cross-product-assertion.ts": "4316a0e940ca75fb871948b05fb60b8639c364432f556bf51ecdaea2aad0bc08",
+    "src/modules/notes/server/tasks-personalization.ts": "f00e887d34cc8896ea5779c35885236f5b535b8c516e89a512b1d637cebb164a",
+    "src/lib/access-mode.ts": "10ecdeb6477b5507850d8033af04c70fb6165f6da4b3d0afd8b4cd22eeda263b",
+    "src/lib/projects/project-ref.ts": "33f0ed7ee3f979a75a61f3273e1f5b2bad3b36ea422a23eea08d1daaac62bd6b",
+    "src/server/projects/capabilities.ts": "ce2f5beb8bb7439d158dc8bfeefa6116b0174c2f6fdbfcdccc3dd623e785af98",
+    "src/server/projects/catalog.ts": "b234d6f47d88a2cb600bf3eee57c9eb792f7226eb621ef4f35d2bdb861dce77f",
+    "src/server/projects/resolve.ts": "22a5761d80d9a6a0fd349c8a541a94c9f1ebaee1de05b5028868856059baff31",
+    "src/server/projects/request-scope.ts": "0031c7d8282c7fde50c7a39039cc997bc633d830147cd752ee515e5bedd74c45",
+    "src/lib/review-suite-fixture.ts": "27a155722cdd0ce8182539508ea4b5254711c08a0e8019540c0855309019e3a2",
+    "src/server/demo/tasks-demo.ts": "2fe726750a544dba43d93a3953ac35369831f607d84f91c178ce95fd58636a6d",
+    "src/server/projects/route-authz.ts": "4ff2d0ee03b996ec1c64c2dcb6fd2bb3aa2916d3b7f75d9fd0ca776bd2e9155e",
+    "src/modules/notes/server/demo/notes-demo.ts": "bcd2df40a763fbf736fb233c63edc9b4a06a3cd423d476e7c01cdfbde63a772f",
+    "src/modules/notes/server/notes-auth-policy.ts": "ed853c386cd1f96fc723f1bfa071485560929561759c23c6e248893d75d20612",
+    "src/modules/notes/server/notes-auth.ts": "517110429eacbcd393868e279b07a8643c9e9681d4383f198fb5d41b95b7dd2e",
+    "src/modules/notes/server/db/notes-schema.ts": "bbd08d1b304f59f4512d4a32b4ba8c5203051f44713b97afc09eef05335ce13d",
+    "src/modules/notes/lib/notes-hybrid.ts": "22fcb62876768dfae80f66f38d6d36df2a48040f6cc98d1aef6eb37b8ffa3fe3",
+    "src/lib/suite-contracts.v1.json": "7bd4beddcadd03ae8bc7f0292f27958d975829d7cf9b0b7d3191b38fece15702",
+    "src/lib/product-urls.ts": "59f30b5e6a9a4974eaccd323ecaee8853d641f8845684a325f1d8f1bbd8138f6",
+    "src/modules/notes/server/notes-task-send-contract.ts": "aa573856ecf3d158fa9fe2c5b3e288bd93a1856a58bb9648bc72f0672898deea",
+    "src/modules/notes/server/notes-recovery-actor.ts": "70fc760308463da6cc3139eecdb6bab58e43316b8470876b7ce075765a7b652f",
+    "src/modules/notes/server/actions/notes.ts": "7045e38bbab34c5a2d274e073acadb4f8da8c02a5363f00fb3fb370306f6e4d2"
+  }
+}

@@ -44,6 +44,7 @@ const TASKS_USER_ID = "u_1";
 const PROJECT_A = "ws_project_a";
 const TIMELINE_SLUG = "glenmara-house";
 const TIMELINE_PROJECT = "plan";
+const FIRST_DUE_AT_SECONDS = Date.UTC(2026, 2, 29, 12) / 1000;
 
 /**
  * One Timeline database for the whole file, bound before the module that reads
@@ -127,7 +128,7 @@ async function seedTasksDatabase(
       args: [
         `task_${String(i).padStart(4, "0")}`,
         `Milestone ${i}`,
-        1_800_000_000_000 + i * 86_400_000,
+        FIRST_DUE_AT_SECONDS + i * 86_400,
         PROJECT_A,
       ],
     });
@@ -299,6 +300,9 @@ test("a whole source reports complete, with a digest", async (t) => {
   if (snapshot.kind !== "complete") return;
   assert.equal(snapshot.items.length, 3);
   assert.equal(snapshot.totalCount, 3);
+  assert.deepEqual(snapshot.items.map((item) => item.targetDate),
+    ["2026-03-29", "2026-03-30", "2026-03-31"],
+    "the real Tasks SQL read must convert Unix seconds without shifting Dublin DST dates");
   assert.match(snapshot.digest, /^[0-9a-f]{64}$/);
 });
 

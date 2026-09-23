@@ -1,0 +1,113 @@
+{
+  "capturedAt": "2026-09-04T19:32:25.543Z",
+  "baseRevision": "7d4040cbd59f4611ca69a60967b34bd58181d4c5",
+  "sourceState": "Submitted dirty implementation; containing commit identifies revision. Source hashes normalize LF.",
+  "url": "http://127.0.0.1:3127/app/settings",
+  "resourcesUrl": "http://127.0.0.1:3127/app/tasks?task=demo-t-01",
+  "viewports": [
+    {
+      "width": 390,
+      "height": 844
+    },
+    {
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "width": 1280,
+      "height": 900
+    },
+    {
+      "width": 1440,
+      "height": 960
+    }
+  ],
+  "sources": [
+    {
+      "path": "src/components/app/settings/settings-app.tsx",
+      "sha256": "f21f478acb6d05418949b2bf6b57dd18f43b83f4e82a9c369385cf2411804e70"
+    },
+    {
+      "path": "src/components/app/settings/sections/storage.tsx",
+      "sha256": "1f17fdda3ac9c9a054713edc05cf5135ef86e26ea81d0a862f54ebd6cdea6c17"
+    },
+    {
+      "path": "src/components/app/settings/sections/connections.tsx",
+      "sha256": "c75f8dcbefb28fbcdd821b4098ea84bb69e17c3ddf980aa0f18438b001d01bd6"
+    },
+    {
+      "path": "src/components/app/settings/sections/connections-view.tsx",
+      "sha256": "8bad9c67ed0327ef7ae599671fd917850ac536cb99da94d867ff31458edf06ed"
+    },
+    {
+      "path": "src/components/app/settings/sections/connections-review.tsx",
+      "sha256": "4eb60134621ee73dd1ae117b6f63a14be39db0a8e8743d40b3dd51436f24831c"
+    },
+    {
+      "path": "src/components/app/detail-panel/resources-section.tsx",
+      "sha256": "b367ef3c53f5a7b3cc65b556c1f5b574c8f23d010d7e36d1d11ec94cb21ca02d"
+    },
+    {
+      "path": "src/components/app/detail-panel/use-drive-uploads.ts",
+      "sha256": "2d0adafdb2ebd0e778cb80b5d265820fd9b9cec6155c0c9d5a41c4a82688e36a"
+    },
+    {
+      "path": "src/components/app/detail-panel/drive-upload-row.tsx",
+      "sha256": "c33c4ff82c84136883e79c8bd0f5b1ff6346d43d7ae0d14d588ba25157784daa"
+    },
+    {
+      "path": "src/components/app/detail-panel/drive-upload-review.tsx",
+      "sha256": "3d9101764fcf105f49e535cce7f07e420d45f0dfd2e1d3cf03ce46d696a69758"
+    },
+    {
+      "path": "src/lib/project-drive-ui.ts",
+      "sha256": "785d3a9d1ba26170b148454c726254fe963f031bca422e2d6f94b47191ae0cd6"
+    },
+    {
+      "path": "src/lib/project-drive-upload-machine.ts",
+      "sha256": "431e109d5c1f8512efd03027ecb58c335bcd39c6cf47cd82da7a33b1306ca3f6"
+    },
+    {
+      "path": "src/server/actions/project-drive-status.ts",
+      "sha256": "456ea3aa005f5581221f51a723abd4405e0680d3bc93582d4e33cd76925dd178"
+    },
+    {
+      "path": "src/server/connections/project-drive-ui-status.ts",
+      "sha256": "f6236ef7e83d7dfb3fe6f9873cd512f5724bb5dbb153a555a4649f2ad2ddbc01"
+    },
+    {
+      "path": "src/server/actions/resources.ts",
+      "sha256": "08545c8fc15d3ada0ebfe670eb410f7a7d6c21f16b56c02eb05d2984e0e36512"
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "docs/projects/project-drive/ui-evidence/connections-1280.png",
+      "sha256": "7d0addf7d09faafe66dadda934a6afb6527c0cd07c6dbc501b25fa6f2a80ea87"
+    },
+    {
+      "path": "docs/projects/project-drive/ui-evidence/connections-1440.png",
+      "sha256": "8e6b38dda307228cb239de7dae6b10ae8cc5252a135b208fc3b29cd198c4a1c7"
+    },
+    {
+      "path": "docs/projects/project-drive/ui-evidence/connections-390.png",
+      "sha256": "5f34fd06bdea38fd3e24cb0ef828018a633d03df422879c10a7f51fc25c8d830"
+    },
+    {
+      "path": "docs/projects/project-drive/ui-evidence/connections-768.png",
+      "sha256": "83cf0ba6d32d01ba9c612efe2ba18907c3789174e268af1b89bcb0a4b49a4e37"
+    },
+    {
+      "path": "docs/projects/project-drive/ui-evidence/connections-attention.png",
+      "sha256": "430b151555ffdd1642471fc487f9c5be3a9fe47df27e99c0e480a55189749c7a"
+    },
+    {
+      "path": "docs/projects/project-drive/ui-evidence/resources-fallback-desktop.png",
+      "sha256": "40501e4221f6925aae5e3c4fb17e76259fa3812e0ac7f1f6464be59b0efca589"
+    },
+    {
+      "path": "docs/projects/project-drive/ui-evidence/resources-mobile.png",
+      "sha256": "5b4f96894a059fe7a765995bf128fc5e3dd639c0632a8ad605c320025ead31fd"
+    }
+  ]
+}

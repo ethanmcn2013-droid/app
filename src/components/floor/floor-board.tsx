@@ -26,7 +26,10 @@
  * existing store's — this file replaces the rendering, nothing else.
  */
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { useCalendarFrame } from "@/components/app/room/room-brief-context";
+import type { CalendarFrame } from "@/lib/calendar-frame";
+import { calendarDateInTimeZone } from "@/lib/planning/dates";
 import { useLabStore } from "@/components/hybrid/store";
 import { useBoardColumns } from "@/components/hybrid/columns-context";
 import { useFitColumns } from "@/components/hybrid/view-prefs";
@@ -72,17 +75,22 @@ function dayCount(iso: string, today: number): string {
 
 export type TimeFact = { kind: string; label: string; said: string; spoken: string };
 
-/** Midnight UTC today, so a card's time fact is stable across a render. */
-export function todayStamp(): number {
-  const now = new Date();
-  return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-}
-
-export function timeOf(task: LabTask, columnIsDone: boolean, today: number): TimeFact {
+export function timeOf(
+  task: LabTask,
+  columnIsDone: boolean,
+  calendar: Pick<CalendarFrame, "today" | "timeZone">,
+): TimeFact {
+  // Date-only schedules stay calendar dates. UTC is just their arithmetic
+  // representation; the request frame has already selected the project day.
+  const today = toUTC(calendar.today);
   const none = { kind: "none", label: "", said: "", spoken: "" };
   if (task.completed || columnIsDone) {
     if (!task.completedAt) return none;
-    const iso = task.completedAt.slice(0, 10);
+    const completed = new Date(task.completedAt);
+    if (Number.isNaN(completed.getTime())) return none;
+    // Completion is an instant, unlike a due date. Resolve it in the same
+    // project timezone before naming its calendar day.
+    const iso = calendarDateInTimeZone(completed, calendar.timeZone);
     return {
       kind: "done",
       label: dayLabel(iso, today),
@@ -174,15 +182,17 @@ type CardProps = {
   clientOf: (task: LabTask) => string | null;
   tagOf: (task: LabTask) => string | null;
   onTick: (id: string) => void;
+  onOpen: (id: string, eventTimeStamp: number) => void;
   onMenu: (id: string, anchor: HTMLElement) => void;
   onDragStart: (event: React.DragEvent) => void;
+  onDragEnd: (event: React.DragEvent) => void;
   onClient: (name: string) => void;
   menuOpen: boolean;
 };
 
 function FloorCard({
   task, time, done, stop, carried, open, clientOnly,
-  clientOf, tagOf, onTick, onMenu, onClient, menuOpen, onDragStart,
+  clientOf, tagOf, onTick, onOpen, onMenu, onClient, menuOpen, onDragStart, onDragEnd,
 }: CardProps) {
   const client = clientOf(task);
   const tag = tagOf(task);
@@ -205,8 +215,13 @@ function FloorCard({
       data-id={task.id}
       draggable={!open}
       onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onClick={(event) => {
+        if (!(event.target as HTMLElement).closest("[data-act]")) onOpen(task.id, event.timeStamp);
+      }}
       aria-label={task.title}
       aria-describedby={`fd-${task.id}`}
+      aria-keyshortcuts="Enter"
       {...(task.description ? { "aria-expanded": open } : {})}
       tabIndex={stop ? 0 : -1}
       {...(done ? {} : { "aria-roledescription": "Movable task" })}
@@ -308,10 +323,11 @@ export function FloorBoard({
   const [fitColumns] = useFitColumns();
   const rootRef = useRef<HTMLDivElement>(null);
 
-  const today = useMemo(() => todayStamp(), []);
+  const calendar = useCalendarFrame();
 
   const [focusId, setFocusId] = useState<string | null>(null);
   const [carriedId, setCarriedId] = useState<string | null>(null);
+  const suppressOpenUntil = useRef(0);
   const carriedFrom = useRef<{ status: string; index: number } | null>(null);
   const [openNoteId, setOpenNoteId] = useState<string | null>(null);
   const [clientOnly, setClientOnly] = useState<string | null>(null);
@@ -338,12 +354,12 @@ export function FloorBoard({
   const rowsFor = useCallback(
     (column: { key: string; isDone: boolean }) => {
       let rows = tasks.filter((t) => t.status === column.key).sort((a, b) => a.order - b.order);
-      if (lateOnly) rows = rows.filter((t) => timeOf(t, column.isDone, today).kind === "overdue");
-      if (todayOnly) rows = rows.filter((t) => timeOf(t, column.isDone, today).kind === "today");
+      if (lateOnly) rows = rows.filter((t) => timeOf(t, column.isDone, calendar).kind === "overdue");
+      if (todayOnly) rows = rows.filter((t) => timeOf(t, column.isDone, calendar).kind === "today");
       if (clientOnly) rows = rows.filter((t) => clientOf(t) === clientOnly);
       return rows;
     },
-    [tasks, clientOnly, clientOf, lateOnly, todayOnly, today],
+    [tasks, clientOnly, clientOf, lateOnly, todayOnly, calendar],
   );
 
   const all = tasks;
@@ -500,7 +516,9 @@ export function FloorBoard({
       }
       if (event.key === "Enter") {
         event.preventDefault();
-        setOpenNoteId((prev) => (prev === id ? null : id));
+        if (carriedId) return;
+        if (event.shiftKey) setOpenNoteId((prev) => (prev === id ? null : id));
+        else store.openTask(id);
         return;
       }
       const DIR: Record<string, [number, number]> = {
@@ -543,6 +561,7 @@ export function FloorBoard({
 
   /* ── pointer drag ──────────────────────────────────────────── */
   const onDragStart = (event: React.DragEvent, id: string) => {
+    suppressOpenUntil.current = event.timeStamp + 500;
     const at = columns.findIndex((c) => rowsFor(c).some((t) => t.id === id));
     carriedFrom.current = { status: columns[at]?.key ?? columns[0].key, index: 0 };
     setCarriedId(id);
@@ -575,6 +594,7 @@ export function FloorBoard({
     overRef.current = { lane, index };
   };
   const onDrop = (event: React.DragEvent) => {
+    suppressOpenUntil.current = event.timeStamp + 500;
     stopEdge();
     if (!carriedId || !overRef.current) return;
     event.preventDefault();
@@ -714,8 +734,19 @@ export function FloorBoard({
                     <FloorCard
                       key={task.id}
                       onDragStart={(e) => onDragStart(e, task.id)}
+                      onDragEnd={(event) => {
+                        suppressOpenUntil.current = event.timeStamp + 500;
+                        stopEdge();
+                        setCarriedId(null);
+                        carriedFrom.current = null;
+                        overRef.current = null;
+                      }}
+                      onOpen={(id, eventTimeStamp) => {
+                        if (carriedId || eventTimeStamp < suppressOpenUntil.current) return;
+                        store.openTask(id);
+                      }}
                         task={task}
-                        time={timeOf(task, column.isDone, today)}
+                        time={timeOf(task, column.isDone, calendar)}
                         done={task.completed || column.isDone}
                         stop={task.id === stopId}
                         carried={task.id === carriedId}

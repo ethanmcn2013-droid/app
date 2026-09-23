@@ -331,7 +331,7 @@
             {
               "kind": "role",
               "role": "heading",
-              "name": "This code has expired.",
+              "name": "This access is no longer available.",
               "proves": [
                 "error"
               ]
@@ -339,7 +339,7 @@
           ]
         },
         {
-          "name": "already used code",
+          "name": "unconfirmed redemption",
           "path": "/redeem/REVIEW-USED",
           "states": [
             "disabled"
@@ -348,7 +348,7 @@
             {
               "kind": "role",
               "role": "heading",
-              "name": "You've already redeemed this one.",
+              "name": "We couldn't confirm this redemption.",
               "proves": [
                 "disabled"
               ]
