@@ -21,7 +21,7 @@ import { assertTasksBriefingQuery } from "./tasks-read-contract";
  * Engine fields produced from the real DB:
  *   - lane:        canonicalised todo/doing/review/done → next/in-flight/in-flight/shipped
  *   - priority:    "P0"|"P1"|"P2"|"P3" string → 0|1|2|3 number
- *   - dueAt:       passed through (unix ms or null)
+ *   - dueAt:       Tasks SQLite seconds converted to unix ms or null
  *   - idleDays:    passed through (Tasks pre-computes this)
  *   - blockedBy:   JSON-parsed; defaults to []
  *   - commentCount:set to 0 for v1, a JOIN on comments per task is
@@ -142,35 +142,47 @@ export function makeTasksDbSource(): BriefingSource | null {
         return [];
       }
 
-      for (const row of rows) {
-        const lane = canonicaliseLane(row.lane as string);
-        const priority = parsePriority(row.priority as string);
-        const idleDays = Number(row.idle_days ?? 0);
-        const blockedBy = parseBlockedBy(row.blocked_by as string | null);
-        // Only credit shipped tasks with a shipping timestamp. The
-        // subquery returns the latest toggleComplete or move event;
-        // for an actively-shipped task that's the moment it shipped.
-        const shippedAt = row.shipped_activity_at;
-        const movedToShippedAt =
-          lane === "shipped" && shippedAt != null
-            ? Number(shippedAt)
-            : null;
-        signals.push({
-          id: String(row.id),
-          title: String(row.title),
-          lane,
-          priority,
-          dueAt: row.due_at != null ? Number(row.due_at) : null,
-          idleDays,
-          commentCount: 0,
-          blockedBy,
-          sourceLabel: `Tasks · ${row.workspace_name}`,
-          movedToShippedAt,
-        });
-      }
+      for (const row of rows) signals.push(mapTasksBriefingRow(row));
       return signals;
     },
   };
+}
+
+type RawTasksBriefingRow = Readonly<Record<string, Value>>;
+
+/** Adapt one raw libSQL Tasks row to the Signal contract. Raw SQLite
+ * `due_at` values are integer seconds; TaskSignal uses Unix milliseconds. */
+export function mapTasksBriefingRow(row: RawTasksBriefingRow): TaskSignal {
+  const lane = canonicaliseLane(String(row.lane ?? ""));
+  const shippedAt = row.shipped_activity_at;
+  return {
+    id: String(row.id),
+    title: String(row.title),
+    lane,
+    priority: parsePriority(String(row.priority ?? "")),
+    dueAt: tasksDueAtToUnixMilliseconds(row.due_at),
+    idleDays: Number(row.idle_days ?? 0),
+    commentCount: 0,
+    blockedBy: parseBlockedBy(typeof row.blocked_by === "string" ? row.blocked_by : null),
+    sourceLabel: `Tasks · ${String(row.workspace_name ?? "")}`,
+    // activities.created_at is Unix seconds and the SQL query multiplies it
+    // by 1000 to align with Signal's millisecond clock.
+    movedToShippedAt: lane === "shipped" && shippedAt != null ? Number(shippedAt) : null,
+  };
+}
+
+/** Tasks stores due_at as seconds, while the briefing engine compares Unix ms.
+ * Null stays absent, negative timestamps remain valid, and malformed or out
+ * of range SQLite values fail closed as undated rather than leaking NaN. */
+export function tasksDueAtToUnixMilliseconds(rawDueAt: Value): number | null {
+  if (rawDueAt == null) return null;
+  if (typeof rawDueAt === "string" && !/^-?\d+$/.test(rawDueAt)) return null;
+  if (typeof rawDueAt !== "number" && typeof rawDueAt !== "bigint" && typeof rawDueAt !== "string") return null;
+  const seconds = Number(rawDueAt);
+  if (!Number.isSafeInteger(seconds)) return null;
+  const milliseconds = seconds * 1000;
+  if (!Number.isSafeInteger(milliseconds) || Math.abs(milliseconds) > 8.64e15) return null;
+  return milliseconds;
 }
 
 export function canonicaliseLane(raw: string): Lane {
