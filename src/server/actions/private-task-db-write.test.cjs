@@ -48,3 +48,25 @@ test('real task create, edit, copy and import database failures hide private wor
     assert.equal((await f.counts()).tasks,1);
   } finally { f.close(); }
 });
+
+test('failed activity INSERT logs a fixed category while the authorized Task edit succeeds', async () => {
+  const f=await usageFixture({seedClaim:false});
+  const privateTitle='PRIVATE_ACTIVITY_TITLE_SYNTHETIC';
+  const originalWarn=console.warn;
+  const warnings=[];
+  try {
+    await f.action({id:'activity-task',title:'Initial title',projectId:'a'});
+    const before=await f.counts();
+    await f.client.execute(`CREATE TRIGGER fail_private_activity BEFORE INSERT ON activities BEGIN SELECT RAISE(ABORT,'${privateTitle}'); END`);
+    console.warn=(...args)=>{warnings.push(args);};
+    await f.load('src/server/actions/tasks.ts').updateTaskAction('activity-task',{title:privateTitle});
+    const updated=(await f.db.select().from(f.schema.tasks).where(eq(f.schema.tasks.id,'activity-task')))[0];
+    assert.equal(updated.title,privateTitle);
+    assert.equal((await f.counts()).activities,before.activities);
+    assert.deepEqual(warnings,[['activity: record failed']]);
+    assert.equal(JSON.stringify(warnings).includes(privateTitle),false);
+  } finally {
+    console.warn=originalWarn;
+    f.close();
+  }
+});
