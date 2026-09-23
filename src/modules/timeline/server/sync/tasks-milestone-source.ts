@@ -57,6 +57,15 @@ export function canonicaliseStatus(tasksLane: string): Status {
   }
 }
 
+/** Tasks stores due_at as SQLite timestamp seconds, not JavaScript milliseconds. */
+export function tasksDueAtToCalendarDate(rawDueAt: unknown): string | null {
+  if (rawDueAt == null) return null;
+  const seconds = Number(rawDueAt);
+  if (!Number.isSafeInteger(seconds) || seconds === 0) return null;
+  const date = new Date(seconds * 1000);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10);
+}
+
 // ── Tagged source result ──────────────────────────────────────────────────────
 
 /**
@@ -301,10 +310,7 @@ export function makeMilestoneSyncSource(): MilestoneSyncSource | null {
       const items = rows.map((row, i) => {
         const tasksWorkspaceId = String(row.workspace_id);
         const tasksTaskId = String(row.task_id);
-        const dueAt = row.due_at != null ? Number(row.due_at) : null;
-        const targetDate = dueAt
-          ? new Date(dueAt).toISOString().slice(0, 10)
-          : null;
+        const targetDate = tasksDueAtToCalendarDate(row.due_at);
 
         return {
           id: `ms-${tasksWorkspaceId}-${tasksTaskId}`,
