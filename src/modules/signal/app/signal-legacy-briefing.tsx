@@ -1,12 +1,12 @@
 import "server-only";
 
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { QuietBriefingLedger } from "../components/brief/quiet-briefing-ledger";
 import { SignalScopeSwitcher } from "../components/brief/scope-switcher";
 import { isDemoMode } from "@/lib/access-mode";
 import { briefingTimestampLabel } from "../lib/briefing/calendar-time";
 import { planningPeriodsEnabled } from "../lib/planning-periods/scope";
-import type { SignalScope } from "../lib/planning-periods/scope";
+import { parseBriefingReadScopeHint } from "../lib/planning-periods/read-scope-hint";
 import { buildBriefingForUser } from "../server/briefing/signal-build-for-user";
 import { buildLegacyLedgerDTO } from "../server/analytics/build-ledger-dto";
 import { isOnboarded } from "../server/onboarding/signal-onboarding-queries";
@@ -34,23 +34,19 @@ export async function SignalLegacyBriefing({
     if (!onboarded) redirect("/app/home/briefing/onboarding");
   }
 
-  const hintedScope: SignalScope | undefined =
-    typeof searchParams.workspaceId === "string"
-      ? { kind: "workspace", workspaceId: searchParams.workspaceId }
-      : planningPeriodsEnabled() &&
-          typeof searchParams.planningPeriodId === "string"
-        ? {
-            kind: "planningPeriod",
-            planningPeriodId: searchParams.planningPeriodId,
-          }
-        : undefined;
+  const hint = parseBriefingReadScopeHint(searchParams, planningPeriodsEnabled());
+  if (hint.kind === "invalid") notFound();
+  const hintedScope = hint.kind === "scope" ? hint.scope : undefined;
 
   const result = await buildBriefingForUser({
     clerkId: userId ?? "demo-user",
     cadence: "daily",
     scope: hintedScope,
   });
-  if (result.kind === "no-workspace") redirect("/app/home/briefing/onboarding");
+  if (result.kind === "no-workspace") {
+    if (hintedScope) notFound();
+    redirect("/app/home/briefing/onboarding");
+  }
 
   if (result.authorizedScope.scope.kind === "planningPeriod") {
     await recordPlanningEvent({

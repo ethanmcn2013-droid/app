@@ -1,19 +1,30 @@
 "use server";
 
-import { unlink } from "node:fs/promises";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
 import { readWorkspaceColumnConfig } from "@/server/db/board-config-read";
 import { isDoneColumnKey, isTaskDone } from "@/lib/board-columns";
 import { nextTaskSeq } from "@/server/db/task-seq";
-import { activities, attachments, comments, resources, tasks } from "@/server/db/schema";
+import { createTaskInTransaction, prepareCanonicalTaskCreate } from "@/server/tasks/create-task-core";
+import {
+  activities,
+  attachments,
+  comments,
+  notifications,
+  resources,
+  tasks,
+  users,
+  workspaces,
+} from "@/server/db/schema";
 import { getSubtasks, getTasks } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
 import { getActiveWorkspaceOrNull, getCurrentUser } from "@/server/auth";
+import { privateTaskDbWrite } from "@/server/actions/private-task-db-write";
 import {
   authorizeProjectCandidate,
+  authorizeStoredProject,
   readableProjectOrNull,
   scopeForTask,
 } from "@/server/actions/project-authz";
@@ -33,18 +44,24 @@ import {
   classifyLaneTransition,
   recordSponsoredUse,
 } from "@/lib/account/instrumentation/call-site";
+import { deleteNativeByteCleanupTargetConfirmed } from "@/server/attachments/native-byte-cleanup";
+import { repairExactNativeByteCleanupReceipts } from "@/server/attachments/native-upload-cleanup";
+import { deleteNativeAttachmentRowsInTransaction } from "@/server/attachments/native-upload-custody";
+import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
+import { hasAccountDeletionStartedWith } from "@/server/account-deletion-lifecycle";
+import { captureTaskCreated } from "@/server/sponsored-use/capture";
 
 /**
  * Pure read pass-through used by the realtime sync hook to refetch
  * the canonical task list when an SSE "tasks-changed" event arrives.
- * Resolves the active workspace from the session cookie.
+ * The displayed Project is explicit and independently proved for this request.
+ * A global change notification never supplies authority or selects a Project.
  */
-export async function getTasksAction(): Promise<Task[]> {
+export async function getTasksAction(candidateProjectId: string): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  // Fail-closed: a caller who belongs to nothing gets no tasks, where the old
-  // accessor handed back LEGACY_WORKSPACE_ID and this returned its rows (D-005).
-  const ambient = await getActiveWorkspaceOrNull();
-  const ws = await readableProjectOrNull(ambient);
+  // Missing, malformed and inaccessible candidates stay neutral. Never replace
+  // an explicit B store with the caller's authorized ambient A task list.
+  const ws = await readableProjectOrNull(candidateProjectId);
   return ws ? getTasks(ws) : [];
 }
 
@@ -492,10 +509,10 @@ export async function updateTaskAction(
   // Workspace guard: a write only lands when the row belongs to the
   // caller's active workspace. Without this clause an authenticated
   // user who knows any task id could overwrite cross-tenant rows.
-  await db
+  await privateTaskDbWrite(() => db
     .update(tasks)
     .set({ ...cleaned, ...bump() })
-    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
+    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws))));
 
   // Emit one activity per tracked field (parallel; observability,
   // not transactional). Untracked fields like `idleDays` are skipped.
@@ -591,65 +608,94 @@ export async function addTaskAction(input: {
   // No proved Project means no destination. The old accessor would have
   // offered LEGACY_WORKSPACE_ID here and this would have created the task
   // inside it (D-005).
-  if (!grant.ok) return neutralTaskList(ambient);
+  if (!grant.ok) {
+    // An explicitly displayed Project must never reconcile its optimistic
+    // state with the caller's different ambient Project after a refusal.
+    if (input.projectId != null) throw new Error("Task Project is unavailable");
+    return neutralTaskList(ambient);
+  }
   const ws = grant.projectId;
   const id =
     input.id ??
     `t-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).slice(0, 8)}`;
-  const lane = input.lane ?? "todo";
-  // Creating straight into a done column is a completion (T·122).
-  const createdDone = isDoneColumnKey(lane, await readWorkspaceColumnConfig(ws));
-  if (input.parentTaskId) {
-    // A subtask inherits its parent's tenant. Require a top-level parent in
-    // the active workspace; this rejects both foreign-parent injection and
-    // unsupported deeper nesting before any child row is inserted.
-    const [parent] = await db
-      .select({ id: tasks.id })
-      .from(tasks)
-      .where(
-        and(
-          eq(tasks.id, input.parentTaskId),
-          eq(tasks.workspaceId, ws),
-          isNull(tasks.parentTaskId),
-        ),
-      );
-    if (!parent) {
-      throw new Error(
-        "addTaskAction: parent task is not in the active workspace",
-      );
+  const created = await db.transaction(async (tx) => {
+    const current = await authorizeStoredProject({
+      storedProjectId: ws, actorUserId: me, capability: "createOrEditTasks",
+      archivePolicy: "enforce", executor: tx,
+    });
+    if (!current.ok) return false;
+    await assertProjectNotDeleting(tx, ws);
+    const [actor] = await tx.select({ clerkId: users.clerkId }).from(users).where(eq(users.id, me)).limit(1);
+    if (!actor || await hasAccountDeletionStartedWith(tx, actor.clerkId ?? me)) return false;
+    const [owner] = await tx.select({ id: users.id, clerkId: users.clerkId }).from(workspaces)
+      .innerJoin(users, eq(users.id, workspaces.ownerUserId)).where(eq(workspaces.id, ws)).limit(1);
+    if (owner && await hasAccountDeletionStartedWith(tx, owner.clerkId ?? owner.id)) return false;
+    if (input.parentTaskId) {
+      // A subtask inherits its parent's tenant. Require a top-level parent in
+      // the active workspace; this rejects both foreign-parent injection and
+      // unsupported deeper nesting before any child row is inserted.
+      const [parent] = await tx
+        .select({ id: tasks.id })
+        .from(tasks)
+        .where(
+          and(
+            eq(tasks.id, input.parentTaskId),
+            eq(tasks.workspaceId, ws),
+            isNull(tasks.parentTaskId),
+          ),
+        );
+      if (!parent) {
+        throw new Error(
+          "addTaskAction: parent task is not in the active workspace",
+        );
+      }
     }
+    const lane = input.lane ?? "todo";
+    // Column truth and completion must use the same transaction as creation.
+    const createdDone = isDoneColumnKey(lane, await readWorkspaceColumnConfig(ws, tx));
+    const task = prepareCanonicalTaskCreate({
+      id, workspaceId: ws, title: input.title, description: input.description, lane,
+      priority: input.priority, assignees: input.assignees, estimate: input.estimate,
+      due: input.due, dueAt: input.dueAt, tags: input.tags, recurrence: input.recurrence,
+      externalContactName: input.externalContactName, externalContactEmail: input.externalContactEmail,
+      cents: sanitizeCents(input.cents ?? null), parentTaskId: input.parentTaskId,
+      completedAt: createdDone ? new Date() : null,
+    });
+    await createTaskInTransaction({
+      async nextPosition(value) {
+        const [row] = await tx.select({ max: sql<number | null>`MAX(${tasks.position})` }).from(tasks)
+          .where(and(eq(tasks.lane, value.lane), eq(tasks.workspaceId, value.workspaceId)));
+        return (row?.max ?? 0) + 1;
+      },
+      async insertTask(value) {
+        const [row] = await privateTaskDbWrite(() => tx.insert(tasks).values({
+          id: value.id, workspaceId: value.workspaceId, seq: nextTaskSeq(value.workspaceId), title: value.title,
+          description: value.description, lane: value.lane, priority: value.priority,
+          assignees: [...value.assignees], estimate: value.estimate, due: value.due,
+          dueAt: value.dueAtSeconds == null ? null : new Date(value.dueAtSeconds * 1000),
+          tags: value.tags == null ? null : [...value.tags], recurrence: value.recurrence,
+          externalContactName: value.externalContactName, externalContactEmail: value.externalContactEmail,
+          cents: value.cents, parentTaskId: value.parentTaskId, position: value.position,
+          completedAt: value.completedAtSeconds == null ? null : new Date(value.completedAtSeconds * 1000),
+          isMilestone: value.isMilestone, updatedAt: new Date(value.createdAtSeconds * 1000),
+        }).returning({ seq: tasks.seq }));
+        return { seq: row?.seq ?? 0 };
+      },
+      async insertActivity(value) {
+        await tx.insert(activities).values({
+          id: `a-${globalThis.crypto.randomUUID()}`,
+          workspaceId: value.workspaceId, taskId: value.id, userId: me, kind: "taskAdd",
+          payload: { kind: "taskAdd", lane: value.lane }, createdAt: new Date(value.createdAtSeconds * 1000),
+        });
+      },
+    }, task);
+    await captureTaskCreated(tx, { actorUserId: me, projectId: ws });
+    return true;
+  }, { behavior: "immediate" });
+  if (!created) {
+    if (input.projectId != null) throw new Error("Task Project is unavailable");
+    return neutralTaskList(ambient);
   }
-  const position = await nextPositionForLane(lane, ws);
-  await db.insert(tasks).values({
-    id,
-    workspaceId: ws,
-    seq: nextTaskSeq(ws),
-    title: input.title,
-    description: input.description,
-    lane,
-    completedAt: createdDone ? new Date() : null,
-    priority: input.priority ?? "p2",
-    assignees: input.assignees ?? [],
-    estimate: input.estimate,
-    due: input.due,
-    position,
-    dueAt: input.dueAt,
-    tags: input.tags,
-    recurrence: input.recurrence,
-    externalContactName: input.externalContactName ?? null,
-    externalContactEmail: input.externalContactEmail ?? null,
-    cents: sanitizeCents(input.cents ?? null),
-    parentTaskId: input.parentTaskId ?? null,
-    ...bump(),
-  });
-  await recordActivity(id, {
-    kind: "taskAdd",
-    lane: input.lane ?? "todo",
-  }, { workspaceId: ws });
-  await recordSponsoredUse(
-    { product: "tasks", kind: "task_created", objectKey: id, subjectId: me, workspaceId: ws },
-    true,
-  );
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });
   return getTasks(ws);
@@ -742,63 +788,77 @@ export async function removeTaskAction(id: string): Promise<Task[]> {
   if (!scope.ok) return neutralTaskList(ambient);
   const ws = scope.ws;
 
-  // Re-read under the proved Project: confirm the parent is still there.
-  const [parent] = await db
-    .select({ id: tasks.id })
-    .from(tasks)
-    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
-  if (!parent) return getTasks(ws);
+  // FK cascade does NOT fire over Turso stateless HTTP, so delete the full
+  // subtree explicitly. Native byte receipts, attachment rows, child rows and
+  // the parent commit under one writer lock: no upload can enter between the
+  // attachment snapshot and task deletion.
+  const deletion = await db.transaction(
+    async (transaction) => {
+      const grant = await authorizeStoredProject({
+        storedProjectId: ws,
+        capability: "createOrEditTasks",
+        actorUserId: me,
+        executor: transaction,
+      });
+      if (!grant.ok) {
+        return { deleted: false, cleanupReceiptKeys: [] as string[] };
+      }
+      await assertProjectNotDeleting(transaction, ws);
+      const [parent] = await transaction
+        .select({ id: tasks.id })
+        .from(tasks)
+        .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)))
+        .limit(1);
+      if (!parent) {
+        return { deleted: false, cleanupReceiptKeys: [] as string[] };
+      }
+      const childRows = await transaction
+        .select({ id: tasks.id })
+        .from(tasks)
+        .where(and(eq(tasks.parentTaskId, id), eq(tasks.workspaceId, ws)));
+      const childIds = childRows.map((row) => row.id);
+      const taskIds = [id, ...childIds];
+      const attachmentRows = await transaction
+        .select({ id: attachments.id })
+        .from(attachments)
+        .where(inArray(attachments.taskId, taskIds));
+      const { cleanupReceiptKeys } =
+        await deleteNativeAttachmentRowsInTransaction(transaction, {
+          workspaceId: ws,
+          attachmentIds: attachmentRows.map((row) => row.id),
+        });
 
-  // FK cascade does NOT fire over Turso stateless HTTP, so we hand-roll
-  // the full subtree delete (mirrors account-erasure.ts pattern).
-  // 1. Collect child ids so we can delete their rows explicitly.
-  const childRows = await db
-    .select({ id: tasks.id, storedPath: attachments.storedPath })
-    .from(tasks)
-    .leftJoin(attachments, eq(attachments.taskId, tasks.id))
-    .where(and(eq(tasks.parentTaskId, id), eq(tasks.workspaceId, ws)));
-
-  const childIds = [...new Set(childRows.map((r) => r.id))];
-
-  // Collect attachment paths for best-effort unlink after row deletion.
-  const childAttachmentPaths = childRows
-    .map((r) => r.storedPath)
-    .filter((p): p is string => p !== null);
-
-  // 2. Also collect attachment paths on the parent itself.
-  const parentAttachmentRows = await db
-    .select({ storedPath: attachments.storedPath })
-    .from(attachments)
-    .where(eq(attachments.taskId, id));
-  const parentAttachmentPaths = parentAttachmentRows.map((r) => r.storedPath);
-
-  // 3. Delete children's child rows (activities, comments, attachments,
-  //    resources). No runtime FK cascade — hand-rolled explicitly.
-  if (childIds.length > 0) {
-    await db.delete(activities).where(inArray(activities.taskId, childIds));
-    await db.delete(comments).where(inArray(comments.taskId, childIds));
-    await db.delete(attachments).where(inArray(attachments.taskId, childIds));
-    await db.delete(resources).where(inArray(resources.taskId, childIds));
-    await db.delete(tasks).where(inArray(tasks.id, childIds));
-  }
-
-  // 4. Delete the parent's own child rows, then the parent itself.
-  await db.delete(activities).where(eq(activities.taskId, id));
-  await db.delete(comments).where(eq(comments.taskId, id));
-  await db.delete(attachments).where(eq(attachments.taskId, id));
-  await db.delete(resources).where(eq(resources.taskId, id));
-  await db
-    .delete(tasks)
-    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
-
-  // 5. Best-effort unlink of orphaned attachment binaries.
-  for (const storedPath of [...childAttachmentPaths, ...parentAttachmentPaths]) {
-    try {
-      await unlink(storedPath);
-    } catch {
-      // ENOENT or serverless: nothing left to remove.
-    }
-  }
+      await transaction
+        .delete(activities)
+        .where(inArray(activities.taskId, taskIds));
+      await transaction
+        .delete(comments)
+        .where(inArray(comments.taskId, taskIds));
+      await transaction
+        .delete(notifications)
+        .where(inArray(notifications.taskId, taskIds));
+      await transaction
+        .delete(resources)
+        .where(inArray(resources.taskId, taskIds));
+      if (childIds.length > 0) {
+        await transaction.delete(tasks).where(inArray(tasks.id, childIds));
+      }
+      const deletedParent = await transaction
+        .delete(tasks)
+        .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)))
+        .returning({ id: tasks.id });
+      if (deletedParent.length !== 1) {
+        throw new Error("task deletion conflicted");
+      }
+      return { deleted: true, cleanupReceiptKeys };
+    },
+    { behavior: "immediate" },
+  );
+  if (!deletion.deleted) return getTasks(ws);
+  await repairExactNativeByteCleanupReceipts(
+    { database: db, deleteTarget: deleteNativeByteCleanupTargetConfirmed },
+    deletion.cleanupReceiptKeys,
+  );
 
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });
@@ -903,7 +963,7 @@ export async function duplicateTaskAction(id: string): Promise<Task[]> {
       ? source.position + 0.0001
       : await nextPositionForLane(source.lane as LaneId, ws);
 
-  await db.insert(tasks).values({
+  await privateTaskDbWrite(() => db.insert(tasks).values({
     id: newId,
     workspaceId: ws,
     seq: nextTaskSeq(ws),
@@ -929,12 +989,12 @@ export async function duplicateTaskAction(id: string): Promise<Task[]> {
     completedAt: source.completedAt ?? null,
     parentTaskId: null,
     ...bump(),
-  });
+  }));
 
   // Copy every subtask as a child of the new task.
   const children = await getSubtasks(id, ws);
   for (const child of children) {
-    await db.insert(tasks).values({
+    await privateTaskDbWrite(() => db.insert(tasks).values({
       id: freshTaskId(),
       workspaceId: ws,
       seq: nextTaskSeq(ws),
@@ -950,7 +1010,7 @@ export async function duplicateTaskAction(id: string): Promise<Task[]> {
       cents: sanitizeCents(child.cents ?? null),
       parentTaskId: newId,
       ...bump(),
-    });
+    }));
   }
 
   await recordActivity(newId, { kind: "taskAdd", lane: source.lane }, { workspaceId: ws });

@@ -1,0 +1,126 @@
+{
+  "base": "0b9d132ac5b5f47579c8630becb94063b1db947d",
+  "original": "3d71256d9822e9eb34e8bf1524b3099ce47bb6bd",
+  "principal": "2fdd06c404e6833dc3110fab2643084a3cd5785d",
+  "ui": "2d1d77835e7bcedfab5c68e53608fe5d00dd8f9a",
+  "runtime": "7742247d7beebeb3b712977f5c3014aa426e55ca",
+  "branch": "feat/january-sponsored-wedding-date",
+  "files": {
+    "src/server/actions/planning.ts": {
+      "blob": "29bb3f99083b57176d7f66e2d33887aca8d8d6ba",
+      "committedSha256": "c870ea1a7e81f156bade7ef58bc1b44e30ee81413153f00f8130d898573e7f0f",
+      "workingSha256": "c870ea1a7e81f156bade7ef58bc1b44e30ee81413153f00f8130d898573e7f0f"
+    },
+    "src/server/db/couple-access-term.ts": {
+      "blob": "928548b5129492c2acdba75d5258ca1c7f33a3db",
+      "committedSha256": "1a80537024f57d95e128c10b6d76ce87d1494b43742ebd1dc361b688374374c6",
+      "workingSha256": "1a80537024f57d95e128c10b6d76ce87d1494b43742ebd1dc361b688374374c6"
+    },
+    "src/server/db/couple-access-term.test.ts": {
+      "blob": "42c603345e75df1820ea4e185aef1bb3141d3386",
+      "committedSha256": "4bd7413f9eb4d360c97c527d5ab79cabaf0a114a94bd73d03383018cd4d9cce1",
+      "workingSha256": "4bd7413f9eb4d360c97c527d5ab79cabaf0a114a94bd73d03383018cd4d9cce1"
+    },
+    "src/server/actions/planning-wedding-date.test.ts": {
+      "blob": "b450c18b391ff7e23d5b1b20a3d006f741fbd757",
+      "committedSha256": "04e2d5fe585df27ff01b4b62c7229127e6bdad1ae7680b3ce0424aef2ad70587",
+      "workingSha256": "04e2d5fe585df27ff01b4b62c7229127e6bdad1ae7680b3ce0424aef2ad70587"
+    },
+    "src/lib/planning/flags.ts": {
+      "blob": "56bd7e57e02dbd61be96ca550111199009bee71f",
+      "committedSha256": "9c1c53e72df514cfd77aa5371feb524d97d548c53b11d2a9a25e3afe97a43191",
+      "workingSha256": "a40e5848ca0f9be12edd803a8cdbe696a12f43b46cfe039bf543dd706971e014"
+    },
+    "src/server/planning/flags.ts": {
+      "blob": "bd2b4b1ae11ff872f76fb670f4777e6f75d20c41",
+      "committedSha256": "5f4224918927e5077f70bea153333b67ca799be5e778d2e19a7c27ad2b34ed4c",
+      "workingSha256": "a169eaa21facb69c65236956eb87a29ee163074d3e2462f157f1338f9fdf5b6a"
+    },
+    "src/server/planning/authorization.ts": {
+      "blob": "bde4c4bc75caf572af1f9c28369d17546728e928",
+      "committedSha256": "3257d5ff28d8b414ad059ddfe3344171aa3c175c216fd9d716463ccc77086b2d",
+      "workingSha256": "bc194cf8a922507583dbed569018a2f751ec203d2c1e407050213802dd7167bd"
+    },
+    "src/server/db/comp-redemption.ts": {
+      "blob": "8cfdc4a7e2a2fae3c2fbdab33abc43400b01ace1",
+      "committedSha256": "c69549e4c13cf269cf58e1150f97aa008ce0213e275bcbe1f082bd7f68f077b5",
+      "workingSha256": "8a319ab928673d1791bdcc60d2c8cd29fce46bf08c198b22f0affe6d477fb11e"
+    },
+    "src/server/db/sponsored-wedding-date.ts": {
+      "blob": "dcf193a9041d34aec6076364b8c0b5cf18a5dfce",
+      "committedSha256": "d68ca634b47acc132545e0b52618dddc10f30bcf2667350e9af0bc478767a38f",
+      "workingSha256": "d68ca634b47acc132545e0b52618dddc10f30bcf2667350e9af0bc478767a38f"
+    },
+    "src/server/actions/sponsored-wedding-date.ts": {
+      "blob": "c8154eec2dc405f9e754d0f34cb65135381be928",
+      "committedSha256": "2faeb8b60a0b0ba10fc5ccc0c477d6b4bd6d8b181febf39030636d48ac87de0f",
+      "workingSha256": "2faeb8b60a0b0ba10fc5ccc0c477d6b4bd6d8b181febf39030636d48ac87de0f"
+    },
+    "src/lib/venue-access-term.ts": {
+      "blob": "91bbefdd967902cf6e770c91e10ec01ff57727dd",
+      "committedSha256": "556f66c6f687f19f86dfa953308f33f38e16f14f4579f58d79b36e84ad1f89b1",
+      "workingSha256": "83540c91a9ec53f4cc0c1d69c360d025539910adf8e59cfc4b0e58a831b99155"
+    },
+    "src/components/welcome/contextual-onboarding.tsx": {
+      "blob": "32526f5ba42940af2381c54e16b341d79de9aca2",
+      "committedSha256": "a1c9a568b76c626954f9a67d5093e50e43d37306d5e91ca058b22cb99359e220",
+      "workingSha256": "ef539cd154c50e1b87e63996a7d1dbcae62f04a2d789bdb6abc76f859a3d5420"
+    },
+    "src/components/app/your-work/your-work-view.tsx": {
+      "blob": "f69737a115f9f323b212cf6191e5e012b9fd9a00",
+      "committedSha256": "5f7c4e341cfc287973b8357ba8025584ebf2d7074976be01d829aea310a3836e",
+      "workingSha256": "989b2c3ef495add9453b321219fd3a3f1c6944a86b2222f460a925cb8750681e"
+    }
+  },
+  "sourceTree": "26ac64a1d089d54e572e33be495cefe1546a99c2",
+  "originalSources": {
+    "3d71256d9822e9eb34e8bf1524b3099ce47bb6bd": {
+      "src/server/actions/planning.ts": {
+        "blob": "68ae9cd7973412d1e846a948ca84ac2544cf91ad",
+        "sha256": "5b4962f64680853332195441d3db9e9811ebeb69ff1c8519801a49ec0f0756c2"
+      },
+      "src/server/db/couple-access-term.ts": {
+        "blob": "5314fd90f1bff019f377527244bd567a39f22110",
+        "sha256": "a96d8ada31f90dfdadfd650aec1ac4df84668d10223298c44f5b7a0f3730d665"
+      }
+    },
+    "2fdd06c404e6833dc3110fab2643084a3cd5785d": {
+      "src/server/actions/planning.ts": {
+        "blob": "68ae9cd7973412d1e846a948ca84ac2544cf91ad",
+        "sha256": "5b4962f64680853332195441d3db9e9811ebeb69ff1c8519801a49ec0f0756c2"
+      },
+      "src/server/db/couple-access-term.ts": {
+        "blob": "f40d3ae39aa318d54877aedccb414a29aed6574e",
+        "sha256": "09d8dc7b3ec46725d63116c5737a5948212388fafe6aab30dadd8fb38d66dff0"
+      }
+    }
+  },
+  "principalEquivalence": {
+    "planningIdentical": true,
+    "removedHelperIdentical": true,
+    "wholeTermFileDifference": "Introductory commentary only; full original readbacks and diff retained."
+  },
+  "frozenUiSourceUnchanged": true,
+  "changesSinceUi": [
+    "src/server/actions/planning-wedding-date.test.ts",
+    "src/server/actions/planning.ts",
+    "src/server/db/couple-access-term.test.ts",
+    "src/server/db/couple-access-term.ts"
+  ],
+  "studio": {
+    "head": "6e74ed9e0e7818fc81bac1cc361a87a97386e05a",
+    "termBlob": "ad0a70f4ff1598a6d538579ca142c1f55eb98c5e",
+    "termSha256": "3ad6c12b3e85d3d5ea3fd90d13770e309c1bbda646cbc63003f7a139f1b5623b"
+  },
+  "scopedPacketPreservation": {
+    "path": "C:/Users/ethan/Documents/Codex/2026-09-04/here-are-6-prompts-i-have-2/outputs/sponsored-wedding-date-2026-09-05",
+    "manifestSha256": "c83d3427da25f5fe4d81e3cf66bb0ff997cb20da8ac201e5dbdeb51ffd5156ec",
+    "filesVerified": 189,
+    "allMatch": true
+  },
+  "principalSuppliedArtifacts": {
+    "principal-original.json": "143a1ac231fa07fbdf484841f0eb23357792e416b87a58a55926e96f77ec51ec",
+    "principal-original-probe.cjs": "2b91befae6d1dac3fec6b2c5121dfdc1515752e7349d65201ee9575ab479625e"
+  },
+  "testedSourceStillExact": true
+}

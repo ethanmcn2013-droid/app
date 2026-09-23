@@ -1,90 +1,109 @@
 import "server-only";
-import { and, eq, gt, isNull, or, desc } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "./index";
 import { entitlements } from "./schema";
 import type { EntitlementTier } from "@/lib/data";
-import { resolveEntitlement } from "@/lib/entitlements-shared/reads";
+import {
+  grantAppliesToWorkspace, isPurchaseMirror, listEntitlements, sharedGrantScope,
+} from "@/lib/entitlements-shared/reads";
 import { TIER_RANK, tierAtLeast } from "@/lib/entitlements-shared/tiers";
 
+export type EntitlementReadDependencies = {
+  database?: typeof db;
+  sharedDatabase?: Parameters<typeof listEntitlements>[1];
+};
+
 /**
- * Resolve the highest active tier a user holds. As of E-3.1
- * (2026-05-14) reads consult the shared signal-entitlements DB AND
- * the local Tasks-only entitlements table, and return whichever
- * grants MORE access.
- *
- * Why max-of-both, not shared-first: Stripe webhook writes still
- * land in the LOCAL table until E-3.2 swaps the writer. A
- * shared-first short-circuit (`if shared.tier !== "free" return it`)
- * would silently DOWNGRADE a customer whose paid entitlement lives
- * only in the local table the moment the shared DB returned any
- * lesser non-free tier. Taking the rank-max is downgrade-proof
- * regardless of which store a given entitlement currently lives in;
- * it collapses back to a plain shared read for free once E-3.2
- * makes the local table empty.
- *
- * `workspaceId` is accepted for signature compatibility with all
- * existing callers; the shared resolver is user-level, the
- * argument only scopes the local-fallback path.
- *
- * Returns "free" on any DB error. Tier reads MUST NOT crash a page.
+ * Project gates honour explicit scope in both stores. Null requests account
+ * grants only; local legacy null-scope rows remain account grants. Rank only
+ * eligible grants, after checking local purchase expiry/revocation by reference.
+ * This is paid-feature eligibility, not project membership or read authority.
  */
 export async function getEffectiveTier(
   userId: string,
-  workspaceId: string,
+  workspaceId: string | null,
+  dependencies: EntitlementReadDependencies = {},
 ): Promise<EntitlementTier> {
-  let shared: EntitlementTier = "free";
-  try {
-    shared = (await resolveEntitlement(userId)).tier;
-  } catch {
-    // Shared DB unreachable, local read below still stands.
-  }
-
-  let local: EntitlementTier = "free";
-  try {
-    local = await getEffectiveTierLocal(userId, workspaceId);
-  } catch {
-    // Local read failed, fall back to whatever shared resolved to.
-  }
-
-  return TIER_RANK[shared] >= TIER_RANK[local] ? shared : local;
+  return resolveTier(userId, { workspaceId }, dependencies);
 }
 
-async function getEffectiveTierLocal(
+/**
+ * Existing personal Notes gates and Timeline's workspace-creation allowance.
+ * January Studio v2 (f1967f2) retains Pro's unlimited workspace count. Preserve
+ * those personal benefits for a valid Pro grant, including a project-bound one;
+ * the count allowance does not grant another project's paid storage/features.
+ * The legacy Event/Wedding results remain available for cap messaging; only
+ * Workspace/Studio ranks enable the Pro benefit. Existing account-bound venue,
+ * comp, review and education grants retain their stored tier and expiry.
+ * Never use this result to authorise access to a particular project.
+ */
+export async function getPersonalFeatureTier(
   userId: string,
-  workspaceId: string,
+  dependencies: EntitlementReadDependencies = {},
 ): Promise<EntitlementTier> {
-  const now = new Date();
-  const rows = await db
-    .select({ tier: entitlements.tier, expiresAt: entitlements.expiresAt })
-    .from(entitlements)
-    .where(
-      and(
-        eq(entitlements.userId, userId),
-        or(
-          eq(entitlements.workspaceId, workspaceId),
-          isNull(entitlements.workspaceId),
-        ),
-        or(
-          isNull(entitlements.expiresAt),
-          gt(entitlements.expiresAt, now),
-        ),
-      ),
-    )
-    .orderBy(desc(entitlements.startedAt));
+  return resolveTier(userId, "personal", dependencies);
+}
 
-  if (rows.length === 0) return "free";
-  let best: EntitlementTier = "free";
-  for (const r of rows) {
-    if (TIER_RANK[r.tier] > TIER_RANK[best]) best = r.tier;
+async function resolveTier(
+  userId: string,
+  target: { workspaceId: string | null } | "personal",
+  dependencies: EntitlementReadDependencies,
+): Promise<EntitlementTier> {
+  if (!userId) return "free";
+  const now = Date.now();
+  const [localResult, sharedResult] = await Promise.allSettled([
+    // Include expired rows and every project: epoch-zero purchase tombstones
+    // must veto a stale mirror even if that mirror carries a different scope.
+    (dependencies.database ?? db).select().from(entitlements).where(eq(entitlements.userId, userId)),
+    listEntitlements(userId, dependencies.sharedDatabase),
+  ]);
+  const local = localResult.status === "fulfilled" ? localResult.value : [];
+  const shared = sharedResult.status === "fulfilled" ? sharedResult.value : [];
+  const purchases = new Map<string, typeof local>();
+  for (const row of local) {
+    if (row.source === "purchase" && row.notes) {
+      const matches = purchases.get(row.notes) ?? [];
+      matches.push(row);
+      purchases.set(row.notes, matches);
+    }
   }
+  const isExpired = (row: (typeof local)[number]) =>
+    row.expiresAt !== null && row.expiresAt.getTime() <= now;
+  let best: EntitlementTier = "free";
+  const consider = (tier: string) => {
+    if (Object.hasOwn(TIER_RANK, tier) && TIER_RANK[tier as EntitlementTier] > TIER_RANK[best]) {
+      best = tier as EntitlementTier;
+    }
+  };
+  for (const row of local) {
+    if (isExpired(row)) continue;
+    // A duplicate active purchase cannot resurrect its revoked reference.
+    if (row.source === "purchase" && row.notes && purchases.get(row.notes)?.some(isExpired)) continue;
+    if (target === "personal" || row.workspaceId === null || row.workspaceId === target.workspaceId) {
+      consider(row.tier);
+    }
+  }
+  for (const row of shared) {
+    const scope = sharedGrantScope(row);
+    if (scope.kind === "unknown" ||
+        (target !== "personal" && !grantAppliesToWorkspace(scope, target.workspaceId))) continue;
+    // If local state cannot be read, purchase mirrors cannot prove that the
+    // reference is still live. Independent Studio/venue grants remain usable.
+    if (localResult.status === "rejected" && isPurchaseMirror(row)) continue;
+    const matches = row.sourceRef ? purchases.get(row.sourceRef) : undefined;
+    if (matches?.length) {
+      if (matches.length !== 1 || matches.some(isExpired)) continue;
+      const purchase = matches[0];
+      const mirroredWorkspace = scope.kind === "workspace" ? scope.workspaceId : null;
+      if (purchase.workspaceId !== mirroredWorkspace || purchase.tier !== row.tier) continue;
+    }
+    consider(row.tier);
+  }
+  // Shared outage retains valid local access. Both unavailable resolves free.
   return best;
 }
 
-/** Tier-rank comparator for `<RequireTier>`. True when `actual` is
- *  at least `minimum`. */
-export function tierMeetsMinimum(
-  actual: EntitlementTier,
-  minimum: EntitlementTier,
-): boolean {
+/** Tier-rank comparator for `<RequireTier>`. */
+export function tierMeetsMinimum(actual: EntitlementTier, minimum: EntitlementTier): boolean {
   return tierAtLeast(actual, minimum);
 }

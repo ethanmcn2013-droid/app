@@ -350,7 +350,7 @@ function rowToComment(row: CommentRow): Comment {
     taskId: row.taskId,
     userId: row.userId as UserId,
     authorName: row.authorName,
-    body: row.body,
+    body: row.body ?? "",
     createdAt: row.createdAt,
   };
 }
@@ -368,7 +368,11 @@ export async function getCommentsForTask(
     })
     .from(comments)
     .leftJoin(users, eq(comments.userId, users.id))
-    .where(eq(comments.taskId, taskId))
+    .where(and(
+      eq(comments.taskId, taskId),
+      isNotNull(comments.revision),
+      isNull(comments.deletedAt),
+    ))
     .orderBy(asc(comments.createdAt))
     // Bound a single task's thread. A 500-comment task is already past any
     // real workflow; the cap keeps the detail panel payload and the AI

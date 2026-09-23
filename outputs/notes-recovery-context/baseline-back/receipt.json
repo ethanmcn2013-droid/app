@@ -1,0 +1,49 @@
+{
+  "revision": "9105c81a3f8472961f08008e525e69670f6ebd9f",
+  "sourceRoot": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\work\\s4-core-ca95830e",
+  "dirty": " M src/components/app/active-project-provider.tsx\n M src/components/app/active-project-route-sync.tsx\n M src/components/app/suite-context-publisher.tsx\n M src/components/app/use-suite-context.ts\n M src/lib/projects/route-snapshot.test.ts\n M src/lib/projects/route-snapshot.ts\n M src/lib/suite-context.ts\n M src/modules/notes/app/page.tsx\n M src/modules/notes/app/workspace/EarlyCaptureBootstrap.tsx\n M src/modules/notes/app/workspace/NotesWorkspace.tsx\n M src/modules/notes/app/workspace/use-notebook.ts\n M src/modules/notes/lib/notes-view-model.ts\n M src/modules/notes/server/actions/notes.ts\n?? experience/notes-recovery-context/\n?? outputs/\n?? src/modules/notes/lib/notes-recovery.test.ts\n?? src/modules/notes/lib/notes-recovery.ts\n?? src/modules/notes/server/notes-recovery-actor.ts\n?? work/\n",
+  "runtime": {
+    "node": "v24.19.0",
+    "chromium": "149.0.7827.55"
+  },
+  "checkedAt": "2026-09-04T23:19:15.017Z",
+  "cases": [
+    {
+      "name": "back-forward-reload",
+      "width": 1440,
+      "passed": false,
+      "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 'Original B'\n- 'Exact private words — café\\nSecond line'\n",
+      "errors": []
+    }
+  ],
+  "sourceInputs": {
+    "src/modules/notes/app/CaptureEmailRow.module.css": "31a035d52430c38cd4b5fd47a2e5e381c705a43542f265220e549b26ec9f1d76",
+    "src/modules/notes/app/CaptureEmailRow.tsx": "e15dbd7b845857c8a8c1e5afab40fa06541fdf1aba400aa20b995040eb5d7bd4",
+    "src/modules/notes/lib/notes-copy.ts": "5e2f1cc4d94fcde391122d36d5f04170f823f6e03eb20a196c6fc01ee771a922",
+    "src/modules/notes/lib/notes-hybrid.ts": "22fcb62876768dfae80f66f38d6d36df2a48040f6cc98d1aef6eb37b8ffa3fe3",
+    "src/modules/notes/lib/notes-view-model.ts": "6e7603eee230b363fdd70b21c2c9277c371b5b007a62eb3d94577ff2c8362000",
+    "src/lib/suite-contracts.v1.json": "7bd4beddcadd03ae8bc7f0292f27958d975829d7cf9b0b7d3191b38fece15702",
+    "src/lib/product-urls.ts": "59f30b5e6a9a4974eaccd323ecaee8853d641f8845684a325f1d8f1bbd8138f6",
+    "src/components/app/unsaved-work-context.tsx": "3c94b18fcba26572eb0f261610d52575956b880f318ba54bb5b54abb9cafce82",
+    "src/lib/planning/context.ts": "9343127fc1143f9598eb2e194906e71cdce27140b5f6d580b4d1fcf2540f483e",
+    "src/modules/notes/app/workspace/use-speech-capture.ts": "72ef0a18da85aa706758a1454f17d808dd16552116e8fad5464993b898ba9584",
+    "src/modules/notes/app/workspace/icons.tsx": "e902d99c0eba307914364a9a577c90eb5c52c613e5d1e0a61b4b77fa5cb5d1e3",
+    "src/modules/notes/app/workspace/notes-workspace.module.css": "eaa67559767cdf73a673635ebc4006f8fb77110da8882751e04840e7060322f3",
+    "src/modules/notes/app/workspace/Composer.tsx": "708a2a33b95fd167fed368a0aced52bbe50c27e7812c84d2577e48491cf45d1e",
+    "src/modules/notes/app/workspace/use-notebook.ts": "77f4d5aec913f2aada92612f446e2bdd573b41490a072a2f3b11e2fac83d1ee8",
+    "src/modules/notes/app/workspace/use-note-motion.ts": "5b53ac76133559b3d3056b810a254487fc08f38823323a168ce7541e102a7921",
+    "src/modules/notes/app/workspace/NotesWorkspace.tsx": "ae15d29ce6948e4b4b31e1f603692ec3f9ae3fe6494ec0bcf5c6f20a7198ddb7",
+    "src/lib/suite-context.ts": "a1fcc8c2954eab83c061fa9a74033500b8e40e59a98a6702660f35d2e7fbd024",
+    "src/components/app/suite-context-publisher.tsx": "c6b3d54bff98266656ca3b3a157fd40ecdc3b245eacf8d84f0705c9f6b2cd49c",
+    "src/components/app/use-suite-context.ts": "ac7bfa4c4a4f95241b7c10f5ae37f57044113cdbb44277aa5fcdcfa947461839",
+    "src/components/studio-bar/rail-icons.tsx": "fd704bcfc7fdfb78545c56ddb070a22be451b416a9faabf104855a62349466ae",
+    "src/components/app/mobile-suite-nav.tsx": "b7f011aee7c0b40b4becee0e78797c8b8a646c60c172bbe1e78049a95c0ee246",
+    "src/components/app/suite-switcher-pills.tsx": "85ed02d33d68e3126e07c07fcd3243f7e8baf2e6f2a28f3b2e4b561593b51ea9",
+    "src/lib/projects/project-ref.ts": "33f0ed7ee3f979a75a61f3273e1f5b2bad3b36ea422a23eea08d1daaac62bd6b",
+    "src/lib/projects/project-url.ts": "34fc6f6932464565512704127969b5824dac5c204762b43f3e7d09c24339f485",
+    "src/lib/projects/route-snapshot.ts": "a14d993572b9ea136376f13789c5e3c32524ece6f61fde5ea0aea2ba2280a000",
+    "src/lib/projects/unsaved-work.ts": "691b4c96072b9edecdd9fd7f634936cdfab949eeb03ef1fa71f5e6d1a1627a7c",
+    "src/components/app/active-project-provider.tsx": "c76276cdf0ab046227493ada957b384814dd47cfd04f270321d5ba4b4a88477b",
+    "src/components/app/active-project-route-sync.tsx": "fb6dd665c1d7d02b4828dbcbe7bb59ae16c347c88f1746039a6fd2c142959598"
+  }
+}

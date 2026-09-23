@@ -1,33 +1,27 @@
-import Link from "next/link";
-
 /**
- * Data and privacy pointer.
- *
- * Export and account deletion live on the primary settings surface at
- * /app/settings, under the "Privacy and data" tab (Phase 4.2). Both actions
- * there hit the same cross-module endpoints (/api/account/export and
- * /api/account/delete), which cover Tasks, Notes, Timeline, and Signal. This
- * profile page keeps a single quiet pointer to that surface instead of a
- * second set of controls, so there is one place to export or delete.
+ * Account export stays reachable outside the project-bound Tasks shell.
+ * A native download uses the existing authenticated, private/no-store endpoint;
+ * Next navigation/prefetch and an active project are not prerequisites.
  */
 export function DataPrivacy() {
   return (
-    <div className="mt-10 rounded-lg border border-line-soft bg-white p-5">
+    <div className="mt-10 rounded-lg border border-line-soft bg-bg-elevated p-5">
       <h2 className="text-[14px] font-semibold tracking-tight text-ink">
         Data and privacy
       </h2>
       <p className="mt-1.5 max-w-[560px] text-[12.5px] leading-[1.6] text-ink-quiet">
-        Export a copy of everything Signal Studio holds for your account, or
-        delete your account, from the Privacy and data tab in Settings. The
-        export and deletion both cover Tasks, Notes, Timeline, and Signal.
+        Download your account data as JSON, including your owned projects and
+        personal Notes. Uploaded files and Google Drive file contents are not
+        included. Any unavailable sections are marked in the download.
       </p>
       <div className="mt-3">
-        <Link
-          href="/app/settings"
-          className="inline-flex rounded-md border border-line bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink transition-colors hover:bg-bg-sunken/60"
+        <a
+          href="/api/account/export"
+          download
+          className="inline-flex min-h-[44px] items-center rounded-md border border-line bg-bg-elevated px-3 py-1.5 text-[12.5px] font-medium text-ink transition-colors hover:bg-bg-sunken/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
-          Open Privacy and data
-        </Link>
+          Download account JSON
+        </a>
       </div>
     </div>
   );

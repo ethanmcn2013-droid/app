@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta
+      name="description"
+      content="A concise visual explanation of Signal Studio's Google Drive access boundary."
+    />
+    <title>Google Drive safety model · Signal Studio</title>
+    <style>
+      :root {
+        --x-safety-paper: #ffffff;
+        --x-safety-paper-soft: #fafafa;
+        --x-safety-paper-deep: #f4f4f5;
+        --x-safety-ink: #111111;
+        --x-safety-ink-soft: #3f3f46;
+        --x-safety-ink-faint: #71717a;
+        --x-safety-ink-ghost: #d4d4d8;
+        --x-safety-accent: #4f46e5;
+        --x-safety-accent-tint: #eef2ff;
+        --x-safety-stop: #ef4444;
+        --x-safety-hairline: rgba(17, 17, 17, 0.1);
+        --x-safety-font-sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+        --x-safety-font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        background: var(--x-safety-paper-soft);
+        color: var(--x-safety-ink);
+      }
+
+      body {
+        margin: 0;
+        min-width: 320px;
+        font-family: var(--x-safety-font-sans);
+        line-height: 1.55;
+      }
+
+      a {
+        color: inherit;
+        text-decoration-color: var(--x-safety-ink-ghost);
+        text-underline-offset: 3px;
+      }
+
+      a:focus-visible {
+        border-radius: 4px;
+        outline: 2px solid var(--x-safety-accent);
+        outline-offset: 4px;
+      }
+
+      .skip-link {
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        z-index: 2;
+        padding: 8px 12px;
+        border: 1px solid var(--x-safety-hairline);
+        border-radius: 6px;
+        background: var(--x-safety-paper);
+        transform: translateY(-200%);
+      }
+
+      .skip-link:focus {
+        transform: translateY(0);
+      }
+
+      .shell {
+        width: min(calc(100% - 32px), 1120px);
+        margin: 32px auto;
+        border: 1px solid var(--x-safety-hairline);
+        border-radius: 10px;
+        background: var(--x-safety-paper);
+      }
+
+      header,
+      main,
+      footer {
+        padding-right: 24px;
+        padding-left: 24px;
+      }
+
+      header {
+        padding-top: 64px;
+        padding-bottom: 40px;
+        border-bottom: 1px solid var(--x-safety-hairline);
+      }
+
+      .eyebrow {
+        margin: 0 0 16px;
+        color: var(--x-safety-ink-faint);
+        font-family: var(--x-safety-font-mono);
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        max-width: 18ch;
+        margin-bottom: 20px;
+        font-size: clamp(1.875rem, 1.4rem + 2.2vw, 3.25rem);
+        font-weight: 600;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+      }
+
+      h2 {
+        margin-bottom: 12px;
+        font-size: 1.25rem;
+        letter-spacing: -0.01em;
+        line-height: 1.3;
+      }
+
+      h3 {
+        margin-bottom: 8px;
+        font-size: 1.0625rem;
+        line-height: 1.3;
+      }
+
+      .lede,
+      .wall p,
+      figcaption {
+        color: var(--x-safety-ink-soft);
+      }
+
+      .lede {
+        max-width: 68ch;
+        margin-bottom: 0;
+        font-size: 1.0625rem;
+      }
+
+      main {
+        padding-top: 48px;
+        padding-bottom: 48px;
+      }
+
+      figure {
+        margin: 32px 0 0;
+      }
+
+      .diagram-shell {
+        overflow-x: auto;
+        padding: 20px;
+        border: 1px solid var(--x-safety-hairline);
+        border-radius: 10px;
+        background: var(--x-safety-paper-soft);
+      }
+
+      .diagram {
+        display: block;
+        width: 100%;
+        min-width: 52rem;
+        height: auto;
+      }
+
+      .diagram .box {
+        fill: var(--x-safety-paper);
+        stroke: var(--x-safety-hairline);
+      }
+
+      .diagram .box-soft {
+        fill: var(--x-safety-paper-soft);
+        stroke: var(--x-safety-hairline);
+      }
+
+      .diagram .box-accent {
+        fill: var(--x-safety-accent-tint);
+        stroke: var(--x-safety-accent);
+        stroke-width: 1.4;
+      }
+
+      .diagram .box-dim {
+        fill: var(--x-safety-paper-deep);
+        stroke: var(--x-safety-hairline);
+      }
+
+      .diagram .bound {
+        fill: none;
+        stroke: var(--x-safety-ink-ghost);
+        stroke-dasharray: 5 4;
+        stroke-width: 1.25;
+      }
+
+      .diagram .line {
+        fill: none;
+        stroke: var(--x-safety-accent);
+        stroke-width: 1.4;
+      }
+
+      .diagram text {
+        fill: var(--x-safety-ink);
+        font-family: var(--x-safety-font-sans);
+      }
+
+      .diagram .t-title {
+        font-size: 12.5px;
+        font-weight: 600;
+      }
+
+      .diagram .t-body {
+        fill: var(--x-safety-ink-soft);
+        font-size: 11px;
+      }
+
+      .diagram .t-mono {
+        fill: var(--x-safety-ink-faint);
+        font-family: var(--x-safety-font-mono);
+        font-size: 10px;
+      }
+
+      .diagram .t-accent,
+      .diagram .t-stop {
+        font-family: var(--x-safety-font-mono);
+        font-size: 9.5px;
+        font-weight: 500;
+        letter-spacing: 0.05em;
+      }
+
+      .diagram .t-accent {
+        fill: var(--x-safety-accent);
+      }
+
+      .diagram .t-stop {
+        fill: var(--x-safety-stop);
+      }
+
+      .diagram .arrow-head {
+        fill: var(--x-safety-accent);
+      }
+
+      figcaption {
+        max-width: 75ch;
+        margin-top: 12px;
+        font-size: 0.8125rem;
+      }
+
+      .walls {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 24px;
+        margin-top: 40px;
+      }
+
+      .wall {
+        padding-top: 16px;
+        border-top: 1px solid var(--x-safety-ink);
+      }
+
+      .wall p {
+        margin-bottom: 0;
+        font-size: 0.875rem;
+      }
+
+      footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        padding-top: 16px;
+        padding-bottom: 16px;
+        border-top: 1px solid var(--x-safety-hairline);
+        color: var(--x-safety-ink-faint);
+        font-family: var(--x-safety-font-mono);
+        font-size: 0.75rem;
+      }
+
+      footer p {
+        margin: 0;
+      }
+
+      @media (max-width: 720px) {
+        .shell {
+          width: 100%;
+          margin: 0;
+          border: 0;
+          border-radius: 0;
+        }
+
+        header,
+        main,
+        footer {
+          padding-right: 16px;
+          padding-left: 16px;
+        }
+
+        .walls {
+          grid-template-columns: 1fr;
+        }
+
+        footer {
+          flex-direction: column;
+        }
+      }
+
+      @media print {
+        @page {
+          size: A4 landscape;
+          margin: 12mm;
+        }
+
+        html,
+        body {
+          background: var(--x-safety-paper);
+        }
+
+        .skip-link {
+          display: none;
+        }
+
+        .shell {
+          width: 100%;
+          margin: 0;
+          border: 0;
+        }
+
+        header,
+        main,
+        footer {
+          padding-right: 0;
+          padding-left: 0;
+        }
+
+        header {
+          padding-top: 0;
+        }
+
+        figure,
+        .wall {
+          break-inside: avoid;
+        }
+
+        .diagram {
+          min-width: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#safety-model">Skip to safety model</a>
+    <div class="shell">
+      <header>
+        <p class="eyebrow">Signal Studio · Google Drive boundary</p>
+        <h1>One board folder is shared. The parent stays private.</h1>
+        <p class="lede">
+          The app requests the exact <code>drive.file</code> scope, creates a private
+          organising root, and grants named access only on the selected board folder.
+          This is an explanatory model, not a release-status report.
+        </p>
+      </header>
+
+      <main id="safety-model">
+        <h2>Three walls protect the rest of a person's Drive</h2>
+        <p class="lede">
+          A folder grant never exposes its parent or a sibling board. Someone who is
+          also a member of another board may hold a separate exact grant for that
+          board; this grant does not provide it.
+        </p>
+
+        <figure>
+          <div class="diagram-shell">
+            <svg
+              class="diagram"
+              viewBox="0 0 880 452"
+              role="img"
+              aria-labelledby="diagram-title diagram-description"
+            >
+              <title id="diagram-title">Board-folder access model</title>
+              <desc id="diagram-description">
+                Inside the storage owner's Google Drive, Signal Studio can reach files
+                it created or that the user explicitly opened with the app. The Signal
+                Studio parent folder is never shared. Only the selected board folder is
+                shared with that board's named members. This grant gives no access to a
+                sibling board, although a multi-board member may hold a separate grant.
+              </desc>
+              <defs>
+                <marker
+                  id="arrow"
+                  viewBox="0 0 10 10"
+                  refX="9"
+                  refY="5"
+                  markerWidth="6"
+                  markerHeight="6"
+                  orient="auto"
+                >
+                  <path d="M 0 0 L 10 5 L 0 10 z" class="arrow-head" />
+                </marker>
+              </defs>
+
+              <rect x="14" y="30" width="560" height="404" rx="10" class="bound" />
+              <text x="30" y="22" class="t-mono">STORAGE OWNER'S GOOGLE DRIVE</text>
+
+              <rect x="32" y="50" width="240" height="132" rx="8" class="box-dim" />
+              <text x="48" y="74" class="t-title">Everything else</text>
+              <text x="48" y="93" class="t-body">Personal documents · photos · other work</text>
+              <text x="48" y="111" class="t-body">Not created or explicitly opened with the app</text>
+              <text x="48" y="140" class="t-stop">INVISIBLE TO SIGNAL STUDIO</text>
+              <text x="48" y="158" class="t-mono">The OAuth scope cannot see or list it</text>
+              <text x="48" y="174" class="t-mono">WALL 1 · ENFORCED BY GOOGLE</text>
+
+              <rect x="292" y="50" width="266" height="76" rx="8" class="box-soft" />
+              <text x="308" y="74" class="t-title">Signal Studio</text>
+              <text x="308" y="92" class="t-body">Private organising folder created by the app</text>
+              <text x="308" y="115" class="t-stop">NEVER SHARED · WALL 2</text>
+
+              <path d="M 425 126 L 425 146" class="line" />
+              <path d="M 130 146 L 520 146" class="line" />
+              <path d="M 130 146 L 130 166" class="line" marker-end="url(#arrow)" />
+              <path d="M 325 146 L 325 166" class="line" marker-end="url(#arrow)" />
+              <path d="M 520 146 L 520 166" class="line" marker-end="url(#arrow)" />
+
+              <rect x="32" y="200" width="196" height="86" rx="8" class="box" />
+              <text x="48" y="224" class="t-title">The Orchard</text>
+              <text x="48" y="243" class="t-body">Board folder</text>
+              <text x="48" y="266" class="t-mono">Its own exact grants only</text>
+
+              <rect x="248" y="200" width="196" height="86" rx="8" class="box-accent" />
+              <text x="264" y="224" class="t-title">Ballinacurra</text>
+              <text x="264" y="243" class="t-body">The selected board folder</text>
+              <text x="264" y="266" class="t-accent">3 NAMED WRITER GRANTS</text>
+
+              <rect x="464" y="200" width="94" height="86" rx="8" class="box" />
+              <text x="480" y="224" class="t-title">Q4</text>
+              <text x="480" y="243" class="t-body">Board</text>
+              <text x="480" y="266" class="t-mono">Separate grant</text>
+
+              <rect x="248" y="300" width="196" height="76" rx="8" class="box-soft" />
+              <text x="264" y="322" class="t-body">contract-signed.pdf</text>
+              <text x="264" y="340" class="t-body">seating-plan.xlsx</text>
+              <text x="264" y="358" class="t-body">welcome-sign.png</text>
+              <path d="M 346 286 L 346 300" class="line" />
+              <text x="32" y="404" class="t-mono">Files inherit the board folder's access automatically.</text>
+              <text x="32" y="422" class="t-mono">WALL 3 · ONLY THIS BOARD'S CURRENT NAMED MEMBERS ARE GRANTED</text>
+
+              <rect x="600" y="30" width="266" height="404" rx="10" class="box-soft" />
+              <text x="620" y="56" class="t-title">Who can open this board's files</text>
+              <text x="620" y="75" class="t-mono">Ballinacurra folder only</text>
+
+              <rect x="618" y="92" width="230" height="54" rx="6" class="box" />
+              <text x="634" y="114" class="t-body">mara@… · writer</text>
+              <text x="634" y="132" class="t-mono">Current named member</text>
+
+              <rect x="618" y="156" width="230" height="54" rx="6" class="box" />
+              <text x="634" y="178" class="t-body">finn@… · writer</text>
+              <text x="634" y="196" class="t-mono">Current named member</text>
+
+              <rect x="618" y="220" width="230" height="54" rx="6" class="box" />
+              <text x="634" y="242" class="t-body">planner@… · writer</text>
+              <text x="634" y="260" class="t-mono">Current named member</text>
+
+              <rect x="618" y="292" width="230" height="60" rx="6" class="box-dim" />
+              <text x="634" y="314" class="t-body">Anonymous share-link visitors</text>
+              <text x="634" y="333" class="t-stop">NEVER GRANTED DRIVE ACCESS</text>
+              <text x="634" y="347" class="t-mono">No named board member to grant</text>
+
+              <text x="620" y="378" class="t-mono">Every grant keeps Google's exact</text>
+              <text x="620" y="394" class="t-mono">permission id. Removing a member</text>
+              <text x="620" y="410" class="t-mono">revokes that permission — never a</text>
+              <text x="620" y="426" class="t-mono">guessed address or broad folder.</text>
+            </svg>
+          </div>
+          <figcaption>
+            Board, person, and file names are illustrative. The storage owner owns
+            the folder and does not need a writer grant; the named writer receipts
+            shown here represent current non-owner members.
+          </figcaption>
+        </figure>
+
+        <section class="walls" aria-label="Three safety walls">
+          <article class="wall">
+            <h3>Wall 1 · Google limits the token</h3>
+            <p>
+              The exact <code>drive.file</code> scope reaches only files Signal Studio
+              created or that a user explicitly opened with it. No full-Drive,
+              read-only-Drive, or identity scope is requested.
+            </p>
+          </article>
+          <article class="wall">
+            <h3>Wall 2 · The parent stays private</h3>
+            <p>
+              The organising root is never shared. A board member cannot move upward
+              from the board folder into the parent.
+            </p>
+          </article>
+          <article class="wall">
+            <h3>Wall 3 · Grants are exact</h3>
+            <p>
+              Each current non-owner member receives named <code>writer</code> access
+              on one board folder. “Anyone” and domain-wide grants are forbidden;
+              sibling access requires its own grant.
+            </p>
+          </article>
+        </section>
+      </main>
+
+      <footer>
+        <p>Signal Studio · Safety-model companion · 2026-09-03</p>
+        <p><a href="../../PROJECT_FILES_IN_DRIVE.html">Return to the executive report</a></p>
+      </footer>
+    </div>
+  </body>
+</html>

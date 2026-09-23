@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect, type ReactNode } from "react";
+import { useState, useTransition, useEffect, useRef, type ReactNode } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
 import { Wordmark } from "@/components/brand/wordmark";
@@ -14,9 +14,20 @@ import {
 import {
   completeOnboardingAction,
   skipOnboardingAction,
+  confirmExistingSetupAction,
 } from "@/server/actions/onboarding";
-import { markFirstRunCompleteAction } from "@/server/actions/seed";
+import { createRetainedSubmission } from "@/lib/onboarding/retained-submission";
+import { withActiveProject } from "@/lib/projects/project-url";
+import type { ProjectId } from "@/lib/projects/project-ref";
 import { trackOnboardingEvent } from "@/lib/onboarding/analytics";
+
+type SetupIntent = {
+  workspaceId: string;
+  kind: "finish" | "skip" | "open";
+  primaryUseCase: PrimaryUseCase;
+  secondaryContext: string | null;
+  seedMode: "starter" | "blank";
+};
 
 type PendingTemplate = { id: string; name: string };
 
@@ -175,9 +186,13 @@ function ProgressDots({ step }: { step: Step }) {
 }
 
 export function OnboardingFlow({
+  workspaceId,
+  actorUserId,
   pendingTemplate = null,
   preselectedSegment = null,
 }: {
+  workspaceId: ProjectId;
+  actorUserId: string;
   pendingTemplate?: PendingTemplate | null;
   preselectedSegment?: PrimaryUseCase | null;
 }) {
@@ -190,6 +205,17 @@ export function OnboardingFlow({
     preselectedSegment ?? (pendingTemplate ? "wedding" : null),
   );
   const [context, setContext] = useState<string | null>(null);
+
+  const [failedIntent, setFailedIntent] = useState<SetupIntent | null>(null);
+  const submissions = useRef<ReturnType<typeof createRetainedSubmission<SetupIntent>> | null>(null);
+  useEffect(() => {
+    const controller = createRetainedSubmission<SetupIntent>(workspaceId, {
+      storage: () => window.sessionStorage,
+      storageKey: `signal:onboarding:${actorUserId}:${workspaceId}`,
+    });
+    submissions.current = controller;
+    return () => controller.dispose();
+  }, [actorUserId, workspaceId]);
 
   useEffect(() => {
     trackOnboardingEvent("onboarding_started", {
@@ -206,43 +232,35 @@ export function OnboardingFlow({
     segmentConfig?.contextQuestion &&
     segmentConfig.contextOptions.length > 0;
 
-  const finish = (seedMode: "starter" | "blank") => {
-    if (!segment) return;
+  const runSetup = (intent: SetupIntent) => {
+    if (!submissions.current) return;
+    const controller = submissions.current;
     startTransition(async () => {
       try {
-        await completeOnboardingAction({
-          primaryUseCase: segment,
-          secondaryContext: context,
-          seedMode,
+        const completed = await controller.run(intent, async (submission) => {
+          if (submission.kind === "open") {
+            await confirmExistingSetupAction(submission);
+          } else if (submission.kind === "skip") {
+            await skipOnboardingAction(submission);
+          } else {
+            await completeOnboardingAction(submission);
+          }
         });
-      } catch (e) {
-        console.warn("onboarding: complete failed", e);
+        if (completed) {
+          setFailedIntent(null);
+          router.push(withActiveProject("/app/home", workspaceId));
+        }
+      } catch {
+        setFailedIntent(controller.retained() ?? intent);
       }
-      router.push("/app/home");
     });
   };
-
-  const openWithTemplate = () => {
-    startTransition(async () => {
-      try {
-        await markFirstRunCompleteAction();
-      } catch (e) {
-        console.warn("onboarding: mark-first-run failed", e);
-      }
-      router.push("/app/home");
-    });
+  const finish = (seedMode: "starter" | "blank") => {
+    if (segment) runSetup({ workspaceId, kind: "finish", primaryUseCase: segment, secondaryContext: context, seedMode });
   };
-
-  const skipAll = () => {
-    startTransition(async () => {
-      try {
-        await skipOnboardingAction();
-      } catch (e) {
-        console.warn("onboarding: skip failed", e);
-      }
-      router.push("/app/home");
-    });
-  };
+  const openWithTemplate = () => runSetup({ workspaceId, kind: "open", primaryUseCase: segment ?? "other", secondaryContext: context, seedMode: "blank" });
+  const skipAll = () => runSetup({ workspaceId, kind: "skip", primaryUseCase: "other", secondaryContext: null, seedMode: "blank" });
+  const uncertainDomain = failedIntent?.kind === "finish" && failedIntent.seedMode === "starter" && !SEGMENTS[failedIntent.primaryUseCase].templateId;
 
   const selectSegment = (id: PrimaryUseCase) => {
     setSegment(id);
@@ -276,6 +294,7 @@ export function OnboardingFlow({
 
       <main className="flex flex-1 items-center justify-center px-6 pb-16 pt-8">
         <div className="w-full max-w-[720px]">
+          <fieldset disabled={pending || failedIntent !== null}>
           <AnimatePresence mode="wait">
             {step === "welcome" && (
               <motion.div
@@ -581,6 +600,25 @@ export function OnboardingFlow({
               </motion.div>
             )}
           </AnimatePresence>
+          </fieldset>
+          {failedIntent && (
+            <div role="alert" className="mt-6 rounded-xl border border-line-soft bg-bg-elevated p-5 text-sm text-ink">
+              <p className="font-medium">We couldn’t confirm that setup finished.</p>
+              <p className="mt-2 text-ink-soft">{uncertainDomain
+                ? "Check your project before starting this pack again. Retrying a reset could replace your work."
+                : "Try again to check your previous setup without adding another starter."}</p>
+              {uncertainDomain ? (
+                <>
+                  <a className="mt-4 inline-block underline underline-offset-4" href={withActiveProject("/app/home", workspaceId)}>Check project</a>
+                  <details className="mt-3 text-xs text-ink-soft"><summary>Setup details for recovery</summary><pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-all">{JSON.stringify({ version: 1, actorUserId, ...failedIntent }, null, 2)}</pre></details>
+                </>
+              ) : (
+                <button type="button" disabled={pending} onClick={() => runSetup(failedIntent)} className="mt-4 rounded-full bg-ink px-5 py-2.5 font-medium text-white disabled:opacity-60">
+                  {pending ? "Checking setup…" : "Try again"}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </main>
     </div>

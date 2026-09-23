@@ -14,7 +14,7 @@ type Props = {
 /**
  * The check-button half of the Done Dopamine system.
  *
- * - Idle: round outline, color/border-line-soft.
+ * - Idle: round outline in the task-control color, inside a 44px target.
  * - Checking: instant press acknowledgement, fill flips green, ✓ glyph
  *   strokes in over 220ms — the contract's "local routine settle".
  * - Unchecking: fades back to outline.
@@ -45,16 +45,19 @@ export function DopamineCheck({ checked, onToggle, title }: Props) {
       }
       whileTap={reduce ? undefined : { scale: 0.92 }}
       transition={{ scale: { duration: 0.08, ease: [0.23, 1, 0.32, 1] } }}
-      className={
-        "relative flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-full border transition-colors duration-200 " +
-        (checked
-          ? "border-emerald-500 bg-emerald-500 text-white"
-          : "border-line text-transparent hover:border-ink-soft hover:bg-bg-sunken/60 hover:text-ink-quiet")
-      }
+      className="group/check relative flex h-[44px] w-[44px] flex-shrink-0 items-center justify-center rounded-full"
       style={{
         transformOrigin: "center",
       }}
     >
+      <span
+        className={
+          "flex h-[18px] w-[18px] items-center justify-center rounded-full border transition-colors duration-200 " +
+          (checked
+            ? "border-[var(--x-status-done)] bg-[var(--x-status-done)] text-[var(--x-task-raised)]"
+            : "border-[var(--x-task-control-border)] text-transparent group-hover/check:border-ink-soft group-hover/check:bg-bg-sunken/60 group-hover/check:text-ink-quiet")
+        }
+      >
       {/* Checkmark, strokes in over 220ms when checked */}
       <motion.svg
         width="11"
@@ -82,6 +85,7 @@ export function DopamineCheck({ checked, onToggle, title }: Props) {
       >
         <motion.polyline points="20 6 9 17 4 12" />
       </motion.svg>
+      </span>
     </motion.button>
   );
 }

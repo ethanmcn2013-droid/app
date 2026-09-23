@@ -1,0 +1,228 @@
+{
+  "runId": "run-2026-09-12T10-44-59.459Z-22000",
+  "runDir": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-12\\plea\\work\\transaction-spike-accepted\\run-2026-09-12T10-44-59.459Z-22000",
+  "node": "v22.23.2",
+  "platform": "win32-x64",
+  "libsqlClient": "0.17.3",
+  "databases": 18,
+  "baselineMigrationFiles": 14,
+  "independentClientsPerCase": 2,
+  "oracleCases": 13,
+  "testAssertions": 17,
+  "duplicateStress": {
+    "submissions": 10000,
+    "concurrency": 40,
+    "maxInteractiveTransactionsPerClient": 1,
+    "durationMs": 3667.183,
+    "throughputPerSecond": 2726.89,
+    "latencyMs": {
+      "p50": 6.271,
+      "p95": 10.127,
+      "p99": 14.551,
+      "max": 2132.54
+    },
+    "transactionAttempts": 3,
+    "busyRetries": 1,
+    "observedMaxActiveWriteTransactionsPerClient": 1
+  },
+  "settings": [
+    {
+      "name": "o01-rollback",
+      "foreignKeys": false,
+      "databasePath": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-12\\plea\\work\\transaction-spike-accepted\\run-2026-09-12T10-44-59.459Z-22000\\o01-rollback-fk-off.db",
+      "journal_mode": "wal",
+      "foreign_keys": 0,
+      "busy_timeout": 100,
+      "synchronous": 2,
+      "locking_mode": "normal",
+      "page_size": 4096
+    },
+    {
+      "name": "o02-lost-response",
+      "foreignKeys": false,
+      "databasePath": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-12\\plea\\work\\transaction-spike-accepted\\run-2026-09-12T10-44-59.459Z-22000\\o02-lost-response-fk-off.db",
+      "journal_mode": "wal",
+      "foreign_keys": 0,
+      "busy_timeout": 100,
+      "synchronous": 2,
+      "locking_mode": "normal",
+      "page_size": 4096
+    },
+    {
+      "name": "o03-duplicate-stress",
+      "foreignKeys": false,
+      "databasePath": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-12\\plea\\work\\transaction-spike-accepted\\run-2026-09-12T10-44-59.459Z-22000\\o03-duplicate-stress-fk-off.db",
+      "journal_mode": "wal",
+      "foreign_keys": 0,
+      "busy_timeout": 100,
+      "synchronous": 2,
+      "locking_mode": "normal",
+      "page_size": 4096
+    },
+    {
+      "name": "o04-payload-conflict",
+      "foreignKeys": false,
+      "databasePath": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-12\\plea\\work\\transaction-spike-accepted\\run-2026-09-12T10-44-59.459Z-22000\\o04-payload-conflict-fk-off.db",
+      "journal_mode": "wal",
+      "foreign_keys": 0,
+      "busy_timeout": 100,
+      "synchronous": 2,
+      "locking_mode": "normal",
+      "page_size": 4096
+    },
+    {
+      "name": "o05-scope-root",
+      "foreignKeys": false,
+      "databasePath": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-12\\plea\\work\\transaction-spike-accepted\\run-2026-09-12T10-44-59.459Z-22000\\o05-scope-root-fk-off.db",
+      "journal_mode": "wal",
+      "foreign_keys": 0,
+      "busy_timeout": 100,
+      "synchronous": 2,
+      "locking_mode": "normal",
+      "page_size": 4096
+    },
+    {
+      "name": "o06-remove-before-send",
+      "foreignKeys": false,
+      "databasePath": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-12\\plea\\work\\transaction-spike-accepted\\run-2026-09-12T10-44-59.459Z-22000\\o06-remove-before-send-fk-off.db",
+      "journal_mode": "wal",
+      "foreign_keys": 0,
+      "busy_timeout": 100,
+      "synchronous": 2,
+      "locking_mode": "normal",
+      "page_size": 4096
+    },
+    {
+      "name": "o07-send-before-remove",
+      "foreignKeys": false,
+      "databasePath": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-12\\plea\\work\\transaction-spike-accepted\\run-2026-09-12T10-44-59.459Z-22000\\o07-send-before-remove-fk-off.db",
+      "journal_mode": "wal",
+      "foreign_keys": 0,
+      "busy_timeout": 100,
+      "synchronous": 2,
+      "locking_mode": "normal",
+      "page_size": 4096
+    },
+    {
+      "name": "o08-epoch-topology",
+      "foreignKeys": false,
+      "databasePath": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-12\\plea\\work\\transaction-spike-accepted\\run-2026-09-12T10-44-59.459Z-22000\\o08-epoch-topology-fk-off.db",
+      "journal_mode": "wal",
+      "foreign_keys": 0,
+      "busy_timeout": 100,
+      "synchronous": 2,
+      "locking_mode": "normal",
+      "page_size": 4096
+    },
+    {
+      "name": "o09-dm-rejoin",
+      "foreignKeys": false,
+      "databasePath": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-12\\plea\\work\\transaction-spike-accepted\\run-2026-09-12T10-44-59.459Z-22000\\o09-dm-rejoin-fk-off.db",
+      "journal_mode": "wal",
+      "foreign_keys": 0,
+      "busy_timeout": 100,
+      "synchronous": 2,
+      "locking_mode": "normal",
+      "page_size": 4096
+    },
+    {
+      "name": "o09-restrict-confirm",
+      "foreignKeys": false,
+      "databasePath": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-12\\plea\\work\\transaction-spike-accepted\\run-2026-09-12T10-44-59.459Z-22000\\o09-restrict-confirm-fk-off.db",
+      "journal_mode": "wal",
+      "foreign_keys": 0,
+      "busy_timeout": 100,
+      "synchronous": 2,
+      "locking_mode": "normal",
+      "page_size": 4096
+    },
+    {
+      "name": "o09-blocked-membership-churn",
+      "foreignKeys": false,
+      "databasePath": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-12\\plea\\work\\transaction-spike-accepted\\run-2026-09-12T10-44-59.459Z-22000\\o09-blocked-membership-churn-fk-off.db",
+      "journal_mode": "wal",
+      "foreign_keys": 0,
+      "busy_timeout": 100,
+      "synchronous": 2,
+      "locking_mode": "normal",
+      "page_size": 4096
+    },
+    {
+      "name": "o09-left-membership-churn",
+      "foreignKeys": false,
+      "databasePath": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-12\\plea\\work\\transaction-spike-accepted\\run-2026-09-12T10-44-59.459Z-22000\\o09-left-membership-churn-fk-off.db",
+      "journal_mode": "wal",
+      "foreign_keys": 0,
+      "busy_timeout": 100,
+      "synchronous": 2,
+      "locking_mode": "normal",
+      "page_size": 4096
+    },
+    {
+      "name": "o10-tombstone-replay",
+      "foreignKeys": false,
+      "databasePath": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-12\\plea\\work\\transaction-spike-accepted\\run-2026-09-12T10-44-59.459Z-22000\\o10-tombstone-replay-fk-off.db",
+      "journal_mode": "wal",
+      "foreign_keys": 0,
+      "busy_timeout": 100,
+      "synchronous": 2,
+      "locking_mode": "normal",
+      "page_size": 4096
+    },
+    {
+      "name": "o11-integrity",
+      "foreignKeys": false,
+      "databasePath": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-12\\plea\\work\\transaction-spike-accepted\\run-2026-09-12T10-44-59.459Z-22000\\o11-integrity-fk-off.db",
+      "journal_mode": "wal",
+      "foreign_keys": 0,
+      "busy_timeout": 100,
+      "synchronous": 2,
+      "locking_mode": "normal",
+      "page_size": 4096
+    },
+    {
+      "name": "o11-integrity",
+      "foreignKeys": true,
+      "databasePath": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-12\\plea\\work\\transaction-spike-accepted\\run-2026-09-12T10-44-59.459Z-22000\\o11-integrity-fk-on.db",
+      "journal_mode": "wal",
+      "foreign_keys": 1,
+      "busy_timeout": 100,
+      "synchronous": 2,
+      "locking_mode": "normal",
+      "page_size": 4096
+    },
+    {
+      "name": "o12-directed-audience",
+      "foreignKeys": false,
+      "databasePath": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-12\\plea\\work\\transaction-spike-accepted\\run-2026-09-12T10-44-59.459Z-22000\\o12-directed-audience-fk-off.db",
+      "journal_mode": "wal",
+      "foreign_keys": 0,
+      "busy_timeout": 100,
+      "synchronous": 2,
+      "locking_mode": "normal",
+      "page_size": 4096
+    },
+    {
+      "name": "o12-attention",
+      "foreignKeys": false,
+      "databasePath": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-12\\plea\\work\\transaction-spike-accepted\\run-2026-09-12T10-44-59.459Z-22000\\o12-attention-fk-off.db",
+      "journal_mode": "wal",
+      "foreign_keys": 0,
+      "busy_timeout": 100,
+      "synchronous": 2,
+      "locking_mode": "normal",
+      "page_size": 4096
+    },
+    {
+      "name": "o13-read-snapshot",
+      "foreignKeys": false,
+      "databasePath": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-12\\plea\\work\\transaction-spike-accepted\\run-2026-09-12T10-44-59.459Z-22000\\o13-read-snapshot-fk-off.db",
+      "journal_mode": "wal",
+      "foreign_keys": 0,
+      "busy_timeout": 100,
+      "synchronous": 2,
+      "locking_mode": "normal",
+      "page_size": 4096
+    }
+  ]
+}

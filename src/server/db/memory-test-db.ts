@@ -1,6 +1,7 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "./schema";
@@ -63,4 +64,38 @@ export async function freshMemoryDb(options: MemoryTestDbOptions = {}) {
   }
 
   return { client, db: drizzle(client, { schema }) };
+}
+
+/**
+ * Transaction-capable sibling for integration tests. libSQL reconnects after
+ * an interactive transaction against `:memory:`, which destroys that isolated
+ * database; an owned temporary file keeps the same schema and is removed by
+ * the returned cleanup function.
+ */
+export async function freshFileDb() {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const drizzleDir = join(here, "..", "..", "..", "drizzle");
+  const directory = mkdtempSync(join(tmpdir(), "signal-file-db-"));
+  const client = createClient({
+    url: pathToFileURL(join(directory, "test.db")).href,
+  });
+  await client.execute("PRAGMA foreign_keys = OFF");
+  const runtimeFiles = readdirSync(drizzleDir)
+    .filter((file) => /^\d{4}_.+\.sql$/.test(file) && file >= "0014_")
+    .sort();
+  for (const file of runtimeFiles) {
+    await client.executeMultiple(readFileSync(join(drizzleDir, file), "utf8"));
+  }
+  return {
+    client,
+    db: drizzle(client, { schema }),
+    cleanup: () => {
+      client.close();
+      try {
+        rmSync(directory, { recursive: true, force: true });
+      } catch {
+        // Windows may briefly retain the disposable libSQL handle.
+      }
+    },
+  };
 }

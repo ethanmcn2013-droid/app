@@ -1,4 +1,4 @@
-import * as chrono from "chrono-node";
+import * as chrono from "chrono-node/en";
 import type { LaneId, Priority } from "@/lib/data";
 
 /**

@@ -18,6 +18,8 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Popover } from "@/components/app/detail-panel/popover";
 import { DueCalendar } from "@/components/app/detail-panel/due-calendar";
+import { requestOpenNav, useTasksNav } from "@/components/app/tasks-nav-state";
+import { WeddingDateForm } from "./wedding-date-form";
 import {
   setProjectStatusAction,
   setProjectTargetDateAction,
@@ -287,14 +289,14 @@ export function ProjectOverview({ data }: { data: ProjectOverviewData }) {
   function handleSetStatus(s: ProjectStatus) {
     setStatus(s);
     startStatusTransition(async () => {
-      await setProjectStatusAction(s);
+      await setProjectStatusAction(s, data.workspaceId);
     });
   }
 
   function handleSetTargetDate(iso: string | null) {
     setTargetDate(iso);
     startDateTransition(async () => {
-      await setProjectTargetDateAction(iso);
+      await setProjectTargetDateAction(iso, data.workspaceId);
     });
   }
 
@@ -303,6 +305,7 @@ export function ProjectOverview({ data }: { data: ProjectOverviewData }) {
   // Mount-stable clock: the React Compiler forbids impure calls in render.
   // Overdue state doesn't need sub-render freshness (mirrors room-brief.tsx).
   const [nowMs] = useState(() => Date.now());
+  const { drawerOpen } = useTasksNav();
 
   // Sort members: owner first.
   const sortedMembers = [...members].sort((a, b) =>
@@ -313,9 +316,21 @@ export function ProjectOverview({ data }: { data: ProjectOverviewData }) {
     <article className="flex h-full flex-col overflow-auto bg-bg-elevated">
       {/* Header */}
       <header className="flex-shrink-0 border-b border-line-soft bg-bg-elevated px-8 pb-6 pt-8">
-        <h1 className="text-[22px] font-semibold tracking-tight text-ink">
-          {data.displayName}
-        </h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="min-w-0 break-words text-[22px] font-semibold tracking-tight text-ink">
+            {data.displayName}
+          </h1>
+          <button
+            aria-expanded={drawerOpen}
+            aria-haspopup="dialog"
+            aria-label="Open Tasks navigation"
+            className="inline-flex min-h-[44px] flex-shrink-0 items-center justify-center rounded-lg border border-line-soft px-3 text-[12px] font-medium text-ink-soft hover:bg-bg-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand min-[1100px]:hidden"
+            onClick={requestOpenNav}
+            type="button"
+          >
+            Projects
+          </button>
+        </div>
         {data.purpose ? (
           <p className="mt-1 text-[13px] leading-snug text-ink-soft">
             {data.purpose}
@@ -330,12 +345,12 @@ export function ProjectOverview({ data }: { data: ProjectOverviewData }) {
             onSet={handleSetStatus}
             pending={statusPending}
           />
-          <TargetDateControl
+          {!data.sponsoredWeddingDate ? <TargetDateControl
             targetDate={targetDate}
             isOwner={isOwner}
             onSet={handleSetTargetDate}
             pending={datePending}
-          />
+          /> : null}
         </div>
 
         {/* Program line — only when a planning period is assigned */}
@@ -351,6 +366,12 @@ export function ProjectOverview({ data }: { data: ProjectOverviewData }) {
 
       {/* Body */}
       <div className="mx-auto w-full max-w-[860px] space-y-10 px-8 py-8">
+
+        {data.sponsoredWeddingDate ? <WeddingDateForm
+          key={`${data.workspaceId}:${data.sponsoredWeddingDate.revision}:${data.sponsoredWeddingDate.canManage}`}
+          initial={data.sponsoredWeddingDate}
+          previousTarget={data.targetDate}
+        /> : null}
 
         {/* Progress section */}
         <section aria-label="Task progress">

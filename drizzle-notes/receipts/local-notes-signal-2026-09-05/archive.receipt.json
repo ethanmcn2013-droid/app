@@ -1,0 +1,8 @@
+{
+  "sha256": "2cb8c931c2c9e6075b0a669fd15e43ad15e474a51b9a3c4011387ef2cb9349fd",
+  "command": "pwsh -File work/notes-signal-schema-2026-09-05/archive.ps1",
+  "completedAt": "2026-09-05T22:13:14.3300003Z",
+  "entriesVerified": 889,
+  "bytes": 1812766,
+  "exitCode": 0
+}

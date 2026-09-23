@@ -50,6 +50,10 @@
   position: relative;
 }
 
+/* The bare Tasks Floor owns the whole canvas, including its phone rail.
+   Without a definite height, its intrinsic sheet stopped 32px early. */
+.root[data-floor-runtime] { height: 100%; }
+
 .stage {
   flex: 1 1 auto;
   min-height: 0;

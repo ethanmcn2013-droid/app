@@ -1,0 +1,15 @@
+{
+  "cases": [
+    "authorized B overrides catalog A, flag true",
+    "authorized B overrides catalog A, flag false",
+    "denied Project retains private writing and clears authority, flag true",
+    "denied Project retains private writing and clears authority, flag false",
+    "raw repeated hint is refused without selecting a substitute",
+    "archived Project withholds new filing",
+    "bare entry redirects canonically and retains note/view",
+    "no Projects leaves personal Unfiled capture available"
+  ],
+  "liveProviders": false,
+  "clientChildren": "stubbed; actual client rendering is check.mjs",
+  "pageSourceSha256": "e03399ecf7b67e5f9f243aa2f13a676383e0aee6fbbab0bd04fdeceb23934990"
+}

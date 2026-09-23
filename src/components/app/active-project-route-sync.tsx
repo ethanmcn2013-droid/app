@@ -50,7 +50,7 @@ export function ActiveProjectRouteSync({
    */
   pathname?: string;
   /** The Project the server verified. Never an unverified client guess. */
-  project: ProjectSummary;
+  project: ProjectSummary | null;
   /**
    * The `workspaceId` this route actually carried, exactly as the caller's
    * Server Component received it — `null` on a bare entry that named none.
@@ -79,6 +79,7 @@ export function ActiveProjectRouteSync({
 }) {
   const context = useActiveProject();
   const publishSnapshot = context?.publishSnapshot;
+  const publishUnavailableSnapshot = context?.publishUnavailableSnapshot;
   const live = context?.live;
   const livePathname = usePathname() ?? "";
 
@@ -96,8 +97,9 @@ export function ActiveProjectRouteSync({
     if (!publishSnapshot) return;
     // Re-runs whenever the live transition moves, which is what lets a payload
     // rendered before the bridge's first publish reach the provider at all.
-    publishSnapshot({ routeKey: key, epoch: stampedEpoch, project });
-  }, [publishSnapshot, key, stampedEpoch, project]);
+    if (project) publishSnapshot({ routeKey: key, epoch: stampedEpoch, project });
+    else publishUnavailableSnapshot?.(key, stampedEpoch);
+  }, [publishSnapshot, publishUnavailableSnapshot, key, stampedEpoch, project]);
 
   return null;
 }

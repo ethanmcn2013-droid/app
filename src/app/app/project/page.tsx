@@ -31,19 +31,8 @@ export const dynamic = "force-dynamic";
  * ADR 0001 §4 step 3 runs and the page replace-redirects to a canonical URL
  * that now carries the Project.
  *
- * ── The interim verification, and why it is here ───────────────────────────
- *
- * `getProjectOverviewData()` still takes no argument, and it lives in
- * `src/server/actions/**`, which another lane owns — an interface request to
- * give it an explicit `projectId` parameter is filed rather than reached for
- * here. Until it lands, this page cannot *direct* that read; what it can do is
- * refuse to render a mismatch. The payload carries its own `workspaceId`, so
- * the authorized Project is compared against the Project the data actually
- * describes, and a disagreement renders the neutral unavailable state instead
- * of silently showing Project A's members and budget under a URL that says B.
- *
- * That is ADR 0001 §2's invariant enforced at the last point this lane
- * controls. It becomes a no-op the moment the parameter exists.
+ * The overview read and its controls receive the authorized URL Project.
+ * The payload check remains a final guard against mismatched content.
  */
 function canonicalProjectUrl(workspaceId: ProjectId): string {
   // The shared contextual-link builder. An earlier draft built this query
@@ -76,6 +65,16 @@ function Unavailable() {
   );
 }
 
+function EmptyProjects() {
+  return (
+    <main id="app-main-content" tabIndex={-1} className="flex min-w-0 flex-1 flex-col items-center justify-center gap-3 bg-[var(--paper)] px-8 text-center">
+      <h1 className="text-[18px] font-semibold text-ink">Your projects start here</h1>
+      <p className="max-w-[42ch] text-[13px] text-ink-soft">Set up your first project to keep its tasks and timeline together.</p>
+      <Link href="/welcome" className="mt-2 rounded-lg bg-brand px-4 py-2.5 text-[13px] font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Set up a project</Link>
+    </main>
+  );
+}
+
 export default async function ProjectPage({
   searchParams,
 }: {
@@ -90,7 +89,7 @@ export default async function ProjectPage({
   if (project.kind === "unavailable") return <Unavailable />;
 
   // Belongs to no Project at all. Never LEGACY_WORKSPACE_ID (D-005).
-  if (project.kind === "empty") return <Unavailable />;
+  if (project.kind === "empty") return <EmptyProjects />;
 
   // Archived Projects open read-only through an explicit link (ADR 0001 §5);
   // the overview is a read, so it renders.
@@ -104,7 +103,7 @@ export default async function ProjectPage({
     redirect(canonicalProjectUrl(project.canonicalRedirectTo));
   }
 
-  const data = await getProjectOverviewData();
+  const data = await getProjectOverviewData(authorized);
 
   // See the docblock. Refuse rather than render another Project's overview.
   if (data.workspaceId !== authorized) return <Unavailable />;
@@ -114,7 +113,7 @@ export default async function ProjectPage({
   // consumes it (D-022).
   return (
     <TasksRuntimePageMount searchParams={searchParams}>
-      <ProjectOverview data={data} />
+      <ProjectOverview key={authorized} data={data} />
     </TasksRuntimePageMount>
   );
 }

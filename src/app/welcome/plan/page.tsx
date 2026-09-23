@@ -10,7 +10,7 @@ import {
 } from "@/server/actions/planning";
 import { getCurrentUser } from "@/server/auth";
 import { ensureUserProvisioned } from "@/server/db/ensure-user";
-import { detectVenueWelcome } from "@/server/db/venue-welcome";
+import { detectVenueWelcomeForLegacyPlanning } from "@/server/db/venue-welcome";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +31,7 @@ export default async function PlanningWelcomePage({
   const [params, draft, venueWelcome] = await Promise.all([
     searchParams,
     getPlanningOnboardingDraftAction(),
-    detectVenueWelcome(actorUserId),
+    detectVenueWelcomeForLegacyPlanning(actorUserId),
   ]);
   const requestedContext = isPlanningPeriodContext(params.context)
     ? (params.context as PlanningPeriodContext)

@@ -3,6 +3,7 @@
 import { SectionHeader } from "../settings-app";
 import type { EntitlementTier } from "@/lib/data";
 import { getQuota, WARN_THRESHOLDS } from "@/lib/storage-config";
+import { MAX_UPLOAD_BYTES } from "@/lib/upload-limit";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -16,9 +17,11 @@ function formatBytes(bytes: number): string {
 export function StorageSection({
   tier,
   usageBytes,
+  driveEnabled = false,
 }: {
   tier: EntitlementTier;
   usageBytes: number;
+  driveEnabled?: boolean;
 }) {
   const quota = getQuota(tier);
   const ratio = usageBytes / quota.totalBytes;
@@ -36,12 +39,18 @@ export function StorageSection({
   const usageLabel = formatBytes(usageBytes);
   const totalLabel = formatBytes(quota.totalBytes);
 
+  // What a person can actually attach: the smaller of what this plan
+  // allows per file and what a single upload can carry. Before WP-0 this
+  // panel showed the plan's number alone, which on a paid plan was 250 MB
+  // — five times what any upload could deliver.
+  const perFileBytes = Math.min(quota.maxFileBytes, MAX_UPLOAD_BYTES);
+
   return (
     <div>
       <SectionHeader
         eyebrow="Storage"
-        title="Project storage"
-        description="Attachments and uploaded files count against your workspace quota. The quota resets if you upgrade."
+        title={driveEnabled ? "Signal Studio storage" : "Project storage"}
+        description={driveEnabled ? "Files stored in Signal Studio count against this board’s allowance. Google Drive files use the storage owner’s Google space." : "Files stored in Signal Studio count against this board’s allowance."}
       />
 
       <div className="rounded-xl border border-line-soft bg-bg-elevated p-5">
@@ -79,13 +88,12 @@ export function StorageSection({
           Per-file limit
         </div>
         <div className="mt-1 text-[13px] text-ink-soft">
-          {formatBytes(quota.maxFileBytes)} per upload
+          {formatBytes(perFileBytes)} per file
         </div>
       </div>
 
       <p className="mt-4 text-[11.5px] leading-[1.55] text-ink-faint">
-        File uploads are not yet active on this workspace. Storage tracking
-        will update when uploads ship.
+        Files are attached from a task, in its Resources section. Files stored in Signal Studio are counted here.
       </p>
     </div>
   );

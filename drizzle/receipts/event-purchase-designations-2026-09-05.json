@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "event-purchase-designations-2026-09-05",
+  "authorizedBy": "User-authorized isolated Event milestone implementation and local SQLite validation only. NOT AUTHORIZED FOR PRODUCTION.",
+  "reviewedBy": "Codex implementation self-check; independent receiving review still required.",
+  "authorizationSource": "2026-09-05 first Event designation milestone, exact base 8172364e. Migration proposed to principal before commitment.",
+  "migrations": [
+    {
+      "id": "0031_event_purchase_designations",
+      "sha256": "139892f27ff427e36ede52e470ec94f32eabfb7ad5308a0906e8c31f922c60d3",
+      "reviewedAt": "2026-09-05T10:00:00Z",
+      "risk": "One additive private checkout/settlement fact table. No historical row changes, no Event sales enablement or project-wide access enforcement. The unique reference and immutable-facts trigger protect binding, first settlement outcome, original positive term and monotone revocation. Explicit user/project delete triggers operate even with foreign keys off. Purchaser deletion removes pending/undesignated records and strips purchaser, provider/checkout identifiers and authorization timestamps from surviving designated project effects. Original positive term and revocation remain; erased positive facts cannot grant access or archive authority. Project deletion removes every fact. No provider credential or content column.",
+      "rollbackPlan": "Local/CI only: with the new table empty, remove its trigger, indexes and table; the isolated rollback test verifies pre-existing schema/data preservation. After facts exist, hold new Event checkout (already held), preserve the facts and use a reviewed forward recovery; never drop paid/reconciliation evidence to roll back code. No production authorization or automatic downgrade.",
+      "postconditions": [
+        "Exact columns, user SET NULL/project CASCADE FKs, unique reference and project index; explicit erasure triggers",
+        "Original binding/settlement facts immutable; revocation monotone",
+        "Empty on apply; existing rows untouched",
+        "Integrity and foreign keys pass"
+      ],
+      "proofs": [
+        {
+          "id": "event-columns",
+          "sql": "SELECT group_concat(name, ',') AS value FROM (SELECT name FROM pragma_table_info('event_purchase_designations') ORDER BY cid)",
+          "expected": "id,purchaser_user_id,workspace_id,checkout_authorized_at,provider_reference,settled_at,original_expires_at,designation,reason,settlement_authorized_at,revoked"
+        },
+        {
+          "id": "event-primary-key",
+          "sql": "SELECT name AS value FROM pragma_table_info('event_purchase_designations') WHERE pk=1",
+          "expected": "id"
+        },
+        {
+          "id": "event-lifecycle-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_list('event_purchase_designations') WHERE ((on_delete='SET NULL' AND \"table\"='users' AND \"from\"='purchaser_user_id' AND \"to\"='id') OR (on_delete='CASCADE' AND \"table\"='workspaces' AND \"from\"='workspace_id' AND \"to\"='id'))",
+          "expected": 2
+        },
+        {
+          "id": "event-reference-index",
+          "sql": "SELECT sql AS value FROM sqlite_schema WHERE type='index' AND name='event_purchase_reference_unique'",
+          "expected": "CREATE UNIQUE INDEX event_purchase_reference_unique ON event_purchase_designations(provider_reference) WHERE provider_reference IS NOT NULL"
+        },
+        {
+          "id": "event-project-index",
+          "sql": "SELECT sql AS value FROM sqlite_schema WHERE type='index' AND name='event_purchase_project_idx'",
+          "expected": "CREATE INDEX event_purchase_project_idx ON event_purchase_designations(workspace_id)"
+        },
+        {
+          "id": "event-shape-constraints",
+          "sql": "SELECT sql AS value FROM sqlite_schema WHERE type='table' AND name='event_purchase_designations'",
+          "expected": "CREATE TABLE event_purchase_designations (\n id TEXT PRIMARY KEY NOT NULL,\n purchaser_user_id TEXT REFERENCES users(id) ON DELETE SET NULL,\n workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\n checkout_authorized_at INTEGER CHECK (checkout_authorized_at > 0),\n provider_reference TEXT,\n settled_at INTEGER,\n original_expires_at INTEGER,\n designation TEXT NOT NULL DEFAULT 'pending' CHECK (designation IN ('pending','designated','paid_undesignated')),\n reason TEXT CHECK (reason IN ('owner_changed','membership_removed','project_archived','project_deleting')),\n settlement_authorized_at INTEGER,\n revoked INTEGER NOT NULL DEFAULT 0 CHECK (revoked IN (0,1)),\n CHECK (provider_reference IS NULL OR (provider_reference GLOB 'stripe:cs_*' AND length(provider_reference) <= 255)),\n CHECK (\n  (purchaser_user_id IS NULL AND id GLOB 'ered_*' AND designation = 'designated' AND provider_reference IS NULL AND checkout_authorized_at IS NULL AND settlement_authorized_at IS NULL AND reason IS NULL AND settled_at IS NOT NULL AND settled_at > 0 AND original_expires_at IS NOT NULL AND original_expires_at > settled_at)\n  OR\n  (purchaser_user_id IS NOT NULL AND checkout_authorized_at IS NOT NULL AND (\n  (designation = 'pending' AND settled_at IS NULL AND original_expires_at IS NULL AND reason IS NULL AND settlement_authorized_at IS NULL AND revoked = 0)\n  OR\n  (designation <> 'pending' AND provider_reference IS NOT NULL AND settled_at IS NOT NULL AND settled_at > 0 AND original_expires_at IS NOT NULL AND original_expires_at > settled_at AND\n   ((designation = 'designated' AND reason IS NULL AND settlement_authorized_at IS NOT NULL AND settlement_authorized_at >= checkout_authorized_at)\n    OR (designation = 'paid_undesignated' AND reason IS NOT NULL AND settlement_authorized_at IS NULL)))))\n )\n)"
+        },
+        {
+          "id": "event-immutable-facts-trigger",
+          "sql": "SELECT sql AS value FROM sqlite_schema WHERE type='trigger' AND name='event_purchase_facts_immutable'",
+          "expected": "CREATE TRIGGER event_purchase_facts_immutable\nBEFORE UPDATE ON event_purchase_designations\nWHEN ((NEW.id IS NOT OLD.id\n OR NEW.purchaser_user_id IS NOT OLD.purchaser_user_id\n OR NEW.checkout_authorized_at IS NOT OLD.checkout_authorized_at\n OR (OLD.provider_reference IS NOT NULL AND NEW.provider_reference IS NOT OLD.provider_reference)\n OR (OLD.designation <> 'pending' AND NEW.settlement_authorized_at IS NOT OLD.settlement_authorized_at))\n AND NOT (OLD.purchaser_user_id IS NOT NULL AND NEW.purchaser_user_id IS NULL\n  AND NEW.id GLOB 'ered_*' AND NEW.id IS NOT OLD.id\n  AND NEW.provider_reference IS NULL AND NEW.checkout_authorized_at IS NULL AND NEW.settlement_authorized_at IS NULL))\n OR NEW.workspace_id IS NOT OLD.workspace_id\n OR (OLD.designation <> 'pending' AND (\n  NEW.settled_at IS NOT OLD.settled_at\n  OR NEW.original_expires_at IS NOT OLD.original_expires_at\n  OR NEW.designation IS NOT OLD.designation\n  OR NEW.reason IS NOT OLD.reason\n ))\n OR NEW.revoked < OLD.revoked\nBEGIN\n SELECT RAISE(ABORT, 'Event purchase facts are immutable');\nEND"
+        },
+        {
+          "id": "event-purchaser-erasure",
+          "sql": "SELECT sql AS value FROM sqlite_schema WHERE type='trigger' AND name='event_purchase_purchaser_erasure'",
+          "expected": "CREATE TRIGGER event_purchase_purchaser_erasure\nBEFORE DELETE ON users\nBEGIN\n DELETE FROM event_purchase_designations WHERE purchaser_user_id = OLD.id AND designation <> 'designated';\n UPDATE event_purchase_designations\n SET id = 'ered_' || lower(hex(randomblob(16))), purchaser_user_id = NULL,\n  provider_reference = NULL, checkout_authorized_at = NULL, settlement_authorized_at = NULL\n WHERE purchaser_user_id = OLD.id AND designation = 'designated';\nEND"
+        },
+        {
+          "id": "event-project-erasure",
+          "sql": "SELECT sql AS value FROM sqlite_schema WHERE type='trigger' AND name='event_purchase_project_erasure'",
+          "expected": "CREATE TRIGGER event_purchase_project_erasure\nBEFORE DELETE ON workspaces\nBEGIN\n DELETE FROM event_purchase_designations WHERE workspace_id = OLD.id;\nEND"
+        },
+        {
+          "id": "event-empty-on-apply",
+          "sql": "SELECT COUNT(*) AS value FROM event_purchase_designations",
+          "expected": 0
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

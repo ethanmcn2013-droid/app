@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "notes-signal-migration-receipt/1",
+  "module": "notes",
+  "id": "notes-local-schema-review-2026-09-05",
+  "authorizedBy": "Delegated January operational implementation: local/test files only.",
+  "reviewedBy": "Author source/fixture review; independent principal acceptance remains pending.",
+  "authorizationSource": "New Notes/Signal schema-provenance task from exact a6293a82955d17bc414506ab89412f8667c1cd2f. No relation to held reviews.",
+  "migrations": [
+    {
+      "id": "0000_notes_baseline",
+      "sha256": "3cb0d9ab087e3517133c7165051f2d101530b0bf47f4e7a9a67425cade36cd72",
+      "reviewedAt": "2026-09-05T21:56:44.465Z",
+      "risk": "Local/test rehearsal only. Preserve historical SQL and any observed foreign ledger. Exact known schema/proofs required; no production adoption authorization.",
+      "rollbackPlan": "A failed local transaction rolls schema/metadata back. Retain successful execution/adoption provenance; restore a separately verified local backup for rollback. No automatic down-migration or production restore.",
+      "postconditions": [
+        "Exact tracked schema fingerprint after this entry.",
+        "Integrity and foreign-key checks pass; expected table/index inventory."
+      ],
+      "schemaFingerprintSha256": "1d03e137d3f8c566ef492e0b16cb591b979decd8fa6e2f85b04a6b64145672e9",
+      "proofs": [
+        {
+          "id": "tables",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_schema WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT IN ('signal_notes_schema_migrations','__drizzle_migrations')",
+          "expected": 5
+        },
+        {
+          "id": "indexes",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_schema WHERE type='index' AND name NOT LIKE 'sqlite_%'",
+          "expected": 9
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    },
+    {
+      "id": "0001_notes_reviewed_at",
+      "sha256": "319c3a9769102506488ad5d7b4d78fd0a8e3aca42ad215680c5d3b2095dc4736",
+      "reviewedAt": "2026-09-05T21:56:44.478Z",
+      "risk": "Local/test rehearsal only. Preserve historical SQL and any observed foreign ledger. Exact known schema/proofs required; no production adoption authorization.",
+      "rollbackPlan": "A failed local transaction rolls schema/metadata back. Retain successful execution/adoption provenance; restore a separately verified local backup for rollback. No automatic down-migration or production restore.",
+      "postconditions": [
+        "Exact tracked schema fingerprint after this entry.",
+        "Integrity and foreign-key checks pass; expected table/index inventory."
+      ],
+      "schemaFingerprintSha256": "b37164718f2851d3f6a2e8e690b2ba85783c6733e06c58f035c71f0a3ec1cacc",
+      "proofs": [
+        {
+          "id": "tables",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_schema WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT IN ('signal_notes_schema_migrations','__drizzle_migrations')",
+          "expected": 5
+        },
+        {
+          "id": "indexes",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_schema WHERE type='index' AND name NOT LIKE 'sqlite_%'",
+          "expected": 10
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

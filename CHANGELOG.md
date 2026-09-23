@@ -4,6 +4,38 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-09-23 · Production Sprint candidate · Drive upload acknowledgment
+
+When the browser cannot read Google's upload acknowledgment, the app checks the existing saved claim once through the server. It marks the file complete only when that check confirms completion; otherwise the same attachment stays paused for an explicit retry. The check sends no file bytes and creates no replacement claim. Local tests cover lost acknowledgments and cancellation; small and large real-browser receiving remain required before release.
+
+## 2026-09-23 · Production Sprint candidate · Project attention in Inbox
+
+The candidate brings directed Project messages and Task Discussion comments into the shared Inbox with current-membership links back to their source. Opening visible content records private per-reader coverage; hidden replies remain unread, and an explicit Mark all seen action captures a committed source boundary. The additive 0037 Tasks migration stores only read ranges and cleans them on account, conversation, and Task deletion, including foreign-key-off recovery paths. Local persistence and migration tests passed; controlled two-session receiving and production migration are still required before a release claim.
+
+## 2026-09-23 · Production Sprint candidate · Task mentions retain their recipient
+
+Selecting a person in Task Discussion now retains that recipient when the mention inserts text in the same interaction. A rendered React browser regression covers two quick selections, body edits, send, and draft clear and restore. This corrects a failed controlled-preview comment; the directed Inbox journey must be repeated with a new owned comment on a later candidate before it can be accepted.
+
+## 2026-09-23 · January candidate · Drive disconnect keeps its evidence
+
+After reconnecting the same Google account, the storage owner can explicitly check and restore the existing board folder. Signal verifies Google identity, the original folder and current member permissions before restoring Drive intake; earlier files and their ownership stay unchanged. Pending disconnects, member removals and deletion keep the repair unavailable. Local tests and independent source review passed; real Google reconnect receiving and production activation remain open.
+
+A Drive disconnect now saves the exact credential generation before asking Google to revoke it. If Google cannot confirm the request, Settings keeps the warning after reload and offers a retry; reconnecting stays unavailable until confirmation. A late OAuth callback cannot replace a connection while its previous disconnect is unresolved. Existing retired credentials remain unknown rather than being labelled confirmed from local status alone.
+
+The additive 0038 migration is reserved after the separate 0037 candidate. Local tests cover failure, crash recovery, account erasure, same-account races and the flags-off production schema; no provider journey or production migration is claimed by this entry.
+
+## 2026-09-23 · January candidate · Core work is easier to find
+
+Home, Projects, Tasks and Timeline now lead the signed-in navigation on desktop and phone, including the Tasks Floor. Notes remains private and opens from More alongside existing work and account utilities. Project links retain their current context, and people without a project see a setup path instead of a stale-link message. This is a release candidate, not a production deployment.
+
+The candidate carries an open Task through Floor view switches while keeping the Project explicit in each view link. Nested Task controls receive pointer clicks inside reorderable lists, with dragging on the explicit grip. Both behaviors passed controlled isolated-preview browser checks on the received source; canonical production receiving remains open.
+
+Add project now offers Monthly business rhythm: one separate, owned Project with 18 starter Tasks and no assumed due dates. A saved request opens the same Project after an uncertain reply. Controlled preview verified creation through Settings, recovery without duplication, and readback from a separate signed-in phone session. On narrow screens, the Projects page now opens its folder drawer so Add project remains reachable, and long Project names wrap. That entry repair has rendered local evidence and awaits deployed receiving; none of these results is a production claim.
+
+Timeline and the Home briefing now convert raw Tasks due timestamps from SQLite seconds at their adapter boundaries. Local SQLite checks cover day boundaries, daylight-saving dates, undated values and pre-1970 dates. A controlled milestone sync retained 25 October 2026 through fresh Dublin and Kiritimati desktop readbacks. The briefing change has local regression evidence, not production cron evidence.
+
+Notes failures keep private database details out of user responses, and account-deletion failures return a private, non-cacheable retry message. Controlled preview proved Notes capture and interrupted retry, plus a recipient account's export, deletion and stale-access refusal with creator-owned records preserved. Live Notes-to-Tasks extraction, required human receiving, production migration/cutover and elapsed daily use retain their separate gates.
+
 ## 2026-09-23 · T·155 · tightens · the app receives the framework security fixes
 
 **The release candidate includes the current framework security fixes while preserving the existing product behavior.** Next.js and its ESLint configuration move from 16.2.11 to 16.3.6. The lockfile and exact-version freshness exceptions travel together; no database migration is required. The measured framework chunk adds 59 gzip bytes beyond the previous ceiling, so a recorded delegated security exception raises that ceiling to 63.1 KiB while retaining the 63 KiB target.
@@ -14,6 +46,151 @@ This entry records the candidate, not a completed production deployment. Linux C
 
 **The candidate recovery path encrypts verified Tasks backups before they leave the runner.** A new main-only workflow accepts a public age recipient, verifies a read-transaction snapshot by local restore, and uploads only ciphertext containing the full backup and restore manifest plus a sanitized receipt. Migration apply waits for upload acknowledgment and rechecks the source, target, schema, and migration ledger; a separate sanitized artifact retains its final or possibly partial result. The old raw-upload workflow is retired and must stay disabled. This is a candidate, not a deployed recovery claim: the actual encrypted artifact must be downloaded, decrypted with the separately held identity, and restored before acceptance. Portable recovery-key escrow remains open.
 
+## 2026-09-12 · January candidate · Invites keep account switching available
+
+An invite opened with the wrong account now shares one authenticated runtime
+across its header and account-switch control. Signing out preserves the same
+invite as the destination for the next sign-in. The controlled recipient
+journey remains in progress.
+
+## 2026-09-06 · January candidate · Keep recovery within reach
+
+Project recovery brings file downloads and published-link controls together in
+Settings. It checks your access to that project each time. Links created at the
+same time have distinct references, so their controls can be told apart.
+
+This internal candidate has passed scoped review and rendered recovery checks.
+Complete sign-in journeys, provider recovery and release acceptance remain open.
+The same checkpoint adds complete schema checks while preserving existing
+database adoption records. Evidence and limits:
+`experience/reviews/january-day-close-2026-09-06/README.md`.
+
+## 2026-09-05 · January candidate · Account data remains within reach
+
+Profile now downloads account JSON directly. Your Event purchase record remains
+yours after a project changes hands. The new owner receives the project access
+dates and refund state without the former payer's receipt details.
+
+The download explains unavailable sections and excludes uploaded or Google Drive
+file contents. Local export and failure/retry checks pass; complete project recovery
+and Event access enforcement remain in progress. No sales or release is opened.
+Evidence: `experience/reviews/january-event-export-2026-09-05/README.md`.
+
+## 2026-09-05 · January candidate · Event purchase history
+
+Event checkout records the intended project and verifies its owner again when
+payment settles. Original access dates and refunds stay attached to that purchase.
+Account erasure preserves the effect on a surviving project without retaining
+the former purchaser's identity.
+
+The internal foundation and two test corrections passed independent review.
+Recovery and post-term access enforcement remain in progress; Event sales stay held.
+Evidence: `experience/reviews/january-event-designation-2026-09-05/README.md`.
+
+## 2026-09-05 · January candidate · Unconfirmed file-access removal stays visible
+
+Connections keeps a notice after reload when Google file-access removal is still
+unconfirmed. It distinguishes current and previous project folders, including
+when live access cannot be checked. Existing live permission labels stay separate.
+
+The actual SQLite/component checks and independent projection review pass.
+Personal account-disconnect receipts and the real provider lifecycle remain open.
+Evidence: `experience/reviews/january-drive-pending-removal-2026-09-05/REPORT.md`.
+
+## 2026-09-05 · January candidate · Drive ownership before connection
+
+Connections explains who will own and see the board's Drive files before an
+account is connected. Cancelling disconnect or an owner change returns keyboard
+focus to the control that opened it.
+
+The scoped component matrix and independent UI review pass. Pending revocation
+after reload and the complete provider lifecycle remain open. Evidence and limits:
+`experience/reviews/january-drive-ui-acceptance-2026-09-05/REPORT.md`.
+
+## 2026-09-05 · January candidate · Dates follow the project
+
+Floor and My work now use the same project calendar for day labels, overdue
+work and daily grouping. A refreshed project day updates the header and tasks
+together. Creating another wedding project leaves existing access grants alone,
+including revoked grants; redemption reads the new project's own date.
+
+Sponsored-date editing keeps access copy current and preserves the confirmed
+revision across a pending save. Both readback defects pass independent verification.
+The final build,132 built cases,32 date states and3 keyboard paths pass. Five date
+controls now use an explicit44px minimum. The exact evidence and limits are in
+`experience/reviews/january-recipient-2026-09-05/README.md`. Customer identity,
+provider, design and receiving acceptance remain separate.
+
+## 2026-09-05 · January candidate · My work uses your known name
+
+My work now greets the signed-in person using their existing workspace profile.
+When no name is known, the greeting stays neutral. Demo accounts retain their
+sample names. Completion controls use the existing task colors and a 44-pixel
+target. Completed text stays subdued while its control remains at full contrast.
+Six source-fixture tests and final scripted browser checks pass. Real account
+and human-use verification remain open. Internal candidate only:
+`docs/execution/january-2027/RECIPIENT-COMPOSITION.md`.
+
+## 2026-09-05 · January candidate · Home opens the right briefing
+
+An observation about several tasks now opens the full briefing for the same project or planning period. Individual tasks still open their own detail. The aggregate action says “Read”, and the source names the scope it describes.
+
+Explicit Home and Full Briefing links also retain their reading scope. An unavailable link no longer substitutes another saved project. Internal candidate: thirteen focused checks and scoped desktop/mobile rendering pass; full suite and authenticated browser acceptance remain open. Evidence: `docs/guides/evidence/home-aggregate-links/README.md`.
+## 2026-09-04 · January candidate · billing follows payment evidence
+
+Event checkout uses a one-time payment and a twelve-month access term. Missing
+billing configuration cannot grant paid access. Repeated provider events resume
+unfinished fulfilment without duplicating access or extending its term. Billing
+settings directs subscription changes to Manage billing and no longer reports a
+cancellation that Stripe has not made.
+
+Internal candidate only. Local database tests, typecheck, lint and build passed;
+provider lifecycle and final suite acceptance remain open. See
+`docs/execution/january-2027/BILLING-REHEARSAL.md` for evidence and limitations.
+
+## 2026-08-27 · T·153 · fixes · settings stopped telling every customer that uploads do not work
+
+**Settings has been saying "File uploads are not yet active on this workspace"
+to every real customer, unconditionally, while uploads were live — and the four
+file-size numbers behind it disagreed with each other and with the platform.
+The copy is now true, the numbers come from one constant, and a file goes from
+the browser to the store without crossing a server.**
+
+Two separate untruths, one screen. The line in `storage.tsx` had no demo-mode
+branch, so it was not stale review copy: it shipped to production, above a
+usage bar that was quietly counting real files. `BLOB_READ_WRITE_TOKEN` has
+been provisioned on the project for twenty-four days.
+
+The size story was worse than the four numbers already recorded. `next.config`
+capped server-action bodies at 8 MB, `SERVER_UPLOAD_LIMIT_BYTES` said 50 MB,
+the free plan said 10 MB, the toast said 50 MB — and Vercel refuses any
+function request body over **4.5 MB** before the framework sees it. Every one
+of the four was unreachable. A 5 MB PDF could not be attached at all, and
+failed with a platform error the app never saw.
+
+So the bytes stopped going that way. The browser asks for a URL signed for one
+pathname, one size and one type set, sends the file straight to the store, and
+a finalize step re-proves the caller,
+confirms the file landed where we said, confirms nobody without credentials can
+read it, and re-reads its leading bytes through the same allowlist the old path
+used. A returned URL is a claim, never evidence. Deliberately the same shape
+Project Drive will use against Google Drive one provider later.
+
+A presigned URL rather than the Blob client helper, for two reasons. The
+helper costs 36.7 KB gzip in every browser and breached the bundle ratchet,
+which is a founder decision rather than an edit. And it could not constrain the
+access mode — the browser passed its own — so a modified client could have
+written a private-by-policy attachment as a public object. Signing bakes that
+in server-side, and leaves the browser a bare PUT with no library at all.
+
+Verified against the production store, not asserted: 17 checks across both
+paths, including a signed URL refused when repointed at another pathname.
+`scripts/verify-blob-store.mjs` reruns it.
+
+Also closed: content validation would otherwise have been lost the moment the
+bytes stopped passing through our hands, and a claim row abandoned by a killed
+browser would have held quota forever. `pnpm first-contact:language`,
+`lint`, `typecheck`, `test` and `build` all green.
 ## 2026-09-08 · T·154 · tightens · the favicon cannot silently drift again
 
 **The ICO fallback is now generated by rendering `SuiteMark` itself, and a

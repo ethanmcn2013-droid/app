@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "conversation-erasure-tombstones-2026-09-23",
+  "authorizedBy": "The approved 2026-09 production-readiness sprint delegates local implementation of account erasure for Project rooms and Task Discussion. This receipt authorizes local and CI rehearsal only; preview or production migration requires the separate target-bound release gates.",
+  "reviewedBy": "Codex P04 implementation candidate; independent Astra migration and lifecycle review is required before preview application.",
+  "authorizationSource": "P04/#19 integration lifecycle remediation and the existing hard-delete account policy.",
+  "migrations": [
+    {
+      "id": "0036_conversation_erasure_tombstones",
+      "sha256": "1e9a55199384996ffd2992ae2e564d730616c8fdb2da2ccd0bf8391f2a5bfa18",
+      "reviewedAt": "2026-09-23T00:00:00.000Z",
+      "risk": "Rebuilds three conversation-source tables to allow content-free, identity-free erasure tombstones while retaining bystander replies. Foreign key checks, exact trigger restoration, and populated upgrade tests are mandatory.",
+      "rollbackPlan": "Disable conversation and Task Discussion writes; retain acknowledged source rows and erasure tombstones. Do not reverse an accepted erasure or restore erased identity.",
+      "postconditions": [
+        "nullable author and creator columns exist only for guarded erasure tombstones",
+        "ordinary writes cannot change author identity or restore erased content",
+        "all existing conversation and Task Discussion guards remain installed",
+        "existing row ids, sequence numbers, and bystander replies survive the table rebuild",
+        "integrity and foreign key checks pass"
+      ],
+      "proofs": [
+        {
+          "id": "erasure-nullable-columns",
+          "sql": "SELECT (SELECT COUNT(*) FROM pragma_table_info('conversations') WHERE name='created_by' AND \"notnull\"=0)+(SELECT COUNT(*) FROM pragma_table_info('conversation_messages') WHERE name IN ('author_id','client_request_id','request_hash') AND \"notnull\"=0)+(SELECT COUNT(*) FROM pragma_table_info('comments') WHERE name='user_id' AND \"notnull\"=0) AS value",
+          "expected": 5
+        },
+        {
+          "id": "erasure-update-guards",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type='trigger' AND name IN ('conversations_creator_erasure_guard','conversation_messages_guard_update','task_comments_guard_update')",
+          "expected": 3
+        },
+        {
+          "id": "erasure-delete-guards",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type='trigger' AND name IN ('conversation_room_delete_cleanup','conversation_task_delete_cleanup','conversation_workspace_work_cleanup')",
+          "expected": 3
+        },
+        {
+          "id": "erasure-temporary-tables-gone",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type='table' AND name IN ('conversations_erasure','conversation_messages_erasure','comments_erasure')",
+          "expected": 0
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

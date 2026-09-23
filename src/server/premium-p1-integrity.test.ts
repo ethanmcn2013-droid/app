@@ -205,10 +205,18 @@ test("removeTaskAction: deleting a parent removes children, comments, activities
     UPDATE tasks SET parent_task_id = 'p-del'
       WHERE id IN ('c-del-1','c-del-2');
 
-    INSERT INTO comments (id, workspace_id, task_id, user_id, body) VALUES
-      ('cm-p','ws-del','p-del','u-del','parent comment'),
-      ('cm-c1','ws-del','c-del-1','u-del','child 1 comment'),
-      ('cm-c2','ws-del','c-del-2','u-del','child 2 comment');
+    INSERT INTO task_discussion_state (task_id, workspace_id, next_create_seq, next_change_seq) VALUES
+      ('p-del','ws-del',2,2),('c-del-1','ws-del',2,2),('c-del-2','ws-del',2,2);
+
+    INSERT INTO comments (id, workspace_id, task_id, user_id, body, client_request_id, request_hash, revision, create_seq) VALUES
+      ('cm-p','ws-del','p-del','u-del','parent comment','cm-p-req',lower(hex(zeroblob(32))),1,1),
+      ('cm-c1','ws-del','c-del-1','u-del','child 1 comment','cm-c1-req',lower(hex(zeroblob(32))),1,1),
+      ('cm-c2','ws-del','c-del-2','u-del','child 2 comment','cm-c2-req',lower(hex(zeroblob(32))),1,1);
+
+    INSERT INTO task_comment_changes (task_id, change_seq, kind, comment_id, revision, audience_epoch, happened_at_ms) VALUES
+      ('p-del',1,'create','cm-p',1,1,1),
+      ('c-del-1',1,'create','cm-c1',1,1,1),
+      ('c-del-2',1,'create','cm-c2',1,1,1);
 
     INSERT INTO activities (id, workspace_id, task_id, user_id, kind, payload) VALUES
       ('act-p','ws-del','p-del','u-del','taskAdd','{}'),

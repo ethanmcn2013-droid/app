@@ -643,7 +643,7 @@ export type ActivityPayload =
   | { kind: "move"; from: LaneId; to: LaneId }
   | { kind: "toggleComplete"; to: "done" | "open" }
   | { kind: "update"; field: UpdateField }
-  | { kind: "commentAdd"; commentId: string; snippet: string }
+  | { kind: "commentAdd"; commentId: string; snippet?: string }
   | { kind: "commentRemove"; commentId: string }
   | {
       kind: "attach";

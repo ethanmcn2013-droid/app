@@ -22,17 +22,147 @@ import {
   type UploadAttachmentResult,
 } from "@/server/actions/attachments";
 import {
+  abandonStaleUploads,
+  finalizeUpload,
+} from "@/server/actions/attachment-uploads";
+import {
+  MAX_UPLOAD_BYTES,
+  SERVER_ACTION_FILE_LIMIT_BYTES,
+  formatUploadLimit,
+} from "@/lib/upload-limit";
+import {
   addLinkResourceAction,
   listTaskResourcesAction,
   removeResourceAction,
   type ResourceRow,
 } from "@/server/actions/resources";
 import { Popover } from "./popover";
+import { isDemoMode } from "@/lib/access-mode";
+import { projectDriveUiEnabled } from "@/lib/project-drive-ui";
+import { useDriveUploads } from "./use-drive-uploads";
+import { DriveUploadRow } from "./drive-upload-row";
+import { DriveUploadReview } from "./drive-upload-review";
+import { driveReloadCopy, driveReloadState } from "@/lib/project-drive-reload";
+import { DriveReloadNotice } from "./drive-reload-notice";
+import { useDriveUploadRecovery } from "./use-drive-upload-recovery";
+import { pendingOwnDriveUploads } from "@/lib/project-drive-upload-recovery";
 
-// Client-side hint only; the server is the authority on size limits.
-// Updated to match SERVER_UPLOAD_LIMIT_BYTES (50 MB) so the hint stays
-// aligned with the effective cap until client-direct multipart ships.
-const MAX_BYTES = 50 * 1024 * 1024;
+// Client-side hint only; the server is the authority on size limits, and
+// it re-checks this against the board's tier and remaining quota before it
+// will mint an upload token.
+//
+// WP-0: this used to be its own 50 MB literal, kept in step with
+// storage-config by a comment. It now reads the one constant every other
+// limit reads, so the toast below cannot drift from what the server will
+// actually accept.
+const MAX_BYTES = MAX_UPLOAD_BYTES;
+
+/**
+ * Send one file, by whichever transport this deployment actually has.
+ *
+ * WP-0. The bytes used to go through `uploadAttachmentAction`, which meant
+ * they crossed a Vercel Function — and Vercel refuses any function request
+ * body over 4.5 MB with a 413 the app never sees. The product advertised
+ * 50 MB, the framework was configured for 8 MB, and neither was reachable.
+ *
+ * The first attempt now writes straight to the store: the server mints a
+ * token scoped to one pathname and one size, the browser PUTs the bytes to
+ * Vercel Blob, and `finalizeUpload` re-authorizes and inspects what landed
+ * before the attachment becomes real. Nothing but metadata crosses a
+ * function, so the platform cap stops applying.
+ *
+ * The fallback is the old path, unchanged, for a deployment with no blob
+ * store — local disk in development, chiefly. It is tried only for a file
+ * small enough to survive a function body, because offering it for a 40 MB
+ * file would just replace one honest error with a confusing one.
+ *
+ * Returns the legacy result when the server action carried the file, and
+ * null when the store did — the storage-warning toast is the only caller
+ * that reads it, and the direct path reports quota through its refusal
+ * instead.
+ */
+async function sendFile(
+  taskId: string,
+  file: File,
+): Promise<UploadAttachmentResult | null> {
+  try {
+    // 1. Ask the server what we are allowed to upload. It answers with a
+    //    URL signed for ONE destination, one size and one type — not with
+    //    a credential we could point anywhere.
+    const permit = await fetch("/api/attachments/upload", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        taskId,
+        filename: file.name,
+        size: file.size,
+        contentType: file.type || "application/octet-stream",
+      }),
+    });
+    if (!permit.ok) throw new Error(await refusalText(permit));
+    const { attachmentId, uploadUrl } = (await permit.json()) as {
+      attachmentId: string;
+      uploadUrl: string;
+    };
+
+    // 2. The bytes, straight to the store. A bare PUT, so no upload
+    //    library ships to the browser.
+    const put = await fetch(uploadUrl, {
+      method: "PUT",
+      body: file,
+      headers: { "Content-Type": file.type || "application/octet-stream" },
+    });
+    if (!put.ok) throw new Error("The upload did not complete.");
+    const stored = (await put.json()) as { url?: string };
+    if (!stored.url) throw new Error("The upload did not complete.");
+
+    // 3. Nothing above is evidence. The server re-proves the caller,
+    //    confirms the blob is the one it signed for, and reads the bytes
+    //    back before the attachment becomes real.
+    const finalized = await finalizeUpload(attachmentId, stored.url);
+    if (!finalized.ok) throw new Error(finalizeMessage(finalized.reason));
+    return null;
+  } catch (err) {
+    // The claim row was reserved before the browser was allowed to write,
+    // so a failure here can leave one behind holding quota. Sweeping is
+    // best-effort and must never mask the real error.
+    void abandonStaleUploads(taskId).catch(() => {});
+
+    if (file.size <= SERVER_ACTION_FILE_LIMIT_BYTES) {
+      const fd = new FormData();
+      fd.append("file", file);
+      return await uploadAttachmentAction(taskId, fd);
+    }
+    throw err;
+  }
+}
+
+/** The server's own sentence, when it sent one worth repeating. */
+async function refusalText(res: Response): Promise<string> {
+  try {
+    const body = (await res.json()) as { error?: string };
+    if (typeof body.error === "string" && body.error.length > 0) {
+      return body.error;
+    }
+  } catch {
+    // Fall through to the generic line below.
+  }
+  return "The upload could not be started.";
+}
+
+/** Refusals a person can act on. Anything else is a plain failure. */
+function finalizeMessage(reason: string): string {
+  switch (reason) {
+    case "content-rejected":
+      return "That file's contents do not match its type. Re-export it and try again.";
+    case "size-mismatch":
+      return "The file changed while it was being sent. Try attaching it again.";
+    case "world-readable":
+      return "That upload was refused for safety. Try attaching it again.";
+    default:
+      return "The upload failed mid-flight.";
+  }
+}
 
 /**
  * Resources section in the task detail panel. Replaces the old
@@ -47,10 +177,17 @@ const MAX_BYTES = 50 * 1024 * 1024;
  * on local disk for local-disk deployments.
  */
 export function ResourcesSection({ task }: { task: Task }) {
+  return <TaskResources key={task.id} task={task} />;
+}
+
+function TaskResources({ task }: { task: Task }) {
   const reduceMotion = useReducedMotion();
   const me = useCurrentUser();
   const { toast } = useToast();
   const [items, setItems] = useState<DisplayRow[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [reload, setReload] = useState(0);
+  const resourceRead = useRef(0);
   const [, startTransition] = useTransition();
   const [dragDepth, setDragDepth] = useState(0);
   const [linkInput, setLinkInput] = useState("");
@@ -58,25 +195,44 @@ export function ResourcesSection({ task }: { task: Task }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const linkInputRef = useRef<HTMLInputElement>(null);
   const inputId = useId();
+  const driveEnabled = projectDriveUiEnabled();
+  const { entries: driveEntries, add: addDriveUpload } = useDriveUploads(task.id, sendFile, () => setReload((value) => value + 1));
+  const reloadState = driveEnabled && !isDemoMode() ? driveReloadState(items === null ? null : items.filter((row): row is RealRow => row.kind === "real"), loadFailed, driveEntries.map(entry => entry.id)) : null;
+  const recoveryRows = (items ?? []).filter((row): row is RealRow => row.kind === "real").map(row => ({ ...row, taskId: task.id }));
+  const mountedIds = driveEntries.map(entry => entry.id);
+  const canCheckGoogle = pendingOwnDriveUploads(recoveryRows, task.id, me, mountedIds).length > 0;
+  const { state: recoveryState, check: checkUploads } = useDriveUploadRecovery(task.id, async () => {
+    // Use the ordinary scoped list after every attempt, including a lost CAS.
+    // A completion returned by the probe alone never fabricates a visible row.
+    const sequence = ++resourceRead.current;
+    try {
+      const rows = await listTaskResourcesAction(task.id);
+      if (resourceRead.current === sequence) { setItems(rows.map(toDisplayRow)); setLoadFailed(false); }
+    } catch {
+      if (resourceRead.current === sequence) setLoadFailed(true);
+      throw new Error("Resources unavailable");
+    }
+  });
 
   const refreshKey = task.updatedAt?.getTime();
 
   useEffect(() => {
     let ignore = false;
+    const sequence = ++resourceRead.current;
     listTaskResourcesAction(task.id)
       .then((rows) => {
-        if (!ignore) setItems(rows.map(toDisplayRow));
+        if (!ignore && resourceRead.current === sequence) { setItems(rows.map(toDisplayRow)); setLoadFailed(false); }
       })
-      .catch((err) => {
-        if (!ignore) {
-          console.warn("resources: fetch failed", err);
-          setItems([]);
+      .catch(() => {
+        if (!ignore && resourceRead.current === sequence) {
+          setLoadFailed(true);
         }
       });
     return () => {
       ignore = true;
+      resourceRead.current += 1;
     };
-  }, [task.id, refreshKey]);
+  }, [task.id, refreshKey, reload]);
 
   // ── Upload handler (unchanged path) ──────────────────────────────────
 
@@ -84,15 +240,27 @@ export function ResourcesSection({ task }: { task: Task }) {
     (files: FileList | File[]) => {
       const list = Array.from(files);
       if (list.length === 0) return;
+      if (driveEnabled && isDemoMode()) {
+        toast("Review only", { body: "No file was uploaded. Review fixtures never contact Google or storage." });
+        return;
+      }
+      // Applies to the shared input AND drop handler, even if a disabled button
+      // is bypassed. A reloaded pending claim must never become a new upload.
+      if (reloadState) {
+        toast("Check the existing upload", { body: driveReloadCopy[reloadState] });
+        return;
+      }
 
       for (const file of list) {
         if (file.size > MAX_BYTES) {
-          toast(`${file.name} is over 50 MB`, {
+          toast(`${file.name} is over ${formatUploadLimit(MAX_BYTES)}`, {
             tone: "warn",
             body: "Trim it down or share a link instead.",
           });
           continue;
         }
+
+        if (driveEnabled) { void addDriveUpload(file); continue; }
 
         const tempId = `temp-${Math.random().toString(36).slice(2, 8)}`;
         const placeholder: PendingUploadRow = {
@@ -108,18 +276,15 @@ export function ResourcesSection({ task }: { task: Task }) {
           setItems((cur) => (cur ? [...cur, placeholder] : [placeholder]));
         }, 300);
 
-        const fd = new FormData();
-        fd.append("file", file);
-
         startTransition(async () => {
           try {
-            const result: UploadAttachmentResult = await uploadAttachmentAction(task.id, fd);
+            const result = await sendFile(task.id, file);
             window.clearTimeout(placeholderTimer);
             // Refresh from server to get the canonical resource row.
             const rows = await listTaskResourcesAction(task.id);
             setItems(rows.map(toDisplayRow));
             // Surface calm storage-usage warning if a threshold was crossed.
-            if (result.warnThresholds.length > 0) {
+            if (result && result.warnThresholds.length > 0) {
               const highestThreshold = Math.max(
                 ...result.warnThresholds.map(Number),
               );
@@ -150,7 +315,7 @@ export function ResourcesSection({ task }: { task: Task }) {
         });
       }
     },
-    [me, task.id, toast],
+    [me, task.id, toast, driveEnabled, addDriveUpload, reloadState],
   );
 
   // ── Link add handler ──────────────────────────────────────────────────
@@ -237,14 +402,12 @@ export function ResourcesSection({ task }: { task: Task }) {
     [handleFiles],
   );
 
-  if (items === null) return null;
-
   const dragging = dragDepth > 0;
-  const realItems = items.filter((r): r is RealRow => r.kind === "real");
-  const pendingItems = items.filter(
+  const realItems = (items ?? []).filter((r): r is RealRow => r.kind === "real");
+  const pendingItems = (items ?? []).filter(
     (r): r is PendingUploadRow => r.kind === "pending-upload",
   );
-  const total = items.length;
+  const total = (items ?? []).length;
 
   return (
     <div
@@ -271,8 +434,9 @@ export function ResourcesSection({ task }: { task: Task }) {
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="inline-flex items-center gap-1 rounded-md text-[12px] font-medium text-ink-quiet transition-colors hover:text-ink-soft"
+            className="inline-flex min-h-[44px] items-center gap-1 rounded-md px-2 text-[12px] font-medium text-ink-quiet transition-colors hover:text-ink-soft"
             aria-label="Attach a file"
+            disabled={reloadState !== null}
           >
             <PaperclipGlyph />
             Attach
@@ -280,12 +444,19 @@ export function ResourcesSection({ task }: { task: Task }) {
         </div>
       </div>
 
+      {loadFailed ? <p role="alert" className="mb-3 text-[12px] text-ink-soft">Resources could not be refreshed. <button className="min-h-[44px] px-2 underline" onClick={() => setReload((value) => value + 1)}>Try again</button></p> : items === null ? <p role="status" className="mb-3 text-[12px] text-ink-soft">Loading Resources…</p> : total === 0 ? <p className="mb-3 text-[12px] text-ink-soft">No resources attached yet.</p> : null}
+      {driveEnabled ? <p className="mb-3 text-[12px] leading-relaxed text-ink-soft">The destination is checked when you attach. If Drive is unavailable before sending, you can choose Signal Studio.</p> : null}
+      {driveEnabled && isDemoMode() ? <DriveUploadReview /> : null}
+      {reloadState ? <DriveReloadNotice state={reloadState} canCheckGoogle={canCheckGoogle} recovery={recoveryState} onRefresh={() => void checkUploads(recoveryRows, me, mountedIds)} /> : null}
+      {driveEntries.length ? <ul aria-label="File upload status" className="mb-3 space-y-2">{driveEntries.map((entry) => <DriveUploadRow key={entry.id} name={entry.name} size={entry.size} state={entry.state} onRetry={() => void entry.attempt.run()} onNative={() => void entry.attempt.useNative()} onCancel={entry.attempt.cancel} />)}</ul> : null}
+
       {/* Hidden file input */}
       <input
         ref={inputRef}
         id={inputId}
         type="file"
         aria-label="Files to attach"
+        disabled={reloadState !== null}
         multiple
         className="sr-only"
         onChange={(e) => {
@@ -392,6 +563,7 @@ type RealRow = {
   addedByUserId: string | null;
   addedAt: number;
   accessState: string;
+  storage: "signal" | "google_drive";
 };
 
 type PendingUploadRow = {
@@ -419,6 +591,7 @@ function toDisplayRow(r: ResourceRow): RealRow {
     addedByUserId: r.addedByUserId,
     addedAt: r.addedAt,
     accessState: r.accessState,
+    storage: r.storage,
   };
 }
 
@@ -433,13 +606,15 @@ function RealResourceRow({
 }) {
   const reduceMotion = useReducedMotion();
   const isUpload = row.resourceKind === "upload";
+  const isDrive = row.storage === "google_drive";
+  const isPending = row.accessState === "pending";
   // Upload rows link to the authenticated download route using the
   // attachment id derived from the resource id ('res-' prefix stripped).
-  const downloadUrl = isUpload
+  const downloadUrl = isUpload && !isDrive && !isPending
     ? `/api/attachments/${row.id.startsWith("res-") ? row.id.slice(4) : row.id}`
     : null;
-  const href = isUpload ? (downloadUrl ?? "#") : (row.url ?? "#");
-  const isExternal = !isUpload;
+  const href = isDrive ? safeDriveFileUrl(row.url) : isUpload ? downloadUrl : row.url;
+  const isExternal = !isUpload || isDrive;
 
   return (
     <motion.li
@@ -452,7 +627,8 @@ function RealResourceRow({
     >
       <ResourceGlyph row={row} downloadUrl={downloadUrl} />
       <a
-        href={href}
+        href={isPending ? undefined : href ?? undefined}
+        aria-disabled={isPending || !href || undefined}
         {...(isExternal
           ? { target: "_blank", rel: "noreferrer" }
           : { download: row.title })}
@@ -461,6 +637,7 @@ function RealResourceRow({
         <div className="truncate text-[13px] font-medium leading-[var(--x-lead-tight)] text-ink">
           {row.title}
         </div>
+        {isDrive ? <p className="mt-0.5 text-[11px] text-ink-soft">{isPending ? "Drive upload not confirmed. Check the existing upload before attaching again." : "Stored in Google Drive · opens in a new tab"}</p> : null}
         <div className="mt-0.5 flex items-center gap-1.5 text-[11px] tabular-nums text-ink-quiet">
           <span className="rounded px-1 py-px text-[11px] font-medium uppercase tracking-[0.12em] text-ink-faint ring-1 ring-line leading-[var(--x-lead-tight)]">
             {providerLabel(row.provider)}
@@ -482,7 +659,7 @@ function RealResourceRow({
           </span>
         </div>
       </a>
-      <Popover
+      {!isPending ? <Popover
         align="end"
         width={200}
         aria-label="Confirm remove resource"
@@ -502,7 +679,7 @@ function RealResourceRow({
         {(close) => (
           <div className="flex flex-col gap-1.5 p-1.5">
             <p className="px-1.5 pt-1 text-[12px] leading-[var(--x-lead-ui)] text-ink-soft">
-              Remove this resource?
+              {isDrive ? "Remove from Resources? The file stays in Google Drive." : "Remove this resource?"}
             </p>
             <div className="flex items-center justify-end gap-1.5">
               <button
@@ -525,7 +702,7 @@ function RealResourceRow({
             </div>
           </div>
         )}
-      </Popover>
+      </Popover> : null}
     </motion.li>
   );
 }
@@ -791,6 +968,14 @@ function providerLabel(provider: string): string {
     case "url": return "Link";
     default: return provider;
   }
+}
+
+function safeDriveFileUrl(value: string | null): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && ["drive.google.com", "docs.google.com"].includes(url.hostname) && !url.username && !url.password && !url.port ? url.href : null;
+  } catch { return null; }
 }
 
 function hasFiles(e: DragEvent<HTMLDivElement>): boolean {

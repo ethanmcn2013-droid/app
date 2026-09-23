@@ -1,0 +1,11 @@
+# Isolated recovery receipt — 4 September 2026
+
+The actual App logical backup and restore verifier restored 51 rows across all 29 tables produced by the current App migration ledger, using synthetic project/member/resource/storage/credential data. It compared every table's restored content hash and every recorded DDL object, checked SQLite integrity and foreign keys, verified the exact migration ledger, and rejected a cross-project parent mutation after restore. Synthetic encrypted refresh-token custody decrypted with a separately supplied fixture key; a wrong connection context was rejected.
+
+The same verifier restored the existing commercial browser fixtures: Studio 4 rows/9 fixture tables and shared entitlements 5 rows/6 fixture tables. Those fixture schemas are partial; this does not establish complete Studio or shared-entitlement production recovery, append-only production trigger coverage, or a provider restore.
+
+Exact source: App 3d8a36e14b1fb58142cb898b6115ad7bf404a36e. Receipt: isolated-recovery-20260904.json. Replay source: isolated-recovery-proof.mjs. It was invoked from the task directory using Node 24, the App tsx loader and register-server-only, with the App worktree path as its argument. Studio sources were the explicitly local work/studio-truth-fixture files; no environment database URL was read. Each run created unique local source/restore files under task work/. Data was quiescent, not copied during live writes. No real provider, account or production credential was used.
+
+The first populated rehearsal exposed a real historical backfill-count failure; 3d8a36e1 corrects its continuous-proof timing while retaining every original execution proof, SQL checksum and receipt. The database gate now passes 64 tests including failed initial backfill and missing-index negatives. Earlier fixture setup attempts also failed on a missing required added_at seed value; they produced no passing receipt. The final run completed exit 0.
+
+Remaining release proof: consistent backup during operational load or an explicit quiescence procedure; complete current Studio/shared/Notes/Timeline schemas and lifecycle data; externally retained keys; production backup retention/restore target; rollout and rollback/worker recovery. This fixture result does not close the January operational gate.

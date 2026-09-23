@@ -1,5 +1,4 @@
 import { auth } from "@clerk/nextjs/server";
-import { createHash } from "node:crypto";
 import { redirect } from "next/navigation";
 import { isDemoMode } from "@/lib/access-mode";
 import {
@@ -28,6 +27,13 @@ import {
 } from "@/modules/notes/server/actions/extraction";
 import { viewFromParam } from "@/modules/notes/lib/notes-view-model";
 import AppLoading from "@/modules/notes/app/loading";
+import { notesRecoveryActorScope } from "@/modules/notes/server/notes-recovery-actor";
+import { isActiveProjectV3Enabled } from "@/lib/projects/flags";
+import { parseProjectId } from "@/lib/projects/project-ref";
+import { resolveProjectForRoute } from "@/server/projects/route-authz";
+import { ActiveProjectRouteSync } from "@/components/app/active-project-route-sync";
+import { SuiteContextPublisher } from "@/components/app/suite-context-publisher";
+import { notesHref } from "@/modules/notes/lib/notes-view-model";
 
 export const dynamic = "force-dynamic";
 
@@ -79,6 +85,19 @@ export default async function NotebookPage({ searchParams }: NotebookPageProps) 
   const workspaceHint = typeof params.workspaceId === "string" ? params.workspaceId : null;
   const periodHint =
     typeof params.planningPeriodId === "string" ? params.planningPeriodId : null;
+  const activeProjectEnabled = isActiveProjectV3Enabled();
+  const projectDecision = activeProjectEnabled || params.workspaceId !== undefined
+    ? await resolveProjectForRoute(params.workspaceId) : null;
+  const verifiedProject = projectDecision?.kind === "ready" || projectDecision?.kind === "archived"
+    ? projectDecision.project : null;
+  if (projectDecision?.kind === "ready" && projectDecision.canonicalRedirectTo) {
+    redirect(notesHref(
+      viewFromParam(typeof params.view === "string" ? params.view : null),
+      typeof params.note === "string" ? params.note : null,
+      projectDecision.canonicalRedirectTo,
+    ));
+  }
+  const captureAllowed = projectDecision?.kind !== "unavailable" && projectDecision?.kind !== "archived";
 
   let initialNotes: Awaited<ReturnType<typeof listNotes>>;
   let initialArchivedNotes: Awaited<ReturnType<typeof listArchivedNotes>>;
@@ -148,7 +167,11 @@ export default async function NotebookPage({ searchParams }: NotebookPageProps) 
     tasksWorkspaces: tasksCatalog.workspaces,
     tasksCatalogAvailable: tasksCatalog.status === "ready",
     planningPeriodsEnabled,
-    initialWorkspaceId: hintedWorkspace?.id ?? null,
+    // A refused hint survives only as recovery/navigation binding. It grants
+    // no capture or handoff capability and supplies no displayed Project name.
+    initialWorkspaceId: projectDecision !== null
+      ? verifiedProject?.id ?? parseProjectId(workspaceHint)
+      : hintedWorkspace?.id ?? null,
     reviewFirstCapture: demoMode && fixture === "first-capture",
     // Capture once on the server so SSR and hydration share the same relative
     // time boundary even when a note is exactly one minute/hour/day old.
@@ -158,7 +181,7 @@ export default async function NotebookPage({ searchParams }: NotebookPageProps) 
     // same tab can never adopt the previous creator's draft or queue.
     recoveryScope: demoMode
       ? `review-${fixture}`
-      : createHash("sha256").update(`signal-notes:${userId}`).digest("hex").slice(0, 24),
+      : notesRecoveryActorScope(userId as string),
   };
   // Which of the three views, and which note, the URL is asking for. Both
   // are navigation state and neither is authorisation: an unknown view falls
@@ -174,8 +197,17 @@ export default async function NotebookPage({ searchParams }: NotebookPageProps) 
 
   return (
     <>
+      {activeProjectEnabled ? <ActiveProjectRouteSync project={verifiedProject} requestedProjectId={workspaceHint} /> : null}
+      {!activeProjectEnabled && projectDecision !== null ? <SuiteContextPublisher workspaceId={verifiedProject?.id ?? null} planningPeriodId={null} /> : null}
+      {!captureAllowed ? (
+        <aside className="capture-email" role="status">
+          This project is unavailable for new work. Your private notes are still here.
+          Choose an available project before capturing or sending new work.
+        </aside>
+      ) : null}
       <EarlyCaptureBootstrap />
       <NotesWorkspace
+            captureAllowed={captureAllowed}
             initialNotes={notebookProps.initialNotes}
             initialArchivedNotes={notebookProps.initialArchivedNotes}
             initialWorkspaceId={notebookProps.initialWorkspaceId}

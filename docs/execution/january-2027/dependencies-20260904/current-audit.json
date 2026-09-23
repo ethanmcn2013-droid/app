@@ -1,0 +1,166 @@
+{
+  "advisories": {
+    "1123528": {
+      "findings": [
+        {
+          "version": "7.29.0",
+          "paths": [
+            ".>@clerk/nextjs>next>styled-jsx>@babel/core",
+            ".>@sentry/nextjs>@sentry/bundler-plugin-core>@babel/core",
+            ".>@sentry/nextjs>@sentry/webpack-plugin>@sentry/bundler-plugin-core>@babel/core",
+            ".>@sentry/nextjs>next>styled-jsx>@babel/core",
+            ".>geist>next>styled-jsx>@babel/core",
+            ".>next>styled-jsx>@babel/core"
+          ],
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "id": 1123528,
+      "title": "@babel/core: Arbitrary File Read via sourceMappingURL Comment",
+      "module_name": "@babel/core",
+      "vulnerable_versions": "<=7.29.0",
+      "patched_versions": ">=7.29.1",
+      "severity": "low",
+      "cwe": "CWE-22, CWE-200",
+      "github_advisory_id": "GHSA-4x5r-pxfx-6jf8",
+      "url": "https://github.com/advisories/GHSA-4x5r-pxfx-6jf8"
+    },
+    "1130716": {
+      "findings": [
+        {
+          "version": "6.27.0",
+          "paths": [
+            ".>@vercel/blob>undici"
+          ],
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "id": 1130716,
+      "title": "undici vulnerable to downstream response desynchronization via retry interceptor",
+      "module_name": "undici",
+      "vulnerable_versions": "<6.28.0",
+      "patched_versions": ">=6.28.0",
+      "severity": "moderate",
+      "cwe": "CWE-444",
+      "github_advisory_id": "GHSA-8xcm-r25x-g524",
+      "url": "https://github.com/advisories/GHSA-8xcm-r25x-g524"
+    },
+    "1130727": {
+      "findings": [
+        {
+          "version": "6.27.0",
+          "paths": [
+            ".>@vercel/blob>undici"
+          ],
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "id": 1130727,
+      "title": "undici vulnerable to CRLF Injection via blob-like body 'type' property",
+      "module_name": "undici",
+      "vulnerable_versions": "<6.28.0",
+      "patched_versions": ">=6.28.0",
+      "severity": "moderate",
+      "cwe": "CWE-93",
+      "github_advisory_id": "GHSA-m8rv-5g2x-5cg5",
+      "url": "https://github.com/advisories/GHSA-m8rv-5g2x-5cg5"
+    },
+    "1130732": {
+      "findings": [
+        {
+          "version": "6.27.0",
+          "paths": [
+            ".>@vercel/blob>undici"
+          ],
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "id": 1130732,
+      "title": "undici vulnerable to cookie attribute injection via unsanitized domain and unparsed setCookie fields",
+      "module_name": "undici",
+      "vulnerable_versions": "<6.28.0",
+      "patched_versions": ">=6.28.0",
+      "severity": "moderate",
+      "cwe": "CWE-74",
+      "github_advisory_id": "GHSA-v3r7-h72x-cjcm",
+      "url": "https://github.com/advisories/GHSA-v3r7-h72x-cjcm"
+    },
+    "1153174": {
+      "findings": [
+        {
+          "version": "2.7.1",
+          "paths": [
+            ".>@sentry/nextjs>@sentry/node>@fastify/otel>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/node>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/node>@opentelemetry/instrumentation-amqplib>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/node>@opentelemetry/instrumentation-connect>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/node>@opentelemetry/instrumentation-fs>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/node>@opentelemetry/instrumentation-hapi>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/node>@opentelemetry/instrumentation-koa>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/node>@opentelemetry/instrumentation-mongoose>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/node>@opentelemetry/instrumentation-mysql2>@opentelemetry/sql-common>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/node>@opentelemetry/instrumentation-pg>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/node>@opentelemetry/instrumentation-pg>@opentelemetry/sql-common>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/node>@opentelemetry/sdk-trace-base>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/node>@opentelemetry/sdk-trace-base>@opentelemetry/resources>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/node>@sentry/node-core>@sentry/opentelemetry>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/node>@sentry/node-core>@sentry/opentelemetry>@opentelemetry/sdk-trace-base>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/node>@sentry/node-core>@sentry/opentelemetry>@opentelemetry/sdk-trace-base>@opentelemetry/resources>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/node>@sentry/node-core>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/node>@sentry/node-core>@opentelemetry/sdk-trace-base>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/node>@sentry/node-core>@opentelemetry/sdk-trace-base>@opentelemetry/resources>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/node>@sentry/opentelemetry>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/node>@sentry/opentelemetry>@opentelemetry/sdk-trace-base>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/node>@sentry/opentelemetry>@opentelemetry/sdk-trace-base>@opentelemetry/resources>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/opentelemetry>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/opentelemetry>@opentelemetry/sdk-trace-base>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/opentelemetry>@opentelemetry/sdk-trace-base>@opentelemetry/resources>@opentelemetry/core",
+            ".>@sentry/nextjs>@sentry/vercel-edge>@opentelemetry/resources>@opentelemetry/core"
+          ],
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        },
+        {
+          "version": "2.6.1",
+          "paths": [
+            ".>@sentry/nextjs>@sentry/node>@opentelemetry/instrumentation-http>@opentelemetry/core"
+          ],
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "id": 1153174,
+      "title": "OpenTelemetry Core: Unbounded memory allocation in W3C Baggage propagation",
+      "module_name": "@opentelemetry/core",
+      "vulnerable_versions": "<2.8.0",
+      "patched_versions": ">=2.8.0",
+      "severity": "moderate",
+      "cwe": "CWE-770",
+      "github_advisory_id": "GHSA-8988-4f7v-96qf",
+      "url": "https://github.com/advisories/GHSA-8988-4f7v-96qf"
+    }
+  },
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 1,
+      "moderate": 4,
+      "high": 0,
+      "critical": 0
+    },
+    "dependencies": 466,
+    "devDependencies": 0,
+    "optionalDependencies": 87,
+    "totalDependencies": 553
+  }
+}

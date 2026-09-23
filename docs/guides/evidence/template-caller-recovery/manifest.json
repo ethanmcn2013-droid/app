@@ -1,0 +1,178 @@
+{
+  "version": 1,
+  "baseCommit": "c163ab5897b8a1b1b1a488bfd4d183290c53084c",
+  "branch": "fix/january-template-caller-recovery",
+  "sourceIdentity": "Final runtime text, SHA-256 of UTF-8 with CRLF normalized to LF; containing Git commit identifies the complete candidate.",
+  "sources": [
+    {
+      "path": "src/server/actions/onboarding.ts",
+      "sha256LfNormalizedUtf8": "effc9e2d834231f2997a1e6e1601d132731c5991171c1133a74add32128a3f19"
+    },
+    {
+      "path": "src/server/onboarding-completion.ts",
+      "sha256LfNormalizedUtf8": "bb6473cc7f8b2fa260fdf79ce731c4e6cc5bb0c33d13873cbcc3e1dc3924e896"
+    },
+    {
+      "path": "src/lib/onboarding/retained-submission.ts",
+      "sha256LfNormalizedUtf8": "11072e18856cb2739578cf7ac2400fe5c144b90491b0f318b1eced8b4175180b"
+    },
+    {
+      "path": "src/app/welcome/page.tsx",
+      "sha256LfNormalizedUtf8": "7c59e7bee4a8ce98b29abd23b6318c4f4751c7ad83254c13765434930e5acd4b"
+    },
+    {
+      "path": "src/components/welcome/onboarding-flow.tsx",
+      "sha256LfNormalizedUtf8": "2ba4145a07ac8320c639b5577363ecab2306b366366d684c6da64f5d0c7ea4eb"
+    },
+    {
+      "path": "src/components/app/settings/sections/workspace.tsx",
+      "sha256LfNormalizedUtf8": "8463b32416ac02ebdeb2a234ebe5168b4f78fdfe3ff0467b9674479a99749b6c"
+    }
+  ],
+  "fixtureUrl": "http://127.0.0.1:3146/?existing",
+  "fixtureHashes": {
+    "entry.tsx": "342055b5f436a60801e8c580652742c84e3966f1583a200b890850a8c94bf0c8",
+    "boundaries.tsx": "4dde353254fb55fd872ca5859b2466b55f8673bb4bbcf85269d91c922390fc32",
+    "bundle.js": "3b33adf0b4d4373da9bcda09ed1632e028d640fe14abf79c60decf32f47c65dd",
+    "bundle.css": "72951cb15ffb5a3c14c2911ed5ea12c5db458635877810627f84fe9f445f0b87"
+  },
+  "fixtureScriptHashes": {
+    "build-fixture.cjs": "690719f100d0c60186552a14622565a4b40dfc141e4fb7667c9d3b3654de494e",
+    "serve-fixture.cjs": "13aadf5ba859e244d26a47a69aa2209851fc50ebf1777c68e6c77bfb1c712b92"
+  },
+  "images": [
+    {
+      "path": "welcome-desktop.png",
+      "format": "JPEG",
+      "sha256": "4a7a317595d79c06708948275ad6808f0a9503d30da781209a43c47f4d6a7cfb",
+      "bytes": 43914,
+      "pixels": [
+        1265,
+        931
+      ],
+      "sourcePhase": "before-existing-confirmation-action-repair",
+      "capture": "full-page"
+    },
+    {
+      "path": "welcome-mobile.png",
+      "format": "JPEG",
+      "sha256": "d11dd29f288bdc4a67e87314681400124cbfd0ac2e17c0ebf930cbd7caf710b1",
+      "bytes": 51557,
+      "pixels": [
+        375,
+        1038
+      ],
+      "sourcePhase": "before-existing-confirmation-action-repair",
+      "capture": "full-page"
+    },
+    {
+      "path": "settings-desktop.png",
+      "format": "JPEG",
+      "sha256": "f91127ae7e62a9b01d6072ad2d8995e717b18b367274d673cbbcc999aad2a67b",
+      "bytes": 182464,
+      "pixels": [
+        1425,
+        1953
+      ],
+      "sourcePhase": "before-existing-confirmation-action-repair",
+      "capture": "full-page"
+    },
+    {
+      "path": "existing-confirmation.jpg",
+      "format": "JPEG",
+      "sha256": "4cd5daf9d9e2906f7e9bdd3e14e00326b5d2498d8d2742ad2727b8e73b1afddc",
+      "bytes": 60783,
+      "pixels": [
+        1905,
+        1011
+      ],
+      "sourcePhase": "final-existing-confirmation",
+      "capture": "full-page"
+    },
+    {
+      "path": "existing-failed.jpg",
+      "format": "JPEG",
+      "sha256": "da0dd84bb3f7a14b106554d609d700de61904bb7706dee006f95f7ba597486c1",
+      "bytes": 64813,
+      "pixels": [
+        1920,
+        897
+      ],
+      "sourcePhase": "final-existing-confirmation",
+      "capture": "viewport"
+    },
+    {
+      "path": "existing-retried.jpg",
+      "format": "JPEG",
+      "sha256": "8f58c29240cd658d4d2ef33a628bff53d210073df3a5c9a84814873d1ffec63d",
+      "bytes": 45064,
+      "pixels": [
+        1905,
+        890
+      ],
+      "sourcePhase": "final-existing-confirmation",
+      "capture": "viewport"
+    }
+  ],
+  "finalBrowserResult": {
+    "capturedAt": "2026-09-04T22:17:47.756Z",
+    "browser": "Chrome",
+    "calls": [
+      {
+        "kind": "open",
+        "primaryUseCase": "wedding",
+        "requestId": "3b6dbc13-d305-47f3-8597-0b82c0408a9c",
+        "secondaryContext": null,
+        "seedMode": "blank",
+        "workspaceId": "project-caller-review"
+      },
+      {
+        "kind": "open",
+        "primaryUseCase": "wedding",
+        "requestId": "3b6dbc13-d305-47f3-8597-0b82c0408a9c",
+        "secondaryContext": null,
+        "seedMode": "blank",
+        "workspaceId": "project-caller-review"
+      }
+    ],
+    "navigation": "Navigation: /app/home?workspaceId=project-caller-review",
+    "starterSets": "Starter sets: 0",
+    "url": "http://127.0.0.1:3146/?existing",
+    "viewport": {
+      "height": 897,
+      "width": 1920
+    },
+    "logs": [],
+    "assertions": [
+      "Same complete payload and request across failed acknowledgement and retry",
+      "No new synthetic starter set",
+      "No navigation after failure; explicit Project destination only after successful acknowledgement"
+    ],
+    "captureNote": "The full-page failure capture timed out once; the current viewport capture succeeded."
+  },
+  "checks": {
+    "callerAndTemplateTests": {
+      "passed": 71,
+      "failed": 0,
+      "includesFinalRuntimeEdits": true
+    },
+    "authorizationRegressions": {
+      "passed": 48,
+      "failed": 0,
+      "timing": "Before the final existing-template action repair; its fresh authority regression is included in the 71-test run."
+    },
+    "typecheck": "Pass after final runtime edits",
+    "scopedEslint": "Pass after final runtime edits",
+    "utf8": "Strict byte decoding and known mojibake-sequence checks passed for all six runtime sources",
+    "staticGates": "Module boundaries, ambient lookup ratchet, first-contact language and experience validation passed earlier; not rerun as part of this evidence-only finish."
+  },
+  "boundaries": [
+    "Actual caller components and application CSS; synthetic server actions, router, dialog, toast, analytics and surrounding layout.",
+    "Visible fixture call payloads prove retained request identity; browser starter-set counter is synthetic, not a database count.",
+    "No authenticated Next/Clerk flow, provider, production, full build, independent security or quality-council acceptance is claimed.",
+    "Earlier screenshots are explicitly not attested to the final existing-template action replacement.",
+    "Lead owns the separate user-wide venue-welcome detection and contextual redirect scope follow-up.",
+    "Settings retains an intent while mounted; whole-tab Settings restore is not implemented.",
+    "Ambiguous legacy domain reset remains fenced with an exact recovery packet and operator follow-up; no automatic domain repair."
+  ]
+}

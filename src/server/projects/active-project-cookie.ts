@@ -25,9 +25,9 @@ import "server-only";
  * not to be added here without a separate product need.
  *
  * **Following a contextual link must not rewrite this cookie.** Only an
- * explicit Project selection does — that is why the only caller of
- * `writeActiveProjectCookie` is `switchActiveProjectAction`, and why a
- * contract test pins that.
+ * explicit Project selection does: switching Projects or accepting an invite
+ * to join one. Both callers prove membership and an active Project before
+ * writing; merely previewing an invite never writes this preference.
  */
 
 import { cookies } from "next/headers";

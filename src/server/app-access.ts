@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { isEmailAllowed } from "@/lib/access-allowlist";
 import { isProductionMode } from "@/lib/access-mode";
 import { db } from "@/server/db";
-import { workspaceMembers } from "@/server/db/schema";
+import { users, workspaceMembers } from "@/server/db/schema";
 
 /**
  * D-018 (grant-on-accept): Tasks-local access gate for /app surfaces.
@@ -46,14 +46,13 @@ export async function requireAppAccessTasks(): Promise<void> {
   // Non-allowlisted users without a membership still go to /waitlist.
   if (user) {
     const clerkId = user.id;
-    // Resolve membership via clerk_id → user_id mapping used by auth.ts.
-    // Import db lazily to avoid circular dependency with auth.ts.
+    // Memberships use the persisted internal id. Legacy accounts and the
+    // recipient fixture can have an id distinct from their Clerk subject.
     const memberRows = await db
       .select({ workspaceId: workspaceMembers.workspaceId })
       .from(workspaceMembers)
-      // workspace_members.user_id equals the Clerk id post-Phase-A
-      // (ensureUserProvisioned writes users.id = clerk_id).
-      .where(eq(workspaceMembers.userId, clerkId))
+      .innerJoin(users, eq(users.id, workspaceMembers.userId))
+      .where(eq(users.clerkId, clerkId))
       .limit(1);
     if (memberRows.length > 0) return;
   }

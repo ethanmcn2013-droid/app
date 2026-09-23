@@ -3,7 +3,7 @@ name: Verify Tasks
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, release/january-2027]
 
 concurrency:
   group: tasks-verify-${{ github.ref }}
@@ -24,6 +24,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:contract
+      - name: Isolated January migration rehearsal
+        run: node scripts/db/verify-january-rehearsal.mjs
       - run: pnpm lint
       - run: pnpm typecheck
       # The D-022 access-term differential test (venue-access-term.test.ts)
@@ -34,15 +36,30 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ethanmcn2013-droid/studio
+          # Every trigger needs this reviewed compatible fixture runtime.
+          ref: 4ed9be64be4f351c5a3e7aa2b396e92d9be570bf
           path: studio-parity
+
+      - name: Install immutable paired Studio dependencies
+        working-directory: studio-parity
+        run: corepack pnpm install --frozen-lockfile
+      - name: Record paired Studio revision
+        run: git -C studio-parity rev-parse HEAD
       - name: Test (includes calendar, Signal, Timeline, and suite truth gates)
         run: pnpm test
         env:
           STUDIO_REPO_PATH: ${{ github.workspace }}/studio-parity
+
+      - name: Actual Venue payment-evidence to use and erasure rehearsal
+        run: |
+          pnpm test:venue-rehearsal --studio-root studio-parity
+          pnpm test:sponsored-use:paired --studio-root studio-parity
       # The parity checkout exists only for the differential step above;
       # removed so the build and later gates never see a second repository.
       - name: Remove parity checkout
         run: rm -rf studio-parity
+      - name: Project Drive lifecycle and recovery
+        run: pnpm test:project-drive
       - run: pnpm build
       # E08.10 — performance budgets, measured from the build above so this
       # costs no extra build time. The check ratchets: it fails when a

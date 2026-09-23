@@ -16,6 +16,7 @@ import { setRuntimeLabels, setRuntimePeople } from "./fixtures";
 import { tagToLabel, userToPerson } from "./adapter";
 import { OptionHybrid } from "./options/hybrid/option-hybrid";
 import { BulkToolbar } from "./shared/bulk-toolbar";
+import { withInspectedTask } from "./selected-task-route";
 import type { LabLabel, LabPerson, LabRouteState, LabView } from "./types";
 import styles from "./hybrid-workspace.module.css";
 
@@ -27,6 +28,10 @@ export type HybridWorkspaceProps = {
 
 function Experience({ route, onRouteChange }: { route: LabRouteState; onRouteChange: (patch: Partial<LabRouteState>) => void }) {
   const store = useLabStore();
+  const selectedRoute = useMemo(
+    () => withInspectedTask(route, store.inspectedId),
+    [route, store.inspectedId],
+  );
 
   // Chrome-level surfaces (command palette via ⌘K, quick-create via "c",
   // and the task detail panel) are production's own, mounted globally in the
@@ -59,9 +64,9 @@ function Experience({ route, onRouteChange }: { route: LabRouteState; onRouteCha
   }, [store]);
 
   return (
-    <div className={styles.root} data-density={route.density} data-task-count={store.tasks.length}>
+    <div className={styles.root} data-density={route.density} data-task-count={store.tasks.length} data-floor-runtime="true">
       <div className={styles.stage}>
-        <OptionHybrid onRouteChange={onRouteChange} route={route} />
+        <OptionHybrid onRouteChange={onRouteChange} route={selectedRoute} />
       </div>
       <BulkToolbar />
       <div aria-live="polite" className={styles.srOnly}>{store.announcement}</div>

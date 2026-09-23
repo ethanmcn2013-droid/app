@@ -1,0 +1,24 @@
+{
+  "changes": [
+    {
+      "id": "tasks.connections.storage",
+      "keys": [
+        "lastReviewedAt",
+        "materialityHash",
+        "materialityReview"
+      ],
+      "before": "778ef47b2a7cb691",
+      "after": "a553937d6a450165"
+    },
+    {
+      "id": "tasks.connections.storage-owner-change",
+      "keys": [
+        "materialityHash",
+        "materialityReview"
+      ],
+      "before": "52aa27dae6dafc3b",
+      "after": "8d7e84db7d7d8f9b"
+    }
+  ],
+  "scope": "Source reviews only; coverage and design approvals unchanged."
+}

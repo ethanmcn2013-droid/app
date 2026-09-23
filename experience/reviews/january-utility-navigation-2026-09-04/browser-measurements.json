@@ -1,0 +1,494 @@
+{
+  "recordedAt": "2026-09-04T20:30:09.087Z",
+  "base": "e64083504c527f6d42e571defeba7aeaa72dc575",
+  "browser": "Connected Chrome, browser-client viewport capability",
+  "checks": [
+    {
+      "case": "settings-desktop",
+      "documentWidth": 1280,
+      "header": "SettingsProject · The Orchard, events",
+      "headerControls": 0,
+      "height": 900,
+      "url": "http://127.0.0.1:3131/app/settings",
+      "width": 1280
+    },
+    {
+      "about": "<a aria-label=\"About Signal Studio (opens in a new tab)\" class=\"signal-shell-module___Eiy4a__railProduct\" data-utility=\"about\" data-tip=\"About Signal Studio ↗\" href=\"https://signalstudio.ie\" rel=\"noopener noreferrer\" target=\"_blank\"><span aria-hidden=\"true\" class=\"signal-shell-module___Eiy4a__railTile\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 5h5v5M19 5l-9 9M10 5H5v14h14v-5\"></path></svg></span><span class=\"signal-shell-module___Eiy4a__railLabel\">About</span></a>",
+      "case": "settings-desktop-final",
+      "documentWidth": 1280,
+      "header": "SettingsProject · The Orchard, events",
+      "headerActions": 0,
+      "height": 900,
+      "products": [
+        "Notes",
+        "Tasks",
+        "Timeline"
+      ],
+      "url": "http://127.0.0.1:3131/app/settings",
+      "width": 1280
+    },
+    {
+      "case": "settings-mobile-keyboard",
+      "documentWidth": 390,
+      "focused": "Members",
+      "headerActions": 0,
+      "height": 844,
+      "outline": "rgb(129, 140, 248) solid 2px",
+      "section": "Who’s in this project",
+      "url": "http://127.0.0.1:3131/app/settings",
+      "width": 390
+    },
+    {
+      "case": "settings-320",
+      "documentWidth": 320,
+      "header": "SettingsProject · The Orchard, events",
+      "url": "http://127.0.0.1:3131/app/settings",
+      "width": 320
+    },
+    {
+      "case": "settings-reflow-640",
+      "documentWidth": 640,
+      "header": "SettingsProject · The Orchard, events",
+      "note": "Equivalent CSS width to 1280 at 200%; actual browser zoom not controlled",
+      "url": "http://127.0.0.1:3131/app/settings",
+      "width": 640
+    },
+    {
+      "case": "invite-mobile",
+      "controls": [
+        {
+          "bottom": 30,
+          "height": 24,
+          "left": 16,
+          "right": 117.21875,
+          "text": "Open Signal Studio launcher",
+          "top": 6,
+          "width": 101.21875,
+          "x": 16,
+          "y": 6
+        },
+        {
+          "bottom": 32,
+          "height": 28,
+          "left": 146.984375,
+          "right": 198.09375,
+          "text": "Tasks",
+          "top": 4,
+          "width": 51.109375,
+          "x": 146.984375,
+          "y": 4
+        },
+        {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "text": "Pricing",
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "text": "Design",
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "text": "About",
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "bottom": 80,
+          "height": 40,
+          "left": 173.75,
+          "right": 299,
+          "text": "Demo workspace",
+          "top": 40,
+          "width": 125.25,
+          "x": 173.75,
+          "y": 40
+        },
+        {
+          "bottom": 84,
+          "height": 48,
+          "left": 311,
+          "right": 359,
+          "text": "Open navigation",
+          "top": 36,
+          "width": 48,
+          "x": 311,
+          "y": 36
+        }
+      ],
+      "documentWidth": 375,
+      "headerHeight": 89,
+      "height": 844,
+      "scrollY": 0,
+      "url": "http://127.0.0.1:3131/invite/review-valid",
+      "width": 390
+    },
+    {
+      "case": "invite-menu-keyboard",
+      "expanded": "true",
+      "focused": "Pricing",
+      "outline": "rgb(79, 70, 229) solid 2px"
+    },
+    {
+      "case": "invite-menu-escape",
+      "expanded": "false",
+      "focused": "Open navigation"
+    },
+    {
+      "case": "invite-320",
+      "collisions": [],
+      "controls": [
+        {
+          "bottom": 30,
+          "height": 24,
+          "label": "Open Signal Studio launcher",
+          "left": 16,
+          "right": 117.21875,
+          "top": 6,
+          "width": 101.21875,
+          "x": 16,
+          "y": 6
+        },
+        {
+          "bottom": 32,
+          "height": 28,
+          "label": "Tasks",
+          "left": 146.984375,
+          "right": 198.09375,
+          "top": 4,
+          "width": 51.109375,
+          "x": 146.984375,
+          "y": 4
+        },
+        {
+          "bottom": 80,
+          "height": 40,
+          "label": "Demo workspace",
+          "left": 103.75,
+          "right": 229,
+          "top": 40,
+          "width": 125.25,
+          "x": 103.75,
+          "y": 40
+        },
+        {
+          "bottom": 84,
+          "height": 48,
+          "label": "Open navigation",
+          "left": 241,
+          "right": 289,
+          "top": 36,
+          "width": 48,
+          "x": 241,
+          "y": 36
+        }
+      ],
+      "documentWidth": 305,
+      "headerHeight": 89,
+      "height": 844,
+      "url": "http://127.0.0.1:3131/invite/review-valid",
+      "width": 320
+    },
+    {
+      "case": "invite-640",
+      "collisions": [],
+      "controls": [
+        {
+          "bottom": 40,
+          "height": 24,
+          "label": "Open Signal Studio launcher",
+          "left": 16,
+          "right": 117.21875,
+          "top": 16,
+          "width": 101.21875,
+          "x": 16,
+          "y": 16
+        },
+        {
+          "bottom": 42,
+          "height": 28,
+          "label": "Tasks",
+          "left": 146.984375,
+          "right": 198.09375,
+          "top": 14,
+          "width": 51.109375,
+          "x": 146.984375,
+          "y": 14
+        },
+        {
+          "bottom": 48,
+          "height": 40,
+          "label": "Demo workspace",
+          "left": 423.75,
+          "right": 549,
+          "top": 8,
+          "width": 125.25,
+          "x": 423.75,
+          "y": 8
+        },
+        {
+          "bottom": 52,
+          "height": 48,
+          "label": "Open navigation",
+          "left": 561,
+          "right": 609,
+          "top": 4,
+          "width": 48,
+          "x": 561,
+          "y": 4
+        }
+      ],
+      "documentWidth": 625,
+      "headerHeight": 57,
+      "height": 450,
+      "url": "http://127.0.0.1:3131/invite/review-valid",
+      "width": 640
+    },
+    {
+      "case": "invite-1280",
+      "collisions": [],
+      "controls": [
+        {
+          "bottom": 40,
+          "height": 24,
+          "label": "Open Signal Studio launcher",
+          "left": 36.5,
+          "right": 137.71875,
+          "top": 16,
+          "width": 101.21875,
+          "x": 36.5,
+          "y": 16
+        },
+        {
+          "bottom": 42,
+          "height": 28,
+          "label": "Tasks",
+          "left": 167.484375,
+          "right": 218.59375,
+          "top": 14,
+          "width": 51.109375,
+          "x": 167.484375,
+          "y": 14
+        },
+        {
+          "bottom": 37.75,
+          "height": 19.5,
+          "label": "Pricing",
+          "left": 897.109375,
+          "right": 938.359375,
+          "top": 18.25,
+          "width": 41.25,
+          "x": 897.109375,
+          "y": 18.25
+        },
+        {
+          "bottom": 37.75,
+          "height": 19.5,
+          "label": "Design",
+          "left": 970.359375,
+          "right": 1011.6875,
+          "top": 18.25,
+          "width": 41.328125,
+          "x": 970.359375,
+          "y": 18.25
+        },
+        {
+          "bottom": 37.75,
+          "height": 19.5,
+          "label": "About",
+          "left": 1043.6875,
+          "right": 1079.25,
+          "top": 18.25,
+          "width": 35.5625,
+          "x": 1043.6875,
+          "y": 18.25
+        },
+        {
+          "bottom": 48,
+          "height": 40,
+          "label": "Demo workspace",
+          "left": 1103.25,
+          "right": 1228.5,
+          "top": 8,
+          "width": 125.25,
+          "x": 1103.25,
+          "y": 8
+        }
+      ],
+      "documentWidth": 1265,
+      "headerHeight": 57,
+      "height": 900,
+      "url": "http://127.0.0.1:3131/invite/review-valid",
+      "width": 1280
+    },
+    {
+      "case": "tasks-desktop",
+      "documentWidth": 1280,
+      "share": 1,
+      "url": "http://127.0.0.1:3131/app/tasks",
+      "viewLinks": [
+        {
+          "href": "/app/tasks",
+          "text": "Board"
+        },
+        {
+          "href": "/app/tasks/list",
+          "text": "List"
+        },
+        {
+          "href": "/app/tasks/timeline",
+          "text": "Schedule"
+        },
+        {
+          "href": "/app/tasks/calendar",
+          "text": "Calendar"
+        }
+      ],
+      "width": 1280
+    },
+    {
+      "case": "tasks-mobile",
+      "documentWidth": 390,
+      "share": 1,
+      "url": "http://127.0.0.1:3131/app/tasks",
+      "views": [
+        "Board",
+        "List",
+        "Schedule",
+        "Calendar"
+      ],
+      "width": 390
+    },
+    {
+      "case": "tasks-list-keyboard-arrival",
+      "documentWidth": 390,
+      "heading": "The Orchard, events",
+      "url": "http://127.0.0.1:3131/app/tasks/list",
+      "views": [
+        {
+          "href": "/app/tasks",
+          "text": "Board"
+        },
+        {
+          "href": "/app/tasks/list",
+          "text": "List"
+        },
+        {
+          "href": "/app/tasks/timeline",
+          "text": "Schedule"
+        },
+        {
+          "href": "/app/tasks/calendar",
+          "text": "Calendar"
+        }
+      ],
+      "width": 390
+    },
+    {
+      "case": "inbox-mobile",
+      "documentWidth": 390,
+      "header": "Inbox",
+      "headerActions": 0,
+      "url": "http://127.0.0.1:3131/app/inbox",
+      "width": 390
+    },
+    {
+      "case": "my-work-mobile",
+      "documentWidth": 390,
+      "header": "My work",
+      "headerActions": 0,
+      "url": "http://127.0.0.1:3131/app/my-tasks",
+      "width": 390
+    },
+    {
+      "case": "archived-mobile",
+      "documentWidth": 390,
+      "header": "Archived",
+      "headerActions": 0,
+      "url": "http://127.0.0.1:3131/app/archived",
+      "width": 390
+    },
+    {
+      "case": "tasks-dark-theme-boundary",
+      "note": "Inactive task views use near-black ink on the existing dark canvas; hybrid source/CSS unchanged in this slice",
+      "theme": "dark",
+      "url": "http://127.0.0.1:3131/app/tasks",
+      "views": [
+        {
+          "color": "rgb(244, 244, 245)",
+          "rect": {
+            "bottom": 177.515625,
+            "height": 32,
+            "left": 37,
+            "right": 114.5,
+            "top": 145.515625,
+            "width": 77.5,
+            "x": 37,
+            "y": 145.515625
+          },
+          "text": "Board"
+        },
+        {
+          "color": "rgba(17, 17, 17, 0.72)",
+          "rect": {
+            "bottom": 177.515625,
+            "height": 32,
+            "left": 116.5,
+            "right": 194,
+            "top": 145.515625,
+            "width": 77.5,
+            "x": 116.5,
+            "y": 145.515625
+          },
+          "text": "List"
+        },
+        {
+          "color": "rgba(17, 17, 17, 0.72)",
+          "rect": {
+            "bottom": 177.515625,
+            "height": 32,
+            "left": 196,
+            "right": 273.5,
+            "top": 145.515625,
+            "width": 77.5,
+            "x": 196,
+            "y": 145.515625
+          },
+          "text": "Schedule"
+        },
+        {
+          "color": "rgba(17, 17, 17, 0.72)",
+          "rect": {
+            "bottom": 177.515625,
+            "height": 32,
+            "left": 275.5,
+            "right": 353,
+            "top": 145.515625,
+            "width": 77.5,
+            "x": 275.5,
+            "y": 145.515625
+          },
+          "text": "Calendar"
+        }
+      ]
+    }
+  ]
+}

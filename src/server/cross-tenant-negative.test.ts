@@ -56,6 +56,7 @@ import {
   notifications,
   activities,
   workspaceSponsorships,
+  projectDriveOperations,
 } from "./db/schema";
 
 const WS_A = "ws-alpha";
@@ -88,9 +89,23 @@ async function seedTwoTenants() {
       ('task-a', '${WS_A}', 1, 'Alpha private task', '', 'todo', 'normal', '[]', 0, 0, 0, 0),
       ('task-b', '${WS_B}', 1, 'Beta private task',  '', 'todo', 'normal', '[]', 0, 0, 0, 0);
 
-    INSERT INTO comments (id, workspace_id, task_id, user_id, body, created_at) VALUES
-      ('comment-a', '${WS_A}', 'task-a', 'user-a', 'Alpha private comment', 0),
-      ('comment-b', '${WS_B}', 'task-b', 'user-b', 'Beta private comment', 0);
+    INSERT INTO task_discussion_state
+      (task_id, workspace_id, audience_epoch, next_create_seq, next_change_seq) VALUES
+      ('task-a', '${WS_A}', 1, 2, 2),
+      ('task-b', '${WS_B}', 1, 2, 2);
+
+    INSERT INTO comments
+      (id, workspace_id, task_id, user_id, body, created_at, client_request_id,
+       request_hash, revision, root_id, create_seq) VALUES
+      ('comment-a', '${WS_A}', 'task-a', 'user-a', 'Alpha private comment', 0,
+       'comment-a-request', '${"a".repeat(64)}', 1, NULL, 1),
+      ('comment-b', '${WS_B}', 'task-b', 'user-b', 'Beta private comment', 0,
+       'comment-b-request', '${"b".repeat(64)}', 1, NULL, 1);
+
+    INSERT INTO task_comment_changes
+      (task_id, change_seq, kind, comment_id, revision, audience_epoch, happened_at_ms) VALUES
+      ('task-a', 1, 'create', 'comment-a', 1, 1, 0),
+      ('task-b', 1, 'create', 'comment-b', 1, 1, 0);
 
     INSERT INTO attachments (id, workspace_id, task_id, uploader_user_id, filename, stored_path, mime_type, size_bytes, created_at)
     VALUES
@@ -129,6 +144,15 @@ async function seedTwoTenants() {
     VALUES
       ('spon-a', '${WS_A}', 'venue-one', 'ref-a', 'ent-a', 'active', '{}', 1, 'rc-a', 0, 0, 0, 0),
       ('spon-b', '${WS_B}', 'venue-two', 'ref-b', 'ent-b', 'active', '{}', 1, 'rc-b', 0, 0, 0, 0);
+
+    INSERT INTO project_drive_operations
+      (id, workspace_id, operation_kind, status, dedupe_key, attempt_count,
+       created_at, updated_at)
+    VALUES
+      ('drive-op-a', '${WS_A}', 'project_delete', 'pending',
+       '${"a".repeat(64)}', 0, 0, 0),
+      ('drive-op-b', '${WS_B}', 'project_delete', 'pending',
+       '${"b".repeat(64)}', 0, 0, 0);
   `);
   return { client, db };
 }
@@ -148,6 +172,7 @@ const OBJECTS = [
   { name: "notifications", table: notifications, ws: notifications.workspaceId, key: notifications.id, a: "note-a", b: "note-b" },
   { name: "activities", table: activities, ws: activities.workspaceId, key: activities.id, a: "act-a", b: "act-b" },
   { name: "sponsorships", table: workspaceSponsorships, ws: workspaceSponsorships.workspaceId, key: workspaceSponsorships.id, a: "spon-a", b: "spon-b" },
+  { name: "Project Drive operations", table: projectDriveOperations, ws: projectDriveOperations.workspaceId, key: projectDriveOperations.id, a: "drive-op-a", b: "drive-op-b" },
 ];
 
 test("a scoped read returns only the caller's own rows, per sensitive object", async () => {

@@ -1,0 +1,34 @@
+{
+  "base": "4e4a356284c2fb028bb33000502b7e43327c7c61",
+  "recordedAt": "2026-09-04T20:53:01.5784963Z",
+  "hashBasis": "Raw worktree bytes; Git may normalize line endings",
+  "buildId": "cZBwfYm0PzYkBDBdJiVqh",
+  "prerequisite": {
+    "commit": "ffa60f4e",
+    "path": "src/lib/sentry-scrub.test.ts",
+    "sha256": "0b6aca7c2e4e3ce3d4a8c16699425ab50efb447edcf73579e095ed5a751dab66",
+    "scope": "Temporarily overlaid for typecheck/build, restored byte-for-byte before commit; test-only, no runtime effect"
+  },
+  "sources": [
+    {
+      "path": "docs/design/labs/tasks-2026-08/floor.html",
+      "sha256": "bfa61dc32f4c470e1d46edbb677ade1615ac05c3a98e00697704d85f8d849da5"
+    },
+    {
+      "path": "src/components/floor/floor.module.css",
+      "sha256": "22d307c384bd7966fce8e3210d4e9ee3b3533fe673eaa6557c3d77c797d50094"
+    },
+    {
+      "path": "package.json",
+      "sha256": "7b56a18a1cc8c5323a69c7267f6b42ba4897f01cb32533d9cca2ac5fcdefcb54"
+    },
+    {
+      "path": "experience/utility-navigation.playwright.config.ts",
+      "sha256": "436f798b95f64166d4dcd86ef8c9f335e496362e951d19fd68bd6a07107cc46c"
+    },
+    {
+      "path": "experience/feature-tests/utility-navigation.spec.ts",
+      "sha256": "19779836ec61a1742557a1afaaeef15ad2767d1cff767b28acd82481bf59e964"
+    }
+  ]
+}

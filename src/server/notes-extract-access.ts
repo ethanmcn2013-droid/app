@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import * as schema from "@/server/db/schema";
-import { tasks, workspaceMembers } from "@/server/db/schema";
+import { tasks, users, workspaceMembers } from "@/server/db/schema";
 import type { ExistingNotesExtractIdentity } from "@/server/notes-extract-idempotency";
 
 type NotesExtractDatabase = LibSQLDatabase<typeof schema>;
@@ -42,6 +42,7 @@ export async function readNotesExtractIdentity(
 export async function resolveNotesExtractAccess(
   database: NotesExtractDatabase,
   input: {
+    /** Authenticated assertion.sub (Clerk identity), never a Tasks local id. */
     userId: string;
     requestedWorkspaceId: string;
     sourceNoteId: string;
@@ -50,15 +51,18 @@ export async function resolveNotesExtractAccess(
   const [member] = await database
     .select({ workspaceId: workspaceMembers.workspaceId })
     .from(workspaceMembers)
+    .innerJoin(users, eq(users.id, workspaceMembers.userId))
     .where(
       and(
-        eq(workspaceMembers.userId, input.userId),
+        eq(users.clerkId, input.userId),
         eq(workspaceMembers.workspaceId, input.requestedWorkspaceId),
       ),
     )
     .limit(1);
   if (!member) return { kind: "denied" };
 
+  // Local identity mapping authorizes membership only. The existing receipt
+  // remains keyed by the immutable assertion subject and note id.
   const existing = await readNotesExtractIdentity(
     database,
     input.sourceNoteId,

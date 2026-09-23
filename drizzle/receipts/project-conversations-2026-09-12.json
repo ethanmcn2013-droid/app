@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "project-conversations-2026-09-12",
+  "authorizedBy": "The founder explicitly authorized continued local Project Conversation implementation on 2026-09-12 after the prototype decision. This receipt authorizes isolated local dry runs and CI application only. It does not authorize a remote database migration, production data, a pilot, external delivery, or release; those require a tasks-migration-execution/1 receipt and the remaining programme gates.",
+  "reviewedBy": "Codex PC-06 implementation pass on 2026-09-12; independent Astra acceptance remains required by the delivery backlog.",
+  "authorizationSource": "PC-06 Durable internal conversation backend in docs/projects/project-conversation/delivery-backlog.md, as amended by the founder to permit local backend execution while preserving the human study as a release gate.",
+  "migrations": [
+    {
+      "id": "0032_project_conversations",
+      "sha256": "ebd7067120118c9757a143303a66fa2defb7d98462c7036ce25f674eb91afd6b",
+      "reviewedAt": "2026-09-12T00:00:00.000Z",
+      "risk": "High application-integrity risk because this introduces the durable message, change, attention, outbox, and receipt aggregate. Apply-time risk is bounded: the migration is additive, copies no legacy comment or message data, and database triggers preserve exact Project scope even when foreign keys are disabled. DM-shaped rows are explicitly rejected until the later DM authorization task enables them.",
+      "rollbackPlan": "Disable conversation sends and creation through the server controls while retaining all additive tables, receipts, and acknowledged history. Do not drop the schema as an operational rollback. Removing stored conversation data is a separately authorized destructive data operation.",
+      "postconditions": [
+        "all seven Project Conversation aggregate tables exist",
+        "one project conversation is enforced per canonical workspaces.id",
+        "workspace membership insert, delete, and update writers advance conversation audience epochs",
+        "workspace archive and restore advance the epoch and synchronize conversation lifecycle",
+        "message, change, receipt, attention, and outbox guards reject mismatched source relationships even with foreign keys disabled",
+        "conversation_outbox stores source identity and revision but no message body",
+        "migration is additive and copies no legacy comments",
+        "integrity check passes",
+        "foreign keys remain clean",
+        "raw user deletion removes Project memberships and advances only affected audience epochs even with foreign keys disabled"
+      ],
+      "proofs": [
+        {
+          "id": "conversation-tables-exist",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type = 'table' AND name IN ('conversations','conversation_participants','conversation_messages','conversation_changes','conversation_receipts','conversation_attention','conversation_outbox')",
+          "expected": 7
+        },
+        {
+          "id": "one-project-room-index-exists",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type = 'index' AND name = 'conversations_one_project_room' AND sql LIKE '%WHERE kind = ''project''%'",
+          "expected": 1
+        },
+        {
+          "id": "membership-epoch-triggers-exist",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type = 'trigger' AND name IN ('conversations_membership_insert_epoch','conversations_membership_delete_epoch','conversations_membership_update_epoch')",
+          "expected": 3
+        },
+        {
+          "id": "archive-epoch-trigger-exists",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type = 'trigger' AND name = 'conversations_workspace_archive_epoch'",
+          "expected": 1
+        },
+        {
+          "id": "relationship-guards-exist",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type = 'trigger' AND name IN ('conversation_messages_guard_insert','conversation_changes_guard_insert','conversation_receipts_guard_insert','conversation_attention_guard_insert','conversation_outbox_guard_insert')",
+          "expected": 5
+        },
+        {
+          "id": "outbox-has-no-body",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('conversation_outbox') WHERE name = 'body'",
+          "expected": 0
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        },
+        {
+          "id": "account-membership-cleanup-trigger-exists",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type = 'trigger' AND name = 'conversations_user_membership_cleanup'",
+          "expected": 1
+        }
+      ]
+    }
+  ]
+}

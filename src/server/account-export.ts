@@ -1,26 +1,78 @@
-import { and, eq, inArray, like, notInArray, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, like, notInArray, or, sql } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import {
   activities,
   attachments,
   comments,
+  conversationAttention,
+  conversationMessages,
+  conversations,
+  driveFolderGrants,
   entitlements,
+  eventPurchaseDesignations,
   meta,
   notificationPrefs,
   notifications,
   pendingInvites,
+  projectDriveOperations,
+  providerConnections,
+  resources,
   shareLinks,
   tasks,
   userPreferences,
   users,
   workspaceMembers,
+  workspaceStorage,
+  workLinks,
   workspaces,
 } from "./db/schema";
 import * as schema from "./db/schema";
+import type {
+  ProjectDriveOperationKind,
+  ProjectDriveOperationStatus,
+} from "./db/schema";
 
 export type ExportDb = LibSQLDatabase<typeof schema>;
 
-/** Attachment columns minus the internal on-disk path, bytes are fetched
+/** Private checkout/settlement facts belong to their purchaser even after
+ * transfer or removal. Never join project content or names into this record. */
+const eventPurchaseMeta = {
+  id: eventPurchaseDesignations.id,
+  workspaceId: eventPurchaseDesignations.workspaceId,
+  checkoutAuthorizedAt: eventPurchaseDesignations.checkoutAuthorizedAt,
+  providerReference: eventPurchaseDesignations.providerReference,
+  settledAt: eventPurchaseDesignations.settledAt,
+  originalExpiresAt: eventPurchaseDesignations.originalExpiresAt,
+  designation: eventPurchaseDesignations.designation,
+  reason: eventPurchaseDesignations.reason,
+  settlementAuthorizedAt: eventPurchaseDesignations.settlementAuthorizedAt,
+  revoked: eventPurchaseDesignations.revoked,
+};
+
+/** Governing project facts, not an access decision or a former payer's receipt.
+ * This stays identical after erasure; even the replacement row id is omitted. */
+const eventProjectEffectMeta = {
+  workspaceId: eventPurchaseDesignations.workspaceId,
+  settledAt: eventPurchaseDesignations.settledAt,
+  originalExpiresAt: eventPurchaseDesignations.originalExpiresAt,
+  designation: eventPurchaseDesignations.designation,
+  revoked: eventPurchaseDesignations.revoked,
+};
+
+function ownerEntitlement(row: typeof entitlements.$inferSelect) {
+  // The existing Event grant's notes also carry the payment reference. Export
+  // its project term here; the purchaser retains their own full account row.
+  if (row.tier === "event") return {
+    workspaceId: row.workspaceId,
+    tier: row.tier,
+    source: row.source,
+    startedAt: row.startedAt,
+    expiresAt: row.expiresAt,
+  };
+  return row;
+}
+
+/** Attachment columns minus the internal storage locator; bytes are fetched
  *  via the authenticated download route, never inlined into the export. */
 const attachmentMeta = {
   id: attachments.id,
@@ -44,6 +96,102 @@ const notesExtractReceiptMeta = {
   sourceNoteExtractSha256: tasks.sourceNoteExtractSha256,
   createdAt: tasks.createdAt,
 };
+
+/** A live refresh credential and its encryption metadata are never portable. */
+const providerConnectionMeta = {
+  id: providerConnections.id,
+  userId: providerConnections.userId,
+  provider: providerConnections.provider,
+  providerAccountId: providerConnections.providerAccountId,
+  providerAccountEmail: providerConnections.providerAccountEmail,
+  rootFolderId: providerConnections.rootFolderId,
+  scopes: providerConnections.scopes,
+  status: providerConnections.status,
+  isCurrent: providerConnections.isCurrent,
+  connectedAt: providerConnections.connectedAt,
+  lastUsedAt: providerConnections.lastUsedAt,
+  lastErrorAt: providerConnections.lastErrorAt,
+};
+
+/** Provider/disk `storedPath` is an internal locator, never export content. */
+const resourceMeta = {
+  id: resources.id,
+  workspaceId: resources.workspaceId,
+  taskId: resources.taskId,
+  kind: resources.kind,
+  provider: resources.provider,
+  externalId: resources.externalId,
+  storage: resources.storage,
+  storageGenerationId: resources.storageGenerationId,
+  title: resources.title,
+  url: resources.url,
+  mimeType: resources.mimeType,
+  sizeBytes: resources.sizeBytes,
+  thumbnail: resources.thumbnail,
+  addedByUserId: resources.addedByUserId,
+  addedAt: resources.addedAt,
+  refreshedAt: resources.refreshedAt,
+  accessState: resources.accessState,
+  countsAgainstStorage: resources.countsAgainstStorage,
+};
+
+const googleDriveActionLabels: Record<ProjectDriveOperationKind, string> = {
+  folder_provision: "Set up the Google Drive folder",
+  grant_create: "Give someone Google Drive folder access",
+  folder_rename: "Rename the Google Drive folder",
+  project_delete: "Remove the Google Drive setup",
+  storage_handover: "Move storage to another Google Drive",
+};
+
+const googleDriveProgressLabels: Record<ProjectDriveOperationStatus, string> = {
+  pending: "Waiting",
+  running: "In progress",
+  retry_wait: "Waiting to retry",
+  manual_attention: "Needs attention",
+  succeeded: "Complete",
+  cancelled: "Cancelled",
+};
+
+/**
+ * A portable, plain-language view of Google Drive activity.
+ *
+ * Credential and storage-generation ids, dedupe hashes, leases and Drive web
+ * links stay internal. Stable folder/permission receipts remain portable, but
+ * this projection cannot expose an OAuth credential or resumable-upload
+ * session URL if either is added to an adjacent table later.
+ */
+const googleDriveActivityMeta = {
+  id: projectDriveOperations.id,
+  projectId: projectDriveOperations.workspaceId,
+  actionCode: projectDriveOperations.operationKind,
+  progressCode: projectDriveOperations.status,
+  personId: projectDriveOperations.subjectUserId,
+  personEmail: projectDriveOperations.granteeEmail,
+  accessLevel: projectDriveOperations.grantRole,
+  projectVersion: projectDriveOperations.workspaceRevision,
+  driveFolderId: projectDriveOperations.providerFolderId,
+  drivePermissionId: projectDriveOperations.providerPermissionId,
+  attempts: projectDriveOperations.attemptCount,
+  lastTriedAt: projectDriveOperations.lastAttemptAt,
+  retryAfter: projectDriveOperations.nextAttemptAt,
+  issueCode: projectDriveOperations.lastErrorCode,
+  startedAt: projectDriveOperations.createdAt,
+  updatedAt: projectDriveOperations.updatedAt,
+  finishedAt: projectDriveOperations.completedAt,
+};
+
+function describeGoogleDriveActivity<
+  Activity extends {
+    actionCode: ProjectDriveOperationKind;
+    progressCode: ProjectDriveOperationStatus;
+  },
+>(row: Activity) {
+  return {
+    ...row,
+    action: googleDriveActionLabels[row.actionCode],
+    progress: googleDriveProgressLabels[row.progressCode],
+  };
+}
 
 /**
  * GDPR Art. 20 (data portability), assemble everything Tasks holds for a
@@ -76,17 +224,90 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
     .where(eq(workspaces.ownerUserId, userId));
   const slugs = ownedWorkspaces.map((w) => w.id);
 
+  // Conversation portability is subject-only and requires current Project
+  // membership. Ownership does not confer another person's private state.
+  const [authoredProjectMessages, authoredTaskDiscussion, projectAttention, authoredWorkLinks] = await Promise.all([
+    database.select({
+      id: conversationMessages.id, projectId: conversationMessages.workspaceId,
+      conversationId: conversationMessages.conversationId, rootId: conversationMessages.rootId,
+      body: conversationMessages.body, createdAt: conversationMessages.createdAt,
+      editedAt: conversationMessages.editedAt, deletedAt: conversationMessages.deletedAt,
+    }).from(conversationMessages)
+      .innerJoin(conversations, and(eq(conversations.id, conversationMessages.conversationId), eq(conversations.kind, "project")))
+      .innerJoin(workspaceMembers, and(eq(workspaceMembers.workspaceId, conversationMessages.workspaceId), eq(workspaceMembers.userId, userId)))
+      .where(eq(conversationMessages.authorId, userId)),
+    database.select({
+      id: comments.id, taskId: comments.taskId, projectId: comments.workspaceId,
+      rootId: comments.rootId, body: comments.body, createdAt: comments.createdAt,
+      editedAt: comments.editedAt, deletedAt: comments.deletedAt,
+    }).from(comments)
+      .innerJoin(workspaceMembers, and(eq(workspaceMembers.workspaceId, comments.workspaceId), eq(workspaceMembers.userId, userId)))
+      .where(and(eq(comments.userId, userId), isNotNull(comments.revision))),
+    database.select({
+      projectId: conversationAttention.workspaceId, conversationId: conversationAttention.conversationId,
+      messageId: conversationAttention.messageId, observedAt: conversationAttention.observedAt,
+    }).from(conversationAttention)
+      .innerJoin(conversations, and(eq(conversations.id, conversationAttention.conversationId), eq(conversations.kind, "project")))
+      .innerJoin(workspaceMembers, and(eq(workspaceMembers.workspaceId, conversationAttention.workspaceId), eq(workspaceMembers.userId, userId)))
+      .where(eq(conversationAttention.recipientId, userId)),
+    database.select({
+      id: workLinks.id, sourceProjectId: workLinks.sourceProjectId,
+      sourceConversationId: workLinks.sourceConversationId, sourceMessageId: workLinks.sourceMessageId,
+      destinationProjectId: workLinks.destinationProjectId, taskId: workLinks.taskId, createdAt: workLinks.createdAt,
+    }).from(workLinks)
+      .innerJoin(conversations, and(eq(conversations.id, workLinks.sourceConversationId), eq(conversations.kind, "project")))
+      .where(and(eq(workLinks.createdBy, userId),
+        sql`EXISTS (SELECT 1 FROM workspace_members sm WHERE sm.workspace_id=${workLinks.sourceProjectId} AND sm.user_id=${userId})`,
+        sql`EXISTS (SELECT 1 FROM workspace_members dm WHERE dm.workspace_id=${workLinks.destinationProjectId} AND dm.user_id=${userId})`)),
+  ]);
+
+  const myProviderConnections = await database
+    .select(providerConnectionMeta)
+    .from(providerConnections)
+    .where(eq(providerConnections.userId, userId));
+  const accountConnectionIds = myProviderConnections.map(
+    (connection) => connection.id,
+  );
+  const accountStorageGenerations = accountConnectionIds.length
+    ? await database
+        // isolation-ok: every connection id was just derived from this proved
+        // user. The cross-Project read is required to export their Drive
+        // account lineage wherever another Project used it.
+        .select({ id: workspaceStorage.id })
+        .from(workspaceStorage)
+        .where(inArray(workspaceStorage.connectionId, accountConnectionIds))
+    : [];
+  const accountStorageGenerationIds = accountStorageGenerations.map(
+    (generation) => generation.id,
+  );
+  const accountProjectDriveActivityScope = or(
+    eq(projectDriveOperations.subjectUserId, userId),
+    accountConnectionIds.length
+      ? inArray(projectDriveOperations.connectionId, accountConnectionIds)
+      : undefined,
+    accountStorageGenerationIds.length
+      ? inArray(
+          projectDriveOperations.storageGenerationId,
+          accountStorageGenerationIds,
+        )
+      : undefined,
+  );
+
   const [
     ownedTasks,
     ownedComments,
     ownedActivities,
     ownedAttachments,
+    ownedResources,
     ownedNotifications,
     ownedEntitlements,
     ownedShareLinks,
     ownedInvites,
     ownedMembers,
     ownedMeta,
+    ownedWorkspaceStorage,
+    ownedDriveFolderGrants,
+    ownedGoogleDriveActivityRows,
     myMemberships,
     myAuthoredComments,
     myAuthoredActivities,
@@ -95,11 +316,17 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
     myUserPreferences,
     myEntitlements,
     myNotesExtractTasks,
+    myDriveFolderGrants,
+    myAddedResources,
+    myGoogleDriveActivityRows,
+    myEventPurchases,
+    ownedEventProjectEffects,
   ] = await Promise.all([
     slugs.length ? database.select().from(tasks).where(inArray(tasks.workspaceId, slugs)) : [],
     slugs.length ? database.select().from(comments).where(inArray(comments.workspaceId, slugs)) : [],
     slugs.length ? database.select().from(activities).where(inArray(activities.workspaceId, slugs)) : [],
     slugs.length ? database.select(attachmentMeta).from(attachments).where(inArray(attachments.workspaceId, slugs)) : [],
+    slugs.length ? database.select(resourceMeta).from(resources).where(inArray(resources.workspaceId, slugs)) : [],
     slugs.length ? database.select().from(notifications).where(inArray(notifications.workspaceId, slugs)) : [],
     slugs.length ? database.select().from(entitlements).where(inArray(entitlements.workspaceId, slugs)) : [],
     slugs.length ? database.select().from(shareLinks).where(inArray(shareLinks.workspaceId, slugs)) : [],
@@ -107,6 +334,24 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
     slugs.length ? database.select().from(workspaceMembers).where(inArray(workspaceMembers.workspaceId, slugs)) : [],
     slugs.length
       ? database.select().from(meta).where(or(...slugs.map((s) => like(meta.key, `board:${s}:%`))))
+      : [],
+    slugs.length
+      ? database
+          .select()
+          .from(workspaceStorage)
+          .where(inArray(workspaceStorage.workspaceId, slugs))
+      : [],
+    slugs.length
+      ? database
+          .select()
+          .from(driveFolderGrants)
+          .where(inArray(driveFolderGrants.workspaceId, slugs))
+      : [],
+    slugs.length
+      ? database
+          .select(googleDriveActivityMeta)
+          .from(projectDriveOperations)
+          .where(inArray(projectDriveOperations.workspaceId, slugs))
       : [],
     database.select().from(workspaceMembers).where(eq(workspaceMembers.userId, userId)),
     database.select().from(comments).where(eq(comments.userId, userId)),
@@ -126,6 +371,44 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
             )
           : fromThisNotesAccount,
       ),
+    database
+      .select()
+      .from(driveFolderGrants)
+      .where(eq(driveFolderGrants.userId, userId)),
+    database
+      .select(resourceMeta)
+      .from(resources)
+      .where(eq(resources.addedByUserId, userId)),
+    database
+      // isolation-ok: this deliberately composes the proved user's subject,
+      // credential and storage-generation lineages across Projects. Owned
+      // Projects are excluded because they are exported in the section above.
+      .select(googleDriveActivityMeta)
+      .from(projectDriveOperations)
+      .where(
+        slugs.length
+          ? and(
+              accountProjectDriveActivityScope,
+              notInArray(projectDriveOperations.workspaceId, slugs),
+            )
+          : accountProjectDriveActivityScope,
+      ),
+    database
+      // isolation-ok: account portability uses the freshly resolved purchaser
+      // id, independently of membership. No project content/name is joined.
+      .select(eventPurchaseMeta)
+      .from(eventPurchaseDesignations)
+      .where(eq(eventPurchaseDesignations.purchaserUserId, userId)),
+    slugs.length
+      ? database.select(eventProjectEffectMeta)
+          .from(eventPurchaseDesignations)
+          .innerJoin(workspaces, eq(workspaces.id, eventPurchaseDesignations.workspaceId))
+          .where(and(
+            inArray(eventPurchaseDesignations.workspaceId, slugs),
+            eq(workspaces.ownerUserId, userId),
+            eq(eventPurchaseDesignations.designation, "designated"),
+          ))
+      : [],
   ]);
 
   return {
@@ -133,28 +416,44 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
     exportedAt,
     clerkId,
     user,
+    eventPurchases: myEventPurchases,
     ownedWorkspaces: {
       workspaces: ownedWorkspaces,
       tasks: ownedTasks,
-      comments: ownedComments,
+      comments: ownedComments.filter((comment) => comment.revision == null || comment.userId === userId),
       activities: ownedActivities,
       attachments: ownedAttachments,
+      resources: ownedResources,
       notifications: ownedNotifications,
-      entitlements: ownedEntitlements,
+      entitlements: ownedEntitlements.map(ownerEntitlement),
+      eventProjectEffects: ownedEventProjectEffects,
       shareLinks: ownedShareLinks,
       pendingInvites: ownedInvites,
       members: ownedMembers,
       boardMeta: ownedMeta,
+      workspaceStorage: ownedWorkspaceStorage,
+      driveFolderGrants: ownedDriveFolderGrants,
+      googleDriveActivity: ownedGoogleDriveActivityRows.map((activity) =>
+        describeGoogleDriveActivity(activity),
+      ),
     },
     footprintElsewhere: {
+      collaboration: { authoredProjectMessages, authoredTaskDiscussion, projectAttention, authoredWorkLinks },
       memberships: myMemberships,
-      authoredComments: myAuthoredComments,
+      authoredComments: myAuthoredComments.filter((comment) =>
+        comment.revision == null || myMemberships.some((membership) => membership.workspaceId === comment.workspaceId)),
       authoredActivities: myAuthoredActivities,
       uploadedAttachments: myUploadedAttachments,
       notificationPrefs: myNotificationPrefs[0] ?? null,
       userPreferences: myUserPreferences[0] ?? null,
       entitlements: myEntitlements,
       notesExtractTasks: myNotesExtractTasks,
+      providerConnections: myProviderConnections,
+      driveFolderGrants: myDriveFolderGrants,
+      addedResources: myAddedResources,
+      googleDriveActivity: myGoogleDriveActivityRows.map((activity) =>
+        describeGoogleDriveActivity(activity),
+      ),
     },
   };
 }

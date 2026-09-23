@@ -9,7 +9,7 @@ import {
 } from "react";
 import type { Task } from "@/lib/data";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
-import { useColumnConfig } from "@/lib/domain-context";
+import { useActiveWorkspace, useColumnConfig } from "@/lib/domain-context";
 import { isTaskDone } from "@/lib/board-columns";
 import type { ColumnConfig } from "@/lib/board-config";
 import { ReorderList, positionForDrop } from "@/components/ui/reorder-list";
@@ -38,6 +38,8 @@ import {
  */
 export function SubtasksSection({ task }: { task: Task }) {
   const { openTask } = useTaskPanel();
+  const activeWorkspace = useActiveWorkspace();
+  const projectId = activeWorkspace?.id ?? task.workspaceId ?? undefined;
   const columnConfig = useColumnConfig();
   const [subtasks, setSubtasks] = useState<Task[] | null>(null);
   const [, startServerSync] = useTransition();
@@ -124,6 +126,7 @@ export function SubtasksSection({ task }: { task: Task }) {
             lane: "todo",
             priority: "p2",
             parentTaskId: task.id,
+            projectId,
           });
           // Refetch so the temp row gets replaced by the real one with
           // its server-assigned id (so subsequent toggles work).
@@ -138,7 +141,7 @@ export function SubtasksSection({ task }: { task: Task }) {
         }
       });
     },
-    [task.id],
+    [task.id, projectId],
   );
 
   // Drag / keyboard reorder the checklist. Optimistic local order, then

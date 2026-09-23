@@ -23,8 +23,9 @@ import type { Task } from "@/lib/data";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
 import { useDomain, useColumnConfig } from "@/lib/domain-context";
 import { isTaskDone } from "@/lib/board-columns";
-import { getTaskConversationAction } from "@/server/actions/conversation";
-import type { ConversationItem } from "@/server/db/queries";
+import { loadTaskConversationAction } from "@/server/actions/task-conversation";
+import type { TaskConversationSurface } from "@/server/conversations/task-history-loader";
+import { readTaskConversationWithSoftDeadline } from "./conversation-read";
 
 import { TaskIdChip, EditedStamp } from "@/components/app/detail-panel/panel-header";
 import { DescriptionEditor } from "@/components/app/detail-panel/description-editor";
@@ -36,6 +37,7 @@ import { hasOpenLayer } from "@/components/primitives/open-layer";
 import { MetadataRail } from "./metadata-rail";
 import { buildTaskDetailActions } from "./task-detail-actions";
 import { TipCard } from "@/components/app/tip-card";
+import { ExistingTaskHistory } from "./existing-task-history";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -52,39 +54,76 @@ export type TaskDetailProps = {
 // ─── Conversation logic (moved from task-detail-panel.tsx) ───────────────────
 
 function useConversation(task: Task) {
-  const [items, setItems] = useState<ConversationItem[]>([]);
+  const [resolved, setResolved] = useState<{ taskId: string; value: TaskConversationSurface } | null>(null);
+  const surface = resolved?.taskId === task.id ? resolved.value : null;
   const [loading, setLoading] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
+  const activeTaskRef = useRef<string | null>(task.id);
+  const requestGenerationRef = useRef(0);
 
   const refreshKey = task.updatedAt?.getTime();
 
+  const beginRequest = useCallback((taskId: string) => {
+    if (activeTaskRef.current !== taskId) return null;
+    return ++requestGenerationRef.current;
+  }, []);
+
+  const isCurrentRequest = useCallback((taskId: string, generation: number) =>
+    activeTaskRef.current === taskId && requestGenerationRef.current === generation, []);
+
+  const refuseCurrentRequest = useCallback((taskId: string, generation: number) => {
+    if (!isCurrentRequest(taskId, generation)) return false;
+    // A denial is a fence, not just an empty render. Invalidate every older
+    // callback before clearing its authorized content.
+    requestGenerationRef.current++;
+    return true;
+  }, [isCurrentRequest]);
+
   const fetchConversation = useCallback(
     (taskId: string, signal: { ignored: boolean }) => {
+      const generation = beginRequest(taskId);
+      if (generation === null) return;
       setLoading(true);
       setTimedOut(false);
 
-      const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("timeout")), 5000),
-      );
-
-      Promise.race([getTaskConversationAction(taskId), timeout])
-        .then((rows) => {
-          if (!signal.ignored) setItems(rows);
-        })
-        .catch((err) => {
-          if (!signal.ignored) {
-            const isTimeout = err instanceof Error && err.message === "timeout";
-            console.warn("conversation: fetch failed", err);
-            setItems([]);
-            if (isTimeout) setTimedOut(true);
+      void readTaskConversationWithSoftDeadline({
+        taskId,
+        load: loadTaskConversationAction,
+        isCurrent: () => !signal.ignored && isCurrentRequest(taskId, generation),
+        onEvent: (event) => {
+          if (event.kind === "slow") {
+            setLoading(false);
+            setTimedOut(true);
+          } else if (event.kind === "success") {
+            setResolved({ taskId, value: event.surface });
+            setLoading(false);
+            setTimedOut(false);
+          } else {
+            // A real denial or failure clears authorized content. A slow cue
+            // alone does not, so the eventual result can still settle.
+            refuseCurrentRequest(taskId, generation);
+            setResolved(null);
+            setLoading(false);
+            setTimedOut(false);
+            console.warn("conversation: fetch failed");
           }
-        })
-        .finally(() => {
-          if (!signal.ignored) setLoading(false);
-        });
+        },
+      });
     },
-    [],
+    [beginRequest, isCurrentRequest, refuseCurrentRequest],
   );
+
+  // This is the scope fence for every bootstrap, manual retry and background
+  // read. Cleanup invalidates callbacks that outlive a task or unmount.
+  useEffect(() => {
+    activeTaskRef.current = task.id;
+    return () => {
+      if (activeTaskRef.current === task.id) activeTaskRef.current = null;
+      // This mutable counter is the intentional cross-request fence.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      requestGenerationRef.current++;
+    };
+  }, [task.id]);
 
   useEffect(() => {
     const signal = { ignored: false };
@@ -98,7 +137,42 @@ function useConversation(task: Task) {
     };
   }, [task.id, refreshKey, fetchConversation]);
 
-  return { items, loading, timedOut, retry: () => {
+  // Compatibility history is read-only, but authorization is still live.
+  // Re-read only this mode so a removed Project member does not retain a
+  // mounted copy. Canonical Discussion owns its own epoch-aware poller.
+  useEffect(() => {
+    if (surface?.mode !== "existing_history") return;
+    const signal = { ignored: false };
+    let inFlight = false;
+    const refresh = async () => {
+      if (inFlight) return;
+      const generation = beginRequest(task.id);
+      if (generation === null) return;
+      inFlight = true;
+      try {
+        const result = await loadTaskConversationAction(task.id);
+        if (signal.ignored || !isCurrentRequest(task.id, generation)) return;
+        setLoading(false);
+        if (result.ok) setResolved({ taskId: task.id, value: result.value });
+        else if (result.code === "unavailable" || result.code === "unauthenticated") {
+          if (refuseCurrentRequest(task.id, generation)) setResolved(null);
+        }
+      } catch {
+        // Keep the authorized snapshot across a transient read failure. The
+        // next tick rechecks access; denials above clear it immediately.
+        if (!signal.ignored && isCurrentRequest(task.id, generation)) setLoading(false);
+      } finally {
+        inFlight = false;
+      }
+    };
+    const timer = window.setInterval(() => void refresh(), 2_500);
+    return () => {
+      signal.ignored = true;
+      window.clearInterval(timer);
+    };
+  }, [beginRequest, isCurrentRequest, refuseCurrentRequest, surface?.mode, task.id]);
+
+  return { surface, loading, timedOut, retry: () => {
     const signal = { ignored: false };
     fetchConversation(task.id, signal);
   }};
@@ -428,7 +502,7 @@ function PrimaryContent({
   conversation: ReturnType<typeof useConversation>;
   showTip: boolean;
 }) {
-  const { items, loading, timedOut, retry } = conversation;
+  const { surface, loading, timedOut, retry } = conversation;
   return (
     <div className="min-w-0">
       {/* Description */}
@@ -454,13 +528,18 @@ function PrimaryContent({
           <ConversationSkeleton />
         ) : timedOut ? (
           <ConversationTimeout onRetry={retry} />
-        ) : (
+        ) : surface?.mode === "discussion" ? (
           <ConversationFeed
             key={task.id}
             taskId={task.id}
-            initialItems={items}
-            assigneeIds={task.assignees}
+            initialDiscussion={surface.discussion}
           />
+        ) : surface?.mode === "existing_history" ? (
+          <ExistingTaskHistory history={surface.history} />
+        ) : (
+          <div className="rounded-lg bg-bg-sunken px-3 py-2 text-[12px] text-ink-soft">
+            Discussion is unavailable right now.
+          </div>
         )}
       </section>
 

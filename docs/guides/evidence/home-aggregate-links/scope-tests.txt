@@ -1,0 +1,21 @@
+✔ overload opens the same authorized briefing scope, never a synthetic task (65.4477ms)
+✔ crowded-week opens the same authorized briefing scope, never a synthetic task (22.6108ms)
+✔ an aggregate across projects labels and carries the whole planning scope (13.6453ms)
+✔ ordinary tasks retain their object route and safe path encoding (14.4929ms)
+✔ aggregate destination passes its scope to the actual briefing route and rechecks a removed project (30.2084ms)
+✔ rendered Home distinguishes reading an aggregate and opening a task (44.0051ms)
+✔ no-workspace remains a new-user result without invented signals (11.1958ms)
+✔ actual orchestrator never falls back from an unavailable explicit project (period flag false) (400.7604ms)
+✔ actual orchestrator never falls back from an unavailable explicit project (period flag true) (23.4967ms)
+✔ actual orchestrator refuses disabled or unavailable periods without reading a saved project (42.8334ms)
+✔ actual briefing route refuses malformed or disabled explicit hints before a data read (6.7384ms)
+✔ actual Home page carries its explicit scope and never invents a new-user view for a refused link (14.5418ms)
+✔ demo briefing uses a fixed synthetic clock (33.177ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2733.3424

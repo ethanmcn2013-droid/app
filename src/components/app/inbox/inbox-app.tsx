@@ -28,6 +28,7 @@ import { useHydrated } from "@/lib/use-hydrated";
 import { buildGreeting } from "@/lib/personality";
 import type { PersonalityPrefs } from "@/lib/personality-prefs";
 import { TipCard } from "@/components/app/tip-card";
+import type { DirectedAttention } from "@/server/conversations/attention";
 
 /**
  * Inbox renders two surfaces stacked:
@@ -42,6 +43,8 @@ import { TipCard } from "@/components/app/tip-card";
  */
 export function InboxApp({
   notifications,
+  attention,
+  attentionAvailable = true,
   digest,
   nudges,
   weeklySnapshot,
@@ -55,6 +58,8 @@ export function InboxApp({
   pinnedHour,
 }: {
   notifications: Notification[];
+  attention?: readonly DirectedAttention[];
+  attentionAvailable?: boolean;
   digest: DailyDigest;
   nudges: Nudge[];
   /** Optional. When omitted (legacy callers) the weekly section is
@@ -110,6 +115,10 @@ export function InboxApp({
         />
 
         <TipCard context="inbox" enabled={personalityPrefs?.tips ?? false} />
+
+        {attention !== undefined || !attentionAvailable ? (
+          <ConversationAttentionSection initial={attention ?? []} available={attentionAvailable} />
+        ) : null}
 
         <NudgesSection nudges={nudges} onOpen={openTask} />
 
@@ -175,7 +184,7 @@ export function InboxApp({
             eyebrow="Direct alerts"
             title={
               notifications.length === 0
-                ? "Inbox zero. Quiet here on purpose."
+                ? attention !== undefined || !attentionAvailable ? "No task alerts right now." : "Inbox zero. Quiet here on purpose."
                 : `${notifications.length} ${notifications.length === 1 ? "alert" : "alerts"} for you.`
             }
             subtitle="We only insert here for direct @mentions and blocks. Lane moves, status flips, simple edits, none of it. Read once, move on."
@@ -197,6 +206,49 @@ export function InboxApp({
       </div>
     </div>
   );
+}
+
+export function ConversationAttentionSection({ initial, available }: { initial: readonly DirectedAttention[]; available: boolean }) {
+  const [items, setItems] = useState(initial);
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(!available);
+  const refresh = useCallback(async () => {
+    try {
+      const response = await fetch("/api/message-attention?action=list&limit=50", { cache: "no-store", credentials: "same-origin" });
+      const result = await response.json() as { ok: boolean; value?: DirectedAttention[] };
+      if (!response.ok || !result.ok || !result.value) throw new Error("attention_unavailable");
+      setItems(result.value);
+      setFailed(false);
+    } catch { setFailed(true); }
+  }, []);
+  useEffect(() => {
+    const onFocus = () => { void refresh(); };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [refresh]);
+  const markAll = async () => {
+    setBusy(true);
+    try {
+      const response = await fetch("/api/message-attention", { method: "POST", credentials: "same-origin", cache: "no-store",
+        headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "mark-all" }) });
+      if (!response.ok) throw new Error("attention_unavailable");
+      await refresh();
+    } catch { setFailed(true); } finally { setBusy(false); }
+  };
+  const unread = items.filter(item => item.seenAt === null).length;
+  return <section aria-label="Project attention" data-project-attention>
+    <SectionHead eyebrow="Project attention" title={failed ? "Attention needs a fresh check." : unread ? `${unread} ${unread === 1 ? "message" : "messages"} for you.` : "No new Project messages."}
+      subtitle="Mentions and Task Discussion from Projects you can still open. Your read state is private." />
+    {failed ? <button type="button" onClick={() => void refresh()}>Try again</button> : <>
+      {unread > 0 ? <button type="button" disabled={busy} onClick={() => void markAll()} className="mt-3 text-sm text-indigo-700 underline">{busy ? "Checking…" : "Mark all seen"}</button> : null}
+      <ul className="mt-4 space-y-2">{items.map(item => <li key={item.eventId} className="rounded-lg border border-line-soft bg-bg-elevated px-4 py-3">
+        <a href={item.href} className="block text-sm text-ink-strong underline-offset-2 hover:underline focus-visible:underline">
+          <span className="font-semibold">{item.projectName}</span> · {item.kind === "conversation" ? "Project message" : "Task Discussion"}{item.seenAt === null ? <span className="ml-2 text-indigo-700">New</span> : null}
+        </a>
+      </li>)}</ul>
+      {items.length >= 50 ? <p className="mt-2 text-xs text-ink-quiet">Showing 50 items, prioritizing unread messages. Older unread items may remain.</p> : null}
+    </>}
+  </section>;
 }
 
 // ────────────────────────────────────────────────────────────────────

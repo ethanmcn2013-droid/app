@@ -1,0 +1,21 @@
+{
+  "cases": [
+    "exact capture binding",
+    "lost create response reconciles same row after membership removal",
+    "denied membership does not fall back to Unfiled",
+    "membership service failure refuses new association",
+    "recovery does not retarget original capture",
+    "private owner edit remains allowed without project membership",
+    "lost edit response reconciles without another write",
+    "stale actor capture and edit refused"
+  ],
+  "rows": [
+    {
+      "user_id": "actor-a",
+      "workspace_id": "project-b",
+      "body": "Edited privately"
+    }
+  ],
+  "db": ":memory:",
+  "liveProviders": false
+}

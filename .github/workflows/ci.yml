@@ -9,9 +9,9 @@ name: ci
 
 on:
   push:
-    branches: [main]
+    branches: [main, release/january-2027]
   pull_request:
-    branches: [main]
+    branches: [main, release/january-2027]
 
 # Cancel in-progress runs for the same ref so a fresh push supersedes
 # the previous one — saves CI minutes on rapid pushes.
@@ -45,6 +45,9 @@ jobs:
       - name: Migration ledger contract
         run: pnpm db:contract
 
+      - name: Isolated January migration rehearsal
+        run: node scripts/db/verify-january-rehearsal.mjs
+
       - name: Typecheck
         run: pnpm typecheck
 
@@ -56,17 +59,33 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ethanmcn2013-droid/studio
+          # Every trigger needs this reviewed compatible fixture runtime.
+          ref: 4ed9be64be4f351c5a3e7aa2b396e92d9be570bf
           path: studio-parity
+
+      - name: Install immutable paired Studio dependencies
+        working-directory: studio-parity
+        run: corepack pnpm install --frozen-lockfile
+      - name: Record paired Studio revision
+        run: git -C studio-parity rev-parse HEAD
 
       - name: Test (includes calendar, Signal, Timeline, and suite truth gates)
         run: pnpm test
         env:
           STUDIO_REPO_PATH: ${{ github.workspace }}/studio-parity
 
+      - name: Actual Venue payment-evidence to use and erasure rehearsal
+        run: |
+          pnpm test:venue-rehearsal --studio-root studio-parity
+          pnpm test:sponsored-use:paired --studio-root studio-parity
+
       # The parity checkout exists only for the differential step above;
       # removed so lint never sweeps a second repository's sources.
       - name: Remove parity checkout
         run: rm -rf studio-parity
+
+      - name: Project Drive lifecycle and recovery
+        run: pnpm test:project-drive
 
       - name: Parser unit test (informational — date-sensitive)
         run: pnpm run test:parser

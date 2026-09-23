@@ -115,19 +115,25 @@ export async function POST(req: Request) {
     globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)
   ).slice(0, 8)}`;
   const parsed = parseTaskInput(body);
-  await db.insert(tasks).values({
-    id: taskId,
-    workspaceId,
-    title: parsed.title || body,
-    lane: "todo",
-    priority: "p2",
-    assignees: [],
-    due: parsed.dueLabel,
-    dueAt: parsed.dueAt,
-    tags: parsed.tags,
-    position,
-    sourceNoteId,
-  });
+  try {
+    await db.insert(tasks).values({
+      id: taskId,
+      workspaceId,
+      title: parsed.title || body,
+      lane: "todo",
+      priority: "p2",
+      assignees: [],
+      due: parsed.dueLabel,
+      dueAt: parsed.dueAt,
+      tags: parsed.tags,
+      position,
+      sourceNoteId,
+    });
+  } catch {
+    // The retired v1 edge still accepts a signed legacy assertion. Failed
+    // Drizzle inserts contain approved text in params; return a fixed retry.
+    return bad("Tasks could not store the approved action. Retry the same wording.", 503);
+  }
 
   return NextResponse.json({
     taskId,

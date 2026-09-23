@@ -6,6 +6,7 @@ import { DemoAuthCard } from "@/components/auth/demo-auth-card";
 import { lookupSponsorByCode } from "@/server/db/venue-welcome";
 import { isDemoMode } from "@/lib/access-mode";
 import { authRouteRobots } from "@/lib/launch";
+import { inviteAuthUrl, inviteReturnPath } from "@/lib/auth/invite-intent";
 import {
   buildWelcomeUrl,
   getSegment,
@@ -27,6 +28,7 @@ export default async function SignUpPage({
 }) {
   const sp = await searchParams;
   const demoMode = isDemoMode();
+  const invitePath = inviteReturnPath(sp.redirect_url);
 
   let sponsor: { name: string; code: string } | null = null;
   if (!demoMode && sp.redirect_url) {
@@ -85,7 +87,11 @@ export default async function SignUpPage({
         <SignUp
           appearance={signalAuthPageAppearance}
           fallbackRedirectUrl={welcomeUrl}
-          forceRedirectUrl={welcomeUrl}
+          forceRedirectUrl={invitePath ?? welcomeUrl}
+          {...(invitePath ? {
+            signInForceRedirectUrl: invitePath,
+            signInUrl: inviteAuthUrl("sign-in", invitePath),
+          } : {})}
         />
       </AuthStage>
   );

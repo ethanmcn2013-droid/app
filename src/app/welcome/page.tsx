@@ -1,14 +1,16 @@
 import { redirect } from "next/navigation";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { workspaces } from "@/server/db/schema";
 import { isFirstRun } from "@/server/db/queries";
 import { detectVenueWelcome } from "@/server/db/venue-welcome";
-import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
+import { getActiveWorkspaceOrNull, getCurrentUser } from "@/server/auth";
 import { ensureUserProvisioned } from "@/server/db/ensure-user";
 import { LEGACY_WORKSPACE_ID } from "@/server/db/seed";
 import { getTemplate, TEMPLATES } from "@/lib/templates";
-import { applyTemplateToWorkspace } from "@/server/db/apply-template";
+import { persistOnboardingSubmission, venueFirstRunRequestId } from "@/server/onboarding-completion";
+import { authorizeProjectCandidate } from "@/server/actions/project-authz";
+import { withActiveProject } from "@/lib/projects/project-url";
 import { OnboardingFlow } from "@/components/welcome/onboarding-flow";
 import { segmentFromParam } from "@/lib/onboarding/segments";
 import { StillProvisioning } from "@/components/welcome/still-provisioning";
@@ -22,7 +24,7 @@ export const metadata = {
 
 const VENUE_TEMPLATE_ID = "wedding-planning-workspace";
 
-type SearchParams = Promise<{ use?: string }>;
+type SearchParams = Promise<{ use?: string; workspaceId?: string | string[] }>;
 
 export default async function WelcomePage({
   searchParams,
@@ -36,7 +38,19 @@ export default async function WelcomePage({
   // code runs. Webhook race / missing-webhook protection, see
   // ensure-user.ts for context.
   await ensureUserProvisioned(me);
-  const ws = await getActiveWorkspace();
+  // An explicit URL is a candidate, never ownership or a reason to fall back.
+  const candidate = params.workspaceId === undefined
+    ? await getActiveWorkspaceOrNull()
+    : typeof params.workspaceId === "string" ? params.workspaceId : null;
+  const grant = await authorizeProjectCandidate({ candidateProjectId: candidate, actorUserId: me, capability: "open", archivePolicy: "enforce" });
+  if (!grant.ok) return (
+    <main className="mx-auto max-w-lg px-6 py-16">
+      <h1 className="text-2xl font-semibold text-ink">That project isn’t available.</h1>
+      <p className="mt-3 text-ink-soft">Open Home to choose a project you can use.</p>
+      <a href="/app/home" className="mt-6 inline-block underline underline-offset-4">Open Home</a>
+    </main>
+  );
+  const ws = grant.projectId;
   if (ws === LEGACY_WORKSPACE_ID && process.env.NODE_ENV === "production") {
     // We just provisioned the user; getting ws-legacy back means
     // something deeper is wrong. Don't mutate the shared fallback
@@ -47,8 +61,16 @@ export default async function WelcomePage({
   // or an old bookmark). Push them straight back into the workspace.
   if (!(await isFirstRun(ws))) {
     // Home is the authenticated front door (consolidation D6).
-    redirect("/app/home");
+    redirect(withActiveProject("/app/home", ws));
   }
+
+  if (!grant.capabilities.manageProject || grant.archived) return (
+    <main className="mx-auto max-w-lg px-6 py-16">
+      <h1 className="text-2xl font-semibold text-ink">A project owner needs to finish setup.</h1>
+      <p className="mt-3 text-ink-soft">You can open the project without changing its setup.</p>
+      <a href={withActiveProject("/app/home", ws)} className="mt-6 inline-block underline underline-offset-4">Open project</a>
+    </main>
+  );
 
   // Venue Editions bridge: if the signed-in user holds an active
   // wedding comp entitlement linked to a sponsor (i.e. they arrived
@@ -56,34 +78,43 @@ export default async function WelcomePage({
   // Auto-apply the wedding workspace template and bounce them onto
   // the board with a query param so the welcome card can name the
   // sponsor.
-  const venueWelcome = await detectVenueWelcome(me);
+  const venueWelcome = await detectVenueWelcome(me, ws);
   const planningFlags = resolvePlanningFeatureFlags();
-  if (planningFlags.contextualOnboarding) {
-    if (venueWelcome) redirect("/welcome/plan?context=wedding_season");
+  // The contextual flow creates a new project. An explicit setup link must
+  // finish the authorized existing project, even while that experiment is on.
+  if (planningFlags.contextualOnboarding && params.workspaceId === undefined) {
+    if (venueWelcome) redirect(withActiveProject("/welcome/plan?context=wedding_season", ws));
     if (preselectedSegment === "student") {
-      redirect("/welcome/plan?context=semester");
+      redirect(withActiveProject("/welcome/plan?context=semester", ws));
     }
     if (preselectedSegment === "wedding") {
-      redirect("/welcome/plan?context=wedding_season");
+      redirect(withActiveProject("/welcome/plan?context=wedding_season", ws));
     }
   }
   if (venueWelcome && TEMPLATES.some((t) => t.id === VENUE_TEMPLATE_ID)) {
     // Pure DB helper instead of `applyTemplateAction`, same reason as
     // `redeemCompCodeAction`: the action calls `revalidatePath` which
     // is illegal during route render.
-    await applyTemplateToWorkspace(VENUE_TEMPLATE_ID, ws);
-    await db.run(sql`
-      UPDATE workspaces
-      SET template_id = ${VENUE_TEMPLATE_ID},
-          active_domain = 'wedding',
-          primary_use_case = 'venue',
-          onboarding_completed_at = unixepoch()
-      WHERE id = ${ws}
-    `);
+    try {
+      await persistOnboardingSubmission({
+        workspaceId: ws,
+        requestId: venueFirstRunRequestId(ws, me),
+        primaryUseCase: "wedding",
+        seedMode: "starter",
+      }, me);
+    } catch {
+      return (
+        <main className="mx-auto max-w-lg px-6 py-16">
+          <h1 className="text-2xl font-semibold text-ink">Your project setup needs another try.</h1>
+          <p className="mt-3 text-ink-soft">We couldn’t confirm that setup finished. Try again to check the same setup without adding another starter.</p>
+          <a className="mt-6 inline-block rounded-full bg-ink px-5 py-3 text-white" href={withActiveProject("/welcome", ws)}>Try again</a>
+        </main>
+      );
+    }
     const target = `/app/tasks?welcome=venue&v=${encodeURIComponent(
       venueWelcome.sponsorSlug,
     )}`;
-    redirect(target);
+    redirect(withActiveProject(target, ws));
   }
 
   // T1.2, if the workspace was created via the templates flow
@@ -103,6 +134,9 @@ export default async function WelcomePage({
 
   return (
     <OnboardingFlow
+      key={`${me}:${ws}`}
+      workspaceId={ws}
+      actorUserId={me}
       pendingTemplate={pendingTemplate}
       preselectedSegment={preselectedSegment}
     />

@@ -9,13 +9,15 @@
  * Invariants verified:
  *   1. Unified export includes all four top-level sections (tasks, notes,
  *      timeline, signal) with correct shapes.
- *   2. A module stub that returns { available: false } is preserved as-is;
- *      the orchestrator never drops or re-raises it.
+ *   2. An unavailable module retains a stable status and safe reason;
+ *      the orchestrator never exports its diagnostic metadata.
  *   3. A module stub that throws degrades to { available: false } rather than
  *      propagating the error to the caller.
  *   4. Tasks attachment storedPath never appears in the unified JSON
  *      (existing export guarantee held through the wrapper).
  *   5. Export of an unprovisioned Tasks user returns null user, no error.
+ *   6. Google Drive's journal survives the unified wrapper only through its
+ *      plain-language, credential-free activity projection.
  *
  * Run: node --import tsx --test src/server/account-unified-export.test.ts
  */
@@ -24,6 +26,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { exportUnifiedAccountDataWith } from "./account-unified-export";
 import { freshMemoryDb } from "./db/memory-test-db";
+import { eq } from "drizzle-orm";
+import { workspaces, workspaceMembers } from "./db/schema";
+import { fixture, checkout, sync } from "./db/event-designation-test-fixture";
 
 // ── Stub factories ────────────────────────────────────────────────────────────
 
@@ -65,6 +70,28 @@ const okOpts = {
   exportSignal: async (_id: string) => SIGNAL_OK,
 };
 
+test("real Event purchaser facts survive the unified wrapper after removal alongside same-actor personal Notes and unavailable modules", async () => {
+  const f = await fixture();
+  try {
+    const input = await checkout(f); await sync(f, input);
+    await f.local.db.update(workspaces).set({ ownerUserId: "next-owner", name: "PRIVATE-NEW-OWNER-PROJECT" }).where(eq(workspaces.id, "project-a"));
+    await f.local.db.delete(workspaceMembers).where(eq(workspaceMembers.userId, "buyer"));
+    const actors: string[] = [];
+    const result = await exportUnifiedAccountDataWith(f.local.db, "buyer", {
+      exportNotes: async actor => { actors.push(actor); return { available: true, notes: [{ id: `personal:${actor}`, body: "my private Note" }] }; },
+      exportTimeline: async actor => { actors.push(actor); throw new Error("PRIVATE-MODULE-TOKEN"); },
+      exportSignal: async actor => { actors.push(actor); return { available: false, reason: "PRIVATE-MODULE-QUERY" }; },
+    });
+    assert.deepEqual(actors, ["buyer", "buyer", "buyer"]);
+    assert.equal(result.tasks.eventPurchases?.[0].providerReference, input.reference);
+    assert.deepEqual(result.tasks.ownedWorkspaces?.eventProjectEffects, []);
+    assert.deepEqual(result.notes, { available: true, notes: [{ id: "personal:buyer", body: "my private Note" }] });
+    assert.deepEqual(result.timeline, { available: false, reason: "Timeline export is unavailable. Try again later." });
+    assert.deepEqual(result.signal, { available: false, reason: "Briefing export is unavailable. Try again later." });
+    assert.doesNotMatch(JSON.stringify(result), /PRIVATE-NEW-OWNER|PRIVATE-MODULE/);
+  } finally { f.close(); }
+});
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function seedTasksUser(client: import("@libsql/client").Client) {
@@ -81,6 +108,11 @@ async function seedTasksUser(client: import("@libsql/client").Client) {
         filename, stored_path, mime_type, size_bytes)
       VALUES ('att-1', 'ws-a', 'task-a1', 'u-target',
         'file.png', '.data/uploads/SECRET.png', 'image/png', 3);
+    INSERT INTO project_drive_operations (
+        id, workspace_id, operation_kind, status, dedupe_key,
+        attempt_count, created_at, updated_at)
+      VALUES ('drive-op-a', 'ws-a', 'project_delete', 'pending',
+        '${"a".repeat(64)}', 0, 1756800000, 1756800000);
   `);
 }
 
@@ -105,6 +137,20 @@ test("unified export includes all four sections with correct shapes", async () =
     assert.ok(result.tasks, "tasks section missing");
     assert.equal(result.tasks.product, "tasks");
     assert.ok(result.tasks.user, "tasks.user missing");
+    assert.deepEqual(
+      result.tasks.ownedWorkspaces?.googleDriveActivity.map((activity) => ({
+        id: activity.id,
+        action: activity.action,
+        progress: activity.progress,
+      })),
+      [
+        {
+          id: "drive-op-a",
+          action: "Remove the Google Drive setup",
+          progress: "Waiting",
+        },
+      ],
+    );
 
     // Module sections from stubs.
     assert.equal((result.notes as { available: boolean }).available, true);
@@ -130,6 +176,9 @@ test("tasks storedPath never appears in the unified export JSON", async () => {
       !json.includes("SECRET"),
       "attachment storedPath leaked into the unified export",
     );
+    assert.equal(json.includes("projectDriveActivity"), false);
+    assert.equal(json.includes("Project Drive"), false);
+    assert.equal(json.includes("googleDriveActivity"), true);
   } finally {
     client.close();
   }
@@ -171,10 +220,8 @@ test("a module that throws degrades to { available: false } without propagating"
 
     const timeline = result.timeline as { available: boolean; reason?: string };
     assert.equal(timeline.available, false);
-    assert.ok(
-      timeline.reason?.includes("TIMELINE_AUTH_TOKEN"),
-      "error message must be preserved in reason",
-    );
+    assert.equal(timeline.reason, "Timeline export is unavailable. Try again later.");
+    assert.doesNotMatch(JSON.stringify(result), /TIMELINE_AUTH_TOKEN/);
     // Notes and Signal still succeeded.
     assert.equal((result.notes as { available: boolean }).available, true);
     assert.equal((result.signal as { available: boolean }).available, true);

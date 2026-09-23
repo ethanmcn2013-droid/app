@@ -173,6 +173,11 @@ export function loadAndValidateLedger({ root = defaultRoot, module = "tasks" } =
     invariant(Number.isSafeInteger(entry.when) && entry.when > previousWhen, `${entry.id} timestamp must be strictly increasing`);
     previousWhen = entry.when;
     invariant(["legacy-adopt-only", "baseline", "forward"].includes(entry.policy), `${entry.id} has invalid policy`);
+    if (entry.id === "0036_conversation_erasure_tombstones") {
+      invariant(entry.migrationEnvelope === "libsql-migrate", `${entry.id} requires the libSQL migration envelope`);
+    } else {
+      invariant(entry.migrationEnvelope === undefined, `${entry.id} has an unsupported migration envelope`);
+    }
     if (entry.policy === "baseline") {
       invariant(baselineOrdinal === -1, "ledger must contain exactly one baseline");
       baselineOrdinal = ordinal;

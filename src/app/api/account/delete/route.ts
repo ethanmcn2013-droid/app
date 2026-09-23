@@ -1,6 +1,9 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { deleteAccountForUser } from "@/server/account";
+import { beginAccountDeletion } from "@/server/account-deletion-lifecycle";
+
+const RESPONSE_HEADERS = { "Cache-Control": "private, no-store" };
 
 /**
  * POST /api/account/delete
@@ -11,8 +14,9 @@ import { deleteAccountForUser } from "@/server/account";
  * Flow:
  *   1. Verify the request is authed (the user can only delete their
  *      own account; no admin path here).
- *   2. Purge the user's footprint from Turso (Tasks' product DB).
- *   3. Call Clerk admin to delete the user. Clerk severs the session
+ *   2. Install a durable, hashed identity-level deletion tombstone.
+ *   3. Purge the user's footprint from every Signal Studio product.
+ *   4. Call Clerk admin to delete the user. Clerk severs the session
  *      automatically; the client will receive a 200 and then redirect
  *      to the homepage.
  *
@@ -28,21 +32,23 @@ import { deleteAccountForUser } from "@/server/account";
 export async function POST() {
   const { userId } = await auth();
   if (!userId) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "unauthorized" }, { status: 401, headers: RESPONSE_HEADERS });
   }
 
   try {
+    // Must precede every eraser. A stale authenticated request and a delayed
+    // Clerk webhook can no longer reprovision this identity after this point.
+    await beginAccountDeletion(userId);
     await deleteAccountForUser(userId);
 
     const client = await clerkClient();
     await client.users.deleteUser(userId);
 
-    return NextResponse.json({ ok: true });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ ok: true }, { headers: RESPONSE_HEADERS });
+  } catch {
     return NextResponse.json(
-      { error: "delete_failed", message },
-      { status: 500 },
+      { error: "delete_failed", message: "Your account deletion could not be completed. Please try again." },
+      { status: 500, headers: RESPONSE_HEADERS },
     );
   }
 }

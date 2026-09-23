@@ -1,0 +1,84 @@
+{
+  "source": "6d49de5490878e6d6cfc275c659cf8671fc8f62b",
+  "archive": "independent-fix.zip",
+  "bytes": 28169,
+  "sha256": "8368c6ae16607c8bbd1310f5b50178c55d9e063ed17e81a36a59cda5d5a4638f",
+  "files": {
+    "candidate-four-clocks.json": {
+      "bytes": 903,
+      "sha256": "2b4066ff832a737ec73f88b2941a3b2388caf7b647d2b094c6f82bad8f555aa2"
+    },
+    "candidate-four-clocks.log": {
+      "bytes": 6632,
+      "sha256": "5bf5383e1c58864d11b0da3c7893c75c58fbb9b0c224cc3363e97581938152c3"
+    },
+    "empty-report-and-network-probe.json": {
+      "bytes": 923,
+      "sha256": "7256e688c5a068cbb5b04aa77e28a8da1b93d52174f93a5e990812a7ee68c3e1"
+    },
+    "empty-report-and-network-probe.log": {
+      "bytes": 850,
+      "sha256": "6f6ea3af39f17de2a8bb3582558f2e7b5621fcbc3028548169c8804246d4388b"
+    },
+    "failed-child-with-report.json": {
+      "bytes": 921,
+      "sha256": "281d356fc1909cf1b009583f3d25a51fd118a3f70491a66b216a996b72850008"
+    },
+    "failed-child-with-report.log": {
+      "bytes": 1421,
+      "sha256": "f748b451a0e6adce151528fca9ff243ab9c2ae10b95aac6380dfa0ca899d96ca"
+    },
+    "original-mutable-terms.json": {
+      "bytes": 927,
+      "sha256": "9ef7bf179f207869c2f812bd197b5d759fc69360c0d323fa3d5cdd18b6ba6c77"
+    },
+    "original-mutable-terms.log": {
+      "bytes": 4889,
+      "sha256": "90bddef15937062ac9f9e693d6ea3ff55fce149c5d5b280add91774594e7a2e1"
+    },
+    "patch.diff": {
+      "bytes": 6562,
+      "sha256": "4d631ac92c5c8f5cecaf9ae804d4fd22937b6644e7d892d34dbf94d87e5f150a"
+    },
+    "README.md": {
+      "bytes": 5179,
+      "sha256": "422d051e83aa0100a585971b1f0e453ec1a5b63e2b57e2cfd5244d1781fecfed"
+    },
+    "reproduction/acceptance-clocks.mjs": {
+      "bytes": 2556,
+      "sha256": "29bf1120a258ecfacbe9cb97aaaf6da5c1a121ae65c41baac091a3481f144da5"
+    },
+    "reproduction/app-acceptance.cjs": {
+      "bytes": 11081,
+      "sha256": "624de7049ec015545b613563ec966539add1d14ade87e64b76d81cc2cacf1e4b"
+    },
+    "reproduction/empty-control-acceptance.cjs": {
+      "bytes": 985,
+      "sha256": "a94d0ca388c4032726eb16419522b7aecee12d7932f31ae0afa051518b4c553d"
+    },
+    "reproduction/exit-control-acceptance.cjs": {
+      "bytes": 160,
+      "sha256": "faf894a7455fcd047c9f7ba3948311a63633e13f95e50b7c9a2b3640467e11d9"
+    },
+    "reproduction/mutable-control-acceptance.cjs": {
+      "bytes": 11073,
+      "sha256": "a81329ab2777cd400e29066b42858a578546cdadb4d5ac5386984960539174a9"
+    },
+    "reproduction/prepare.py": {
+      "bytes": 4927,
+      "sha256": "6b606b787e786c7b4462994203c7d2b93de17111b9f9ec907dbd478fa03ed8f6"
+    },
+    "reproduction/run.py": {
+      "bytes": 1750,
+      "sha256": "551e8356ad15ea8d569d91356ec298849307987dbd494a67790a43a4423f0f50"
+    },
+    "source.json": {
+      "bytes": 4434,
+      "sha256": "77e859f25da903db600428c060f6529402d1025dba0799b81086bc391842671a"
+    },
+    "verification.json": {
+      "bytes": 5572,
+      "sha256": "0e3a7c0d007361d6e7856b37da7402c88976bbc361cbbdb16f9c1183ae6ee9c0"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.connections.storage",
+  "source": "tasks/src/components/app/settings/sections/connections-view.tsx",
+  "materialityHash": "792f9249ba775c65",
+  "reviewedAt": "2026-09-23",
+  "reviewer": "Production sprint source reviewer",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-776b131ccc1d285f9c76fe35-b1f0b607db42f49a.json",
+    "attestationSha256": "695e2d52f144e9edc78a1056905a1f28b2ac8d275b2450eceda701fbd2b6b396",
+    "runId": "tasks-playwright-776b131ccc1d285f9c76fe35",
+    "canonicalEvidenceSha256": "776b131ccc1d285f9c76fe35d39885f359fa005fffca90ce659cd2384a783241",
+    "rawArtifactSha256": "b1f0b607db42f49a58deb99721d2fd37a12006f7ededde0b67e298f9a2fcd7f9",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.surface.task-detail-panel",
+    "caseName": "populated task",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Connections now shows a pending Google disconnect as unconfirmed, prevents reconnect during that state, and offers Check disconnect. Source inspection confirms the notice and callback wiring at this component; the linked four-breakpoint populated Task panel is adjacent app regression context only, not a Connections render or real Google OAuth/revocation proof. Existing focused disconnect tests and future provider receiving remain separate.",
+  "decision": "Refresh only this component source hash and review receipt. Preserve preview and under-remediation statuses and partial coverage; require real provider lifecycle receiving before claiming Google disconnect acceptance."
+}

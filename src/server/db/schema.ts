@@ -5,6 +5,7 @@ import {
   integer,
   real,
   primaryKey,
+  foreignKey,
   index,
   uniqueIndex,
   check,
@@ -483,16 +484,303 @@ export const comments = sqliteTable("comments", {
     .notNull()
     .references(() => tasks.id, { onDelete: "cascade" }),
   userId: text("user_id")
-    .notNull()
     .references(() => users.id),
-  body: text("body").notNull(),
+  body: text("body"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
+  clientRequestId: text("client_request_id"),
+  requestHash: text("request_hash"),
+  revision: integer("revision"),
+  editedAt: integer("edited_at"),
+  deletedAt: integer("deleted_at"),
+  rootId: text("root_id"),
+  createSeq: integer("create_seq"),
 }, (t) => [
   // Mirror drizzle/0003_hot_indexes.sql.
   index("idx_comments_task_id").on(t.taskId),
   index("idx_comments_user_id").on(t.userId),
+  uniqueIndex("task_comments_request").on(t.taskId, t.userId, t.clientRequestId)
+    .where(sql`${t.clientRequestId} IS NOT NULL`),
+  uniqueIndex("task_comments_sequence").on(t.taskId, t.createSeq)
+    .where(sql`${t.createSeq} IS NOT NULL`),
+  index("task_comments_root").on(t.taskId, t.rootId, t.createSeq),
+]);
+
+export const taskDiscussionState = sqliteTable("task_discussion_state", {
+  taskId: text("task_id").primaryKey().references(() => tasks.id, { onDelete: "cascade" }),
+  workspaceId: text("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  audienceEpoch: integer("audience_epoch").notNull().default(1),
+  nextCreateSeq: integer("next_create_seq").notNull().default(1),
+  nextChangeSeq: integer("next_change_seq").notNull().default(1),
+}, (t) => [
+  check("task_discussion_epoch_check", sql`${t.audienceEpoch} >= 1`),
+  check("task_discussion_create_seq_check", sql`${t.nextCreateSeq} >= 1`),
+  check("task_discussion_change_seq_check", sql`${t.nextChangeSeq} >= 1`),
+]);
+
+export const taskCommentChanges = sqliteTable("task_comment_changes", {
+  taskId: text("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  changeSeq: integer("change_seq").notNull(),
+  kind: text("kind").$type<"create" | "edit" | "delete" | "audience">().notNull(),
+  commentId: text("comment_id"),
+  revision: integer("revision"),
+  audienceEpoch: integer("audience_epoch").notNull(),
+  happenedAtMs: integer("happened_at_ms").notNull(),
+}, (t) => [
+  primaryKey({ columns: [t.taskId, t.changeSeq] }),
+  check("task_comment_changes_sequence_check", sql`${t.changeSeq} >= 1`),
+  check("task_comment_changes_epoch_check", sql`${t.audienceEpoch} >= 1`),
+]);
+
+export const taskCommentReceipts = sqliteTable("task_comment_receipts", {
+  taskId: text("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  actorId: text("actor_id").notNull(),
+  clientRequestId: text("client_request_id").notNull(),
+  operation: text("operation").$type<"send" | "edit" | "delete">().notNull(),
+  payloadHash: text("payload_hash").notNull(),
+  commentId: text("comment_id").notNull().references(() => comments.id, { onDelete: "cascade" }),
+  createSeq: integer("create_seq").notNull(),
+  changeSeq: integer("change_seq").notNull(),
+  revision: integer("revision").notNull(),
+  committedAtMs: integer("committed_at_ms").notNull(),
+}, (t) => [primaryKey({ columns: [t.taskId, t.actorId, t.clientRequestId] })]);
+
+export const taskCommentAttention = sqliteTable("task_comment_attention", {
+  id: text("id").primaryKey(),
+  eventId: text("event_id").notNull().unique(),
+  taskId: text("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  workspaceId: text("workspace_id").notNull(),
+  recipientId: text("recipient_id").notNull(),
+  commentId: text("comment_id").notNull().references(() => comments.id, { onDelete: "cascade" }),
+  sourceRevision: integer("source_revision").notNull(),
+  rootId: text("root_id"),
+  createSeq: integer("create_seq").notNull(),
+  reasonBits: integer("reason_bits").notNull(),
+  seenAtMs: integer("seen_at_ms"),
+}, (t) => [
+  uniqueIndex("task_comment_attention_source_recipient").on(t.taskId, t.recipientId, t.commentId),
+  index("task_comment_attention_recipient").on(t.recipientId, t.seenAtMs, t.createSeq),
+]);
+
+export const taskCommentOutbox = sqliteTable("task_comment_outbox", {
+  id: text("id").primaryKey(),
+  eventId: text("event_id").notNull().unique(),
+  taskId: text("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  workspaceId: text("workspace_id").notNull(),
+  recipientId: text("recipient_id").notNull(),
+  commentId: text("comment_id").notNull().references(() => comments.id, { onDelete: "cascade" }),
+  sourceRevision: integer("source_revision").notNull(),
+  audienceEpoch: integer("audience_epoch").notNull(),
+  state: text("state").$type<"pending" | "leased" | "delivered" | "dropped">().notNull().default("pending"),
+  attemptCount: integer("attempt_count").notNull().default(0),
+  nextAttemptAt: integer("next_attempt_at"),
+  leaseUntil: integer("lease_until"),
+  leaseToken: text("lease_token"),
+  lastErrorCode: text("last_error_code"),
+  createdAtMs: integer("created_at_ms").notNull(),
+}, (t) => [
+  uniqueIndex("task_comment_outbox_source_recipient").on(t.taskId, t.recipientId, t.commentId),
+  index("task_comment_outbox_claim").on(t.state, t.nextAttemptAt),
+]);
+
+export const taskCommentMigrationReport = sqliteTable("task_comment_migration_report", {
+  commentId: text("comment_id").primaryKey(),
+  disposition: text("disposition").$type<"quarantined">().notNull(),
+  reason: text("reason").$type<"missing_task_tenant" | "missing_author" | "tenant_mismatch">().notNull(),
+  recordedAtMs: integer("recorded_at_ms").notNull(),
+});
+
+export const conversations = sqliteTable("conversations", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  kind: text("kind").$type<"project" | "dm">().notNull(),
+  lifecycle: text("lifecycle").$type<"active" | "archived">().notNull().default("active"),
+  audienceEpoch: integer("audience_epoch").notNull().default(1),
+  nextCreateSeq: integer("next_create_seq").notNull().default(1),
+  nextChangeSeq: integer("next_change_seq").notNull().default(1),
+  dmLowUserId: text("dm_low_user_id"),
+  dmHighUserId: text("dm_high_user_id"),
+  pairState: text("pair_state").$type<"pending" | "active" | "declined" | "blocked" | "left" | "membership_lost" | "rejoin_pending">(),
+  dmRequesterId: text("dm_requester_id"),
+  dmBlockedByUserId: text("dm_blocked_by_user_id"),
+  dmStateBeforeBlock: text("dm_state_before_block").$type<"pending" | "active" | "declined" | "left" | "membership_lost" | "rejoin_pending">(),
+  createdBy: text("created_by").references(() => users.id),
+  createdAt: integer("created_at").notNull(),
+}, (t) => [
+  uniqueIndex("conversations_one_project_room").on(t.workspaceId).where(sql`${t.kind} = 'project'`),
+  uniqueIndex("conversations_one_dm_pair").on(t.workspaceId, t.dmLowUserId, t.dmHighUserId).where(sql`${t.kind} = 'dm'`),
+  check("conversations_kind_check", sql`${t.kind} IN ('project', 'dm')`),
+  check("conversations_lifecycle_check", sql`${t.lifecycle} IN ('active', 'archived')`),
+  check("conversations_audience_epoch_check", sql`${t.audienceEpoch} >= 1`),
+  check("conversations_next_create_seq_check", sql`${t.nextCreateSeq} >= 1`),
+  check("conversations_next_change_seq_check", sql`${t.nextChangeSeq} >= 1`),
+  check("conversations_shape_check", sql`(
+    (${t.kind} = 'project' AND ${t.dmLowUserId} IS NULL AND ${t.dmHighUserId} IS NULL AND ${t.pairState} IS NULL)
+    OR (${t.kind} = 'dm' AND ${t.dmLowUserId} IS NOT NULL AND ${t.dmHighUserId} IS NOT NULL
+      AND ${t.dmLowUserId} < ${t.dmHighUserId} AND ${t.pairState} IS NOT NULL)
+  )`),
+  check("conversations_pair_state_check", sql`${t.pairState} IS NULL OR ${t.pairState} IN ('pending', 'active', 'declined', 'blocked', 'left', 'membership_lost', 'rejoin_pending')`),
+]);
+
+export const conversationParticipants = sqliteTable("conversation_participants", {
+  conversationId: text("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  status: text("status").$type<"active" | "removed" | "membership_lost" | "rejoin_pending">().notNull(),
+  consented: integer("consented", { mode: "boolean" }).notNull().default(false),
+  retainsHistory: integer("retains_history", { mode: "boolean" }).notNull().default(false),
+  reopenConfirmed: integer("reopen_confirmed", { mode: "boolean" }).notNull().default(false),
+}, (t) => [
+  primaryKey({ columns: [t.conversationId, t.userId] }),
+  check("conversation_participants_status_check", sql`${t.status} IN ('active', 'removed', 'membership_lost', 'rejoin_pending')`),
+]);
+
+export const conversationDmReceipts = sqliteTable("conversation_dm_receipts", {
+  actorId: text("actor_id").notNull(),
+  clientRequestId: text("client_request_id").notNull(),
+  operation: text("operation").$type<"request" | "accept" | "decline" | "block" | "unblock" | "leave" | "reopen">().notNull(),
+  payloadHash: text("payload_hash").notNull(),
+  conversationId: text("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  resultingState: text("resulting_state").$type<"pending" | "active" | "declined" | "blocked" | "left" | "membership_lost" | "rejoin_pending">().notNull(),
+  committedAt: integer("committed_at").notNull(),
+}, (t) => [primaryKey({ columns: [t.actorId, t.clientRequestId] })]);
+
+export const conversationMessages = sqliteTable("conversation_messages", {
+  id: text("id").primaryKey(),
+  conversationId: text("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  workspaceId: text("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  authorId: text("author_id").references(() => users.id),
+  clientRequestId: text("client_request_id"),
+  requestHash: text("request_hash"),
+  rootId: text("root_id"),
+  createSeq: integer("create_seq").notNull(),
+  revision: integer("revision").notNull(),
+  body: text("body"),
+  createdAt: integer("created_at").notNull(),
+  editedAt: integer("edited_at"),
+  deletedAt: integer("deleted_at"),
+}, (t) => [
+  uniqueIndex("conversation_messages_request").on(t.conversationId, t.authorId, t.clientRequestId),
+  uniqueIndex("conversation_messages_sequence").on(t.conversationId, t.createSeq),
+  index("conversation_messages_root").on(t.conversationId, t.rootId, t.createSeq),
+  check("conversation_messages_create_seq_check", sql`${t.createSeq} >= 1`),
+  check("conversation_messages_revision_check", sql`${t.revision} >= 1`),
+  check("conversation_messages_tombstone_check", sql`((${t.deletedAt} IS NULL AND ${t.body} IS NOT NULL) OR (${t.deletedAt} IS NOT NULL AND ${t.body} IS NULL))`),
+]);
+
+export const conversationChanges = sqliteTable("conversation_changes", {
+  conversationId: text("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  changeSeq: integer("change_seq").notNull(),
+  kind: text("kind").$type<"create" | "edit" | "delete" | "audience">().notNull(),
+  messageId: text("message_id"),
+  revision: integer("revision"),
+  audienceEpoch: integer("audience_epoch").notNull(),
+  happenedAt: integer("happened_at").notNull(),
+}, (t) => [
+  primaryKey({ columns: [t.conversationId, t.changeSeq] }),
+  check("conversation_changes_sequence_check", sql`${t.changeSeq} >= 1`),
+  check("conversation_changes_kind_check", sql`${t.kind} IN ('create', 'edit', 'delete', 'audience')`),
+  check("conversation_changes_audience_epoch_check", sql`${t.audienceEpoch} >= 1`),
+  check("conversation_changes_shape_check", sql`(
+    (${t.kind} = 'audience' AND ${t.messageId} IS NULL AND ${t.revision} IS NULL)
+    OR (${t.kind} <> 'audience' AND ${t.messageId} IS NOT NULL AND ${t.revision} IS NOT NULL)
+  )`),
+]);
+
+export const conversationReceipts = sqliteTable("conversation_receipts", {
+  conversationId: text("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  actorId: text("actor_id").notNull(),
+  clientRequestId: text("client_request_id").notNull(),
+  operation: text("operation").$type<"send" | "edit" | "delete">().notNull(),
+  payloadHash: text("payload_hash").notNull(),
+  messageId: text("message_id").notNull().references(() => conversationMessages.id, { onDelete: "cascade" }),
+  createSeq: integer("create_seq").notNull(),
+  changeSeq: integer("change_seq").notNull(),
+  revision: integer("revision").notNull(),
+  committedAt: integer("committed_at").notNull(),
+}, (t) => [primaryKey({ columns: [t.conversationId, t.actorId, t.clientRequestId] })]);
+
+export const conversationAttention = sqliteTable("conversation_attention", {
+  id: text("id").primaryKey(),
+  conversationId: text("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  workspaceId: text("workspace_id").notNull(),
+  recipientId: text("recipient_id").notNull(),
+  messageId: text("message_id").notNull(),
+  rootId: text("root_id"),
+  createSeq: integer("create_seq").notNull(),
+  reasonBits: integer("reason_bits").notNull().default(1),
+  observedAt: integer("observed_at"),
+}, (t) => [
+  uniqueIndex("conversation_attention_source_recipient").on(t.conversationId, t.recipientId, t.messageId),
+  index("conversation_attention_recipient").on(t.recipientId, t.observedAt, t.createSeq),
+]);
+
+/** Reader-private coverage of ordinary conversation roots and opened replies. */
+export const messageReadCoverage = sqliteTable("message_read_coverage", {
+  userId: text("user_id").notNull(),
+  sourceKind: text("source_kind").$type<"conversation" | "task_discussion">().notNull(),
+  scopeId: text("scope_id").notNull(),
+  rootKey: text("root_key").notNull().default(""),
+  rangeStart: integer("range_start").notNull(),
+  rangeEnd: integer("range_end").notNull(),
+  observedAtMs: integer("observed_at_ms").notNull(),
+}, (t) => [
+  primaryKey({ columns: [t.userId, t.sourceKind, t.scopeId, t.rootKey, t.rangeStart, t.rangeEnd] }),
+  index("message_read_coverage_scope").on(t.userId, t.sourceKind, t.scopeId, t.rootKey, t.rangeStart, t.rangeEnd),
+]);
+
+export const conversationOutbox = sqliteTable("conversation_outbox", {
+  id: text("id").primaryKey(),
+  conversationId: text("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  workspaceId: text("workspace_id").notNull(),
+  recipientId: text("recipient_id").notNull(),
+  messageId: text("message_id").notNull(),
+  sourceRevision: integer("source_revision").notNull().default(1),
+  audienceEpoch: integer("audience_epoch").notNull().default(1),
+  state: text("state").$type<"pending" | "leased" | "delivered" | "dropped">().notNull().default("pending"),
+  attemptCount: integer("attempt_count").notNull().default(0),
+  nextAttemptAt: integer("next_attempt_at"),
+  leaseUntil: integer("lease_until"),
+  leaseToken: text("lease_token"),
+  lastErrorCode: text("last_error_code"),
+  createdAt: integer("created_at").notNull(),
+}, (t) => [
+  uniqueIndex("conversation_outbox_source_recipient").on(t.conversationId, t.recipientId, t.messageId),
+  index("conversation_outbox_claim").on(t.state, t.nextAttemptAt),
+]);
+
+/** Body-free provenance for a canonical task created from reviewed conversation work. */
+export const workLinks = sqliteTable("work_links", {
+  id: text("id").primaryKey(),
+  sourceProjectId: text("source_project_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  sourceConversationId: text("source_conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  sourceMessageId: text("source_message_id").notNull().references(() => conversationMessages.id, { onDelete: "cascade" }),
+  sourceRevision: integer("source_revision").notNull(),
+  sourceAudienceEpoch: integer("source_audience_epoch").notNull(),
+  destinationProjectId: text("destination_project_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  taskId: text("task_id").notNull().unique().references(() => tasks.id, { onDelete: "cascade" }),
+  createdBy: text("created_by").notNull().references(() => users.id),
+  createdAt: integer("created_at").notNull(),
+}, (t) => [
+  index("work_links_source").on(t.sourceConversationId, t.sourceMessageId),
+  check("work_links_revision_check", sql`${t.sourceRevision} >= 1`),
+  check("work_links_epoch_check", sql`${t.sourceAudienceEpoch} >= 1`),
+]);
+
+export const workOperationReceipts = sqliteTable("work_operation_receipts", {
+  actorId: text("actor_id").notNull(),
+  clientRequestId: text("client_request_id").notNull(),
+  operation: text("operation").$type<"conversation_task">().notNull(),
+  payloadHash: text("payload_hash").notNull(),
+  sourceProjectId: text("source_project_id").notNull(),
+  sourceConversationId: text("source_conversation_id"),
+  destinationProjectId: text("destination_project_id").notNull(),
+  taskId: text("task_id").notNull(),
+  workLinkId: text("work_link_id").notNull(),
+  committedAt: integer("committed_at").notNull(),
+}, (t) => [
+  primaryKey({ columns: [t.actorId, t.clientRequestId, t.operation] }),
+  check("work_operation_receipts_operation_check", sql`${t.operation} = 'conversation_task'`),
 ]);
 
 // Compile-time contract, flags drift between schema and the
@@ -900,6 +1188,504 @@ const _checkAttachment: _SchemaCoversAttachment = true;
 void _checkAttachment;
 
 /**
+ * A person's durable grant to an external storage provider. Project Drive
+ * asks only for Drive's `drive.file` scope, so `providerAccountId` stores the
+ * stable `about.user.permissionId` returned by Drive itself. It deliberately
+ * does not depend on an OpenID `sub`, which would widen the OAuth scope set.
+ *
+ * Refresh tokens are AES-256-GCM envelopes bound to this row's id. Access
+ * tokens are request-local and must never reach this table.
+ */
+export const providerConnections = sqliteTable(
+  "provider_connections",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    provider: text("provider").$type<"google_drive">().notNull(),
+    /** Drive User.permissionId. Email is display-only and never identity. */
+    providerAccountId: text("provider_account_id").notNull(),
+    providerAccountEmail: text("provider_account_email"),
+    /** The unshared `Signal Studio` folder created under this grant. */
+    rootFolderId: text("root_folder_id").notNull(),
+    refreshTokenCipher: text("refresh_token_cipher").notNull(),
+    keyVersion: integer("key_version").notNull().default(1),
+    scopes: text("scopes", { mode: "json" }).$type<string[]>().notNull(),
+    status: text("status")
+      .$type<"active" | "needs_reauth" | "revoked">()
+      .notNull()
+      .default("active"),
+    /** One current credential generation per person/provider; history stays. */
+    isCurrent: integer("is_current", { mode: "boolean" })
+      .notNull()
+      .default(true),
+    connectedAt: integer("connected_at", { mode: "timestamp" }).notNull(),
+    lastUsedAt: integer("last_used_at", { mode: "timestamp" }),
+    lastErrorAt: integer("last_error_at", { mode: "timestamp" }),
+    /** Local retirement is immediate; provider revocation is a separate fact. */
+    revokeRequestedAt: integer("revoke_requested_at", { mode: "timestamp" }),
+    revokeConfirmedAt: integer("revoke_confirmed_at", { mode: "timestamp" }),
+    /** One bounded provider attempt per credential generation at a time. */
+    revokeAttemptId: text("revoke_attempt_id"),
+    revokeAttemptedAt: integer("revoke_attempted_at", { mode: "timestamp" }),
+  },
+  (t) => [
+    index("idx_provider_connections_user_provider").on(
+      t.userId,
+      t.provider,
+    ),
+    uniqueIndex("idx_provider_connections_current")
+      .on(t.userId, t.provider)
+      .where(sql`${t.isCurrent} = 1`),
+    foreignKey({
+      name: "provider_connections_user_fk",
+      columns: [t.userId],
+      foreignColumns: [users.id],
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
+    check(
+      "provider_connections_key_version_check",
+      sql`${t.keyVersion} >= 1`,
+    ),
+    check(
+      "provider_connections_scopes_json_check",
+      sql`json_valid(${t.scopes})`,
+    ),
+    check(
+      "provider_connections_status_check",
+      sql`${t.status} IN ('active','needs_reauth','revoked')`,
+    ),
+    check(
+      "provider_connections_is_current_check",
+      sql`${t.isCurrent} IN (0,1)`,
+    ),
+  ],
+);
+
+/**
+ * One immutable folder generation for a workspace. Its own id — not the
+ * credential id — is the generation identity, because the same owner can
+ * receive a replacement folder and can leave then return. A handover inserts
+ * a new row and retires the old one; it never rewrites historical identity.
+ */
+export const workspaceStorage = sqliteTable(
+  "workspace_storage",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id").notNull(),
+    connectionId: text("connection_id").notNull(),
+    /** The one board folder this generation may write into. */
+    folderId: text("folder_id").notNull(),
+    folderWebViewLink: text("folder_web_view_link").notNull(),
+    state: text("state")
+      .$type<"active" | "needs_reauth" | "folder_missing" | "quota_full">()
+      .notNull()
+      .default("active"),
+    isCurrent: integer("is_current", { mode: "boolean" })
+      .notNull()
+      .default(true),
+  },
+  (t) => [
+    uniqueIndex("idx_workspace_storage_current")
+      .on(t.workspaceId)
+      .where(sql`${t.isCurrent} = 1`),
+    // Parent key for the grant table's workspace/generation consistency FK.
+    uniqueIndex("idx_workspace_storage_generation_workspace").on(
+      t.id,
+      t.workspaceId,
+    ),
+    index("idx_workspace_storage_workspace_id").on(t.workspaceId),
+    index("idx_workspace_storage_connection_id").on(t.connectionId),
+    foreignKey({
+      name: "workspace_storage_workspace_fk",
+      columns: [t.workspaceId],
+      foreignColumns: [workspaces.id],
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
+    foreignKey({
+      name: "workspace_storage_connection_fk",
+      columns: [t.connectionId],
+      foreignColumns: [providerConnections.id],
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
+    check(
+      "workspace_storage_state_check",
+      sql`${t.state} IN ('active','needs_reauth','folder_missing','quota_full')`,
+    ),
+    check(
+      "workspace_storage_is_current_check",
+      sql`${t.isCurrent} IN (0,1)`,
+    ),
+  ],
+);
+
+/**
+ * The exact Drive permission Signal created for one member on one folder
+ * generation. The generation id stays distinct even for owner A → B → A or a
+ * replacement folder under the same connection.
+ */
+export const driveFolderGrants = sqliteTable(
+  "drive_folder_grants",
+  {
+    storageGenerationId: text("storage_generation_id").notNull(),
+    workspaceId: text("workspace_id").notNull(),
+    userId: text("user_id").notNull(),
+    permissionId: text("permission_id").notNull(),
+    grantedEmail: text("granted_email").notNull(),
+    role: text("role").$type<"writer" | "reader">().notNull(),
+    grantedAt: integer("granted_at", { mode: "timestamp" }).notNull(),
+    revokePending: integer("revoke_pending", { mode: "boolean" })
+      .notNull()
+      .default(false),
+  },
+  (t) => [
+    primaryKey({ columns: [t.storageGenerationId, t.userId] }),
+    index("idx_drive_folder_grants_workspace_generation").on(
+      t.workspaceId,
+      t.storageGenerationId,
+    ),
+    foreignKey({
+      name: "drive_folder_grants_storage_fk",
+      columns: [t.storageGenerationId, t.workspaceId],
+      foreignColumns: [workspaceStorage.id, workspaceStorage.workspaceId],
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
+    foreignKey({
+      name: "drive_folder_grants_user_fk",
+      columns: [t.userId],
+      foreignColumns: [users.id],
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
+    check(
+      "drive_folder_grants_role_check",
+      sql`${t.role} IN ('writer','reader')`,
+    ),
+    check(
+      "drive_folder_grants_revoke_pending_check",
+      sql`${t.revokePending} IN (0,1)`,
+    ),
+  ],
+);
+
+export type ProjectDriveOperationKind =
+  | "folder_provision"
+  | "grant_create"
+  | "folder_rename"
+  | "project_delete"
+  | "storage_handover";
+
+export type ProjectDriveOperationStatus =
+  | "pending"
+  | "running"
+  | "retry_wait"
+  | "manual_attention"
+  | "succeeded"
+  | "cancelled";
+
+export type ProjectDriveOperationErrorCode =
+  | "ambiguous_provider_result"
+  | "cannot_invite_non_google_user"
+  | "connection_not_current"
+  | "folder_missing"
+  | "grant_not_found"
+  | "network_error"
+  | "permission_denied"
+  | "provider_conflict"
+  | "provider_unavailable"
+  | "quota_full"
+  | "rate_limited"
+  | "reauth_required"
+  | "repair_incomplete"
+  | "workspace_changed";
+
+/**
+ * Durable intent and recovery receipts for split database/Drive operations.
+ * The row exists before a provider call; it stores only stable provider ids
+ * and normalized error codes afterwards. Tokens, provider response bodies and
+ * resumable-upload session URLs must never be written here.
+ *
+ * `targetStorageGenerationId` deliberately has no FK. It reserves the next
+ * immutable generation before Drive returns a folder id, when the required
+ * `workspaceStorage` row cannot exist yet. `storageGenerationId` names an
+ * already-created generation and is workspace-coupled by a composite FK.
+ *
+ * Grant revoke repair is not duplicated here: `driveFolderGrants` already
+ * owns the exact permission id and `revokePending` is its single queue. A
+ * project-delete operation is likewise intent, not a lasting tombstone. Once
+ * all provider/grant work succeeds, delete that row in the same final database
+ * transaction that deletes the workspace; its RESTRICT FK forces that order.
+ */
+export const projectDriveOperations = sqliteTable(
+  "project_drive_operations",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id").notNull(),
+    operationKind: text("operation_kind")
+      .$type<ProjectDriveOperationKind>()
+      .notNull(),
+    status: text("status")
+      .$type<ProjectDriveOperationStatus>()
+      .notNull()
+      .default("pending"),
+    /** SHA-256 of a versioned, operation-specific canonical tuple. */
+    dedupeKey: text("dedupe_key").notNull(),
+    /** Target credential for folder provision or handover. */
+    connectionId: text("connection_id"),
+    /** Existing generation for a grant, rename, or handover source. */
+    storageGenerationId: text("storage_generation_id"),
+    /** Reserved generation created before its workspaceStorage row. */
+    targetStorageGenerationId: text("target_storage_generation_id"),
+    subjectUserId: text("subject_user_id"),
+    granteeEmail: text("grantee_email"),
+    grantRole: text("grant_role").$type<"writer" | "reader">(),
+    workspaceRevision: integer("workspace_revision"),
+    /** Stable folder receipt; never an access capability. */
+    providerFolderId: text("provider_folder_id"),
+    providerFolderWebViewLink: text("provider_folder_web_view_link"),
+    /** Exact permission receipt required for grant recovery/revocation. */
+    providerPermissionId: text("provider_permission_id"),
+    /** Also serves as the fencing token for a claimed attempt. */
+    attemptCount: integer("attempt_count").notNull().default(0),
+    lastAttemptAt: integer("last_attempt_at", { mode: "timestamp" }),
+    nextAttemptAt: integer("next_attempt_at", { mode: "timestamp" }),
+    leaseExpiresAt: integer("lease_expires_at", { mode: "timestamp" }),
+    lastErrorCode: text("last_error_code").$type<ProjectDriveOperationErrorCode>(),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+    completedAt: integer("completed_at", { mode: "timestamp" }),
+  },
+  (t) => [
+    uniqueIndex("idx_project_drive_operations_dedupe").on(t.dedupeKey),
+    uniqueIndex("idx_project_drive_operations_target_generation")
+      .on(t.targetStorageGenerationId)
+      .where(sql`${t.targetStorageGenerationId} IS NOT NULL`),
+    index("idx_project_drive_operations_workspace_status").on(
+      t.workspaceId,
+      t.status,
+      t.operationKind,
+    ),
+    index("idx_project_drive_operations_ready")
+      .on(t.status, t.nextAttemptAt, t.leaseExpiresAt, t.createdAt)
+      .where(sql`${t.status} IN ('pending','running','retry_wait')`),
+    index("idx_project_drive_operations_connection")
+      .on(t.connectionId)
+      .where(sql`${t.connectionId} IS NOT NULL`),
+    index("idx_project_drive_operations_storage")
+      .on(t.storageGenerationId, t.workspaceId)
+      .where(sql`${t.storageGenerationId} IS NOT NULL`),
+    index("idx_project_drive_operations_subject_user")
+      .on(t.subjectUserId)
+      .where(sql`${t.subjectUserId} IS NOT NULL`),
+    foreignKey({
+      name: "project_drive_operations_workspace_fk",
+      columns: [t.workspaceId],
+      foreignColumns: [workspaces.id],
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
+    foreignKey({
+      name: "project_drive_operations_connection_fk",
+      columns: [t.connectionId],
+      foreignColumns: [providerConnections.id],
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
+    foreignKey({
+      name: "project_drive_operations_storage_fk",
+      columns: [t.storageGenerationId, t.workspaceId],
+      foreignColumns: [workspaceStorage.id, workspaceStorage.workspaceId],
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
+    foreignKey({
+      name: "project_drive_operations_subject_user_fk",
+      columns: [t.subjectUserId],
+      foreignColumns: [users.id],
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
+    check(
+      "project_drive_operations_kind_check",
+      sql`${t.operationKind} IN ('folder_provision','grant_create','folder_rename','project_delete','storage_handover')`,
+    ),
+    check(
+      "project_drive_operations_status_check",
+      sql`${t.status} IN ('pending','running','retry_wait','manual_attention','succeeded','cancelled')`,
+    ),
+    check(
+      "project_drive_operations_dedupe_key_check",
+      sql`length(${t.dedupeKey}) = 64 AND ${t.dedupeKey} = lower(${t.dedupeKey}) AND ${t.dedupeKey} NOT GLOB '*[^0-9a-f]*'`,
+    ),
+    check(
+      "project_drive_operations_error_code_check",
+      sql`${t.lastErrorCode} IS NULL OR ${t.lastErrorCode} IN ('ambiguous_provider_result','cannot_invite_non_google_user','connection_not_current','folder_missing','grant_not_found','network_error','permission_denied','provider_conflict','provider_unavailable','quota_full','rate_limited','reauth_required','repair_incomplete','workspace_changed')`,
+    ),
+    check(
+      "project_drive_operations_attempt_check",
+      sql`typeof(${t.attemptCount}) = 'integer'
+        AND ${t.attemptCount} >= 0
+        AND ((${t.attemptCount} = 0 AND ${t.lastAttemptAt} IS NULL)
+          OR (${t.attemptCount} > 0 AND ${t.lastAttemptAt} IS NOT NULL))
+        AND (${t.lastAttemptAt} IS NULL OR ${t.lastAttemptAt} >= ${t.createdAt})
+        AND (${t.nextAttemptAt} IS NULL OR ${t.nextAttemptAt} >= ${t.lastAttemptAt})
+        AND (${t.leaseExpiresAt} IS NULL OR ${t.leaseExpiresAt} >= ${t.lastAttemptAt})`,
+    ),
+    check(
+      "project_drive_operations_integer_type_check",
+      sql`typeof(${t.createdAt}) = 'integer' AND ${t.createdAt} >= 0
+        AND typeof(${t.updatedAt}) = 'integer' AND ${t.updatedAt} >= 0
+        AND (${t.lastAttemptAt} IS NULL OR
+          (typeof(${t.lastAttemptAt}) = 'integer' AND ${t.lastAttemptAt} >= 0))
+        AND (${t.nextAttemptAt} IS NULL OR
+          (typeof(${t.nextAttemptAt}) = 'integer' AND ${t.nextAttemptAt} >= 0))
+        AND (${t.leaseExpiresAt} IS NULL OR
+          (typeof(${t.leaseExpiresAt}) = 'integer' AND ${t.leaseExpiresAt} >= 0))
+        AND (${t.completedAt} IS NULL OR
+          (typeof(${t.completedAt}) = 'integer' AND ${t.completedAt} >= 0))`,
+    ),
+    check(
+      "project_drive_operations_status_time_check",
+      sql`(${t.status} = 'pending'
+          AND ${t.leaseExpiresAt} IS NULL
+          AND ${t.nextAttemptAt} IS NULL
+          AND ${t.completedAt} IS NULL)
+        OR (${t.status} = 'running'
+          AND ${t.attemptCount} > 0
+          AND ${t.leaseExpiresAt} IS NOT NULL
+          AND ${t.nextAttemptAt} IS NULL
+          AND ${t.completedAt} IS NULL)
+        OR (${t.status} = 'retry_wait'
+          AND ${t.attemptCount} > 0
+          AND ${t.leaseExpiresAt} IS NULL
+          AND ${t.nextAttemptAt} IS NOT NULL
+          AND ${t.lastErrorCode} IS NOT NULL
+          AND ${t.completedAt} IS NULL)
+        OR (${t.status} = 'manual_attention'
+          AND ${t.attemptCount} > 0
+          AND ${t.leaseExpiresAt} IS NULL
+          AND ${t.nextAttemptAt} IS NULL
+          AND ${t.lastErrorCode} IS NOT NULL
+          AND ${t.completedAt} IS NULL)
+        OR (${t.status} IN ('succeeded','cancelled')
+          AND (${t.status} = 'cancelled' OR ${t.attemptCount} > 0)
+          AND ${t.leaseExpiresAt} IS NULL
+          AND ${t.nextAttemptAt} IS NULL
+          AND ${t.completedAt} IS NOT NULL)`,
+    ),
+    check(
+      "project_drive_operations_timestamp_check",
+      sql`${t.updatedAt} >= ${t.createdAt}
+        AND (${t.completedAt} IS NULL OR ${t.completedAt} >= ${t.createdAt})`,
+    ),
+    check(
+      "project_drive_operations_folder_receipt_check",
+      sql`(${t.providerFolderId} IS NULL AND ${t.providerFolderWebViewLink} IS NULL)
+        OR (${t.providerFolderId} IS NOT NULL
+          AND length(trim(${t.providerFolderId})) > 0
+          AND ${t.providerFolderWebViewLink} IS NOT NULL
+          AND length(trim(${t.providerFolderWebViewLink})) > 0)`,
+    ),
+    check(
+      "project_drive_operations_email_check",
+      sql`${t.granteeEmail} IS NULL OR (
+        length(${t.granteeEmail}) BETWEEN 3 AND 320
+        AND ${t.granteeEmail} = lower(trim(${t.granteeEmail}))
+        AND instr(${t.granteeEmail}, '@') > 1
+        AND substr(${t.granteeEmail}, -1) <> '@')`,
+    ),
+    check(
+      "project_drive_operations_grant_role_check",
+      sql`${t.grantRole} IS NULL OR ${t.grantRole} IN ('writer','reader')`,
+    ),
+    check(
+      "project_drive_operations_revision_check",
+      sql`${t.workspaceRevision} IS NULL OR (
+        typeof(${t.workspaceRevision}) = 'integer'
+        AND ${t.workspaceRevision} >= 1)`,
+    ),
+    check(
+      "project_drive_operations_kind_shape_check",
+      sql`(${t.operationKind} = 'folder_provision'
+          AND ${t.connectionId} IS NOT NULL
+          AND ${t.storageGenerationId} IS NULL
+          AND ${t.targetStorageGenerationId} IS NOT NULL
+          AND ${t.subjectUserId} IS NULL
+          AND ${t.granteeEmail} IS NULL
+          AND ${t.grantRole} IS NULL
+          AND ${t.workspaceRevision} IS NULL
+          AND ${t.providerPermissionId} IS NULL)
+        OR (${t.operationKind} = 'grant_create'
+          AND ${t.connectionId} IS NULL
+          AND ${t.storageGenerationId} IS NOT NULL
+          AND ${t.targetStorageGenerationId} IS NULL
+          AND ${t.subjectUserId} IS NOT NULL
+          AND ${t.granteeEmail} IS NOT NULL
+          AND ${t.grantRole} IS NOT NULL
+          AND ${t.workspaceRevision} IS NULL
+          AND ${t.providerFolderId} IS NULL
+          AND ${t.providerFolderWebViewLink} IS NULL)
+        OR (${t.operationKind} = 'folder_rename'
+          AND ${t.connectionId} IS NULL
+          AND ${t.storageGenerationId} IS NOT NULL
+          AND ${t.targetStorageGenerationId} IS NULL
+          AND ${t.subjectUserId} IS NULL
+          AND ${t.granteeEmail} IS NULL
+          AND ${t.grantRole} IS NULL
+          AND ${t.workspaceRevision} IS NOT NULL
+          AND ${t.providerFolderId} IS NULL
+          AND ${t.providerFolderWebViewLink} IS NULL
+          AND ${t.providerPermissionId} IS NULL)
+        OR (${t.operationKind} = 'project_delete'
+          AND ${t.connectionId} IS NULL
+          AND ${t.storageGenerationId} IS NULL
+          AND ${t.targetStorageGenerationId} IS NULL
+          AND ${t.subjectUserId} IS NULL
+          AND ${t.granteeEmail} IS NULL
+          AND ${t.grantRole} IS NULL
+          AND ${t.workspaceRevision} IS NULL
+          AND ${t.providerFolderId} IS NULL
+          AND ${t.providerFolderWebViewLink} IS NULL
+          AND ${t.providerPermissionId} IS NULL)
+        OR (${t.operationKind} = 'storage_handover'
+          AND ${t.connectionId} IS NOT NULL
+          AND ${t.storageGenerationId} IS NOT NULL
+          AND ${t.targetStorageGenerationId} IS NOT NULL
+          AND ${t.targetStorageGenerationId} <> ${t.storageGenerationId}
+          AND ${t.subjectUserId} IS NULL
+          AND ${t.granteeEmail} IS NULL
+          AND ${t.grantRole} IS NULL
+          AND ${t.workspaceRevision} IS NULL
+          AND ${t.providerPermissionId} IS NULL)`,
+    ),
+    check(
+      "project_drive_operations_terminal_receipt_check",
+      sql`${t.status} <> 'succeeded'
+        OR (${t.operationKind} IN ('folder_provision','storage_handover')
+          AND ${t.providerFolderId} IS NOT NULL)
+        OR (${t.operationKind} = 'grant_create'
+          AND ${t.providerPermissionId} IS NOT NULL
+          AND length(trim(${t.providerPermissionId})) > 0)
+        OR ${t.operationKind} IN ('folder_rename','project_delete')`,
+    ),
+    check(
+      "project_drive_operations_cancelled_receipt_check",
+      sql`${t.status} <> 'cancelled' OR (
+        ${t.providerFolderId} IS NULL
+        AND ${t.providerFolderWebViewLink} IS NULL
+        AND ${t.providerPermissionId} IS NULL)`,
+    ),
+  ],
+);
+
+/**
  * Unified resource model. Absorbs file attachments (kind='upload') and
  * external links (kind='link') into one read layer.
  *
@@ -923,6 +1709,18 @@ export const resources = sqliteTable("resources", {
   provider: text("provider").notNull(),
   /** Optional provider-native identifier (e.g. Figma file key). */
   externalId: text("external_id"),
+  /** Which byte store owns this resource. Existing rows remain Signal-native. */
+  storage: text("storage")
+    .$type<"signal" | "drive">()
+    .notNull()
+    .default("signal"),
+  /** Selects the immutable folder generation; the connection is derived. */
+  storageGenerationId: text("storage_generation_id").references(
+    () => workspaceStorage.id,
+    { onDelete: "restrict", onUpdate: "cascade" },
+  ),
+  /** Provider/disk location when a resource needs one; never client-trusted. */
+  storedPath: text("stored_path"),
   title: text("title").notNull(),
   url: text("url"),
   mimeType: text("mime_type"),
@@ -942,9 +1740,21 @@ export const resources = sqliteTable("resources", {
 }, (t) => [
   index("idx_resources_task_id").on(t.taskId),
   index("idx_resources_workspace_id").on(t.workspaceId),
+  index("idx_resources_workspace_storage_generation")
+    .on(t.workspaceId, t.storageGenerationId)
+    .where(sql`${t.storageGenerationId} IS NOT NULL`),
   check(
     "resources_kind_check",
     sql`${t.kind} IN ('upload','link')`,
+  ),
+  check(
+    "resources_storage_check",
+    sql`${t.storage} IN ('signal','drive')`,
+  ),
+  check(
+    "resources_storage_generation_check",
+    sql`(${t.storage} = 'signal' AND ${t.storageGenerationId} IS NULL)
+      OR (${t.storage} = 'drive' AND ${t.storageGenerationId} IS NOT NULL)`,
   ),
 ]);
 
@@ -1001,4 +1811,33 @@ export const workspaceEvents = sqliteTable("workspace_events", {
   createdAt: integer("created_at").notNull(),
 }, (t) => [
   index("idx_workspace_events_workspace_created").on(t.workspaceId, t.createdAt),
+]);
+
+/**
+ * New Event checkout proof and its one immutable settlement outcome.
+ * No historical adoption. A paid_undesignated receipt never grants authority.
+ * Project deletion removes these facts. Purchaser erasure strips identifying
+ * bindings and retains only the surviving project effect, never positive cover.
+ */
+export const eventPurchaseDesignations = sqliteTable("event_purchase_designations", {
+  id: text("id").primaryKey(),
+  purchaserUserId: text("purchaser_user_id").references(() => users.id, { onDelete: "set null" }),
+  workspaceId: text("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  checkoutAuthorizedAt: integer("checkout_authorized_at", { mode: "timestamp" }),
+  providerReference: text("provider_reference"),
+  settledAt: integer("settled_at", { mode: "timestamp" }),
+  originalExpiresAt: integer("original_expires_at", { mode: "timestamp" }),
+  designation: text("designation").$type<"pending" | "designated" | "paid_undesignated">().notNull().default("pending"),
+  reason: text("reason").$type<"owner_changed" | "membership_removed" | "project_archived" | "project_deleting">(),
+  settlementAuthorizedAt: integer("settlement_authorized_at", { mode: "timestamp" }),
+  revoked: integer("revoked", { mode: "boolean" }).notNull().default(false),
+}, table => [
+  uniqueIndex("event_purchase_reference_unique").on(table.providerReference).where(sql.raw("provider_reference IS NOT NULL")),
+  index("event_purchase_project_idx").on(table.workspaceId),
+  check("event_checkout_time", sql.raw("checkout_authorized_at > 0")),
+  check("event_designation_state", sql.raw("designation IN ('pending','designated','paid_undesignated')")),
+  check("event_designation_reason", sql.raw("reason IN ('owner_changed','membership_removed','project_archived','project_deleting')")),
+  check("event_revoked_boolean", sql.raw("revoked IN (0,1)")),
+  check("event_reference_shape", sql.raw("provider_reference IS NULL OR (provider_reference GLOB 'stripe:cs_*' AND length(provider_reference) <= 255)")),
+  check("event_settlement_shape", sql.raw("(purchaser_user_id IS NULL AND id GLOB 'ered_*' AND designation = 'designated' AND provider_reference IS NULL AND checkout_authorized_at IS NULL AND settlement_authorized_at IS NULL AND reason IS NULL AND settled_at IS NOT NULL AND settled_at > 0 AND original_expires_at IS NOT NULL AND original_expires_at > settled_at) OR (purchaser_user_id IS NOT NULL AND checkout_authorized_at IS NOT NULL AND ( (designation = 'pending' AND settled_at IS NULL AND original_expires_at IS NULL AND reason IS NULL AND settlement_authorized_at IS NULL AND revoked = 0) OR (designation <> 'pending' AND provider_reference IS NOT NULL AND settled_at IS NOT NULL AND settled_at > 0 AND original_expires_at IS NOT NULL AND original_expires_at > settled_at AND ((designation = 'designated' AND reason IS NULL AND settlement_authorized_at IS NOT NULL AND settlement_authorized_at >= checkout_authorized_at) OR (designation = 'paid_undesignated' AND reason IS NOT NULL AND settlement_authorized_at IS NULL)))))")),
 ]);

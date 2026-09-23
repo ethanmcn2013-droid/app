@@ -7,7 +7,22 @@ import {
   projectChrome,
   routeKey,
   type RouteSnapshot,
+  initialActiveProjectState,
+  reduceActiveProject,
+  chromeFor,
 } from "@/lib/projects/route-snapshot";
+
+test("a current server refusal withdraws old authority; a stale refusal cannot erase a new route", () => {
+  let state = reduceActiveProject(initialActiveProjectState(), { type: "route", routeKey: keyB });
+  state = reduceActiveProject(state, { type: "snapshot", snapshot: snapshot(keyB, state.live.epoch, "ws-b") });
+  assert.equal(chromeFor(state, "ws-a").kind, "verified");
+  const stale = { type: "snapshot-unavailable" as const, routeKey: keyB, epoch: state.live.epoch - 1 };
+  assert.equal(reduceActiveProject(state, stale), state);
+  state = reduceActiveProject(state, { ...stale, epoch: state.live.epoch });
+  assert.equal(chromeFor(state, "ws-a").kind, "skeleton");
+  const moved = reduceActiveProject(state, { type: "route", routeKey: keyA });
+  assert.equal(reduceActiveProject(moved, { ...stale, epoch: moved.live.epoch }), moved);
+});
 
 function project(id: string, revision = 1): ProjectSummary {
   return {

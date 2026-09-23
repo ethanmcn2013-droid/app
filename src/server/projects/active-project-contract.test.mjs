@@ -48,7 +48,7 @@ test("one cookie constant, one writer, one set of attributes", () => {
   assert.doesNotMatch(cookieModule, /createHmac|createCipher|sign\(/);
 });
 
-test("only switchActiveProjectAction writes the last-active Project cookie", () => {
+test("only explicit switching and invite acceptance write the last-active Project cookie", () => {
   const writers = walk(path.join(root, "src"))
     .filter((file) => /writeActiveProjectCookie\s*\(/.test(readFileSync(file, "utf8")))
     .map((file) => path.relative(root, file).replaceAll(path.sep, "/"))
@@ -58,6 +58,8 @@ test("only switchActiveProjectAction writes the last-active Project cookie", () 
     writers,
     [
       "src/server/actions/active-project.ts",
+      "src/server/actions/settings.ts",
+      "src/server/actions/tasks-project-arrival.ts",
       "src/server/projects/active-project-cookie.ts",
       "src/server/projects/active-project-contract.test.mjs",
     ].sort(),
@@ -132,6 +134,10 @@ test("the unified cookie name is spelled in exactly one module", () => {
  * `writeActiveProjectCookie` (D-021 interface request 5) has not begun.
  */
 const LEGACY_COOKIE_WRITERS = {
+  // Recipient recovery is an explicit, freshly authorized selection POST.
+  // D-021 bounded addition: both preferences must move together while the
+  // flag-off layout still reads the legacy cookie. Contextual GETs do not write.
+  "src/server/actions/tasks-project-arrival.ts": ["httpOnly", "maxAge", "path", "sameSite", "secure"],
   // src/app/api/suite-context/route.ts is deliberately ABSENT (D-028,
   // 2026-08-17). It was writer #1 — the inbound suite-link handler, whose write
   // made following a contextual link rewrite the bare-entry preference, the
@@ -271,18 +277,18 @@ test("useSearchParams is quarantined in the bridge, under its own Suspense", () 
 test("the provider's one-selection guard is synchronous, not stateful", () => {
   const selectBody = provider.slice(provider.indexOf("const selectProject = useCallback"));
   const guardAt = selectBody.indexOf('if (pendingRef.current) return { kind: "switch-pending" };');
-  const claimAt = selectBody.indexOf("pendingRef.current = true;");
+  const claimAt = selectBody.indexOf("pendingRef.current = {");
   const dispatchAt = selectBody.indexOf('type: "select-started"');
   assert(guardAt > 0 && claimAt > guardAt, "the ref check remains the first refusal");
   assert(
     claimAt < dispatchAt,
     "two clicks in one React batch would both read a pre-batch state value; the ref is what serializes them",
   );
-  // The ref must never be touched during render — that is a react-hooks/refs
-  // error, and mirroring state into a ref to read it back is how it happens.
+  // The ref may be released in an effect after a verified snapshot, but it
+  // must never be touched during render — that is a react-hooks/refs error.
   const renderBody = provider.slice(
     provider.indexOf("export function ActiveProjectProvider"),
-    provider.indexOf("const onRoute = useCallback"),
+    provider.indexOf("useEffect(() => {", provider.indexOf("export function ActiveProjectProvider")),
   );
   assert.doesNotMatch(renderBody, /pendingRef\.current/);
 });
@@ -300,7 +306,7 @@ test("selectProject consults the unsaved-work signal before a switch may start",
   const guardAt = selectBody.indexOf("if (pendingRef.current)");
   const consultAt = selectBody.indexOf("refuseForUnsavedWork(unsavedWork.claims())");
   const refuseDispatchAt = selectBody.indexOf('type: "select-refused"');
-  const claimAt = selectBody.indexOf("pendingRef.current = true;");
+  const claimAt = selectBody.indexOf("pendingRef.current = {");
   assert(consultAt > guardAt, "the pending guard stays first; the hold is consulted next");
   assert(
     consultAt < claimAt,
@@ -372,6 +378,17 @@ test("the Tasks sidebar switches through the provider flag-on and is unchanged f
     /await selectWorkspaceAction\(id\);\s*\n\s*router\.refresh\(\);/,
     "flag off keeps today's behaviour exactly",
   );
+});
+
+test("Add project selects the newly created Project through V3 before the legacy cookie path", () => {
+  const sidebar = read("src/components/studio-bar/projects-sidebar.tsx");
+  const addBody = sidebar.slice(sidebar.indexOf("function AddProjectRow("), sidebar.indexOf("function ProjectRowMenu("));
+  const createdAt = addBody.indexOf("await createProjectAction(trimmed, null)");
+  const enabledAt = addBody.indexOf("if (activeProject?.enabled)", createdAt);
+  const guardedAt = addBody.indexOf("activeProject.selectProject({ id, name: trimmed }, { surface: \"tasks\" })", enabledAt);
+  const legacyAt = addBody.indexOf("await selectWorkspaceAction(result.id)", guardedAt);
+  assert(createdAt > 0 && enabledAt > createdAt && guardedAt > enabledAt && legacyAt > guardedAt);
+  assert.match(addBody.slice(guardedAt, legacyAt), /return;/, "V3 never falls through to the legacy writer");
 });
 
 test("the /app shell mounts the provider only when the flag is on", () => {

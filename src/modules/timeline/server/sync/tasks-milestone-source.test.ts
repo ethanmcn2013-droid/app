@@ -15,10 +15,11 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { createClient } from "@libsql/client";
 
 // ── 1. canonicaliseStatus ─────────────────────────────────────────────────────
 
-import { canonicaliseStatus } from "./tasks-milestone-source.js";
+import { canonicaliseStatus, tasksDueAtToCalendarDate } from "./tasks-milestone-source.js";
 import { assertTasksMilestoneQuery, TASKS_READ_CONTRACT_VERSION } from "./tasks-read-contract.js";
 
 test("cross-product milestone source is keyed by immutable clerk_id", async () => {
@@ -64,6 +65,38 @@ test("canonicaliseStatus, done → shipped", () => {
 test("canonicaliseStatus, unknown → next (safe default)", () => {
   assert.equal(canonicaliseStatus("backlog"), "next");
   assert.equal(canonicaliseStatus(""), "next");
+});
+
+test("raw Tasks due_at seconds keep their calendar date through UTC boundaries and Dublin DST", async () => {
+  const client = createClient({ url: ":memory:" });
+  try {
+    await client.execute("CREATE TABLE tasks (id TEXT PRIMARY KEY, due_at INTEGER)");
+    const cases = [
+      ["spring-dst", Date.UTC(2026, 2, 29, 12) / 1000, "2026-03-29"],
+      ["autumn-dst", Date.UTC(2026, 9, 25, 12) / 1000, "2026-10-25"],
+      ["utc-day-start", Date.UTC(2026, 0, 1, 0, 30) / 1000, "2026-01-01"],
+      ["utc-day-end", Date.UTC(2026, 11, 31, 23, 30) / 1000, "2026-12-31"],
+      ["pre-epoch", Date.UTC(1969, 11, 31, 23, 59, 59) / 1000, "1969-12-31"],
+    ] as const;
+    for (const [id, seconds] of cases) {
+      await client.execute({ sql: "INSERT INTO tasks(id, due_at) VALUES (?, ?)", args: [id, seconds] });
+    }
+    const rows = await client.execute("SELECT id, due_at FROM tasks ORDER BY id");
+    for (const [id, seconds, expectedDate] of cases) {
+      const row = rows.rows.find((candidate) => candidate.id === id);
+      assert.ok(row, id);
+      assert.equal(row.due_at, seconds, `${id} must remain raw SQLite seconds`);
+      assert.equal(tasksDueAtToCalendarDate(row.due_at), expectedDate, id);
+    }
+  } finally {
+    client.close();
+  }
+});
+
+test("missing, zero, and invalid Tasks due_at values remain undated", () => {
+  for (const value of [null, undefined, 0, "", "not-a-date", 1.5, Number.NaN, 9_000_000_000_000]) {
+    assert.equal(tasksDueAtToCalendarDate(value), null, String(value));
+  }
 });
 
 // ── 2. Node id format ─────────────────────────────────────────────────────────

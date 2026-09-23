@@ -33,11 +33,10 @@ export async function GET() {
         "Cache-Control": "private, no-store",
       },
     });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+  } catch {
     return NextResponse.json(
-      { error: "export_failed", message },
-      { status: 500 },
+      { error: "export_failed", message: "Your export could not be completed. Please try again." },
+      { status: 500, headers: { "Cache-Control": "private, no-store" } },
     );
   }
 }

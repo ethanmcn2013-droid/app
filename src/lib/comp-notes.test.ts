@@ -58,17 +58,19 @@ describe("coupleVisibleCompNotes", () => {
 });
 
 describe("source contract: the redeem card filters before it renders", () => {
-  it("comp.ts passes both notes paths through the filter", () => {
+  it("comp.ts filters the common first-claim and replay projection", () => {
     const comp = readFileSync(
       new URL("../server/actions/comp.ts", import.meta.url),
       "utf8",
     );
     assert.match(comp, /coupleVisibleCompNotes/);
-    // Both the first redemption and the idempotent re-hit.
-    const calls = comp.match(/coupleVisibleCompNotes\(/g) ?? [];
-    assert.ok(calls.length >= 2, `only ${calls.length} filtered notes paths`);
+    // Both results now converge after the transactional claim helper.
+    const implementation = comp.slice(comp.indexOf("async function redeemCompCodeImpl"), comp.indexOf("export type StudentVerifyResult"));
+    assert.match(implementation, /await claimCompEntitlement\(db/);
+    assert.match(implementation, /notes: coupleVisibleCompNotes\(claim.codeNotes\)/);
     // No raw column reaching the result any more.
     assert.doesNotMatch(comp, /notes: row\.notes,/);
     assert.doesNotMatch(comp, /notes: existing\.notes,/);
+    assert.doesNotMatch(comp, /notes: claim\.codeNotes,/);
   });
 });

@@ -18,13 +18,17 @@ import {
   useTransition,
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
+  type TransitionStartFunction,
 } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { openTaskCount } from "@/lib/tasks/selectors";
 import { parseProjectId } from "@/lib/projects/project-ref";
+import { isDemoMode } from "@/lib/access-mode";
+import { confirmMonthlyRemix, pendingMonthlyRemix, prepareMonthlyRemix } from "@/lib/template-remix-intent";
 import { useActiveProject } from "@/components/app/active-project-provider";
 import { selectWorkspaceAction } from "@/server/actions/cross-workspace";
 import {
@@ -33,6 +37,7 @@ import {
   deleteProjectAction,
   restoreProjectAction,
 } from "@/server/actions/planning";
+import { remixTemplateAction } from "@/server/actions/templates";
 import type {
   ProjectsTreeData,
   ProjectsTreeLeaf,
@@ -51,6 +56,8 @@ const SIDEBAR_WIDTH_KEY = "signal-tasks.projects-sidebar-width";
 const SIDEBAR_MIN_WIDTH = 196;
 const SIDEBAR_MAX_WIDTH = 420;
 const SIDEBAR_DEFAULT_WIDTH = 236;
+const MONTHLY_TEMPLATE_ID = "local-business-monthly-rhythm";
+const MONTHLY_PROJECT_NAME = "Monthly business rhythm · my remix";
 
 function clampSidebarWidth(value: number): number {
   return Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, Math.round(value)));
@@ -69,6 +76,95 @@ function useDrawerViewport(): boolean {
   );
 }
 
+/** A remix always creates a separate owned Project. Its saved request survives
+ * a lost action response and this component's remount in the same tab. */
+function MonthlyTemplateChoice({ pending, startTransition, onCreated }: {
+  pending: boolean;
+  startTransition: TransitionStartFunction;
+  onCreated?: () => void;
+}) {
+  const { isLoaded, userId } = useAuth();
+  const activeProject = useActiveProject();
+  const router = useRouter();
+  const [status, setStatus] = useState<"idle" | "unconfirmed" | "unavailable" | "created">("idle");
+
+  useEffect(() => {
+    if (!userId) return;
+    let next: "idle" | "unconfirmed" | "unavailable";
+    try {
+      next = pendingMonthlyRemix(window.sessionStorage, userId) ? "unconfirmed" : "idle";
+    } catch {
+      next = "unavailable";
+    }
+    const frame = window.requestAnimationFrame(() => setStatus(next));
+    return () => window.cancelAnimationFrame(frame);
+  }, [userId]);
+
+  function createFromTemplate() {
+    if (!userId || pending) return;
+    let requestId: string;
+    try {
+      requestId = prepareMonthlyRemix(window.sessionStorage, userId, () => crypto.randomUUID());
+    } catch {
+      setStatus("unavailable");
+      return;
+    }
+    startTransition(async () => {
+      let workspaceId: string;
+      try {
+        ({ workspaceId } = await remixTemplateAction(MONTHLY_TEMPLATE_ID, requestId));
+      } catch {
+        // The server may have committed and the acknowledgement may be lost.
+        // A replay uses the saved ID, never a fresh Project request.
+        setStatus("unconfirmed");
+        return;
+      }
+      const id = parseProjectId(workspaceId);
+      if (!id) {
+        setStatus("unconfirmed");
+        return;
+      }
+      try { confirmMonthlyRemix(window.sessionStorage, userId, requestId); }
+      catch { /* A stale saved ID only reopens this same Project on replay. */ }
+      try {
+        if (activeProject?.enabled) {
+          const selection = activeProject.selectProject({ id, name: MONTHLY_PROJECT_NAME }, { surface: "tasks" });
+          if (selection.kind !== "started") {
+            setStatus("created");
+            router.refresh();
+            return;
+          }
+        } else {
+          await selectWorkspaceAction(id);
+          window.sessionStorage.setItem("signal-tasks.recent-project", id);
+          router.refresh();
+        }
+        onCreated?.();
+      } catch {
+        setStatus("created");
+        router.refresh();
+      }
+    });
+  }
+
+  return (
+    <div className={styles.templateChoiceWrap}>
+      <button
+        className={styles.templateChoice}
+        disabled={pending || !isLoaded || !userId || status === "created"}
+        onClick={createFromTemplate}
+        type="button"
+      >
+        {status === "unconfirmed" ? "Check monthly starter Project" : "Start with Monthly business rhythm"}
+      </button>
+      <p className={styles.templateChoiceHelp}>A new Project with 18 starter tasks. Dates are yours to set.</p>
+      {status === "unconfirmed" ? <p className={styles.templateChoiceStatus} role="status">We couldn’t confirm the first attempt. Check again to open the same Project.</p> : null}
+      {status === "unavailable" ? <p className={styles.templateChoiceStatus} role="status">A safe retry isn’t available in this browser. Check your Projects list before trying again.</p> : null}
+      {status === "created" ? <p className={styles.templateChoiceStatus} role="status">Project created. Open it from your Projects list when you’re ready.</p> : null}
+    </div>
+  );
+}
+
 /**
  * Quiet "Add project" row at the foot of the Projects tree (T·97).
  * At rest it reads like a nav row with a "+" glyph. Clicking reveals
@@ -76,12 +172,14 @@ function useDrawerViewport(): boolean {
  * creates the project via `createProjectAction`, switches to it, and
  * refreshes; Escape or an empty blur cancels.
  */
-function AddProjectRow({ onCreated }: { onCreated?: () => void }) {
+export function AddProjectRow({ onCreated }: { onCreated?: () => void }) {
   const router = useRouter();
+  const activeProject = useActiveProject();
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState("");
   const [pending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
+  const enteringTemplateChoiceRef = useRef(false);
 
   useEffect(() => {
     if (adding) inputRef.current?.focus();
@@ -101,6 +199,23 @@ function AddProjectRow({ onCreated }: { onCreated?: () => void }) {
     startTransition(async () => {
       try {
         const result = await createProjectAction(trimmed, null);
+        if (activeProject?.enabled) {
+          // V3 resolves the unified Project cookie before the legacy one.
+          // Creation's legacy cookie alone cannot switch a creator who
+          // already has a unified preference. Use the guarded transition,
+          // which proves membership and redirects to this new Tasks Project.
+          const id = parseProjectId(result.id);
+          setAdding(false);
+          setDraft("");
+          if (!id) {
+            router.refresh();
+            return;
+          }
+          onCreated?.();
+          const selection = activeProject.selectProject({ id, name: trimmed }, { surface: "tasks" });
+          if (selection.kind !== "started") router.refresh();
+          return;
+        }
         await selectWorkspaceAction(result.id);
         window.sessionStorage.setItem("signal-tasks.recent-project", result.id);
         setAdding(false);
@@ -122,8 +237,12 @@ function AddProjectRow({ onCreated }: { onCreated?: () => void }) {
             aria-label="New project name"
             className={styles.addProjectInput}
             disabled={pending}
-            onBlur={() => {
-              if (!draft.trim()) cancel();
+            onBlur={(event) => {
+              // Moving from the blank-name input into the template choice is
+              // still inside Add project; don't close it before its click.
+              const next = event.relatedTarget;
+              const insideChoice = next instanceof Node && event.currentTarget.closest("li")?.contains(next);
+              if (!draft.trim() && !insideChoice && !enteringTemplateChoiceRef.current) cancel();
             }}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
@@ -140,6 +259,15 @@ function AddProjectRow({ onCreated }: { onCreated?: () => void }) {
             value={draft}
           />
         </div>
+        {!isDemoMode() ? <div
+          onPointerDownCapture={() => { enteringTemplateChoiceRef.current = true; }}
+          onPointerUpCapture={() => { window.setTimeout(() => { enteringTemplateChoiceRef.current = false; }, 0); }}
+          onPointerCancelCapture={() => { enteringTemplateChoiceRef.current = false; }}
+        ><MonthlyTemplateChoice pending={pending} startTransition={startTransition} onCreated={() => {
+          setAdding(false);
+          setDraft("");
+          onCreated?.();
+        }} /></div> : null}
       </li>
     );
   }

@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "sponsored-use-intents-2026-09-04",
+  "authorizedBy": "Founder authorized local implementation and disposable SQLite validation only. NOT AUTHORIZED FOR PRODUCTION.",
+  "reviewedBy": "Codex, bounded Tasks sponsored-use delivery implementation, 2026-09-04",
+  "authorizationSource": "2026-09-04 delegated Tasks-first sponsored-use slice; additive migrations must be justified and locally verified.",
+  "migrations": [
+    {
+      "id": "0030_sponsored_use_intents",
+      "sha256": "a9319eae5e1a7006ff6ddcd557c62a2e18e5dc0670778f7ccd1389d567c31a37",
+      "reviewedAt": "2026-09-04T19:00:00Z",
+      "risk": "Additive empty specialized intent and subject-erasure index tables. No existing rows rewritten. Event payload has only seven pseudonymous fields. Private entitlement reference is removed at erasure or after35days; subject/epoch erasure index expires after24months. No provider credentials or content columns. No foreign keys: deletion must preserve pending pseudonymous erasure control until acknowledgment.",
+      "rollbackPlan": "Before enablement and with both tables empty, drop the two indexes then sponsored_use_intents and sponsored_use_subjects. After use, disable capture, deliver or retain all pending erasure controls, complete retention and erasure review before removal. Never discard an unacknowledged erasure request.",
+      "postconditions": [
+        "Dedicated receipt and erasure index exist with unique keys",
+        "Both tables are empty on apply",
+        "No existing data changes",
+        "Integrity and foreign keys pass"
+      ],
+      "proofs": [
+        {
+          "id": "usage-intent-columns",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('sponsored_use_intents') WHERE name IN ('id','kind','actor_key','entitlement_id','epoch','payload','created_at','delivered_at')",
+          "expected": 8
+        },
+        {
+          "id": "usage-subject-columns",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('sponsored_use_subjects')",
+          "expected": 4
+        },
+        {
+          "id": "usage-intent-primary-key",
+          "sql": "SELECT name AS value FROM pragma_table_info('sponsored_use_intents') WHERE pk=1",
+          "expected": "id"
+        },
+        {
+          "id": "usage-subject-primary-key",
+          "sql": "SELECT group_concat(name, ',') AS value FROM (SELECT name FROM pragma_table_info('sponsored_use_subjects') WHERE pk>0 ORDER BY pk)",
+          "expected": "actor_key,epoch"
+        },
+        {
+          "id": "usage-indexes",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type='index' AND name IN ('sponsored_use_pending_idx','sponsored_use_actor_idx')",
+          "expected": 2
+        },
+        {
+          "id": "usage-empty",
+          "sql": "SELECT (SELECT count(*) FROM sponsored_use_intents)+(SELECT count(*) FROM sponsored_use_subjects) AS value",
+          "expected": 0
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,838 @@
+{
+  "base": "a6293a82955d17bc414506ab89412f8667c1cd2f",
+  "source": "279cbe5c54797a0b6995ac57ae22346081f13256",
+  "branch": "ops/january-notes-signal-migrations",
+  "worktree": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+  "changedFiles": [
+    "drizzle-notes/.gitattributes",
+    "drizzle-notes/MIGRATIONS.md",
+    "drizzle-notes/migration-ledger.json",
+    "drizzle-notes/receipts/local-schema-review-2026-09-05.json",
+    "drizzle-signal/.gitattributes",
+    "drizzle-signal/MIGRATIONS.md",
+    "drizzle-signal/migration-ledger.json",
+    "drizzle-signal/receipts/local-schema-review-2026-09-05.json",
+    "scripts/db/notes-inventory.mjs",
+    "scripts/db/notes-migrate.mjs",
+    "scripts/db/notes-signal-ledger.mjs",
+    "scripts/db/notes-signal-migrate.mjs",
+    "scripts/db/notes-signal-migrate.test.mjs",
+    "scripts/db/signal-inventory.mjs",
+    "scripts/db/signal-migrate.mjs"
+  ],
+  "identities": {
+    "drizzle-notes/.gitattributes": {
+      "blob": "cc2d335b83020c594d56d8abc728b84cb5f966b2",
+      "sha256": "b676529378a2f637b304088647afea494152ba996f18976dc39f475851dcd77f",
+      "loadedSha256": "b676529378a2f637b304088647afea494152ba996f18976dc39f475851dcd77f"
+    },
+    "drizzle-notes/MIGRATIONS.md": {
+      "blob": "e067a6653b5cd66d465cf5e1e34ec50cf1cc604d",
+      "sha256": "5e8b92e06307ed42fb8e4431922fa6407827f228b61fa2e4f6bb16341fd160c4",
+      "loadedSha256": "5e8b92e06307ed42fb8e4431922fa6407827f228b61fa2e4f6bb16341fd160c4"
+    },
+    "drizzle-notes/migration-ledger.json": {
+      "blob": "f387a060317f8f66a5704e62129a92648775fd65",
+      "sha256": "2760d80224fa31acca77241dcffa0ae9073b916a041c510599cfafaa16d1c201",
+      "loadedSha256": "2760d80224fa31acca77241dcffa0ae9073b916a041c510599cfafaa16d1c201"
+    },
+    "drizzle-notes/receipts/local-schema-review-2026-09-05.json": {
+      "blob": "42b37f02d2189f888d4c86f63b8a805ee9b24511",
+      "sha256": "cd260f4d308fd2da0fc9cc720e8d52dd1bf3f51620c2257cebd494b43e4fd516",
+      "loadedSha256": "cd260f4d308fd2da0fc9cc720e8d52dd1bf3f51620c2257cebd494b43e4fd516"
+    },
+    "drizzle-signal/.gitattributes": {
+      "blob": "cc2d335b83020c594d56d8abc728b84cb5f966b2",
+      "sha256": "b676529378a2f637b304088647afea494152ba996f18976dc39f475851dcd77f",
+      "loadedSha256": "b676529378a2f637b304088647afea494152ba996f18976dc39f475851dcd77f"
+    },
+    "drizzle-signal/MIGRATIONS.md": {
+      "blob": "504b358527b70e8e5bf64ce677547ebe90d094af",
+      "sha256": "34b7eb6689691a67e33f426b7d6a449f1c04928d917dc212fb521536a7498c83",
+      "loadedSha256": "34b7eb6689691a67e33f426b7d6a449f1c04928d917dc212fb521536a7498c83"
+    },
+    "drizzle-signal/migration-ledger.json": {
+      "blob": "243806edcb59438290e7db0920e3fd613560d782",
+      "sha256": "b142e0eb07ba9ffe515f23893e0a32609e05c37fea555edc6e0ba719b81c998c",
+      "loadedSha256": "b142e0eb07ba9ffe515f23893e0a32609e05c37fea555edc6e0ba719b81c998c"
+    },
+    "drizzle-signal/receipts/local-schema-review-2026-09-05.json": {
+      "blob": "fdaa0df36898c7fff5cb82fc73d4456f41bdf451",
+      "sha256": "dc1efa6d406db1a5f34ca373f048025357a90ef0ac2e0a31df92d655eac0121c",
+      "loadedSha256": "dc1efa6d406db1a5f34ca373f048025357a90ef0ac2e0a31df92d655eac0121c"
+    },
+    "scripts/db/notes-inventory.mjs": {
+      "blob": "2460482307f7b000c17d01e23038d10c3a96a91e",
+      "sha256": "80ad6a7a7d2bca22f98f94bb2e03a7968d3f42a7f3ed761c72d4e7845ea44795",
+      "loadedSha256": "80ad6a7a7d2bca22f98f94bb2e03a7968d3f42a7f3ed761c72d4e7845ea44795"
+    },
+    "scripts/db/notes-migrate.mjs": {
+      "blob": "f670d175ca262540c141c822e6ad54344cec1167",
+      "sha256": "d3ef64b2fae063586eef38caff5444a9ac91a3757b6efb1ad2cef74e888d6591",
+      "loadedSha256": "d3ef64b2fae063586eef38caff5444a9ac91a3757b6efb1ad2cef74e888d6591"
+    },
+    "scripts/db/notes-signal-ledger.mjs": {
+      "blob": "5509b4871ff9db069dde55865784d59b6b5478b7",
+      "sha256": "3a12fac9bf16f39d8537dd5ed0abd208c90b2db8539027880b3a3781c7e28774",
+      "loadedSha256": "3a12fac9bf16f39d8537dd5ed0abd208c90b2db8539027880b3a3781c7e28774"
+    },
+    "scripts/db/notes-signal-migrate.mjs": {
+      "blob": "639282097579dd05d1b1e13a97cf0eee837186c6",
+      "sha256": "24ab3c33aeb9430ee4cd406783e86c23dd754a2c2574c3ef59c1bc6c7a86399d",
+      "loadedSha256": "24ab3c33aeb9430ee4cd406783e86c23dd754a2c2574c3ef59c1bc6c7a86399d"
+    },
+    "scripts/db/notes-signal-migrate.test.mjs": {
+      "blob": "3b10a40e5e3a6c3c128bbdd9577b1d17bb171715",
+      "sha256": "36985d40045bcd853865eaa2e4da6f6f54ba4ec17353ac8021ccf929d8f03389",
+      "loadedSha256": "36985d40045bcd853865eaa2e4da6f6f54ba4ec17353ac8021ccf929d8f03389"
+    },
+    "scripts/db/signal-inventory.mjs": {
+      "blob": "3ba1e73dfcaf80238e974ebdc21eafa8cc616608",
+      "sha256": "06b58bd42a9b433ad45f83698652b7bf351cb85f36c8ed62188ffecfe4e82f80",
+      "loadedSha256": "06b58bd42a9b433ad45f83698652b7bf351cb85f36c8ed62188ffecfe4e82f80"
+    },
+    "scripts/db/signal-migrate.mjs": {
+      "blob": "8e5f35ad09605c5b42b4afbc2e3998e0c0ad6a2d",
+      "sha256": "1812662bd20e2e9ebfb82a419a7eb47c2128bd16147689cea5c17c8593d6ecbd",
+      "loadedSha256": "1812662bd20e2e9ebfb82a419a7eb47c2128bd16147689cea5c17c8593d6ecbd"
+    },
+    "drizzle-notes/0000_notes_baseline.sql": {
+      "blob": "fe12384cb956a9b2eae0f3eda92b388d4f04e7e1",
+      "sha256": "3cb0d9ab087e3517133c7165051f2d101530b0bf47f4e7a9a67425cade36cd72",
+      "loadedSha256": "03603f1f22335a9b8ca01d24dca2cce3cf327be72e280b293df1c881fd96387e"
+    },
+    "drizzle-notes/0001_notes_reviewed_at.sql": {
+      "blob": "08dba29f27b21f830dbb777eb9d20637ea510ced",
+      "sha256": "319c3a9769102506488ad5d7b4d78fd0a8e3aca42ad215680c5d3b2095dc4736",
+      "loadedSha256": "9af236a0644e0e93630d895a4aae1822cb726812c179667d3101af2d24a6e068"
+    },
+    "drizzle-notes/meta/0000_snapshot.json": {
+      "blob": "ebff388f6a67f3d40f6599da4820d9f5c7e2b296",
+      "sha256": "123658e9fff2346f49ef30c02125b7979051dce521a2bdb01ba491658d25a717",
+      "loadedSha256": "6b161df853ad9172d01d0d0f1a7fc3822dd0b4354ef11cd5066f97da734cbb4d"
+    },
+    "drizzle-notes/meta/0001_snapshot.json": {
+      "blob": "3d1c32485a0333d0985027b8febab91163fdb7ec",
+      "sha256": "7a09a20505aab565d8aa82caa54e10df13d75405a718e3308c61b46e3eca02ca",
+      "loadedSha256": "038a0efec70f002892dd112ac9433ab1d1f59845c25c76bbdb00ce5907a76d41"
+    },
+    "drizzle-notes/meta/_journal.json": {
+      "blob": "e9a7e33b48af52ff795f5f5613d2a811591f8eba",
+      "sha256": "4b7b89dc157ef456a9f321962a5ef7afad0b6d61f15d82e36d1357a3142cf249",
+      "loadedSha256": "2168835cc88e6bd6b57f3290a77959f56c5c3359ee624f3c4c86cfd315a3bd78"
+    },
+    "drizzle-signal/0000_signal_baseline.sql": {
+      "blob": "2f5af385351f343f679379170a8eca530370aab5",
+      "sha256": "e1447993800f0d5429870db605fd7f0fb1b532b734111d0514847e3182c9f98a",
+      "loadedSha256": "2b5202d9088734c8e3b30aa3c1d496acbfefdde114a46442c2bad4aa924c2a41"
+    },
+    "drizzle-signal/meta/0000_snapshot.json": {
+      "blob": "b39cf705789ba833ee5d6ba974e0f00dc6579e0d",
+      "sha256": "f719e13f356f17e978f43dbe63da0ce9cdf5058c6c79dc2dbb2c3353d63d6ac4",
+      "loadedSha256": "ae3a2a9c138019684e5affe81695cc8a9f321a24f0c565712e8010e4f65aff55"
+    },
+    "drizzle-signal/meta/_journal.json": {
+      "blob": "9f1ac8b4209f53bb6822ff9003cf79c58c77ce9e",
+      "sha256": "454952f2915b5d112349e72fe63037cbfd4a63b0e881b9096a50fae89148ea09",
+      "loadedSha256": "9de1a22e43e8b281c5bf3a438f259e35da28c9d18a171f3a75fd43cddea62cde"
+    },
+    "drizzle.notes.config.ts": {
+      "blob": "ff5e8cceb112440ae25f0781c12fa26b1dd14d60",
+      "sha256": "bf02d869b8471556933172f4f8de49358ad2c2a643a1dc54dca68e53dc0c7111",
+      "loadedSha256": "d2062b1b538e35b1829db78b9635f8704cc9661533f1d6bbd276f1dd07927785"
+    },
+    "drizzle.signal.config.ts": {
+      "blob": "c0937b38d4064c298de96566744b720213b0aa5f",
+      "sha256": "ac9dbd2897baf65c75ab62c28eea8b1fdb8447e9302d52b2f8062c6f7fb9248f",
+      "loadedSha256": "4ae0f15655311ab0f388ce8a1abb07bfacc21f2a89cb20f952a24712a71473b9"
+    },
+    "scripts/db/migrate.mjs": {
+      "blob": "c4ec44335cf49f7ddef9db8b8276c89d5d3f38ac",
+      "sha256": "a22ff625bef86d96877cccfc92e25000baf5fddc0ebd53231c1665ae7b11c2dc",
+      "loadedSha256": "11b610c98b33fc5e0b8a2e568233102fff113de779930ba60490cb8cbb142eb7"
+    },
+    "scripts/db/migration-ledger.mjs": {
+      "blob": "e470c59f956ec846fcda809fac8e179b0c58cb8e",
+      "sha256": "d545f20c58669b17ec0775967918da359e23ed568f896b068f44046d73049b99",
+      "loadedSha256": "6c2b99dcbe20657bf14c12bc6e137363df4198e529e2d97b237367e614f47081"
+    },
+    "scripts/db/timeline-inventory.mjs": {
+      "blob": "3a132770e3b7f545fee739d0027569b89bec10f8",
+      "sha256": "6ddd7eaa74373d91dc679aec639cf359211283de377b5f3b136ac9024b70cb4f",
+      "loadedSha256": "fbe8773af01e4472e7148ba80fb0e7e4298a00570c3da82d8b3db438e709393e"
+    },
+    "scripts/db/timeline-migrate.mjs": {
+      "blob": "991c9035aaafeb2ab15654415e79ddaefe929776",
+      "sha256": "ddc21ec29590de244850b104ca850cf472284f70792340ca226eafef5e53cd40",
+      "loadedSha256": "e5af29a0a954e80740af785f36b025704d696e609c4bb9f2233f4d8290aa36f7"
+    }
+  },
+  "originalInputsPreserved": 14,
+  "canonicalContext": [
+    {
+      "root": "C:/Users/ethan/signal-studio-workspace/worktrees/studio/feat-january-commercial-readiness",
+      "source": "82b61cca237d524df080668ddd5381278a200f6b",
+      "file": "docs/execution/january-2027/ACCEPTANCE.md",
+      "sha256": "3cebb1030dc4310463cdb8c8a1fb39d25aecc16f4b65fa91362891f106b17200"
+    },
+    {
+      "root": "C:/Users/ethan/signal-studio-workspace/worktrees/studio/feat-january-commercial-readiness",
+      "source": "82b61cca237d524df080668ddd5381278a200f6b",
+      "file": "docs/execution/january-2027/PROGRAMME.md",
+      "sha256": "fea5c61e41d4618a752f7d0b1145713eddea5b011b35c285d4af4f144f2d8c0d"
+    },
+    {
+      "root": "C:/Users/ethan/signal-studio-workspace/worktrees/studio/feat-january-commercial-readiness",
+      "source": "82b61cca237d524df080668ddd5381278a200f6b",
+      "file": "content/hq/decisions/january-2027-launch.md",
+      "sha256": "b3644c5b723b0a23aa22d767e506323f0ed83af22038f46b0f0e12b484b7fa5b"
+    }
+  ],
+  "priorRestore": [
+    {
+      "file": "HANDOFF.md",
+      "original": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\outputs\\january-module-recovery-182935\\HANDOFF.md",
+      "sha256": "67a0015aeef328b96a59f83fef81f17c504cff8b1737095695d309007686e0b7"
+    },
+    {
+      "file": "INVENTORY.md",
+      "original": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\outputs\\january-module-recovery-182935\\INVENTORY.md",
+      "sha256": "16151d7b51cd686db977ef368767273357c016ed917427ae8a031a2cc840b199"
+    },
+    {
+      "file": "final/receipt.json",
+      "original": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\outputs\\january-module-recovery-182935\\final\\receipt.json",
+      "sha256": "55d5f86f3890e4d5daae48f94b71667a1d807fc553553eb0f368c6416ffea9b4"
+    },
+    {
+      "file": "final/provenance.json",
+      "original": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\outputs\\january-module-recovery-182935\\final\\provenance.json",
+      "sha256": "9a8c6cac9238c70b6c6c765e7aba0d322fc1dbc0653ce0b579c31272d6be6379"
+    },
+    {
+      "file": "final/schema-coverage.json",
+      "original": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\outputs\\january-module-recovery-182935\\final\\schema-coverage.json",
+      "sha256": "c0ba2b1965f559223754a874fdeb82b185702d71a466be77aa2dd5632e648d83"
+    },
+    {
+      "file": "final/pending-notes.manifest.json",
+      "original": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\outputs\\january-module-recovery-182935\\final\\pending-notes.manifest.json",
+      "sha256": "ce7e57ecef3377c6f5c480c6c10cdc0e4804e79afac265cd9c7cfc630279d0d9"
+    },
+    {
+      "file": "final/pending-signal.manifest.json",
+      "original": "C:\\Users\\ethan\\Documents\\Codex\\2026-09-04\\here-are-6-prompts-i-have-2\\outputs\\january-module-recovery-182935\\final\\pending-signal.manifest.json",
+      "sha256": "15085c46a4a6754db51d8f8062dadc0cb879349eaedbdfe2fd53eb701f1ab3c6"
+    }
+  ],
+  "checks": {
+    "finalTests": 21,
+    "failedTests": 0,
+    "lintErrors": 0,
+    "lintWarnings": 0
+  },
+  "finalGateCommands": [
+    "Node22 work/notes-signal-schema-2026-09-05/verify.mjs test-final",
+    "Node22 work/notes-signal-schema-2026-09-05/verify.mjs lint-final"
+  ],
+  "limits": [
+    "Local/test absolute file URLs only; no actual production/remote adoption or connection.",
+    "Known-schema fingerprint profiles only; unknown legacy state refused. Foreign history is observed, not reconciled or rewritten.",
+    "BackupEvidence is a required reference/hash, not independently verified by this runner. Actual production backup/restore acceptance remains open.",
+    "Local file copy tested using VACUUM INTO; historical182935 backup/helper/runtime proof remains separate and unchanged.",
+    "No new general migration abstraction, automatic retry/coordination, package/CI/registry/HQ/primarySQL/Drive runtime changes.",
+    "No full App build/type/suite needed for this operational MJS-only slice; principal owns registration and receiving review.",
+    "Concurrent cross-process target replacement, network filesystems and remote-driver behavior not certified.",
+    "Prior Drive stop was instructed by principal after automatic rejection; sealed artifacts were not rewritten or revisited."
+  ],
+  "commands": [
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "status",
+        "--short"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--name-only",
+        "a6293a82955d17bc414506ab89412f8667c1cd2f",
+        "279cbe5c54797a0b6995ac57ae22346081f13256"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-notes/.gitattributes"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-notes/.gitattributes"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-notes/MIGRATIONS.md"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-notes/MIGRATIONS.md"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-notes/migration-ledger.json"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-notes/migration-ledger.json"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-notes/receipts/local-schema-review-2026-09-05.json"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-notes/receipts/local-schema-review-2026-09-05.json"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-signal/.gitattributes"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-signal/.gitattributes"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-signal/MIGRATIONS.md"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-signal/MIGRATIONS.md"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-signal/migration-ledger.json"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-signal/migration-ledger.json"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-signal/receipts/local-schema-review-2026-09-05.json"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-signal/receipts/local-schema-review-2026-09-05.json"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:scripts/db/notes-inventory.mjs"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:scripts/db/notes-inventory.mjs"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:scripts/db/notes-migrate.mjs"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:scripts/db/notes-migrate.mjs"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:scripts/db/notes-signal-ledger.mjs"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:scripts/db/notes-signal-ledger.mjs"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:scripts/db/notes-signal-migrate.mjs"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:scripts/db/notes-signal-migrate.mjs"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:scripts/db/notes-signal-migrate.test.mjs"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:scripts/db/notes-signal-migrate.test.mjs"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:scripts/db/signal-inventory.mjs"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:scripts/db/signal-inventory.mjs"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:scripts/db/signal-migrate.mjs"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:scripts/db/signal-migrate.mjs"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-notes/0000_notes_baseline.sql"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-notes/0000_notes_baseline.sql"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-notes/0001_notes_reviewed_at.sql"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-notes/0001_notes_reviewed_at.sql"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-notes/meta/0000_snapshot.json"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-notes/meta/0000_snapshot.json"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-notes/meta/0001_snapshot.json"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-notes/meta/0001_snapshot.json"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-notes/meta/_journal.json"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-notes/meta/_journal.json"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-signal/0000_signal_baseline.sql"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-signal/0000_signal_baseline.sql"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-signal/meta/0000_snapshot.json"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-signal/meta/0000_snapshot.json"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-signal/meta/_journal.json"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle-signal/meta/_journal.json"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle.notes.config.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle.notes.config.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle.signal.config.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:drizzle.signal.config.ts"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:scripts/db/migrate.mjs"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:scripts/db/migrate.mjs"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:scripts/db/migration-ledger.mjs"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:scripts/db/migration-ledger.mjs"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:scripts/db/timeline-inventory.mjs"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:scripts/db/timeline-inventory.mjs"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:scripts/db/timeline-migrate.mjs"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "279cbe5c54797a0b6995ac57ae22346081f13256:scripts/db/timeline-migrate.mjs"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/app/ops-january-notes-signal-migrations",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/studio/feat-january-commercial-readiness",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "82b61cca237d524df080668ddd5381278a200f6b:docs/execution/january-2027/ACCEPTANCE.md"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/studio/feat-january-commercial-readiness",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "82b61cca237d524df080668ddd5381278a200f6b:docs/execution/january-2027/PROGRAMME.md"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/studio/feat-january-commercial-readiness",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "82b61cca237d524df080668ddd5381278a200f6b:content/hq/decisions/january-2027-launch.md"
+      ],
+      "cwd": "C:/Users/ethan/signal-studio-workspace/worktrees/studio/feat-january-commercial-readiness",
+      "exitCode": 0
+    }
+  ],
+  "packagingExitCode": 0
+}

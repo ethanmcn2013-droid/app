@@ -7,8 +7,11 @@ function read(relativePath) {
 }
 
 const hybridWorkspace = read("src/components/hybrid/hybrid-workspace.tsx");
+const hybridWorkspaceStyles = read("src/components/hybrid/hybrid-workspace.module.css");
 const appLayout = read("src/app/app/layout.tsx");
 const mobileSuiteNav = read("src/components/app/mobile-suite-nav.tsx");
+const coreNavigation = read("src/lib/core-navigation.ts");
+const floorWorkspace = read("src/components/floor/floor-workspace.tsx");
 const commandPaletteFile = read("src/components/app/palette/command-palette.tsx");
 // The palette composes its search field from the shared scope-search
 // primitive, so the combobox lifecycle spans both files. Read them as one
@@ -106,22 +109,19 @@ test("Tasks owns the same product-specific document title as its siblings", () =
 });
 
 test("the rail derives ownership and carries allowlisted context hints", () => {
-  // Signal → Home consolidation (D4): the rail resolves the active
-  // surface (Home included) and walks typed destination paths. Signal
-  // must never return as a rail destination.
+  // The core path model is shared by desktop and both mobile bars. Project
+  // ownership must be explicit because the product resolver calls it Tasks.
   assert.match(studioRail, /activeRailKey\(pathname\)/);
-  assert.match(studioRail, /suiteSurfaceFromAppPath/);
-  assert.doesNotMatch(studioRail, /\{ key: "signal"/);
-  // The rail is a PRODUCT switcher (board pass 4): no Home, no Project —
-  // Home is the first destination of the local Tasks navigation, and
-  // /app/home and /app/project both stay routable.
-  assert.doesNotMatch(studioRail, /\{ key: "home"/);
-  assert.doesNotMatch(studioRail, /\{ key: "project"/);
+  assert.match(studioRail, /activeCoreDestination\(pathname\)/);
+  assert.match(studioRail, /RAIL_DESTINATIONS = CORE_DESTINATIONS/);
   assert.deepEqual(
-    [...studioRail.matchAll(/\{ key: "(home|notes|tasks|timeline|project)", label:/g)]
+    [...coreNavigation.matchAll(/\{ id: "(home|project|tasks|timeline)", label:/g)]
       .map((match) => match[1]),
-    ["notes", "tasks", "timeline"],
+    ["home", "project", "tasks", "timeline"],
   );
+  assert.doesNotMatch(coreNavigation, /\{ id: "notes"/);
+  assert.match(studioRail, /withSuiteContext\(PRODUCT_APP_PATHS\.notes, suiteContext\)/);
+  assert.match(studioRail, /aria-label="More"/);
   assert.match(studioRail, /useSuiteContext\(\)/);
   assert.match(
     studioRail,
@@ -161,7 +161,7 @@ test("search is a compact command trigger beside Add task, not a resident field"
   assert.doesNotMatch(studioRail, /aria-label="Search"/);
   assert.doesNotMatch(studioRail, /aria-label="Team"/);
   assert.doesNotMatch(studioRail, /aria-label="Settings"/);
-  assert.match(studioRail, /aria-label="Help and settings"/);
+  assert.match(studioRail, /aria-label="More"/);
   assert.match(studioRail, /href="\/app\/settings"/);
   assert.match(studioRail, /href="\/settings\/profile"/);
   assert.match(studioRail, /event\.key !== "Escape"/);
@@ -261,20 +261,14 @@ test("Tasks chrome publishes the authorised workspace name, not a domain example
   assert.doesNotMatch(studioChrome, /useDomain/);
 });
 
-test("mobile suite nav exposes Home-first canonical destinations", () => {
-  // Signal → Home consolidation (D4): Home, then the three products.
-  // Signal must not return as a tab, and Project left the shell
-  // navigation with the 2026-08-05 board pass — the project overview is
-  // reached from project contexts, never as a fifth product.
+test("mobile suite nav exposes the same core paths and Notes under More", () => {
   assert.match(appLayout, /<MobileSuiteNav \/>/);
-  assert.match(mobileSuiteNav, /if \(activeKey === "tasks"\) return null;/);
-  assert.deepEqual(
-    [...mobileSuiteNav.matchAll(/\{ id: "(home|notes|tasks|timeline|project)", label:/g)]
-      .map((match) => match[1]),
-    ["home", "notes", "tasks", "timeline"],
-  );
-  assert.doesNotMatch(mobileSuiteNav, /\{ id: "signal"/);
-  assert.doesNotMatch(mobileSuiteNav, /\{ id: "project"/);
+  assert.match(mobileSuiteNav, /if \(suiteSurfaceFromAppPath\(pathname\) === "tasks" && !messagesRoute\) return null;/);
+  assert.match(mobileSuiteNav, /const messagesRoute = pathname === MESSAGES_APP_PATH/);
+  assert.match(mobileSuiteNav, /CORE_DESTINATIONS\.map/);
+  assert.match(mobileSuiteNav, /label: "Notes", href: withSuiteContext\(PRODUCT_APP_PATHS\.notes, suiteContext\)/);
+  assert.match(mobileSuiteNav, /aria-haspopup="menu"/);
+  assert.match(mobileSuiteNav, /event\.key !== "Escape"/);
   assert.match(
     mobileSuiteNav,
     /withSuiteContext\(destination\.path, suiteContext\)/,
@@ -285,19 +279,11 @@ test("mobile suite nav exposes Home-first canonical destinations", () => {
   );
 });
 
-test("mobile Tasks has one persistent product spine and one keyboard-complete views menu", () => {
+test("mobile Tasks has one persistent core spine and one keyboard-complete More menu", () => {
   assert.equal((tasksSidebar.match(/<nav/g) ?? []).length, 1);
-  // Consolidation (D4): the Tasks mobile spine leads with Home and
-  // carries the three products; Signal is retired from the spine.
-  assert.deepEqual(
-    [
-      ...tasksSidebar.matchAll(
-        /\{ id: "(home|notes|tasks|timeline)", label: "(?:Home|Notes|Tasks|Timeline)", path:/g,
-      ),
-    ].map((match) => match[1]),
-    ["home", "notes", "tasks", "timeline"],
-  );
-  assert.doesNotMatch(tasksSidebar, /\{ id: "signal"/);
+  assert.match(tasksSidebar, /CORE_DESTINATIONS\.map/);
+  assert.match(tasksSidebar, /withSuiteContext\(PRODUCT_APP_PATHS\.notes, suiteContext\)/);
+  assert.match(tasksSidebar, /Tasks views/);
   assert.match(
     tasksSidebar,
     /withSuiteContext\(product\.path, suiteContext\)/,
@@ -312,6 +298,22 @@ test("mobile Tasks has one persistent product spine and one keyboard-complete vi
   assert.match(tasksSidebar, /triggerRef\.current\?\.focus/);
   assert.match(tasksSidebar, /grid-cols-5/);
   assert.match(tasksSidebar, /min-h-14/);
+});
+
+test("bare Tasks Floor preserves the core destinations and Notes under More", () => {
+  assert.match(floorWorkspace, /CORE_DESTINATIONS\.map\(\(destination\) => product\(destination\.id, destination\.label, destination\.path\)\)/);
+  assert.match(floorWorkspace, /withSuiteContext\(href, suite\)/);
+  assert.match(floorWorkspace, /aria-label="More"/);
+  assert.match(floorWorkspace, /withSuiteContext\(PRODUCT_APP_PATHS\.notes, suite\)/);
+  assert.match(floorWorkspace, /aria-haspopup="menu"/);
+  assert.match(floorWorkspace, /event\.key !== "Escape"/);
+  assert.match(floorWorkspace, /moreTriggerRef\.current\?\.focus\(\)/);
+  assert.match(floorWorkspace, /href="\/app\/inbox"/);
+  assert.match(floorWorkspace, /href="\/app\/settings"/);
+  assert.match(floorWorkspace, /aria-label="Add task"/);
+  assert.match(productWorkspaceShell, /bareChrome \? "pb-0" : "pb-\[calc\(64px\+env\(safe-area-inset-bottom\)\)\]"/);
+  assert.match(hybridWorkspace, /data-floor-runtime="true"/);
+  assert.match(hybridWorkspaceStyles, /\.root\[data-floor-runtime\] \{ height: 100%; \}/);
 });
 
 test("the mobile Tasks account escape hatch preserves suite context", () => {

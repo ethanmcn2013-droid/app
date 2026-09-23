@@ -1,27 +1,21 @@
 import { NextResponse } from "next/server";
 import { Webhook } from "svix";
 import { headers } from "next/headers";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import * as Sentry from "@sentry/nextjs";
 import { db } from "@/server/db";
 import { users } from "@/server/db/schema";
-import { grantEntitlement } from "@/server/actions/billing";
+import { deleteAccountForUser } from "@/server/account";
+import {
+  beginAccountDeletion,
+  hasAccountDeletionStartedWith,
+} from "@/server/account-deletion-lifecycle";
 import { trackOnboardingEventServer } from "@/lib/onboarding/analytics-server";
+import { provisionCreatedClerkUserWith } from "@/server/db/clerk-user-provision";
 import type { WebhookEvent } from "@clerk/nextjs/server";
 
-/**
- * .edu Pro grant, when the user's primary email ends in `.edu`,
- * we auto-grant Pro for one academic semester (~120 days). The
- * entitlement is user-level (workspaceId = NULL) so the Phase 4
- * layered-resolution path picks it up across every workspace the
- * student creates without per-workspace bookkeeping.
- *
- * Why 120 days: long enough to cover a single semester (~16 weeks)
- * plus a buffer for the post-semester wrap-up. Shorter than a year
- * so the student renews intentionally, and bumps into the manifesto
- * pricing rather than the silent auto-charge.
- */
-const EDU_PRO_DAYS = 120;
+// Student Edition requires the canonical paid offer and verified eligibility.
+// A domain suffix is not evidence; historical grants retain their original terms.
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,7 +24,7 @@ export const dynamic = "force-dynamic";
  * Clerk → DB sync via Svix-verified webhook.
  *
  * On `user.created` we provision the trio in a single transaction:
- *   1. `users` row keyed by Clerk id
+ *   1. `users` row resolved by Clerk id (retaining an existing internal id)
  *   2. `workspaces` row (the user's personal workspace)
  *   3. `workspace_members` row giving them owner role
  *
@@ -170,65 +164,13 @@ async function handleUserCreated(u: ClerkUser): Promise<void> {
   const color = deriveColor(u.id);
   const initials = deriveInitials(u);
 
-  // Internal user id = Clerk id. Skipping the dual-id indirection
-  // simplifies every callsite that holds a "user id", there's only
-  // one. Clerk ids are URL-safe and DB-safe.
-  const userId = u.id;
-
-  // Build a slug that won't collide. Tail of the Clerk id is unique
-  // by construction.
-  const slug = `personal-${u.id.replace(/^user_/, "").slice(0, 8).toLowerCase()}`;
-  const workspaceId = `ws-${u.id.replace(/^user_/, "").slice(0, 12).toLowerCase()}`;
-  const planningPeriodId = `planning-${workspaceId}`;
-
-  // All three writes inside one BEGIN…COMMIT so a crash mid-flight
-  // can't leave a user without a workspace.
-  await db.transaction(async (tx) => {
-    await tx.run(sql`
-      INSERT INTO users (id, clerk_id, email, handle, name, color, initials)
-      VALUES (${userId}, ${u.id}, ${email}, ${handle}, ${name}, ${color}, ${initials})
-      ON CONFLICT(id) DO UPDATE SET
-        email = excluded.email,
-        handle = excluded.handle,
-        name = excluded.name
-    `);
-    await tx.run(sql`
-      INSERT OR IGNORE INTO planning_periods (
-        id, owner_user_id, name, context_type, start_date, end_date,
-        timezone, position, revision
-      )
-      VALUES (
-        ${planningPeriodId}, ${userId}, 'Active work', 'general',
-        date('now'), date('now', '+1 year', '-1 day'), 'UTC', 1000, 1
-      )
-    `);
-    await tx.run(sql`
-      INSERT OR IGNORE INTO workspaces (
-        id, slug, name, owner_user_id, active_domain,
-        planning_period_id, context_type, position, updated_at
-      )
-      VALUES (
-        ${workspaceId}, ${slug}, ${name ?? "Personal"}, ${userId}, NULL,
-        ${planningPeriodId}, 'project', 1000, unixepoch()
-      )
-    `);
-    await tx.run(sql`
-      UPDATE workspaces
-      SET planning_period_id = COALESCE(planning_period_id, ${planningPeriodId}),
-          context_type = COALESCE(context_type, 'project'),
-          updated_at = COALESCE(updated_at, unixepoch())
-      WHERE id = ${workspaceId}
-    `);
-    await tx.run(sql`
-      INSERT OR IGNORE INTO workspace_members (workspace_id, user_id, role)
-      VALUES (${workspaceId}, ${userId}, 'owner')
-    `);
+  // A delayed webhook may follow fallback provisioning or a legacy account
+  // with a distinct internal id. Use the persisted id for every dependent row.
+  const userId = await provisionCreatedClerkUserWith(db, {
+    clerkId: u.id, email, handle, name, color, initials,
   });
+  if (!userId) return;
 
-  // .edu Pro grant. Runs OUTSIDE the transaction, the workspace
-  // exists by this point, and a failure here shouldn't roll back
-  // the user creation. Worst case: the entitlement is missed, the
-  // student lands on Free, and they redeem manually later.
   const emailDomain = email?.split("@")[1]?.toLowerCase() ?? null;
   await trackOnboardingEventServer(userId, "signup_completed", {
     email_domain: emailDomain ?? undefined,
@@ -236,22 +178,6 @@ async function handleUserCreated(u: ClerkUser): Promise<void> {
     primary_use_case: emailDomain && isEduEmail(email!) ? "student" : undefined,
   });
 
-  if (email && isEduEmail(email)) {
-    try {
-      await grantEntitlement({
-        userId,
-        workspaceId: null,
-        tier: "workspace",
-        source: "edu",
-        durationDays: EDU_PRO_DAYS,
-        notes: `edu:${email.toLowerCase()}`,
-      });
-    } catch (err) {
-      // Log + continue. The user is already created; the entitlement
-      // is recoverable via /redeem with a manual support touch.
-      console.warn("[clerk webhook] .edu grant failed", err);
-    }
-  }
 }
 
 /** True when the email's TLD-equivalent suffix is `.edu`. Strips
@@ -264,13 +190,19 @@ function isEduEmail(email: string): boolean {
 async function handleUserUpdated(u: ClerkUser): Promise<void> {
   const email = u.email_addresses?.[0]?.email_address ?? null;
   const name = deriveName(u);
-  await db
-    .update(users)
-    .set({ email, name })
-    .where(eq(users.clerkId, u.id));
+  await db.transaction(async (tx) => {
+    if (await hasAccountDeletionStartedWith(tx, u.id)) return;
+    await tx
+      .update(users)
+      .set({ email, name })
+      .where(eq(users.clerkId, u.id));
+  }, { behavior: "immediate" });
 }
 
 async function handleUserDeleted(u: ClerkUser): Promise<void> {
-  // Cascading FKs delete the user's workspaces (owner) and memberships.
-  await db.delete(users).where(eq(users.clerkId, u.id));
+  // Clerk Dashboard/admin deletions must execute the same complete erasure as
+  // the in-app route. The tombstone makes webhook retries idempotent and blocks
+  // a delayed create/update delivery from resurrecting product data.
+  await beginAccountDeletion(u.id);
+  await deleteAccountForUser(u.id);
 }

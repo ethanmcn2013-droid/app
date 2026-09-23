@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { ClerkRuntimeProvider } from "@/components/clerk-runtime-provider";
 import { MobileSuiteNav } from "@/components/app/mobile-suite-nav";
+import { ConversationMobileNav, ConversationStudioRail } from "@/components/app/conversation-navigation-runtime";
 import { ProductWorkspaceShell } from "@/components/app/product-workspace-shell";
 import { SuiteChromeGate } from "@/components/app/suite-chrome-gate";
 import {
@@ -16,9 +17,10 @@ import { StudioChromeProvider } from "@/components/studio-bar/studio-chrome-cont
 import { isDemoMode } from "@/lib/access-mode";
 import { requireAppAccessTasks } from "@/server/app-access";
 import { ActiveProjectProvider } from "@/components/app/active-project-provider";
+import { ConversationSessionRuntime } from "@/components/app/conversation-session-runtime";
 import { isActiveProjectV3Enabled } from "@/lib/projects/flags";
 import { readActiveProjectCookies } from "@/server/projects/active-project-cookie";
-import { PAPER_LIGHT, PAPER_DARK } from "@/app/layout";
+import { PAPER_LIGHT, PAPER_DARK } from "@/lib/document-paper";
 import type { Viewport } from "next";
 
 export const dynamic = "force-dynamic";
@@ -136,16 +138,16 @@ export default function AppLayout({
           </SuiteChromeGate>
           <SuiteScrollFrameBody>
             <SuiteChromeGate>
-              <StudioRail />
+              <Suspense fallback={<StudioRail />}><ConversationStudioRail /></Suspense>
             </SuiteChromeGate>
             <Suspense fallback={<SuiteLoading />}>
               <SharedAppGate>
-                <ProductWorkspaceShell>{children}</ProductWorkspaceShell>
+                <ConversationSessionRuntime><ProductWorkspaceShell>{children}</ProductWorkspaceShell></ConversationSessionRuntime>
               </SharedAppGate>
             </Suspense>
           </SuiteScrollFrameBody>
           <SuiteChromeGate>
-            <MobileSuiteNav />
+            <Suspense fallback={<MobileSuiteNav />}><ConversationMobileNav /></Suspense>
             <SuiteCommandRoot />
           </SuiteChromeGate>
         </SuiteScrollFrame>

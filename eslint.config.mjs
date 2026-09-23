@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
     ".vercel/**",
     // Deterministic browser evidence is generated locally and in CI.
     "experience/output/**",
+    // Retained CommonJS review evidence is not application or maintained test code.
+    "docs/projects/project-conversation/evidence/reviews/compatibility-ordering.test.cjs",
   ]),
   {
     // GRANDFATHERED lint debt: these five files were ported verbatim from

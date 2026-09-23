@@ -16,19 +16,28 @@
  * `/app/tasks` is a bare-chrome path: the spine here is the one spine.
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { TASKS_VIEW_PATHS } from "@/lib/product-urls";
+import { PRODUCT_APP_PATHS, STUDIO_URL, TASKS_VIEW_PATHS } from "@/lib/product-urls";
+import { CORE_DESTINATIONS, type CoreDestinationId } from "@/lib/core-navigation";
 import { useSuiteContext } from "@/components/app/use-suite-context";
+import { useActiveProject } from "@/components/app/active-project-provider";
+import { STUDIO_PALETTE_EVENT } from "@/components/studio-bar/studio-chrome-context";
+import { ShareButton } from "@/components/app/share/share-button";
+import { PageActionsOverflow } from "@/components/app/page-header";
 import { withSuiteContext } from "@/lib/suite-context";
+import { useActiveWorkspace } from "@/lib/domain-context";
+import { parseProjectId } from "@/lib/projects/project-ref";
+import { floorViewHref } from "@/lib/projects/floor-view-href";
 import { useLabStore } from "@/components/hybrid/store";
 import { useBoardColumns } from "@/components/hybrid/columns-context";
 import type { LabTask, LabView } from "@/components/hybrid/types";
-import { FloorBoard, timeOf, todayStamp } from "./floor-board";
+import { FloorBoard, timeOf } from "./floor-board";
 import { FLOOR_PRESET } from "./floor-preset";
-import { useDayIsKnown } from "./use-floor-place";
+import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import styles from "./floor.module.css";
+import navStyles from "./floor-navigation.module.css";
 
 /* ── the spine ─────────────────────────────────────────────────── */
 
@@ -42,6 +51,11 @@ const RailIcon = {
   home: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M3 10.5 12 3l9 7.5" /><path d="M5.5 9.5V20h13V9.5" />
+    </svg>
+  ),
+  project: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M7 17V4m0 1h11l-2.5 4L18 13H7" /><circle cx="7" cy="20" r="1" />
     </svg>
   ),
   notes: (
@@ -99,20 +113,9 @@ const Search = (
     <circle cx="11" cy="11" r="6.4" /><path d="m16 16 4 4" />
   </svg>
 );
-const Share = (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <circle cx="17.5" cy="6" r="2.4" /><circle cx="6.5" cy="12" r="2.4" /><circle cx="17.5" cy="18" r="2.4" />
-    <path d="m8.7 10.8 6.6-3.6M8.7 13.2l6.6 3.6" />
-  </svg>
-);
 const Panel = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <rect x="4" y="5" width="16" height="14" rx="2.4" /><path d="M14.5 5v14" />
-  </svg>
-);
-const DotsIcon = (
-  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" />
   </svg>
 );
 const PlusIcon = (
@@ -150,6 +153,8 @@ export type FloorWorkspaceProps = {
   tasks: LabTask[];
   /** The project's own name, as the header states it. */
   projectName: string;
+  /** The open detail, if any, stays addressable across view switches. */
+  taskId: string | null;
   /** The operator's initials for the dock and the spine. */
   initials: string;
   /** The four views' interiors for anything that is not the board. */
@@ -158,13 +163,13 @@ export type FloorWorkspaceProps = {
 };
 
 export function FloorWorkspace({
-  view, tasks, projectName, initials, children, onOpenPlanning,
+  view, tasks, projectName, taskId, initials, children, onOpenPlanning,
 }: FloorWorkspaceProps) {
   const router = useRouter();
   const pathname = usePathname() ?? "";
   const store = useLabStore();
   const columns = useBoardColumns();
-  const today = todayStamp();
+  const calendar = useCalendarFrame();
 
   /* The two facts a venue owner acts on. They are the loudest objects in the
      header because they are the questions the board is opened to answer, and
@@ -185,29 +190,78 @@ export function FloorWorkspace({
     let dueToday = 0;
     let undated = 0;
     for (const task of tasks) {
-      const time = timeOf(task, isDone(task), today);
+      const time = timeOf(task, isDone(task), calendar);
       if (time.kind === "overdue") overdue += 1;
       if (time.kind === "today") dueToday += 1;
       if (time.kind === "none" && !isDone(task)) undated += 1;
     }
     return { total, done, overdue, dueToday, undated };
-  }, [tasks, columns, today]);
+  }, [tasks, columns, calendar]);
 
   const suite = useSuiteContext();
+  const activeProject = useActiveProject();
+  const workspace = useActiveWorkspace();
+  // V3 supplies only a verified Project. While it is pending or unavailable,
+  // do not let a view switch fall back to a stale ambient Project.
+  const viewProjectId = activeProject?.enabled
+    ? (activeProject.chrome.kind === "verified" ? activeProject.chrome.project.id : null)
+    : parseProjectId(suite?.workspaceId ?? workspace?.id);
+  const viewSwitchBlocked = Boolean(activeProject?.enabled && !viewProjectId);
+  const openSearch = () => window.dispatchEvent(new CustomEvent(STUDIO_PALETTE_EVENT));
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreHostRef = useRef<HTMLDivElement>(null);
+  const moreTriggerRef = useRef<HTMLButtonElement>(null);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
+  const moreMenuId = useId();
 
-  const dayKnown = useDayIsKnown();
+  useEffect(() => {
+    if (!moreOpen) return;
+    const frame = window.requestAnimationFrame(() => moreMenuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus());
+    const onPointerDown = (event: PointerEvent) => {
+      if (!moreHostRef.current?.contains(event.target as Node)) setMoreOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setMoreOpen(false);
+      moreTriggerRef.current?.focus();
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [moreOpen]);
 
-  const todayLabel = useMemo(() => {
-    const now = new Date();
-    return `${DAYS[now.getDay()]} ${now.getDate()} ${MONTHS[now.getMonth()]}`;
-  }, []);
+  const onMoreKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const items = Array.from(moreMenuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
+    const index = Math.max(0, items.indexOf(document.activeElement as HTMLElement));
+    let next: number | null = null;
+    if (event.key === "ArrowDown") next = (index + 1) % items.length;
+    if (event.key === "ArrowUp") next = (index - 1 + items.length) % items.length;
+    if (event.key === "Home") next = 0;
+    if (event.key === "End") next = items.length - 1;
+    if (next !== null) {
+      event.preventDefault();
+      items[next]?.focus();
+    } else if (event.key === "Tab") {
+      setMoreOpen(false);
+    }
+  };
+
+  // Format the project's date without consulting the browser clock/timezone.
+  // The same serialized frame supplies SSR, hydration, counts and card filters.
+  const day = new Date(`${calendar.today}T12:00:00Z`);
+  const todayLabel = `${DAYS[day.getUTCDay()]} ${day.getUTCDate()} ${MONTHS[day.getUTCMonth()]}`;
 
   /* Crossing to another product carries the workspace with it. The suite
      sidebar did this and the spine that replaced it did not, so stepping from
      Tasks to Timeline landed a person in the right product with no idea which
      wedding they were looking at. data-product is the same contract the rest
      of the suite navigates by. */
-  const product = (key: "notes" | "tasks" | "timeline", label: string, href: string) => {
+  const product = (key: CoreDestinationId, label: string, href: string) => {
     const active = key === "tasks";
     return (
       <Link
@@ -240,12 +294,23 @@ export function FloorWorkspace({
         </Link>
         <span className={styles.railDivider} />
         <div className={styles.railGroup}>
-          <Link href="/app/home" className={styles.railTile} data-key="home" aria-label="Home" title="Home">
-            {RailIcon.home}
-          </Link>
-          {product("notes", "Notes", "/app/notes")}
-          {product("tasks", "Tasks", "/app/tasks")}
-          {product("timeline", "Timeline", "/app/timeline")}
+          {CORE_DESTINATIONS.map((destination) => product(destination.id, destination.label, destination.path))}
+          <div className={navStyles.moreHost} ref={moreHostRef}>
+            <button ref={moreTriggerRef} type="button" className={`${styles.railTile} ${navStyles.moreButton}`} aria-label="More" title="More" aria-haspopup="menu" aria-expanded={moreOpen} aria-controls={moreOpen ? moreMenuId : undefined} onClick={() => setMoreOpen((open) => !open)}>
+              {RailIcon.more}
+            </button>
+            {moreOpen ? (
+              <div ref={moreMenuRef} id={moreMenuId} role="menu" aria-label="More" className={navStyles.moreMenu} onKeyDown={onMoreKeyDown}>
+                <button role="menuitem" tabIndex={-1} type="button" onClick={() => { store.addTask(columns[0]?.key ?? "todo"); setMoreOpen(false); }}>{PlusIcon}<span>Add task</span></button>
+                <Link role="menuitem" tabIndex={-1} href={withSuiteContext(PRODUCT_APP_PATHS.notes, suite)} onClick={() => setMoreOpen(false)}>{RailIcon.notes}<span>Notes</span></Link>
+                <Link role="menuitem" tabIndex={-1} href="/app/inbox" onClick={() => setMoreOpen(false)}>{RailIcon.inbox}<span>Inbox</span></Link>
+                <Link role="menuitem" tabIndex={-1} href="/app/settings" onClick={() => setMoreOpen(false)}>{RailIcon.help}<span>Project and team</span></Link>
+                <Link role="menuitem" tabIndex={-1} href="/settings/profile" onClick={() => setMoreOpen(false)}><span>Account settings</span></Link>
+                <a role="menuitem" tabIndex={-1} href={STUDIO_URL} rel="noopener noreferrer" target="_blank">About Signal Studio ↗</a>
+                <a role="menuitem" tabIndex={-1} href="mailto:hello@signalstudio.ie?subject=Signal%20Studio%20help">Contact support</a>
+              </div>
+            ) : null}
+          </div>
         </div>
         <span className={styles.railSpacer} />
         <div className={styles.railUtil}>
@@ -258,7 +323,7 @@ export function FloorWorkspace({
         </div>
         <button
           type="button"
-          className={styles.railAdd}
+          className={`${styles.railAdd} ${navStyles.addButton}`}
           aria-label="Add task"
           onClick={() => store.addTask(columns[0]?.key ?? "todo")}
         >
@@ -276,12 +341,7 @@ export function FloorWorkspace({
           <span className={styles.headRule} />
           <h1 className={styles.headName}>{projectName}</h1>
           <div className={styles.headFacts}>
-            {/* Withheld until a timezone exists, and marked so React never
-                treats the change from nothing to a date as a mismatch. The
-                span itself is always here, so the row does not move. */}
-            <span className={styles.today} suppressHydrationWarning>
-              {dayKnown ? todayLabel : ""}
-            </span>
+            <span className={styles.today}>{todayLabel}</span>
             {facts.total > 0 && facts.done === facts.total ? (
               <span className={styles.ratio} data-all="">Everything is done.</span>
             ) : facts.total > 0 ? (
@@ -324,25 +384,35 @@ export function FloorWorkspace({
             )}
           </div>
           <div className={styles.headActions}>
-            <button type="button" className={`${styles.ghost} ${styles.headSearch}`} aria-label="Search">
+            <button type="button" className={`${styles.ghost} ${styles.headSearch}`} aria-label="Search" onClick={openSearch}>
               {Search}
             </button>
-            <button type="button" className={styles.ghost}>{Share}<span>Share</span></button>
+            <ShareButton view={view} variant="band" />
             {onOpenPlanning && (
               <button type="button" className={styles.ghost} onClick={onOpenPlanning}>
                 {Panel}<span>Planning</span>
                 {facts.undated > 0 && <em>{facts.undated}</em>}
               </button>
             )}
-            <button type="button" className={styles.ghost} aria-label="More">{DotsIcon}</button>
+            <PageActionsOverflow
+              onSearch={openSearch}
+              showShare={false}
+              shareView={view}
+              printPath={withSuiteContext(`/print/${view}`, suite)}
+              variant="band"
+            />
           </div>
         </div>
 
         <div className={styles.views}>
           <nav className={styles.seg} data-group="views" aria-label="View">
             {(Object.keys(VIEW_LABEL) as LabView[]).map((key) => {
-              const href = TASKS_VIEW_PATHS[key];
-              const active = key === view || pathname === href;
+              const routePath = TASKS_VIEW_PATHS[key];
+              const href = floorViewHref(key, viewProjectId, taskId);
+              const active = key === view || pathname === routePath;
+              if (viewSwitchBlocked) {
+                return <span key={key} aria-disabled="true" className={styles.segItem}>{ViewIcon[key]}<span>{VIEW_LABEL[key]}</span></span>;
+              }
               return (
                 <Link
                   key={key}
@@ -374,7 +444,7 @@ export function FloorWorkspace({
 
         {/* ── the dock ────────────────────────────────────────── */}
         <div className={styles.dock}>
-          <button type="button" className={styles.dockField} aria-label={`Search ${projectName}`}>
+          <button type="button" className={styles.dockField} aria-label={`Search ${projectName}`} onClick={openSearch}>
             {Search}<span>Search {projectName}</span>
           </button>
           <button

@@ -1,0 +1,32 @@
+{
+  "base": "e64083504c527f6d42e571defeba7aeaa72dc575",
+  "branch": "fix/january-utility-navigation",
+  "recordedAt": "2026-09-04T20:31:52.3407229Z",
+  "hashBasis": "Raw worktree bytes at final browser review, before commit; Git normalizes line endings",
+  "sources": [
+    {
+      "path": "package.json",
+      "sha256": "a0df696186df3f3742c77734e59ee3e47b88377ee5d0a23eb51dfaa2279b9943"
+    },
+    {
+      "path": "src/components/app/page-header.tsx",
+      "sha256": "c68c55e9a44490814d15aaedd3a42bd770f9b06905c88f457045c4b92bf8ee1b"
+    },
+    {
+      "path": "src/components/app/page-header-context.ts",
+      "sha256": "b9f7fa9b8ddd4ca3489008c570482632f760589127e438152e9015f18100909d"
+    },
+    {
+      "path": "src/components/app/page-header-context.test.ts",
+      "sha256": "7ba865e1b366fed1076145a2a3b4d489341c2044e0f2998919dcdfc5f3275dce"
+    },
+    {
+      "path": "src/components/chrome/suite-header.tsx",
+      "sha256": "64a00ffc427541129bc104f8d94e225bc2369f0d2597b84f5236236b6dba6148"
+    },
+    {
+      "path": "src/components/studio-bar/studio-rail.tsx",
+      "sha256": "5b46a857c6df7bf62b1da27afc02c3d82a1ae541092955a523402ce318f01184"
+    }
+  ]
+}

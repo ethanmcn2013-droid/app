@@ -17,10 +17,17 @@ const EARLY_CAPTURE_BOOTSTRAP = String.raw`(() => {
   window.__signalNotesEarlyCaptureInstalled = true;
   let value = "";
   let pendingSave = false;
+  let actorScope = null;
+  let workspaceId = null;
   const isCapture = (target) =>
     target instanceof HTMLTextAreaElement && target.hasAttribute("data-notes-hybrid-capture");
   const remember = (event) => {
-    if (isCapture(event.target)) value = event.target.value;
+    if (isCapture(event.target)) {
+      value = event.target.value;
+      const notebook = event.target.closest("[data-notes-workspace]");
+      actorScope = notebook?.getAttribute("data-recovery-scope") ?? null;
+      workspaceId = notebook?.getAttribute("data-recovery-project") || null;
+    }
   };
   const queueSave = (event) => {
     if (!isCapture(event.target)) return;
@@ -28,7 +35,7 @@ const EARLY_CAPTURE_BOOTSTRAP = String.raw`(() => {
     if (event.shiftKey || event.isComposing || event.keyCode === 229) return;
     if (!event.target.value.trim()) return;
     event.preventDefault();
-    value = event.target.value;
+    remember(event);
     pendingSave = true;
     event.target.setAttribute("data-early-save", "queued");
   };
@@ -38,7 +45,7 @@ const EARLY_CAPTURE_BOOTSTRAP = String.raw`(() => {
     document.removeEventListener("input", remember, true);
     document.removeEventListener("keydown", queueSave, true);
     delete window.__signalNotesClaimEarlyCapture;
-    return { value, pendingSave };
+    return { value, pendingSave, actorScope, workspaceId };
   };
 })();`;
 

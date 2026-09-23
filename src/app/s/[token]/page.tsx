@@ -27,9 +27,9 @@ export async function generateMetadata({
   const { token } = await params;
   const result = await resolveAudienceTimeline(token);
 
-  // Resolve unavailable links before React begins streaming the page. Calling
-  // notFound only from the page body can produce a soft 404 with a 200 status
-  // once the response stream has started.
+  // Reject unavailable links in metadata as well as the page body so neither
+  // emits publication details. Next can stream this boundary with HTTP 200;
+  // the generic not-found body and no-store/noindex headers are the contract.
   if (result.kind !== "ok") notFound();
 
   const description = KIND_DESCRIPTIONS[result.dto.audienceKind];

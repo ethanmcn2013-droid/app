@@ -55,7 +55,7 @@ import {
   loadAndValidateLedger,
   sha256,
 } from "./migration-ledger.mjs";
-import { databaseIdentitySha256, isLocalDatabaseUrl, verifyProofs } from "./migrate.mjs";
+import { databaseIdentitySha256, isLocalDatabaseUrl, SCHEMA_FINGERPRINT_VERSION, verifyProofs } from "./migrate.mjs";
 
 export { databaseIdentitySha256, isLocalDatabaseUrl };
 
@@ -94,7 +94,7 @@ function validateEnvironment(environment) {
 /** Every schema object except the two ledger tables, normalized and hashed. */
 export async function timelineSchemaFingerprintSha256(executor, ledger) {
   const result = await executor.execute({
-    sql: "SELECT type, name, tbl_name, COALESCE(sql, '') AS sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' AND name NOT IN (?, ?) ORDER BY type, name",
+    sql: "SELECT type, name, tbl_name, COALESCE(sql, '') AS sql FROM sqlite_schema WHERE name NOT GLOB 'sqlite_*' AND name NOT IN (?, ?) ORDER BY type, name",
     args: [ledger.databaseLedgerTable, ledger.legacyDrizzleTable],
   });
   const rows = result.rows.map((row) => [
@@ -104,6 +104,19 @@ export async function timelineSchemaFingerprintSha256(executor, ledger) {
     String(row.sql).replace(/\s+/g, " ").trim(),
   ]);
   return sha256(JSON.stringify(rows));
+}
+
+// Historical coverage only, after exact stored adoption/receipt validation.
+// New adoption and current inventory must use the complete fingerprint above.
+async function historicalAdoptionFingerprintSha256(executor, ledger) {
+  const result = await executor.execute({
+    sql: "SELECT type, name, tbl_name, COALESCE(sql, '') AS sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' AND name NOT IN (?, ?) ORDER BY type, name",
+    args: [ledger.databaseLedgerTable, ledger.legacyDrizzleTable],
+  });
+  return sha256(JSON.stringify(result.rows.map(row => [
+    String(row.type), String(row.name), String(row.tbl_name),
+    String(row.sql).replace(/\s+/g, " ").trim(),
+  ])));
 }
 
 async function tableExists(executor, table) {
@@ -116,7 +129,7 @@ async function tableExists(executor, table) {
 
 async function applicationObjectCount(executor, ledger) {
   const result = await executor.execute({
-    sql: "SELECT COUNT(*) AS value FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' AND name NOT IN (?, ?)",
+    sql: "SELECT COUNT(*) AS value FROM sqlite_schema WHERE name NOT GLOB 'sqlite_*' AND name NOT IN (?, ?)",
     args: [ledger.databaseLedgerTable, ledger.legacyDrizzleTable],
   });
   return Number(firstScalar(result));
@@ -275,6 +288,7 @@ function validateAdoptionReceipt(file, context, { databaseUrl, environment }) {
   invariant(fs.existsSync(absolute), `adoption receipt is missing: ${absolute}`);
   const receipt = JSON.parse(fs.readFileSync(absolute, "utf8"));
   invariant(receipt.schemaVersion === "timeline-production-adoption/1", "unsupported adoption receipt");
+  invariant(receipt.schemaFingerprintVersion === undefined || receipt.schemaFingerprintVersion === SCHEMA_FINGERPRINT_VERSION, "unsupported adoption schema fingerprint version");
   invariant(typeof receipt.id === "string" && receipt.id.length > 0, "adoption receipt is missing id");
   invariant(receipt.environment === environment, "adoption receipt environment does not match");
   invariant(receipt.databaseIdentitySha256 === databaseIdentitySha256(databaseUrl), "adoption receipt targets a different database");
@@ -480,7 +494,6 @@ export async function adoptTimelineDatabase({
   invariant((await applicationObjectCount(client, context.ledger)) > 0, "adopt refuses an empty database; run migrate to apply the fresh baseline");
   const receipt = validateAdoptionReceipt(receiptPath, context, { databaseUrl, environment });
   const currentFingerprint = await timelineSchemaFingerprintSha256(client, context.ledger);
-  invariant(receipt.document.schemaFingerprintSha256 === currentFingerprint, "adoption receipt schema fingerprint does not match the target database");
 
   const legacy = await readLegacyDrizzleChain(client, context.ledger);
   invariant(
@@ -500,9 +513,22 @@ export async function adoptTimelineDatabase({
     const row = existingRows[0];
     invariant(row.status === "adopted_legacy", "existing baseline was not adopted as legacy state");
     invariant(row.execution_receipt_id === receipt.id && row.execution_receipt_sha256 === receipt.sha256, "existing adoption receipt differs from the requested receipt");
-    return { status: "no-op", adopted: context.baseline.id, proofs, schemaFingerprintSha256: currentFingerprint, legacyDrizzleChain: legacy };
+    const historicalReplay = receipt.document.schemaFingerprintSha256 !== currentFingerprint;
+    if (historicalReplay) {
+      invariant(receipt.document.schemaFingerprintVersion === undefined, "adoption receipt schema fingerprint does not match the target database");
+      invariant(receipt.document.schemaFingerprintSha256 === await historicalAdoptionFingerprintSha256(client, context.ledger), "adoption receipt schema fingerprint does not match the target database");
+    }
+    return { status: "no-op", adopted: context.baseline.id, proofs, schemaFingerprintSha256: currentFingerprint, legacyDrizzleChain: legacy,
+      ...(historicalReplay ? {
+        receiptFingerprintMode: "legacy-like-replay",
+        receiptFingerprintSha256: receipt.document.schemaFingerprintSha256,
+        notice: "Historical receipt replay only. Its fingerprint excluded ordinary sqlite-like names; the complete current fingerprint is reported separately.",
+      } : {}),
+    };
   }
 
+  invariant(receipt.document.schemaFingerprintSha256 === currentFingerprint, "adoption receipt schema fingerprint does not match the target database");
+  invariant(receipt.document.schemaFingerprintVersion === SCHEMA_FINGERPRINT_VERSION, "new adoption requires schemaFingerprintVersion sqlite-schema/2");
   await atomicWrite(client, {
     proofs: [...context.baseline.receipt.record.proofs, ...receipt.document.proofs],
     metadata: [

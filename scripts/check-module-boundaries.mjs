@@ -179,6 +179,12 @@ const MODULE_GDPR_IMPORT = {
   signal: `@/modules/signal/server/signal-gdpr`,
 };
 
+// Exact host composition for negative-only project recovery outside normal
+// product admission. Independently reviewed module surface: identity-bound
+// publication metadata/withdrawal, with no normal content or positive writer.
+const PROJECT_RECOVERY_HOST = path.join(srcDir, "server", "project-recovery.ts");
+const PROJECT_RECOVERY_IMPORT = "@/modules/timeline/server/project-recovery";
+
 // Collect all source files outside each module to check their imports.
 const allSrcFiles = walk(srcDir);
 
@@ -242,7 +248,10 @@ for (const mod of MODULES) {
         (imp === MODULE_GDPR_IMPORT[mod] ||
           imp.startsWith(MODULE_GDPR_IMPORT[mod] + "/"));
 
-      if (!inAllowedDir && !isGdprOrchestratorForThisModule) {
+      const isProjectRecoveryBridge = mod === "timeline" &&
+        file === PROJECT_RECOVERY_HOST && imp === PROJECT_RECOVERY_IMPORT;
+
+      if (!inAllowedDir && !isGdprOrchestratorForThisModule && !isProjectRecoveryBridge) {
         failures.push(
           `[rule-2] ${rel(file)}: imports from src/modules/${mod} but is not ` +
             `inside src/app/app/${segment}/ or src/modules/${mod}/. ` +
