@@ -94,6 +94,7 @@ jobs:
         run: node scripts/db/production-backup-custody.mjs acknowledge
 
       - name: Apply only after encrypted artifact upload
+        id: production_apply
         if: inputs.command == 'execute'
         env:
           TASKS_DATABASE_URL: ${{ secrets.TASKS_DATABASE_URL }}
@@ -102,3 +103,12 @@ jobs:
           BACKUP_ARTIFACT_ID: ${{ steps.encrypted_backup.outputs.artifact-id }}
           BACKUP_ARTIFACT_DIGEST: ${{ steps.encrypted_backup.outputs.artifact-digest }}
         run: node scripts/db/production-backup-custody.mjs apply
+
+      - name: Retain sanitized migration result
+        if: ${{ always() && inputs.command == 'execute' && steps.encrypted_backup.outcome == 'success' && steps.production_apply.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: tasks-encrypted-migration-result-${{ github.run_id }}
+          path: .db-final/receipt.json
+          if-no-files-found: error
+          retention-days: 90

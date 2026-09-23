@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {execFileSync, spawnSync} from 'node:child_process';
 import {fileURLToPath, pathToFileURL} from 'node:url';
+import {parseArgs} from 'node:util';
 import {createClient} from '@libsql/client';
 import {takeBackup} from './backup.mjs';
 import {restoreInto, measure, compare, compareDdl} from './restore-verify.mjs';
@@ -12,8 +13,14 @@ import {databaseIdentitySha256, migrationStatus, runMigrations, schemaFingerprin
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const cipherDir = path.join(root, '.db-cipher');
+const finalDir = path.join(root, '.db-final');
+const finalOutputDir = () => process.env.GITHUB_ACTIONS === 'true' ||
+  !process.env.CUSTODY_TEST_FINAL_DIR ? finalDir : path.resolve(process.env.CUSTODY_TEST_FINAL_DIR);
 const sha40 = /^[a-f0-9]{40}$/;
 const sha64 = /^[a-f0-9]{64}$/;
+// Independently observed production Tasks URL fingerprint. A credential
+// accidentally bound to another module must fail before any provider request.
+const productionTasksUrlSha256 = '248b09a9d4560a8b66dd2d910e5d95c97b473eda4b656577d030592105a72eb0';
 const safeCode = error => /^[A-Z][A-Z0-9_]{0,47}$/.test(error?.code ?? '')
   ? error.code : 'verification_failed';
 const requireValue = (condition, code) => {
@@ -46,6 +53,68 @@ export function encryptBackup(plainPath, cipherPath, recipient, ageBinary, spawn
   return rawFileSha256(cipherPath);
 }
 
+export function makeBackupBundle(backup) {
+  requireValue(typeof backup?.body === 'string' &&
+    sha64.test(backup?.manifest?.backupSha256 ?? '') &&
+    sha256(backup.body) === backup.manifest.backupSha256 &&
+    Array.isArray(backup.manifest.tables) && backup.manifest.ddl,
+  'BACKUP_BUNDLE_INVALID');
+  return {schema:'tasks-encrypted-backup-bundle/1',
+    body:backup.body, manifest:backup.manifest};
+}
+
+export function readBackupBundle(bundlePath, expectedBackupSha256) {
+  requireValue(sha64.test(expectedBackupSha256 ?? ''), 'EXPECTED_BACKUP_DIGEST_MISSING');
+  const bundle = JSON.parse(fs.readFileSync(bundlePath, 'utf8'));
+  requireValue(bundle.schema === 'tasks-encrypted-backup-bundle/1', 'BACKUP_BUNDLE_INVALID');
+  makeBackupBundle(bundle);
+  requireValue(bundle.manifest.backupSha256 === expectedBackupSha256,
+    'BACKUP_DIGEST_MISMATCH');
+  return bundle;
+}
+
+export function finalResult(input) {
+  const result = input.result === 'applied' ? 'applied' : 'failed';
+  const phase = ['preflight','before_mutation','migration_attempted','postcheck','complete']
+    .includes(input.phase) ? input.phase : 'preflight';
+  const validSha = value => sha64.test(value ?? '') ? value : null;
+  const validSource = value => sha40.test(value ?? '') ? value : null;
+  const validId = value => /^[1-9][0-9]*$/.test(String(value ?? '')) ? String(value) : null;
+  const migrations = Array.isArray(input.migrations) && input.migrations.every(entry =>
+    /^[a-zA-Z0-9_-]{1,80}$/.test(entry?.id ?? '') && sha64.test(entry?.sha256 ?? ''))
+    ? input.migrations.map(entry => ({id:entry.id, sha256:entry.sha256})) : null;
+  return {
+    schema:'tasks-encrypted-migration-result/1', result, phase,
+    mutationState:result === 'applied' ? 'verified_current' :
+      ['migration_attempted','postcheck','complete'].includes(phase)
+        ? 'partial_or_complete_unverified' : 'none_started',
+    errorCode:result === 'failed' ? safeCode(input.error) : null,
+    sourceRevision:validSource(input.sourceRevision),
+    targetSha256:validSha(input.targetSha256),
+    ledgerSha256:validSha(input.ledgerSha256),
+    snapshotSchemaSha256:validSha(input.snapshotSchemaSha256),
+    snapshotLedgerRowsSha256:validSha(input.snapshotLedgerRowsSha256),
+    dryRunFingerprint:validSha(input.dryRunFingerprint),
+    migrations,
+    backupSha256:validSha(input.backupSha256),
+    cipherSha256:validSha(input.cipherSha256),
+    backupArtifactId:validId(input.artifactId),
+    backupArtifactDigest:validSha(input.artifactDigest),
+    executionReceiptSha256:validSha(input.executionReceiptSha256),
+    postApplyStatus:result === 'applied' ? 'current' : null,
+    appliedCount:result === 'applied' && Number.isSafeInteger(input.appliedCount)
+      ? input.appliedCount : null,
+  };
+}
+
+export function writeFinalResult(dir, input) {
+  requireValue(!fs.existsSync(dir), 'FINAL_RESULT_ALREADY_EXISTS');
+  fs.mkdirSync(dir, {mode:0o700});
+  fs.writeFileSync(path.join(dir, 'receipt.json'),
+    JSON.stringify(finalResult(input), null, 2) + '\n', {flag:'wx', mode:0o600});
+  requireValue(fs.readdirSync(dir).join(',') === 'receipt.json', 'FINAL_RESULT_NOT_ALLOWLISTED');
+}
+
 function sourceRevision() {
   const head = execFileSync('git', ['-C', root, 'rev-parse', 'HEAD'],
     {encoding:'utf8', stdio:['ignore','pipe','ignore']}).trim();
@@ -57,13 +126,20 @@ function sourceRevision() {
   return head;
 }
 
+export function requireProductionTasksTarget(url) {
+  requireValue(url, 'PRODUCTION_BINDING_MISSING');
+  const parsed = new URL(url);
+  requireValue(parsed.protocol === 'libsql:' && !parsed.username && !parsed.password &&
+    !parsed.port && (parsed.pathname === '' || parsed.pathname === '/') &&
+    !parsed.search && !parsed.hash, 'REMOTE_TARGET_REQUIRED');
+  requireValue(sha256(url) === productionTasksUrlSha256, 'PRODUCTION_TARGET_MISMATCH');
+}
+
 function connection() {
   const url = process.env.TASKS_DATABASE_URL;
   const authToken = process.env.TASKS_AUTH_TOKEN;
   requireValue(url && authToken, 'PRODUCTION_BINDING_MISSING');
-  const parsed = new URL(url);
-  requireValue(parsed.protocol === 'libsql:' && !parsed.username && !parsed.password &&
-    !parsed.search && !parsed.hash, 'REMOTE_TARGET_REQUIRED');
+  requireProductionTasksTarget(url);
   return {url, authToken};
 }
 
@@ -77,6 +153,7 @@ function paths() {
   return {
     privateDir,
     backupPath:path.join(privateDir, 'backup.jsonl'),
+    bundlePath:path.join(privateDir, 'backup.bundle.json'),
     restorePath:path.join(privateDir, 'restored.db'),
     preparedPath:path.join(privateDir, 'prepared.json'),
     uploadAckPath:path.join(privateDir, 'upload-ack.json'),
@@ -170,7 +247,9 @@ async function prepare() {
       try { dryRunFingerprint = await schemaFingerprintSha256(local); }
       finally { local.close(); }
     }
-    const cipherSha256 = encryptBackup(p.backupPath, p.cipherPath, recipient, ageBinary);
+    fs.writeFileSync(p.bundlePath, JSON.stringify(makeBackupBundle(backup)) + '\n',
+      {flag:'wx', mode:0o600});
+    const cipherSha256 = encryptBackup(p.bundlePath, p.cipherPath, recipient, ageBinary);
     const prepared = {
       schema:'tasks-encrypted-backup-prepared/1', mode, sourceRevision:source,
       targetUrlSha256:sha256(url), databaseIdentitySha256:databaseIdentitySha256(url),
@@ -196,20 +275,23 @@ async function prepare() {
       {flag:'wx', mode:0o600});
     requireCipherArtifactContents(cipherDir);
     console.log(JSON.stringify({result:'prepared', mode, tables:prepared.tableCount,
-      rows:prepared.totalRows, backupSha256:prepared.backupSha256}));
+      rows:prepared.totalRows, backupSha256:prepared.backupSha256, cipherSha256}));
   } finally {
     client?.close();
   }
 }
 
-async function apply() {
+async function apply(progress) {
   const source = sourceRevision();
+  progress.sourceRevision = source;
   const ack = requireUploadAck(process.env.BACKUP_ARTIFACT_ID, process.env.BACKUP_ARTIFACT_DIGEST);
   const p = paths();
   const acknowledged = JSON.parse(fs.readFileSync(p.uploadAckPath, 'utf8'));
   requireValue(acknowledged.sourceRevision === source &&
     acknowledged.artifactId === ack.artifactId &&
     acknowledged.artifactDigest === ack.artifactDigest, 'UPLOAD_ACK_CHANGED');
+  progress.artifactId = ack.artifactId;
+  progress.artifactDigest = ack.artifactDigest;
   const {url, authToken} = connection();
   const prepared = JSON.parse(fs.readFileSync(p.preparedPath, 'utf8'));
   requireValue(prepared.schema === 'tasks-encrypted-backup-prepared/1' &&
@@ -221,12 +303,20 @@ async function apply() {
   requireValue(sha64.test(prepared.backupSha256) && rawFileSha256(p.backupPath) === prepared.backupSha256 &&
     rawFileSha256(p.cipherPath) === prepared.cipherSha256 &&
     acknowledged.cipherSha256 === prepared.cipherSha256, 'PREPARED_DIGEST_CHANGED');
+  progress.targetSha256 = prepared.targetUrlSha256;
+  progress.backupSha256 = prepared.backupSha256;
+  progress.cipherSha256 = prepared.cipherSha256;
+  progress.ledgerSha256 = prepared.ledgerSha256;
+  progress.snapshotSchemaSha256 = prepared.snapshot.schemaFingerprintSha256;
+  progress.snapshotLedgerRowsSha256 = prepared.snapshot.ledgerRowsSha256;
+  progress.dryRunFingerprint = prepared.dryRunFingerprint;
   requireCipherArtifactContents(cipherDir);
   const context = loadAndValidateLedger({root});
   requireValue(context.ledgerSha256 === prepared.ledgerSha256, 'SOURCE_LEDGER_CHANGED');
   const pending = prepared.migrations;
   requireValue(Array.isArray(pending) && pending.length > 0 &&
     pending.every(entry => sha64.test(entry.sha256 ?? '')), 'PENDING_MIGRATIONS_MISSING');
+  progress.migrations = pending;
 
   let client;
   let tx;
@@ -246,6 +336,7 @@ async function apply() {
     const currentPending = pendingMigrations(context, currentRows)
       .map(entry => ({id:entry.id, sha256:entry.sha256}));
     requireValue(JSON.stringify(pending) === JSON.stringify(currentPending), 'PENDING_MIGRATIONS_CHANGED');
+    progress.phase = 'before_mutation';
 
     const receipt = {
       schemaVersion:'tasks-migration-execution/1', id:`tasks-encrypted-execution-${process.env.GITHUB_RUN_ID ?? Date.now()}`,
@@ -257,16 +348,64 @@ async function apply() {
     };
     fs.writeFileSync(p.executionReceiptPath, JSON.stringify(receipt, null, 2) + '\n',
       {flag:'wx', mode:0o600});
+    progress.executionReceiptSha256 = canonicalFileSha256(p.executionReceiptPath);
+    progress.phase = 'migration_attempted';
     const result = await runMigrations({client, context, environment:'production', databaseUrl:url,
       executionReceiptPath:p.executionReceiptPath, releaseSha:source});
+    progress.phase = 'postcheck';
     const status = await migrationStatus({client, context});
     requireValue(status.state === 'current', 'POST_APPLY_STATUS_FAILED');
+    progress.phase = 'complete';
+    progress.appliedCount = result.applied?.length ?? 0;
     console.log(JSON.stringify({result:'applied', applied:result.applied?.length ?? 0,
-      artifactId:ack.artifactId, executionReceiptSha256:canonicalFileSha256(p.executionReceiptPath)}));
+      artifactId:ack.artifactId, executionReceiptSha256:progress.executionReceiptSha256}));
   } finally {
     if (tx) await tx.rollback().catch(() => undefined);
     client?.close();
   }
+}
+
+async function recover(argv) {
+  const {values} = parseArgs({args:argv, options:{
+    cipher:{type:'string'}, identity:{type:'string'},
+    'age-binary':{type:'string'}, 'output-dir':{type:'string'},
+    'expected-cipher-sha256':{type:'string'},
+    'expected-backup-sha256':{type:'string'},
+  }});
+  const cipher = path.resolve(values.cipher ?? '');
+  const identity = path.resolve(values.identity ?? '');
+  const ageBinary = path.resolve(values['age-binary'] ?? '');
+  const outputDir = path.resolve(values['output-dir'] ?? '');
+  requireValue(values.cipher && values.identity && values['age-binary'] &&
+    values['output-dir'], 'RECOVERY_INPUT_MISSING');
+  requireValue(sha64.test(values['expected-cipher-sha256'] ?? '') &&
+    sha64.test(values['expected-backup-sha256'] ?? ''), 'EXPECTED_DIGEST_MISSING');
+  requireValue(fs.existsSync(cipher) && fs.existsSync(identity) &&
+    fs.existsSync(ageBinary), 'RECOVERY_INPUT_MISSING');
+  requireValue(rawFileSha256(cipher) === values['expected-cipher-sha256'],
+    'CIPHER_DIGEST_MISMATCH');
+  const relative = path.relative(root, outputDir);
+  requireValue(relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative) &&
+    !fs.existsSync(outputDir), 'PRIVATE_OUTPUT_REQUIRED');
+  fs.mkdirSync(outputDir, {mode:0o700});
+  const bundlePath = path.join(outputDir, 'backup.bundle.json');
+  const decrypted = spawnSync(ageBinary,
+    ['-d','-i',identity,'-o',bundlePath,cipher], {stdio:'ignore'});
+  requireValue(!decrypted.error && decrypted.status === 0, 'DECRYPTION_FAILED');
+  const bundle = readBackupBundle(bundlePath, values['expected-backup-sha256']);
+  const backupPath = path.join(outputDir, 'backup.jsonl');
+  const manifestPath = path.join(outputDir, 'backup.manifest.json');
+  fs.writeFileSync(backupPath, bundle.body, {flag:'wx', mode:0o600});
+  fs.writeFileSync(manifestPath, JSON.stringify(bundle.manifest, null, 2) + '\n',
+    {flag:'wx', mode:0o600});
+  requireValue(rawFileSha256(backupPath) === values['expected-backup-sha256'],
+    'BACKUP_DIGEST_MISMATCH');
+  await verifyLocalRestore(bundle, path.join(outputDir, 'restored.db'));
+  console.log(JSON.stringify({result:'recovered',
+    backupSha256:values['expected-backup-sha256'],
+    cipherSha256:values['expected-cipher-sha256'],
+    tables:bundle.manifest.tableCount, rows:bundle.manifest.totalRows,
+    restore:'fresh_local_verified'}));
 }
 
 function acknowledge() {
@@ -287,13 +426,22 @@ function acknowledge() {
 let stage = 'guard';
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const command = process.argv[2];
+  const progress = {phase:'preflight'};
   try {
-    requireValue(['prepare','acknowledge','apply'].includes(command), 'COMMAND_INVALID');
+    requireValue(['prepare','acknowledge','apply','recover'].includes(command), 'COMMAND_INVALID');
     stage = command;
     if (command === 'prepare') await prepare();
     if (command === 'acknowledge') acknowledge();
-    if (command === 'apply') await apply();
+    if (command === 'apply') {
+      await apply(progress);
+      writeFinalResult(finalOutputDir(), {...progress, result:'applied'});
+    }
+    if (command === 'recover') await recover(process.argv.slice(3));
   } catch (error) {
+    if (command === 'apply') {
+      try { writeFinalResult(finalOutputDir(), {...progress, result:'failed', error}); }
+      catch { /* upload step fails closed if no final receipt exists */ }
+    }
     console.error(JSON.stringify({result:'failed', stage, errorCode:safeCode(error)}));
     process.exitCode = 1;
   }

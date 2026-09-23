@@ -12,7 +12,7 @@ This entry records the candidate, not a completed production deployment. Linux C
 
 ## 2026-09-23 · T·156 · protects · database backup custody
 
-**The candidate recovery path encrypts verified Tasks backups before they leave the runner.** A new main-only workflow accepts a public age recipient, verifies a read-transaction snapshot by local restore, and uploads only ciphertext and a sanitized receipt. Migration apply waits for upload acknowledgment and rechecks the source, target, schema, and migration ledger. The old raw-upload workflow is retired and must stay disabled. This is a candidate, not a deployed recovery claim: the actual encrypted artifact must be downloaded, decrypted with the separately held identity, and restored before acceptance. Portable recovery-key escrow remains open.
+**The candidate recovery path encrypts verified Tasks backups before they leave the runner.** A new main-only workflow accepts a public age recipient, verifies a read-transaction snapshot by local restore, and uploads only ciphertext containing the full backup and restore manifest plus a sanitized receipt. Migration apply waits for upload acknowledgment and rechecks the source, target, schema, and migration ledger; a separate sanitized artifact retains its final or possibly partial result. The old raw-upload workflow is retired and must stay disabled. This is a candidate, not a deployed recovery claim: the actual encrypted artifact must be downloaded, decrypted with the separately held identity, and restored before acceptance. Portable recovery-key escrow remains open.
 
 ## 2026-09-08 · T·154 · tightens · the favicon cannot silently drift again
 

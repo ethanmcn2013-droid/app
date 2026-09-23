@@ -104,5 +104,8 @@ The committed adoption receipt stores only content hashes and non-secret proof
 results. Database credentials and backup bytes stay outside the repository.
 The retired `db-migrate` workflow's raw `.db-evidence/` upload must stay
 disabled. The new `db-migrate-encrypted` workflow uploads only an age-encrypted
-backup and sanitized receipt, and requires upload acknowledgment before the
-production apply. The private decryption identity is held outside GitHub.
+bundle of the backup body and full verification manifest with a sanitized
+receipt, and requires upload acknowledgment before production apply. It retains
+a separate sanitized final result even if apply fails after mutation starts.
+The private decryption identity is held outside GitHub; see `DEPLOY.md` §4
+for the trusted-hash offline restore rehearsal.
