@@ -116,6 +116,30 @@ test("unverified storage fails closed and Clerk identity resolves only through c
   });
 });
 
+test("project audience uses humane names for null and blank member fields without changing identities", async () => {
+  await withFixture(async ({ client, service }) => {
+    const room = await service.ensureProjectConversation({ actorId: "synthetic_alice", projectId: projectA });
+    if (!room.ok) assert.fail("fixture room missing");
+    await client.batch([
+      { sql: "UPDATE users SET name=NULL, handle='  Bob Handle  ', email='bob@example.test' WHERE id='synthetic_bob'" },
+      { sql: "INSERT INTO users(id,clerk_id,email,handle,name,color,initials) VALUES ('synthetic_casey','clerk_casey','casey@example.test','  ','  ','#777777','C')" },
+      { sql: "INSERT INTO users(id,clerk_id,email,handle,name,color,initials) VALUES ('synthetic_unnamed','clerk_unnamed',NULL,NULL,NULL,'#888888','?')" },
+      { sql: "INSERT INTO workspace_members(workspace_id,user_id,role,joined_at) VALUES (?,'synthetic_casey','member',?)", args: [projectA, Date.now()] },
+      { sql: "INSERT INTO workspace_members(workspace_id,user_id,role,joined_at) VALUES (?,'synthetic_unnamed','member',?)", args: [projectA, Date.now()] },
+    ], "write");
+
+    const audience = await service.listProjectAudience({ actorId: "synthetic_alice", projectId: projectA });
+    if (!audience.ok) assert.fail("authorized audience missing");
+    assert.deepEqual(audience.value.members, [
+      { id: "synthetic_alice", name: "Alice" },
+      { id: "synthetic_bob", name: "Bob Handle" },
+      { id: "synthetic_casey", name: "casey" },
+      { id: "synthetic_unnamed", name: "Someone" },
+    ]);
+    assert.deepEqual(await service.listProjectAudience({ actorId: "synthetic_charlie", projectId: projectA }), { ok: false, code: "unavailable" });
+  });
+});
+
 test("HTTP receipt recovery survives lost acknowledgment and send rollback; another connection revokes all later reads", async () => {
   const fixture = await freshDatabase();
   const second = createClient({ url: `file:${join(fixture.directory, "tasks.db").replaceAll("\\", "/")}` });
