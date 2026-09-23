@@ -1,9 +1,10 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
-import { attachments, resources, tasks } from "@/server/db/schema";
+import { attachments, resources, tasks, users } from "@/server/db/schema";
+import { userDisplayName } from "@/lib/user-display-name";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
 import { getCurrentUser } from "@/server/auth";
@@ -63,6 +64,7 @@ export type ResourceRow = {
   mimeType: string | null;
   sizeBytes: number | null;
   addedByUserId: string | null;
+  addedByName: string | null;
   addedAt: number;
   accessState: string;
   countsAgainstStorage: number;
@@ -117,6 +119,18 @@ export async function listTaskResourcesAction(
     (a) => !mirroredIds.includes(`res-${a.id}`),
   );
 
+  // The resource list is already authorized for this Task. Resolve only
+  // contributors visible on these rows; an erased author remains unnamed.
+  const contributorIds = [...new Set([
+    ...resourceRows.map((row) => row.addedByUserId),
+    ...unmirroredAttachments.map((row) => row.uploaderUserId),
+  ].filter((id): id is string => Boolean(id)))];
+  const contributorRows = contributorIds.length > 0
+    ? await db.select({ id: users.id, name: users.name, handle: users.handle, email: users.email })
+      .from(users).where(inArray(users.id, contributorIds))
+    : [];
+  const contributorNames = new Map(contributorRows.map((row) => [row.id, userDisplayName(row)]));
+
   const fromResources: ResourceRow[] = resourceRows.map((r) => ({
     id: r.id,
     taskId: r.taskId,
@@ -128,6 +142,7 @@ export async function listTaskResourcesAction(
     mimeType: r.mimeType,
     sizeBytes: r.sizeBytes,
     addedByUserId: r.addedByUserId,
+    addedByName: r.addedByUserId ? contributorNames.get(r.addedByUserId) ?? null : null,
     addedAt: r.addedAt,
     accessState: r.accessState,
     countsAgainstStorage: r.countsAgainstStorage,
@@ -145,6 +160,7 @@ export async function listTaskResourcesAction(
     mimeType: a.mimeType,
     sizeBytes: a.sizeBytes,
     addedByUserId: a.uploaderUserId,
+    addedByName: a.uploaderUserId ? contributorNames.get(a.uploaderUserId) ?? null : null,
     addedAt: Math.floor((a.createdAt?.getTime() ?? Date.now()) / 1000),
     accessState: "legacy",
     countsAgainstStorage: 1,

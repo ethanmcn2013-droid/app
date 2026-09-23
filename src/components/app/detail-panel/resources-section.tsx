@@ -561,6 +561,7 @@ type RealRow = {
   mimeType: string | null;
   sizeBytes: number | null;
   addedByUserId: string | null;
+  addedByName: string | null;
   addedAt: number;
   accessState: string;
   storage: "signal" | "google_drive";
@@ -589,6 +590,7 @@ function toDisplayRow(r: ResourceRow): RealRow {
     mimeType: r.mimeType,
     sizeBytes: r.sizeBytes,
     addedByUserId: r.addedByUserId,
+    addedByName: r.addedByName,
     addedAt: r.addedAt,
     accessState: r.accessState,
     storage: r.storage,
@@ -651,7 +653,7 @@ function RealResourceRow({
           {row.addedByUserId ? (
             <>
               <span aria-hidden>·</span>
-              <Avatar user={row.addedByUserId} size={12} />
+              <Avatar user={row.addedByUserId} name={row.addedByName ?? undefined} size={12} />
             </>
           ) : null}
           <span title={new Date(row.addedAt * 1000).toLocaleString()}>

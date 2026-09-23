@@ -96,8 +96,7 @@ export function InboxApp({
   pinnedHour?: number;
 }) {
   const { openTask } = useTaskPanel();
-  const me = USERS[digest.user];
-  const displayName = userName ?? me.name;
+  const displayName = userName?.trim() || null;
 
   return (
     /* bg-bg: the inbox reads on white — its quiet uppercase kickers sit
@@ -130,7 +129,7 @@ export function InboxApp({
         <section>
           <SectionHead
             eyebrow="Daily digest"
-            title={`Good morning, ${displayName}.`}
+            title={displayName ? `Good morning, ${displayName}.` : "Good morning."}
             subtitle="Your one summary for the day. We don’t send anything else unless someone tags you directly."
             action={
               <div className="flex items-center gap-2">
@@ -164,13 +163,17 @@ export function InboxApp({
               title="Closed yesterday"
               empty="No tasks were marked done in the last 24 hours."
               tasks={digest.completedYesterday}
+              digestUser={digest.user}
+              digestUserName={displayName}
               onOpen={openTask}
             />
             <DigestCard
               tone="brand"
-              title="Due today"
+              title="Due in the next 24 hours"
               empty="Nothing on your plate is due in the next 24 hours."
               tasks={digest.dueToday}
+              digestUser={digest.user}
+              digestUserName={displayName}
               onOpen={openTask}
             />
           </div>
@@ -482,12 +485,16 @@ function DigestCard({
   title,
   tone,
   tasks,
+  digestUser,
+  digestUserName,
   empty,
   onOpen,
 }: {
   title: string;
   tone: "brand" | "emerald";
   tasks: Task[];
+  digestUser: UserId;
+  digestUserName: string | null;
   empty: string;
   onOpen: (id: string) => void;
 }) {
@@ -517,25 +524,31 @@ function DigestCard({
         </p>
       ) : (
         <ul className="mt-3 space-y-1.5">
-          {tasks.slice(0, 6).map((t) => (
-            <li key={t.id}>
-              <button
-                type="button"
-                onClick={() => onOpen(t.id)}
-                className="flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-bg-sunken/60"
-              >
-                <Avatar user={t.assignees[0]} size={14} />
-                <span className="line-clamp-1 flex-1 text-[12.5px] text-ink">
-                  {t.title}
-                </span>
-                {t.due ? (
-                  <span className="flex-shrink-0 rounded bg-bg-sunken px-1.5 py-0.5 text-[10.5px] text-ink-soft">
-                    {t.due}
+          {tasks.slice(0, 6).map((t) => {
+            // This digest belongs to the signed-in assignee. Prefer that
+            // person's avatar when a Task has several assignees, and only
+            // pass the profile name for the matching id.
+            const avatarUser = t.assignees.includes(digestUser) ? digestUser : t.assignees[0];
+            return (
+              <li key={t.id}>
+                <button
+                  type="button"
+                  onClick={() => onOpen(t.id)}
+                  className="flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-bg-sunken/60"
+                >
+                  <Avatar user={avatarUser} name={avatarUser === digestUser ? digestUserName ?? undefined : undefined} size={14} />
+                  <span className="line-clamp-1 flex-1 text-[12.5px] text-ink">
+                    {t.title}
                   </span>
-                ) : null}
-              </button>
-            </li>
-          ))}
+                  {t.due ? (
+                    <span className="flex-shrink-0 rounded bg-bg-sunken px-1.5 py-0.5 text-[10.5px] text-ink-soft">
+                      {t.due}
+                    </span>
+                  ) : null}
+                </button>
+              </li>
+            );
+          })}
           {tasks.length > 6 ? (
             <li className="px-1.5 text-[11px] text-ink-quiet">
               + {tasks.length - 6} more
@@ -579,7 +592,7 @@ function Mentions({
               onClick={() => onOpen(m.taskId)}
               className="flex w-full items-start gap-2 rounded-md p-1.5 text-left transition-colors hover:bg-white/60"
             >
-              <Avatar user={m.from} size={18} />
+              <Avatar user={m.from} name={m.fromName} size={18} />
               <div className="flex-1">
                 <div className="text-[12px] text-ink-soft">
                   <span className="font-medium text-ink">{m.fromName}</span>{" "}

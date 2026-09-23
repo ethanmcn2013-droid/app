@@ -61,8 +61,8 @@ function substanceLine(input: GreetingInput): string {
   if (dueToday > 0) {
     const n = numWord(dueToday);
     return dueToday === 1
-      ? "One task is due today."
-      : `${n} tasks are due today.`;
+      ? "One task is due in the next 24 hours."
+      : `${n} tasks are due in the next 24 hours.`;
   }
 
   if (doneToday > 0) {
@@ -72,7 +72,7 @@ function substanceLine(input: GreetingInput): string {
       : `You have completed ${n} today.`;
   }
 
-  return "Nothing is due today.";
+  return "Nothing is due in the next 24 hours.";
 }
 
 export function buildGreeting(input: GreetingInput): GreetingResult | null {

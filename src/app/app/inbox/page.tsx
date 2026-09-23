@@ -31,6 +31,7 @@ import { PERSONALITY_DEFAULTS } from "@/lib/personality-prefs";
 import { isTaskDone } from "@/lib/board-columns";
 import { authenticateConversationActor, getMessageAttentionService } from "@/server/conversations/runtime";
 import { loadInboxAttention } from "@/server/conversations/attention-loader";
+import { userDisplayName } from "@/lib/user-display-name";
 
 export const dynamic = "force-dynamic";
 
@@ -118,11 +119,10 @@ export default async function InboxPage() {
       // so the button's render decision doesn't hinge on a client-side
       // filter pass.
       getOverdueTodayCount(),
-      // C1: resolve the real user's display name from DB so the inbox
-      // greeting uses the actual name rather than the USERS Proxy
-      // fallback ("Someone") for Clerk-issued ids.
+      // Use the same permitted profile fallback as activity authors when
+      // Clerk has not supplied a name yet.
       db
-        .select({ name: users.name })
+        .select({ name: users.name, handle: users.handle, email: users.email })
         .from(users)
         .where(eq(users.id, me))
         .then((rows) => rows[0] ?? null),
@@ -149,7 +149,7 @@ export default async function InboxPage() {
         workspaceName={wsMeta?.name}
         workspaceSlug={wsMeta?.slug}
         overdueCount={overdueCount}
-        userName={userRow?.name ?? undefined}
+        userName={userRow ? userDisplayName(userRow) ?? undefined : undefined}
         personalityPrefs={personalityPrefs}
       />
     </TasksRuntimePageMount>
