@@ -308,13 +308,13 @@ export function MembersSection({
             onChange={(e) => { setInviteEmail(e.target.value); setInviteNotice(null); }}
             placeholder="teammate@yourdomain.com"
             disabled={!canEdit || pending || isCapped}
-            className="min-h-11 flex-1 rounded-md border border-line bg-white px-3 py-1.5 text-[13px] text-ink shadow-sm focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/15 disabled:opacity-60"
+            className="min-h-[44px] flex-1 rounded-md border border-line bg-white px-3 py-1.5 text-[13px] text-ink shadow-sm focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/15 disabled:opacity-60"
           />
           <select
             value={inviteRole}
             onChange={(e) => setInviteRole(e.target.value as "member" | "owner")}
             disabled={!canEdit || pending || isCapped}
-            className="min-h-11 rounded-md border border-line bg-white px-2 py-1.5 text-[13px] text-ink shadow-sm focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/15 disabled:opacity-60"
+            className="min-h-[44px] rounded-md border border-line bg-white px-2 py-1.5 text-[13px] text-ink shadow-sm focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/15 disabled:opacity-60"
             aria-label="Role for invited member"
           >
             <option value="member">Member</option>
@@ -323,7 +323,7 @@ export function MembersSection({
           <button
             type="submit"
             disabled={!canEdit || pending || isCapped || !inviteEmail.trim()}
-            className="min-h-11 rounded-full bg-ink px-4 py-1.5 text-[12.5px] font-medium text-white shadow-sm hover:bg-ink-soft disabled:opacity-50"
+            className="min-h-[44px] rounded-full bg-ink px-4 py-1.5 text-[12.5px] font-medium text-white shadow-sm hover:bg-ink-soft disabled:opacity-50"
           >
             Create invite
           </button>
@@ -344,7 +344,7 @@ export function MembersSection({
             <input id="manual-invite-link" type="text" readOnly value={manualInvite.url}
               onFocus={(event) => event.currentTarget.select()}
               aria-label={`Invite link for ${manualInvite.email}`}
-              className="mt-2 min-h-11 w-full rounded-md border border-line bg-white px-3 text-[12px] text-ink focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/15" />
+              className="mt-2 min-h-[44px] w-full rounded-md border border-line bg-white px-3 text-[12px] text-ink focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/15" />
           </div>
         ) : null}
         {!canEdit ? (
@@ -410,7 +410,7 @@ export function MembersSection({
                 </div>
                 {canEdit ? (
                   <button type="button" onClick={() => void handleCopyLink(invite)}
-                    className="min-h-11 rounded-full border border-line bg-white px-3 text-[11.5px] font-medium text-ink-soft hover:border-ink-soft/30 hover:text-ink">
+                    className="min-h-[44px] rounded-full border border-line bg-white px-3 text-[11.5px] font-medium text-ink-soft hover:border-ink-soft/30 hover:text-ink">
                     Copy link
                   </button>
                 ) : null}
@@ -419,7 +419,7 @@ export function MembersSection({
                     type="button"
                     onClick={() => handleResend(invite)}
                     disabled={pending}
-                    className="min-h-11 rounded-full border border-line bg-white px-3 text-[11.5px] font-medium text-ink-soft hover:border-ink-soft/30 hover:text-ink disabled:opacity-60"
+                    className="min-h-[44px] rounded-full border border-line bg-white px-3 text-[11.5px] font-medium text-ink-soft hover:border-ink-soft/30 hover:text-ink disabled:opacity-60"
                   >
                     {invite.lastSentAt === null ? "Send email" : "Resend"}
                   </button>
@@ -429,7 +429,7 @@ export function MembersSection({
                     type="button"
                     onClick={() => handleRevoke(invite)}
                     disabled={pending}
-                    className="min-h-11 min-w-11 rounded-md p-1.5 text-ink-quiet transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:opacity-60"
+                    className="min-h-[44px] min-w-[44px] rounded-md p-1.5 text-ink-quiet transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:opacity-60"
                     aria-label={`Revoke invite for ${invite.email}`}
                     title="Revoke invite"
                   >
