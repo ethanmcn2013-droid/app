@@ -483,9 +483,12 @@ export function createConversationService(
       const scope = await loadProjectScope(executor, input);
       if (!scope.row || !scope.member || !scope.row.id) return failure("unavailable");
       const members = await executor.execute({
-        sql: `SELECT u.id, u.name FROM workspace_members wm
+        sql: `SELECT u.id,
+          COALESCE(NULLIF(TRIM(u.name), ''), NULLIF(TRIM(u.handle), ''),
+            NULLIF(TRIM(SUBSTR(u.email, 1, INSTR(u.email, '@') - 1)), ''), 'Someone') AS name
+          FROM workspace_members wm
           JOIN users u ON u.id = wm.user_id
-          WHERE wm.workspace_id = ? ORDER BY lower(u.name), u.id`,
+          WHERE wm.workspace_id = ? ORDER BY name COLLATE NOCASE, u.id`,
         args: [input.projectId],
       });
       return {
