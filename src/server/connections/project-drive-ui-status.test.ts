@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { projectDriveAccessPeople, readProjectDriveUiStatus } from "./project-drive-ui-status";
+import { eq } from "drizzle-orm";
+import { providerConnections, workspaceStorage } from "@/server/db/schema";
 import { coreAuthorization, freshProjectDriveCoreDb, seedProjectDriveCore, seedStorageGenerations } from "./project-drive-core.test.helpers";
 import type { LiveDrivePermission } from "./drive-grants";
 import { createElement } from "react";
@@ -22,6 +24,27 @@ test("only Google's current named-user email and role prove access", () => {
 });
 test("an empty live list never becomes complete membership coverage", () => {
   assert.equal(projectDriveAccessPeople([{ name: "Owner", email: "owner@example.com" }], []).people[0].access, "unconfirmed");
+});
+test("only the current storage owner with a matching active Google account sees restore", async () => {
+  const f = await freshProjectDriveCoreDb();
+  try {
+    await seedProjectDriveCore(f.client);
+    await seedStorageGenerations(f.client);
+    await f.db.update(workspaceStorage).set({ state: "needs_reauth" }).where(eq(workspaceStorage.id, "gen-current"));
+    const deps = {
+      database: f.db,
+      connection: async () => ({ connected: true, accountEmail: "owner@example.com", status: "active" as const, connectedAt: null, rootFolderUrl: null, projectUsesThisAccount: true, affectedProjectCount: 1, revocationPending: false }),
+      permissions: async () => [] as LiveDrivePermission[], now: () => new Date(),
+    };
+    const auth = coreAuthorization("owner", "ws-a");
+    assert.equal((await readProjectDriveUiStatus(auth, deps)).canRestore, true);
+    await f.db.update(providerConnections).set({ providerAccountId: "different-account" }).where(eq(providerConnections.id, "conn-new"));
+    assert.equal((await readProjectDriveUiStatus(auth, deps)).canRestore, false);
+    await f.db.update(providerConnections).set({ providerAccountId: "account-owner", providerAccountEmail: "not-clerk@example.com" }).where(eq(providerConnections.id, "conn-new"));
+    assert.equal((await readProjectDriveUiStatus(auth, deps)).canRestore, false);
+    await f.db.update(providerConnections).set({ providerAccountEmail: "owner@example.com", revokeRequestedAt: new Date() }).where(eq(providerConnections.id, "conn-new"));
+    assert.equal((await readProjectDriveUiStatus(auth, { ...deps, connection: async () => ({ ...(await deps.connection()), revocationPending: true }) })).canRestore, false);
+  } finally { f.cleanup(); }
 });
 test("status is project scoped, sanitized, race aware and fails closed on provider errors", async () => {
   const fixture = await freshProjectDriveCoreDb();
@@ -63,7 +86,7 @@ for (const scenario of removalCases) test(`pending permission removal: ${scenari
     assert.doesNotMatch(JSON.stringify(reloaded), /private-permission|stale-private|live-private|Private provider|private-root|private-connected|conn-old|gen-current/);
     const html = renderToStaticMarkup(createElement(ConnectionsView, {
       status: reloaded, busy: false, message: null, confirmation: false, handover: null,
-      onRefresh() {}, onConnect() {}, onEnable() {}, onDisconnect() {}, onCancelDisconnect() {}, onConfirmDisconnect() {}, onRetryDisconnect() {},
+      onRefresh() {}, onConnect() {}, onEnable() {}, onRestore() {}, onDisconnect() {}, onCancelDisconnect() {}, onConfirmDisconnect() {}, onRetryDisconnect() {},
     }));
     assert.equal(html.includes('aria-label="Pending access removal"'), scenario.current + scenario.previous > 0);
     assert.equal(html.includes("current Drive folder is still unconfirmed"), scenario.current > 0);

@@ -16,6 +16,7 @@ import {
   enableProjectGoogleDriveStorage,
   type ProjectDriveFolderSetupState,
 } from "@/server/connections/project-drive-folder-management";
+import { restoreProjectGoogleDriveStorage } from "@/server/connections/project-drive-storage-restore";
 import {
   ARCHIVED_PROJECT_DRIVE_STORAGE_HANDOVER_STATE,
   DEMO_PROJECT_DRIVE_STORAGE_HANDOVER_STATE,
@@ -80,6 +81,21 @@ export async function enableGoogleDriveForProjectAction(
     return ARCHIVED_PROJECT_DRIVE_FOLDER_SETUP_STATE;
   }
   const result = await enableProjectGoogleDriveStorage(authorization);
+  revalidatePath("/app/settings");
+  return result;
+}
+
+/** Recheck the same owner's existing folder after a confirmed reconnect. */
+export async function restoreGoogleDriveForProjectAction(
+  projectId: string,
+): Promise<ProjectDriveFolderSetupState | null> {
+  if (isDemoMode()) return DEMO_PROJECT_DRIVE_FOLDER_SETUP_STATE;
+  // This new UI-only repair path is unavailable during the flags-off,
+  // pre-Drive-schema production promotion. Disconnect cleanup remains live.
+  if (!projectDriveUiEnabled()) return null;
+  const authorization = await authorizeProjectDrive(projectId, "manageProject");
+  if (authorization.archived) return ARCHIVED_PROJECT_DRIVE_FOLDER_SETUP_STATE;
+  const result = await restoreProjectGoogleDriveStorage(authorization);
   revalidatePath("/app/settings");
   return result;
 }

@@ -54,7 +54,7 @@ function LiveConnections({ projectId }: { projectId: string }) {
     finally { await refresh(); locked.current = false; }
   }
 
-  async function act(kind: "connect" | "enable" | "disconnect") {
+  async function act(kind: "connect" | "enable" | "restore" | "disconnect") {
     if (locked.current) return;
     locked.current = true;
     setBusy(true);
@@ -69,6 +69,9 @@ function LiveConnections({ projectId }: { projectId: string }) {
       if (kind === "enable") {
         const result = await actions.enableGoogleDriveForProjectAction(projectId);
         setMessage(result.status === "active" ? "Board folder set up. Google access is checked below." : "Setup is not complete. The current state is shown below; existing files have not moved.");
+      } else if (kind === "restore") {
+        const result = await actions.restoreGoogleDriveForProjectAction(projectId);
+        setMessage(result?.status === "active" ? "Board Drive access restored. Google access is checked below." : "Drive access is not yet confirmed. Existing files have not moved; check the current state below.");
       } else {
         const result = await actions.disconnectGoogleDriveConnectionAction(projectId);
         setMessage(result.revocationConfirmed ? "Google confirmed your Drive disconnect." : result.disconnected ? "Google has not confirmed the disconnect yet. Check it again before reconnecting." : "No current Drive connection or pending disconnect was found. Check again.");
@@ -78,5 +81,5 @@ function LiveConnections({ projectId }: { projectId: string }) {
     finally { await refresh(); locked.current = false; }
   }
   if (!status) return <section aria-label="Connections"><h2 className="text-[22px] font-semibold text-ink">Connections</h2><p role="status" className="my-4 text-[13px] text-ink-soft">{busy ? "Loading connection and Google access…" : message}</p>{!busy ? <button className={driveButton} onClick={() => void refresh()}>Check again</button> : null}</section>;
-  return <ConnectionsView status={status} busy={busy} message={message} confirmation={confirmation} onRefresh={() => void refresh()} onConnect={() => void act("connect")} onEnable={() => void act("enable")} onDisconnect={() => setConfirmation(true)} onCancelDisconnect={() => setConfirmation(false)} onConfirmDisconnect={() => void act("disconnect")} onRetryDisconnect={() => void act("disconnect")} handover={<DriveHandoverView read={handover} busy={busy} onSubmit={target => void changeOwner(target)} />} />;
+  return <ConnectionsView status={status} busy={busy} message={message} confirmation={confirmation} onRefresh={() => void refresh()} onConnect={() => void act("connect")} onEnable={() => void act("enable")} onRestore={() => void act("restore")} onDisconnect={() => setConfirmation(true)} onCancelDisconnect={() => setConfirmation(false)} onConfirmDisconnect={() => void act("disconnect")} onRetryDisconnect={() => void act("disconnect")} handover={<DriveHandoverView read={handover} busy={busy} onSubmit={target => void changeOwner(target)} />} />;
 }

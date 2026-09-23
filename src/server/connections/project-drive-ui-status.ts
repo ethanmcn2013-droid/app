@@ -45,7 +45,7 @@ export async function readProjectDriveUiStatus(
   assertProjectDriveCapability(authorization, "manageProject");
   const snapshot = async () => {
     const [storage, members] = await Promise.all([
-      deps.database.select({ id: workspaceStorage.id, ownerName: users.name, folderUrl: workspaceStorage.folderWebViewLink })
+      deps.database.select({ id: workspaceStorage.id, state: workspaceStorage.state, ownerUserId: providerConnections.userId, providerAccountId: providerConnections.providerAccountId, ownerName: users.name, ownerEmail: users.email, folderUrl: workspaceStorage.folderWebViewLink })
         .from(workspaceStorage)
         .innerJoin(providerConnections, eq(providerConnections.id, workspaceStorage.connectionId))
         .leftJoin(users, eq(users.id, providerConnections.userId))
@@ -60,6 +60,14 @@ export async function readProjectDriveUiStatus(
     snapshot(), deps.connection(authorization), readCurrentProjectDriveFolderSetupState(deps.database, authorization),
   ]);
   if (before.storage.length > 1) throw new Error("Storage unavailable");
+  const [restoreCredential] = before.storage[0]?.state === "needs_reauth" && before.storage[0].ownerUserId === authorization.actorUserId
+    ? await deps.database.select({ id: providerConnections.id, accountEmail: providerConnections.providerAccountEmail }).from(providerConnections).where(and(
+      eq(providerConnections.userId, authorization.actorUserId),
+      eq(providerConnections.provider, "google_drive"),
+      eq(providerConnections.providerAccountId, before.storage[0].providerAccountId),
+      eq(providerConnections.status, "active"),
+      eq(providerConnections.isCurrent, true),
+    )).limit(2) : [];
   let access: ProjectDriveStatus["access"] = {
     state: before.storage.length ? "unavailable" : "not_connected", checkedAt: null, people: [], otherPermissionCount: 0,
   };
@@ -97,6 +105,9 @@ export async function readProjectDriveUiStatus(
     ownerName: before.storage[0] ? before.storage[0].ownerName || "Storage owner" : null,
     folderUrl: safeDriveFolderUrl(before.storage[0]?.folderUrl ?? null),
     setup: setup && setup.status !== "demo" ? setup.status : "not_connected",
+    canRestore: Boolean(restoreCredential && own.connected && !own.revocationPending &&
+      emailKey(before.storage[0]?.ownerEmail ?? null) !== null &&
+      emailKey(before.storage[0]?.ownerEmail ?? null) === emailKey(restoreCredential.accountEmail)),
     pendingRemovals,
     ownConnection: { connected: own.connected, needsReconnect: own.status === "needs_reauth", revocationPending: own.revocationPending, accountEmail: own.accountEmail, affectedProjectCount: own.affectedProjectCount },
     access,

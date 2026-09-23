@@ -27,7 +27,7 @@ test("flags-off Settings reads avoid every Drive table on the production 0027 sc
     process.env.NEXT_PUBLIC_PROJECT_DRIVE_UI = "false";
     process.env.NEXT_PUBLIC_SIGNAL_ACCESS_MODE = "production";
     process.env.TASKS_DATABASE_URL = databaseUrl;
-    const [{ getProjectDriveStatusAction }, { getGoogleDriveConnectionSummaryAction }] = await Promise.all([
+    const [{ getProjectDriveStatusAction }, { getGoogleDriveConnectionSummaryAction, restoreGoogleDriveForProjectAction }] = await Promise.all([
       import("./project-drive-status"), import("./connections"),
     ]);
     assert.deepEqual(await getProjectDriveStatusAction("ws-old"), { kind: "disabled" });
@@ -36,6 +36,7 @@ test("flags-off Settings reads avoid every Drive table on the production 0027 sc
       rootFolderUrl: null, projectUsesThisAccount: false, affectedProjectCount: 0,
       revocationPending: false,
     });
+    assert.equal(await restoreGoogleDriveForProjectAction("ws-old"), null);
   } finally {
     client.close();
     for (const [key, value] of Object.entries(previous)) {

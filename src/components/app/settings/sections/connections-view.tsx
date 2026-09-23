@@ -17,13 +17,14 @@ const setupCopy: Record<ProjectDriveStatus["setup"], string> = {
 const accessLabel = { owner: "Owns folder", writer: "Can edit", reader: "Can view", unconfirmed: "Access not confirmed" };
 
 /** Custodian thesis: name the accountable person first; evidence remains distinct. */
-export function ConnectionsView({ status, busy, message, onRefresh, onConnect, onEnable, onDisconnect, confirmation, onCancelDisconnect, onConfirmDisconnect, onRetryDisconnect, handover }: {
+export function ConnectionsView({ status, busy, message, onRefresh, onConnect, onEnable, onRestore, onDisconnect, confirmation, onCancelDisconnect, onConfirmDisconnect, onRetryDisconnect, handover }: {
   status: ProjectDriveStatus;
   busy: boolean;
   message: string | null;
   onRefresh: () => void;
   onConnect: () => void;
   onEnable: () => void;
+  onRestore: () => void;
   onDisconnect: () => void;
   confirmation: boolean;
   onCancelDisconnect: () => void;
@@ -79,6 +80,7 @@ export function ConnectionsView({ status, busy, message, onRefresh, onConnect, o
         <button className={driveButton} disabled={busy || status.setup === "archived" || status.ownConnection.revocationPending} onClick={onConnect}>{status.ownConnection.connected || status.ownConnection.needsReconnect ? "Reconnect Google Drive" : "Connect Google Drive"}</button>
         {status.ownConnection.revocationPending ? <button className={driveButton} disabled={busy} onClick={onRetryDisconnect}>Check disconnect</button> : null}
         {status.setup === "not_connected" && status.ownConnection.connected && !status.ownConnection.needsReconnect ? <button className={driveButton} disabled={busy} onClick={onEnable}>Use my Drive for this board</button> : null}
+        {status.setup === "needs_attention" && status.canRestore ? <button className={driveButton} disabled={busy} onClick={onRestore}>Check and restore this board’s Drive</button> : null}
         {status.ownConnection.connected ? <button ref={disconnectButton} className={driveButton} disabled={busy} onClick={onDisconnect}>Disconnect my Drive</button> : null}
       </div>
       {confirmation ? <div className="mt-4 rounded-lg border border-line p-4" role="group" aria-label="Confirm Drive disconnect">
