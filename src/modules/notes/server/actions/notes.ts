@@ -52,6 +52,7 @@ import {
 } from "@/modules/notes/server/demo/notes-demo";
 import { recordSponsoredUse } from "@/lib/account/instrumentation/call-site";
 import { assertNotesRecoveryActor } from "@/modules/notes/server/notes-recovery-actor";
+import { privateNotesDbWrite } from "@/modules/notes/server/private-db-write";
 
 function makeId() {
   return `n_${crypto.randomUUID().replace(/-/g, "")}`;
@@ -201,14 +202,17 @@ export async function createNote(
     if (access === "allowed") workspaceId = requestedWorkspaceId;
   }
 
-  await db.insert(notes).values({
-    id,
-    userId,
-    body: trimmed,
-    createdAt: now,
-    updatedAt: now,
-    workspaceId,
-  });
+  await privateNotesDbWrite(
+    async () => db.insert(notes).values({
+      id,
+      userId,
+      body: trimmed,
+      createdAt: now,
+      updatedAt: now,
+      workspaceId,
+    }),
+    "capture",
+  );
 
   // No revalidate: the client owns the optimistic merge and reconciles
   // against this return value. Revalidating thrashes the route cache
@@ -1317,19 +1321,22 @@ export async function createNoteIdempotent(
       : null;
 
   const now = Date.now();
-  const inserted = await db
-    .insert(notes)
-    .values({
-      id,
-      userId,
-      body,
-      createdAt: now,
-      updatedAt: now,
-      workspaceId,
-      source,
-    })
-    .onConflictDoNothing()
-    .returning(await noteSelection());
+  const inserted = await privateNotesDbWrite(
+    async () => db
+      .insert(notes)
+      .values({
+        id,
+        userId,
+        body,
+        createdAt: now,
+        updatedAt: now,
+        workspaceId,
+        source,
+      })
+      .onConflictDoNothing()
+      .returning(await noteSelection()),
+    "capture",
+  );
 
   if (inserted[0]) {
     // Only a real insert counts. The replay path below reconciles a lost
@@ -1384,19 +1391,22 @@ export async function updateNoteWithVersion(
   assertNotesRecoveryActor(userId, input.expectedActorScope);
   const updatedAt = nextUpdatedAt(Date.now(), attempted.updatedAt);
 
-  const updated = await db
-    .update(notes)
-    .set({ body: attempted.body, updatedAt })
-    .where(
-      and(
-        eq(notes.id, id),
-        eq(notes.userId, userId),
-        eq(notes.updatedAt, attempted.updatedAt),
-        isNull(notes.archivedAt),
-        noPendingTasksSend(userId, id),
-      ),
-    )
-    .returning(await noteSelection());
+  const updated = await privateNotesDbWrite(
+    async () => db
+      .update(notes)
+      .set({ body: attempted.body, updatedAt })
+      .where(
+        and(
+          eq(notes.id, id),
+          eq(notes.userId, userId),
+          eq(notes.updatedAt, attempted.updatedAt),
+          isNull(notes.archivedAt),
+          noPendingTasksSend(userId, id),
+        ),
+      )
+      .returning(await noteSelection()),
+    "edit",
+  );
 
   if (updated[0]) {
     // Only the compare-and-swap that actually wrote counts. The lost-response
