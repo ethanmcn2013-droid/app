@@ -102,7 +102,7 @@ try {
   else {
     // Only actions exercised by this matrix: selection POST and detail reads.
     // Imported write/provider actions remain visible UI but fail if invoked.
-    const allowedActions=new Set(['openTasksProjectAction','getSubtasksAction','getTaskConversationAction','listTaskResourcesAction','getPersonalityPrefs']);
+    const allowedActions=new Set(['openTasksProjectAction','getSubtasksAction','loadTaskConversationAction','listTaskResourcesAction','getPersonalityPrefs']);
     const requestErrors=[];
     const json=(res,value,status=200)=>{res.statusCode=status;res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');res.end(JSON.stringify(value));};
     function reviveArgs(value){if(!value||typeof value!=='object')return value;if(value.$form){const form=new FormData();for(const [key,entry] of value.$form)form.append(key,entry);return form;}return Array.isArray(value)?value.map(reviveArgs):Object.fromEntries(Object.entries(value).map(([key,entry])=>[key,reviveArgs(entry)]));}
@@ -201,7 +201,8 @@ try {
         await page.getByRole('textbox',{name:'Task title',exact:true}).waitFor();
         assert.equal(await page.getByRole('textbox',{name:'Task title',exact:true}).inputValue(),'Confirm the guest access list');
         assert.equal(new URL(page.url()).searchParams.get('workspaceId'),'project-b');
-        await page.waitForFunction(()=>['getTaskConversationAction','getSubtasksAction','listTaskResourcesAction'].every(name=>window.routeFixture.requests.some(r=>r.name===name)));
+        await page.waitForFunction(()=>['loadTaskConversationAction','getSubtasksAction','listTaskResourcesAction'].every(name=>window.routeFixture.requests.some(r=>r.name===name)));
+        await page.locator('[data-existing-task-history][data-read-only]').waitFor();
         await evidence(surfaces[2].id,'active-object-canonical-panel');
         f.state.actor='user_creator';await page.goto(origin+surfaces[1].href);
         await page.getByRole('heading',{name:'No tasks assigned to you yet',exact:true}).waitFor();
