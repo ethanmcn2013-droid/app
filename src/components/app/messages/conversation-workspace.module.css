@@ -45,7 +45,9 @@
 .errorNotice { background: #fff1f2; border-bottom: 1px solid #fecdd3; color: #9f1239; font-size: 11px; padding: 9px 18px; text-align: center; }
 .feedScroller { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-color: var(--cw-line) transparent; }
 .feed { list-style: none; margin: 0 auto; max-width: 760px; padding: 32px 28px 48px; }
-.message { display: flex; gap: 11px; margin-bottom: 25px; }
+.message { display: flex; gap: 11px; margin-bottom: 25px; position: relative; }
+.observeSentinel { position: absolute; left: 0; right: 0; top: 0; height: 24px; pointer-events: none; }
+.unreadBadge { color: #4338ca !important; font-weight: 700; }
 .avatar { align-items: center; background: var(--cw-white); border: 1px solid var(--cw-line); border-radius: 50%; color: var(--cw-soft); display: flex; flex: 0 0 34px; font-size: 10px; font-weight: 700; height: 34px; justify-content: center; }
 .message > div { min-width: 0; }
 .messageMeta { align-items: baseline; display: flex; flex-wrap: wrap; gap: 7px; }

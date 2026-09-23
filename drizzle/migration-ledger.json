@@ -492,6 +492,16 @@
       "migrationEnvelope": "libsql-migrate",
       "receipt": "drizzle/receipts/conversation-erasure-tombstones-2026-09-23.json",
       "receiptSha256": "11f9796427ddbcb8bc8c1f1f05b472edc230c05c9bc02f40e87e3651bdcadd57"
+    },
+    {
+      "ordinal": 37,
+      "id": "0037_message_read_coverage",
+      "file": "drizzle/0037_message_read_coverage.sql",
+      "when": 1790150400000,
+      "sha256": "19562652ba33f5c7025ce80d2c80762497bb654654d8633c0ada2757f5e06364",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/message-read-coverage-2026-09-23.json",
+      "receiptSha256": "e261673ae15591b818d7b8d4e8416e0ddbd6d23f7660bdf211329619141c9663"
     }
   ]
 }

@@ -29,6 +29,8 @@ import { USERS } from "@/lib/data";
 import { readPersonalityPrefs } from "@/server/personality-read";
 import { PERSONALITY_DEFAULTS } from "@/lib/personality-prefs";
 import { isTaskDone } from "@/lib/board-columns";
+import { authenticateConversationActor, getMessageAttentionService } from "@/server/conversations/runtime";
+import { loadInboxAttention } from "@/server/conversations/attention-loader";
 
 export const dynamic = "force-dynamic";
 
@@ -128,11 +130,17 @@ export default async function InboxPage() {
       readPersonalityPrefs(me),
     ]);
   const nudges = generateNudges(tasks, me, await readWorkspaceColumnConfig(ws));
+  const { attention, available: attentionAvailable } = await loadInboxAttention({
+    authenticate: authenticateConversationActor,
+    service: getMessageAttentionService,
+  });
   return (
     <TasksRuntimePageMount>
       <AppPageHeader />
       <InboxApp
         notifications={notifications}
+        attention={attention}
+        attentionAvailable={attentionAvailable}
         digest={digest}
         nudges={nudges}
         weeklySnapshot={weeklySnapshot}

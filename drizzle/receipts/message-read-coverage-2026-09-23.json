@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "message-read-coverage-2026-09-23",
+  "authorizedBy": "The founder's controlled internal Production Sprint J13 authorizes additive in-app private read-state implementation. This receipt authorizes local and CI rehearsal only; Preview and Production require separate target-bound migration gates.",
+  "reviewedBy": "Codex J13 implementation candidate; fresh independent security and migration review required before any remote apply.",
+  "authorizationSource": "Production Sprint #31/J13, approved 2026-09-23 for internal attention and read-state only.",
+  "migrations": [
+    {
+      "id": "0037_message_read_coverage",
+      "sha256": "19562652ba33f5c7025ce80d2c80762497bb654654d8633c0ada2757f5e06364",
+      "reviewedAt": "2026-09-23T08:00:00.000Z",
+      "risk": "Adds reader-private root and reply coverage. A bad actor/scope or foreign-key-off cleanup could expose another reader's state or preserve orphan ranges.",
+      "rollbackPlan": "Turn off new attention reads and writes; retain canonical messages, comments and directed attention. Do not roll back observed ranges over later reads. Review exact rows before an additive correction.",
+      "postconditions": [
+        "reader-private coverage table has no body or author-facing receipt",
+        "insert checks actor and source identity",
+        "user, conversation and task deletion clean coverage with foreign keys off",
+        "existing source rows and directed attention are unchanged",
+        "integrity and foreign key checks pass"
+      ],
+      "proofs": [
+        {
+          "id": "coverage-table",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type='table' AND name='message_read_coverage'",
+          "expected": 1
+        },
+        {
+          "id": "coverage-guards",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type='trigger' AND name IN ('message_read_coverage_guard_insert','message_read_coverage_user_cleanup','message_read_coverage_conversation_cleanup','message_read_coverage_task_cleanup')",
+          "expected": 4
+        },
+        {
+          "id": "body-free-coverage",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('message_read_coverage') WHERE name IN ('body','snippet','payload','author_id','project_name')",
+          "expected": 0
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}
