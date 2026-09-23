@@ -9,6 +9,7 @@ next cycle.
 Home, Projects, Tasks and Timeline now lead the signed-in navigation on desktop and phone, including the Tasks Floor. Notes remains private and opens from More alongside existing work and account utilities. Project links retain their current context, and people without a project see a setup path instead of a stale-link message. This is a release candidate, not a production deployment.
 
 The candidate now carries an open Task through Floor view switches by reading the production detail-panel selection state. The Project remains explicit in each view link. This behavior still needs final deployed browser confirmation.
+Nested Task controls now receive pointer clicks inside reorderable lists, while dragging remains on the explicit grip. The candidate behavior was checked locally and still needs final deployed browser confirmation.
 
 ## 2026-09-23 · T·155 · tightens · the app receives the framework security fixes
 
