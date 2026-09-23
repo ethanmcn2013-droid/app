@@ -180,6 +180,25 @@ export const TENANT_SURFACES = [
       // planning period groups a person's workspaces.
       "planningPeriods",
       "planningOnboardingSessions",
+      // Conversation and Task Discussion carry tenant content or derived
+      // receipts. Include indirect tenant keys so future Drizzle reads are
+      // scanned too; raw SQL still needs service-level authorization tests.
+      "taskDiscussionState",
+      "taskCommentChanges",
+      "taskCommentReceipts",
+      "taskCommentAttention",
+      "taskCommentOutbox",
+      "taskCommentMigrationReport",
+      "conversations",
+      "conversationParticipants",
+      "conversationDmReceipts",
+      "conversationMessages",
+      "conversationChanges",
+      "conversationReceipts",
+      "conversationAttention",
+      "conversationOutbox",
+      "workLinks",
+      "workOperationReceipts",
     ],
     /**
      * Tables in schema.ts that are genuinely global and are excluded from

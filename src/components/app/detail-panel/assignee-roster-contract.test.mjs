@@ -13,9 +13,10 @@ import { test } from "node:test";
  * Marcus. `src/lib/members.ts` and `src/server/db/members.ts` both state the
  * rule in prose; nothing enforced it.
  *
- * The rule: these files read the roster from DomainProvider
- * (`useWorkspaceMembers`) and never name a seed persona or a design-lab
- * fixture export.
+ * The assign menu reads DomainProvider's `useWorkspaceMembers` roster. Task
+ * Discussion reads the authorized, current workspace roster returned in its
+ * server snapshot, including after an audience change. Neither may use seed
+ * personas or a design-lab fixture export.
  */
 
 const FILES = [
@@ -39,14 +40,18 @@ function read(file) {
 }
 
 test("the assign menu and the mention pool read the live workspace roster", () => {
-  for (const file of FILES) {
-    const source = read(file);
-    assert.match(
-      source,
-      /useWorkspaceMembers\(\)/,
-      `${file} must resolve people from the workspace roster`,
-    );
-  }
+  assert.match(read(FILES[0]), /useWorkspaceMembers\(\)/,
+    "the assign menu must resolve people from DomainProvider's workspace roster");
+  const feed = read(FILES[1]);
+  assert.match(feed, /discussion\.members\.map\(/,
+    "Task Discussion mentions must use the authorized snapshot roster");
+  assert.match(feed, /setDiscussion\(fresh\)/,
+    "Task Discussion must replace the roster when its audience changes");
+  const service = read("src/server/conversations/task-discussion.ts");
+  assert.match(service, /FROM workspace_members wm JOIN users u/,
+    "the Task Discussion snapshot roster must come from current membership");
+  assert.match(service, /members: members\.rows\.map\(/,
+    "the Task Discussion snapshot must return that current roster");
 });
 
 test("no seed persona id is hard-coded as an assignable person", () => {

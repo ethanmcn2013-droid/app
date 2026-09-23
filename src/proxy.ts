@@ -232,9 +232,9 @@ const productionProxy = clerkMiddleware(async (auth, req) => {
   // visitor, so this cannot leak an unauthenticated render.
   return bareChromeContinue(req);
 }, {
-  // Clerk's dashboard allowlist mirrors the two production origins retained
-  // by the helper. The controlled, non-Vercel recipient proof may append its
-  // validated localhost origin; every deployed runtime keeps this pair exact.
+  // Clerk's dashboard allowlist mirrors the two production origins. A marked
+  // local recipient proof may append localhost; the isolated sprint preview
+  // may append only its nominated alias after five-store and auth guards.
   authorizedParties: clerkAuthorizedParties(process.env),
 });
 
