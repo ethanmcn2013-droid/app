@@ -54,7 +54,8 @@ export async function getGoogleDriveConnectionSummaryAction(
 ): Promise<GoogleDriveConnectionSummary> {
   // The initial flags-off production promotion still has the pre-Drive
   // schema. A hidden Settings summary must not touch the newer columns.
-  if (isDemoMode() || !projectDriveUiEnabled()) return EMPTY_SUMMARY;
+  if (isDemoMode()) return EMPTY_SUMMARY;
+  if (!projectDriveUiEnabled()) return EMPTY_SUMMARY;
   const authorization = await authorizeProjectDrive(
     projectId,
     "manageProject",
