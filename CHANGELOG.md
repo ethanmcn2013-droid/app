@@ -10,6 +10,8 @@ The candidate brings directed Project messages and Task Discussion comments into
 
 ## 2026-09-23 · January candidate · Drive disconnect keeps its evidence
 
+After reconnecting the same Google account, the storage owner can explicitly check and restore the existing board folder. Signal verifies Google identity, the original folder and current member permissions before restoring Drive intake; earlier files and their ownership stay unchanged. Pending disconnects, member removals and deletion keep the repair unavailable. Local tests and independent source review passed; real Google reconnect receiving and production activation remain open.
+
 A Drive disconnect now saves the exact credential generation before asking Google to revoke it. If Google cannot confirm the request, Settings keeps the warning after reload and offers a retry; reconnecting stays unavailable until confirmation. A late OAuth callback cannot replace a connection while its previous disconnect is unresolved. Existing retired credentials remain unknown rather than being labelled confirmed from local status alone.
 
 The additive 0038 migration is reserved after the separate 0037 candidate. Local tests cover failure, crash recovery, account erasure, same-account races and the flags-off production schema; no provider journey or production migration is claimed by this entry.
