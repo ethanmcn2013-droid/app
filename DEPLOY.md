@@ -148,7 +148,7 @@ hashes:
 ```text
 gh run download RUN_ID --repo ethanmcn2013-droid/app --name tasks-encrypted-backup-RUN_ID --dir CIPHER_DIR
 node scripts/db/production-backup-custody.mjs recover --cipher=CIPHER_DIR/backup.age --identity=PRIVATE_IDENTITY_PATH --age-binary=VERIFIED_AGE_BINARY --expected-cipher-sha256=TRUSTED_CIPHER_SHA256 --expected-backup-sha256=TRUSTED_BACKUP_SHA256 --output-dir=PRIVATE_FRESH_DIR
-node scripts/db/restore-verify.mjs --backup=PRIVATE_FRESH_DIR/backup.jsonl --manifest=PRIVATE_FRESH_DIR/backup.manifest.json
+node scripts/db/restore-verify.mjs --backup=PRIVATE_FRESH_DIR/backup.jsonl --manifest=PRIVATE_FRESH_DIR/backup.manifest.json --keep
 ```
 
 This refuses a wrong ciphertext hash before decryption, checks the decrypted
@@ -157,7 +157,9 @@ every row hash, DDL object, SQLite integrity, and foreign key on a new local
 database. The private output contains `backup.jsonl` and
 `backup.manifest.json`; the final command independently reruns the shipped
 per-table verifier. Keep the identity and plaintext outside Git and
-artifact uploads. The result artifact `tasks-encrypted-migration-result-RUN_ID`
+artifact uploads; the verifier's `--keep` local temp database also contains
+plaintext and must be removed from its reported path after rehearsal. The
+result artifact `tasks-encrypted-migration-result-RUN_ID`
 is sanitized evidence, not a substitute for post-apply production checks.
 
 Each source snapshot is consistent within its read transaction. App writes
