@@ -52,8 +52,9 @@ async function runGoldenStory() {
     // Email is the sole provider transport reached by invite creation. Capture
     // its payload locally; success here attests only the app's delivery branch.
     f.overrides.set('src/server/email',{
+      emailConfigured:true,
       inviteEmailHtml: input=>JSON.stringify(input),
-      sendEmail:async input=>{sent.push(input);return {ok:true}},
+      sendEmail:async input=>{sent.push(input);return {ok:true,id:'fixture-provider-accepted'}},
     });
     process.env.SIGNAL_ACCESS_MODE='production';process.env.NEXT_PUBLIC_SIGNAL_ACCESS_MODE='production';
     process.env.TASKS_DATABASE_URL=urls.app;process.env.TASKS_AUTH_TOKEN='synthetic-local-read-token';
@@ -111,10 +112,13 @@ async function runGoldenStory() {
 
     // Deliberate creator task authorship and invite. The membership being
     // claimed next does not exist before the actual acceptance transaction.
-    await settings.inviteMemberByEmailAction('recipient@example.test','member','project-b');
+    const invited=await settings.inviteMemberByEmailAction('recipient@example.test','member','project-b');
+    assert.equal(invited.sent,true,'fixture provider accepted and delivery audit committed');
     assert.equal(sent.length,1);
     const pending=(await sql("SELECT token FROM pending_invites WHERE workspace_id='project-b'"))[0];
     assert.ok(pending?.token);
+    assert.equal((await sql("SELECT count(*) n FROM workspace_events WHERE kind='inviteSent'"))[0].n,1);
+    assert.ok((await sql("SELECT last_sent_at FROM pending_invites WHERE token=?",[pending.token]))[0].last_sent_at);
     assert.equal((await sql("SELECT * FROM workspace_members WHERE workspace_id='project-b' AND user_id='recipient'")).length,0);
     await actions.updateTaskAction(taskId,{assignees:['recipient']});
     await actions.addTaskAction({id:'creator-unselected',projectId:'project-b',title:'Private vendor budget discussion',assignees:['creator']});
