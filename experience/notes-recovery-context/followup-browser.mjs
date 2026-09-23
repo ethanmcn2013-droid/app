@@ -18,6 +18,16 @@ await fs.mkdir(out, {recursive:true});
 const actorScope = id => createHash('sha256').update(`signal-notes:${id}`).digest('hex').slice(0,24);
 const actors = {a:actorScope('fixture-actor-a'), b:actorScope('fixture-actor-b')};
 const noteIds = ['n_'+'1'.repeat(32), 'n_'+'2'.repeat(32)];
+const corePaths = ['/app/home', '/app/project', '/app/tasks', '/app/timeline'];
+function assertCorePaths(links, expectedCopies, workspaceId) {
+ assert.equal(links.length, corePaths.length * expectedCopies);
+ const expected = Array.from({length:expectedCopies},()=>corePaths).flat();
+ assert.deepEqual(links.map(h=>new URL(h,origin).pathname),expected,'every rail keeps Home, Projects, Tasks, Timeline in order');
+ for(const href of links){
+  const context=new URL(href,origin).searchParams.get('workspaceId');
+  assert.equal(context,workspaceId,'every core destination carries only current proved context');
+ }
+}
 
 // Every I/O boundary is a local fixture. A new unexpected server import fails
 // the bundle; browser network requests outside this ephemeral origin fail.
@@ -176,10 +186,16 @@ try{
  for(const flag of [true,false])for(const width of [1440,390])await runCase('actual-rail-'+flag,width,async page=>{
   if(!flag){await page.evaluate(()=>{window.v3=false;window.renderFixture()});await page.waitForTimeout(180)}
   const links=await page.locator('[data-signal-product-rail] nav a').evaluateAll(ns=>ns.map(n=>n.getAttribute('href')));
-  assert.equal(links.length,3);assert.ok(links.every(h=>new URL(h,origin).searchParams.get('workspaceId')==='project-b'));
+  assertCorePaths(links,1,'project-b');
+  const visibleRail=width<768?'[data-signal-bottom-nav]':'[data-signal-product-rail]';
+  await page.locator(`${visibleRail} button[aria-label="More"]`).click();
+  const notes=page.locator(`${visibleRail} [role="menuitem"]`, {hasText:'Notes'});
+  assert.equal(new URL(await notes.getAttribute('href'),origin).pathname,'/app/notes');
+  assert.equal(new URL(await notes.getAttribute('href'),origin).searchParams.get('workspaceId'),'project-b');
+  await page.keyboard.press('Escape');
   await page.evaluate(()=>window.changeFrame('b','project-b',false));await page.waitForTimeout(150);
   const refused=await page.locator('[data-signal-product-rail] nav a').evaluateAll(ns=>ns.map(n=>n.getAttribute('href')));
-  assert.ok(refused.every(h=>!h.includes('project-a')&&!h.includes('project-b')));
+  assertCorePaths(refused,1,null);
   return{links,refused};
  });
  for(const flag of [false,true])for(const width of [1440,390])await runCase('storage-quota-cold-consumers-'+flag,width,async page=>{
@@ -193,7 +209,7 @@ try{
   },flag);
   await page.reload();await page.waitForTimeout(180);
   const nav=()=>page.locator('[data-signal-product-rail] nav a,[data-signal-bottom-nav] a').evaluateAll(ns=>ns.map(n=>n.getAttribute('href')));
-  const links=await nav();assert.equal(links.length,7);assert.ok(links.every(h=>h.includes('project-b')),'every early and late consumer must use B');
+  const links=await nav();assertCorePaths(links,2,'project-b');
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('signal_suite_context_v2')).workspaceId),'project-a','stale storage remains readable');
   await page.evaluate(()=>{window.mobileGeneration++;window.renderFixture()});await page.waitForTimeout(100);
   assert.deepEqual(await nav(),links,'a later mount also reads current B');
@@ -203,8 +219,7 @@ try{
   await page.evaluate(()=>{window.mobileVisible=false;window.renderFixture()});await page.waitForTimeout(100);
   await page.evaluate(()=>window.changeFrame('b','project-b',false));await page.waitForTimeout(100);
   await page.evaluate(()=>{window.mobileVisible=true;window.mobileGeneration++;window.renderFixture()});await page.waitForTimeout(100);
-  const refused=await nav();assert.equal(refused.length,7);
-  assert.ok(refused.every(h=>!h.includes('project-a')&&!h.includes('project-b')),'late refused consumer cannot revive cached A or prior actor B');
+  const refused=await nav();assertCorePaths(refused,2,null);
   await page.screenshot({path:path.join(out,'quota-refused-'+flag+'-'+width+'.png'),fullPage:true});
   return{links,refused,readableCache:'project-a',storageWrites:'throw',coldAndLaterSubscribers:true};
  });
