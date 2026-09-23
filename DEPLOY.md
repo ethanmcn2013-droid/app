@@ -117,6 +117,57 @@ pnpm db:migrate -- \
   --receipt=<execution-receipt.json>
 ```
 
+The old `db-migrate` GitHub workflow is retired and must remain disabled: it
+uploaded raw database JSONL and a local dry-run database from `.db-evidence/`.
+Use the separate `db-migrate-encrypted` workflow on `main` only. Its `status`
+and `measure` commands remain read-only. `backup` and `execute` require the
+public `DB_BACKUP_AGE_RECIPIENT` Actions variable and checksum-pinned age binary
+before connecting to Tasks. The supplied database URL must match the
+independently observed production Tasks URL fingerprint; a wrong-store binding
+fails before provider access. They capture a read transaction, verify a fresh
+local restore, and upload only `backup.age` with a sanitized receipt. The
+encrypted bundle contains both the exact JSONL body and its full per-table/DDL
+manifest. `execute` also dry-runs migrations locally, requires the encrypted
+upload acknowledgment,
+then rechecks the target URL, source revision, schema and migration-ledger
+baseline before invoking the existing atomic migration runner. Missing
+encryption or upload blocks apply. A separate allowlisted result artifact
+records a verified apply or a failed/possibly partial state. The matching
+private age identity stays outside GitHub; a downloaded-artifact decryption and restore rehearsal is
+required before calling the off-device backup recoverable. Current custody is
+bound to one Windows account/host; portable key escrow remains open.
+
+For an offline rehearsal, download the exact run's
+`tasks-encrypted-backup-RUN_ID` artifact. Record the trusted
+`cipherSha256` and `backupSha256` from that run's **Prepare verified encrypted
+backup** log or independently retained release record, not from the downloaded
+artifact alone. With a separately held identity materialized to a private path,
+run these commands from the pinned App source, substituting the named paths and
+hashes:
+
+```text
+gh run download RUN_ID --repo ethanmcn2013-droid/app --name tasks-encrypted-backup-RUN_ID --dir CIPHER_DIR
+node scripts/db/production-backup-custody.mjs recover --cipher=CIPHER_DIR/backup.age --identity=PRIVATE_IDENTITY_PATH --age-binary=VERIFIED_AGE_BINARY --expected-cipher-sha256=TRUSTED_CIPHER_SHA256 --expected-backup-sha256=TRUSTED_BACKUP_SHA256 --output-dir=PRIVATE_FRESH_DIR
+node scripts/db/restore-verify.mjs --backup=PRIVATE_FRESH_DIR/backup.jsonl --manifest=PRIVATE_FRESH_DIR/backup.manifest.json --keep
+```
+
+This refuses a wrong ciphertext hash before decryption, checks the decrypted
+body against its manifest and trusted backup hash, then restores and verifies
+every row hash, DDL object, SQLite integrity, and foreign key on a new local
+database. The private output contains `backup.jsonl` and
+`backup.manifest.json`; the final command independently reruns the shipped
+per-table verifier. Keep the identity and plaintext outside Git and
+artifact uploads; the verifier's `--keep` local temp database also contains
+plaintext and must be removed from its reported path after rehearsal. The
+result artifact `tasks-encrypted-migration-result-RUN_ID`
+is sanitized evidence, not a substitute for post-apply production checks.
+
+Each source snapshot is consistent within its read transaction. App writes
+between snapshot and apply can occur and are absent from that backup; schema
+and ledger drift fail before apply, while the migration runner retains its
+transactional guards. GitHub artifact retention is 90 days, not permanent
+archival. Never re-enable the old workflow ID, including for an older ref.
+
 A fresh database (created from the 0014 baseline + forwards) takes the same
 `db:migrate` path with a fresh execution receipt for the new database
 identity. The module databases (notes / timeline / signal) are created from

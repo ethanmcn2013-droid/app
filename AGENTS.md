@@ -59,9 +59,11 @@ must never emit them. `/app/signal*` is a legacy redirect input only.
 
 Never run `drizzle-kit push` or `drizzle-kit migrate` directly against
 production — the historical `0000`–`0013` chain is non-idempotent.
-The only paths in are the receipt-backed runner (`pnpm db:migrate`) and
-the `db-migrate` GitHub workflow (`command=execute`); `pnpm db:contract`
-is the pre-flight gate. Full contract: `DEPLOY.md` §4 and
+The approved production workflow is `db-migrate-encrypted` on `main`, with a
+verified encrypted backup upload before apply; the old `db-migrate` workflow
+must remain disabled. The receipt-backed runner (`pnpm db:migrate`) remains
+the low-level migration engine, and `pnpm db:contract` is the pre-flight gate.
+Full contract: `DEPLOY.md` §4 and
 `drizzle/MIGRATIONS.md`.
 
 ## Signal HQ sync
