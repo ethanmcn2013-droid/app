@@ -319,8 +319,21 @@ test("controlled recipient accepts B, completes assigned work, and loses B after
     observe("homeReturned");
 
     await creatorPage.goto(`/app/tasks?workspaceId=${RECIPIENT_PROJECT_ID}`);
-    const completedCard = creatorPage.locator(`article[data-id="${RECIPIENT_TASK_ID}"][data-done]`);
-    await expect(completedCard.getByText(RECIPIENT_TASK_TITLE, { exact: true })).toBeVisible();
+    const doneGroup = creatorPage.getByRole("group", { name: "Done", exact: true });
+    await expect(doneGroup).toHaveCount(1);
+    const completedCard = doneGroup.locator(`article[data-id="${RECIPIENT_TASK_ID}"][data-done]`);
+    await expect(completedCard).toHaveCount(1);
+    // Flight animation may clone a card into document.body. A second real card
+    // outside the Done lane is a product duplicate, not acceptable readback.
+    const cardLocations = await creatorPage.locator(`article[data-id="${RECIPIENT_TASK_ID}"][data-done]`)
+      .evaluateAll((nodes) => nodes.map((node) => ({
+        inDoneGroup: Boolean(node.closest('[role="group"][aria-labelledby="ln-done"]')),
+        ariaHidden: node.getAttribute("aria-hidden") === "true",
+      })));
+    expect(cardLocations.filter((card) => !card.inDoneGroup && !card.ariaHidden)).toEqual([]);
+    const title = completedCard.locator('p[data-trim="title"][data-clip="row"]');
+    await expect(title).toHaveText(RECIPIENT_TASK_TITLE);
+    await expect(title).toBeVisible();
     await expect(completedCard.getByRole("checkbox", { name: "Mark not done" })).toHaveAttribute("aria-checked", "true");
     observe("creatorReadback");
 
