@@ -144,16 +144,44 @@ export function createMessageAttentionService(adapter: ConversationDatabaseAdapt
       input.items.some(item => !item || !["conversation", "task_discussion"].includes(item.kind) || !id(item.scopeId) || !id(item.itemId))) return fail("invalid_input");
     if (!adapter.available) return fail("temporarily_unavailable");
     return transaction("read", async (db) => {
+      const items = [...new Map(input.items.map(entry => [`${entry.kind}:${entry.scopeId}:${entry.itemId}`, entry])).values()];
+      const values = items.map(() => "(?,?,?,?)").join(",");
+      const args = items.flatMap((item, ordinal) => [ordinal, item.kind, item.scopeId, item.itemId]);
+      // One bounded read keeps each source's exact membership/body/scope guard
+      // and its root-specific coverage check in the same transaction. A remote
+      // client must not make two round trips per visible row.
+      const resolved = await db.execute({ sql: `WITH requested(ordinal,kind,scope_id,item_id) AS (VALUES ${values})
+        SELECT r.ordinal,r.item_id,m.create_seq,
+          EXISTS(SELECT 1 FROM message_read_coverage rc WHERE rc.user_id=?
+            AND rc.source_kind='conversation' AND rc.scope_id=r.scope_id
+            AND rc.root_key=COALESCE(m.root_id,'') AND rc.range_start<=m.create_seq
+            AND rc.range_end>=m.create_seq) AS covered
+        FROM requested r JOIN conversation_messages m ON m.id=r.item_id AND m.conversation_id=r.scope_id
+        JOIN conversations c ON c.id=m.conversation_id AND c.kind='project'
+        JOIN workspaces w ON w.id=c.workspace_id
+        JOIN workspace_members wm ON wm.workspace_id=w.id AND wm.user_id=?
+        JOIN users actor ON actor.id=wm.user_id
+        WHERE r.kind='conversation' AND m.deleted_at IS NULL AND m.body IS NOT NULL
+        UNION ALL
+        SELECT r.ordinal,r.item_id,cm.create_seq,
+          EXISTS(SELECT 1 FROM message_read_coverage rc WHERE rc.user_id=?
+            AND rc.source_kind='task_discussion' AND rc.scope_id=r.scope_id
+            AND rc.root_key=COALESCE(cm.root_id,'') AND rc.range_start<=cm.create_seq
+            AND rc.range_end>=cm.create_seq) AS covered
+        FROM requested r JOIN comments cm ON cm.id=r.item_id AND cm.task_id=r.scope_id
+        JOIN tasks t ON t.id=cm.task_id AND t.workspace_id=cm.workspace_id
+        JOIN workspaces w ON w.id=t.workspace_id
+        JOIN workspace_members wm ON wm.workspace_id=w.id AND wm.user_id=?
+        JOIN users actor ON actor.id=wm.user_id
+        WHERE r.kind='task_discussion' AND cm.deleted_at IS NULL AND cm.body IS NOT NULL
+          AND cm.create_seq IS NOT NULL
+        ORDER BY ordinal`, args: [...args, input.actorId, input.actorId, input.actorId, input.actorId] });
+      if (resolved.rows.length !== items.length) return fail("unavailable");
       const unreadItemIds: string[] = [];
       const positions: { itemId: string; createSeq: number }[] = [];
-      for (const item of new Map(input.items.map(entry => [`${entry.kind}:${entry.scopeId}:${entry.itemId}`, entry])).values()) {
-        const row = await authorizedItem(db, input.actorId, item);
-        if (!row) return fail("unavailable");
-        positions.push({ itemId: item.itemId, createSeq: number(row.create_seq) });
-        const covered = await db.execute({ sql: `SELECT 1 AS covered FROM message_read_coverage
-          WHERE user_id=? AND source_kind=? AND scope_id=? AND root_key=? AND range_start<=? AND range_end>=? LIMIT 1`,
-          args: [input.actorId, item.kind, item.scopeId, row.root_id == null ? "" : str(row.root_id), number(row.create_seq), number(row.create_seq)] });
-        if (!covered.rows.length) unreadItemIds.push(item.itemId);
+      for (const row of resolved.rows) {
+        positions.push({ itemId: str(row.item_id), createSeq: number(row.create_seq) });
+        if (!number(row.covered)) unreadItemIds.push(str(row.item_id));
       }
       return { ok: true, value: { unreadItemIds, positions } };
     });

@@ -415,8 +415,16 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
           else setUnreadMessageIds(current => new Set([...current].filter(id => !items.some(item => item.id === id)))); })
         .catch(() => { for (const message of items) observedMessagesRef.current.delete(message.id); });
     }, { root: feedRef.current, threshold: 0.6 });
-    for (const node of feedRef.current.querySelectorAll<HTMLElement>("[data-message-observe]")) observer.observe(node);
-    return () => observer.disconnect();
+    const nodes = [...feedRef.current.querySelectorAll<HTMLElement>("[data-message-observe]")];
+    for (const node of nodes) observer.observe(node);
+    // A hidden-tab callback must not mark read. On foreground, force a fresh
+    // intersection notification even if the sentinel geometry did not move.
+    const resample = () => {
+      if (document.visibilityState !== "visible") return;
+      for (const node of nodes) { observer.unobserve(node); observer.observe(node); }
+    };
+    document.addEventListener("visibilitychange", resample);
+    return () => { document.removeEventListener("visibilitychange", resample); observer.disconnect(); };
   }, [fixtureActor, scope, state.messages, state.status]);
 
   function restoreForFreshAudience(pending: PendingSend, generation: number) {
