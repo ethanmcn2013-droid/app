@@ -59,6 +59,7 @@ export function AudienceManager({
   defaultAudienceKind = "class",
   projectName,
   projectSlug,
+  contextQuery = "",
 }: {
   workspaceSlug: string;
   suiteWorkspaceId: string | null;
@@ -71,6 +72,13 @@ export function AudienceManager({
   defaultAudienceKind?: AudienceKind;
   projectName?: string;
   projectSlug?: string;
+  /**
+   * The resolved `?workspaceId=…` query of the page that rendered this
+   * manager. The publication route resolves its Timeline from the same query;
+   * without it an owner of several Timelines lands on the primary one, which
+   * does not hold this publication, and the link 404s.
+   */
+  contextQuery?: string;
 }) {
   const [connectState, connectAction, connectPending] = useActionState(
     connectSuiteWorkspaceAction,
@@ -302,7 +310,7 @@ export function AudienceManager({
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <Link
-                        href={`/app/timeline/audience/${encodeURIComponent(publication.id)}`}
+                        href={`/app/timeline/audience/${encodeURIComponent(publication.id)}${contextQuery}`}
                         className={primaryButton}
                       >
                         Open shared page

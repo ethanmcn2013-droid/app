@@ -241,3 +241,18 @@ test("Retry is offered only where retrying could change the answer", () => {
   );
   assert.match(line, /role="status" aria-live="polite"/, "freshness is polite, never an alert");
 });
+
+test("opening a publication keeps the Timeline context that owns it", () => {
+  const manager = read("app/audience/audience-manager.tsx");
+  const page = read("app/audience/page.tsx");
+  const detail = read("app/audience/[publicationId]/page.tsx");
+
+  // The detail route resolves its Timeline from ?workspaceId; the link must
+  // carry it or a non-primary Project's publication 404s for its own owner.
+  assert.match(
+    manager,
+    /href=\{`\/app\/timeline\/audience\/\$\{encodeURIComponent\(publication\.id\)\}\$\{contextQuery\}`\}/,
+  );
+  assert.match(page, /contextQuery=\{contextQuery\}/);
+  assert.match(detail, /requested\.workspaceId/);
+});

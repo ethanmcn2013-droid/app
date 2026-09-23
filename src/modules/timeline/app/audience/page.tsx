@@ -126,6 +126,7 @@ export default async function AudienceTimelineManagerPage({
         }
         projectName={project?.name}
         projectSlug={project?.slug}
+        contextQuery={contextQuery}
       />
     </div>
   );
