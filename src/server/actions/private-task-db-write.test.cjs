@@ -72,6 +72,8 @@ test('failed activity INSERT logs a fixed category while the authorized Task edi
 });
 
 test('failed share visit INSERT logs no private user-agent while retaining the visit counter', async () => {
+  // The fixture uses the production helper's equivalent Drizzle INSERT and
+  // 60-character hint limit; the Server Action itself is loaded from source.
   const f=await usageFixture({seedClaim:false});
   const privateAgent='PRIVATE_SHARE_USER_AGENT_SYNTHETIC';
   const originalWarn=console.warn;

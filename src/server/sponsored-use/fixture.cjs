@@ -25,8 +25,8 @@ async function usageFixture(options = {}) {
     if (file === "src/lib/access-mode.ts") return { isDemoMode: () => state.demo };
     if (file === "src/server/db/queries.ts") return {
       getTasks: async ws => db.select().from(schema.tasks).where(eq(schema.tasks.workspaceId, ws)),
-      // Exercise the share action's actual Drizzle visit write against the
-      // disposable store, including a failing INSERT carrying user-agent text.
+      // Represent the production query helper's same Drizzle INSERT against
+      // the disposable store, including its 60-character user-agent limit.
       recordShareLinkVisit: async (token, userAgent) => db.insert(schema.shareLinkVisits).values({
         id: `fixture-visit-${++visitSequence}`,
         token,
