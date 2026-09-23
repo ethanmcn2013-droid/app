@@ -566,7 +566,8 @@
   margin: 1px 0 6px;
   padding: 0 0 0 22px;
   position: relative;
-  overflow: hidden;
+  /* The last archived row's Restore menu must extend below the list. */
+  overflow: visible;
 }
 
 .projectChildren::before {
@@ -623,11 +624,14 @@
   top: 50%;
   transform: translateY(-50%);
   transition: opacity 120ms ease;
+  /* transform/opacity form a stacking context; keep it above later rows. */
+  z-index: 1;
 }
 
 .projectRowWrap:hover .projectRowMenu,
 .projectRowMenu[data-open] {
   opacity: 1;
+  z-index: 20;
 }
 
 .projectRowMenuBtn {
