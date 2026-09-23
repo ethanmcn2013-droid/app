@@ -9,6 +9,7 @@ import type {
   SendTaskCommentInput,
   TaskCommentRecord,
   TaskCommentReceipt,
+  TaskCommentPage,
   TaskDiscussionDelta,
   TaskDiscussionSnapshot,
   TombstoneTaskCommentInput,
@@ -123,6 +124,11 @@ function ConversationFeedState({
     history: ConversationResult<TaskDiscussionDelta>;
     snapshot?: ConversationResult<TaskDiscussionSnapshot>;
   }> | null>(null);
+  const observedCommentsRef = useRef(new Set<string>());
+  const [unreadCommentIds, setUnreadCommentIds] = useState<ReadonlySet<string>>(new Set());
+  const deepLinkFocusedRef = useRef(false);
+  const deepLinkLoadAttemptedRef = useRef(new Set<string>());
+  const discussionNodeRef = useRef<HTMLDivElement>(null);
   function revoke() {
     generationRef.current++;
     for (const controller of operationControllersRef.current) controller.abort();
@@ -239,6 +245,74 @@ function ConversationFeedState({
       outgoingCache.delete(cacheKey);
     }
   }, [access, cacheKey, composer, outgoingCache, pending, reviewedAudienceEpoch]);
+
+  useEffect(() => {
+    if (fixtureActor || access !== "ready") return;
+    const loaded = comments.filter(comment => comment.body !== null);
+    if (!loaded.length) return;
+    let cancelled = false;
+    const groups = Array.from({ length: Math.ceil(loaded.length / 100) }, (_, index) => loaded.slice(index * 100, (index + 1) * 100));
+    void Promise.all(groups.map(group => fetch("/api/message-attention", { method: "POST", credentials: "same-origin", cache: "no-store",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "status", items: group.map(comment => ({ kind: "task_discussion", scopeId: taskId, itemId: comment.id })) }),
+    }).then(async response => response.ok ? await response.json() as { ok: boolean; value?: { unreadItemIds: string[] } } : null)))
+      .then(results => {
+        if (cancelled || results.some(result => !result?.ok || !result.value)) return;
+        setUnreadCommentIds(new Set(results.flatMap(result => result?.value?.unreadItemIds ?? [])
+          .filter(id => !observedCommentsRef.current.has(id))));
+      }).catch(() => { /* Preserve the last proven status until the next loaded page. */ });
+    return () => { cancelled = true; };
+  }, [access, comments, fixtureActor, taskId]);
+
+  useEffect(() => {
+    if (fixtureActor || access !== "ready" || !discussionNodeRef.current || typeof IntersectionObserver === "undefined") return;
+    const source = new Map(comments.filter(comment => comment.body !== null).map(comment => [comment.id, comment]));
+    const nodes = [...discussionNodeRef.current.querySelectorAll<HTMLElement>("[data-comment-observe]")];
+    const observer = new IntersectionObserver((entries) => {
+      if (document.visibilityState !== "visible") return;
+      const visible = entries.filter(entry => entry.isIntersecting && entry.intersectionRatio >= 0.6)
+        .map(entry => source.get((entry.target as HTMLElement).dataset.observeCommentId ?? ""))
+        .filter((comment): comment is TaskCommentRecord => comment !== undefined && !observedCommentsRef.current.has(comment.id));
+      if (!visible.length) return;
+      for (const comment of visible) observedCommentsRef.current.add(comment.id);
+      void fetch("/api/message-attention", { method: "POST", credentials: "same-origin", cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "observe", items: visible.map(comment => ({ kind: "task_discussion", scopeId: taskId, itemId: comment.id })) }) })
+        .then(response => { if (!response.ok) for (const comment of visible) observedCommentsRef.current.delete(comment.id);
+          else setUnreadCommentIds(current => new Set([...current].filter(id => !visible.some(comment => comment.id === id)))); })
+        .catch(() => { for (const comment of visible) observedCommentsRef.current.delete(comment.id); });
+    }, { threshold: 0.6 });
+    for (const node of nodes) observer.observe(node);
+    return () => observer.disconnect();
+  }, [access, comments, fixtureActor, taskId]);
+
+  useEffect(() => {
+    if (deepLinkFocusedRef.current || !location.hash.startsWith("#comment-")) return;
+    let id: string;
+    try { id = decodeURIComponent(location.hash.slice("#comment-".length)); } catch { return; }
+    if (!comments.some(comment => comment.id === id && comment.body !== null)) {
+      if (!fixtureActor && access === "ready" && !deepLinkLoadAttemptedRef.current.has(id)) {
+        deepLinkLoadAttemptedRef.current.add(id);
+        void fetch("/api/message-attention", { method: "POST", credentials: "same-origin", cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "status", items: [{ kind: "task_discussion", scopeId: taskId, itemId: id }] }),
+        }).then(async response => response.ok ? await response.json() as { ok: boolean; value?: { positions: { itemId: string; createSeq: number }[] } } : null)
+          .then(async result => {
+            const sequence = result?.ok ? result.value?.positions.find(position => position.itemId === id)?.createSeq : undefined;
+            if (!sequence || !Number.isSafeInteger(sequence)) return;
+            const page = await apiResult<TaskCommentPage>(discussionUrl("comments", { taskId, beforeCreateSeq: sequence + 1, limit: 100 }), fixtureActor);
+            if (page.ok && page.value.comments.some(comment => comment.id === id && comment.body !== null))
+              setComments(current => mergeComments(current, page.value.comments));
+          }).catch(() => { /* Keep a missing or revoked target private. */ });
+      }
+      return;
+    }
+    const frame = requestAnimationFrame(() => {
+      const target = document.getElementById(`comment-${id}`);
+      if (target) { target.scrollIntoView({ block: "center" }); target.focus({ preventScroll: true }); deepLinkFocusedRef.current = true; }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [access, comments, fixtureActor, taskId]);
 
   const people = useMemo<MentionPerson[]>(() => discussion.members.map((member) => ({
     id: member.id,
@@ -399,7 +473,7 @@ function ConversationFeedState({
 
   const audienceReady = reviewedAudienceEpoch === discussion.audienceEpoch;
   return (
-    <div id="discussion" className="space-y-3 pb-6" data-task-discussion data-audience-epoch={discussion.audienceEpoch}>
+    <div id="discussion" ref={discussionNodeRef} className="space-y-3 pb-6" data-task-discussion data-audience-epoch={discussion.audienceEpoch}>
       {notice ? (
         <p role="status" className="rounded-lg bg-bg-sunken px-3 py-2 text-[12px] text-ink-soft">{notice}</p>
       ) : null}
@@ -414,7 +488,7 @@ function ConversationFeedState({
       {rows.length === 0 && pending.length === 0 ? <EmptyState /> : (
         <AnimatePresence initial={false}>
           {rows.map((row) => row.kind === "comment" ? (
-            <CommentRow key={row.comment.id} comment={row.comment} currentActorId={fixtureActor ?? me}
+            <CommentRow key={row.comment.id} comment={row.comment} unread={unreadCommentIds.has(row.comment.id)} currentActorId={fixtureActor ?? me}
               members={people} onEdit={edit} onDelete={tombstone} />
           ) : <ActivityRow key={row.activity.id} activity={row.activity} />)}
           {pending.map((item) => <PendingRow key={item.input.clientRequestId} item={item}
@@ -442,8 +516,9 @@ function Initials({ name }: { name: string }) {
   </span>;
 }
 
-function CommentRow({ comment, currentActorId, members, onEdit, onDelete }: {
+function CommentRow({ comment, unread, currentActorId, members, onEdit, onDelete }: {
   comment: TaskCommentRecord;
+  unread: boolean;
   currentActorId: string;
   members: MentionPerson[];
   onEdit: (comment: TaskCommentRecord, body: string, mentions: readonly string[]) => Promise<boolean>;
@@ -454,9 +529,10 @@ function CommentRow({ comment, currentActorId, members, onEdit, onDelete }: {
   const [draft, setDraft] = useState(comment.body ?? "");
   const [mentionIds, setMentionIds] = useState<readonly string[]>(comment.mentionUserIds);
   const own = comment.authorId === currentActorId;
-  return <motion.article id={`comment-${comment.id}`} layout="position"
+  return <motion.article id={`comment-${comment.id}`} data-comment-id={comment.id} tabIndex={-1} layout="position"
     initial={reduced ? { opacity: 0 } : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-    className={`group/comment flex items-start gap-2.5 rounded-md px-1 py-1 ${comment.rootCommentId ? "ml-8 border-l border-line-soft pl-3" : ""}`}>
+    className={`group/comment relative flex items-start gap-2.5 rounded-md px-1 py-1 ${comment.rootCommentId ? "ml-8 border-l border-line-soft pl-3" : ""}`}>
+    <span aria-hidden data-comment-observe data-observe-comment-id={comment.id} className="pointer-events-none absolute inset-x-0 top-0 h-6" />
     <Initials name={comment.authorName} />
     <div className="min-w-0 flex-1">
       <div className="flex items-baseline gap-1.5">
@@ -464,6 +540,7 @@ function CommentRow({ comment, currentActorId, members, onEdit, onDelete }: {
         <span className="text-[11px] tabular-nums text-ink-quiet" title={new Date(comment.createdAt).toLocaleString()}>
           {formatRelativeTime(new Date(comment.createdAt))}{comment.editedAt ? " · edited" : ""}
         </span>
+        {unread && comment.body !== null ? <span className="text-[11px] font-semibold text-indigo-700">Unread</span> : null}
       </div>
       {comment.body === null ? (
         <p className="mt-0.5 text-[13px] italic text-ink-quiet">Comment deleted</p>
@@ -611,4 +688,3 @@ function Composer({ taskId, actorName, people, draft, disabled, onSubmit, onDraf
     <span className="sr-only">Task {taskId}</span>
   </div>;
 }
-

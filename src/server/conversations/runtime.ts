@@ -6,13 +6,15 @@ import { conversationAvailability, resolveConversationControls } from "../../lib
 import { createConversationService } from "./service";
 import { createConversationTaskOutcomeService } from "./work-links";
 import { createTaskDiscussionService } from "./task-discussion";
+import { createMessageAttentionService } from "./attention";
 import { createLocalConversationDatabaseAdapter, createRemoteConversationDatabaseAdapter, createUnavailableConversationDatabaseAdapter, type ConversationDatabaseAdapter } from "./database";
 import { resolveConversationRuntimeTarget } from "./runtime-target";
 
 type Service = ReturnType<typeof createConversationService>;
 type TaskOutcomes = ReturnType<typeof createConversationTaskOutcomeService>;
 type TaskDiscussion = ReturnType<typeof createTaskDiscussionService>;
-type RuntimeServices = Readonly<{ conversation: Service; taskOutcomes: TaskOutcomes; taskDiscussion: TaskDiscussion }>;
+type Attention = ReturnType<typeof createMessageAttentionService>;
+type RuntimeServices = Readonly<{ conversation: Service; taskOutcomes: TaskOutcomes; taskDiscussion: TaskDiscussion; attention: Attention }>;
 const runtimeGlobal = globalThis as typeof globalThis & { conversationRuntime?: { cacheKey: string; services: RuntimeServices } };
 
 function servicesFor(adapter: ConversationDatabaseAdapter): RuntimeServices {
@@ -21,6 +23,7 @@ function servicesFor(adapter: ConversationDatabaseAdapter): RuntimeServices {
     conversation: createConversationService(adapter, { directMessagesEnabled }),
     taskOutcomes: createConversationTaskOutcomeService(adapter, { directMessagesEnabled }),
     taskDiscussion: createTaskDiscussionService(adapter),
+    attention: createMessageAttentionService(adapter),
   };
 }
 
@@ -70,6 +73,10 @@ export async function getConversationTaskOutcomeService(): Promise<TaskOutcomes>
 
 export async function getTaskDiscussionService(): Promise<TaskDiscussion> {
   return (await getRuntimeServices()).taskDiscussion;
+}
+
+export async function getMessageAttentionService(): Promise<Attention> {
+  return (await getRuntimeServices()).attention;
 }
 
 export async function authenticateConversationActor(mode: "read" | "write" = "read"): Promise<string | null> {
