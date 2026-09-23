@@ -7,6 +7,9 @@ import {
   attachments,
   comments,
   meta,
+  taskCommentChanges,
+  taskCommentReceipts,
+  taskDiscussionState,
   tasks,
   workspaces,
 } from "@/server/db/schema";
@@ -40,9 +43,36 @@ async function fixture(foreignKeys: boolean) {
       ('task-a', 'ws-a', 'Target parent', 'todo', 'p1', NULL),
       ('task-a-child', 'ws-a', 'Target child', 'doing', 'p2', 'task-a'),
       ('task-b', 'ws-b', 'Bystander', 'todo', 'p1', NULL);
-    INSERT INTO comments (id, workspace_id, task_id, user_id, body) VALUES
-      ('comment-a', NULL, 'task-a', 'owner-a', 'legacy target'),
-      ('comment-b', 'ws-b', 'task-b', 'owner-b', 'bystander');
+    INSERT INTO task_discussion_state (
+      task_id, workspace_id, audience_epoch, next_create_seq, next_change_seq
+    ) VALUES
+      ('task-a', 'ws-a', 1, 2, 2),
+      ('task-b', 'ws-b', 1, 2, 2);
+    INSERT INTO comments (
+      id, workspace_id, task_id, user_id, body, created_at,
+      client_request_id, request_hash, revision, create_seq
+    ) VALUES
+      ('comment-a', 'ws-a', 'task-a', 'owner-a', 'Target comment', 1,
+       'fixture_task_a_comment_0001',
+       '516dcbca32080e77f4a0a1f579a1f94cd9b02caeb7f0165b6d720ea40e5e50e2', 1, 1),
+      ('comment-b', 'ws-b', 'task-b', 'owner-b', 'Bystander comment', 1,
+       'fixture_task_b_comment_0001',
+       '5979b1e76b5d5b416d708a687de2e7aac57eb6a395a1cc9695d5422e0f2d3a3d', 1, 1);
+    INSERT INTO task_comment_changes (
+      task_id, change_seq, kind, comment_id, revision, audience_epoch, happened_at_ms
+    ) VALUES
+      ('task-a', 1, 'create', 'comment-a', 1, 1, 1000),
+      ('task-b', 1, 'create', 'comment-b', 1, 1, 1000);
+    INSERT INTO task_comment_receipts (
+      task_id, actor_id, client_request_id, operation, payload_hash,
+      comment_id, create_seq, change_seq, revision, committed_at_ms
+    ) VALUES
+      ('task-a', 'owner-a', 'fixture_task_a_comment_0001', 'send',
+       '516dcbca32080e77f4a0a1f579a1f94cd9b02caeb7f0165b6d720ea40e5e50e2',
+       'comment-a', 1, 1, 1, 1000),
+      ('task-b', 'owner-b', 'fixture_task_b_comment_0001', 'send',
+       '5979b1e76b5d5b416d708a687de2e7aac57eb6a395a1cc9695d5422e0f2d3a3d',
+       'comment-b', 1, 1, 1, 1000);
     INSERT INTO activities (id, workspace_id, task_id, user_id, kind, payload) VALUES
       ('activity-a', NULL, 'task-a-child', 'owner-a', 'created', '{}'),
       ('activity-b', 'ws-b', 'task-b', 'owner-b', 'created', '{}');
@@ -95,12 +125,44 @@ describe("atomic Project task-graph replacement", () => {
                       lane: "todo",
                       priority: "p1",
                     });
+                    await replacement.insert(taskDiscussionState).values({
+                      taskId: "replacement-a",
+                      workspaceId: "ws-a",
+                      audienceEpoch: 1,
+                      nextCreateSeq: 2,
+                      nextChangeSeq: 2,
+                    });
                     await replacement.insert(comments).values({
                       id: "replacement-comment-a",
                       workspaceId: "ws-a",
                       taskId: "replacement-a",
                       userId: "owner-a",
                       body: "Replacement comment",
+                      clientRequestId: "fixture_replacement_comment_0001",
+                      requestHash: "69e1f7f54fe793b2edfa60c3b681b53b276310c65cbd375112bce5552eed7d4f",
+                      revision: 1,
+                      createSeq: 1,
+                    });
+                    await replacement.insert(taskCommentChanges).values({
+                      taskId: "replacement-a",
+                      changeSeq: 1,
+                      kind: "create",
+                      commentId: "replacement-comment-a",
+                      revision: 1,
+                      audienceEpoch: 1,
+                      happenedAtMs: 1000,
+                    });
+                    await replacement.insert(taskCommentReceipts).values({
+                      taskId: "replacement-a",
+                      actorId: "owner-a",
+                      clientRequestId: "fixture_replacement_comment_0001",
+                      operation: "send",
+                      payloadHash: "69e1f7f54fe793b2edfa60c3b681b53b276310c65cbd375112bce5552eed7d4f",
+                      commentId: "replacement-comment-a",
+                      createSeq: 1,
+                      changeSeq: 1,
+                      revision: 1,
+                      committedAtMs: 1000,
                     });
                   }
                   await replacement
@@ -131,6 +193,15 @@ describe("atomic Project task-graph replacement", () => {
           assert.equal(storageCalls, 1);
           assert.equal(await count(setup, "tasks WHERE workspace_id = 'ws-a'"), mode === "reseed" ? 1 : 0);
           assert.equal(await count(setup, "comments WHERE id = 'comment-a'"), 0);
+          for (const table of ["task_discussion_state", "task_comment_changes", "task_comment_receipts"]) {
+            assert.equal(await count(setup, `${table} WHERE task_id = 'task-a'`), 0, `${table}: old Project lineage`);
+            assert.equal(await count(setup, `${table} WHERE task_id = 'task-b'`), 1, `${table}: other Project intact`);
+            assert.equal(
+              await count(setup, `${table} WHERE task_id = 'replacement-a'`),
+              mode === "reseed" ? 1 : 0,
+              `${table}: replacement lineage`,
+            );
+          }
           assert.equal(await count(setup, "activities WHERE id = 'activity-a'"), 0);
           assert.equal(await count(setup, "notifications WHERE id = 'notification-a'"), 0);
           assert.equal(await count(setup, "attachments WHERE id = 'attachment-a'"), 0);
@@ -217,6 +288,9 @@ describe("atomic Project task-graph replacement", () => {
         assert.equal(storageCalls, 0);
         assert.equal(await count(setup, "tasks WHERE workspace_id = 'ws-a'"), 2);
         assert.equal(await count(setup, "comments WHERE id = 'comment-a'"), 1);
+        for (const table of ["task_discussion_state", "task_comment_changes", "task_comment_receipts"]) {
+          assert.equal(await count(setup, `${table} WHERE task_id = 'task-a'`), 1, `${table}: rollback retained lineage`);
+        }
         assert.equal(await count(setup, "attachments WHERE id = 'attachment-a'"), 1);
         assert.equal(await count(setup, "resources WHERE id = 'res-attachment-a'"), 1);
         assert.equal(

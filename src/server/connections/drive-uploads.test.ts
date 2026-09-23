@@ -695,6 +695,13 @@ describe("Project Drive upload foundation", () => {
         sql: "DELETE FROM users WHERE id = ?",
         args: [missingUserId],
       });
+      // Migration 0036 now removes memberships as part of user erasure. Recreate
+      // the deliberately corrupt lineage after that cleanup so this test still
+      // verifies the upload service fails closed on a dangling membership.
+      await fixture.client.execute({
+        sql: "INSERT INTO workspace_members (workspace_id, user_id, role) VALUES ('ws-a', ?, ?)",
+        args: [missingUserId, missingUserId === "owner" ? "owner" : "member"],
+      });
       const danglingMembership = await fixture.db
         .select({ userId: workspaceMembers.userId })
         .from(workspaceMembers)

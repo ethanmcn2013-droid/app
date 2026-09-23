@@ -151,8 +151,29 @@ async function seedProjectChildren(
     INSERT INTO tasks (
       id, workspace_id, title, lane, priority, assignees, created_at, updated_at
     ) VALUES ('task-delete', 'ws-a', 'Delete me', 'todo', 'medium', '[]', 10, 10);
-    INSERT INTO comments (id, workspace_id, task_id, user_id, body)
-      VALUES ('comment-delete', 'ws-a', 'task-delete', 'owner', 'Comment');
+    INSERT INTO task_discussion_state (
+      task_id, workspace_id, audience_epoch, next_create_seq, next_change_seq
+    ) VALUES ('task-delete', 'ws-a', 1, 2, 2);
+    INSERT INTO comments (
+      id, workspace_id, task_id, user_id, body, created_at,
+      client_request_id, request_hash, revision, create_seq
+    ) VALUES (
+      'comment-delete', 'ws-a', 'task-delete', 'owner', 'Comment', 10,
+      'fixture_comment_delete_0001',
+      '582fd0c2e0d7fee6b957e9d7a03968c78ee85f076363f876292ba1fce9d45121',
+      1, 1
+    );
+    INSERT INTO task_comment_changes (
+      task_id, change_seq, kind, comment_id, revision, audience_epoch, happened_at_ms
+    ) VALUES ('task-delete', 1, 'create', 'comment-delete', 1, 1, 10000);
+    INSERT INTO task_comment_receipts (
+      task_id, actor_id, client_request_id, operation, payload_hash,
+      comment_id, create_seq, change_seq, revision, committed_at_ms
+    ) VALUES (
+      'task-delete', 'owner', 'fixture_comment_delete_0001', 'send',
+      '582fd0c2e0d7fee6b957e9d7a03968c78ee85f076363f876292ba1fce9d45121',
+      'comment-delete', 1, 1, 1, 10000
+    );
     INSERT INTO activities (id, workspace_id, task_id, user_id, kind, payload)
       VALUES ('activity-delete', 'ws-a', 'task-delete', 'owner', 'created', '{}');
     INSERT INTO attachments (
@@ -778,6 +799,7 @@ describe("Project Drive-aware Project deletion", () => {
         "project_drive_operations",
         "resources",
         "share_links",
+        "task_discussion_state",
         "suite_outbox",
         "tasks",
         "workspace_events",
@@ -787,6 +809,10 @@ describe("Project Drive-aware Project deletion", () => {
         "workspaces",
       ]) {
         assert.equal(await count(fixture, table), 0, `${table} must be empty`);
+      }
+      for (const table of ["task_comment_changes", "task_comment_receipts"]) {
+        const result = await fixture.client.execute(`SELECT COUNT(*) AS n FROM ${table} WHERE task_id = 'task-delete'`);
+        assert.equal(Number(result.rows[0]?.n ?? 0), 0, `${table} must lose deleted task lineage`);
       }
       assert.equal(
         Number(
