@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import type { Activity } from "@/lib/data";
 import type { ConversationResult } from "@/lib/conversations/contracts";
 import type {
@@ -21,6 +21,8 @@ import { beginTaskSync } from "@/lib/tasks/delight-events";
 import { conversationHeaders, shouldSendComposerKey } from "@/components/app/messages/conversation-client-model";
 import { ConversationPoller } from "@/lib/conversations/polling";
 import { loadDeepLinkedComment } from "@/lib/conversations/deep-link-comment";
+import { emptyTaskCommentDraft, withTaskCommentBody, withTaskCommentMention,
+  withoutTaskCommentMention, withTaskCommentRoot, type TaskCommentDraft } from "@/lib/conversations/task-comment-draft";
 import { useConversationCaches } from "@/components/app/messages/conversation-session-provider";
 
 export type ConversationFeedProps = {
@@ -40,11 +42,7 @@ export type PendingTaskOperation = Readonly<{
   error?: string;
 }>;
 
-type ComposerDraft = Readonly<{
-  body: string;
-  mentionUserIds: readonly string[];
-  rootCommentId: string | null;
-}>;
+type ComposerDraft = TaskCommentDraft;
 
 export type TaskDiscussionOutgoingState = Readonly<{
   pending: readonly PendingTaskOperation[];
@@ -109,9 +107,7 @@ function ConversationFeedState({
     (restored?.pending ?? []).map((operation) => operation.state === "pending"
       ? { ...operation, state: "uncertain" as const, error: "navigation_interrupted" }
       : operation));
-  const [composer, setComposer] = useState<ComposerDraft>(restored?.draft ?? {
-    body: "", mentionUserIds: [], rootCommentId: null,
-  });
+  const [composer, setComposer] = useState<ComposerDraft>(restored?.draft ?? emptyTaskCommentDraft);
   const [notice, setNotice] = useState<string | null>(null);
   const [access, setAccess] = useState<"ready" | "unavailable">("ready");
   const [reviewedAudienceEpoch, setReviewedAudienceEpoch] = useState(
@@ -644,7 +640,7 @@ function Composer({ taskId, actorName, people, draft, disabled, onSubmit, onDraf
   draft: ComposerDraft;
   disabled: boolean;
   onSubmit: (body: string, mentions: readonly string[], root: string | null) => Promise<boolean>;
-  onDraftChange: (draft: ComposerDraft) => void;
+  onDraftChange: Dispatch<SetStateAction<ComposerDraft>>;
   comments: readonly TaskCommentRecord[];
 }) {
   const [sending, setSending] = useState(false);
@@ -652,24 +648,24 @@ function Composer({ taskId, actorName, people, draft, disabled, onSubmit, onDraf
   const root = comments.find((comment) => comment.id === draft.rootCommentId);
 
   const change = (value: string) => {
-    onDraftChange({ ...draft, body: value });
+    onDraftChange(withTaskCommentBody(value));
   };
   const submit = async () => {
     if (disabled || sending || !draft.body.trim()) return;
     setSending(true);
     const accepted = await onSubmit(draft.body, draft.mentionUserIds, draft.rootCommentId);
     setSending(false);
-    if (accepted) onDraftChange({ body: "", mentionUserIds: [], rootCommentId: null });
+    if (accepted) onDraftChange(emptyTaskCommentDraft);
     requestAnimationFrame(() => ref.current?.focus());
   };
 
   return <div className="sticky bottom-0 -mx-6 mt-4 border-t border-line-soft bg-bg-elevated/95 px-6 pb-2 pt-3 backdrop-blur" data-comment-composer>
     {root ? <div className="mb-2 flex items-center justify-between rounded-md bg-bg-sunken px-2 py-1 text-[11px] text-ink-quiet">
-      <span>Replying to {root.authorName}</span><button type="button" onClick={() => onDraftChange({ ...draft, rootCommentId: null })}>Cancel</button>
+      <span>Replying to {root.authorName}</span><button type="button" onClick={() => onDraftChange(withTaskCommentRoot(null))}>Cancel</button>
     </div> : null}
     {!root && comments.some((comment) => comment.body !== null && comment.rootCommentId === null) ? (
       <label className="mb-1 block text-[11px] text-ink-quiet">Reply to
-        <select value="" onChange={(event) => onDraftChange({ ...draft, rootCommentId: event.target.value || null })} className="ml-1 bg-transparent text-ink-soft">
+        <select value="" onChange={(event) => onDraftChange(withTaskCommentRoot(event.target.value || null))} className="ml-1 bg-transparent text-ink-soft">
           <option value="">Discussion</option>
           {comments.filter((comment) => comment.body !== null && comment.rootCommentId === null).map((comment) =>
             <option key={comment.id} value={comment.id}>{comment.authorName}: {comment.body?.slice(0, 40)}</option>)}
@@ -679,9 +675,7 @@ function Composer({ taskId, actorName, people, draft, disabled, onSubmit, onDraf
     <div className="flex items-start gap-2.5">
       <Initials name={actorName} />
       <MentionField ref={ref} value={draft.body} onChange={change} people={people}
-        onMention={(person) => onDraftChange({ ...draft,
-          mentionUserIds: draft.mentionUserIds.includes(person.id)
-            ? draft.mentionUserIds : [...draft.mentionUserIds, person.id] })}
+        onMention={(person) => onDraftChange(withTaskCommentMention(person.id))}
         onKeyDown={(event) => {
           const mobileReturn = window.matchMedia("(max-width: 760px), (pointer: coarse)").matches;
           if (shouldSendComposerKey({ key: event.key, shiftKey: event.shiftKey,
@@ -699,8 +693,7 @@ function Composer({ taskId, actorName, people, draft, disabled, onSubmit, onDraf
     </div>
     <div className="ml-8 mt-1">
       <MentionSelection people={people} selectedIds={draft.mentionUserIds}
-        onRemove={(id) => onDraftChange({ ...draft,
-          mentionUserIds: draft.mentionUserIds.filter((item) => item !== id) })} />
+        onRemove={(id) => onDraftChange(withoutTaskCommentMention(id))} />
     </div>
     <span className="sr-only">Task {taskId}</span>
   </div>;
