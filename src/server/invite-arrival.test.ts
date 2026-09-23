@@ -455,9 +455,20 @@ test("sign-in and sign-up retain invite intent across both auth directions", asy
   assert.equal(signUp?.props.signInUrl, "/sign-in?redirect_url=%2Finvite%2Finvite-b");
   const normal = elements(await SignUpPage({ searchParams: Promise.resolve({}) })).find(element => element.props.forceRedirectUrl);
   assert.equal(normal?.props.forceRedirectUrl, "/welcome");
-  for (const redirect_url of ["https://attacker.test/invite/x", "//attacker.test", "/invite/../app", "/invite/x?next=https://attacker.test", "/app/home"]) {
+  const ordinarySignIn = elements(await SignInPage({ searchParams: Promise.resolve({}) }));
+  assert(!ordinarySignIn.some(element => element.props.forceRedirectUrl),
+    "a sign-in without a requested return keeps Clerk's configured default");
+  const appReturn = "/app/tasks?workspaceId=project-b&task=task-b";
+  const appSignIn = elements(await SignInPage({ searchParams: Promise.resolve({ redirect_url: appReturn }) }))
+    .find(element => element.props.forceRedirectUrl);
+  assert.equal(appSignIn?.props.forceRedirectUrl, appReturn,
+    "the rendered Clerk sign-in returns to the exact safe App task after authentication");
+  assert.equal(appSignIn?.props.signUpForceRedirectUrl, undefined,
+    "an App return does not acquire invite-specific sign-up props");
+  for (const redirect_url of ["https://attacker.test/invite/x", "//attacker.test", "/invite/../app", "/invite/x?next=https://attacker.test", "/app/tasks?workspaceId=project-b&workspaceId=project-a"]) {
     const signInTree = await SignInPage({ searchParams: Promise.resolve({ redirect_url }) });
-    assert(!elements(signInTree).some(element => element.props.forceRedirectUrl));
+    assert.equal(elements(signInTree).find(element => element.props.forceRedirectUrl)?.props.forceRedirectUrl, "/app",
+      "a rejected return gets an explicit safe destination rather than Clerk consuming the raw query");
     const signUpTree = await SignUpPage({ searchParams: Promise.resolve({ redirect_url }) });
     assert.equal(elements(signUpTree).find(element => element.props.forceRedirectUrl)?.props.forceRedirectUrl, "/welcome");
   }
