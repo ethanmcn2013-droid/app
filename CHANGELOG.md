@@ -8,8 +8,13 @@ next cycle.
 
 Home, Projects, Tasks and Timeline now lead the signed-in navigation on desktop and phone, including the Tasks Floor. Notes remains private and opens from More alongside existing work and account utilities. Project links retain their current context, and people without a project see a setup path instead of a stale-link message. This is a release candidate, not a production deployment.
 
-The candidate now carries an open Task through Floor view switches by reading the production detail-panel selection state. The Project remains explicit in each view link. This behavior still needs final deployed browser confirmation.
-Nested Task controls now receive pointer clicks inside reorderable lists, while dragging remains on the explicit grip. The candidate behavior was checked locally and still needs final deployed browser confirmation.
+The candidate carries an open Task through Floor view switches while keeping the Project explicit in each view link. Nested Task controls receive pointer clicks inside reorderable lists, with dragging on the explicit grip. Both behaviors passed controlled isolated-preview browser checks on the received source; canonical production receiving remains open.
+
+Add project now offers Monthly business rhythm: one separate, owned Project with 18 starter Tasks and no assumed due dates. A saved request opens the same Project after an uncertain reply. Local backend and touch-browser checks passed; real-account template receiving is tracked separately and is not a production claim.
+
+Timeline and the Home briefing now convert raw Tasks due timestamps from SQLite seconds at their adapter boundaries. Local SQLite checks cover day boundaries, daylight-saving dates, undated values and pre-1970 dates. A controlled milestone sync retained 25 October 2026 through fresh Dublin and Kiritimati desktop readbacks. The briefing change has local regression evidence, not production cron evidence.
+
+Notes failures keep private database details out of user responses, and account-deletion failures return a private, non-cacheable retry message. Controlled preview proved Notes capture and interrupted retry, plus a recipient account's export, deletion and stale-access refusal with creator-owned records preserved. Live Notes-to-Tasks extraction, required human receiving, production migration/cutover and elapsed daily use retain their separate gates.
 
 ## 2026-09-23 · T·155 · tightens · the app receives the framework security fixes
 
