@@ -14,7 +14,7 @@ Set these on the nominated Vercel preview branch, not on production:
 | `SIGNAL_SPRINT_PREVIEW_AUTH` | `isolated-clerk-preview-v1` |
 | `VERCEL`, `VERCEL_ENV`, `NODE_ENV` | `1`, `preview`, `production` (Vercel supplied) |
 | `NEXT_PUBLIC_SIGNAL_DEPLOYMENT_ENV` | `preview` (Next build injection) |
-| `NEXT_PUBLIC_SIGNAL_ACCESS_MODE` | `production`, so client and server keep the real Clerk gate |
+| `NEXT_PUBLIC_SIGNAL_ACCESS_MODE`, `SIGNAL_ACCESS_MODE` | Both `production`, so client and server keep the real Clerk gate |
 | `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_APP_URL` | Exact nominated origin above, without trailing slash |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | Matching Clerk development-instance keys (`pk_test_`, `sk_test_`); operator verifies the actual pair |
 | `TASKS_DATABASE_URL`/`TASKS_AUTH_TOKEN`, `NOTES_DATABASE_URL`/`NOTES_AUTH_TOKEN`, `TIMELINE_DATABASE_URL`/`TIMELINE_AUTH_TOKEN`, `SIGNAL_DATABASE_URL`/`SIGNAL_AUTH_TOKEN`, `ENTITLEMENTS_DATABASE_URL`/`ENTITLEMENTS_AUTH_TOKEN` | Five isolated preview stores with nonempty tokens; each URL must match the reviewed SHA-256 fingerprint pinned in the proxy helper |

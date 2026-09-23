@@ -42,7 +42,8 @@ export function sprintPreviewAuthorizedPartiesForTargets(
   invariant(env.SIGNAL_RECIPIENT_IDENTITY_PROOF === undefined,
     "Sprint preview auth cannot overlap the local recipient proof.");
   invariant(env.VERCEL === "1" && env.VERCEL_ENV === "preview" && env.NODE_ENV === "production" &&
-    env.NEXT_PUBLIC_SIGNAL_DEPLOYMENT_ENV === "preview" && env.NEXT_PUBLIC_SIGNAL_ACCESS_MODE === "production",
+    env.NEXT_PUBLIC_SIGNAL_DEPLOYMENT_ENV === "preview" &&
+    env.NEXT_PUBLIC_SIGNAL_ACCESS_MODE === "production" && env.SIGNAL_ACCESS_MODE === "production",
   "Sprint preview auth requires the isolated Vercel preview with the production auth gate.");
   invariant(env.NEXT_PUBLIC_SITE_URL === SPRINT_PREVIEW_ORIGIN &&
     env.NEXT_PUBLIC_APP_URL === SPRINT_PREVIEW_ORIGIN,
