@@ -317,7 +317,7 @@ export function ProjectOverview({ data }: { data: ProjectOverviewData }) {
       {/* Header */}
       <header className="flex-shrink-0 border-b border-line-soft bg-bg-elevated px-8 pb-6 pt-8">
         <div className="flex items-start justify-between gap-3">
-          <h1 className="min-w-0 truncate text-[22px] font-semibold tracking-tight text-ink">
+          <h1 className="min-w-0 break-words text-[22px] font-semibold tracking-tight text-ink">
             {data.displayName}
           </h1>
           <button

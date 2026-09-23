@@ -212,6 +212,17 @@ try {
           assert.equal(await trigger.evaluate(element=>document.activeElement===element),true);
           assert.equal(f.state.cookieWrites.length,0);
           await evidence('tasks.page.app-project','mobile-project-entry');
+          const longName='Monthly business rhythm for a very long local project name';
+          await f.client.execute({sql:"UPDATE meta SET value=? WHERE key='board:project-b:name'",args:[longName]});
+          await page.reload();
+          const longHeading=page.getByRole('heading',{name:longName,exact:true});
+          await longHeading.waitFor();
+          assert.equal(await longHeading.evaluate(element=>element.scrollWidth<=element.clientWidth+1),true);
+          assert.equal(await longHeading.evaluate(element=>element.scrollHeight>Number.parseFloat(getComputedStyle(element).fontSize)*1.5),true);
+          assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+          assert.equal(await page.getByRole('button',{name:'Open Tasks navigation',exact:true}).isVisible(),true);
+          await evidence('tasks.page.app-project','mobile-long-project-name');
+          await f.client.execute({sql:"UPDATE meta SET value='B arrival board' WHERE key='board:project-b:name'"});
         }
         f.state.v3=true;f.cookies();
         // Object ownership wins a conflicting URL hint; its chrome snapshot
