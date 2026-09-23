@@ -3,7 +3,8 @@
 // Produces, in order, inside the CI job that holds the credentials:
 //   1. A logical backup of the target database (schema DDL + every row of
 //      every user table, JSONL), hashed for the execution receipt. The
-//      bytes are uploaded as a CI artifact; only the hash enters evidence.
+//      bytes remain local to the runner; this legacy script must not be used
+//      as a production workflow because it has no encrypted upload gate.
 //   2. An isolated-copy dry run: the backup is restored into a local file
 //      database and the pending forward migrations are applied to it by
 //      the ordinary runner (local URLs take the non-production path), so
@@ -25,6 +26,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
+import { encodeValue } from "./backup.mjs";
 import {
   canonicalFileSha256,
   loadAndValidateLedger,
@@ -68,15 +70,6 @@ const tables = schemaRows.filter((row) => row.type === "table").map((row) => Str
 const lines = [JSON.stringify({ kind: "meta", url: "redacted", takenAt: new Date().toISOString(), tables })];
 for (const row of schemaRows) {
   lines.push(JSON.stringify({ kind: "ddl", type: row.type, name: row.name, sql: row.sql }));
-}
-
-function encodeValue(value) {
-  if (value instanceof ArrayBuffer || ArrayBuffer.isView(value)) {
-    const buffer = Buffer.from(value instanceof ArrayBuffer ? value : value.buffer);
-    return { $blob: buffer.toString("base64") };
-  }
-  if (typeof value === "bigint") return { $int: value.toString() };
-  return value;
 }
 
 let totalRows = 0;

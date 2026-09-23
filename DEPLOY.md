@@ -117,6 +117,27 @@ pnpm db:migrate -- \
   --receipt=<execution-receipt.json>
 ```
 
+The old `db-migrate` GitHub workflow is retired and must remain disabled: it
+uploaded raw database JSONL and a local dry-run database from `.db-evidence/`.
+Use the separate `db-migrate-encrypted` workflow on `main` only. Its `status`
+and `measure` commands remain read-only. `backup` and `execute` require the
+public `DB_BACKUP_AGE_RECIPIENT` Actions variable and checksum-pinned age binary
+before connecting to Tasks. They capture a read transaction, verify a fresh
+local restore, and upload only `backup.age` with a sanitized receipt. `execute`
+also dry-runs migrations locally, requires the encrypted upload acknowledgment,
+then rechecks the target URL, source revision, schema and migration-ledger
+baseline before invoking the existing atomic migration runner. Missing
+encryption or upload blocks apply. The matching private age identity stays
+outside GitHub; a downloaded-artifact decryption and restore rehearsal is
+required before calling the off-device backup recoverable. Current custody is
+bound to one Windows account/host; portable key escrow remains open.
+
+Each source snapshot is consistent within its read transaction. App writes
+between snapshot and apply can occur and are absent from that backup; schema
+and ledger drift fail before apply, while the migration runner retains its
+transactional guards. GitHub artifact retention is 90 days, not permanent
+archival. Never re-enable the old workflow ID, including for an older ref.
+
 A fresh database (created from the 0014 baseline + forwards) takes the same
 `db:migrate` path with a fresh execution receipt for the new database
 identity. The module databases (notes / timeline / signal) are created from
