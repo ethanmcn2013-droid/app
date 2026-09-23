@@ -23,7 +23,8 @@ jobs:
   verify:
     name: typecheck · test
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    # The expanded full suite reaches Project Drive after 12 minutes; allow headroom without skipping gates.
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
