@@ -535,7 +535,7 @@ function PrimaryContent({
         ) : surface?.mode === "existing_history" ? (
           <ExistingTaskHistory history={surface.history} />
         ) : (
-          <div className="rounded-lg bg-bg-sunken px-3 py-2 text-[12px] text-ink-quiet">
+          <div className="rounded-lg bg-bg-sunken px-3 py-2 text-[12px] text-ink-soft">
             Discussion is unavailable right now.
           </div>
         )}
