@@ -12,7 +12,7 @@ const esbuild=createRequire(require.resolve('tsx/package.json'))('esbuild');
 const ts=require('typescript'),{chromium}=require('@playwright/test');
 const postcss=createRequire(require.resolve('@tailwindcss/postcss'))('postcss'),tailwind=require('@tailwindcss/postcss');
 const out=path.resolve(process.env.RECIPIENT_ROUTE_OUTPUT ?? 'experience/output/recipient-project-work/routes');
-const capture=process.argv.includes('--capture'),prepare=process.argv.includes('--prepare'),serve=process.argv.includes('--serve');
+const capture=process.argv.includes('--capture'),prepare=process.argv.includes('--prepare'),serve=process.argv.includes('--serve'),mobileEntry=process.argv.includes('--mobile-entry');
 await fs.mkdir(out,{recursive:true});
 const f=await routeFixture(),actionModules=new Map(),sourceInputs={};
 const surfaces=[
@@ -21,7 +21,7 @@ const surfaces=[
   {id:'tasks.page.app-task-by-id',href:'/app/task/archive-b',text:'Archived B arrival note'},
   {id:'tasks.page.app-archived',href:'/app/archived?workspaceId=project-b',text:'Archived B arrival note'},
 ];
-const receipt={head:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),status:'running',mode:prepare?'prepare':capture?'capture':serve?'serve':'smoke',checks:[],sourceInputs,limits:[
+const receipt={head:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),status:'running',mode:prepare?'prepare':capture?'capture':serve?'serve':mobileEntry?'mobile-entry':'smoke',checks:[],sourceInputs,limits:[
   'Actual page/layout/server functions, membership/room/task queries, App shell and client components with disposable SQLite prerequisites.',
   'Explicit RSC serialization and Next navigation/headers/cache/action adapters; synthetic Clerk server identity and client account widget; no Next build/session/middleware/Flight proof.',
   'Local SQLite immediate transactions are scheduled serially; no provider or concurrency acceptance claim.',
@@ -34,6 +34,8 @@ const viewportContractSource=await fs.readFile(path.join(root,viewportContractPa
 const declaredProjects=JSON.parse(viewportContractSource).projects;
 const desktopProject=declaredProjects.find(project=>project.name==='desktop');
 assert.ok(desktopProject,'The owning browser contract must declare its desktop project');
+const mobileProject=declaredProjects.find(project=>project.name==='mobile');
+assert.ok(mobileProject?.viewport.width===390,'The mobile entry check requires the declared 390px project');
 sourceInputs[viewportContractPath]=hash(viewportContractSource);
 receipt.projects=declaredProjects;
 const external={
@@ -49,6 +51,7 @@ try {
   // Discover references through real route executions, including refusal forms
   // and both mounts. The resulting tree is never replaced with a fixture shell.
   for(const v3 of [true,false])for(const surface of surfaces){f.state.v3=v3;f.cookies();await f.render(surface.href);}
+  f.state.v3=true;f.cookies();await f.render('/app/project?workspaceId=project-b');
   f.state.v3=true;f.cookies();
   const plugin={name:'bounded-request-adapters',setup(build){
     build.onResolve({filter:/^fixture:client-modules$/},()=>({path:'modules',namespace:'fixture-modules'}));
@@ -133,7 +136,7 @@ try {
       browser=await chromium.launch({headless:true});
       // Smoke is deliberately one desktop pass. --capture is the separately
       // authorized final four-width matrix; neither proves a Next/Clerk session.
-      for(const project of capture?declaredProjects:[desktopProject]) {
+      for(const project of capture?declaredProjects:mobileEntry?[mobileProject]:[desktopProject]) {
         const {width,height}=project.viewport;
         const context=await browser.newContext({viewport:{width,height},reducedMotion:'reduce'}),page=await context.newPage(),errors=[];
         page.on('pageerror',error=>{errors.push(error.message);console.error('BROWSER',error.message)});
@@ -185,6 +188,30 @@ try {
           assert.equal(f.state.cookieWrites.length,2);assert.equal(f.state.cookies.get('tasks_active_ws'),'project-b');
           await page.reload();await assertB(surface);assert.equal(f.state.cookieWrites.length,2);
           await evidence(surface.id,'selected-and-reloaded');
+        }
+        if(width===390){
+          f.state.v3=true;f.cookies();
+          await page.goto(origin+surfaces[0].href);
+          const projects=page.getByRole('navigation',{name:'Signal Studio'}).getByRole('link',{name:'Projects',exact:true});
+          await projects.click();
+          assert.equal(new URL(page.url()).pathname,'/app/project');
+          await page.getByRole('heading',{name:'B arrival board',exact:true}).waitFor();
+          const trigger=page.getByRole('button',{name:'Open Tasks navigation',exact:true});
+          await trigger.waitFor();
+          assert.equal(await trigger.isVisible(),true);
+          await trigger.click();
+          const drawer=page.getByRole('dialog',{name:'Tasks navigation'});
+          await drawer.waitFor();
+          assert.equal(await trigger.getAttribute('aria-expanded'),'true');
+          await evidence('tasks.page.app-project','mobile-project-drawer');
+          await drawer.getByRole('button',{name:'Add project',exact:true}).click();
+          await drawer.getByRole('button',{name:'Start with Monthly business rhythm',exact:true}).waitFor();
+          await evidence('tasks.page.app-project','mobile-template-choice');
+          await drawer.press('Escape');
+          await drawer.waitFor({state:'hidden'});
+          assert.equal(await trigger.evaluate(element=>document.activeElement===element),true);
+          assert.equal(f.state.cookieWrites.length,0);
+          await evidence('tasks.page.app-project','mobile-project-entry');
         }
         f.state.v3=true;f.cookies();
         // Object ownership wins a conflicting URL hint; its chrome snapshot

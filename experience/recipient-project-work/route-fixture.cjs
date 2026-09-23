@@ -3,6 +3,7 @@ const { recipientFixture } = require('./fixture.cjs');
 
 const routes = {
   '/app/tasks': 'src/app/app/tasks/page',
+  '/app/project': 'src/app/app/project/page',
   '/app/my-tasks': 'src/app/app/my-tasks/page',
   '/app/archived': 'src/app/app/archived/page',
 };
