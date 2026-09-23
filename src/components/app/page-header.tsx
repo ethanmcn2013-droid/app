@@ -66,7 +66,7 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
         {projectDrawerAvailable ? (
           <button
             aria-label="Open Tasks navigation"
-            className="inline-flex h-11 flex-shrink-0 items-center justify-center rounded-lg border border-line-soft px-3 text-[12px] font-medium text-ink-soft hover:bg-bg-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand min-[1100px]:hidden"
+            className="inline-flex h-[44px] flex-shrink-0 items-center justify-center rounded-lg border border-line-soft px-3 text-[12px] font-medium text-ink-soft hover:bg-bg-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand min-[1100px]:hidden"
             onClick={requestOpenNav}
             type="button"
           >

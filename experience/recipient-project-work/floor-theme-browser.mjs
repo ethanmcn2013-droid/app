@@ -51,7 +51,7 @@ const stubs={
   'next/link':`import React from 'react';export default function Link(props){return <a {...props}/>}`,
   'next/navigation':`export const usePathname=()=>'/app/tasks';export const useRouter=()=>({push:href=>window.navigation.push(href)});`,
   '@/components/app/use-suite-context':`export const useSuiteContext=()=>({workspaceId:'floor-fixture-project'});`,
-  '@/lib/domain-context':`export const useColumnConfig=()=>null;`,
+  '@/lib/domain-context':`export const useColumnConfig=()=>null;export const useActiveWorkspace=()=>({id:'floor-fixture-project'});`,
   '@/components/app/done-dopamine/first-completion-moment':`export const maybeFireFirstCompletion=()=>{};`,
   '@/components/studio-bar/studio-chrome-context':`export const STUDIO_PALETTE_EVENT='studio-bar:palette';`,
   '@/components/app/share/share-button':`import React from 'react';export const ShareButton=({view})=><button type="button" aria-label="Share" onClick={()=>window.fixtureShareView=view}>Share</button>;`,
