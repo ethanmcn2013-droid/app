@@ -22,6 +22,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { PRODUCT_APP_PATHS, STUDIO_URL, TASKS_VIEW_PATHS } from "@/lib/product-urls";
 import { CORE_DESTINATIONS, type CoreDestinationId } from "@/lib/core-navigation";
 import { useSuiteContext } from "@/components/app/use-suite-context";
+import { STUDIO_PALETTE_EVENT } from "@/components/studio-bar/studio-chrome-context";
+import { ShareButton } from "@/components/app/share/share-button";
+import { PageActionsOverflow } from "@/components/app/page-header";
 import { withSuiteContext } from "@/lib/suite-context";
 import { useLabStore } from "@/components/hybrid/store";
 import { useBoardColumns } from "@/components/hybrid/columns-context";
@@ -106,20 +109,9 @@ const Search = (
     <circle cx="11" cy="11" r="6.4" /><path d="m16 16 4 4" />
   </svg>
 );
-const Share = (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <circle cx="17.5" cy="6" r="2.4" /><circle cx="6.5" cy="12" r="2.4" /><circle cx="17.5" cy="18" r="2.4" />
-    <path d="m8.7 10.8 6.6-3.6M8.7 13.2l6.6 3.6" />
-  </svg>
-);
 const Panel = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <rect x="4" y="5" width="16" height="14" rx="2.4" /><path d="M14.5 5v14" />
-  </svg>
-);
-const DotsIcon = (
-  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" />
   </svg>
 );
 const PlusIcon = (
@@ -201,6 +193,7 @@ export function FloorWorkspace({
   }, [tasks, columns, calendar]);
 
   const suite = useSuiteContext();
+  const openSearch = () => window.dispatchEvent(new CustomEvent(STUDIO_PALETTE_EVENT));
   const [moreOpen, setMoreOpen] = useState(false);
   const moreHostRef = useRef<HTMLDivElement>(null);
   const moreTriggerRef = useRef<HTMLButtonElement>(null);
@@ -377,17 +370,23 @@ export function FloorWorkspace({
             )}
           </div>
           <div className={styles.headActions}>
-            <button type="button" className={`${styles.ghost} ${styles.headSearch}`} aria-label="Search">
+            <button type="button" className={`${styles.ghost} ${styles.headSearch}`} aria-label="Search" onClick={openSearch}>
               {Search}
             </button>
-            <button type="button" className={styles.ghost}>{Share}<span>Share</span></button>
+            <ShareButton view={view} variant="band" />
             {onOpenPlanning && (
               <button type="button" className={styles.ghost} onClick={onOpenPlanning}>
                 {Panel}<span>Planning</span>
                 {facts.undated > 0 && <em>{facts.undated}</em>}
               </button>
             )}
-            <button type="button" className={styles.ghost} aria-label="More">{DotsIcon}</button>
+            <PageActionsOverflow
+              onSearch={openSearch}
+              showShare={false}
+              shareView={view}
+              printPath={withSuiteContext(`/print/${view}`, suite)}
+              variant="band"
+            />
           </div>
         </div>
 
@@ -427,7 +426,7 @@ export function FloorWorkspace({
 
         {/* ── the dock ────────────────────────────────────────── */}
         <div className={styles.dock}>
-          <button type="button" className={styles.dockField} aria-label={`Search ${projectName}`}>
+          <button type="button" className={styles.dockField} aria-label={`Search ${projectName}`} onClick={openSearch}>
             {Search}<span>Search {projectName}</span>
           </button>
           <button

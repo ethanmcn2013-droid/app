@@ -20,6 +20,9 @@ const adapters={
   '@/components/app/use-suite-context':`export const useSuiteContext=()=>({workspaceId:'calendar-project'});`,
   '@/lib/domain-context':`export const useColumnConfig=()=>null;`,
   '@/components/app/done-dopamine/first-completion-moment':`export const maybeFireFirstCompletion=()=>{};`,
+  '@/components/studio-bar/studio-chrome-context':`export const STUDIO_PALETTE_EVENT='studio-bar:palette';`,
+  '@/components/app/share/share-button':`import React from 'react';export const ShareButton=({view})=><button type="button" aria-label="Share" onClick={()=>window.fixtureShareView=view}>Share</button>;`,
+  '@/components/app/page-header':`import React from 'react';export const PageActionsOverflow=({printPath})=><button type="button" aria-label="More actions" onClick={()=>window.fixturePrintPath=printPath}>More</button>;`,
 };
 const entry=`import React from 'react';
 import {FloorWorkspace} from '@/components/floor/floor-workspace';
@@ -49,7 +52,7 @@ export async function buildFloorCalendarFixture(out,{browserBundle=false}={}) {
   let browser;
   if(browserBundle)browser=await esbuild.build({...common,platform:'browser',define:{'process.env':'{}','process.env.NODE_ENV':'"development"'},stdin:{contents:entry+`
 import {hydrateRoot,createRoot} from 'react-dom/client';
-window.hydrationErrors=[];let mounted;
+window.hydrationErrors=[];window.fixtureSearchCalls=0;addEventListener('studio-bar:palette',()=>window.fixtureSearchCalls++);let mounted;
 window.start=(props,hydrate)=>{mounted=hydrate?hydrateRoot(document.getElementById('root'),<App {...props}/>,{onRecoverableError:e=>window.hydrationErrors.push(e.message)}):createRoot(document.getElementById('root'));if(!hydrate)mounted.render(<App {...props}/>);};
 window.update=props=>mounted.render(<App {...props}/>);
 window.read=()=>({frame:document.querySelector('[data-frame]')?.textContent,inspected:document.querySelector('[data-inspected]')?.textContent,header:document.querySelector('.'+styles.headFacts+' > span:first-child')?.textContent,summary:[...document.querySelectorAll('.'+styles.headFacts+' button')].map(n=>n.textContent),cards:[...document.querySelectorAll('article[data-id]')].map(n=>{const chip=n.querySelector('[data-t]');return {id:n.dataset.id,kind:chip?.dataset.t??'none',label:chip?[...chip.childNodes].filter(c=>c.nodeType===3).map(c=>c.textContent).join(''):'',title:chip?.title??''};}),hydrationErrors:window.hydrationErrors});`,loader:'jsx',resolveDir:root},outfile:path.join(out,'browser.js')});
@@ -164,6 +167,17 @@ export async function runFloorCalendarBrowser() {
         result.updated=await read();check('timezone update keeps header',result.updated.header,scenario.header);check('completion timezone updates',result.updated.cards.find(c=>c.id==='done').label,'Today');
       }
       if(scenario.id==='demo-host-drift'){
+        if(viewport.width>=768){
+          await page.getByRole('button',{name:'Search Project calendar'}).click();
+          check('dock Search dispatches canonical palette event',await page.evaluate(()=>window.fixtureSearchCalls),1);
+        }else{
+          await page.getByRole('button',{name:'Search',exact:true}).click();
+          check('phone header Search dispatches canonical palette event',await page.evaluate(()=>window.fixtureSearchCalls),1);
+        }
+        await page.getByRole('button',{name:'Share',exact:true}).click();
+        check('Share delegates current view to canonical boundary',await page.evaluate(()=>window.fixtureShareView),'board');
+        await page.getByRole('button',{name:'More actions'}).click();
+        check('More delegates contextual print path to canonical boundary',await page.evaluate(()=>window.fixturePrintPath),'/print/board?sourceProduct=tasks&contextVersion=2&workspaceId=calendar-project');
         check('task detail starts closed',(await read()).inspected,'');
         await page.locator('article[data-id="today"] [data-trim="title"]').click();
         check('existing card title opens canonical store detail',(await read()).inspected,'today');

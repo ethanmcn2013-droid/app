@@ -53,6 +53,9 @@ const stubs={
   '@/components/app/use-suite-context':`export const useSuiteContext=()=>({workspaceId:'floor-fixture-project'});`,
   '@/lib/domain-context':`export const useColumnConfig=()=>null;`,
   '@/components/app/done-dopamine/first-completion-moment':`export const maybeFireFirstCompletion=()=>{};`,
+  '@/components/studio-bar/studio-chrome-context':`export const STUDIO_PALETTE_EVENT='studio-bar:palette';`,
+  '@/components/app/share/share-button':`import React from 'react';export const ShareButton=({view})=><button type="button" aria-label="Share" onClick={()=>window.fixtureShareView=view}>Share</button>;`,
+  '@/components/app/page-header':`import React from 'react';export const PageActionsOverflow=({printPath})=><button type="button" aria-label="More actions" onClick={()=>window.fixturePrintPath=printPath}>More</button>;`,
   '@/components/app/active-project-provider':`export const ACTIVE_PROJECT_TRIGGER_SKELETON_WIDTH=180;export const useActiveProject=()=>window.projectFixture;`,
   '@/server/actions/project-catalog':`export const loadProjectCatalogAction=()=>{throw Error('Catalog request outside color fixture')};`,
 };
