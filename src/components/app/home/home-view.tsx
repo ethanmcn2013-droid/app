@@ -1,4 +1,6 @@
 import Link from "next/link";
+import type { ProjectSummary } from "@/lib/projects/project-ref";
+import { buildProjectUrl } from "@/lib/projects/project-url";
 import type {
   HomeComingRow,
   HomeData,
@@ -44,6 +46,21 @@ export function HomeView({ data }: { data: Extract<HomeData, { kind: "ok" }> }) 
       </div>
     </div>
   );
+}
+
+/** Tasks proved this Project exists, but Signal could not read its Home yet. */
+export function HomeProjectUnavailable({ project }: { project: ProjectSummary }) {
+  return <div className="thin-scroll flex-1 overflow-auto bg-bg px-5 py-6 md:px-10 md:py-9">
+    <div className="mx-auto flex min-h-[60dvh] max-w-[560px] flex-col justify-center">
+      <h1 className="text-[24px] font-medium tracking-tight text-ink md:text-[28px]">Home isn’t ready yet.</h1>
+      <p className="mt-3 max-w-[44ch] text-[14px] leading-relaxed text-ink-soft">
+        We couldn’t read {project.name} for Home right now. Your project is still available in Tasks.
+      </p>
+      <Link className="mt-7 w-fit rounded-lg bg-ink px-4 py-2.5 text-[13.5px] font-medium text-white" href={buildProjectUrl({ surface: "tasks" }, project.id)}>
+        Open Tasks <span aria-hidden>→</span>
+      </Link>
+    </div>
+  </div>;
 }
 
 function SectionLabel({

@@ -78,6 +78,7 @@ function useDrawerViewport(): boolean {
  */
 function AddProjectRow({ onCreated }: { onCreated?: () => void }) {
   const router = useRouter();
+  const activeProject = useActiveProject();
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState("");
   const [pending, startTransition] = useTransition();
@@ -101,6 +102,23 @@ function AddProjectRow({ onCreated }: { onCreated?: () => void }) {
     startTransition(async () => {
       try {
         const result = await createProjectAction(trimmed, null);
+        if (activeProject?.enabled) {
+          // V3 resolves the unified Project cookie before the legacy one.
+          // Creation's legacy cookie alone cannot switch a creator who
+          // already has a unified preference. Use the guarded transition,
+          // which proves membership and redirects to this new Tasks Project.
+          const id = parseProjectId(result.id);
+          setAdding(false);
+          setDraft("");
+          if (!id) {
+            router.refresh();
+            return;
+          }
+          onCreated?.();
+          const selection = activeProject.selectProject({ id, name: trimmed }, { surface: "tasks" });
+          if (selection.kind !== "started") router.refresh();
+          return;
+        }
         await selectWorkspaceAction(result.id);
         window.sessionStorage.setItem("signal-tasks.recent-project", result.id);
         setAdding(false);

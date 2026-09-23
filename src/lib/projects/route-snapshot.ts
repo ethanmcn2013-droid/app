@@ -206,6 +206,8 @@ export type ActiveProjectPending = Readonly<{
   projectId: ProjectId;
   /** Shown on the trigger: `Opening 2024 school year…`. */
   label: string;
+  /** When known, only this destination route may settle the switch. */
+  destinationRouteKey?: string;
 }>;
 
 export type ActiveProjectState = Readonly<{
@@ -226,6 +228,20 @@ export type ActiveProjectState = Readonly<{
    */
   refusal: SelectProjectRefusal | null;
 }>;
+
+/** The only proof that an explicit switch arrived at its requested route. */
+export function selectionVerified(
+  state: ActiveProjectState,
+  selection: { projectId: ProjectId; routeKey: string },
+): boolean {
+  const snapshot = state.committed;
+  return state.pending === null &&
+    state.live.routeKey === selection.routeKey &&
+    snapshot !== null &&
+    snapshot.routeKey === selection.routeKey &&
+    snapshot.epoch === state.live.epoch &&
+    snapshot.project.id === selection.projectId;
+}
 
 export type ActiveProjectEvent =
   | Readonly<{ type: "route"; routeKey: string }>
@@ -275,7 +291,9 @@ export function reduceActiveProject(
         ...state,
         committed: event.snapshot,
         pending:
-          state.pending && state.pending.projectId === event.snapshot.project.id
+          state.pending &&
+          state.pending.projectId === event.snapshot.project.id &&
+          (!state.pending.destinationRouteKey || state.pending.destinationRouteKey === event.snapshot.routeKey)
             ? null
             : state.pending,
       };

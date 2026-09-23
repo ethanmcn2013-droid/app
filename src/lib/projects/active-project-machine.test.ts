@@ -7,6 +7,7 @@ import {
   initialActiveProjectState,
   reduceActiveProject,
   routeKey,
+  selectionVerified,
   stampSnapshotEpoch,
   type ActiveProjectState,
 } from "@/lib/projects/route-snapshot";
@@ -275,6 +276,26 @@ test("selection state clears when the destination Project verifies", () => {
   harness.navigate("/app/tasks", "ws-b");
   harness.publish("/app/tasks", b);
   assert.equal(harness.state.pending, null, "arrival clears the pending label");
+});
+
+test("a switch settles only at its requested verified route, including same-Project navigation", () => {
+  const harness = new Harness();
+  const b = project("ws-b");
+  harness.navigate("/app/home", "ws-b");
+  harness.publish("/app/home", b);
+  const destination = routeKey("/app/tasks", "ws-b");
+  harness.state = reduceActiveProject(harness.state, {
+    type: "select-started",
+    pending: { projectId: b.id, label: "Opening WS-B…", destinationRouteKey: destination },
+  });
+  assert.equal(selectionVerified(harness.state, { projectId: b.id, routeKey: destination }), false);
+  harness.publish("/app/home", b);
+  assert.equal(harness.state.pending?.projectId, b.id, "old Home snapshot cannot settle Tasks navigation");
+  harness.navigate("/app/tasks", "ws-b");
+  assert.equal(selectionVerified(harness.state, { projectId: b.id, routeKey: destination }), false, "URL alone is not proof");
+  harness.publish("/app/tasks", b);
+  assert.equal(selectionVerified(harness.state, { projectId: b.id, routeKey: destination }), true);
+  assert.equal(harness.state.pending, null);
 });
 
 test("a failed selection clears pending and states that A is still active", () => {

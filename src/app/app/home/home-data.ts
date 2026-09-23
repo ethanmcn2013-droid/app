@@ -63,6 +63,8 @@ export type HomeData =
   | { kind: "new-user" }
   | {
       kind: "ok";
+      /** The scope Signal actually authorized and read, never a route guess. */
+      scope: SignalScope;
       dateLabel: string;
       greeting: string;
       scopeLabel: string;
@@ -222,6 +224,7 @@ export async function loadHomeData(opts: {
 
   return {
     kind: "ok",
+    scope: authorizedScope.scope,
     dateLabel,
     greeting: greetingFor(briefing.greetingHour),
     scopeLabel: authorizedScope.label,
