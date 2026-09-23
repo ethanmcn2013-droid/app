@@ -11,6 +11,8 @@ import { fileURLToPath } from "node:url";
 
 const serverDir = dirname(fileURLToPath(import.meta.url));
 const actions = readFileSync(join(serverDir, "actions", "tasks.ts"), "utf8");
+const tasksProvider = readFileSync(join(serverDir, "..", "lib", "tasks", "tasks-context.tsx"), "utf8");
+const subtasksSection = readFileSync(join(serverDir, "..", "components", "app", "detail-panel", "subtasks-section.tsx"), "utf8");
 const activity = readFileSync(join(serverDir, "db", "activity.ts"), "utf8");
 const queries = readFileSync(join(serverDir, "db", "queries.ts"), "utf8");
 const dbIndex = readFileSync(join(serverDir, "db", "index.ts"), "utf8");
@@ -251,6 +253,29 @@ test("addTaskAction validates parent ownership and top-level shape", () => {
   assert.match(body, /eq\(tasks\.workspaceId, ws\)/);
   assert.match(body, /isNull\(tasks\.parentTaskId\)/);
   assert.match(body, /parent task is not in the active workspace/);
+});
+
+test("routed task and subtask creation writes to the displayed Project, not an ambient cookie", () => {
+  // Regresses a real B-board/A-cookie write: the server proved A correctly,
+  // but the B board omitted its destination and silently created there.
+  const scopedCreate = /addTaskAction\(\{\s*\.\.\.input,\s*id:\s*task\.id,\s*projectId\s*\}\)/;
+  assert.match(tasksProvider, scopedCreate);
+  assert.doesNotMatch(
+    tasksProvider.replace(scopedCreate, "addTaskAction({ ...input, id: task.id })"),
+    scopedCreate,
+    "omitting the displayed Project must trip this guard",
+  );
+  assert.match(subtasksSection, /const projectId = activeWorkspace\?\.id\s*\?\?\s*task\.workspaceId/);
+  assert.match(subtasksSection, /addTaskAction\(\{[\s\S]*?parentTaskId:\s*task\.id,[\s\S]*?projectId,/);
+
+  const body = exportedActionBody(actions, "addTaskAction");
+  assert.match(body, /candidateProjectId:\s*input\.projectId\s*\?\?\s*ambient/);
+  assert.match(body, /const ws = grant\.projectId/);
+  assert.match(body, /workspaceId:\s*ws/);
+  // A refused explicit B write must reject the optimistic B card. Returning
+  // neutralTaskList(ambient) would hydrate A's tasks into the B provider.
+  assert.match(body, /if \(!grant\.ok\)\s*\{[\s\S]*?if \(input\.projectId != null\) throw/);
+  assert.match(body, /if \(!created\)\s*\{[\s\S]*?if \(input\.projectId != null\) throw/);
 });
 
 test("subtask reads include both parent id and workspace scope", () => {

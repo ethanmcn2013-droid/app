@@ -607,7 +607,12 @@ export async function addTaskAction(input: {
   // No proved Project means no destination. The old accessor would have
   // offered LEGACY_WORKSPACE_ID here and this would have created the task
   // inside it (D-005).
-  if (!grant.ok) return neutralTaskList(ambient);
+  if (!grant.ok) {
+    // An explicitly displayed Project must never reconcile its optimistic
+    // state with the caller's different ambient Project after a refusal.
+    if (input.projectId != null) throw new Error("Task Project is unavailable");
+    return neutralTaskList(ambient);
+  }
   const ws = grant.projectId;
   const id =
     input.id ??
@@ -686,7 +691,10 @@ export async function addTaskAction(input: {
     await captureTaskCreated(tx, { actorUserId: me, projectId: ws });
     return true;
   }, { behavior: "immediate" });
-  if (!created) return neutralTaskList(ambient);
+  if (!created) {
+    if (input.projectId != null) throw new Error("Task Project is unavailable");
+    return neutralTaskList(ambient);
+  }
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });
   return getTasks(ws);

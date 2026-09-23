@@ -326,7 +326,7 @@ export function TasksProvider({
         };
         withServerSync(
           () => dispatch({ type: "add", task }),
-          () => addTaskAction({ ...input, id: task.id }),
+          () => addTaskAction({ ...input, id: task.id, projectId }),
         );
         return task;
       },
