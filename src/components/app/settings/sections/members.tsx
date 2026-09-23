@@ -174,6 +174,11 @@ export function MembersSection({
             : "Invite created. We couldn’t confirm email delivery; check with them before sending again.");
           return;
         }
+        if (result.reason === "invite-no-longer-active") {
+          setManualInvite(null);
+          setInviteNotice("The invite is no longer active. Email delivery wasn’t confirmed; check with them before trying again.");
+          return;
+        }
         toast(`Invite sent to ${email}`, {
           tone: "success",
           body: "Good for 7 days. They click the link, sign in with this address, and they’re in.",
@@ -234,6 +239,14 @@ export function MembersSection({
             body: result.reason === "email-unavailable"
               ? "Email isn’t available right now. No message was sent; copy the link below instead."
               : "We couldn’t confirm email delivery. Check with them before sending again, or copy the link below.",
+          });
+          return;
+        }
+        if (result.reason === "invite-no-longer-active") {
+          setManualInvite(null);
+          toast("Invite no longer active", {
+            tone: "info",
+            body: "Email delivery wasn’t confirmed. Check with them before trying again.",
           });
           return;
         }

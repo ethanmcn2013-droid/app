@@ -35,6 +35,9 @@ const fixture = {
   transition: undefined as Promise<void> | undefined,
   navigation: null as null | { kind: string; url: string },
   clientError: null as string | null,
+  mailEnabled: false,
+  mailCalls: [] as { to: string; subject: string }[],
+  onMailSend: null as null | (() => Promise<void>),
 };
 (globalThis as Record<string, unknown>).__inviteArrival = fixture;
 
@@ -65,6 +68,9 @@ beforeEach(async () => {
   fixture.transition = undefined;
   fixture.navigation = null;
   fixture.clientError = null;
+  fixture.mailEnabled = false;
+  fixture.mailCalls = [];
+  fixture.onMailSend = null;
   process.env.SIGNAL_ACTIVE_PROJECT_V3_ENABLED = "true";
   await harness.client.executeMultiple(`
     DELETE FROM project_drive_operations; DELETE FROM drive_folder_grants;
@@ -130,6 +136,58 @@ test("owner creates an email-bound invite without a mail provider, with no deliv
   await harness.client.execute("INSERT INTO workspace_members(workspace_id,user_id,role) VALUES('project-b','invitee','member')");
   fixture.user!.id = "invitee";
   assert.deepEqual(await listPendingInvitesAction("project-b"), []);
+});
+
+test("provider acceptance followed by audit rollback returns only a live owner link and keeps retry truthful", async () => {
+  fixture.user = {
+    id: "owner", primaryEmailAddressId: "owner-primary",
+    emailAddresses: [{ id: "owner-primary", emailAddress: "owner@example.test", verification: { status: "verified" } }],
+  };
+  fixture.allowAmbient = true;
+  fixture.cookies.set("signal_active_project", "project-b");
+  fixture.mailEnabled = true;
+  await client.executeMultiple(`CREATE TRIGGER reject_invite_audit BEFORE INSERT ON workspace_events
+    WHEN NEW.kind = 'inviteSent' BEGIN SELECT RAISE(ABORT, 'test post-provider audit failure'); END;`);
+  const { inviteMemberByEmailAction } = await import("./actions/settings");
+  const uncertain = await inviteMemberByEmailAction("fresh@example.test", "member", "project-b");
+  assert.equal(uncertain.reason, "delivery-unconfirmed");
+  assert.equal(uncertain.sent, false);
+  assert.equal(fixture.mailCalls.length, 1, "the fake provider accepted one message before audit failed");
+  const [pending] = await rows("SELECT token,last_sent_at FROM pending_invites WHERE workspace_id='project-b' AND email='fresh@example.test'");
+  assert.equal(uncertain.acceptUrl?.endsWith(`/invite/${pending.token}`), true);
+  assert.equal(pending.last_sent_at, null, "rolled-back delivery metadata must not claim Sent");
+  assert.deepEqual(await rows("SELECT kind FROM workspace_events"), []);
+
+  // An explicit retry can send again; the same durable email-bound invite is
+  // reused and the action never silently reports the first attempt as sent.
+  await client.execute("DROP TRIGGER reject_invite_audit");
+  const retry = await inviteMemberByEmailAction("fresh@example.test", "member", "project-b");
+  assert.equal(retry.sent, true);
+  assert.equal(fixture.mailCalls.length, 2);
+  assert.deepEqual(await rows("SELECT token FROM pending_invites WHERE workspace_id='project-b' AND email='fresh@example.test'"), [{ token: pending.token }]);
+  assert.equal((await rows("SELECT last_sent_at FROM pending_invites WHERE workspace_id='project-b' AND email='fresh@example.test'"))[0].last_sent_at !== null, true);
+  assert.deepEqual(await rows("SELECT kind FROM workspace_events"), [{ kind: "inviteSent" }]);
+});
+
+test("provider acceptance after invite revocation never returns a bearer link or delivery claim", async () => {
+  fixture.user = {
+    id: "owner", primaryEmailAddressId: "owner-primary",
+    emailAddresses: [{ id: "owner-primary", emailAddress: "owner@example.test", verification: { status: "verified" } }],
+  };
+  fixture.allowAmbient = true;
+  fixture.cookies.set("signal_active_project", "project-b");
+  fixture.mailEnabled = true;
+  fixture.onMailSend = async () => {
+    await client.execute("UPDATE pending_invites SET expires_at = unixepoch() - 1 WHERE workspace_id='project-b' AND email='fresh@example.test'");
+  };
+  const { inviteMemberByEmailAction } = await import("./actions/settings");
+  const result = await inviteMemberByEmailAction("fresh@example.test", "member", "project-b");
+  assert.equal(result.reason, "invite-no-longer-active");
+  assert.equal(result.sent, false);
+  assert.equal(result.acceptUrl, undefined);
+  assert.equal(fixture.mailCalls.length, 1);
+  assert.deepEqual(await rows("SELECT last_sent_at FROM pending_invites WHERE email='fresh@example.test'"), [{ last_sent_at: null }]);
+  assert.deepEqual(await rows("SELECT kind FROM workspace_events"), []);
 });
 
 test("accept B replaces stale A preferences and returns canonical My work in B", async () => {

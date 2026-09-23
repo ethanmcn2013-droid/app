@@ -22,6 +22,7 @@ import {
 } from "@/server/auth";
 import {
   authorizeProjectCandidate,
+  authorizeStoredProject,
   readableProjectOrNull,
   type ProjectCapabilityKey,
   type ProjectGrant,
@@ -513,7 +514,7 @@ export async function inviteMemberByEmailAction(
   ok: true;
   email: string;
   sent: boolean;
-  reason?: "already-member" | "cooldown" | "email-unavailable" | "delivery-unconfirmed";
+  reason?: "already-member" | "cooldown" | "email-unavailable" | "delivery-unconfirmed" | "invite-no-longer-active";
   acceptUrl?: string;
 }> {
   const trimmed = email.trim().toLowerCase();
@@ -650,26 +651,66 @@ export async function inviteMemberByEmailAction(
   // Update delivery evidence atomically unless deletion already owns the
   // Project. The email may have crossed the provider boundary just before a
   // concurrent delete; in that case the invite cannot be made live again.
-  await db.transaction(
-    async (tx) => {
-      await assertProjectNotDeleting(tx, ws);
-      await tx
-        .update(pendingInvites)
-        .set({ lastSentAt: now })
-        .where(eq(pendingInvites.token, token));
+  try {
+    await db.transaction(
+      async (tx) => {
+        await assertProjectNotDeleting(tx, ws);
+        const updated = await tx
+          .update(pendingInvites)
+          .set({ lastSentAt: now })
+          .where(and(
+            eq(pendingInvites.token, token),
+            eq(pendingInvites.workspaceId, ws),
+            eq(pendingInvites.email, trimmed),
+            isNull(pendingInvites.acceptedAt),
+            gt(pendingInvites.expiresAt, new Date()),
+          ))
+          .returning({ token: pendingInvites.token });
+        if (updated.length !== 1) throw new Error("Invite is no longer active");
 
-      // Record workspace event. No email address in payload (audit trail only).
-      await tx.insert(workspaceEvents).values({
-        id: mintEventId(),
-        workspaceId: ws,
-        userId: me,
-        kind: "inviteSent",
-        payload: JSON.stringify({ role }),
-        createdAt: Math.floor(now / 1000),
+        // Record workspace event. No email address in payload (audit trail only).
+        await tx.insert(workspaceEvents).values({
+          id: mintEventId(),
+          workspaceId: ws,
+          userId: me,
+          kind: "inviteSent",
+          payload: JSON.stringify({ role }),
+          createdAt: Math.floor(now / 1000),
+        });
+      },
+      { behavior: "immediate" },
+    );
+  } catch {
+    // The provider may already have accepted the message. A rolled-back audit
+    // cannot be presented as confirmed delivery. Re-prove the owner's access
+    // and the exact invite's live state before returning its bearer link.
+    let stillLive = false;
+    try {
+      stillLive = await db.transaction(async (tx) => {
+        const grant = await authorizeStoredProject({
+          storedProjectId: ws, capability: "manageProject", actorUserId: me, executor: tx,
+        });
+        if (!grant.ok) return false;
+        await assertProjectNotDeleting(tx, ws);
+        const [pending] = await tx.select({ token: pendingInvites.token })
+          .from(pendingInvites)
+          .where(and(
+            eq(pendingInvites.token, token),
+            eq(pendingInvites.workspaceId, ws),
+            eq(pendingInvites.email, trimmed),
+            isNull(pendingInvites.acceptedAt),
+            gt(pendingInvites.expiresAt, new Date()),
+          )).limit(1);
+        return Boolean(pending);
       });
-    },
-    { behavior: "immediate" },
-  );
+    } catch {
+      // Refuse a bearer link if the proof/read itself is unavailable.
+    }
+    revalidatePath("/app/settings");
+    return stillLive
+      ? { ok: true, email: trimmed, sent: false, reason: "delivery-unconfirmed", acceptUrl }
+      : { ok: true, email: trimmed, sent: false, reason: "invite-no-longer-active" };
+  }
 
   revalidatePath("/app/settings");
   return { ok: true, email: trimmed, sent: true };

@@ -22,9 +22,17 @@ exports.cookies = async () => ({
   delete: name => { throw Error("Unexpected cookie deletion: " + name); },
 });
 exports.revalidatePath = path => fixture().invalidations.push(path);
-exports.sendEmail = () => { throw Error("Email must not be sent"); };
-exports.inviteEmailHtml = () => { throw Error("Email must not be composed"); };
-exports.emailConfigured = false;
+exports.sendEmail = async args => {
+  if (!fixture().mailEnabled) throw Error("Email must not be sent");
+  fixture().mailCalls.push(args);
+  await fixture().onMailSend?.();
+  return { ok: true, id: "fixture-provider-accepted" };
+};
+exports.inviteEmailHtml = () => {
+  if (!fixture().mailEnabled) throw Error("Email must not be composed");
+  return "<p>Fixture invitation</p>";
+};
+Object.defineProperty(exports, "emailConfigured", { get: () => fixture().mailEnabled });
 exports.executeProjectDriveGrantOperation = async input => {
   fixture().driveCalls.push(input);
   throw Error("Fixture provider unavailable");
