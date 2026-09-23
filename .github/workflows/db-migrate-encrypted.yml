@@ -1,0 +1,114 @@
+name: db-migrate-encrypted
+
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: 'Production Tasks operation'
+        type: choice
+        options: [status, measure, backup, execute]
+        required: true
+        default: status
+
+concurrency:
+  group: db-migrate-production
+  cancel-in-progress: false
+
+jobs:
+  run:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Status (read-only)
+        if: inputs.command == 'status'
+        env:
+          TASKS_DATABASE_URL: ${{ secrets.TASKS_DATABASE_URL }}
+          TASKS_AUTH_TOKEN: ${{ secrets.TASKS_AUTH_TOKEN }}
+        run: node scripts/db/migrate.mjs status --confirm-production=tasks
+
+      - name: Measure (read-only)
+        if: inputs.command == 'measure'
+        env:
+          TASKS_DATABASE_URL: ${{ secrets.TASKS_DATABASE_URL }}
+          TASKS_AUTH_TOKEN: ${{ secrets.TASKS_AUTH_TOKEN }}
+        run: node scripts/db/measure-board-truth.mjs
+
+      - name: Require recovery recipient before database access
+        if: inputs.command == 'backup' || inputs.command == 'execute'
+        env:
+          DB_BACKUP_AGE_RECIPIENT: ${{ vars.DB_BACKUP_AGE_RECIPIENT }}
+        run: |
+          test -n "$DB_BACKUP_AGE_RECIPIENT"
+          case "$DB_BACKUP_AGE_RECIPIENT" in age1*) ;; *) exit 1;; esac
+
+      - name: Install checksum-pinned age v1.3.2
+        if: inputs.command == 'backup' || inputs.command == 'execute'
+        run: |
+          curl --fail --location --silent --show-error \
+            -o "$RUNNER_TEMP/age-v1.3.2-linux-amd64.tar.gz" \
+            https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-linux-amd64.tar.gz
+          echo 'cbe24006683f8eb669266162894b9a522a1af52f2665fbc63a4bb032ed26ac10  '"$RUNNER_TEMP/age-v1.3.2-linux-amd64.tar.gz" | sha256sum --check --status
+          tar -xzf "$RUNNER_TEMP/age-v1.3.2-linux-amd64.tar.gz" -C "$RUNNER_TEMP"
+          test -x "$RUNNER_TEMP/age/age"
+
+      - name: Prepare verified encrypted backup
+        if: inputs.command == 'backup' || inputs.command == 'execute'
+        env:
+          TASKS_DATABASE_URL: ${{ secrets.TASKS_DATABASE_URL }}
+          TASKS_AUTH_TOKEN: ${{ secrets.TASKS_AUTH_TOKEN }}
+          DB_BACKUP_AGE_RECIPIENT: ${{ vars.DB_BACKUP_AGE_RECIPIENT }}
+          AGE_BINARY: ${{ runner.temp }}/age/age
+          BACKUP_MODE: ${{ inputs.command }}
+        run: node scripts/db/production-backup-custody.mjs prepare
+
+      - name: Upload ciphertext and sanitized receipt
+        id: encrypted_backup
+        if: inputs.command == 'backup' || inputs.command == 'execute'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tasks-encrypted-backup-${{ github.run_id }}
+          path: |
+            .db-cipher/backup.age
+            .db-cipher/receipt.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Verify encrypted artifact upload acknowledgment
+        if: inputs.command == 'backup' || inputs.command == 'execute'
+        env:
+          BACKUP_ARTIFACT_ID: ${{ steps.encrypted_backup.outputs.artifact-id }}
+          BACKUP_ARTIFACT_DIGEST: ${{ steps.encrypted_backup.outputs.artifact-digest }}
+        run: node scripts/db/production-backup-custody.mjs acknowledge
+
+      - name: Apply only after encrypted artifact upload
+        id: production_apply
+        if: inputs.command == 'execute'
+        env:
+          TASKS_DATABASE_URL: ${{ secrets.TASKS_DATABASE_URL }}
+          TASKS_AUTH_TOKEN: ${{ secrets.TASKS_AUTH_TOKEN }}
+          DB_BACKUP_AGE_RECIPIENT: ${{ vars.DB_BACKUP_AGE_RECIPIENT }}
+          BACKUP_ARTIFACT_ID: ${{ steps.encrypted_backup.outputs.artifact-id }}
+          BACKUP_ARTIFACT_DIGEST: ${{ steps.encrypted_backup.outputs.artifact-digest }}
+        run: node scripts/db/production-backup-custody.mjs apply
+
+      - name: Retain sanitized migration result
+        if: ${{ always() && inputs.command == 'execute' && steps.encrypted_backup.outcome == 'success' && steps.production_apply.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: tasks-encrypted-migration-result-${{ github.run_id }}
+          path: .db-final/receipt.json
+          if-no-files-found: error
+          retention-days: 90

@@ -71,6 +71,8 @@ analytics.db*
 roadmap.db*
 prefs.db*
 .db-evidence/
+.db-cipher/
+.db-final/
 
 # database backups taken by scripts/db/backup.mjs — never committed
 .db-backups/

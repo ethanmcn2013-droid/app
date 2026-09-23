@@ -85,10 +85,10 @@ after(async () => {
       retryDelay: 50,
     });
   } catch (error) {
-    // A native libSQL handle can survive until process teardown on Windows.
-    // This is a unique OS-temp fixture, so EBUSY/EPERM after bounded retries
-    // is teardown noise rather than a failed backup or restore assertion.
-    if (error?.code !== "EPERM" && error?.code !== "EBUSY") throw error;
+    // The local libSQL driver can retain a Windows handle after close().
+    if (error?.code !== "EPERM" && !(process.platform === "win32" && error?.code === "EBUSY")) {
+      throw error;
+    }
   }
 });
 
