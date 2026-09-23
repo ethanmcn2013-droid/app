@@ -167,7 +167,10 @@ export function resolveStoredPathDeleteTarget(
   // disk-key seam below and must never be silently double-prefixed here.
   const candidate = isAbsolute(storedPath)
     ? storedPath
-    : resolve(process.cwd(), storedPath);
+    // Stored uploads are runtime data, never bundled repository assets. Keep
+    // legacy relative locators and the exact root check below without making
+    // Turbopack include the entire checkout in every attachment consumer.
+    : resolve(/* turbopackIgnore: true */ process.cwd(), storedPath);
   return Object.freeze({
     kind: "disk",
     absPath: exactPathInsideUploadsRoot(candidate),
