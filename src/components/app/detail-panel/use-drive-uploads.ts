@@ -22,6 +22,7 @@ export function useDriveUploads(taskId: string, native: (taskId: string, file: F
     const id = crypto.randomUUID();
     const attempt = createDriveUploadAttempt(taskId, id, file, {
       create: async (...args) => (await import("@/server/actions/drive-resource-uploads")).createDriveUploadSessionAction(...args),
+      recover: async (...args) => (await import("@/server/actions/drive-upload-recovery")).recoverDriveUploadAction(...args),
       finalize: async (...args) => (await import("@/server/actions/drive-resource-uploads")).finalizeDriveUploadAction(...args),
       upload: uploadToGoogleDriveResumableSession, native,
     }, (state) => {

@@ -9,6 +9,7 @@ function harness(overrides: Partial<DriveUploadPorts> = {}) {
   const ports: DriveUploadPorts = {
     create: async (task, input) => { calls.push(`create:${task}:${input.resourceId}`); return { kind: "drive-session", resourceId: input.resourceId, sessionUrl: "https://www.googleapis.com/upload/drive/v3/files?upload_id=fixture", startOffset: 0 }; },
     upload: async ({ onProgress }) => { calls.push("upload"); onProgress?.(5, 5); return { kind: "complete", fileId: "file" }; },
+    recover: async (task, id) => { calls.push(`recover:${task}:${id}`); return "pending"; },
     finalize: async (id) => { calls.push("finalize"); return { resourceId: id, fileId: "file", webViewLink: "https://drive.google.com/file/d/file/view", outcome: "finalized" }; },
     native: async () => { calls.push("native"); }, ...overrides,
   };
@@ -31,8 +32,56 @@ test("fallback requires an explicit user choice and native completion is labelle
 test("ambiguous byte transfer retries the same claim; no native fallback", async () => {
   const h = harness({ upload: async () => ({ kind: "paused", reason: "ambiguous", nextOffset: null }) });
   await h.attempt.run(); await h.attempt.useNative(); await h.attempt.run();
-  assert.deepEqual(h.calls, ["create:task-a:stable-id", "create:task-a:stable-id"]);
+  assert.deepEqual(h.calls, ["create:task-a:stable-id", "recover:task-a:stable-id", "create:task-a:stable-id", "recover:task-a:stable-id"]);
   assert.equal(h.attempt.snapshot().phase, "paused");
+});
+test("a lost browser acknowledgment checks the exact saved claim once and accepts server completion without sending bytes again", async () => {
+  const h = harness({
+    upload: async () => { h.calls.push("upload"); return { kind: "paused", reason: "ambiguous", nextOffset: null }; },
+    recover: async (task, id) => { h.calls.push(`recover:${task}:${id}`); return "complete"; },
+  });
+  await h.attempt.run();
+  assert.deepEqual(h.calls, ["create:task-a:stable-id", "upload", "recover:task-a:stable-id"]);
+  assert.equal(h.attempt.snapshot().phase, "complete");
+  assert.equal(h.attempt.snapshot().confirmedBytes, file.size);
+  await h.attempt.run();
+  assert.equal(h.calls.length, 3);
+});
+test("a non-complete or failed same-claim check pauses without another data request or replacement claim", async () => {
+  for (const recover of [async () => "pending" as const, async () => "unavailable" as const, async () => { throw Error("secret provider detail"); }]) {
+    const h = harness({ upload: async () => { h.calls.push("upload"); return { kind: "paused", reason: "ambiguous", nextOffset: null }; }, recover: async (task, id) => { h.calls.push(`recover:${task}:${id}`); return recover(); } });
+    await h.attempt.run();
+    assert.deepEqual(h.calls, ["create:task-a:stable-id", "upload", "recover:task-a:stable-id"]);
+    assert.equal(h.attempt.snapshot().phase, "paused");
+    assert.doesNotMatch(JSON.stringify(h.states), /secret/);
+  }
+});
+test("cancellation before a lost acknowledgment skips reconciliation", async () => {
+  let resolve!: (value: Awaited<ReturnType<DriveUploadPorts["upload"]>>) => void;
+  const h = harness({ upload: () => new Promise(r => { resolve = r; }) });
+  const pending = h.attempt.run(); await Promise.resolve();
+  h.attempt.cancel();
+  resolve({ kind: "paused", reason: "ambiguous", nextOffset: null });
+  await pending;
+  assert.deepEqual(h.calls, ["create:task-a:stable-id"]);
+  assert.equal(h.attempt.snapshot().phase, "paused");
+});
+test("cancellation or disposal during same-claim check cannot paint success or initiate another upload", async () => {
+  for (const stop of ["cancel", "dispose"] as const) {
+    let resolve!: (value: Awaited<ReturnType<DriveUploadPorts["recover"]>>) => void;
+    const h = harness({
+      upload: async () => { h.calls.push("upload"); return { kind: "paused", reason: "ambiguous", nextOffset: null }; },
+      recover: (task, id) => { h.calls.push(`recover:${task}:${id}`); return new Promise(r => { resolve = r; }); },
+    });
+    const pending = h.attempt.run();
+    while (!h.calls.some(call => call.startsWith("recover:"))) await Promise.resolve();
+    if (stop === "cancel") h.attempt.cancel(); else h.attempt.dispose();
+    const delivered = h.states.length;
+    resolve("complete"); await pending;
+    assert.deepEqual(h.calls, ["create:task-a:stable-id", "upload", "recover:task-a:stable-id"]);
+    assert.equal(h.states.length, delivered);
+    assert.notEqual(h.attempt.snapshot().phase, "complete");
+  }
 });
 test("a lost create reply cannot turn a later fallback into a second upload", async () => {
   let count = 0;
