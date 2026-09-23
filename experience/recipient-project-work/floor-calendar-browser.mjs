@@ -30,7 +30,7 @@ import {createCalendarFrame,PINNED_REVIEW_CALENDAR_FRAME} from '@/lib/calendar-f
 import {addDays} from '@/components/hybrid/dates';
 import styles from '@/components/floor/floor.module.css';
 export {createCalendarFrame,PINNED_REVIEW_CALENDAR_FRAME,timeOf,addDays};
-function Surface(){const store=useLabStore(),frame=useCalendarFrame();return <><output hidden data-frame>{frame.today}</output><FloorWorkspace view="board" tasks={store.tasks} projectName="Project calendar" initials="EC" onOpenPlanning={()=>{}}/></>}
+function Surface(){const store=useLabStore(),frame=useCalendarFrame();return <><output hidden data-frame>{frame.today}</output><output hidden data-inspected>{store.inspectedId??''}</output><FloorWorkspace view="board" tasks={store.tasks} projectName="Project calendar" initials="EC" onOpenPlanning={()=>{}}/></>}
 export function App({frame,tasks}){return <RoomBriefProvider value={{calendarFrame:frame,purpose:null,periodName:null,dateWindow:null,ownerName:null}}><LabStoreProvider initialTasks={tasks} initialInspectedId={null} readOnly={false} onInspectedChange={()=>{}}><Surface/></LabStoreProvider></RoomBriefProvider>}
 `;
 
@@ -52,7 +52,7 @@ import {hydrateRoot,createRoot} from 'react-dom/client';
 window.hydrationErrors=[];let mounted;
 window.start=(props,hydrate)=>{mounted=hydrate?hydrateRoot(document.getElementById('root'),<App {...props}/>,{onRecoverableError:e=>window.hydrationErrors.push(e.message)}):createRoot(document.getElementById('root'));if(!hydrate)mounted.render(<App {...props}/>);};
 window.update=props=>mounted.render(<App {...props}/>);
-window.read=()=>({frame:document.querySelector('[data-frame]')?.textContent,header:document.querySelector('.'+styles.headFacts+' > span:first-child')?.textContent,summary:[...document.querySelectorAll('.'+styles.headFacts+' button')].map(n=>n.textContent),cards:[...document.querySelectorAll('article[data-id]')].map(n=>{const chip=n.querySelector('[data-t]');return {id:n.dataset.id,kind:chip?.dataset.t??'none',label:chip?[...chip.childNodes].filter(c=>c.nodeType===3).map(c=>c.textContent).join(''):'',title:chip?.title??''};}),hydrationErrors:window.hydrationErrors});`,loader:'jsx',resolveDir:root},outfile:path.join(out,'browser.js')});
+window.read=()=>({frame:document.querySelector('[data-frame]')?.textContent,inspected:document.querySelector('[data-inspected]')?.textContent,header:document.querySelector('.'+styles.headFacts+' > span:first-child')?.textContent,summary:[...document.querySelectorAll('.'+styles.headFacts+' button')].map(n=>n.textContent),cards:[...document.querySelectorAll('article[data-id]')].map(n=>{const chip=n.querySelector('[data-t]');return {id:n.dataset.id,kind:chip?.dataset.t??'none',label:chip?[...chip.childNodes].filter(c=>c.nodeType===3).map(c=>c.textContent).join(''):'',title:chip?.title??''};}),hydrationErrors:window.hydrationErrors});`,loader:'jsx',resolveDir:root},outfile:path.join(out,'browser.js')});
   const sourceInputs={};
   for(const file of new Set([...Object.keys(server.metafile.inputs),...Object.keys(browser?.metafile.inputs??{})]))if(file.startsWith('src/'))sourceInputs[file]=hash((await fs.readFile(path.join(root,file),'utf8')).replace(/\r\n/g,'\n'));
   return {model,sourceInputs};
@@ -162,6 +162,24 @@ export async function runFloorCalendarBrowser() {
         await page.evaluate(props=>window.update(props),{...props,frame:model.createCalendarFrame({now:new Date(scenario.now),timeZone:scenario.updateZone})});
         await page.waitForFunction(()=>window.read().cards.find(c=>c.id==='done').label==='Today');
         result.updated=await read();check('timezone update keeps header',result.updated.header,scenario.header);check('completion timezone updates',result.updated.cards.find(c=>c.id==='done').label,'Today');
+      }
+      if(scenario.id==='demo-host-drift'){
+        check('task detail starts closed',(await read()).inspected,'');
+        await page.locator('article[data-id="today"] [data-trim="title"]').click();
+        check('existing card title opens canonical store detail',(await read()).inspected,'today');
+        await page.locator('article[data-id="late"] [data-act="tick"]').click();
+        check('checkbox does not open another detail',(await read()).inspected,'today');
+        await page.locator('article[data-id="undated"] [data-act="menu"]').click();
+        check('move menu does not open another detail',(await read()).inspected,'today');
+        await page.keyboard.press('Escape');
+        await page.locator('article[data-id="milestone"]').focus();
+        await page.keyboard.press('Enter');
+        check('keyboard Enter opens existing task detail',(await read()).inspected,'milestone');
+        await page.locator('article[data-id="done"]').focus();
+        await page.keyboard.press('Shift+Enter');
+        check('Shift Enter retains description expansion without opening detail',[(await read()).inspected,await page.locator('article[data-id="done"]').getAttribute('data-open')],['milestone','']);
+        await page.locator('article[data-id="tomorrow"]').dragTo(page.locator('[data-lane="todo"] [data-tray-body]'));
+        check('drag does not open task detail',(await read()).inspected,'milestone');
       }
       check('no browser errors',errors,[]);check('no later hydration recovery',(await read()).hydrationErrors,[]);
       await page.close();
