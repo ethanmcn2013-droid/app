@@ -19,6 +19,7 @@ export type ProjectDriveStatus = Readonly<{
   ownConnection: Readonly<{
     connected: boolean;
     needsReconnect: boolean;
+    revocationPending: boolean;
     accountEmail: string | null;
     affectedProjectCount: number;
   }>;

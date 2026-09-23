@@ -58,7 +58,7 @@ export async function removalScenario(name: string) {
     };
     const deps = {
       database: f.db,
-      connection: async () => ({ connected: true, accountEmail: "owner@example.com", status: "active" as const, connectedAt: "private-connected-time", rootFolderUrl: "private-root", projectUsesThisAccount: true, affectedProjectCount: 1 }),
+      connection: async () => ({ connected: true, accountEmail: "owner@example.com", status: "active" as const, connectedAt: "private-connected-time", rootFolderUrl: "private-root", projectUsesThisAccount: true, affectedProjectCount: 1, revocationPending: false }),
       permissions,
       now: () => new Date("2026-09-05T11:00:00.000Z"),
     };

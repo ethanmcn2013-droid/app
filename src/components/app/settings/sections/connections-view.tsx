@@ -17,7 +17,7 @@ const setupCopy: Record<ProjectDriveStatus["setup"], string> = {
 const accessLabel = { owner: "Owns folder", writer: "Can edit", reader: "Can view", unconfirmed: "Access not confirmed" };
 
 /** Custodian thesis: name the accountable person first; evidence remains distinct. */
-export function ConnectionsView({ status, busy, message, onRefresh, onConnect, onEnable, onDisconnect, confirmation, onCancelDisconnect, onConfirmDisconnect, handover }: {
+export function ConnectionsView({ status, busy, message, onRefresh, onConnect, onEnable, onDisconnect, confirmation, onCancelDisconnect, onConfirmDisconnect, onRetryDisconnect, handover }: {
   status: ProjectDriveStatus;
   busy: boolean;
   message: string | null;
@@ -28,6 +28,7 @@ export function ConnectionsView({ status, busy, message, onRefresh, onConnect, o
   confirmation: boolean;
   onCancelDisconnect: () => void;
   onConfirmDisconnect: () => void;
+  onRetryDisconnect: () => void;
   handover: ReactNode;
 }) {
   const disconnectButton = useRef<HTMLButtonElement>(null);
@@ -73,8 +74,10 @@ export function ConnectionsView({ status, busy, message, onRefresh, onConnect, o
       <h3 id="own-drive-heading" className="text-[16px] font-semibold text-ink">Your Google Drive</h3>
       <p className="mt-2 break-all">{status.ownConnection.accountEmail ?? "No Google account connected."}</p>
       <p className="mt-2">Connecting your account does not change where this board’s files go. Setting up the board folder is a separate step.</p>
+      {status.ownConnection.revocationPending ? <p role="status" className="mt-3 rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-ink">Google has not confirmed your previous disconnect. Your Drive is no longer used for new files. Check the disconnect before reconnecting.</p> : null}
       <div className="mt-3 flex flex-wrap gap-2">
-        <button className={driveButton} disabled={busy || status.setup === "archived"} onClick={onConnect}>{status.ownConnection.connected || status.ownConnection.needsReconnect ? "Reconnect Google Drive" : "Connect Google Drive"}</button>
+        <button className={driveButton} disabled={busy || status.setup === "archived" || status.ownConnection.revocationPending} onClick={onConnect}>{status.ownConnection.connected || status.ownConnection.needsReconnect ? "Reconnect Google Drive" : "Connect Google Drive"}</button>
+        {status.ownConnection.revocationPending ? <button className={driveButton} disabled={busy} onClick={onRetryDisconnect}>Check disconnect</button> : null}
         {status.setup === "not_connected" && status.ownConnection.connected && !status.ownConnection.needsReconnect ? <button className={driveButton} disabled={busy} onClick={onEnable}>Use my Drive for this board</button> : null}
         {status.ownConnection.connected ? <button ref={disconnectButton} className={driveButton} disabled={busy} onClick={onDisconnect}>Disconnect my Drive</button> : null}
       </div>
