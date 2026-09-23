@@ -167,6 +167,35 @@ test("fresh databases apply the canonical baseline plus forwards and rerun as a 
   assert.equal((await migrationStatus({ client })).state, "current");
 }));
 
+test("0021 backfills existing tasks once, then permits later nullable legacy rows without losing schema guards", async () => withClient(async (client) => {
+  const through20 = loadAndValidateLedger();
+  through20.forward = through20.forward.filter((entry) => entry.ordinal <= 20);
+  await runMigrations({ client, context: through20, releaseSha: "before-task-seq" });
+  await client.execute("INSERT INTO users(id,clerk_id,name,color,initials) VALUES ('seq_actor','clerk_seq_actor','Actor','#111','SA')");
+  await client.execute("INSERT INTO workspaces(id,slug,name,owner_user_id,context_type) VALUES ('seq_project','seq-project','Project','seq_actor','project')");
+  await client.execute("INSERT INTO workspace_members(workspace_id,user_id,role) VALUES ('seq_project','seq_actor','owner')");
+  await client.execute("INSERT INTO tasks(id,workspace_id,title,lane,priority,assignees,created_at) VALUES ('seq_older','seq_project','Older','todo','p2','[]',1),('seq_newer','seq_project','Newer','todo','p2','[]',2)");
+
+  const through21 = loadAndValidateLedger();
+  through21.forward = through21.forward.filter((entry) => entry.ordinal <= 21);
+  const backfill = await runMigrations({ client, context: through21, releaseSha: "task-seq-backfill" });
+  assert.deepEqual(backfill.applied, ["0021_tasks_seq"]);
+  const numbered = await client.execute("SELECT id,seq FROM tasks WHERE workspace_id='seq_project' ORDER BY created_at");
+  assert.deepEqual(numbered.rows.map((row) => [row.id, Number(row.seq)]), [["seq_older", 1], ["seq_newer", 2]]);
+
+  // The migration explicitly permits later writers that do not allocate seq.
+  await client.execute("INSERT INTO tasks(id,workspace_id,title,lane,priority,assignees,created_at) VALUES ('seq_legacy','seq_project','Legacy','todo','p2','[]',3)");
+  assert.equal((await client.execute("SELECT seq FROM tasks WHERE id='seq_legacy'")).rows[0].seq, null);
+  assert.equal((await migrationStatus({ client, context: through21 })).state, "current");
+  const remaining = await runMigrations({ client, releaseSha: "after-task-seq" });
+  assert.equal(remaining.applied[0], "0022_workspaces_description");
+  assert.equal((await migrationStatus({ client })).state, "current");
+
+  await assert.rejects(client.execute("INSERT INTO tasks(id,workspace_id,seq,title,lane,priority,assignees) VALUES ('seq_duplicate','seq_project',1,'Duplicate','todo','p2','[]')"));
+  await client.execute("DROP INDEX tasks_workspace_seq_unique");
+  await assert.rejects(migrationStatus({ client }), /proof unique-index-exists/);
+}));
+
 test("populated 0027 production-shaped ledger upgrades through January and conversations, then no-ops", async () => withClient(async (client) => {
   const through27 = loadAndValidateLedger();
   through27.forward = through27.forward.filter((entry) => entry.ordinal <= 27);

@@ -234,7 +234,14 @@
       "sha256": "97f290913eecb62d3a60c412bb7c908d2a519512ef835727396551615725491b",
       "policy": "forward",
       "receipt": "drizzle/receipts/tasks-seq-2026-07-28.json",
-      "receiptSha256": "c29507098c928654cd1fb5a2cf4b6d069d5ee3a6bbaf9b2c4b73df8fd19b063d"
+      "receiptSha256": "c29507098c928654cd1fb5a2cf4b6d069d5ee3a6bbaf9b2c4b73df8fd19b063d",
+      "continuousProofIds": [
+        "seq-column-exists",
+        "per-workspace-unique",
+        "unique-index-exists",
+        "integrity",
+        "foreign-keys"
+      ]
     },
     {
       "ordinal": 22,
