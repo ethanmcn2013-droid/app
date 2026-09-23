@@ -18,6 +18,7 @@ import type { ShareView } from "@/server/actions/share";
 import { TASKS_VIEW_PATHS } from "@/lib/product-urls";
 import { parseProjectId } from "@/lib/projects/project-ref";
 import { withActiveProject } from "@/lib/projects/project-url";
+import { requestOpenNav } from "@/components/app/tasks-nav-state";
 import { pageHeaderTaskView, pageHeaderTitle } from "./page-header-context";
 
 // "Schedule", never "Timeline": inside Tasks the view is named Schedule —
@@ -45,8 +46,9 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
   const pack = useDomain();
   const workspace = useActiveWorkspace();
   const projectId = parseProjectId(workspace?.id);
-  const projectName = pack.boardName ?? shortenTitle(pack.workspaceTitle);
+  const projectName = pack.workspaceName?.trim() || pack.boardName || shortenTitle(pack.workspaceTitle);
   const title = pageHeaderTitle(pathname, projectName);
+  const projectDrawerAvailable = pathname === "/app/project" || pathname === "/app/settings";
   // Route ownership is explicit. A tab-highlight override cannot turn a
   // utility page into a shareable board or expose task export actions.
   const taskView = pageHeaderTaskView(pathname);
@@ -61,6 +63,16 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
           </h1>
           {title === "Settings" ? <p className="mt-1 truncate text-[12px] text-ink-soft" title={projectName}>Project · {projectName}</p> : null}
         </div>
+        {projectDrawerAvailable ? (
+          <button
+            aria-label="Open Tasks navigation"
+            className="inline-flex h-11 flex-shrink-0 items-center justify-center rounded-lg border border-line-soft px-3 text-[12px] font-medium text-ink-soft hover:bg-bg-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand min-[1100px]:hidden"
+            onClick={requestOpenNav}
+            type="button"
+          >
+            Projects
+          </button>
+        ) : null}
         {taskView ? <div className="flex flex-shrink-0 items-center gap-2">
           {/* T·94: Search + New task live in the Studio Bar. The page
               header keeps only view-local actions. */}

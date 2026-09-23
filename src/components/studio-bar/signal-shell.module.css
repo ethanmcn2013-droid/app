@@ -634,6 +634,11 @@
   z-index: 20;
 }
 
+@media (hover: none) {
+  /* A touch user has no hover cue for the Project lifecycle menu. */
+  .projectRowMenu { opacity: 1; }
+}
+
 .projectRowMenuBtn {
   align-items: center;
   background: var(--x-task-hover);
