@@ -202,10 +202,20 @@ describe("data-integrity checks", () => {
   });
 
   it("catches a comment whose workspace disagrees with its task", async () => {
-    await insert("comments", {
-      id: "c-drift", workspace_id: "ws-nomember", task_id: "t-ok", user_id: "u-ok",
-      body: "note", created_at: 1,
-    });
+    // The live guard correctly refuses this corrupt row. Recreate a historical
+    // bad row in the isolated fixture, then restore the production trigger so
+    // this still proves the read-only integrity check catches existing drift.
+    const guard = await client.execute("SELECT sql FROM sqlite_master WHERE type = 'trigger' AND name = 'task_comments_guard_insert'");
+    assert.equal(guard.rows.length, 1);
+    await client.execute("DROP TRIGGER task_comments_guard_insert");
+    try {
+      await insert("comments", {
+        id: "c-drift", workspace_id: "ws-nomember", task_id: "t-ok", user_id: "u-ok",
+        body: "note", created_at: 1, revision: 1, create_seq: 1,
+      });
+    } finally {
+      await client.execute(String(guard.rows[0].sql));
+    }
     const result = await violationsOf("comment-tenant-drift");
     assert.equal(result.violations, 1);
   });

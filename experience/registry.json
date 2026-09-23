@@ -1,6 +1,6 @@
 {
   "schemaVersion": "signal-experience/1",
-  "generatedAt": "2026-07-26",
+  "generatedAt": "2026-09-23",
   "breakpoints": {
     "mobile": {
       "width": 390,
@@ -3986,6 +3986,187 @@
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "2dafc6ff8f760305"
+    },
+    {
+      "id": "tasks.page.app-messages",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/app/messages",
+      "source": "tasks/src/app/app/messages/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "review-and-approval-workspace",
+      "primaryJob": "Read project conversation messages.",
+      "primaryAction": "Choose a project and send a message.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "empty",
+        "populated",
+        "loading",
+        "error",
+        "restricted",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "core",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "6b9c5261e23c8347"
+    },
+    {
+      "id": "tasks.page.lab-project-conversation",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/lab/project-conversation",
+      "source": "tasks/src/app/lab/project-conversation/page.tsx",
+      "parentJourney": "design-review",
+      "archetype": "review-and-approval-workspace",
+      "primaryJob": "Review the project conversation prototype.",
+      "primaryAction": "Compare the conversation design.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "0a52162386d8a5ab"
+    },
+    {
+      "id": "tasks.page.lab-project-conversation-discussion",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/lab/project-conversation/discussion",
+      "source": "tasks/src/app/lab/project-conversation/discussion/page.tsx",
+      "parentJourney": "design-review",
+      "archetype": "detail-or-record-view",
+      "primaryJob": "Review the synthetic task discussion.",
+      "primaryAction": "Inspect discussion states.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "6fdcf5b839103166"
+    },
+    {
+      "id": "tasks.page.lab-project-conversation-live",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/lab/project-conversation/live",
+      "source": "tasks/src/app/lab/project-conversation/live/page.tsx",
+      "parentJourney": "design-review",
+      "archetype": "review-and-approval-workspace",
+      "primaryJob": "Review the synthetic conversation workspace.",
+      "primaryAction": "Switch fixture actor and project.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "555cf75c7e834cfb"
     }
   ]
 }
