@@ -65,6 +65,7 @@ export async function applyTemplateInTransaction(
   workspaceId: string,
   actorUserId: string,
   options: TemplateApplicationOptions & { requestId: string },
+  seedContext: "existing-project" | "new-remix-project" = "existing-project",
 ): Promise<void> {
   const grant = await authorizeStoredProject({
     storedProjectId: workspaceId, actorUserId, capability: "createOrEditTasks",
@@ -105,11 +106,17 @@ export async function applyTemplateInTransaction(
     const id = `t-${digest([applicationId, index])}`;
     const position = lanePositions.get(task.lane)!;
     lanePositions.set(task.lane, position + 1);
+    const dueAt = resolveTemplateDueAt({ anchorDate, dueOffsetDays: task.dueOffsetDays });
     await transaction.insert(tasks).values({
       id, workspaceId, seq: nextTaskSeq(workspaceId),
       title: task.title, lane: task.lane, priority: task.priority,
-      assignees: [], due: task.due,
-      dueAt: resolveTemplateDueAt({ anchorDate, dueOffsetDays: task.dueOffsetDays }),
+      assignees: [],
+      // Legacy packs contain "Today"/"Fri" presentation labels without a
+      // resolvable date. A newly remixed Project has no anchor, so showing
+      // those labels would claim a deadline the user never chose. Preserve
+      // existing additive-application behaviour and prior remix receipts.
+      due: seedContext === "new-remix-project" && dueAt === null ? null : task.due,
+      dueAt,
       isMilestone: task.milestone === true, tags: task.tags, position, updatedAt: now,
     });
     await transaction.insert(activities).values({
@@ -151,7 +158,7 @@ export async function remixTemplateIntoWorkspace(
       }).returning();
       await transaction.insert(workspaceMembers).values({ workspaceId, userId: actorUserId, role: "owner" });
     }
-    await applyTemplateInTransaction(transaction, templateId, workspaceId, actorUserId, { requestId, anchorDate: null });
+    await applyTemplateInTransaction(transaction, templateId, workspaceId, actorUserId, { requestId, anchorDate: null }, "new-remix-project");
     return { workspaceId, slug: workspace.slug };
   }, { behavior: "immediate" }));
 }

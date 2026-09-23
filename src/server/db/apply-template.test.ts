@@ -332,6 +332,33 @@ test("remix action retries a failed cookie write without creating another Projec
   } finally { f.cleanup(); }
 });
 
+test("monthly starter lost acknowledgement reopens one owned Project with 18 undated tasks", async () => {
+  const f = await fixture();
+  try {
+    const monthlyId = "local-business-monthly-rhythm";
+    const template = getTemplate(monthlyId);
+    const { actions, state } = await actionHarness(f);
+    state.failCookie = true;
+    await assert.rejects(actions.remixTemplateAction(monthlyId, requestId), /cookie failure/);
+    const [created] = await f.db.select().from(workspaces).where(eq(workspaces.templateId, monthlyId));
+    assert.ok(created);
+    assert.equal(created.ownerUserId, "owner");
+    assert.equal(created.activeDomain, template.domain);
+    const before = await f.db.select().from(tasks).where(eq(tasks.workspaceId, created.id));
+    assert.equal(before.length, 18);
+    assert.deepEqual(new Set(before.map(row => row.title)), new Set(template.tasks.map(row => row.title)));
+    assert.ok(before.every(row => row.due === null && row.dueAt === null));
+    const result = await actions.remixTemplateAction(monthlyId, requestId);
+    assert.equal(result.workspaceId, created.id);
+    assert.deepEqual(
+      (await f.db.select().from(tasks).where(eq(tasks.workspaceId, created.id))).map(row => row.id).sort(),
+      before.map(row => row.id).sort(),
+    );
+    assert.equal((await f.db.select().from(workspaceMembers).where(eq(workspaceMembers.workspaceId, created.id))).length, 1);
+    assert.equal((await f.db.select().from(activities).where(eq(activities.workspaceId, created.id))).length, 18);
+  } finally { f.cleanup(); }
+});
+
 test("demo actions remain inert before identity, persistence, cookie and invalidation", async () => {
   const f = await fixture();
   try {

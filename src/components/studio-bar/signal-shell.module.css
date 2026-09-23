@@ -747,3 +747,26 @@
 }
 
 .addProjectInput::placeholder { color: var(--x-task-text-muted); }
+
+.templateChoiceWrap { padding: 5px 8px 10px 22px; }
+.templateChoice {
+  background: var(--x-task-hover);
+  border: 1px solid var(--x-task-border);
+  border-radius: 8px;
+  color: var(--x-task-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  min-height: 44px;
+  padding: 7px 9px;
+  text-align: left;
+  width: 100%;
+}
+.templateChoice:hover { border-color: var(--x-task-focus); }
+.templateChoice:focus-visible { outline: 2px solid var(--x-task-focus); outline-offset: 2px; }
+.templateChoice:disabled { cursor: default; opacity: 0.55; }
+.templateChoiceHelp,
+.templateChoiceStatus { color: var(--x-task-text-muted); font-size: 11px; line-height: 1.45; margin: 6px 0 0; }
+.templateChoiceStatus { color: var(--x-task-text); }
