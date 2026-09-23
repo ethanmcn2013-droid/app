@@ -22,10 +22,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { PRODUCT_APP_PATHS, STUDIO_URL, TASKS_VIEW_PATHS } from "@/lib/product-urls";
 import { CORE_DESTINATIONS, type CoreDestinationId } from "@/lib/core-navigation";
 import { useSuiteContext } from "@/components/app/use-suite-context";
+import { useActiveProject } from "@/components/app/active-project-provider";
 import { STUDIO_PALETTE_EVENT } from "@/components/studio-bar/studio-chrome-context";
 import { ShareButton } from "@/components/app/share/share-button";
 import { PageActionsOverflow } from "@/components/app/page-header";
 import { withSuiteContext } from "@/lib/suite-context";
+import { useActiveWorkspace } from "@/lib/domain-context";
+import { parseProjectId } from "@/lib/projects/project-ref";
+import { floorViewHref } from "@/lib/projects/floor-view-href";
 import { useLabStore } from "@/components/hybrid/store";
 import { useBoardColumns } from "@/components/hybrid/columns-context";
 import type { LabTask, LabView } from "@/components/hybrid/types";
@@ -149,6 +153,8 @@ export type FloorWorkspaceProps = {
   tasks: LabTask[];
   /** The project's own name, as the header states it. */
   projectName: string;
+  /** The open detail, if any, stays addressable across view switches. */
+  taskId: string | null;
   /** The operator's initials for the dock and the spine. */
   initials: string;
   /** The four views' interiors for anything that is not the board. */
@@ -157,7 +163,7 @@ export type FloorWorkspaceProps = {
 };
 
 export function FloorWorkspace({
-  view, tasks, projectName, initials, children, onOpenPlanning,
+  view, tasks, projectName, taskId, initials, children, onOpenPlanning,
 }: FloorWorkspaceProps) {
   const router = useRouter();
   const pathname = usePathname() ?? "";
@@ -193,6 +199,14 @@ export function FloorWorkspace({
   }, [tasks, columns, calendar]);
 
   const suite = useSuiteContext();
+  const activeProject = useActiveProject();
+  const workspace = useActiveWorkspace();
+  // V3 supplies only a verified Project. While it is pending or unavailable,
+  // do not let a view switch fall back to a stale ambient Project.
+  const viewProjectId = activeProject?.enabled
+    ? (activeProject.chrome.kind === "verified" ? activeProject.chrome.project.id : null)
+    : parseProjectId(suite?.workspaceId ?? workspace?.id);
+  const viewSwitchBlocked = Boolean(activeProject?.enabled && !viewProjectId);
   const openSearch = () => window.dispatchEvent(new CustomEvent(STUDIO_PALETTE_EVENT));
   const [moreOpen, setMoreOpen] = useState(false);
   const moreHostRef = useRef<HTMLDivElement>(null);
@@ -393,8 +407,12 @@ export function FloorWorkspace({
         <div className={styles.views}>
           <nav className={styles.seg} data-group="views" aria-label="View">
             {(Object.keys(VIEW_LABEL) as LabView[]).map((key) => {
-              const href = TASKS_VIEW_PATHS[key];
-              const active = key === view || pathname === href;
+              const routePath = TASKS_VIEW_PATHS[key];
+              const href = floorViewHref(key, viewProjectId, taskId);
+              const active = key === view || pathname === routePath;
+              if (viewSwitchBlocked) {
+                return <span key={key} aria-disabled="true" className={styles.segItem}>{ViewIcon[key]}<span>{VIEW_LABEL[key]}</span></span>;
+              }
               return (
                 <Link
                   key={key}

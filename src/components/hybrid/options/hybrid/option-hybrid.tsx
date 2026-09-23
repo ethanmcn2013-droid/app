@@ -222,6 +222,7 @@ export function OptionHybrid({ route, onRouteChange }: TasksOptionProps) {
         initials={operatorInitials}
         onOpenPlanning={openPlanningExclusive}
         projectName={floorProjectName}
+        taskId={route.task}
         tasks={visibleTasks}
         view={route.view}
       >
