@@ -7,6 +7,7 @@ import { collectMentions, type DigestMention } from "./digest-mentions";
 import { rowToTask } from "./row-mappers";
 import type { Task, UserId } from "@/lib/data";
 import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
+import { digestWindow } from "@/lib/digest-window";
 
 export type DailyDigest = {
   /** ISO date the digest is for. */
@@ -19,8 +20,6 @@ export type DailyDigest = {
   /** Mentions targeting the user in the previous 24h. Body snippets. */
   mentions: DigestMention[];
 };
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Compile the next morning's digest for a given user in a given
@@ -37,8 +36,7 @@ export async function compileDailyDigest(
   const user = userId ?? (await getCurrentUser());
   const ws = workspaceId ?? (await getActiveWorkspace());
   const now = new Date();
-  const dayStart = new Date(now.getTime() - DAY_MS);
-  const dayEnd = new Date(now.getTime() + DAY_MS);
+  const { previousStart: dayStart, nextEnd: dayEnd } = digestWindow(now);
 
   // Tasks completed (lane=done) and updated within the past 24h —
   // scoped to the active workspace so the digest doesn't bleed across

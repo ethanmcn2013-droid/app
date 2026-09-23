@@ -145,7 +145,7 @@ export function digestEmailHtml(digest: DailyDigest, recipientName: string): str
     <p style="margin:0 0 20px;color:#475569;font-size:14px;line-height:1.55">Your one summary for the day. We don't send anything else unless someone tags you directly.</p>
 
     ${completed ? `<h2 style="margin:18px 0 6px;font-size:13px;font-weight:600;color:#475569">Closed yesterday</h2><ul style="margin:0 0 16px 0;padding-left:18px;font-size:14px;color:#14151a">${completed}</ul>` : ""}
-    ${due ? `<h2 style="margin:18px 0 6px;font-size:13px;font-weight:600;color:#475569">Due today</h2><ul style="margin:0 0 16px 0;padding-left:18px;font-size:14px;color:#14151a">${due}</ul>` : '<p style="margin:0 0 16px;color:#94a3b8;font-size:13.5px">Nothing on your plate is due in the next 24 hours.</p>'}
+    ${due ? `<h2 style="margin:18px 0 6px;font-size:13px;font-weight:600;color:#475569">Due in the next 24 hours</h2><ul style="margin:0 0 16px 0;padding-left:18px;font-size:14px;color:#14151a">${due}</ul>` : '<p style="margin:0 0 16px;color:#94a3b8;font-size:13.5px">Nothing on your plate is due in the next 24 hours.</p>'}
     ${mentions ? `<h2 style="margin:18px 0 6px;font-size:13px;font-weight:600;color:#4f46e5">Mentioned in the last 24h</h2><ul style="margin:0;padding-left:18px;font-size:13.5px;color:#14151a">${mentions}</ul>` : ""}
 
     <hr style="margin:28px 0;border:0;border-top:1px solid #e5e7eb">

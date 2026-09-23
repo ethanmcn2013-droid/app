@@ -4,6 +4,10 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-09-23 · Production candidate · Inbox timing and contributor names
+
+Inbox and the daily digest now describe assigned Tasks due in the next 24 hours as a rolling window, so a Task due tomorrow no longer appears under a “Due today” heading tonight. The query and stored due dates are unchanged. Inbox uses the saved profile name, handle or email local part when available; otherwise its greeting stays neutral. Resources shows that same permitted contributor name after the Task access check instead of displaying “Someone” for a known account. Production receiving remains open.
+
 ## 2026-09-23 · Production Sprint candidate · Drive upload acknowledgment
 
 When the browser cannot read Google's upload acknowledgment, the app checks the existing saved claim once through the server. It marks the file complete only when that check confirms completion; otherwise the same attachment stays paused for an explicit retry. The check sends no file bytes and creates no replacement claim. Local tests cover lost acknowledgments and cancellation; small and large real-browser receiving remain required before release.

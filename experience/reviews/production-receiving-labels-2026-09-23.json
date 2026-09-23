@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.resources.drive-upload",
+  "source": "tasks/src/components/app/detail-panel/resources-section.tsx",
+  "materialityHash": "548584a8438cde99",
+  "reviewedAt": "2026-09-23",
+  "reviewer": "Codex implementer under delegated authority",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-776b131ccc1d285f9c76fe35-684a3dc00e324f02.json",
+    "attestationSha256": "ad40c3a33e969198a36184bc54b70a341f0860e87930ab0ce8ec350f7d43c4e1",
+    "runId": "tasks-playwright-776b131ccc1d285f9c76fe35",
+    "canonicalEvidenceSha256": "776b131ccc1d285f9c76fe35d39885f359fa005fffca90ce659cd2384a783241",
+    "rawArtifactSha256": "684a3dc00e324f029d86a12e92d36094f1a2db3279dc86f0d39d764e8537e663",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.surface.task-detail-panel",
+    "caseName": "populated task",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "The Resources contributor avatar now receives the display name for an attached uploader after the Task access check. The full rendered matrix and a focused avatar assertion passed; no provider write or live profile was exercised.",
+  "decision": "Accept this scoped source-hash refresh for the draft candidate. Existing state coverage and audit score remain unchanged. Independent source review and production receiving remain open."
+}

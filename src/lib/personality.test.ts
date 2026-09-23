@@ -7,6 +7,40 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { buildGreeting, numWord } from "./personality";
+import { digestWindow } from "./digest-window";
+import { userDisplayName } from "./user-display-name";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { Avatar } from "@/components/showcase/avatar";
+
+test("next-day midnight is inside the rolling digest before Dublin midnight", () => {
+  const now = new Date("2026-09-23T21:02:00.000Z"); // 22:02 in Dublin
+  const due = new Date("2026-09-24T00:00:00.000Z");
+  const { nextEnd } = digestWindow(now);
+  assert.ok(due > now && due <= nextEnd);
+  assert.equal(nextEnd.toISOString(), "2026-09-24T21:02:00.000Z");
+});
+
+test("the rolling digest stays 24 hours through Dublin's autumn clock change", () => {
+  const now = new Date("2026-10-24T21:30:00.000Z");
+  const { previousStart, nextEnd } = digestWindow(now);
+  assert.equal(now.getTime() - previousStart.getTime(), 86_400_000);
+  assert.equal(nextEnd.getTime() - now.getTime(), 86_400_000);
+});
+
+test("member display name prefers saved name, handle, then email local part", () => {
+  assert.equal(userDisplayName({ name: " Niamh ", handle: "niamh", email: "n@example.com" }), "Niamh");
+  assert.equal(userDisplayName({ name: null, handle: "niamh", email: "n@example.com" }), "niamh");
+  assert.equal(userDisplayName({ name: " ", handle: null, email: "founder@example.com" }), "founder");
+  assert.equal(userDisplayName({ name: null, handle: null, email: null }), null);
+});
+
+test("a real contributor avatar renders the permitted profile name", () => {
+  const name = userDisplayName({ name: null, handle: "owner", email: "owner@example.com" });
+  const html = renderToStaticMarkup(createElement(Avatar, { user: "user_real_clerk", name: name ?? undefined }));
+  assert.match(html, /aria-label="owner"/);
+  assert.doesNotMatch(html, /Someone/);
+});
 
 // ── Hour band salutations ────────────────────────────────────────────────────
 
@@ -88,15 +122,15 @@ test("overdue > 0 → overdue message takes priority over dueToday", () => {
   assert.ok(!result?.line.includes("due today"), `Should not mention due-today: ${result?.line}`);
 });
 
-test("overdue 0, dueToday > 0 → due today message", () => {
+test("overdue 0, dueToday > 0 → next 24 hours message", () => {
   const result = buildGreeting({ name: null, hour: 9, dueToday: 3, overdue: 0, doneToday: 5 });
-  assert.ok(result?.line.includes("due today"), `Expected 'due today' in: ${result?.line}`);
+  assert.ok(result?.line.includes("due in the next 24 hours"), `Expected rolling-window wording in: ${result?.line}`);
   assert.ok(!result?.line.includes("completed"), `Should not mention completed: ${result?.line}`);
 });
 
-test("all zero → 'Nothing is due today.'", () => {
+test("all zero → no task due in the next 24 hours", () => {
   const result = buildGreeting({ name: null, hour: 9, dueToday: 0, overdue: 0, doneToday: 0 });
-  assert.ok(result?.line.includes("Nothing is due today."));
+  assert.ok(result?.line.includes("Nothing is due in the next 24 hours."));
 });
 
 test("only doneToday > 0 → completed message", () => {
@@ -116,14 +150,14 @@ test("overdue 2 → plural 'Two tasks are overdue.'", () => {
   assert.ok(result?.line.includes("Two tasks are overdue."), `Got: ${result?.line}`);
 });
 
-test("dueToday 1 → singular 'One task is due today.'", () => {
+test("dueToday 1 → singular next 24 hours wording", () => {
   const result = buildGreeting({ name: null, hour: 9, dueToday: 1, overdue: 0, doneToday: 0 });
-  assert.ok(result?.line.includes("One task is due today."), `Got: ${result?.line}`);
+  assert.ok(result?.line.includes("One task is due in the next 24 hours."), `Got: ${result?.line}`);
 });
 
-test("dueToday 5 → plural 'Five tasks are due today.'", () => {
+test("dueToday 5 → plural next 24 hours wording", () => {
   const result = buildGreeting({ name: null, hour: 9, dueToday: 5, overdue: 0, doneToday: 0 });
-  assert.ok(result?.line.includes("Five tasks are due today."), `Got: ${result?.line}`);
+  assert.ok(result?.line.includes("Five tasks are due in the next 24 hours."), `Got: ${result?.line}`);
 });
 
 test("doneToday 1 → 'You have completed one today.'", () => {
