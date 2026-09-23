@@ -172,13 +172,14 @@ function MonthlyTemplateChoice({ pending, startTransition, onCreated }: {
  * creates the project via `createProjectAction`, switches to it, and
  * refreshes; Escape or an empty blur cancels.
  */
-function AddProjectRow({ onCreated }: { onCreated?: () => void }) {
+export function AddProjectRow({ onCreated }: { onCreated?: () => void }) {
   const router = useRouter();
   const activeProject = useActiveProject();
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState("");
   const [pending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
+  const enteringTemplateChoiceRef = useRef(false);
 
   useEffect(() => {
     if (adding) inputRef.current?.focus();
@@ -241,7 +242,7 @@ function AddProjectRow({ onCreated }: { onCreated?: () => void }) {
               // still inside Add project; don't close it before its click.
               const next = event.relatedTarget;
               const insideChoice = next instanceof Node && event.currentTarget.closest("li")?.contains(next);
-              if (!draft.trim() && !insideChoice) cancel();
+              if (!draft.trim() && !insideChoice && !enteringTemplateChoiceRef.current) cancel();
             }}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
@@ -258,7 +259,15 @@ function AddProjectRow({ onCreated }: { onCreated?: () => void }) {
             value={draft}
           />
         </div>
-        {!isDemoMode() ? <MonthlyTemplateChoice pending={pending} startTransition={startTransition} onCreated={onCreated} /> : null}
+        {!isDemoMode() ? <div
+          onPointerDownCapture={() => { enteringTemplateChoiceRef.current = true; }}
+          onPointerUpCapture={() => { window.setTimeout(() => { enteringTemplateChoiceRef.current = false; }, 0); }}
+          onPointerCancelCapture={() => { enteringTemplateChoiceRef.current = false; }}
+        ><MonthlyTemplateChoice pending={pending} startTransition={startTransition} onCreated={() => {
+          setAdding(false);
+          setDraft("");
+          onCreated?.();
+        }} /></div> : null}
       </li>
     );
   }
