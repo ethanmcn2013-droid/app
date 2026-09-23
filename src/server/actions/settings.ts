@@ -684,13 +684,13 @@ export async function inviteMemberByEmailAction(
     // The provider may already have accepted the message. A rolled-back audit
     // cannot be presented as confirmed delivery. Re-prove the owner's access
     // and the exact invite's live state before returning its bearer link.
-    let stillLive = false;
+    let stillLive: boolean | null = null;
     try {
       stillLive = await db.transaction(async (tx) => {
         const grant = await authorizeStoredProject({
           storedProjectId: ws, capability: "manageProject", actorUserId: me, executor: tx,
         });
-        if (!grant.ok) return false;
+        if (!grant.ok) return null;
         await assertProjectNotDeleting(tx, ws);
         const [pending] = await tx.select({ token: pendingInvites.token })
           .from(pendingInvites)
@@ -704,12 +704,13 @@ export async function inviteMemberByEmailAction(
         return Boolean(pending);
       });
     } catch {
-      // Refuse a bearer link if the proof/read itself is unavailable.
+      // Unknown is not evidence that the invite was revoked. Refuse a bearer
+      // link and keep delivery uncertain if the proof/read is unavailable.
     }
     revalidatePath("/app/settings");
-    return stillLive
-      ? { ok: true, email: trimmed, sent: false, reason: "delivery-unconfirmed", acceptUrl }
-      : { ok: true, email: trimmed, sent: false, reason: "invite-no-longer-active" };
+    if (stillLive === true) return { ok: true, email: trimmed, sent: false, reason: "delivery-unconfirmed", acceptUrl };
+    if (stillLive === false) return { ok: true, email: trimmed, sent: false, reason: "invite-no-longer-active" };
+    return { ok: true, email: trimmed, sent: false, reason: "delivery-unconfirmed" };
   }
 
   revalidatePath("/app/settings");

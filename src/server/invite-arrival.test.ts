@@ -190,6 +190,55 @@ test("provider acceptance after invite revocation never returns a bearer link or
   assert.deepEqual(await rows("SELECT kind FROM workspace_events"), []);
 });
 
+test("lost owner permission after provider acceptance reports uncertainty without exposing the link", async () => {
+  fixture.user = {
+    id: "owner", primaryEmailAddressId: "owner-primary",
+    emailAddresses: [{ id: "owner-primary", emailAddress: "owner@example.test", verification: { status: "verified" } }],
+  };
+  fixture.allowAmbient = true;
+  fixture.cookies.set("signal_active_project", "project-b");
+  fixture.mailEnabled = true;
+  fixture.onMailSend = async () => {
+    await client.execute("DELETE FROM workspace_members WHERE workspace_id='project-b' AND user_id='owner'");
+  };
+  await client.executeMultiple(`CREATE TRIGGER reject_invite_audit BEFORE INSERT ON workspace_events
+    WHEN NEW.kind = 'inviteSent' BEGIN SELECT RAISE(ABORT, 'test post-provider audit failure'); END;`);
+  const { inviteMemberByEmailAction } = await import("./actions/settings");
+  const result = await inviteMemberByEmailAction("fresh@example.test", "member", "project-b");
+  assert.equal(result.reason, "delivery-unconfirmed");
+  assert.equal(result.sent, false);
+  assert.equal(result.acceptUrl, undefined);
+  assert.equal(fixture.mailCalls.length, 1);
+  assert.deepEqual(await rows("SELECT last_sent_at FROM pending_invites WHERE email='fresh@example.test'"), [{ last_sent_at: null }]);
+  assert.deepEqual(await rows("SELECT kind FROM workspace_events"), []);
+});
+
+test("a failed reproof read after provider acceptance stays uncertain rather than claiming revocation", async () => {
+  fixture.user = {
+    id: "owner", primaryEmailAddressId: "owner-primary",
+    emailAddresses: [{ id: "owner-primary", emailAddress: "owner@example.test", verification: { status: "verified" } }],
+  };
+  fixture.allowAmbient = true;
+  fixture.cookies.set("signal_active_project", "project-b");
+  fixture.mailEnabled = true;
+  fixture.onMailSend = async () => {
+    await client.execute("ALTER TABLE workspace_members RENAME TO workspace_members_test_reproof_unavailable");
+  };
+  await client.executeMultiple(`CREATE TRIGGER reject_invite_audit BEFORE INSERT ON workspace_events
+    WHEN NEW.kind = 'inviteSent' BEGIN SELECT RAISE(ABORT, 'test post-provider audit failure'); END;`);
+  try {
+    const { inviteMemberByEmailAction } = await import("./actions/settings");
+    const result = await inviteMemberByEmailAction("fresh@example.test", "member", "project-b");
+    assert.equal(result.reason, "delivery-unconfirmed");
+    assert.equal(result.sent, false);
+    assert.equal(result.acceptUrl, undefined);
+    assert.equal(fixture.mailCalls.length, 1);
+    assert.deepEqual(await rows("SELECT last_sent_at FROM pending_invites WHERE email='fresh@example.test'"), [{ last_sent_at: null }]);
+  } finally {
+    await client.execute("ALTER TABLE workspace_members_test_reproof_unavailable RENAME TO workspace_members");
+  }
+});
+
 test("accept B replaces stale A preferences and returns canonical My work in B", async () => {
   const result = await acceptInviteAction("invite-b");
   assert.equal(result.workspaceId, "project-b");

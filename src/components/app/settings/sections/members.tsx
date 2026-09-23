@@ -174,6 +174,11 @@ export function MembersSection({
             : "Invite created. We couldn’t confirm email delivery; check with them before sending again.");
           return;
         }
+        if (result.reason === "delivery-unconfirmed") {
+          setManualInvite(null);
+          setInviteNotice("We couldn’t confirm email delivery or verify the invite link. Check with them before trying again.");
+          return;
+        }
         if (result.reason === "invite-no-longer-active") {
           setManualInvite(null);
           setInviteNotice("The invite is no longer active. Email delivery wasn’t confirmed; check with them before trying again.");
@@ -239,6 +244,14 @@ export function MembersSection({
             body: result.reason === "email-unavailable"
               ? "Email isn’t available right now. No message was sent; copy the link below instead."
               : "We couldn’t confirm email delivery. Check with them before sending again, or copy the link below.",
+          });
+          return;
+        }
+        if (result.reason === "delivery-unconfirmed") {
+          setManualInvite(null);
+          toast("Email delivery unconfirmed", {
+            tone: "info",
+            body: "We couldn’t verify the invite link. Check with them before trying again.",
           });
           return;
         }
