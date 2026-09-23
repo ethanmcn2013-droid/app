@@ -38,6 +38,7 @@ import { useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import {
   HOME_APP_PATH,
+  PROJECT_APP_PATH,
   PRODUCT_APP_PATHS,
   suiteSurfaceFromAppPath,
   type SuiteSurfaceId,
@@ -90,6 +91,9 @@ const MODULE_LABELS: Readonly<Record<SuiteSurfaceId, string>> = Object.freeze({
 });
 
 function activeModuleIdentity(pathname: string): { word: string; home: string; label: string } {
+  if (pathname === PROJECT_APP_PATH || pathname.startsWith(`${PROJECT_APP_PATH}/`)) {
+    return { word: "projects", home: PROJECT_APP_PATH, label: "Projects" };
+  }
   const surfaceId = suiteSurfaceFromAppPath(pathname);
   return {
     word: surfaceId,

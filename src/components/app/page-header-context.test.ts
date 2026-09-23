@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { pageHeaderTaskView, pageHeaderTitle } from "./page-header-context";
 import { TASKS_VIEW_PATHS } from "@/lib/product-urls";
+import { CORE_DESTINATIONS } from "@/lib/core-navigation";
 import { assertProjectId } from "@/lib/projects/project-ref";
 import { withActiveProject } from "@/lib/projects/project-url";
 
@@ -38,10 +39,11 @@ test("header links retain the loaded Project using canonical URLs", () => {
   assert.doesNotMatch(source, /!isInbox|!isMyTasks|!isArchived|inferShareView/);
 });
 
-test("the public Studio link is an external utility, outside the three-product switcher", () => {
+test("the public Studio link stays outside core navigation and Notes stays under More", () => {
   const source = readFileSync(new URL("../studio-bar/studio-rail.tsx", import.meta.url), "utf8");
-  const destinations = source.slice(source.indexOf("export const RAIL_DESTINATIONS"), source.indexOf("function activeRailKey"));
-  assert.deepEqual([...destinations.matchAll(/key: "([a-z]+)", label:/g)].map((match) => match[1]), ["notes", "tasks", "timeline"]);
+  assert.deepEqual(CORE_DESTINATIONS.map((destination) => destination.id), ["home", "project", "tasks", "timeline"]);
+  assert.match(source, /RAIL_DESTINATIONS = CORE_DESTINATIONS/);
+  assert.match(source, /withSuiteContext\(PRODUCT_APP_PATHS\.notes, suiteContext\)/);
   const about = source.slice(source.indexOf('aria-label="About Signal Studio'), source.indexOf('<span className={styles.railSpacer}'));
   assert.ok(source.indexOf('</nav>') < source.indexOf('aria-label="About Signal Studio'));
   assert.match(about, /data-utility="about"/);

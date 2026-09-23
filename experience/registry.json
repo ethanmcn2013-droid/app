@@ -2209,14 +2209,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-05",
+      "lastReviewedAt": "2026-09-23",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "4b38715dceed59c0",
+      "materialityHash": "eae5935da642d5ed",
       "materialityReview": {
-        "materialityHash": "4b38715dceed59c0",
-        "reviewedAt": "2026-09-05",
-        "evidence": "experience/reviews/january-8172364e-tasks.page.app-project.json"
+        "materialityHash": "eae5935da642d5ed",
+        "reviewedAt": "2026-09-23",
+        "evidence": "experience/reviews/production-core-navigation-2026-09-23/tasks.page.app-project-materiality.json"
       }
     },
     {

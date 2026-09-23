@@ -69,7 +69,13 @@ export function ProductWorkspaceShell({
       <main
         id="app-main-content"
         tabIndex={-1}
-        className="flex min-h-0 min-w-0 flex-1 flex-col bg-[color-mix(in_srgb,var(--x-task-canvas)_72%,var(--x-task-surface))] pb-[calc(64px+env(safe-area-inset-bottom))] md:pb-0"
+        className={[
+          "flex min-h-0 min-w-0 flex-1 flex-col bg-[color-mix(in_srgb,var(--x-task-canvas)_72%,var(--x-task-surface))]",
+          // The Tasks Floor owns its own phone rail. Only the other Tasks
+          // surfaces need room for MobileTabBar below this canvas.
+          bareChrome ? "pb-0" : "pb-[calc(64px+env(safe-area-inset-bottom))]",
+          "md:pb-0",
+        ].join(" ")}
         data-product-canvas="tasks"
       >
         {children}

@@ -1,0 +1,72 @@
+.moreHost {
+  height: var(--tap);
+  position: relative;
+  width: var(--tap);
+}
+
+.moreButton {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.moreMenu {
+  background: var(--x-studio-chrome-raised);
+  border: 1px solid color-mix(in srgb, var(--x-studio-ink) 15%, transparent);
+  border-radius: 12px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+  color: var(--x-studio-ink);
+  display: grid;
+  left: calc(100% + 12px);
+  max-height: 70dvh;
+  overflow-y: auto;
+  padding: 6px;
+  position: absolute;
+  top: 0;
+  width: 220px;
+  z-index: 10;
+}
+
+.moreMenu :is(a, button) {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--x-studio-ink);
+  display: flex;
+  font-size: 12px;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 10px;
+  text-align: left;
+  text-decoration: none;
+  width: 100%;
+}
+
+.moreMenu :is(a, button):hover,
+.moreMenu :is(a, button):focus-visible {
+  background: color-mix(in srgb, var(--x-studio-ink) 9%, transparent);
+}
+
+.moreMenu svg {
+  flex: none;
+  height: 18px;
+  width: 18px;
+}
+
+@media (max-width: 720px) {
+  .moreMenu {
+    bottom: calc(80px + env(safe-area-inset-bottom));
+    left: 9px;
+    position: fixed;
+    right: 9px;
+    top: auto;
+    width: auto;
+  }
+}
+
+@media (max-width: 360px) {
+  /* Five core targets and the account avatar retain 44px hit areas. Add task
+     remains available as the first More action on the narrowest phones. */
+  .addButton.addButton { display: none; }
+}

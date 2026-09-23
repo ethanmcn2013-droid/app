@@ -59,7 +59,7 @@ function Experience({ route, onRouteChange }: { route: LabRouteState; onRouteCha
   }, [store]);
 
   return (
-    <div className={styles.root} data-density={route.density} data-task-count={store.tasks.length}>
+    <div className={styles.root} data-density={route.density} data-task-count={store.tasks.length} data-floor-runtime="true">
       <div className={styles.stage}>
         <OptionHybrid onRouteChange={onRouteChange} route={route} />
       </div>

@@ -16,10 +16,11 @@
  * `/app/tasks` is a bare-chrome path: the spine here is the one spine.
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { TASKS_VIEW_PATHS } from "@/lib/product-urls";
+import { PRODUCT_APP_PATHS, STUDIO_URL, TASKS_VIEW_PATHS } from "@/lib/product-urls";
+import { CORE_DESTINATIONS, type CoreDestinationId } from "@/lib/core-navigation";
 import { useSuiteContext } from "@/components/app/use-suite-context";
 import { withSuiteContext } from "@/lib/suite-context";
 import { useLabStore } from "@/components/hybrid/store";
@@ -29,6 +30,7 @@ import { FloorBoard, timeOf } from "./floor-board";
 import { FLOOR_PRESET } from "./floor-preset";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import styles from "./floor.module.css";
+import navStyles from "./floor-navigation.module.css";
 
 /* ── the spine ─────────────────────────────────────────────────── */
 
@@ -42,6 +44,11 @@ const RailIcon = {
   home: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M3 10.5 12 3l9 7.5" /><path d="M5.5 9.5V20h13V9.5" />
+    </svg>
+  ),
+  project: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M7 17V4m0 1h11l-2.5 4L18 13H7" /><circle cx="7" cy="20" r="1" />
     </svg>
   ),
   notes: (
@@ -194,6 +201,48 @@ export function FloorWorkspace({
   }, [tasks, columns, calendar]);
 
   const suite = useSuiteContext();
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreHostRef = useRef<HTMLDivElement>(null);
+  const moreTriggerRef = useRef<HTMLButtonElement>(null);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
+  const moreMenuId = useId();
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    const frame = window.requestAnimationFrame(() => moreMenuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus());
+    const onPointerDown = (event: PointerEvent) => {
+      if (!moreHostRef.current?.contains(event.target as Node)) setMoreOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setMoreOpen(false);
+      moreTriggerRef.current?.focus();
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [moreOpen]);
+
+  const onMoreKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const items = Array.from(moreMenuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
+    const index = Math.max(0, items.indexOf(document.activeElement as HTMLElement));
+    let next: number | null = null;
+    if (event.key === "ArrowDown") next = (index + 1) % items.length;
+    if (event.key === "ArrowUp") next = (index - 1 + items.length) % items.length;
+    if (event.key === "Home") next = 0;
+    if (event.key === "End") next = items.length - 1;
+    if (next !== null) {
+      event.preventDefault();
+      items[next]?.focus();
+    } else if (event.key === "Tab") {
+      setMoreOpen(false);
+    }
+  };
 
   // Format the project's date without consulting the browser clock/timezone.
   // The same serialized frame supplies SSR, hydration, counts and card filters.
@@ -205,7 +254,7 @@ export function FloorWorkspace({
      Tasks to Timeline landed a person in the right product with no idea which
      wedding they were looking at. data-product is the same contract the rest
      of the suite navigates by. */
-  const product = (key: "notes" | "tasks" | "timeline", label: string, href: string) => {
+  const product = (key: CoreDestinationId, label: string, href: string) => {
     const active = key === "tasks";
     return (
       <Link
@@ -238,12 +287,23 @@ export function FloorWorkspace({
         </Link>
         <span className={styles.railDivider} />
         <div className={styles.railGroup}>
-          <Link href="/app/home" className={styles.railTile} data-key="home" aria-label="Home" title="Home">
-            {RailIcon.home}
-          </Link>
-          {product("notes", "Notes", "/app/notes")}
-          {product("tasks", "Tasks", "/app/tasks")}
-          {product("timeline", "Timeline", "/app/timeline")}
+          {CORE_DESTINATIONS.map((destination) => product(destination.id, destination.label, destination.path))}
+          <div className={navStyles.moreHost} ref={moreHostRef}>
+            <button ref={moreTriggerRef} type="button" className={`${styles.railTile} ${navStyles.moreButton}`} aria-label="More" title="More" aria-haspopup="menu" aria-expanded={moreOpen} aria-controls={moreOpen ? moreMenuId : undefined} onClick={() => setMoreOpen((open) => !open)}>
+              {RailIcon.more}
+            </button>
+            {moreOpen ? (
+              <div ref={moreMenuRef} id={moreMenuId} role="menu" aria-label="More" className={navStyles.moreMenu} onKeyDown={onMoreKeyDown}>
+                <button role="menuitem" tabIndex={-1} type="button" onClick={() => { store.addTask(columns[0]?.key ?? "todo"); setMoreOpen(false); }}>{PlusIcon}<span>Add task</span></button>
+                <Link role="menuitem" tabIndex={-1} href={withSuiteContext(PRODUCT_APP_PATHS.notes, suite)} onClick={() => setMoreOpen(false)}>{RailIcon.notes}<span>Notes</span></Link>
+                <Link role="menuitem" tabIndex={-1} href="/app/inbox" onClick={() => setMoreOpen(false)}>{RailIcon.inbox}<span>Inbox</span></Link>
+                <Link role="menuitem" tabIndex={-1} href="/app/settings" onClick={() => setMoreOpen(false)}>{RailIcon.help}<span>Project and team</span></Link>
+                <Link role="menuitem" tabIndex={-1} href="/settings/profile" onClick={() => setMoreOpen(false)}><span>Account settings</span></Link>
+                <a role="menuitem" tabIndex={-1} href={STUDIO_URL} rel="noopener noreferrer" target="_blank">About Signal Studio ↗</a>
+                <a role="menuitem" tabIndex={-1} href="mailto:hello@signalstudio.ie?subject=Signal%20Studio%20help">Contact support</a>
+              </div>
+            ) : null}
+          </div>
         </div>
         <span className={styles.railSpacer} />
         <div className={styles.railUtil}>
@@ -256,7 +316,7 @@ export function FloorWorkspace({
         </div>
         <button
           type="button"
-          className={styles.railAdd}
+          className={`${styles.railAdd} ${navStyles.addButton}`}
           aria-label="Add task"
           onClick={() => store.addTask(columns[0]?.key ?? "todo")}
         >
