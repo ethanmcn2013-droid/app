@@ -30,7 +30,7 @@ test("status is project scoped, sanitized, race aware and fails closed on provid
     const auth = coreAuthorization("owner", "ws-a");
     const deps = {
       database: fixture.db,
-      connection: async () => ({ connected: true, accountEmail: "owner@example.com", status: "active" as const, connectedAt: "private-time", rootFolderUrl: "secret-root", projectUsesThisAccount: true, affectedProjectCount: 1 }),
+      connection: async () => ({ connected: true, accountEmail: "owner@example.com", status: "active" as const, connectedAt: "private-time", rootFolderUrl: "secret-root", projectUsesThisAccount: true, affectedProjectCount: 1, revocationPending: false }),
       permissions: async () => [permission()], now: () => new Date("2026-09-04T12:00:00.000Z"),
     };
     const result = await readProjectDriveUiStatus(auth, deps);
@@ -63,7 +63,7 @@ for (const scenario of removalCases) test(`pending permission removal: ${scenari
     assert.doesNotMatch(JSON.stringify(reloaded), /private-permission|stale-private|live-private|Private provider|private-root|private-connected|conn-old|gen-current/);
     const html = renderToStaticMarkup(createElement(ConnectionsView, {
       status: reloaded, busy: false, message: null, confirmation: false, handover: null,
-      onRefresh() {}, onConnect() {}, onEnable() {}, onDisconnect() {}, onCancelDisconnect() {}, onConfirmDisconnect() {},
+      onRefresh() {}, onConnect() {}, onEnable() {}, onDisconnect() {}, onCancelDisconnect() {}, onConfirmDisconnect() {}, onRetryDisconnect() {},
     }));
     assert.equal(html.includes('aria-label="Pending access removal"'), scenario.current + scenario.previous > 0);
     assert.equal(html.includes("current Drive folder is still unconfirmed"), scenario.current > 0);

@@ -98,7 +98,7 @@ export async function readProjectDriveUiStatus(
     folderUrl: safeDriveFolderUrl(before.storage[0]?.folderUrl ?? null),
     setup: setup && setup.status !== "demo" ? setup.status : "not_connected",
     pendingRemovals,
-    ownConnection: { connected: own.connected, needsReconnect: own.status === "needs_reauth", accountEmail: own.accountEmail, affectedProjectCount: own.affectedProjectCount },
+    ownConnection: { connected: own.connected, needsReconnect: own.status === "needs_reauth", revocationPending: own.revocationPending, accountEmail: own.accountEmail, affectedProjectCount: own.affectedProjectCount },
     access,
   };
 }

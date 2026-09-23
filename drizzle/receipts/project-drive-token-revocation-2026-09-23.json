@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "project-drive-token-revocation-2026-09-23",
+  "authorizedBy": "J16/#32 founder-authorized local implementation. This candidate receipt authorizes local and CI rehearsal only; target-bound preview and production migration gates remain separate.",
+  "reviewedBy": "Codex J16 candidate; independent review remains required before integration or remote application.",
+  "authorizationSource": "2026-09-23 founder-only production-readiness sprint, J16 durable Google Drive disconnect correction.",
+  "migrations": [
+    {
+      "id": "0038_project_drive_token_revocation",
+      "sha256": "054f3aa69d775f6b4ab59e40811cef209dcb12d886944ccef92ad9316ccd16c8",
+      "reviewedAt": "2026-09-23T09:02:00.000Z",
+      "risk": "Four nullable columns are added to existing personal provider connection rows without rewriting ciphertext, identity, status, current generation, storage selection or existing provider facts. Existing revoked rows retain an unknown provider outcome; neither revoked status nor a missing error proves Google accepted revocation. New requests persist the exact generation and remain unconfirmed until an explicit provider result is recorded. The migration is reserved after J13's separate 0037 and cannot be remotely applied from this standalone branch.",
+      "rollbackPlan": "Keep Drive UI and workers disabled. Do not drop requested, in-flight or confirmed evidence after runtime use. Reconcile the exact actor-owned generation and provider outcome before any separately reviewed schema rollback; never revoke an active same-account generation from an undifferentiated historical row.",
+      "postconditions": [
+        "four nullable request, confirmation and attempt columns exist on provider_connections",
+        "all preexisting credential and storage rows retain their original values and identities",
+        "legacy revoked rows do not gain inferred request or confirmation timestamps",
+        "integrity and foreign key checks pass"
+      ],
+      "proofs": [
+        {
+          "id": "drive-revocation-columns",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('provider_connections') WHERE (name IN ('revoke_requested_at','revoke_confirmed_at','revoke_attempted_at') AND lower(type)='integer' AND \"notnull\"=0) OR (name='revoke_attempt_id' AND lower(type)='text' AND \"notnull\"=0)",
+          "expected": 4
+        },
+        {
+          "id": "drive-revocation-no-inferred-provider-proof",
+          "sql": "SELECT COUNT(*) AS value FROM provider_connections WHERE revoke_confirmed_at IS NOT NULL AND revoke_requested_at IS NULL",
+          "expected": 0
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

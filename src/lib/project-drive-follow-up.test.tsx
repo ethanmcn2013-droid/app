@@ -9,12 +9,28 @@ import type { DriveHandoverRead } from "./project-drive-handover-ui";
 
 test("first consent and separate board setup both disclose future file ownership and visibility", () => {
   for (const connected of [false, true]) {
-    const html = renderToStaticMarkup(<ConnectionsView status={{ ownerName: null, folderUrl: null, setup: "not_connected", pendingRemovals: { currentFolder: 0, previousFolders: 0 }, ownConnection: { connected, needsReconnect: false, accountEmail: connected ? "owner@example.test" : null, affectedProjectCount: 0 }, access: { state: "not_connected", checkedAt: null, people: [], otherPermissionCount: 0 } }} busy={false} message={null} confirmation={false} handover={null} onRefresh={() => {}} onConnect={() => {}} onEnable={() => {}} onDisconnect={() => {}} onCancelDisconnect={() => {}} onConfirmDisconnect={() => {}} />);
+    const html = renderToStaticMarkup(<ConnectionsView status={{ ownerName: null, folderUrl: null, setup: "not_connected", pendingRemovals: { currentFolder: 0, previousFolders: 0 }, ownConnection: { connected, needsReconnect: false, revocationPending: false, accountEmail: connected ? "owner@example.test" : null, affectedProjectCount: 0 }, access: { state: "not_connected", checkedAt: null, people: [], otherPermissionCount: 0 } }} busy={false} message={null} confirmation={false} handover={null} onRefresh={() => {}} onConnect={() => {}} onEnable={() => {}} onDisconnect={() => {}} onCancelDisconnect={() => {}} onConfirmDisconnect={() => {}} onRetryDisconnect={() => {}} />);
     assert.match(html, /will own and be able to see its Drive files/);
     assert.match(html, /Those files use their Google Drive space/);
     assert.ok(html.indexOf("will own and be able to see") < html.indexOf(connected ? "Use my Drive for this board" : "Connect Google Drive"));
     assert.match(html, /Connecting your account does not change where this board/);
   }
+});
+
+test("a reloaded unconfirmed disconnect keeps retry visible and forbids reconnect", () => {
+  const html = renderToStaticMarkup(<ConnectionsView status={{
+    ownerName: null, folderUrl: null, setup: "not_connected",
+    pendingRemovals: { currentFolder: 0, previousFolders: 0 },
+    ownConnection: { connected: false, needsReconnect: false, revocationPending: true, accountEmail: null, affectedProjectCount: 0 },
+    access: { state: "not_connected", checkedAt: null, people: [], otherPermissionCount: 0 },
+  }} busy={false} message={null} confirmation={false} handover={null}
+  onRefresh={() => {}} onConnect={() => {}} onEnable={() => {}}
+  onDisconnect={() => {}} onCancelDisconnect={() => {}}
+  onConfirmDisconnect={() => {}} onRetryDisconnect={() => {}} />);
+  assert.match(html, /Google has not confirmed your previous disconnect/);
+  assert.match(html, /<button[^>]*disabled=""[^>]*>Connect Google Drive<\/button>/);
+  assert.match(html, />Check disconnect<\/button>/);
+  assert.doesNotMatch(html, />Disconnect my Drive<\/button>/);
 });
 
 test("reloaded claims block new intake regardless of file metadata; refresh errors never mean empty", () => {

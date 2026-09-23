@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { isDemoMode } from "@/lib/access-mode";
+import { projectDriveUiEnabled } from "@/lib/project-drive-ui";
 import {
   disconnectGoogleDriveConnection,
   getGoogleDriveConnectionSummary,
@@ -30,6 +31,7 @@ const EMPTY_SUMMARY: GoogleDriveConnectionSummary = Object.freeze({
   rootFolderUrl: null,
   projectUsesThisAccount: false,
   affectedProjectCount: 0,
+  revocationPending: false,
 });
 
 /** Return the same-origin route that starts a freshly authorized OAuth flow. */
@@ -50,7 +52,9 @@ export async function beginGoogleDriveConnectionAction(
 export async function getGoogleDriveConnectionSummaryAction(
   projectId: string,
 ): Promise<GoogleDriveConnectionSummary> {
-  if (isDemoMode()) return EMPTY_SUMMARY;
+  // The initial flags-off production promotion still has the pre-Drive
+  // schema. A hidden Settings summary must not touch the newer columns.
+  if (isDemoMode() || !projectDriveUiEnabled()) return EMPTY_SUMMARY;
   const authorization = await authorizeProjectDrive(
     projectId,
     "manageProject",
@@ -114,7 +118,7 @@ export async function disconnectGoogleDriveConnectionAction(
     return {
       disconnected: false,
       affectedProjectCount: 0,
-      revocationConfirmed: true,
+      revocationConfirmed: false,
     };
   }
   const authorization = await authorizeProjectDrive(

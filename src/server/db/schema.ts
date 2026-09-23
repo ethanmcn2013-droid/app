@@ -1207,6 +1207,12 @@ export const providerConnections = sqliteTable(
     connectedAt: integer("connected_at", { mode: "timestamp" }).notNull(),
     lastUsedAt: integer("last_used_at", { mode: "timestamp" }),
     lastErrorAt: integer("last_error_at", { mode: "timestamp" }),
+    /** Local retirement is immediate; provider revocation is a separate fact. */
+    revokeRequestedAt: integer("revoke_requested_at", { mode: "timestamp" }),
+    revokeConfirmedAt: integer("revoke_confirmed_at", { mode: "timestamp" }),
+    /** One bounded provider attempt per credential generation at a time. */
+    revokeAttemptId: text("revoke_attempt_id"),
+    revokeAttemptedAt: integer("revoke_attempted_at", { mode: "timestamp" }),
   },
   (t) => [
     index("idx_provider_connections_user_provider").on(

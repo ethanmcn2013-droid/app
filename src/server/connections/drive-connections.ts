@@ -1,7 +1,7 @@
 import "server-only";
 
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { APP_ORIGIN } from "@/lib/product-urls";
 import {
@@ -16,6 +16,7 @@ import {
 import { db } from "@/server/db";
 import {
   providerConnections,
+  meta,
   workspaceStorage,
 } from "@/server/db/schema";
 import * as schema from "@/server/db/schema";
@@ -41,6 +42,10 @@ import {
   assertProjectDriveCapability,
   type AuthorizedProjectDriveContext,
 } from "./project-drive-authz";
+import {
+  GOOGLE_DRIVE_ACCOUNT_ERASURE_FENCE_VALUE,
+  googleDriveAccountErasureFenceKey,
+} from "./project-drive-operation-lifecycle";
 
 const GOOGLE_DRIVE_PROVIDER = "google_drive" as const;
 const GOOGLE_DRIVE_FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
@@ -48,6 +53,8 @@ const ROOT_FOLDER_NAME = "Signal Studio";
 const ROOT_MARKER_KEY = "signalRoot";
 const ROOT_MARKER_VALUE = "v1";
 const GOOGLE_CALLBACK_PATH = "/api/connections/google/callback";
+const REVOKE_TIMEOUT_MS = 20_000;
+const REVOKE_RETRY_DELAY_MS = 60_000;
 
 export const GOOGLE_OAUTH_STATE_COOKIE = "signal_google_drive_oauth_state";
 export const GOOGLE_OAUTH_STATE_COOKIE_PATH = GOOGLE_CALLBACK_PATH;
@@ -65,6 +72,7 @@ export type GoogleDriveConnectionSummary = Readonly<{
   rootFolderUrl: string | null;
   projectUsesThisAccount: boolean;
   affectedProjectCount: number;
+  revocationPending: boolean;
 }>;
 
 export type BegunGoogleDriveConnection = Readonly<{
@@ -91,7 +99,8 @@ export type DisconnectedGoogleDriveConnection = Readonly<{
 export type GoogleDriveConnectionErrorCode =
   | "missing-config"
   | "missing-refresh-token"
-  | "stale-authorization";
+  | "stale-authorization"
+  | "revocation-pending";
 
 export class GoogleDriveConnectionError extends Error {
   readonly code: GoogleDriveConnectionErrorCode;
@@ -103,6 +112,8 @@ export class GoogleDriveConnectionError extends Error {
         "Google did not return an offline credential. Please connect again.",
       "stale-authorization":
         "This connection request is no longer current. Please connect again.",
+      "revocation-pending":
+        "The previous Google Drive disconnect is not yet confirmed. Check it before reconnecting.",
     };
     super(messages[code]);
     this.name = "GoogleDriveConnectionError";
@@ -255,6 +266,38 @@ function uniqueStrings(values: readonly string[]): string[] {
 export function createGoogleDriveConnectionService(
   deps: GoogleDriveConnectionServiceDependencies,
 ) {
+  const pendingRevocationFor = (actorUserId: string) =>
+    and(
+      eq(providerConnections.userId, actorUserId),
+      eq(providerConnections.provider, GOOGLE_DRIVE_PROVIDER),
+      isNotNull(providerConnections.revokeRequestedAt),
+      isNull(providerConnections.revokeConfirmedAt),
+    );
+
+  const accountErasureFenceFor = (actorUserId: string) =>
+    and(
+      eq(meta.key, googleDriveAccountErasureFenceKey(actorUserId)),
+      eq(meta.value, GOOGLE_DRIVE_ACCOUNT_ERASURE_FENCE_VALUE),
+    );
+
+  async function assertNoPendingRevocation(actorUserId: string) {
+    const [pending] = await deps.database
+      .select({ id: providerConnections.id })
+      .from(providerConnections)
+      .where(pendingRevocationFor(actorUserId))
+      .limit(1);
+    if (pending) throw new GoogleDriveConnectionError("revocation-pending");
+  }
+
+  async function assertAccountNotErasing(actorUserId: string) {
+    const [fence] = await deps.database
+      .select({ key: meta.key })
+      .from(meta)
+      .where(accountErasureFenceFor(actorUserId))
+      .limit(1);
+    if (fence) throw new GoogleDriveConnectionError("stale-authorization");
+  }
+
   async function currentConnection(actorUserId: string) {
     const [connection] = await deps.database
       .select()
@@ -328,6 +371,8 @@ export function createGoogleDriveConnectionService(
     input: Readonly<{ clerkUserId: string; sessionId: string }>,
   ): Promise<BegunGoogleDriveConnection> {
     assertProjectDriveCapability(authorization, "manageProject");
+    await assertAccountNotErasing(authorization.actorUserId);
+    await assertNoPendingRevocation(authorization.actorUserId);
     const existing = await currentConnection(authorization.actorUserId);
     const intent: GoogleOAuthStateIntent = existing
       ? "reconnect-google-drive"
@@ -370,6 +415,8 @@ export function createGoogleDriveConnectionService(
     input: Readonly<{ code: string; intent: GoogleOAuthStateIntent }>,
   ): Promise<CompletedGoogleDriveConnection> {
     assertProjectDriveCapability(authorization, "manageProject");
+    await assertAccountNotErasing(authorization.actorUserId);
+    await assertNoPendingRevocation(authorization.actorUserId);
     const oauthClient = requireOAuthClient(deps);
     const ring = requireKeyRing(deps);
     const before = await currentConnection(authorization.actorUserId);
@@ -420,6 +467,22 @@ export function createGoogleDriveConnectionService(
 
     try {
       await deps.database.transaction(async (tx) => {
+        const [erasureFence] = await tx
+          .select({ key: meta.key })
+          .from(meta)
+          .where(accountErasureFenceFor(authorization.actorUserId))
+          .limit(1);
+        const [pendingRevoke] = await tx
+          .select({ id: providerConnections.id })
+          .from(providerConnections)
+          .where(pendingRevocationFor(authorization.actorUserId))
+          .limit(1);
+        if (erasureFence || pendingRevoke) {
+          throw new GoogleDriveConnectionError(
+            erasureFence ? "stale-authorization" : "revocation-pending",
+          );
+        }
+        await assertProjectNotDeleting(tx, authorization.projectId);
         const [stillCurrent] = await tx
           .select({ id: providerConnections.id })
           .from(providerConnections)
@@ -576,7 +639,14 @@ export function createGoogleDriveConnectionService(
     authorization: AuthorizedProjectDriveContext,
   ): Promise<GoogleDriveConnectionSummary> {
     assertProjectDriveCapability(authorization, "manageProject");
-    const current = await currentConnection(authorization.actorUserId);
+    const [current, pending] = await Promise.all([
+      currentConnection(authorization.actorUserId),
+      deps.database
+        .select({ id: providerConnections.id })
+        .from(providerConnections)
+        .where(pendingRevocationFor(authorization.actorUserId))
+        .limit(1),
+    ]);
     if (!current) {
       return Object.freeze({
         connected: false,
@@ -586,6 +656,7 @@ export function createGoogleDriveConnectionService(
         rootFolderUrl: null,
         projectUsesThisAccount: false,
         affectedProjectCount: 0,
+        revocationPending: pending.length > 0,
       });
     }
     const lineageIds = await connectionLineageIds({
@@ -615,6 +686,7 @@ export function createGoogleDriveConnectionService(
       rootFolderUrl: driveRootUrl(current.rootFolderId),
       projectUsesThisAccount: projectIds.includes(authorization.projectId),
       affectedProjectCount: projectIds.length,
+      revocationPending: pending.length > 0,
     });
   }
 
@@ -623,7 +695,14 @@ export function createGoogleDriveConnectionService(
   ): Promise<DisconnectedGoogleDriveConnection> {
     assertProjectDriveCapability(authorization, "manageProject");
     const now = deps.now();
-    const retired = await deps.database.transaction(async (tx) => {
+    const claim = await deps.database.transaction(async (tx) => {
+      const [erasureFence] = await tx
+        .select({ key: meta.key })
+        .from(meta)
+        .where(accountErasureFenceFor(authorization.actorUserId))
+        .limit(1);
+      if (erasureFence) throw new GoogleDriveConnectionError("stale-authorization");
+
       const [current] = await tx
         .select()
         .from(providerConnections)
@@ -635,118 +714,150 @@ export function createGoogleDriveConnectionService(
           ),
         )
         .limit(1);
-      if (!current) return null;
+      const pending = await tx
+        .select()
+        .from(providerConnections)
+        .where(pendingRevocationFor(authorization.actorUserId))
+        .orderBy(providerConnections.connectedAt);
+      // A prior in-flight revocation must never target a newly connected
+      // same-account grant. New code fences both OAuth entry and completion;
+      // a legacy or raced current+pending combination needs human review.
+      if (current && pending.length) {
+        throw new GoogleDriveConnectionError("revocation-pending");
+      }
 
+      let affectedProjectCount = 0;
+      if (current) {
+        const lineage = await tx
+          .select({ id: providerConnections.id })
+          .from(providerConnections)
+          .where(
+            and(
+              eq(providerConnections.userId, authorization.actorUserId),
+              eq(providerConnections.provider, GOOGLE_DRIVE_PROVIDER),
+              eq(providerConnections.providerAccountId, current.providerAccountId),
+            ),
+          );
+        const lineageIds = lineage.map((row) => row.id);
+        const affected = lineageIds.length
+          ? await tx
+              // isolation-ok: exact actor-owned Google-account lineage; a
+              // personal disconnect fences every Project using that grant.
+              .select({ workspaceId: workspaceStorage.workspaceId })
+              .from(workspaceStorage)
+              .where(and(
+                inArray(workspaceStorage.connectionId, lineageIds),
+                eq(workspaceStorage.isCurrent, true),
+              ))
+          : [];
+        const affectedProjects = uniqueStrings(affected.map((row) => row.workspaceId));
+        for (const workspaceId of affectedProjects) {
+          await assertProjectNotDeleting(tx, workspaceId);
+        }
+        affectedProjectCount = affectedProjects.length;
+        if (lineageIds.length) {
+          await tx.update(workspaceStorage).set({ state: "needs_reauth" }).where(and(
+            inArray(workspaceStorage.connectionId, lineageIds),
+            eq(workspaceStorage.isCurrent, true),
+          ));
+        }
+        await tx.update(providerConnections).set({
+          status: "revoked",
+          isCurrent: false,
+          revokeRequestedAt: now,
+          revokeConfirmedAt: null,
+          revokeAttemptId: null,
+          revokeAttemptedAt: null,
+          lastErrorAt: null,
+        }).where(and(
+          eq(providerConnections.id, current.id),
+          eq(providerConnections.userId, authorization.actorUserId),
+          eq(providerConnections.isCurrent, true),
+        ));
+      }
+
+      const target = current ?? pending[0];
+      if (!target) return { kind: "none" as const };
+      if (target.revokeAttemptedAt &&
+          now.getTime() - target.revokeAttemptedAt.getTime() < REVOKE_RETRY_DELAY_MS) {
+        return { kind: "pending" as const, affectedProjectCount };
+      }
       let refreshToken: string | null = null;
       if (deps.keyRing) {
         try {
-          refreshToken = open(
-            current.refreshTokenCipher,
-            providerTokenAadContext(current.id),
-            deps.keyRing,
-          );
-        } catch {
-          refreshToken = null;
-        }
+          refreshToken = open(target.refreshTokenCipher,
+            providerTokenAadContext(target.id), deps.keyRing);
+        } catch { /* Missing/retired key leaves the request unconfirmed. */ }
       }
-
-      const lineage = await tx
-        .select({ id: providerConnections.id })
-        .from(providerConnections)
-        .where(
-          and(
-            eq(providerConnections.userId, authorization.actorUserId),
-            eq(providerConnections.provider, GOOGLE_DRIVE_PROVIDER),
-            eq(
-              providerConnections.providerAccountId,
-              current.providerAccountId,
-            ),
-          ),
-        );
-      const lineageIds = lineage.map((row) => row.id);
-      const affected = lineageIds.length
-        ? await tx
-            // isolation-ok: lineage is restricted to the authorized actor's
-            // Google account above; disconnect must mark every current
-            // Project using that personal connection as needing attention.
-            .select({ workspaceId: workspaceStorage.workspaceId })
-            .from(workspaceStorage)
-            .where(
-              and(
-                inArray(workspaceStorage.connectionId, lineageIds),
-                eq(workspaceStorage.isCurrent, true),
-              ),
-            )
-        : [];
-      for (const workspaceId of uniqueStrings(
-        affected.map((row) => row.workspaceId),
-      )) {
-        await assertProjectNotDeleting(tx, workspaceId);
+      if (!refreshToken) {
+        await tx.update(providerConnections).set({ lastErrorAt: now }).where(and(
+          eq(providerConnections.id, target.id),
+          eq(providerConnections.userId, authorization.actorUserId),
+        ));
+        return { kind: "pending" as const, affectedProjectCount };
       }
-      if (lineageIds.length > 0) {
-        await tx
-          .update(workspaceStorage)
-          .set({ state: "needs_reauth" })
-          .where(
-            and(
-              inArray(workspaceStorage.connectionId, lineageIds),
-              eq(workspaceStorage.isCurrent, true),
-            ),
-          );
-      }
-      await tx
-        .update(providerConnections)
-        .set({
-          status: "revoked",
-          isCurrent: false,
-          lastErrorAt: refreshToken ? null : now,
-        })
-        .where(
-          and(
-            eq(providerConnections.id, current.id),
-            eq(providerConnections.userId, authorization.actorUserId),
-            eq(providerConnections.isCurrent, true),
-          ),
-        );
-      return {
-        id: current.id,
-        refreshToken,
-        affectedProjectCount: uniqueStrings(
-          affected.map((row) => row.workspaceId),
-        ).length,
-      };
+      const attemptId = randomUUID();
+      const [claimed] = await tx.update(providerConnections).set({
+        revokeAttemptId: attemptId,
+        revokeAttemptedAt: now,
+      }).where(and(
+        eq(providerConnections.id, target.id),
+        eq(providerConnections.userId, authorization.actorUserId),
+        pendingRevocationFor(authorization.actorUserId),
+      )).returning({ id: providerConnections.id });
+      if (!claimed) throw new GoogleDriveConnectionError("stale-authorization");
+      return { kind: "claimed" as const, id: target.id, attemptId,
+        refreshToken, affectedProjectCount };
     }, { behavior: "immediate" });
 
-    if (!retired) {
+    if (claim.kind === "none") {
       return Object.freeze({
         disconnected: false,
         affectedProjectCount: 0,
-        revocationConfirmed: true,
+        revocationConfirmed: false,
       });
     }
-    if (!retired.refreshToken) {
+    if (claim.kind === "pending") {
       return Object.freeze({
         disconnected: true,
-        affectedProjectCount: retired.affectedProjectCount,
+        affectedProjectCount: claim.affectedProjectCount,
         revocationConfirmed: false,
       });
     }
 
     try {
-      await revokeGoogleToken(retired.refreshToken, deps.fetchImpl);
+      await revokeGoogleToken(claim.refreshToken, (input, init) =>
+        deps.fetchImpl(input, { ...init, signal: AbortSignal.timeout(REVOKE_TIMEOUT_MS) }));
+      const [confirmed] = await deps.database.update(providerConnections).set({
+        revokeConfirmedAt: deps.now(),
+        revokeAttemptId: null,
+        lastErrorAt: null,
+      }).where(and(
+        eq(providerConnections.id, claim.id),
+        eq(providerConnections.userId, authorization.actorUserId),
+        eq(providerConnections.revokeAttemptId, claim.attemptId),
+        pendingRevocationFor(authorization.actorUserId),
+      )).returning({ id: providerConnections.id });
+      const [stillPending] = await deps.database.select({ id: providerConnections.id })
+        .from(providerConnections)
+        .where(pendingRevocationFor(authorization.actorUserId)).limit(1);
       return Object.freeze({
         disconnected: true,
-        affectedProjectCount: retired.affectedProjectCount,
-        revocationConfirmed: true,
+        affectedProjectCount: claim.affectedProjectCount,
+        revocationConfirmed: Boolean(confirmed) && !stillPending,
       });
     } catch {
       await deps.database
         .update(providerConnections)
-        .set({ lastErrorAt: deps.now() })
-        .where(eq(providerConnections.id, retired.id));
+        .set({ lastErrorAt: deps.now(), revokeAttemptId: null })
+        .where(and(
+          eq(providerConnections.id, claim.id),
+          eq(providerConnections.userId, authorization.actorUserId),
+          eq(providerConnections.revokeAttemptId, claim.attemptId),
+        ));
       return Object.freeze({
         disconnected: true,
-        affectedProjectCount: retired.affectedProjectCount,
+        affectedProjectCount: claim.affectedProjectCount,
         revocationConfirmed: false,
       });
     }
