@@ -57,7 +57,10 @@ test("actual action denies " + denial + " with no usage or task writes", () => f
     await f.seedClaim("member", "a", "b");
     await f.load("src/server/account-deletion-lifecycle.ts").beginAccountDeletionWith(f.db, "clerk-owner");
   }
-  await f.action({ id: "denied", title: "private", projectId: "a" });
+  await assert.rejects(
+    () => f.action({ id: "denied", title: "private", projectId: "a" }),
+    /Task Project is unavailable/,
+  );
   assert.deepEqual(await f.counts(), empty);
 }));
 test("flag-off and demo create no usage; wrong-project grant never supplies provenance", () => fixture(async f => {
@@ -79,7 +82,10 @@ test("erasure fence removes receipts and retains exactly one pseudonymous contro
   const rows = await f.db.select().from(f.usageSchema.sponsoredUseIntents);
   assert.equal(rows.length, 1); assert.equal(rows[0].kind, "erase"); assert.equal(rows[0].entitlementId, null);
   assert.ok(!JSON.stringify(rows).includes("clerk-owner"));
-  await f.action({ id: "late", title: "private", projectId: "a" });
+  await assert.rejects(
+    () => f.action({ id: "late", title: "private", projectId: "a" }),
+    /Task Project is unavailable/,
+  );
   assert.equal((await f.counts()).tasks, 1);
 }));
 test("delivery retries exact signed payload after failure; no remote error or raw identity stored", () => fixture(async f => {
