@@ -164,6 +164,10 @@
 }
 
 .railUtility:hover { background: rgba(255, 255, 255, 0.05); color: var(--x-studio-ink); }
+.railUtility[data-active] {
+  background: color-mix(in srgb, var(--x-studio-accent) 16%, transparent);
+  color: var(--x-studio-ink-strong);
+}
 .railUtility:active { transform: scale(0.97); }
 
 .railHelpMenuHost {

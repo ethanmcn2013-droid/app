@@ -4,6 +4,10 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-09-23 · January candidate · Core work is easier to find
+
+Home, Projects, Tasks and Timeline now lead the signed-in navigation on desktop and phone, including the Tasks Floor. Notes remains private and opens from More alongside existing work and account utilities. Project links retain their current context, and people without a project see a setup path instead of a stale-link message. This is a release candidate, not a production deployment.
+
 ## 2026-09-23 · T·155 · tightens · the app receives the framework security fixes
 
 **The release candidate includes the current framework security fixes while preserving the existing product behavior.** Next.js and its ESLint configuration move from 16.2.11 to 16.3.6. The lockfile and exact-version freshness exceptions travel together; no database migration is required. The measured framework chunk adds 59 gzip bytes beyond the previous ceiling, so a recorded delegated security exception raises that ceiling to 63.1 KiB while retaining the 63 KiB target.

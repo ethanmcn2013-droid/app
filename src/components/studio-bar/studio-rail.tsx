@@ -1,17 +1,13 @@
 "use client";
 
 /**
- * Signal Studio product rail — the vertical stroke of the L-frame (T·95
- * lab parity). Ported 1:1 from the Option B lab's SignalProductRail;
- * in production every tile is a real destination, never a preview stub:
+ * Signal Studio navigation rail — the vertical stroke of the L-frame.
+ * In production every tile is a real destination, never a preview stub:
  *
- *   home     → the Signal Studio umbrella
- *   products → each product's canonical module route within this app,
- *              carrying allowlisted workspace context as navigation hints
+ *   core     → Home, Projects, Tasks and Timeline with allowlisted context
+ *   More     → private Notes and the existing work/account utilities
  *   about    → the public Signal Studio site (external utility)
  *   inbox    → /app/inbox (the daily digest surface)
- *   help     → a compact menu retaining support, workspace/team, and
- *              account-settings access
  *   account  → the profile avatar + full account menu, docked at the foot
  *              of the rail (the L-frame's bottom-left corner). Relocated
  *              from the Studio Bar's top-right cluster.
@@ -20,7 +16,7 @@
  * keeps the account avatar, since the rail is not painted there).
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useSuiteContext } from "@/components/app/use-suite-context";
@@ -31,30 +27,15 @@ import {
   STUDIO_URL,
   suiteSurfaceFromAppPath,
 } from "@/lib/product-urls";
+import { activeCoreDestination, CORE_DESTINATIONS } from "@/lib/core-navigation";
 import { withSuiteContext } from "@/lib/suite-context";
 import { RailIcon, type RailIconName } from "./rail-icons";
 import styles from "./signal-shell.module.css";
 
-/**
- * Rail destinations: the three PRODUCTS, nothing else — the rail is a
- * product switcher, not a place list (board pass 4, 2026-08-05).
- * "Project" left in pass 2; Home follows now: it is a suite landing,
- * reachable as the first destination of the local Tasks navigation and
- * from each product's own surfaces, not a sibling product. /app/home and
- * /app/project both remain routable.
- */
-export const RAIL_DESTINATIONS: Array<{
-  key: "notes" | "tasks" | "timeline";
-  label: string;
-  path: string;
-}> = [
-  { key: "notes", label: "Notes", path: PRODUCT_APP_PATHS.notes },
-  { key: "tasks", label: "Tasks", path: PRODUCT_APP_PATHS.tasks },
-  { key: "timeline", label: "Timeline", path: PRODUCT_APP_PATHS.timeline },
-];
+export const RAIL_DESTINATIONS = CORE_DESTINATIONS;
 
-function activeRailKey(pathname: string): string {
-  return suiteSurfaceFromAppPath(pathname);
+function activeRailKey(pathname: string) {
+  return activeCoreDestination(pathname);
 }
 
 function ProductTile({ icon, label }: { icon: RailIconName; label: string }) {
@@ -68,8 +49,9 @@ function ProductTile({ icon, label }: { icon: RailIconName; label: string }) {
   );
 }
 
-function RailHelpMenu() {
+function RailMoreMenu({ messagesEnabled, current }: { messagesEnabled: boolean; current: boolean }) {
   const [open, setOpen] = useState(false);
+  const suiteContext = useSuiteContext();
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -101,6 +83,22 @@ function RailHelpMenu() {
     };
   }, [open]);
 
+  const onMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const items = Array.from(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
+    const index = Math.max(0, items.indexOf(document.activeElement as HTMLElement));
+    let next: number | null = null;
+    if (event.key === "ArrowDown") next = (index + 1) % items.length;
+    if (event.key === "ArrowUp") next = (index - 1 + items.length) % items.length;
+    if (event.key === "Home") next = 0;
+    if (event.key === "End") next = items.length - 1;
+    if (next !== null) {
+      event.preventDefault();
+      items[next]?.focus();
+    } else if (event.key === "Tab") {
+      setOpen(false);
+    }
+  };
+
   return (
     <div
       className={styles.railHelpMenuHost}
@@ -110,28 +108,37 @@ function RailHelpMenu() {
       <button
         aria-expanded={open}
         aria-haspopup="menu"
-        aria-label="Help and settings"
+        aria-label="More"
         className={styles.railUtility}
-        data-tip="Help and settings"
+        data-active={current ? "true" : undefined}
+        data-tip="More"
         onClick={() => setOpen((current) => !current)}
         ref={triggerRef}
         type="button"
       >
-        <span aria-hidden="true" className={styles.helpGlyph}>?</span>
+        <RailIcon name="more" size={18} />
       </button>
       {open ? (
         <div
-          aria-label="Help and settings"
+          aria-label="More"
           className={styles.railHelpMenu}
+          onKeyDown={onMenuKeyDown}
           ref={menuRef}
           role="menu"
         >
-          <span className={styles.railHelpEyebrow}>Help and settings</span>
-          <Link href="/app/settings" role="menuitem">
+          <span className={styles.railHelpEyebrow}>More</span>
+          <Link href={withSuiteContext(PRODUCT_APP_PATHS.notes, suiteContext)} onClick={() => setOpen(false)} role="menuitem">
+            <span>Notes</span>
+          </Link>
+          <Link href="/app/inbox" onClick={() => setOpen(false)} role="menuitem">
+            <span>Inbox</span>
+          </Link>
+          {messagesEnabled ? <Link href={MESSAGES_APP_PATH} onClick={() => setOpen(false)} role="menuitem"><span>Messages</span></Link> : null}
+          <Link href="/app/settings" onClick={() => setOpen(false)} role="menuitem">
             <span>Project and team</span>
             <span aria-hidden="true">↗</span>
           </Link>
-          <Link href="/settings/profile" role="menuitem">
+          <Link href="/settings/profile" onClick={() => setOpen(false)} role="menuitem">
             <span>Account settings</span>
             <span aria-hidden="true">↗</span>
           </Link>
@@ -158,21 +165,21 @@ export function StudioRail({ messagesEnabled = false }: { messagesEnabled?: bool
     <aside aria-label="Signal Studio navigation" className={`${styles.signalRail} hidden md:flex`} data-signal-product-rail="true">
       {/* The Signal Studio home mark lives once, in the Studio Bar's
           top-left cell directly above this rail — no second dot here. */}
-      <nav aria-label="Products" className={styles.railProducts}>
+      <nav aria-label="Core navigation" className={styles.railProducts}>
         {RAIL_DESTINATIONS.map((destination) => {
-          const active = destination.key === activeKey;
+          const active = destination.id === activeKey;
           const href = withSuiteContext(destination.path, suiteContext);
           return (
             <Link
               aria-current={active ? "page" : undefined}
               className={styles.railProduct}
               data-active={active ? "true" : undefined}
-              data-product={destination.key}
+              data-product={destination.id}
               data-tip={active ? `${destination.label} · current` : `Open ${destination.label}`}
               href={href}
-              key={destination.key}
+              key={destination.id}
             >
-              <ProductTile icon={destination.key} label={destination.label} />
+              <ProductTile icon={destination.id} label={destination.label} />
             </Link>
           );
         })}
@@ -201,7 +208,7 @@ export function StudioRail({ messagesEnabled = false }: { messagesEnabled?: bool
       <Link aria-label="Inbox" className={styles.railUtility} data-tip="Inbox · daily digest" href="/app/inbox">
         <RailIcon name="updates" size={18} />
       </Link>
-      <RailHelpMenu />
+      <RailMoreMenu messagesEnabled={messagesEnabled} current={pathname === PRODUCT_APP_PATHS.notes || pathname.startsWith(`${PRODUCT_APP_PATHS.notes}/`)} />
       {/* Account lives here at the foot of the rail — the bottom-left corner
           of the Signal Studio L-frame. The profile avatar (with its full
           account menu) was relocated from the Studio Bar's top-right cluster
