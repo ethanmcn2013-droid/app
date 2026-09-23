@@ -3,6 +3,8 @@
  * navigation hint, never authorization; the destination still proves Clerk
  * identity, Project membership, and access to any selected Task.
  */
+import { inviteAuthUrl, inviteReturnPath } from "./invite-intent";
+
 const STATIC_APP_PATHS = new Set([
   "/app", "/app/home", "/app/home/briefing", "/app/project",
   "/app/your-work", "/app/tasks", "/app/tasks/list",
@@ -61,4 +63,20 @@ export function appAuthReturnPath(value: unknown): string | null {
 export function signInUrlForAppReturn(value: unknown): string {
   const path = appAuthReturnPath(value);
   return path ? `/sign-in?${new URLSearchParams({ redirect_url: path })}` : "/sign-in";
+}
+
+/** A present but rejected redirect must not be left to Clerk's URL parser. */
+export function signInRedirectProps(value: unknown): {
+  forceRedirectUrl?: string;
+  signUpForceRedirectUrl?: string;
+  signUpUrl?: string;
+} {
+  const invitePath = inviteReturnPath(value);
+  if (invitePath) return {
+    forceRedirectUrl: invitePath,
+    signUpForceRedirectUrl: invitePath,
+    signUpUrl: inviteAuthUrl("sign-up", invitePath),
+  };
+  if (value === undefined) return {};
+  return { forceRedirectUrl: appAuthReturnPath(value) ?? "/app" };
 }

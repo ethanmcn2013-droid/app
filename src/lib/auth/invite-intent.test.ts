@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { inviteAuthUrl, inviteReturnPath } from "./invite-intent";
-import { appAuthReturnPath, signInUrlForAppReturn } from "./app-return";
+import { appAuthReturnPath, signInRedirectProps, signInUrlForAppReturn } from "./app-return";
 
 test("invite intent survives URL encoding and both auth entry points", () => {
   const path = "/invite/Abc_123-xyz";
@@ -29,6 +29,8 @@ test("an expired-session Tasks deep link survives the same-origin sign-in wall",
   assert.equal(url.pathname, "/sign-in");
   assert.equal(url.searchParams.get("redirect_url"), target);
   assert.equal(appAuthReturnPath(url.searchParams.get("redirect_url")), target);
+  assert.deepEqual(signInRedirectProps(url.searchParams.get("redirect_url")),
+    { forceRedirectUrl: target });
 });
 
 test("known App destinations preserve only route-specific, unambiguous state", () => {
@@ -58,5 +60,20 @@ test("external, encoded, duplicate and unknown App returns cannot override sign-
   ]) {
     assert.equal(appAuthReturnPath(value), null, String(value));
     assert.equal(signInUrlForAppReturn(value), "/sign-in", String(value));
+    if (value !== undefined) assert.deepEqual(signInRedirectProps(value),
+      { forceRedirectUrl: "/app" }, String(value));
   }
+});
+
+test("sign-in gives Clerk a safe destination for invalid input and preserves invite priority", () => {
+  assert.deepEqual(signInRedirectProps(undefined), {});
+  assert.deepEqual(signInRedirectProps(["/app/tasks", "/app/notes"]),
+    { forceRedirectUrl: "/app" });
+  assert.deepEqual(signInRedirectProps("https://evil.test/app/tasks"),
+    { forceRedirectUrl: "/app" });
+  assert.deepEqual(signInRedirectProps("/invite/Abc_123-xyz"), {
+    forceRedirectUrl: "/invite/Abc_123-xyz",
+    signUpForceRedirectUrl: "/invite/Abc_123-xyz",
+    signUpUrl: "/sign-up?redirect_url=%2Finvite%2FAbc_123-xyz",
+  });
 });
