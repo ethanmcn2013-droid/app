@@ -35,6 +35,7 @@ import {
 import { taskFocusPath } from "@/lib/product-urls";
 import type { NotesCopy } from "@/modules/notes/lib/notes-copy";
 import { editAfterSave, recoveredEditForNote, type RecoveredEdit } from "@/modules/notes/lib/notes-recovery";
+import { friendlyError } from "@/modules/notes/lib/notes-error-copy";
 
 /**
  * Everything Notes knows about a person's writing, and everything that can
@@ -136,11 +137,6 @@ export type NotebookOptions = {
 
 function stableNoteId(): string {
   return `n_${crypto.randomUUID().replace(/-/g, "")}`;
-}
-
-function friendlyError(error: unknown, fallback: string): string {
-  if (error instanceof Error && error.message.trim()) return error.message;
-  return fallback;
 }
 
 function sortNewest(notes: NoteRead[]): NoteRead[] {

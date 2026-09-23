@@ -1,12 +1,34 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { editAfterSave, notebookRecoveryKey, recoveredEditForNote } from "./notes-recovery";
+import { friendlyError } from "./notes-error-copy";
 import { notesRecoveryActorScope, assertNotesRecoveryActor } from "../server/notes-recovery-actor";
 import { notesHref } from "./notes-view-model";
 import { assertProjectId } from "@/lib/projects/project-ref";
 import { canonicaliseProjectUrl, withActiveProject } from "@/lib/projects/project-url";
 import { withSuiteContext } from "@/lib/suite-context";
 import { YOUR_WORK_APP_PATH } from "@/lib/product-urls";
+
+test("redacted server failures use recoverable Notes copy, while app guidance survives", () => {
+  const fallback = "That did not save. Your exact words are still here.";
+  for (const message of [
+    "Minified React error #441; visit https://react.dev/errors/441 for the full message",
+    "An error occurred in the Server Components render. The specific message is omitted in production builds.",
+    "NEXT_REDIRECT;push;/app/notes",
+  ]) {
+    assert.equal(friendlyError(new Error(message), fallback), fallback);
+  }
+  assert.equal(friendlyError({ message: "unknown remote response" }, fallback), fallback);
+  assert.equal(friendlyError(new Error("  "), fallback), fallback);
+  for (const message of [
+    "This capture has a different saved version. Reopen Notes to review it.",
+    "Tasks workspaces are unavailable right now. Nothing was sent.",
+    "That note could not be deleted, so it is back.",
+    "Your account changed. Reopen Notes before retrying.",
+  ]) {
+    assert.equal(friendlyError(new Error(message), fallback), message);
+  }
+});
 
 test("recovery frames cannot alias another actor or project", () => {
   const keys = [notebookRecoveryKey("a", "b"), notebookRecoveryKey("a:b", null), notebookRecoveryKey("a", "c"), notebookRecoveryKey("c", "b")];
