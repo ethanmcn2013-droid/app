@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-messages",
+  "source": "tasks/src/app/app/messages/page.tsx",
+  "materialityHash": "0ea7b55f226c2e34",
+  "reviewedAt": "2026-09-23",
+  "reviewer": "Production sprint source reviewer",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-776b131ccc1d285f9c76fe35-b1f0b607db42f49a.json",
+    "attestationSha256": "695e2d52f144e9edc78a1056905a1f28b2ac8d275b2450eceda701fbd2b6b396",
+    "runId": "tasks-playwright-776b131ccc1d285f9c76fe35",
+    "canonicalEvidenceSha256": "776b131ccc1d285f9c76fe35d39885f359fa005fffca90ce659cd2384a783241",
+    "rawArtifactSha256": "b1f0b607db42f49a58deb99721d2fd37a12006f7ededde0b67e298f9a2fcd7f9",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-inbox",
+    "caseName": "demo digest with empty direct alerts",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "The Messages route now validates optional project, root, message and sequence deep-link parameters and requires an authorized project before passing them to the conversation workspace. Source inspection found no direct Messages case in the critical fixture; the linked four-breakpoint Inbox demo digest is adjacent shell regression context only. Authenticated deep-link and read-state behavior require separate preview receiving evidence.",
+  "decision": "Refresh only this route source hash and review receipt. Keep existing registered status, partial coverage, and no screenshot or accessibility coverage; do not treat the adjacent demo fixture as a Messages journey or production acceptance."
+}

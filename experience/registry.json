@@ -269,7 +269,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "627d494b5a0a8eb3"
+      "materialityHash": "081dffba670e865e"
     },
     {
       "id": "tasks.page.app-tasks-list",
@@ -3702,14 +3702,14 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-09-05",
+      "lastReviewedAt": "2026-09-23",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "31d858c47674f034",
+      "materialityHash": "792f9249ba775c65",
       "materialityReview": {
-        "materialityHash": "31d858c47674f034",
-        "reviewedAt": "2026-09-05",
-        "evidence": "experience/reviews/january-1ac3d233-tasks.connections.storage.json"
+        "materialityHash": "792f9249ba775c65",
+        "reviewedAt": "2026-09-23",
+        "evidence": "experience/reviews/production-sprint-4cbe-tasks.connections.storage.json"
       }
     },
     {
@@ -4031,10 +4031,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": null,
+      "lastReviewedAt": "2026-09-23",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "6b9c5261e23c8347"
+      "materialityHash": "0ea7b55f226c2e34",
+      "materialityReview": {
+        "materialityHash": "0ea7b55f226c2e34",
+        "reviewedAt": "2026-09-23",
+        "evidence": "experience/reviews/production-sprint-4cbe-tasks.page.app-messages.json"
+      }
     },
     {
       "id": "tasks.page.lab-project-conversation",
