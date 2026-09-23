@@ -65,6 +65,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import type { ProjectId, ProjectSummary } from "@/lib/projects/project-ref";
 import { parseProjectId } from "@/lib/projects/project-ref";
 import { buildProjectUrl, PROJECT_URL_PARAM, type ProjectDestination } from "@/lib/projects/project-url";
+import { isExpectedProjectSwitchRedirect } from "@/lib/projects/project-switch-redirect";
 import {
   chromeFor,
   initialActiveProjectState,
@@ -297,6 +298,16 @@ export function ActiveProjectProvider({
         dispatch({ type: "select-failed", message });
       };
 
+      const awaitVerifiedSnapshot = () => {
+        // Redirect has started, but only the destination's server snapshot
+        // proves the switch. Bound a missing snapshot without claiming A or B.
+        if (pendingRef.current?.token === token) {
+          pendingRef.current.timeout = setTimeout(() => {
+            fail(`Couldn't open ${project.name}. You're still in the current project.`);
+          }, 30_000);
+        }
+      };
+
       startTransition(() => {
         void (async () => {
           try {
@@ -304,18 +315,11 @@ export function ActiveProjectProvider({
               workspaceId: project.id,
               destination,
             });
-            // Next's client-side Server Action redirect can resolve the
-            // calling promise with no value. That is navigation in progress,
-            // not a failed switch. The verified route snapshot above is the
-            // only event that releases the selection guard on this path.
+            // A redirect may resolve without a value in some runtimes. Next
+            // 16.3.6 instead rejects with NEXT_REDIRECT; both paths wait for
+            // the exact destination's server-verified route snapshot.
             if (!result) {
-              // A failed destination may never publish a snapshot. Keep the
-              // guard bounded; a timeout reports failure, never success.
-              if (pendingRef.current?.token === token) {
-                pendingRef.current.timeout = setTimeout(() => {
-                  fail(`Couldn't open ${project.name}. You're still in the current project.`);
-                }, 30_000);
-              }
+              awaitVerifiedSnapshot();
               return;
             }
             fail(
@@ -323,7 +327,11 @@ export function ActiveProjectProvider({
                 ? `${project.name} is archived. Open it read-only from Archived.`
                 : `Couldn't open ${project.name}. You're still in the current project.`,
             );
-          } catch {
+          } catch (error) {
+            if (isExpectedProjectSwitchRedirect(error, `${target.pathname}${target.search}`)) {
+              awaitVerifiedSnapshot();
+              return;
+            }
             fail(
               `Couldn't open ${project.name}. You're still in the current project.`,
             );
