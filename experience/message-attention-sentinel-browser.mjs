@@ -17,13 +17,24 @@ try {
   </article></div>`);
   await page.evaluate(() => {
     window.attentionHits = [];
+    window.testVisibility = "hidden";
+    Object.defineProperty(document, "visibilityState", { configurable: true, get: () => window.testVisibility });
     const reading = document.getElementById("reading");
     const observer = new IntersectionObserver(entries => {
+      if (document.visibilityState !== "visible") return;
       for (const entry of entries) if (entry.isIntersecting && entry.intersectionRatio >= 0.6)
         window.attentionHits.push(entry.target.dataset.observeMessageId);
     }, { root: reading, threshold: 0.6 });
-    reading.querySelectorAll("[data-message-observe]").forEach(node => observer.observe(node));
+    const nodes = [...reading.querySelectorAll("[data-message-observe]")];
+    nodes.forEach(node => observer.observe(node));
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState !== "visible") return;
+      nodes.forEach(node => { observer.unobserve(node); observer.observe(node); });
+    });
   });
+  await page.waitForTimeout(100);
+  assert.deepEqual(await page.evaluate(() => window.attentionHits), [], "hidden load cannot mark observed");
+  await page.evaluate(() => { window.testVisibility = "visible"; document.dispatchEvent(new Event("visibilitychange")); });
   await page.waitForFunction(() => window.attentionHits.includes("tall"));
   const evidence = await page.evaluate(() => {
     const reading = document.getElementById("reading").getBoundingClientRect();
@@ -32,5 +43,5 @@ try {
   });
   assert.ok(evidence.wholeRowRatioCeiling < 0.6);
   assert.deepEqual(evidence.hits, ["tall"]);
-  console.log("PASS tall-item top sentinel observed; hidden row remained unread");
+  console.log("PASS hidden load stayed unread; foreground resampled tall sentinel; hidden row remained unread");
 } finally { await browser.close(); }

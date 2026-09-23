@@ -20,6 +20,7 @@ import { formatRelativeTime } from "@/lib/utils";
 import { beginTaskSync } from "@/lib/tasks/delight-events";
 import { conversationHeaders, shouldSendComposerKey } from "@/components/app/messages/conversation-client-model";
 import { ConversationPoller } from "@/lib/conversations/polling";
+import { loadDeepLinkedComment } from "@/lib/conversations/deep-link-comment";
 import { useConversationCaches } from "@/components/app/messages/conversation-session-provider";
 
 export type ConversationFeedProps = {
@@ -283,7 +284,14 @@ function ConversationFeedState({
         .catch(() => { for (const comment of visible) observedCommentsRef.current.delete(comment.id); });
     }, { threshold: 0.6 });
     for (const node of nodes) observer.observe(node);
-    return () => observer.disconnect();
+    // IntersectionObserver does not repeat an unchanged ratio when a hidden
+    // tab returns to foreground. Re-observe loaded sentinels on that transition.
+    const resample = () => {
+      if (document.visibilityState !== "visible") return;
+      for (const node of nodes) { observer.unobserve(node); observer.observe(node); }
+    };
+    document.addEventListener("visibilitychange", resample);
+    return () => { document.removeEventListener("visibilitychange", resample); observer.disconnect(); };
   }, [access, comments, fixtureActor, taskId]);
 
   useEffect(() => {
@@ -293,17 +301,26 @@ function ConversationFeedState({
     if (!comments.some(comment => comment.id === id && comment.body !== null)) {
       if (!fixtureActor && access === "ready" && !deepLinkLoadAttemptedRef.current.has(id)) {
         deepLinkLoadAttemptedRef.current.add(id);
-        void fetch("/api/message-attention", { method: "POST", credentials: "same-origin", cache: "no-store",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "status", items: [{ kind: "task_discussion", scopeId: taskId, itemId: id }] }),
-        }).then(async response => response.ok ? await response.json() as { ok: boolean; value?: { positions: { itemId: string; createSeq: number }[] } } : null)
-          .then(async result => {
-            const sequence = result?.ok ? result.value?.positions.find(position => position.itemId === id)?.createSeq : undefined;
-            if (!sequence || !Number.isSafeInteger(sequence)) return;
-            const page = await apiResult<TaskCommentPage>(discussionUrl("comments", { taskId, beforeCreateSeq: sequence + 1, limit: 100 }), fixtureActor);
-            if (page.ok && page.value.comments.some(comment => comment.id === id && comment.body !== null))
-              setComments(current => mergeComments(current, page.value.comments));
-          }).catch(() => { /* Keep a missing or revoked target private. */ });
+        const generation = generationRef.current;
+        const controller = new AbortController();
+        operationControllersRef.current.add(controller);
+        void loadDeepLinkedComment({
+          commentId: id,
+          isCurrent: () => generation === generationRef.current && !controller.signal.aborted,
+          position: async () => {
+            const response = await fetch("/api/message-attention", { method: "POST", credentials: "same-origin", cache: "no-store",
+              headers: { "Content-Type": "application/json" }, signal: controller.signal,
+              body: JSON.stringify({ action: "status", items: [{ kind: "task_discussion", scopeId: taskId, itemId: id }] }),
+            });
+            if (!response.ok) return { ok: false, code: "unavailable" } as const;
+            return await response.json() as { ok: true; value: { positions: { itemId: string; createSeq: number }[] } } |
+              { ok: false; code: "unavailable" };
+          },
+          page: beforeCreateSeq => apiResult<TaskCommentPage>(
+            discussionUrl("comments", { taskId, beforeCreateSeq, limit: 100 }), fixtureActor, { signal: controller.signal }),
+          onLoaded: loaded => setComments(current => mergeComments(current, loaded)),
+        }).catch(() => { /* Keep a missing or revoked target private. */ })
+          .finally(() => operationControllersRef.current.delete(controller));
       }
       return;
     }

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
 import { createClient } from "@libsql/client";
-import { createLocalConversationDatabaseAdapter } from "./database";
+import { createLocalConversationDatabaseAdapter, type ConversationSqlExecutor } from "./database";
 import { createConversationService } from "./service";
 import { createTaskDiscussionService } from "./task-discussion";
 import { createMessageAttentionService } from "./attention";
@@ -191,5 +191,42 @@ test("an authorized deep link locates an older Task comment beyond the first pag
     assert.deepEqual(await f.attention.readStatus({ actorId: "attention_foreign", items: [{
       kind: "task_discussion", scopeId: taskId, itemId: "older_comment_1",
     }] }), { ok: false, code: "unavailable" });
+  } finally { f.client.close(); }
+});
+
+test("100 visible statuses use one authorized read and retain exact per-item coverage", async () => {
+  const f = await fixture();
+  try {
+    assert.equal((await f.discussion.openTaskDiscussion({ actorId: "attention_alice", taskId })).ok, true);
+    const items = Array.from({ length: 100 }, (_, index) => ({
+      kind: "task_discussion" as const, scopeId: taskId, itemId: `status_comment_${index + 1}`,
+    }));
+    await f.client.batch(items.map((item, index) => ({
+      sql: `INSERT INTO comments(id,workspace_id,task_id,user_id,body,client_request_id,request_hash,create_seq,revision)
+        VALUES(?,?,?,'attention_alice',?,?,?, ?,1)`,
+      args: [item.itemId, project, taskId, `Body ${index + 1}`, `status_request_${index + 1}`,
+        `status_hash_${index + 1}`, index + 1],
+    })), "write");
+    await f.client.execute({ sql: `INSERT INTO message_read_coverage
+      (user_id,source_kind,scope_id,root_key,range_start,range_end,observed_at_ms)
+      VALUES('attention_bob','task_discussion',?,'',1,1,1)`, args: [taskId] });
+    let statements = 0;
+    const base = createLocalConversationDatabaseAdapter({ client: f.client });
+    const attention = createMessageAttentionService({ ...base,
+      transaction: <T>(mode: "read" | "write", operation: (db: ConversationSqlExecutor) => Promise<T>) =>
+        base.transaction(mode, db => operation({ execute: statement => {
+          statements += 1;
+          return db.execute(statement);
+        } })),
+    });
+    const status = await attention.readStatus({ actorId: "attention_bob", items });
+    if (!status.ok) assert.fail(`Status failed: ${status.code}`);
+    assert.equal(statements, 1, "remote read cost cannot scale with visible row count");
+    assert.equal(status.value.positions.length, 100);
+    assert.deepEqual(status.value.positions[0], { itemId: items[0].itemId, createSeq: 1 });
+    assert.equal(status.value.unreadItemIds.length, 99);
+    assert.equal(status.value.unreadItemIds.includes(items[0].itemId), false);
+    assert.deepEqual(await attention.readStatus({ actorId: "attention_foreign", items }),
+      { ok: false, code: "unavailable" }, "one missing membership refuses the whole batch");
   } finally { f.client.close(); }
 });
