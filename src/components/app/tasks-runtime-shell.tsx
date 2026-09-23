@@ -221,6 +221,7 @@ export async function TasksRuntimeShell({
         <DomainProvider
           domain={domain}
           boardName={boardName}
+          workspaceName={workspace?.name ?? null}
           boardDescription={workspace?.description ?? null}
           currency={workspace?.currency ?? null}
           budgetCents={workspace?.budgetCents ?? null}

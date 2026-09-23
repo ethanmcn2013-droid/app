@@ -17,6 +17,8 @@ type DomainCtx = {
   pack: DomainPack;
   workspaceId: string;
   workspaceSlug: string;
+  /** Persisted Project name, independent of the domain example copy. */
+  workspaceName: string | null;
   /** Per-workspace board name override from the meta table.
    *  Null when no override has been set, consumers fall back to
    *  `shortenTitle(pack.workspaceTitle)` in that case. */
@@ -59,6 +61,7 @@ export function DomainProvider({
   domain,
   workspaceId,
   workspaceSlug,
+  workspaceName,
   boardName,
   boardDescription,
   currency,
@@ -77,6 +80,8 @@ export function DomainProvider({
   domain: DomainId;
   workspaceId: string;
   workspaceSlug: string;
+  /** Resolved from the authorized workspaces row. */
+  workspaceName?: string | null;
   personalization: WorkspacePersonalization;
   /** Resolved from meta table in the layout server component. */
   boardName?: string | null;
@@ -113,6 +118,7 @@ export function DomainProvider({
         pack: DOMAINS[domain],
         workspaceId,
         workspaceSlug,
+        workspaceName: workspaceName ?? null,
         boardName: boardName ?? null,
         boardDescription: boardDescription ?? null,
         columnConfig: resolvedConfig,
@@ -133,6 +139,8 @@ export function DomainProvider({
 export function useDomain(): DomainPack & {
   /** Resolved board-name override (null = not overridden). */
   boardName: string | null;
+  /** Persisted Project name (null outside the Tasks runtime). */
+  workspaceName: string | null;
   /** Resolved project description (null = the owner hasn't written one). */
   boardDescription: string | null;
 } {
@@ -142,9 +150,9 @@ export function useDomain(): DomainPack & {
     // outside the app shell (e.g. marketing pages embed components).
     // Wedding (not marketing) so an out-of-shell render still shows a
     // real 80% audience, never the tech-company dogfood board.
-    return { ...DOMAINS.wedding, boardName: null, boardDescription: null };
+    return { ...DOMAINS.wedding, boardName: null, workspaceName: null, boardDescription: null };
   }
-  return { ...v.pack, boardName: v.boardName, boardDescription: v.boardDescription };
+  return { ...v.pack, boardName: v.boardName, workspaceName: v.workspaceName, boardDescription: v.boardDescription };
 }
 
 /** Active workspace metadata. Returns null when called outside the

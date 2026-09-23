@@ -210,27 +210,77 @@ test("actual Home page carries its explicit scope and never invents a new-user v
   let permitted = true;
   let enabled = true;
   const calls: unknown[] = [];
+  const resolved: unknown[] = [];
   const page = load<typeof import("./page")>("./page.tsx", {
     "next/navigation": { redirect: () => { throw new Error("redirect"); }, notFound: () => { throw new Error("not-found"); } },
     "@/lib/access-mode": { isDemoMode: () => false },
     "@/server/app-access": { requireAppAccessTasks: async () => {} },
     "@/modules/signal/home": { requireSignalUser: async () => "synthetic", parseBriefingReadScopeHint, planningPeriodsEnabled: () => enabled },
     "./home-data": { loadHomeData: async (input: unknown) => { calls.push(input); return permitted ? data : { kind: "new-user" }; } },
-    "@/components/app/home/home-view": { HomeView: () => null, HomeNewUser: () => null },
+    "@/server/projects/route-authz": { resolveProjectForRoute: async (id: unknown) => { resolved.push(id); return id ? { kind: "ready", project: { id, name: "B" } } : { kind: "empty" }; } },
+    "@/components/app/active-project-route-sync": { ActiveProjectRouteSync: () => null },
+    "@/components/app/home/home-view": { HomeView: () => null, HomeNewUser: () => null, HomeProjectUnavailable: () => null },
   });
   for (const flag of [true, false]) {
     enabled = flag;
     await page.default({ searchParams: Promise.resolve({ workspaceId: "project-b", planningPeriodId: "season" }) });
     assert.deepEqual(calls.at(-1), { clerkId: "synthetic", scope: { kind: "workspace", workspaceId: "project-b" } });
+    assert.equal(resolved.at(-1), "project-b", "chrome reauthorizes the scope Signal actually read");
   }
   const before = calls.length;
   await assert.rejects(page.default({ searchParams: Promise.resolve({ workspaceId: ["project-b"] }) }), /not-found/);
   await assert.rejects(page.default({ searchParams: Promise.resolve({ planningPeriodId: "season" }) }), /not-found/);
   assert.equal(calls.length, before);
   permitted = false;
+  const beforeResolved = resolved.length;
   await assert.rejects(page.default({ searchParams: Promise.resolve({ workspaceId: "project-b" }) }), /not-found/);
-  await page.default();
+  assert.equal(resolved.length, beforeResolved, "a refused explicit scope never consults the ambient Tasks fallback");
+  const newUser = await page.default();
   assert.deepEqual(calls.at(-1), { clerkId: "synthetic" }, "a bare new-user visit remains supported");
+  assert.equal(newUser.props.children[0].props.project, null, "a truly empty Home publishes no Project");
+});
+
+test("bare Home reads a fresh Tasks creator's authorized Project without a Signal preference", async () => {
+  const { data } = await fixture([]);
+  const calls: unknown[] = [];
+  const resolved: unknown[] = [];
+  const project = { id: "project-b", name: "Personal" };
+  const page = load<typeof import("./page")>("./page.tsx", {
+    "next/navigation": { redirect: () => { throw new Error("redirect"); }, notFound: () => { throw new Error("not-found"); } },
+    "@/lib/access-mode": { isDemoMode: () => false },
+    "@/server/app-access": { requireAppAccessTasks: async () => {} },
+    "@/modules/signal/home": { requireSignalUser: async () => "clerk-creator", parseBriefingReadScopeHint, planningPeriodsEnabled: () => false },
+    "./home-data": { loadHomeData: async (input: { scope?: SignalScope }) => { calls.push(input); return input.scope ? data : { kind: "new-user" }; } },
+    "@/server/projects/route-authz": { resolveProjectForRoute: async (id: unknown) => {
+      resolved.push(id);
+      return { kind: "ready", workspaceId: "project-b", project };
+    } },
+    "@/components/app/active-project-route-sync": { ActiveProjectRouteSync: () => null },
+    "@/components/app/home/home-view": { HomeView: () => null, HomeNewUser: () => null, HomeProjectUnavailable: () => null },
+  });
+  const result = await page.default();
+  assert.deepEqual(calls, [
+    { clerkId: "clerk-creator" },
+    { clerkId: "clerk-creator", scope: { kind: "workspace", workspaceId: "project-b" } },
+  ]);
+  assert.deepEqual(resolved, [undefined, "project-b"], "Tasks resolves the bare fallback; Home chrome rechecks the actual Signal scope");
+  assert.equal(result.props.children[0].props.project, project);
+  assert.equal(result.props.children[0].props.requestedProjectId, null, "a bare route snapshot uses the bare route key");
+});
+
+test("bare Home with a Tasks Project never tells the creator to set up another workspace if Signal is unavailable", async () => {
+  const page = load<typeof import("./page")>("./page.tsx", {
+    "next/navigation": { redirect: () => { throw new Error("redirect"); }, notFound: () => { throw new Error("not-found"); } },
+    "@/lib/access-mode": { isDemoMode: () => false },
+    "@/server/app-access": { requireAppAccessTasks: async () => {} },
+    "@/modules/signal/home": { requireSignalUser: async () => "clerk-creator", parseBriefingReadScopeHint, planningPeriodsEnabled: () => false },
+    "./home-data": { loadHomeData: async () => ({ kind: "new-user" }) },
+    "@/server/projects/route-authz": { resolveProjectForRoute: async () => ({ kind: "ready", workspaceId: "project-b", project: { id: "project-b", name: "Personal" } }) },
+    "@/components/app/active-project-route-sync": { ActiveProjectRouteSync: () => null },
+    "@/components/app/home/home-view": { HomeView: () => null, HomeNewUser: () => "wrong-setup", HomeProjectUnavailable: () => "temporarily-unavailable" },
+  });
+  const result = await page.default();
+  assert.equal(result.props.children[1].type(), "temporarily-unavailable");
 });
 
 function analyticsDispatcherFixture() {
@@ -329,4 +379,3 @@ test("engine selection retains legacy/period behavior after shared hint validati
   }
   assert.equal(observed.length, 0);
 });
-
