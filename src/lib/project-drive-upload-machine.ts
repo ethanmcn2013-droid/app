@@ -1,5 +1,6 @@
 import type { DriveUploadSessionResult, FinalizeDriveUploadResult } from "@/server/connections/drive-uploads";
 import type { DriveResumableUploadOptions, DriveResumableUploadResult } from "./drive-resumable-upload";
+import type { DriveUploadRecoveryResult } from "./project-drive-upload-recovery";
 
 export type DriveUploadView = Readonly<{
   phase: "checking" | "uploading" | "confirming" | "paused" | "fallback" | "native" | "native-uncertain" | "complete" | "cancelled";
@@ -9,6 +10,8 @@ export type DriveUploadView = Readonly<{
 export type DriveUploadPorts = {
   create: (taskId: string, input: { resourceId: string; name: string; mimeType: string; sizeBytes: number }) => Promise<DriveUploadSessionResult>;
   upload: (options: DriveResumableUploadOptions) => Promise<DriveResumableUploadResult>;
+  /** Probe and adopt the exact saved claim. This path cannot mint a session or send bytes. */
+  recover: (taskId: string, resourceId: string) => Promise<DriveUploadRecoveryResult>;
   finalize: (resourceId: string, fileId: string) => Promise<FinalizeDriveUploadResult>;
   native: (taskId: string, file: File) => Promise<unknown>;
 };
@@ -54,6 +57,18 @@ export function createDriveUploadAttempt(taskId: string, resourceId: string, fil
       if (permit.kind === "paused" || abort.signal.aborted) { pause(); return; }
       emit("uploading", "Sending to Google Drive…", permit.startOffset);
       const result = await ports.upload({ sessionUrl: permit.sessionUrl, startOffset: permit.startOffset, file, signal: abort.signal, onProgress: (bytes) => emit("uploading", "Sending to Google Drive…", bytes) });
+      if (result.kind === "paused" && result.reason === "ambiguous" && !abort.signal.aborted && !disposed) {
+        // The browser can lose Google's acknowledgment even when Google has
+        // the bytes. Ask the server once about this saved resource; unlike
+        // create(), recover() cannot mint another session or send file data.
+        emit("checking", "Checking the same file with Google Drive…");
+        const recovered = await ports.recover(taskId, resourceId);
+        if (abort.signal.aborted || disposed) return;
+        if (recovered === "complete") {
+          emit("complete", "Attached in Google Drive.", file.size);
+          return;
+        }
+      }
       if (result.kind !== "complete") { pause(); return; }
       emit("confirming", "File received by Google. Confirming attachment…", file.size);
       await ports.finalize(resourceId, result.fileId);
