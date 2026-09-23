@@ -13,7 +13,7 @@ before(async () => {
   Form = (await import("./wedding-date-form")).WeddingDateForm;
   Overview = (await import("./project-overview")).ProjectOverview;
 });
-const router = { back() {}, forward() {}, push() {}, replace() {}, refresh() {}, hmrRefresh() {}, prefetch: async () => {} };
+const router = { back() {}, forward() {}, push() {}, replace() {}, refresh() {}, hmrRefresh() {}, prefetch: async () => {}, bfcacheId: "test" };
 const initial: SponsoredWeddingDate = { projectId: "a", weddingDate: null, revision: 1, canManage: true, access: { status: "active", expiresAt: "2028-03-06T12:00:00Z" } };
 const overview: ProjectOverviewData = { workspaceId: "a", slug: "a", displayName: "Our wedding", purpose: null, createdAt: null, ownerUserId: "owner", isOwner: true, members: [], taskStats: { total: 0, complete: 0, overdue: 0, undated: 0, progressPct: 0 }, milestones: [], recentEvents: [], declaredStatus: null, targetDate: "2028-12-12", program: null, sponsoredWeddingDate: initial };
 function render(element: ReturnType<typeof createElement>) {
