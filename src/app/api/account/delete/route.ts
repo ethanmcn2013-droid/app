@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { deleteAccountForUser } from "@/server/account";
 import { beginAccountDeletion } from "@/server/account-deletion-lifecycle";
 
+const RESPONSE_HEADERS = { "Cache-Control": "private, no-store" };
+
 /**
  * POST /api/account/delete
  *
@@ -30,7 +32,7 @@ import { beginAccountDeletion } from "@/server/account-deletion-lifecycle";
 export async function POST() {
   const { userId } = await auth();
   if (!userId) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "unauthorized" }, { status: 401, headers: RESPONSE_HEADERS });
   }
 
   try {
@@ -42,12 +44,11 @@ export async function POST() {
     const client = await clerkClient();
     await client.users.deleteUser(userId);
 
-    return NextResponse.json({ ok: true });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ ok: true }, { headers: RESPONSE_HEADERS });
+  } catch {
     return NextResponse.json(
-      { error: "delete_failed", message },
-      { status: 500 },
+      { error: "delete_failed", message: "Your account deletion could not be completed. Please try again." },
+      { status: 500, headers: RESPONSE_HEADERS },
     );
   }
 }

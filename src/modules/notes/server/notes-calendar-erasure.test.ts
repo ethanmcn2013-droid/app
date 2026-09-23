@@ -110,7 +110,7 @@ function routeFixture(f: Fixture, revoke: Google["revokeGoogleToken"]) {
   const logs: unknown[] = [];
   const attempted: string[] = [];
   const deleted: string[] = [];
-  const state = { userId: "owner-a" as string | null, fenceFails: false };
+  const state = { userId: "owner-a" as string | null, fenceFails: false, clerkFails: false };
   const orchestrator = unified(revoke, logs, attempted);
   const product = (name: string) => ({ eraseForUser: async () => { attempted.push(name); return { ok: true }; } });
   const account = loadModule<typeof import("@/server/account")>("./account.ts", {
@@ -127,7 +127,10 @@ function routeFixture(f: Fixture, revoke: Google["revokeGoogleToken"]) {
   const route = loadModule<typeof import("@/app/api/account/delete/route")>("../app/api/account/delete/route.ts", {
     "@clerk/nextjs/server": {
       auth: async () => ({ userId: state.userId }),
-      clerkClient: async () => ({ users: { deleteUser: async (id: string) => { deleted.push(id); } } }),
+      clerkClient: async () => ({ users: { deleteUser: async (id: string) => {
+        if (state.clerkFails) throw new Error("private-clerk-provider-response owner-a");
+        deleted.push(id);
+      } } }),
     },
     "next/server": { NextResponse: TestResponse },
     "@/server/account": account,
@@ -161,14 +164,17 @@ test("actual account route retains Notes on provider failure, retries, then dele
     });
     const first = await r.route.POST();
     assert.equal(first.status, 500);
-    assert.deepEqual(await first.json(), { error: "delete_failed", message: "Unified account erasure incomplete: Notes" });
+    assert.equal(first.headers.get("cache-control"), "private, no-store");
+    assert.deepEqual(await first.json(), { error: "delete_failed", message: "Your account deletion could not be completed. Please try again." });
     assert.deepEqual(r.deleted, []);
     assert.equal(r.attempted[0], "Fence");
     assert.deepEqual(r.attempted.slice(1).sort(), ["Signal", "Tasks", "Timeline"]);
     assert.deepEqual(await f.gdpr.exportForUser("owner-a"), original);
     assert.equal((await f.connections())[0]?.refreshToken, "synthetic-owner-a");
     fail = false;
-    assert.equal((await r.route.POST()).status, 200);
+    const successfulRetry = await r.route.POST();
+    assert.equal(successfulRetry.status, 200);
+    assert.equal(successfulRetry.headers.get("cache-control"), "private, no-store");
     assert.deepEqual(r.deleted, ["owner-a"]);
     const erased = await f.gdpr.exportForUser("owner-a");
     assert.deepEqual(erased, { available: true, notes: [], noteTaskSendOutbox: [], calendarConnections: [], spawnedCalendarEvents: [], preferences: null });
@@ -177,6 +183,29 @@ test("actual account route retains Notes on provider failure, retries, then dele
     assert.equal((await r.route.POST()).status, 200);
     assert.deepEqual(tokens, ["synthetic-owner-a", "synthetic-owner-a"], "completed retry has no credential to revoke");
     assert.doesNotMatch(JSON.stringify(r.logs), /synthetic-|refreshToken|refresh_token/);
+  } finally { f.cleanup(); }
+});
+
+test("Clerk failure after product erasure returns no private provider detail and remains retryable", async () => {
+  const f = await fixture();
+  try {
+    const r = routeFixture(f, async () => {});
+    r.state.clerkFails = true;
+    const failed = await r.route.POST();
+    assert.equal(failed.status, 500);
+    assert.equal(failed.headers.get("cache-control"), "private, no-store");
+    assert.deepEqual(await failed.json(), {
+      error: "delete_failed",
+      message: "Your account deletion could not be completed. Please try again.",
+    });
+    assert.deepEqual(r.deleted, [], "Clerk deletion was not acknowledged");
+    assert.deepEqual((await f.gdpr.exportForUser("owner-a")).notes, [],
+      "product erasure completed before the failing Clerk call");
+    r.state.clerkFails = false;
+    const retried = await r.route.POST();
+    assert.equal(retried.status, 200);
+    assert.equal(retried.headers.get("cache-control"), "private, no-store");
+    assert.deepEqual(r.deleted, ["owner-a"]);
   } finally { f.cleanup(); }
 });
 
@@ -194,7 +223,8 @@ test("a later SQLite delete failure rolls back all Notes rows; already-revoked r
     }));
     const first = await r.route.POST();
     assert.equal(first.status, 500);
-    assert.doesNotMatch(await first.text(), /synthetic-|SQL failure/);
+    assert.deepEqual(await first.json(), { error: "delete_failed", message: "Your account deletion could not be completed. Please try again." });
+    assert.equal(first.headers.get("cache-control"), "private, no-store");
     assert.deepEqual(r.deleted, []);
     assert.deepEqual(await f.gdpr.exportForUser("owner-a"), before);
     assert.equal((await f.connections())[0]?.refreshToken, "synthetic-owner-a");
@@ -337,11 +367,16 @@ test("actual delete route requires auth and successful existing deletion fence b
   try {
     const r = routeFixture(f, async () => { throw new Error("Unexpected provider call"); });
     r.state.userId = null;
-    assert.equal((await r.route.POST()).status, 401);
+    const unauthenticated = await r.route.POST();
+    assert.equal(unauthenticated.status, 401);
+    assert.equal(unauthenticated.headers.get("cache-control"), "private, no-store");
     assert.deepEqual(r.attempted, []);
     r.state.userId = "owner-a";
     r.state.fenceFails = true;
-    assert.equal((await r.route.POST()).status, 500);
+    const refused = await r.route.POST();
+    assert.equal(refused.status, 500);
+    assert.equal(refused.headers.get("cache-control"), "private, no-store");
+    assert.deepEqual(await refused.json(), { error: "delete_failed", message: "Your account deletion could not be completed. Please try again." });
     assert.deepEqual(r.attempted, ["Fence"]);
     assert.deepEqual(r.deleted, []);
     assert.equal((await f.connections()).length, 1);
