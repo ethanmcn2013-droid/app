@@ -8,6 +8,10 @@ next cycle.
 
 The candidate brings directed Project messages and Task Discussion comments into the shared Inbox with current-membership links back to their source. Opening visible content records private per-reader coverage; hidden replies remain unread, and an explicit Mark all seen action captures a committed source boundary. The additive 0037 Tasks migration stores only read ranges and cleans them on account, conversation, and Task deletion, including foreign-key-off recovery paths. Local persistence and migration tests passed; controlled two-session receiving and production migration are still required before a release claim.
 
+## 2026-09-23 · Production Sprint candidate · Task mentions retain their recipient
+
+Selecting a person in Task Discussion now retains that recipient when the mention inserts text in the same interaction. A rendered React browser regression covers two quick selections, body edits, send, and draft clear and restore. This corrects a failed controlled-preview comment; the directed Inbox journey must be repeated with a new owned comment on a later candidate before it can be accepted.
+
 ## 2026-09-23 · January candidate · Drive disconnect keeps its evidence
 
 After reconnecting the same Google account, the storage owner can explicitly check and restore the existing board folder. Signal verifies Google identity, the original folder and current member permissions before restoring Drive intake; earlier files and their ownership stay unchanged. Pending disconnects, member removals and deletion keep the repair unavailable. Local tests and independent source review passed; real Google reconnect receiving and production activation remain open.
