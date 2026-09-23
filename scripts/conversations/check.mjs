@@ -13,7 +13,7 @@ for (const key of Object.keys(environment)) {
 }
 environment.PC06_WORK_DIR = directory;
 environment.PC08_WORK_DIR = directory;
-const files = ["src/lib/conversations", "src/server/conversations", "src/components/app/messages"]
+const files = ["src/lib/conversations", "src/server/conversations", "src/components/app/messages", "src/components/app/task-detail"]
   .flatMap((folder) => readdirSync(join(root, folder)).filter((name) => name.endsWith(".test.ts")).map((name) => `${folder}/${name}`));
 // The task creation core retains its own domain folder.
 try {

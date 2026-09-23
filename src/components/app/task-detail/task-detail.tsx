@@ -25,6 +25,7 @@ import { useDomain, useColumnConfig } from "@/lib/domain-context";
 import { isTaskDone } from "@/lib/board-columns";
 import { loadTaskConversationAction } from "@/server/actions/task-conversation";
 import type { TaskConversationSurface } from "@/server/conversations/task-history-loader";
+import { readTaskConversationWithSoftDeadline } from "./conversation-read";
 
 import { TaskIdChip, EditedStamp } from "@/components/app/detail-panel/panel-header";
 import { DescriptionEditor } from "@/components/app/detail-panel/description-editor";
@@ -53,7 +54,8 @@ export type TaskDetailProps = {
 // ─── Conversation logic (moved from task-detail-panel.tsx) ───────────────────
 
 function useConversation(task: Task) {
-  const [surface, setSurface] = useState<TaskConversationSurface | null>(null);
+  const [resolved, setResolved] = useState<{ taskId: string; value: TaskConversationSurface } | null>(null);
+  const surface = resolved?.taskId === task.id ? resolved.value : null;
   const [loading, setLoading] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
   const activeTaskRef = useRef<string | null>(task.id);
@@ -84,29 +86,29 @@ function useConversation(task: Task) {
       setLoading(true);
       setTimedOut(false);
 
-      const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("timeout")), 5000),
-      );
-
-      Promise.race([loadTaskConversationAction(taskId), timeout])
-        .then((result) => {
-          if (signal.ignored || !isCurrentRequest(taskId, generation)) return;
-          if (!result.ok) throw new Error(result.code);
-          setSurface(result.value);
-        })
-        .catch((err) => {
-          if (!signal.ignored && isCurrentRequest(taskId, generation)) {
-            const isTimeout = err instanceof Error && err.message === "timeout";
-            console.warn("conversation: fetch failed", err);
+      void readTaskConversationWithSoftDeadline({
+        taskId,
+        load: loadTaskConversationAction,
+        isCurrent: () => !signal.ignored && isCurrentRequest(taskId, generation),
+        onEvent: (event) => {
+          if (event.kind === "slow") {
             setLoading(false);
+            setTimedOut(true);
+          } else if (event.kind === "success") {
+            setResolved({ taskId, value: event.surface });
+            setLoading(false);
+            setTimedOut(false);
+          } else {
+            // A real denial or failure clears authorized content. A slow cue
+            // alone does not, so the eventual result can still settle.
             refuseCurrentRequest(taskId, generation);
-            setSurface(null);
-            if (isTimeout) setTimedOut(true);
+            setResolved(null);
+            setLoading(false);
+            setTimedOut(false);
+            console.warn("conversation: fetch failed");
           }
-        })
-        .finally(() => {
-          if (!signal.ignored && isCurrentRequest(taskId, generation)) setLoading(false);
-        });
+        },
+      });
     },
     [beginRequest, isCurrentRequest, refuseCurrentRequest],
   );
@@ -151,9 +153,9 @@ function useConversation(task: Task) {
         const result = await loadTaskConversationAction(task.id);
         if (signal.ignored || !isCurrentRequest(task.id, generation)) return;
         setLoading(false);
-        if (result.ok) setSurface(result.value);
+        if (result.ok) setResolved({ taskId: task.id, value: result.value });
         else if (result.code === "unavailable" || result.code === "unauthenticated") {
-          if (refuseCurrentRequest(task.id, generation)) setSurface(null);
+          if (refuseCurrentRequest(task.id, generation)) setResolved(null);
         }
       } catch {
         // Keep the authorized snapshot across a transient read failure. The
