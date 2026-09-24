@@ -108,10 +108,11 @@ export function AppSidebar({
       <div className={styles.brandRow}>
         <Link href="/app/home" className={styles.brand} aria-label="Signal Studio home">
           <span className={styles.brandMark} aria-hidden="true">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-              <path d="M2 8.5c1.6-3.4 3.2-5 4-5s1.2 1.6 1.6 3.2S8.8 9.5 10 6" />
+            {/* The Signal Studio mark: the broadcast ring around the dot. */}
+            <svg width="24" height="24" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" strokeWidth="1.6" />
+              <circle cx="12" cy="12" r="2.9" fill="currentColor" />
             </svg>
-            <i />
           </span>
           <span className={styles.brandName}>Signal Studio</span>
         </Link>

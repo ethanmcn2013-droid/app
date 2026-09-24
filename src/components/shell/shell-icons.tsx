@@ -111,6 +111,9 @@ export const ShellIcon = {
   layers: (p: IconProps) => (
     <Svg {...p}><path d="M8 2.5 13.5 5.25 8 8 2.5 5.25Z" /><path d="m2.5 8 5.5 2.75L13.5 8M2.5 10.75 8 13.5l5.5-2.75" /></Svg>
   ),
+  analytics: (p: IconProps) => (
+    <Svg {...p}><path d="M2.5 13.5h11" /><path d="M4.5 11V8M8 11V4.5M11.5 11V6.5" /></Svg>
+  ),
   arrowRight: (p: IconProps) => (
     <Svg {...p}><path d="M3.5 8h9M9 4.5 12.5 8 9 11.5" /></Svg>
   ),

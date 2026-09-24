@@ -28,6 +28,8 @@ export const WORKSPACE_DESTINATIONS: readonly ShellDestination[] = [
   { id: "notes", label: "Notes", href: "/app/notes", icon: "notes", owns: ["/app/notes"] },
   { id: "messages", label: "Messages", href: "/app/messages", icon: "messages", owns: ["/app/messages"], requiresMessages: true },
   { id: "timeline", label: "Timeline", href: "/app/timeline", icon: "timeline", owns: ["/app/timeline"] },
+  { id: "files", label: "Files", href: "/app/files", icon: "files", owns: ["/app/files"] },
+  { id: "analytics", label: "Analytics", href: "/app/analytics", icon: "analytics", owns: ["/app/analytics"] },
 ];
 
 export const FOOTER_DESTINATIONS: readonly ShellDestination[] = [

@@ -7,7 +7,7 @@ import {
   useSyncExternalStore,
   useTransition,
 } from "react";
-import { motion, AnimatePresence, useReducedMotion } from "motion/react";
+import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import {
   USERS,
   type Notification,
@@ -24,22 +24,35 @@ import { weeklyDigestNarrationAction } from "@/server/actions/ai";
 import { ShareThisWeekButton } from "@/components/app/share-this-week-button";
 import { CopySlackSummary } from "@/components/app/copy-slack-summary";
 import { RollForwardButton } from "@/components/app/inbox/roll-forward-button";
+import { AppPageHeader } from "@/components/app/page-header";
+import { ShellIcon } from "@/components/shell/shell-icons";
 import { useHydrated } from "@/lib/use-hydrated";
 import { buildGreeting } from "@/lib/personality";
 import type { PersonalityPrefs } from "@/lib/personality-prefs";
 import { TipCard } from "@/components/app/tip-card";
 import type { DirectedAttention } from "@/server/conversations/attention";
+import { ConversationAttentionSection } from "./conversation-attention";
+import styles from "./inbox.module.css";
 
 /**
- * Inbox renders two surfaces stacked:
+ * Inbox v3: a calm, list-first inbox on the shared 1180px page column.
  *
- *   1. **Today's digest**, the plain-English summary of yesterday's
- *      completions and today's due-tasks. This is exactly what the
- *      daily email *would* send tomorrow morning. Showing it inline
- *      is the design contract: zero-spam, single source.
+ * Main column, in the order a person acts on it:
+ *   - **Project messages**, mentions and Task Discussion from Projects.
+ *   - **What's stuck**, rules-based nudges the reader can dismiss.
+ *   - **Daily digest**, exactly what the morning email would send: what is
+ *     due, who mentioned you, what closed. Showing it inline is the design
+ *     contract: zero spam, single source.
+ *   - **Direct alerts**, instant pings (only @mentions and blocks). Empty
+ *     most of the time, so it sits last when empty and first when not.
  *
- *   2. **Direct alerts**, instant pings (only @mentions and blocks).
- *      Empty 95% of the time; loud when it isn't.
+ * Side column: this week's numbers with the share actions, the optional
+ * narrated recap, the tip line and a short legend of how the inbox decides
+ * what lands here. Under ~880px of content width the side column drops
+ * below the main one.
+ *
+ * The personality greeting is the page subtitle, not a banner, so the
+ * reader is greeted once.
  */
 export function InboxApp({
   notifications,
@@ -62,7 +75,7 @@ export function InboxApp({
   attentionAvailable?: boolean;
   digest: DailyDigest;
   nudges: Nudge[];
-  /** Optional. When omitted (legacy callers) the weekly section is
+  /** Optional. When omitted (legacy callers) the weekly card is
    *  hidden entirely. */
   weeklySnapshot?: WeeklyDigestSnapshot;
   /** True when the workspace has the AI key configured AND the
@@ -90,173 +103,165 @@ export function InboxApp({
    *  and tips default to off (safe fallback for legacy callers). */
   personalityPrefs?: PersonalityPrefs;
   /** Demo/review only: pins the greeting's hour to the demo clock so the
-   *  salutation cannot drift from the pinned "today" (or contradict the
-   *  digest's "Good morning" on the same screen). Omitted in production,
-   *  where the visitor's own local hour is the right one. */
+   *  salutation cannot drift from the pinned "today". Omitted in
+   *  production, where the visitor's own local hour is the right one. */
   pinnedHour?: number;
 }) {
   const { openTask } = useTaskPanel();
   const displayName = userName?.trim() || null;
+  const showAttention = attention !== undefined || !attentionAvailable;
+  const greeting = useSessionGreeting({
+    name: userName ?? null,
+    dueToday: digest.dueToday.length,
+    overdueCount: overdueCount ?? 0,
+    enabled: personalityPrefs?.greeting ?? false,
+    pinnedHour,
+  });
+
+  const alerts = (
+    <AlertsSection
+      key="alerts"
+      notifications={notifications}
+      attentionShown={showAttention}
+      onOpen={openTask}
+    />
+  );
 
   return (
-    /* bg-bg: the inbox reads on white — its quiet uppercase kickers sit
-       directly on the page ground, and the room wash (T·95) puts them a
-       hair under the 4.5:1 Axe bar. The lab specifies the room views,
-       not the inbox; white stays its ground. */
-    <div className="thin-scroll flex-1 overflow-auto bg-bg px-4 py-5 md:px-8 md:py-6">
-      <div className="mx-auto max-w-[820px] space-y-8">
-        <GreetingBanner
-          name={userName ?? null}
-          dueToday={digest.dueToday.length}
-          overdueCount={overdueCount ?? 0}
-          enabled={personalityPrefs?.greeting ?? false}
-          pinnedHour={pinnedHour}
-        />
+    <MotionConfig reducedMotion="user">
+      <AppPageHeader
+        description={greeting ?? "Anything that needs you, plus one summary a day."}
+        actions={
+          typeof overdueCount === "number" && overdueCount > 0 ? (
+            <RollForwardButton overdueCount={overdueCount} />
+          ) : null
+        }
+      />
+      <div className={`${styles.scroll} thin-scroll`}>
+        <div className={`${styles.inner} mx-auto w-full max-w-[1180px] px-4 md:px-8`}>
+          <div className={styles.grid}>
+            <div className={styles.column}>
+              {notifications.length > 0 ? alerts : null}
 
-        <TipCard context="inbox" enabled={personalityPrefs?.tips ?? false} />
+              {showAttention ? (
+                <ConversationAttentionSection initial={attention ?? []} available={attentionAvailable} />
+              ) : null}
 
-        {attention !== undefined || !attentionAvailable ? (
-          <ConversationAttentionSection initial={attention ?? []} available={attentionAvailable} />
-        ) : null}
+              <NudgesSection nudges={nudges} onOpen={openTask} />
 
-        <NudgesSection nudges={nudges} onOpen={openTask} />
+              <DigestSection
+                digest={digest}
+                digestUserName={displayName}
+                onOpen={openTask}
+              />
 
-        {weeklySnapshot && weeklyEnabled ? (
-          <WeeklyRecapSection snapshot={weeklySnapshot} />
-        ) : null}
+              {notifications.length === 0 ? alerts : null}
+            </div>
 
-        {/* Today's digest */}
-        <section>
-          <SectionHead
-            eyebrow="Daily digest"
-            title={displayName ? `Good morning, ${displayName}.` : "Good morning."}
-            subtitle="Your one summary for the day. We don’t send anything else unless someone tags you directly."
-            action={
-              <div className="flex items-center gap-2">
-                {workspaceId && weeklySnapshot ? (
-                  <ShareThisWeekButton
-                    workspaceId={workspaceId}
-                    closedThisWeek={weeklySnapshot.closedThisWeek}
-                  />
-                ) : null}
-                {workspaceId &&
-                weeklySnapshot &&
-                workspaceName &&
-                workspaceSlug ? (
-                  <CopySlackSummary
-                    workspaceName={workspaceName}
-                    workspaceSlug={workspaceSlug}
-                    closedThisWeek={weeklySnapshot.closedThisWeek}
-                    closedTitles={weeklySnapshot.closedTitles}
-                  />
-                ) : null}
-                {typeof overdueCount === "number" && overdueCount > 0 ? (
-                  <RollForwardButton overdueCount={overdueCount} />
-                ) : null}
-              </div>
-            }
-          />
-
-          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-            <DigestCard
-              tone="emerald"
-              title="Closed yesterday"
-              empty="No tasks were marked done in the last 24 hours."
-              tasks={digest.completedYesterday}
-              digestUser={digest.user}
-              digestUserName={displayName}
-              onOpen={openTask}
-            />
-            <DigestCard
-              tone="brand"
-              title="Due in the next 24 hours"
-              empty="Nothing on your plate is due in the next 24 hours."
-              tasks={digest.dueToday}
-              digestUser={digest.user}
-              digestUserName={displayName}
-              onOpen={openTask}
-            />
-          </div>
-
-          <Mentions list={digest.mentions} onOpen={openTask} />
-        </section>
-
-        {/* Direct alerts */}
-        <section>
-          <SectionHead
-            eyebrow="Direct alerts"
-            title={
-              notifications.length === 0
-                ? attention !== undefined || !attentionAvailable ? "No task alerts right now." : "Inbox zero. Quiet here on purpose."
-                : `${notifications.length} ${notifications.length === 1 ? "alert" : "alerts"} for you.`
-            }
-            subtitle="We only insert here for direct @mentions and blocks. Lane moves, status flips, simple edits, none of it. Read once, move on."
-          />
-          {notifications.length === 0 ? (
-            <EmptyAlerts />
-          ) : (
-            <ul className="mt-4 space-y-2">
-              {notifications.map((n) => (
-                <NotificationRow
-                  key={n.id}
-                  notification={n}
-                  onOpen={openTask}
+            <aside className={`${styles.column} ${styles.side}`} aria-label="Summary">
+              {weeklySnapshot ? (
+                <WeekSection
+                  snapshot={weeklySnapshot}
+                  narrationEnabled={Boolean(weeklyEnabled)}
+                  actions={
+                    workspaceId ? (
+                      <>
+                        <ShareThisWeekButton
+                          workspaceId={workspaceId}
+                          closedThisWeek={weeklySnapshot.closedThisWeek}
+                        />
+                        {workspaceName && workspaceSlug ? (
+                          <CopySlackSummary
+                            workspaceName={workspaceName}
+                            workspaceSlug={workspaceSlug}
+                            closedThisWeek={weeklySnapshot.closedThisWeek}
+                            closedTitles={weeklySnapshot.closedTitles}
+                          />
+                        ) : null}
+                      </>
+                    ) : null
+                  }
                 />
-              ))}
-            </ul>
-          )}
-        </section>
+              ) : null}
+
+              <div className={styles.tip}>
+                <TipCard context="inbox" enabled={personalityPrefs?.tips ?? false} />
+              </div>
+
+              <HowItWorks />
+            </aside>
+          </div>
+        </div>
       </div>
+    </MotionConfig>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Shared pieces
+// ────────────────────────────────────────────────────────────────────
+
+function CardHead({
+  id,
+  title,
+  count,
+  countTone,
+  end,
+}: {
+  id: string;
+  title: string;
+  count?: number;
+  countTone?: "accent" | "danger";
+  end?: React.ReactNode;
+}) {
+  return (
+    <div className={styles.cardHead}>
+      <h2 id={id} className={styles.cardTitle}>
+        {title}
+        {typeof count === "number" ? (
+          <span className={styles.cardCount} data-tone={count > 0 ? countTone : undefined}>
+            <span className="sr-only">(</span>
+            {count}
+            <span className="sr-only">)</span>
+          </span>
+        ) : null}
+      </h2>
+      {end}
     </div>
   );
 }
 
-export function ConversationAttentionSection({ initial, available }: { initial: readonly DirectedAttention[]; available: boolean }) {
-  const [items, setItems] = useState(initial);
-  const [busy, setBusy] = useState(false);
-  const [failed, setFailed] = useState(!available);
-  const refresh = useCallback(async () => {
-    try {
-      const response = await fetch("/api/message-attention?action=list&limit=50", { cache: "no-store", credentials: "same-origin" });
-      const result = await response.json() as { ok: boolean; value?: DirectedAttention[] };
-      if (!response.ok || !result.ok || !result.value) throw new Error("attention_unavailable");
-      setItems(result.value);
-      setFailed(false);
-    } catch { setFailed(true); }
-  }, []);
-  useEffect(() => {
-    const onFocus = () => { void refresh(); };
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
-  }, [refresh]);
-  const markAll = async () => {
-    setBusy(true);
-    try {
-      const response = await fetch("/api/message-attention", { method: "POST", credentials: "same-origin", cache: "no-store",
-        headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "mark-all" }) });
-      if (!response.ok) throw new Error("attention_unavailable");
-      await refresh();
-    } catch { setFailed(true); } finally { setBusy(false); }
-  };
-  const unread = items.filter(item => item.seenAt === null).length;
-  return <section aria-label="Project attention" data-project-attention>
-    <SectionHead eyebrow="Project attention" title={failed ? "Attention needs a fresh check." : unread ? `${unread} ${unread === 1 ? "message" : "messages"} for you.` : "No new Project messages."}
-      subtitle="Mentions and Task Discussion from Projects you can still open. Your read state is private." />
-    {failed ? <button type="button" onClick={() => void refresh()}>Try again</button> : <>
-      {unread > 0 ? <button type="button" disabled={busy} onClick={() => void markAll()} className="mt-3 text-sm text-indigo-700 underline">{busy ? "Checking…" : "Mark all seen"}</button> : null}
-      <ul className="mt-4 space-y-2">{items.map(item => <li key={item.eventId} className="rounded-lg border border-line-soft bg-bg-elevated px-4 py-3">
-        <a href={item.href} className="block text-sm text-ink-strong underline-offset-2 hover:underline focus-visible:underline">
-          <span className="font-semibold">{item.projectName}</span> · {item.kind === "conversation" ? "Project message" : "Task Discussion"}{item.seenAt === null ? <span className="ml-2 text-indigo-700">New</span> : null}
-        </a>
-      </li>)}</ul>
-      {items.length >= 50 ? <p className="mt-2 text-xs text-ink-quiet">Showing 50 items, prioritizing unread messages. Older unread items may remain.</p> : null}
-    </>}
-  </section>;
+const CLOSE_ICON = (
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+    <path d="m4.5 4.5 7 7M11.5 4.5l-7 7" />
+  </svg>
+);
+
+const CHECK_ICON = (
+  <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="m3.5 8.5 3 3 6-7" />
+  </svg>
+);
+
+function SparkleIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M8 2.5 9.1 6.9 13.5 8 9.1 9.1 8 13.5 6.9 9.1 2.5 8 6.9 6.9Z" />
+    </svg>
+  );
+}
+
+function FlagIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3.5 14V2.75M3.5 3h8l-1.75 3 1.75 3h-8" />
+    </svg>
+  );
 }
 
 // ────────────────────────────────────────────────────────────────────
-// Nudges, the "what's stuck" feed. Cheeky on purpose; the brand can
-// afford a smirk because the policy underneath is restrained.
+// Nudges, the "what's stuck" feed. Dry on purpose; the policy
+// underneath is restrained.
 // ────────────────────────────────────────────────────────────────────
 
 const DISMISSED_KEY = "tasks_dismissed_nudges";
@@ -269,6 +274,23 @@ function readDismissedNudges(): Set<string> {
   } catch {
     return new Set();
   }
+}
+
+const NUDGE_LABEL: Record<Nudge["kind"], string> = {
+  "idle-doing": "Gone quiet",
+  "idle-review": "Waiting on review",
+  "past-due": "Past due",
+  "blocker-cleared": "Free to move",
+  "review-pile": "Reviews waiting",
+  "doing-empty": "Nothing started",
+  "llm-narration": "Suggested",
+};
+
+function nudgeTone(nudge: Nudge): "danger" | "warning" | "success" | undefined {
+  if (nudge.kind === "blocker-cleared") return "success";
+  if (nudge.severity >= 75) return "danger";
+  if (nudge.severity >= 50) return "warning";
+  return undefined;
 }
 
 function NudgesSection({
@@ -294,35 +316,40 @@ function NudgesSection({
     });
   };
 
-  if (!mounted) return null;
-
-  const visible = nudges.filter((n) => !dismissed.has(n.id));
-  if (visible.length === 0) return null;
+  // The dismissed list lives in this browser, so the card waits for
+  // hydration rather than flashing nudges the reader already cleared.
+  const visible = mounted ? nudges.filter((n) => !dismissed.has(n.id)) : [];
 
   return (
-    <section>
-      <SectionHead
-        eyebrow="What’s stuck"
-        title={`${visible.length} ${visible.length === 1 ? "thing wants" : "things want"} a nudge.`}
-        subtitle="Idle work, past-due dates, tasks that are free to move. Dismiss anything you don’t need."
-      />
-      <ul className="mt-4 space-y-2">
-        <AnimatePresence initial={false}>
-          {visible.map((n) => (
-            <NudgeCard
-              key={n.id}
-              nudge={n}
-              onOpen={onOpen}
-              onDismiss={dismiss}
-            />
-          ))}
-        </AnimatePresence>
-      </ul>
-    </section>
+    <AnimatePresence>
+      {visible.length > 0 ? (
+        <motion.section
+          key="nudges"
+          aria-labelledby="inbox-stuck"
+          className={styles.card}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.24, ease: [0.2, 0.8, 0.2, 1] }}
+        >
+          <CardHead id="inbox-stuck" title="What’s stuck" count={visible.length} countTone="danger" />
+          <p className={styles.cardNote}>
+            Work that has gone quiet or slipped its date. Dismiss anything you don’t need.
+          </p>
+          <ul className={styles.list}>
+            <AnimatePresence initial={false}>
+              {visible.map((n) => (
+                <NudgeRow key={n.id} nudge={n} onOpen={onOpen} onDismiss={dismiss} />
+              ))}
+            </AnimatePresence>
+          </ul>
+        </motion.section>
+      ) : null}
+    </AnimatePresence>
   );
 }
 
-function NudgeCard({
+function NudgeRow({
   nudge,
   onOpen,
   onDismiss,
@@ -331,70 +358,44 @@ function NudgeCard({
   onOpen: (id: string) => void;
   onDismiss: (id: string) => void;
 }) {
-  const tone = nudge.severity >= 75 ? "urgent" : nudge.severity >= 50 ? "warn" : "info";
-  const palette =
-    tone === "urgent"
-      ? "border-rose-200/80 bg-rose-50/60"
-      : tone === "warn"
-        ? "border-amber-200/80 bg-amber-50/40"
-        : "border-line-soft bg-bg-elevated/60";
-  const iconColor =
-    tone === "urgent"
-      ? "text-rose-500"
-      : tone === "warn"
-        ? "text-amber-600"
-        : "text-ink-quiet";
-
+  const tone = nudgeTone(nudge);
   return (
     <motion.li
       layout="position"
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, height: 0, marginTop: 0 }}
-      transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-      className={
-        "group relative flex items-start gap-3 rounded-xl border px-4 py-3 transition-colors " +
-        palette
-      }
+      className={styles.row}
+      exit={{ opacity: 0, height: 0, minHeight: 0, paddingTop: 0, paddingBottom: 0 }}
+      transition={{ duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
+      style={{ overflow: "hidden" }}
     >
-      <span className={"mt-0.5 flex-shrink-0 " + iconColor}>
-        <NudgeIcon kind={nudge.kind} />
-      </span>
       <button
         type="button"
         onClick={() => nudge.taskId && onOpen(nudge.taskId)}
         disabled={!nudge.taskId}
-        className="min-w-0 flex-1 text-left"
+        className={styles.rowButton}
       >
-        <div className="line-clamp-1 text-[13.5px] font-medium text-ink">
-          {nudge.headline}
-        </div>
-        <p className="mt-0.5 text-[12.5px] leading-[1.5] text-ink-soft">
-          {nudge.body}
-        </p>
+        <span className={styles.glyph} data-tone={tone}>
+          <NudgeIcon kind={nudge.kind} />
+        </span>
+        <span className={styles.rowMain}>
+          <span className={styles.rowTitle}>{nudge.headline}</span>
+          <span className={styles.rowBody}>{nudge.body}</span>
+        </span>
       </button>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onDismiss(nudge.id);
-        }}
-        aria-label="Dismiss nudge"
-        className="ml-2 inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-ink-quiet opacity-0 transition-opacity hover:bg-bg-sunken hover:text-ink-soft group-hover:opacity-100 focus-visible:opacity-100"
-      >
-        <svg
-          width="13"
-          height="13"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.7"
-          strokeLinecap="round"
+      <span className={styles.rowEnd}>
+        <span className={`${styles.pill} ${styles.wideOnly}`} data-tone={tone}>{NUDGE_LABEL[nudge.kind]}</span>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDismiss(nudge.id);
+          }}
+          aria-label="Dismiss nudge"
+          title="Dismiss"
+          className={styles.dismiss}
         >
-          <line x1="6" y1="6" x2="18" y2="18" />
-          <line x1="6" y1="18" x2="18" y2="6" />
-        </svg>
-      </button>
+          {CLOSE_ICON}
+        </button>
+      </span>
     </motion.li>
   );
 }
@@ -403,240 +404,207 @@ function NudgeIcon({ kind }: { kind: Nudge["kind"] }) {
   switch (kind) {
     case "idle-doing":
     case "idle-review":
-      return (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <circle cx="12" cy="12" r="10" />
-          <polyline points="12 6 12 12 16 14" />
-        </svg>
-      );
+      return <ShellIcon.clock size={15} />;
     case "past-due":
-      return (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="8" x2="12" y2="12" />
-          <line x1="12" y1="16" x2="12.01" y2="16" />
-        </svg>
-      );
+      return <ShellIcon.alert size={15} />;
     case "blocker-cleared":
-      return (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      );
+      return <ShellIcon.checkCircle size={15} />;
     case "review-pile":
-      return (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <line x1="3" y1="6" x2="21" y2="6" />
-          <line x1="3" y1="12" x2="21" y2="12" />
-          <line x1="3" y1="18" x2="21" y2="18" />
-        </svg>
-      );
+      return <ShellIcon.layers size={15} />;
     case "doing-empty":
       return (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M8.75 1.75 3.5 9h4l-.75 5.25L12.5 7h-4Z" />
         </svg>
       );
     case "llm-narration":
-      return (
-        // Sparkle for AI-authored nudges so the surface is honest
-        // about its source. Stroke matches the brand gradient
-        // accent used elsewhere in the AI affordances.
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 3 L13.5 9 L20 10.5 L13.5 12 L12 18 L10.5 12 L4 10.5 L10.5 9 Z" />
-        </svg>
-      );
+      // Sparkle for written nudges so the surface is honest about its
+      // source.
+      return <SparkleIcon size={15} />;
   }
 }
 
-function SectionHead({
-  eyebrow,
-  title,
-  subtitle,
-  action,
+// ────────────────────────────────────────────────────────────────────
+// Daily digest: due, mentions, closed.
+// ────────────────────────────────────────────────────────────────────
+
+const DIGEST_ROW_LIMIT = 6;
+
+function formatDigestDate(iso: string): string {
+  // `forDate` is a calendar date (YYYY-MM-DD). Read it at noon UTC and
+  // format in UTC so server and client agree on the day.
+  const d = new Date(`${iso}T12:00:00Z`);
+  if (Number.isNaN(d.getTime())) return iso;
+  return new Intl.DateTimeFormat("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: "UTC",
+  }).format(d);
+}
+
+function DigestSection({
+  digest,
+  digestUserName,
+  onOpen,
 }: {
-  eyebrow: string;
-  title: string;
-  subtitle: string;
-  /** Optional right-aligned affordance (e.g. the share-this-week
-   *  button on the daily-digest header). Sits flush with the title
-   *  row so the eyebrow + headline keep their breathing room. */
-  action?: React.ReactNode;
+  digest: DailyDigest;
+  digestUserName: string | null;
+  onOpen: (id: string) => void;
 }) {
   return (
-    <div>
-      <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-ink-quiet">
-        {eyebrow}
-      </div>
-      <div className="mt-1 flex items-start justify-between gap-3">
-        <h2 className="text-balance text-[20px] font-semibold tracking-[-0.01em] text-ink">
-          {title}
-        </h2>
-        {action ? <div className="pt-0.5">{action}</div> : null}
-      </div>
-      <p className="mt-1 max-w-[58ch] text-[13px] leading-[1.55] text-ink-soft">
-        {subtitle}
-      </p>
-    </div>
+    <section aria-labelledby="inbox-digest" className={styles.card}>
+      <CardHead
+        id="inbox-digest"
+        title="Daily digest"
+        end={<span className={styles.cardMeta}>{formatDigestDate(digest.forDate)}</span>}
+      />
+
+      <DigestGroup
+        label="Due in the next 24 hours"
+        tasks={digest.dueToday}
+        empty="Nothing on your plate is due in the next 24 hours."
+        digestUser={digest.user}
+        digestUserName={digestUserName}
+        onOpen={onOpen}
+      />
+
+      {digest.mentions.length > 0 ? (
+        <div className={styles.group}>
+          <p className={styles.groupLabel}>
+            Mentioned in the last 24 hours
+            <span className={styles.groupCount}>{digest.mentions.length}</span>
+          </p>
+          <ul className={styles.list}>
+            {digest.mentions.map((m, i) => (
+              <li key={i} className={styles.row}>
+                <button type="button" onClick={() => onOpen(m.taskId)} className={styles.rowButton}>
+                  <Avatar user={m.from} name={m.fromName} size={22} />
+                  <span className={styles.rowMain}>
+                    <span className={styles.rowLine}>
+                      <strong>{m.fromName}</strong> on <strong>{m.taskTitle}</strong>
+                    </span>
+                    <span className={styles.quote}>{m.snippet}</span>
+                  </span>
+                  <span className={styles.time}>{formatRelativeTime(m.createdAt)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      <DigestGroup
+        label="Closed yesterday"
+        tasks={digest.completedYesterday}
+        done
+        empty="No tasks were marked done in the last 24 hours."
+        digestUser={digest.user}
+        digestUserName={digestUserName}
+        onOpen={onOpen}
+      />
+    </section>
   );
 }
 
-function DigestCard({
-  title,
-  tone,
+function DigestGroup({
+  label,
   tasks,
+  done = false,
+  empty,
   digestUser,
   digestUserName,
-  empty,
   onOpen,
 }: {
-  title: string;
-  tone: "brand" | "emerald";
+  label: string;
   tasks: Task[];
+  done?: boolean;
+  empty: string;
   digestUser: UserId;
   digestUserName: string | null;
-  empty: string;
   onOpen: (id: string) => void;
 }) {
-  const dotColor = tone === "brand" ? "var(--brand)" : "#10b981";
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="rounded-xl border border-line-soft bg-white p-4"
-    >
-      <div className="flex items-center gap-2">
-        <span
-          className="block h-1.5 w-1.5 rounded-full"
-          style={{ background: dotColor }}
-        />
-        <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-soft">
-          {title}
-        </span>
-        <span className="ml-auto text-[12px] tabular-nums text-ink-quiet">
-          {tasks.length}
-        </span>
-      </div>
+    <div className={styles.group}>
+      <p className={styles.groupLabel}>
+        {label}
+        <span className={styles.groupCount}>{tasks.length}</span>
+      </p>
       {tasks.length === 0 ? (
-        <p className="mt-3 text-[12.5px] leading-[1.5] text-ink-faint">
-          {empty}
-        </p>
+        <p className={styles.groupEmpty}>{empty}</p>
       ) : (
-        <ul className="mt-3 space-y-1.5">
-          {tasks.slice(0, 6).map((t) => {
-            // This digest belongs to the signed-in assignee. Prefer that
-            // person's avatar when a Task has several assignees, and only
-            // pass the profile name for the matching id.
-            const avatarUser = t.assignees.includes(digestUser) ? digestUser : t.assignees[0];
+        <ul className={styles.list}>
+          {tasks.slice(0, DIGEST_ROW_LIMIT).map((t) => {
+            // The digest belongs to the signed-in reader, so their own face
+            // on every row is noise. Show an avatar only when the Task is
+            // someone else's, and only pass the profile name for the
+            // reader's own id.
+            const mine = t.assignees.length === 0 || t.assignees.includes(digestUser);
+            const other = mine ? null : t.assignees[0];
             return (
-              <li key={t.id}>
-                <button
-                  type="button"
-                  onClick={() => onOpen(t.id)}
-                  className="flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-bg-sunken/60"
-                >
-                  <Avatar user={avatarUser} name={avatarUser === digestUser ? digestUserName ?? undefined : undefined} size={14} />
-                  <span className="line-clamp-1 flex-1 text-[12.5px] text-ink">
-                    {t.title}
+              <li key={t.id} className={styles.row} data-align="center">
+                <button type="button" onClick={() => onOpen(t.id)} className={styles.rowButton}>
+                  <span className={styles.check} data-state={done ? "done" : undefined} aria-hidden="true">
+                    {done ? CHECK_ICON : null}
                   </span>
-                  {t.due ? (
-                    <span className="flex-shrink-0 rounded bg-bg-sunken px-1.5 py-0.5 text-[10.5px] text-ink-soft">
-                      {t.due}
-                    </span>
+                  <span className={styles.rowMain}>
+                    <span className={styles.rowTitle} data-done={done ? "" : undefined}>{t.title}</span>
+                  </span>
+                  {other ? (
+                    <Avatar user={other} name={other === digestUser ? digestUserName ?? undefined : undefined} size={20} />
                   ) : null}
+                  {!done && t.due ? <span className={styles.pill}>{t.due}</span> : null}
                 </button>
               </li>
             );
           })}
-          {tasks.length > 6 ? (
-            <li className="px-1.5 text-[11px] text-ink-quiet">
-              + {tasks.length - 6} more
-            </li>
+          {tasks.length > DIGEST_ROW_LIMIT ? (
+            <li className={styles.more}>+ {tasks.length - DIGEST_ROW_LIMIT} more</li>
           ) : null}
         </ul>
       )}
-    </motion.div>
+    </div>
   );
 }
 
-function Mentions({
-  list,
+// ────────────────────────────────────────────────────────────────────
+// Direct alerts: @mentions, blocks, reminders, milestones.
+// ────────────────────────────────────────────────────────────────────
+
+function AlertsSection({
+  notifications,
+  attentionShown,
   onOpen,
 }: {
-  list: DailyDigest["mentions"];
+  notifications: Notification[];
+  attentionShown: boolean;
   onOpen: (id: string) => void;
 }) {
-  if (list.length === 0) return null;
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.05 }}
-      className="mt-3 rounded-xl border border-brand/20 bg-brand-soft/40 p-4"
-    >
-      <div className="flex items-center gap-2">
-        <span
-          className="block h-1.5 w-1.5 rounded-full"
-          style={{ background: "var(--brand)" }}
-        />
-        <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-brand">
-          Mentioned in the last 24h
-        </span>
-      </div>
-      <ul className="mt-3 space-y-2">
-        {list.map((m, i) => (
-          <li key={i}>
-            <button
-              type="button"
-              onClick={() => onOpen(m.taskId)}
-              className="flex w-full items-start gap-2 rounded-md p-1.5 text-left transition-colors hover:bg-white/60"
-            >
-              <Avatar user={m.from} name={m.fromName} size={18} />
-              <div className="flex-1">
-                <div className="text-[12px] text-ink-soft">
-                  <span className="font-medium text-ink">{m.fromName}</span>{" "}
-                  on <span className="font-medium text-ink">{m.taskTitle}</span>
-                </div>
-                <div className="mt-0.5 text-[12.5px] text-ink-soft">
-                  &ldquo;{m.snippet}&rdquo;
-                </div>
-              </div>
-              <span className="flex-shrink-0 text-[11px] tabular-nums text-ink-quiet">
-                {formatRelativeTime(m.createdAt)}
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </motion.div>
-  );
-}
-
-function EmptyAlerts() {
-  return (
-    <div className="mt-4 rounded-xl border border-dashed border-line-soft bg-white/40 p-8 text-center">
-      <div className="mx-auto inline-flex h-10 w-10 items-center justify-center rounded-full bg-bg-sunken text-ink-quiet">
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.7"
-        >
-          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9z" />
-          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-        </svg>
-      </div>
-      <div className="mt-3 text-[14px] font-medium text-ink">
-        Nothing for you right now.
-      </div>
-      <p className="mx-auto mt-1 max-w-[40ch] text-[12.5px] leading-[1.5] text-ink-soft">
-        That&rsquo;s by design, we don&rsquo;t ping you every time a card
-        moves. Get back to work.
-      </p>
-    </div>
+    <section aria-labelledby="inbox-alerts" className={styles.card}>
+      <CardHead id="inbox-alerts" title="Direct alerts" count={notifications.length} countTone="accent" />
+      {notifications.length === 0 ? (
+        <div className={styles.zero}>
+          <span className={styles.zeroIcon}>
+            <ShellIcon.bell size={16} />
+          </span>
+          <h3 className={styles.zeroTitle}>
+            {attentionShown ? "No task alerts right now." : "Inbox zero. Quiet here on purpose."}
+          </h3>
+          <p className={styles.zeroBody}>
+            Alerts land here only when someone @mentions you or a task of yours is held up. Card moves and edits never ping you.
+          </p>
+        </div>
+      ) : (
+        <ul className={styles.list}>
+          <AnimatePresence initial={false}>
+            {notifications.map((n) => (
+              <NotificationRow key={n.id} notification={n} onOpen={onOpen} />
+            ))}
+          </AnimatePresence>
+        </ul>
+      )}
+    </section>
   );
 }
 
@@ -652,32 +620,28 @@ function NotificationRow({
   return (
     <motion.li
       layout="position"
+      className={styles.row}
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-      className="rounded-xl border border-line-soft bg-white p-3 transition-colors hover:border-ink-soft/30"
+      transition={{ duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
     >
       <button
         type="button"
         onClick={() => n.taskId && onOpen(n.taskId)}
-        className="flex w-full items-start gap-3 text-left"
+        className={styles.rowButton}
       >
         {sentence.actor ? (
-          <Avatar user={sentence.actor} size={22} />
+          <Avatar user={sentence.actor} size={24} />
         ) : (
-          <span className="block h-[22px] w-[22px] rounded-full bg-brand-soft" />
+          <span className={styles.glyph} data-size="sm" data-tone={sentence.tone ?? "accent"}>
+            {sentence.icon ?? <ShellIcon.bell size={13} />}
+          </span>
         )}
-        <div className="flex-1">
-          <div className="text-[12.5px] text-ink-soft">{sentence.line}</div>
-          {sentence.body ? (
-            <div className="mt-1 text-[12.5px] leading-[1.5] text-ink">
-              &ldquo;{sentence.body}&rdquo;
-            </div>
-          ) : null}
-        </div>
-        <span className="flex-shrink-0 text-[11px] tabular-nums text-ink-quiet">
-          {formatRelativeTime(n.createdAt)}
+        <span className={styles.rowMain}>
+          <span className={styles.rowLine}>{sentence.line}</span>
+          {sentence.body ? <span className={styles.quote}>{sentence.body}</span> : null}
         </span>
+        <span className={styles.time}>{formatRelativeTime(n.createdAt)}</span>
       </button>
     </motion.li>
   );
@@ -687,6 +651,8 @@ function renderNotificationSentence(n: Notification): {
   actor: UserId | null;
   line: React.ReactNode;
   body?: string;
+  icon?: React.ReactNode;
+  tone?: "accent" | "warning" | "success";
 } | null {
   switch (n.payload.kind) {
     case "mention":
@@ -694,13 +660,8 @@ function renderNotificationSentence(n: Notification): {
         actor: n.payload.from,
         line: (
           <>
-            <span className="font-medium text-ink">
-              {USERS[n.payload.from]?.name ?? n.payload.from}
-            </span>{" "}
-            mentioned you on{" "}
-            <span className="font-medium text-ink">
-              {n.payload.taskTitle}
-            </span>
+            <strong>{USERS[n.payload.from]?.name ?? n.payload.from}</strong> mentioned you on{" "}
+            <strong>{n.payload.taskTitle}</strong>
           </>
         ),
         body: n.payload.snippet,
@@ -708,53 +669,50 @@ function renderNotificationSentence(n: Notification): {
     case "blocked":
       return {
         actor: null,
+        icon: <ShellIcon.alert size={13} />,
+        tone: "warning",
         line: (
           <>
-            <span className="font-medium text-ink">{n.payload.taskTitle}</span>{" "}
-            is blocked by{" "}
-            <span className="font-medium text-ink">
-              {n.payload.blockerTitle}
-            </span>
+            <strong>{n.payload.taskTitle}</strong> is waiting on <strong>{n.payload.blockerTitle}</strong>
           </>
         ),
       };
     case "dueToday":
       return {
         actor: null,
+        icon: <ShellIcon.clock size={13} />,
         line: (
           <>
-            <span className="font-medium text-ink">{n.payload.taskTitle}</span>{" "}
-            is due today.
+            <strong>{n.payload.taskTitle}</strong> is due today.
           </>
         ),
       };
     case "nudge": {
-      // Recipient line: "{Name} sent a gentle reminder about '{title}'."
+      // Recipient line: "{Name} sent a gentle reminder."
       // The task title is resolved at query time via the getNotificationsForUser
       // join; the payload intentionally carries only ids (D-008 privacy rule).
       // We resolve the sender's display name from the USERS proxy (covers seeded
       // personas) with a safe "A teammate" fallback for real Clerk ids whose
-      // display name we don't have on the client.
+      // display name we don't have on the client. The row's onOpen already
+      // opens the task panel when n.taskId is set.
       const senderMeta = USERS[n.payload.fromUserId];
       const senderName = senderMeta?.name ?? "A teammate";
-      // taskTitle is carried by the NotificationRow via n.taskId; we don't
-      // have it in the payload (by design). Use the task link affordance: the
-      // row's onOpen already opens the task panel when n.taskId is set.
       return {
         actor: n.payload.fromUserId,
         line: (
           <>
-            <span className="font-medium text-ink">{senderName}</span>{" "}
-            sent a gentle reminder.
+            <strong>{senderName}</strong> sent a gentle reminder.
           </>
         ),
       };
     }
     case "milestone": {
-      // System-generated: actor is null, renders the brand-soft dot avatar.
+      // System-generated: no actor, renders the milestone flag.
       const { count } = n.payload;
       return {
         actor: null,
+        icon: <FlagIcon size={13} />,
+        tone: "success",
         line: <>That was your {count}th completed task.</>,
       };
     }
@@ -764,14 +722,12 @@ function renderNotificationSentence(n: Notification): {
 }
 
 // ────────────────────────────────────────────────────────────────────
-// GreetingBanner — one-per-session contextual greeting above the inbox.
-// Reads counts from props already available to InboxApp; computes the
-// hour client-side on mount so there is no server/client mismatch.
+// Greeting: the page subtitle, once per session.
 // ────────────────────────────────────────────────────────────────────
 
 const GREETING_SESSION_KEY = "personality:greeted:v1";
 
-function GreetingBanner({
+function useSessionGreeting({
   name,
   dueToday,
   overdueCount,
@@ -783,7 +739,7 @@ function GreetingBanner({
   overdueCount: number;
   enabled: boolean;
   pinnedHour?: number;
-}) {
+}): string | null {
   const [line, setLine] = useState<string | null>(null);
 
   useEffect(() => {
@@ -820,20 +776,47 @@ function GreetingBanner({
     return () => window.clearTimeout(timer);
   }, [name, dueToday, overdueCount, enabled, pinnedHour]);
 
-  if (!line) return null;
-
-  return (
-    <div className="rounded-lg border border-line-soft bg-bg-elevated px-4 py-3 text-[13px] leading-[1.5] text-ink-soft">
-      {line}
-    </div>
-  );
+  return line;
 }
 
 // ────────────────────────────────────────────────────────────────────
-// Weekly recap, the LLM-narrated Sunday digest. Hidden until the
-// user explicitly asks for it. Anti-spam contract holds: nothing
-// pings, nothing auto-runs. The button is the consent.
+// This week: the numbers, the share actions and the narrated recap.
 // ────────────────────────────────────────────────────────────────────
+
+function WeekSection({
+  snapshot,
+  narrationEnabled,
+  actions,
+}: {
+  snapshot: WeeklyDigestSnapshot;
+  narrationEnabled: boolean;
+  actions: React.ReactNode;
+}) {
+  const stats = [
+    { label: "Closed", value: snapshot.closedThisWeek },
+    { label: "Still open", value: snapshot.openCount },
+    { label: "Gone quiet", value: snapshot.stillCirclingTitles.length },
+  ];
+  return (
+    <section aria-labelledby="inbox-week" className={styles.card}>
+      <CardHead id="inbox-week" title="This week" end={<span className={styles.cardMeta}>Last 7 days</span>} />
+      <dl className={styles.stats}>
+        {stats.map((stat) => (
+          <div key={stat.label} className={styles.stat}>
+            <dt className={styles.statLabel}>{stat.label}</dt>
+            <dd className={styles.statValue}>{stat.value}</dd>
+          </div>
+        ))}
+      </dl>
+      {snapshot.closedThisWeek > 0 && actions ? <div className={styles.cardFoot}>{actions}</div> : null}
+      {narrationEnabled ? <WeeklyRecap snapshot={snapshot} /> : null}
+    </section>
+  );
+}
+
+// Weekly recap, the narrated Sunday digest. Hidden until the reader
+// explicitly asks for it. Anti-spam contract holds: nothing pings,
+// nothing auto-runs. The button is the consent.
 
 const WEEKLY_CACHE_KEY = "tasks_weekly_recap_cache_v1";
 
@@ -874,23 +857,16 @@ function weeklyCacheSubscribe(_onChange: () => void): () => void {
 }
 
 /** Server snapshot used during SSR / first render. We can't read
- *  localStorage on the server, so the section renders as if no
+ *  localStorage on the server, so the recap renders as if no
  *  cache exists; the client snapshot replaces it post-hydration. */
 function weeklyCacheServerSnapshot(): WeeklyCacheEntry | null {
   return null;
 }
 
-function WeeklyRecapSection({
-  snapshot,
-}: {
-  snapshot: WeeklyDigestSnapshot;
-}) {
-  const reduce = useReducedMotion();
+function WeeklyRecap({ snapshot }: { snapshot: WeeklyDigestSnapshot }) {
   // Subscribe to localStorage via useSyncExternalStore so the
   // initial cached read happens during render (post-hydration) and
-  // doesn't trip the no-setState-in-effect rule. The store ignores
-  // change events, the cache only changes via our own writes,
-  // which already setState directly.
+  // doesn't trip the no-setState-in-effect rule.
   const cached = useSyncExternalStore(
     weeklyCacheSubscribe,
     readWeeklyCache,
@@ -927,154 +903,58 @@ function WeeklyRecapSection({
   }, [isStreaming]);
 
   // Empty-state guard: if literally nothing happened this week and
-  // there's no cached recap, hide the section entirely. The brand
+  // there's no cached recap, hide the recap entirely. The brand
   // doesn't fabricate content for empty workspaces.
-  const isQuietWeek =
-    snapshot.closedThisWeek === 0 && snapshot.openCount === 0;
+  const isQuietWeek = snapshot.closedThisWeek === 0 && snapshot.openCount === 0;
   if (isQuietWeek && !cached) return null;
 
-  // Subhead copy varies by state, keep it dry, no exclamation
-  // points. The numbers do the talking.
-  const subtitle = (() => {
-    if (snapshot.closedThisWeek === 0 && snapshot.openCount > 0) {
-      return `${snapshot.openCount} still open. Quiet on closeouts.`;
-    }
-    if (snapshot.closedThisWeek > 0 && snapshot.stillCirclingTitles.length > 0) {
-      return `${snapshot.closedThisWeek} closed, ${snapshot.stillCirclingTitles.length} still circling.`;
-    }
-    if (snapshot.closedThisWeek > 0) {
-      return `${snapshot.closedThisWeek} closeout${snapshot.closedThisWeek === 1 ? "" : "s"} this week.`;
-    }
-    return "Sunday is for resets.";
-  })();
-
   return (
-    <section>
-      <SectionHead
-        eyebrow="Weekly recap"
-        title="Your week, narrated."
-        subtitle={subtitle}
-      />
-
-      <motion.div
-        layout
-        className="relative mt-4 overflow-hidden rounded-xl border border-line-soft bg-white p-5"
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(79,70,229,0.04) 0%, rgba(255,255,255,1) 60%)",
-        }}
-      >
-        <div className="flex items-center gap-2 pb-3">
-          <span
-            aria-hidden
-            className="block h-1.5 w-1.5 rounded-full"
-            style={{
-              background:
-                "linear-gradient(135deg, var(--brand) 0%, #4338ca 100%)",
-            }}
-          />
-          <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-soft">
-            {cached?.forDate
-              ? `Generated ${formatCacheDate(cached.forDate)}`
-              : "Sunday digest"}
+    <div className={styles.recap}>
+      <div className={styles.recapHead}>
+        <p className={styles.recapTitle}>
+          <span className={styles.glyph} data-size="sm" data-tone="accent">
+            <SparkleIcon size={13} />
           </span>
-          <span className="ml-auto flex items-center gap-1.5">
-            {hasRun && !isStreaming ? (
-              <button
-                type="button"
-                onClick={run}
-                className="text-[10.5px] uppercase tracking-[0.08em] text-ink-faint transition-colors hover:text-brand"
-              >
-                Regenerate
-              </button>
-            ) : null}
-          </span>
-        </div>
-
-        {!hasRun ? (
-          <button
-            type="button"
-            onClick={run}
-            className="group flex w-full items-center justify-between gap-3 rounded-lg border border-dashed border-line-soft bg-bg-sunken/30 px-4 py-3 text-left transition-all duration-300 hover:border-brand/40 hover:bg-brand-soft/30"
-            style={{ transitionTimingFunction: "var(--ease-out-expo)" }}
-          >
-            <span>
-              <span className="block text-[13.5px] font-medium text-ink">
-                Narrate the week
-              </span>
-              <span className="mt-0.5 block text-[12px] text-ink-soft">
-                4-5 sentences. Closes, hold-ups, a Sunday vibe-check.
-              </span>
-            </span>
-            <span className="inline-flex h-7 items-center rounded-full bg-ink px-3 text-[10.5px] font-medium uppercase tracking-[0.08em] text-white transition-opacity group-hover:opacity-90">
-              Run
-            </span>
-          </button>
-        ) : (
-          <motion.p
-            initial={
-              reduce
-                ? { opacity: 0 }
-                : { opacity: 0, y: 4 }
-            }
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.32,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            className="text-[14px] leading-[1.65] text-ink"
-          >
-            {text || (
-              <span className="text-ink-faint">Reading the week…</span>
-            )}
-            {isStreaming && text ? (
-              <motion.span
-                aria-hidden
-                className="ml-0.5 inline-block h-[12px] w-[2px] -translate-y-[1px] bg-brand align-middle"
-                animate={{ opacity: [1, 0.2, 1] }}
-                transition={{
-                  duration: 0.9,
-                  ease: "easeInOut",
-                  repeat: Infinity,
-                }}
-              />
-            ) : null}
-          </motion.p>
-        )}
-
-        {/* Tiny stat strip at the bottom, the rules-based facts the
-            LLM was given. Honesty about the source of truth. */}
-        <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-line-soft pt-3 text-[11px] text-ink-quiet">
-          <Stat label="Closed" value={snapshot.closedThisWeek} />
-          <span aria-hidden className="text-line-soft">
-            ·
-          </span>
-          <Stat label="Open" value={snapshot.openCount} />
-          {snapshot.stillCirclingTitles.length > 0 ? (
-            <>
-              <span aria-hidden className="text-line-soft">
-                ·
-              </span>
-              <Stat
-                label="Idle ≥ 3d"
-                value={snapshot.stillCirclingTitles.length}
-              />
-            </>
+          Weekly recap
+          {cached?.forDate ? (
+            <span className={styles.recapWhen}>· {formatCacheDate(cached.forDate)}</span>
           ) : null}
-        </div>
-      </motion.div>
-    </section>
-  );
-}
+        </p>
+        {hasRun && !isStreaming ? (
+          <button type="button" onClick={run} className={styles.textButton}>
+            Regenerate
+          </button>
+        ) : null}
+      </div>
 
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <span className="inline-flex items-baseline gap-1">
-      <span className="text-[12px] font-semibold tabular-nums text-ink">
-        {value}
-      </span>
-      <span className="uppercase tracking-[0.1em]">{label}</span>
-    </span>
+      {!hasRun ? (
+        <button type="button" onClick={run} className={styles.narrate}>
+          <span className={styles.rowMain}>
+            <span className={styles.rowTitle}>Narrate the week</span>
+            <span className={styles.rowBody}>A few plain sentences on what closed and what is still open.</span>
+          </span>
+          <ShellIcon.arrowRight size={14} />
+        </button>
+      ) : (
+        <motion.p
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+          className={styles.recapText}
+          aria-live="polite"
+        >
+          {text || <span className={styles.recapWaiting}>Reading the week…</span>}
+          {isStreaming && text ? (
+            <motion.span
+              aria-hidden
+              className={styles.caret}
+              animate={{ opacity: [1, 0.2, 1] }}
+              transition={{ duration: 0.9, ease: "easeInOut", repeat: Infinity }}
+            />
+          ) : null}
+        </motion.p>
+      )}
+    </div>
   );
 }
 
@@ -1088,5 +968,48 @@ function formatCacheDate(iso: string): string {
     d.getMonth() === today.getMonth() &&
     d.getDate() === today.getDate();
   if (sameDay) return "today";
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return d.toLocaleDateString("en-GB", { month: "short", day: "numeric" });
+}
+
+// ────────────────────────────────────────────────────────────────────
+// How it works: the inbox's policy in three lines, for first contact.
+// ────────────────────────────────────────────────────────────────────
+
+function HowItWorks() {
+  const items = [
+    {
+      title: "Direct alerts",
+      body: "Only @mentions and tasks that are held up. Nothing else pings you.",
+      icon: <ShellIcon.bell size={13} />,
+      tone: "accent",
+    },
+    {
+      title: "Daily digest",
+      body: "One summary a day of what is due, who mentioned you and what closed. It matches the morning email.",
+      icon: <ShellIcon.sun size={13} />,
+      tone: undefined,
+    },
+    {
+      title: "What’s stuck",
+      body: "Work that has gone quiet or slipped its date. Dismiss what you don’t need.",
+      icon: <ShellIcon.clock size={13} />,
+      tone: "warning",
+    },
+  ];
+  return (
+    <section aria-labelledby="inbox-how" className={styles.card}>
+      <CardHead id="inbox-how" title="How your inbox works" />
+      <ul className={styles.legend}>
+        {items.map((item) => (
+          <li key={item.title} className={styles.legendItem}>
+            <span className={styles.glyph} data-size="sm" data-tone={item.tone}>{item.icon}</span>
+            <span>
+              <span className={styles.legendTitle}>{item.title}</span>
+              <span className={styles.legendBody}>{item.body}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 }
