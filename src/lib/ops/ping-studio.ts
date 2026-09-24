@@ -87,11 +87,13 @@ export async function pingStudio(payload: PingPayload): Promise<void> {
  * cron_runs, where HQ Health reads it. Vercel keeps runtime logs briefly, so
  * without this a nightly job leaves no durable record of having run.
  *
- * - A 401 is not recorded: the route is public and must not let anyone
- *   write to the ledger by calling it.
+ * - A 401, or the fixed "cron-secret-not-configured" refusal that precedes
+ *   the auth check, is not recorded: the route is public and must not let
+ *   anyone write to the ledger by calling it.
  * - A thrown handler is recorded as a failed run, then rethrown.
- * - The heartbeat carries only ok, a skip reason and a failure count, the
- *   same content-free shape the route already returns.
+ * - The heartbeat carries only ok and a skip reason. Routes differ in what
+ *   a top-level `failed` counts, so it is not forwarded; the route's own
+ *   response keeps its full counts.
  */
 export function withStudioHeartbeat<Req extends Request>(
   source: StudioCronSource,
@@ -113,13 +115,13 @@ export function withStudioHeartbeat<Req extends Request>(
     } catch {
       body = null;
     }
+    if (body?.error === "cron-secret-not-configured") return response;
     const skipped = typeof body?.skipped === "string" ? body.skipped : null;
     await pingStudio({
       source,
       ranAt: Date.now(),
       ok: response.ok && body?.ok !== false,
       skipped: skipped ? 1 : 0,
-      failed: typeof body?.failed === "number" ? body.failed : undefined,
       notes: skipped ? `skipped: ${skipped}` : `http ${response.status}`,
     });
     return response;

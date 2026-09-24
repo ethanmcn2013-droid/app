@@ -49,12 +49,22 @@ test("a flag-off skip is recorded as an ok run with its reason", async () => {
   assert.equal(sent[0]!.body.notes, "skipped: flag-off");
 });
 
-test("a run with failures is recorded as not ok with its count", async () => {
+test("a run with failures is recorded as not ok", async () => {
   const route = withStudioHeartbeat("app_analytics_snapshots", json({ ok: false, completed: 2, failed: 1 }));
   await route(req());
   assert.equal(sent[0]!.body.ok, false);
-  assert.equal(sent[0]!.body.failed, 1);
+  assert.equal("failed" in sent[0]!.body, false);
   assert.equal(sent[0]!.body.notes, "http 200");
+});
+
+test("the pre-auth missing-secret refusal is not recorded", async () => {
+  const route = withStudioHeartbeat(
+    "app_analytics_snapshots",
+    json({ ok: false, error: "cron-secret-not-configured" }, 500),
+  );
+  const res = await route(req());
+  assert.equal(res.status, 500);
+  assert.equal(sent.length, 0);
 });
 
 test("a thrown handler is recorded as failed and still throws", async () => {
