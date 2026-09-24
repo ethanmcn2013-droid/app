@@ -256,3 +256,16 @@ test("opening a publication keeps the Timeline context that owns it", () => {
   assert.match(page, /contextQuery=\{contextQuery\}/);
   assert.match(detail, /requested\.workspaceId/);
 });
+
+test("armed confirm buttons keep one width so the row never reflows under the pointer", () => {
+  const source = read("app/audience/share-controls.tsx");
+
+  // Both labels occupy the same grid cell; only visibility changes on arm.
+  assert.match(source, /<span className="grid">/);
+  assert.equal((source.match(/col-start-1 row-start-1/g) ?? []).length, 2);
+  assert.doesNotMatch(source, /\{armed \? armedLabel : label\}/);
+  // visibility (not display) keeps the hidden label's width reserved.
+  assert.match(source, /visibility: armed \? "hidden" : "visible"/);
+  assert.match(source, /visibility: armed \? "visible" : "hidden"/);
+  assert.doesNotMatch(source, /display: armed/);
+});
