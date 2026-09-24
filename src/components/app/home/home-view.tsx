@@ -10,7 +10,9 @@ import type {
   HomeTaskRow,
 } from "@/app/app/home/home-data";
 import { ShellIcon } from "@/components/shell/shell-icons";
+import { isDemoMode } from "@/lib/access-mode";
 import { HomeItemLink, HomeViewedPing } from "./home-analytics";
+import { HomeGreeting } from "./home-greeting";
 import styles from "./home.module.css";
 
 /**
@@ -46,7 +48,9 @@ export function HomeView({ data }: { data: OkHome }) {
         <header className={styles.header}>
           <div>
             <p className={styles.eyebrow}>{formatDateLabel(data.dateLabel)}</p>
-            <h1 className={styles.title}>{data.greeting}</h1>
+            <h1 className={styles.title}>
+              <HomeGreeting serverGreeting={data.greeting} pinned={isDemoMode()} />
+            </h1>
             <p className={styles.subtitle}>{summaryLine(data.stats, data.scopeLabel)}</p>
           </div>
           <div className={styles.actions}>

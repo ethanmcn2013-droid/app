@@ -308,7 +308,7 @@
 
 .pill[data-tone="warning"] {
   background: color-mix(in srgb, var(--v3-warning) 16%, transparent);
-  color: color-mix(in srgb, var(--v3-warning) 70%, var(--v3-text));
+  color: var(--v3-warning-text);
 }
 
 .pill[data-tone="review"] {

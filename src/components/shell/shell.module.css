@@ -408,7 +408,6 @@
 
 .scrim { display: none; }
 
-:global(.v3-focus) :focus-visible { outline: 2px solid var(--v3-accent); outline-offset: 2px; }
 
 /* ── tablet and phone: sidebar becomes a drawer ─────────────────── */
 

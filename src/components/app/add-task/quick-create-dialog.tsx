@@ -84,14 +84,18 @@ export function QuickCreateDialog({
     .join(" ");
 
   return (
-    <Dialog open={open} onClose={close} ariaLabel="Add a task" motionMode="instant">
-      <div className="px-5 pt-4.5 pb-4">
-        {/* A stable accessible name — the visible placeholder stays the
-            per-pack example, but the NAME must not be whatever the pack
-            example (or the typed value) happens to be. */}
+    <Dialog open={open} onClose={close} ariaLabel="Add a task" motionMode="instant" width={560}>
+      <div className="flex items-center justify-between border-b border-[color:var(--v3-border)] px-5 py-3">
+        <p className="text-[13px] font-semibold text-[color:var(--v3-text)]">New task</p>
+        <span className="truncate pl-3 text-[12px] text-[color:var(--v3-text-3)]">{pack.boardName || pack.workspaceTitle}</span>
+      </div>
+      <div className="px-5 pb-4 pt-4">
+        {/* A stable accessible name: the example lives in the hint below, so
+            the NAME is never whatever the pack example or typed value is. */}
         <input
           id="quick-create-input"
           aria-label="Task name"
+          aria-describedby="quick-create-hint"
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -105,11 +109,17 @@ export function QuickCreateDialog({
               submit();
             }
           }}
-          placeholder={`Name a task, try: ${pack.firstTaskExample}`}
+          placeholder="What needs doing?"
+          // The borderless field is the dialog's only input and its caret is
+          // the focus indicator; the global ring would box the text itself.
+          style={{ outline: "none" }}
           autoComplete="off"
           spellCheck={false}
-          className="w-full bg-transparent text-[17px] font-medium leading-snug tracking-[-0.01em] text-ink placeholder:text-ink-faint focus:outline-none"
+          className="w-full bg-transparent text-[16px] font-medium leading-snug tracking-[-0.01em] text-[color:var(--v3-text)] placeholder:text-[color:var(--v3-text-3)] focus:outline-none"
         />
+        <p id="quick-create-hint" className="mt-1.5 text-[12.5px] leading-relaxed text-[color:var(--v3-text-3)]">
+          Try &ldquo;{pack.firstTaskExample}&rdquo;. Dates like Friday and #labels are picked up as you type.
+        </p>
 
         <span aria-live="polite" className="sr-only" role="status">
           {parsePreviewStatus}
@@ -204,31 +214,37 @@ export function QuickCreateDialog({
           ) : null}
         </AnimatePresence>
 
-        <div className="mt-3 flex items-center justify-between">
+      </div>
+      <div className="flex items-center justify-between gap-3 border-t border-[color:var(--v3-border)] bg-[color:var(--v3-sunken)] px-5 py-3">
+        <span
+          className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--v3-border)] bg-[color:var(--v3-surface)] px-2.5 py-1 text-[12px] font-medium text-[color:var(--v3-text-2)]"
+          title="New tasks start here"
+        >
           <span
-            className="inline-flex items-center gap-1.5 rounded-md bg-bg-sunken/60 px-1.5 py-0.5 text-[11.5px] font-medium"
-            style={{ color: todoLane.ink }}
-            title="Default lane"
+            className="block h-2 w-2 rounded-full border-[1.5px] border-[color:var(--v3-text-3)]"
+            aria-hidden="true"
+          />
+          {todoLane.name}
+        </span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={close}
+            className="inline-flex h-[32px] items-center rounded-[var(--v3-radius)] px-3 text-[13px] font-medium text-[color:var(--v3-text-2)] hover:bg-[color:var(--v3-hover)]"
           >
-            <span
-              className="block h-1.5 w-1.5 rounded-full"
-              style={{ background: todoLane.dot }}
-            />
-            {todoLane.name}
-          </span>
-          <span
-            className={
-              "inline-flex items-center gap-1.5 text-[11.5px] " +
-              (parsed.title.trim()
-                ? "text-ink-quiet"
-                : "text-ink-faint")
-            }
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={!parsed.title.trim()}
+            className="inline-flex h-[32px] items-center gap-2 rounded-[var(--v3-radius)] bg-[color:var(--v3-accent)] px-3 text-[13px] font-medium text-[color:var(--v3-on-accent)] hover:bg-[color:var(--v3-accent-hover)] disabled:opacity-50"
           >
-            <kbd className="inline-flex h-[18px] items-center rounded border border-line-soft bg-white px-1 font-mono text-[10px]">
+            Create task
+            <kbd className="inline-flex h-[18px] items-center rounded border border-white/30 px-1 font-sans text-[10px]">
               ⏎
             </kbd>
-            Create
-          </span>
+          </button>
         </div>
       </div>
     </Dialog>

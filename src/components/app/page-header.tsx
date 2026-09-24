@@ -18,7 +18,6 @@ import type { ShareView } from "@/server/actions/share";
 import { TASKS_VIEW_PATHS } from "@/lib/product-urls";
 import { parseProjectId } from "@/lib/projects/project-ref";
 import { withActiveProject } from "@/lib/projects/project-url";
-import { requestOpenNav } from "@/components/app/tasks-nav-state";
 import { pageHeaderTaskView, pageHeaderTitle } from "./page-header-context";
 
 // "Schedule", never "Timeline": inside Tasks the view is named Schedule —
@@ -39,7 +38,23 @@ function shortenTitle(t: string): string {
   return idx > 0 ? t.slice(0, idx) : t;
 }
 
-export function AppPageHeader({ active: activeProp }: { active?: string }) {
+/**
+ * v3 page header: one title row shared by every utility page (Inbox, My
+ * tasks, Settings, Archive). Aligned to the same 1180px page column as
+ * Home so the title and the content below start on one edge. Navigation
+ * lives in the shell, so there is no drawer button here any more.
+ */
+export function AppPageHeader({
+  active: activeProp,
+  description,
+  actions,
+}: {
+  active?: string;
+  /** One plain sentence under the title. */
+  description?: React.ReactNode;
+  /** Page-level actions on the right of the title row. */
+  actions?: React.ReactNode;
+}) {
   const pathname = usePathname();
   const active = activeProp ?? pathname ?? "";
   const { openPalette } = usePalette();
@@ -48,34 +63,27 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
   const projectId = parseProjectId(workspace?.id);
   const projectName = pack.workspaceName?.trim() || pack.boardName || shortenTitle(pack.workspaceTitle);
   const title = pageHeaderTitle(pathname, projectName);
-  const projectDrawerAvailable = pathname === "/app/project" || pathname === "/app/settings";
   // Route ownership is explicit. A tab-highlight override cannot turn a
   // utility page into a shareable board or expose task export actions.
   const taskView = pageHeaderTaskView(pathname);
   const contextualPath = (path: string) => projectId ? withActiveProject(path, projectId) : path;
+  const subtitle = description ?? (title === "Settings" ? <>Project · {projectName}</> : null);
 
   return (
-    <header className="px-4 pb-3 pt-2.5 md:px-8 md:pt-3">
-      <div className="flex items-center justify-between gap-3">
+    <header className="mx-auto w-full max-w-[1180px] px-4 pb-2 pt-6 md:px-8 md:pt-7">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <h1 className="text-[20px] font-semibold tracking-tight md:text-[24px]">
+          <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.02em] text-[color:var(--v3-text)] md:text-[26px]">
             <span className="block truncate">{title}</span>
           </h1>
-          {title === "Settings" ? <p className="mt-1 truncate text-[12px] text-ink-soft" title={projectName}>Project · {projectName}</p> : null}
+          {subtitle ? (
+            <p className="mt-1 truncate text-[13.5px] text-[color:var(--v3-text-2)]" title={typeof subtitle === "string" ? subtitle : undefined}>
+              {subtitle}
+            </p>
+          ) : null}
         </div>
-        {projectDrawerAvailable ? (
-          <button
-            aria-label="Open Tasks navigation"
-            className="inline-flex h-[44px] flex-shrink-0 items-center justify-center rounded-lg border border-line-soft px-3 text-[12px] font-medium text-ink-soft hover:bg-bg-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand min-[1100px]:hidden"
-            onClick={requestOpenNav}
-            type="button"
-          >
-            Projects
-          </button>
-        ) : null}
+        {actions ? <div className="flex flex-shrink-0 items-center gap-2">{actions}</div> : null}
         {taskView ? <div className="flex flex-shrink-0 items-center gap-2">
-          {/* T·94: Search + New task live in the Studio Bar. The page
-              header keeps only view-local actions. */}
           <span className="hidden lg:inline-flex">
             <ShareButton view={taskView} />
           </span>
@@ -89,7 +97,7 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
       </div>
 
       {taskView ? <div className="mt-4 flex min-w-0 items-center justify-between">
-        <nav aria-label="Task views" className="flex min-w-0 items-center gap-1 overflow-x-auto rounded-lg bg-bg-sunken/70 p-0.5 thin-scroll">
+        <nav aria-label="Task views" className="flex min-w-0 items-center gap-1 overflow-x-auto rounded-lg bg-[color:var(--v3-sunken)] p-0.5 thin-scroll">
           {TABS.map((t) => (
             <Link
               key={t.href}
@@ -98,8 +106,8 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
               className={
                 "shrink-0 rounded-md px-3 py-1 text-[12.5px] font-medium transition-colors " +
                 (active === t.href
-                  ? "bg-white text-ink shadow-sm"
-                  : "text-ink-quiet hover:text-ink-soft")
+                  ? "bg-[color:var(--v3-surface)] text-[color:var(--v3-text)] shadow-sm"
+                  : "text-[color:var(--v3-text-3)] hover:text-[color:var(--v3-text-2)]")
               }
             >
               {t.label}

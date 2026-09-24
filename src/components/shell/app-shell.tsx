@@ -232,6 +232,7 @@ function NewMenu() {
       <button
         type="button"
         className={styles.newButton}
+        aria-label="New"
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}

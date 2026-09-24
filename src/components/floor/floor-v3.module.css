@@ -26,3 +26,39 @@
   width: 14px;
   height: 14px;
 }
+
+/* Sentence-case labels. The lab master's mono micro-labels read as a
+   different product inside the v3 shell; the doubled class wins over the
+   generated rule without touching the generated file. */
+.label.label {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--v3-text);
+}
+
+.tag.tag {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--v3-sunken);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: capitalize;
+  color: var(--v3-text-2);
+}
+
+.menu.menu p {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--v3-text-3);
+}

@@ -40,6 +40,7 @@ import { useFloorPlace } from "./use-floor-place";
 import { useFloorFlight } from "./use-floor-flight";
 import { useFloorUndo, type FloorAct } from "./use-floor-undo";
 import styles from "./floor.module.css";
+import v3Styles from "./floor-v3.module.css";
 
 /** The label registry is module state in the hybrid tree. */
 function labelName(id: string): string | null {
@@ -276,7 +277,7 @@ function FloorCard({
             {bindName(client)}
           </button>
         )}
-        {!client && tag && <span className={styles.tag}>{tag}</span>}
+        {!client && tag && <span className={`${styles.tag} ${v3Styles.tag}`}>{tag}</span>}
         {priority && !done && <span className={styles.hi}>{priority}<span className={styles.sr}> priority</span></span>}
         {task.comments.length > 0 && (
           <span className={styles.cm}><Comment />{task.comments.length}</span>
@@ -703,7 +704,7 @@ export function FloorBoard({
                 <div className={styles.trayHead}>
                   <div className={styles.trayTop}>
                     <span className={styles.pip} aria-hidden="true" />
-                    <h2 className={styles.trayName} id={`ln-${column.key}`}>{column.name}</h2>
+                    <h2 className={`${styles.trayName} ${v3Styles.label}`} id={`ln-${column.key}`}>{column.name}</h2>
                     <span className={styles.trayCount} aria-hidden="true">
                       {rows.length}
                       {filtering && <span className={styles.ofAll}> of {laneAll.length}</span>}
@@ -922,7 +923,7 @@ export function FloorBoard({
         <>
           <div className={styles.menuVeil} onClick={() => setMenuFor(null)} />
           <div
-            className={styles.cardMenu}
+            className={`${styles.cardMenu} ${v3Styles.menu}`}
             role="menu"
             aria-label="Move task"
             style={{ left: menuAt.left, top: menuAt.top }}
