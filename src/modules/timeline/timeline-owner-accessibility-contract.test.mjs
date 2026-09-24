@@ -269,3 +269,11 @@ test("armed confirm buttons keep one width so the row never reflows under the po
   assert.match(source, /visibility: armed \? "visible" : "hidden"/);
   assert.doesNotMatch(source, /display: armed/);
 });
+
+test("the publication page returns to the manager filtered to its Project", () => {
+  const detail = read("app/audience/[publicationId]/page.tsx");
+
+  assert.match(detail, /managerQuery\.set\("workspaceId", context\.workspaceId\)/);
+  assert.match(detail, /if \(publication\.projectSlug\) managerQuery\.set\("project", publication\.projectSlug\)/);
+  assert.match(detail, /managerHref=\{`\/app\/timeline\/audience\$\{managerSearch \? `\?\$\{managerSearch\}` : ""\}`\}/);
+});
