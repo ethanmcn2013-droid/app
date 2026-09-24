@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
+import { withStudioHeartbeat } from "@/lib/ops/ping-studio";
 import {
   activeSnapshotWorkspaceIds,
   captureWorkspaceSnapshots,
@@ -66,7 +67,7 @@ function authorized(req: Request): { ok: true } | { ok: false; status: number; e
   return match ? { ok: true } : { ok: false, status: 401, error: "unauthorized" };
 }
 
-export async function GET(req: Request) {
+async function runAnalyticsSnapshots(req: Request): Promise<Response> {
   const auth = authorized(req);
   if (!auth.ok) {
     return NextResponse.json({ ok: false, error: auth.error }, { status: auth.status });
@@ -121,3 +122,5 @@ export async function GET(req: Request) {
     prunedBefore: prunedBefore.toISOString(),
   });
 }
+
+export const GET = withStudioHeartbeat("app_analytics_snapshots", runAnalyticsSnapshots);

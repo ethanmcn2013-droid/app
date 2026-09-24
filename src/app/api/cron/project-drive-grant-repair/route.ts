@@ -2,6 +2,7 @@ import "server-only";
 
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
+import { withStudioHeartbeat } from "@/lib/ops/ping-studio";
 import type {
   ProjectDriveFolderRepairResult,
 } from "@/server/connections/project-drive-folder-repair";
@@ -200,4 +201,7 @@ export function createProjectDriveGrantRepairRoute(
   };
 }
 
-export const GET = createProjectDriveGrantRepairRoute();
+export const GET = withStudioHeartbeat(
+  "app_drive_grant_repair",
+  createProjectDriveGrantRepairRoute(),
+);
