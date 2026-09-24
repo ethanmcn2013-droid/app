@@ -68,6 +68,11 @@ html:root {
 }
 
 html:root[data-theme="dark"] {
+  /* Beats globals.css's later `:root { color-scheme: light }`, which ties
+     with [data-theme="dark"] on specificity and wins on order: native
+     scrollbars and form controls follow the dark theme. */
+  color-scheme: dark;
+
   /* ── v3 semantic: dark ──────────────────────────────────────────── */
   --v3-shell: #111113;
   --v3-canvas: #161618;
