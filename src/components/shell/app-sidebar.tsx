@@ -10,6 +10,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useActiveProject } from "@/components/app/active-project-provider";
 import { useSuiteContext } from "@/components/app/use-suite-context";
+import { useMessagesUnread } from "@/components/app/messages/messages-unread";
 import { withSuiteContext } from "@/lib/suite-context";
 import { loadProjectCatalogAction } from "@/server/actions/project-catalog";
 import type { ChooserRow } from "@/lib/projects/project-chooser";
@@ -58,10 +59,14 @@ function useProjectRows(enabled: boolean) {
 export function AppSidebar({
   messagesEnabled,
   inboxCount = 0,
+  messagesUnread = 0,
 }: {
   messagesEnabled: boolean;
   inboxCount?: number;
+  /** Direct messages, mentions and requests waiting; Messages keeps it live. */
+  messagesUnread?: number;
 }) {
+  const messagesCount = useMessagesUnread(messagesUnread);
   const pathname = usePathname() ?? "";
   const activeId = activeDestinationId(pathname);
   const suiteContext = useSuiteContext();
@@ -149,7 +154,15 @@ export function AppSidebar({
         <nav className={styles.section} aria-label="Studio">
           <div className={styles.label}>Studio</div>
           {WORKSPACE_DESTINATIONS.filter((destination) => !destination.requiresMessages || messagesEnabled).map((destination) =>
-            link(destination),
+            link(
+              destination,
+              destination.id === "messages" && messagesCount > 0 ? (
+                <span className={styles.badge}>
+                  {messagesCount > 99 ? "99+" : messagesCount}
+                  <span className="sr-only"> waiting</span>
+                </span>
+              ) : null,
+            ),
           )}
         </nav>
 

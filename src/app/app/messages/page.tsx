@@ -1,5 +1,10 @@
 import { notFound } from "next/navigation";
 import { ConversationWorkspace } from "@/components/app/messages/conversation-workspace";
+import { CenterState } from "@/components/app/messages/chat-ui";
+import chatStyles from "@/components/app/messages/chat.module.css";
+import { DemoMessagesApp } from "@/components/app/messages/demo-messages-app";
+import { isDemoMode } from "@/lib/access-mode";
+import { demoMessagesSnapshot } from "@/server/demo/messages-demo";
 import { conversationAvailability, resolveConversationControls } from "@/lib/conversations/flags";
 import { parseProjectId } from "@/lib/projects/project-ref";
 import { authenticateConversationActor, getConversationService } from "@/server/conversations/runtime";
@@ -8,6 +13,9 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Messages · Signal Studio" };
 
 export default async function MessagesPage({ searchParams }: { searchParams: Promise<{ projectId?: string | string[]; rootId?: string | string[]; messageId?: string | string[]; messageSeq?: string | string[] }> }) {
+  // Demo/review: seeded conversations in the browser's memory. This returns
+  // before any conversation actor, flag or service is read (access-mode.ts).
+  if (isDemoMode()) return <DemoMessagesApp snapshot={demoMessagesSnapshot()} />;
   const actorId = await authenticateConversationActor();
   const controls = resolveConversationControls(process.env);
   if (!actorId || !conversationAvailability(controls, actorId).read) notFound();
@@ -22,7 +30,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
       ((params.rootId || params.messageId) && !initialProjectId)) notFound();
   const service = await getConversationService();
   const catalog = await service.listProjects({ actorId });
-  if (!catalog.ok) return <main id="app-main-content" className="min-w-0 flex-1 bg-white p-8 text-stone-950"><h1>Messages</h1><p>Conversations are temporarily unavailable. Try again shortly.</p></main>;
+  if (!catalog.ok) return <main id="app-main-content" className={chatStyles.page}><h1 className={chatStyles.srOnly}>Messages</h1><CenterState role="alert" text="Signal Studio cannot reach conversations right now. Try again shortly." title="Messages are unavailable" /></main>;
   const projects = [...catalog.value];
   if (initialProjectId && !projects.some((project) => project.id === initialProjectId)) {
     const scope = await service.getProjectConversation({ actorId, projectId: initialProjectId });
