@@ -4,20 +4,21 @@ import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { useMemo, useState } from "react";
 import type { Nudge } from "@/lib/nudges/generate-nudges";
 import { useHydrated } from "@/lib/use-hydrated";
+import styles from "./my-tasks.module.css";
 
 /**
- * What's stuck, a low-density nudges rail for My Week.
+ * What's stuck: the low-density nudges card in the My tasks rail.
  *
- * The inbox carries the loud version (rose/amber cards, per-kind icons).
- * My Week is the calm front door, so this rail is deliberately quieter:
- * a small-caps header matching the other sections, compact rows, a single
- * severity dot instead of iconography, capped at three, and silent on a
- * quiet week. It shares the inbox's localStorage dismissal key so a nudge
- * dismissed in one surface stays dismissed in the other.
+ * The inbox carries the loud version (per-kind icons and tints). My tasks
+ * keeps it quiet: one severity dot per row, capped at three, silent on a
+ * quiet week. The header dot is Home's Today's Signal mark, because these
+ * are the same proactive reading. It shares the inbox's localStorage
+ * dismissal key so a nudge dismissed in one surface stays dismissed in the
+ * other.
  *
  * Nudges are computed client-side from the same context task list the rest
- * of My Week reads (generateNudges is a pure function), so this rail needs
- * no server seam, it cannot break the front door.
+ * of My tasks reads (generateNudges is a pure function), so this card needs
+ * no server seam and cannot break the page.
  */
 
 const DISMISSED_KEY = "tasks_dismissed_nudges";
@@ -31,6 +32,12 @@ function readDismissedNudges(): Set<string> {
   } catch {
     return new Set();
   }
+}
+
+function severityTone(severity: number): "danger" | "warning" | undefined {
+  if (severity >= 75) return "danger";
+  if (severity >= 50) return "warning";
+  return undefined;
 }
 
 export function NudgesRail({
@@ -73,78 +80,51 @@ export function NudgesRail({
   if (!mounted || visible.length === 0) return null;
 
   return (
-    <section className="mt-7">
-      <div className="flex items-baseline justify-between border-b border-line-soft pb-2">
-        <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-soft">
+    <section className={styles.card} aria-labelledby="my-tasks-stuck">
+      <div className={styles.groupHead}>
+        <span className={styles.signalDot} aria-hidden="true" />
+        <h2 id="my-tasks-stuck" className={styles.groupTitle}>
           What&rsquo;s stuck
-        </h3>
-        <span className="text-[11px] tabular-nums text-ink-quiet">
-          {visible.length}
-        </span>
+        </h2>
+        <span className={styles.groupCount}>{visible.length}</span>
       </div>
-      <ul className="mt-1">
+      <ul className={styles.list}>
         <AnimatePresence initial={false}>
           {visible.map((n) => {
-            const dotColor =
-              n.severity >= 75
-                ? "var(--status-flight, #f59e0b)"
-                : n.severity >= 50
-                  ? "#d97706"
-                  : "var(--ink-quiet, #71717a)";
             const clickable = !!n.taskId;
             return (
               <motion.li
                 key={n.id}
-                layout={reduce ? false : "position"}
-                initial={reduce ? { opacity: 0 } : { opacity: 0, y: 3 }}
-                animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                className={styles.item}
+                initial={reduce ? { opacity: 0 } : { opacity: 0, height: 0 }}
+                animate={reduce ? { opacity: 1 } : { opacity: 1, height: "auto" }}
                 exit={reduce ? { opacity: 0 } : { opacity: 0, height: 0 }}
-                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                className="group flex items-start gap-3 border-b border-line-soft/60 px-1 py-2.5 last:border-b-0"
+                transition={{ duration: reduce ? 0 : 0.2, ease: [0.2, 0.8, 0.2, 1] }}
               >
-                <span
-                  aria-hidden
-                  className="mt-1.5 block h-1.5 w-1.5 flex-shrink-0 rounded-full"
-                  style={{ background: dotColor }}
-                />
-                <button
-                  type="button"
-                  onClick={() => clickable && onOpen(n.taskId!)}
-                  disabled={!clickable}
-                  className={
-                    "min-w-0 flex-1 text-left " +
-                    (clickable ? "cursor-pointer" : "cursor-default")
-                  }
-                >
-                  <div className="line-clamp-1 text-[13.5px] text-ink">
-                    {n.headline}
-                  </div>
-                  <p className="mt-0.5 line-clamp-1 text-[11.5px] leading-[1.5] text-ink-quiet">
-                    {n.body}
-                  </p>
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    dismiss(n.id);
-                  }}
-                  aria-label="Dismiss"
-                  className="ml-2 inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-ink-quiet opacity-0 transition-opacity hover:bg-bg-sunken hover:text-ink-soft group-hover:opacity-100 focus-visible:opacity-100"
-                >
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.7"
-                    strokeLinecap="round"
+                <div className={styles.nudge}>
+                  <button
+                    type="button"
+                    className={styles.nudgeOpen}
+                    onClick={() => clickable && onOpen(n.taskId!)}
+                    disabled={!clickable}
                   >
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                    <line x1="6" y1="18" x2="18" y2="6" />
-                  </svg>
-                </button>
+                    <span className={styles.severity} data-tone={severityTone(n.severity)} aria-hidden="true" />
+                    <span className={styles.rowMain}>
+                      <span className={styles.rowTitle}>{n.headline}</span>
+                      <span className={styles.nudgeBody}>{n.body}</span>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => dismiss(n.id)}
+                    aria-label="Dismiss"
+                    className={styles.dismiss}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+                      <path d="m4.5 4.5 7 7M11.5 4.5l-7 7" />
+                    </svg>
+                  </button>
+                </div>
               </motion.li>
             );
           })}

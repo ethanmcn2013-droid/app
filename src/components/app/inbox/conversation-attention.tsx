@@ -92,7 +92,7 @@ export function ConversationAttentionSection({ initial, available }: { initial: 
                 <li key={item.eventId}>
                   <a
                     href={item.href}
-                    className="relative flex min-h-11 items-center gap-3 rounded-[var(--v3-radius)] px-2.5 py-2 text-[color:var(--v3-text)] transition-colors hover:bg-[color:var(--v3-hover)] focus-visible:shadow-[inset_0_0_0_2px_var(--v3-accent)] focus-visible:outline-none"
+                    className="relative flex min-h-[44px] items-center gap-3 rounded-[var(--v3-radius)] px-2.5 py-2 text-[color:var(--v3-text)] transition-colors hover:bg-[color:var(--v3-hover)] focus-visible:shadow-[inset_0_0_0_2px_var(--v3-accent)] focus-visible:outline-none"
                   >
                     <span
                       className={

@@ -11,7 +11,7 @@ export function pageHeaderTaskView(pathname: string | null): TasksViewId | null 
 export function pageHeaderTitle(pathname: string | null, projectName: string): string {
   if (pathname === "/app/settings" || pathname?.startsWith("/app/settings/")) return "Settings";
   if (pathname === "/app/inbox") return "Inbox";
-  if (pathname === "/app/my-tasks") return "My work";
+  if (pathname === "/app/my-tasks") return "My tasks";
   if (pathname === "/app/archived") return "Archived";
   return projectName;
 }

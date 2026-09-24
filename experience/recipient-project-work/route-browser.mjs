@@ -17,7 +17,7 @@ await fs.mkdir(out,{recursive:true});
 const f=await routeFixture(),actionModules=new Map(),sourceInputs={};
 const surfaces=[
   {id:'tasks.page.app-tasks',href:'/app/tasks?workspaceId=project-b',text:'Confirm the guest access list'},
-  {id:'tasks.page.app-my-tasks',href:'/app/my-tasks?workspaceId=project-b',text:'Without a date'},
+  {id:'tasks.page.app-my-tasks',href:'/app/my-tasks?workspaceId=project-b',text:'No date'},
   {id:'tasks.page.app-task-by-id',href:'/app/task/archive-b',text:'Archived B arrival note'},
   {id:'tasks.page.app-archived',href:'/app/archived?workspaceId=project-b',text:'Archived B arrival note'},
 ];
@@ -174,8 +174,11 @@ try {
           await assertB(surface);
           assert.equal(f.state.cookieWrites.length,0);
           if(surface.id==='tasks.page.app-my-tasks'){
-            await page.getByRole('heading',{name:/^(Still up|Good morning|Good afternoon|Good evening), Alex\.$/}).waitFor();
-            for(const text of ['Without a date','Later','Check the final arrival plan','Confirm the arrival time'])await page.getByText(text,{exact:true}).first().waitFor();
+            // v3: the page is titled My tasks and leads with the list; Home owns the greeting.
+            await page.getByRole('heading',{name:'My tasks',exact:true}).waitFor();
+            assert.equal(await page.getByRole('heading',{name:/^(Still up|Good morning|Good afternoon|Good evening)/}).count(),0);
+            for(const text of ['No date','Upcoming'])await page.getByRole('heading',{name:text,exact:true}).waitFor();
+            for(const text of ['Check the final arrival plan','Confirm the arrival time'])await page.getByText(text,{exact:true}).first().waitFor();
             assert.equal(await page.getByText('Prepare the shared checklist',{exact:true}).count(),0);
           }
           await evidence(surface.id,'stale-a');

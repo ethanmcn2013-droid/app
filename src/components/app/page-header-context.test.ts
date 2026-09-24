@@ -21,7 +21,7 @@ test("Settings is named for the utility page; task titles and existing personal 
   assert.equal(pageHeaderTitle("/app/settings", "The Orchard"), "Settings");
   assert.equal(pageHeaderTitle("/app/tasks", "The Orchard"), "The Orchard");
   assert.equal(pageHeaderTitle("/app/inbox", "The Orchard"), "Inbox");
-  assert.equal(pageHeaderTitle("/app/my-tasks", "The Orchard"), "My work");
+  assert.equal(pageHeaderTitle("/app/my-tasks", "The Orchard"), "My tasks");
   assert.equal(pageHeaderTitle("/app/archived", "The Orchard"), "Archived");
 });
 

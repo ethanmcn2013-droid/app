@@ -1,0 +1,688 @@
+/* My tasks v3: the personal task list. Tokens only from src/ds/v3.css.
+   Rows, circles, pills and due cells deliberately match Home's
+   (src/components/app/home/home.module.css) so the two read as one product. */
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: var(--v3-canvas);
+}
+
+/* The horizontal column comes from the same Tailwind classes AppPageHeader
+   uses (mx-auto w-full max-w-[1180px] px-4 md:px-8, on this repo's remapped
+   spacing scale), so the title and the list start on one edge. Only the
+   vertical rhythm lives here. */
+.inner {
+  padding-top: 12px;
+  padding-bottom: 48px;
+}
+
+@media (min-width: 768px) {
+  .inner {
+    padding-top: 16px;
+    padding-bottom: 56px;
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 20px;
+  align-items: start;
+}
+
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+@media (max-width: 1080px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ── Filter (header action) ─────────────────────────────────────── */
+.filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-sunken);
+  box-shadow: inset 0 0 0 1px var(--v3-border);
+}
+
+.filterButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--v3-radius-sm);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--v3-text-3);
+  white-space: nowrap;
+  transition: background-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
+}
+
+.filterButton:hover {
+  color: var(--v3-text-2);
+}
+
+.filterButton[aria-pressed="true"] {
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  box-shadow: var(--v3-shadow-1), 0 0 0 1px var(--v3-border);
+}
+
+.filterButton:focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: 1px;
+}
+
+.filterCount {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--v3-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Cards ──────────────────────────────────────────────────────── */
+.card {
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-1);
+  overflow: hidden;
+}
+
+.group + .group {
+  border-top: 1px solid var(--v3-border);
+}
+
+.groupHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px 6px;
+}
+
+/* Icon centred over the row circles; the 4px margin puts the title on the
+   44px edge where row titles start. */
+.groupIcon {
+  display: inline-flex;
+  flex-shrink: 0;
+  margin-right: 4px;
+  color: var(--v3-text-3);
+}
+
+.groupIcon[data-tone="danger"] {
+  color: var(--v3-danger);
+}
+
+.groupIcon[data-tone="warning"] {
+  color: var(--v3-warning);
+}
+
+.groupIcon[data-tone="accent"] {
+  color: var(--v3-accent);
+}
+
+.groupIcon[data-tone="review"] {
+  color: var(--v3-review);
+}
+
+.groupIcon[data-tone="success"] {
+  color: var(--v3-success);
+}
+
+.groupTitle {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--v3-text);
+}
+
+.groupCount {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--v3-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.groupCount[data-tone="danger"] {
+  color: var(--v3-danger);
+}
+
+.groupHint {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--v3-text-3);
+}
+
+@media (max-width: 639px) {
+  .groupHint {
+    display: none;
+  }
+}
+
+.signalDot {
+  width: 8px;
+  height: 8px;
+  margin: 0 8px 0 4px;
+  border-radius: 999px;
+  background: var(--v3-accent);
+  box-shadow: 0 0 0 3px var(--v3-accent-soft);
+}
+
+.groupEmpty {
+  padding: 2px 16px 16px 44px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--v3-text-3);
+}
+
+/* ── Rows ───────────────────────────────────────────────────────── */
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0 6px 6px;
+}
+
+.item {
+  overflow: hidden;
+}
+
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  border-radius: var(--v3-radius);
+  color: var(--v3-text);
+  transition: background-color 120ms var(--v3-ease);
+}
+
+.row:hover {
+  background: var(--v3-hover);
+}
+
+.row[data-open] {
+  background: var(--v3-accent-soft);
+}
+
+.open {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 10px 6px 2px;
+  border-radius: var(--v3-radius);
+  text-align: left;
+  outline: none;
+}
+
+/* Inset: the animated <li> clips anything drawn outside it. */
+.open:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--v3-accent);
+}
+
+.rowMain {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.rowTitle {
+  font-size: 13.5px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--v3-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 200ms var(--v3-ease);
+}
+
+.rowMeta {
+  margin-top: 1px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--v3-text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.urgent {
+  color: var(--v3-danger);
+  font-weight: 500;
+}
+
+.row[data-done] .rowTitle {
+  color: var(--v3-text-3);
+  text-decoration: line-through;
+  text-decoration-color: var(--v3-border-strong);
+}
+
+.laneCell {
+  flex-shrink: 0;
+  width: 112px;
+  display: flex;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 500;
+  background: var(--v3-sunken);
+  color: var(--v3-text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pill[data-tone="warning"] {
+  background: color-mix(in srgb, var(--v3-warning) 16%, transparent);
+  color: var(--v3-warning-text);
+}
+
+.pill[data-tone="review"] {
+  background: color-mix(in srgb, var(--v3-review) 14%, transparent);
+  color: var(--v3-review);
+}
+
+.due {
+  flex-shrink: 0;
+  min-width: 64px;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--v3-text-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.due[data-overdue] {
+  color: var(--v3-danger);
+}
+
+/* ── Status circle: the lane at rest, "mark done" on hover ────────
+   Visual 16px (Home's .check), inside a 36 x 44 target. */
+.check {
+  position: relative;
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 36px;
+  height: 44px;
+  border-radius: var(--v3-radius);
+  outline: none;
+  cursor: pointer;
+}
+
+.check:focus-visible .ring {
+  box-shadow: 0 0 0 2px var(--v3-canvas), 0 0 0 4px var(--v3-accent);
+}
+
+.ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 1.5px solid var(--v3-border-strong);
+  color: transparent;
+  transition:
+    background 160ms var(--v3-ease),
+    border-color 160ms var(--v3-ease),
+    color 160ms var(--v3-ease),
+    transform 120ms var(--v3-ease);
+}
+
+.check[data-lane="doing"] .ring {
+  border-color: var(--v3-warning);
+  background: conic-gradient(var(--v3-warning) 0 50%, transparent 50% 100%);
+}
+
+.check[data-lane="review"] .ring {
+  border-color: var(--v3-review);
+  background: conic-gradient(var(--v3-review) 0 75%, transparent 75% 100%);
+}
+
+.check:active .ring {
+  transform: scale(0.88);
+}
+
+@media (hover: hover) {
+  .check:not([aria-pressed="true"]):hover .ring {
+    border-color: var(--v3-success);
+    background: color-mix(in srgb, var(--v3-success) 14%, transparent);
+    color: var(--v3-success);
+  }
+}
+
+.check[aria-pressed="true"] .ring {
+  border-color: var(--v3-success);
+  background: var(--v3-success);
+  color: var(--v3-canvas);
+}
+
+.glyph {
+  width: 10px;
+  height: 10px;
+  overflow: visible;
+}
+
+.glyph path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+
+.check[aria-pressed="true"] .glyph path {
+  animation: draw 240ms var(--v3-ease) both;
+}
+
+@keyframes draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ── Nudges (What's stuck) ──────────────────────────────────────── */
+.nudge {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-radius: var(--v3-radius);
+  transition: background-color 120ms var(--v3-ease);
+}
+
+.nudge:hover {
+  background: var(--v3-hover);
+}
+
+.nudgeOpen {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  align-items: flex-start;
+  padding: 10px 0;
+  border-radius: var(--v3-radius);
+  text-align: left;
+  outline: none;
+}
+
+.nudgeOpen:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--v3-accent);
+}
+
+.nudgeOpen:disabled {
+  cursor: default;
+}
+
+/* Centred on the row circles (24px) with the headline on the 44px edge. */
+.severity {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  margin: 7px 17px 0 15px;
+  border-radius: 999px;
+  background: var(--v3-text-3);
+}
+
+.severity[data-tone="danger"] {
+  background: var(--v3-danger);
+}
+
+.severity[data-tone="warning"] {
+  background: var(--v3-warning);
+}
+
+.nudgeBody {
+  margin-top: 2px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--v3-text-2);
+}
+
+.dismiss {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin: 6px 4px 0 0;
+  border-radius: var(--v3-radius-sm);
+  color: var(--v3-text-3);
+  opacity: 0;
+  outline: none;
+  transition: opacity 120ms var(--v3-ease), background-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
+}
+
+.nudge:hover .dismiss,
+.dismiss:focus-visible {
+  opacity: 1;
+}
+
+.dismiss:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.dismiss:focus-visible {
+  box-shadow: 0 0 0 2px var(--v3-accent);
+}
+
+@media (hover: none) {
+  .dismiss {
+    opacity: 1;
+  }
+}
+
+/* ── Rail footers and empty states ──────────────────────────────── */
+.more {
+  display: flex;
+  width: calc(100% - 12px);
+  min-height: 36px;
+  margin: 0 6px 6px;
+  align-items: center;
+  padding: 0 10px 0 38px;
+  border-radius: var(--v3-radius);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--v3-text-2);
+  outline: none;
+  transition: background-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
+}
+
+.more:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.more:focus-visible {
+  box-shadow: 0 0 0 2px var(--v3-accent);
+}
+
+.railEmpty {
+  padding: 2px 16px 16px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--v3-text-3);
+}
+
+.clear {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 28px 24px;
+}
+
+.emptyIcon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  background: var(--v3-accent-soft);
+  color: var(--v3-accent);
+}
+
+.emptyTitle {
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: 600;
+  color: var(--v3-text);
+}
+
+.emptyBody {
+  max-width: 46ch;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--v3-text-2);
+}
+
+.textLink {
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--v3-accent);
+  border-radius: var(--v3-radius-sm);
+  outline: none;
+}
+
+.textLink:hover {
+  color: var(--v3-accent-hover);
+}
+
+.textLink:focus-visible {
+  box-shadow: 0 0 0 2px var(--v3-accent);
+}
+
+/* Nothing assigned: centred in the page column, not in a card. */
+.unassigned {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 64px 0 40px;
+  text-align: center;
+}
+
+.unassigned .emptyIcon {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+}
+
+.unassignedTitle {
+  font-size: 18px;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--v3-text);
+}
+
+.unassignedBody {
+  margin-top: 6px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--v3-text-2);
+}
+
+.buttonPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  margin-top: 20px;
+  padding: 0 14px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-accent);
+  color: var(--v3-on-accent);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  outline: none;
+  transition: background-color 120ms var(--v3-ease);
+}
+
+.buttonPrimary:hover {
+  background: var(--v3-accent-hover);
+}
+
+.buttonPrimary:focus-visible {
+  box-shadow: 0 0 0 2px var(--v3-canvas), 0 0 0 4px var(--v3-accent);
+}
+
+/* Phones: the filter sits above the list at full width, with 36px segments. */
+.filterWide {
+  display: flex;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.filterWide .filterButton {
+  flex: 1;
+  justify-content: center;
+  height: 36px;
+}
+
+@media (max-width: 720px) {
+  .laneCell {
+    display: none;
+  }
+
+  .due:empty {
+    display: none;
+  }
+
+  /* Two lines before truncating: a phone row has no room to waste on "…". */
+  .rowTitle {
+    display: -webkit-box;
+    white-space: normal;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring,
+  .row,
+  .rowTitle {
+    transition: none;
+  }
+
+  .check[aria-pressed="true"] .glyph path {
+    animation: none;
+  }
+}

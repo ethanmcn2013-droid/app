@@ -26,7 +26,7 @@ async function recipientFixture(options = {}) {
     'src/lib/auth-context': { useCurrentUser: () => state.actor },
     'src/lib/tasks/tasks-context': { useTasksState: () => ({ tasks: state.tasks }), useTasksDispatch: () => ({ toggleComplete: id => state.toggled.push(id) }) },
     'src/lib/tasks/use-task-panel': { useTaskPanel: () => ({ taskId: null, openTask: id => state.opened.push(id) }) },
-    'src/lib/domain-context': { usePersonalization: () => ({ headline: 'Your project starts here', body: 'Add the first piece of work.', firstTaskExample: 'Add your first task' }), useColumnConfig: () => null, useActiveWorkspace: () => ({ id: state.project, slug: state.project }), useWorkspaceMembers: () => state.members },
+    'src/lib/domain-context': { usePersonalization: () => ({ headline: 'Your project starts here', body: 'Add the first piece of work.', firstTaskExample: 'Add your first task' }), useColumnConfig: () => null, useActiveWorkspace: () => ({ id: state.project, slug: state.project }), useWorkspaceMembers: () => state.members, useDomain: () => ({ workspaceName: null, boardName: null, workspaceTitle: '' }) },
     'src/components/app/room/room-brief-context': { useCalendarFrame: () => load('src/lib/calendar-frame').createCalendarFrame({ now: new Date('2027-01-21T12:00:00Z'), timeZone: 'UTC', locale: 'en-GB', source: 'review' }) },
     'src/components/app/add-task/add-task-context': { useAddTask: () => ({ openDialog: () => state.opened.push('new') }) },
     'src/components/app/active-project-route-sync': { ActiveProjectRouteSync: props => React.createElement('i', { 'data-route-project': props.project?.id ?? 'unavailable' }) },
