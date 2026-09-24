@@ -93,7 +93,7 @@ const SKIP_LINK_CLASS =
   // The label rides an --ink fill, so it takes --paper, not white: in dark
   // the fill IS near-white, and a white label on it is invisible. The first
   // control a keyboard user reaches is not a place to get that wrong.
-  "fixed left-3 top-3 z-[200] -translate-y-[calc(100%+1rem)] rounded-md bg-[var(--ink)] px-4 py-2 text-sm font-semibold text-[var(--paper)] shadow-lg outline-none transition-transform focus:translate-y-0 focus-visible:ring-2 focus-visible:ring-[var(--x-studio-accent)] focus-visible:ring-offset-2";
+  "fixed left-3 top-3 z-[200] -translate-y-[calc(100%+1rem)] rounded-md bg-[var(--ink)] px-4 py-2 text-sm font-semibold text-[var(--paper)] shadow-none outline-none transition-transform focus:translate-y-0 focus:shadow-lg focus-visible:ring-2 focus-visible:ring-[var(--x-studio-accent)] focus-visible:ring-offset-2";
 
 /**
  * Shared Signal Studio application frame.

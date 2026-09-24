@@ -117,7 +117,7 @@ test("aggregate destination passes its scope to the actual briefing route and re
   assert.equal(observed.length, 2);
 });
 
-test("rendered Home distinguishes reading an aggregate and opening a task", async () => {
+test("rendered Home links tasks and the scoped Overview, never a synthetic id", async () => {
   const { data } = await fixture([...signals(6), { ...signals(1, now - 86_400_000)[0], id: "due-task" }]);
   const link = ({ href, children, className }: { href: string; children: ReactNode; className?: string }) => createElement("a", { href, className }, children);
   const view = load<typeof import("@/components/app/home/home-view")>("../../../components/app/home/home-view.tsx", {
@@ -125,9 +125,11 @@ test("rendered Home distinguishes reading an aggregate and opening a task", asyn
     "./home.module.css": { default: new Proxy({}, { get: (_target, key) => String(key) }) },
   });
   const html = renderToStaticMarkup(createElement(view.HomeView, { data }));
-  assert.match(html, /Read →/);
-  assert.match(html, /Read full briefing/);
-  assert.match(html, /Open →/);
+  // Today's Signal was removed from Home (founder, 24 Sep 2026); the full
+  // read lives in Overview, reached through the scoped briefing href.
+  assert.doesNotMatch(html, /Today(&#x27;|&rsquo;|’|')s Signal/);
+  assert.match(html, /href="\/app\/task\/due-task"/);
+  assert.ok(html.includes(`href="${data.briefingHref.replaceAll("&", "&amp;")}"`), "Home links the scoped Overview");
   assert.doesNotMatch(html, /href="[^"]*synthetic/);
   assert.equal(data.briefingHref, "/app/home/briefing?contextVersion=2&workspaceId=project-b");
   assert.doesNotMatch(html, /href="\/app\/home\/briefing"/);

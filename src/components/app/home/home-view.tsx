@@ -5,23 +5,22 @@ import type {
   HomeData,
   HomeDeadlineGroup,
   HomeReviewRow,
-  HomeSignalRow,
   HomeStats,
   HomeTaskRow,
 } from "@/app/app/home/home-data";
 import { ShellIcon } from "@/components/shell/shell-icons";
 import { isDemoMode } from "@/lib/access-mode";
-import { HomeItemLink, HomeViewedPing } from "./home-analytics";
+import { HomeViewedPing } from "./home-analytics";
 import { HomeGreeting } from "./home-greeting";
 import styles from "./home.module.css";
 
 /**
  * Home v3: the authenticated front door, as a working dashboard.
  *
- * One question still leads (what matters now?), but the answer is laid out
- * the way people scan a workspace: the numbers first, then Today's Signal and
- * the tasks in motion, with deadlines and reviews alongside. Every figure is
- * derived from the same authorized briefing read; nothing is invented.
+ * Laid out the way people scan their work: the numbers first, then the tasks
+ * in motion, with deadlines and reviews alongside. The full read across the
+ * Project lives in Overview. Every figure is derived from the same authorized
+ * briefing read; nothing is invented.
  *
  * Server component. The only client JS is the analytics ping and per-row
  * open events (no content in payloads).
@@ -56,7 +55,7 @@ export function HomeView({ data }: { data: OkHome }) {
           <div className={styles.actions}>
             <Link href={data.briefingHref} className={styles.button}>
               <ShellIcon.overview size={14} />
-              Full briefing
+              Overview
             </Link>
             <Link href="/app/tasks?create=task" className={styles.buttonPrimary}>
               <ShellIcon.plus size={14} />
@@ -69,7 +68,6 @@ export function HomeView({ data }: { data: OkHome }) {
 
         <div className={styles.grid}>
           <div className={styles.column}>
-            <TodaysSignal rows={data.signalRows} allClear={data.allClear} briefingHref={data.briefingHref} />
             <MyTasks rows={data.myTasks} total={data.stats.open} />
           </div>
           <div className={styles.column}>
@@ -117,64 +115,6 @@ function Stats({ stats }: { stats: HomeStats }) {
           <span className={styles.statNote}>{item.note}</span>
         </Link>
       ))}
-    </section>
-  );
-}
-
-function TodaysSignal({
-  rows,
-  allClear,
-  briefingHref,
-}: {
-  rows: HomeSignalRow[];
-  allClear: OkHome["allClear"];
-  briefingHref: string;
-}) {
-  return (
-    <section className={styles.card} aria-labelledby="todays-signal">
-      <div className={styles.cardHead}>
-        <h2 id="todays-signal" className={styles.cardTitle}>
-          <span className={styles.signalDot} aria-hidden="true" />
-          Today&rsquo;s Signal
-        </h2>
-        <HomeItemLink href={briefingHref} event="home_briefing_opened" properties={{}} className={styles.cardLink}>
-          Open full briefing <span aria-hidden="true">→</span>
-        </HomeItemLink>
-      </div>
-
-      {allClear ? (
-        <div className={styles.clear}>
-          <p className={styles.clearTitle}>{allClear.headline}</p>
-          <p className={styles.clearBody}>{allClear.body}</p>
-          {allClear.readLine ? <p className={styles.clearRead}>{allClear.readLine}</p> : null}
-        </div>
-      ) : (
-        <ul className={styles.list}>
-          {rows.map((row) => (
-            <li key={`${row.trigger}:${row.id}`}>
-              <HomeItemLink
-                href={row.href}
-                event="home_signal_item_opened"
-                properties={{ trigger: row.trigger, due: row.due }}
-                className={`${styles.row} ${styles.signalRow}`}
-              >
-                <span className={styles.rowMain}>
-                  <span className={styles.rowTitle}>{row.title}</span>
-                  <span className={styles.signalWhy}>{row.why}</span>
-                  <span className={styles.rowMeta}>
-                    {row.source}
-                    {row.due ? <> · {row.due}</> : null}
-                    {row.destination === "briefing" ? <span className="sr-only"> · Read full briefing</span> : null}
-                  </span>
-                </span>
-                <span className={styles.go} aria-hidden="true">
-                  {row.destination === "briefing" ? "Read →" : "Open →"}
-                </span>
-              </HomeItemLink>
-            </li>
-          ))}
-        </ul>
-      )}
     </section>
   );
 }

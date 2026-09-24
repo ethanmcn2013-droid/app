@@ -25,7 +25,8 @@ import {
 import styles from "./shell.module.css";
 
 /** Stable project colour from its id: identity, never status. */
-const PROJECT_HUES = ["#6366f1", "#3b82f6", "#14b8a6", "#22a55a", "#e5a93b", "#f97316", "#e5484d", "#e86fa6"];
+/* v3 identity tokens: white initials pass AA on every hue (src/ds/v3.css). */
+const PROJECT_HUES = Array.from({ length: 8 }, (_, index) => `var(--v3-project-${index + 1})`);
 export function projectColor(id: string): string {
   let hash = 0;
   for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) >>> 0;

@@ -25,7 +25,7 @@ html:root {
   --v3-border: #e8e6e3;
   --v3-border-strong: #d9d6d1;
   --v3-text: #141414;
-  --v3-text-2: #5f5e5b;
+  --v3-text-2: #4a4946; /* a visible step above text-3 */
   --v3-text-3: #6b6964; /* 4.9:1 on the shell grey; AA for small text */
   --v3-accent: #4f46e5;
   --v3-accent-hover: #4338ca;
@@ -38,6 +38,45 @@ html:root {
   --v3-warning-text: #7d5710;
   --v3-success: #2f9e6a;
   --v3-review: #5b52e0;
+
+  /* Tone pairs: -soft is the tint, -text is AA (4.5:1+) on that tint. */
+  --v3-danger-soft: color-mix(in srgb, var(--v3-danger) 12%, transparent);
+  --v3-danger-text: #ac272c;
+  --v3-warning-soft: color-mix(in srgb, var(--v3-warning) 16%, transparent);
+  --v3-success-soft: color-mix(in srgb, var(--v3-success) 14%, transparent);
+  --v3-success-text: #24674a;
+  --v3-review-soft: color-mix(in srgb, var(--v3-review) 14%, transparent);
+  --v3-accent-text: var(--v3-accent);
+  /* Neutral chip fill that reads as raised, not sunken, on surfaces. */
+  --v3-fill: #f1f0ee;
+  /* 3:1 non-text contrast for unchecked rings, checkboxes and strokes. */
+  --v3-control-border: #898783;
+  --v3-warning-stroke: #b87d14;
+  --v3-row-selected: color-mix(in srgb, var(--v3-accent) 6%, var(--v3-surface));
+  --v3-scrim: rgba(10, 10, 12, 0.36);
+  /* The Signal Studio mark (favicon): ring and dot on black. */
+  --v3-brand-ground: #000000;
+  --v3-brand-signal: #534dff;
+  /* File kinds: identity at 3:1+ on the surface. */
+  --v3-kind-doc: #3b82f6;
+  --v3-kind-image: #d9468a;
+  --v3-kind-sheet: #1f9d55;
+  --v3-kind-slides: #e2711d;
+  --v3-kind-design: #7c5cf5;
+  --v3-kind-link: #0f9ba8;
+  --v3-kind-neutral: #5f5e5b;
+  /* Project identity tiles: white initials pass AA on every hue. */
+  --v3-project-1: #4f46e5;
+  --v3-project-2: #2563eb;
+  --v3-project-3: #0f766e;
+  --v3-project-4: #15803d;
+  --v3-project-5: #b45309;
+  --v3-project-6: #c2410c;
+  --v3-project-7: #dc2626;
+  --v3-project-8: #be185d;
+  --v3-project-ink: #ffffff;
+  --v3-tap: 44px;
+  --x-accent-focus: var(--v3-accent);
 
   --v3-shadow-1: 0 1px 2px rgba(20, 18, 14, 0.06);
   --v3-shadow-pop: 0 8px 28px rgba(20, 18, 14, 0.12), 0 0 0 1px var(--v3-border);
@@ -83,7 +122,7 @@ html:root[data-theme="dark"] {
   --v3-border: rgba(255, 255, 255, 0.08);
   --v3-border-strong: rgba(255, 255, 255, 0.14);
   --v3-text: #ededef;
-  --v3-text-2: #a1a1a8;
+  --v3-text-2: #b4b4bb;
   --v3-text-3: #8b8b93; /* 4.6:1 on the raised dark surface */
   --v3-accent: #8b87f8;
   --v3-accent-hover: #a3a0fa;
@@ -96,6 +135,26 @@ html:root[data-theme="dark"] {
   --v3-warning-text: #e8b64c;
   --v3-success: #4cc38a;
   --v3-review: #9b95fa;
+  --v3-danger-soft: color-mix(in srgb, var(--v3-danger) 20%, transparent);
+  --v3-danger-text: #f07d82;
+  --v3-warning-soft: color-mix(in srgb, var(--v3-warning) 20%, transparent);
+  --v3-success-soft: color-mix(in srgb, var(--v3-success) 20%, transparent);
+  --v3-success-text: #8cd4b2;
+  --v3-review-soft: color-mix(in srgb, var(--v3-review) 20%, transparent);
+  --v3-accent-text: #9f9bf6;
+  --v3-fill: rgba(255, 255, 255, 0.06);
+  --v3-control-border: #75757c;
+  --v3-warning-stroke: var(--v3-warning);
+  --v3-row-selected: color-mix(in srgb, var(--v3-accent) 6%, var(--v3-surface));
+  --v3-scrim: rgba(0, 0, 0, 0.56);
+  --v3-kind-doc: #6ea8fe;
+  --v3-kind-image: #f07ab3;
+  --v3-kind-sheet: #4cc38a;
+  --v3-kind-slides: #f59e4b;
+  --v3-kind-design: #a594fa;
+  --v3-kind-link: #3fc7d3;
+  --v3-kind-neutral: #a1a1a8;
+  --x-accent-focus: var(--v3-accent);
 
   --v3-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
   --v3-shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--v3-border);
