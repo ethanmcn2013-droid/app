@@ -8,6 +8,8 @@ import { getAnalyticsUser } from "../../server/onboarding/signal-onboarding-quer
 import { requireSignalUser } from "../../server/signal-auth";
 import { SignalOnboardingPicker } from "./signal-onboarding-picker";
 import { REVIEW_SUITE_FIXTURE } from "@/lib/review-suite-fixture";
+import { ShellIcon } from "@/components/shell/shell-icons";
+import styles from "../../components/overview/overview.module.css";
 
 /**
  * Onboarding page — ported from signal/src/app/app/onboarding/page.tsx.
@@ -24,7 +26,7 @@ export async function SignalOnboardingPage() {
   let candidates;
 
   if (demo) {
-    // Demo mode: serve mock workspace, no auth, no DB.
+    // Demo mode: serve the mock Project, no auth, no DB.
     candidates = [{
       workspaceId: REVIEW_SUITE_FIXTURE.workspace.id,
       name: REVIEW_SUITE_FIXTURE.workspace.name,
@@ -48,70 +50,54 @@ export async function SignalOnboardingPage() {
     }
   }
 
-  return (
-    <div className="mx-auto w-full max-w-[960px] px-6 py-8 sm:px-8">
-      <div className="max-w-[600px]">
-        <p
-          className="mb-[14px] text-[11px] font-semibold uppercase tracking-[0.14em]"
-          style={{ color: "var(--ink-soft)" }}
-        >
-          Onboarding
-        </p>
-        <h1
-          className="mb-3 text-[36px] font-semibold leading-[1.06] tracking-[-0.035em] text-balance"
-          style={{ color: "var(--ink)" }}
-        >
-          {candidates.length === 0
-            ? "No workspace found."
-            : candidates.length === 1
-              ? "Signal found your workspace."
-              : "Pick the workspace Signal should read."}
-        </h1>
-        <p
-          className="mb-8 max-w-[510px] text-[15px] leading-[1.6]"
-          style={{ color: "var(--ink-soft)" }}
-        >
-          {candidates.length === 0
-            ? "Signal reads from a Tasks workspace. Create one in Tasks, or ask to be added to one, then come back."
-            : "Signal reads this workspace when you open the briefing. You can change it later."}
-        </p>
+  const heading =
+    candidates.length === 0
+      ? "No project found yet."
+      : candidates.length === 1
+        ? "Signal found your project."
+        : "Pick the project Signal should read.";
 
-        {candidates.length === 0 ? (
-          <div
-            className="rounded-lg border p-6"
-            style={{
-              borderColor: "var(--hairline)",
-              background: "var(--paper)",
-            }}
-          >
-            {/* S5: TASKS_URL rewritten to in-app /app/tasks.
-                No component-level ring on either anchor: the suite's global
-                :focus-visible outline is the only focus mark. */}
-            <a
-              href="/app/tasks"
-              className="inline-flex min-h-[44px] items-center text-[13px] font-medium no-underline transition-[color] hover:text-[color:var(--ink)]"
-              style={{ color: "var(--ink)" }}
-            >
-              Open Tasks <span aria-hidden>&nbsp;→</span>
-            </a>
-            <p
-              className="mt-2 max-w-[510px] text-[15px] leading-[1.6]"
-              style={{ color: "var(--ink-quiet)" }}
-            >
-              Once you have a workspace,{" "}
-              <a
-                href="/app/home/briefing/onboarding"
-                className="underline underline-offset-2"
-                style={{ color: "var(--ink-soft)" }}
-              >
-                come back to this tab and try again
-              </a>
-              .
-            </p>
-          </div>
-        ) : (
-          <SignalOnboardingPicker candidates={candidates} />
-        )}
+  return (
+    <div className={`${styles.page} thin-scroll`}>
+      <div className={`${styles.inner} ${styles.rise}`}>
+        <div className={styles.narrow}>
+          <p className={styles.eyebrow}>Set up the Overview</p>
+          <h1 className={styles.title}>{heading}</h1>
+          <p className={styles.lede}>
+            {candidates.length === 0
+              ? "Signal reads from a project in Tasks. Create one in Tasks, or ask to be added to one, then come back."
+              : "Signal reads this project each time you open the Overview. You can change it later."}
+          </p>
+
+          {candidates.length === 0 ? (
+            <div className={styles.card}>
+              <div className={styles.setting}>
+                <span className={styles.settingIcon} aria-hidden="true">
+                  <ShellIcon.tasks size={16} />
+                </span>
+                <div className={styles.settingText}>
+                  <p className={styles.settingValue}>Start in Tasks</p>
+                  <p className={styles.settingBody}>
+                    Once you have a project,{" "}
+                    <a href="/app/home/briefing/onboarding" className={styles.readLink}>
+                      come back to this page and try again
+                    </a>
+                    .
+                  </p>
+                </div>
+              </div>
+              <div className={styles.cardFoot}>
+                {/* S5: TASKS_URL rewritten to in-app /app/tasks. */}
+                <a href="/app/tasks" className={styles.button}>
+                  Open Tasks
+                  <ShellIcon.arrowRight size={14} />
+                </a>
+              </div>
+            </div>
+          ) : (
+            <SignalOnboardingPicker candidates={candidates} />
+          )}
+        </div>
       </div>
     </div>
   );

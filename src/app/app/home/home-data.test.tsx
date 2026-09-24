@@ -107,7 +107,8 @@ test("aggregate destination passes its scope to the actual briefing route and re
     } },
     "../server/analytics/build-ledger-dto": { buildLegacyLedgerDTO: () => ({}) },
     "../server/signal-planning-events": { recordPlanningEvent: async () => {} },
-    "../components/brief/quiet-briefing-ledger": { QuietBriefingLedger: () => null },
+    "../components/overview/overview-view": { OverviewView: () => null },
+    "../lib/overview/overview-model": { buildOverviewModel: () => ({}) },
     "../components/brief/scope-switcher": { SignalScopeSwitcher: () => null },
   });
   await page.SignalLegacyBriefing({ searchParams: params });
@@ -197,7 +198,8 @@ test("actual briefing route refuses malformed or disabled explicit hints before 
     "../server/briefing/signal-build-for-user": { buildBriefingForUser: async () => { calls++; return { kind: "no-workspace" }; } },
     "../server/analytics/build-ledger-dto": {},
     "../server/signal-planning-events": {},
-    "../components/brief/quiet-briefing-ledger": {},
+    "../components/overview/overview-view": {},
+    "../lib/overview/overview-model": {},
     "../components/brief/scope-switcher": {},
   });
   for (const params of [{ workspaceId: ["project-a", "project-b"] }, { workspaceId: " " }, { planningPeriodId: "season" }, { planningPeriodId: ["season"] }]) {
@@ -325,7 +327,8 @@ function analyticsDispatcherFixture() {
     "../server/analytics/feature-flag": { isSignalAnalyticsEnabled: () => analytics },
     "./signal-page-data": pageData,
     "../server/analytics/service": {}, "../server/analytics/build-ledger-dto": {},
-    "../components/brief/quiet-briefing-ledger": {}, "../components/signal/evidence-drawer": {},
+    "../components/overview/overview-view": {}, "../lib/overview/overview-model": {},
+    "../components/signal/evidence-drawer": {},
     "./signal-legacy-briefing": { SignalLegacyBriefing: () => null },
   });
   return { page, observed, deny: () => { denied = true; }, flags: (a: boolean, p: boolean) => { analytics = a; periods = p; } };

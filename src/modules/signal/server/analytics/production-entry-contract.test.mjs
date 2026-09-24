@@ -18,8 +18,20 @@ const briefingPage = readFileSync(
   new URL("../../app/signal-brief-page.tsx", import.meta.url),
   "utf8",
 );
-const briefingLedger = readFileSync(
-  new URL("../../components/brief/quiet-briefing-ledger.tsx", import.meta.url),
+const overviewView = readFileSync(
+  new URL("../../components/overview/overview-view.tsx", import.meta.url),
+  "utf8",
+);
+const overviewActions = readFileSync(
+  new URL("../../components/overview/overview-actions.tsx", import.meta.url),
+  "utf8",
+);
+const overviewStyles = readFileSync(
+  new URL("../../components/overview/overview.module.css", import.meta.url),
+  "utf8",
+);
+const legacyBriefing = readFileSync(
+  new URL("../../app/signal-legacy-briefing.tsx", import.meta.url),
   "utf8",
 );
 const ledgerAction = readFileSync(
@@ -74,13 +86,18 @@ test("Signal onboarding only redirects when its linked workspace still exists", 
   assert.match(onboardingPicker, /role="status"/);
 });
 
-test("the progressive path renders one Quiet Ledger without the analytics shell", () => {
+test("both engines render one Overview, and the progressive path keeps its drawer without the analytics shell", () => {
   assert.match(
     briefingPage,
-    /<section id="signal-main-content"[\s\S]*<QuietBriefingLedger ledger=\{ledger\} \/>[\s\S]*<\/section>/,
+    /<section id="signal-main-content"[\s\S]*<OverviewView model=\{model\} \/>[\s\S]*<\/section>/,
   );
   assert.match(briefingPage, /<EvidenceDrawer/);
   assert.doesNotMatch(briefingPage, /SignalAppShell/);
+  assert.match(legacyBriefing, /<OverviewView/);
+  // One build feeds the page: the ledger and the engine's own signals from
+  // the same buildBriefingForUser result, never a second read.
+  assert.equal(legacyBriefing.match(/buildBriefingForUser\(/g)?.length, 1);
+  assert.match(legacyBriefing, /signals: result\.signals/);
 });
 
 /**
@@ -123,18 +140,22 @@ test("Signal surfaces only verified in-app briefing behavior", () => {
   assert.doesNotMatch(notificationsPage, /<main\b/);
   assert.match(notificationsPage, /<section[\s\S]*In app only[\s\S]*<\/section>/);
   assert.doesNotMatch(
-    `${notificationsPage}\n${cadenceForm}\n${briefingLedger}`,
+    `${notificationsPage}\n${cadenceForm}\n${overviewView}`,
     /tomorrow,\s*6am|06:00|unsubscribe|every email|sends a short morning briefing/i,
   );
 });
 
-test("the Quiet Ledger action keeps raw source ids behind a server rebuild", () => {
-  assert.match(briefingLedger, /action=\{openSignalLedgerEntry\}/);
+test("the Overview's open action keeps raw source ids behind a server rebuild", () => {
+  assert.match(overviewActions, /action=\{openSignalLedgerEntry\}/);
   assert.match(
-    briefingLedger,
-    /type="hidden" name="entryId" value=\{entry\.id\}/,
+    overviewActions,
+    /type="hidden" name="entryId" value=\{entryId\}/,
   );
-  assert.doesNotMatch(briefingLedger, /name="(?:taskId|workspaceId)"/);
+  assert.match(overviewView, /<OpenInTasks entryId=\{entry\.id\}/);
+  assert.doesNotMatch(
+    `${overviewView}\n${overviewActions}`,
+    /name="(?:taskId|workspaceId)"/,
+  );
   assert.match(ledgerAction, /await buildBriefingForUser\(/);
   assert.match(ledgerAction, /signalScopeHintFromReferer/);
   assert.match(ledgerAction, /legacyLedgerTasksHref\(/);
@@ -145,49 +166,56 @@ test("the Quiet Ledger action keeps raw source ids behind a server rebuild", () 
   assert.match(ledgerAction, /projectId: REVIEW_PRIMARY_PROJECT\.id/);
 });
 
-test("Signal loading and disclosure controls announce their state", () => {
+test("Overview loading and disclosure controls announce their state", () => {
   assert.match(loading, /role="status"/);
   assert.match(loading, /aria-live="polite"/);
-  assert.match(loading, /Building your Signal briefing/);
-  assert.match(briefingLedger, /aria-controls=\{panelId\}/);
-  assert.match(briefingLedger, /id=\{panelId\}/);
-  // Touch targets are pinned by their real height. `min-h-11` used to stand
-  // here, but this design system maps --space-11 to 80px, so the class
-  // silently produced an 80px band rather than the 44px minimum it implies.
-  assert.match(briefingLedger, /min-height:\s*44px/);
-  assert.doesNotMatch(briefingLedger, /min-h-11\b/);
+  assert.match(loading, /Reading your Overview/);
+  assert.match(overviewActions, /aria-controls=\{panelId\}/);
+  assert.match(overviewActions, /aria-expanded=\{open\}/);
+  assert.match(overviewActions, /id=\{panelId\}/);
+  // A collapsed panel stays in the document so aria-controls resolves, and
+  // leaves the tab order and accessibility tree while it is closed.
+  assert.match(overviewActions, /inert=\{!open\}/);
+  // Touch targets are pinned by their real height wherever the pointer is a
+  // finger. Never `min-h-11`: this design system maps --space-11 to 80px.
+  assert.match(
+    overviewStyles,
+    /@media \(pointer: coarse\) \{[\s\S]*?\.action,[\s\S]*?\.whyToggle,[\s\S]*?min-height:\s*44px/,
+  );
+  assert.doesNotMatch(`${overviewView}\n${overviewActions}`, /min-h-11\b/);
 });
 
-test("the ledger reveals itself without waiting for hydration", () => {
-  // An `initial="hidden"` motion variant ships the whole ledger at opacity 0
-  // and reveals it on hydration, so the honest skeleton hands off to a blank
-  // page. The entrance must be CSS on server-rendered markup instead.
-  assert.doesNotMatch(briefingLedger, /initial="hidden"/);
-  assert.match(briefingLedger, /@keyframes signal-rise/);
+test("the Overview reveals itself without waiting for hydration", () => {
+  // An `initial="hidden"` motion variant ships the page at opacity 0 and
+  // reveals it on hydration, so the honest skeleton hands off to a blank
+  // page. The entrance is CSS on server-rendered markup instead, and the
+  // view itself is a server component.
+  assert.doesNotMatch(`${overviewView}\n${overviewActions}`, /initial="hidden"/);
+  assert.doesNotMatch(overviewView, /^"use client"/);
+  assert.match(overviewStyles, /@keyframes ov-rise/);
   assert.match(
-    briefingLedger,
+    overviewStyles,
     /prefers-reduced-motion: reduce[\s\S]*animation: none/,
   );
 });
 
 test("the primary action reports its own busy state without dropping focus", () => {
-  assert.match(briefingLedger, /useFormStatus/);
+  assert.match(overviewActions, /useFormStatus/);
   // `aria-disabled`, never `disabled`: a disabled control drops keyboard
-  // focus to <body> and the reader loses their place mid-briefing. The
-  // click guard is what actually prevents the second submit, and a polite
-  // status is the announcement a disabled button can never make.
-  assert.match(briefingLedger, /aria-disabled=\{pending\}/);
-  assert.doesNotMatch(briefingLedger, /\sdisabled=\{pending\}/);
-  assert.match(briefingLedger, /if \(pending\) event\.preventDefault\(\)/);
-  assert.match(briefingLedger, /role="status"[\s\S]*aria-live="polite"/);
+  // focus to <body> and the reader loses their place. The click guard is
+  // what actually prevents the second submit, and a polite status is the
+  // announcement a disabled button can never make.
+  assert.match(overviewActions, /aria-disabled=\{pending\}/);
+  assert.doesNotMatch(overviewActions, /\sdisabled=\{pending\}/);
+  assert.match(overviewActions, /if \(pending\) event\.preventDefault\(\)/);
+  assert.match(overviewActions, /role="status"[\s\S]*aria-live="polite"/);
 });
 
 test("the entrance never fades, so the frame after the skeleton is content", () => {
-  // An opacity ramp leaves the handoff frame white for the whole stagger.
-  // The rise animates transform only.
-  const keyframes = briefingLedger.match(
-    /@keyframes signal-rise \{[\s\S]*?\n\}/,
-  );
-  assert.ok(keyframes, "signal-rise keyframes must exist");
-  assert.doesNotMatch(keyframes[0], /opacity/);
+  // An opacity ramp leaves the handoff frame blank for the whole entrance.
+  // The page rise, the bar draw and the runway marks animate transform or
+  // clip only.
+  const keyframes = overviewStyles.match(/@keyframes [\w-]+ \{[\s\S]*?\n\}/g) ?? [];
+  assert.ok(keyframes.length >= 1, "the Overview entrance keyframes must exist");
+  for (const block of keyframes) assert.doesNotMatch(block, /opacity/);
 });

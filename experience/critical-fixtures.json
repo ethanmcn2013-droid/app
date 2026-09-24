@@ -842,15 +842,23 @@
               ]
             },
             {
-              "kind": "text",
-              "text": "Thursday 09:00 · The Orchard, events",
+              "kind": "role",
+              "role": "heading",
+              "name": "Overview",
               "proves": [
                 "default"
               ]
             },
             {
               "kind": "text",
-              "text": "8 read · 4 flagged · 3 shown",
+              "text": "Thursday 16 July · Read at 09:00",
+              "proves": [
+                "default"
+              ]
+            },
+            {
+              "kind": "text",
+              "text": "2 things need attention and 1 is at risk.",
               "proves": [
                 "default"
               ]
@@ -886,7 +894,7 @@
             {
               "kind": "role",
               "role": "heading",
-              "name": "Signal found your workspace.",
+              "name": "Signal found your project.",
               "proves": [
                 "first-use",
                 "populated"
@@ -1337,7 +1345,7 @@
       "evidence": "rendered",
       "cases": [
         {
-          "name": "full briefing ledger",
+          "name": "overview",
           "path": "/app/home/briefing",
           "states": [
             "default",
@@ -1353,15 +1361,23 @@
               ]
             },
             {
-              "kind": "text",
-              "text": "Thursday 09:00 · The Orchard, events",
+              "kind": "role",
+              "role": "heading",
+              "name": "Overview",
               "proves": [
                 "default"
               ]
             },
             {
               "kind": "text",
-              "text": "8 read · 4 flagged · 3 shown",
+              "text": "Thursday 16 July · Read at 09:00",
+              "proves": [
+                "default"
+              ]
+            },
+            {
+              "kind": "text",
+              "text": "2 things need attention and 1 is at risk.",
               "proves": [
                 "default"
               ]
@@ -1390,7 +1406,7 @@
             {
               "kind": "role",
               "role": "heading",
-              "name": "Signal found your workspace.",
+              "name": "Signal found your project.",
               "proves": [
                 "first-use",
                 "populated"
