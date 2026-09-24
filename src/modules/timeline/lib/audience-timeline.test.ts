@@ -233,3 +233,14 @@ test("a link expiry ends at the publication's own midnight, never bare UTC", () 
   assert.throws(() => endOfCalendarDayInZone("not-a-date", "Europe/Dublin"));
   assert.throws(() => endOfCalendarDayInZone("2026-10-03", "Not/AZone"));
 });
+
+test("an owner never sees 'Link live' for a publication with no active links", async () => {
+  const { effectivePublicationState, publicationStateLabel } = await import("./format");
+  const label = (state: string, activeShareCount: number) =>
+    publicationStateLabel(effectivePublicationState({ state, activeShareCount }));
+
+  assert.equal(label("published", 1), "Link live");
+  assert.equal(label("published", 0), "Links revoked");
+  assert.equal(label("draft", 0), "Private draft");
+  assert.equal(label("unpublished", 0), "Unpublished");
+});

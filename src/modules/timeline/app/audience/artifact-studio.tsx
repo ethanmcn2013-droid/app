@@ -5,7 +5,7 @@ import {
   TimelineArtifact,
   TimelinePhonePreview,
 } from "@/modules/timeline/components/artifact";
-import { publicationStateLabel } from "@/modules/timeline/lib/format";
+import { effectivePublicationState, publicationStateLabel } from "@/modules/timeline/lib/format";
 import { presentViewerCount } from "@/modules/timeline/lib/viewer-count";
 import styles from "./artifact-studio.module.css";
 
@@ -38,7 +38,7 @@ export function TimelineArtifactStudio({
           Shared timelines
         </Link>
         <span className={styles.status} data-live={live ? "true" : undefined}>
-          {publicationStateLabel(live ? "published" : publication.state)}
+          {publicationStateLabel(effectivePublicationState(publication))}
         </span>
       </div>
 

@@ -81,6 +81,19 @@ export function audienceKindLabel(kind: string): string {
   return kind.charAt(0).toUpperCase() + kind.slice(1);
 }
 
+/**
+ * The state an owner should see. A "published" record whose links were all
+ * revoked is not live; saying "Link live" there tells the owner a page is
+ * reachable when it is not. Shared by the manager and the artifact studio.
+ */
+export function effectivePublicationState(publication: {
+  state: string;
+  activeShareCount: number;
+}): string {
+  if (publication.state !== "published") return publication.state;
+  return publication.activeShareCount > 0 ? "published" : "revoked";
+}
+
 export function publicationStateLabel(state: string): string {
   if (state === "published") return "Link live";
   if (state === "draft") return "Private draft";
