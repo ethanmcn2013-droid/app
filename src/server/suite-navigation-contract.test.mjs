@@ -12,6 +12,10 @@ const appLayout = read("src/app/app/layout.tsx");
 const mobileSuiteNav = read("src/components/app/mobile-suite-nav.tsx");
 const coreNavigation = read("src/lib/core-navigation.ts");
 const floorWorkspace = read("src/components/floor/floor-workspace.tsx");
+const v3Shell = read("src/components/shell/app-shell.tsx");
+const v3Sidebar = read("src/components/shell/app-sidebar.tsx");
+const v3Nav = read("src/components/shell/shell-nav.ts");
+const bareArtifactPath = read("src/lib/bare-artifact-path.ts");
 const commandPaletteFile = read("src/components/app/palette/command-palette.tsx");
 // The palette composes its search field from the shared scope-search
 // primitive, so the combobox lifecycle spans both files. Read them as one
@@ -261,22 +265,25 @@ test("Tasks chrome publishes the authorised workspace name, not a domain example
   assert.doesNotMatch(studioChrome, /useDomain/);
 });
 
-test("mobile suite nav exposes the same core paths and Notes under More", () => {
-  assert.match(appLayout, /<MobileSuiteNav \/>/);
-  assert.match(mobileSuiteNav, /if \(suiteSurfaceFromAppPath\(pathname\) === "tasks" && !messagesRoute\) return null;/);
-  assert.match(mobileSuiteNav, /const messagesRoute = pathname === MESSAGES_APP_PATH/);
-  assert.match(mobileSuiteNav, /CORE_DESTINATIONS\.map/);
-  assert.match(mobileSuiteNav, /label: "Notes", href: withSuiteContext\(PRODUCT_APP_PATHS\.notes, suiteContext\)/);
-  assert.match(mobileSuiteNav, /aria-haspopup="menu"/);
-  assert.match(mobileSuiteNav, /event\.key !== "Escape"/);
-  assert.match(
-    mobileSuiteNav,
-    /withSuiteContext\(destination\.path, suiteContext\)/,
-  );
-  assert.doesNotMatch(
-    mobileSuiteNav,
-    /\/app\/(?:board|list|calendar|plan|brief)(?:\b|\/)/,
-  );
+test("the v3 shell is the one persistent navigation on every signed-in page", () => {
+  // Redesign sprint (24 Sep 2026, founder authority): the studio bar, icon
+  // rail, bottom tab bar and the Floor's own spine were replaced by one
+  // sidebar + top bar. The same core paths stay reachable with suite context.
+  assert.match(appLayout, /<AppShell[\s>]/);
+  assert.doesNotMatch(appLayout, /<MobileSuiteNav|<StudioBar|<StudioRail/);
+  for (const path of ["/app/home", "/app/inbox", "/app/tasks", "/app/notes", "/app/timeline", "/app/settings"]) {
+    assert.match(v3Nav, new RegExp(`href: "${path}"`));
+  }
+  assert.match(v3Sidebar, /withSuiteContext\(destination\.href, suiteContext\)/);
+  assert.match(v3Nav, /requiresMessages: true/);
+  assert.doesNotMatch(v3Nav, /\/app\/(?:board|list|calendar|plan|brief)(?:|\/)/);
+});
+
+test("the mobile drawer closes on navigation and Escape", () => {
+  assert.match(v3Shell, /aria-label="Open navigation"/);
+  assert.match(v3Shell, /event\.key === "Escape"\) setMobileOpen\(false\)/);
+  assert.match(v3Shell, /if \(drawerPath !== pathname\)/);
+  assert.match(v3Shell, /aria-haspopup="menu"/);
 });
 
 test("mobile Tasks has one persistent core spine and one keyboard-complete More menu", () => {
@@ -300,18 +307,11 @@ test("mobile Tasks has one persistent core spine and one keyboard-complete More 
   assert.match(tasksSidebar, /min-h-14/);
 });
 
-test("bare Tasks Floor preserves the core destinations and Notes under More", () => {
-  assert.match(floorWorkspace, /CORE_DESTINATIONS\.map\(\(destination\) => product\(destination\.id, destination\.label, destination\.path\)\)/);
-  assert.match(floorWorkspace, /withSuiteContext\(href, suite\)/);
-  assert.match(floorWorkspace, /aria-label="More"/);
-  assert.match(floorWorkspace, /withSuiteContext\(PRODUCT_APP_PATHS\.notes, suite\)/);
-  assert.match(floorWorkspace, /aria-haspopup="menu"/);
-  assert.match(floorWorkspace, /event\.key !== "Escape"/);
-  assert.match(floorWorkspace, /moreTriggerRef\.current\?\.focus\(\)/);
-  assert.match(floorWorkspace, /href="\/app\/inbox"/);
-  assert.match(floorWorkspace, /href="\/app\/settings"/);
-  assert.match(floorWorkspace, /aria-label="Add task"/);
-  assert.match(productWorkspaceShell, /bareChrome \? "pb-0" : "pb-\[calc\(64px\+env\(safe-area-inset-bottom\)\)\]"/);
+test("Tasks renders inside the v3 shell and keeps its own Add task", () => {
+  assert.match(bareArtifactPath, /return isBareArtifactPath\(pathname\) \|\| isTimelinePreviewPath\(pathname\);/);
+  assert.match(floorWorkspace, /data-shell="v3"/);
+  assert.match(floorWorkspace, /Add task/);
+  assert.match(v3Shell, /router\.push\("\/app\/tasks\?create=task"\)/);
   assert.match(hybridWorkspace, /data-floor-runtime="true"/);
   assert.match(hybridWorkspaceStyles, /\.root\[data-floor-runtime\] \{ height: 100%; \}/);
 });

@@ -1,0 +1,28 @@
+/* v3 shell additions to the Floor (redesign sprint, 24 Sep 2026).
+   floor.module.css stays generated from its lab master; the v3 layout
+   overrides for the root, sheet and head live in src/ds/v3.css. */
+.headAdd {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 11px 0 9px;
+  border: 0;
+  border-radius: var(--v3-radius, 8px);
+  background: var(--v3-accent);
+  color: var(--v3-on-accent, #fff);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 120ms var(--v3-ease);
+}
+
+.headAdd:hover {
+  background: var(--v3-accent-hover);
+}
+
+.headAdd svg {
+  width: 14px;
+  height: 14px;
+}

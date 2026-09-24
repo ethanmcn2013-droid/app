@@ -1,7 +1,6 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { AppSidebar } from "@/components/app/sidebar";
 import { RoomToolsProvider } from "@/components/app/room/room-tools-context";
 import { useBareChromeRoute } from "@/components/app/suite-scroll-frame";
 import type { ProjectsTreeData } from "@/server/actions/projects-tree";
@@ -65,17 +64,12 @@ export function ProductWorkspaceShell({
 
   return (
     <RoomToolsProvider>
-      <AppSidebar activeWorkspaceId={activeWorkspaceId} tree={tree} />
+      {/* v3: the shell sidebar replaces the Tasks projects tree and the
+          phone tab bar, so the canvas no longer reserves room for either. */}
       <main
         id="app-main-content"
         tabIndex={-1}
-        className={[
-          "flex min-h-0 min-w-0 flex-1 flex-col bg-[color-mix(in_srgb,var(--x-task-canvas)_72%,var(--x-task-surface))]",
-          // The Tasks Floor owns its own phone rail. Only the other Tasks
-          // surfaces need room for MobileTabBar below this canvas.
-          bareChrome ? "pb-0" : "pb-[calc(64px+env(safe-area-inset-bottom))]",
-          "md:pb-0",
-        ].join(" ")}
+        className="flex min-h-0 min-w-0 flex-1 flex-col bg-[var(--v3-canvas)]"
         data-product-canvas="tasks"
       >
         {children}

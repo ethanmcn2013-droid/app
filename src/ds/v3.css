@@ -1,0 +1,129 @@
+/*
+ * Signal Studio v3: the redesign token layer (24 Sep 2026).
+ *
+ * Founder authority for the redesign sprint supersedes the earlier design
+ * locks and canons (docs/design/redesign-2026-09/06-current-state-and-constraints.md).
+ *
+ * Two jobs:
+ * 1. Define the v3 semantic tokens the new shell and primitives use (--v3-*).
+ * 2. Re-point the base tokens every existing surface already reads (--paper,
+ *    --ink*, --hairline*, --accent*), so the whole App moves to the v3 palette
+ *    at once while screens are rebuilt one by one.
+ *
+ * `html:root` outranks the plain `:root` blocks in signal-ds and globals.css
+ * regardless of import order; `[data-theme="dark"]` is set by theme-runtime.
+ */
+
+html:root {
+  /* ── v3 semantic: light ─────────────────────────────────────────── */
+  --v3-shell: #f4f3f1;
+  --v3-canvas: #ffffff;
+  --v3-surface: #ffffff;
+  --v3-sunken: #f8f7f5;
+  --v3-hover: rgba(24, 20, 14, 0.045);
+  --v3-selected: #ffffff;
+  --v3-border: #e8e6e3;
+  --v3-border-strong: #d9d6d1;
+  --v3-text: #141414;
+  --v3-text-2: #5f5e5b;
+  --v3-text-3: #8e8c88;
+  --v3-accent: #4f46e5;
+  --v3-accent-hover: #4338ca;
+  --v3-accent-soft: rgba(79, 70, 229, 0.1);
+  --v3-on-accent: #ffffff;
+  --v3-solid: #141414;
+  --v3-on-solid: #ffffff;
+  --v3-danger: #e5484d;
+  --v3-warning: #e5a93b;
+  --v3-success: #2f9e6a;
+  --v3-review: #7c74f0;
+
+  --v3-shadow-1: 0 1px 2px rgba(20, 18, 14, 0.06);
+  --v3-shadow-pop: 0 8px 28px rgba(20, 18, 14, 0.12), 0 0 0 1px var(--v3-border);
+  --v3-radius-sm: 6px;
+  --v3-radius: 8px;
+  --v3-radius-lg: 12px;
+  --v3-radius-xl: 16px;
+  --v3-sidebar-w: 248px;
+  --v3-topbar-h: 48px;
+  --v3-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* ── legacy base tokens → v3 (every existing surface) ───────────── */
+  --paper: var(--v3-canvas);
+  --paper-soft: #faf9f7;
+  --paper-deep: var(--v3-shell);
+  --ink: var(--v3-text);
+  --ink-soft: #3d3c39;
+  --ink-quiet: var(--v3-text-2);
+  --ink-faint: var(--v3-text-3);
+  --ink-ghost: var(--v3-border-strong);
+  --hairline: rgba(24, 20, 14, 0.1);
+  --hairline-soft: rgba(24, 20, 14, 0.06);
+  --accent: var(--v3-accent);
+  --accent-hover: var(--v3-accent-hover);
+  --accent-tint: #eef0ff;
+  --accent-soft: var(--v3-accent-soft);
+  --accent-glow: rgba(79, 70, 229, 0.28);
+}
+
+html:root[data-theme="dark"] {
+  /* ── v3 semantic: dark ──────────────────────────────────────────── */
+  --v3-shell: #111113;
+  --v3-canvas: #161618;
+  --v3-surface: #1b1b1e;
+  --v3-sunken: #131315;
+  --v3-hover: rgba(255, 255, 255, 0.045);
+  --v3-selected: rgba(255, 255, 255, 0.07);
+  --v3-border: rgba(255, 255, 255, 0.08);
+  --v3-border-strong: rgba(255, 255, 255, 0.14);
+  --v3-text: #ededef;
+  --v3-text-2: #a1a1a8;
+  --v3-text-3: #6c6c74;
+  --v3-accent: #8b87f8;
+  --v3-accent-hover: #a3a0fa;
+  --v3-accent-soft: rgba(139, 135, 248, 0.16);
+  --v3-on-accent: #0e0e12;
+  --v3-solid: #ededef;
+  --v3-on-solid: #111113;
+  --v3-danger: #f0646a;
+  --v3-warning: #e8b64c;
+  --v3-success: #4cc38a;
+  --v3-review: #9b95fa;
+
+  --v3-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --v3-shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--v3-border);
+
+  --paper: var(--v3-canvas);
+  --paper-soft: var(--v3-surface);
+  --paper-deep: var(--v3-shell);
+  --ink: var(--v3-text);
+  --ink-soft: #c9c9ce;
+  --ink-quiet: var(--v3-text-2);
+  --ink-faint: var(--v3-text-3);
+  --ink-ghost: #3a3a40;
+  --hairline: rgba(255, 255, 255, 0.09);
+  --hairline-soft: rgba(255, 255, 255, 0.055);
+  --accent: var(--v3-accent);
+  --accent-hover: var(--v3-accent-hover);
+  --accent-tint: rgba(139, 135, 248, 0.14);
+  --accent-soft: var(--v3-accent-soft);
+  --accent-glow: rgba(139, 135, 248, 0.3);
+}
+
+/* ── Tasks Floor inside the v3 shell ──────────────────────────────
+   No ink ground, inset, spine or dock: the Floor's sheet is the shell's
+   work sheet. The board, trays and cards are unchanged. */
+html [data-shell="v3"][data-cards] {
+  padding: 0;
+  background: var(--v3-canvas);
+}
+
+html [data-shell="v3"][data-cards] [data-sheet] {
+  border-radius: 0;
+  background: var(--v3-canvas);
+}
+
+html [data-shell="v3"][data-cards] [data-floor-head] {
+  padding-left: 24px;
+  padding-right: 16px;
+}

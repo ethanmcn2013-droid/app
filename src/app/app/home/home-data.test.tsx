@@ -122,6 +122,7 @@ test("rendered Home distinguishes reading an aggregate and opening a task", asyn
   const link = ({ href, children, className }: { href: string; children: ReactNode; className?: string }) => createElement("a", { href, className }, children);
   const view = load<typeof import("@/components/app/home/home-view")>("../../../components/app/home/home-view.tsx", {
     "next/link": { default: link }, "./home-analytics": { HomeItemLink: link, HomeViewedPing: () => null },
+    "./home.module.css": { default: new Proxy({}, { get: (_target, key) => String(key) }) },
   });
   const html = renderToStaticMarkup(createElement(view.HomeView, { data }));
   assert.match(html, /Read →/);

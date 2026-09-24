@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { StudioRail } from "@/components/studio-bar/studio-rail";
 import { MobileSuiteNav } from "./mobile-suite-nav";
+import { AppSidebar } from "@/components/shell/app-sidebar";
 import { conversationAvailability, resolveConversationControls } from "@/lib/conversations/flags";
 import { authenticateConversationActor } from "@/server/conversations/runtime";
 
@@ -18,4 +19,9 @@ export async function ConversationStudioRail() {
 }
 export async function ConversationMobileNav() {
   return <MobileSuiteNav messagesEnabled={await canShowMessages()} />;
+}
+
+/** v3 shell sidebar: Messages appears only for viewers who can read it. */
+export async function ConversationShellSidebar() {
+  return <AppSidebar messagesEnabled={await canShowMessages()} />;
 }

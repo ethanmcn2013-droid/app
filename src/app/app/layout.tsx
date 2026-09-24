@@ -1,18 +1,14 @@
 import { Suspense } from "react";
 import { ClerkRuntimeProvider } from "@/components/clerk-runtime-provider";
-import { MobileSuiteNav } from "@/components/app/mobile-suite-nav";
-import { ConversationMobileNav, ConversationStudioRail } from "@/components/app/conversation-navigation-runtime";
+import { ConversationShellSidebar } from "@/components/app/conversation-navigation-runtime";
+import { AppShell } from "@/components/shell/app-shell";
+import { AppSidebar } from "@/components/shell/app-sidebar";
 import { ProductWorkspaceShell } from "@/components/app/product-workspace-shell";
 import { SuiteChromeGate } from "@/components/app/suite-chrome-gate";
-import {
-  SuiteScrollFrame,
-  SuiteScrollFrameBody,
-} from "@/components/app/suite-scroll-frame";
+import { SuiteScrollFrame } from "@/components/app/suite-scroll-frame";
 import { SuiteCommandRoot } from "@/components/app/suite-command-root";
 import { SuiteLoading } from "@/components/app/suite-loading";
 import { ThemeRuntime } from "./theme-runtime";
-import { StudioBar } from "@/components/studio-bar/studio-bar";
-import { StudioRail } from "@/components/studio-bar/studio-rail";
 import { StudioChromeProvider } from "@/components/studio-bar/studio-chrome-context";
 import { isDemoMode } from "@/lib/access-mode";
 import { requireAppAccessTasks } from "@/server/app-access";
@@ -133,21 +129,23 @@ export default function AppLayout({
           <a href="#app-main-content" className={SKIP_LINK_CLASS}>
             Skip to main content
           </a>
-          <SuiteChromeGate>
-            <StudioBar />
-          </SuiteChromeGate>
-          <SuiteScrollFrameBody>
-            <SuiteChromeGate>
-              <Suspense fallback={<StudioRail />}><ConversationStudioRail /></Suspense>
-            </SuiteChromeGate>
+          {/* v3 shell (redesign sprint, 24 Sep 2026): one persistent sidebar
+              and top bar for every /app page. It renders bare on the
+              chrome-free routes, exactly as the old gate did. */}
+          <AppShell
+            sidebar={
+              <Suspense fallback={<AppSidebar messagesEnabled={false} />}>
+                <ConversationShellSidebar />
+              </Suspense>
+            }
+          >
             <Suspense fallback={<SuiteLoading />}>
               <SharedAppGate>
                 <ConversationSessionRuntime><ProductWorkspaceShell>{children}</ProductWorkspaceShell></ConversationSessionRuntime>
               </SharedAppGate>
             </Suspense>
-          </SuiteScrollFrameBody>
+          </AppShell>
           <SuiteChromeGate>
-            <Suspense fallback={<MobileSuiteNav />}><ConversationMobileNav /></Suspense>
             <SuiteCommandRoot />
           </SuiteChromeGate>
         </SuiteScrollFrame>

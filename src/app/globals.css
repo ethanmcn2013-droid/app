@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "signal-ds/tokens.css";
 @import "../ds/theme-overrides.css";
+@import "../ds/v3.css";
 @import "signal-ds/tailwind.css";
 
 /* ────────────────────────────────────────────────────────────
