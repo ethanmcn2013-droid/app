@@ -335,7 +335,8 @@ export function ProjectOverview({
     });
   }
 
-  const { taskStats, members, milestones, recentEvents, program, isOwner } = data;
+  // No program views (founder, 24 Sep 2026): Details names the project only.
+  const { taskStats, members, milestones, recentEvents, isOwner } = data;
 
   // Mount-stable clock: the React Compiler forbids impure calls in render.
   // Review mode pins it to the fixture's day so every surface agrees.
@@ -362,8 +363,6 @@ export function ProjectOverview({
   const titleId = `project-title-${data.workspaceId}`;
 
   const details: { label: string; value: string }[] = [];
-  if (program) details.push({ label: "Program", value: program.name });
-  if (program?.dateRange) details.push({ label: "Program dates", value: program.dateRange });
   if (owner) details.push({ label: "Owner", value: memberName(owner) });
   if (data.createdAt) details.push({ label: "Created", value: formatProjectDate(data.createdAt) });
 

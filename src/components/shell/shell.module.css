@@ -5,7 +5,7 @@
   display: flex;
   height: 100dvh;
   width: 100%;
-  background: var(--v3-shell);
+  background: var(--v3-chrome);
   color: var(--v3-text);
   font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
 }
@@ -19,7 +19,28 @@
   flex-direction: column;
   min-height: 0;
   padding: 10px 10px 8px;
-  background: var(--v3-shell);
+  background: var(--v3-chrome);
+  /* The sidebar is ink in both themes (founder): its tokens are the dark
+     set, scoped here, so every control inside keeps AA contrast. */
+  color-scheme: dark;
+  --v3-canvas: #161618;
+  --v3-surface: #1f1f23;
+  --v3-sunken: #0c0c0d;
+  --v3-fill: rgba(255, 255, 255, 0.07);
+  --v3-hover: rgba(255, 255, 255, 0.06);
+  --v3-selected: rgba(255, 255, 255, 0.1);
+  --v3-border: rgba(255, 255, 255, 0.09);
+  --v3-border-strong: rgba(255, 255, 255, 0.16);
+  --v3-text: #ededef;
+  --v3-text-2: #b4b4bb;
+  --v3-text-3: #8b8b93;
+  --v3-accent: #8b87f8;
+  --v3-accent-hover: #a3a0fa;
+  --v3-accent-soft: rgba(139, 135, 248, 0.18);
+  --v3-accent-text: #9f9bf6;
+  --v3-on-accent: #0e0e12;
+  --v3-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  color: var(--v3-text);
   transition: width 180ms var(--v3-ease);
 }
 .shell[data-collapsed] .sidebar { width: 60px; }

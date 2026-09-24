@@ -17,6 +17,8 @@
 html:root {
   /* ── v3 semantic: light ─────────────────────────────────────────── */
   --v3-shell: #f4f3f1;
+  /* App chrome (sidebar and the frame around the page): ink in both themes. */
+  --v3-chrome: #141414;
   --v3-canvas: #ffffff;
   --v3-surface: #ffffff;
   --v3-sunken: #f8f7f5;
@@ -114,6 +116,7 @@ html:root[data-theme="dark"] {
 
   /* ── v3 semantic: dark ──────────────────────────────────────────── */
   --v3-shell: #111113;
+  --v3-chrome: #111113;
   --v3-canvas: #161618;
   --v3-surface: #1b1b1e;
   --v3-sunken: #131315;
