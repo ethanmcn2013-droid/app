@@ -65,7 +65,17 @@ export function ArmedSubmitButton({
         setArmed(false);
       }}
     >
-      {armed ? armedLabel : label}
+      {/* Both labels share one grid cell so the button keeps the wider width in
+          either state. Swapping text alone reflowed the wrapped row and moved
+          the next destructive button under the pointer before the confirm click. */}
+      <span className="grid">
+        <span className="col-start-1 row-start-1" style={{ visibility: armed ? "hidden" : "visible" }}>
+          {label}
+        </span>
+        <span className="col-start-1 row-start-1" style={{ visibility: armed ? "visible" : "hidden" }}>
+          {armedLabel}
+        </span>
+      </span>
     </button>
   );
 }
