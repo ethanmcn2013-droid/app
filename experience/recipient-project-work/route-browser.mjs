@@ -194,24 +194,25 @@ try {
         }
         if(width===390){
           f.state.v3=true;f.cookies();
-          await page.goto(origin+surfaces[0].href);
-          const projects=page.getByRole('navigation',{name:'Signal Studio'}).getByRole('link',{name:'Projects',exact:true});
-          await projects.click();
+          // v3: the shell owns navigation, and /app/project is the Projects
+          // index above the open Project's overview. Creating a Project starts
+          // from the page's own "New project" button, not a Tasks drawer.
+          await page.goto(origin+'/app/project?workspaceId=project-b');
           assert.equal(new URL(page.url()).pathname,'/app/project');
+          await page.getByRole('heading',{name:'Projects',level:1,exact:true}).waitFor();
           await page.getByRole('heading',{name:'B arrival board',exact:true}).waitFor();
-          const trigger=page.getByRole('button',{name:'Open Tasks navigation',exact:true});
+          const trigger=page.getByRole('button',{name:'New project',exact:true});
           await trigger.waitFor();
           assert.equal(await trigger.isVisible(),true);
+          await evidence('tasks.page.app-project','mobile-projects-index');
           await trigger.click();
-          const drawer=page.getByRole('dialog',{name:'Tasks navigation'});
-          await drawer.waitFor();
-          assert.equal(await trigger.getAttribute('aria-expanded'),'true');
-          await evidence('tasks.page.app-project','mobile-project-drawer');
-          await drawer.getByRole('button',{name:'Add project',exact:true}).click();
-          await drawer.getByRole('button',{name:'Start with Monthly business rhythm',exact:true}).waitFor();
+          const projectName=page.getByRole('textbox',{name:'Name your project',exact:true});
+          await projectName.waitFor();
+          assert.equal(await projectName.evaluate(element=>document.activeElement===element),true);
+          await page.getByRole('button',{name:'Start with Monthly business rhythm',exact:true}).waitFor();
           await evidence('tasks.page.app-project','mobile-template-choice');
-          await drawer.press('Escape');
-          await drawer.waitFor({state:'hidden'});
+          await projectName.press('Escape');
+          await projectName.waitFor({state:'hidden'});
           assert.equal(await trigger.evaluate(element=>document.activeElement===element),true);
           assert.equal(f.state.cookieWrites.length,0);
           await evidence('tasks.page.app-project','mobile-project-entry');
@@ -223,7 +224,7 @@ try {
           assert.equal(await longHeading.evaluate(element=>element.scrollWidth<=element.clientWidth+1),true);
           assert.equal(await longHeading.evaluate(element=>element.scrollHeight>Number.parseFloat(getComputedStyle(element).fontSize)*1.5),true);
           assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
-          assert.equal(await page.getByRole('button',{name:'Open Tasks navigation',exact:true}).isVisible(),true);
+          assert.equal(await page.getByRole('button',{name:'New project',exact:true}).isVisible(),true);
           await evidence('tasks.page.app-project','mobile-long-project-name');
           await f.client.execute({sql:"UPDATE meta SET value='B arrival board' WHERE key='board:project-b:name'"});
         }
