@@ -9,6 +9,7 @@ import type { EntitlementTier } from "@/lib/data";
 import type { PaidTier } from "@/server/stripe";
 import { EVENT_SELF_SERVE_AVAILABLE, EVENT_UNAVAILABLE_MESSAGE } from "@/lib/billing-availability";
 import { SectionHeader } from "../settings-app";
+import { Badge, SettingsGroup, SettingsRow, cx, ui } from "../settings-ui";
 import { REDEEM_FAILURE_COPY, REDEEM_TIER_LABELS } from "@/components/redeem/redeem-copy";
 
 type TierMeta = {
@@ -34,9 +35,9 @@ const TIER_META: TierMeta[] = [
     id: "free",
     label: "Free",
     price: "€0",
-    blurb: "One workspace. All three products. Three editing guests.",
+    blurb: "One project. All three products. Three editing guests.",
     features: [
-      "One workspace",
+      "One project",
       "Board, list, calendar, and timeline views",
       "Daily digest",
       "Three editing guests",
@@ -47,10 +48,10 @@ const TIER_META: TierMeta[] = [
     id: "workspace",
     label: "Pro",
     price: "€12 / mo",
-    blurb: "Unlimited workspaces. Notes, Tasks and Timeline.",
+    blurb: "Unlimited projects. Notes, Tasks and Timeline.",
     paidTier: "workspace",
     features: [
-      "Unlimited workspaces",
+      "Unlimited projects",
       "Editing guest limit not yet published",
       "All three products, with the daily briefing in Home",
       "Recurring tasks and dates written in plain English",
@@ -61,10 +62,10 @@ const TIER_META: TierMeta[] = [
     id: "event",
     label: "Event",
     price: "€89 once",
-    blurb: `One workspace for one event. ${EVENT_UNAVAILABLE_MESSAGE}`,
+    blurb: `One project for one event. ${EVENT_UNAVAILABLE_MESSAGE}`,
     paidTier: "event",
     features: [
-      "One workspace, 12 months of editing",
+      "One project, 12 months of editing",
       "Unlimited guests",
       "No subscription, no auto-renew",
     ],
@@ -74,12 +75,12 @@ const TIER_META: TierMeta[] = [
     id: "studio",
     label: "Studio",
     price: "By arrangement",
-    blurb: "One subscription. Every workspace you own.",
+    blurb: "One subscription. Every project you own.",
     features: [
-      "Unlimited workspaces, one per client, one per project",
-      "Workspace features on every workspace you own",
+      "Unlimited projects, one per client",
+      "Pro features on every project you own",
       "No per-seat tax inside any of them",
-      "One bill, not one per workspace",
+      "One bill, not one per project",
     ],
     // No paidTier, no selfServe, only shown when the user already
     // holds it (granted via Studio /api/internal/entitlements/grant).
@@ -103,7 +104,7 @@ const TIER_META: TierMeta[] = [
     //                           false: getMemberCapacity returns max: null for this tier.
     price: "Included by your venue",
     blurb:
-      "One workspace. One wedding. Eighteen months, or three months past the wedding, whichever is later.",
+      "One project. One wedding. Eighteen months, or three months past the wedding, whichever is later.",
     features: [
       "Wedding-shaped starter pack from day one",
       "Invite your spouse, your planner and your family",
@@ -186,113 +187,123 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
     });
   }
 
+  // Available self-serve tiers + the user's CURRENT tier when it isn't
+  // already in that set (Studio + Wedding only render when the user holds
+  // them).
+  const visibleTiers = TIER_META.filter(
+    (t) => t.selfServe || t.id === tier,
+  );
+  const cols =
+    visibleTiers.length === 4 ? "md:grid-cols-4" :
+    visibleTiers.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3";
+
   return (
     <div>
       <SectionHeader
-        eyebrow="Billing"
-        title="What you’re on, and what’s next"
+        title="Billing"
         description="Review your plan, manage billing or redeem an access code."
       />
 
-      {/* Current tier strip */}
-      <div className="rounded-xl border border-line-soft bg-bg-elevated p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-quiet">
-              Current plan
-            </div>
-            <div className="mt-1.5 flex items-center gap-2">
-              <span className="text-[20px] font-semibold tracking-tight text-ink">
-                {current.label}
-              </span>
-              <TierBadge tier={tier} />
-            </div>
-            <p className="mt-1 text-[12.5px] text-ink-soft">{current.blurb}</p>
-          </div>
-          <div className="flex flex-shrink-0 items-center gap-2">
-            {isPaid ? (
-              <div className="flex flex-shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
-                <button
-                  type="button"
-                  onClick={openPortal}
-                  disabled={pending}
-                  className="rounded-full border border-line bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink-soft hover:border-ink-soft/30 hover:text-ink disabled:opacity-60"
-                >
-                  Manage billing
-                </button>
+      {/* Current plan */}
+      <SettingsGroup title="Current plan">
+        <div className="flex flex-col gap-4 px-4 py-5 sm:flex-row sm:items-center sm:justify-between md:px-5">
+          <div className="flex min-w-0 items-start gap-3.5">
+            <span
+              aria-hidden
+              className="flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-[var(--v3-radius)] bg-[var(--v3-accent-soft)] text-[color:var(--v3-accent)]"
+            >
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 2.25 13.75 5.5v5L8 13.75 2.25 10.5v-5Z" />
+                <path d="m2.25 5.5 5.75 3.25 5.75-3.25M8 8.75v5" />
+              </svg>
+            </span>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-baseline gap-x-2">
+                <span className="text-[18px] font-semibold leading-6 tracking-[-0.015em] text-[color:var(--v3-text)]">
+                  {current.label}
+                </span>
+                <span className="text-[13px] tabular-nums text-[color:var(--v3-text-3)]">
+                  {current.price}
+                </span>
               </div>
-            ) : null}
+              <p className="mt-1 max-w-[460px] text-[12.5px] leading-[1.5] text-[color:var(--v3-text-2)]">
+                {current.blurb}
+              </p>
+            </div>
           </div>
+          {isPaid ? (
+            <button
+              type="button"
+              onClick={openPortal}
+              disabled={pending}
+              className={ui.button}
+            >
+              Manage billing
+            </button>
+          ) : null}
         </div>
-      </div>
+      </SettingsGroup>
 
-      {/* Tier comparison, available self-serve tiers
-       *  + the user's CURRENT tier when it isn't already in that set
-       *  (Studio + Wedding only render when the user holds them). */}
-      {(() => {
-        const visibleTiers = TIER_META.filter(
-          (t) => t.selfServe || t.id === tier,
-        );
-        const cols =
-          visibleTiers.length === 4 ? "md:grid-cols-4" :
-          visibleTiers.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3";
-        return (
-      <div className="mt-4 overflow-hidden rounded-xl border border-line-soft bg-bg-elevated">
-        <div className={`grid grid-cols-1 divide-y divide-line-soft ${cols} md:divide-x md:divide-y-0`}>
+      {/* Tier comparison */}
+      <SettingsGroup title="Plans">
+        <div className={cx("grid grid-cols-1 divide-y divide-[color:var(--v3-border)] md:divide-x md:divide-y-0", cols)}>
           {visibleTiers.map((t) => {
             const isCurrent = t.id === tier;
             const canUpgrade = TIER_RANK[t.id] > TIER_RANK[tier];
             return (
               <div
                 key={t.id}
-                className={
-                  "flex flex-col p-5 " +
-                  (isCurrent ? "bg-brand-soft/40" : "")
-                }
+                className={cx(
+                  "flex flex-col p-4 md:p-5",
+                  isCurrent
+                    ? "bg-[color-mix(in_srgb,var(--v3-accent)_5%,transparent)]"
+                    : "",
+                )}
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-[14px] font-semibold text-ink">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[13.5px] font-semibold text-[color:var(--v3-text)]">
                     {t.label}
                   </span>
                   {isCurrent ? (
-                    <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.1em] text-brand">
-                      You
-                    </span>
+                    <Badge tone="accent">Your plan</Badge>
                   ) : null}
                 </div>
-                <div className="mt-1 text-[18px] font-semibold tabular-nums tracking-tight text-ink">
+                <div className="mt-2 text-[20px] font-semibold leading-7 tabular-nums tracking-[-0.02em] text-[color:var(--v3-text)]">
                   {t.price}
                 </div>
-                <p className="mt-1 text-[11.5px] leading-[1.5] text-ink-quiet">
+                <p className="mt-1 text-[12px] leading-[1.5] text-[color:var(--v3-text-2)]">
                   {t.blurb}
                 </p>
-                <ul className="mt-3 flex-1 space-y-1.5">
+                <ul className="mt-4 flex-1 space-y-2">
                   {t.features.map((f) => (
                     <li
                       key={f}
-                      className="flex gap-2 text-[12px] leading-[1.5] text-ink-soft"
+                      className="flex gap-2 text-[12.5px] leading-[1.45] text-[color:var(--v3-text-2)]"
                     >
                       <svg
-                        width="11"
-                        height="11"
-                        viewBox="0 0 24 24"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 16 16"
                         fill="none"
                         stroke="currentColor"
-                        strokeWidth="2.4"
-                        className="mt-1 flex-shrink-0 text-brand"
+                        strokeWidth="1.75"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                        className="mt-px shrink-0 text-[color:var(--v3-accent)]"
                       >
-                        <polyline points="20 6 9 17 4 12" />
+                        <path d="m3.5 8.5 3 3 6-7" />
                       </svg>
                       <span>{f}</span>
                     </li>
                   ))}
                 </ul>
-                <div className="mt-4">
+                <div className="mt-5">
                   {isCurrent ? (
                     <button
                       type="button"
                       disabled
-                      className="w-full rounded-full border border-line bg-bg-sunken/40 px-3 py-1.5 text-[12px] font-medium text-ink-quiet"
+                      className={cx(ui.button, "w-full")}
                     >
                       Current
                     </button>
@@ -301,62 +312,51 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
                       type="button"
                       onClick={() => t.paidTier && startCheckout(t.paidTier)}
                       disabled={pending}
-                      className="w-full rounded-full bg-ink px-3 py-1.5 text-[12px] font-medium text-white shadow-sm hover:bg-ink-soft disabled:opacity-60"
+                      className={cx(ui.primary, "w-full")}
                     >
                       Upgrade
                     </button>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled
-                      className="w-full rounded-full border border-line bg-white px-3 py-1.5 text-[12px] font-medium text-ink-quiet"
-                    >
-                      —
-                    </button>
-                  )}
+                  ) : null}
                 </div>
               </div>
             );
           })}
         </div>
-      </div>
-        );
-      })()}
+      </SettingsGroup>
 
       {/* Comp code */}
-      <form
-        onSubmit={redeem}
-        className="mt-4 rounded-xl border border-line-soft bg-bg-elevated p-5"
-      >
-        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-quiet">
-          Got a code?
-        </div>
-        <p className="mt-1 max-w-[520px] text-[12.5px] leading-[1.55] text-ink-soft">
-          Redeem an access code you received from Signal Studio or your venue.
-        </p>
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-          <input
-            type="text"
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder="GIFT-A4B2X9"
-            disabled={pending}
-            className="flex-1 rounded-md border border-line bg-white px-3 py-1.5 font-mono text-[13px] tracking-wider text-ink shadow-sm focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/15 disabled:opacity-60"
-          />
-          <button
-            type="submit"
-            disabled={pending || !code.trim()}
-            className="rounded-full bg-ink px-4 py-1.5 text-[12.5px] font-medium text-white shadow-sm hover:bg-ink-soft disabled:opacity-50"
+      <SettingsGroup title="Access code">
+        <form onSubmit={redeem}>
+          <SettingsRow
+            label="Got a code?"
+            htmlFor="billing-access-code"
+            description="Redeem an access code you received from Signal Studio or your venue."
           >
-            {pending ? "Working…" : "Redeem"}
-          </button>
-        </div>
-      </form>
-      <p className="mt-4 text-[12.5px] leading-[1.55] text-ink-soft">
+            <input
+              id="billing-access-code"
+              type="text"
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              placeholder="GIFT-A4B2X9"
+              disabled={pending}
+              className={cx(ui.input, "font-mono tracking-[0.06em] sm:w-[200px]")}
+            />
+            <button
+              type="submit"
+              disabled={pending || !code.trim()}
+              className={ui.button}
+            >
+              {pending ? "Working…" : "Redeem"}
+            </button>
+          </SettingsRow>
+        </form>
+      </SettingsGroup>
+
+      <p className="mt-4 px-0.5 text-[12.5px] leading-[1.55] text-[color:var(--v3-text-2)]">
         Need help with a payment or access code?{" "}
         <a
           href="mailto:hello@signalstudio.ie?subject=Billing%20or%20access%20help"
-          className="font-medium underline underline-offset-4"
+          className={ui.link}
         >
           Email Signal Studio
         </a>
@@ -364,28 +364,5 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
         original invitation ready.
       </p>
     </div>
-  );
-}
-
-function TierBadge({ tier }: { tier: EntitlementTier }) {
-  const styles: Record<EntitlementTier, { bg: string; ink: string }> = {
-    free: { bg: "bg-bg-sunken", ink: "text-ink-quiet" },
-    event: { bg: "bg-amber-50", ink: "text-amber-700" },
-    wedding: { bg: "bg-rose-50", ink: "text-rose-700" },
-    workspace: { bg: "bg-brand-soft", ink: "text-brand" },
-    studio: { bg: "bg-ink/5", ink: "text-ink" },
-  };
-  const s = styles[tier];
-  return (
-    <span
-      className={
-        "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] " +
-        s.bg +
-        " " +
-        s.ink
-      }
-    >
-      {TIER_META.find((t) => t.id === tier)?.label ?? tier}
-    </span>
   );
 }
