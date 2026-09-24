@@ -42,19 +42,21 @@ export default async function TimelineArtifactStudioPage({
   const publication = publications.find((candidate) => candidate.id === publicationId);
   if (!publication) notFound();
 
-  const contextQuery = context
-    ? `?workspaceId=${encodeURIComponent(context.workspaceId)}${
-        context.planningPeriodId
-          ? `&planningPeriodId=${encodeURIComponent(context.planningPeriodId)}`
-          : ""
-      }`
-    : "";
+  // The manager can be filtered to one Project (`?project=`); return there
+  // when the publication belongs to one, alongside the resolved context.
+  const managerQuery = new URLSearchParams();
+  if (context) {
+    managerQuery.set("workspaceId", context.workspaceId);
+    if (context.planningPeriodId) managerQuery.set("planningPeriodId", context.planningPeriodId);
+  }
+  if (publication.projectSlug) managerQuery.set("project", publication.projectSlug);
+  const managerSearch = managerQuery.toString();
 
   return (
     <TimelineArtifactStudio
       publication={publication}
       timeline={ownerPublicationToTimelineDto(publication)}
-      managerHref={`/app/timeline/audience${contextQuery}`}
+      managerHref={`/app/timeline/audience${managerSearch ? `?${managerSearch}` : ""}`}
     />
   );
 }
