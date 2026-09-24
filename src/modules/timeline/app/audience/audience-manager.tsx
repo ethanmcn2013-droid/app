@@ -22,6 +22,7 @@ import type {
 import {
   audienceKindLabel,
   calendarDateLabel,
+  effectivePublicationState,
   publicationStateLabel,
 } from "@/modules/timeline/lib/format";
 import { viewerCountSummary } from "@/modules/timeline/lib/viewer-count";
@@ -271,11 +272,7 @@ export function AudienceManager({
               // only earns its indigo while a link actually works.
               const linkLive =
                 publication.state === "published" && publication.activeShareCount > 0;
-              const effectiveState = linkLive
-                ? "published"
-                : publication.state === "published"
-                  ? "revoked"
-                  : publication.state;
+              const effectiveState = effectivePublicationState(publication);
               const setAsideCount = publication.items.filter(
                 (item) => item.state === "cancelled",
               ).length;
