@@ -195,8 +195,8 @@ function GuestList({ meal, plus }: { meal: boolean; plus: boolean }) {
               <th scope="col" className={s.gColSide}>
                 Side
               </th>
-              {plus && <th scope="col">Plus one</th>}
-              {meal && <th scope="col">Meal</th>}
+              {plus && <th scope="col" className={s.gColExtra}>Plus one</th>}
+              {meal && <th scope="col" className={s.gColExtra}>Meal</th>}
               <th scope="col">Reply</th>
               <th scope="col" className={s.gColFrom}>
                 Found in
@@ -224,15 +224,17 @@ function GuestRow({ g, i, animate, meal, plus }: { g: Guest; i: number; animate:
       transition={{ duration: 0.42, delay: animate ? d : 0, ease: EASE }}
     >
       <th scope="row" className={s.gName}>
-        <span className={s.gAvatar} aria-hidden>
-          {initials(g.name)}
+        <span className={s.gNameIn}>
+          <span className={s.gAvatar} aria-hidden>
+            {initials(g.name)}
+          </span>
+          {g.name}
         </span>
-        {g.name}
       </th>
       <td className={s.gColSide}>{g.side}</td>
-      {plus && <td className={s.gMuted}>{g.plusOne ? "Yes" : "No"}</td>}
-      {meal && <td className={g.meal ? undefined : s.gMuted}>{g.meal ?? (g.reply === "yes" ? "Not asked" : "")}</td>}
-      <td>
+      {plus && <td className={cx(s.gColExtra, s.gMuted)}>{g.plusOne ? "Yes" : "No"}</td>}
+      {meal && <td className={cx(s.gColExtra, !g.meal && s.gMuted)}>{g.meal ?? (g.reply === "yes" ? "Not asked" : "")}</td>}
+      <td className={s.gColReply}>
         <span className={cx(s.pill, g.reply === "yes" && s.pillYes, g.reply === "waiting" && s.pillWait, g.reply === "no" && s.pillNo)}>{REPLY_LABEL[g.reply]}</span>
       </td>
       <td className={s.gColFrom}>
@@ -554,7 +556,6 @@ export function ChecklistDatePreview({ item, project }: { item: string; project:
   ];
   return (
     <div className={s.check}>
-      <p className={s.checkTitle}>{item}</p>
       <ul className={s.checkList}>
         {items.map((it, i) => (
           <Rise key={it.t} i={i} as="li" className={s.checkRow}>

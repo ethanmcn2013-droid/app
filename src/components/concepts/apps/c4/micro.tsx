@@ -78,14 +78,13 @@ export function Timer({ seconds, label }: { seconds: number; label: string }) {
             {mmss(shown)}
           </span>
           <span className={s.timerSub} aria-live="polite">
-            {up ? "Time is up" : late ? "Thirty seconds left" : running ? "Running" : `${label}, ready`}
+            {up ? "Time is up" : late ? "Thirty seconds left" : running ? "Running" : "Ready"}
           </span>
         </div>
       </div>
       <div className={s.timerSide}>
-        <p className={s.timerName}>{label}</p>
-        <p className={s.timerLen}>
-          <span className={s.num}>{mmss(length)}</span> each
+        <p className={s.timerName}>
+          <span className={s.num}>{mmss(length)}</span> {label === "Speech timer" ? "for each speech" : label === "Toast timer" ? "for each toast" : "on the clock"}
         </p>
         <div className={s.timerRow}>
           <button type="button" className={s.primary} onClick={running ? () => setRunning(false) : start}>

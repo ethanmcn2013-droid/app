@@ -190,6 +190,11 @@ function ProjectChip({ project, onProject }: { project: ProjectId; onProject: (p
 
 /* ── suggestions ─────────────────────────────────────────────────── */
 
+const ONE_LINERS: { text: string; project: ProjectId }[] = [
+  { text: "a timer for the speeches", project: "mf" },
+  { text: "countdown to 2 November", project: "hollis" },
+];
+
 export function SuggestionPhrases({ onPick }: { onPick: (text: string, project: ProjectId) => void }) {
   return (
     <div className={s.sugg}>
@@ -204,6 +209,18 @@ export function SuggestionPhrases({ onPick }: { onPick: (text: string, project: 
           </li>
         ))}
       </ul>
+      <p className={s.oneLine}>
+        Small tools are made on the spot. Try{" "}
+        {ONE_LINERS.map((x, i) => (
+          <span key={x.text}>
+            {i > 0 && " or "}
+            <button type="button" className={s.oneLineBtn} onClick={() => onPick(x.text, x.project)}>
+              {x.text}
+            </button>
+          </span>
+        ))}
+        .
+      </p>
     </div>
   );
 }
@@ -286,7 +303,7 @@ export function RailCard({
   kept: boolean;
 }) {
   return (
-    <button type="button" className={cx(s.rail, selected && s.railOn)} aria-pressed={selected} onClick={onSelect}>
+    <button type="button" className={cx(s.rail, selected && s.railOn, kept && s.railKept)} aria-pressed={selected} onClick={onSelect}>
       <ToolTile tool={tool} size="s" />
       <span className={s.railText}>
         <span className={s.railRank}>{kept ? "Kept" : rank}</span>
@@ -367,7 +384,10 @@ export function AlreadyOn({ items, fresh, onOpen }: { items: OnRow[]; fresh: str
                   <span className={s.onName}>{o.label ?? t.name}</span>
                   <span className={s.onProject}>
                     {o.project === "all" ? (
-                      "Every Project"
+                      <>
+                        <span className={s.pDotAll} aria-hidden />
+                        Every Project
+                      </>
                     ) : (
                       <>
                         <ProjectDot id={o.project} />

@@ -259,14 +259,20 @@ export default function Concept() {
             ? "Made on the spot"
             : "";
 
-  // The phone's bottom bar carries the one main action.
-  let dockAction: { label: string; run: () => void; done?: boolean } | null = null;
-  if (result.kind === "micro") dockAction = microPinned ? { label: `Pinned to ${projectById(home).short}`, run: () => {}, done: true } : { label: `Pin to ${projectById(home).short}`, run: pinMicro };
-  else if (result.kind === "already" && selIdx === 0) dockAction = { label: "Open it", run: () => open(toolById(result.tool).name, home) };
+  // The phone's bottom bar carries the one main action. Plain data here; the click runs runDock.
+  type DockAct = "pin" | "none" | "openAlready" | "open" | "keep";
+  let dockAction: { label: string; act: DockAct; done?: boolean } | null = null;
+  if (result.kind === "micro") dockAction = microPinned ? { label: `Pinned to ${projectById(home).short}`, act: "none", done: true } : { label: `Pin to ${projectById(home).short}`, act: "pin" };
+  else if (result.kind === "already" && selIdx === 0) dockAction = { label: "Open it", act: "openAlready" };
   else if (current && (result.kind === "answers" || result.kind === "none" || result.kind === "already"))
-    dockAction = isKept(current)
-      ? { label: `Open ${toolById(current).noun}`, run: () => open(toolById(current).name, home), done: true }
-      : { label: `Keep this ${toolById(current).noun}`, run: () => keep(current, result.kind === "none" && current === "checklist" ? result.item : undefined) };
+    dockAction = isKept(current) ? { label: `Open ${toolById(current).noun}`, act: "open", done: true } : { label: `Keep this ${toolById(current).noun}`, act: "keep" };
+
+  const runDock = (act: DockAct) => {
+    if (act === "pin") pinMicro();
+    else if (act === "openAlready" && result.kind === "already") open(toolById(result.tool).name, home);
+    else if (act === "open" && current) open(toolById(current).name, home);
+    else if (act === "keep" && current) keep(current, result.kind === "none" && current === "checklist" ? result.item : undefined);
+  };
 
   return (
     <MotionConfig reducedMotion="user">
@@ -278,9 +284,11 @@ export default function Concept() {
           </header>
 
           <div className={s.dock}>
+            {/* On a phone the dock owns the foot of the screen; this marker lets the app's floating notices rise above it. */}
+            <span className={s.dockMark} data-signal-bottom-nav aria-hidden />
             {dockAction && (
               <div className={s.dockBar}>
-                <button type="button" className={cx(s.primary, s.dockKeep, dockAction.done && s.primaryDone)} onClick={dockAction.run}>
+                <button type="button" className={cx(s.primary, s.dockKeep, dockAction.done && s.primaryDone)} onClick={() => runDock(dockAction.act)}>
                   {dockAction.done && <Check />}
                   {dockAction.label}
                 </button>
@@ -553,6 +561,8 @@ function AnswerCard({
         </p>
       )}
 
+      <WhereItCameFrom p={{ ...prov, line }} />
+
       <div className={s.frame}>
         <div className={s.frameBar}>
           <span className={s.frameName}>
@@ -562,8 +572,6 @@ function AnswerCard({
         </div>
         <div className={s.frameBody}>{none ? <ChecklistDatePreview item={none} project={project} /> : <Preview tool={tool} project={project} meal={refine.meal} plus={refine.plus} />}</div>
       </div>
-
-      <WhereItCameFrom p={{ ...prov, line }} />
 
       {guestsLive && (
         <div className={s.refine} role="group" aria-label="Add to the guest list">
