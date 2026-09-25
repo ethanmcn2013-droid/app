@@ -88,6 +88,7 @@ export type CanvasProps = {
   onRenameCluster?: (id: string, name: string) => void;
   onTone?: (ids: string[], tone: Tone) => void;
   onPeelStarter?: () => void;
+  onAddToStage?: (stage: StageKey) => void;
   openId?: string | null;
   renderChrome?: (zoom: ZoomApi) => ReactNode;
 };
@@ -584,6 +585,11 @@ export function WallCanvas(p: CanvasProps) {
       onPointerCancel={onPointerUp}
       onPointerLeave={() => setPointer(null)}
       onDoubleClick={onDoubleClick}
+      onScroll={(e) => {
+        // Focus inside the wall must never scroll the clipped viewport.
+        e.currentTarget.scrollTop = 0;
+        e.currentTarget.scrollLeft = 0;
+      }}
       onContextMenu={(e) => e.preventDefault()}
     >
       <div
@@ -607,6 +613,17 @@ export function WallCanvas(p: CanvasProps) {
                 </span>
                 <h2 className={s.zoneName}>{st.name}</h2>
                 <span className={s.zoneCount}>{count}</span>
+                {!readOnly && p.onAddToStage ? (
+                  <button
+                    type="button"
+                    className={s.zoneAdd}
+                    data-chrome=""
+                    aria-label={`Add a note to ${st.name}`}
+                    onClick={() => p.onAddToStage?.(st.key)}
+                  >
+                    <Icon.plus size={16} />
+                  </button>
+                ) : null}
               </header>
               {count === 0 && !(wall.starterPad && st.key === "ideas") ? <p className={s.zoneEmpty}>{st.hint}</p> : null}
               {mode === "wall" && !readOnly ? (
@@ -745,7 +762,7 @@ export function WallCanvas(p: CanvasProps) {
         {/* Notes, in reading order so Tab follows the wall */}
         {ordered.map((n) => {
           const owner = n.owner ? people.get(n.owner) : undefined;
-          const presence = cursors.find((c) => c.noteId === n.id);
+          const presence = readOnly ? undefined : cursors.find((c) => c.noteId === n.id);
           return (
             <StickyNote
               key={n.id}
@@ -926,8 +943,8 @@ function SelectionBar({
   onDelete: () => void;
   onEdit: () => void;
 }) {
-  const left = clamp((rect.x + rect.w / 2) * view.s + view.x, 180, vw - 180);
-  const top = Math.max(64, rect.y * view.s + view.y - 12);
+  const left = clamp((rect.x + rect.w / 2) * view.s + view.x, 200, vw - 200);
+  const top = Math.max(64, rect.y * view.s + view.y - 12 - (note.clusterId ? 20 : 0));
   const tones: Tone[] = [5, 8, 7, 6, 4, 3, 2, 1];
   return (
     <div className={s.selBar} style={{ left, top }} data-chrome="" role="toolbar" aria-label="Note actions">

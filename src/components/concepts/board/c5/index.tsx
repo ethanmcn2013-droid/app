@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { STAGES, WALL_ORDER, initialWalls, type Note, type StageKey, type Tone, type Wall } from "./data";
-import { daysFromToday, shortDate, type Mode } from "./geometry";
+import { daysFromToday, freeSpot, shortDate, type Mode } from "./geometry";
 import { Icon } from "./icons";
 import { Face, toneVar } from "./note";
 import { createNote, dropNotes, moveToStage, nudge, patchNote, removeNotes, uid } from "./ops";
@@ -94,7 +94,7 @@ export default function PlanningWall() {
 
   const addNoteAt = useCallback(
     (x: number, y: number, title = "") => {
-      const tone: Tone = (wall.notes.at(-1)?.tone ?? 5) as Tone;
+      const tone: Tone = 5;
       const r = createNote(wall, x, y, tone, title);
       apply(r.wall);
       newIds.current.add(r.id);
@@ -434,6 +434,12 @@ export default function PlanningWall() {
           onRenameCluster={(id, name) => apply({ ...wall, clusters: wall.clusters.map((c) => (c.id === id ? { ...c, name } : c)) }, false)}
           onTone={(ids, tone) => apply({ ...wall, notes: wall.notes.map((n) => (ids.includes(n.id) ? { ...n, tone } : n)) })}
           onPeelStarter={peelStarter}
+          onAddToStage={(stage) => {
+            const zone = wall.zones.find((z) => z.stage === stage)!;
+            const spot = freeSpot(zone, wall.notes, new Set());
+            const id = addNoteAt(spot.x, spot.y);
+            setWalls((all) => ({ ...all, [wallId]: patchNote(all[wallId], id, { stage }) }));
+          }}
           openId={openId}
           renderChrome={(zoom) => (
             <>
@@ -505,7 +511,9 @@ function HelpCard({ onClose }: { onClose: () => void }) {
         {SHORTCUTS.map(([k, v]) => (
           <div key={k}>
             <dt>
-              {k.split(" ").map((part, i) => (part === "+" || part === "/" ? <span key={i}> {part} </span> : <kbd key={i} className={s.kbd}>{part}</kbd>))}
+              {k.split(" ").map((part, i, all) =>
+                all.length > 1 && (part === "+" || part === "/") ? <span key={i}> {part} </span> : <kbd key={i} className={s.kbd}>{part}</kbd>,
+              )}
             </dt>
             <dd>{v}</dd>
           </div>
