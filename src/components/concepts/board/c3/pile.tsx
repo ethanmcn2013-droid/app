@@ -105,7 +105,7 @@ export function DonePile({
               key={task.id}
               className={clsx(s.pileCard, top ? s.pileTop : s.pileUnder)}
               style={{ zIndex: i + 1, "--pr": `${tilt.r}deg` } as CSSProperties}
-              initial={reduce ? { opacity: 0 } : false}
+              initial={false}
               animate={{
                 opacity: depth > 4 ? 0 : 1,
                 x: tilt.x,

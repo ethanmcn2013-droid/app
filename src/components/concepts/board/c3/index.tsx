@@ -667,8 +667,13 @@ export default function TodaysDesk() {
                     <p className={s.emptyText}>
                       {evening || st.done.length > 6
                         ? "Everything else can wait for Monday."
-                        : "Pull something in from everything else, or enjoy the quiet."}
+                        : "Pull something in from everything else when you are ready."}
                     </p>
+                    {(evening || st.done.length > 6) && (
+                      <button type="button" className={s.softBtn} onClick={() => setView("wrap")}>
+                        Wrap up the day
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

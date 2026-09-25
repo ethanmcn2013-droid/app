@@ -245,6 +245,15 @@ export function QueueCard({
         </div>
       </div>
       <span className={s.est}>{dur(task.est)}</span>
+      {task.note && !dragging && (
+        <span className={s.peek} role="tooltip">
+          <span className={s.peekTitle}>{task.title}</span>
+          <span className={s.peekNote}>{task.note}</span>
+          <span className={s.peekMeta}>
+            <ProjectDot project={project} /> {project?.name} · {dur(task.est)}
+          </span>
+        </span>
+      )}
       <div className={s.qActions}>
         {suggested && onRemove ? (
           <button type="button" className={s.iconBtn} onClick={onRemove} aria-label={`Leave ${task.title} for another day`} title="Not today">
@@ -579,6 +588,7 @@ export function OfferSlot({ task, project, onAccept, onDismiss }: { task: Task; 
           <ProjectDot project={project} /> {dur(task.est)}
           {task.reason ? ` · ${REASON_LABEL[task.reason]}` : ""}
         </p>
+        {task.note && <p className={s.offerNote}>{task.note}</p>}
       </div>
       <div className={s.offerActions}>
         <button type="button" className={s.ghostBtn} onClick={onDismiss}>
