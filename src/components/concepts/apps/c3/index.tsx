@@ -238,7 +238,7 @@ export default function FieldGuide() {
                       <span className={styles.issueMeta}>Issue 38, Thursday 24 September</span>
                     )}
                   </div>
-                  <LeadStory story={storyById(leadId)} onOpen={() => openStory(leadId)} hidden={openId === leadId} />
+                  <LeadStory key={leadId} story={storyById(leadId)} onOpen={() => openStory(leadId)} hidden={openId === leadId} />
                   <div className={styles.grid}>
                     {ordered.map((id, i) => (
                       <StoryCard key={id} story={storyById(id)} enabled={enabled} hidden={openId === id} onOpen={() => openStory(id)} span={i < 3 ? "third" : "half"} />

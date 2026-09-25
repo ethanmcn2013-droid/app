@@ -192,10 +192,12 @@
   display: flex;
   gap: 8px;
   margin: 0;
-  padding: 2px;
+  padding: 2px 28px 2px 2px;
   list-style: none;
   overflow-x: auto;
   scrollbar-width: none;
+  /* a soft edge, so a row that runs on reads as more to see, not as cut off */
+  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
 }
 
 .kitItem {
@@ -1006,7 +1008,8 @@
 .suggestForm {
   display: grid;
   gap: 8px;
-  max-width: 560px;
+  width: 100%;
+  max-width: 520px;
 }
 
 .ideaLabel {
@@ -1462,7 +1465,7 @@
 }
 
 .footNoteQuiet {
-  max-width: 34ch;
+  max-width: 42ch;
   font: italic 400 15px/1.4 var(--c3-serif);
   color: var(--v3-text-2);
 }
