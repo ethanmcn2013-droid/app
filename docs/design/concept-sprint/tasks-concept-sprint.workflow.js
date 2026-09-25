@@ -1,13 +1,11 @@
 export const meta = {
   name: 'tasks-concept-sprint',
-  description: 'Five world-class concepts each for the Tasks board, list and calendar: slate, build, two critique and refine rounds, HTML gallery',
+  description: 'Five world-class concepts each for the Tasks board, list and calendar: slate, build, one critique and refine round, HTML gallery',
   phases: [
     { title: 'Slate', detail: 'one creative director per view sets five maximally distinct directions' },
     { title: 'Build', detail: 'one designer-engineer per concept builds it on sample data' },
-    { title: 'Critique', detail: 'independent critic reviews renders, round 1' },
-    { title: 'Refine', detail: 'apply valid critique, round 1' },
-    { title: 'Critique 2', detail: 'fresh critic, round 2' },
-    { title: 'Refine 2', detail: 'final polish and gallery thumbnail' },
+    { title: 'Critique', detail: 'independent critic reviews renders' },
+    { title: 'Refine', detail: 'apply valid critique, final polish and gallery shots' },
     { title: 'Gallery', detail: 'build the static HTML gallery for the founder' },
   ],
 }
@@ -104,11 +102,11 @@ Take your own screenshots: 1440x900 light, 1440x900 dark, 1440x1600 light (tall)
 const refine = (it, round, f) => agent(`${CONTEXT}
 You are the designer-engineer who built concept "${it.c.title}" (${it.view.name} view, folder ${folder(it)}). Round ${round} critique (score ${f?.score}):
 ${JSON.stringify(f?.findings ?? [], null, 1)}
-Be a skeptical owner: apply every finding that is real and makes it better; skip (and say why) any that is wrong, taste-neutral or dilutes the thesis. Then go beyond: fix anything else you see. Re-verify: tsc (your folder clean), eslint on your folder, screenshots 1440x900 light and dark, 390x844 light, and the interaction states you touched, under ${SHOTS}/${tag(it)}-refine${round}-*.png — LOOK and iterate.${round === 2 ? ` Finally save the gallery shots: ${SHOT} ${route(it)} ${SHOTS}/final/${tag(it)}-light.png 1440 900 light, the same with dark (${tag(it)}-dark.png), and ${SHOT} ${route(it)} ${SHOTS}/final/${tag(it)}-phone.png 390 844 light, and make sure meta.ts has the final title and thesis.` : ''} Commit your folder and push. Report what you applied/skipped, checks and screenshot paths.`, { label: `refine${round}:${tag(it)}`, phase: round === 1 ? 'Refine' : 'Refine 2', schema: REPORT })
+Be a skeptical owner: apply every finding that is real and makes it better; skip (and say why) any that is wrong, taste-neutral or dilutes the thesis. Then go beyond: fix anything else you see. Re-verify: tsc (your folder clean), eslint on your folder, screenshots 1440x900 light and dark, 390x844 light, and the interaction states you touched, under ${SHOTS}/${tag(it)}-refine${round}-*.png — LOOK and iterate.${round === 1 ? ` Finally save the gallery shots: ${SHOT} ${route(it)} ${SHOTS}/final/${tag(it)}-light.png 1440 900 light, the same with dark (${tag(it)}-dark.png), and ${SHOT} ${route(it)} ${SHOTS}/final/${tag(it)}-phone.png 390 844 light, and make sure meta.ts has the final title and thesis.` : ''} Commit your folder and push. Report what you applied/skipped, checks and screenshot paths.`, { label: `refine${round}:${tag(it)}`, phase: round === 1 ? 'Refine' : 'Refine 2', schema: REPORT })
 
-const results = await pipeline(
-  items,
-  (it) => agent(`${CONTEXT}
+// Builds run first as their own stage, so the founder can review every build
+// before critique starts. Pass args.stopAfterBuild = true to stop here.
+const build = (it) => agent(`${CONTEXT}
 You are the principal designer-engineer building concept ${it.c.n} for the ${it.view.name} view: "${it.c.title}".
 Thesis: ${it.c.thesis}
 Brief: ${it.c.brief}
@@ -116,14 +114,21 @@ Signature: ${it.c.signature}
 Avoid: ${it.c.avoid}
 IMPORTANT: a previous builder for this concept may have been cut off part-way through. If ${folder(it)} already contains substantial work, DO NOT start over: audit it (read every file, take screenshots), keep what is good, finish what is incomplete and fix what is broken. Only if the folder holds just the stub, build from scratch.
 Build it completely in ${folder(it)}: replace the stub index.tsx, write meta.ts (title, thesis), add components, a CSS module and a sample-data module inside the folder. Make it feel real and alive: believable data, real-feeling interactions (drag and drop, inline edit, filters, selection, hover cards, panels, keyboard shortcuts where natural), tasteful motion (respect prefers-reduced-motion), every state that matters, great phone layout. Invent any feature that makes it world class, but it must look production-grade, not a wireframe.
-Verify: tsc (your folder clean), eslint on your folder, and screenshots at 1440x900 light, 1440x900 dark, 390x844 light plus key interactions under ${SHOTS}/${tag(it)}-build-*.png. LOOK at each and iterate at least three times until it is genuinely world class. Commit your folder and push. Report a summary, checks and screenshot paths.`, { label: `build:${tag(it)}`, phase: 'Build', schema: REPORT }),
-  (b, it) => critique(it, 1, b?.summary).then((f) => ({ b, f1: f })),
-  (x, it) => refine(it, 1, x.f1).then((r1) => ({ ...x, r1 })),
-  (x, it) => critique(it, 2, x.r1?.summary).then((f2) => ({ ...x, f2 })),
-  (x, it) => refine(it, 2, x.f2).then((r2) => ({
+Verify: tsc (your folder clean), eslint on your folder, and screenshots at 1440x900 light, 1440x900 dark, 390x844 light plus key interactions under ${SHOTS}/${tag(it)}-build-*.png. LOOK at each and iterate at least three times until it is genuinely world class. Commit your folder and push. Report a summary, checks and screenshot paths.`, { label: `build:${tag(it)}`, phase: 'Build', schema: REPORT })
+const builds = await parallel(items.map((it) => () => build(it)))
+if (args && args.stopAfterBuild) {
+  return { builds: items.map((it, i) => ({ concept: tag(it), title: it.c.title, thesis: it.c.thesis, built: Boolean(builds[i]), summary: builds[i]?.summary ?? null })) }
+}
+const builtItems = items.map((it, i) => ({ ...it, b: builds[i] }))
+
+const results = await pipeline(
+  builtItems,
+  (it) => critique(it, 1, it.b?.summary).then((f) => ({ b: it.b, f1: f })),
+  // One critique and one refine round (founder's call, 2026-09-25).
+  (x, it) => refine(it, 1, x.f1).then((r1) => ({
     concept: tag(it), view: it.view.key, n: it.c.n, title: it.c.title, thesis: it.c.thesis, signature: it.c.signature,
-    score1: x.f1?.score ?? null, score2: x.f2?.score ?? null,
-    final: r2?.summary ?? null, checks: r2?.checks ?? null,
+    score: x.f1?.score ?? null,
+    final: r1?.summary ?? null, checks: r1?.checks ?? null,
   })),
 )
 
@@ -133,7 +138,7 @@ const gallery = await agent(`${CONTEXT}
 You are assembling the founder's review gallery for the Tasks concept sprint. Results:
 ${JSON.stringify(done, null, 1)}
 1. Make sure every concept has its three final shots in ${SHOTS}/final/ (<view>-<n>-light.png, -dark.png, -phone.png); take any that are missing with ${SHOT}.
-2. Build ONE self-contained HTML page at ${WT}/docs/design/concept-sprint/tasks-gallery.html: every image embedded as a data URI (so it works anywhere), grouped Board / List / Calendar, five concepts each; per concept: number, title, thesis, signature, the round 1 and round 2 critic scores, the light shot large, the dark and phone shots beside it, click-to-zoom lightbox, and a "how to open it live" note (/app/concepts/<view>/<n> on the review dev server). Use the Signal Studio v3 look (ink sidebar feel, indigo #4f46e5 accent, clean sans type), light and dark via prefers-color-scheme, sentence case, no exclamation marks. Keep it under 15 MB (compress screenshots to JPEG quality 82 if needed).
+2. Build ONE self-contained HTML page at ${WT}/docs/design/concept-sprint/tasks-gallery.html: every image embedded as a data URI (so it works anywhere), grouped Board / List / Calendar, five concepts each; per concept: number, title, thesis, signature, the critic score, the light shot large, the dark and phone shots beside it, click-to-zoom lightbox, and a "how to open it live" note (/app/concepts/<view>/<n> on the review dev server). Use the Signal Studio v3 look (ink sidebar feel, indigo #4f46e5 accent, clean sans type), light and dark via prefers-color-scheme, sentence case, no exclamation marks. Keep it under 15 MB (compress screenshots to JPEG quality 82 if needed).
 3. Publish it with the Artifact tool (load the artifact-design skill first if available; one private page, title "Tasks concepts"). If the Artifact tool is unavailable, say so and give the file path instead.
 4. Commit the HTML and push.
 Return the HTML path, the artifact URL (or "unavailable") and a short summary ranking your top pick per view with one line why.`, { label: 'gallery', phase: 'Gallery', schema: GALLERY })
