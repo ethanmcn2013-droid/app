@@ -8,7 +8,11 @@ import styles from "./flow.module.css";
 
 type Flows = Record<StageKey, StageFlow>;
 
-export type BoardHealth = { kind: "pooled"; stage: StageKey } | { kind: "healthy"; oldest: number } | { kind: "new" } | { kind: "none" };
+export type BoardHealth =
+  | { kind: "pooled"; stage: StageKey }
+  | { kind: "healthy"; oldest: number }
+  | { kind: "new" }
+  | { kind: "none"; stuck: number };
 
 export function FlowStrip({
   flows,
@@ -128,7 +132,15 @@ function HealthLine({ flows, health }: { flows: Flows; health: BoardHealth }) {
       </p>
     );
   }
-  return null;
+  return (
+    <p className={styles.health} data-kind="none">
+      <Icon.clock size={14} />
+      <span>
+        <strong>Nothing is pooling.</strong>{" "}
+        {health.stuck === 1 ? "One thing has sat longer than usual." : health.stuck > 1 ? `${health.stuck} things have sat longer than usual.` : "Work is moving at its usual pace."}
+      </span>
+    </p>
+  );
 }
 
 export function TimeMachine({

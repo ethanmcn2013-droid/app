@@ -78,7 +78,7 @@ export default function FlowAndFriction() {
     if (pooled) return { kind: "pooled", stage: pooled };
     const oldest = Math.max(0, ...openPlaced.map((p) => p.age));
     if (stuck.length === 0 && oldest <= 3) return { kind: "healthy", oldest: Math.max(oldest, 1) };
-    return { kind: "none" };
+    return { kind: "none", stuck: stuck.length };
   }, [isNew, flows, openPlaced, stuck.length]);
 
   const pack = live ? (packs[projectId] ?? []).filter((id) => flows.review.cards.some((p) => p.card.id === id)) : [];
@@ -155,6 +155,7 @@ export default function FlowAndFriction() {
     const current = openPlaced.concat(flows.done.cards).find((p) => p.card.id === id);
     if (!card || !live || (current && current.stage === to)) return;
     const restore = snapshot();
+    const usualApprover = cards.find((c) => c.approver)?.approver;
     updateCards((list) =>
       list.map((c) =>
         c.id !== id
@@ -163,6 +164,7 @@ export default function FlowAndFriction() {
               ...c,
               history: [...c.history, { stage: to, day: 0 }],
               blocker: to === "waiting" ? (c.blocker ?? { who: "a reply", since: 0 }) : c.blocker,
+              approver: to === "review" && !c.approver ? usualApprover : c.approver,
             },
       ),
     );

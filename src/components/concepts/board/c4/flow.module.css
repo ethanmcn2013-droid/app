@@ -357,7 +357,7 @@
 .segment {
   position: relative;
   flex: var(--grow) 1 0;
-  min-width: 108px;
+  min-width: 120px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -997,6 +997,15 @@
 }
 
 .forWho {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 4px;
+  color: var(--v3-text-3);
+  vertical-align: -1px;
+}
+
+.health[data-kind="none"] svg {
   color: var(--v3-text-3);
 }
 
@@ -1708,7 +1717,7 @@
 }
 
 .journey[data-compact] .journeyStep {
-  min-width: 44px;
+  min-width: 56px;
 }
 
 .popover {
@@ -2103,7 +2112,7 @@
     flex-basis: 100%;
   }
 
-  .tick:not([data-current]):not(:first-child) .tickDay {
+  .tick:not([data-current]) .tickDay {
     visibility: hidden;
   }
 
@@ -2205,4 +2214,10 @@
   .card {
     transition: none;
   }
+}
+
+.journey[data-compact] .journeyName {
+  white-space: normal;
+  overflow: visible;
+  line-height: 1.2;
 }

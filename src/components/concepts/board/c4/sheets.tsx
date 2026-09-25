@@ -290,7 +290,7 @@ export function StuckTriage({
 }
 
 export function JourneyPopover({ placed, usual, day, rect }: { placed: Placed; usual: number; day: number; rect: { x: number; y: number; top: number; w: number } }) {
-  const width = 300;
+  const width = 348;
   const vw = typeof window === "undefined" ? 1440 : window.innerWidth;
   const vh = typeof window === "undefined" ? 900 : window.innerHeight;
   const left = Math.max(12, Math.min(rect.x + rect.w - width, vw - width - 12));

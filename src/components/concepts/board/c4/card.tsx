@@ -95,7 +95,13 @@ export function AgedCard({
             <Avatar person={owner} />
             <span className={styles.whoText}>
               {owner?.first}
-              {approver && stage === "review" ? <span className={styles.forWho}> · for {approver.first}</span> : null}
+              {approver && stage === "review" ? (
+                <span className={styles.forWho}>
+                  <Icon.arrowRight size={11} />
+                  <span className={styles.srOnly}>for</span>
+                  {approver.first}
+                </span>
+              ) : null}
             </span>
           </span>
           {done ? (
