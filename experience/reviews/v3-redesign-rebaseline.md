@@ -24,3 +24,5 @@ Materiality receipts in `experience/evidence-runs/` are bound to the critical-fi
 - The critical-experience Playwright capture in `design-quality.yml` still renders every critical page and surface and runs axe on it. The v3 tokens were corrected until those checks passed.
 - Unit, contract and security tests are unchanged in intent. Tests that asserted the old chrome's markup were rewritten to guard the new shell's behaviour (see `src/server/suite-navigation-contract.test.mjs`).
 - Receipts are re-captured through the normal review flow (`pnpm experience:review`) as each v3 surface is signed off.
+
+The retired receipt files themselves moved to `experience/reviews/history/pre-v3-rebaseline/` on 25 September 2026. `attest-playwright --verify-receipts` checks every top-level receipt against the current browser run, and those receipts describe the old design.
