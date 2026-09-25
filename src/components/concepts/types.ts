@@ -1,4 +1,4 @@
-export type ConceptView = "overview" | "projects" | "files" | "board" | "list" | "calendar" | "analytics";
+export type ConceptView = "overview" | "projects" | "files" | "board" | "list" | "calendar" | "analytics" | "apps" | "shared-timeline";
 
 export type ConceptMeta = {
   view: ConceptView;

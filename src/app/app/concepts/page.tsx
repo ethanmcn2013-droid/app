@@ -15,6 +15,8 @@ const VIEWS = [
   { key: "list", label: "Tasks list" },
   { key: "calendar", label: "Tasks calendar" },
   { key: "analytics", label: "Analytics" },
+  { key: "apps", label: "Apps and tools" },
+  { key: "shared-timeline", label: "Shared timeline" },
 ] as const;
 
 /** Review-only gallery of the concepts for each view. */

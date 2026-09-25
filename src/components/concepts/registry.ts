@@ -39,6 +39,18 @@ import { meta as analytics3Meta } from "./analytics/c3/meta";
 import { meta as analytics4Meta } from "./analytics/c4/meta";
 import { meta as analytics5Meta } from "./analytics/c5/meta";
 import { meta as analytics6Meta } from "./analytics/c6/meta";
+import { meta as apps1Meta } from "./apps/c1/meta";
+import { meta as apps2Meta } from "./apps/c2/meta";
+import { meta as apps3Meta } from "./apps/c3/meta";
+import { meta as apps4Meta } from "./apps/c4/meta";
+import { meta as apps5Meta } from "./apps/c5/meta";
+import { meta as apps6Meta } from "./apps/c6/meta";
+import { meta as sharedTimeline1Meta } from "./shared-timeline/c1/meta";
+import { meta as sharedTimeline2Meta } from "./shared-timeline/c2/meta";
+import { meta as sharedTimeline3Meta } from "./shared-timeline/c3/meta";
+import { meta as sharedTimeline4Meta } from "./shared-timeline/c4/meta";
+import { meta as sharedTimeline5Meta } from "./shared-timeline/c5/meta";
+import { meta as sharedTimeline6Meta } from "./shared-timeline/c6/meta";
 import type { ConceptMeta } from "./types";
 
 export const CONCEPTS: readonly ConceptMeta[] = [
@@ -78,6 +90,18 @@ export const CONCEPTS: readonly ConceptMeta[] = [
   analytics4Meta,
   analytics5Meta,
   analytics6Meta,
+  apps1Meta,
+  apps2Meta,
+  apps3Meta,
+  apps4Meta,
+  apps5Meta,
+  apps6Meta,
+  sharedTimeline1Meta,
+  sharedTimeline2Meta,
+  sharedTimeline3Meta,
+  sharedTimeline4Meta,
+  sharedTimeline5Meta,
+  sharedTimeline6Meta,
 ];
 
 export const CONCEPT_LOADERS: Record<string, () => Promise<{ default: ComponentType }>> = {
@@ -117,4 +141,16 @@ export const CONCEPT_LOADERS: Record<string, () => Promise<{ default: ComponentT
   "analytics/4": () => import("./analytics/c4"),
   "analytics/5": () => import("./analytics/c5"),
   "analytics/6": () => import("./analytics/c6"),
+  "apps/1": () => import("./apps/c1"),
+  "apps/2": () => import("./apps/c2"),
+  "apps/3": () => import("./apps/c3"),
+  "apps/4": () => import("./apps/c4"),
+  "apps/5": () => import("./apps/c5"),
+  "apps/6": () => import("./apps/c6"),
+  "shared-timeline/1": () => import("./shared-timeline/c1"),
+  "shared-timeline/2": () => import("./shared-timeline/c2"),
+  "shared-timeline/3": () => import("./shared-timeline/c3"),
+  "shared-timeline/4": () => import("./shared-timeline/c4"),
+  "shared-timeline/5": () => import("./shared-timeline/c5"),
+  "shared-timeline/6": () => import("./shared-timeline/c6"),
 };
