@@ -1,0 +1,644 @@
+/* List. Tokens only from src/ds/v3.css. One card holding a grid of rows,
+   matching Files and My tasks. */
+
+.wrap {
+  container: tasklist / inline-size;
+  max-width: var(--column-max, 1180px);
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 var(--gutter, 32px) 96px;
+}
+
+.grid {
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-1);
+  /* clip, not auto: a scroll container here would stop the header and the
+     group rows sticking to the page as it scrolls. */
+  overflow: clip;
+}
+
+.headRow,
+.row {
+  display: grid;
+  grid-template-columns: var(--cols);
+  align-items: center;
+}
+
+.headRow {
+  position: sticky;
+  top: var(--tool-h, 0px);
+  z-index: 3;
+  height: 40px;
+  border-bottom: 1px solid var(--v3-border);
+  background: var(--v3-surface);
+  border-radius: var(--v3-radius-lg) var(--v3-radius-lg) 0 0;
+}
+
+.headButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  margin-left: -6px;
+  padding: 0 6px;
+  border-radius: var(--v3-radius-sm);
+  color: var(--v3-text-2);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.headButton:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.headButton[data-sorted] {
+  color: var(--v3-text);
+}
+
+.titleHead {
+  padding-left: 30px;
+}
+
+.plainHead {
+  color: var(--v3-text-2);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.checkHead,
+.pickHead,
+.menuCell,
+.checkCell {
+  display: grid;
+  place-items: center;
+}
+
+.iconButton {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--v3-radius-sm);
+  color: var(--v3-text-3);
+}
+
+.iconButton:hover,
+.iconButton[aria-expanded="true"] {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+/* ── Groups ───────────────────────────────────────────────────────── */
+.group + .group {
+  border-top: 1px solid var(--v3-border);
+}
+
+.groupHead {
+  position: sticky;
+  top: calc(var(--tool-h, 0px) + 40px);
+  z-index: 2;
+  background: color-mix(in srgb, var(--v3-sunken) 92%, transparent);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--v3-border);
+}
+
+.groupCell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 12px 0 8px;
+}
+
+.groupToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 8px 0 4px;
+  border-radius: var(--v3-radius-sm);
+  color: var(--v3-text);
+}
+
+.groupToggle:hover {
+  background: var(--v3-hover);
+}
+
+.chevron {
+  display: grid;
+  place-items: center;
+  color: var(--v3-text-3);
+  transition: transform 160ms var(--v3-ease);
+}
+
+.chevron[data-open] {
+  transform: rotate(90deg);
+}
+
+.groupIcon {
+  display: inline-flex;
+}
+
+.groupTitle {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.groupCount {
+  color: var(--v3-text-3);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.groupDone {
+  color: var(--v3-text-3);
+  font-size: 12px;
+}
+
+.groupAdd {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  margin-left: auto;
+  padding: 0 8px;
+  border-radius: var(--v3-radius-sm);
+  color: var(--v3-text-3);
+  font-size: 12.5px;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity 120ms var(--v3-ease);
+}
+
+.groupHead:hover .groupAdd,
+.groupAdd:focus-visible {
+  opacity: 1;
+}
+
+.groupAdd:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+/* ── Rows ─────────────────────────────────────────────────────────── */
+.row {
+  position: relative;
+  min-height: 44px;
+  border-bottom: 1px solid color-mix(in srgb, var(--v3-border) 70%, transparent);
+  cursor: pointer;
+  outline: none;
+  transition: background-color 100ms var(--v3-ease);
+}
+
+.row[data-density="comfortable"] {
+  min-height: 52px;
+}
+
+.group .row:last-child {
+  border-bottom: 0;
+}
+
+.row:hover {
+  background: var(--v3-hover);
+}
+
+.row:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--v3-accent);
+}
+
+.row[data-selected] {
+  background: var(--v3-row-selected);
+}
+
+.row[data-open] {
+  background: var(--v3-row-selected);
+  box-shadow: inset 2px 0 0 var(--v3-accent);
+}
+
+.check {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--v3-accent);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.row:hover .check,
+.row:focus-within .check,
+.check:checked,
+.wrap[data-selecting] .check {
+  opacity: 1;
+}
+
+.titleCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 6px 16px 6px 0;
+}
+
+.titleText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13.5px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--v3-text);
+}
+
+.row[data-done] .title {
+  color: var(--v3-text-3);
+  text-decoration: line-through;
+  text-decoration-color: var(--v3-border-strong);
+}
+
+.number {
+  margin-right: 6px;
+  color: var(--v3-text-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.desc {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--v3-text-3);
+}
+
+.phoneMeta {
+  display: none;
+}
+
+.cell {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding-right: 12px;
+}
+
+.plainCell {
+  padding-right: 12px;
+  font-size: 12.5px;
+  color: var(--v3-text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.cellButton {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-height: 30px;
+  margin-left: -6px;
+  padding: 0 6px;
+  border-radius: var(--v3-radius-sm);
+  color: var(--v3-text-2);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.cellButton:not(:disabled):hover {
+  background: var(--v3-surface);
+  box-shadow: 0 0 0 1px var(--v3-border-strong);
+}
+
+.cellButton:disabled {
+  cursor: default;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: var(--v3-text-2);
+  white-space: nowrap;
+}
+
+.status span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.person {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.personName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--v3-text-2);
+}
+
+.none {
+  color: var(--v3-text-3);
+}
+
+.labels {
+  display: inline-flex;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.menuCell .iconButton {
+  opacity: 0;
+}
+
+.row:hover .menuCell .iconButton,
+.row:focus-within .menuCell .iconButton {
+  opacity: 1;
+}
+
+/* ── Inline add ───────────────────────────────────────────────────── */
+.inline {
+  display: block;
+  border-top: 1px solid var(--v3-border);
+}
+
+.inlineCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 16px 0 46px;
+}
+
+.inlineInput {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  border: 0;
+  background: transparent;
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  outline: none;
+}
+
+.inlineInput::placeholder {
+  color: var(--v3-text-3);
+  font-weight: 400;
+}
+
+/* ── Empty states ─────────────────────────────────────────────────── */
+.empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-sunken);
+  box-shadow: inset 0 0 0 1px var(--v3-border);
+  color: var(--v3-text-2);
+  font-size: 13px;
+}
+
+.empty span {
+  flex: 1;
+}
+
+.empty button {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--v3-radius-sm);
+  background: var(--v3-surface);
+  box-shadow: 0 0 0 1px var(--v3-border);
+  color: var(--v3-text);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.firstRun {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 460px;
+  margin: 24px auto;
+  padding: 24px;
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius-xl);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-1);
+}
+
+.firstRun h2 {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.firstRun p {
+  color: var(--v3-text-2);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.firstIcon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-accent-soft);
+  color: var(--v3-accent-text);
+}
+
+.firstButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-accent);
+  color: var(--v3-on-accent);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.labelsMid {
+  display: none;
+}
+
+/* ── Mid width: faces, marks and one label ────────────────────────── */
+@container tasklist (max-width: 900px) {
+  .headRow,
+  .row {
+    grid-template-columns: var(--cols-mid, var(--cols));
+  }
+  .wideOnly,
+  .labelsWide,
+  .personName {
+    display: none;
+  }
+  .labelsMid {
+    display: inline-flex;
+  }
+  /* The column is only as wide as a face, so its heading goes quiet. */
+  .assigneeHead .headButton,
+  .priorityHead .headButton {
+    width: 32px;
+    overflow: hidden;
+    color: transparent;
+  }
+  .assigneeHead .headButton svg,
+  .priorityHead .headButton svg {
+    color: var(--v3-text-2);
+  }
+  .cell[data-col="priority"] [data-priority] > span:last-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+  .cell[data-col="assignee"],
+  .cell[data-col="priority"] {
+    padding-right: 4px;
+  }
+}
+
+/* ── Narrow list: stacked two-line rows (docked sheet, phone) ─────── */
+@container tasklist (max-width: 700px) {
+  .headRow {
+    display: none;
+  }
+  .groupHead {
+    top: var(--tool-h, 0px);
+  }
+  .row,
+  .row[data-density="comfortable"] {
+    display: flex;
+    min-width: 0;
+    min-height: 56px;
+    padding: 6px 16px 6px 8px;
+  }
+  .cell,
+  .plainCell,
+  .desc {
+    display: none;
+  }
+  .checkCell {
+    width: 28px;
+    flex: none;
+  }
+  .menuCell {
+    flex: none;
+  }
+  .titleCell {
+    flex: 1;
+    padding: 0;
+    gap: 12px;
+  }
+  .title {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+  .phoneMeta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    color: var(--v3-text-3);
+    font-size: 12px;
+  }
+}
+
+/* ── Phone: two-line rows ─────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .wrap {
+    padding: 0 0 120px;
+  }
+  .grid {
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+    overflow-x: hidden;
+  }
+  .headRow {
+    display: none;
+  }
+  .groupHead {
+    top: var(--tool-h, 0px);
+  }
+  .row,
+  .row[data-density="comfortable"] {
+    display: flex;
+    min-width: 0;
+    min-height: 60px;
+    padding: 6px 16px;
+  }
+  .checkCell,
+  .cell,
+  .plainCell,
+  .menuCell,
+  .desc {
+    display: none;
+  }
+  .titleCell {
+    flex: 1;
+    padding: 0;
+    gap: 12px;
+  }
+  .title {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+  .phoneMeta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    color: var(--v3-text-3);
+    font-size: 12px;
+  }
+  .groupAdd {
+    opacity: 1;
+    min-height: 44px;
+  }
+  .inlineCell {
+    padding-left: 16px;
+  }
+}
+
+@media (pointer: coarse) {
+  .check,
+  .menuCell .iconButton,
+  .groupAdd {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row,
+  .chevron,
+  .groupAdd {
+    transition: none;
+  }
+}

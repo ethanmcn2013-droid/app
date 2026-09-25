@@ -16,7 +16,6 @@ import { Avatar } from "@/components/showcase/avatar";
 import { EASE_OUT_TOKEN } from "@/components/primitives/anchored-layer";
 import { useToast } from "@/components/primitives/toast";
 import { formatRelativeTime } from "@/lib/utils";
-import { cn } from "@/lib/utils";
 import {
   uploadAttachmentAction,
   type UploadAttachmentResult,
@@ -37,6 +36,7 @@ import {
   type ResourceRow,
 } from "@/server/actions/resources";
 import { Popover } from "./popover";
+import sx from "./sheet-sections.module.css";
 import { isDemoMode } from "@/lib/access-mode";
 import { projectDriveUiEnabled } from "@/lib/project-drive-ui";
 import { useDriveUploads } from "./use-drive-uploads";
@@ -410,42 +410,42 @@ function TaskResources({ task }: { task: Task }) {
   const total = (items ?? []).length;
 
   return (
-    <div
-      className={cn(
-        "relative border-t border-line-soft px-6 py-5 transition-colors",
-        dragging && "bg-bg-sunken/50",
-      )}
+    <section
+      className={sx.section}
+      data-dragging={dragging ? "" : undefined}
+      aria-labelledby={`${inputId}-title`}
       onDragEnter={onDragEnter}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
     >
-      {/* Section header */}
-      <div className="mb-3 flex items-baseline justify-between gap-3">
-        <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
-          Resources
-        </span>
-        <div className="flex items-baseline gap-3">
-          {total > 0 ? (
-            <span className="text-[11px] tabular-nums text-ink-quiet">
-              {total} {total === 1 ? "item" : "items"}
-            </span>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            className="inline-flex min-h-[44px] items-center gap-1 rounded-md px-2 text-[12px] font-medium text-ink-quiet transition-colors hover:text-ink-soft"
-            aria-label="Attach a file"
-            disabled={reloadState !== null}
-          >
-            <PaperclipGlyph />
-            Attach
-          </button>
-        </div>
+      {/* Section header: title, muted count, one trailing action. */}
+      <div className={sx.head}>
+        <h2 className={sx.title} id={`${inputId}-title`}>Files and links</h2>
+        {total > 0 ? <span className={sx.count}>{total}</span> : null}
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className={sx.action}
+          aria-label="Attach a file"
+          disabled={reloadState !== null}
+        >
+          <PaperclipGlyph />
+          Attach
+        </button>
       </div>
 
-      {loadFailed ? <p role="alert" className="mb-3 text-[12px] text-ink-soft">Resources could not be refreshed. <button className="min-h-[44px] px-2 underline" onClick={() => setReload((value) => value + 1)}>Try again</button></p> : items === null ? <p role="status" className="mb-3 text-[12px] text-ink-soft">Loading Resources…</p> : total === 0 ? <p className="mb-3 text-[12px] text-ink-soft">No resources attached yet.</p> : null}
-      {driveEnabled ? <p className="mb-3 text-[12px] leading-relaxed text-ink-soft">The destination is checked when you attach. If Drive is unavailable before sending, you can choose Signal Studio.</p> : null}
+      {/* The drop zone below is the empty state; only loading and a failed
+          load need their own line. */}
+      {loadFailed ? (
+        <p role="alert" className={sx.note}>
+          Files and links didn’t load.
+          <button type="button" className={sx.noteAction} onClick={() => setReload((value) => value + 1)}>Try again</button>
+        </p>
+      ) : items === null ? (
+        <p role="status" className={sx.note}>Loading files and links…</p>
+      ) : null}
+      {driveEnabled ? <p className={sx.note}>The destination is checked when you attach. If Drive is unavailable before sending, you can choose Signal Studio.</p> : null}
       {driveEnabled && isDemoMode() ? <DriveUploadReview /> : null}
       {reloadState ? <DriveReloadNotice state={reloadState} canCheckGoogle={canCheckGoogle} recovery={recoveryState} onRefresh={() => void checkUploads(recoveryRows, me, mountedIds)} /> : null}
       {driveEntries.length ? <ul aria-label="File upload status" className="mb-3 space-y-2">{driveEntries.map((entry) => <DriveUploadRow key={entry.id} name={entry.name} size={entry.size} state={entry.state} onRetry={() => void entry.attempt.run()} onNative={() => void entry.attempt.useNative()} onCancel={entry.attempt.cancel} />)}</ul> : null}
@@ -467,7 +467,7 @@ function TaskResources({ task }: { task: Task }) {
 
       {/* Resource list */}
       {total > 0 ? (
-        <ul className="flex flex-col gap-1">
+        <ul className={sx.list}>
           <AnimatePresence initial={false}>
             {realItems.map((row) => (
               <RealResourceRow
@@ -490,14 +490,7 @@ function TaskResources({ task }: { task: Task }) {
         link input IS the drop zone: dashed while empty, quiet once the
         section holds items.
       */}
-      <div
-        className={[
-          "flex items-center gap-1.5",
-          total === 0
-            ? "rounded-md border border-dashed border-line px-2.5 py-2"
-            : "mt-3",
-        ].join(" ")}
-      >
+      <div className={sx.drop} data-empty={total === 0 ? "" : undefined}>
         <LinkGlyph />
         <input
           ref={linkInputRef}
@@ -511,20 +504,16 @@ function TaskResources({ task }: { task: Task }) {
             }
           }}
           placeholder={total === 0 ? "Drop files here, or paste a link…" : "Paste a link…"}
+          aria-label="Paste a link"
           disabled={linkPending}
-          className={[
-            "min-w-0 flex-1 text-[12px] text-ink placeholder:text-ink-faint focus:outline-none disabled:opacity-50",
-            total === 0
-              ? "bg-transparent"
-              : "rounded-md border border-line px-2 py-1 focus:border-ink-soft",
-          ].join(" ")}
+          className={sx.dropInput}
         />
         {linkInput.trim() ? (
           <button
             type="button"
             onClick={handleAddLink}
             disabled={linkPending}
-            className="flex-shrink-0 rounded-md bg-ink px-2 py-1 text-[12px] font-medium text-white transition-opacity duration-[var(--motion-fast)] ease-[var(--ease-out)] hover:opacity-85 disabled:opacity-50"
+            className={sx.solid}
           >
             {linkPending ? "Adding…" : "Add"}
           </button>
@@ -539,13 +528,13 @@ function TaskResources({ task }: { task: Task }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: reduceMotion ? 0.08 : 0.12 }}
-            className="pointer-events-none absolute inset-2 flex items-center justify-center rounded-lg border border-dashed border-ink-soft/40 bg-white/80 text-[12px] font-medium text-ink-soft backdrop-blur-sm"
+            className={sx.overlay}
           >
             Drop to attach
           </motion.div>
         ) : null}
       </AnimatePresence>
-    </div>
+    </section>
   );
 }
 
@@ -625,7 +614,7 @@ function RealResourceRow({
       animate={{ opacity: 1, transform: "translateY(0)" }}
       exit={{ opacity: 0 }}
       transition={{ duration: reduceMotion ? 0.1 : 0.2, ease: EASE_OUT_TOKEN }}
-      className="group/resource flex items-center gap-2.5 rounded-md px-1.5 py-1.5 transition-colors hover:bg-bg-sunken/60"
+      className={sx.resource}
     >
       <ResourceGlyph row={row} downloadUrl={downloadUrl} />
       <a
@@ -634,14 +623,14 @@ function RealResourceRow({
         {...(isExternal
           ? { target: "_blank", rel: "noreferrer" }
           : { download: row.title })}
-        className="min-w-0 flex-1"
+        className={sx.resourceLink}
       >
-        <div className="truncate text-[13px] font-medium leading-[var(--x-lead-tight)] text-ink">
+        <div className={sx.resourceTitle}>
           {row.title}
         </div>
-        {isDrive ? <p className="mt-0.5 text-[11px] text-ink-soft">{isPending ? "Drive upload not confirmed. Check the existing upload before attaching again." : "Stored in Google Drive · opens in a new tab"}</p> : null}
-        <div className="mt-0.5 flex items-center gap-1.5 text-[11px] tabular-nums text-ink-quiet">
-          <span className="rounded px-1 py-px text-[11px] font-medium uppercase tracking-[0.12em] text-ink-faint ring-1 ring-line leading-[var(--x-lead-tight)]">
+        {isDrive ? <p className={sx.resourceNote}>{isPending ? "Drive upload not confirmed. Check the existing upload before attaching again." : "Stored in Google Drive · opens in a new tab"}</p> : null}
+        <div className={sx.resourceMeta}>
+          <span className={sx.badge}>
             {providerLabel(row.provider)}
           </span>
           {row.sizeBytes != null ? (
@@ -672,22 +661,22 @@ function RealResourceRow({
             onClick={onClick}
             aria-expanded={expanded}
             aria-label={`Remove ${row.title}`}
-            className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded text-ink-faint opacity-0 transition-opacity duration-[var(--motion-fast)] ease-[var(--ease-out)] hover:bg-bg-sunken hover:text-ink-soft group-hover/resource:opacity-100 focus-visible:opacity-100 aria-expanded:opacity-100"
+            className={sx.remove}
           >
             <TrashGlyph />
           </button>
         )}
       >
         {(close) => (
-          <div className="flex flex-col gap-1.5 p-1.5">
-            <p className="px-1.5 pt-1 text-[12px] leading-[var(--x-lead-ui)] text-ink-soft">
+          <div className={sx.confirm}>
+            <p className={sx.confirmText}>
               {isDrive ? "Remove from Resources? The file stays in Google Drive." : "Remove this resource?"}
             </p>
-            <div className="flex items-center justify-end gap-1.5">
+            <div className={sx.confirmActions}>
               <button
                 type="button"
                 onClick={close}
-                className="rounded-md px-2 py-1 text-[12px] font-medium text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
+                className={sx.ghost}
               >
                 Cancel
               </button>
@@ -697,7 +686,7 @@ function RealResourceRow({
                   close();
                   onRemove();
                 }}
-                className="rounded-md bg-ink px-2 py-1 text-[12px] font-medium text-white transition-opacity duration-[var(--motion-fast)] ease-[var(--ease-out)] hover:opacity-85"
+                className={sx.danger}
               >
                 Remove
               </button>
@@ -718,14 +707,15 @@ function PendingRow({ row }: { row: PendingUploadRow }) {
       animate={{ opacity: 0.75, transform: "translateY(0)" }}
       exit={{ opacity: 0 }}
       transition={{ duration: reduceMotion ? 0.1 : 0.18 }}
-      className="flex items-center gap-2.5 rounded-md px-1.5 py-1.5"
+      className={sx.resource}
+      data-pending=""
     >
       <FileGlyph mimeType={row.mimeType} />
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-[13px] font-medium leading-[var(--x-lead-tight)] text-ink-soft">
+      <div className={sx.resourceLink}>
+        <div className={sx.resourceTitle}>
           {row.title}
         </div>
-        <div className="mt-0.5 flex items-center gap-1.5 text-[11px] tabular-nums text-ink-faint">
+        <div className={sx.resourceMeta}>
           <span>{formatBytes(row.sizeBytes)}</span>
           <span aria-hidden>·</span>
           <span>uploading…</span>
@@ -734,7 +724,7 @@ function PendingRow({ row }: { row: PendingUploadRow }) {
       <motion.span
         animate={reduceMotion ? { opacity: 0.65 } : { rotate: 360 }}
         transition={reduceMotion ? { duration: 0 } : { duration: 0.9, ease: "linear", repeat: Infinity }}
-        className="inline-block h-[10px] w-[10px] flex-shrink-0 rounded-full border-2 border-brand/30 border-t-brand"
+        className={sx.spinner}
         aria-label="Uploading"
       />
     </motion.li>
@@ -754,10 +744,7 @@ function ResourceGlyph({
     return <FileGlyph mimeType={row.mimeType ?? ""} downloadUrl={downloadUrl ?? undefined} />;
   }
   return (
-    <span
-      className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md border border-line-soft bg-white text-ink-quiet"
-      aria-hidden
-    >
+    <span className={sx.tile} aria-hidden>
       <ExternalLinkGlyph />
     </span>
   );
@@ -774,17 +761,14 @@ function FileGlyph({
   if (category === "image" && downloadUrl) {
     return (
       <span
-        className="block h-9 w-9 flex-shrink-0 rounded-md border border-line-soft bg-bg-sunken bg-cover bg-center"
+        className={sx.tile}
         style={{ backgroundImage: `url(${downloadUrl})` }}
         aria-hidden
       />
     );
   }
   return (
-    <span
-      className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md border border-line-soft bg-white text-ink-quiet"
-      aria-hidden
-    >
+    <span className={sx.tile} aria-hidden>
       <CategoryGlyph category={category} />
     </span>
   );
@@ -927,7 +911,7 @@ function LinkGlyph() {
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden
-      className="flex-shrink-0 text-ink-faint"
+      style={{ flex: "none", color: "var(--v3-text-3)" }}
     >
       <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
       <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />

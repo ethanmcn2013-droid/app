@@ -163,6 +163,43 @@ export type NotesCopy = {
     /** Toast when a duplicate was avoided. */
     recovered: string;
   };
+  /** The v3 notebook frame: list, capture canvas, reader and review. */
+  notebook: {
+    /** The list pane before the first note exists. */
+    empty: string;
+    /** The capture bar pinned over the list. */
+    captureBar: string;
+    /** The canvas heading. */
+    canvasTitle: string;
+    /** Line under the capture canvas. */
+    canvasAssurance: string;
+    /** The disclosure under the canvas. */
+    moreWays: string;
+    /** Banner heading with one note waiting. */
+    bannerOne: string;
+    /** Banner heading. `{count}` is the number waiting. */
+    bannerMany: string;
+    /** Banner body when notes can become tasks. */
+    reviewPrompt: string;
+    /** Banner body when nothing can become a task here. */
+    reviewPromptNoTasks: string;
+    /** Heading over the last few notes that became tasks. */
+    recentTitle: string;
+    /** The first line of a finished review session. */
+    reviewDone: string;
+    /** "{count} kept" in the finished line. */
+    reviewKept: string;
+    /** One note turned into a task, in the finished line. */
+    reviewTurnedOne: string;
+    /** "{count} turned into tasks" in the finished line. */
+    reviewTurned: string;
+    /** "{count} deleted" in the finished line. */
+    reviewDeleted: string;
+    /** Nothing waiting for review at all. */
+    reviewEmpty: string;
+    /** The In Tasks view before anything has become a task. */
+    sentEmpty: string;
+  };
 };
 
 const generic: NotesCopy = {
@@ -240,6 +277,25 @@ const generic: NotesCopy = {
   receipts: {
     sent: "Sent to Tasks. Your note stayed here.",
     recovered: "Tasks already had this one, so nothing was duplicated.",
+  },
+  notebook: {
+    empty: "Your notes will appear here.",
+    captureBar: "Write a note…",
+    canvasTitle: "New note",
+    canvasAssurance: "Only you can see your notes.",
+    moreWays: "More ways to capture",
+    bannerOne: "1 note waiting",
+    bannerMany: "{count} notes waiting",
+    reviewPrompt: "Keep, turn into a task, or delete.",
+    reviewPromptNoTasks: "Keep or delete.",
+    recentTitle: "Recently turned into tasks",
+    reviewDone: "All caught up.",
+    reviewKept: "{count} kept",
+    reviewTurnedOne: "1 turned into a task",
+    reviewTurned: "{count} turned into tasks",
+    reviewDeleted: "{count} deleted",
+    reviewEmpty: "Nothing waiting. New notes land here until you decide what they are.",
+    sentEmpty: "Notes you turn into tasks show up here, with a link to the task.",
   },
 };
 
@@ -319,6 +375,25 @@ const wedding: NotesCopy = {
     sent: "Added to your list. Your note stayed here.",
     recovered: "This was already on your list, so nothing was added twice.",
   },
+  notebook: {
+    empty: "Your notes will appear here.",
+    captureBar: "Write it down…",
+    canvasTitle: "New note",
+    canvasAssurance: "Nobody else can read your notes.",
+    moreWays: "More ways to capture",
+    bannerOne: "1 note waiting",
+    bannerMany: "{count} notes waiting",
+    reviewPrompt: "Keep, add to your list, or delete.",
+    reviewPromptNoTasks: "Keep or delete.",
+    recentTitle: "Recently added to your list",
+    reviewDone: "All caught up.",
+    reviewKept: "{count} kept",
+    reviewTurnedOne: "1 added to your list",
+    reviewTurned: "{count} added to your list",
+    reviewDeleted: "{count} deleted",
+    reviewEmpty: "Nothing waiting. New notes land here until you decide what each one is for.",
+    sentEmpty: "Notes you add to your list show up here, with a link to the task.",
+  },
 };
 
 const REGISTERS: Record<NotesRegister, NotesCopy> = { generic, wedding };
@@ -372,5 +447,93 @@ export const BANNED_IN_COPY: readonly string[] = [
 // studio/BRAND.md still applies to the whole term; this list is only the
 // mechanical half.
 
+/** Fills `{count}` in a copy string. */
+export function withCount(template: string, count: number): string {
+  return template.replace("{count}", count.toLocaleString("en-IE"));
+}
+
+/**
+ * What a list row's second line says when a note has no more text than its
+ * title, by where the note came from. Same wording in both registers.
+ */
+export const EMPTY_ROW_PREVIEW: Readonly<Record<"typed" | "voice" | "photo" | "email" | "calendar", string>> = {
+  typed: "No more text",
+  voice: "Voice note",
+  photo: "Photo note",
+  email: "No more text",
+  calendar: "No more text",
+};
+
 /** Exported for the test and for any surface that needs the whole set. */
 export const ALL_REGISTERS: readonly NotesRegister[] = ["generic", "wedding"] as const;
+
+/**
+ * The three views, by their internal id. The `sent` id and the ?view=sent
+ * URL are unchanged; what a person reads is "In Tasks", the same words as
+ * countLabel. "Sent" is never shown.
+ */
+export const NOTES_VIEW_LABELS: Readonly<Record<"notebook" | "review" | "sent", string>> = {
+  notebook: "All",
+  review: "To review",
+  sent: "In Tasks",
+};
+
+/** The legend that explains the list's two state marks, everywhere it appears. */
+export const NOTES_LEGEND = {
+  waiting: "Waiting for a decision",
+  /** The same mark, where the legend has one line to itself. */
+  waitingShort: "Waiting",
+  inTasks: "In Tasks",
+  private: "Private to you",
+} as const;
+
+/** What the reader's decision bar and the row actions say. */
+export const NOTES_ACTIONS = {
+  keep: "Keep",
+  turnIntoTask: "Turn into task",
+  delete: "Delete",
+  openTask: "Open task",
+  editNote: "Edit note",
+  moreForNote: "More actions for this note",
+  saving: "Saving…",
+  saved: "Saved",
+  notSaved: "Not saved. Retry",
+} as const;
+
+/**
+ * One keyboard map for the three decisions, wherever they are offered: the
+ * list, the open note and review. Same keys, same order (Turn into task,
+ * Keep, Delete), so muscle memory built in one place works in the others.
+ * `shortcut` is the aria-keyshortcuts value; `keycap` is what the key
+ * hint shows.
+ */
+export const NOTES_DECISION_KEYS = {
+  turnIntoTask: { shortcut: "T", keycap: "T" },
+  keep: { shortcut: "E", keycap: "E" },
+  delete: { shortcut: "Delete Backspace", keycap: "⌫" },
+  later: { shortcut: "L", keycap: "L" },
+} as const;
+
+/** The order the decision buttons appear in, everywhere. */
+export const NOTES_DECISION_ORDER = ["turnIntoTask", "keep", "delete"] as const;
+
+/**
+ * The finished line of a review session: "All caught up. 5 kept, 2 turned
+ * into tasks, 1 deleted." Parts with nothing in them are left out.
+ */
+export function reviewSummary(
+  copy: NotesCopy,
+  counts: { kept: number; turned: number; deleted: number },
+): string {
+  const parts: string[] = [];
+  if (counts.kept > 0) parts.push(withCount(copy.notebook.reviewKept, counts.kept));
+  if (counts.turned === 1) parts.push(copy.notebook.reviewTurnedOne);
+  else if (counts.turned > 1) parts.push(withCount(copy.notebook.reviewTurned, counts.turned));
+  if (counts.deleted > 0) parts.push(withCount(copy.notebook.reviewDeleted, counts.deleted));
+  return parts.length ? `${copy.notebook.reviewDone} ${parts.join(", ")}.` : copy.notebook.reviewDone;
+}
+
+/** "8 notes waiting", "1 note waiting". */
+export function waitingLabel(copy: NotesCopy, count: number): string {
+  return count === 1 ? copy.notebook.bannerOne : withCount(copy.notebook.bannerMany, count);
+}

@@ -245,8 +245,8 @@ try {
         assert.equal(new URL(page.url()).searchParams.get('workspaceId'),'project-b');
         await page.waitForFunction(()=>['loadTaskConversationAction','getSubtasksAction','listTaskResourcesAction'].every(name=>window.routeFixture.requests.some(r=>r.name===name)));
         await page.locator('[data-existing-task-history][data-read-only]').waitFor();
-        const viewNav=page.getByRole('navigation',{name:'View'});
-        for(const [label,pathname] of [['Board','/app/tasks'],['List','/app/tasks/list'],['Schedule','/app/tasks/timeline'],['Calendar','/app/tasks/calendar']]){
+        const viewNav=page.getByRole('navigation',{name:'Task views'});
+        for(const [label,pathname] of [['Board','/app/tasks'],['List','/app/tasks/list'],['Calendar','/app/tasks/calendar']]){
           const href=await viewNav.getByRole('link',{name:label,exact:true}).getAttribute('href');
           const url=new URL(href,origin);
           assert.equal(url.pathname,pathname);
@@ -255,8 +255,8 @@ try {
         }
         // The fixture owns the Board route only. The production detail panel
         // is modal, so these rendered hrefs are the browser-observable proof;
-        // the four destination routes need a full app run.
-        receipt.checks.push('open B task is retained in all four rendered Floor links');
+        // the three destination routes need a full app run.
+        receipt.checks.push('open B task is retained in all three rendered view links');
         await evidence(surfaces[2].id,'active-object-canonical-panel');
         f.state.actor='user_creator';await page.goto(origin+surfaces[1].href);
         await page.getByRole('heading',{name:'No tasks assigned to you yet',exact:true}).waitFor();

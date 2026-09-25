@@ -1,20 +1,16 @@
 /**
- * /app/timeline loading boundary — the module-local Timeline loader, plus
- * the suite's arrival settle (wave 7).
+ * /app/timeline loading boundary: the module-local Timeline loader only.
  *
- * The loader itself is untouched and still owned by the module. What is
- * added here is the hand-off: ArrivalSettle rides beside it and gives the
- * Timeline surface one whole-surface opacity settle when this boundary
- * yields. See src/components/system/arrival-settle.tsx.
+ * ArrivalSettle used to ride beside it, but it always renders an inline
+ * <script>, and React raises the dev overlay ("Encountered a script tag while
+ * rendering React component") when a loading boundary renders one on a
+ * client navigation, such as pressing the "All projects" tab from a plan.
+ * The shared fix belongs in src/components/system/arrival-settle.tsx
+ * (render the script only before hydration); until then this boundary stays
+ * script-free.
  */
-import { ArrivalSettle } from "@/components/system/arrival-settle";
 import TimelineModuleLoading from "@/modules/timeline/app/loading";
 
 export default function TimelineLoading() {
-  return (
-    <>
-      <ArrivalSettle />
-      <TimelineModuleLoading />
-    </>
-  );
+  return <TimelineModuleLoading />;
 }

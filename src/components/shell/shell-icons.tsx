@@ -42,6 +42,10 @@ export const ShellIcon = {
   overview: (p: IconProps) => (
     <Svg {...p}><rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1" /><rect x="9" y="2.5" width="4.5" height="4.5" rx="1" /><rect x="2.5" y="9" width="4.5" height="4.5" rx="1" /><rect x="9" y="9" width="4.5" height="4.5" rx="1" /></Svg>
   ),
+  /** Overview in the sidebar: a pulse line, so it never reads as the Apps grid. */
+  pulse: (p: IconProps) => (
+    <Svg {...p}><path d="M1.75 8.5h2.75l1.75-4.25 3 7.5 1.75-3.25h3.25" /></Svg>
+  ),
   projects: (p: IconProps) => (
     <Svg {...p}><path d="M2.5 4.5a1 1 0 0 1 1-1h3l1.5 1.5h4.5a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1Z" /></Svg>
   ),
@@ -78,6 +82,9 @@ export const ShellIcon = {
   chevronRight: (p: IconProps) => (
     <Svg {...p}><path d="m6.5 4.5 3.5 3.5-3.5 3.5" /></Svg>
   ),
+  chevronLeft: (p: IconProps) => (
+    <Svg {...p}><path d="m9.5 4.5-3.5 3.5 3.5 3.5" /></Svg>
+  ),
   sidebar: (p: IconProps) => (
     <Svg {...p}><rect x="2" y="2.75" width="12" height="10.5" rx="1.75" /><path d="M6.25 2.75v10.5" /></Svg>
   ),
@@ -113,6 +120,10 @@ export const ShellIcon = {
   ),
   analytics: (p: IconProps) => (
     <Svg {...p}><path d="M2.5 13.5h11" /><path d="M4.5 11V8M8 11V4.5M11.5 11V6.5" /></Svg>
+  ),
+  /** Apps and tools: three tiles and a plus in the fourth corner. */
+  apps: (p: IconProps) => (
+    <Svg {...p}><rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1.25" /><rect x="9" y="2.5" width="4.5" height="4.5" rx="1.25" /><rect x="2.5" y="9" width="4.5" height="4.5" rx="1.25" /><path d="M11.25 9v4.5M9 11.25h4.5" /></Svg>
   ),
   arrowRight: (p: IconProps) => (
     <Svg {...p}><path d="M3.5 8h9M9 4.5 12.5 8 9 11.5" /></Svg>

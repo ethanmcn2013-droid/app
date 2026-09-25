@@ -23,7 +23,7 @@ export type NotesView = "notebook" | "review" | "sent";
 export type NotebookSort = "newest" | "oldest";
 
 /** Optional narrowing of the notebook list. */
-export type NotebookFilter = "all" | "typed" | "voice" | "photo" | "review";
+export type NotebookFilter = "all" | "typed" | "voice" | "photo" | "email" | "review";
 
 export const NOTES_VIEWS: readonly NotesView[] = ["notebook", "review", "sent"];
 
@@ -88,25 +88,45 @@ export function derivePresentation(body: string): {
 
   if (!firstLine) return { title: "Untitled note", preview: rest };
 
-  // Most notes are one paragraph with no line breaks at all. Splitting the
-  // opening sentence off gives every row the same two-line shape — a line
-  // that names the thought and a line that continues it — instead of one
-  // long title wrapping twice while the row below shows nothing.
-  if (!rest && firstLine.length > 56) {
-    const boundary = firstLine.search(/[.!?](\s|$)/);
-    if (boundary > 16 && boundary < firstLine.length - 8) {
-      return {
-        title: clampTitle(firstLine.slice(0, boundary + 1).trim()),
-        preview: firstLine.slice(boundary + 1).trim(),
-      };
-    }
-  }
+  // The row and the reader name a note the same way: one rule, splitLead.
+  // The row only adds a character clamp for a first line with no natural
+  // break, and CSS clamps it visually before that anyway.
+  const { title, lead } = splitLead(firstLine);
+  return { title: clampTitle(title), preview: [lead, rest].filter(Boolean).join(" ") };
+}
 
-  return { title: clampTitle(firstLine), preview: rest };
+/** A first line this short is always the whole title. */
+const LEAD_TITLE_MAX = 72;
+/** A break must land after this many characters to make a useful title. */
+const LEAD_BREAK_MIN = 16;
+/** ...and within this many, or the title is a paragraph. */
+const LEAD_BREAK_MAX = 120;
+
+/**
+ * Splits a note's first line into the title and what continues it.
+ *
+ * Most notes are one paragraph with no line breaks at all. A short line is
+ * the title. A long one is cut after its first sentence or its first colon,
+ * provided that break names something (past character 16) and comes early
+ * (within the first 120). Without such a break the whole line is the title:
+ * a note is never cut at an arbitrary word, because a heading that ends on
+ * a dangling word, with the body resuming mid-clause, reads as broken.
+ */
+export function splitLead(firstLine: string): { title: string; lead: string } {
+  const line = firstLine.trim();
+  if (line.length <= LEAD_TITLE_MAX) return { title: line, lead: "" };
+  const match = /[.!?](?=\s|$)|:(?=\s)/g;
+  for (const hit of line.matchAll(match)) {
+    const index = hit.index ?? -1;
+    if (index <= LEAD_BREAK_MIN) continue;
+    if (index >= LEAD_BREAK_MAX) break;
+    return { title: line.slice(0, index + 1).trim(), lead: line.slice(index + 1).trim() };
+  }
+  return { title: line, lead: "" };
 }
 
 function clampTitle(value: string): string {
-  return value.length > 96 ? `${value.slice(0, 95).trimEnd()}…` : value;
+  return value.length > LEAD_BREAK_MAX ? `${value.slice(0, LEAD_BREAK_MAX - 1).trimEnd()}…` : value;
 }
 
 const MINUTE = 60_000;
@@ -285,6 +305,7 @@ export function matchesFilter(
     case "typed":
     case "voice":
     case "photo":
+    case "email":
       return noteSource(note.source) === filter;
     case "review":
       return needsReview(note);
@@ -381,4 +402,158 @@ export function deriveTaskTitle(body: string): string {
   return trimmed.length > MAX_TASK_TITLE_CHARS
     ? `${trimmed.slice(0, MAX_TASK_TITLE_CHARS - 1).trimEnd()}…`
     : trimmed;
+}
+
+// ── v3 list and review helpers ─────────────────────────────────────────
+
+export type DayGroup = {
+  /** Stable key for React and for the sticky header. */
+  key: string;
+  label: string;
+  notes: PresentableNote[];
+};
+
+const monthFormatters = new Map<string, Intl.DateTimeFormat>();
+
+/** Whole calendar days between two instants, in the reader's zone. */
+function calendarDaysBetween(now: number, then: number, timeZone: string): number {
+  const dayKey = cached(dayKeyFormatters, timeZone, () =>
+    new Intl.DateTimeFormat("en-IE", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }),
+  );
+  const utcDay = (value: number) => {
+    const parts = dayKey.formatToParts(new Date(value));
+    const get = (type: string) => Number(parts.find((part) => part.type === type)?.value ?? "0");
+    return Date.UTC(get("year"), get("month") - 1, get("day"));
+  };
+  return Math.round((utcDay(now) - utcDay(then)) / DAY);
+}
+
+/**
+ * The list's date groups: "Today", "Yesterday", "Earlier this week", then
+ * one group per month ("July 2026"). Input order is kept, so the groups
+ * follow whichever sort the list is in; a note from the future reads Today.
+ */
+export function groupByDay(
+  notes: readonly PresentableNote[],
+  now: number,
+  timeZone = "Europe/Dublin",
+): DayGroup[] {
+  const month = cached(monthFormatters, timeZone, () =>
+    new Intl.DateTimeFormat("en-IE", { timeZone, month: "long", year: "numeric" }),
+  );
+  const groups: DayGroup[] = [];
+  for (const note of notes) {
+    const days = calendarDaysBetween(now, note.createdAt, timeZone);
+    const label =
+      days <= 0
+        ? "Today"
+        : days === 1
+          ? "Yesterday"
+          : days < 7
+            ? "Earlier this week"
+            : month.format(new Date(note.createdAt));
+    const last = groups[groups.length - 1];
+    if (last && last.label === label) last.notes.push(note);
+    else groups.push({ key: `${label}-${groups.length}`, label, notes: [note] });
+  }
+  return groups;
+}
+
+/**
+ * Where a review session stands. `done` decisions made out of `total` notes
+ * that were waiting when it began; the label names the note in front of you,
+ * so two decided out of eight reads "3 of 8".
+ */
+export function reviewProgress(done: number, total: number): { label: string; ratio: number } {
+  const safeTotal = Math.max(0, Math.floor(total));
+  const safeDone = Math.max(0, Math.min(Math.floor(done), safeTotal));
+  if (safeTotal === 0) return { label: "0 of 0", ratio: 0 };
+  return {
+    label: `${Math.min(safeDone + 1, safeTotal)} of ${safeTotal}`,
+    ratio: safeDone / safeTotal,
+  };
+}
+
+export type SourceCounts = Record<NoteSource, number>;
+
+/** How many notebook notes came in each way, for the source chips. */
+export function sourceCounts(notes: readonly PresentableNote[]): SourceCounts {
+  const counts: SourceCounts = { typed: 0, voice: 0, photo: 0, email: 0, calendar: 0 };
+  for (const note of notes) {
+    if (isArchived(note)) continue;
+    counts[noteSource(note.source)] += 1;
+  }
+  return counts;
+}
+
+// ── v3 reader helpers ──────────────────────────────────────────────────
+
+/**
+ * The reader's page: a heading and the paragraphs after it.
+ *
+ * The heading is the first meaningful line, split by the same rule as the
+ * list row (splitLead), so a note has one title everywhere. What the split
+ * leaves over opens the body. Blank lines separate paragraphs; single line
+ * breaks inside one are kept as written.
+ */
+export function readerParts(body: string): { title: string; rest: string[] } {
+  const lines = body.split(/\r?\n/);
+  const first = lines.findIndex((line) => line.trim().length > 0);
+  if (first < 0) return { title: "Untitled note", rest: [] };
+  const { title, lead } = splitLead(lines[first]!);
+  const remainder = [lead, lines.slice(first + 1).join("\n")].filter(Boolean).join("\n\n");
+  const rest = remainder
+    .split(/\n\s*\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+  return { title, rest };
+}
+
+/** The reader's heading. Never empty ("Untitled note"). */
+export function readerTitle(body: string): string {
+  return readerParts(body).title;
+}
+
+/** Everything after the heading, as paragraphs. */
+export function readerRest(body: string): string[] {
+  return readerParts(body).rest;
+}
+
+/** Words a person would count: runs of letters or digits, apostrophes kept. */
+export function wordCount(body: string): number {
+  return body.match(/[\p{L}\p{N}][\p{L}\p{N}'’-]*/gu)?.length ?? 0;
+}
+
+/** "1 word", "38 words". */
+export function wordLabel(count: number): string {
+  return count === 1 ? "1 word" : `${count.toLocaleString("en-IE")} words`;
+}
+
+/** The ways in the filter offers, in the order it lists them. */
+export const FILTER_SOURCES = ["typed", "voice", "photo", "email"] as const;
+export type FilterSource = (typeof FILTER_SOURCES)[number];
+
+/** The filter's own names for each way in. */
+export const FILTER_LABELS: Record<FilterSource, string> = {
+  typed: "Written",
+  voice: "Spoken",
+  photo: "Photos",
+  email: "Email",
+};
+
+/**
+ * The sources worth offering: only those with at least one note, in a fixed
+ * order, with their counts. A filter that can only ever return nothing is
+ * not a choice.
+ */
+export function activeSources(counts: SourceCounts): Array<{ source: FilterSource; count: number }> {
+  return FILTER_SOURCES.filter((source) => counts[source] > 0).map((source) => ({
+    source,
+    count: counts[source],
+  }));
 }

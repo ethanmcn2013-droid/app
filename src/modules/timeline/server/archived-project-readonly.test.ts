@@ -280,15 +280,35 @@ test("the curation actions refuse a proved archive and the page stops offering e
     "only a PROVED archive refuses; an unreachable Tasks database does not",
   );
 
+  // v3: one plan surface, no modes. The page is still the label on the
+  // refusal: a proved archive gets no edit, add, drag or keys, no publish,
+  // and keeps "switch every link off".
   const page = readRepositoryFile("src/modules/timeline/app/plan/[projectSlug]/page.tsx");
   assert.match(
     page,
-    /const mode: OwnerMode = archived \? "view" : requestedMode;/,
+    /const openFirstPanel = !archived && requested\.mode === "edit";/,
     "`?mode=edit` is not a permission",
   );
   assert.match(page, /canPublish=\{!archived\}/, "publishing is disabled while archived");
+  assert.match(page, /autoSync=\{!archived && !isDemoMode\(\)\}/, "an archived Project does not refresh from Tasks");
   assert.ok(
     !/canRevoke/.test(page),
     "revoke is never gated on archive state, so there is no prop for it",
   );
+
+  const surface = readRepositoryFile(
+    "src/modules/timeline/app/plan/[projectSlug]/_components/v3/plan-surface.tsx",
+  );
+  assert.match(surface, /const canEdit = !archived;/, "every edit path keys off one flag");
+  // Keys, add and drag all refuse without it.
+  assert.match(surface, /if \(!canEdit \|\| !activeNode\) return;/);
+  assert.match(surface, /canDrag=\{canEdit && !phone\}/);
+  const sheet = readRepositoryFile(
+    "src/modules/timeline/app/plan/[projectSlug]/_components/v3/share-sheet.tsx",
+  );
+  // Minting is withdrawn when archived; switching links off is not gated.
+  assert.match(sheet, /\{canPublish \? \(\s*<form action=\{publication\.state === "published" \? rotateAction : publishAction\}/);
+  const revoke = sheet.indexOf("<form action={revokeAction}>");
+  assert.ok(revoke !== -1, "switch every link off stays reachable");
+  assert.ok(!/canPublish/.test(sheet.slice(sheet.lastIndexOf("{publication.state === \"published\" ? (", revoke), revoke)));
 });

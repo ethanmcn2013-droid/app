@@ -50,6 +50,8 @@ export type SavedRoomView = Readonly<{
   /** Absent on views saved before the T·125 widening — treated as "all". */
   due?: RoomDueFilter;
   column?: RoomColumnFilter;
+  /** Absent on views saved before labels became a filter — "all". */
+  label?: string;
 }>;
 
 type RoomToolsState = {
@@ -58,6 +60,8 @@ type RoomToolsState = {
   owner: RoomOwnerFilter;
   due: RoomDueFilter;
   column: RoomColumnFilter;
+  /** One label (tag name) or "all". */
+  label: string;
   sort: RoomSortMode;
   density: RoomDensity;
   savedViews: readonly SavedRoomView[];
@@ -69,6 +73,7 @@ type RoomToolsState = {
   setOwner: (v: RoomOwnerFilter) => void;
   setDue: (v: RoomDueFilter) => void;
   setColumn: (v: RoomColumnFilter) => void;
+  setLabel: (v: string) => void;
   setSort: (v: RoomSortMode) => void;
   setDensity: (v: RoomDensity) => void;
   clearFilters: () => void;
@@ -110,6 +115,7 @@ export function RoomToolsProvider({ children }: { children: ReactNode }) {
   const [owner, setOwner] = useState<RoomOwnerFilter>("all");
   const [due, setDue] = useState<RoomDueFilter>("all");
   const [column, setColumn] = useState<RoomColumnFilter>("all");
+  const [label, setLabel] = useState<string>("all");
   const [sort, setSort] = useState<RoomSortMode>("manual");
   const [density, setDensity] = useState<RoomDensity>("compact");
   const [fieldsOpen, setFieldsOpen] = useState(false);
@@ -152,12 +158,13 @@ export function RoomToolsProvider({ children }: { children: ReactNode }) {
         owner,
         due,
         column,
+        label,
         sort,
         density,
       };
       persist([...savedViews, entry]);
     },
-    [column, density, due, owner, persist, priority, query, savedViews, sort],
+    [column, density, due, label, owner, persist, priority, query, savedViews, sort],
   );
 
   const applySavedView = useCallback(
@@ -169,9 +176,11 @@ export function RoomToolsProvider({ children }: { children: ReactNode }) {
       setOwner(entry.owner);
       setDue(entry.due ?? "all");
       setColumn(entry.column ?? "all");
+      setLabel(entry.label ?? "all");
       setSort(entry.sort);
       setDensity(entry.density);
-      router.push(TASKS_VIEW_PATHS[entry.view]);
+      // A view saved while Schedule existed opens on the board.
+      router.push(TASKS_VIEW_PATHS[entry.view] ?? TASKS_VIEW_PATHS.board);
     },
     [router, savedViews],
   );
@@ -186,13 +195,15 @@ export function RoomToolsProvider({ children }: { children: ReactNode }) {
     setOwner("all");
     setDue("all");
     setColumn("all");
+    setLabel("all");
   }, []);
 
   const activeFilterCount =
     (priority === "all" ? 0 : 1) +
     (owner === "all" ? 0 : 1) +
     (due === "all" ? 0 : 1) +
-    (column === "all" ? 0 : 1);
+    (column === "all" ? 0 : 1) +
+    (label === "all" ? 0 : 1);
 
   const value = useMemo(
     () => ({
@@ -201,6 +212,7 @@ export function RoomToolsProvider({ children }: { children: ReactNode }) {
       owner,
       due,
       column,
+      label,
       sort,
       density,
       savedViews,
@@ -211,6 +223,7 @@ export function RoomToolsProvider({ children }: { children: ReactNode }) {
       setOwner,
       setDue,
       setColumn,
+      setLabel,
       setSort,
       setDensity,
       clearFilters,
@@ -225,6 +238,7 @@ export function RoomToolsProvider({ children }: { children: ReactNode }) {
       owner,
       due,
       column,
+      label,
       sort,
       density,
       savedViews,
@@ -246,6 +260,5 @@ export function useRoomTools(): RoomToolsState {
   return v;
 }
 
-// The Task-level useRoomVisibleTasks hook that used to live here served
-// the pre-consolidation views; since T·125 the visible list is derived
-// on LabTask by useVisibleLabTasks in src/components/hybrid/view-tools.tsx.
+// The visible list is derived on LabTask by useVisibleLabTasks in
+// src/components/tasks/visible-tasks.ts.

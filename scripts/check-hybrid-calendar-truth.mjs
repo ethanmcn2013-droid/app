@@ -2,7 +2,9 @@ import { readFileSync, readdirSync } from "node:fs";
 import { extname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = fileURLToPath(new URL("../src/components/hybrid/", import.meta.url));
+// The store and adapters live in hybrid/; the v3 views (Calendar among them)
+// live in tasks/. Both must read today from the calendar frame.
+const roots = ["../src/components/hybrid/", "../src/components/tasks/"].map((dir) => fileURLToPath(new URL(dir, import.meta.url)));
 const banned = [
   ["LAB_TODAY", /\bLAB_TODAY\b/],
   ["frozen July planning start", /2026-07-06/],
@@ -21,11 +23,13 @@ function files(directory) {
 }
 
 const failures = [];
-for (const file of files(root)) {
-  const source = readFileSync(file, "utf8");
-  for (const [label, pattern] of banned) {
-    if (pattern.test(source)) {
-      failures.push(`${relative(root, file)} contains ${label}`);
+for (const root of roots) {
+  for (const file of files(root)) {
+    const source = readFileSync(file, "utf8");
+    for (const [label, pattern] of banned) {
+      if (pattern.test(source)) {
+        failures.push(`${relative(root, file)} contains ${label}`);
+      }
     }
   }
 }

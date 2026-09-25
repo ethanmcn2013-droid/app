@@ -3,9 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Task } from "@/lib/data";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
-
-const TEXT_CLASSES =
-  "block w-full bg-transparent px-0 text-[13.5px] leading-[var(--x-lead-read)] text-ink-soft transition-colors focus:outline-none";
+import sx from "./sheet-sections.module.css";
 
 export function DescriptionEditor({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
@@ -77,7 +75,8 @@ export function DescriptionEditor({ task }: { task: Task }) {
           // Enter inserts newline (default behavior). Multi-line is the
           // mode, descriptions are prose.
         }}
-        className={`${TEXT_CLASSES} resize-none text-ink`}
+        className={sx.descInput}
+        placeholder="Add a description"
         aria-label="Task description"
       />
     );
@@ -95,9 +94,10 @@ export function DescriptionEditor({ task }: { task: Task }) {
             startEdit();
           }
         }}
-        className={`${TEXT_CLASSES} cursor-text text-left text-ink-faint hover:text-ink-quiet`}
+        className={sx.desc}
+        data-empty=""
       >
-        Add a description.
+        Add a description
       </button>
     );
   }
@@ -113,7 +113,8 @@ export function DescriptionEditor({ task }: { task: Task }) {
           startEdit({ caretAtEnd: true });
         }
       }}
-      className={`${TEXT_CLASSES} cursor-text whitespace-pre-wrap hover:text-ink`}
+      className={sx.desc}
+      title="Click to edit"
     >
       {description}
     </p>

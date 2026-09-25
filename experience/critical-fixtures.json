@@ -83,7 +83,7 @@
             {
               "kind": "role",
               "role": "heading",
-              "name": "The Orchard, events",
+              "name": "Tasks",
               "proves": [
                 "default"
               ]
@@ -811,9 +811,8 @@
       ],
       "assertions": [
         {
-          "kind": "role",
-          "role": "dialog",
-          "name": "Confirm marquee sides with the hire company",
+          "kind": "text",
+          "text": "Confirm marquee sides with the hire company",
           "proves": [
             "default"
           ]

@@ -98,7 +98,7 @@ export function FieldRows({ task }: { task: Task }) {
             {task.tags.map((t) => (
               <span
                 key={t}
-                className="rounded-md border border-line-soft bg-bg-sunken/60 px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.12em] text-ink-soft leading-[var(--x-lead-tight)]"
+                className="rounded-md border border-line-soft bg-bg-sunken/60 px-1.5 py-0.5 text-[11px] font-medium text-ink-soft leading-[var(--x-lead-tight)]"
               >
                 {t}
               </span>
@@ -112,7 +112,7 @@ export function FieldRows({ task }: { task: Task }) {
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <div className="pt-1 text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
+    <div className="pt-1 text-[12px] font-medium text-[color:var(--v3-text-2)] leading-[var(--x-lead-tight)]">
       {children}
     </div>
   );
@@ -341,8 +341,6 @@ export function AssigneesRow({ task }: { task: Task }) {
   // fixtures.ts — the views' assign menus carry the same rule).
   const members = useWorkspaceMembers();
   const assigned = task.assignees;
-  const nameFor = (id: string) =>
-    members.find((member) => member.id === id)?.name ?? USERS[id].name;
   // Show Nudge button only when there is at least one assignee that is not
   // the current user — hidden entirely when task has no other assignee.
   const hasOtherAssignee = assigned.some((a) => a !== me);
@@ -430,7 +428,7 @@ export function AssigneesRow({ task }: { task: Task }) {
         {() =>
           members.length === 0 ? (
             <p className="px-2 py-1.5 text-[13px] text-ink-quiet">
-              No one else is in this workspace yet. Invite someone from
+              No one else is in this project yet. Invite someone from
               Settings, then assign the task to them.
             </p>
           ) : (

@@ -30,6 +30,7 @@ import { suiteSurfaceFromAppPath } from "@/lib/product-urls";
 import { updateUserPreferencesAction } from "@/server/actions/preferences";
 import { ShellIcon } from "./shell-icons";
 import { crumbsForPath } from "./shell-nav";
+import { AppsLauncher } from "./launcher/apps-launcher";
 import styles from "./shell.module.css";
 
 type ShellState = {
@@ -200,6 +201,7 @@ function Topbar() {
         <Link href="/app/inbox" className={styles.iconButton} aria-label="Inbox">
           <ShellIcon.bell />
         </Link>
+        <AppsLauncher />
         <NewMenu />
         <UserButtonWithSuite current={surface} />
       </div>

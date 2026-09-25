@@ -18,6 +18,7 @@ import {
   getSubtasksAction,
   updateTaskAction,
 } from "@/server/actions/tasks";
+import sx from "./sheet-sections.module.css";
 
 /**
  * Nested checklist for a parent task's children. Lives in the detail
@@ -183,25 +184,20 @@ export function SubtasksSection({ task }: { task: Task }) {
   const total = subtasks.length;
   const done = subtasks.filter((s) => isTaskDone(s, columnConfig)).length;
 
-  // Empty state: a single quiet composer chip, no header.
-  if (total === 0) {
-    return (
-      <div className="border-t border-line-soft px-6 py-5">
-        <SubtaskComposer onAdd={add} compact />
-      </div>
-    );
-  }
-
+  // Same header as Files and links and Activity; empty, the composer row
+  // under it is the whole invitation.
   return (
-    <div className="border-t border-line-soft px-6 py-5">
-      <div className="mb-3 flex items-baseline justify-between gap-3">
-        <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
-          Subtasks
-        </span>
-        <span className="text-[11px] tabular-nums text-ink-quiet">
-          {done} of {total} done
-        </span>
+    <section className={sx.section} aria-labelledby={`subtasks-${task.id}`}>
+      <div className={sx.head}>
+        <h2 className={sx.title} id={`subtasks-${task.id}`}>Subtasks</h2>
+        {total > 0 ? <span className={sx.count}>{done} of {total} done</span> : null}
       </div>
+      {total === 0 ? (
+        <div className={sx.list}>
+          <SubtaskComposer onAdd={add} compact />
+        </div>
+      ) : (
+        <div className={sx.list}>
       <ReorderList
         items={subtasks.map((s) => ({ ...s, label: s.title }))}
         onReorder={reorder}
@@ -215,10 +211,10 @@ export function SubtasksSection({ task }: { task: Task }) {
           />
         )}
       />
-      <div className="mt-1.5">
-        <SubtaskComposer onAdd={add} />
-      </div>
-    </div>
+          <SubtaskComposer onAdd={add} />
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -238,17 +234,13 @@ function SubtaskRow({
   // Temp (optimistic) rows aren't openable, they have no real id yet.
   const openable = !subtask.id.startsWith("temp-");
   return (
-    <div className="group flex items-center gap-2 py-[5px]">
+    <div className={sx.subtask}>
       <button
         type="button"
         onClick={onToggle}
         aria-pressed={isDone}
         aria-label={isDone ? "Mark subtask as not done" : "Mark subtask as done"}
-        className={
-          isDone
-            ? "flex h-[15px] w-[15px] flex-shrink-0 items-center justify-center rounded-[4px] border border-ink-soft bg-ink-soft text-white transition-colors"
-            : "flex h-[15px] w-[15px] flex-shrink-0 items-center justify-center rounded-[4px] border border-line bg-white text-transparent transition-colors hover:border-ink-soft"
-        }
+        className={sx.check}
       >
         <CheckGlyph />
       </button>
@@ -256,11 +248,8 @@ function SubtaskRow({
         type="button"
         onClick={onOpen}
         disabled={!openable}
-        className={
-          isDone
-            ? "min-w-0 flex-1 truncate text-left text-[13px] leading-[var(--x-lead-ui)] text-ink-quiet line-through opacity-60 transition-opacity duration-[var(--motion-fast)] ease-[var(--ease-out)] hover:opacity-80 disabled:cursor-default"
-            : "min-w-0 flex-1 truncate text-left text-[13px] leading-[var(--x-lead-ui)] text-ink-soft transition-colors hover:text-ink disabled:cursor-default"
-        }
+        className={sx.subtaskTitle}
+        data-done={isDone ? "" : undefined}
       >
         {subtask.title}
       </button>
@@ -299,32 +288,21 @@ function SubtaskComposer({
   compact?: boolean;
 }) {
   const [value, setValue] = useState("");
-  const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const showsHint = !focused && value.length === 0;
-
   return (
-    <div
-      className={
-        showsHint
-          ? "flex items-center gap-2 rounded-md py-[5px] text-ink-quiet transition-colors hover:text-ink-soft"
-          : "flex items-center gap-2 rounded-md border border-line-soft bg-white py-[3px] pl-1.5 pr-1.5 transition-colors focus-within:border-ink-soft/60"
-      }
-    >
-      {showsHint ? <PlusGlyph /> : null}
+    <div className={sx.composer}>
+      <span className={sx.composerGlyph}>
+        <PlusGlyph />
+      </span>
       <input
         ref={inputRef}
         type="text"
         value={value}
-        placeholder={compact ? "Add subtask" : "Add subtask"}
+        placeholder={compact ? "Add a subtask" : "Add another subtask"}
         onChange={(e) => setValue(e.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => {
-          setFocused(false);
-          // Don't auto-submit on blur; quiet drop-out preserves the
-          // ghost-row aesthetic.
-        }}
+        // Blur never submits: a half-typed subtask waits in the field
+        // rather than being saved by surprise.
         onKeyDown={(e) => {
           if (
             e.key === "Enter" &&
@@ -345,11 +323,7 @@ function SubtaskComposer({
         }}
         autoComplete="off"
         spellCheck={false}
-        className={
-          showsHint
-            ? "min-w-0 flex-1 cursor-text bg-transparent text-[13px] leading-[var(--x-lead-ui)] text-ink-quiet placeholder:text-ink-quiet focus:outline-none"
-            : "min-w-0 flex-1 bg-transparent text-[13px] leading-[var(--x-lead-ui)] text-ink placeholder:text-ink-faint focus:outline-none"
-        }
+        className={sx.composerInput}
         aria-label="Add subtask"
       />
     </div>
@@ -366,7 +340,6 @@ function PlusGlyph() {
       stroke="currentColor"
       strokeWidth="2.4"
       aria-hidden
-      className="flex-shrink-0"
     >
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />

@@ -49,6 +49,16 @@ import styles from "./notes-workspace.module.css";
 
 export type ComposerMode = "type" | "voice" | "photo";
 
+/** What the capture bar over the list can ask the one composer to do. */
+export type ComposerActions = {
+  /** Open the voice consent step, when voice is available. */
+  openVoice: () => void;
+  /** Open the photo picker. Must run inside the click that asked for it. */
+  openPhoto: () => void;
+};
+
+const PHOTO_UNAVAILABLE = "Reading photos is not switched on here yet. Typing and voice still work.";
+
 type Stage =
   | { kind: "idle" }
   | { kind: "voice-consent" }
@@ -177,6 +187,7 @@ export function Composer({
   fieldRef,
   onFocusChange,
   earlierDeviceCopy,
+  actionsRef,
 }: {
   copy: NotesCopy;
   draft: string;
@@ -197,6 +208,8 @@ export function Composer({
   fieldRef: React.RefObject<HTMLTextAreaElement | null>;
   onFocusChange?: (focused: boolean) => void;
   earlierDeviceCopy?: string;
+  /** Filled with the composer's own voice and photo entry points. */
+  actionsRef?: React.RefObject<ComposerActions | null>;
 }) {
   const [mode, setMode] = useState<ComposerMode>("type");
   const [stage, setStage] = useState<Stage>({ kind: "idle" });
@@ -327,6 +340,23 @@ export function Composer({
     speech.cancel();
     resetStage();
   }, [resetStage, speech]);
+
+  // The capture bar reaches voice and photo through here, so there is still
+  // only one composer and one consent step.
+  useEffect(() => {
+    if (!actionsRef) return;
+    actionsRef.current = {
+      openVoice: () => {
+        if (!readOnly && !voiceUnavailable && !busy) openVoiceConsent();
+      },
+      openPhoto: () => {
+        if (!readOnly && photoAvailable && !busy) fileInputRef.current?.click();
+      },
+    };
+    return () => {
+      actionsRef.current = null;
+    };
+  }, [actionsRef, busy, openVoiceConsent, photoAvailable, readOnly, voiceUnavailable]);
 
   // ── Photo ───────────────────────────────────────────────────────────
 
@@ -810,10 +840,12 @@ export function Composer({
 
         {stage.kind === "idle" && !photo ? (
           <div className={styles.composerFooter}>
-            <div className={styles.modeGroup}>
+            <div className={styles.modeGroup} role="group" aria-label="How to capture">
               <button
                 type="button"
                 className={styles.modeButton}
+                data-mode-button="type"
+                title="Type"
                 data-active={mode === "type" || undefined}
                 onClick={() => {
                   setMode("type");
@@ -827,6 +859,8 @@ export function Composer({
               <button
                 type="button"
                 className={styles.modeButton}
+                data-mode-button="voice"
+                title="Voice"
                 onClick={openVoiceConsent}
                 disabled={readOnly || voiceUnavailable || busy}
                 aria-describedby={voiceUnavailable ? voiceNoteId : undefined}
@@ -834,9 +868,12 @@ export function Composer({
                 <VoiceIcon />
                 <span>Voice</span>
               </button>
+              {/* A closed route says so on the page, under the control. */}
               <button
                 type="button"
                 className={styles.modeButton}
+                data-mode-button="photo"
+                title="Photo"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={readOnly || busy || !photoAvailable}
                 aria-describedby={photoAvailable ? undefined : photoNoteId}
@@ -865,7 +902,7 @@ export function Composer({
               >
                 {captureStatus === "pending" ? "Saving…" : "Save note"}
                 <span className={styles.keycap} aria-hidden="true">
-                  {saveChord}⏎
+                  {saveChord} ↵
                 </span>
               </button>
             </div>
@@ -900,8 +937,7 @@ export function Composer({
           ) : null}
           {!photoAvailable ? (
             <p className={styles.composerNote} id={photoNoteId}>
-              Reading photos is not switched on for this account yet.
-              {voiceUnavailable ? " Typing works everywhere." : " Typing and voice both work."}
+              {PHOTO_UNAVAILABLE}
             </p>
           ) : null}
         </div>

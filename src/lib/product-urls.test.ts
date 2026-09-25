@@ -55,11 +55,11 @@ describe("Signal Studio URL contract", () => {
     assert.deepEqual(TASKS_VIEW_PATHS, {
       board: "/app/tasks",
       list: "/app/tasks/list",
-      timeline: "/app/tasks/timeline",
       calendar: "/app/tasks/calendar",
     });
     assert.equal(PRODUCT_APP_PATHS.timeline, "/app/timeline");
-    assert.notEqual(TASKS_VIEW_PATHS.timeline, PRODUCT_APP_PATHS.timeline);
+    // Schedule is retired: no Tasks view may point at a timeline path.
+    assert.ok(!Object.values(TASKS_VIEW_PATHS).some((path) => path.includes("timeline")));
   });
 
   it("derives the active product without treating Tasks views as products", () => {

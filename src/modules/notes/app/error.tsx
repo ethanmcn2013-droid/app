@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
+import styles from "./loading.module.css";
 
 /**
- * Error boundary for the notebook itself. listNotes() reads Turso
- * server-side; a failure here should stay recoverable inside the app
- * shell rather than blanking the notebook. Notes' own quiet register.
+ * Error boundary for the notebook. listNotes() reads the database on the
+ * server; a failure here stays recoverable inside the app shell rather than
+ * blanking the page, and says the one thing a person needs to hear first.
  */
 export default function NotebookError({
   error,
@@ -19,64 +20,20 @@ export default function NotebookError({
   }, [error]);
 
   return (
-    <div
-      style={{
-        minHeight: "50vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "3rem 1.5rem",
-        textAlign: "center",
-      }}
-    >
-      <div style={{ maxWidth: "24rem" }}>
-        <h1
-          style={{
-            fontSize: "1.05rem",
-            fontWeight: 600,
-            color: "var(--color-ink)",
-            marginBottom: "0.5rem",
-          }}
-        >
-          The notebook didn&rsquo;t load.
-        </h1>
-        <p
-          style={{
-            fontSize: "0.875rem",
-            lineHeight: 1.6,
-            color: "var(--color-ink-soft)",
-            marginBottom: "1.25rem",
-          }}
-        >
-          Notes could not confirm the notebook state from this screen. Try
-          loading it again before making any further changes.
+    <div className={styles.error}>
+      <div className={styles.errorCard} role="alert">
+        <span className={styles.errorMark} aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <circle cx="8" cy="8" r="5.75" />
+            <path d="M8 5v3.5M8 10.75v.01" />
+          </svg>
+        </span>
+        <h1 className={styles.errorTitle}>Notes did not load. Your notes are safe.</h1>
+        <p className={styles.errorBody}>
+          Nothing was changed. Try again, and if it keeps happening, come back in a few minutes.
         </p>
-        {error.digest ? (
-          <p
-            style={{
-              fontFamily: "monospace",
-              fontSize: "0.7rem",
-              color: "var(--color-ink-faint)",
-              marginBottom: "1rem",
-            }}
-          >
-            ref · {error.digest}
-          </p>
-        ) : null}
-        <button
-          type="button"
-          onClick={reset}
-          style={{
-            background: "var(--color-accent)",
-            color: "var(--paper)",
-            border: "none",
-            borderRadius: "8px",
-            padding: "0.6rem 1.1rem",
-            fontSize: "0.875rem",
-            fontWeight: 500,
-            cursor: "pointer",
-          }}
-        >
+        {error.digest ? <p className={styles.errorRef}>Reference {error.digest}</p> : null}
+        <button type="button" className={styles.retry} onClick={reset}>
           Try again
         </button>
       </div>

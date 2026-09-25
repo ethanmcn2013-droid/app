@@ -149,10 +149,8 @@
   justify-content: space-between;
   height: 24px;
   padding: 0 8px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--v3-text-3);
 }
 .label a { color: inherit; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 6px; }
@@ -373,7 +371,7 @@
 .menu a svg, .menu button svg { color: var(--v3-text-3); }
 .menu a:hover, .menu button:hover, .menu a:focus-visible, .menu button:focus-visible { background: var(--v3-hover); outline: none; }
 .menuHint { margin-left: auto; font-size: 11.5px; color: var(--v3-text-3); }
-.menuLabel { padding: 8px 10px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--v3-text-3); }
+.menuLabel { padding: 8px 10px 4px; font-size: 12px; font-weight: 600; color: var(--v3-text-3); }
 .segmented {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -453,6 +451,25 @@
   .newButton span { display: none; }
   .newButton { padding: 0 8px; }
   .collapseButton { display: none; }
+}
+
+/* Phones: the trail keeps its last two steps so the current page is never
+   the crumb that gets cut (Signal Studio / Apps and tools / Notes → Apps and tools / Notes). */
+@media (max-width: 599px) {
+  .crumbs { overflow: hidden; }
+  .crumbs > span:nth-last-child(n+3) { display: none !important; }
+  .crumbs > span:nth-last-child(2):not(:first-child) > .crumbSep { display: none; }
+  /* The parent gives way first: the page you are on is never the crumb
+     that ends in an ellipsis. */
+  .crumbs a { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .crumbCurrent { flex: 0 0 auto; max-width: 100%; }
+}
+
+/* Narrow phones: a parent cut to "Apps a…" helps nobody, so only the page
+   you are on is named; the sidebar carries the way back. */
+@media (max-width: 419px) {
+  .crumbs > span:nth-last-child(2) { display: none !important; }
+  .crumbs > span:last-child > .crumbSep { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

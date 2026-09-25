@@ -1,110 +1,114 @@
+/* Capture by email, inside the Notes canvas's "More ways to capture".
+   v3 tokens only (src/ds/v3.css). */
+
 .root {
-  display: inline-flex;
-  min-inline-size: 0;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.35rem 0.55rem;
-  margin: 0;
-  color: var(--ink-faint, var(--color-ink-soft));
-  font-size: var(--text-caption, 0.75rem);
-  line-height: 1.35;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px 0;
+}
+
+.mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-fill);
+  box-shadow: inset 0 0 0 1px var(--v3-border);
+  color: var(--v3-text-2);
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .label {
-  color: var(--ink-soft, var(--color-ink-soft));
-  font-weight: var(--weight-medium, 500);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--v3-text);
 }
 
-.label::after {
-  margin-inline-start: 0.55rem;
-  color: var(--hairline, var(--color-line-strong));
-  content: "/";
-  font-weight: 400;
+.root[data-tier="free"] .label {
+  color: var(--v3-text-2);
 }
 
 .detail {
-  min-inline-size: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--v3-text-2);
 }
 
-.detail a {
-  color: var(--ink-soft, var(--color-ink));
-  text-decoration-line: underline;
-  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.16em;
+.link {
+  color: var(--v3-accent-text);
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+  text-underline-offset: 3px;
 }
 
 .address {
-  display: inline-flex;
-  min-inline-size: 0;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--ink-soft, var(--color-ink));
-  cursor: pointer;
-}
-
-.address code {
-  overflow: hidden;
+  margin-top: 6px;
+  align-self: flex-start;
+  max-width: 100%;
+  padding: 4px 8px;
+  border-radius: var(--v3-radius-sm);
+  background: var(--v3-sunken);
+  box-shadow: inset 0 0 0 1px var(--v3-border);
   font: inherit;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 13px;
+  color: var(--v3-text);
+  overflow-wrap: anywhere;
 }
 
-.hint {
-  flex: 0 0 auto;
-  color: var(--ink-faint, var(--color-ink-soft));
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
+.copy {
+  flex: none;
+  align-self: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--v3-control-border);
+  border-radius: var(--v3-radius);
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 120ms var(--v3-ease);
+}
+
+.copy:hover {
+  background: var(--v3-hover);
 }
 
 .fallbackInput {
-  inline-size: min(21rem, 100%);
-  min-block-size: 1.75rem;
-  padding: 0.15rem 0.45rem;
-  border: 1px solid var(--hairline, var(--color-line-strong));
-  border-radius: var(--radius-sm, 0.25rem);
-  /* No `white` fallback: if --paper ever failed to resolve inside a dark
-     document, a literal white input would be the one thing on the surface
-     that cannot be read. Unresolved, this falls through to the field it
-     sits on, which is legible in either theme. */
-  background: var(--paper);
-  color: var(--ink, var(--color-ink));
+  margin-top: 6px;
+  width: min(21rem, 100%);
+  min-height: 36px;
+  padding: 0 8px;
+  border: 1px solid var(--v3-control-border);
+  border-radius: var(--v3-radius-sm);
+  background: var(--v3-surface);
+  color: var(--v3-text);
   font: inherit;
+  font-size: 13px;
 }
 
-.fallbackInput:focus-visible {
-  outline: 2px solid var(--accent, var(--color-signal));
-  outline-offset: 2px;
-}
-
-@media (max-width: 40rem) {
-  .root {
-    inline-size: 100%;
-  }
-
-  .address {
-    max-inline-size: 100%;
-  }
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .detail a:hover {
-    color: var(--ink, var(--color-ink));
-  }
-
-  .address:hover code {
-    color: var(--ink, var(--color-ink));
-    text-decoration: underline;
-    text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
-    text-underline-offset: 0.16em;
+@media (pointer: coarse) {
+  .copy,
+  .fallbackInput {
+    min-height: 44px;
   }
 }
 
 @media (forced-colors: active) {
-  .address,
+  .copy,
   .fallbackInput {
     border: 1px solid ButtonText;
   }
