@@ -118,6 +118,7 @@ export default function KeyboardCommandList() {
   const focusTask = tasks.find((t) => t.id === focus) ?? null;
   const late = shown.filter((t) => t.due && t.status !== "done" && daysFromToday(t.due) < 0).length;
   const focusGroupStatus: StatusId = newInto ?? focusTask?.status ?? "todo";
+  const highlightWords = filterTokens.flatMap((t) => (t.kind === "word" ? [t.word] : []));
   const flashOrder = flash ? order.filter((id) => flash.ids.includes(id)) : [];
 
   /* helpers */
@@ -561,6 +562,7 @@ export default function KeyboardCommandList() {
                           selecting={selected.length > 0}
                           flash={flash && fi >= 0 ? { n: flash.n, delay: fi * 30 } : undefined}
                           onClick={rowClick}
+                          highlight={highlightWords}
                           onToggleSelect={toggleSelect}
                           onToggleDone={(id) => toggleDone([id])}
                           onLongPress={(id) => {
@@ -611,7 +613,9 @@ export default function KeyboardCommandList() {
 
       {!isPhone && (
         <aside className={s.peekPane} aria-label="Task in focus">
-          {peek ?? <p className={s.peekEmpty}>Move to a task with J and K, or click one, to see it here.</p>}
+          {peek ?? (
+            <p className={s.peekEmpty}>{filtering ? "Nothing matches the filter, so there is nothing to show here." : "Click a task, or move with J and K, to see it here."}</p>
+          )}
         </aside>
       )}
 

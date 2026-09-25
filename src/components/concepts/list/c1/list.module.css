@@ -569,6 +569,13 @@
   color: var(--v3-text);
 }
 
+.mark {
+  background: color-mix(in srgb, var(--v3-warning) 30%, transparent);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 1px;
+}
+
 .row[data-done] .title {
   color: var(--v3-text-2);
 }

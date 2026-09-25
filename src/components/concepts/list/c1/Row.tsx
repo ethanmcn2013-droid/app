@@ -16,9 +16,17 @@ type Props = {
   onToggleSelect: (id: number, shift: boolean) => void;
   onToggleDone: (id: number) => void;
   onLongPress: (id: number) => void;
+  highlight?: string[];
 };
 
-export function Row({ task, focused, selected, selecting, flash, onClick, onToggleSelect, onToggleDone, onLongPress }: Props) {
+function marked(title: string, words?: string[]) {
+  if (!words?.length) return title;
+  const esc = words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const parts = title.split(new RegExp(`(${esc.join("|")})`, "gi"));
+  return parts.map((part, i) => (i % 2 ? <mark key={i} className={s.mark}>{part}</mark> : part));
+}
+
+export function Row({ task, focused, selected, selecting, flash, onClick, onToggleSelect, onToggleDone, onLongPress, highlight }: Props) {
   const timer = useRef<number | null>(null);
   const pressed = useRef(false);
   const start = useRef<{ x: number; y: number } | null>(null);
@@ -101,7 +109,7 @@ export function Row({ task, focused, selected, selecting, flash, onClick, onTogg
         {PROJECT.key}-{task.id}
       </span>
       <span className={s.titleCell}>
-        <span className={s.title}>{task.title}</span>
+        <span className={s.title}>{marked(task.title, highlight)}</span>
         {task.subtasks && (
           <span className={s.subCount} aria-label={`${subDone} of ${task.subtasks.length} subtasks done`}>
             <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden>
