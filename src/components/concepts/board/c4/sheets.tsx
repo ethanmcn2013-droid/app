@@ -146,7 +146,7 @@ export function CardDrawer({
           ) : null}
           {card.blocker && stage === "waiting" ? (
             <div>
-              <dt>Blocked by</dt>
+              <dt>Waiting on</dt>
               <dd>
                 <BlockerLine who={card.blocker.who} since={card.blocker.since} day={day} />
               </dd>
