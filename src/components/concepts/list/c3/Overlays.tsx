@@ -31,6 +31,8 @@ export function Popover({ children, className, onClose, align = "left", up }: { 
   );
 }
 
+const COL_W: Partial<Record<Column["type"], string>> = { title: "32%", text: "28%", currency: "13%", number: "12%", date: "16%", checkbox: "11%" };
+
 export type ToastState = { id: number; text: string; undo?: Row[] };
 
 export function Toast({ toast, onUndo, onClose }: { toast: ToastState | null; onUndo: (rows: Row[]) => void; onClose: () => void }) {
@@ -122,7 +124,7 @@ export function PasteConfirm({ state, columns, onConfirm, onCancel }: { state: P
             <thead>
               <tr>
                 {used.map((c) => (
-                  <th key={c.key} className={c.type === "currency" || c.type === "number" ? s.right : undefined}>
+                  <th key={c.key} className={c.type === "currency" || c.type === "number" ? s.right : undefined} style={{ width: COL_W[c.type] ?? "18%" }}>
                     {c.name}
                   </th>
                 ))}

@@ -183,7 +183,7 @@ function FieldControl({ c, row, onChange }: { c: Column; row: Row; onChange: (co
           {c.type === "currency" && <span className={s.numPrefix}>€</span>}
           <input
             id={id}
-            className={`${s.fieldInput} ${s.fieldNum}`}
+            className={`${s.fieldInput} ${c.type === "currency" ? s.fieldNum : s.fieldPlain}`}
             inputMode="decimal"
             defaultValue={typeof v === "number" ? String(v) : ""}
             placeholder={c.type === "currency" ? "0" : "Empty"}

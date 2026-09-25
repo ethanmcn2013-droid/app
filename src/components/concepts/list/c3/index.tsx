@@ -13,6 +13,7 @@ import {
   isNumeric,
   planPaste,
   rowsFromPlan,
+  sheetColumns,
   sheetRows,
   sortRows,
   toText,
@@ -65,7 +66,7 @@ export default function PlannersSheet() {
   const seq = useRef(100);
 
   const sheet = sheets.find((x) => x.id === sheetId) ?? sheets[0];
-  const cols = useMemo(() => columns.filter((c) => c.key === "title" || !sheet.hidden.includes(c.key)), [columns, sheet.hidden]);
+  const cols = useMemo(() => sheetColumns(columns, sheet), [columns, sheet]);
   const base = useMemo(() => sheetRows(rows, sheet), [rows, sheet]);
   const shown = useMemo(() => sortRows(applyFilter(base, sheet.filter), sheet.sort, columns), [base, sheet.filter, sheet.sort, columns]);
   const groups = useMemo(() => buildGroups(base, shown, sheet.groupBy), [base, shown, sheet.groupBy]);
@@ -321,7 +322,7 @@ export default function PlannersSheet() {
     setColumns((cs) => [...cs, { key, name: label, type, width: WIDTH_BY_TYPE[type] ?? 160, custom: true }]);
     if (flat[0]) {
       setSel({ a: { row: flat[0].id, col: key }, f: { row: flat[0].id, col: key } });
-      reveal(flat[0].id, key);
+      requestAnimationFrame(() => document.getElementById(cellDomId(flat[0].id, key))?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" }));
     }
     setToast({ id: Date.now(), text: `Added the ${label} field` });
   };
@@ -339,8 +340,7 @@ export default function PlannersSheet() {
     setSheetId(id);
     setChecked(new Set());
     setEditing(null);
-    const first = sheetRows(rows, sheets.find((x) => x.id === id)!)[0];
-    setSel(first ? { a: { row: first.id, col: "title" }, f: { row: first.id, col: "title" } } : null);
+    setSel(null);
   };
 
   /* ── Keyboard ───────────────────────────────────────────────────── */
@@ -462,7 +462,6 @@ export default function PlannersSheet() {
         }
         onCellDown={(pos, e) => {
           if (e.button !== 0) return;
-          if (editing) setEditing(null);
           if (e.shiftKey && sel) setSel({ a: sel.a, f: pos });
           else setSel({ a: pos, f: pos });
           dragSel.current = true;

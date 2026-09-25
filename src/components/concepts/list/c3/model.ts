@@ -80,6 +80,8 @@ export type Sheet = {
   table: string;
   base?: "supplier" | "cost";
   hidden: string[];
+  /** Column order for this sheet; fields not named keep their place after. */
+  order?: string[];
   groupBy: GroupBy;
   filter: Filter;
   sort: { key: string; dir: "asc" | "desc" } | null;
@@ -93,6 +95,7 @@ export const START_SHEETS: Sheet[] = [
     table: "main",
     base: "supplier",
     hidden: ["status", "guests", "room"],
+    order: ["title", "supplier", "cost", "paid", "due", "owner", "event", "notes"],
     groupBy: "none",
     filter: NO_FILTER,
     sort: { key: "supplier", dir: "asc" },
@@ -103,11 +106,22 @@ export const START_SHEETS: Sheet[] = [
     table: "main",
     base: "cost",
     hidden: ["owner", "guests", "room", "notes"],
+    order: ["title", "cost", "paid", "supplier", "event", "status", "due"],
     groupBy: "event",
     filter: NO_FILTER,
     sort: { key: "cost", dir: "desc" },
   },
 ];
+
+export function sheetColumns(columns: Column[], sheet: Sheet) {
+  const shown = columns.filter((c) => c.key === "title" || !sheet.hidden.includes(c.key));
+  if (!sheet.order) return shown;
+  const rank = (c: Column) => {
+    const i = sheet.order!.indexOf(c.key);
+    return i < 0 ? sheet.order!.length + columns.indexOf(c) : i;
+  };
+  return [...shown].sort((a, b) => rank(a) - rank(b));
+}
 
 export function sheetRows(rows: Row[], sheet: Sheet) {
   return rows.filter((r) => {

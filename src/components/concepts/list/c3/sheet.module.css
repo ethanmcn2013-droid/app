@@ -8,7 +8,7 @@
   --c3-checked: color-mix(in srgb, var(--v3-accent) 6%, var(--v3-canvas));
   --c3-warn: color-mix(in srgb, var(--v3-warning) 18%, var(--v3-canvas));
   --c3-group: var(--v3-sunken);
-  --c3-edge-shadow: 8px 0 12px -8px rgba(20, 18, 14, 0.2);
+  --c3-edge-shadow: 6px 0 12px -4px rgba(20, 18, 14, 0.13);
   --head-h: 36px;
   --row-h: 36px;
   --group-h: 40px;
@@ -25,7 +25,7 @@
 }
 
 :global(html[data-theme="dark"]) .root {
-  --c3-edge-shadow: 10px 0 14px -8px rgba(0, 0, 0, 0.6);
+  --c3-edge-shadow: 8px 0 14px -4px rgba(0, 0, 0, 0.55);
   --c3-hover: color-mix(in srgb, var(--v3-text) 4%, var(--v3-canvas));
   --c3-range: color-mix(in srgb, var(--v3-accent) 16%, var(--v3-canvas));
   --c3-warn: color-mix(in srgb, var(--v3-warning) 16%, var(--v3-canvas));
@@ -1055,6 +1055,13 @@
   white-space: nowrap;
 }
 
+.groupMeta .groupMetaIcon {
+  display: inline-block;
+  margin-right: 5px;
+  vertical-align: -1px;
+  color: var(--v3-text-3);
+}
+
 .subtotal {
   font-weight: 650;
   font-variant-numeric: tabular-nums;
@@ -1812,6 +1819,11 @@
   color: var(--v3-accent-text);
 }
 
+.tick {
+  display: inline-block;
+  animation: c3-tick 700ms var(--v3-ease);
+}
+
 .aggWarn .aggVal {
   color: var(--v3-warning-text);
 }
@@ -2344,6 +2356,7 @@
 .previewTable {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
   font-size: 12.5px;
 }
 
@@ -2667,6 +2680,10 @@
 
 .fieldNum {
   padding-left: 25px;
+  font-variant-numeric: tabular-nums;
+}
+
+.fieldPlain {
   font-variant-numeric: tabular-nums;
 }
 
@@ -3126,6 +3143,19 @@
 @keyframes c3-slide-up {
   from {
     transform: translateY(100%);
+  }
+}
+
+@keyframes c3-tick {
+  0% {
+    color: var(--v3-accent-text);
+    transform: translateY(-3px);
+    opacity: 0.4;
+  }
+  40% {
+    color: var(--v3-accent-text);
+    transform: none;
+    opacity: 1;
   }
 }
 

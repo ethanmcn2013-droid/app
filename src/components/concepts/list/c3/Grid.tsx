@@ -301,7 +301,12 @@ function GroupRow({ g, cols, collapsed, filteredOut, onToggle }: { g: Group; col
           );
         else if (filteredOut) body = null;
         else if (c.type === "status") body = <MixBar mix={mix} />;
-        else if (c.key === "due" && g.kind === "event" && g.value) body = <span className={s.groupMeta}>{fmtDate(EVENTS[g.value as EventId].date)}</span>;
+        else if (c.key === "due" && g.kind === "event" && g.value) body = (
+            <span className={s.groupMeta} title="The event day">
+              <Icon name="event" size={12} className={s.groupMetaIcon} />
+              {fmtDate(EVENTS[g.value as EventId].date)}
+            </span>
+          );
         else if (c.key === "due" && g.kind === "event") body = <span className={s.groupMeta}>{g.meta}</span>;
         else if (c.type === "person" && c.key === "owner")
           body = (
@@ -311,7 +316,11 @@ function GroupRow({ g, cols, collapsed, filteredOut, onToggle }: { g: Group; col
               ))}
             </span>
           );
-        else if (c.key === "cost") body = cost ? <span className={s.subtotal}>{eur(cost)}</span> : null;
+        else if (c.key === "cost") body = cost ? (
+            <span key={cost} className={`${s.subtotal} ${s.tick}`}>
+              {eur(cost)}
+            </span>
+          ) : null;
         else if (c.key === "paid") body = withCost ? <span className={s.groupMeta}>{paidCount(g.rows)} paid</span> : null;
         else if (c.key === "guests" && g.kind === "event" && g.value) body = <span className={s.groupMeta}>{EVENTS[g.value as EventId].guests} expected</span>;
         else if (c.custom && isNumeric(c)) {
@@ -686,7 +695,7 @@ function FooterRow(p: Inner) {
                 aria-label={`${c.name} total, ${inSel ? "selection sum" : AGG_NAMES[agg].toLowerCase()}. Change how it adds up`}
               >
                 <span className={s.aggName}>{inSel ? "Selected" : AGG_NAMES[agg]}</span>
-                <span className={s.aggVal}>{v == null ? "–" : agg === "filled" && !inSel ? v : fmtNumber(v, c)}</span>
+                <span key={`${agg}-${v}`} className={`${s.aggVal} ${s.tick}`}>{v == null ? "–" : agg === "filled" && !inSel ? v : fmtNumber(v, c)}</span>
               </button>
               {menu === c.key && (
                 <Popover className={s.aggMenu} onClose={() => setMenu(null)} align="right" up>
