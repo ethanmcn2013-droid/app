@@ -84,6 +84,14 @@ VIEWS.forEach((v, i) => {
   if (!slates[i]) { log(`slate failed for ${v.key}; its concepts are skipped`); return }
   for (const c of slates[i].concepts.slice(0, 6)) items.push({ v, c })
 })
+// args.only (optional): build just these concepts, e.g. ["shared-timeline-2"].
+// The founder paces this sprint in batches and hands each one to a local session.
+const ONLY = args && Array.isArray(args.only) ? new Set(args.only) : null
+if (ONLY) {
+  const keep = items.filter((it) => ONLY.has(`${it.v.key}-${it.c.n}`))
+  items.length = 0
+  items.push(...keep)
+}
 const folder = (it) => `src/components/concepts/${it.v.key}/c${it.c.n}`
 const route = (it) => `app/concepts/${it.v.key}/${it.c.n}`
 const tag = (it) => `${it.v.key}-${it.c.n}`
