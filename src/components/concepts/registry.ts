@@ -33,6 +33,12 @@ import { meta as calendar2Meta } from "./calendar/c2/meta";
 import { meta as calendar3Meta } from "./calendar/c3/meta";
 import { meta as calendar4Meta } from "./calendar/c4/meta";
 import { meta as calendar5Meta } from "./calendar/c5/meta";
+import { meta as analytics1Meta } from "./analytics/c1/meta";
+import { meta as analytics2Meta } from "./analytics/c2/meta";
+import { meta as analytics3Meta } from "./analytics/c3/meta";
+import { meta as analytics4Meta } from "./analytics/c4/meta";
+import { meta as analytics5Meta } from "./analytics/c5/meta";
+import { meta as analytics6Meta } from "./analytics/c6/meta";
 import type { ConceptMeta } from "./types";
 
 export const CONCEPTS: readonly ConceptMeta[] = [
@@ -66,6 +72,12 @@ export const CONCEPTS: readonly ConceptMeta[] = [
   calendar3Meta,
   calendar4Meta,
   calendar5Meta,
+  analytics1Meta,
+  analytics2Meta,
+  analytics3Meta,
+  analytics4Meta,
+  analytics5Meta,
+  analytics6Meta,
 ];
 
 export const CONCEPT_LOADERS: Record<string, () => Promise<{ default: ComponentType }>> = {
@@ -99,4 +111,10 @@ export const CONCEPT_LOADERS: Record<string, () => Promise<{ default: ComponentT
   "calendar/3": () => import("./calendar/c3"),
   "calendar/4": () => import("./calendar/c4"),
   "calendar/5": () => import("./calendar/c5"),
+  "analytics/1": () => import("./analytics/c1"),
+  "analytics/2": () => import("./analytics/c2"),
+  "analytics/3": () => import("./analytics/c3"),
+  "analytics/4": () => import("./analytics/c4"),
+  "analytics/5": () => import("./analytics/c5"),
+  "analytics/6": () => import("./analytics/c6"),
 };

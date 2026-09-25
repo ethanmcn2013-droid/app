@@ -14,16 +14,17 @@ const VIEWS = [
   { key: "board", label: "Tasks board" },
   { key: "list", label: "Tasks list" },
   { key: "calendar", label: "Tasks calendar" },
+  { key: "analytics", label: "Analytics" },
 ] as const;
 
-/** Review-only gallery of the five concepts for each view. */
+/** Review-only gallery of the concepts for each view. */
 export default function ConceptsGallery() {
   if (!isDemoMode()) notFound();
   return (
     <div className={styles.page}>
       <div className={styles.inner}>
         <h1 className={styles.title}>Concepts</h1>
-        <p className={styles.subtitle}>Five directions for each view. Open one, then pick your favourites to refine.</p>
+        <p className={styles.subtitle}>Five or six directions for each view. Open one, then pick your favourites to refine.</p>
         {VIEWS.map((view) => (
           <section key={view.key} className={styles.section} aria-labelledby={`c-${view.key}`}>
             <h2 id={`c-${view.key}`} className={styles.sectionTitle}>{view.label}</h2>
