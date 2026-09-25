@@ -307,7 +307,7 @@ test("the curation actions refuse a proved archive and the page stops offering e
     "src/modules/timeline/app/plan/[projectSlug]/_components/v3/share-sheet.tsx",
   );
   // Minting is withdrawn when archived; switching links off is not gated.
-  assert.match(sheet, /\{canPublish \? \(\s*<form action=\{publication\.state === "published" \? rotateAction : publishAction\}/);
+  assert.match(sheet, /\{canPublish \? \([\s\S]*?<form action=\{rotateAction\}[\s\S]*?<form action=\{publication\.state === "published" \? rotateAction : publishAction\}/);
   const revoke = sheet.indexOf("<form action={revokeAction}>");
   assert.ok(revoke !== -1, "switch every link off stays reachable");
   assert.ok(!/canPublish/.test(sheet.slice(sheet.lastIndexOf("{publication.state === \"published\" ? (", revoke), revoke)));
