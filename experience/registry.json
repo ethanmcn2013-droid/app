@@ -1,6 +1,6 @@
 {
   "schemaVersion": "signal-experience/1",
-  "generatedAt": "2026-07-26",
+  "generatedAt": "2026-09-25",
   "breakpoints": {
     "mobile": {
       "width": 390,
@@ -4363,7 +4363,7 @@
       "lastReviewedAt": "2026-09-25",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "1aa864ed1b84f74a"
+      "materialityHash": "01f95353282c2d76"
     },
     {
       "id": "tasks.page.app-concepts-by-view-by-n",
