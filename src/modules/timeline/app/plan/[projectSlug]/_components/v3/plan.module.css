@@ -2152,7 +2152,13 @@
     font-size: 26px;
   }
 
+  /* Preview and Share stay one tap away on a phone; only Shared pages
+     folds into the menu. The key hints mean nothing without a keyboard. */
   .actions {
+    gap: 6px;
+  }
+
+  .actions .kbdInline {
     display: none;
   }
 

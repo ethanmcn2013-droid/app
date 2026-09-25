@@ -92,11 +92,11 @@ export function PlanHeader({
       </div>
       <div className={styles.headActions}>
         <div className={styles.actions}>
-          <Link href={previewHref} className={styles.button} title="Preview what guests see (P)">
+          <Link href={previewHref} className={styles.button} title="Preview what guests see (P)" aria-label="Preview" aria-keyshortcuts="P">
             Preview
             <Kbd className={styles.kbdInline}>P</Kbd>
           </Link>
-          <button type="button" className={styles.buttonPrimary} onClick={onShare} aria-haspopup="dialog" title="Share (S)">
+          <button type="button" className={styles.buttonPrimary} onClick={onShare} aria-haspopup="dialog" aria-keyshortcuts="S" title="Share (S)">
             {shareLabel}
           </button>
         </div>
@@ -111,8 +111,6 @@ export function PlanHeader({
                 label: "Plan actions",
                 returnTo: button,
                 items: [
-                  { id: "share", label: shareLabel, onSelect: onShare },
-                  { id: "preview", label: "Preview what guests see", onSelect: () => window.location.assign(previewHref) },
                   { id: "pages", label: "Shared pages", onSelect: () => window.location.assign(manageHref) },
                 ],
               })

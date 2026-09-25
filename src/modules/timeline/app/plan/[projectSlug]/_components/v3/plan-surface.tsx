@@ -621,23 +621,18 @@ export function PlanSurface(props: PlanSurfaceProps) {
         </Sheet>
       ) : null}
 
-      <div className={styles.phoneBar}>
-        <a href={previewHref} className={styles.button}>
-          Preview
-        </a>
-        {canEdit ? (
+      {/* Preview and Share live in the header on every size; the phone bar
+          carries only the one thing that header cannot: adding a milestone. */}
+      {canEdit ? (
+        <div className={styles.phoneBar}>
           <button ref={phone ? manualAddTriggerRef : undefined} type="button" className={styles.buttonPrimary} onClick={() => openAdd("top")}>
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path d="M8 3.5v9M3.5 8h9" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
             </svg>
             Add milestone
           </button>
-        ) : (
-          <button type="button" className={styles.buttonPrimary} onClick={() => setShareOpen(true)}>
-            Share
-          </button>
-        )}
-      </div>
+        </div>
+      ) : null}
 
       <ShareSheet
         open={shareOpen}
