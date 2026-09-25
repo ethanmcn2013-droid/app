@@ -21,8 +21,6 @@ import { PROJECT_APP_PATH } from "@/lib/product-urls";
 import { parseProjectId } from "@/lib/projects/project-ref";
 import { withActiveProject } from "@/lib/projects/project-url";
 import { floorProjectName } from "@/lib/projects/floor-project-name";
-import { differenceInDays } from "@/components/hybrid/dates";
-import type { CalendarDate } from "@/components/hybrid/types";
 import { useSurface } from "./surface";
 import { timeOf } from "./time";
 import { TIcon } from "./icons";
@@ -245,15 +243,6 @@ function ProgressFacts() {
     return { total: surface.all.length, done, overdue, today, undated };
   }, [calendar, surface]);
 
-  const period = useMemo(() => {
-    const plan = calendar.planningPeriod;
-    if (!plan?.startDate || !plan.endDate) return null;
-    const length = differenceInDays(plan.startDate as CalendarDate, plan.endDate as CalendarDate) + 1;
-    const day = differenceInDays(plan.startDate as CalendarDate, calendar.today as CalendarDate) + 1;
-    if (day < 1 || day > length || length < 2) return null;
-    return `Day ${day} of ${length}, ${plan.name}`;
-  }, [calendar]);
-
   if (facts.total === 0) return null;
   const ratio = facts.total ? facts.done / facts.total : 0;
   const allDone = facts.done === facts.total;
@@ -283,7 +272,6 @@ function ProgressFacts() {
         >
           <span className={styles.meterFill} style={{ transform: `scaleX(${ratio})` }} />
         </span>
-        {period ? <span className={styles.period}>{period}</span> : null}
       </div>
       {allDone ? null : (
         <div className={styles.facts} role="group" aria-label="Quick filters">

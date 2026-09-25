@@ -347,7 +347,6 @@ const PAGES_PASSING_THE_URL = [
   "src/app/app/tasks/calendar/page.tsx",
   "src/app/app/tasks/list/page.tsx",
   "src/app/app/tasks/page.tsx",
-  "src/app/app/your-work/page.tsx",
 ];
 
 /**
