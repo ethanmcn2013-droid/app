@@ -105,7 +105,7 @@ try {
   else {
     // Only actions exercised by this matrix: selection POST and detail reads.
     // Imported write/provider actions remain visible UI but fail if invoked.
-    const allowedActions=new Set(['openTasksProjectAction','getSubtasksAction','loadTaskConversationAction','listTaskResourcesAction','getPersonalityPrefs']);
+    const allowedActions=new Set(['openTasksProjectAction','getSubtasksAction','loadTaskConversationAction','listTaskResourcesAction','getPersonalityPrefs','loadProjectCatalogAction']);
     const requestErrors=[];
     const json=(res,value,status=200)=>{res.statusCode=status;res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');res.end(JSON.stringify(value));};
     function reviveArgs(value){if(!value||typeof value!=='object')return value;if(value.$form){const form=new FormData();for(const [key,entry] of value.$form)form.append(key,entry);return form;}return Array.isArray(value)?value.map(reviveArgs):Object.fromEntries(Object.entries(value).map(([key,entry])=>[key,reviveArgs(entry)]));}
@@ -165,7 +165,7 @@ try {
           assert.equal(await page.getByText('ONLY A ARCHIVED TASK',{exact:true}).count(),0);
           assert.equal(await page.getByText('PRIVATE C TASK',{exact:true}).count(),0);
           if(surface.id==='tasks.page.app-tasks')await page.getByText('B arrival board',{exact:true}).first().waitFor({timeout:5000});
-          else if(f.state.v3)await page.locator('[data-slot="active-project-trigger"]').filter({hasText:'Arrival project B'}).waitFor({timeout:5000});
+          else if(f.state.v3)await page.locator('aside button[data-active]').filter({hasText:'Arrival project B'}).waitFor({timeout:5000});
           assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
         }
         for(const surface of surfaces){
