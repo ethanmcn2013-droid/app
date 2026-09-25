@@ -3,7 +3,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { addDays, dayMonth, diffDays, dueClause, isLate, PEOPLE, personById, PROJECT, TODAY, weekday, type Commitment } from "./data";
+import { addDays, relDay, dayMonth, diffDays, dueClause, isLate, PEOPLE, personById, PROJECT, TODAY, weekday, type Commitment } from "./data";
 import { Icon } from "./icons";
 import { useMounted } from "./hooks";
 import s from "./c5.module.css";
@@ -58,7 +58,7 @@ export function buildUpdate(items: Commitment[], on: Set<Section>): Line[] {
       .sort((a, b) => (a.due! < b.due! ? -1 : 1));
     lines.push({ kind: "gap", text: "" });
     lines.push({ kind: "head", text: soon.length ? `Coming up by ${weekday(addDays(TODAY, 3))}` : `Nothing due before ${weekday(addDays(TODAY, 4))}.` });
-    soon.forEach((x) => lines.push({ kind: "item", text: `${who(x)}, ${what(x)} (${dueClause(x)})` }));
+    soon.forEach((x) => lines.push({ kind: "item", text: `${who(x)}, ${what(x)} (${relDay(x.due!)})` }));
   }
 
   if (on.has("waiting")) {
