@@ -189,6 +189,10 @@ export function GroupMenu({ value, onPick }: { value: GroupBy; onPick: (g: Group
           </li>
         ))}
       </ul>
+      <p className={s.keysTip}>
+        <span className={s.keysHandle} aria-hidden />
+        Drag the square on a cell&apos;s corner to fill down. Dates step a day at a time; hold ⌥ to copy instead.
+      </p>
     </>
   );
 }

@@ -746,6 +746,28 @@
   font-size: 13px;
 }
 
+.keysTip {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 4px 4px 2px;
+  padding: 10px 8px 4px;
+  border-top: 1px solid var(--v3-border);
+  color: var(--v3-text-2);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.keysHandle {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin-top: 5px;
+  border-radius: 2.5px;
+  background: var(--v3-accent);
+  box-shadow: 0 0 0 2px var(--v3-surface), 0 0 0 3px var(--v3-accent-soft);
+}
+
 .keysCombo {
   display: inline-flex;
   gap: 3px;
@@ -3101,6 +3123,8 @@
     top: auto !important;
     bottom: 12px;
     width: auto !important;
+    transform: none !important;
+    animation-name: c3-slide-up;
   }
 }
 
