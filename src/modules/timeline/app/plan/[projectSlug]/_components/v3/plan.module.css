@@ -1058,7 +1058,7 @@
 }
 
 .mark[data-tone="error"] {
-  color: var(--v3-danger);
+  color: var(--v3-danger-text);
 }
 
 .addedHere {
@@ -2025,7 +2025,7 @@
 }
 
 .danger[data-armed] {
-  border-color: var(--v3-danger);
+  border-color: var(--v3-danger-text);
   background: var(--v3-danger-soft);
 }
 

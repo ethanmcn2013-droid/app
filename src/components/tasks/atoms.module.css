@@ -369,7 +369,7 @@
   font-size: 11px;
   font-weight: 500;
   line-height: 1;
-  color: inherit;
+  color: var(--v3-text-2); /* AA on its own tint even inside a tertiary hint */
   background: color-mix(in srgb, currentColor 12%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 18%, transparent);
 }

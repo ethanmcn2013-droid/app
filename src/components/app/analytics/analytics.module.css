@@ -194,7 +194,7 @@
 
 .kpiIcon[data-tone="bad"] {
   background: color-mix(in srgb, var(--v3-danger) 12%, transparent);
-  color: var(--v3-danger);
+  color: var(--v3-danger-text);
 }
 
 .kpiIcon[data-tone="good"] {
@@ -1183,7 +1183,7 @@
 
 .changeIcon[data-tone="bad"] {
   background: color-mix(in srgb, var(--v3-danger) 12%, transparent);
-  color: var(--v3-danger);
+  color: var(--v3-danger-text);
 }
 
 .changeLink {

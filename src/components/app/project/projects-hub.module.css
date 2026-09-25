@@ -125,7 +125,7 @@
 }
 
 .notice[data-tone="danger"] .noticeIcon {
-  color: var(--v3-danger);
+  color: var(--v3-danger-text);
 }
 
 .noticeBody {
@@ -375,7 +375,7 @@
 .meta[data-tone="danger"],
 .meta[data-tone="danger"] svg,
 .overdue {
-  color: var(--v3-danger);
+  color: var(--v3-danger-text);
 }
 
 .meta[data-quiet] {
@@ -659,7 +659,7 @@
 
 .newError {
   font-size: 12.5px;
-  color: var(--v3-danger);
+  color: var(--v3-danger-text);
 }
 
 /* The starter Project, offered beside the blank one. */

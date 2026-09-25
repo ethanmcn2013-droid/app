@@ -319,7 +319,7 @@
 }
 
 .due[data-overdue] {
-  color: var(--v3-danger);
+  color: var(--v3-danger-text);
 }
 
 .laneCell {
@@ -356,7 +356,7 @@
 }
 
 .groupLabel[data-tone="danger"] {
-  color: var(--v3-danger);
+  color: var(--v3-danger-text);
 }
 
 .empty {

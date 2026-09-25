@@ -864,7 +864,7 @@
   color: var(--v3-text-2);
 }
 
-.delivery[data-state="failed"] { color: var(--v3-danger); }
+.delivery[data-state="failed"] { color: var(--v3-danger-text); }
 
 .spinner {
   width: 10px;
@@ -912,7 +912,7 @@
 }
 
 .tool:hover { background: var(--v3-hover); color: var(--v3-text); }
-.tool[data-danger]:hover { color: var(--v3-danger); }
+.tool[data-danger]:hover { color: var(--v3-danger-text); }
 
 .editor {
   margin-top: 4px;
@@ -1041,7 +1041,7 @@
 .noticeIcon { flex: none; display: grid; color: var(--v3-text-2); }
 .notice[data-tone="accent"] .noticeIcon { color: var(--v3-accent); }
 .notice[data-tone="warning"] .noticeIcon { color: var(--v3-warning-text); }
-.notice[data-tone="danger"] .noticeIcon { color: var(--v3-danger); }
+.notice[data-tone="danger"] .noticeIcon { color: var(--v3-danger-text); }
 
 /* A private-conversation request or a centred state */
 
@@ -1178,7 +1178,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-.composerCount[data-invalid] { color: var(--v3-danger); font-weight: 600; }
+.composerCount[data-invalid] { color: var(--v3-danger-text); font-weight: 600; }
 .composerCount + .composerHint { margin-left: 0; }
 
 .send {
@@ -1228,7 +1228,7 @@
 
 .chip[data-unavailable] {
   background: color-mix(in srgb, var(--v3-danger) 10%, var(--v3-surface));
-  color: var(--v3-danger);
+  color: var(--v3-danger-text);
 }
 
 .chip button {

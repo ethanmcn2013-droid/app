@@ -122,7 +122,7 @@
 }
 
 .groupIcon[data-tone="danger"] {
-  color: var(--v3-danger);
+  color: var(--v3-danger-text);
 }
 
 .groupIcon[data-tone="warning"] {
@@ -156,7 +156,7 @@
 }
 
 .groupCount[data-tone="danger"] {
-  color: var(--v3-danger);
+  color: var(--v3-danger-text);
 }
 
 .groupHint {
@@ -263,7 +263,7 @@
 }
 
 .urgent {
-  color: var(--v3-danger);
+  color: var(--v3-danger-text);
   font-weight: 500;
 }
 
@@ -317,7 +317,7 @@
 }
 
 .due[data-overdue] {
-  color: var(--v3-danger);
+  color: var(--v3-danger-text);
 }
 
 /* ── Status circle: the lane at rest, "mark done" on hover ────────

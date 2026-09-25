@@ -111,17 +111,9 @@ export function AppsLauncher({ messagesEnabled: messagesOverride }: { messagesEn
     if (messagesOverride === undefined) askMessages();
   }, [messagesOverride]);
 
-  // Ask on idle, so the answer is in before the first open.
-  useEffect(() => {
-    if (messagesOverride !== undefined) return;
-    const idle = window.requestIdleCallback
-      ? window.requestIdleCallback(() => askMessages(), { timeout: 3000 })
-      : window.setTimeout(() => askMessages(), 1500);
-    return () => {
-      if (window.cancelIdleCallback) window.cancelIdleCallback(idle);
-      else window.clearTimeout(idle);
-    };
-  }, [messagesOverride]);
+  // Ask on intent (hover, focus, open), never on idle: a server action is a
+  // request to the current page, and a background one is cancelled by the
+  // next navigation.
 
   const openLauncher = useCallback(() => {
     if (timer.current) window.clearTimeout(timer.current);

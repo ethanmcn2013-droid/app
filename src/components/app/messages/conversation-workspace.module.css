@@ -42,7 +42,7 @@
 .notice strong, .notice span, .notice button { font-size: 12.5px; }
 .notice span { color: var(--cw-soft); }
 .notice button { background: var(--cw-indigo); border: 0; border-radius: var(--v3-radius); color: var(--v3-on-accent); cursor: pointer; min-height: 30px; padding: 0 12px; }
-.errorNotice { background: color-mix(in srgb, var(--v3-danger) 7%, var(--v3-canvas)); border-bottom: 1px solid color-mix(in srgb, var(--v3-danger) 30%, var(--v3-border)); color: var(--v3-danger); font-size: 12.5px; padding: 9px 18px; text-align: center; }
+.errorNotice { background: color-mix(in srgb, var(--v3-danger) 7%, var(--v3-canvas)); border-bottom: 1px solid color-mix(in srgb, var(--v3-danger) 30%, var(--v3-border)); color: var(--v3-danger-text); font-size: 12.5px; padding: 9px 18px; text-align: center; }
 .feedScroller { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-color: var(--cw-line) transparent; }
 .feed { list-style: none; margin: 0 auto; max-width: 760px; padding: 32px 28px 48px; }
 .message { display: flex; gap: 11px; margin-bottom: 25px; position: relative; }
@@ -80,7 +80,7 @@
 .composer textarea::placeholder { color: var(--cw-soft); }
 .composer > div { align-items: center; display: flex; justify-content: flex-end; }
 .composer > div > span { color: var(--cw-soft); font-size: 12px; margin-right: 10px; }
-.composer > div > span[data-invalid] { color: var(--v3-danger); }
+.composer > div > span[data-invalid] { color: var(--v3-danger-text); }
 .composer button, .status button { background: var(--cw-indigo); border: 0; border-radius: var(--v3-radius); color: var(--v3-on-accent); cursor: pointer; font-size: 12px; font-weight: 650; min-height: 36px; padding: 0 16px; }
 .composer button:disabled { cursor: not-allowed; opacity: .42; }
 .composer > p { color: var(--cw-soft); font-size: 12px; margin: 0; padding: 18px; text-align: center; }
@@ -98,7 +98,7 @@
 .status > svg { color: var(--cw-indigo); }
 .status h1 { font-size: 19px; letter-spacing: -.02em; margin: 16px 0 5px; }
 .status p { color: var(--cw-soft); font-size: 13px; line-height: 1.5; margin: 0; max-width: 46ch; }
-.status span { color: var(--v3-danger); font-size: 12.5px; margin-top: 10px; }
+.status span { color: var(--v3-danger-text); font-size: 12.5px; margin-top: 10px; }
 .status button { margin-top: 18px; }
 .noProjects { padding: 32px; }
 .noProjects h1 { font-size: 22px; margin: 0 0 7px; }

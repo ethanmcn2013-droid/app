@@ -811,8 +811,9 @@
       ],
       "assertions": [
         {
-          "kind": "text",
-          "text": "Confirm marquee sides with the hire company",
+          "kind": "role",
+          "role": "heading",
+          "name": "Files and links",
           "proves": [
             "default"
           ]
@@ -966,7 +967,7 @@
             {
               "kind": "role",
               "role": "heading",
-              "name": "Notebook",
+              "name": "Notes",
               "proves": [
                 "populated"
               ]
@@ -986,7 +987,7 @@
       "cases": [
         {
           "name": "project-first owner artifact",
-          "path": "/app/timeline",
+          "path": "/app/timeline/mara-finn",
           "states": [
             "populated",
             "reduced-motion",
@@ -1011,7 +1012,7 @@
             {
               "kind": "role",
               "role": "link",
-              "name": "Milestones",
+              "name": "All projects",
               "proves": [
                 "populated"
               ]
@@ -1164,8 +1165,9 @@
               ]
             },
             {
-              "kind": "text",
-              "text": "Preview only · this does not add a view",
+              "kind": "role",
+              "role": "heading",
+              "name": "See the story they will see.",
               "proves": [
                 "empty"
               ]
@@ -1314,8 +1316,9 @@
               ]
             },
             {
-              "kind": "text",
-              "text": "Order tonic + the good olives",
+              "kind": "role",
+              "role": "heading",
+              "name": "Upcoming deadlines",
               "proves": [
                 "populated"
               ]

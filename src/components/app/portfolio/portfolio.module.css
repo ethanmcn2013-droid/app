@@ -834,7 +834,7 @@ a.name:hover {
 }
 
 .flag[data-tone="danger"] {
-  color: var(--v3-danger);
+  color: var(--v3-danger-text);
 }
 
 .barLabel,
