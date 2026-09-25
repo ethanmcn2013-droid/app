@@ -1012,14 +1012,6 @@
             {
               "kind": "role",
               "role": "link",
-              "name": "All projects",
-              "proves": [
-                "populated"
-              ]
-            },
-            {
-              "kind": "role",
-              "role": "link",
               "name": "Preview",
               "proves": [
                 "populated"
@@ -1321,13 +1313,6 @@
               "name": "Upcoming deadlines",
               "proves": [
                 "populated"
-              ]
-            },
-            {
-              "kind": "text",
-              "text": "Open full briefing",
-              "proves": [
-                "default"
               ]
             }
           ]
