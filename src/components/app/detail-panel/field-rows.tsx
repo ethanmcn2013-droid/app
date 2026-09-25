@@ -23,6 +23,7 @@ import { useColumnConfig, useWorkspaceAnchor, useWorkspaceMembers } from "@/lib/
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import {
   describeAnchorFromToday,
+  dueInstantForDay,
   relateDueToAnchor,
   toCalendarDate,
 } from "@/lib/tasks/anchor-due";
@@ -772,7 +773,7 @@ export function DueRow({ task }: { task: Task }) {
             anchor.label,
           )}
           onSelect={(date, label) => {
-            updateTask(task.id, { due: label, dueAt: date });
+            updateTask(task.id, { due: label, dueAt: dueInstantForDay(date) ?? date });
             close();
           }}
           onClear={() => {

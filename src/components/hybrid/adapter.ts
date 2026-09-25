@@ -16,6 +16,7 @@ import { effectiveColumnKey, isTaskDone } from "@/lib/board-columns";
 import { tagDisplayName } from "@/lib/tags";
 import type { ColumnConfig } from "@/lib/board-config";
 import { addDays, asCalendarDate, differenceInDays } from "./dates";
+import { calendarDateInTimeZone } from "@/lib/planning/dates";
 import type {
   CalendarDate,
   LabLabel,
@@ -47,8 +48,28 @@ export function labToPriority(priority: TaskPriority): Priority {
   return LAB_TO_PRIORITY[priority] ?? "p2";
 }
 
-function toCalendarDate(value: Date | string | null | undefined): CalendarDate | null {
+/**
+ * The calendar day a stored due instant falls on, read in the viewer's
+ * frame time zone when there is one. Slicing the UTC ISO string moved any
+ * date stored as local midnight (the detail-panel picker, before
+ * `dueInstantForDay`) back a day for everyone east of UTC, so the board
+ * said "Today" where the task panel said "Tomorrow".
+ */
+function toCalendarDate(
+  value: Date | string | null | undefined,
+  timeZone?: string,
+): CalendarDate | null {
   if (!value) return null;
+  if (timeZone) {
+    const instant = typeof value === "string" ? new Date(value) : value;
+    if (!Number.isNaN(instant.getTime())) {
+      try {
+        return calendarDateInTimeZone(instant, timeZone) as CalendarDate;
+      } catch {
+        // Unknown zone: fall through to the UTC date.
+      }
+    }
+  }
   const iso = typeof value === "string" ? value : value.toISOString();
   const day = iso.slice(0, 10);
   try {
@@ -63,7 +84,7 @@ export function taskToSchedule(
   task: Task,
   calendar?: CalendarFrame,
 ): TaskSchedule {
-  const dueDate = toCalendarDate(task.dueAt ?? null);
+  const dueDate = toCalendarDate(task.dueAt ?? null, calendar?.timeZone);
   if (task.isMilestone && dueDate) {
     return { kind: "milestone", on: dueDate };
   }

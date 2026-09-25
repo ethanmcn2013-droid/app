@@ -47,6 +47,17 @@ export function anchorNoun(anchorLabel: string | null | undefined): string {
   return `the ${lowered}`;
 }
 
+/**
+ * The instant stored for a due *day*: 09:00 UTC on that calendar date, the
+ * same shape the board writes (`adapter.ts` scheduleToTaskFields). A picked
+ * day used to be stored as local midnight, which is the previous UTC day
+ * anywhere east of UTC, so every UTC-date reader showed it a day early.
+ */
+export function dueInstantForDay(value: Date): Date | null {
+  const day = toCalendarDate(value);
+  return day ? new Date(`${day}T09:00:00.000Z`) : null;
+}
+
 /** Reads a Date as a calendar date in the frame's own terms. */
 export function toCalendarDate(value: Date): CalendarDate | null {
   if (Number.isNaN(value.getTime())) return null;
