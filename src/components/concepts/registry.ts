@@ -18,6 +18,21 @@ import { meta as files2Meta } from "./files/c2/meta";
 import { meta as files3Meta } from "./files/c3/meta";
 import { meta as files4Meta } from "./files/c4/meta";
 import { meta as files5Meta } from "./files/c5/meta";
+import { meta as board1Meta } from "./board/c1/meta";
+import { meta as board2Meta } from "./board/c2/meta";
+import { meta as board3Meta } from "./board/c3/meta";
+import { meta as board4Meta } from "./board/c4/meta";
+import { meta as board5Meta } from "./board/c5/meta";
+import { meta as list1Meta } from "./list/c1/meta";
+import { meta as list2Meta } from "./list/c2/meta";
+import { meta as list3Meta } from "./list/c3/meta";
+import { meta as list4Meta } from "./list/c4/meta";
+import { meta as list5Meta } from "./list/c5/meta";
+import { meta as calendar1Meta } from "./calendar/c1/meta";
+import { meta as calendar2Meta } from "./calendar/c2/meta";
+import { meta as calendar3Meta } from "./calendar/c3/meta";
+import { meta as calendar4Meta } from "./calendar/c4/meta";
+import { meta as calendar5Meta } from "./calendar/c5/meta";
 import type { ConceptMeta } from "./types";
 
 export const CONCEPTS: readonly ConceptMeta[] = [
@@ -36,6 +51,21 @@ export const CONCEPTS: readonly ConceptMeta[] = [
   files3Meta,
   files4Meta,
   files5Meta,
+  board1Meta,
+  board2Meta,
+  board3Meta,
+  board4Meta,
+  board5Meta,
+  list1Meta,
+  list2Meta,
+  list3Meta,
+  list4Meta,
+  list5Meta,
+  calendar1Meta,
+  calendar2Meta,
+  calendar3Meta,
+  calendar4Meta,
+  calendar5Meta,
 ];
 
 export const CONCEPT_LOADERS: Record<string, () => Promise<{ default: ComponentType }>> = {
@@ -54,4 +84,19 @@ export const CONCEPT_LOADERS: Record<string, () => Promise<{ default: ComponentT
   "files/3": () => import("./files/c3"),
   "files/4": () => import("./files/c4"),
   "files/5": () => import("./files/c5"),
+  "board/1": () => import("./board/c1"),
+  "board/2": () => import("./board/c2"),
+  "board/3": () => import("./board/c3"),
+  "board/4": () => import("./board/c4"),
+  "board/5": () => import("./board/c5"),
+  "list/1": () => import("./list/c1"),
+  "list/2": () => import("./list/c2"),
+  "list/3": () => import("./list/c3"),
+  "list/4": () => import("./list/c4"),
+  "list/5": () => import("./list/c5"),
+  "calendar/1": () => import("./calendar/c1"),
+  "calendar/2": () => import("./calendar/c2"),
+  "calendar/3": () => import("./calendar/c3"),
+  "calendar/4": () => import("./calendar/c4"),
+  "calendar/5": () => import("./calendar/c5"),
 };
