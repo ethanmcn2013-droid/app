@@ -17,7 +17,7 @@ import {
   type Handoff,
 } from "./parts";
 import { PhoneBoard } from "./phone";
-import { IconCheck, IconChevron, IconCollapse, IconExpand, IconMoon, IconPlus, IconSearch } from "./icons";
+import { IconArrow, IconCheck, IconChevron, IconCollapse, IconExpand, IconMoon, IconPlus, IconSearch } from "./icons";
 import s from "./c2.module.css";
 
 const CELL_CAP = 4;
@@ -258,6 +258,16 @@ export default function WhosCarryingWhat() {
 
   /* ── keyboard ── */
   const searchRef = useRef<HTMLInputElement>(null);
+  const bannerRef = useRef<HTMLDivElement>(null);
+  const [bannerInView, setBannerInView] = useState(true);
+  useEffect(() => {
+    const el = bannerRef.current;
+    const root = rootRef.current;
+    if (!el || !root) return;
+    const io = new IntersectionObserver(([entry]) => setBannerInView(entry.isIntersecting), { root, threshold: 0.6 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [phone]);
   const allLaneIds = lanes.map((l) => l.id);
   const allCollapsed = allLaneIds.every((id) => collapsed.has(id));
   const toggleAll = () => setCollapsed(allCollapsed ? new Set() : new Set(allLaneIds));
@@ -488,6 +498,7 @@ export default function WhosCarryingWhat() {
             </div>
           ) : null}
 
+          <div ref={bannerRef}>
           <AnimatePresence initial={false}>
             {showBanner && suggestion ? (
               <BalanceBanner
@@ -518,6 +529,7 @@ export default function WhosCarryingWhat() {
               />
             ) : null}
           </AnimatePresence>
+          </div>
         </header>
 
         {phone ? (
@@ -648,6 +660,7 @@ export default function WhosCarryingWhat() {
                   >
                     {/* rail */}
                     <div className={s.rail} role="rowheader">
+                      <div className={s.railInner}>
                       <div className={s.railTop}>
                         <LaneAvatar lane={lane} size={32} />
                         <div className={s.railWho}>
@@ -693,6 +706,7 @@ export default function WhosCarryingWhat() {
                           {done} done this week
                         </button>
                       ) : null}
+                      </div>
                     </div>
 
                     {/* cells */}
@@ -840,6 +854,37 @@ export default function WhosCarryingWhat() {
             </div>
           </LayoutGroup>
         )}
+
+        {/* the proposal stays in reach while the board scrolls to the cards */}
+        <AnimatePresence>
+          {proposing && suggestion && !bannerInView ? (
+            <motion.div
+              key="proposal"
+              className={s.proposal}
+              role="region"
+              aria-label="Suggested swap"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 12 }}
+              transition={{ type: "spring", stiffness: 420, damping: 34 }}
+            >
+              <span className={s.proposalFaces} aria-hidden>
+                <Avatar person={suggestion.from} size={24} />
+                <IconArrow width={14} height={14} />
+                <Avatar person={suggestion.to} size={24} />
+              </span>
+              <span className={s.proposalText}>
+                Move {plural(suggestion.taskIds.length, "card")} to {suggestion.to.first}?
+              </span>
+              <button type="button" className={s.btnGhost} onClick={() => setProposing(false)}>
+                Not now
+              </button>
+              <button type="button" className={s.btnPrimary} onClick={acceptSuggestion}>
+                Move {suggestion.taskIds.length}
+              </button>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
 
         {/* floating card while dragging */}
         {drag && dragTask ? (

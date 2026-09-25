@@ -105,3 +105,8 @@ export const IconUser = (p: P) => (
     <path d="M2.75 13.5c.75-2.5 2.75-3.75 5.25-3.75s4.5 1.25 5.25 3.75" />
   </svg>
 );
+export const IconArrow = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M3 8h10M9.5 4.5 13 8l-3.5 3.5" />
+  </svg>
+);
