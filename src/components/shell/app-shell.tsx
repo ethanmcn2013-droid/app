@@ -275,6 +275,32 @@ function subscribeThemeMode(onChange: () => void) {
   return () => observer.disconnect();
 }
 
+function chooseThemeMode(next: ThemeMode) {
+  document.documentElement.setAttribute("data-theme-mode", next);
+  window.dispatchEvent(new Event("signal:theme"));
+  void updateUserPreferencesAction({ themeMode: next }).catch(() => {});
+}
+
+const THEME_ORDER: readonly ThemeMode[] = ["system", "light", "dark"];
+const THEME_NAMES: Record<ThemeMode, string> = { system: "Match system", light: "Light", dark: "Dark" };
+
+/**
+ * The theme as one small button: each press moves to the next of Match
+ * system, Light and Dark, and the icon shows the one in use. A set-once
+ * preference, so it takes an icon's room, not a row.
+ */
+export function ThemeCycleButton({ className }: { className?: string }) {
+  const mode = useSyncExternalStore(subscribeThemeMode, readThemeMode, () => "system" as ThemeMode);
+  const next = THEME_ORDER[(THEME_ORDER.indexOf(mode) + 1) % THEME_ORDER.length]!;
+  const Icon = mode === "light" ? ShellIcon.sun : mode === "dark" ? ShellIcon.moon : ShellIcon.monitor;
+  const label = `Theme: ${THEME_NAMES[mode]}. Switch to ${THEME_NAMES[next]}`;
+  return (
+    <button type="button" className={className} onClick={() => chooseThemeMode(next)} aria-label={label} title={label}>
+      <Icon />
+    </button>
+  );
+}
+
 /** Light / Dark / System, applied instantly and saved to preferences. */
 export function ThemeSwitch() {
   const mode = useSyncExternalStore(subscribeThemeMode, readThemeMode, () => "system" as ThemeMode);

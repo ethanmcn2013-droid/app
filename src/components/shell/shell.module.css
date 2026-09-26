@@ -519,3 +519,152 @@
 }
 .item:hover .presence { box-shadow: 0 0 0 2px color-mix(in srgb, #fff 6%, var(--v3-chrome)); }
 .chatTag { height: 15px; font-size: 10px; padding: 0 5px; }
+
+/* ── Sidebar, world-class pass (26 Sep 2026) ─────────────────────────
+   One "you are here" fill with no border or shadow; icons one step brighter
+   so they carry the row; section headers that fold; a quiet gap between
+   the work and the wider view; one footer row. */
+
+.sidebar { padding: 12px 10px 10px; }
+
+.brandRow { height: 34px; padding: 0 2px 0 6px; margin-bottom: 10px; }
+.brandName { font-size: 14.5px; font-weight: 650; letter-spacing: -0.015em; }
+.brand:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: 2px; }
+
+/* The collapse control shows when the sidebar is in use, not all the time. */
+.collapseButton { opacity: 0; transition: opacity 140ms var(--v3-ease), background-color 120ms var(--v3-ease), color 120ms var(--v3-ease); }
+.sidebar:hover .collapseButton,
+.sidebar:focus-within .collapseButton,
+.shell[data-collapsed] .collapseButton { opacity: 1; }
+@media (hover: none) { .collapseButton { opacity: 1; } }
+
+.searchTrigger {
+  height: 32px;
+  margin-bottom: 14px;
+  border-color: color-mix(in srgb, var(--v3-text) 9%, transparent);
+  background: color-mix(in srgb, var(--v3-text) 4%, transparent);
+  color: var(--v3-text-3);
+}
+.searchTrigger:hover { background: color-mix(in srgb, var(--v3-text) 7%, transparent); }
+.kbd { background: transparent; border-color: color-mix(in srgb, var(--v3-text) 12%, transparent); font-size: 10px; letter-spacing: 0.02em; }
+
+/* A soft fade where the list scrolls under the footer. */
+.scroll {
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent);
+  padding-bottom: 12px;
+}
+
+.section { gap: 1px; }
+.section + .section { margin-top: 18px; }
+.navSlot { display: flex; flex-direction: column; }
+.navSlot[data-gap] { margin-top: 10px; }
+
+.item {
+  height: 30px;
+  gap: 10px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 7px;
+  color: color-mix(in srgb, var(--v3-text) 78%, transparent);
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: -0.003em;
+}
+.item svg { color: color-mix(in srgb, var(--v3-text) 58%, transparent); }
+.item:hover { background: var(--v3-hover); color: var(--v3-text); }
+.item:hover svg { color: color-mix(in srgb, var(--v3-text) 80%, transparent); }
+.item:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: -2px; }
+.item[aria-current="page"],
+.item[data-active] {
+  background: color-mix(in srgb, var(--v3-text) 9%, transparent);
+  border: 0;
+  box-shadow: none;
+  color: var(--v3-text);
+}
+.item[aria-current="page"] svg,
+.item[data-active] svg { color: var(--v3-text); }
+.item:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Unread chat rows: full colour and only a hair heavier; read rows step
+   back. Colour carries "new", so it never out-shouts the navigation. */
+.item[data-unread] { color: var(--v3-text); font-weight: 560; }
+.item[data-unread] svg { color: color-mix(in srgb, var(--v3-text) 80%, transparent); }
+
+/* The open Project: a small accent dot, so there is never a second
+   "you are here" highlight. */
+.item[data-current-project] { color: var(--v3-text); }
+.currentDot {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--v3-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--v3-accent) 22%, transparent);
+}
+.count { font-size: 11.5px; color: color-mix(in srgb, var(--v3-text) 45%, transparent); }
+
+/* Section headers: the name folds its section; actions appear on hover. */
+.label { height: 26px; padding: 0 2px 0 0; margin-bottom: 1px; }
+.labelToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 6px 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: color-mix(in srgb, var(--v3-text) 48%, transparent);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+}
+.labelToggle:hover { color: var(--v3-text); background: var(--v3-hover); }
+.labelToggle:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: -2px; }
+.labelChevron { opacity: 0; transition: transform 160ms var(--v3-ease), opacity 120ms var(--v3-ease); }
+.section:hover .labelChevron,
+.labelToggle:focus-visible .labelChevron,
+.section[data-folded] .labelChevron { opacity: 1; }
+.section[data-folded] .labelChevron { transform: rotate(-90deg); }
+.labelActions { display: inline-flex; align-items: center; gap: 2px; opacity: 0; transition: opacity 120ms var(--v3-ease); }
+.section:hover .labelActions,
+.section:focus-within .labelActions { opacity: 1; }
+@media (hover: none) { .labelActions, .labelChevron { opacity: 1; } }
+.label a { width: 22px; height: 22px; color: color-mix(in srgb, var(--v3-text) 55%, transparent); }
+.label a:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: -2px; opacity: 1; }
+
+.projectSquare { width: 18px; height: 18px; border-radius: 5px; font-size: 9.5px; }
+.chatAdd { color: color-mix(in srgb, var(--v3-text) 50%, transparent); }
+
+/* Footer: Settings, then help and theme as icons on the same row. */
+.footer {
+  flex-direction: row;
+  align-items: center;
+  gap: 2px;
+  padding-top: 8px;
+  margin-top: 6px;
+  border-top: 1px solid color-mix(in srgb, var(--v3-text) 8%, transparent);
+}
+.footer > .item { flex: 1; min-width: 0; }
+.footerTools { display: flex; align-items: center; gap: 2px; flex: none; }
+.footerTools .iconButton { width: 30px; height: 30px; color: color-mix(in srgb, var(--v3-text) 58%, transparent); }
+.footerTools .iconButton:hover { color: var(--v3-text); }
+
+/* Collapsed rail: icons only, sections without headers, footer stacked. */
+.shell[data-collapsed] .label,
+.shell[data-collapsed] .currentDot,
+.shell[data-collapsed] .chatTag { display: none; }
+.shell[data-collapsed] .section + .section { margin-top: 10px; padding-top: 10px; border-top: 1px solid color-mix(in srgb, var(--v3-text) 8%, transparent); }
+.shell[data-collapsed] .navSlot[data-gap] { margin-top: 6px; }
+.shell[data-collapsed] .footer { flex-direction: column; }
+.shell[data-collapsed] .footer > .item { flex: none; width: 100%; }
+.shell[data-collapsed] .footerTools { flex-direction: column; }
+.shell[data-collapsed] .item[data-current-project] { box-shadow: inset 2px 0 0 var(--v3-accent); }
+
+.section[aria-label="Channels"] .item:not([data-unread]):not([aria-current="page"]),
+.section[aria-label="Direct messages"] .item:not([data-unread]):not([aria-current="page"]):not(.chatAdd) { color: color-mix(in srgb, var(--v3-text) 62%, transparent); }
+
+/* No keyboard, no shortcut hint. */
+@media (hover: none) and (pointer: coarse) { .searchTrigger .kbd { display: none; } }

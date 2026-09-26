@@ -23,12 +23,14 @@ export const PRIMARY_DESTINATIONS: readonly ShellDestination[] = [
 ];
 
 export const WORKSPACE_DESTINATIONS: readonly ShellDestination[] = [
-  { id: "overview", label: "Overview", href: "/app/home/briefing", icon: "pulse", owns: ["/app/home/briefing", "/app/signal"] },
-  { id: "projects", label: "Projects", href: "/app/project", icon: "projects", owns: ["/app/project", "/app/archived"] },
+  // The work itself, most used first.
   { id: "tasks", label: "Tasks", href: "/app/tasks", icon: "tasks", owns: ["/app/tasks", "/app/task"] },
-  { id: "messages", label: "Chat", href: "/app/messages", icon: "messages", owns: ["/app/messages"], requiresMessages: true },
+  { id: "projects", label: "Projects", href: "/app/project", icon: "projects", owns: ["/app/project", "/app/archived"] },
   { id: "timeline", label: "Timeline", href: "/app/timeline", icon: "timeline", owns: ["/app/timeline"] },
+  { id: "messages", label: "Chat", href: "/app/messages", icon: "messages", owns: ["/app/messages"], requiresMessages: true },
   { id: "files", label: "Files", href: "/app/files", icon: "files", owns: ["/app/files"] },
+  // The wider view.
+  { id: "overview", label: "Overview", href: "/app/home/briefing", icon: "pulse", owns: ["/app/home/briefing", "/app/signal"] },
   { id: "analytics", label: "Analytics", href: "/app/analytics", icon: "analytics", owns: ["/app/analytics"] },
   // Everything else lives behind one row and the top bar's launcher. The
   // label is a literal so the contract can read it; launcher-catalog.test.ts
