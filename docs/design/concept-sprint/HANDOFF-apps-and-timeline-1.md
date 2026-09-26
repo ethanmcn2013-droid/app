@@ -19,7 +19,7 @@ Built from a creative director slate, one builder per concept, no critique or re
 
 Routes: `/app/concepts/apps/1..6`. Code: `src/components/concepts/apps/c1..c6/`.
 
-## Shared timeline (4 of 6 finished)
+## Shared timeline (5 of 6 finished)
 
 | # | Title | Thesis | Commit |
 |---|---|---|---|
@@ -27,8 +27,9 @@ Routes: `/app/concepts/apps/1..6`. Code: `src/components/concepts/apps/c1..c6/`.
 | 2 | Countdown Instrument | One dramatic, precise countdown fills the screen and the milestones orbit it on a dial, so the page feels like the minutes before a launch. You can drag the hand back through time. | `d74712b4` |
 | 3 | The Invitation Suite | The timeline arrives as a printed stationery suite: tap the wax seal and the envelope opens into cards, one per moment on the way to the day. | `d9e931ed` |
 | 4 | Every Day Poster | A single-screen living poster where every day of the project is one dot, filled up to today, designed first to be screenshotted and posted. | `50576d64` |
+| 5 | The Dispatch | The shared timeline as a quiet run of letters from the people organising it, so stakeholders follow the progress the way they would follow a friend's news. | `44e0e3e4` |
 
-Routes: `/app/concepts/shared-timeline/1..4`. Shared-timeline concepts cover the whole screen
+Routes: `/app/concepts/shared-timeline/1..5`. Shared-timeline concepts cover the whole screen
 (`position: fixed; inset: 0`) so the app sidebar and top bar never show, because the real page is a
 public link opened without an account. Concept 1 has a "See it as Wedding / Launch / Class" switcher
 and a preview-states menu.
@@ -39,12 +40,14 @@ session, and reduced motion opens it straight away.
 
 Concept 4 has Poster, Story, Square and Wide sizes, downloads the poster as a PNG at the matching size, and a Concept preview bar (Wedding, Launch, Class, Library; Today, Day 8, Last week, After, No date). It renders into the document body and makes the rest of the page inert while open.
 
-**Not built yet:** shared timelines 5 and 6, one at a time on the founder's go.
+Concept 5 has "New since you last looked" (the last visit is remembered in the browser), a no-account "Get the next update" by email or WhatsApp, a one-tap thank you on each letter, and a Concept preview bar (Field study, Wedding, Launch updates; first update, this week, a quiet spell, a date moved, finished; a "Returning 10 days later" switch).
+
+**Not built yet:** shared timeline 6, on the founder's go.
 
 ## Screenshots
 
 `docs/design/concept-sprint/shots/apps/apps-{1..6}-{light,dark,phone}.jpg` and
-`docs/design/concept-sprint/shots/shared-timeline/shared-timeline-{1..4}-{light,dark,phone}.jpg`, plus
+`docs/design/concept-sprint/shots/shared-timeline/shared-timeline-{1..5}-{light,dark,phone}.jpg`, plus
 `shared-timeline-3-{light,phone}-open.jpg` for the opened suite
 (1440x900 light and dark, 390x844 phone at 2x).
 
