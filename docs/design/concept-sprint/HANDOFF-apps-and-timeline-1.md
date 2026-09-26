@@ -19,15 +19,16 @@ Built from a creative director slate, one builder per concept, no critique or re
 
 Routes: `/app/concepts/apps/1..6`. Code: `src/components/concepts/apps/c1..c6/`.
 
-## Shared timeline (3 of 6 finished)
+## Shared timeline (4 of 6 finished)
 
 | # | Title | Thesis | Commit |
 |---|---|---|---|
 | 1 | The Road There | The shared timeline as a story read top to bottom, one chapter per milestone, with a sticky path that fills to today and a countdown that ends at the day. | `2c300a76` |
 | 2 | Countdown Instrument | One dramatic, precise countdown fills the screen and the milestones orbit it on a dial, so the page feels like the minutes before a launch. You can drag the hand back through time. | `d74712b4` |
 | 3 | The Invitation Suite | The timeline arrives as a printed stationery suite: tap the wax seal and the envelope opens into cards, one per moment on the way to the day. | `d9e931ed` |
+| 4 | Every Day Poster | A single-screen living poster where every day of the project is one dot, filled up to today, designed first to be screenshotted and posted. | `50576d64` |
 
-Routes: `/app/concepts/shared-timeline/1..3`. Shared-timeline concepts cover the whole screen
+Routes: `/app/concepts/shared-timeline/1..4`. Shared-timeline concepts cover the whole screen
 (`position: fixed; inset: 0`) so the app sidebar and top bar never show, because the real page is a
 public link opened without an account. Concept 1 has a "See it as Wedding / Launch / Class" switcher
 and a preview-states menu.
@@ -36,12 +37,14 @@ Concept 2 has a Preview menu (Kiln launch, wedding, supper club; a year out, fin
 Concept 3 opens with a sealed envelope; press Enter or tap the seal. It remembers it was opened for the
 session, and reduced motion opens it straight away.
 
-**Not built yet:** shared timelines 4 and 5 (next batch, on the founder's go), then 6.
+Concept 4 has Poster, Story, Square and Wide sizes, downloads the poster as a PNG at the matching size, and a Concept preview bar (Wedding, Launch, Class, Library; Today, Day 8, Last week, After, No date). It renders into the document body and makes the rest of the page inert while open.
+
+**Not built yet:** shared timelines 5 and 6, one at a time on the founder's go.
 
 ## Screenshots
 
 `docs/design/concept-sprint/shots/apps/apps-{1..6}-{light,dark,phone}.jpg` and
-`docs/design/concept-sprint/shots/shared-timeline/shared-timeline-{1..3}-{light,dark,phone}.jpg`, plus
+`docs/design/concept-sprint/shots/shared-timeline/shared-timeline-{1..4}-{light,dark,phone}.jpg`, plus
 `shared-timeline-3-{light,phone}-open.jpg` for the opened suite
 (1440x900 light and dark, 390x844 phone at 2x).
 
