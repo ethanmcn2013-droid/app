@@ -1,0 +1,871 @@
+/* Every Day Poster. Page colour comes from src/ds/v3.css tokens. The
+   poster itself is a printed object: its palette (--pz-*) is mixed from
+   the fixed identity tokens, so it is the same poster in light and dark
+   and the downloaded image matches it. Contrast, checked:
+   ink 9:1+, muted 5:1+, accent text 4.6:1+, hollow rings 3:1+. */
+
+.root {
+  --pz-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Charter, "Bitstream Charter", "Book Antiqua", Georgia, serif;
+  --pz-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --pz-round: ui-rounded, "SF Pro Rounded", var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --pz-ui: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+
+  /* Wedding: warm paper, wine-black ink, rose. */
+  --pz-identity: var(--v3-project-8);
+  --pz-paper: color-mix(in srgb, var(--v3-project-5) 6%, var(--v3-project-ink));
+  --pz-ink: color-mix(in srgb, var(--v3-brand-ground) 86%, var(--v3-project-8));
+  --pz-muted: color-mix(in srgb, var(--pz-ink) 64%, var(--pz-paper));
+  --pz-hollow: color-mix(in srgb, var(--pz-ink) 47%, var(--pz-paper));
+  --pz-accent: var(--v3-project-8);
+  --pz-accentText: var(--v3-project-8);
+  --pz-onAccent: var(--v3-project-ink);
+  --pz-tint: color-mix(in srgb, var(--pz-ink) 7%, var(--pz-paper));
+
+  --pz-backdrop: color-mix(in srgb, var(--pz-identity) 10%, var(--v3-canvas));
+  --pz-backdrop-lift: color-mix(in srgb, var(--pz-identity) 4%, var(--v3-canvas));
+  --pz-shadow: color-mix(in srgb, var(--v3-brand-ground) 16%, transparent);
+  --pz-shadow-near: color-mix(in srgb, var(--v3-brand-ground) 10%, transparent);
+  --pz-panel: color-mix(in srgb, var(--v3-surface) 72%, transparent);
+  --pz-line: color-mix(in srgb, var(--v3-text) 12%, transparent);
+  /* The poster's identity, tuned for text on the page backdrop. */
+  --pz-ui-accent: color-mix(in srgb, var(--pz-identity) 88%, var(--v3-text));
+
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background:
+    radial-gradient(ellipse 60% 70% at 38% 46%, var(--pz-backdrop-lift), transparent 70%),
+    var(--pz-backdrop);
+  color: var(--v3-text);
+  font-family: var(--pz-ui);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 600ms var(--v3-ease);
+}
+
+/* App launch: an ink poster with one electric accent. */
+.root[data-world="launch"] {
+  --pz-identity: var(--v3-brand-signal);
+  --pz-paper: color-mix(in srgb, var(--v3-brand-ground) 92%, var(--v3-brand-signal));
+  --pz-ink: var(--v3-project-ink);
+  --pz-muted: color-mix(in srgb, var(--pz-ink) 66%, var(--pz-paper));
+  --pz-hollow: color-mix(in srgb, var(--pz-ink) 40%, var(--pz-paper));
+  --pz-accent: color-mix(in srgb, var(--v3-brand-signal) 80%, var(--v3-project-ink));
+  --pz-accentText: color-mix(in srgb, var(--v3-brand-signal) 55%, var(--v3-project-ink));
+  --pz-onAccent: var(--v3-brand-ground);
+  --pz-tint: color-mix(in srgb, var(--pz-ink) 12%, var(--pz-paper));
+}
+
+/* Class: mint paper, forest ink, orange for today. */
+.root[data-world="class"] {
+  --pz-identity: var(--v3-project-4);
+  --pz-paper: color-mix(in srgb, var(--v3-project-4) 6%, var(--v3-project-ink));
+  --pz-ink: color-mix(in srgb, var(--v3-project-4) 60%, var(--v3-brand-ground));
+  --pz-muted: color-mix(in srgb, var(--pz-ink) 78%, var(--pz-paper));
+  --pz-hollow: color-mix(in srgb, var(--pz-ink) 60%, var(--pz-paper));
+  --pz-accent: var(--v3-project-6);
+  --pz-accentText: color-mix(in srgb, var(--v3-project-6) 85%, var(--v3-brand-ground));
+  --pz-onAccent: var(--v3-project-ink);
+  --pz-tint: color-mix(in srgb, var(--v3-project-4) 14%, var(--pz-paper));
+}
+
+/* Restoration: stone paper, ink, harbour teal. */
+.root[data-world="restoration"] {
+  --pz-identity: var(--v3-project-3);
+  --pz-paper: color-mix(in srgb, var(--v3-project-5) 4%, color-mix(in srgb, var(--v3-brand-ground) 5%, var(--v3-project-ink)));
+  --pz-ink: color-mix(in srgb, var(--v3-brand-ground) 88%, var(--v3-project-3));
+  --pz-muted: color-mix(in srgb, var(--pz-ink) 64%, var(--pz-paper));
+  --pz-hollow: color-mix(in srgb, var(--pz-ink) 47%, var(--pz-paper));
+  --pz-accent: var(--v3-project-3);
+  --pz-accentText: var(--v3-project-3);
+  --pz-onAccent: var(--v3-project-ink);
+  --pz-tint: color-mix(in srgb, var(--pz-ink) 7%, var(--pz-paper));
+}
+
+:global(html[data-theme="dark"]) .root {
+  --pz-backdrop: color-mix(in srgb, var(--pz-identity) 18%, var(--v3-canvas));
+  --pz-backdrop-lift: color-mix(in srgb, var(--pz-identity) 26%, var(--v3-canvas));
+  --pz-shadow: color-mix(in srgb, var(--v3-brand-ground) 55%, transparent);
+  --pz-shadow-near: color-mix(in srgb, var(--v3-brand-ground) 35%, transparent);
+  --pz-panel: color-mix(in srgb, var(--v3-surface) 55%, transparent);
+  --pz-ui-accent: color-mix(in srgb, var(--pz-identity) 50%, var(--v3-text));
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ── Layout ─────────────────────────────────────────────────────── */
+
+.layout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100dvh - 58px);
+  padding: 24px 0 0;
+}
+
+/* Concept-only switches, kept apart from what a visitor would see. */
+.barWrap {
+  display: flex;
+  justify-content: center;
+  padding: 0 16px;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 6px 5px 14px;
+  border-radius: 999px;
+  border: 1px dashed color-mix(in srgb, var(--v3-text) 22%, transparent);
+  background: var(--pz-panel);
+}
+
+.barTitle {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--v3-text-2);
+  white-space: nowrap;
+}
+
+.barRule {
+  width: 1px;
+  height: 18px;
+  background: var(--pz-line);
+}
+
+.bar .chips {
+  flex-wrap: nowrap;
+}
+
+.stage {
+  position: relative;
+  flex: none;
+  min-width: 0;
+}
+
+.frame {
+  position: relative;
+  overflow: hidden;
+  background: var(--pz-paper);
+  border-radius: 3px;
+  box-shadow:
+    0 1px 1px var(--pz-shadow-near),
+    0 4px 10px var(--pz-shadow-near),
+    0 30px 70px -20px var(--pz-shadow);
+  transition:
+    width 720ms var(--v3-ease),
+    height 720ms var(--v3-ease),
+    background-color 500ms var(--v3-ease);
+}
+
+.fresh {
+  animation: pzFade 180ms var(--v3-ease) both;
+}
+
+@keyframes pzFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.art {
+  position: absolute;
+  inset: 0;
+}
+
+.svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  overflow: visible;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.svg:focus {
+  outline: none;
+}
+
+/* Every mark moves when the format changes: the poster reflows. */
+.geo {
+  transition:
+    cx 720ms var(--v3-ease),
+    cy 720ms var(--v3-ease),
+    r 720ms var(--v3-ease),
+    x 720ms var(--v3-ease),
+    y 720ms var(--v3-ease),
+    width 720ms var(--v3-ease),
+    height 720ms var(--v3-ease),
+    stroke-width 720ms var(--v3-ease);
+}
+
+.lead {
+  transition:
+    d 720ms var(--v3-ease),
+    stroke-width 720ms var(--v3-ease);
+}
+
+.txt {
+  white-space: pre;
+  font-variant-numeric: tabular-nums;
+  transition:
+    transform 720ms var(--v3-ease),
+    font-size 720ms var(--v3-ease);
+}
+
+.cell {
+  outline: none;
+}
+
+/* The daily fill: every lived day starts as an empty ring and fills,
+   one fast wave from the first day to today. Only the start is given,
+   so each mark eases back to its own colour. */
+.wave {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pzFill 170ms var(--v3-ease) both;
+}
+
+@keyframes pzFill {
+  from {
+    fill: var(--pz-paper);
+    stroke: var(--pz-hollow);
+    stroke-width: var(--pz-hw);
+    transform: scale(0.8);
+  }
+}
+
+.waveText {
+  animation: pzFade 170ms var(--v3-ease) both;
+}
+
+/* Today draws a single ring once the wave lands. */
+.ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: rotate(-90deg);
+  stroke-dasharray: 100;
+  stroke-dashoffset: 0;
+  animation: pzRing 620ms var(--v3-ease) 460ms both;
+}
+
+@keyframes pzRing {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* The last week: the day breathes. */
+.pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pzPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes pzPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.28);
+  }
+}
+
+.focusRing {
+  fill: none;
+  stroke: var(--pz-accent);
+  stroke-width: 1.5px;
+  pointer-events: none;
+}
+
+.tip {
+  position: absolute;
+  z-index: 2;
+  transform: translate(-50%, -100%);
+  display: grid;
+  gap: 2px;
+  padding: 8px 11px 9px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-solid);
+  color: var(--v3-on-solid);
+  box-shadow: var(--v3-shadow-pop);
+  font-family: var(--pz-ui);
+  font-size: 13px;
+  line-height: 1.3;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: pzTip 140ms var(--v3-ease) both;
+}
+
+.tip[data-below] {
+  transform: translate(-50%, 0);
+}
+
+@keyframes pzTip {
+  from {
+    opacity: 0;
+    margin-top: 4px;
+  }
+  to {
+    opacity: 1;
+    margin-top: 0;
+  }
+}
+
+.tipTitle {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.tipLine {
+  font-weight: 450;
+}
+
+.tipSub {
+  font-size: 12px;
+  opacity: 0.78;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── The quiet column ───────────────────────────────────────────── */
+
+.aside {
+  flex: none;
+  overflow-y: auto;
+  padding: 2px 4px 2px 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding-bottom: 28px;
+  scrollbar-width: none;
+  mask-image: linear-gradient(to bottom, var(--v3-brand-ground) calc(100% - 28px), transparent);
+}
+
+.from {
+  display: grid;
+  gap: 4px;
+}
+
+.fromName {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.fromLine {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--v3-text-2);
+}
+
+.section {
+  display: grid;
+  gap: 10px;
+}
+
+.h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--v3-text);
+}
+
+.buttons {
+  display: grid;
+  gap: 8px;
+}
+
+.primary,
+.secondary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: var(--v3-radius);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 550;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 160ms var(--v3-ease),
+    transform 160ms var(--v3-ease),
+    border-color 160ms var(--v3-ease);
+}
+
+.primary {
+  border: 0;
+  background: var(--v3-solid);
+  color: var(--v3-on-solid);
+}
+
+.primary:hover {
+  background: color-mix(in srgb, var(--v3-solid) 86%, var(--v3-canvas));
+}
+
+.secondary {
+  border: 1px solid var(--v3-control-border);
+  background: var(--pz-panel);
+  color: var(--v3-text);
+}
+
+.secondary:hover {
+  background: var(--v3-surface);
+}
+
+.primary:active,
+.secondary:active {
+  transform: scale(0.985);
+}
+
+.primary:focus-visible,
+.secondary:focus-visible,
+.seg:focus-visible,
+.chip:focus-visible,
+.handle:focus-visible,
+.close:focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: 2px;
+}
+
+.btnIcon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.btnText {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.btnMeta {
+  font-size: 12px;
+  font-weight: 450;
+  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.primary .btnMeta {
+  opacity: 0.86;
+}
+
+.segs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 4px;
+  border-radius: calc(var(--v3-radius) + 2px);
+  border: 1px solid var(--pz-line);
+  background: var(--pz-panel);
+}
+
+.seg {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  min-height: 54px;
+  padding: 6px 2px 5px;
+  border: 0;
+  border-radius: var(--v3-radius-sm);
+  background: transparent;
+  color: var(--v3-text-2);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 160ms var(--v3-ease), color 160ms var(--v3-ease);
+}
+
+.seg:hover {
+  color: var(--v3-text);
+}
+
+.seg[aria-pressed="true"] {
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  box-shadow: var(--v3-shadow-1), 0 0 0 1px var(--v3-border);
+}
+
+.glyphBox {
+  display: grid;
+  place-items: center;
+  height: 24px;
+}
+
+.glyph {
+  display: block;
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+}
+
+.segRatio {
+  font-size: 11px;
+  color: var(--v3-text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 14px 70px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 13px;
+  line-height: 1.35;
+  border-top: 1px solid var(--pz-line);
+}
+
+.item:first-child {
+  border-top: 0;
+}
+
+.itemDate {
+  white-space: nowrap;
+  color: var(--v3-text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.itemLabel {
+  color: var(--v3-text);
+}
+
+.item[data-state="done"] .itemLabel {
+  color: var(--v3-text-2);
+}
+
+.item[data-state="next"] .itemLabel {
+  font-weight: 600;
+}
+
+.marker {
+  align-self: center;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid var(--v3-control-border);
+}
+
+.item[data-state="done"] .marker {
+  background: var(--v3-text);
+  border-color: var(--v3-text);
+}
+
+.item[data-state="next"] .marker {
+  border-color: var(--v3-text);
+  border-width: 2px;
+}
+
+.todayRow {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 5px 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--pz-ui-accent);
+  border-top: 1px solid var(--pz-line);
+  font-variant-numeric: tabular-nums;
+}
+
+.todayDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--pz-ui-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pz-ui-accent) 20%, transparent);
+}
+
+.preview {
+  margin-top: auto;
+  display: grid;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--pz-line);
+}
+
+.previewNote {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--v3-text-2);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.chip {
+  min-height: 30px;
+  padding: 0 9px;
+  border-radius: 999px;
+  border: 1px solid var(--pz-line);
+  background: transparent;
+  color: var(--v3-text-2);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 160ms var(--v3-ease), color 160ms var(--v3-ease), border-color 160ms var(--v3-ease);
+}
+
+.chip:hover {
+  color: var(--v3-text);
+  border-color: var(--v3-control-border);
+}
+
+.chip[aria-pressed="true"] {
+  background: var(--v3-solid);
+  border-color: var(--v3-solid);
+  color: var(--v3-on-solid);
+}
+
+.hint {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--v3-text-2);
+}
+
+.kbd {
+  display: inline-block;
+  padding: 0 4px;
+  border: 1px solid var(--pz-line);
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+/* ── Phone ──────────────────────────────────────────────────────── */
+
+.phoneOnly {
+  display: none;
+}
+
+.handle,
+.sheet,
+.scrim {
+  display: none;
+}
+
+@media (max-width: 759px) {
+  .layout {
+    display: block;
+    min-height: 0;
+    padding: 0 0 104px;
+  }
+
+  .stage {
+    display: block;
+    width: 100%;
+  }
+
+  .frame {
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0 auto;
+  }
+
+  .aside,
+  .barWrap {
+    display: none;
+  }
+
+  .phoneOnly {
+    display: block;
+  }
+
+  .below {
+    padding: 28px 20px 8px;
+    display: grid;
+    gap: 14px;
+  }
+
+  .belowTitle {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  .belowFoot {
+    margin: 18px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: var(--v3-text-2);
+  }
+
+  .item {
+    font-size: 14.5px;
+    padding: 10px 0;
+    grid-template-columns: 14px 84px minmax(0, 1fr);
+  }
+
+  .todayRow {
+    font-size: 14px;
+    padding: 10px 0;
+  }
+
+  .handle {
+    position: fixed;
+    left: 50%;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    z-index: 3;
+    transform: translateX(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 48px;
+    padding: 0 20px 0 16px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--v3-solid);
+    color: var(--v3-on-solid);
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    box-shadow: 0 10px 30px -8px var(--pz-shadow), 0 2px 6px var(--pz-shadow-near);
+    cursor: pointer;
+  }
+
+  .grab {
+    width: 18px;
+    height: 4px;
+    border-radius: 2px;
+    background: currentColor;
+    opacity: 0.6;
+  }
+
+  .scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 4;
+    background: var(--v3-scrim);
+  }
+
+  .sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 5;
+    display: grid;
+    gap: 22px;
+    max-height: 86dvh;
+    overflow-y: auto;
+    padding: 10px 20px max(24px, env(safe-area-inset-bottom));
+    border-radius: 18px 18px 0 0;
+    background: var(--v3-surface);
+    color: var(--v3-text);
+    box-shadow: 0 -12px 40px var(--pz-shadow);
+  }
+
+  .sheetGrab {
+    justify-self: center;
+    width: 40px;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--v3-border-strong);
+  }
+
+  .sheetHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sheetTitle {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  .close {
+    min-width: 44px;
+    min-height: 44px;
+    margin-right: -10px;
+    border: 0;
+    background: transparent;
+    color: var(--v3-text-2);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .sheet .segs,
+  .sheet .secondary {
+    background: var(--v3-sunken);
+  }
+
+  .sheet .preview {
+    margin-top: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wave,
+  .waveText,
+  .ring,
+  .pulse,
+  .fresh,
+  .tip {
+    animation: none;
+  }
+
+  .geo,
+  .lead,
+  .txt,
+  .frame {
+    transition: none;
+  }
+}
