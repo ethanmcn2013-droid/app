@@ -1639,3 +1639,214 @@
 .newMessagePerson:hover .newMessageGo,
 .newMessagePerson:focus-visible .newMessageGo { opacity: 1; }
 .newMessageEmpty { padding: 16px 8px; font-size: 13.5px; color: var(--v3-text-2); }
+
+/* ── Chat, ClickUp layout (26 Sep 2026) ──────────────────────────────
+   A slim header (name, details, a row of tabs), then one centred column
+   that the conversation and the composer share, date dividers as a pill on
+   a full-width rule, and a generous composer card. */
+
+.chat[data-directory] { --column: 1280px; --gutter: 40px; }
+
+/* Header */
+.cuHeader {
+  flex: none;
+  display: grid;
+  gap: 2px;
+  padding: 10px 16px 0 20px;
+  border-bottom: 1px solid var(--v3-border);
+  background: var(--v3-canvas);
+}
+.cuTitleRow { display: flex; align-items: center; gap: 9px; min-height: 32px; }
+.cuTitleRow .back { display: none; }
+.cuTitle {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--v3-text);
+}
+.cuOnline { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--v3-text-2); }
+.cuOnline span { width: 7px; height: 7px; border-radius: 999px; background: #2fb36b; }
+.cuMore {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--v3-text-2);
+  cursor: pointer;
+}
+.cuMore:hover { background: var(--v3-hover); color: var(--v3-text); }
+.cuMore:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: 1px; }
+.cuSpacer { flex: 1; }
+.cuTabs { display: flex; align-items: flex-end; gap: 18px; min-height: 34px; }
+.cuTab {
+  position: relative;
+  height: 34px;
+  padding: 0 1px;
+  border: 0;
+  background: transparent;
+  color: var(--v3-text-2);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+.cuTab:hover { color: var(--v3-text); }
+.cuTab:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: -2px; border-radius: 4px; }
+.cuTab[aria-current="page"] { color: var(--v3-text); font-weight: 600; }
+.cuTab[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--v3-text);
+}
+.cuSub {
+  margin-left: auto;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--v3-text-3);
+  white-space: nowrap;
+}
+
+/* One centred column for the conversation and the composer. */
+.chat[data-directory] .streamInner,
+.chat[data-directory] .composerWrap > * { width: 100%; max-width: var(--column); margin-left: auto; margin-right: auto; }
+.chat[data-directory] .composerWrap { padding: 8px var(--gutter) 22px; }
+
+/* The start of the conversation: centred, quiet, one action. */
+.chat[data-directory] .intro {
+  justify-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 64px var(--gutter) 36px;
+  max-width: 520px;
+  margin: 0 auto;
+}
+.chat[data-directory] .intro > :first-child { margin-bottom: 0; }
+.chat[data-directory] .introTitle { font-size: 16px; font-weight: 650; letter-spacing: -0.01em; }
+.chat[data-directory] .introText { font-size: 13.5px; color: var(--v3-text-2); }
+.chat[data-directory] .introActions { width: 100%; margin-top: 14px; }
+.introButton {
+  width: 100%;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--v3-border-strong);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 120ms var(--v3-ease), border-color 120ms var(--v3-ease);
+}
+.introButton:hover { background: var(--v3-hover); border-color: color-mix(in srgb, var(--v3-text) 30%, transparent); }
+.introButton:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: 2px; }
+
+/* Date dividers: a pill on a rule that runs the full width. */
+.chat[data-directory] .day { margin-top: 28px; border-top: 0; }
+.chat[data-directory] .day::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: calc(50% - 50vw);
+  right: calc(50% - 50vw);
+  height: 1px;
+  background: var(--v3-border);
+}
+.chat[data-directory] .stream { overflow-x: hidden; }
+.chat[data-directory] .dayLabel span {
+  padding: 4px 12px;
+  border: 1px solid var(--v3-border-strong);
+  border-radius: 999px;
+  background: var(--v3-canvas);
+  color: var(--v3-text);
+  font-size: 12.5px;
+  font-weight: 650;
+  box-shadow: none;
+}
+.chat[data-directory] .dayBody { padding-top: 22px; }
+
+/* Messages: a 32px avatar, the name in bold beside a quiet time. */
+.chat[data-directory] .msg { grid-template-columns: 32px minmax(0, 1fr); column-gap: 12px; padding: 2px 12px; border-radius: 8px; }
+.chat[data-directory] .msg[data-first] { padding-top: 12px; }
+.chat[data-directory] .gutter > [aria-hidden] { --size: 32px !important; width: 32px; height: 32px; }
+.chat[data-directory] .author { font-size: 14px; font-weight: 650; }
+.chat[data-directory] .time { font-size: 12px; color: var(--v3-text-3); }
+.chat[data-directory] .body { font-size: 14px; line-height: 1.55; }
+
+/* The composer: one generous card, tools along the bottom, send on the right. */
+.chat[data-directory] .composer {
+  border: 1px solid var(--v3-border-strong);
+  border-radius: 12px;
+  background: var(--v3-canvas);
+  box-shadow: none;
+}
+.chat[data-directory] .composer:focus-within {
+  border-color: color-mix(in srgb, var(--v3-text) 34%, transparent);
+  box-shadow: none;
+}
+.chat[data-directory] .composer[data-disabled] { background: var(--v3-canvas); opacity: 0.7; }
+.chat[data-directory] .composerInput { min-height: 52px; padding: 16px 20px 6px; font-size: 14px; }
+.chat[data-directory] .composerBar { padding: 6px 10px 10px 12px; gap: 4px; }
+.chat[data-directory] .composerBar .iconButton { width: 30px; height: 30px; border-radius: 8px; color: var(--v3-text-2); }
+.chat[data-directory] .composerBar .iconButton:hover { color: var(--v3-text); background: var(--v3-hover); }
+.chat[data-directory] .send {
+  margin-left: auto;
+  width: 36px;
+  height: 30px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--v3-text) 12%, transparent);
+  color: var(--v3-text);
+}
+.chat[data-directory] .send:not(:disabled) { background: var(--v3-accent); color: #fff; }
+.chat[data-directory] .send:disabled { opacity: 1; color: var(--v3-text-3); }
+
+/* New direct message: the title on the bar, a full-width search. */
+.chat[data-directory] .newMessage { padding: 14px 20px 12px; gap: 10px; }
+.chat[data-directory] .newMessageSearch {
+  height: 34px;
+  border-color: var(--v3-border-strong);
+  border-radius: 8px;
+  background: transparent;
+}
+.chat[data-directory] .newMessageList { flex: 1; align-content: start; padding: 10px 12px; }
+
+@container chat (max-width: 679px) {
+  .chat[data-directory] { --gutter: 14px; }
+  .cuTitleRow .back { display: grid; }
+  .cuSub { display: none; }
+  .chat[data-directory] .msg { padding: 2px 4px; }
+}
+
+/* Avatars: the person's identity hue with a top light and a hairline ring,
+   matching the sidebar. White initials pass AA on every project hue. */
+.avatar[data-solid] {
+  background-color: var(--solid);
+  background-image: linear-gradient(160deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 58%);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  font-weight: 700;
+}

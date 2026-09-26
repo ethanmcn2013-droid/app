@@ -157,7 +157,7 @@ export function AppSidebar({
         : null;
   // An open Chat row is the page you are on; the Chat destination row stays
   // quiet then, so only one row reads as "here".
-  const chatRowOpen = Boolean(directory && [...directory.channels, ...directory.direct].some((entry) => entry.href === here));
+  const chatRowOpen = Boolean(directory && (here === directory.newMessageHref || [...directory.channels, ...directory.direct].some((entry) => entry.href === here)));
 
   const openProject = useCallback(
     (row: ChooserRow) => {

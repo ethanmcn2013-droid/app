@@ -14,7 +14,7 @@ import { publishChatDirectory, publishMessagesUnread } from "./messages-unread";
 import { chatHref, demoChatDirectory } from "./chat-directory";
 import { listTimeLabel, matchesQuery, previewText, type ChatMessage, type ChatPerson } from "./chat-view-model";
 import { conversationAttention, demoReducer, initDemoState, rootMessages, threadReplies, unreadTotal, type DemoConversation, type DemoMessagesSnapshot, type DemoState } from "./demo-messages-model";
-import { useBottomAnchor, JumpToLatest, Avatar, CenterState, ChatHeader, ChatIcon, ChatList, Composer, ConversationIntro, DetailsBlock, Dot, MessageStream, PeopleList, Pill, ProjectTile, SidePanel, StatusGlyph, TaskTile, chatStyles as styles, type ChatListItem, type ChatListSection, type MessageActions } from "./chat-ui";
+import { useBottomAnchor, JumpToLatest, Avatar, CenterState, ChatIcon, ChatList, Composer, ConversationIntro, DetailsBlock, Dot, MessageStream, PeopleList, Pill, ProjectTile, SidePanel, StatusGlyph, TaskTile, chatStyles as styles, type ChatListItem, type ChatListSection, type MessageActions } from "./chat-ui";
 
 type Side = Readonly<{ kind: "thread"; rootId: string }> | Readonly<{ kind: "details" }> | null;
 
@@ -230,7 +230,6 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
 
   /* Conversation */
   const detailsOpen = side?.kind === "details";
-  const detailsButton = <button aria-label="Conversation details" aria-pressed={detailsOpen} className={styles.iconButton} onClick={() => detailsOpen ? closeSide() : openSide({ kind: "details" })} title="Details" type="button"><ChatIcon.panel /></button>;
   const other = personOf(conversation.otherId);
   const key = draftKeyOf(conversation.id, null);
   let leading: ReactNode;
@@ -238,21 +237,21 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
   let headerActions: ReactNode;
   let intro: ReactNode;
   if (conversation.kind === "project") {
-    leading = <ProjectTile id={snapshot.project.id} name={conversation.title} />;
+    leading = <ProjectTile id={snapshot.project.id} name={conversation.title} size={24} />;
     subtitle = <>Project conversation<Dot />{members.length} members</>;
-    headerActions = <><AvatarStack className={styles.headerStack} members={members} onClick={() => detailsOpen ? closeSide() : openSide({ kind: "details" })} pressed={detailsOpen} />{detailsButton}</>;
-    intro = <ConversationIntro mark={<ProjectTile id={snapshot.project.id} name={conversation.title} size={48} />} text={<>The Project conversation. Everyone in {conversation.title} can read it and reply, and messages stay inside this Project.</>} title={conversation.title} />;
+    headerActions = <AvatarStack className={styles.headerStack} members={members} onClick={() => detailsOpen ? closeSide() : openSide({ kind: "details" })} pressed={detailsOpen} />;
+    intro = <ConversationIntro actions={<button className={styles.introButton} onClick={() => openSide({ kind: "details" })} type="button"><ChatIcon.panel />See members and details</button>} mark={null} text={<>Everyone in {conversation.title} can read this channel and reply. Messages stay inside this Project.</>} title={<>This is the start of #{conversation.title}</>} />;
   } else if (conversation.kind === "dm") {
-    leading = <Avatar id={conversation.otherId ?? conversation.id} name={conversation.title} />;
+    leading = <Avatar id={conversation.otherId ?? conversation.id} name={conversation.title} size={24} />;
     subtitle = <>{other?.role ? <>{other.role}<Dot /></> : null}<ChatIcon.lock />Private</>;
-    headerActions = detailsButton;
-    intro = <ConversationIntro mark={<Avatar id={conversation.otherId ?? conversation.id} name={conversation.title} size={48} />} text={<>This is the start of your private conversation with {conversation.title}. Only the two of you can read it.</>} title={conversation.title} />;
+    headerActions = null;
+    intro = <ConversationIntro actions={<button className={styles.introButton} onClick={() => openSide({ kind: "details" })} type="button"><ChatIcon.user />View profile</button>} mark={null} text={<>Only the two of you can read this conversation. {other?.role ? `${conversation.title.split(/\s+/)[0]} is ${other.role.toLowerCase()} at ${snapshot.project.name}.` : ""}</>} title={<>This is the start of your conversation with {conversation.title}</>} />;
   } else {
     const task = conversation.task!;
-    leading = <TaskTile status={task.status} />;
+    leading = <TaskTile size={24} status={task.status} />;
     subtitle = <><Pill><StatusGlyph status={task.status} />{task.statusLabel}</Pill>{task.dueLabel ? <Pill tone={task.dueLabel === "Due today" ? "warning" : undefined}>{task.dueLabel}</Pill> : null}<span>Task thread</span></>;
-    headerActions = <><a className={styles.button} href={task.href}>Open task</a><span aria-hidden="true" className={styles.headerDivider} />{detailsButton}</>;
-    intro = <ConversationIntro mark={<TaskTile size={48} status={task.status} />} text="Discussion on this task. Everyone in the Project can read it and reply." title={task.title} />;
+    headerActions = null;
+    intro = <ConversationIntro actions={<a className={styles.introButton} href={task.href}><ChatIcon.task />Open the task</a>} mark={null} text="Everyone in the Project can read this discussion and reply." title={<>Discussion on {task.title}</>} />;
   }
 
   const request = conversation.request && conversation.request.requesterId !== selfId ? conversation.request : null;
@@ -261,19 +260,35 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
     blocked={request ? "Accept the request to start messaging." : pendingOwn ? "Messages begin after they accept." : undefined}
     label={`Message ${conversation.title}`}
     mentionIds={mentionDrafts[key] ?? []}
-    note="Preview. What you send stays in this tab and is not saved."
     onArrowUpEmpty={() => editLastOwn(roots)}
     onChange={(value) => setDrafts((current) => ({ ...current, [key]: value }))}
     onMentionIdsChange={(ids) => setMentionDrafts((current) => ({ ...current, [key]: ids }))}
     onSend={() => send(conversation.id, null)}
     people={members}
-    placeholder={conversation.kind === "task" ? "Comment on this task" : conversation.kind === "dm" ? `Message ${conversation.title.split(/\s+/)[0]}` : `Message #${conversation.title}`}
+    placeholder={conversation.kind === "task" ? "Write a comment on this task" : conversation.kind === "dm" ? `Write to ${conversation.title}` : `Write to #${conversation.title}`}
     selfId={selfId}
+    showHint={false}
     value={drafts[key] ?? ""}
   />;
 
   const conversationPane = <section aria-labelledby="chat-conversation-title" className={styles.pane}>
-    <ChatHeader actions={headerActions} backRef={backRef} leading={leading} onBack={() => setPane("list")} subtitle={subtitle} title={conversation.title} titleId="chat-conversation-title" />
+    <header className={styles.cuHeader}>
+      <div className={styles.cuTitleRow}>
+        <button aria-label="All conversations" className={`${styles.iconButton} ${styles.back}`} onClick={() => setPane("list")} ref={backRef} type="button"><ChatIcon.back /></button>
+        {leading}
+        <h2 className={styles.cuTitle} id="chat-conversation-title">{conversation.kind === "project" ? `#${conversation.title}` : conversation.title}</h2>
+        {conversation.kind === "dm" && other?.online ? <span className={styles.cuOnline}><span aria-hidden="true" />Online</span> : null}
+        <button aria-label="Conversation details" className={styles.cuMore} onClick={() => detailsOpen ? closeSide() : openSide({ kind: "details" })} title="Details" type="button"><ChatIcon.more /></button>
+        <span className={styles.cuSpacer} />
+        {headerActions}
+      </div>
+      <nav aria-label="Conversation views" className={styles.cuTabs}>
+        <button aria-current={detailsOpen ? undefined : "page"} className={styles.cuTab} onClick={() => { if (detailsOpen) closeSide(); }} type="button">Chat</button>
+        <button aria-current={detailsOpen ? "page" : undefined} className={styles.cuTab} onClick={() => detailsOpen ? closeSide() : openSide({ kind: "details" })} type="button">Details</button>
+        {conversation.kind === "task" && conversation.task ? <a className={styles.cuTab} href={conversation.task.href}>Task</a> : null}
+        <span className={styles.cuSub}>{subtitle}</span>
+      </nav>
+    </header>
     {request ? <CenterState
       actions={<><button className={styles.buttonPrimary} onClick={() => { dispatch({ type: "accept", conversationId: conversation.id }); setAnnouncement(`You can now message ${conversation.title}`); }} type="button">Accept</button><button className={styles.button} onClick={() => { const fallback = state.conversations.find((item) => item.kind === "project")?.id; dispatch({ type: "decline", conversationId: conversation.id }); setSide(null); if (fallback) select(fallback); setAnnouncement("Request declined"); }} type="button">Decline</button></>}
       mark={<Avatar id={conversation.otherId ?? conversation.id} name={conversation.title} size={56} />}
@@ -302,7 +317,7 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
   const directPeople = people.filter((person) => person.id !== selfId && (!pq || matchesQuery(person.name, pq) || (person.role ? matchesQuery(person.role, pq) : false)));
   const newMessagePane = <section aria-labelledby="chat-new-title" className={styles.pane}>
     <div className={styles.newMessage}>
-      <h2 className={styles.newMessageTitle} id="chat-new-title">New direct message</h2>
+      <h2 className={styles.cuTitle} id="chat-new-title">New direct message</h2>
       <label className={styles.newMessageSearch}>
         <ChatIcon.search />
         <span className={styles.srOnly}>Search people</span>
@@ -322,6 +337,11 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
       })}
       {directPeople.length === 0 ? <li className={styles.newMessageEmpty}>No one in {snapshot.project.name} matches.</li> : null}
     </ul>
+    <div className={styles.composerWrap}>
+      <div className={styles.composer} data-disabled="">
+        <textarea aria-label="Message (choose someone first)" className={styles.composerInput} disabled placeholder="Choose someone above, then write your message" rows={2} />
+      </div>
+    </div>
   </section>;
 
   let sidePanel: ReactNode = null;

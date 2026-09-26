@@ -41,12 +41,15 @@ export const ChatIcon = {
   warning: (p: { size?: number }) => <Svg {...p}><path d="M7.13 2.9a1 1 0 0 1 1.74 0l5 8.75a1 1 0 0 1-.87 1.5H3a1 1 0 0 1-.87-1.5Z" /><path d="M8 6.5v2.75M8 11.25h.01" /></Svg>,
   retry: (p: { size?: number }) => <Svg {...p}><path d="M13 8a5 5 0 1 1-1.46-3.54" /><path d="M13 2.75V5h-2.25" /></Svg>,
   hash: (p: { size?: number }) => <Svg {...p}><path d="M6.25 2.5 5 13.5M11 2.5 9.75 13.5M3 6h10.5M2.5 10H13" /></Svg>,
+  more: (p: { size?: number }) => <Svg {...p}><circle cx="3.75" cy="8" r=".9" fill="currentColor" stroke="none" /><circle cx="8" cy="8" r=".9" fill="currentColor" stroke="none" /><circle cx="12.25" cy="8" r=".9" fill="currentColor" stroke="none" /></Svg>,
+  user: (p: { size?: number }) => <Svg {...p}><circle cx="8" cy="5.75" r="2.75" /><path d="M2.75 13.5c.6-2.4 2.7-3.9 5.25-3.9s4.65 1.5 5.25 3.9" /></Svg>,
 };
 
 /* ── Identity ───────────────────────────────────────────────────────── */
 
 export function Avatar({ id, name, size = 36 }: { id: string; name: string; size?: number }) {
-  return <span aria-hidden="true" className={styles.avatar} data-tone={toneOf(id)} style={{ "--size": `${size}px` } as React.CSSProperties}>{initialsOf(name)}</span>;
+  // The same hue a person has in the sidebar, so they look alike everywhere.
+  return <span aria-hidden="true" className={styles.avatar} data-solid="" data-tone={toneOf(id)} style={{ "--size": `${size}px`, "--solid": projectColor(id) } as React.CSSProperties}>{initialsOf(name)}</span>;
 }
 
 export function ProjectTile({ id, name, size = 36 }: { id: string; name: string; size?: number }) {
