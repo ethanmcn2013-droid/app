@@ -8,8 +8,10 @@
  */
 
 import { useEffect, useLayoutEffect, useReducer, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AvatarStack } from "@/components/app/presence/avatar-stack";
+import { openPalette } from "@/components/shell/app-shell";
 import { publishChatDirectory, publishMessagesUnread } from "./messages-unread";
 import { chatHref, demoChatDirectory } from "./chat-directory";
 import { listTimeLabel, matchesQuery, previewText, type ChatMessage, type ChatPerson } from "./chat-view-model";
@@ -240,20 +242,21 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
     leading = <ProjectTile id={snapshot.project.id} name={conversation.title} size={24} />;
     subtitle = <>Project conversation<Dot />{members.length} members</>;
     headerActions = <AvatarStack className={styles.headerStack} members={members} onClick={() => detailsOpen ? closeSide() : openSide({ kind: "details" })} pressed={detailsOpen} />;
-    intro = <ConversationIntro actions={<button className={styles.introButton} onClick={() => openSide({ kind: "details" })} type="button"><ChatIcon.panel />See members and details</button>} mark={null} text={<>Everyone in {conversation.title} can read this channel and reply. Messages stay inside this Project.</>} title={<>This is the start of #{conversation.title}</>} />;
+    intro = <ConversationIntro actions={<><button className={styles.introButton} onClick={() => openSide({ kind: "details" })} type="button"><ChatIcon.panel />See members and details</button><Link className={styles.cuCard} href="/app/timeline"><span aria-hidden="true" className={styles.cuCardArt}><i /><i /><i /></span><span className={styles.cuCardText}><strong>Open the timeline</strong><span>See the dates and milestones for {snapshot.project.name}</span></span></Link></>} mark={null} text={<>Everyone in {conversation.title} can read this channel and reply. Messages stay inside this Project.</>} title={<>This is the start of #{conversation.title}</>} />;
   } else if (conversation.kind === "dm") {
     leading = <Avatar id={conversation.otherId ?? conversation.id} name={conversation.title} size={24} />;
     subtitle = <>{other?.role ? <>{other.role}<Dot /></> : null}<ChatIcon.lock />Private</>;
     headerActions = null;
-    intro = <ConversationIntro actions={<button className={styles.introButton} onClick={() => openSide({ kind: "details" })} type="button"><ChatIcon.user />View profile</button>} mark={null} text={<>Only the two of you can read this conversation. {other?.role ? `${conversation.title.split(/\s+/)[0]} is ${other.role.toLowerCase()} at ${snapshot.project.name}.` : ""}</>} title={<>This is the start of your conversation with {conversation.title}</>} />;
+    intro = <ConversationIntro actions={<><button className={styles.introButton} onClick={() => openSide({ kind: "details" })} type="button"><ChatIcon.user />View profile</button><Link className={styles.cuCard} href="/app/timeline"><span aria-hidden="true" className={styles.cuCardArt}><i /><i /><i /></span><span className={styles.cuCardText}><strong>Open the timeline</strong><span>See the dates and milestones for {snapshot.project.name}</span></span></Link></>} mark={null} text={<>Only the two of you can read this conversation. {other?.role ? `${conversation.title.split(/\s+/)[0]} is ${other.role.toLowerCase()} at ${snapshot.project.name}.` : ""}</>} title={<>This is the start of your conversation with {conversation.title}</>} />;
   } else {
     const task = conversation.task!;
     leading = <TaskTile size={24} status={task.status} />;
     subtitle = <><Pill><StatusGlyph status={task.status} />{task.statusLabel}</Pill>{task.dueLabel ? <Pill tone={task.dueLabel === "Due today" ? "warning" : undefined}>{task.dueLabel}</Pill> : null}<span>Task thread</span></>;
     headerActions = null;
-    intro = <ConversationIntro actions={<a className={styles.introButton} href={task.href}><ChatIcon.task />Open the task</a>} mark={null} text="Everyone in the Project can read this discussion and reply." title={<>Discussion on {task.title}</>} />;
+    intro = <ConversationIntro actions={<><a className={styles.introButton} href={task.href}><ChatIcon.task />Open the task</a><Link className={styles.cuCard} href="/app/timeline"><span aria-hidden="true" className={styles.cuCardArt}><i /><i /><i /></span><span className={styles.cuCardText}><strong>Open the timeline</strong><span>See the dates and milestones for {snapshot.project.name}</span></span></Link></>} mark={null} text="Everyone in the Project can read this discussion and reply." title={<>Discussion on {task.title}</>} />;
   }
 
+  const latestThread = [...roots].reverse().find((message) => (message.replyCount ?? 0) > 0);
   const request = conversation.request && conversation.request.requesterId !== selfId ? conversation.request : null;
   const pendingOwn = conversation.request && conversation.request.requesterId === selfId;
   const composer = <Composer
@@ -265,7 +268,7 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
     onMentionIdsChange={(ids) => setMentionDrafts((current) => ({ ...current, [key]: ids }))}
     onSend={() => send(conversation.id, null)}
     people={members}
-    placeholder={conversation.kind === "task" ? "Write a comment on this task" : conversation.kind === "dm" ? `Write to ${conversation.title}` : `Write to #${conversation.title}`}
+    placeholder={conversation.kind === "task" ? "Write a comment on this task" : conversation.kind === "dm" ? `Write to ${conversation.title}, Enter to send, Shift + Enter for a new line` : `Write to #${conversation.title}, Enter to send, Shift + Enter for a new line`}
     selfId={selfId}
     showHint={false}
     value={drafts[key] ?? ""}
@@ -286,9 +289,20 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
         <button aria-current={detailsOpen ? undefined : "page"} className={styles.cuTab} onClick={() => { if (detailsOpen) closeSide(); }} type="button">Chat</button>
         <button aria-current={detailsOpen ? "page" : undefined} className={styles.cuTab} onClick={() => detailsOpen ? closeSide() : openSide({ kind: "details" })} type="button">Details</button>
         {conversation.kind === "task" && conversation.task ? <a className={styles.cuTab} href={conversation.task.href}>Task</a> : null}
-        <span className={styles.cuSub}>{subtitle}</span>
+        <span className="sr-only">{subtitle}</span>
       </nav>
     </header>
+    <div className={styles.cuOverlay}>
+      <Link className={styles.cuChip} href="/app/files">
+        <span aria-hidden="true" className={styles.cuChipMark}><i /><i /><i /><i /></span>
+        <span>Files, links<br />and notes</span>
+      </Link>
+      <div aria-label="Conversation tools" className={styles.cuRail} role="toolbar">
+        <button aria-label="Search" className={styles.cuRailButton} onClick={() => openPalette()} title="Search" type="button"><ChatIcon.search /></button>
+        <button aria-label={latestThread ? "Open the latest thread" : "No threads yet"} className={styles.cuRailButton} disabled={!latestThread} onClick={() => latestThread && openSide({ kind: "thread", rootId: latestThread.id })} title={latestThread ? "Latest thread" : "No threads yet"} type="button"><ChatIcon.thread /></button>
+        <button aria-label="Details" aria-pressed={detailsOpen} className={styles.cuRailButton} onClick={() => detailsOpen ? closeSide() : openSide({ kind: "details" })} title="Details" type="button"><ChatIcon.user /></button>
+      </div>
+    </div>
     {request ? <CenterState
       actions={<><button className={styles.buttonPrimary} onClick={() => { dispatch({ type: "accept", conversationId: conversation.id }); setAnnouncement(`You can now message ${conversation.title}`); }} type="button">Accept</button><button className={styles.button} onClick={() => { const fallback = state.conversations.find((item) => item.kind === "project")?.id; dispatch({ type: "decline", conversationId: conversation.id }); setSide(null); if (fallback) select(fallback); setAnnouncement("Request declined"); }} type="button">Decline</button></>}
       mark={<Avatar id={conversation.otherId ?? conversation.id} name={conversation.title} size={56} />}

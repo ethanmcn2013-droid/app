@@ -1850,3 +1850,119 @@
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
   font-weight: 700;
 }
+
+/* ── Chat, closer to the reference (pass 2) ───────────────────────── */
+
+/* Dark: the chat area sits near-black, a step below the app frame. */
+:global(html[data-theme="dark"]) .chat[data-directory] { --v3-canvas: #151515; --v3-surface: #1b1b1b; }
+.chat[data-directory] { background: var(--v3-canvas); }
+
+/* Lighter, smaller type. */
+.chat[data-directory] .cuTitle { font-size: 14px; font-weight: 600; letter-spacing: 0; }
+.chat[data-directory] .cuTab { font-size: 13px; }
+.chat[data-directory] .cuTab[aria-current="page"] { font-weight: 600; }
+.chat[data-directory] .introTitle { font-size: 15px; font-weight: 600; letter-spacing: 0; }
+.chat[data-directory] .introText { font-size: 13px; }
+.chat[data-directory] .author { font-size: 13.5px; font-weight: 600; }
+.chat[data-directory] .time { font-size: 11.5px; }
+.chat[data-directory] .body { font-size: 13.5px; font-weight: 400; }
+.chat[data-directory] .dayLabel span { font-size: 12px; font-weight: 600; }
+.chat[data-directory] .introButton { font-size: 13px; font-weight: 500; height: 34px; border-radius: 6px; }
+
+/* The pane holds the chip and the tool strip over the stream. */
+.chat[data-directory] > .pane { position: relative; }
+.cuOverlay { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.cuChip {
+  position: absolute;
+  top: 91px;
+  left: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px 7px 8px;
+  border: 1px solid var(--v3-border-strong);
+  border-radius: 8px;
+  background: var(--v3-canvas);
+  color: var(--v3-text-2);
+  font-size: 11.5px;
+  line-height: 1.3;
+  text-decoration: none;
+  pointer-events: auto;
+}
+.cuChip:hover { color: var(--v3-text); background: var(--v3-hover); }
+.cuChipMark { display: grid; grid-template-columns: repeat(2, 9px); gap: 2px; }
+.cuChipMark i { width: 9px; height: 9px; border-radius: 3px; background: var(--v3-kind-sheet); }
+.cuChipMark i:nth-child(2) { background: var(--v3-kind-doc); }
+.cuChipMark i:nth-child(3) { background: var(--v3-kind-slides); }
+.cuChipMark i:nth-child(4) { background: var(--v3-kind-neutral); }
+.cuRail {
+  position: absolute;
+  top: 91px;
+  right: 12px;
+  display: grid;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--v3-border);
+  border-radius: 10px;
+  background: var(--v3-canvas);
+  pointer-events: auto;
+}
+.cuRailButton {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--v3-text-2);
+  cursor: pointer;
+}
+.cuRailButton:hover:not(:disabled),
+.cuRailButton[aria-pressed="true"] { background: var(--v3-hover); color: var(--v3-text); }
+.cuRailButton:disabled { opacity: 0.4; cursor: default; }
+.cuRailButton:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: -2px; }
+.chat[data-directory][data-side] .cuRail { display: none; }
+
+/* The coloured card under the intro's button, as in the reference. */
+.chat[data-directory] .introActions { display: grid; gap: 12px; }
+.cuCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--v3-danger) 16%, var(--v3-canvas));
+  color: var(--v3-text);
+  text-align: left;
+  text-decoration: none;
+  transition: background-color 140ms var(--v3-ease);
+}
+.cuCard:hover { background: color-mix(in srgb, var(--v3-danger) 24%, var(--v3-canvas)); }
+.cuCard:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: 2px; }
+.cuCardArt {
+  flex: none;
+  display: grid;
+  gap: 3px;
+  width: 36px;
+  height: 36px;
+  padding: 7px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--v3-danger) 55%, #000);
+}
+.cuCardArt i { display: block; height: 4px; border-radius: 2px; background: #fff; opacity: 0.9; }
+.cuCardArt i:nth-child(1) { width: 70%; background: #ffd166; }
+.cuCardArt i:nth-child(2) { width: 100%; margin-left: 20%; width: 80%; }
+.cuCardArt i:nth-child(3) { width: 50%; background: #ffb4a8; }
+.cuCardText { display: grid; gap: 1px; min-width: 0; }
+.cuCardText strong { font-size: 13px; font-weight: 600; }
+.cuCardText span { font-size: 12px; color: var(--v3-text-2); }
+
+/* The chip needs the room beside the centred column; narrower, it would sit
+   over the messages. */
+@container chat (max-width: 1399px) {
+  .cuChip { display: none; }
+}
+@container chat (max-width: 679px) {
+  .cuRail { display: none; }
+}
