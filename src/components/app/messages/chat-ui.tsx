@@ -43,6 +43,9 @@ export const ChatIcon = {
   hash: (p: { size?: number }) => <Svg {...p}><path d="M6.25 2.5 5 13.5M11 2.5 9.75 13.5M3 6h10.5M2.5 10H13" /></Svg>,
   more: (p: { size?: number }) => <Svg {...p}><circle cx="3.75" cy="8" r=".9" fill="currentColor" stroke="none" /><circle cx="8" cy="8" r=".9" fill="currentColor" stroke="none" /><circle cx="12.25" cy="8" r=".9" fill="currentColor" stroke="none" /></Svg>,
   user: (p: { size?: number }) => <Svg {...p}><circle cx="8" cy="5.75" r="2.75" /><path d="M2.75 13.5c.6-2.4 2.7-3.9 5.25-3.9s4.65 1.5 5.25 3.9" /></Svg>,
+  link: (p: { size?: number }) => <Svg {...p}><path d="M6.9 9.1a2.6 2.6 0 0 0 3.7 0l2-2a2.6 2.6 0 0 0-3.7-3.7l-.6.6" /><path d="M9.1 6.9a2.6 2.6 0 0 0-3.7 0l-2 2a2.6 2.6 0 0 0 3.7 3.7l.6-.6" /></Svg>,
+  plus: (p: { size?: number }) => <Svg {...p}><path d="M8 3.25v9.5M3.25 8h9.5" /></Svg>,
+  plane: (p: { size?: number }) => <Svg {...p}><path d="M2.6 3.1 13.6 8 2.6 12.9l1.6-4.9Z" fill="currentColor" stroke="none" /></Svg>,
 };
 
 /* ── Identity ───────────────────────────────────────────────────────── */
@@ -443,7 +446,7 @@ const EMOJI: readonly (readonly [string, string])[] = [
 
 export type ComposerHandle = Readonly<{ focus: () => void }>;
 
-export function Composer({ value, onChange, onSend, label, placeholder, people, selfId, mentionIds, onMentionIdsChange, unavailableMentionIds, sendDisabled, disabled, blocked, count, note, onArrowUpEmpty, onEscape, inputRef, autoFocus, showHint = true }: {
+export function Composer({ value, onChange, onSend, label, placeholder, people, selfId, mentionIds, onMentionIdsChange, unavailableMentionIds, sendDisabled, disabled, blocked, count, note, onArrowUpEmpty, onEscape, inputRef, autoFocus, showHint = true, toolbar }: {
   value: string;
   onChange: (value: string) => void;
   onSend: () => void;
@@ -466,11 +469,14 @@ export function Composer({ value, onChange, onSend, label, placeholder, people, 
   inputRef?: (node: HTMLTextAreaElement | null) => void;
   autoFocus?: boolean;
   showHint?: boolean;
+  /** The full toolbar: an insert menu behind a round plus, then the tools. */
+  toolbar?: "full";
 }) {
   const textareaRef = useAutosize(value);
   const [caret, setCaret] = useState<number | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [emojiOpen, setEmojiOpen] = useState(false);
+  const [insertOpen, setInsertOpen] = useState(false);
   const [dismissedAt, setDismissedAt] = useState<number | null>(null);
   const mentionable = people.filter((person) => person.id !== selfId);
   const query = caret === null || !onMentionIdsChange || !mentionable.length ? null : activeMentionQuery(value, caret);
@@ -490,6 +496,22 @@ export function Composer({ value, onChange, onSend, label, placeholder, people, 
     onChange(next);
     const position = start + text.length;
     requestAnimationFrame(() => { const node = textareaRef.current; if (!node) return; node.focus(); node.setSelectionRange(position, position); setCaret(position); });
+  }
+
+  function mention() {
+    const node = textareaRef.current;
+    const start = node?.selectionStart ?? value.length;
+    const end = node?.selectionEnd ?? value.length;
+    const spacer = start > 0 && !/\s$/.test(value.slice(0, start)) ? " " : "";
+    insertAt(`${spacer}@`, start, end);
+  }
+
+  function addLink() {
+    const node = textareaRef.current;
+    const start = node?.selectionStart ?? value.length;
+    const end = node?.selectionEnd ?? value.length;
+    const spacer = start > 0 && !/\s$/.test(value.slice(0, start)) ? " " : "";
+    insertAt(`${spacer}https://`, start, end);
   }
 
   function pick(person: ChatPerson) {
@@ -562,12 +584,24 @@ export function Composer({ value, onChange, onSend, label, placeholder, people, 
           rows={1}
           value={value}
         />
-        <div className={styles.composerBar}>
-          {onMentionIdsChange && mentionable.length ? <button aria-label="Mention someone" className={styles.iconButton} disabled={disabled} onClick={() => { const node = textareaRef.current; const start = node?.selectionStart ?? value.length; const end = node?.selectionEnd ?? value.length; const spacer = start > 0 && !/\s$/.test(value.slice(0, start)) ? " " : ""; insertAt(`${spacer}@`, start, end); }} title="Mention someone" type="button"><ChatIcon.at /></button> : null}
+        <div className={styles.composerBar} data-toolbar={toolbar}>
+          {toolbar === "full" ? <>
+            <button aria-expanded={insertOpen} aria-haspopup="menu" aria-label="Insert" className={styles.composerPlus} disabled={disabled} onClick={() => setInsertOpen((current) => !current)} title="Insert" type="button"><ChatIcon.plus /></button>
+            {insertOpen ? <div aria-label="Insert" className={styles.popover} onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); setInsertOpen(false); textareaRef.current?.focus(); } }} role="menu">
+              {onMentionIdsChange && mentionable.length ? <button autoFocus className={styles.option} onClick={() => { setInsertOpen(false); mention(); }} role="menuitem" type="button"><ChatIcon.at /><span>Mention someone</span><small>@</small></button> : null}
+              <button autoFocus={!(onMentionIdsChange && mentionable.length)} className={styles.option} onClick={() => { setInsertOpen(false); setEmojiOpen(true); }} role="menuitem" type="button"><ChatIcon.smile /><span>Add emoji</span></button>
+              <button className={styles.option} onClick={() => { setInsertOpen(false); addLink(); }} role="menuitem" type="button"><ChatIcon.link /><span>Add a link</span></button>
+            </div> : null}
+            <span aria-hidden="true" className={styles.composerDivider} />
+          </> : null}
+          {onMentionIdsChange && mentionable.length ? <button aria-label="Mention someone" className={styles.iconButton} disabled={disabled} onClick={mention} title="Mention someone" type="button"><ChatIcon.at /></button> : null}
           <button aria-expanded={emojiOpen} aria-label="Add emoji" className={styles.iconButton} data-emoji-toggle="" disabled={disabled} onClick={() => setEmojiOpen((current) => !current)} title="Add emoji" type="button"><ChatIcon.smile /></button>
+          {toolbar === "full" ? <>
+            <button aria-label="Add a link" className={styles.iconButton} disabled={disabled} onClick={addLink} title="Add a link" type="button"><ChatIcon.link /></button>
+          </> : null}
           {count ?? null}
           {showHint ? <span className={styles.composerHint}><kbd>Enter</kbd> to send · <kbd>Shift</kbd> + <kbd>Enter</kbd> for a new line</span> : null}
-          <button aria-label="Send message" className={styles.send} disabled={!canSend} onClick={onSend} title="Send" type="button"><ChatIcon.send /></button>
+          <button aria-label="Send message" className={styles.send} disabled={!canSend} onClick={onSend} title="Send (Enter)" type="button">{toolbar === "full" ? <ChatIcon.plane /> : <ChatIcon.send />}</button>
         </div>
       </>}
     </div>

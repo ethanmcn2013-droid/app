@@ -268,9 +268,10 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
     onMentionIdsChange={(ids) => setMentionDrafts((current) => ({ ...current, [key]: ids }))}
     onSend={() => send(conversation.id, null)}
     people={members}
-    placeholder={conversation.kind === "task" ? "Write a comment on this task" : conversation.kind === "dm" ? `Write to ${conversation.title}, Enter to send, Shift + Enter for a new line` : `Write to #${conversation.title}, Enter to send, Shift + Enter for a new line`}
+    placeholder={conversation.kind === "task" ? "Write a comment on this task" : conversation.kind === "dm" ? `Write to ${conversation.title}, press '@' to mention someone` : `Write to #${conversation.title}, press '@' to mention someone`}
     selfId={selfId}
     showHint={false}
+    toolbar="full"
     value={drafts[key] ?? ""}
   />;
 
