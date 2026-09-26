@@ -16,6 +16,7 @@ import { withSuiteContext } from "@/lib/suite-context";
 import { loadProjectCatalogAction } from "@/server/actions/project-catalog";
 import type { ChooserRow } from "@/lib/projects/project-chooser";
 import { ShellIcon } from "./shell-icons";
+import { useFaviconBadge } from "./favicon-badge";
 import { openPalette, ThemeSwitch, useShell } from "./app-shell";
 import {
   activeDestinationId,
@@ -76,6 +77,7 @@ export function AppSidebar({
   chatDirectory?: ChatDirectory | null;
 }) {
   const messagesCount = useMessagesUnread(messagesUnread);
+  useFaviconBadge(inboxCount + (messagesEnabled ? messagesCount : 0));
   const pathname = usePathname() ?? "";
   const directory = useChatDirectory(messagesEnabled ? chatDirectory : null);
   const searchParams = useSearchParams();

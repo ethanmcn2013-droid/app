@@ -36,6 +36,9 @@ html:root {
   --v3-solid: #141414;
   --v3-on-solid: #ffffff;
   --v3-danger: #cd2b31;
+  /* Unread counts in both themes: one red, white figures at AA (5.0:1). */
+  --v3-notify: #cd2b31;
+  --v3-on-notify: #ffffff;
   --v3-warning: #e5a93b;
   --v3-warning-text: #7d5710;
   --v3-success: #2f9e6a;

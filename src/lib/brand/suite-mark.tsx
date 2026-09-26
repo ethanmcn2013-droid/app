@@ -1,68 +1,57 @@
 /**
- * Suite mark — a single indigo dot on ink.
+ * Suite mark: the broadcast ring around the dot (founder, 26 Sep 2026).
  *
- * THE DOT IS THE MARK. docs/brand.md is explicit that the wordmark's
- * trailing dot is load-bearing ("don't replace it with a swoosh, a
- * checkmark, or a square"), so the icon is that dot and nothing else.
- * The broadcast ring it used to carry (option 6, cycle 37) was a second
- * idea competing with the first at 16px, where a 1.5px stroke is a grey
- * smudge around the thing you actually wanted to see.
+ * THE MARK. An indigo ring with the dot at its centre, the same mark the
+ * app sidebar carries. It is drawn as vector geometry (an inline SVG that
+ * ImageResponse rasterises at each exact size), so every favicon frame is
+ * rendered natively rather than scaled from another size.
  *
- * THE INK. #17171a is --x-studio-chrome, the charcoal L-frame of the
- * Studio Bar — and the one surface colour that is IDENTICAL in both
- * themes (globals.css, T·94). It is also already the manifest's
- * theme_color, so an installed PWA's title bar and its icon are now the
- * same charcoal rather than white-on-charcoal. A literal, not a var():
- * ImageResponse rasterises outside the document, so there is no
- * cascade here to read tokens from.
+ * NO BACKGROUND IN THE TAB. The browser icon and the ICO frames are
+ * transparent: the mark sits on whatever the tab strip is. The Apple touch
+ * icon and the Android maskable icon keep the ink tile, because both
+ * platforms fill a transparent icon with a colour of their own.
  *
- * THE INDIGO. indigo-500, NOT the brand's indigo-600. A favicon dot is
- * a non-text graphic, so its floor is WCAG 1.4.11's 3:1 against the
- * field it sits on, and the ratios on this exact charcoal are the ones
- * globals.css already measured for the dark accent roles:
+ * SMALL SIZES. A tab icon is 16px to 32px. The reference ring is a hairline
+ * (4% of its diameter), which at 16px is a grey smudge rather than a ring,
+ * so tab sizes fill the canvas and carry a heavier ring. From 64px up the
+ * ring returns to the reference proportion.
  *
- *     indigo-600  #4f46e5   2.84:1   ← the brand indigo, fails
- *     indigo-500  #6366f1   4.00:1   ← chosen
- *     indigo-400  #818cf8   6.00:1   ← clears, but reads lilac
- *
- * indigo-500 is not a new value invented for the icon: it is what
- * --x-studio-accent already resolves to, i.e. the repo's existing
- * answer to "which indigo rides ON the charcoal chrome". indigo-400
- * clears by more but drifts off-brand at the one size that matters,
- * where a 6px dot is read as a colour and nothing else.
+ * THE INDIGO. #6860ff is the reference's saturated blue-violet, lifted just
+ * enough to hold WCAG 1.4.11's 3:1 as a non-text graphic on a dark tab strip
+ * (#202124, 3.5:1) as well as on the ink tile and on light tabs.
  */
 
-/** indigo-500 · --x-studio-accent — the indigo that rides on charcoal. */
-export const SIGNAL_INDIGO = "#6366f1";
-/** --x-studio-chrome — the Studio Bar charcoal, same in both themes. */
+/** The mark's indigo: saturated blue-violet, 3:1 or better on dark tabs. */
+export const SIGNAL_INDIGO = "#6860ff";
+/** --x-studio-chrome: the Studio Bar charcoal, same in both themes. */
 export const SIGNAL_INK = "#17171a";
 
 type SuiteMarkProps = {
   canvas: number;
+  /** Transparent by default; the app-install icons pass the ink tile. */
   background?: string;
   borderRadius?: number;
 };
 
 /**
- * The dot holds 40% of the canvas — up from the 36% it spent inside the
- * old ring. With the ring gone the mark loses its outer edge, so the dot
- * grows to keep the same presence in a tab strip; the remaining 30% of
- * ink on each side reads as deliberate framing rather than a shrunken
- * mark. 40% also sits far inside the 80% safe zone Android's adaptive
- * masks clip the 512px icon to, so no mask can touch it.
+ * Geometry for a canvas. On a transparent tab icon the ring fills the
+ * canvas; on a tile it sits well inside the 80% safe zone Android's masks
+ * clip to. The dot is 41% of the ring's outer diameter, as in the reference.
  */
-export function suiteMarkMetrics(canvas: number) {
-  const dot = Math.round(canvas * 0.4);
-  return { dot };
+export function suiteMarkMetrics(canvas: number, onTile = false) {
+  const small = canvas <= 48;
+  const outer = onTile ? canvas * 0.56 : canvas - (small ? 1 : canvas * 0.04);
+  const stroke = Math.max(outer * (small ? 0.085 : 0.045), 1.25);
+  const ring = (outer - stroke) / 2;
+  const dot = (outer * 0.41) / 2;
+  return { outer, stroke, ring, dot };
 }
 
-/** Suite icon mark, a single indigo dot centred on ink. */
-export function SuiteMark({
-  canvas,
-  background = SIGNAL_INK,
-  borderRadius = 0,
-}: SuiteMarkProps) {
-  const { dot } = suiteMarkMetrics(canvas);
+/** Suite icon mark: the indigo ring and dot, on a tile or on nothing. */
+export function SuiteMark({ canvas, background = "transparent", borderRadius = 0 }: SuiteMarkProps) {
+  const onTile = background !== "transparent";
+  const { stroke, ring, dot } = suiteMarkMetrics(canvas, onTile);
+  const c = canvas / 2;
 
   return (
     <div
@@ -76,15 +65,10 @@ export function SuiteMark({
         justifyContent: "center",
       }}
     >
-      <div
-        style={{
-          width: dot,
-          height: dot,
-          borderRadius: "50%",
-          background: SIGNAL_INDIGO,
-          flexShrink: 0,
-        }}
-      />
+      <svg width={canvas} height={canvas} viewBox={`0 0 ${canvas} ${canvas}`} xmlns="http://www.w3.org/2000/svg">
+        <circle cx={c} cy={c} r={ring} fill="none" stroke={SIGNAL_INDIGO} strokeWidth={stroke} />
+        <circle cx={c} cy={c} r={dot} fill={SIGNAL_INDIGO} />
+      </svg>
     </div>
   );
 }
