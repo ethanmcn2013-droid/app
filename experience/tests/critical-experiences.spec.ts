@@ -531,10 +531,9 @@ test("tasks.surface.task-detail-panel / populated task", async ({ page }, testIn
   await expect(page.getByRole("heading", { name: "Tasks", level: 1 })).toBeVisible();
   await enterDeterministicMotionMode(page);
   await page.keyboard.press("Enter");
-  // At 1280px and wider the sheet docks beside the board as a labelled
-  // region; below that it is a modal dialog. Both carry the task's name.
-  const wide = (page.viewportSize()?.width ?? 0) >= 1280;
-  const panel = page.getByRole(wide ? "complementary" : "dialog", {
+  // An opened task is a modal dialog at every width: the two-column task
+  // view from 1024px, the sheet below. Both carry the task's name.
+  const panel = page.getByRole("dialog", {
     name: "Confirm marquee sides with the hire company",
   });
   await expect(panel).toBeVisible();

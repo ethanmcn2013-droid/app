@@ -55,7 +55,8 @@ export type TaskSheetProps = {
   mode: SheetMode;
   onClose: () => void;
   onNavigate?: (direction: "prev" | "next") => void;
-  onExpand: () => void;
+  /** Absent when the layout is fixed (the wide two-column task view). */
+  onExpand?: () => void;
   /** "3 of 13" in the current view, when known. */
   position?: string | null;
   /** The page layout shown over the app (expanded from the sheet) keeps a close button. */
@@ -88,9 +89,9 @@ export function TaskSheet({ task, mode, onClose, onNavigate, onExpand, position,
       } else if ((event.key === "k" || event.key === "ArrowUp") && onNavigate) {
         event.preventDefault();
         onNavigate("prev");
-      } else if (event.key === "e" && (mode !== "page" || overlay)) {
+      } else if (event.key === "e" && onExpand && (mode !== "page" || overlay)) {
         event.preventDefault();
-        onExpand();
+        onExpand?.();
       } else if (event.key === "Escape" && mode === "page") {
         event.preventDefault();
         onClose();
@@ -103,7 +104,7 @@ export function TaskSheet({ task, mode, onClose, onNavigate, onExpand, position,
   const actions = buildTaskDetailActions(task, {
     dispatchers,
     isFocus: mode === "page",
-    onOpenFocus: onExpand,
+    onOpenFocus: onExpand ?? (() => {}),
     onClosePanel: onClose,
     columnConfig,
   });
@@ -144,7 +145,7 @@ export function TaskSheet({ task, mode, onClose, onNavigate, onExpand, position,
     </div>
   );
 
-  const body = (
+  const main = (
     <>
       <section className={styles.section} aria-label="Description">
         <DescriptionEditor key={task.id} task={task} />
@@ -155,6 +156,10 @@ export function TaskSheet({ task, mode, onClose, onNavigate, onExpand, position,
       <div className={styles.legacySection}>
         <ResourcesSection key={`resources-${task.id}`} task={task} />
       </div>
+    </>
+  );
+
+  const activity = (
       <section className={`${sx.section} ${styles.activity}`} aria-labelledby={`activity-${task.id}`}>
         <div className={sx.head}>
           <h2 className={sx.title} id={`activity-${task.id}`}>Activity</h2>
@@ -181,23 +186,27 @@ export function TaskSheet({ task, mode, onClose, onNavigate, onExpand, position,
           </p>
         )}
       </section>
-    </>
   );
 
+  // Two columns, ClickUp-style: the task (title, properties in a grid,
+  // description, subtasks, files) scrolls on the left, and Activity owns the
+  // full height on the right with its comment box pinned to the bottom.
   if (mode === "page") {
     return (
       <div className={styles.page} ref={rootRef} role={overlay ? undefined : "main"} aria-label={`Task: ${task.title}`}>
         {header}
-        <div className={styles.pageScroll}>
-          <div className={styles.pageGrid}>
-            <div className={styles.pageMain}>
+        <div className={styles.split}>
+          <div className={styles.splitMain}>
+            <div className={styles.splitInner}>
               {title}
-              {body}
+              <Properties task={task} grid />
+              <div className={styles.divider} />
+              {main}
             </div>
-            <aside className={styles.pageSide} aria-label="Properties">
-              <Properties task={task} />
-            </aside>
           </div>
+          <aside className={styles.activityColumn} aria-label="Activity">
+            {activity}
+          </aside>
         </div>
       </div>
     );
@@ -210,7 +219,8 @@ export function TaskSheet({ task, mode, onClose, onNavigate, onExpand, position,
         {title}
         <Properties task={task} />
         <div className={styles.divider} />
-        {body}
+        {main}
+        {activity}
       </div>
     </div>
   );
@@ -233,7 +243,7 @@ function SheetHeader({
   position?: string | null;
   onClose: () => void;
   onNavigate?: (direction: "prev" | "next") => void;
-  onExpand: () => void;
+  onExpand?: () => void;
   menu: ReactNode;
   overlay?: boolean;
 }) {
@@ -274,15 +284,17 @@ function SheetHeader({
             </button>
           </>
         ) : null}
-        <button
-          type="button"
-          className={styles.headButton}
-          aria-label={mode === "page" ? "Back to the board (E)" : "Open full page (E)"}
-          title={mode === "page" ? "Back to the board" : "Open full page (E)"}
-          onClick={onExpand}
-        >
-          {mode === "page" ? <TIcon.collapse size={16} /> : <TIcon.expand size={16} />}
-        </button>
+        {onExpand ? (
+          <button
+            type="button"
+            className={styles.headButton}
+            aria-label={mode === "page" ? "Back to the board (E)" : "Open full page (E)"}
+            title={mode === "page" ? "Back to the board" : "Open full page (E)"}
+            onClick={onExpand}
+          >
+            {mode === "page" ? <TIcon.collapse size={16} /> : <TIcon.expand size={16} />}
+          </button>
+        ) : null}
         {menu}
         {mode === "page" && !overlay ? null : (
           <button type="button" className={styles.headButton} aria-label="Close" title="Close (Esc)" onClick={onClose}>
@@ -341,16 +353,27 @@ function TitleEditor({ task }: { task: Task }) {
 
 type Picker = "status" | "assignee" | "due" | "priority" | "labels" | null;
 
+const ROW_ICONS: Record<string, (props: { size?: number }) => ReactNode> = {
+  Status: (props) => <TIcon.check {...props} />,
+  Assignees: (props) => <TIcon.person {...props} />,
+  "Due date": (props) => <TIcon.calendar {...props} />,
+  Priority: (props) => <TIcon.flag {...props} />,
+  Labels: (props) => <TIcon.tag {...props} />,
+  Contact: (props) => <TIcon.person {...props} />,
+  Amount: (props) => <TIcon.diamond {...props} />,
+};
+
 function Row({ label, children }: { label: string; children: ReactNode }) {
+  const Icon = ROW_ICONS[label];
   return (
     <div className={styles.row}>
-      <dt className={styles.rowLabel}>{label}</dt>
+      <dt className={styles.rowLabel}>{Icon ? <span className={styles.rowIcon} aria-hidden="true"><Icon size={14} /></span> : null}{label}</dt>
       <dd className={styles.rowValue}>{children}</dd>
     </div>
   );
 }
 
-function Properties({ task }: { task: Task }) {
+function Properties({ task, grid = false }: { task: Task; grid?: boolean }) {
   const dispatchers = useTasksDispatch();
   const columnConfig = useColumnConfig();
   const columns = useMemo(() => resolveBoardColumns(columnConfig), [columnConfig]);
@@ -398,7 +421,7 @@ function Properties({ task }: { task: Task }) {
 
   return (
     <>
-      <dl className={styles.props}>
+      <dl className={styles.props} data-grid={grid ? "" : undefined}>
         <Row label="Status">
           <button type="button" className={styles.value} onClick={open("status")} aria-haspopup="dialog" aria-expanded={picker === "status"}>
             <StatusGlyph column={column} size={14} />

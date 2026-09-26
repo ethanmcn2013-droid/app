@@ -633,3 +633,102 @@
     transition: none;
   }
 }
+
+/* ── Two-column task view (ClickUp-style) ─────────────────────────── */
+
+/* A large window over the app, inset from the edges so the app still
+   frames it, instead of the right-hand sheet. */
+.modalFrame[data-full] {
+  top: 24px;
+  right: 24px;
+  bottom: 24px;
+  left: 24px;
+  border: 1px solid var(--v3-border);
+  border-radius: 14px;
+}
+@media (min-width: 1440px) {
+  .modalFrame[data-full] { left: max(24px, calc((100vw - 1560px) / 2)); right: max(24px, calc((100vw - 1560px) / 2)); }
+}
+
+.split {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 34%);
+}
+
+.splitMain {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.splitInner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 28px 36px 48px;
+}
+
+.splitInner .titleBlock { padding: 8px 0 18px; }
+.splitInner .title { font-size: 28px; line-height: 36px; font-weight: 700; letter-spacing: -0.02em; }
+.splitInner .props { padding: 0; }
+.splitInner .adders { padding: 10px 0 0; }
+.splitInner .divider { margin: 22px 0 8px; }
+.splitInner .section { padding-left: 0; padding-right: 0; }
+.splitInner .legacySection > * { padding-left: 0; padding-right: 0; }
+
+/* Properties side by side, two to a row, each with a quiet icon. */
+.props[data-grid] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 36px;
+}
+.props[data-grid] .row { grid-template-columns: 132px minmax(0, 1fr); min-height: 40px; }
+.rowLabel { display: inline-flex; align-items: center; gap: 8px; }
+.rowIcon { display: inline-grid; place-items: center; color: var(--v3-text-3); }
+
+/* Activity owns the right column's full height; its comment box stays at
+   the bottom while the history scrolls above it. */
+.activityColumn {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--v3-border);
+  background: var(--v3-surface);
+  overflow-y: auto;
+}
+.activityColumn .activity {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: 0 20px 16px;
+}
+.activityColumn .activity > :first-child {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: 0 -20px 12px;
+  padding: 16px 20px 12px;
+  background: var(--v3-surface);
+  border-bottom: 1px solid var(--v3-border);
+}
+.activityColumn [data-task-discussion] {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0;
+}
+.activityColumn [data-task-discussion] > :last-child {
+  position: sticky;
+  bottom: 0;
+  margin-top: auto;
+  padding-top: 12px;
+  background: var(--v3-surface);
+}
+
+@media (max-width: 1180px) {
+  .props[data-grid] { grid-template-columns: minmax(0, 1fr); }
+  .split { grid-template-columns: minmax(0, 1fr) 340px; }
+}
