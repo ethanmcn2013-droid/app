@@ -2,15 +2,16 @@
 
 /**
  * v3 sidebar: the one persistent navigation for the whole suite.
- * Sections: primary (Home, Inbox, My tasks), Studio, Projects, footer.
+ * Sections: primary (Home, Inbox, My tasks), Studio, Projects, Chat
+ * (Channels and Direct messages), footer.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useActiveProject } from "@/components/app/active-project-provider";
 import { useSuiteContext } from "@/components/app/use-suite-context";
-import { useMessagesUnread } from "@/components/app/messages/messages-unread";
+import { useChatDirectory, useMessagesUnread, type ChatDirectory, type ChatDirectoryEntry } from "@/components/app/messages/messages-unread";
 import { withSuiteContext } from "@/lib/suite-context";
 import { loadProjectCatalogAction } from "@/server/actions/project-catalog";
 import type { ChooserRow } from "@/lib/projects/project-chooser";
@@ -36,6 +37,11 @@ export function projectColor(id: string): string {
 
 const PROJECT_LIMIT = 8;
 
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] ?? "") + (parts.length > 1 ? parts.at(-1)![0] : "")).toUpperCase();
+}
+
 function useProjectRows(enabled: boolean) {
   const [rows, setRows] = useState<readonly ChooserRow[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -60,14 +66,20 @@ export function AppSidebar({
   messagesEnabled,
   inboxCount = 0,
   messagesUnread = 0,
+  chatDirectory = null,
 }: {
   messagesEnabled: boolean;
   inboxCount?: number;
-  /** Direct messages, mentions and requests waiting; Messages keeps it live. */
+  /** Direct messages, mentions and requests waiting; Chat keeps it live. */
   messagesUnread?: number;
+  /** Channels and Direct messages; Chat keeps it live as you read. */
+  chatDirectory?: ChatDirectory | null;
 }) {
   const messagesCount = useMessagesUnread(messagesUnread);
   const pathname = usePathname() ?? "";
+  const directory = useChatDirectory(messagesEnabled ? chatDirectory : null);
+  const searchParams = useSearchParams();
+  const here = `${pathname}${searchParams?.toString() ? `?${searchParams.toString()}` : ""}`;
   const activeId = activeDestinationId(pathname);
   const suiteContext = useSuiteContext();
   const activeProject = useActiveProject();
@@ -105,6 +117,35 @@ export function AppSidebar({
         <Icon />
         <span className={styles.itemLabel}>{destination.label}</span>
         {extra}
+      </Link>
+    );
+  };
+
+  const chatLink = (entry: ChatDirectoryEntry) => {
+    const current = here === entry.href;
+    const count = entry.count > 0 ? (
+      <span className={styles.badge}>
+        {entry.count > 99 ? "99+" : entry.count}
+        <span className="sr-only"> {entry.kind === "dm" ? (entry.count === 1 ? "new message" : "new messages") : entry.count === 1 ? "mention" : "mentions"}</span>
+      </span>
+    ) : entry.request ? <span className={styles.chatTag}>Request</span> : null;
+    return (
+      <Link
+        key={entry.id}
+        href={entry.href}
+        className={styles.item}
+        aria-current={current ? "page" : undefined}
+        data-unread={entry.unread && !current ? "" : undefined}
+        title={collapsed ? entry.title : undefined}
+        onClick={() => setMobileOpen(false)}
+      >
+        {entry.kind === "dm" ? (
+          <span className={styles.chatAvatar} style={{ background: projectColor(entry.personId ?? entry.id) }} aria-hidden="true">
+            {initialsOf(entry.title)}
+          </span>
+        ) : entry.kind === "task" ? <ShellIcon.tasks /> : <ShellIcon.hash />}
+        <span className={styles.itemLabel}>{entry.title}</span>
+        {count}
       </Link>
     );
   };
@@ -208,6 +249,37 @@ export function AppSidebar({
               <span className={styles.itemLabel}>Archive</span>
             </Link>
           </nav>
+        ) : null}
+
+        {directory ? (
+          <>
+            <nav className={styles.section} aria-label="Channels">
+              <div className={styles.label}><span>Channels</span></div>
+              {directory.channels.length === 0 ? <div className={styles.projectsEmpty}>No channels yet.</div> : null}
+              {directory.channels.map((entry) => chatLink(entry))}
+            </nav>
+            <nav className={styles.section} aria-label="Direct messages">
+              <div className={styles.label}>
+                <span>Direct messages</span>
+                {directory.newMessageHref ? (
+                  <Link href={directory.newMessageHref} aria-label="New message" title="New message">
+                    <ShellIcon.plus size={13} />
+                  </Link>
+                ) : null}
+              </div>
+              {directory.direct.map((entry) => chatLink(entry))}
+              {directory.newMessageHref ? (
+                <Link
+                  href={directory.newMessageHref}
+                  className={`${styles.item} ${styles.chatAdd}`}
+                  aria-current={here === directory.newMessageHref ? "page" : undefined}
+                >
+                  <ShellIcon.plus />
+                  <span className={styles.itemLabel}>New message</span>
+                </Link>
+              ) : null}
+            </nav>
+          </>
         ) : null}
       </div>
 

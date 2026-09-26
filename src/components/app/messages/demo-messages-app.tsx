@@ -8,8 +8,10 @@
  */
 
 import { useEffect, useLayoutEffect, useReducer, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AvatarStack } from "@/components/app/presence/avatar-stack";
-import { publishMessagesUnread } from "./messages-unread";
+import { publishChatDirectory, publishMessagesUnread } from "./messages-unread";
+import { chatHref, demoChatDirectory } from "./chat-directory";
 import { listTimeLabel, matchesQuery, previewText, type ChatMessage, type ChatPerson } from "./chat-view-model";
 import { conversationAttention, demoReducer, initDemoState, rootMessages, threadReplies, unreadTotal, type DemoConversation, type DemoMessagesSnapshot, type DemoState } from "./demo-messages-model";
 import { useBottomAnchor, JumpToLatest, Avatar, CenterState, ChatHeader, ChatIcon, ChatList, Composer, ConversationIntro, DetailsBlock, Dot, MessageStream, PeopleList, Pill, ProjectTile, SidePanel, StatusGlyph, TaskTile, chatStyles as styles, type ChatListItem, type ChatListSection, type MessageActions } from "./chat-ui";
@@ -52,12 +54,38 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
   const sideTrigger = useRef<HTMLElement | null>(null);
   const startedAt = useRef<number | null>(null);
   const sequence = useRef(0);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlId = searchParams?.get("c") ?? null;
+  const composing = searchParams?.get("new") === "1";
+  const [peopleQuery, setPeopleQuery] = useState("");
+
+  // The sidebar's Channels and Direct messages drive the open conversation
+  // through the URL (?c=). Follow it during render, so the list and the pane
+  // never disagree for a frame.
+  const [followedUrl, setFollowedUrl] = useState<string | null>(null);
+  if (urlId !== followedUrl) {
+    setFollowedUrl(urlId);
+    if (urlId && urlId !== selectedId && state.conversations.some((item) => item.id === urlId)) {
+      setSelectedId(urlId);
+      setEditingId(null);
+      setSide((current) => current?.kind === "details" ? current : null);
+      setPane("conversation");
+      dispatch({ type: "open", conversationId: urlId });
+    }
+  }
 
   // Keep this tab's preview and feed the sidebar's Messages badge.
   useEffect(() => {
     kept = { snapshotKey: snapshotKeyOf(snapshot), state };
     publishMessagesUnread(unreadTotal(state.conversations));
+    publishChatDirectory(demoChatDirectory(state.conversations));
   }, [snapshot, state]);
+
+  // A bare /app/messages names what it shows, so the sidebar can mark it.
+  useEffect(() => {
+    if (!urlId && !composing && selectedId) router.replace(chatHref(selectedId), { scroll: false });
+  }, [urlId, composing, selectedId, router]);
 
   const people = snapshot.people;
   const selfId = snapshot.actorId;
@@ -85,6 +113,7 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
   }
 
   function select(id: string) {
+    if (id !== urlId) router.replace(chatHref(id), { scroll: false });
     setSelectedId(id);
     setEditingId(null);
     setSide((current) => current?.kind === "details" ? current : null);
@@ -192,7 +221,7 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
     sections={sections}
     selectedId={conversation?.id}
     subtitle={snapshot.project.name}
-    title="Messages"
+    title="Chat"
   />;
 
   if (!conversation) {
@@ -238,7 +267,7 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
     onMentionIdsChange={(ids) => setMentionDrafts((current) => ({ ...current, [key]: ids }))}
     onSend={() => send(conversation.id, null)}
     people={members}
-    placeholder={conversation.kind === "task" ? "Comment on this task" : `Message ${conversation.kind === "dm" ? conversation.title.split(/\s+/)[0] : conversation.title}`}
+    placeholder={conversation.kind === "task" ? "Comment on this task" : conversation.kind === "dm" ? `Message ${conversation.title.split(/\s+/)[0]}` : `Message #${conversation.title}`}
     selfId={selfId}
     value={drafts[key] ?? ""}
   />;
@@ -267,6 +296,32 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
       selfId={selfId}
     />}
     {composer}
+  </section>;
+
+  const pq = peopleQuery.trim();
+  const directPeople = people.filter((person) => person.id !== selfId && (!pq || matchesQuery(person.name, pq) || (person.role ? matchesQuery(person.role, pq) : false)));
+  const newMessagePane = <section aria-labelledby="chat-new-title" className={styles.pane}>
+    <div className={styles.newMessage}>
+      <h2 className={styles.newMessageTitle} id="chat-new-title">New direct message</h2>
+      <label className={styles.newMessageSearch}>
+        <ChatIcon.search />
+        <span className={styles.srOnly}>Search people</span>
+        <input autoFocus onChange={(event) => setPeopleQuery(event.target.value)} placeholder="Search people by name or role" type="search" value={peopleQuery} />
+      </label>
+    </div>
+    <ul aria-label="People" className={styles.newMessageList}>
+      {directPeople.map((person) => {
+        const direct = state.conversations.find((item) => item.kind === "dm" && item.otherId === person.id);
+        return <li key={person.id}>
+          <button className={styles.newMessagePerson} disabled={!direct} onClick={() => { if (direct) { setPeopleQuery(""); router.push(chatHref(direct.id), { scroll: false }); } }} type="button">
+            <Avatar id={person.id} name={person.name} size={32} />
+            <span className={styles.newMessageName}>{person.name}{person.role ? <small>{person.role}</small> : null}</span>
+            <span className={styles.newMessageGo}>Message <ChatIcon.chevron size={14} /></span>
+          </button>
+        </li>;
+      })}
+      {directPeople.length === 0 ? <li className={styles.newMessageEmpty}>No one in {snapshot.project.name} matches.</li> : null}
+    </ul>
   </section>;
 
   let sidePanel: ReactNode = null;
@@ -321,10 +376,10 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
   }
 
   return <main className={styles.page} id="app-main-content" tabIndex={-1}>
-    <div className={styles.chat} data-pane={pane} data-preview="" data-side={sidePanel ? "" : undefined} onKeyDown={onChatKey} ref={chatRef}>
+    <div className={styles.chat} data-directory="sidebar" data-pane={composing ? "conversation" : pane} data-preview="" data-side={sidePanel && !composing ? "" : undefined} onKeyDown={onChatKey} ref={chatRef}>
       {list}
-      {conversationPane}
-      {sidePanel}
+      {composing ? newMessagePane : conversationPane}
+      {composing ? null : sidePanel}
     </div>
     <p aria-live="polite" className={styles.srOnly} role="status">{announcement}</p>
   </main>;

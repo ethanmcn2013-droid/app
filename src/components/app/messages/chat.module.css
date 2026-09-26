@@ -1538,3 +1538,104 @@
   .spinner { animation-duration: 2.4s; }
   .toolbar, .threadGo, .emoji { transition: none; }
 }
+
+/* ── Chat directory in the app sidebar ─────────────────────────────── */
+
+/* Channels and Direct messages live in the app sidebar, so on a wide screen
+   the conversation takes the whole page. Phones keep the in-page list: the
+   sidebar is a drawer there, and the list is the quickest way in. */
+.chat[data-directory] { grid-template-columns: minmax(0, 1fr); }
+.chat[data-directory][data-side] { grid-template-columns: minmax(0, 1fr) var(--side-w); }
+.chat[data-directory] > .list { display: none; }
+
+@container chat (max-width: 1099px) {
+  .chat[data-directory][data-side] { grid-template-columns: minmax(0, 1fr); }
+}
+
+@container chat (max-width: 679px) {
+  .chat[data-directory][data-pane="list"] > .list { display: flex; }
+  .chat[data-directory][data-pane="list"] > .pane { display: none; }
+}
+
+/* The composer: one generous card with its tools along the bottom. */
+.chat[data-directory] .composerWrap { padding: 6px var(--gutter) 20px; }
+.chat[data-directory] .composer { border-radius: 14px; }
+.chat[data-directory] .composerInput { min-height: 56px; padding: 14px 16px 4px; }
+.chat[data-directory] .composerBar { padding: 4px 10px 10px 10px; }
+
+/* ── New direct message ────────────────────────────────────────────── */
+
+.newMessage {
+  flex: none;
+  display: grid;
+  gap: 12px;
+  padding: 18px var(--gutter) 14px;
+  border-bottom: 1px solid var(--v3-border);
+}
+.newMessageTitle { margin: 0; font-size: 15px; font-weight: 650; color: var(--v3-text); }
+.newMessageSearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--v3-control-border);
+  border-radius: var(--v3-radius);
+  background: var(--v3-surface);
+  color: var(--v3-text-3);
+}
+.newMessageSearch:focus-within {
+  border-color: color-mix(in srgb, var(--v3-accent) 60%, var(--v3-border-strong));
+  box-shadow: 0 0 0 3px var(--v3-accent-soft);
+}
+.newMessageSearch input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 14px;
+}
+.newMessageSearch input::placeholder { color: var(--v3-text-3); }
+.newMessageList {
+  list-style: none;
+  margin: 0;
+  padding: 8px calc(var(--gutter) - 8px);
+  overflow-y: auto;
+  display: grid;
+  gap: 2px;
+  align-content: start;
+}
+.newMessagePerson {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border: 0;
+  border-radius: var(--v3-radius);
+  background: transparent;
+  color: var(--v3-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.newMessagePerson:hover,
+.newMessagePerson:focus-visible { background: var(--v3-hover); outline: none; }
+.newMessagePerson:focus-visible { box-shadow: 0 0 0 2px var(--v3-accent); }
+.newMessageName { flex: 1; min-width: 0; display: grid; font-size: 14px; font-weight: 600; }
+.newMessageName small { font-size: 12.5px; font-weight: 400; color: var(--v3-text-2); }
+.newMessageGo {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12.5px;
+  color: var(--v3-text-2);
+  opacity: 0;
+  transition: opacity 120ms var(--v3-ease);
+}
+.newMessagePerson:hover .newMessageGo,
+.newMessagePerson:focus-visible .newMessageGo { opacity: 1; }
+.newMessageEmpty { padding: 16px 8px; font-size: 13.5px; color: var(--v3-text-2); }

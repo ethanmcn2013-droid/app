@@ -28,3 +28,51 @@ export function useMessagesUnread(serverCount: number): number {
   const value = useSyncExternalStore(subscribe, () => live, () => null);
   return value ?? serverCount;
 }
+
+/**
+ * The sidebar's Chat directory: Channels and Direct messages, like the
+ * conversation list it replaces. The server renders it with the shell; an
+ * open Chat view publishes the live one so unread weight follows as you read.
+ */
+export type ChatDirectoryEntry = Readonly<{
+  id: string;
+  kind: "channel" | "task" | "dm";
+  title: string;
+  href: string;
+  /** Direct messages: the other person, for their avatar colour. */
+  personId?: string;
+  /** Mentions in a channel, messages in a direct message. */
+  count: number;
+  /** Anything new at all: the row reads in full weight. */
+  unread: boolean;
+  request?: boolean;
+}>;
+
+export type ChatDirectory = Readonly<{
+  channels: readonly ChatDirectoryEntry[];
+  direct: readonly ChatDirectoryEntry[];
+  /** Where "New message" goes; null when direct messages are off. */
+  newMessageHref: string | null;
+}>;
+
+let liveDirectory: ChatDirectory | null = null;
+let liveDirectoryKey = "";
+const directoryListeners = new Set<() => void>();
+
+export function publishChatDirectory(directory: ChatDirectory): void {
+  const key = JSON.stringify(directory);
+  if (key === liveDirectoryKey) return;
+  liveDirectoryKey = key;
+  liveDirectory = directory;
+  for (const listener of directoryListeners) listener();
+}
+
+function subscribeDirectory(listener: () => void) {
+  directoryListeners.add(listener);
+  return () => { directoryListeners.delete(listener); };
+}
+
+export function useChatDirectory(serverDirectory: ChatDirectory | null): ChatDirectory | null {
+  const value = useSyncExternalStore(subscribeDirectory, () => liveDirectory, () => null);
+  return value ?? serverDirectory;
+}

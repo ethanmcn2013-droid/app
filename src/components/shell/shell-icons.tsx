@@ -73,6 +73,9 @@ export const ShellIcon = {
   help: (p: IconProps) => (
     <Svg {...p}><circle cx="8" cy="8" r="5.75" /><path d="M6.4 6.3a1.7 1.7 0 0 1 3.25.7c0 1.15-1.65 1.4-1.65 2.4" /><path d="M8 11.3v.2" /></Svg>
   ),
+  hash: (p: IconProps) => (
+    <Svg {...p}><path d="M6.25 2.75 5 13.25M11 2.75 9.75 13.25M3 5.75h10.5M2.5 10.25H13" /></Svg>
+  ),
   plus: (p: IconProps) => (
     <Svg {...p}><path d="M8 3v10M3 8h10" /></Svg>
   ),

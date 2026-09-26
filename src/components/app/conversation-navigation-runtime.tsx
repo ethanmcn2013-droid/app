@@ -5,8 +5,10 @@ import { AppSidebar } from "@/components/shell/app-sidebar";
 import { isDemoMode } from "@/lib/access-mode";
 import { conversationAvailability, resolveConversationControls } from "@/lib/conversations/flags";
 import { unreadTotal } from "@/components/app/messages/demo-messages-model";
+import { demoChatDirectory } from "@/components/app/messages/chat-directory";
+import type { ChatDirectory } from "@/components/app/messages/messages-unread";
 import { loadInboxAttention } from "@/server/conversations/attention-loader";
-import { authenticateConversationActor, getMessageAttentionService } from "@/server/conversations/runtime";
+import { authenticateConversationActor, getConversationService, getMessageAttentionService } from "@/server/conversations/runtime";
 import { demoMessagesSnapshot } from "@/server/demo/messages-demo";
 
 const canShowMessages = cache(async () => {
@@ -42,8 +44,30 @@ export async function ConversationMobileNav() {
   return <MobileSuiteNav messagesEnabled={await canShowMessages()} />;
 }
 
-/** v3 shell sidebar: Messages appears only for viewers who can read it. */
+/**
+ * The sidebar's Chat directory. Demo/review lists the seeded conversations.
+ * Otherwise, once canShowMessages() passes, the reader's Project channels
+ * from the same authorized catalog Chat itself reads; it fails quiet to none.
+ */
+const chatDirectory = cache(async (): Promise<ChatDirectory | null> => {
+  if (isDemoMode()) return demoChatDirectory(demoMessagesSnapshot().conversations);
+  if (!(await canShowMessages())) return null;
+  try {
+    const actorId = await authenticateConversationActor();
+    if (!actorId) return null;
+    const catalog = await (await getConversationService()).listProjects({ actorId });
+    if (!catalog.ok) return null;
+    const controls = resolveConversationControls(process.env);
+    return {
+      channels: catalog.value.map((project) => ({ id: project.id, kind: "channel", title: project.name, href: `/app/messages?projectId=${encodeURIComponent(project.id)}`, count: 0, unread: false })),
+      direct: [],
+      newMessageHref: controls.directMessagesEnabled ? "/app/messages" : null,
+    };
+  } catch { return null; }
+});
+
+/** v3 shell sidebar: Chat appears only for viewers who can read it. */
 export async function ConversationShellSidebar() {
-  const [messagesEnabled, unread] = await Promise.all([canShowMessages(), messagesUnread()]);
-  return <AppSidebar messagesEnabled={messagesEnabled} messagesUnread={messagesEnabled ? unread : 0} />;
+  const [messagesEnabled, unread, directory] = await Promise.all([canShowMessages(), messagesUnread(), chatDirectory()]);
+  return <AppSidebar messagesEnabled={messagesEnabled} messagesUnread={messagesEnabled ? unread : 0} chatDirectory={messagesEnabled ? directory : null} />;
 }

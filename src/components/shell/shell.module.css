@@ -475,3 +475,32 @@
 @media (prefers-reduced-motion: reduce) {
   .sidebar, .scrim, .menu { transition: none; animation: none; }
 }
+
+/* Chat: Channels and Direct messages. Unread rows read in full weight, the
+   way a channel list does; the badge counts what is waiting for you. */
+.item[data-unread] { color: var(--v3-text); font-weight: 650; }
+.item[data-unread] svg { color: var(--v3-text-2); }
+.chatAvatar {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0;
+}
+.chatTag {
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--v3-accent-soft);
+  color: var(--v3-accent-text);
+}
+.chatAdd { color: var(--v3-text-3); }

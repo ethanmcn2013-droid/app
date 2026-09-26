@@ -10,7 +10,7 @@ import { parseProjectId } from "@/lib/projects/project-ref";
 import { authenticateConversationActor, getConversationService } from "@/server/conversations/runtime";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Messages · Signal Studio" };
+export const metadata = { title: "Chat · Signal Studio" };
 
 export default async function MessagesPage({ searchParams }: { searchParams: Promise<{ projectId?: string | string[]; rootId?: string | string[]; messageId?: string | string[]; messageSeq?: string | string[] }> }) {
   // Demo/review: seeded conversations in the browser's memory. This returns
@@ -30,7 +30,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
       ((params.rootId || params.messageId) && !initialProjectId)) notFound();
   const service = await getConversationService();
   const catalog = await service.listProjects({ actorId });
-  if (!catalog.ok) return <main id="app-main-content" className={chatStyles.page}><h1 className={chatStyles.srOnly}>Messages</h1><CenterState role="alert" text="Signal Studio cannot reach conversations right now. Try again shortly." title="Messages are unavailable" /></main>;
+  if (!catalog.ok) return <main id="app-main-content" className={chatStyles.page}><h1 className={chatStyles.srOnly}>Chat</h1><CenterState role="alert" text="Signal Studio cannot reach conversations right now. Try again shortly." title="Chat is unavailable" /></main>;
   const projects = [...catalog.value];
   if (initialProjectId && !projects.some((project) => project.id === initialProjectId)) {
     const scope = await service.getProjectConversation({ actorId, projectId: initialProjectId });
