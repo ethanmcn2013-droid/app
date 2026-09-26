@@ -17,6 +17,7 @@ import { loadProjectCatalogAction } from "@/server/actions/project-catalog";
 import type { ChooserRow } from "@/lib/projects/project-chooser";
 import { ShellIcon } from "./shell-icons";
 import { useFaviconBadge } from "./favicon-badge";
+import { SIGNAL_INDIGO, suiteMarkMetrics } from "@/lib/brand/suite-mark";
 import { openPalette, ThemeSwitch, useShell } from "./app-shell";
 import {
   activeDestinationId,
@@ -37,6 +38,7 @@ export function projectColor(id: string): string {
 }
 
 const PROJECT_LIMIT = 8;
+const BRAND_MARK = suiteMarkMetrics(24);
 
 function initialsOf(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -157,10 +159,11 @@ export function AppSidebar({
       <div className={styles.brandRow}>
         <Link href="/app/home" className={styles.brand} aria-label="Signal Studio home">
           <span className={styles.brandMark} aria-hidden="true">
-            {/* The Signal Studio mark: the broadcast ring around the dot. */}
+            {/* The Signal Studio mark, the same backgroundless ring and dot as
+                the tab icon, from the same geometry. */}
             <svg width="24" height="24" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" strokeWidth="1.6" />
-              <circle cx="12" cy="12" r="2.9" fill="currentColor" />
+              <circle cx="12" cy="12" r={BRAND_MARK.ring} fill="none" stroke={SIGNAL_INDIGO} strokeWidth={BRAND_MARK.stroke} />
+              <circle cx="12" cy="12" r={BRAND_MARK.dot} fill={SIGNAL_INDIGO} />
             </svg>
           </span>
           <span className={styles.brandName}>Signal Studio</span>
