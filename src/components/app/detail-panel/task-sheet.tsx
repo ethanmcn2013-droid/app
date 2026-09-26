@@ -101,6 +101,8 @@ export function TaskSheet({ task, mode, onClose, onNavigate, onExpand, position,
     return () => document.removeEventListener("keydown", onKey, true);
   }, [mode, onClose, onExpand, onNavigate, overlay]);
 
+  const [activityOpen, setActivityOpen] = useState(true);
+
   const actions = buildTaskDetailActions(task, {
     dispatchers,
     isFocus: mode === "page",
@@ -113,6 +115,8 @@ export function TaskSheet({ task, mode, onClose, onNavigate, onExpand, position,
     <SheetHeader
       task={task}
       mode={mode}
+      activityOpen={mode === "page" ? activityOpen : undefined}
+      onToggleActivity={mode === "page" ? () => setActivityOpen((open) => !open) : undefined}
       position={position}
       overlay={overlay}
       onClose={onClose}
@@ -180,10 +184,17 @@ export function TaskSheet({ task, mode, onClose, onNavigate, onExpand, position,
         ) : conversation.surface?.mode === "existing_history" ? (
           <ExistingTaskHistory history={conversation.surface.history} />
         ) : (
-          <p className={sx.quiet} role="status">
-            Comments aren&rsquo;t available right now.
-            <button type="button" className={sx.noteAction} onClick={conversation.retry}>Try again</button>
-          </p>
+          <>
+            <p className={sx.quiet} role="status">
+              Comments aren&rsquo;t available right now.
+              <button type="button" className={sx.noteAction} onClick={conversation.retry}>Try again</button>
+            </p>
+            {mode === "page" ? (
+              <div className={styles.commentBox} data-comment-composer="" data-unavailable="">
+                <textarea disabled rows={2} placeholder="Write a comment…" aria-label="Write a comment (comments are unavailable right now)" />
+              </div>
+            ) : null}
+          </>
         )}
       </section>
   );
@@ -195,18 +206,23 @@ export function TaskSheet({ task, mode, onClose, onNavigate, onExpand, position,
     return (
       <div className={styles.page} ref={rootRef} role={overlay ? undefined : "main"} aria-label={`Task: ${task.title}`}>
         {header}
-        <div className={styles.split}>
+        <div className={styles.split} data-activity={activityOpen ? "" : undefined}>
           <div className={styles.splitMain}>
             <div className={styles.splitInner}>
+              <div className={styles.kindRow}>
+                <span className={styles.kindChip}><span className={styles.kindDot} aria-hidden="true" />Task</span>
+              </div>
               {title}
               <Properties task={task} grid />
               <div className={styles.divider} />
               {main}
             </div>
           </div>
-          <aside className={styles.activityColumn} aria-label="Activity">
-            {activity}
-          </aside>
+          {activityOpen ? (
+            <aside className={styles.activityColumn} aria-label="Activity">
+              {activity}
+            </aside>
+          ) : null}
         </div>
       </div>
     );
@@ -237,7 +253,11 @@ function SheetHeader({
   onNavigate,
   onExpand,
   menu,
+  activityOpen,
+  onToggleActivity,
 }: {
+  activityOpen?: boolean;
+  onToggleActivity?: () => void;
   task: Task;
   mode: SheetMode;
   position?: string | null;
@@ -255,6 +275,16 @@ function SheetHeader({
   const number = typeof task.seq === "number" ? `T-${task.seq}` : null;
   return (
     <header className={styles.head}>
+      {mode === "page" && onNavigate ? (
+        <div className={styles.headNav}>
+          <button type="button" className={styles.headButton} aria-label="Previous task (K)" title="Previous task (K)" onClick={() => onNavigate("prev")}>
+            <TIcon.chevronUp size={16} />
+          </button>
+          <button type="button" className={styles.headButton} aria-label="Next task (J)" title="Next task (J)" onClick={() => onNavigate("next")}>
+            <TIcon.chevronDown size={16} />
+          </button>
+        </div>
+      ) : null}
       <nav className={styles.crumbs} aria-label="Where this task lives">
         <span className={styles.crumbProject} title={project}>{project}</span>
         <TIcon.chevronRight size={12} />
@@ -268,12 +298,19 @@ function SheetHeader({
             <span className={styles.crumbNumber}>{number}</span>
           </>
         ) : null}
-        <span className={styles.stamp}>
-          <EditedStamp updatedAt={task.updatedAt} />
-        </span>
+        {mode === "page" ? null : (
+          <span className={styles.stamp}>
+            <EditedStamp updatedAt={task.updatedAt} />
+          </span>
+        )}
       </nav>
       <div className={styles.headActions}>
-        {onNavigate ? (
+        {mode === "page" ? (
+          <span className={styles.stamp}>
+            <EditedStamp updatedAt={task.updatedAt} />
+          </span>
+        ) : null}
+        {onNavigate && mode !== "page" ? (
           <>
             {position ? <span className={styles.position}>{position}</span> : null}
             <button type="button" className={styles.headButton} aria-label="Previous task (K)" title="Previous task (K)" onClick={() => onNavigate("prev")}>
@@ -296,6 +333,18 @@ function SheetHeader({
           </button>
         ) : null}
         {menu}
+        {onToggleActivity ? (
+          <button
+            type="button"
+            className={styles.headButton}
+            aria-label={activityOpen ? "Hide activity" : "Show activity"}
+            aria-pressed={Boolean(activityOpen)}
+            title={activityOpen ? "Hide activity" : "Show activity"}
+            onClick={onToggleActivity}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><rect x="2" y="2.75" width="12" height="10.5" rx="2" /><path d="M9.75 2.75v10.5" /></svg>
+          </button>
+        ) : null}
         {mode === "page" && !overlay ? null : (
           <button type="button" className={styles.headButton} aria-label="Close" title="Close (Esc)" onClick={onClose}>
             <TIcon.close size={16} />
@@ -399,6 +448,9 @@ function Properties({ task, grid = false }: { task: Task; grid?: boolean }) {
 
   const key = effectiveColumnKey(task);
   const column = columns.find((c) => c.key === key);
+  const columnIndex = columns.findIndex((c) => c.key === key);
+  const nextColumn = columnIndex >= 0 && columnIndex < columns.length - 1 ? columns[columnIndex + 1] : null;
+  const isDone = isTaskDone(task, columnConfig);
   const assigned = task.assignees ?? [];
   const faces = assigned.map((id) => {
     const member = members.find((m) => m.id === id);
@@ -423,10 +475,27 @@ function Properties({ task, grid = false }: { task: Task; grid?: boolean }) {
     <>
       <dl className={styles.props} data-grid={grid ? "" : undefined}>
         <Row label="Status">
-          <button type="button" className={styles.value} onClick={open("status")} aria-haspopup="dialog" aria-expanded={picker === "status"}>
-            <StatusGlyph column={column} size={14} />
-            {column?.name ?? "To do"}
-          </button>
+          {grid ? (
+            <span className={styles.statusControl}>
+              <button type="button" className={styles.statusPill} onClick={open("status")} aria-haspopup="dialog" aria-expanded={picker === "status"} aria-label={`Status: ${column?.name ?? "To do"}. Change status`}>
+                <StatusGlyph column={column} size={12} />
+                {column?.name ?? "To do"}
+              </button>
+              {nextColumn ? (
+                <button type="button" className={styles.statusStep} onClick={() => dispatchers.moveTaskToColumn(task.id, nextColumn.key)} aria-label={`Move to ${nextColumn.name}`} title={`Move to ${nextColumn.name}`}>
+                  <TIcon.chevronRight size={12} />
+                </button>
+              ) : null}
+              <button type="button" className={styles.statusDone} data-done={isDone ? "" : undefined} onClick={() => dispatchers.toggleComplete(task.id)} aria-label={isDone ? "Reopen" : "Mark done"} title={isDone ? "Reopen" : "Mark done"}>
+                <TIcon.check size={14} />
+              </button>
+            </span>
+          ) : (
+            <button type="button" className={styles.value} onClick={open("status")} aria-haspopup="dialog" aria-expanded={picker === "status"}>
+              <StatusGlyph column={column} size={14} />
+              {column?.name ?? "To do"}
+            </button>
+          )}
         </Row>
         <Row label="Assignees">
           <button type="button" className={styles.value} onClick={open("assignee")} aria-haspopup="dialog" aria-expanded={picker === "assignee"}>
@@ -436,7 +505,7 @@ function Properties({ task, grid = false }: { task: Task; grid?: boolean }) {
                 <span>{faces.length === 1 ? faces[0].name : `${faces.length} people`}</span>
               </>
             ) : (
-              <span className={styles.empty}>No one yet</span>
+              <span className={styles.empty}>{grid ? "Empty" : "No one yet"}</span>
             )}
           </button>
         </Row>
@@ -444,7 +513,7 @@ function Properties({ task, grid = false }: { task: Task; grid?: boolean }) {
           <span className={styles.valueGroup}>
             <button type="button" className={styles.value} data-overdue={overdue ? "" : undefined} onClick={open("due")} aria-haspopup="dialog" aria-expanded={picker === "due"}>
               {task.isMilestone ? <TIcon.diamond size={14} /> : <TIcon.calendar size={14} />}
-              {dueIso ? `${dayLabel(dueIso, calendar.today)}${dayLabel(dueIso, calendar.today) === shortDate(dueIso) ? "" : `, ${shortDate(dueIso)}`}` : <span className={styles.empty}>No date</span>}
+              {dueIso ? `${dayLabel(dueIso, calendar.today)}${dayLabel(dueIso, calendar.today) === shortDate(dueIso) ? "" : `, ${shortDate(dueIso)}`}` : <span className={styles.empty}>{grid ? "Empty" : "No date"}</span>}
             </button>
             <span className={styles.repeat}>
               <RecurrenceRow task={task} />
@@ -466,7 +535,7 @@ function Properties({ task, grid = false }: { task: Task; grid?: boolean }) {
                 ))}
               </span>
             ) : (
-              <span className={styles.empty}>None</span>
+              <span className={styles.empty}>{grid ? "Empty" : "None"}</span>
             )}
           </button>
         </Row>
@@ -494,15 +563,15 @@ function Properties({ task, grid = false }: { task: Task; grid?: boolean }) {
           </Row>
         ) : null}
       </dl>
-      <div className={styles.adders}>
+      <div className={styles.adders} data-list={grid ? "" : undefined}>
         {showAmount ? null : (
           <button type="button" className={styles.adder} onClick={() => setRevealed((r) => ({ ...r, amount: true }))}>
-            <TIcon.plus size={12} /> Amount
+            {grid ? <><TIcon.pencil size={14} /> Add an amount</> : <><TIcon.plus size={12} /> Amount</>}
           </button>
         )}
         {showContact ? null : (
           <button type="button" className={styles.adder} onClick={() => setRevealed((r) => ({ ...r, contact: true }))}>
-            <TIcon.plus size={12} /> Contact
+            {grid ? <><TIcon.person size={14} /> Add a contact</> : <><TIcon.plus size={12} /> Contact</>}
           </button>
         )}
         <button
@@ -511,11 +580,11 @@ function Properties({ task, grid = false }: { task: Task; grid?: boolean }) {
           aria-pressed={Boolean(task.isMilestone)}
           onClick={() => dispatchers.setMilestone(task.id, !task.isMilestone)}
         >
-          <TIcon.diamond size={12} /> {task.isMilestone ? "Milestone" : "Make it a milestone"}
+          <TIcon.diamond size={grid ? 14 : 12} /> {task.isMilestone ? "Milestone" : "Make it a milestone"}
         </button>
         {revealed.copies ? null : (
           <button type="button" className={styles.adder} onClick={() => setRevealed((r) => ({ ...r, copies: true }))}>
-            <TIcon.duplicate size={12} /> Make copies
+            <TIcon.duplicate size={grid ? 14 : 12} /> Make copies
           </button>
         )}
       </div>

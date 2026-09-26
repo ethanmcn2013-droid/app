@@ -187,7 +187,7 @@ export function SubtasksSection({ task }: { task: Task }) {
   // Same header as Files and links and Activity; empty, the composer row
   // under it is the whole invitation.
   return (
-    <section className={sx.section} aria-labelledby={`subtasks-${task.id}`}>
+    <section className={sx.section} aria-labelledby={`subtasks-${task.id}`} data-empty={total === 0 ? "" : undefined} data-sheet-subtasks="">
       <div className={sx.head}>
         <h2 className={sx.title} id={`subtasks-${task.id}`}>Subtasks</h2>
         {total > 0 ? <span className={sx.count}>{done} of {total} done</span> : null}

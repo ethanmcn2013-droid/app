@@ -634,68 +634,188 @@
   }
 }
 
+
 /* ── Two-column task view (ClickUp-style) ─────────────────────────── */
 
-/* A large window over the app, inset from the edges so the app still
-   frames it, instead of the right-hand sheet. */
+/* One large window over the app, with the app still framing it. */
 .modalFrame[data-full] {
   top: 24px;
-  right: 24px;
   bottom: 24px;
-  left: 24px;
-  border: 1px solid var(--v3-border);
-  border-radius: 14px;
+  left: max(24px, 7.5vw);
+  right: max(24px, 7.5vw);
+  border: 1px solid var(--v3-border-strong);
+  border-radius: 12px;
+  background: var(--v3-canvas);
 }
-@media (min-width: 1440px) {
-  .modalFrame[data-full] { left: max(24px, calc((100vw - 1560px) / 2)); right: max(24px, calc((100vw - 1560px) / 2)); }
-}
+
+.page .head { min-height: 44px; padding: 0 12px 0 10px; gap: 10px; }
+.headNav { display: flex; align-items: center; padding-right: 6px; border-right: 1px solid var(--v3-border); }
+.headNav .headButton { width: 28px; height: 28px; }
+.page .crumbs { font-size: 13.5px; }
+.page .stamp { margin: 0 8px 0 0; font-size: 12.5px; color: var(--v3-text-3); }
 
 .split {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(360px, 34%);
+  grid-template-columns: minmax(0, 1fr);
 }
+.split[data-activity] { grid-template-columns: minmax(0, 1fr) clamp(340px, 30%, 560px); }
 
-.splitMain {
-  min-width: 0;
-  min-height: 0;
-  overflow-y: auto;
-}
+.splitMain { min-width: 0; min-height: 0; overflow-y: auto; }
 
 .splitInner {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 28px 36px 48px;
+  display: flex;
+  flex-direction: column;
+  max-width: 1000px;
+  padding: 22px 48px 64px 84px;
 }
 
-.splitInner .titleBlock { padding: 8px 0 18px; }
-.splitInner .title { font-size: 28px; line-height: 36px; font-weight: 700; letter-spacing: -0.02em; }
-.splitInner .props { padding: 0; }
-.splitInner .adders { padding: 10px 0 0; }
-.splitInner .divider { margin: 22px 0 8px; }
-.splitInner .section { padding-left: 0; padding-right: 0; }
-.splitInner .legacySection > * { padding-left: 0; padding-right: 0; }
+/* A quiet type chip above the title, as in the reference. */
+.kindRow { display: flex; margin-bottom: 14px; }
+.kindChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--v3-border-strong);
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--v3-text);
+}
+.kindDot { width: 10px; height: 10px; border-radius: 999px; border: 3px solid var(--v3-text-2); }
 
-/* Properties side by side, two to a row, each with a quiet icon. */
+.splitInner .titleBlock { padding: 0 0 22px; }
+.splitInner .title { font-size: 28px; line-height: 36px; font-weight: 650; letter-spacing: -0.015em; }
+.splitInner .doneButton { display: none; }
+
+/* Properties two to a row: a muted label with its icon, then the value. */
 .props[data-grid] {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 36px;
+  column-gap: 48px;
+  padding: 0;
 }
-.props[data-grid] .row { grid-template-columns: 132px minmax(0, 1fr); min-height: 40px; }
+.props[data-grid] .row { grid-template-columns: 140px minmax(0, 1fr); min-height: 36px; }
+.props[data-grid] .valueGroup { flex-wrap: nowrap; white-space: nowrap; }
+.props[data-grid] .rowLabel { padding-left: 2px; font-size: 14px; color: var(--v3-text-2); }
+.props[data-grid] .value { font-size: 14px; min-height: 30px; }
+.props[data-grid] .empty { color: var(--v3-text-3); }
 .rowLabel { display: inline-flex; align-items: center; gap: 8px; }
 .rowIcon { display: inline-grid; place-items: center; color: var(--v3-text-3); }
 
-/* Activity owns the right column's full height; its comment box stays at
-   the bottom while the history scrolls above it. */
+/* Status: a filled pill, a step to the next status, and done. */
+.statusControl { display: inline-flex; align-items: center; }
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 6px 0 0 6px;
+  background: color-mix(in srgb, var(--v3-text) 11%, transparent);
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.statusPill:last-child { border-radius: 6px; }
+.statusStep {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 26px;
+  border: 0;
+  border-left: 1px solid var(--v3-border-strong);
+  border-radius: 0 6px 6px 0;
+  background: color-mix(in srgb, var(--v3-text) 11%, transparent);
+  color: var(--v3-text);
+  cursor: pointer;
+}
+.statusPill:hover,
+.statusStep:hover { background: color-mix(in srgb, var(--v3-text) 16%, transparent); }
+.statusDone {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-left: 6px;
+  border: 1px solid var(--v3-border-strong);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--v3-text-2);
+  cursor: pointer;
+}
+.statusDone:hover { color: var(--v3-text); background: var(--v3-hover); }
+.statusDone[data-done] { background: var(--v3-success); border-color: var(--v3-success); color: var(--v3-on-accent); }
+
+.splitInner .divider { margin: 26px 0 14px; }
+.splitInner .section { padding: 0 0 24px; }
+
+/* Left column order: title, properties, divider, description, the action
+   list, then subtasks and files. */
+.splitInner > .section { order: 1; min-height: 88px; }
+.splitInner > .adders { order: 2; }
+.splitInner > .legacySection { order: 3; padding: 0; }
+
+/* The action list: plain rows with an icon. */
+.adders[data-list] {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 18px 0 4px;
+}
+.adders[data-list] .adder {
+  height: 32px;
+  gap: 10px;
+  padding: 0 6px;
+  margin-left: -6px;
+  font-size: 14px;
+  color: var(--v3-text);
+}
+.adders[data-list] .adder svg { color: var(--v3-text-2); }
+
+/* Subtasks and Files join the list as rows while they are empty, and grow
+   into sections once they hold something. */
+.splitInner [data-sheet-subtasks],
+.splitInner [data-sheet-files] { border-top: 0; padding: 4px 0 0; }
+.splitInner [data-sheet-subtasks]:not([data-empty]),
+.splitInner [data-sheet-files]:not([data-empty]) { padding-top: 22px; }
+.splitInner [data-sheet-subtasks][data-empty] > :first-child { display: none; }
+.splitInner [data-sheet-subtasks][data-empty] [class*="composer"] { color: var(--v3-text); font-size: 14px; min-height: 32px; padding-left: 0; }
+.splitInner [data-sheet-files][data-empty] > :first-child { margin: 0; min-height: 32px; }
+.splitInner [data-sheet-files][data-empty] > :first-child h2 { display: none; }
+.splitInner [data-sheet-files][data-empty] > :first-child button {
+  margin-left: -6px;
+  padding: 0 6px;
+  height: 32px;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--v3-text);
+}
+.splitInner [data-sheet-files][data-empty] [class*="drop"] {
+  border: 0;
+  background: transparent;
+  padding-left: 0;
+  min-height: 32px;
+}
+
+/* Activity: the whole right column, history above, the comment box pinned
+   to the bottom. */
 .activityColumn {
   min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
   border-left: 1px solid var(--v3-border);
-  background: var(--v3-surface);
+  background: var(--v3-canvas);
   overflow-y: auto;
 }
 .activityColumn .activity {
@@ -703,32 +823,53 @@
   display: flex;
   flex-direction: column;
   min-height: 100%;
-  padding: 0 20px 16px;
+  border-top: 0;
+  padding: 0 16px 14px;
 }
 .activityColumn .activity > :first-child {
   position: sticky;
   top: 0;
   z-index: 2;
-  margin: 0 -20px 12px;
-  padding: 16px 20px 12px;
-  background: var(--v3-surface);
+  margin: 0 -16px 14px;
+  padding: 0 18px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  background: var(--v3-canvas);
   border-bottom: 1px solid var(--v3-border);
 }
-.activityColumn [data-task-discussion] {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding-bottom: 0;
-}
-.activityColumn [data-task-discussion] > :last-child {
+.activityColumn .activity > :first-child h2 { font-size: 14.5px; font-weight: 650; }
+.activityColumn [data-task-discussion] { flex: 1; display: flex; flex-direction: column; padding-bottom: 0; }
+.activityColumn [data-comment-composer] {
   position: sticky;
   bottom: 0;
-  margin-top: auto;
-  padding-top: 12px;
-  background: var(--v3-surface);
+  margin: auto 0 0;
+  padding: 12px 0 0;
+  border-top: 0;
+  background: var(--v3-canvas);
+  backdrop-filter: none;
 }
+
+.commentBox textarea {
+  display: block;
+  width: 100%;
+  min-height: 88px;
+  resize: none;
+  padding: 14px 16px;
+  border: 1px solid var(--v3-border-strong);
+  border-radius: 12px;
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 14px;
+}
+.commentBox textarea::placeholder { color: var(--v3-text-3); }
+.commentBox textarea:disabled { cursor: not-allowed; }
 
 @media (max-width: 1180px) {
   .props[data-grid] { grid-template-columns: minmax(0, 1fr); }
-  .split { grid-template-columns: minmax(0, 1fr) 340px; }
+  .splitInner { padding: 22px 32px 48px; }
 }
+
+.splitInner [data-sheet-subtasks][data-empty] input::placeholder { color: var(--v3-text); opacity: 1; }
+.splitInner [data-sheet-subtasks][data-empty] [class*="composerGlyph"] { color: var(--v3-text-2); }

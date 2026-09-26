@@ -413,6 +413,8 @@ function TaskResources({ task }: { task: Task }) {
     <section
       className={sx.section}
       data-dragging={dragging ? "" : undefined}
+      data-empty={items !== null && total === 0 ? "" : undefined}
+      data-sheet-files=""
       aria-labelledby={`${inputId}-title`}
       onDragEnter={onDragEnter}
       onDragOver={onDragOver}
@@ -431,7 +433,7 @@ function TaskResources({ task }: { task: Task }) {
           disabled={reloadState !== null}
         >
           <PaperclipGlyph />
-          Attach
+          <span data-attach-label="">Attach file</span>
         </button>
       </div>
 
