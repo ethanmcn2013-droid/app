@@ -11,6 +11,9 @@ const VIEWS = [
   { key: "overview", label: "Overview" },
   { key: "projects", label: "Projects" },
   { key: "files", label: "Files" },
+  { key: "board", label: "Tasks board" },
+  { key: "list", label: "Tasks list" },
+  { key: "calendar", label: "Tasks calendar" },
 ] as const;
 
 /** Review-only gallery of the five concepts for each view. */

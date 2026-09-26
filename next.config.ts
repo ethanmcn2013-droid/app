@@ -306,7 +306,26 @@ const embedFrameHeaders = [
   ),
 ];
 
+// Design concepts (/app/concepts/*) render only in review and demo mode. A
+// build with the production posture, the same fail-closed rule access-mode.ts
+// uses (Vercel production, or a production build with no VERCEL_ENV, which
+// is what CI measures), swaps the concept registry for an empty one so no
+// concept code is emitted or counted against the bundle budget. Vercel
+// previews and `next dev` keep the concepts. SIGNAL_CONCEPTS_IN_BUILD=true
+// forces them into a local production build.
+const conceptsExcludedFromBuild =
+  process.env.SIGNAL_CONCEPTS_IN_BUILD !== "true" &&
+  (process.env.VERCEL_ENV === "production" ||
+    (process.env.NODE_ENV === "production" && !process.env.VERCEL_ENV));
+
 const nextConfig: NextConfig = {
+  turbopack: conceptsExcludedFromBuild
+    ? {
+        resolveAlias: {
+          "@/components/concepts/registry": "./src/components/concepts/registry.production.ts",
+        },
+      }
+    : undefined,
   // Dev-only: the floating dev-tools badge sits over the bottom-nav Home tab
   // at 375px and contaminates every mobile design capture. No production effect.
   devIndicators: false,
