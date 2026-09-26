@@ -231,7 +231,7 @@ export function AppSidebar({
       >
         {entry.kind === "dm" ? (
           <span className={styles.chatAvatarWrap} aria-hidden="true">
-            <span className={styles.chatAvatar} style={{ background: projectColor(entry.personId ?? entry.id) }}>
+            <span className={styles.chatAvatar} style={{ backgroundColor: projectColor(entry.personId ?? entry.id) }}>
               {initialsOf(entry.title)}
             </span>
             {entry.online ? <span className={styles.presence} /> : null}
@@ -317,7 +317,7 @@ export function AppSidebar({
                       title={row.blockedReason ?? (collapsed ? row.name : row.subtitle)}
                       aria-label={row.accessibleName}
                     >
-                      <span className={styles.projectSquare} style={{ background: projectColor(row.id) }} aria-hidden="true">
+                      <span className={styles.projectSquare} style={{ backgroundColor: projectColor(row.id) }} aria-hidden="true">
                         {row.monogram.slice(0, 1)}
                       </span>
                       <span className={styles.itemLabel}>{row.name}</span>
