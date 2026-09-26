@@ -190,15 +190,18 @@
   font-variant-numeric: tabular-nums;
   color: var(--v3-text-3);
 }
+/* Unread counts sit a touch smaller than a person's avatar (18px), so the
+   count reads as a mark on the row rather than a second avatar. */
 .badge {
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
   border-radius: 999px;
   background: var(--v3-notify);
   color: var(--v3-on-notify);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
   display: grid;
   place-items: center;
   font-variant-numeric: tabular-nums;
@@ -500,3 +503,19 @@
   color: var(--v3-accent-text);
 }
 .chatAdd { color: var(--v3-text-3); }
+
+.chatAvatarWrap { position: relative; flex: none; display: inline-grid; }
+/* Online: a green dot on the avatar's lower right, ringed in the sidebar's
+   own colour so it reads as a cut-out. */
+.presence {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #2fb36b;
+  box-shadow: 0 0 0 2px var(--v3-chrome);
+}
+.item:hover .presence { box-shadow: 0 0 0 2px color-mix(in srgb, #fff 6%, var(--v3-chrome)); }
+.chatTag { height: 15px; font-size: 10px; padding: 0 5px; }

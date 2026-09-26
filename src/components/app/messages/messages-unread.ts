@@ -41,6 +41,8 @@ export type ChatDirectoryEntry = Readonly<{
   href: string;
   /** Direct messages: the other person, for their avatar colour. */
   personId?: string;
+  /** Direct messages: the other person is online (real presence only). */
+  online?: boolean;
   /** Mentions in a channel, messages in a direct message. */
   count: number;
   /** Anything new at all: the row reads in full weight. */

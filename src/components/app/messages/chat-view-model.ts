@@ -4,7 +4,8 @@
  * access, sends, or reads data; it only shapes records for display.
  */
 
-export type ChatPerson = Readonly<{ id: string; name: string; role?: string }>;
+/** `online` only when real presence data exists: no data means no dot. */
+export type ChatPerson = Readonly<{ id: string; name: string; role?: string; online?: boolean }>;
 
 export type ChatDeliveryState = "sent" | "sending" | "uncertain" | "failed";
 

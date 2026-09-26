@@ -4,11 +4,12 @@
  */
 import type { ChatDirectory, ChatDirectoryEntry } from "./messages-unread";
 import { conversationAttention, type DemoConversation } from "./demo-messages-model";
+import type { ChatPerson } from "./chat-view-model";
 
 export const chatHref = (conversationId: string) => `/app/messages?c=${encodeURIComponent(conversationId)}`;
 export const NEW_MESSAGE_HREF = "/app/messages?new=1";
 
-export function demoChatDirectory(conversations: readonly DemoConversation[]): ChatDirectory {
+export function demoChatDirectory(conversations: readonly DemoConversation[], people: readonly ChatPerson[] = []): ChatDirectory {
   const entry = (item: DemoConversation): ChatDirectoryEntry => {
     const attention = conversationAttention(item);
     return {
@@ -17,6 +18,7 @@ export function demoChatDirectory(conversations: readonly DemoConversation[]): C
       title: item.title,
       href: chatHref(item.id),
       personId: item.otherId,
+      online: item.otherId ? people.find((person) => person.id === item.otherId)?.online || undefined : undefined,
       count: attention.count,
       unread: attention.activity,
       request: attention.request || undefined,

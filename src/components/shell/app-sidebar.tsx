@@ -144,11 +144,17 @@ export function AppSidebar({
         onClick={() => setMobileOpen(false)}
       >
         {entry.kind === "dm" ? (
-          <span className={styles.chatAvatar} style={{ background: projectColor(entry.personId ?? entry.id) }} aria-hidden="true">
-            {initialsOf(entry.title)}
+          <span className={styles.chatAvatarWrap} aria-hidden="true">
+            <span className={styles.chatAvatar} style={{ background: projectColor(entry.personId ?? entry.id) }}>
+              {initialsOf(entry.title)}
+            </span>
+            {entry.online ? <span className={styles.presence} /> : null}
           </span>
         ) : entry.kind === "task" ? <ShellIcon.tasks /> : <ShellIcon.hash />}
-        <span className={styles.itemLabel}>{entry.title}</span>
+        <span className={styles.itemLabel}>
+          {entry.title}
+          {entry.online ? <span className="sr-only">, online</span> : null}
+        </span>
         {count}
       </Link>
     );

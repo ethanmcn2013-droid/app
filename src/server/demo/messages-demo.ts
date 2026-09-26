@@ -21,9 +21,9 @@ import { DEMO_USER_ID, DEMO_WORKSPACE_ID, DEMO_WORKSPACE_NAME, demoTasks } from 
 
 const PEOPLE = {
   orla: { id: DEMO_USER_ID, name: REVIEW_SUITE_FIXTURE.user.name, role: "Events manager" },
-  niamh: { id: "demo-member-niamh", name: "Niamh Kelly", role: "Floor lead" },
+  niamh: { id: "demo-member-niamh", name: "Niamh Kelly", role: "Floor lead", online: true },
   dara: { id: "demo-member-dara", name: "Dara Quinn", role: "Head chef" },
-  aoife: { id: "demo-member-aoife", name: "Aoife Walsh", role: "Bar manager" },
+  aoife: { id: "demo-member-aoife", name: "Aoife Walsh", role: "Bar manager", online: true },
   ciaran: { id: "demo-member-ciaran", name: "Ciarán Byrne", role: "Grounds and setup" },
 } as const satisfies Record<string, ChatPerson>;
 

@@ -50,7 +50,10 @@ export async function ConversationMobileNav() {
  * from the same authorized catalog Chat itself reads; it fails quiet to none.
  */
 const chatDirectory = cache(async (): Promise<ChatDirectory | null> => {
-  if (isDemoMode()) return demoChatDirectory(demoMessagesSnapshot().conversations);
+  if (isDemoMode()) {
+    const snapshot = demoMessagesSnapshot();
+    return demoChatDirectory(snapshot.conversations, snapshot.people);
+  }
   if (!(await canShowMessages())) return null;
   try {
     const actorId = await authenticateConversationActor();

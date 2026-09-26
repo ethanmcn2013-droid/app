@@ -79,7 +79,7 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
   useEffect(() => {
     kept = { snapshotKey: snapshotKeyOf(snapshot), state };
     publishMessagesUnread(unreadTotal(state.conversations));
-    publishChatDirectory(demoChatDirectory(state.conversations));
+    publishChatDirectory(demoChatDirectory(state.conversations, snapshot.people));
   }, [snapshot, state]);
 
   // A bare /app/messages names what it shows, so the sidebar can mark it.
