@@ -7,10 +7,10 @@ import { useToast } from "@/components/primitives/toast";
 /**
  * End-of-day "Roll forward" button.
  *
- * Lives in the daily-digest header next to the celebratory share-this-
- * week button. The split is intentional: share-this-week is the brag,
- * roll-forward is the broom. Quiet styling, no icon, ink-quiet text —
- * this is utility, not a flourish.
+ * Lives in the inbox page header's actions, apart from the share-this-
+ * week button in the "This week" card. The split is intentional: share-
+ * this-week is the brag, roll-forward is the broom. A plain secondary
+ * button: utility, not a flourish.
  *
  * Two-step confirm matches the magic-link revoke pattern from cycle 16.
  *   - First click arms a 4s window and swaps copy to a rose-600
@@ -98,12 +98,15 @@ export function RollForwardButton({ overdueCount }: { overdueCount: number }) {
           : `Roll ${overdueCount} overdue ${overdueCount === 1 ? "task" : "tasks"} forward to tomorrow`
       }
       className={
-        "inline-flex flex-shrink-0 items-center rounded-md px-2 py-1 text-[12.5px] font-medium transition-colors disabled:opacity-60 " +
+        "inline-flex h-8 flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[var(--v3-radius)] border px-3 text-[13px] font-medium shadow-[var(--v3-shadow-1)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--v3-accent)] disabled:opacity-60 " +
         (armed
-          ? "text-rose-600 hover:text-rose-700"
-          : "text-ink-quiet hover:text-ink-soft")
+          ? "border-[color:color-mix(in_srgb,var(--v3-danger)_45%,transparent)] bg-[color:color-mix(in_srgb,var(--v3-danger)_10%,var(--v3-surface))] text-[color:var(--v3-danger)]"
+          : "border-[color:var(--v3-border)] bg-[color:var(--v3-surface)] text-[color:var(--v3-text)] hover:border-[color:var(--v3-border-strong)] hover:bg-[color:var(--v3-hover)]")
       }
     >
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M2.5 8h9M8.5 4.5 12 8l-3.5 3.5M13.5 3v10" />
+      </svg>
       {pending
         ? "Rolling…"
         : armed

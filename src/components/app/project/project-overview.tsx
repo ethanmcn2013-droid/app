@@ -1,97 +1,87 @@
 "use client";
 
 /**
- * Project overview client component (Phase 4.1, D-011).
+ * Project overview (Phase 4.1, D-011; v3 redesign 24 Sep 2026).
  *
- * Editorial register: calm, declarative, matching the room-brief band.
- * No em dashes, no exclamation marks, no dark mode.
+ * One Project at a glance: its name and purpose, the status the owner
+ * declares, its target date, then task progress, milestones and recent
+ * activity beside the team and the Project's details.
  *
  * Declared status and computed task progress are always visually distinct.
- * The caption beneath the progress bar makes this explicit every time.
+ * The caption beneath the progress figure says so every time.
+ *
+ * Rendered below the Projects index (`projects-hub.tsx`) with the index's h1
+ * above it, or on its own as the page when the index is off. It is not a
+ * scroll container; the page around it is.
+ *
+ * Styling is Tailwind over v3 tokens rather than a CSS module: the
+ * wedding-date browser check bundles this file standalone with no CSS output.
  *
  * Resources block is intentionally absent: resources are per-task in this
  * schema (task_id is NOT NULL on the resources table). There is no
- * workspace-level resource listing action. This is noted as a skip.
+ * project-level resource listing action.
  */
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Popover } from "@/components/app/detail-panel/popover";
 import { DueCalendar } from "@/components/app/detail-panel/due-calendar";
-import { requestOpenNav, useTasksNav } from "@/components/app/tasks-nav-state";
+import { ShellIcon } from "@/components/shell/shell-icons";
+import {
+  formatProjectDate,
+  formatProjectDateTime,
+  PROJECT_STATUS_NOT_SET,
+  PROJECT_STATUS_OPTIONS,
+  projectStatusOption,
+} from "@/lib/projects/project-hub";
+import { StatusDot, STATUS_PILL_BASE, STATUS_TONE_CLASS, STATUS_TONE_TEXT } from "./project-status-pill";
 import { WeddingDateForm } from "./wedding-date-form";
 import {
   setProjectStatusAction,
   setProjectTargetDateAction,
+  type ProjectMember,
   type ProjectOverviewData,
   type ProjectStatus,
 } from "@/server/actions/project-overview";
 
-// ── Status config ────────────────────────────────────────────────────
+// ── Shared class recipes (v3 tokens only) ────────────────────────────
 
-type StatusOption = {
-  value: ProjectStatus;
-  label: string;
-  /** Tailwind classes for the pill */
-  pillCls: string;
-};
+const CARD =
+  "overflow-hidden rounded-[var(--v3-radius-lg)] border border-[color:var(--v3-border)] bg-[var(--v3-surface)] [box-shadow:var(--v3-shadow-1)]";
+const CARD_HEAD = "flex min-h-[48px] items-center justify-between gap-3 px-4 pb-2 pt-3";
+const CARD_TITLE = "flex items-center gap-2 text-[14px] font-semibold text-[color:var(--v3-text)]";
+const CARD_COUNT = "text-[12px] font-medium tabular-nums text-[color:var(--v3-text-3)]";
+const CARD_LINK =
+  "inline-flex items-center gap-1 rounded-[var(--v3-radius-sm)] text-[12.5px] font-medium text-[color:var(--v3-text-2)] transition-colors hover:text-[color:var(--v3-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--v3-accent)]";
+const ROW =
+  "flex min-h-[44px] items-center gap-3 rounded-[var(--v3-radius)] px-2.5 py-2 text-[color:var(--v3-text)] transition-colors";
+const ROW_LINK = `${ROW} hover:bg-[var(--v3-hover)] focus-visible:outline-none focus-visible:[box-shadow:0_0_0_2px_var(--v3-accent)]`;
+const EMPTY = "px-4 pb-4 pt-1 text-[13px] leading-relaxed text-[color:var(--v3-text-3)]";
+const CHIP_BUTTON =
+  "inline-flex h-[26px] items-center gap-1.5 rounded-full px-2.5 text-[12px] font-medium transition-[background-color,box-shadow,opacity] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--v3-accent)] disabled:opacity-50";
 
-const STATUS_OPTIONS: StatusOption[] = [
-  {
-    value: "on-track",
-    label: "On track",
-    pillCls: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  },
-  {
-    value: "at-risk",
-    label: "At risk",
-    pillCls: "bg-amber-50 text-amber-700 ring-amber-200",
-  },
-  {
-    value: "paused",
-    label: "Paused",
-    pillCls: "bg-zinc-100 text-zinc-600 ring-zinc-200",
-  },
-  {
-    value: "complete",
-    label: "Complete",
-    pillCls: "bg-indigo-50 text-indigo-700 ring-indigo-200",
-  },
-];
+// ── Date helpers ─────────────────────────────────────────────────────
 
-const NOT_SET_PILL_CLS =
-  "bg-bg-sunken text-ink-quiet ring-line";
-
-function statusConfig(s: ProjectStatus): StatusOption {
-  return (
-    STATUS_OPTIONS.find((o) => o.value === s) ?? {
-      value: null,
-      label: "Not set",
-      pillCls: NOT_SET_PILL_CLS,
-    }
-  );
+function isoDay(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-// ── Date formatter ───────────────────────────────────────────────────
-
-function formatTargetDate(iso: string): string {
-  const d = new Date(`${iso}T00:00:00Z`);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  });
+function memberName(m: ProjectMember): string {
+  return m.name?.trim() || m.email?.split("@")[0] || m.userId.slice(0, 10);
 }
 
 // ── Initials avatar ──────────────────────────────────────────────────
 
-function Initials({ name, initials }: { name: string | null; initials: string | null }) {
+function Initials({ name, initials, owner }: { name: string | null; initials: string | null; owner: boolean }) {
   const display = initials?.trim() || (name?.trim() ? name.trim().slice(0, 2).toUpperCase() : "?");
   return (
     <span
-      className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-bg-sunken text-[11px] font-semibold text-ink-quiet"
+      className={
+        "flex size-[32px] shrink-0 items-center justify-center rounded-full text-[11px] font-semibold tracking-[0.02em] " +
+        (owner
+          ? "bg-[var(--v3-accent-soft)] text-[color:var(--v3-accent)]"
+          : "bg-[var(--v3-sunken)] text-[color:var(--v3-text-2)] ring-1 ring-inset ring-[color:var(--v3-border)]")
+      }
       aria-hidden="true"
       title={name ?? undefined}
     >
@@ -100,7 +90,7 @@ function Initials({ name, initials }: { name: string | null; initials: string | 
   );
 }
 
-// ── Status pill control ──────────────────────────────────────────────
+// ── Status control ───────────────────────────────────────────────────
 
 function StatusControl({
   status,
@@ -113,14 +103,15 @@ function StatusControl({
   onSet: (s: ProjectStatus) => void;
   pending: boolean;
 }) {
-  const cfg = statusConfig(status);
+  const cfg = projectStatusOption(status);
 
   if (!isOwner) {
     return (
       <span
-        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11.5px] font-medium ring-1 ${cfg.pillCls}`}
+        className={`${STATUS_PILL_BASE} h-[26px] px-2.5 text-[12px] ${STATUS_TONE_CLASS[cfg.tone]}`}
         title="Only the project owner can set the status."
       >
+        <StatusDot tone={cfg.tone} />
         {cfg.label}
       </span>
     );
@@ -129,57 +120,78 @@ function StatusControl({
   return (
     <Popover
       aria-label="Set project status"
-      width={180}
+      width={188}
       trigger={({ onClick, "aria-expanded": expanded, ref }) => (
         <button
           ref={ref}
           type="button"
           onClick={onClick}
           aria-expanded={expanded}
+          aria-haspopup="dialog"
           disabled={pending}
-          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11.5px] font-medium ring-1 transition-opacity hover:opacity-80 disabled:opacity-50 ${cfg.pillCls}`}
+          title="Status is what the owner declares"
+          className={`${CHIP_BUTTON} ${STATUS_TONE_CLASS[cfg.tone]} hover:opacity-85`}
         >
+          <StatusDot tone={cfg.tone} />
           {cfg.label}
-          <svg
-            width="10"
-            height="10"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
+          <ShellIcon.chevronDown size={12} className="-mr-0.5 opacity-70" />
         </button>
       )}
     >
       {(close) => (
         <div className="flex flex-col gap-0.5 p-1">
-          {([...STATUS_OPTIONS, { value: null as ProjectStatus, label: "Not set", pillCls: NOT_SET_PILL_CLS }] as StatusOption[]).map((opt) => (
-            <button
-              key={opt.value ?? "null"}
-              type="button"
-              onClick={() => {
-                onSet(opt.value);
-                close();
-              }}
-              className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12.5px] transition-colors hover:bg-bg-sunken ${
-                opt.value === status ? "font-medium text-ink" : "text-ink-soft"
-              }`}
-            >
-              <span
-                className={`inline-flex h-2 w-2 rounded-full ring-1 ${opt.pillCls}`}
-                aria-hidden
-              />
-              {opt.label}
-            </button>
-          ))}
+          {[...PROJECT_STATUS_OPTIONS, PROJECT_STATUS_NOT_SET].map((opt) => {
+            const selected = opt.value === status;
+            return (
+              <button
+                key={opt.value ?? "unset"}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => {
+                  onSet(opt.value);
+                  close();
+                }}
+                className={
+                  "flex min-h-[32px] items-center gap-2.5 rounded-md px-2 text-left text-[12.5px] transition-colors hover:bg-[var(--v3-hover)] " +
+                  (selected ? "font-medium text-[color:var(--v3-text)]" : "text-[color:var(--v3-text-2)]")
+                }
+              >
+                <span className={`inline-flex ${STATUS_TONE_TEXT[opt.tone]}`}>
+                  <StatusDot tone={opt.tone} />
+                </span>
+                <span className="flex-1">{opt.label}</span>
+                {selected ? <CheckGlyph /> : null}
+              </button>
+            );
+          })}
         </div>
       )}
     </Popover>
+  );
+}
+
+function CheckGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="m3.5 8.25 3 3 6-6.5" />
+    </svg>
+  );
+}
+
+function CalendarGlyph() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="2.5" y="3.5" width="11" height="10" rx="1.5" />
+      <path d="M2.5 6.75h11M5.5 2v2.5M10.5 2v2.5" />
+    </svg>
+  );
+}
+
+function MilestoneGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden="true">
+      <path d="M8 2.25 13.75 8 8 13.75 2.25 8Z" />
+    </svg>
   );
 }
 
@@ -197,15 +209,18 @@ function TargetDateControl({
   pending: boolean;
 }) {
   const dateObj = targetDate ? new Date(`${targetDate}T00:00:00Z`) : null;
+  const quiet =
+    "bg-[var(--v3-surface)] text-[color:var(--v3-text-2)] ring-1 ring-inset ring-[color:var(--v3-border)]";
 
   if (!isOwner) {
     return targetDate ? (
-      <span className="inline-flex items-center gap-1 rounded-full bg-bg-sunken px-2.5 py-0.5 text-[11.5px] font-medium text-ink-quiet ring-1 ring-line">
-        <CalendarIcon />
-        {formatTargetDate(targetDate)}
+      <span className={`${CHIP_BUTTON} ${quiet}`}>
+        <CalendarGlyph />
+        <span className="text-[color:var(--v3-text-3)]">Target</span>
+        {formatProjectDate(targetDate)}
       </span>
     ) : (
-      <span className="text-[12px] text-ink-quiet" title="Only the project owner can set the target date.">
+      <span className="text-[12px] text-[color:var(--v3-text-3)]" title="Only the project owner can set the target date.">
         No target date
       </span>
     );
@@ -221,11 +236,19 @@ function TargetDateControl({
           type="button"
           onClick={onClick}
           aria-expanded={expanded}
+          aria-haspopup="dialog"
           disabled={pending}
-          className="inline-flex items-center gap-1 rounded-full bg-bg-sunken px-2.5 py-0.5 text-[11.5px] font-medium text-ink-soft ring-1 ring-line transition-colors hover:bg-bg-elevated hover:text-ink disabled:opacity-50"
+          className={`${CHIP_BUTTON} ${quiet} hover:bg-[var(--v3-hover)] hover:text-[color:var(--v3-text)]`}
         >
-          <CalendarIcon />
-          {targetDate ? formatTargetDate(targetDate) : "Set target date"}
+          <CalendarGlyph />
+          {targetDate ? (
+            <>
+              <span className="text-[color:var(--v3-text-3)]">Target</span>
+              {formatProjectDate(targetDate)}
+            </>
+          ) : (
+            "Set target date"
+          )}
         </button>
       )}
     >
@@ -233,8 +256,7 @@ function TargetDateControl({
         <DueCalendar
           value={dateObj}
           onSelect={(d) => {
-            const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-            onSet(iso);
+            onSet(isoDay(d));
             close();
           }}
           onClear={() => {
@@ -247,40 +269,51 @@ function TargetDateControl({
   );
 }
 
-function CalendarIcon() {
-  return (
-    <svg
-      width="11"
-      height="11"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.9"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-      <line x1="16" y1="2" x2="16" y2="6" />
-      <line x1="8" y1="2" x2="8" y2="6" />
-      <line x1="3" y1="10" x2="21" y2="10" />
-    </svg>
-  );
-}
-
-// ── Section heading ──────────────────────────────────────────────────
-
-function SectionHeading({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mb-3 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-ink-quiet">
-      {children}
-    </div>
-  );
-}
-
 // ── Main component ───────────────────────────────────────────────────
 
-export function ProjectOverview({ data }: { data: ProjectOverviewData }) {
+export type ProjectDeclaredState = { status: ProjectStatus; targetDate: string | null };
+
+/**
+ * Where the overview's links go. The page builds these with the typed
+ * Project URL helpers (`buildProjectUrl`, `withActiveProject`) so every link
+ * carries the Project; the overview itself stays free of URL plumbing (and of
+ * the environment-reading module behind it, which the standalone wedding-date
+ * browser bundle cannot load).
+ */
+export type ProjectOverviewLinks = Readonly<{
+  tasks: string;
+  timeline: string;
+  notes: string;
+  addTask: string;
+  task: (taskId: string) => string;
+}>;
+
+const PLAIN_LINKS: ProjectOverviewLinks = {
+  tasks: "/app/tasks",
+  timeline: "/app/timeline",
+  notes: "/app/notes",
+  addTask: "/app/tasks?create=task",
+  task: (taskId) => `/app/tasks?task=${encodeURIComponent(taskId)}`,
+};
+
+export function ProjectOverview({
+  data,
+  titleLevel = 1,
+  identityColor,
+  monogram,
+  links = PLAIN_LINKS,
+  onDeclaredChange,
+}: {
+  data: ProjectOverviewData;
+  /** 1 when the overview is the page; 2 below the Projects index. */
+  titleLevel?: 1 | 2;
+  /** The Project's identity hue (`projectColor`) for its monogram. */
+  identityColor?: string;
+  monogram?: string;
+  links?: ProjectOverviewLinks;
+  /** Lets the index card above mirror a status or date the owner just set. */
+  onDeclaredChange?: (next: ProjectDeclaredState) => void;
+}) {
   const [status, setStatus] = useState<ProjectStatus>(data.declaredStatus);
   const [targetDate, setTargetDate] = useState<string | null>(data.targetDate);
   const [statusPending, startStatusTransition] = useTransition();
@@ -288,6 +321,7 @@ export function ProjectOverview({ data }: { data: ProjectOverviewData }) {
 
   function handleSetStatus(s: ProjectStatus) {
     setStatus(s);
+    onDeclaredChange?.({ status: s, targetDate });
     startStatusTransition(async () => {
       await setProjectStatusAction(s, data.workspaceId);
     });
@@ -295,101 +329,145 @@ export function ProjectOverview({ data }: { data: ProjectOverviewData }) {
 
   function handleSetTargetDate(iso: string | null) {
     setTargetDate(iso);
+    onDeclaredChange?.({ status, targetDate: iso });
     startDateTransition(async () => {
       await setProjectTargetDateAction(iso, data.workspaceId);
     });
   }
 
-  const { taskStats, members, milestones, recentEvents, program, isOwner } = data;
+  // No program views (founder, 24 Sep 2026): Details names the project only.
+  const { taskStats, members, milestones, recentEvents, isOwner } = data;
 
   // Mount-stable clock: the React Compiler forbids impure calls in render.
-  // Overdue state doesn't need sub-render freshness (mirrors room-brief.tsx).
-  const [nowMs] = useState(() => Date.now());
-  const { drawerOpen } = useTasksNav();
+  // Review mode pins it to the fixture's day so every surface agrees.
+  const [nowMs] = useState(() =>
+    data.todayIso ? Date.parse(`${data.todayIso}T00:00:00Z`) : Date.now(),
+  );
 
-  // Sort members: owner first.
+  const views = [
+    { key: "overview", label: "Overview", href: null, icon: <ShellIcon.overview size={14} /> },
+    { key: "tasks", label: "Tasks", href: links.tasks, icon: <ShellIcon.tasks size={14} /> },
+    { key: "timeline", label: "Timeline", href: links.timeline, icon: <ShellIcon.timeline size={14} /> },
+    { key: "notes", label: "Notes", href: links.notes, icon: <ShellIcon.notes size={14} /> },
+  ];
+
+  // Owner first, then everyone else in the order the server returned.
   const sortedMembers = [...members].sort((a, b) =>
     a.role === "owner" && b.role !== "owner" ? -1 : b.role === "owner" && a.role !== "owner" ? 1 : 0,
   );
+  const owner = members.find((m) => m.userId === data.ownerUserId) ?? null;
+  const open = Math.max(0, taskStats.total - taskStats.complete);
+
+  const Title = titleLevel === 1 ? "h1" : "h2";
+  const CardTitle = titleLevel === 1 ? "h2" : "h3";
+  const titleId = `project-title-${data.workspaceId}`;
+
+  const details: { label: string; value: string }[] = [];
+  if (owner) details.push({ label: "Owner", value: memberName(owner) });
+  if (data.createdAt) details.push({ label: "Created", value: formatProjectDate(data.createdAt) });
 
   return (
-    <article className="flex h-full flex-col overflow-auto bg-bg-elevated">
+    <article aria-labelledby={titleId} className="@container min-w-0">
       {/* Header */}
-      <header className="flex-shrink-0 border-b border-line-soft bg-bg-elevated px-8 pb-6 pt-8">
-        <div className="flex items-start justify-between gap-3">
-          <h1 className="min-w-0 break-words text-[22px] font-semibold tracking-tight text-ink">
-            {data.displayName}
-          </h1>
-          <button
-            aria-expanded={drawerOpen}
-            aria-haspopup="dialog"
-            aria-label="Open Tasks navigation"
-            className="inline-flex min-h-[44px] flex-shrink-0 items-center justify-center rounded-lg border border-line-soft px-3 text-[12px] font-medium text-ink-soft hover:bg-bg-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand min-[1100px]:hidden"
-            onClick={requestOpenNav}
-            type="button"
-          >
-            Projects
-          </button>
-        </div>
-        {data.purpose ? (
-          <p className="mt-1 text-[13px] leading-snug text-ink-soft">
-            {data.purpose}
-          </p>
+      <header>
+        {titleLevel === 2 ? (
+          <p className="mb-3 text-[12px] font-medium text-[color:var(--v3-text-3)]">Project overview</p>
         ) : null}
+        <div className="flex items-start gap-3.5">
+          {monogram ? (
+            <span
+              aria-hidden="true"
+              className="mt-0.5 grid size-[44px] shrink-0 place-items-center rounded-[11px] text-[14px] font-semibold tracking-[0.02em] text-white [box-shadow:inset_0_0_0_1px_rgba(255,255,255,0.14),var(--v3-shadow-1)]"
+              style={{ background: identityColor ?? "var(--v3-solid)" }}
+            >
+              {monogram}
+            </span>
+          ) : null}
+          <div className="min-w-0 flex-1">
+            <Title
+              id={titleId}
+              className={
+                "min-w-0 break-words font-semibold leading-tight tracking-[-0.02em] text-[color:var(--v3-text)] " +
+                (titleLevel === 1 ? "text-[22px] md:text-[26px]" : "text-[20px] md:text-[22px]")
+              }
+            >
+              {data.displayName}
+            </Title>
+            {data.purpose ? (
+              <p className="mt-1 max-w-[72ch] text-[13.5px] leading-relaxed text-[color:var(--v3-text-2)]">
+                {data.purpose}
+              </p>
+            ) : null}
 
-        {/* Controls row: status + target date */}
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <StatusControl
-            status={status}
-            isOwner={isOwner}
-            onSet={handleSetStatus}
-            pending={statusPending}
-          />
-          {!data.sponsoredWeddingDate ? <TargetDateControl
-            targetDate={targetDate}
-            isOwner={isOwner}
-            onSet={handleSetTargetDate}
-            pending={datePending}
-          /> : null}
+            {/* Declared state: status + target date */}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <StatusControl status={status} isOwner={isOwner} onSet={handleSetStatus} pending={statusPending} />
+              {!data.sponsoredWeddingDate ? (
+                <TargetDateControl targetDate={targetDate} isOwner={isOwner} onSet={handleSetTargetDate} pending={datePending} />
+              ) : null}
+            </div>
+          </div>
         </div>
 
-        {/* Program line — only when a planning period is assigned */}
-        {program ? (
-          <p className="mt-3 text-[11px] text-ink-quiet">
-            <span className="font-medium uppercase tracking-wide">Program</span>
-            {" "}
-            {program.name}
-            {program.dateRange ? ` · ${program.dateRange}` : null}
-          </p>
-        ) : null}
+        <nav
+          aria-label="Project views"
+          className="mt-5 flex w-fit max-w-full items-center gap-0.5 overflow-x-auto rounded-[var(--v3-radius)] bg-[var(--v3-sunken)] p-0.5 ring-1 ring-inset ring-[color:var(--v3-border)] thin-scroll"
+        >
+          {views.map((view) =>
+            view.href === null ? (
+              <span
+                key={view.key}
+                aria-current="page"
+                className="inline-flex h-[28px] shrink-0 items-center gap-1.5 rounded-[var(--v3-radius-sm)] bg-[var(--v3-surface)] px-3 text-[12.5px] font-medium text-[color:var(--v3-text)] [box-shadow:var(--v3-shadow-1)] ring-1 ring-inset ring-[color:var(--v3-border)]"
+              >
+                {view.icon}
+                {view.label}
+              </span>
+            ) : (
+              <Link
+                key={view.key}
+                href={view.href}
+                className="inline-flex h-[28px] shrink-0 items-center gap-1.5 rounded-[var(--v3-radius-sm)] px-3 text-[12.5px] font-medium text-[color:var(--v3-text-3)] transition-colors hover:text-[color:var(--v3-text)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[color:var(--v3-accent)]"
+              >
+                {view.icon}
+                {view.label}
+              </Link>
+            ),
+          )}
+        </nav>
       </header>
 
-      {/* Body */}
-      <div className="mx-auto w-full max-w-[860px] space-y-10 px-8 py-8">
+      {/* Body: main column + side column on wide containers */}
+      <div className="mt-5 grid items-start gap-5 @min-[820px]:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
+        <div className="flex min-w-0 flex-col gap-5">
+          {data.sponsoredWeddingDate ? (
+            <WeddingDateForm
+              key={`${data.workspaceId}:${data.sponsoredWeddingDate.revision}:${data.sponsoredWeddingDate.canManage}`}
+              initial={data.sponsoredWeddingDate}
+              previousTarget={data.targetDate}
+              headingLevel={titleLevel === 1 ? 2 : 3}
+            />
+          ) : null}
 
-        {data.sponsoredWeddingDate ? <WeddingDateForm
-          key={`${data.workspaceId}:${data.sponsoredWeddingDate.revision}:${data.sponsoredWeddingDate.canManage}`}
-          initial={data.sponsoredWeddingDate}
-          previousTarget={data.targetDate}
-        /> : null}
-
-        {/* Progress section */}
-        <section aria-label="Task progress">
-          <SectionHeading>Progress</SectionHeading>
-          <div className="overflow-hidden rounded-xl border border-line-soft bg-white">
-            <div className="px-5 pt-5 pb-4">
-              <div className="mb-2 flex items-baseline justify-between">
-                <span className="text-[28px] font-bold tracking-tight text-ink">
+          {/* Progress */}
+          <section aria-label="Task progress" className={CARD}>
+            <div className={CARD_HEAD}>
+              <CardTitle className={CARD_TITLE}>Progress</CardTitle>
+              <span className="text-[12.5px] tabular-nums text-[color:var(--v3-text-2)]">
+                {taskStats.complete} of {taskStats.total} tasks
+              </span>
+            </div>
+            <div className="px-4 pb-4">
+              <div className="flex items-baseline gap-1">
+                <span className="text-[40px] font-semibold leading-none tracking-[-0.03em] tabular-nums text-[color:var(--v3-text)]">
                   {taskStats.progressPct}
-                  <span className="ml-0.5 text-[16px] font-semibold text-ink-soft">%</span>
                 </span>
-                <span className="text-[12.5px] tabular-nums text-ink-quiet">
-                  {taskStats.complete} of {taskStats.total} tasks
-                </span>
+                <span className="text-[18px] font-semibold text-[color:var(--v3-text-3)]">%</span>
+                <span className="ml-2 text-[12.5px] text-[color:var(--v3-text-3)]">done</span>
               </div>
-              <div className="overflow-hidden rounded-full bg-bg-sunken" style={{ height: 6 }}>
+              <div className="mt-3.5 h-2 overflow-hidden rounded-full bg-[var(--v3-sunken)] ring-1 ring-inset ring-[color:var(--v3-border)]">
                 <div
-                  className="h-full rounded-full bg-brand transition-all duration-500"
+                  className="h-full rounded-full bg-[var(--v3-accent)] transition-[width] duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)]"
                   style={{ width: `${taskStats.progressPct}%` }}
                   role="progressbar"
                   aria-valuenow={taskStats.progressPct}
@@ -398,196 +476,188 @@ export function ProjectOverview({ data }: { data: ProjectOverviewData }) {
                   aria-label={`${taskStats.complete} of ${taskStats.total} tasks complete`}
                 />
               </div>
-              <dl className="mt-3 flex gap-6">
-                <div>
-                  <dt className="text-[10.5px] text-ink-quiet">Overdue</dt>
-                  <dd
-                    className={`text-[13px] font-medium tabular-nums ${
-                      taskStats.overdue > 0 ? "text-red-600" : "text-ink"
-                    }`}
-                  >
-                    {taskStats.overdue}
-                  </dd>
+              {taskStats.total === 0 ? (
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[var(--v3-radius)] bg-[var(--v3-sunken)] px-3.5 py-3">
+                  <p className="text-[13px] leading-snug text-[color:var(--v3-text-2)]">
+                    No tasks yet. Progress fills in as tasks are done.
+                  </p>
+                  <Link href={links.addTask} className={CARD_LINK}>
+                    Add a task <span aria-hidden="true">→</span>
+                  </Link>
                 </div>
-                <div>
-                  <dt className="text-[10.5px] text-ink-quiet">No date</dt>
-                  <dd className="text-[13px] font-medium tabular-nums text-ink">
-                    {taskStats.undated}
-                  </dd>
-                </div>
-              </dl>
+              ) : (
+                <dl className="mt-4 grid grid-cols-3 overflow-hidden rounded-[var(--v3-radius)] border border-[color:var(--v3-border)]">
+                  <ProgressStat label="Open" value={open} />
+                  <ProgressStat label="Overdue" value={taskStats.overdue} danger={taskStats.overdue > 0} />
+                  <ProgressStat label="No date" value={taskStats.undated} />
+                </dl>
+              )}
             </div>
-            <p className="border-t border-line-soft/60 px-5 py-2.5 text-[11px] leading-snug text-ink-quiet">
+            <p className="border-t border-[color:var(--v3-border)] bg-[var(--v3-sunken)] px-4 py-2.5 text-[12px] leading-snug text-[color:var(--v3-text-3)]">
               Progress is computed from tasks. Status is what the owner declares.
             </p>
-          </div>
-        </section>
+          </section>
 
-        {/* Team section */}
-        <section aria-label="Team">
-          <SectionHeading>Team</SectionHeading>
-          {sortedMembers.length === 0 ? (
-            <p className="text-[13px] text-ink-quiet">
-              No members yet.{" "}
-              <Link
-                href="/app/settings"
-                className="underline underline-offset-2 transition-colors hover:text-ink-soft"
-              >
-                Invite someone
-              </Link>{" "}
-              to this project.
-            </p>
-          ) : (
-            <div className="overflow-hidden rounded-xl border border-line-soft bg-white">
-              <ul>
-                {sortedMembers.map((m) => {
-                  const displayName =
-                    m.name?.trim() ||
-                    m.email?.split("@")[0] ||
-                    m.userId.slice(0, 10);
-                  return (
-                    <li
-                      key={m.userId}
-                      className="flex items-center gap-3 border-b border-line-soft/60 px-5 py-3 last:border-b-0"
-                    >
-                      <Initials name={m.name} initials={m.initials} />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[13px] font-medium text-ink">
-                            {displayName}
-                          </span>
-                          {m.role === "owner" ? (
-                            <span className="rounded bg-bg-sunken px-1.5 py-0.5 text-[10px] font-medium text-ink-quiet">
-                              Owner
-                            </span>
-                          ) : null}
-                        </div>
-                        {m.email ? (
-                          <div className="mt-0.5 truncate text-[11.5px] text-ink-quiet">
-                            {m.email}
-                          </div>
-                        ) : null}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-              <div className="border-t border-line-soft/60 px-5 py-2.5">
-                <Link
-                  href="/app/settings"
-                  className="text-[12px] font-medium text-ink-quiet underline-offset-2 transition-colors hover:text-ink-soft hover:underline"
-                >
-                  Invite a team member
-                </Link>
-              </div>
+          {/* Milestones */}
+          <section aria-label="Milestones" className={CARD}>
+            <div className={CARD_HEAD}>
+              <CardTitle className={CARD_TITLE}>
+                Milestones
+                {milestones.length > 0 ? <span className={CARD_COUNT}>{milestones.length}</span> : null}
+              </CardTitle>
+              <Link href={links.timeline} className={CARD_LINK}>
+                Timeline <span aria-hidden="true">→</span>
+              </Link>
             </div>
-          )}
-        </section>
-
-        {/* Milestones section */}
-        <section aria-label="Milestones">
-          <SectionHeading>Milestones</SectionHeading>
-          {milestones.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-line px-5 py-4 text-[13px] leading-snug text-ink-quiet">
-              Mark a task as a milestone and it appears here and on your plan.
-            </div>
-          ) : (
-            <div className="overflow-hidden rounded-xl border border-line-soft bg-white">
-              <ul>
+            {milestones.length === 0 ? (
+              <p className={EMPTY}>Mark a task as a milestone and it appears here and on your plan.</p>
+            ) : (
+              <ul className="px-1.5 pb-1.5">
                 {milestones.map((m) => {
-                  const due = m.dueAt
-                    ? new Date(m.dueAt).toLocaleDateString("en-GB", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                        timeZone: "UTC",
-                      })
-                    : null;
-                  const isPast =
-                    m.dueAt && new Date(m.dueAt).getTime() < nowMs;
+                  const due = m.dueAt ? formatProjectDate(m.dueAt) : null;
+                  const isPast = Boolean(m.dueAt && new Date(m.dueAt).getTime() < nowMs);
                   return (
-                    <li
-                      key={m.id}
-                      className="flex items-center justify-between gap-4 border-b border-line-soft/60 px-5 py-3 last:border-b-0"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="flex-shrink-0">
-                          <MilestoneDot />
+                    <li key={m.id}>
+                      <Link href={links.task(m.id)} className={ROW_LINK}>
+                        <span className="grid size-[28px] shrink-0 place-items-center rounded-[var(--v3-radius-sm)] bg-[var(--v3-accent-soft)] text-[color:var(--v3-accent)]">
+                          <MilestoneGlyph />
                         </span>
-                        <Link
-                          href={`/app/tasks?task=${m.id}`}
-                          className="truncate text-[13px] font-medium text-ink underline-offset-2 hover:text-ink-soft hover:underline"
-                        >
-                          {m.title}
-                        </Link>
-                      </div>
-                      {due ? (
+                        <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium">{m.title}</span>
                         <span
-                          className={`flex-shrink-0 text-[11.5px] tabular-nums ${
-                            isPast ? "text-red-600" : "text-ink-quiet"
-                          }`}
+                          className={
+                            "shrink-0 text-[12px] font-medium tabular-nums " +
+                            (isPast ? "text-[color:var(--v3-danger)]" : "text-[color:var(--v3-text-2)]")
+                          }
                         >
-                          {due}
+                          {due ?? "No date"}
                         </span>
-                      ) : null}
+                      </Link>
                     </li>
                   );
                 })}
               </ul>
-            </div>
-          )}
-        </section>
+            )}
+          </section>
 
-        {/* Recent activity section */}
-        <section aria-label="Recent activity">
-          <SectionHeading>Recent activity</SectionHeading>
-          {recentEvents.length === 0 ? (
-            <div className="rounded-xl border border-line-soft bg-white px-5 py-4 text-[13px] leading-snug text-ink-quiet">
-              Quiet so far.
+          {/* Recent activity */}
+          <section aria-label="Recent activity" className={CARD}>
+            <div className={CARD_HEAD}>
+              <CardTitle className={CARD_TITLE}>Recent activity</CardTitle>
             </div>
-          ) : (
-            <div className="overflow-hidden rounded-xl border border-line-soft bg-white">
-              <ul>
+            {recentEvents.length === 0 ? (
+              <p className={EMPTY}>Quiet so far.</p>
+            ) : (
+              <ul className="px-4 pb-2">
                 {recentEvents.map((ev) => (
                   <li
                     key={ev.id}
-                    className="flex items-baseline justify-between gap-4 border-b border-line-soft/60 px-5 py-2.5 last:border-b-0"
+                    className="flex items-baseline justify-between gap-4 border-t border-[color:var(--v3-border)] py-2.5 first:border-t-0"
                   >
-                    <p className="min-w-0 text-[13px] leading-[1.45] text-ink">
-                      {ev.sentence}
-                    </p>
+                    <p className="min-w-0 text-[13px] leading-[1.45] text-[color:var(--v3-text)]">{ev.sentence}</p>
                     <span
-                      className="flex-shrink-0 text-[11px] tabular-nums text-ink-quiet"
-                      title={new Date(ev.createdAt).toLocaleString()}
+                      className="shrink-0 text-[12px] tabular-nums text-[color:var(--v3-text-3)]"
+                      title={formatProjectDateTime(ev.createdAt)}
                     >
                       {ev.relative}
                     </span>
                   </li>
                 ))}
               </ul>
+            )}
+          </section>
+        </div>
+
+        <aside className="flex min-w-0 flex-col gap-5" aria-label="Team and details">
+          {/* Team */}
+          <section aria-label="Team" className={CARD}>
+            <div className={CARD_HEAD}>
+              <CardTitle className={CARD_TITLE}>
+                Team
+                {sortedMembers.length > 0 ? <span className={CARD_COUNT}>{sortedMembers.length}</span> : null}
+              </CardTitle>
             </div>
-          )}
-        </section>
+            {sortedMembers.length === 0 ? (
+              <p className={EMPTY}>
+                No members yet.{" "}
+                <Link
+                  href="/app/settings"
+                  className="font-medium text-[color:var(--v3-text-2)] underline underline-offset-2 transition-colors hover:text-[color:var(--v3-text)]"
+                >
+                  Invite someone
+                </Link>{" "}
+                to this project.
+              </p>
+            ) : (
+              <>
+                <ul className="px-1.5 pb-1">
+                  {sortedMembers.map((m) => (
+                    <li key={m.userId} className={ROW}>
+                      <Initials name={m.name} initials={m.initials} owner={m.role === "owner"} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate text-[13.5px] font-medium">{memberName(m)}</span>
+                          {m.role === "owner" ? (
+                            <span className="shrink-0 rounded-full bg-[var(--v3-sunken)] px-1.5 py-px text-[11px] font-medium text-[color:var(--v3-text-2)] ring-1 ring-inset ring-[color:var(--v3-border)]">
+                              Owner
+                            </span>
+                          ) : null}
+                        </div>
+                        {m.email ? (
+                          <div className="mt-0.5 truncate text-[12px] text-[color:var(--v3-text-3)]">{m.email}</div>
+                        ) : null}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                <div className="border-t border-[color:var(--v3-border)] p-1.5">
+                  <Link href="/app/settings" className={`${ROW_LINK} min-h-[40px] text-[13px] font-medium text-[color:var(--v3-text-2)] hover:text-[color:var(--v3-text)]`}>
+                    <span className="grid size-[32px] shrink-0 place-items-center rounded-full border border-dashed border-[color:var(--v3-border-strong)] text-[color:var(--v3-text-3)]">
+                      <ShellIcon.plus size={14} />
+                    </span>
+                    Invite a team member
+                  </Link>
+                </div>
+              </>
+            )}
+          </section>
+
+          {/* Details */}
+          {details.length > 0 ? (
+            <section aria-label="Details" className={CARD}>
+              <div className={CARD_HEAD}>
+                <CardTitle className={CARD_TITLE}>Details</CardTitle>
+              </div>
+              <dl className="px-4 pb-3">
+                {details.map((item) => (
+                  <div
+                    key={item.label}
+                    className="flex items-baseline justify-between gap-4 border-t border-[color:var(--v3-border)] py-2.5 first:border-t-0"
+                  >
+                    <dt className="shrink-0 text-[12.5px] text-[color:var(--v3-text-3)]">{item.label}</dt>
+                    <dd className="min-w-0 text-right text-[13px] font-medium text-[color:var(--v3-text)]">{item.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          ) : null}
+        </aside>
       </div>
     </article>
   );
 }
 
-function MilestoneDot() {
+function ProgressStat({ label, value, danger = false }: { label: string; value: number; danger?: boolean }) {
   return (
-    <svg
-      width="10"
-      height="10"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="text-ink-quiet"
-      aria-hidden
-    >
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-    </svg>
+    <div className="border-l border-[color:var(--v3-border)] px-3.5 py-2.5 first:border-l-0">
+      <dt className="text-[12px] text-[color:var(--v3-text-3)]">{label}</dt>
+      <dd
+        className={
+          "mt-0.5 text-[18px] font-semibold leading-tight tabular-nums " +
+          (danger ? "text-[color:var(--v3-danger)]" : "text-[color:var(--v3-text)]")
+        }
+      >
+        {value}
+      </dd>
+    </div>
   );
 }

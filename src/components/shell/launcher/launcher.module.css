@@ -1,0 +1,1537 @@
+/* Apps and tools: the top bar popover, the phone sheet, the /app/tools page
+   and the tool placeholder. v3 tokens only (src/ds/v3.css).
+   Spec: docs/design/v3/launcher.md (revision 2). */
+
+/* ── trigger ─────────────────────────────────────────────────────── */
+
+.anchor {
+  position: relative;
+  display: flex;
+}
+
+.trigger {
+  position: relative;
+}
+
+/* A 44px hit area around the 36px mark, so the bar stays calm. */
+.trigger::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+}
+
+.anchor .trigger[data-open] {
+  background: var(--v3-selected);
+  box-shadow: inset 0 0 0 1px var(--v3-control-border);
+  color: var(--v3-text);
+}
+
+.tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: -4px;
+  z-index: 70;
+  display: none;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 6px 5px 10px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-text);
+  color: var(--v3-canvas);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.tooltip .kbd {
+  border-color: color-mix(in srgb, var(--v3-canvas) 30%, transparent);
+  background: transparent;
+  color: var(--v3-canvas);
+}
+
+.tooltip .kbd:first-of-type {
+  margin-left: 6px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .trigger:not([data-open]):hover .tooltip {
+    display: inline-flex;
+    animation: launcherFade 120ms var(--v3-ease) 400ms both;
+  }
+}
+
+/* ── popover ─────────────────────────────────────────────────────── */
+
+.popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 60;
+  width: min(432px, calc(100vw - 32px));
+  /* The bottom edge clears the fixed preview pill (about 64px tall with its
+     margin) so the footer, and its "Tell us" line, is never covered. */
+  max-height: min(760px, calc(100dvh - 72px - 64px));
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-pop);
+  overflow: hidden;
+  transform-origin: top right;
+  animation: launcherIn 160ms var(--v3-ease) both;
+}
+
+.popover[data-phase="closing"] {
+  animation: launcherOut 120ms var(--v3-ease) both;
+  pointer-events: none;
+}
+
+@keyframes launcherIn {
+  from { opacity: 0; transform: scale(0.98) translateY(-2px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes launcherOut {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: scale(0.99); }
+}
+
+/* ── sheet (phones and touch screens) ────────────────────────────── */
+
+.sheetLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.sheetScrim {
+  position: absolute;
+  inset: 0;
+  background: var(--v3-scrim);
+  animation: launcherFade 200ms var(--v3-ease) both;
+}
+
+.sheetLayer[data-phase="closing"] .sheetScrim {
+  animation: launcherOut 120ms var(--v3-ease) both;
+}
+
+.sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  max-height: 88dvh;
+  border-radius: var(--v3-radius-xl) var(--v3-radius-xl) 0 0;
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-pop);
+  overflow: hidden;
+  transition: transform 200ms var(--v3-ease);
+  animation: sheetUp 240ms var(--v3-ease) both;
+  touch-action: pan-y;
+}
+
+.sheet[data-phase="closing"] {
+  animation: sheetDown 160ms var(--v3-ease) both;
+  pointer-events: none;
+}
+
+@keyframes sheetUp {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+
+@keyframes sheetDown {
+  from { opacity: 1; }
+  to { opacity: 0; transform: translateY(24%); }
+}
+
+.handleZone {
+  flex: none;
+  display: grid;
+  place-items: center;
+  height: 20px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--v3-border-strong);
+}
+
+/* ── panel (popover and sheet) ───────────────────────────────────── */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.panelHead {
+  flex: none;
+  padding: 12px 12px 8px;
+}
+
+.panel[data-variant="sheet"] .panelHead {
+  padding: 0 16px 8px;
+  touch-action: none;
+}
+
+.panelTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 32px;
+  padding: 0 0 8px 4px;
+}
+
+.panelTitle {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--v3-text);
+  border-radius: var(--v3-radius-sm);
+}
+
+.panelTitle:focus {
+  outline: none;
+}
+
+.seeAll {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 32px;
+  padding: 0 6px 0 10px;
+  border-radius: var(--v3-radius);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--v3-accent-text);
+  text-decoration: none;
+  transition: background-color 120ms var(--v3-ease);
+}
+
+.seeAll:hover {
+  background: var(--v3-accent-soft);
+}
+
+.done {
+  min-height: 44px;
+  margin-right: -8px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--v3-radius);
+  background: transparent;
+  color: var(--v3-accent-text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.panelBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 8px 8px;
+  scrollbar-width: thin;
+  /* A soft edge where the list runs under the head and the foot. */
+  mask-image: linear-gradient(to bottom, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
+}
+
+.panel[data-variant="sheet"] .panelBody {
+  padding: 0 12px 8px;
+}
+
+.panelFoot {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px 6px;
+  border-top: 1px solid var(--v3-border);
+  background: var(--v3-sunken);
+}
+
+.panel[data-variant="sheet"] .panelFoot {
+  padding: 4px 16px calc(8px + env(safe-area-inset-bottom));
+}
+
+.footLine {
+  min-height: 20px;
+  padding: 0 4px;
+  font-size: 12.5px;
+  line-height: 20px;
+  color: var(--v3-text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.footName {
+  margin-right: 6px;
+  font-weight: 600;
+  color: var(--v3-text);
+}
+
+.footRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.footLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 36px;
+  padding: 0 4px;
+  border-radius: var(--v3-radius);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--v3-accent-text);
+  text-decoration: none;
+}
+
+.footLink[data-quiet] {
+  color: var(--v3-text-2);
+}
+
+.footLink:hover {
+  color: var(--v3-accent-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.panel[data-variant="sheet"] .footLink {
+  min-height: 44px;
+  font-size: 15px;
+}
+
+.legend {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--v3-text-3);
+  white-space: nowrap;
+}
+
+.legend .kbd + span {
+  margin-right: 6px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .legend {
+    display: inline-flex;
+  }
+}
+
+.kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 5px;
+  border: 1px solid var(--v3-border-strong);
+  background: var(--v3-surface);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--v3-text-2);
+}
+
+/* ── search ──────────────────────────────────────────────────────── */
+
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 6px 0 12px;
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius);
+  background: var(--v3-sunken);
+  color: var(--v3-text-3);
+  transition: border-color 120ms var(--v3-ease), box-shadow 120ms var(--v3-ease), background-color 120ms var(--v3-ease);
+}
+
+.search:focus-within {
+  border-color: var(--v3-control-border);
+  background: var(--v3-surface);
+  box-shadow: 0 0 0 3px var(--v3-accent-soft);
+}
+
+.search[data-variant="sheet"],
+.search[data-variant="page"] {
+  height: 44px;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 15px;
+  outline: none;
+}
+
+.searchInput:focus-visible {
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: var(--v3-text-3);
+}
+
+.search .kbd {
+  margin-right: 4px;
+}
+
+.clear {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--v3-radius);
+  background: transparent;
+  color: var(--v3-text-3);
+  cursor: pointer;
+}
+
+.clear:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.count {
+  padding: 6px 4px 0;
+  font-size: 12.5px;
+  color: var(--v3-text-3);
+}
+
+.count:empty {
+  display: none;
+}
+
+/* ── sections ────────────────────────────────────────────────────── */
+
+.sections {
+  display: flex;
+  flex-direction: column;
+  animation: launcherFade 120ms var(--v3-ease) both;
+}
+
+.section {
+  padding: 8px 0 6px;
+}
+
+.section + .section {
+  border-top: 1px solid var(--v3-border);
+}
+
+.sectionTitle {
+  padding: 4px 6px 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--v3-text-3);
+}
+
+/* Popover and sheet tiles: four across, icon over label. */
+.tileGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2px;
+  list-style: none;
+}
+
+.tile,
+.tileSkeleton {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 84px;
+  padding: 8px 4px;
+  border-radius: var(--v3-radius-lg);
+}
+
+.tile {
+  color: var(--v3-text);
+  text-decoration: none;
+  transition: background-color 120ms var(--v3-ease);
+}
+
+.tile[data-stagger] {
+  animation: launcherRise 200ms var(--v3-ease) both;
+  animation-delay: calc(var(--i, 0) * 12ms);
+}
+
+.tile:hover {
+  background: var(--v3-hover);
+}
+
+.tile[data-active] {
+  background: var(--v3-selected);
+  box-shadow: inset 0 0 0 1.5px var(--v3-accent);
+}
+
+.plate {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-fill);
+  box-shadow: inset 0 0 0 1px var(--v3-border);
+  color: var(--v3-text);
+  transition: transform 160ms var(--v3-ease), background-color 120ms var(--v3-ease);
+}
+
+.tile:hover .plate {
+  transform: translateY(-1px);
+}
+
+/* An app you can use: its own filled identity tile, the glyph in project
+   ink. The loudest colour in the launcher belongs to what works today. */
+.plate[data-identity] {
+  background: var(--app-hue);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, #000 10%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent);
+  color: var(--v3-project-ink);
+}
+
+/* The app you are in keeps its colour and gains a ring. */
+.tile[aria-current="page"] .plate,
+.appCard[aria-current="page"] .plate {
+  box-shadow:
+    0 0 0 2px var(--v3-surface),
+    0 0 0 4px var(--v3-accent);
+}
+
+.tileLabel {
+  max-width: 100%;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* The current app: a 2px accent line under its name. */
+.tile[aria-current="page"] .tileLabel {
+  text-decoration: underline;
+  text-decoration-color: var(--v3-accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
+}
+
+/* The Messages slot while the gate answers: same box, no content. */
+.plateSkeleton,
+.labelSkeleton,
+.skeleton {
+  background: linear-gradient(90deg, var(--v3-fill) 0%, var(--v3-hover) 50%, var(--v3-fill) 100%);
+  background-size: 200% 100%;
+  animation: launcherShimmer 1.4s linear infinite;
+}
+
+.plateSkeleton {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--v3-radius-lg);
+}
+
+.labelSkeleton {
+  width: 52px;
+  height: 10px;
+  margin: 3px 0 2px;
+  border-radius: 999px;
+}
+
+/* Rows: Works with and search results. */
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  list-style: none;
+}
+
+.row,
+.toolRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 6px 8px;
+  border-radius: var(--v3-radius);
+  color: var(--v3-text);
+  text-decoration: none;
+  transition: background-color 120ms var(--v3-ease);
+}
+
+a.row:hover,
+a.toolRow:hover {
+  background: var(--v3-hover);
+}
+
+.row[data-active],
+.toolRow[data-active] {
+  background: var(--v3-selected);
+  box-shadow: inset 2px 0 0 var(--v3-accent);
+}
+
+.row[data-static] {
+  cursor: default;
+}
+
+.rowTile {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-fill);
+  box-shadow: inset 0 0 0 1px var(--v3-border);
+  color: var(--v3-text);
+}
+
+/* An app in search results: the same filled identity tile. */
+.rowTile[data-tone="app"] {
+  background: var(--app-hue);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #000 10%, transparent);
+  color: var(--v3-project-ink);
+}
+
+/* A tool on the way: a soft tint of its hue, never louder than the apps.
+   The glyph mixes the hue toward the text colour, which darkens it on the
+   light theme and lightens it on the dark one, so it holds 3:1 on both. */
+.rowTile[data-tone="tool"],
+.toolPlate,
+.otherPlate {
+  background: color-mix(in srgb, var(--tool-hue) 14%, var(--v3-surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tool-hue) 24%, transparent);
+  color: color-mix(in srgb, var(--tool-hue) 72%, var(--v3-text));
+}
+
+.rowText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.rowLabel {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--v3-text);
+}
+
+.rowDescription {
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--v3-text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pill {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--v3-fill);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--v3-text-2);
+  white-space: nowrap;
+}
+
+.pill[data-tone="setup"] {
+  background: var(--v3-accent-soft);
+  color: var(--v3-accent-text);
+}
+
+.enter {
+  flex: none;
+  display: none;
+  place-items: center;
+  width: 24px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1px solid var(--v3-border-strong);
+  font-size: 12px;
+  color: var(--v3-text-2);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  a.row[data-active] .enter {
+    display: inline-grid;
+  }
+}
+
+/* Coming soon in the popover: two across, tinted tiles, no chips. */
+.toolRows {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+  list-style: none;
+}
+
+.toolRow {
+  gap: 10px;
+  min-height: 48px;
+}
+
+.toolRow .rowLabel {
+  font-size: 13.5px;
+}
+
+.toolRow .rowDescription {
+  font-size: 12px;
+}
+
+.panel[data-variant="sheet"] .toolRows {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.panel[data-variant="sheet"] .row,
+.panel[data-variant="sheet"] .toolRow {
+  min-height: 56px;
+}
+
+.panel[data-variant="sheet"] .tile,
+.panel[data-variant="sheet"] .tileSkeleton {
+  min-height: 80px;
+}
+
+@media (min-width: 480px) {
+  .panel[data-variant="sheet"] .toolRows {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ── results ─────────────────────────────────────────────────────── */
+
+.results {
+  padding-top: 6px;
+  animation: launcherFade 120ms var(--v3-ease) both;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 20px 8px 16px;
+}
+
+.emptyMark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-bottom: 8px;
+  border-radius: 999px;
+  background: var(--v3-fill);
+  color: var(--v3-text-2);
+}
+
+.emptyTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--v3-text);
+  overflow-wrap: anywhere;
+}
+
+.emptyBody {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--v3-text-2);
+}
+
+.suggest {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  margin-top: 10px;
+  padding: 0 14px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-accent);
+  color: var(--v3-on-accent);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 120ms var(--v3-ease);
+}
+
+.suggest:hover {
+  background: var(--v3-accent-hover);
+}
+
+@media (pointer: coarse) {
+  .suggest {
+    min-height: 44px;
+  }
+}
+
+/* ── page (/app/tools) ───────────────────────────────────────────── */
+
+.page {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: var(--v3-canvas);
+}
+
+.pageInner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px 32px 56px;
+}
+
+.pageHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 24px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.pageHeading {
+  min-width: 0;
+}
+
+.pageTitle {
+  font-size: 26px;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--v3-text);
+}
+
+.pageLede {
+  margin-top: 6px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--v3-text-2);
+}
+
+.pageSearch {
+  width: min(340px, 100%);
+}
+
+.pageBody .section {
+  padding: 24px 0 4px;
+}
+
+.pageBody .section + .section {
+  border-top: 0;
+}
+
+.pageBody .sectionTitle {
+  padding: 0 0 10px;
+  font-size: 14px;
+  color: var(--v3-text);
+}
+
+.pageBody .results {
+  padding-top: 20px;
+  max-width: 720px;
+}
+
+.pageBody .row {
+  min-height: 60px;
+  padding: 10px 12px;
+}
+
+/* Your apps: compact 64px cards, four across. */
+.appGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  list-style: none;
+}
+
+.appCard,
+.appCardSkeleton,
+.connectedCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  height: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  text-decoration: none;
+  transition: border-color 120ms var(--v3-ease), box-shadow 160ms var(--v3-ease), transform 160ms var(--v3-ease);
+}
+
+.appCardSkeleton {
+  border-style: dashed;
+}
+
+a.appCard:hover,
+a.connectedCard:hover {
+  border-color: var(--v3-border-strong);
+  box-shadow: var(--v3-shadow-1);
+}
+
+.appCard .plate {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--v3-radius);
+}
+
+.appCard[aria-current="page"] {
+  border-color: color-mix(in srgb, var(--v3-accent) 50%, var(--v3-border));
+}
+
+.connectedCard[data-static] {
+  background: var(--v3-sunken);
+}
+
+.cardText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cardLabel {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--v3-text);
+}
+
+.cardDescription {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--v3-text-2);
+}
+
+.appCard .cardDescription {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Works with: two across. */
+.connectedGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  list-style: none;
+}
+
+.connectedCard .rowTile {
+  width: 36px;
+  height: 36px;
+}
+
+/* Coming soon: four across and compact, the same height as the app cards,
+   so what is not built yet never outweighs what is. */
+.toolGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  list-style: none;
+}
+
+.toolCard,
+.requestCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  height: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  text-decoration: none;
+  transition: border-color 120ms var(--v3-ease), box-shadow 160ms var(--v3-ease), transform 160ms var(--v3-ease);
+}
+
+.toolCard:hover {
+  border-color: var(--v3-border-strong);
+  box-shadow: var(--v3-shadow-1);
+}
+
+.toolCard .cardDescription,
+.requestCard .cardDescription {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toolPlate {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--v3-radius);
+}
+
+.planLink {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  color: var(--v3-text-3);
+}
+
+.toolCard:hover .planLink {
+  color: var(--v3-text-2);
+}
+
+.planLink svg {
+  transition: transform 160ms var(--v3-ease);
+}
+
+.toolCard:hover .planLink svg {
+  transform: translateX(2px);
+}
+
+.requestCard {
+  border: 1px dashed var(--v3-control-border);
+  background: transparent;
+}
+
+.requestCard:hover {
+  border-style: solid;
+  background: var(--v3-hover);
+}
+
+.requestPlate {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--v3-radius);
+  border: 1px dashed var(--v3-control-border);
+  color: var(--v3-text-2);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── tool placeholder (/app/tools/[slug]) ────────────────────────── */
+
+.tool {
+  --tool-hue: var(--v3-project-1);
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 32px 64px;
+}
+
+.toolNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.backLink,
+.pagerLink,
+.nextLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 36px;
+  padding: 0 8px;
+  border-radius: var(--v3-radius);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--v3-text-2);
+  text-decoration: none;
+  transition: background-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
+}
+
+.backLink {
+  margin-left: -8px;
+}
+
+.backLink:hover,
+.pagerLink:hover,
+.nextLink:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.pager {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: -8px;
+}
+
+.nextLink {
+  display: none;
+}
+
+.toolHero {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--v3-border);
+}
+
+.toolMark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--v3-radius-xl);
+  background: var(--tool-hue);
+  color: var(--v3-project-ink);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #000 8%, transparent), var(--v3-shadow-1);
+  animation: launcherRise 280ms var(--v3-ease) both;
+}
+
+.toolHeadText {
+  min-width: 0;
+}
+
+.toolHeading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+
+.toolName {
+  font-size: 22px;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--v3-text);
+}
+
+.toolLede {
+  margin-top: 4px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--v3-text-2);
+}
+
+.toolSection {
+  padding-top: 28px;
+}
+
+.toolSectionTitle {
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--v3-text);
+}
+
+.bullets {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  list-style: none;
+}
+
+.bullet {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--v3-text);
+}
+
+.bulletMark {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--tool-hue);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #000 12%, transparent);
+  transform: translateY(-2px);
+}
+
+.untilThen {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.untilLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 12px 14px;
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  text-decoration: none;
+  transition: border-color 120ms var(--v3-ease), box-shadow 160ms var(--v3-ease);
+}
+
+.untilLink .plate {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--v3-radius);
+}
+
+.untilLink:hover {
+  border-color: var(--v3-border-strong);
+  box-shadow: var(--v3-shadow-1);
+}
+
+.chevron {
+  flex: none;
+  color: var(--v3-text-3);
+  transition: transform 160ms var(--v3-ease), color 120ms var(--v3-ease);
+}
+
+.untilLink:hover .chevron {
+  transform: translateX(2px);
+  color: var(--v3-text-2);
+}
+
+.askButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-top: 16px;
+  padding: 0 18px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-accent);
+  color: var(--v3-on-accent);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 120ms var(--v3-ease);
+}
+
+.askButton:hover {
+  background: var(--v3-accent-hover);
+}
+
+.otherTools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+}
+
+.otherTool {
+  --tool-hue: var(--v3-project-1);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px 0 8px;
+  border: 1px solid var(--v3-border);
+  border-radius: 999px;
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  font-size: 13.5px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: border-color 120ms var(--v3-ease), background-color 120ms var(--v3-ease);
+}
+
+.otherTool:hover {
+  border-color: var(--v3-border-strong);
+  background: var(--v3-hover);
+}
+
+.otherPlate {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+}
+
+/* ── loading ─────────────────────────────────────────────────────── */
+
+.skeleton {
+  border-radius: var(--v3-radius);
+}
+
+.skeletonTitle {
+  width: 220px;
+  height: 30px;
+}
+
+.skeletonLede {
+  width: min(420px, 70vw);
+  height: 16px;
+  margin-top: 10px;
+}
+
+.skeletonSearch {
+  width: min(340px, 100%);
+  height: 44px;
+}
+
+.skeletonHeading {
+  width: 96px;
+  height: 14px;
+  margin: 32px 0 12px;
+}
+
+.skeletonApp {
+  height: 64px;
+  border-radius: var(--v3-radius-lg);
+}
+
+.skeletonTool {
+  height: 168px;
+  border-radius: var(--v3-radius-lg);
+}
+
+/* ── motion ──────────────────────────────────────────────────────── */
+
+@keyframes launcherShimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+@keyframes launcherRise {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes launcherFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes launcherWiggle {
+  0%, 100% { transform: rotate(0); }
+  30% { transform: rotate(-1.5deg); }
+  70% { transform: rotate(1.5deg); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a.toolRow:hover .rowTile,
+  .toolCard:hover .toolPlate {
+    animation: launcherWiggle 240ms var(--v3-ease) 1;
+  }
+}
+
+/* ── breakpoints ─────────────────────────────────────────────────── */
+
+@media (max-width: 1099px) {
+  .appGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .toolGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 899px) {
+  .connectedGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 599px) {
+  .pageInner {
+    padding: 20px 16px 40px;
+  }
+
+  .pageTitle {
+    font-size: 24px;
+  }
+
+  .pageSearch {
+    width: 100%;
+  }
+
+  .appGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .appCard {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .appCard .cardDescription {
+    display: none;
+  }
+
+  /* Coming soon becomes full-width 64px rows; the request card stays last. */
+  .toolGrid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .toolCard,
+  .requestCard {
+    flex-direction: row;
+    align-items: center;
+    min-height: 64px;
+    padding: 10px 12px;
+  }
+
+  .toolPlate,
+  .requestPlate {
+    width: 36px;
+    height: 36px;
+  }
+
+  .toolCard .cardDescription {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .planLink {
+    display: none;
+  }
+
+  .skeletonTool {
+    height: 64px;
+  }
+
+  .tool {
+    padding: 12px 16px 40px;
+  }
+
+  .toolNav {
+    margin-bottom: 20px;
+  }
+
+  .pager {
+    display: none;
+  }
+
+  .toolHero {
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .toolMark {
+    width: 56px;
+    height: 56px;
+  }
+
+  .untilThen {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .askButton {
+    width: 100%;
+  }
+
+  .nextLink {
+    display: flex;
+    justify-content: space-between;
+    min-height: 52px;
+    margin-top: 28px;
+    padding: 0 16px;
+    border: 1px solid var(--v3-border);
+    border-radius: var(--v3-radius-lg);
+    background: var(--v3-surface);
+    font-size: 14px;
+    color: var(--v3-text);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popover,
+  .tile[data-stagger],
+  .sections,
+  .results,
+  .toolMark,
+  .sheetScrim {
+    animation-name: launcherFade;
+    animation-duration: 100ms;
+    animation-delay: 0ms;
+  }
+
+  .sheet,
+  .sheet[data-phase="closing"],
+  .popover[data-phase="closing"] {
+    animation: launcherFade 100ms linear both;
+  }
+
+  .sheet[data-phase="closing"],
+  .popover[data-phase="closing"] {
+    animation-direction: reverse;
+  }
+
+  .plate,
+  .chevron,
+  .appCard,
+  .toolCard,
+  .planLink svg {
+    transition: none;
+    transform: none;
+  }
+
+  .plateSkeleton,
+  .labelSkeleton,
+  .skeleton {
+    animation: none;
+  }
+}
+
+/* No keyboard, no key hint. */
+@media (hover: none), (pointer: coarse) {
+  .search .kbd {
+    display: none;
+  }
+}

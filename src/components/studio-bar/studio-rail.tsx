@@ -133,7 +133,7 @@ function RailMoreMenu({ messagesEnabled, current }: { messagesEnabled: boolean; 
           <Link href="/app/inbox" onClick={() => setOpen(false)} role="menuitem">
             <span>Inbox</span>
           </Link>
-          {messagesEnabled ? <Link href={MESSAGES_APP_PATH} onClick={() => setOpen(false)} role="menuitem"><span>Messages</span></Link> : null}
+          {messagesEnabled ? <Link href={MESSAGES_APP_PATH} onClick={() => setOpen(false)} role="menuitem"><span>Chat</span></Link> : null}
           <Link href="/app/settings" onClick={() => setOpen(false)} role="menuitem">
             <span>Project and team</span>
             <span aria-hidden="true">↗</span>

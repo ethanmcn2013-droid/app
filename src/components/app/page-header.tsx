@@ -1,36 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useDomain } from "@/lib/domain-context";
-import { useActiveWorkspace, useColumnConfig } from "@/lib/domain-context";
-import { publicBoardColumns } from "@/lib/public-board-lanes";
-import { ShareButton } from "@/components/app/share/share-button";
-import { usePalette } from "@/components/app/palette/command-palette";
-import { useTasks } from "@/lib/tasks/tasks-context";
-import { useToast } from "@/components/primitives/toast";
-import {
-  formatTasksAsCsv,
-  formatTasksAsMarkdown,
-} from "@/lib/exports";
-import type { ShareView } from "@/server/actions/share";
-import { TASKS_VIEW_PATHS } from "@/lib/product-urls";
-import { parseProjectId } from "@/lib/projects/project-ref";
-import { withActiveProject } from "@/lib/projects/project-url";
-import { requestOpenNav } from "@/components/app/tasks-nav-state";
-import { pageHeaderTaskView, pageHeaderTitle } from "./page-header-context";
-
-// "Schedule", never "Timeline": inside Tasks the view is named Schedule —
-// "Timeline" without the Tasks namespace always means the Timeline product
-// one rail-stop below (SUITE_URL_AND_NAMING_CONTRACT). The route slug is
-// the one place the old name legitimately survives.
-const TABS = [
-  { href: TASKS_VIEW_PATHS.board, label: "Board" },
-  { href: TASKS_VIEW_PATHS.list, label: "List" },
-  { href: TASKS_VIEW_PATHS.timeline, label: "Schedule" },
-  { href: TASKS_VIEW_PATHS.calendar, label: "Calendar" },
-];
+import { pageHeaderTitle } from "./page-header-context";
 
 /** Pull the part of the workspace title before " · " for the H1.
  *  e.g. "Q3 Launch · Plays in motion" → "Q3 Launch". */
@@ -39,356 +11,48 @@ function shortenTitle(t: string): string {
   return idx > 0 ? t.slice(0, idx) : t;
 }
 
-export function AppPageHeader({ active: activeProp }: { active?: string }) {
+/**
+ * v3 page header: one title row shared by every utility page (Inbox, My
+ * tasks, Settings, Archive). Aligned to the same 1180px page column as
+ * Home so the title and the content below start on one edge. Navigation
+ * lives in the shell, so there is no drawer button here any more.
+ *
+ * Tasks draws its own header (src/components/tasks/tasks-header.tsx): the
+ * view switch, share, export and print live there, so a utility page can
+ * never grow task view tabs or board actions.
+ */
+export function AppPageHeader({
+  description,
+  actions,
+}: {
+  /** Kept for callers that still pass a highlight; titles come from the route. */
+  active?: string;
+  /** One plain sentence under the title. */
+  description?: React.ReactNode;
+  /** Page-level actions on the right of the title row. */
+  actions?: React.ReactNode;
+}) {
   const pathname = usePathname();
-  const active = activeProp ?? pathname ?? "";
-  const { openPalette } = usePalette();
   const pack = useDomain();
-  const workspace = useActiveWorkspace();
-  const projectId = parseProjectId(workspace?.id);
   const projectName = pack.workspaceName?.trim() || pack.boardName || shortenTitle(pack.workspaceTitle);
   const title = pageHeaderTitle(pathname, projectName);
-  const projectDrawerAvailable = pathname === "/app/project" || pathname === "/app/settings";
-  // Route ownership is explicit. A tab-highlight override cannot turn a
-  // utility page into a shareable board or expose task export actions.
-  const taskView = pageHeaderTaskView(pathname);
-  const contextualPath = (path: string) => projectId ? withActiveProject(path, projectId) : path;
+  const subtitle = description ?? (title === "Settings" ? <>Project · {projectName}</> : null);
 
   return (
-    <header className="px-4 pb-3 pt-2.5 md:px-8 md:pt-3">
-      <div className="flex items-center justify-between gap-3">
+    <header className="mx-auto w-full max-w-[1180px] px-4 pb-2 pt-6 md:px-8 md:pt-7">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <h1 className="text-[20px] font-semibold tracking-tight md:text-[24px]">
+          <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.02em] text-[color:var(--v3-text)] md:text-[26px]">
             <span className="block truncate">{title}</span>
           </h1>
-          {title === "Settings" ? <p className="mt-1 truncate text-[12px] text-ink-soft" title={projectName}>Project · {projectName}</p> : null}
-        </div>
-        {projectDrawerAvailable ? (
-          <button
-            aria-label="Open Tasks navigation"
-            className="inline-flex h-[44px] flex-shrink-0 items-center justify-center rounded-lg border border-line-soft px-3 text-[12px] font-medium text-ink-soft hover:bg-bg-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand min-[1100px]:hidden"
-            onClick={requestOpenNav}
-            type="button"
-          >
-            Projects
-          </button>
-        ) : null}
-        {taskView ? <div className="flex flex-shrink-0 items-center gap-2">
-          {/* T·94: Search + New task live in the Studio Bar. The page
-              header keeps only view-local actions. */}
-          <span className="hidden lg:inline-flex">
-            <ShareButton view={taskView} />
-          </span>
-          <PageActionsOverflow
-            onSearch={openPalette}
-            showShare
-            shareView={taskView}
-            printPath={contextualPath(`/print/${taskView}`)}
-          />
-        </div> : null}
-      </div>
-
-      {taskView ? <div className="mt-4 flex min-w-0 items-center justify-between">
-        <nav aria-label="Task views" className="flex min-w-0 items-center gap-1 overflow-x-auto rounded-lg bg-bg-sunken/70 p-0.5 thin-scroll">
-          {TABS.map((t) => (
-            <Link
-              key={t.href}
-              href={contextualPath(t.href)}
-              aria-current={active === t.href ? "page" : undefined}
-              className={
-                "shrink-0 rounded-md px-3 py-1 text-[12.5px] font-medium transition-colors " +
-                (active === t.href
-                  ? "bg-white text-ink shadow-sm"
-                  : "text-ink-quiet hover:text-ink-soft")
-              }
-            >
-              {t.label}
-            </Link>
-          ))}
-        </nav>
-      </div> : null}
-    </header>
-  );
-}
-
-/**
- * Secondary actions menu, collapses Export/Print (always) and
- * Search/Share (mobile/tablet) into a single ··· popover.
- *
- * M4 (2026-05-28): Export + Print demoted from primary toolbar here.
- * Visible on all screen sizes; desktop shows ··· for utility actions.
- * Exported since T·95: the room view bar (lab parity) hosts the same
- * overflow beside its tools. `onSearch` optional there — the bar has
- * the universal field.
- */
-export function PageActionsOverflow({
-  onSearch,
-  showShare,
-  shareView,
-  printPath,
-  variant = "bordered",
-}: {
-  onSearch?: () => void;
-  showShare: boolean;
-  variant?: "bordered" | "band";
-  shareView: ShareView;
-  printPath: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement | null>(null);
-
-  // Export hooks, only active when workspace is available.
-  const { toast } = useToast();
-  const { state } = useTasks();
-  const pack = useDomain();
-  const ws = useActiveWorkspace();
-  const columnConfig = useColumnConfig();
-  const [copying, setCopying] = useState<string | null>(null);
-
-  const handleCopy = useCallback(
-    async (key: string, text: string, label: string, body: string) => {
-      setCopying(key);
-      const doWrite = async (t: string) => {
-        try {
-          await navigator.clipboard.writeText(t);
-        } catch {
-          const ta = document.createElement("textarea");
-          ta.value = t;
-          ta.style.cssText = "position:fixed;opacity:0";
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand("copy");
-          document.body.removeChild(ta);
-        }
-      };
-      try {
-        await doWrite(text);
-        toast(label, { tone: "success", body });
-      } catch {
-        toast("Couldn’t copy", { tone: "error" });
-      }
-      setTimeout(() => {
-        setCopying(null);
-        setOpen(false);
-      }, 700);
-    },
-    [toast],
-  );
-
-  const onCopyCsv = () => {
-    if (!ws) return;
-    handleCopy(
-      "csv",
-      formatTasksAsCsv(state.tasks, publicBoardColumns(columnConfig, state.tasks)),
-      "CSV copied",
-      "Paste into Google Sheets, Excel, or Numbers.",
-    );
-  };
-  const onCopyMarkdown = () => {
-    if (!ws) return;
-    handleCopy(
-      "md",
-      formatTasksAsMarkdown(
-        state.tasks,
-        // The name the operator can see, not the raw workspace title: the
-        // header and the sidebar resolve boardName first, and an export
-        // headlined with a name the user has never seen reads as someone
-        // else's file. Same expression the header title uses at its own
-        // scope above.
-        pack.boardName ?? shortenTitle(pack.workspaceTitle),
-        publicBoardColumns(columnConfig, state.tasks),
-      ),
-      "Markdown copied",
-      "Paste into Google Docs, Notion, or anything markdown.",
-    );
-  };
-  const onCopyCalendar = () => {
-    if (!ws) return;
-    const origin = window.location.origin.replace(/^https?/, "webcal");
-    handleCopy(
-      "ical",
-      `${origin}/api/calendar/${ws.id}`,
-      "Calendar link copied",
-      "Paste it into your calendar app, where it asks to add a subscription.",
-    );
-  };
-
-  useEffect(() => {
-    if (!open) return;
-    function onDocClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("mousedown", onDocClick);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDocClick);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        aria-label="More actions"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-        data-band-action={variant === "band" ? "" : undefined}
-        /* "band": the project header's ghost register, where this sits as
-           one of three sibling actions. Carried natively rather than as a
-           descendant override from the band's stylesheet — that costume
-           lost to the dark-theme .bg-white patch and grew a raised box in
-           dark only. */
-        className={
-          variant === "band"
-            ? "inline-flex h-7 w-7 items-center justify-center rounded-md border-0 bg-transparent text-[var(--x-task-text-secondary)] transition-colors hover:bg-[var(--x-task-hover)] hover:text-[var(--x-task-text)] aria-expanded:bg-[var(--x-task-selected)] aria-expanded:text-[var(--x-accent-ink)]"
-            : "inline-flex h-8 w-8 items-center justify-center rounded-md border border-line bg-white text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink"
-        }
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-          <circle cx="5" cy="12" r="1.6" />
-          <circle cx="12" cy="12" r="1.6" />
-          <circle cx="19" cy="12" r="1.6" />
-        </svg>
-      </button>
-      {open ? (
-        <div
-          role="menu"
-          className="absolute right-0 top-full z-30 mt-1.5 w-52 overflow-hidden rounded-lg border border-line-soft bg-white p-1 shadow-[0_18px_40px_-18px_rgba(20,21,26,0.22)]"
-        >
-          {/* Mobile/tablet: Search + Share */}
-          <div className="lg:hidden">
-            {onSearch ? (
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => {
-                  setOpen(false);
-                  onSearch();
-                }}
-                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
-                Search
-              </button>
-            ) : null}
-            {showShare ? (
-              <div className="[&>button]:!w-full [&>button]:!justify-start [&>button]:!rounded [&>button]:!border-0 [&>button]:!bg-transparent [&>button]:!px-2 [&>button]:!py-1.5 [&>button]:!text-[12.5px] [&>button]:!text-ink-soft hover:[&>button]:!bg-bg-sunken">
-                <ShareButton view={shareView} />
-              </div>
-            ) : null}
-            {ws ? <div className="my-1 border-t border-line-soft" /> : null}
-          </div>
-
-          {/* Export section, shown when workspace is active */}
-          {ws ? (
-            <>
-              <p className="px-2.5 pb-1 pt-0.5 text-[10px] font-semibold uppercase tracking-wider text-ink-quiet">
-                Export
-              </p>
-              <OverflowItem
-                label="Copy as CSV"
-                active={copying === "csv"}
-                onClick={onCopyCsv}
-                icon={
-                  /* pack: icon-copy-csv */
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="6" y="5.25" width="9.5" height="11" rx="2.25" />
-                    <rect x="8.5" y="7.75" width="9.5" height="11" rx="2.25" />
-                    <path d="M13.25 10.5V16" />
-                    <path d="M10.75 13.25H15.75" />
-                  </svg>
-                }
-              />
-              <OverflowItem
-                label="Copy as Markdown"
-                active={copying === "md"}
-                onClick={onCopyMarkdown}
-                icon={
-                  /* pack: icon-copy-markdown */
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="6" y="5.25" width="9.5" height="11" rx="2.25" />
-                    <rect x="8.5" y="7.75" width="9.5" height="11" rx="2.25" />
-                    <path d="M13.25 10.75V15" />
-                    <path d="M11 12.75L13.25 15.25L15.5 12.75" />
-                  </svg>
-                }
-              />
-              <OverflowItem
-                label="Subscribe in Calendar"
-                active={copying === "ical"}
-                onClick={onCopyCalendar}
-                icon={
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" />
-                    <line x1="16" y1="2" x2="16" y2="6" />
-                    <line x1="8" y1="2" x2="8" y2="6" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
-                  </svg>
-                }
-              />
-              <div className="my-1 border-t border-line-soft" />
-              <Link
-                href={printPath}
-                target="_blank"
-                rel="noopener noreferrer"
-                role="menuitem"
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-2 rounded px-2 py-1.5 text-[12.5px] text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink"
-              >
-                {/* pack: icon-print */}
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M8 8.5V5.25A0.5 0.5 0 0 1 8.5 4.75H15.5A0.5 0.5 0 0 1 16 5.25V8.5" />
-                  <rect x="4.75" y="8.5" width="14.5" height="7.25" rx="2" />
-                  <path d="M8 12.75H16V18.5A0.75 0.75 0 0 1 15.25 19.25H8.75A0.75 0.75 0 0 1 8 18.5Z" />
-                  <circle cx="7" cy="11.5" r="1.35" fill="currentColor" stroke="none" />
-                </svg>
-                Print view
-              </Link>
-            </>
+          {subtitle ? (
+            <p className="mt-1 truncate text-[13.5px] text-[color:var(--v3-text-2)]" title={typeof subtitle === "string" ? subtitle : undefined}>
+              {subtitle}
+            </p>
           ) : null}
         </div>
-      ) : null}
-    </div>
-  );
-}
-
-function OverflowItem({
-  label,
-  icon,
-  active,
-  onClick,
-}: {
-  label: string;
-  icon: React.ReactNode;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="menuitem"
-      onClick={onClick}
-      className={
-        "flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] transition-colors " +
-        (active
-          ? "bg-emerald-50 text-emerald-800"
-          : "text-ink-soft hover:bg-bg-sunken hover:text-ink")
-      }
-    >
-      <span className={active ? "text-emerald-700" : "text-ink-quiet"}>
-        {icon}
-      </span>
-      {active ? "Copied" : label}
-    </button>
+        {actions ? <div className="flex flex-shrink-0 items-center gap-2">{actions}</div> : null}
+      </div>
+    </header>
   );
 }

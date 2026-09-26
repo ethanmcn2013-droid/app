@@ -1,0 +1,1183 @@
+/* Board. Tokens only from src/ds/v3.css. Lanes are sunken trays, cards are
+   raised surfaces on a hairline; motion is transform and opacity only. */
+
+.boardHost {
+  --curve: var(--v3-ease);
+  --lane-w: 288px;
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.board {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  padding: 2px var(--gutter, 32px) 24px var(--edge, 32px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-padding-inline: var(--edge, 32px);
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--v3-border-strong) transparent;
+}
+
+/* Fit columns: lanes share the spare width, but only when each fitted lane
+   would still be at least 248px wide (the board measures this and sets
+   data-fit-room). Narrower than that, the lanes keep a readable 272px and
+   the track scrolls with a gentle snap, the way Linear and Height do. */
+.boardHost[data-fit][data-fit-room] .lane {
+  flex: 1 1 0;
+  min-width: 248px;
+  max-width: 360px;
+}
+
+.boardHost[data-fit][data-fit-room] .lane[data-compact-done] {
+  flex-grow: 0.86;
+}
+
+.boardHost:not([data-fit-room]) {
+  --lane-w: 272px;
+}
+
+.boardHost:not([data-fit-room]) .board {
+  scroll-snap-type: x proximity;
+}
+
+.boardHost:not([data-fit-room]) .lane,
+.boardHost:not([data-fit-room]) .collapsed {
+  scroll-snap-align: start;
+}
+
+.lane {
+  position: relative;
+  display: flex;
+  flex: none;
+  width: var(--lane-w);
+  max-height: 100%;
+  flex-direction: column;
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-sunken);
+  box-shadow: inset 0 0 0 1px var(--v3-border);
+  transition: box-shadow 160ms var(--v3-ease), background-color 160ms var(--v3-ease);
+}
+
+.lane[data-drop-target] {
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--v3-accent) 55%, transparent);
+  background: color-mix(in srgb, var(--v3-accent) 4%, var(--v3-sunken));
+}
+
+.lane[data-over][data-drop-target] {
+  box-shadow: inset 0 0 0 1.5px var(--v3-warning-stroke);
+}
+
+/* ── Lane header ──────────────────────────────────────────────────── */
+.laneHead {
+  flex: none;
+  padding: 10px 8px 6px 12px;
+}
+
+.laneTop {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+}
+
+.laneName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--v3-text);
+}
+
+.laneCount {
+  flex: none;
+  color: var(--v3-text-3);
+  font-size: 12.5px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.laneCount[data-over] {
+  color: var(--v3-warning-text);
+  text-decoration: underline;
+  text-decoration-color: var(--v3-warning-stroke);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}
+
+/* The add and menu buttons float over the header's end instead of
+   reserving width, so a narrow column keeps its whole name and count. */
+.laneTools {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-left: 20px;
+  background: linear-gradient(to right, transparent, var(--v3-sunken) 18px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms var(--v3-ease);
+}
+
+.lane:hover .laneTools,
+.lane:focus-within .laneTools,
+.laneTools:has([aria-expanded="true"]) {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.laneButton {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--v3-radius-sm);
+  color: var(--v3-text-2);
+}
+
+.laneButton:hover,
+.laneButton[aria-expanded="true"] {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.laneNote {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  margin-top: 1px;
+  padding-left: 23px;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--v3-text-3);
+}
+
+.swatchDot {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--v3-text) 12%, transparent);
+}
+
+/* ── Lane body ────────────────────────────────────────────────────── */
+.laneBody {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 48px;
+  flex-direction: column;
+  row-gap: 8px;
+  padding: 4px 8px 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--v3-border-strong) transparent;
+}
+
+.laneBody[data-many] > .card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 84px;
+}
+
+.dropLayer {
+  position: absolute;
+  inset: 0 8px;
+  pointer-events: none;
+}
+
+.dropSlot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--v3-accent) 7%, transparent);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--v3-accent) 45%, transparent);
+  animation: slotIn 140ms var(--v3-ease);
+}
+
+.dropSlot::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 6px;
+  right: 6px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--v3-accent);
+}
+
+@keyframes slotIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ── Card ─────────────────────────────────────────────────────────── */
+.card {
+  position: relative;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 10px 12px;
+  border-radius: 10px;
+  background: var(--v3-surface);
+  box-shadow: 0 0 0 1px var(--v3-border), var(--v3-shadow-1);
+  color: var(--v3-text);
+  cursor: pointer;
+  touch-action: pan-x pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: box-shadow 140ms var(--v3-ease), background-color 140ms var(--v3-ease), opacity 140ms var(--v3-ease);
+  outline: none;
+}
+
+.card:hover {
+  box-shadow: 0 0 0 1px var(--v3-border-strong), 0 2px 8px -2px color-mix(in srgb, var(--v3-text) 14%, transparent);
+}
+
+.card:focus-visible {
+  box-shadow: 0 0 0 2px var(--v3-accent), 0 2px 8px -2px color-mix(in srgb, var(--v3-text) 14%, transparent);
+}
+
+.card[data-open] {
+  background: var(--v3-row-selected);
+  box-shadow: 0 0 0 1.5px var(--v3-accent), var(--v3-shadow-1);
+}
+
+.card[data-selected] {
+  background: var(--v3-row-selected);
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--v3-accent) 70%, transparent), var(--v3-shadow-1);
+}
+
+.card[data-selected]::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--v3-accent);
+}
+
+.card[data-carried] {
+  box-shadow: 0 0 0 2px var(--v3-accent), var(--v3-shadow-pop);
+  transform: scale(1.02);
+  z-index: 2;
+}
+
+.card[data-dragging] {
+  opacity: 0;
+}
+
+.card[data-placed] {
+  animation: arrive 1200ms var(--v3-ease);
+}
+
+@keyframes arrive {
+  0% {
+    background: var(--v3-accent-soft);
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  10% {
+    transform: none;
+    opacity: 1;
+  }
+  40% {
+    background: var(--v3-accent-soft);
+  }
+  100% {
+    background: var(--v3-surface);
+  }
+}
+
+.cardMain {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.cardMain > :first-child {
+  margin-top: 0;
+}
+
+.cardTitle {
+  flex: 1;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  hyphens: manual;
+  font-size: 13.5px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--v3-text);
+}
+
+.card[data-done] .cardTitle {
+  color: var(--v3-text-2);
+}
+
+.cardNumber {
+  margin-right: 6px;
+  color: var(--v3-text-3);
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.cardNote {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+  margin: -4px 0 0 28px;
+  font-size: 12.5px;
+  line-height: 18px;
+  color: var(--v3-text-3);
+}
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 22px;
+}
+
+.metaEnd {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.metaEnd:empty {
+  display: none;
+}
+
+.metaButton {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--v3-radius-sm);
+  cursor: pointer;
+}
+
+.metaButton:disabled {
+  cursor: default;
+}
+
+.metaButton:not(:disabled):hover {
+  box-shadow: 0 0 0 1px var(--v3-border-strong);
+}
+
+.metaFaces {
+  display: inline-flex;
+  flex: none;
+  border-radius: 999px;
+}
+
+.metaFaces:not(:disabled):hover {
+  box-shadow: 0 0 0 2px var(--v3-border-strong);
+}
+
+.cardMenu {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--v3-radius-sm);
+  background: var(--v3-surface);
+  box-shadow: -8px 0 8px -2px var(--v3-surface);
+  color: var(--v3-text-2);
+  opacity: 0;
+  transition: opacity 120ms var(--v3-ease);
+}
+
+.card:hover .cardMenu,
+.card:focus-within .cardMenu,
+.cardMenu[aria-expanded="true"] {
+  opacity: 1;
+}
+
+.card[data-open] .cardMenu {
+  background: var(--v3-row-selected);
+  box-shadow: -8px 0 8px -2px var(--v3-row-selected);
+}
+
+.card[data-selected] .cardMenu {
+  display: none;
+}
+
+.cardMenu:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.renameField {
+  flex: 1;
+  min-width: 0;
+  margin: -3px -6px -3px -4px;
+  padding: 2px 5px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--v3-canvas);
+  box-shadow: 0 0 0 1.5px var(--v3-accent);
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 20px;
+  font-weight: 500;
+  resize: none;
+  field-sizing: content;
+  outline: none;
+}
+
+/* ── Drag ghost and completion flight ─────────────────────────────── */
+.dragGhost,
+.flightGhost {
+  position: fixed;
+  z-index: 200;
+  margin: 0;
+  pointer-events: none;
+  box-shadow: 0 0 0 1px var(--v3-border-strong), var(--v3-shadow-pop);
+  will-change: transform;
+}
+
+.dragGhost {
+  cursor: grabbing;
+  transform-origin: 30% 20%;
+}
+
+.flightGhost {
+  transition: transform 300ms var(--v3-ease);
+}
+
+.boardHost[data-dragging] {
+  cursor: grabbing;
+}
+
+.boardHost[data-dragging] .card:hover {
+  box-shadow: 0 0 0 1px var(--v3-border), var(--v3-shadow-1);
+}
+
+/* ── Done rows ────────────────────────────────────────────────────── */
+.doneRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 34px;
+  padding: 0 10px 0 11px;
+  border-radius: var(--v3-radius);
+  color: var(--v3-text-3);
+  cursor: pointer;
+  touch-action: pan-x pan-y;
+  user-select: none;
+  outline: none;
+  transition: background-color 120ms var(--v3-ease);
+}
+
+.doneRow:hover {
+  background: var(--v3-hover);
+}
+
+.doneRow:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--v3-accent);
+}
+
+.doneRow[data-dragging] {
+  opacity: 0;
+}
+
+.doneRow[data-selected] {
+  background: var(--v3-row-selected);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--v3-accent) 70%, transparent);
+}
+
+.doneTitle {
+  flex: 1;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--v3-text-2);
+  text-decoration: line-through;
+  text-decoration-color: var(--v3-border-strong);
+}
+
+.doneWhen {
+  flex: none;
+  font-size: 12px;
+  color: var(--v3-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.lane[data-compact-done] .laneBody {
+  row-gap: 0;
+}
+
+.showAll {
+  align-self: flex-start;
+  min-height: 32px;
+  margin-top: 2px;
+  padding: 0 11px;
+  border-radius: var(--v3-radius);
+  color: var(--v3-text-2);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.showAll:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+/* ── Empty, add row, composer ─────────────────────────────────────── */
+.emptyZone {
+  display: flex;
+  align-items: center;
+  min-height: 76px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1.5px dashed var(--v3-border-strong);
+  color: var(--v3-text-3);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.emptyQuiet {
+  padding: 8px 6px 4px;
+  color: var(--v3-text-3);
+  font-size: 12.5px;
+}
+
+.lane[data-drop-target] .emptyZone {
+  border-color: transparent;
+  color: transparent;
+}
+
+.addRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  min-height: 36px;
+  margin: 2px 8px 8px;
+  padding: 0 8px;
+  border-radius: var(--v3-radius);
+  color: var(--v3-text-3);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
+}
+
+.addRow:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.composer {
+  flex: none;
+  padding: 10px 12px 8px;
+  border-radius: 10px;
+  background: var(--v3-surface);
+  box-shadow: 0 0 0 1.5px var(--v3-accent), var(--v3-shadow-1);
+}
+
+.composerRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.composerRow > svg {
+  margin-top: 2px;
+}
+
+.composerInput {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 20px;
+  font-weight: 500;
+  resize: none;
+  field-sizing: content;
+  outline: none;
+}
+
+.composerInput::placeholder {
+  color: var(--v3-text-3);
+  font-weight: 400;
+}
+
+.composerHint {
+  margin: 6px 0 0 26px;
+  font-size: 11.5px;
+  color: var(--v3-text-3);
+}
+
+/* ── Folded columns ───────────────────────────────────────────────── */
+.collapsed {
+  position: relative;
+  flex: none;
+  width: 44px;
+  align-self: stretch;
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-sunken);
+  box-shadow: inset 0 0 0 1px var(--v3-border);
+}
+
+.collapsed[data-drop-target] {
+  box-shadow: inset 0 0 0 1.5px var(--v3-accent);
+}
+
+.unfold {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 0;
+  border-radius: inherit;
+  color: var(--v3-text-2);
+}
+
+.unfold:hover {
+  background: var(--v3-hover);
+}
+
+.foldName {
+  writing-mode: vertical-rl;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--v3-text);
+}
+
+.foldCount {
+  font-size: 12px;
+  color: var(--v3-text-3);
+}
+
+.foldBody {
+  display: none;
+}
+
+/* ── Add column ───────────────────────────────────────────────────── */
+/* A slim rail at the end of the track, so a fitted board never pushes it
+   off screen; the words appear when there is room. */
+.addColumn {
+  flex: none;
+  align-self: flex-start;
+  width: 40px;
+}
+
+.addColumnButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: var(--v3-radius-lg);
+  border: 1.5px dashed var(--v3-border-strong);
+  color: var(--v3-text-2);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 120ms var(--v3-ease), color 120ms var(--v3-ease), border-color 120ms var(--v3-ease);
+}
+
+.addColumnButton:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+  border-color: var(--v3-control-border);
+}
+
+.addColumnButton:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.addColumnText {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.fieldForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+}
+
+.fieldLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--v3-text-2);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.fieldInput {
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--v3-border-strong);
+  border-radius: var(--v3-radius);
+  background: var(--v3-canvas);
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 400;
+}
+
+.fieldInput:focus {
+  outline: none;
+  border-color: var(--v3-accent);
+  box-shadow: 0 0 0 3px var(--v3-accent-soft);
+}
+
+.fieldHelp {
+  color: var(--v3-text-3);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.fieldActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.confirmScrim {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: var(--v3-scrim);
+}
+
+.confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(420px, 100%);
+  padding: 20px;
+  border-radius: var(--v3-radius-xl);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-pop);
+}
+
+.confirmTitle {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.confirmBody {
+  color: var(--v3-text-2);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+/* ── Keyboard carry bar ───────────────────────────────────────────── */
+.carryBar {
+  position: fixed;
+  left: 50%;
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100vw - 32px);
+  padding: 10px 14px;
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-solid);
+  color: var(--v3-on-solid);
+  font-size: 12.5px;
+  box-shadow: var(--v3-shadow-pop);
+  transform: translateX(-50%);
+}
+
+.carryBar b {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.carryKeys {
+  opacity: 0.7;
+}
+
+/* ── First run and filtered ───────────────────────────────────────── */
+/* First run: the real columns stand behind the guide as tall empty trays,
+   so the page already looks like the board it will become. The guide sits
+   over the first columns, whose own empty sentences step aside for it. */
+.boardHost[data-first-run] .lane {
+  min-height: min(460px, 100%);
+}
+
+.boardHost[data-first-run] .lane:nth-child(-n + 3) .emptyZone {
+  visibility: hidden;
+}
+
+.guide {
+  position: absolute;
+  top: 76px;
+  left: calc(var(--edge, 32px) + 16px);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(460px, calc(100% - 2 * var(--gutter, 32px)));
+  padding: 22px;
+  border-radius: var(--v3-radius-xl);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-pop);
+}
+
+.guideIcon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-accent-soft);
+  color: var(--v3-accent-text);
+}
+
+.guideTitle {
+  font-size: 17px;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+.guideBody {
+  color: var(--v3-text-2);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.guideForm {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.guideInput {
+  flex: 1;
+  min-width: 0;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--v3-border-strong);
+  border-radius: var(--v3-radius);
+  background: var(--v3-canvas);
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 14px;
+}
+
+.guideInput:focus {
+  outline: none;
+  border-color: var(--v3-accent);
+  box-shadow: 0 0 0 3px var(--v3-accent-soft);
+}
+
+.guideAdd {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-accent);
+  color: var(--v3-on-accent);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.guideAdd:disabled {
+  opacity: 0.45;
+}
+
+.guideExamples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.guideExample {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--v3-fill);
+  color: var(--v3-text-2);
+  font-size: 12.5px;
+}
+
+.guideExample:hover {
+  color: var(--v3-text);
+  box-shadow: inset 0 0 0 1px var(--v3-border-strong);
+}
+
+.filteredEmpty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 var(--gutter, 32px) 12px var(--edge, 32px);
+  padding: 10px 12px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-sunken);
+  box-shadow: inset 0 0 0 1px var(--v3-border);
+  color: var(--v3-text-2);
+  font-size: 13px;
+}
+
+.filteredEmpty span {
+  flex: 1;
+}
+
+.filteredEmpty button {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--v3-radius-sm);
+  background: var(--v3-surface);
+  box-shadow: 0 0 0 1px var(--v3-border);
+  color: var(--v3-text);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+/* ── Phone pager ──────────────────────────────────────────────────── */
+.pager {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .boardHost,
+  .boardHost:not([data-fit-room]) {
+    --lane-w: calc(100vw - 56px);
+  }
+  .boardHost:not([data-fit-room]) .board {
+    scroll-snap-type: x mandatory;
+  }
+  .board {
+    align-items: flex-start;
+    gap: 12px;
+    padding: 4px 16px 120px;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 16px;
+    overflow-y: visible;
+  }
+  .boardHost[data-fit][data-fit-room] .lane,
+  .lane {
+    flex: none;
+    width: var(--lane-w);
+    max-width: none;
+    min-width: 0;
+    max-height: none;
+    scroll-snap-align: start;
+  }
+  .laneBody {
+    overflow: visible;
+  }
+  .laneTools {
+    position: static;
+    margin-left: auto;
+    padding-left: 0;
+    background: none;
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .laneButton {
+    width: 40px;
+    height: 40px;
+  }
+  /* The menu is always visible here, so the title keeps clear of it. */
+  .cardTitle {
+    padding-right: 36px;
+  }
+  .cardMenu {
+    opacity: 1;
+    width: 36px;
+    height: 36px;
+    top: 2px;
+    right: 2px;
+    border-radius: var(--v3-radius);
+    background: var(--v3-surface);
+    box-shadow: none;
+  }
+  /* The pager chip is the column header on a phone. */
+  .laneHead {
+    display: none;
+  }
+  .laneBody {
+    padding-top: 6px;
+  }
+  .addRow {
+    min-height: 44px;
+  }
+  .pager {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px 2px 16px;
+    background: var(--v3-canvas);
+  }
+  .pagerTabs {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, var(--v3-canvas) calc(100% - 20px), transparent);
+    mask-image: linear-gradient(to right, var(--v3-canvas) calc(100% - 20px), transparent);
+  }
+  .pagerTabs::-webkit-scrollbar {
+    display: none;
+  }
+  .pagerTools {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 0;
+  }
+  .pagerTools .laneButton {
+    width: 44px;
+    height: 44px;
+  }
+  .pagerItem {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: var(--v3-fill);
+    color: var(--v3-text-2);
+    font-size: 12.5px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .pagerItem[aria-selected="true"] {
+    background: var(--v3-solid);
+    color: var(--v3-on-solid);
+  }
+  .pagerCount {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.7;
+  }
+  .addColumn {
+    width: 44px;
+    margin-right: 16px;
+  }
+  .guide {
+    position: relative;
+    top: 0;
+    left: 0;
+    margin: 0 16px 12px;
+    width: auto;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1099px) {
+  .board {
+    scroll-snap-type: x proximity;
+  }
+  .lane {
+    scroll-snap-align: start;
+  }
+}
+
+@media (pointer: coarse) {
+  .laneTools {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  /* No hover on touch: the card menu shows, so titles stop short of it. */
+  .cardTitle {
+    padding-right: 30px;
+  }
+  .cardMenu {
+    opacity: 1;
+    background: var(--v3-surface);
+    border-radius: var(--v3-radius-sm);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .lane,
+  .laneTools,
+  .cardMenu,
+  .addRow,
+  .doneRow {
+    transition: none;
+  }
+  .card[data-placed] {
+    animation: washOnly 1200ms linear;
+  }
+  .card[data-carried] {
+    transform: none;
+  }
+  .flightGhost {
+    transition: none;
+  }
+  .dropSlot {
+    animation: none;
+  }
+}
+
+@keyframes washOnly {
+  0%,
+  40% {
+    background: var(--v3-accent-soft);
+  }
+  100% {
+    background: var(--v3-surface);
+  }
+}

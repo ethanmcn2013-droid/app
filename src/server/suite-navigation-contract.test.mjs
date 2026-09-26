@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 
 function read(relativePath) {
@@ -7,11 +9,20 @@ function read(relativePath) {
 }
 
 const hybridWorkspace = read("src/components/hybrid/hybrid-workspace.tsx");
-const hybridWorkspaceStyles = read("src/components/hybrid/hybrid-workspace.module.css");
+// v3 Tasks: the page is TasksWorkspace; view switches go through the
+// toolbar and the one link builder.
+const tasksWorkspace = read("src/components/tasks/tasks-workspace.tsx");
+const tasksWorkspaceStyles = read("src/components/tasks/workspace.module.css");
+const tasksToolbar = read("src/components/tasks/toolbar.tsx");
+const tasksHeader = read("src/components/tasks/header.tsx");
+const tasksViewHref = read("src/lib/projects/floor-view-href.ts");
 const appLayout = read("src/app/app/layout.tsx");
 const mobileSuiteNav = read("src/components/app/mobile-suite-nav.tsx");
 const coreNavigation = read("src/lib/core-navigation.ts");
-const floorWorkspace = read("src/components/floor/floor-workspace.tsx");
+const v3Shell = read("src/components/shell/app-shell.tsx");
+const v3Sidebar = read("src/components/shell/app-sidebar.tsx");
+const v3Nav = read("src/components/shell/shell-nav.ts");
+const bareArtifactPath = read("src/lib/bare-artifact-path.ts");
 const commandPaletteFile = read("src/components/app/palette/command-palette.tsx");
 // The palette composes its search field from the shared scope-search
 // primitive, so the combobox lifecycle spans both files. Read them as one
@@ -31,24 +42,15 @@ const tasksSidebar = read("src/components/app/sidebar.tsx");
 const taskMetadataRail = read(
   "src/components/app/task-detail/metadata-rail.tsx",
 );
-const tasksCalendar = read(
-  "src/components/hybrid/options/b/calendar-view.tsx",
-);
-// T·132: the design lab's own inspector was deleted with the rest of the
-// lab chrome. The task a person actually opens is the production detail
-// panel, so the accessible-name contract is asserted where it now lives.
+const tasksCalendar = read("src/components/tasks/calendar-view.tsx");
+// The task a person opens is the production task sheet host, so the
+// accessible-name contract is asserted where it lives.
 const taskDetailPanel = read(
-  "src/components/app/detail-panel/focus-window.tsx",
+  "src/components/app/detail-panel/task-detail-panel.tsx",
 );
-const taskSharedStyles = read(
-  "src/components/hybrid/shared/shared.module.css",
-);
-const taskScheduleStyles = read(
-  "src/components/hybrid/options/a/option-a.module.css",
-);
-const taskCalendarStyles = read(
-  "src/components/hybrid/options/b/option-b.module.css",
-);
+const taskSharedStyles = read("src/components/tasks/workspace.module.css");
+const taskBoardStyles = read("src/components/tasks/board.module.css");
+const taskCalendarStyles = read("src/components/tasks/calendar.module.css");
 const studioBar = read("src/components/studio-bar/studio-bar.tsx");
 const studioChrome = read("src/components/studio-bar/studio-chrome-context.tsx");
 const studioRail = read("src/components/studio-bar/studio-rail.tsx");
@@ -69,7 +71,10 @@ const crossSuiteJourney = JSON.parse(
 );
 
 test("Tasks view changes can emit only canonical Tasks destinations", () => {
-  for (const source of [hybridWorkspace, roomTools]) {
+  assert.match(tasksToolbar, /floorViewHref\(view, verified, taskId\)/);
+  assert.match(tasksWorkspace, /router\.push\(viewHref\.href\(next\)\)/);
+  for (const source of [`${tasksToolbar}
+${tasksViewHref}`, roomTools]) {
     assert.match(source, /TASKS_VIEW_PATHS/);
     assert.doesNotMatch(source, /router\.(?:push|replace)\(\s*`\/app\/\$\{/);
     for (const retiredPath of [
@@ -90,15 +95,14 @@ test("Tasks view changes can emit only canonical Tasks destinations", () => {
   }
 });
 
-test("Tasks calls its local time view Schedule, reserving Timeline for the product", () => {
-  assert.match(
-    tasksSidebar,
-    /\{ href: TASKS_VIEW_PATHS\.timeline, label: "Schedule"/,
-  );
-  assert.doesNotMatch(
-    tasksSidebar,
-    /\{ href: TASKS_VIEW_PATHS\.timeline, label: "Timeline"/,
-  );
+test("Tasks has three views and no local time view that could be confused with Timeline", () => {
+  for (const source of [tasksSidebar, tasksToolbar]) {
+    assert.doesNotMatch(source, /TASKS_VIEW_PATHS\.timeline/);
+    assert.doesNotMatch(source, /label: "Schedule"/);
+  }
+  assert.match(tasksToolbar, /\{ id: "board", label: "Board"/);
+  assert.match(tasksToolbar, /\{ id: "list", label: "List"/);
+  assert.match(tasksToolbar, /\{ id: "calendar", label: "Calendar"/);
 });
 
 test("Tasks owns the same product-specific document title as its siblings", () => {
@@ -261,22 +265,53 @@ test("Tasks chrome publishes the authorised workspace name, not a domain example
   assert.doesNotMatch(studioChrome, /useDomain/);
 });
 
-test("mobile suite nav exposes the same core paths and Notes under More", () => {
-  assert.match(appLayout, /<MobileSuiteNav \/>/);
-  assert.match(mobileSuiteNav, /if \(suiteSurfaceFromAppPath\(pathname\) === "tasks" && !messagesRoute\) return null;/);
-  assert.match(mobileSuiteNav, /const messagesRoute = pathname === MESSAGES_APP_PATH/);
-  assert.match(mobileSuiteNav, /CORE_DESTINATIONS\.map/);
-  assert.match(mobileSuiteNav, /label: "Notes", href: withSuiteContext\(PRODUCT_APP_PATHS\.notes, suiteContext\)/);
-  assert.match(mobileSuiteNav, /aria-haspopup="menu"/);
-  assert.match(mobileSuiteNav, /event\.key !== "Escape"/);
-  assert.match(
-    mobileSuiteNav,
-    /withSuiteContext\(destination\.path, suiteContext\)/,
+test("the v3 shell is the one persistent navigation on every signed-in page", () => {
+  // Redesign sprint (24 Sep 2026, founder authority): the studio bar, icon
+  // rail, bottom tab bar and the Floor's own spine were replaced by one
+  // sidebar + top bar. The same core paths stay reachable with suite context.
+  assert.match(appLayout, /<AppShell[\s>]/);
+  assert.doesNotMatch(appLayout, /<MobileSuiteNav|<StudioBar|<StudioRail/);
+  for (const path of ["/app/home", "/app/inbox", "/app/tasks", "/app/notes", "/app/timeline", "/app/settings"]) {
+    assert.match(v3Nav, new RegExp(`href: "${path}"`));
+  }
+  assert.match(v3Sidebar, /withSuiteContext\(destination\.href, suiteContext\)/);
+  assert.match(v3Nav, /requiresMessages: true/);
+  assert.doesNotMatch(v3Nav, /\/app\/(?:board|list|calendar|plan|brief)(?:|\/)/);
+});
+
+test("Notes lives in Apps and tools, and the launcher opens the same catalogue", () => {
+  // Founder brief (24 Sep 2026): a Google-apps style launcher for apps and
+  // the tools on the way. Notes leaves the sidebar but stays one step away.
+  // Revision 2 (25 Sep 2026): one name, "Apps and tools", everywhere.
+  const studioSection = v3Nav.slice(
+    v3Nav.indexOf("WORKSPACE_DESTINATIONS"),
+    v3Nav.indexOf("TOOL_DESTINATIONS"),
   );
-  assert.doesNotMatch(
-    mobileSuiteNav,
-    /\/app\/(?:board|list|calendar|plan|brief)(?:\b|\/)/,
+  assert.doesNotMatch(studioSection, /\{ id: "notes"/);
+  assert.match(v3Nav, /\{ id: "tools", label: "Apps and tools", href: "\/app\/tools"/);
+  assert.doesNotMatch(v3Nav, /More tools/);
+  assert.match(v3Nav, /export const TOOL_DESTINATIONS[\s\S]*?href: "\/app\/notes"/);
+  assert.match(v3Shell, /<AppsLauncher/);
+  // The New menu still starts a note.
+  assert.match(v3Shell, /<Link href="\/app\/notes" role="menuitem"/);
+  const launcher = read("src/components/shell/launcher/apps-launcher.tsx");
+  assert.match(launcher, /aria-label="Apps and tools"/);
+  assert.match(launcher, /aria-haspopup="dialog"/);
+  assert.match(launcher, /if \(openPath !== pathname\)/);
+  const catalogue = read("src/components/shell/launcher/launcher-catalog.ts");
+  assert.doesNotMatch(catalogue, /https?:\/\//);
+  const mailHosts = new Set(
+    [...catalogue.matchAll(/FEEDBACK_EMAIL = "([^"]+)"/g)].map((match) => match[1]),
   );
+  assert.deepEqual([...mailHosts], ["hello@signalstudio.ie"]);
+  assert.doesNotMatch(catalogue, /mailto:(?!\$\{FEEDBACK_EMAIL\})/);
+});
+
+test("the mobile drawer closes on navigation and Escape", () => {
+  assert.match(v3Shell, /aria-label="Open navigation"/);
+  assert.match(v3Shell, /event\.key === "Escape"\) setMobileOpen\(false\)/);
+  assert.match(v3Shell, /if \(drawerPath !== pathname\)/);
+  assert.match(v3Shell, /aria-haspopup="menu"/);
 });
 
 test("mobile Tasks has one persistent core spine and one keyboard-complete More menu", () => {
@@ -300,20 +335,14 @@ test("mobile Tasks has one persistent core spine and one keyboard-complete More 
   assert.match(tasksSidebar, /min-h-14/);
 });
 
-test("bare Tasks Floor preserves the core destinations and Notes under More", () => {
-  assert.match(floorWorkspace, /CORE_DESTINATIONS\.map\(\(destination\) => product\(destination\.id, destination\.label, destination\.path\)\)/);
-  assert.match(floorWorkspace, /withSuiteContext\(href, suite\)/);
-  assert.match(floorWorkspace, /aria-label="More"/);
-  assert.match(floorWorkspace, /withSuiteContext\(PRODUCT_APP_PATHS\.notes, suite\)/);
-  assert.match(floorWorkspace, /aria-haspopup="menu"/);
-  assert.match(floorWorkspace, /event\.key !== "Escape"/);
-  assert.match(floorWorkspace, /moreTriggerRef\.current\?\.focus\(\)/);
-  assert.match(floorWorkspace, /href="\/app\/inbox"/);
-  assert.match(floorWorkspace, /href="\/app\/settings"/);
-  assert.match(floorWorkspace, /aria-label="Add task"/);
-  assert.match(productWorkspaceShell, /bareChrome \? "pb-0" : "pb-\[calc\(64px\+env\(safe-area-inset-bottom\)\)\]"/);
-  assert.match(hybridWorkspace, /data-floor-runtime="true"/);
-  assert.match(hybridWorkspaceStyles, /\.root\[data-floor-runtime\] \{ height: 100%; \}/);
+test("Tasks renders inside the v3 shell and keeps its own Add task", () => {
+  assert.match(bareArtifactPath, /return isBareArtifactPath\(pathname\) \|\| isTimelinePreviewPath\(pathname\);/);
+  assert.match(hybridWorkspace, /<TasksWorkspace view=\{view\}/);
+  assert.match(tasksHeader, /New task/);
+  assert.match(tasksHeader, /data-new-task-anchor/);
+  assert.match(v3Shell, /router\.push\("\/app\/tasks\?create=task"\)/);
+  assert.match(tasksWorkspace, /data-floor-runtime="true"/);
+  assert.match(tasksWorkspaceStyles, /\.workspace \{[\s\S]*?height: 100%;/);
 });
 
 test("the mobile Tasks account escape hatch preserves suite context", () => {
@@ -370,29 +399,34 @@ test("both command layers expose a valid modal combobox lifecycle", () => {
 });
 
 test("Calendar overflow and the task inspector keep accessible focus and names", () => {
-  assert.match(tasksCalendar, /aria-haspopup="dialog"/);
-  assert.match(tasksCalendar, /aria-controls=\{overflowDate === date/);
-  assert.match(tasksCalendar, /role="dialog"/);
-  assert.match(tasksCalendar, /aria-labelledby=\{labelledBy\}/);
-  assert.match(tasksCalendar, /querySelector<HTMLElement>\("ul button, header button"\)/);
-  assert.match(tasksCalendar, /overflowTriggerRef\.current\?\.focus/);
+  // The month is a grid of labelled, selectable days; "+n more" selects the
+  // day so its full list shows in the day pane, where focus can reach it.
+  assert.match(tasksCalendar, /role="grid"/);
+  assert.match(tasksCalendar, /role="gridcell"/);
+  assert.match(tasksCalendar, /aria-selected=\{selected\}/);
+  assert.match(tasksCalendar, /aria-label=\{`\$\{longDay\(date\)\}, \$\{items\.length\}/);
+  assert.match(tasksCalendar, /\+\{rest\} more/);
+  // The sheet is a modal dialog below 1280px and a labelled region beside
+  // the board above it; both are named by the task title.
   assert.match(taskDetailPanel, /role="dialog"/);
   assert.match(taskDetailPanel, /aria-modal="true"/);
-  assert.match(taskDetailPanel, /aria-labelledby="task-panel-title"/);
+  assert.match(taskDetailPanel, /role="complementary"/);
+  assert.equal((taskDetailPanel.match(/aria-labelledby="task-panel-title"/g) ?? []).length, 2);
 });
 
 test("Tasks mobile CSS contains dense canvases and preserves 44px primary targets", () => {
   for (const styles of [
     taskSharedStyles,
-    taskScheduleStyles,
+    taskBoardStyles,
     taskCalendarStyles,
   ]) {
     assert.match(styles, /@media \(max-width: 767px\)/);
     assert.match(styles, /44px/);
   }
-  assert.match(taskScheduleStyles, /\.timelineCanvas[\s\S]*overflow|\.timelineScroller[\s\S]*overflow/);
-  assert.match(taskCalendarStyles, /\.calendarPrimary[\s\S]*overflow-x: auto/);
-  assert.match(taskCalendarStyles, /\.calendarWorkspace[\s\S]*min-width: 0/);
+  assert.match(taskBoardStyles, /\.board \{[\s\S]*?overflow-x: auto/);
+  assert.match(taskBoardStyles, /scroll-snap-type: x mandatory/);
+  assert.match(taskCalendarStyles, /\.main \{[\s\S]*?min-width: 0/);
+  assert.match(taskCalendarStyles, /\.day \{[\s\S]*?min-width: 0/);
   assert.match(taskSharedStyles, /env\(safe-area-inset-bottom\)/);
   // Assert the literal 44px, not `h-11`. This repo remaps Tailwind's numeric
   // spacing scale (--space-11 is 80px), so `h-11` asserted a token that
@@ -608,4 +642,32 @@ test("the cross-suite evidence contract separates read-only traversal from hashe
   assert.equal(serialized.includes("capture-and-save-source-note"), false);
   assert.equal(serialized.includes("review-and-create-task"), false);
   assert.equal(serialized.includes("confirm-task-and-promote-milestone"), false);
+});
+
+test("a tool reached through Apps and tools lights up its parent row, and the crumbs still name it", () => {
+  // Launcher critique F4 (25 Sep 2026): /app/notes had no highlighted
+  // sidebar row while /app/tools/whiteboard highlighted Apps and tools.
+  // shell-nav.ts is TypeScript, so it is evaluated in a child process with
+  // the same tsx loader the unit suites use.
+  const script = [
+    'import * as loaded from "./src/components/shell/shell-nav.ts";',
+    // The repo is CommonJS by default, so tsx may hand the exports over as default.
+    "const nav = loaded.activeDestinationId ? loaded : loaded.default;",
+    "const paths = ['/app/notes', '/app/notes/anything', '/app/tools', '/app/tools/whiteboard', '/app/tasks'];",
+    "const active = Object.fromEntries(paths.map((path) => [path, nav.activeDestinationId(path)]));",
+    "const crumbs = Object.fromEntries(paths.map((path) => [path, nav.crumbsForPath(path).map((crumb) => crumb.label)]));",
+    "console.log(JSON.stringify({ active, crumbs }));",
+  ].join("\n");
+  const output = execFileSync(process.execPath, ["--import", "tsx", "--input-type=module", "-e", script], {
+    cwd: fileURLToPath(new URL("../../", import.meta.url)),
+    encoding: "utf8",
+  });
+  const { active, crumbs } = JSON.parse(output.trim().split("\n").pop());
+  assert.equal(active["/app/notes"], "tools");
+  assert.equal(active["/app/notes/anything"], "tools");
+  assert.equal(active["/app/tools"], "tools");
+  assert.equal(active["/app/tools/whiteboard"], "tools");
+  assert.equal(active["/app/tasks"], "tasks");
+  assert.deepEqual(crumbs["/app/notes"], ["Signal Studio", "Apps and tools", "Notes"]);
+  assert.equal(crumbs["/app/tools/whiteboard"].at(-1), "Whiteboard");
 });

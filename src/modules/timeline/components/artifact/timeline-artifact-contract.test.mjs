@@ -17,6 +17,10 @@ const artifactStudio = readFileSync(
   new URL("../../app/audience/artifact-studio.tsx", import.meta.url),
   "utf8",
 );
+const ownerPreview = readFileSync(
+  new URL("../../app/audience/project-preview.tsx", import.meta.url),
+  "utf8",
+);
 /**
  * The module's one vocabulary. Every state word and structural noun the
  * artifact renders now lives here rather than in the component, so the
@@ -115,13 +119,13 @@ test("the owner studio owns vertical scrolling inside the app shell", () => {
 });
 
 test("owner surfaces embed the exact artifact without claiming a document-height viewport", () => {
-  // The owner's plan view sits inside the suite chrome, so it embeds the
-  // artifact with its own product header suppressed — one wordmark, never
-  // two. The studio is an exhibit frame and keeps the header.
-  assert.match(
-    ownerProject,
-    /<TimelineArtifact timeline=\{timeline\} embedded showProductHeader=\{false\} \/>/,
-  );
+  // v3 (24 Sep 2026): the owner's plan is a working surface, not the guest's
+  // poster, so it no longer embeds the artifact at all. The guest's page is
+  // shown where it can be claimed honestly: Preview (the frozen publication,
+  // rendered with the artifact's own defaults) and the studio, an exhibit
+  // frame that keeps the header.
+  assert.doesNotMatch(ownerProject, /<TimelineArtifact\b/);
+  assert.match(ownerPreview, /<TimelineArtifact timeline=\{timeline\} \/>/);
   assert.match(artifactStudio, /<TimelineArtifact timeline=\{timeline\} embedded \/>/);
   assert.match(artifact, /data-embedded=\{embedded \? "true" : undefined\}/);
   assert.match(styles, /\.artifact\[data-embedded="true"\]\s*\{[\s\S]*?min-height:\s*auto;/);

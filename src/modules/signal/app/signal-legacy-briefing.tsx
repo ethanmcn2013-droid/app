@@ -1,10 +1,11 @@
 import "server-only";
 
 import { notFound, redirect } from "next/navigation";
-import { QuietBriefingLedger } from "../components/brief/quiet-briefing-ledger";
+import { OverviewView } from "../components/overview/overview-view";
 import { SignalScopeSwitcher } from "../components/brief/scope-switcher";
 import { isDemoMode } from "@/lib/access-mode";
 import { briefingTimestampLabel } from "../lib/briefing/calendar-time";
+import { buildOverviewModel } from "../lib/overview/overview-model";
 import { planningPeriodsEnabled } from "../lib/planning-periods/scope";
 import { parseBriefingReadScopeHint } from "../lib/planning-periods/read-scope-hint";
 import { buildBriefingForUser } from "../server/briefing/signal-build-for-user";
@@ -65,16 +66,33 @@ export async function SignalLegacyBriefing({
     scopeKind: result.authorizedScope.scope.kind,
   });
 
+  // The Overview reads the same single build: the ledger for what asks for
+  // attention, and the engine's own authorized signals for everything the
+  // page lays out around it. No second read, no second scope check.
+  const model = buildOverviewModel({
+    ledger,
+    timezone: result.authorizedScope.timezone,
+    legacy: {
+      briefing: result.briefing,
+      signals: result.signals,
+      authorizedScope: result.authorizedScope,
+    },
+  });
+
   return (
-    <div data-signal-module>
-      {planningPeriodsEnabled() ? (
-        <SignalScopeSwitcher
-          catalog={result.catalog}
-          activeScope={result.authorizedScope.scope}
-          demo={demo}
-        />
-      ) : null}
-      <QuietBriefingLedger ledger={ledger} />
+    <div data-signal-module className="contents">
+      <OverviewView
+        model={model}
+        scopeControl={
+          planningPeriodsEnabled() ? (
+            <SignalScopeSwitcher
+              catalog={result.catalog}
+              activeScope={result.authorizedScope.scope}
+              demo={demo}
+            />
+          ) : null
+        }
+      />
     </div>
   );
 }

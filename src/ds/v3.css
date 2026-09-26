@@ -1,0 +1,219 @@
+/*
+ * Signal Studio v3: the redesign token layer (24 Sep 2026).
+ *
+ * Founder authority for the redesign sprint supersedes the earlier design
+ * locks and canons (docs/design/redesign-2026-09/06-current-state-and-constraints.md).
+ *
+ * Two jobs:
+ * 1. Define the v3 semantic tokens the new shell and primitives use (--v3-*).
+ * 2. Re-point the base tokens every existing surface already reads (--paper,
+ *    --ink*, --hairline*, --accent*), so the whole App moves to the v3 palette
+ *    at once while screens are rebuilt one by one.
+ *
+ * `html:root` outranks the plain `:root` blocks in signal-ds and globals.css
+ * regardless of import order; `[data-theme="dark"]` is set by theme-runtime.
+ */
+
+html:root {
+  /* ── v3 semantic: light ─────────────────────────────────────────── */
+  --v3-shell: #f4f3f1;
+  /* App chrome (sidebar and the frame around the page): ink in both themes. */
+  --v3-chrome: #141414;
+  --v3-canvas: #ffffff;
+  --v3-surface: #ffffff;
+  --v3-sunken: #f8f7f5;
+  --v3-hover: rgba(24, 20, 14, 0.045);
+  --v3-selected: #ffffff;
+  --v3-border: #e8e6e3;
+  --v3-border-strong: #d9d6d1;
+  --v3-text: #141414;
+  --v3-text-2: #4a4946; /* a visible step above text-3 */
+  --v3-text-3: #6b6964; /* 4.9:1 on the shell grey; AA for small text */
+  --v3-accent: #4f46e5;
+  --v3-accent-hover: #4338ca;
+  --v3-accent-soft: rgba(79, 70, 229, 0.1);
+  --v3-on-accent: #ffffff;
+  --v3-solid: #141414;
+  --v3-on-solid: #ffffff;
+  --v3-danger: #cd2b31;
+  /* Unread counts in both themes: one red, white figures at AA (5.0:1). */
+  --v3-notify: #cd2b31;
+  --v3-on-notify: #ffffff;
+  --v3-warning: #e5a93b;
+  --v3-warning-text: #7d5710;
+  --v3-success: #2f9e6a;
+  --v3-review: #5b52e0;
+
+  /* Tone pairs: -soft is the tint, -text is AA (4.5:1+) on that tint. */
+  --v3-danger-soft: color-mix(in srgb, var(--v3-danger) 12%, transparent);
+  --v3-danger-text: #ac272c;
+  --v3-warning-soft: color-mix(in srgb, var(--v3-warning) 16%, transparent);
+  --v3-success-soft: color-mix(in srgb, var(--v3-success) 14%, transparent);
+  --v3-success-text: #24674a;
+  --v3-review-soft: color-mix(in srgb, var(--v3-review) 14%, transparent);
+  --v3-accent-text: var(--v3-accent);
+  /* Neutral chip fill that reads as raised, not sunken, on surfaces. */
+  --v3-fill: #f1f0ee;
+  /* 3:1 non-text contrast for unchecked rings, checkboxes and strokes. */
+  --v3-control-border: #898783;
+  --v3-warning-stroke: #b87d14;
+  --v3-row-selected: color-mix(in srgb, var(--v3-accent) 6%, var(--v3-surface));
+  --v3-scrim: rgba(10, 10, 12, 0.36);
+  /* The Signal Studio mark (favicon): ring and dot on black. */
+  --v3-brand-ground: #000000;
+  --v3-brand-signal: #534dff;
+  /* File kinds: identity at 3:1+ on the surface. */
+  --v3-kind-doc: #3b82f6;
+  --v3-kind-image: #d9468a;
+  --v3-kind-sheet: #1f9d55;
+  --v3-kind-slides: #e2711d;
+  --v3-kind-design: #7c5cf5;
+  --v3-kind-link: #0f9ba8;
+  --v3-kind-neutral: #5f5e5b;
+  /* Project identity tiles: white initials pass AA on every hue. */
+  --v3-project-1: #4f46e5;
+  --v3-project-2: #2563eb;
+  --v3-project-3: #0f766e;
+  --v3-project-4: #15803d;
+  --v3-project-5: #b45309;
+  --v3-project-6: #c2410c;
+  --v3-project-7: #dc2626;
+  --v3-project-8: #be185d;
+  --v3-project-ink: #ffffff;
+  --v3-tap: 44px;
+  --x-accent-focus: var(--v3-accent);
+
+  --v3-shadow-1: 0 1px 2px rgba(20, 18, 14, 0.06);
+  --v3-shadow-pop: 0 8px 28px rgba(20, 18, 14, 0.12), 0 0 0 1px var(--v3-border);
+  --v3-radius-sm: 6px;
+  --v3-radius: 8px;
+  --v3-radius-lg: 12px;
+  --v3-radius-xl: 16px;
+  --v3-sidebar-w: 248px;
+  --v3-topbar-h: 48px;
+  --v3-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* ── legacy base tokens → v3 (every existing surface) ───────────── */
+  --paper: var(--v3-canvas);
+  --paper-soft: #faf9f7;
+  --paper-deep: var(--v3-shell);
+  --ink: var(--v3-text);
+  --ink-soft: #3d3c39;
+  --ink-quiet: var(--v3-text-2);
+  --ink-faint: var(--v3-text-3);
+  --ink-ghost: var(--v3-border-strong);
+  --hairline: rgba(24, 20, 14, 0.1);
+  --hairline-soft: rgba(24, 20, 14, 0.06);
+  --accent: var(--v3-accent);
+  --accent-hover: var(--v3-accent-hover);
+  --accent-tint: #eef0ff;
+  --accent-soft: var(--v3-accent-soft);
+  --accent-glow: rgba(79, 70, 229, 0.28);
+}
+
+html:root[data-theme="dark"] {
+  /* Beats globals.css's later `:root { color-scheme: light }`, which ties
+     with [data-theme="dark"] on specificity and wins on order: native
+     scrollbars and form controls follow the dark theme. */
+  color-scheme: dark;
+
+  /* ── v3 semantic: dark ──────────────────────────────────────────── */
+  /* Neutral greys, no blue cast (ClickUp-grade dark, 26 Sep 2026): the
+     chrome sits darkest, the work canvas a step lighter, raised surfaces a
+     step above that, and borders are solid enough to read as edges. */
+  --v3-shell: #121212;
+  --v3-chrome: #141414;
+  --v3-canvas: #1c1c1c;
+  --v3-surface: #232323;
+  --v3-sunken: #181818;
+  --v3-hover: rgba(255, 255, 255, 0.06);
+  --v3-selected: rgba(255, 255, 255, 0.09);
+  --v3-border: #2c2c2c;
+  --v3-border-strong: #3b3b3b;
+  --v3-text: #ececec;
+  --v3-text-2: #b8b8b8;
+  --v3-text-3: #8f8f8f; /* 4.8:1 on the raised dark surface */
+  --v3-accent: #8b87f8;
+  --v3-accent-hover: #a3a0fa;
+  --v3-accent-soft: rgba(139, 135, 248, 0.16);
+  --v3-on-accent: #0e0e12;
+  --v3-solid: #ededef;
+  --v3-on-solid: #141414;
+  --v3-danger: #f0646a;
+  --v3-warning: #e8b64c;
+  --v3-warning-text: #e8b64c;
+  --v3-success: #4cc38a;
+  --v3-review: #9b95fa;
+  --v3-danger-soft: color-mix(in srgb, var(--v3-danger) 20%, transparent);
+  --v3-danger-text: #f07d82;
+  --v3-warning-soft: color-mix(in srgb, var(--v3-warning) 20%, transparent);
+  --v3-success-soft: color-mix(in srgb, var(--v3-success) 20%, transparent);
+  --v3-success-text: #8cd4b2;
+  --v3-review-soft: color-mix(in srgb, var(--v3-review) 20%, transparent);
+  --v3-accent-text: #9f9bf6;
+  --v3-fill: rgba(255, 255, 255, 0.07);
+  --v3-control-border: #707070;
+  --v3-warning-stroke: var(--v3-warning);
+  --v3-row-selected: color-mix(in srgb, var(--v3-accent) 6%, var(--v3-surface));
+  --v3-scrim: rgba(0, 0, 0, 0.56);
+  --v3-kind-doc: #6ea8fe;
+  --v3-kind-image: #f07ab3;
+  --v3-kind-sheet: #4cc38a;
+  --v3-kind-slides: #f59e4b;
+  --v3-kind-design: #a594fa;
+  --v3-kind-link: #3fc7d3;
+  --v3-kind-neutral: #a1a1a8;
+  --x-accent-focus: var(--v3-accent);
+
+  --v3-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --v3-shadow-pop: 0 16px 40px rgba(0, 0, 0, 0.55), 0 0 0 1px var(--v3-border-strong);
+
+  --paper: var(--v3-canvas);
+  --paper-soft: var(--v3-surface);
+  --paper-deep: var(--v3-shell);
+  --ink: var(--v3-text);
+  --ink-soft: #cdcdcd;
+  --ink-quiet: var(--v3-text-2);
+  --ink-faint: var(--v3-text-3);
+  --ink-ghost: #3b3b3b;
+  --hairline: #2c2c2c;
+  --hairline-soft: #252525;
+  --accent: var(--v3-accent);
+  --accent-hover: var(--v3-accent-hover);
+  --accent-tint: rgba(139, 135, 248, 0.14);
+  --accent-soft: var(--v3-accent-soft);
+  --accent-glow: rgba(139, 135, 248, 0.3);
+}
+
+/* ── Tasks Floor inside the v3 shell ──────────────────────────────
+   No ink ground, inset, spine or dock: the Floor's sheet is the shell's
+   work sheet. The board, trays and cards are unchanged. */
+html [data-shell="v3"][data-cards] {
+  padding: 0;
+  background: var(--v3-canvas);
+}
+
+html [data-shell="v3"][data-cards] [data-sheet] {
+  border-radius: 0;
+  background: var(--v3-canvas);
+}
+
+html [data-shell="v3"][data-cards] [data-floor-head] {
+  padding-left: 24px;
+  padding-right: 16px;
+}
+
+/* Columns share the sheet's width instead of a fixed 258–312px track, so all
+   five fit beside the sidebar at 1440; below the minimum the board scrolls
+   sideways as before. The dock's 84px band is gone with the dock. */
+html [data-shell="v3"][data-cards] [data-board] {
+  grid-template-columns: repeat(var(--lanes, 5), minmax(216px, 1fr));
+  padding-bottom: 12px;
+}
+
+/* Default keyboard focus inside the shell. :where() keeps it at zero
+   specificity, so a component that styles its own focus always wins. */
+:where(.v3-focus) :focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: 2px;
+}

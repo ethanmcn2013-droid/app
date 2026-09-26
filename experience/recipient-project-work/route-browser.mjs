@@ -17,7 +17,7 @@ await fs.mkdir(out,{recursive:true});
 const f=await routeFixture(),actionModules=new Map(),sourceInputs={};
 const surfaces=[
   {id:'tasks.page.app-tasks',href:'/app/tasks?workspaceId=project-b',text:'Confirm the guest access list'},
-  {id:'tasks.page.app-my-tasks',href:'/app/my-tasks?workspaceId=project-b',text:'Without a date'},
+  {id:'tasks.page.app-my-tasks',href:'/app/my-tasks?workspaceId=project-b',text:'No date'},
   {id:'tasks.page.app-task-by-id',href:'/app/task/archive-b',text:'Archived B arrival note'},
   {id:'tasks.page.app-archived',href:'/app/archived?workspaceId=project-b',text:'Archived B arrival note'},
 ];
@@ -105,7 +105,7 @@ try {
   else {
     // Only actions exercised by this matrix: selection POST and detail reads.
     // Imported write/provider actions remain visible UI but fail if invoked.
-    const allowedActions=new Set(['openTasksProjectAction','getSubtasksAction','loadTaskConversationAction','listTaskResourcesAction','getPersonalityPrefs']);
+    const allowedActions=new Set(['openTasksProjectAction','getSubtasksAction','loadTaskConversationAction','listTaskResourcesAction','getPersonalityPrefs','loadProjectCatalogAction']);
     const requestErrors=[];
     const json=(res,value,status=200)=>{res.statusCode=status;res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');res.end(JSON.stringify(value));};
     function reviveArgs(value){if(!value||typeof value!=='object')return value;if(value.$form){const form=new FormData();for(const [key,entry] of value.$form)form.append(key,entry);return form;}return Array.isArray(value)?value.map(reviveArgs):Object.fromEntries(Object.entries(value).map(([key,entry])=>[key,reviveArgs(entry)]));}
@@ -165,7 +165,7 @@ try {
           assert.equal(await page.getByText('ONLY A ARCHIVED TASK',{exact:true}).count(),0);
           assert.equal(await page.getByText('PRIVATE C TASK',{exact:true}).count(),0);
           if(surface.id==='tasks.page.app-tasks')await page.getByText('B arrival board',{exact:true}).first().waitFor({timeout:5000});
-          else if(f.state.v3)await page.locator('[data-slot="active-project-trigger"]').filter({hasText:'Arrival project B'}).waitFor({timeout:5000});
+          else if(f.state.v3)await page.locator('aside button[data-active]').filter({hasText:'Arrival project B'}).waitFor({timeout:5000});
           assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
         }
         for(const surface of surfaces){
@@ -174,8 +174,11 @@ try {
           await assertB(surface);
           assert.equal(f.state.cookieWrites.length,0);
           if(surface.id==='tasks.page.app-my-tasks'){
-            await page.getByRole('heading',{name:/^(Still up|Good morning|Good afternoon|Good evening), Alex\.$/}).waitFor();
-            for(const text of ['Without a date','Later','Check the final arrival plan','Confirm the arrival time'])await page.getByText(text,{exact:true}).first().waitFor();
+            // v3: the page is titled My tasks and leads with the list; Home owns the greeting.
+            await page.getByRole('heading',{name:'My tasks',exact:true}).waitFor();
+            assert.equal(await page.getByRole('heading',{name:/^(Still up|Good morning|Good afternoon|Good evening)/}).count(),0);
+            for(const text of ['No date','Upcoming'])await page.getByRole('heading',{name:text,exact:true}).waitFor();
+            for(const text of ['Check the final arrival plan','Confirm the arrival time'])await page.getByText(text,{exact:true}).first().waitFor();
             assert.equal(await page.getByText('Prepare the shared checklist',{exact:true}).count(),0);
           }
           await evidence(surface.id,'stale-a');
@@ -191,24 +194,25 @@ try {
         }
         if(width===390){
           f.state.v3=true;f.cookies();
-          await page.goto(origin+surfaces[0].href);
-          const projects=page.getByRole('navigation',{name:'Signal Studio'}).getByRole('link',{name:'Projects',exact:true});
-          await projects.click();
+          // v3: the shell owns navigation, and /app/project is the Projects
+          // index above the open Project's overview. Creating a Project starts
+          // from the page's own "New project" button, not a Tasks drawer.
+          await page.goto(origin+'/app/project?workspaceId=project-b');
           assert.equal(new URL(page.url()).pathname,'/app/project');
+          await page.getByRole('heading',{name:'Projects',level:1,exact:true}).waitFor();
           await page.getByRole('heading',{name:'B arrival board',exact:true}).waitFor();
-          const trigger=page.getByRole('button',{name:'Open Tasks navigation',exact:true});
+          const trigger=page.getByRole('button',{name:'New project',exact:true});
           await trigger.waitFor();
           assert.equal(await trigger.isVisible(),true);
+          await evidence('tasks.page.app-project','mobile-projects-index');
           await trigger.click();
-          const drawer=page.getByRole('dialog',{name:'Tasks navigation'});
-          await drawer.waitFor();
-          assert.equal(await trigger.getAttribute('aria-expanded'),'true');
-          await evidence('tasks.page.app-project','mobile-project-drawer');
-          await drawer.getByRole('button',{name:'Add project',exact:true}).click();
-          await drawer.getByRole('button',{name:'Start with Monthly business rhythm',exact:true}).waitFor();
+          const projectName=page.getByRole('textbox',{name:'Name your project',exact:true});
+          await projectName.waitFor();
+          assert.equal(await projectName.evaluate(element=>document.activeElement===element),true);
+          await page.getByRole('button',{name:'Start with Monthly business rhythm',exact:true}).waitFor();
           await evidence('tasks.page.app-project','mobile-template-choice');
-          await drawer.press('Escape');
-          await drawer.waitFor({state:'hidden'});
+          await projectName.press('Escape');
+          await projectName.waitFor({state:'hidden'});
           assert.equal(await trigger.evaluate(element=>document.activeElement===element),true);
           assert.equal(f.state.cookieWrites.length,0);
           await evidence('tasks.page.app-project','mobile-project-entry');
@@ -220,7 +224,7 @@ try {
           assert.equal(await longHeading.evaluate(element=>element.scrollWidth<=element.clientWidth+1),true);
           assert.equal(await longHeading.evaluate(element=>element.scrollHeight>Number.parseFloat(getComputedStyle(element).fontSize)*1.5),true);
           assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
-          assert.equal(await page.getByRole('button',{name:'Open Tasks navigation',exact:true}).isVisible(),true);
+          assert.equal(await page.getByRole('button',{name:'New project',exact:true}).isVisible(),true);
           await evidence('tasks.page.app-project','mobile-long-project-name');
           await f.client.execute({sql:"UPDATE meta SET value='B arrival board' WHERE key='board:project-b:name'"});
         }
@@ -241,8 +245,8 @@ try {
         assert.equal(new URL(page.url()).searchParams.get('workspaceId'),'project-b');
         await page.waitForFunction(()=>['loadTaskConversationAction','getSubtasksAction','listTaskResourcesAction'].every(name=>window.routeFixture.requests.some(r=>r.name===name)));
         await page.locator('[data-existing-task-history][data-read-only]').waitFor();
-        const viewNav=page.getByRole('navigation',{name:'View'});
-        for(const [label,pathname] of [['Board','/app/tasks'],['List','/app/tasks/list'],['Schedule','/app/tasks/timeline'],['Calendar','/app/tasks/calendar']]){
+        const viewNav=page.getByRole('navigation',{name:'Task views'});
+        for(const [label,pathname] of [['Board','/app/tasks'],['List','/app/tasks/list'],['Calendar','/app/tasks/calendar']]){
           const href=await viewNav.getByRole('link',{name:label,exact:true}).getAttribute('href');
           const url=new URL(href,origin);
           assert.equal(url.pathname,pathname);
@@ -251,8 +255,8 @@ try {
         }
         // The fixture owns the Board route only. The production detail panel
         // is modal, so these rendered hrefs are the browser-observable proof;
-        // the four destination routes need a full app run.
-        receipt.checks.push('open B task is retained in all four rendered Floor links');
+        // the three destination routes need a full app run.
+        receipt.checks.push('open B task is retained in all three rendered view links');
         await evidence(surfaces[2].id,'active-object-canonical-panel');
         f.state.actor='user_creator';await page.goto(origin+surfaces[1].href);
         await page.getByRole('heading',{name:'No tasks assigned to you yet',exact:true}).waitFor();

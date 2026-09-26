@@ -1,7 +1,7 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
 
 async function measureViews(page: Page) {
-  return page.getByRole("navigation", { name: "View", exact: true }).evaluate((nav) => {
+  return page.getByRole("navigation", { name: "Task views", exact: true }).evaluate((nav) => {
     type Color = [number, number, number, number];
     function rgba(value: string): Color {
       const parts = value.match(/[\d.]+/g)?.map(Number) ?? [];
@@ -60,7 +60,7 @@ async function captureViews(page: Page, info: TestInfo, name: string) {
   await info.attach(`${name}-contrast`, { body: JSON.stringify(measurement, null, 2), contentType: "application/json" });
   await info.attach(name, { body: await page.screenshot(), contentType: "image/png" });
   expect(measurement.documentWidth).toBeLessThanOrEqual(measurement.width);
-  expect(measurement.measurements.map(({ label }) => label)).toEqual(["Board", "List", "Schedule", "Calendar"]);
+  expect(measurement.measurements.map(({ label }) => label)).toEqual(["Board", "List", "Calendar"]);
   for (const view of measurement.measurements) {
     expect(view.rect.width, view.label ?? "view").toBeGreaterThan(0);
     expect(view.rect.x).toBeGreaterThanOrEqual(0);
@@ -72,13 +72,13 @@ async function captureViews(page: Page, info: TestInfo, name: string) {
 test("Tasks view labels retain readable contrast on Board and List", async ({ page }, info) => {
   await page.goto("/app/tasks");
   await expect(page.locator("html")).toHaveAttribute("data-theme", info.project.use.colorScheme as string);
-  const views = page.getByRole("navigation", { name: "View", exact: true });
+  const views = page.getByRole("navigation", { name: "Task views", exact: true });
   await expect(views.getByRole("link", { name: "Board", exact: true })).toHaveAttribute("aria-current", "page");
   await captureViews(page, info, "board");
   await views.getByRole("link", { name: "List", exact: true }).press("Enter");
   await expect(page).toHaveURL(/\/app\/tasks\/list$/);
   await expect(views.getByRole("link", { name: "List", exact: true })).toHaveAttribute("aria-current", "page");
-  await expect(page.getByRole("table").first()).toBeVisible();
+  await expect(page.getByRole("grid", { name: "Tasks" })).toBeVisible();
   await captureViews(page, info, "list");
 });
 
@@ -113,11 +113,11 @@ test("isolated Board to List navigation reports all console and request faults",
   });
   try {
     await page.goto("/app/tasks");
-    const views = page.getByRole("navigation", { name: "View", exact: true });
+    const views = page.getByRole("navigation", { name: "Task views", exact: true });
     await expect(views.getByRole("link", { name: "Board", exact: true })).toHaveAttribute("aria-current", "page");
     await views.getByRole("link", { name: "List", exact: true }).press("Enter");
     await expect(page).toHaveURL(/\/app\/tasks\/list$/);
-    await expect(page.getByRole("table").first()).toBeVisible();
+    await expect(page.getByRole("grid", { name: "Tasks" })).toBeVisible();
     expect(delayedListResponses).toBeGreaterThan(0);
     expect(await page.locator('[id^="stndz-"]').count()).toBe(0);
     expect(consoleFaults).toEqual([]);

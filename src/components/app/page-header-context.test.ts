@@ -13,7 +13,8 @@ test("utility, sibling-product and unknown pages never own task view actions", (
   }
 });
 
-test("all four canonical task views retain their exact share-view identity", () => {
+test("the three canonical task views retain their exact share-view identity", () => {
+  assert.deepEqual(Object.keys(TASKS_VIEW_PATHS).sort(), ["board", "calendar", "list"]);
   for (const [view, path] of Object.entries(TASKS_VIEW_PATHS)) assert.equal(pageHeaderTaskView(path), view);
 });
 
@@ -21,7 +22,7 @@ test("Settings is named for the utility page; task titles and existing personal 
   assert.equal(pageHeaderTitle("/app/settings", "The Orchard"), "Settings");
   assert.equal(pageHeaderTitle("/app/tasks", "The Orchard"), "The Orchard");
   assert.equal(pageHeaderTitle("/app/inbox", "The Orchard"), "Inbox");
-  assert.equal(pageHeaderTitle("/app/my-tasks", "The Orchard"), "My work");
+  assert.equal(pageHeaderTitle("/app/my-tasks", "The Orchard"), "My tasks");
   assert.equal(pageHeaderTitle("/app/archived", "The Orchard"), "Archived");
 });
 
@@ -31,11 +32,11 @@ test("header links retain the loaded Project using canonical URLs", () => {
     assert.equal(result.pathname, path);
     assert.deepEqual([...result.searchParams], [["workspaceId", "project-b"]]);
   }
+  // Utility pages share this header; Tasks owns its own. The shared header
+  // therefore carries no task view tabs, share or export actions at all,
+  // and no highlight override can give it route authority.
   const source = readFileSync(new URL("./page-header.tsx", import.meta.url), "utf8");
-  assert.match(source, /pageHeaderTaskView\(pathname\)/, "highlight overrides cannot create route authority");
-  assert.match(source, /parseProjectId\(workspace\?\.id\)/);
-  assert.match(source, /href=\{contextualPath\(t\.href\)\}/);
-  assert.equal((source.match(/\{taskView \?/g) ?? []).length, 2, "both the actions and tabs are gated by explicit task-view ownership");
+  assert.doesNotMatch(source, /ShareButton|TASKS_VIEW_PATHS|Schedule|aria-label="Task views"/);
   assert.doesNotMatch(source, /!isInbox|!isMyTasks|!isArchived|inferShareView/);
 });
 

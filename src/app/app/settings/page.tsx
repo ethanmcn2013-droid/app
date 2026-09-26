@@ -50,13 +50,20 @@ export default async function SettingsPage() {
     const nowIso = new Date().toISOString();
     return (
       <TasksRuntimePageMount>
-        <AppPageHeader />
-        <p
-          role="status"
-          className="border-b border-line-soft bg-brand-soft px-4 py-2 text-center text-xs font-medium text-brand"
-        >
-          Review preview, settings are read-only.
-        </p>
+        {/* The read-only notice rides the title row as a status pill: it
+            names the page's state once, in the column, instead of a
+            full-bleed band between the header and the content. */}
+        <AppPageHeader
+          actions={
+            <p
+              role="status"
+              className="inline-flex h-[28px] items-center gap-2 rounded-full max-sm:w-[calc(100vw-32px)] border border-[color:color-mix(in_srgb,var(--v3-review)_30%,transparent)] bg-[color-mix(in_srgb,var(--v3-review)_10%,transparent)] px-3 text-[12.5px] font-medium text-[color:color-mix(in_srgb,var(--v3-review)_72%,var(--v3-text))]"
+            >
+              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--v3-review)]" />
+              Review preview, settings are read-only.
+            </p>
+          }
+        />
         <SettingsApp
             readOnly
             currentUserId={DEMO_USER_ID}

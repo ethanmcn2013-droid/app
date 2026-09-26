@@ -1,0 +1,875 @@
+/* Task sheet. Tokens only from src/ds/v3.css. */
+
+/* ── Frames ───────────────────────────────────────────────────────── */
+.dockFrame {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  animation: slideIn 200ms var(--v3-ease);
+}
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: var(--v3-scrim);
+  animation: fade 180ms var(--v3-ease);
+}
+
+.modalFrame {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  bottom: 8px;
+  z-index: 81;
+  display: flex;
+  width: min(600px, calc(100vw - 48px));
+  border-radius: var(--v3-radius-xl);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-pop), 0 24px 64px -24px rgba(10, 10, 12, 0.4);
+  overflow: hidden;
+  outline: none;
+  animation: slideIn 200ms var(--v3-ease);
+}
+
+/* The full-page layout, over the app. */
+.modalFrame[data-full] {
+  left: 8px;
+  width: auto;
+  animation: fade 160ms var(--v3-ease);
+}
+
+.modalFrame[data-full] .page {
+  flex: 1;
+  min-width: 0;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 767px) {
+  .modalFrame {
+    inset: 0;
+    width: 100%;
+    border-radius: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dockFrame,
+  .modalFrame {
+    animation: fade 120ms linear;
+  }
+}
+
+/* ── Sheet ────────────────────────────────────────────────────────── */
+.sheet {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  background: var(--v3-surface);
+  color: var(--v3-text);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  min-height: 52px;
+  padding: 0 10px 0 20px;
+  border-bottom: 1px solid var(--v3-border);
+}
+
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  color: var(--v3-text-3);
+  font-size: 12.5px;
+}
+
+.crumbs svg {
+  flex: none;
+}
+
+.crumbProject {
+  min-width: 0;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--v3-text-2);
+}
+
+.crumbStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  color: var(--v3-text-2);
+}
+
+.crumbNumber {
+  flex: none;
+  color: var(--v3-text-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.crumbStatus {
+  flex: none;
+}
+
+.dockFrame:focus,
+.modalFrame:focus {
+  outline: none;
+}
+
+.stamp {
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+.headActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+
+.position {
+  padding: 0 6px;
+  color: var(--v3-text-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.headButton {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--v3-radius);
+  color: var(--v3-text-2);
+  transition: background-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
+}
+
+.headButton:hover,
+.headButton[aria-expanded="true"],
+.headButton[data-state="open"] {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 48px;
+  scrollbar-width: thin;
+}
+
+/* ── Title ────────────────────────────────────────────────────────── */
+.titleBlock {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px 20px 8px 24px;
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 6px;
+  margin: -2px -6px;
+  border: 0;
+  border-radius: var(--v3-radius);
+  background: transparent;
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 22px;
+  line-height: 30px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  resize: none;
+  field-sizing: content;
+  outline: none;
+  transition: background-color 120ms var(--v3-ease), box-shadow 120ms var(--v3-ease);
+}
+
+.title:hover {
+  background: var(--v3-hover);
+}
+
+.title:focus {
+  background: var(--v3-canvas);
+  box-shadow: 0 0 0 1.5px var(--v3-accent);
+}
+
+.doneButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  height: 32px;
+  margin-top: 1px;
+  padding: 0 12px;
+  border-radius: var(--v3-radius);
+  border: 1px solid var(--v3-border-strong);
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color 120ms var(--v3-ease), border-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
+}
+
+.doneButton svg {
+  color: var(--v3-success);
+}
+
+.doneButton:hover {
+  border-color: var(--v3-success);
+  background: var(--v3-success-soft);
+  color: var(--v3-success-text);
+}
+
+.doneButton[data-done] svg {
+  color: var(--v3-text-2);
+}
+
+.doneButton[data-done]:hover {
+  border-color: var(--v3-border-strong);
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+/* ── Properties ───────────────────────────────────────────────────── */
+.props {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 20px 0 18px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: center;
+  min-height: 38px;
+}
+
+.rowLabel {
+  padding-left: 6px;
+  color: var(--v3-text-2);
+  font-size: 13px;
+}
+
+.rowValue {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.value {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 32px;
+  padding: 0 8px;
+  border-radius: var(--v3-radius);
+  color: var(--v3-text);
+  font-size: 13px;
+  text-align: left;
+  transition: background-color 120ms var(--v3-ease);
+}
+
+.value:hover,
+.value[aria-expanded="true"] {
+  background: var(--v3-hover);
+}
+
+.value[data-overdue] {
+  color: var(--v3-danger-text);
+}
+
+.valueGroup {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+
+.repeat {
+  display: inline-flex;
+  font-size: 12.5px;
+}
+
+.empty {
+  color: var(--v3-text-3);
+}
+
+.labelList {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.labelChip {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--v3-radius-sm);
+  background: var(--v3-fill);
+  color: var(--v3-text-2);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.blocked {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  color: var(--v3-warning-text);
+  font-size: 13px;
+}
+
+/* Optional fields wait on one quiet line under the properties, starting
+   where the labels start, until someone uses them. */
+.adders {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 4px;
+  padding: 6px 20px 4px 16px;
+}
+
+.adder {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: var(--v3-radius-sm);
+  color: var(--v3-text-3);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.adder:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.adder[aria-pressed="true"] {
+  color: var(--v3-accent-text);
+}
+
+.duePicker {
+  padding: 8px;
+}
+
+.divider {
+  height: 1px;
+  margin: 14px 24px 4px;
+  background: var(--v3-border);
+}
+
+/* ── Sections ─────────────────────────────────────────────────────── */
+.section {
+  padding: 12px 24px 16px;
+}
+
+.sectionTitle {
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--v3-text);
+}
+
+/* The subtask and files sections bring their own hairline and padding. */
+.legacySection > * {
+  border-top-color: var(--v3-border);
+}
+
+/* Activity takes its header and spacing from sheet-sections; this only
+   keeps room under the feed. */
+.activity {
+  padding-bottom: 8px;
+}
+
+.activitySkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.activitySkeleton span {
+  display: block;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--v3-fill);
+}
+
+.activitySkeleton span:nth-child(1) {
+  width: 40%;
+}
+
+.activitySkeleton span:nth-child(2) {
+  width: 80%;
+}
+
+.activitySkeleton span:nth-child(3) {
+  width: 60%;
+}
+
+/* ── Stale ────────────────────────────────────────────────────────── */
+.stale {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px 32px;
+  text-align: center;
+  background: var(--v3-surface);
+}
+
+.staleIcon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--v3-fill);
+  color: var(--v3-text-2);
+}
+
+.staleTitle {
+  max-width: 30ch;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.staleBody {
+  max-width: 34ch;
+  color: var(--v3-text-2);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.staleButton {
+  height: 36px;
+  margin-top: 6px;
+  padding: 0 16px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-solid);
+  color: var(--v3-on-solid);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ── Full page ────────────────────────────────────────────────────── */
+.page {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  background: var(--v3-canvas);
+  color: var(--v3-text);
+}
+
+.page .head {
+  padding-left: 32px;
+  padding-right: 24px;
+  background: var(--v3-canvas);
+}
+
+.pageScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.pageGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 720px) 300px;
+  justify-content: center;
+  gap: 48px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 16px 32px 64px;
+}
+
+.pageMain .titleBlock {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.pageMain .section,
+.pageMain .activity {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.pageMain .legacySection > * {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.pageSide {
+  position: sticky;
+  top: 16px;
+  align-self: start;
+  padding: 12px 8px 12px 0;
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-1);
+}
+
+.pageSide .props {
+  padding: 4px 8px 0 8px;
+}
+
+.pageSide .row {
+  grid-template-columns: 96px minmax(0, 1fr);
+}
+
+.pageSide .adders {
+  padding: 6px 8px 4px 2px;
+}
+
+@media (max-width: 1099px) {
+  .pageGrid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .pageSide {
+    position: static;
+    order: -1;
+  }
+}
+
+@media (max-width: 767px) {
+  .head {
+    padding-left: 12px;
+  }
+  .crumbProject {
+    display: none;
+  }
+  .crumbs > svg,
+  .crumbNumber,
+  .stamp,
+  .position {
+    display: none;
+  }
+  .headButton {
+    width: 44px;
+    height: 44px;
+  }
+  .titleBlock {
+    flex-direction: column;
+    padding: 16px 16px 8px;
+  }
+  .props {
+    padding: 8px 12px 0 10px;
+  }
+  .row {
+    grid-template-columns: 96px minmax(0, 1fr);
+    min-height: 44px;
+  }
+  .adders {
+    padding-left: 8px;
+  }
+  .section,
+  .activity {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .page .head {
+    padding-left: 16px;
+    padding-right: 8px;
+  }
+  .pageGrid {
+    padding: 8px 16px 48px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .title,
+  .value,
+  .doneButton,
+  .headButton {
+    transition: none;
+  }
+}
+
+
+/* ── Two-column task view (ClickUp-style) ─────────────────────────── */
+
+/* One large window over the app, with the app still framing it. */
+.modalFrame[data-full] {
+  top: 24px;
+  bottom: 24px;
+  left: max(24px, 7.5vw);
+  right: max(24px, 7.5vw);
+  border: 1px solid var(--v3-border-strong);
+  border-radius: 12px;
+  background: var(--v3-canvas);
+}
+
+.page .head { min-height: 44px; padding: 0 12px 0 10px; gap: 10px; }
+.headNav { display: flex; align-items: center; padding-right: 6px; border-right: 1px solid var(--v3-border); }
+.headNav .headButton { width: 28px; height: 28px; }
+.page .crumbs { font-size: 13.5px; }
+.page .stamp { margin: 0 8px 0 0; font-size: 12.5px; color: var(--v3-text-3); }
+
+.split {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+.split[data-activity] { grid-template-columns: minmax(0, 1fr) clamp(340px, 30%, 560px); }
+
+.splitMain { min-width: 0; min-height: 0; overflow-y: auto; }
+
+.splitInner {
+  display: flex;
+  flex-direction: column;
+  max-width: 1000px;
+  padding: 22px 48px 64px 84px;
+}
+
+/* A quiet type chip above the title, as in the reference. */
+.kindRow { display: flex; margin-bottom: 14px; }
+.kindChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--v3-border-strong);
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--v3-text);
+}
+.kindDot { width: 10px; height: 10px; border-radius: 999px; border: 3px solid var(--v3-text-2); }
+
+.splitInner .titleBlock { padding: 0 0 22px; }
+.splitInner .title { font-size: 28px; line-height: 36px; font-weight: 650; letter-spacing: -0.015em; }
+.splitInner .doneButton { display: none; }
+
+/* Properties two to a row: a muted label with its icon, then the value. */
+.props[data-grid] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 48px;
+  padding: 0;
+}
+.props[data-grid] .row { grid-template-columns: 140px minmax(0, 1fr); min-height: 36px; }
+.props[data-grid] .valueGroup { flex-wrap: nowrap; white-space: nowrap; }
+.props[data-grid] .rowLabel { padding-left: 2px; font-size: 14px; color: var(--v3-text-2); }
+.props[data-grid] .value { font-size: 14px; min-height: 30px; }
+.props[data-grid] .empty { color: var(--v3-text-3); }
+.rowLabel { display: inline-flex; align-items: center; gap: 8px; }
+.rowIcon { display: inline-grid; place-items: center; color: var(--v3-text-3); }
+
+/* Status: a filled pill, a step to the next status, and done. */
+.statusControl { display: inline-flex; align-items: center; }
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 6px 0 0 6px;
+  background: color-mix(in srgb, var(--v3-text) 11%, transparent);
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.statusPill:last-child { border-radius: 6px; }
+.statusStep {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 26px;
+  border: 0;
+  border-left: 1px solid var(--v3-border-strong);
+  border-radius: 0 6px 6px 0;
+  background: color-mix(in srgb, var(--v3-text) 11%, transparent);
+  color: var(--v3-text);
+  cursor: pointer;
+}
+.statusPill:hover,
+.statusStep:hover { background: color-mix(in srgb, var(--v3-text) 16%, transparent); }
+.statusDone {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-left: 6px;
+  border: 1px solid var(--v3-border-strong);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--v3-text-2);
+  cursor: pointer;
+}
+.statusDone:hover { color: var(--v3-text); background: var(--v3-hover); }
+.statusDone[data-done] { background: var(--v3-success); border-color: var(--v3-success); color: var(--v3-on-accent); }
+
+.splitInner .divider { margin: 26px 0 14px; }
+.splitInner .section { padding: 0 0 24px; }
+
+/* Left column order: title, properties, divider, description, the action
+   list, then subtasks and files. */
+.splitInner > .section { order: 1; min-height: 88px; }
+.splitInner > .adders { order: 2; }
+.splitInner > .legacySection { order: 3; padding: 0; }
+
+/* The action list: plain rows with an icon. */
+.adders[data-list] {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 18px 0 4px;
+}
+.adders[data-list] .adder {
+  height: 32px;
+  gap: 10px;
+  padding: 0 6px;
+  margin-left: -6px;
+  font-size: 14px;
+  color: var(--v3-text);
+}
+.adders[data-list] .adder svg { color: var(--v3-text-2); }
+
+/* Subtasks and Files join the list as rows while they are empty, and grow
+   into sections once they hold something. */
+.splitInner [data-sheet-subtasks],
+.splitInner [data-sheet-files] { border-top: 0; padding: 4px 0 0; }
+.splitInner [data-sheet-subtasks]:not([data-empty]),
+.splitInner [data-sheet-files]:not([data-empty]) { padding-top: 22px; }
+.splitInner [data-sheet-subtasks][data-empty] > :first-child { display: none; }
+.splitInner [data-sheet-subtasks][data-empty] [class*="composer"] { color: var(--v3-text); font-size: 14px; min-height: 32px; padding-left: 0; }
+.splitInner [data-sheet-files][data-empty] > :first-child { margin: 0; min-height: 32px; }
+.splitInner [data-sheet-files][data-empty] > :first-child h2 { display: none; }
+.splitInner [data-sheet-files][data-empty] > :first-child button {
+  margin-left: -6px;
+  padding: 0 6px;
+  height: 32px;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--v3-text);
+}
+.splitInner [data-sheet-files][data-empty] [class*="drop"] {
+  border: 0;
+  background: transparent;
+  padding-left: 0;
+  min-height: 32px;
+}
+
+/* Activity: the whole right column, history above, the comment box pinned
+   to the bottom. */
+.activityColumn {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--v3-border);
+  background: var(--v3-canvas);
+  overflow-y: auto;
+}
+.activityColumn .activity {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  border-top: 0;
+  padding: 0 16px 14px;
+}
+.activityColumn .activity > :first-child {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: 0 -16px 14px;
+  padding: 0 18px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  background: var(--v3-canvas);
+  border-bottom: 1px solid var(--v3-border);
+}
+.activityColumn .activity > :first-child h2 { font-size: 14.5px; font-weight: 650; }
+.activityColumn [data-task-discussion] { flex: 1; display: flex; flex-direction: column; padding-bottom: 0; }
+.activityColumn [data-comment-composer] {
+  position: sticky;
+  bottom: 0;
+  margin: auto 0 0;
+  padding: 12px 0 0;
+  border-top: 0;
+  background: var(--v3-canvas);
+  backdrop-filter: none;
+}
+
+.commentBox textarea {
+  display: block;
+  width: 100%;
+  min-height: 88px;
+  resize: none;
+  padding: 14px 16px;
+  border: 1px solid var(--v3-border-strong);
+  border-radius: 12px;
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 14px;
+}
+.commentBox textarea::placeholder { color: var(--v3-text-3); }
+.commentBox textarea:disabled { cursor: not-allowed; }
+
+@media (max-width: 1180px) {
+  .props[data-grid] { grid-template-columns: minmax(0, 1fr); }
+  .splitInner { padding: 22px 32px 48px; }
+}
+
+.splitInner [data-sheet-subtasks][data-empty] input::placeholder { color: var(--v3-text); opacity: 1; }
+.splitInner [data-sheet-subtasks][data-empty] [class*="composerGlyph"] { color: var(--v3-text-2); }

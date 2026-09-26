@@ -26,6 +26,17 @@ export function WorkspaceBoardColumnsProvider({ children }: { children: ReactNod
   );
 }
 
+/** A resolved column set supplied by the caller: the Tasks surface uses it to
+ *  paint optimistic column edits (rename, colour, reorder) before the server
+ *  revalidation lands. */
+export function BoardColumnsOverrideProvider({ columns, children }: { columns: BoardColumn[]; children: ReactNode }) {
+  return (
+    <BoardColumnsContext.Provider value={columns}>
+      {children}
+    </BoardColumnsContext.Provider>
+  );
+}
+
 const DEFAULT_COLUMNS = resolveBoardColumns(null);
 
 /** The active column set. Defaults to the shipped five columns so the

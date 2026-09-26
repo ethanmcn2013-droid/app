@@ -35,7 +35,7 @@ export function TimelineArtifactStudio({
             <path d="m12 19-7-7 7-7" />
             <path d="M19 12H5" />
           </svg>
-          Shared timelines
+          Shared pages
         </Link>
         <span className={styles.status} data-live={live ? "true" : undefined}>
           {publicationStateLabel(effectivePublicationState(publication))}
@@ -44,12 +44,12 @@ export function TimelineArtifactStudio({
 
       <header className={styles.intro}>
         <div>
-          <p className={styles.eyebrow}>Owner artifact studio</p>
+          <p className={styles.eyebrow}>Your shared page</p>
           <h1>See the story they will see.</h1>
         </div>
         <p className={styles.introCopy}>
           This is the standalone experience for anyone holding your link. It
-          carries no workspace navigation, private notes or operating controls.
+          carries no project navigation, private notes or operating controls.
         </p>
       </header>
 
@@ -76,7 +76,7 @@ export function TimelineArtifactStudio({
       <section aria-labelledby="artifact-canvas-heading">
         <div className={styles.sectionHeader}>
           <div>
-            <p className={styles.sectionIndex}>01 · Shared experience</p>
+            <p className={styles.sectionIndex}>On a large screen</p>
             <h2 id="artifact-canvas-heading">The full timeline</h2>
           </div>
           <Link className={styles.manageLink} href={managerHref}>
@@ -94,13 +94,13 @@ export function TimelineArtifactStudio({
 
       <section className={styles.phoneSection} aria-labelledby="phone-preview-heading">
         <div className={styles.phoneCopy}>
-          <p className={styles.sectionIndex}>02 · Phone preview</p>
+          <p className={styles.sectionIndex}>On a phone</p>
           <h2 id="phone-preview-heading">The same story, in their hand.</h2>
           <p>
             This is the real responsive artifact, not a screenshot. Scroll it,
             switch the time lens and open milestones exactly as a viewer can.
           </p>
-          <p className={styles.phoneNote}>Preview only · this does not add a view</p>
+          <p className={styles.phoneNote}>Previewing never adds a view.</p>
         </div>
         <div className={styles.deviceStage}>
           <TimelinePhonePreview timeline={timeline} label="Viewer phone preview" />

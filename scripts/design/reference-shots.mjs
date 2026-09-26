@@ -109,7 +109,6 @@ const SCENES = [
   /* ── Tasks ────────────────────────────────────────────────────── */
   { slug: "tasks-board", product: "tasks", state: "populated", url: "/app/tasks" },
   { slug: "tasks-list", product: "tasks", state: "populated", url: "/app/tasks/list" },
-  { slug: "tasks-schedule", product: "tasks", state: "populated", url: "/app/tasks/timeline" },
   { slug: "tasks-calendar", product: "tasks", state: "populated", url: "/app/tasks/calendar" },
   { slug: "tasks-my-tasks", product: "tasks", state: "populated", url: "/app/my-tasks" },
   { slug: "tasks-project", product: "tasks", state: "populated", url: "/app/project" },

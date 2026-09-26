@@ -5,10 +5,9 @@ import { assertProjectId } from "./project-ref";
 
 const projectB = assertProjectId("ws-b-owned");
 
-test("each Floor view switch carries the exact Project and open task", () => {
+test("each Tasks view switch carries the exact Project and open task", () => {
   assert.equal(floorViewHref("board", projectB, "task 42"), "/app/tasks?task=task+42&workspaceId=ws-b-owned");
   assert.equal(floorViewHref("list", projectB, "task 42"), "/app/tasks/list?task=task+42&workspaceId=ws-b-owned");
-  assert.equal(floorViewHref("timeline", projectB, "task 42"), "/app/tasks/timeline?task=task+42&workspaceId=ws-b-owned");
   assert.equal(floorViewHref("calendar", projectB, "task 42"), "/app/tasks/calendar?task=task+42&workspaceId=ws-b-owned");
 });
 

@@ -3,10 +3,15 @@ import { test } from "node:test";
 
 import {
   ALL_REGISTERS,
+  NOTES_ACTIONS,
+  NOTES_LEGEND,
+  NOTES_VIEW_LABELS,
   BANNED_IN_COPY,
   notesCopy,
   notesCopyForDomain,
   registerForDomain,
+  reviewSummary,
+  waitingLabel,
   type NotesCopy,
 } from "./notes-copy";
 
@@ -224,4 +229,73 @@ test("no string promises access forever", () => {
     }
   }
   assert.deepEqual(offences, [], offences.join("\n"));
+});
+
+test("the third view reads In Tasks, and Sent is never a visible label", () => {
+  assert.deepEqual(NOTES_VIEW_LABELS, { notebook: "All", review: "To review", sent: "In Tasks" });
+  const visible = [
+    ...Object.values(NOTES_VIEW_LABELS),
+    ...Object.values(NOTES_LEGEND),
+    ...Object.values(NOTES_ACTIONS),
+    ...ALL_REGISTERS.flatMap((register) => Object.values(notesCopy(register).notebook)),
+  ];
+  for (const value of visible) assert.doesNotMatch(value, /^Sent\b/, value);
+});
+
+test("the v3 frame strings are plain and sentence case", () => {
+  const visible = [
+    ...Object.values(NOTES_VIEW_LABELS),
+    ...Object.values(NOTES_LEGEND),
+    ...Object.values(NOTES_ACTIONS),
+  ];
+  for (const value of visible) {
+    assert.equal(value[0], value[0]!.toUpperCase(), value);
+    assert.doesNotMatch(value, /!|—/, value);
+    for (const banned of BANNED_IN_COPY) assert.ok(!value.toLowerCase().includes(banned), `${value}: ${banned}`);
+  }
+  assert.equal(NOTES_ACTIONS.notSaved, "Not saved. Retry");
+});
+
+test("the review summary counts decisions and leaves out empty parts", () => {
+  const copy = notesCopy("generic");
+  assert.equal(
+    reviewSummary(copy, { kept: 5, turned: 2, deleted: 1 }),
+    "All caught up. 5 kept, 2 turned into tasks, 1 deleted.",
+  );
+  assert.equal(reviewSummary(copy, { kept: 0, turned: 1, deleted: 0 }), "All caught up. 1 turned into a task.");
+  assert.equal(reviewSummary(copy, { kept: 0, turned: 0, deleted: 0 }), "All caught up.");
+  assert.equal(
+    reviewSummary(notesCopy("wedding"), { kept: 1, turned: 3, deleted: 0 }),
+    "All caught up. 1 kept, 3 added to your list.",
+  );
+});
+
+test("the waiting banner counts in words", () => {
+  const copy = notesCopy("generic");
+  assert.equal(waitingLabel(copy, 1), "1 note waiting");
+  assert.equal(waitingLabel(copy, 8), "8 notes waiting");
+});
+
+test("review and the open note use one keyboard map and one button order for the decisions", async () => {
+  // Launcher critique F7 (25 Sep 2026): Keep was E in the list and reader
+  // but K in review, and the button order differed.
+  const { readFileSync } = await import("node:fs");
+  const { NOTES_DECISION_KEYS, NOTES_DECISION_ORDER } = await import("./notes-copy");
+  const read = (file: string) =>
+    readFileSync(new URL(`../app/workspace/${file}`, import.meta.url), "utf8");
+  const shortcutsIn = (source: string) =>
+    [...source.matchAll(/aria-keyshortcuts=\{NOTES_DECISION_KEYS\.(turnIntoTask|keep|delete)\.shortcut\}/g)].map(
+      (match) => match[1],
+    );
+  const review = shortcutsIn(read("ReviewSession.tsx"));
+  const reader = shortcutsIn(read("NoteReader.tsx"));
+  assert.deepEqual(review, [...NOTES_DECISION_ORDER]);
+  assert.deepEqual(reader, review);
+  // No hard-coded decision keys left behind in either surface.
+  for (const source of [read("ReviewSession.tsx"), read("NoteReader.tsx")]) {
+    assert.doesNotMatch(source, /aria-keyshortcuts="(?:K|E|T|Backspace)"/);
+  }
+  assert.equal(NOTES_DECISION_KEYS.keep.shortcut, "E");
+  assert.equal(NOTES_DECISION_KEYS.turnIntoTask.shortcut, "T");
+  assert.match(NOTES_DECISION_KEYS.delete.shortcut, /Backspace/);
 });

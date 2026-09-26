@@ -1,0 +1,162 @@
+/* Shared pages (v3): the page frame and header around the sharing manager.
+   Behaviour lives in audience-manager.tsx and is unchanged. */
+
+.page {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: var(--v3-canvas);
+}
+
+.column {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px 32px 56px;
+}
+
+.tabsRow {
+  display: flex;
+  margin-bottom: 18px;
+}
+
+.projectLine {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--v3-text-2);
+}
+
+a.projectLine:hover {
+  color: var(--v3-text);
+}
+
+.projectTile {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--v3-project-ink);
+}
+
+.crumbSep {
+  color: var(--v3-text-3);
+}
+
+.header {
+  max-width: 760px;
+  margin-bottom: 36px;
+}
+
+.title {
+  margin-top: 4px;
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 650;
+  letter-spacing: -0.022em;
+  color: var(--v3-text);
+  text-wrap: balance;
+}
+
+.lede {
+  margin-top: 10px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--v3-text-2);
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  border-top: 1px solid var(--v3-border);
+}
+
+.step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  counter-increment: step;
+  padding: 14px 16px 0 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--v3-text-2);
+}
+
+/* The progress line: the current step's segment is drawn in accent. */
+.step::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 0;
+  right: 16px;
+  height: 2px;
+  border-radius: 1px;
+  background: transparent;
+}
+
+.step[aria-current="step"]::before {
+  background: var(--v3-accent);
+}
+
+.step > strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--v3-text);
+}
+
+.step[aria-current="step"] > strong {
+  color: var(--v3-accent-text);
+}
+
+.step > strong::before {
+  content: counter(step);
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--v3-fill);
+  color: var(--v3-text-2);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.step[aria-current="step"] > strong::before {
+  background: var(--v3-accent);
+  color: var(--v3-on-accent);
+}
+
+@media (pointer: coarse) {
+  .projectLine {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 767px) {
+  .column {
+    padding: 20px 16px 40px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

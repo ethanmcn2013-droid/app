@@ -1,682 +1,1508 @@
 /*
- * Notes — the working surface.
+ * Notes v3: the notebook as a tool (docs/design/v3/launcher.md §3.6–3.8).
  *
- * There is no card here. The module <main> the app shell hands Notes is
- * already brilliant white, and this sheet fills it edge to edge: the only
- * structure is hairlines, space, and one indigo. A rounded page floating on
- * grey was an application frame drawn inside an application, and it cost the
- * notebook the width it needed.
- *
- * Type is the design system's own reading steps and nothing between them:
- * 12 / 13 / 15 / 17 / 20, which are --text-caption, --text-body-sm,
- * --text-body, --text-body-lg and --text-heading. There is no 14 and no 16
- * here; both were a private ramp this sheet used to carry and the system
- * excludes. Keyboard caps are set at --text-label, the 11px mono step,
- * because that is what a keycap is. Three weights: 400 for everything read,
- * 500 for anything that names or labels, 600 for a heading.
- *
- * The three objects that carry the product are separated by a real step
- * rather than by a pixel. The list index reads at 15; the capture field and
- * the reading pane both read at 17, deliberately the same step, because what
- * you write here is what you will read here. Reading sizes carry
- * --x-lead-read, interface sizes --x-lead-ui, and the caps --x-lead-tight.
- *
- * One stated exception to the ramp: text fields drop to 16px below 600px.
- * That is the iOS zoom floor, not a type size. Under 16px Safari zooms the
- * page the moment a field takes focus and the notebook jumps.
- *
- * One column, not three strata. --x-notes-capture is the width the composer,
- * the toolbar's controls and the note itself all end on, so the capture
- * surface, the retrieval surface and the reading surface are one column with
- * one right edge. The band hairlines still run edge to edge: the frame is
- * the app's, the column is the notebook's.
- *
- * Tokens are the vendored design system's own names, with one stated
- * exception: six semantic values (danger, warning, raised, done,
- * done-strong, quiet) exist only in the --x-* extension layer, so they are
- * aliased once at .root rather than referenced inline. Notes adds no palette
- * of its own.
+ * v3 tokens only (src/ds/v3.css), light and dark from the same rules.
+ * Desktop: list pane | right pane (canvas, reader or review).
+ * Below 900px: one pane at a time; the canvas is the bar at the foot of the
+ * screen that opens into a sheet. Every selector carries a local class (pure
+ * CSS modules).
  */
 
+/* ── frame ──────────────────────────────────────────────────────────── */
+
 .root {
-  /* Five semantic values Notes needs and the vendored layer does not yet
-     carry. They are aliased here rather than referenced inline so the
-     borrow from the Tasks namespace is stated once and is easy to retire
-     when these are promoted to the shared layer. */
-  --x-notes-danger: var(--x-task-danger);
-  --x-notes-warning: var(--x-task-warning);
-  --x-notes-raised: var(--x-task-raised);
-  --x-notes-done: var(--x-status-done);
-  --x-notes-done-strong: var(--x-status-done-hover);
-  /* Quiet ink for the 12-13px register: timestamps, counts, excerpts, the
-     standing privacy label. --ink-faint clears 4.5:1 by a hair at those sizes
-     and reads thin. --x-ink-quiet is the shared metadata ink; --ink-600 is
-     the same value under its burn-down name and keeps this sheet correct on
-     its own until the token lands. */
-  --x-notes-quiet: var(--x-ink-quiet, var(--ink-600));
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--v3-canvas);
+  color: var(--v3-text);
+}
 
-  --x-notes-list: 384px;
-  --x-notes-gutter: clamp(20px, 2.4vw, 32px);
-  /* The reading measure, in true characters rather than in zero-widths. A ch
-     is the advance of "0", which in Geist is about a third wider than the
-     average letter, so the old 68ch set roughly 90 characters a line, well
-     past the 66 a reader tracks comfortably. 50ch lands at about 66. */
-  --x-notes-measure: 50ch;
-  /* The one column. The composer starts at the gutter and the note starts a
-     list-width plus a gutter in, so this is the width that puts their right
-     edges on the same vertical. */
-  --x-notes-capture: calc(var(--x-notes-list) + var(--x-notes-measure));
-
+.frame {
+  flex: 1;
+  min-height: 0;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  min-block-size: 0;
-  block-size: 100%;
-  inline-size: 100%;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--font-sans);
-  font-size: 15px;
-  line-height: var(--x-lead-read);
-}
-
-:where(.root) *,
-:where(.root) *::before,
-:where(.root) *::after {
-  box-sizing: border-box;
-}
-
-:where(.root) button,
-:where(.root) input,
-:where(.root) select,
-:where(.root) textarea {
-  max-inline-size: 100%;
-  color: inherit;
-  font: inherit;
-}
-
-:where(.root) button,
-:where(.root) select {
-  cursor: pointer;
-}
-
-:where(.root) button:disabled,
-:where(.root) input:disabled,
-:where(.root) textarea:disabled {
-  cursor: not-allowed;
-}
-
-/* No radius here: at (0,2,0) it outranked every component rule and every
-   button visibly changed shape the moment it took focus. */
-.root :focus-visible {
-  outline: 2px solid var(--x-accent-focus, var(--accent));
-  outline-offset: 2px;
-}
-
-.root ::selection {
-  background: var(--accent-tint);
-  color: var(--ink);
+  grid-template-columns: 360px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-areas: "list main";
 }
 
 .srOnly {
   position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
+  width: 1px;
+  height: 1px;
   padding: 0;
   margin: -1px;
   overflow: hidden;
-  clip-path: inset(50%);
+  clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
 }
 
-/* ── Local header ─────────────────────────────────────────────────────── */
+/* The page's own status lines (restricted Project, partial failure) sit
+   above the notebook as one inline warning banner. */
+.root ~ :global(.capture-email) {
+  order: -1;
+}
 
-.header {
-  /* The popover and the menu anchor to this. Without it they resolve against
-     whatever is positioned further up the tree and land on top of the black
-     product bar. */
-  position: relative;
+.root ~ :global(.capture-email),
+:global(.capture-email):has(~ .root) {
+  flex: none;
+  margin: 12px 16px 0;
+  padding: 10px 14px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-warning-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--v3-warning-stroke) 40%, transparent);
+  color: var(--v3-warning-text);
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+/* ── list pane ──────────────────────────────────────────────────────── */
+
+.listPane {
+  grid-area: list;
+  container: notes-list / inline-size;
+  min-height: 0;
   display: flex;
-  min-block-size: 48px;
+  flex-direction: column;
+  background: var(--v3-sunken);
+  border-right: 1px solid var(--v3-border);
+}
+
+.listHead {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 16px 8px;
+}
+
+.titleRow {
+  display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
-  padding-inline: var(--x-notes-gutter);
-  border-block-end: 1px solid var(--hairline);
+  gap: 8px;
+  min-height: 32px;
+}
+
+.title {
+  font-size: 17px;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--v3-text);
+}
+
+.titleActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: -6px;
+}
+
+/* One capture surface at a time. On wide screens the canvas composer is the
+   way in whenever it is showing, so the list offers only this pencil; while
+   a note is open the capture bar returns. Phones always use the pencil. */
+.newButton {
+  display: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--v3-radius);
+  background: transparent;
+  color: var(--v3-text-2);
+  cursor: pointer;
+}
+
+.newButton:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+/* The capture bar: a door to the one canvas. */
+.captureBar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 44px;
+  padding: 0 4px 0 0;
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-1);
+  transition: border-color 120ms var(--v3-ease), box-shadow 160ms var(--v3-ease);
+}
+
+.captureBar:hover,
+.captureBar:focus-within {
+  border-color: var(--v3-control-border);
+}
+
+.captureBar[data-disabled] {
+  background: var(--v3-sunken);
+  box-shadow: none;
+}
+
+.captureWrite {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px 0 13px;
+  border: 0;
+  border-radius: var(--v3-radius-lg);
+  background: transparent;
+  color: var(--v3-text-3);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: text;
+}
+
+.captureWrite:focus-visible {
+  outline-offset: -2px;
+}
+
+.captureText {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.captureText[data-draft] {
+  color: var(--v3-text);
+}
+
+.captureIcon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: var(--v3-radius);
+  background: transparent;
+  color: var(--v3-text-2);
+  cursor: pointer;
+  transition: background-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
+}
+
+.captureIcon:hover:not(:disabled) {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.captureIcon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 6px 0 11px;
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius);
+  background: var(--v3-surface);
+  color: var(--v3-text-3);
+  transition: border-color 120ms var(--v3-ease), box-shadow 120ms var(--v3-ease);
+}
+
+.search:focus-within {
+  border-color: var(--v3-control-border);
+  box-shadow: 0 0 0 3px var(--v3-accent-soft);
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.searchInput:focus-visible {
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: var(--v3-text-3);
+}
+
+.searchInput::-webkit-search-cancel-button {
+  display: none;
+}
+
+.searchKey {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  border: 1px solid var(--v3-border-strong);
+  border-radius: 5px;
+  font-size: 11.5px;
+  color: var(--v3-text-3);
+}
+
+.searchClear {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--v3-text-3);
+  cursor: pointer;
+}
+
+.searchClear:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+/* One row: three views as a segmented control, then Filter. */
+.viewRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .views {
+  flex: 1;
+  min-width: 0;
   display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  margin-inline-start: -10px;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-fill);
+  box-shadow: inset 0 0 0 1px var(--v3-border);
 }
 
 .viewTab {
+  flex: 1 1 auto;
+  min-width: max-content;
   display: inline-flex;
-  min-block-size: 32px;
   align-items: center;
-  gap: 7px;
-  padding: 0 10px;
-  border: 0;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--x-notes-quiet);
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 6px;
+  color: var(--v3-text-2);
   font-size: 13px;
   font-weight: 500;
-  line-height: var(--x-lead-ui);
   text-decoration: none;
-  transition: color var(--motion-instant) var(--ease-out),
-    background-color var(--motion-instant) var(--ease-out);
+  white-space: nowrap;
+  transition: background-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
 }
 
 .viewTab:hover {
-  color: var(--ink);
-  background: var(--paper-deep);
-}
-
-/* Quiet ink clears 4.5:1 on paper with room to spare and still loses a little
-   on --paper-deep, which is the hover ground for every control in this
-   header. Step up on hover. */
-.viewTab:hover .viewCount,
-.menuItem:hover .menuHint {
-  color: var(--ink-soft);
+  color: var(--v3-text);
 }
 
 .viewTab[aria-current="page"] {
-  color: var(--ink);
-  background: var(--accent-tint);
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  box-shadow: var(--v3-shadow-1), 0 0 0 1px var(--v3-border);
+}
+
+/* A view name is never cut: "To review" is the reason the tabs exist. */
+.viewName {
+  flex: 0 0 auto;
 }
 
 .viewCount {
   font-size: 12px;
-  font-weight: 500;
   font-variant-numeric: tabular-nums;
-  color: var(--x-notes-quiet);
+  color: var(--v3-text-3);
 }
 
 .viewTab[aria-current="page"] .viewCount {
-  color: var(--x-accent-ink);
+  color: var(--v3-text-2);
 }
 
-/* The header's utilities end on the column, not on the frame. A percentage
-   margin here resolves against the header's own content box, so this is the
-   slack between the column and the far edge, and it collapses to nothing the
-   moment the viewport is narrower than the column. */
-.headerRight {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-inline-end: max(0px, calc(100% - var(--x-notes-capture)));
-}
-
-/* ── Privacy indicator and its popover ────────────────────────────────── */
-
-.privacy {
-  display: inline-flex;
-  min-block-size: 32px;
-  align-items: center;
-  gap: 6px;
-  padding: 0 8px;
-  border: 0;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--x-notes-quiet);
-  font-size: 13px;
-  line-height: var(--x-lead-ui);
-  transition: color var(--motion-instant) var(--ease-out),
-    background-color var(--motion-instant) var(--ease-out);
-}
-
-.privacy:hover,
-.privacy[aria-expanded="true"] {
-  color: var(--ink);
-  background: var(--paper-deep);
-}
-
-.privacy svg {
+.filterAnchor {
+  position: relative;
   flex: none;
-  color: var(--x-notes-quiet);
 }
 
-.privacyText {
+.filterButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 34px;
+  min-width: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius);
+  background: var(--v3-surface);
+  color: var(--v3-text-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 120ms var(--v3-ease), border-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
+}
+
+.filterButton:hover,
+.filterButton[data-open] {
+  border-color: var(--v3-control-border);
+  color: var(--v3-text);
+}
+
+.filterButton[data-active] {
+  width: auto;
+  padding: 0 10px;
+  border-color: color-mix(in srgb, var(--v3-accent) 40%, transparent);
+  background: var(--v3-accent-soft);
+  color: var(--v3-accent-text);
+}
+
+.filterLabel {
   white-space: nowrap;
 }
 
-/* Hung off the column's right edge, the same vertical the control that opens
-   it now sits on. */
-.popover {
-  position: absolute;
-  z-index: 40;
-  inset-inline-end: max(
-    var(--x-notes-gutter),
-    calc(100% - var(--x-notes-gutter) - var(--x-notes-capture))
-  );
-  inset-block-start: 44px;
-  inline-size: min(380px, calc(100vw - 32px));
-  padding: var(--space-5);
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-lg);
-  background: var(--paper);
-  box-shadow: var(--shadow-modal);
-}
-
-.popoverTitle {
-  margin: 0 0 var(--space-3);
-  font-size: 15px;
-  font-weight: 600;
-  line-height: var(--x-lead-tight);
-  letter-spacing: -0.01em;
-}
-
-.popoverList {
-  display: grid;
-  gap: var(--space-3);
-  margin: 0;
-  padding: 0;
-  font-size: 13px;
-  line-height: var(--x-lead-read);
-  color: var(--ink-soft);
-}
-
-.popoverList dt {
-  font-weight: 500;
-  color: var(--ink);
-}
-
-.popoverList dd {
-  margin: 2px 0 0;
-}
-
-/* ── Overflow menu ────────────────────────────────────────────────────── */
-
-.iconButton {
-  display: inline-grid;
-  place-items: center;
-  inline-size: 32px;
-  block-size: 32px;
-  border: 0;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--x-notes-quiet);
-  transition: color var(--motion-instant) var(--ease-out),
-    background-color var(--motion-instant) var(--ease-out);
-}
-
-.iconButton:hover,
-.iconButton[aria-expanded="true"] {
-  color: var(--ink);
-  background: var(--paper-deep);
-}
-
-.menu {
-  position: absolute;
-  z-index: 40;
-  inset-inline-end: max(
-    var(--x-notes-gutter),
-    calc(100% - var(--x-notes-gutter) - var(--x-notes-capture))
-  );
-  inset-block-start: 44px;
-  inline-size: min(320px, calc(100vw - 32px));
-  padding: var(--space-2);
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-lg);
-  background: var(--paper);
-  box-shadow: var(--shadow-modal);
-}
-
-.menuItem {
+.filterChips {
   display: flex;
-  inline-size: 100%;
-  min-block-size: 40px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.filterChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 8px 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--v3-accent-soft);
+  color: var(--v3-accent-text);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.filterChip:hover {
+  background: color-mix(in srgb, var(--v3-accent) 16%, transparent);
+}
+
+.filterChip svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* ── the list ───────────────────────────────────────────────────────── */
+
+.listScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 8px 16px;
+  scrollbar-width: thin;
+}
+
+/* Its outer edges sit on the same 16px gutter as search and the tabs. */
+.reviewPrompt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 8px 8px;
+  padding: 12px 12px 12px 14px;
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-1), inset 0 0 0 1px var(--v3-border);
+  animation: notesFade 200ms var(--v3-ease) both;
+}
+
+.reviewPromptText {
+  flex: 1;
+  min-width: 0;
+}
+
+.reviewPromptTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--v3-text);
+}
+
+.reviewPromptBody {
+  margin-top: 2px;
+  padding-left: 16px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--v3-text-2);
+}
+
+.reviewPromptButton {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--v3-radius);
+  /* The system secondary button: solid accent stays for Turn into task
+     and Save. */
+  background: var(--v3-surface);
+  box-shadow: inset 0 0 0 1px var(--v3-control-border);
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 120ms var(--v3-ease);
+}
+
+.reviewPromptButton:hover {
+  background: var(--v3-hover);
+}
+
+.matchCount {
+  padding: 8px 8px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--v3-text-3);
+}
+
+/* Day groups skip layout and paint while off screen. */
+.group {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 400px;
+}
+
+.groupLabel {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
-  padding: 0 10px;
-  border: 0;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--ink);
-  font-size: 13px;
-  line-height: var(--x-lead-ui);
-  text-align: start;
-  text-decoration: none;
-}
-
-.menuItem:hover {
-  background: var(--paper-deep);
-}
-
-.menuHint {
-  color: var(--x-notes-quiet);
+  padding: 12px 8px 6px;
+  background: var(--v3-sunken);
   font-size: 12px;
+  font-weight: 600;
+  color: var(--v3-text-3);
 }
 
-.menuNote {
-  padding: var(--space-2) 10px var(--space-3);
-  color: var(--x-notes-quiet);
-  font-size: 12px;
-  line-height: var(--x-lead-read);
+.groupCount {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
 }
 
-.menuAddress {
-  display: block;
-  padding: 0 10px var(--space-2);
-  color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  overflow-wrap: anywhere;
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  list-style: none;
 }
 
-/* ── The view body ────────────────────────────────────────────────────── */
+.listEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 20px 8px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--v3-text-2);
+}
 
-.body {
+.listEmpty[data-first-use] {
+  align-items: center;
+  gap: 12px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.listEmptyMark {
   display: grid;
-  grid-template-rows: minmax(0, 1fr);
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-1), inset 0 0 0 1px var(--v3-border);
+  color: var(--v3-text-2);
+}
+
+/* Rows. */
+.rowShell,
+.rowShellInner {
+  display: block;
+}
+
+.rowWrap {
+  position: relative;
+  border-radius: var(--v3-radius);
+}
+
+.row {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  padding: 11px 12px;
+  border: 0;
+  border-radius: var(--v3-radius);
+  background: transparent;
+  color: var(--v3-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms var(--v3-ease);
+}
+
+.row:hover {
+  background: var(--v3-hover);
+}
+
+.row:focus-visible {
+  outline-offset: -2px;
+}
+
+.rowWrap[data-selected] .row {
+  background: var(--v3-row-selected);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--v3-accent) 18%, transparent);
+}
+
+.rowWrap[data-selected] .row::before {
+  content: "";
+  position: absolute;
+  inset: 10px auto 10px 0;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--v3-accent);
+}
+
+.rowWrap[data-fresh] .row {
+  animation: notesFresh 2400ms var(--v3-ease) both;
+}
+
+@keyframes notesFresh {
+  0%,
+  25% {
+    background: var(--v3-accent-soft);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+.rowMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.rowTitle {
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 500;
+  color: var(--v3-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Undecided notes read a touch heavier, like an unread message. */
+.rowWrap[data-waiting] .rowTitle {
+  font-weight: 600;
+}
+
+.rowPreview {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--v3-text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowPreview[data-empty] {
+  color: var(--v3-text-3);
+}
+
+.rowAside {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 1px 0;
+  transition: opacity 120ms var(--v3-ease);
+}
+
+.rowTime {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--v3-text-3);
+}
+
+.rowSource {
+  width: 13px;
+  height: 13px;
+}
+
+.rowStatus {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+}
+
+.rowStatus[data-tone="success"] {
+  color: var(--v3-success-text);
+}
+
+.rowStatus[data-tone="warning"] {
+  color: var(--v3-warning-text);
+}
+
+.rowStatus[data-tone="muted"] {
+  color: var(--v3-text-3);
+}
+
+.rowStatus[data-resolved] {
+  animation: notesChipResolve 180ms var(--v3-ease) both;
+}
+
+.waitingDot {
+  flex: none;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--v3-review);
+  box-shadow: 0 0 0 3px var(--v3-review-soft);
+}
+
+.highlight {
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--v3-warning) 38%, transparent);
+  color: inherit;
+  padding: 0 1px;
+}
+
+/* The row's decisions: compact icon buttons that take the place of the
+   time and state column, on the title's line, so the preview is never
+   covered. The title fades out before them rather than sliding under. */
+.rowActions {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px;
+  border-radius: 8px;
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-1), 0 0 0 1px var(--v3-border);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms var(--v3-ease);
+}
+
+.rowAction {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--v3-text-2);
+  cursor: pointer;
+}
+
+/* A 44px tall hit area; the buttons sit side by side, so width stays 28. */
+.rowAction::after {
+  content: "";
+  position: absolute;
+  inset: -8px 0;
+}
+
+.rowAction svg {
+  width: 15px;
+  height: 15px;
+}
+
+.rowAction:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.rowAction[data-tone="primary"] {
+  color: var(--v3-accent-text);
+}
+
+.rowAction[data-tone="primary"]:hover {
+  background: var(--v3-accent-soft);
+  color: var(--v3-accent-text);
+}
+
+.rowMore {
+  width: 28px;
+  height: 28px;
+}
+
+/* How far the cluster reaches past the time column into the title. */
+.rowWrap {
+  --row-fade: 6px;
+}
+
+.rowWrap:has(.rowActions[data-count="2"]) {
+  --row-fade: 30px;
+}
+
+.rowWrap:has(.rowActions[data-count="3"]) {
+  --row-fade: 64px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* Hover shows the cluster, unless the keyboard is on another row: one
+     row's actions at a time. */
+  .rowWrap:hover .rowActions,
+  .rowWrap:has(:focus-visible) .rowActions,
+  .rowWrap:has(.rowMore[data-open]) .rowActions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .listScroll:has(.rowWrap :focus-visible) .rowWrap:hover:not(:has(:focus-visible)):not(:has(.rowMore[data-open])) .rowActions {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .rowWrap[data-actions]:hover .rowAside,
+  .rowWrap[data-actions]:has(:focus-visible) .rowAside,
+  .rowWrap[data-actions]:has(.rowMore[data-open]) .rowAside {
+    opacity: 0;
+  }
+
+  .listScroll:has(.rowWrap :focus-visible) .rowWrap[data-actions]:hover:not(:has(:focus-visible)):not(:has(.rowMore[data-open])) .rowAside {
+    opacity: 1;
+  }
+
+  .rowWrap[data-actions]:hover .rowTitle,
+  .rowWrap[data-actions]:has(:focus-visible) .rowTitle,
+  .rowWrap[data-actions]:has(.rowMore[data-open]) .rowTitle {
+    mask-image: linear-gradient(
+      to right,
+      #000 calc(100% - var(--row-fade) - 24px),
+      transparent calc(100% - var(--row-fade))
+    );
+  }
+
+  .listScroll:has(.rowWrap :focus-visible) .rowWrap[data-actions]:hover:not(:has(:focus-visible)):not(:has(.rowMore[data-open])) .rowTitle {
+    mask-image: none;
+  }
+
+  /* The note open beside the list already has its decision bar in the
+     reader; the row stays a clean, readable title. */
+  .rowWrap[data-selected] .rowActions {
+    display: none;
+  }
+
+  .rowWrap[data-actions][data-selected] .rowAside {
+    opacity: 1;
+  }
+
+  .rowWrap[data-actions][data-selected] .rowTitle {
+    mask-image: none;
+  }
+}
+
+/* Touch: the reader carries every decision, one tap away. */
+@media (hover: none), (pointer: coarse) {
+  .rowActions {
+    display: none;
+  }
+}
+
+.rowRetry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px 8px;
+  font-size: 12.5px;
+  color: var(--v3-warning-text);
+}
+
+/* ── the capture beats ─────────────────────────────────────────────────
+ * A new note grows into its final slot and a deleted one closes its gap.
+ * Nothing fires on page load: the arrival attribute is only set on a note
+ * that appeared after the first paint.
+ */
+.rowShell[data-arriving],
+.rowShell[data-departing] {
+  display: grid;
+  grid-template-rows: 1fr;
+}
+
+.rowShell[data-arriving] > .rowShellInner,
+.rowShell[data-departing] > .rowShellInner {
   min-block-size: 0;
   overflow: hidden;
 }
 
-.notebook {
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
-  min-block-size: 100%;
-  overflow: hidden;
-  /* The column is capped and centred, so the space a wide screen adds becomes
-     two even margins instead of one dead band on the right. Uncapped, every
-     piece of content stopped on the capture measure while the composer band,
-     the toolbar rule and the list divider ran on to the true canvas edge —
-     measured 467px of empty paper at 1440 and 911px at 1920, with three
-     full-width hairlines crossing it. The frame was drawing a container the
-     content then refused to fill. Capping here rather than on each band means
-     the rules end exactly where the content does, because they are inside it. */
-  inline-size: 100%;
-  max-inline-size: calc(var(--x-notes-capture) + 2 * var(--x-notes-gutter));
-  margin-inline: auto;
+.rowShell[data-arriving] {
+  animation: notesRowArrive 180ms var(--v3-ease) both;
 }
 
-/* ── Composer ─────────────────────────────────────────────────────────── */
+.rowShell[data-arriving] > .rowShellInner {
+  animation: notesRowRise 180ms var(--v3-ease) both;
+}
+
+.rowShell[data-departing] {
+  pointer-events: none;
+  animation: notesRowDepart 200ms var(--v3-ease) both;
+}
+
+@keyframes notesRowArrive {
+  from {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+  to {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+}
+
+@keyframes notesRowRise {
+  from {
+    transform: translateY(6px);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes notesRowDepart {
+  from {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+  to {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}
+
+@keyframes notesChipResolve {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* A surface handed different content settles into it. Never from zero:
+   walking the list swaps this every keystroke. */
+.swapSettle {
+  animation: notesSwapSettle 160ms var(--v3-ease) both;
+}
+
+@keyframes notesSwapSettle {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ── list footer: the legend ────────────────────────────────────────── */
+
+.listFoot {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  min-height: 44px;
+  padding: 6px 8px 6px 16px;
+  border-top: 1px solid var(--v3-border);
+  font-size: 12px;
+  color: var(--v3-text-2);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.legendItem .waitingDot {
+  width: 7px;
+  height: 7px;
+  box-shadow: 0 0 0 2px var(--v3-review-soft);
+}
+
+.legendCheck {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  color: var(--v3-success-text);
+}
+
+.legendCheck svg {
+  width: 14px;
+  height: 14px;
+}
+
+.legendButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 0 6px;
+  margin: 0 -6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--v3-text-2);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.legendButton svg {
+  width: 13px;
+  height: 13px;
+}
+
+.legendButton:hover,
+.legendButton[aria-expanded="true"] {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.legendHelp {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-left: auto;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--v3-text-3);
+  cursor: pointer;
+}
+
+.legendHelp:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.popover {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: calc(100% + 8px);
+  z-index: 30;
+  padding: 16px;
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-pop);
+  animation: notesPop 160ms var(--v3-ease) both;
+}
+
+.popoverTitle {
+  font-size: 13.5px;
+  line-height: 1.45;
+  font-weight: 600;
+  color: var(--v3-text);
+}
+
+.popoverList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.popoverList dt {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--v3-text);
+}
+
+.popoverList dd {
+  margin-top: 2px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--v3-text-2);
+}
+
+/* ── capture canvas ─────────────────────────────────────────────────── */
+
+.canvas {
+  grid-area: main;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 28px 32px 56px;
+}
+
+.root:not([data-main="capture"]) .canvas {
+  display: none;
+}
+
+.canvasInner {
+  max-width: 680px;
+  margin: 0 auto;
+  padding-top: 20px;
+}
+
+.canvasHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.canvasTitle {
+  font-size: 22px;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--v3-text);
+}
+
+.sheetClose {
+  display: none;
+}
+
+.restricted {
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-warning-soft);
+  color: var(--v3-warning-text);
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.canvasAssurance {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--v3-text-2);
+}
+
+.canvasAssurance svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--v3-text-3);
+}
+
+.canvasTips {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 28px;
+  list-style: none;
+}
+
+.canvasTips li {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-sunken);
+  box-shadow: inset 0 0 0 1px var(--v3-border);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--v3-text-2);
+}
+
+.canvasTips strong {
+  font-weight: 600;
+  color: var(--v3-text);
+}
+
+.tipMark {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-surface);
+  box-shadow: inset 0 0 0 1px var(--v3-border);
+  color: var(--v3-text-2);
+}
+
+.canvasTip {
+  margin-top: 8px;
+  padding-left: 22px;
+  font-size: 13px;
+  color: var(--v3-text-3);
+}
+
+.moreWays {
+  margin-top: 20px;
+  border-top: 1px solid var(--v3-border);
+}
+
+.moreWaysSummary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--v3-text-2);
+  list-style: none;
+  cursor: pointer;
+}
+
+.moreWaysSummary::-webkit-details-marker {
+  display: none;
+}
+
+.moreWaysSummary svg {
+  transition: transform 160ms var(--v3-ease);
+}
+
+.moreWays[open] .moreWaysSummary svg {
+  transform: rotate(90deg);
+}
+
+.moreWaysSummary:hover {
+  color: var(--v3-text);
+}
+
+.recent {
+  margin-top: 28px;
+}
+
+.recentTitle {
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--v3-text-2);
+}
+
+.recentList {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  border-top: 1px solid var(--v3-border);
+}
+
+.recentItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  border-bottom: 1px solid var(--v3-border);
+}
+
+.recentText {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--v3-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recentLink {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 32px;
+  padding: 0 6px 0 8px;
+  border-radius: var(--v3-radius);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--v3-accent-text);
+  text-decoration: none;
+}
+
+.recentLink:hover {
+  background: var(--v3-accent-soft);
+}
+
+/* ── the composer (Composer.tsx) ─────────────────────────────────────── */
 
 .composerBand {
-  padding: var(--space-5) var(--x-notes-gutter);
-  border-block-end: 1px solid var(--hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-/* Capped to the column. Full-bleed, one line of placeholder was drawn across
-   1348px of paper, which reads as a page that has not finished loading rather
-   than as a place to write. Its right edge now lands on the note's. */
 .composer {
   position: relative;
-  display: grid;
-  max-inline-size: var(--x-notes-capture);
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-lg);
-  background: var(--paper);
-  transition: border-color var(--motion-fast) var(--ease-out),
-    box-shadow var(--motion-fast) var(--ease-out);
+  /* The footer reads its own width, so the pane width, not the window,
+     decides when Type, Voice and Photo fold to icons. */
+  container: composer / inline-size;
+  border: 1px solid var(--v3-border-strong);
+  border-radius: var(--v3-radius-xl);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-1);
+  transition: border-color 160ms var(--v3-ease), box-shadow 160ms var(--v3-ease);
 }
 
-.composer[data-focused="true"] {
-  border-color: color-mix(in srgb, var(--accent) 40%, var(--hairline));
-  box-shadow: 0 0 0 3px var(--accent-soft);
+.composer:focus-within {
+  border-color: var(--v3-control-border);
+  box-shadow: 0 0 0 4px var(--v3-accent-soft), var(--v3-shadow-1);
 }
 
-.composer[data-mode="voice"],
-.composer[data-mode="photo"] {
-  border-color: color-mix(in srgb, var(--accent) 32%, var(--hairline));
-}
-
-.photoDisclosure {
-  display: grid;
-  gap: 3px;
-  max-inline-size: var(--x-notes-measure);
-  margin: 0 12px 10px;
-  padding: 10px 12px;
-  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--hairline));
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--accent) 4%, var(--paper));
-  color: var(--ink-soft);
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.photoDisclosure strong {
-  color: var(--ink);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-/* The reading step, not a step below it. What is typed here is read back at
-   17 in the pane on the right; setting capture smaller than reading made the
-   composer look like a search box. */
 .composerField {
   display: block;
-  inline-size: 100%;
-  min-block-size: 44px;
-  padding: 12px 14px 2px;
+  width: 100%;
+  min-height: 220px;
+  padding: 20px 22px 8px;
   border: 0;
   background: transparent;
-  color: var(--ink);
+  color: var(--v3-text);
+  font: inherit;
   font-size: 17px;
-  line-height: var(--x-lead-read);
+  line-height: 1.6;
   resize: none;
-  overflow-y: auto;
-}
-
-.composerField::placeholder {
-  color: var(--x-notes-quiet);
+  outline: none;
 }
 
 .composerField:focus-visible {
-  outline: 2px solid var(--x-accent-focus, var(--accent));
-  outline-offset: 3px;
+  outline: none;
+}
+
+.composerField::placeholder {
+  color: var(--v3-text-3);
 }
 
 .composerFooter {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
-  padding: 6px 8px 6px 8px;
+  gap: 12px;
+  padding: 10px 12px 12px;
 }
 
+/* A segmented control: Type, Voice, Photo. */
 .modeGroup {
-  display: flex;
-  align-items: center;
+  display: inline-flex;
   gap: 2px;
+  padding: 2px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-fill);
+  box-shadow: inset 0 0 0 1px var(--v3-border);
 }
 
 .modeButton {
   display: inline-flex;
-  min-block-size: 32px;
   align-items: center;
   gap: 6px;
-  padding: 0 9px;
+  height: 30px;
+  padding: 0 11px 0 9px;
   border: 0;
-  border-radius: var(--radius-md);
+  border-radius: 6px;
   background: transparent;
-  color: var(--x-notes-quiet);
+  color: var(--v3-text-2);
+  font: inherit;
   font-size: 13px;
   font-weight: 500;
-  line-height: var(--x-lead-ui);
-  transition: color var(--motion-instant) var(--ease-out),
-    background-color var(--motion-instant) var(--ease-out);
+  cursor: pointer;
+  transition: background-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
 }
 
 .modeButton:hover:not(:disabled) {
-  color: var(--ink);
-  background: var(--paper-deep);
+  color: var(--v3-text);
 }
 
-.modeButton[data-active="true"] {
-  color: var(--x-accent-ink);
-  background: var(--accent-tint);
+.modeButton[data-active] {
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  box-shadow: var(--v3-shadow-1), 0 0 0 1px var(--v3-border);
 }
 
 .modeButton:disabled {
-  color: var(--ink-ghost);
-}
-
-.footerDivider {
-  inline-size: 1px;
-  block-size: 18px;
-  margin-inline: 6px;
-  background: var(--hairline);
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .composerRight {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: 10px;
 }
 
 .counter {
-  color: var(--x-notes-quiet);
-  font-size: 12px;
+  font-size: 12.5px;
   font-variant-numeric: tabular-nums;
+  color: var(--v3-text-3);
 }
 
-.counter[data-near="true"] {
-  color: var(--x-task-warning);
+.counter[data-near] {
+  color: var(--v3-warning-text);
 }
 
-.counter[data-over="true"] {
-  color: var(--x-task-danger);
+.counter[data-over] {
+  color: var(--v3-danger-text);
+  font-weight: 600;
 }
 
-.primaryButton {
-  display: inline-flex;
-  min-block-size: 34px;
-  align-items: center;
-  gap: 8px;
-  padding: 0 12px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  background: var(--accent);
-  /* The ink that rides an accent fill. It was --x-task-raised, which is
-     paper — and paper is the DEEPEST surface in dark, so the label went
-     near-black on indigo (3.05:1). --x-on-accent stays on the light side
-     of the fill in both themes, still without a literal white. */
-  color: var(--x-on-accent);
-  font-size: 13px;
-  font-weight: 500;
-  line-height: var(--x-lead-ui);
-  transition: background-color var(--motion-instant) var(--ease-out);
-}
-
-.primaryButton:hover:not(:disabled) {
-  background: var(--accent-hover);
-}
-
-/* The press, acknowledged under the finger. Every decision in Notes — save,
-   keep, delete, turn into task — reaches a server or a six-second timer, and
-   until wave 7 none of them moved at all while it did. The ground deepens on
-   the instant token and nothing else happens: no lift, no scale, no travel.
-   Keyboard commands are unaffected; they were already a cut. */
-.primaryButton:active:not(:disabled) {
-  background: color-mix(in srgb, var(--ink) 14%, var(--accent-hover));
-}
-
-/* Save note sits disabled for as long as the field is empty, which is most of
-   the time, so this is a resting state and not an edge case. --ink-faint put
-   the label at 4.63:1 on --paper-soft. The hairline, the flat fill and the
-   missing keycap carry "not yet"; the label stays readable. */
-.primaryButton:disabled {
-  border-color: var(--hairline);
-  background: var(--paper-soft);
-  color: var(--x-notes-quiet);
-}
-
+/* Keyboard hints: only where there is a keyboard. */
 .keycap {
-  display: inline-flex;
-  align-items: center;
+  margin-left: 2px;
   padding: 1px 5px;
-  border-radius: var(--radius-sm);
-  /* A translucent wash put the cap at 4.02:1 against its own button. The
-     ring carries the shape instead, and the glyph keeps full contrast. */
-  border: 1px solid color-mix(in srgb, var(--x-task-raised) 45%, transparent);
+  border-radius: 5px;
   background: transparent;
-  font-family: var(--font-mono);
-  font-size: var(--text-label);
-  line-height: var(--x-lead-tight);
-}
-
-.primaryButton:disabled .keycap {
-  display: none;
-}
-
-.quietButton {
-  display: inline-flex;
-  min-block-size: 34px;
-  align-items: center;
-  gap: 6px;
-  padding: 0 11px;
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-md);
-  background: var(--paper);
-  color: var(--ink);
-  font-size: 13px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 45%, transparent);
+  font: inherit;
+  font-size: 11.5px;
   font-weight: 500;
-  line-height: var(--x-lead-ui);
-  transition: background-color var(--motion-instant) var(--ease-out),
-    border-color var(--motion-instant) var(--ease-out);
+  line-height: 1.2;
 }
 
-.quietButton:hover:not(:disabled) {
-  background: var(--paper-deep);
-  border-color: var(--ink-ghost);
+.quietButton .keycap {
+  background: var(--v3-fill);
+  color: var(--v3-text-2);
 }
 
-.quietButton:active:not(:disabled) {
-  background: color-mix(in srgb, var(--ink) 9%, var(--paper));
-  border-color: var(--ink-faint);
+@media (hover: none), (pointer: coarse) {
+  .keycap {
+    display: none;
+  }
 }
 
-.quietButton:disabled {
-  color: var(--x-notes-quiet);
+/* Narrower still, Save note takes its own full-width line under the modes. */
+@container composer (max-width: 320px) {
+  .composerFooter .composerRight {
+    flex: 1 1 100%;
+  }
+
+  .composerRight .primaryButton {
+    flex: 1;
+    justify-content: center;
+  }
 }
 
-.dangerButton {
-  composes: quietButton;
-  color: var(--x-task-danger);
-}
+/* A narrow composer: the keycap goes, and the modes fold to icons with
+   their names kept for screen readers and in the tooltip. */
+@container composer (max-width: 520px) {
+  .composerFooter .keycap {
+    display: none;
+  }
 
-.dangerButton:hover:not(:disabled) {
-  background: var(--status-blocked-bg);
-  border-color: color-mix(in srgb, var(--status-blocked) 40%, var(--hairline));
-}
+  .modeGroup .modeButton {
+    width: 34px;
+    padding: 0;
+    justify-content: center;
+  }
 
-/* Delete presses in exactly as far as Keep does. The colour it presses into
-   is the one it already carries at rest. */
-.dangerButton:active:not(:disabled) {
-  background: color-mix(in srgb, var(--status-blocked) 18%, var(--paper));
-  border-color: color-mix(in srgb, var(--status-blocked) 56%, var(--hairline));
+  .modeGroup .modeButton > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
 }
 
 .composerStatus {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 12px 0;
-  color: var(--x-notes-quiet);
+  padding: 0 18px 12px;
   font-size: 13px;
-  line-height: var(--x-lead-ui);
+  line-height: 1.45;
+  color: var(--v3-text-2);
 }
 
 .composerStatus[data-tone="error"] {
-  color: var(--x-task-danger);
+  color: var(--v3-danger-text);
 }
 
 .composerStatus[data-tone="saved"] {
-  color: var(--x-status-done);
+  color: var(--v3-success-text);
 }
 
-/* ── Voice ────────────────────────────────────────────────────────────── */
+.composerNotes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 4px;
+}
 
-.captureStage {
+.composerNote {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--v3-text-2);
+}
+
+.fileInput {
+  display: none;
+}
+
+.dropTarget {
+  position: absolute;
+  inset: 8px;
   display: grid;
-  gap: var(--space-4);
-  padding: var(--space-4);
+  place-items: center;
+  border: 1.5px dashed var(--v3-accent);
+  border-radius: var(--v3-radius-lg);
+  background: color-mix(in srgb, var(--v3-accent) 8%, var(--v3-surface));
+  color: var(--v3-accent-text);
+  font-size: 14px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+/* Voice, photo and read-back stages. */
+.captureStage {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 22px;
+  animation: notesFade 160ms var(--v3-ease) both;
 }
 
 .consentHeading {
@@ -686,81 +1512,106 @@
 }
 
 .consentIcon {
-  display: inline-grid;
-  flex: none;
-  inline-size: 40px;
-  block-size: 40px;
+  display: grid;
   place-items: center;
-  border-radius: var(--radius-md);
-  background: var(--accent-tint);
-  color: var(--x-accent-ink);
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--v3-accent-soft);
+  color: var(--v3-accent-text);
 }
 
 .consentTitle {
-  margin: 0;
-  color: var(--ink);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
-  line-height: var(--x-lead-tight);
-  letter-spacing: -0.01em;
+  color: var(--v3-text);
 }
 
 .consentSummary {
-  margin: 3px 0 0;
-  color: var(--x-notes-quiet);
   font-size: 13px;
-  line-height: var(--x-lead-ui);
+  color: var(--v3-text-2);
+}
+
+.captureDisclosure {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--v3-text-2);
 }
 
 .consentFacts {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 6px;
-  padding: 10px 12px;
-  border-radius: var(--radius-md);
-  background: var(--paper-deep);
-  color: var(--ink-soft);
-  font-size: 12px;
-  line-height: var(--x-lead-read);
 }
 
 .consentFacts span {
-  position: relative;
-  padding-inline-start: 14px;
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--v3-text-2);
 }
 
 .consentFacts span::before {
-  position: absolute;
-  inset-inline-start: 0;
-  content: "\2022";
-  color: var(--x-accent-ink);
+  content: "";
+  flex: none;
+  width: 5px;
+  height: 5px;
+  margin-top: 7px;
+  border-radius: 999px;
+  background: var(--v3-text-3);
+}
+
+.stageActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stageActionsRight {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
 }
 
 .recordRow {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
-}
-
-.recordLabel {
-  color: var(--x-notes-quiet);
-  font-size: 13px;
-  line-height: var(--x-lead-ui);
+  gap: 10px;
 }
 
 .recordDot {
   flex: none;
-  inline-size: 10px;
-  block-size: 10px;
-  border-radius: var(--radius-pill);
-  background: var(--status-blocked);
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--v3-danger);
+  animation: notesPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes notesPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--v3-danger) 40%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px transparent;
+  }
 }
 
 .recordElapsed {
-  color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: 15px;
+  font-size: 14px;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
-  line-height: var(--x-lead-flush);
+  color: var(--v3-text);
+}
+
+.recordLabel {
+  font-size: 13px;
+  color: var(--v3-text-2);
 }
 
 .levels {
@@ -768,98 +1619,76 @@
   flex: 0 1 260px;
   align-items: center;
   gap: 3px;
-  block-size: 22px;
-  min-inline-size: 0;
+  height: 22px;
+  min-width: 0;
+  margin-left: auto;
 }
 
 .level {
-  /* align-self stretch, not a height: the parent centres its children, so
-     without this the bars collapse to nothing and the meter is invisible. */
+  /* Stretch, not a height: the parent centres, so the bars would collapse. */
   align-self: stretch;
   flex: 1 1 0;
-  min-inline-size: 2px;
-  max-inline-size: 3px;
-  border-radius: var(--radius-pill);
-  background: var(--accent-soft);
+  min-width: 2px;
+  max-width: 3px;
+  border-radius: 999px;
+  background: var(--v3-accent-soft);
   transform-origin: center;
+  transition: transform 80ms linear;
 }
 
-.level[data-live="true"] {
-  background: var(--accent);
+.level[data-live] {
+  background: var(--v3-accent);
 }
 
 .transcript {
-  max-block-size: 132px;
-  max-inline-size: var(--x-notes-measure);
+  max-height: 132px;
   overflow-y: auto;
-  color: var(--ink-soft);
-  font-size: 15px;
-  line-height: var(--x-lead-read);
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--v3-text);
 }
 
 .transcriptEmpty {
-  color: var(--x-notes-quiet);
-}
-
-.captureDisclosure {
-  margin: 0;
-  max-inline-size: var(--x-notes-measure);
-  color: var(--x-notes-quiet);
-  font-size: 12px;
-  line-height: var(--x-lead-read);
-}
-
-.stageActions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.stageActionsRight {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--v3-text-3);
 }
 
 .processing {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: var(--ink-soft);
-  font-size: 15px;
-  line-height: var(--x-lead-ui);
+  font-size: 14px;
+  color: var(--v3-text-2);
 }
 
 .spinner {
+  display: inline-block;
   flex: none;
-  inline-size: 14px;
-  block-size: 14px;
-  border: 2px solid var(--accent-soft);
-  border-block-start-color: var(--accent);
-  border-radius: var(--radius-pill);
-  animation: notesSpin var(--motion-slow) linear infinite;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--v3-border-strong);
+  border-top-color: var(--v3-accent);
+  border-radius: 999px;
+  animation: notesSpin 800ms linear infinite;
 }
 
 @keyframes notesSpin {
   to {
-    transform: rotate(1turn);
+    transform: rotate(360deg);
   }
 }
 
-/* ── Photo ────────────────────────────────────────────────────────────── */
-
 .photoPreview {
   display: block;
-  inline-size: 100%;
-  /* A fixed frame rather than the photo's own proportions: a page held at
-     arm's length and a wide whiteboard both land in the same box, and the
-     composer never jumps height with the picture. */
-  block-size: clamp(180px, 30vh, 260px);
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-md);
+  width: 100%;
+  /* A fixed frame, so the composer never jumps height with the picture. */
+  height: clamp(180px, 30vh, 260px);
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-sunken);
   object-fit: contain;
-  background: var(--paper-deep);
+  transition: transform 200ms var(--v3-ease);
 }
 
 .photoPreview[data-rotation="90"] {
@@ -874,1479 +1703,1919 @@
   transform: rotate(270deg);
 }
 
-.dropTarget {
-  display: grid;
-  place-items: center;
-  gap: var(--space-2);
-  padding: var(--space-8) var(--space-4);
-  border: 1px dashed var(--ink-ghost);
-  border-radius: var(--radius-md);
-  color: var(--x-notes-quiet);
-  font-size: 13px;
-  line-height: var(--x-lead-read);
-  text-align: center;
-}
-
-.dropTarget[data-over="true"] {
-  border-color: var(--accent);
-  background: var(--accent-tint);
-  color: var(--x-accent-ink);
-}
-
-/* display:none, not clipped. Clipped, these two sat in the tab order as
-   stops where the focus ring vanished, and one of them was never opened by
-   anything at all. */
-.fileInput {
-  display: none;
-}
-
-/* Why a capture route is not open, said out loud.
-   Both of these used to live in a title attribute on a disabled button, which
-   is a tooltip nobody on a phone, a keyboard or a screen reader ever sees. The
-   line is on the page and the button points at it with aria-describedby. */
-.composerNotes {
-  display: grid;
+.photoDisclosure {
+  display: flex;
+  flex-direction: column;
   gap: 2px;
-  max-inline-size: var(--x-notes-capture);
-  padding-block-start: 8px;
-}
-
-.composerNote {
-  margin: 0;
-  color: var(--x-notes-quiet);
+  padding: 10px 12px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-fill);
   font-size: 13px;
-  line-height: var(--x-lead-read);
+  line-height: 1.5;
+  color: var(--v3-text-2);
 }
 
-/* ── Extracted-note review ────────────────────────────────────────────── */
+.photoDisclosure strong {
+  color: var(--v3-text);
+  font-weight: 600;
+}
 
 .extractHeader {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--space-4);
+  flex-wrap: wrap;
+  gap: 4px 12px;
 }
 
 .extractTitle {
-  margin: 0;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
-  line-height: var(--x-lead-tight);
-  letter-spacing: -0.01em;
+  color: var(--v3-text);
 }
 
 .extractHint {
-  color: var(--x-notes-quiet);
   font-size: 13px;
-  line-height: var(--x-lead-read);
+  color: var(--v3-text-2);
 }
 
 .extractList {
-  display: grid;
-  gap: var(--space-3);
-  margin: 0;
-  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   list-style: none;
 }
 
 .extractItem {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  gap: var(--space-2);
-  padding: 10px 10px 10px 12px;
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-md);
-  background: var(--paper);
-}
-
-.extractField {
-  inline-size: 100%;
-  min-block-size: 26px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--ink);
-  font-size: 15px;
-  line-height: var(--x-lead-read);
-  resize: none;
-  overflow: hidden;
-}
-
-.extractField:focus-visible {
-  outline: 2px solid var(--x-accent-focus, var(--accent));
-  outline-offset: 3px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 4px 4px 4px 12px;
+  border: 1px solid var(--v3-border-strong);
+  border-radius: var(--v3-radius);
+  background: var(--v3-canvas);
 }
 
 .extractItem:focus-within {
-  border-color: color-mix(in srgb, var(--accent) 40%, var(--hairline));
+  border-color: var(--v3-control-border);
+}
+
+.extractField {
+  flex: 1;
+  min-height: 36px;
+  padding: 7px 0;
+  border: 0;
+  background: transparent;
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+  resize: none;
+  outline: none;
+}
+
+.extractField:focus-visible {
+  outline: none;
 }
 
 .removeButton {
-  display: inline-grid;
+  display: grid;
   place-items: center;
-  inline-size: 28px;
-  block-size: 28px;
+  width: 32px;
+  height: 32px;
   border: 0;
-  border-radius: var(--radius-md);
+  border-radius: 6px;
   background: transparent;
-  color: var(--x-notes-quiet);
+  color: var(--v3-text-3);
+  cursor: pointer;
 }
 
 .removeButton:hover {
-  background: var(--paper-deep);
-  color: var(--ink);
+  background: var(--v3-hover);
+  color: var(--v3-danger-text);
 }
 
-/* ── Toolbar ──────────────────────────────────────────────────────────── */
+/* ── buttons ─────────────────────────────────────────────────────────── */
 
-.toolbar {
-  display: flex;
-  min-block-size: 44px;
+.primaryButton,
+.quietButton {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding-inline: var(--x-notes-gutter);
-  border-block-end: 1px solid var(--hairline);
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: var(--v3-radius);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 120ms var(--v3-ease), border-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
 }
 
-.search {
-  position: relative;
-  display: flex;
-  flex: 1 1 auto;
-  align-items: center;
-  gap: 8px;
-  min-inline-size: 0;
-  max-inline-size: 340px;
-  padding-inline-start: 2px;
-  color: var(--x-notes-quiet);
-}
-
-.searchInput {
-  inline-size: 100%;
-  min-block-size: 32px;
-  padding: 0;
+.primaryButton {
   border: 0;
+  background: var(--v3-accent);
+  color: var(--v3-on-accent);
+  box-shadow: var(--v3-shadow-1);
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: var(--v3-accent-hover);
+}
+
+.quietButton {
+  border: 1px solid var(--v3-border-strong);
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  font-weight: 500;
+}
+
+.quietButton:hover:not(:disabled) {
+  background: var(--v3-hover);
+  border-color: var(--v3-control-border);
+}
+
+.quietButton[data-tone="danger"] {
+  color: var(--v3-danger-text);
+}
+
+.quietButton[data-tone="danger"]:hover:not(:disabled) {
+  background: var(--v3-danger-soft);
+}
+
+.primaryButton:disabled,
+.quietButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  box-shadow: none;
+}
+
+.linkButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 5px;
   background: transparent;
-  color: var(--ink);
-  font-size: 15px;
-  line-height: var(--x-lead-ui);
+  color: var(--v3-accent-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-.searchInput::placeholder {
-  color: var(--x-notes-quiet);
+.linkButton:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
-/* The field itself takes the ring: the container border is 2.2:1 against
-   paper and is not a focus indicator. */
-.searchInput:focus-visible {
-  outline: 2px solid var(--x-accent-focus, var(--accent));
+.iconButton {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border: 0;
+  border-radius: var(--v3-radius);
+  background: transparent;
+  color: var(--v3-text-2);
+  cursor: pointer;
+  transition: background-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
+}
+
+.iconButton:hover,
+.iconButton[aria-expanded="true"] {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border: 1px solid var(--v3-border-strong);
+  border-radius: 5px;
+  background: var(--v3-sunken);
+  color: var(--v3-text-2);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .searchKey,
+  .captureWrite .kbd {
+    display: none;
+  }
+}
+
+/* ── stage: reader, review, In Tasks ────────────────────────────────── */
+
+.stage {
+  grid-area: main;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--v3-canvas);
+}
+
+.root[data-main="capture"] .stage {
+  display: none;
+}
+
+.reader {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.readerBar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 8px 16px 8px 24px;
+  border-bottom: 1px solid var(--v3-border);
+}
+
+.backButton {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  margin-left: -8px;
+  padding: 0 10px 0 4px;
+  border: 0;
+  border-radius: var(--v3-radius);
+  background: transparent;
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.backButton:hover {
+  background: var(--v3-hover);
+}
+
+.readerMeta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--v3-text-2);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.readerMeta svg {
+  flex: none;
+  color: var(--v3-text-3);
+}
+
+.metaPrivateDot {
+  color: var(--v3-text-3);
+}
+
+.readerMore {
+  margin-right: -6px;
+}
+
+.privateTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.privateTag svg {
+  width: 13px;
+  height: 13px;
+}
+
+.savePillSlot {
+  flex: none;
+  display: inline-flex;
+  min-width: 0;
+}
+
+.savePill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--v3-fill);
+  color: var(--v3-text-2);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  animation: notesFade 160ms var(--v3-ease) both;
+}
+
+.savePill svg {
+  width: 13px;
+  height: 13px;
+}
+
+.savePill[data-tone="pending"] {
+  background: transparent;
+  color: var(--v3-text-3);
+}
+
+.savePill[data-tone="saved"] {
+  background: var(--v3-success-soft);
+  color: var(--v3-success-text);
+  animation: notesFade 160ms var(--v3-ease) both, notesFadeOut 300ms var(--v3-ease) 1.2s forwards;
+}
+
+.savePill[data-tone="failed"] {
+  background: var(--v3-danger-soft);
+  color: var(--v3-danger-text);
+  cursor: pointer;
+}
+
+.savePill[data-tone="failed"]:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.readerScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.readerColumn {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 36px 32px 72px;
+}
+
+.readerError {
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-danger-soft);
+  color: var(--v3-danger-text);
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+/* The page: click or Enter to edit. The hint shows where a pointer can hover. */
+.readerPage {
+  position: relative;
+  margin: -12px -16px;
+  padding: 12px 16px;
+  border-radius: var(--v3-radius-lg);
+  cursor: text;
+  transition: background-color 160ms var(--v3-ease);
+  animation: notesFade 120ms var(--v3-ease) both;
+}
+
+.readerPage:focus-visible {
   outline-offset: 2px;
 }
 
-.search:focus-within {
-  color: var(--ink);
-}
-
-.searchKey {
-  flex: none;
-  padding: 1px 5px;
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-sm);
-  color: var(--x-notes-quiet);
-  font-family: var(--font-mono);
-  font-size: var(--text-label);
-  line-height: var(--x-lead-tight);
-}
-
-/* Ends on the column, with the composer above it and the note beside it. */
-.toolbarRight {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-inline-end: max(0px, calc(100% - var(--x-notes-capture)));
-}
-
-.sortSelect {
-  composes: select;
-}
-
-.select {
-  min-block-size: 32px;
-  padding: 0 6px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--x-notes-quiet);
-  font-size: 13px;
-  line-height: var(--x-lead-ui);
-}
-
-.select:hover {
-  color: var(--ink);
-  background: var(--paper-deep);
-}
-
-/* ── Split ────────────────────────────────────────────────────────────── */
-
-.split {
-  display: grid;
-  grid-template-columns: var(--x-notes-list) minmax(0, 1fr);
-  /* Full height even when the list is short. Content-sized, the hairline
-     between list and note stopped mid-air with white below it. */
-  min-block-size: 100%;
-  overflow: hidden;
-}
-
-.listPane {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  min-block-size: 0;
-  border-inline-end: 1px solid var(--hairline);
-  overflow: hidden;
-}
-
-/* The left half of one seam. This row and .detailHeader are the same object
-   seen either side of the divider, so they are the same height, the same
-   step, the same leading and the same vertical centring, and the hairline
-   under them is one rule that crosses the divider rather than two that stop
-   at it. Before this they sat 6px apart on the page. */
-.listMeta {
-  display: flex;
-  min-block-size: 52px;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding-inline: var(--x-notes-gutter);
-  border-block-end: 1px solid var(--hairline-soft);
-  color: var(--x-notes-quiet);
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
-  line-height: var(--x-lead-ui);
-}
-
-.list {
-  display: block;
-  min-block-size: 0;
-  margin: 0;
-  padding: var(--space-2) 0 var(--space-8);
-  overflow-y: auto;
-  list-style: none;
-}
-
-/* One gutter for the whole workspace. The rows used to sit on --space-5 while
-   every band above them sat on --x-notes-gutter, so the list's text and the
-   composer's edge were 12px out of line at desk width. */
-.row {
-  position: relative;
-  display: grid;
-  inline-size: 100%;
-  grid-template-columns: 18px minmax(0, 1fr);
-  gap: 10px;
-  padding: 12px var(--x-notes-gutter) 12px calc(var(--x-notes-gutter) - 2px);
-  border: 0;
-  border-inline-start: 2px solid transparent;
-  background: transparent;
-  text-align: start;
-}
-
-.row:hover {
-  background: var(--paper-soft);
-}
-
-.row[aria-current="true"] {
-  border-inline-start-color: var(--accent);
-  background: var(--accent-tint);
-}
-
-.rowIcon {
-  display: grid;
-  place-items: center;
-  block-size: 20px;
-  color: var(--x-notes-quiet);
-}
-
-.row[aria-current="true"] .rowIcon {
-  color: var(--x-accent-ink);
-}
-
-.row[aria-current="true"] .rowPreview,
-.row[aria-current="true"] .rowMeta,
-.row[aria-current="true"] .rowFlag {
-  color: var(--ink-soft);
-}
-
-.row[aria-current="true"] .rowFlag[data-tone="sent"] {
-  color: var(--x-status-done-hover);
-}
-
-.row[aria-current="true"] .rowFlag[data-tone="review"] {
-  color: var(--accent-hover);
-}
-
-.row[aria-current="true"] .rowFlag[data-tone="attention"] {
-  color: var(--x-task-danger);
-}
-
-.rowBody {
-  display: grid;
-  gap: 2px;
-  min-inline-size: 0;
-}
-
-.rowTitle {
-  overflow: hidden;
-  color: var(--ink);
-  font-size: 15px;
-  font-weight: 500;
-  line-height: var(--x-lead-ui);
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-.rowPreview {
-  overflow: hidden;
-  color: var(--x-notes-quiet);
-  font-size: 13px;
-  line-height: var(--x-lead-ui);
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
-}
-
-.rowMeta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 8px;
-  margin-block-start: 4px;
-  color: var(--x-notes-quiet);
-  font-size: 12px;
-  line-height: var(--x-lead-ui);
-}
-
-/* One chip, one anatomy. "In Tasks" carried an icon and a colour, "To review"
-   carried a colour and nothing else, and the two sat in the same slot looking
-   like different kinds of thing. They are the same kind of thing: a fact
-   about this note. Shape, height, step and weight are fixed here; the colour
-   is the only thing that changes, and the colour is the meaning. */
-.rowFlag {
-  display: inline-flex;
-  align-items: center;
-  min-block-size: 18px;
-  padding-inline: 6px;
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, currentColor 10%, transparent);
-  color: var(--x-notes-quiet);
-  font-size: 12px;
-  font-weight: 500;
-  line-height: var(--x-lead-flush);
-  white-space: nowrap;
-}
-
-/* The strong green, not the plain one. A chip sits on a 10% wash of its own
-   colour, and --x-status-done on that wash is 4.02:1 at 12px, which axe
-   catches and a reader feels. The hover-weight green clears 5.4:1. */
-.rowFlag[data-tone="sent"] {
-  color: var(--x-notes-done-strong);
-}
-
-/* --status-blocked is 3.81:1 on paper, which is a fail at 12px. The Notes
-   danger alias is the same red mixed into ink and clears 6:1. */
-.rowFlag[data-tone="attention"] {
-  color: var(--x-notes-danger);
-}
-
-.rowFlag[data-tone="review"] {
-  color: var(--x-accent-ink);
-}
-
-.highlight {
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--accent) 34%, transparent);
-  color: var(--ink);
-}
-
-/* Anything hung under a row starts where the row's words start: the gutter,
-   the 18px source icon and the 10px that separates them. */
-.rowRetry {
-  display: flex;
-  padding: 0 var(--x-notes-gutter) 12px calc(var(--x-notes-gutter) + 28px);
-}
-
-/* The decision, on the note it is about.
-   Keep it, make it a task, let it go — the three verbs the Review tab has
-   always carried, on every row that is still waiting for one of them. Same
-   handlers, same buttons, one step quieter so eight of these in a list read
-   as a notebook rather than as a form. */
-.rowActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 0 var(--x-notes-gutter) 12px calc(var(--x-notes-gutter) + 28px);
-}
-
-.rowActions .quietButton,
-.rowActions .dangerButton {
-  min-block-size: 30px;
-  padding-inline: 9px;
-}
-
-.rowSeparator {
-  block-size: 1px;
-  margin-inline: var(--x-notes-gutter);
-  background: var(--hairline-soft);
-}
-
-/* ── The capture beats ────────────────────────────────────────────────────
- *
- * Wave 7. Until now the product's own verbs happened between one frame and
- * the next: a saved note appeared, a decided row vanished, a promotion grew
- * a chip. Four movements, one grammar, and no new values — every duration
- * here is a semantic token, every curve is --ease-out, and under
- * prefers-reduced-motion the tokens are already 0ms, so each beat lands on
- * its end state on the first frame and the state change survives without the
- * travel. Nothing loops, nothing bounces, nothing fires on page load: the
- * arrival attribute is only ever set on a note that appeared after the first
- * paint, which is why this is a placement receipt and not a stagger.
- */
-
-/* The wrapper a row needs to open and close its own space. Only ever grid
-   while a beat is running: outside one it is an ordinary block, so the row's
-   focus ring is never clipped by a container that exists for 220ms. */
-.rowShell,
-.rowShellInner,
-.rowDecision,
-.rowDecisionInner {
-  display: block;
-}
-
-.rowShell[data-arriving],
-.rowShell[data-departing],
-.rowDecision[data-departing] {
-  display: grid;
-  grid-template-rows: 1fr;
-}
-
-/* The element that gets clipped is never the element that carries padding.
-   Under border-box a box cannot be shorter than its own padding, so animating
-   the padded strip directly stopped it 12px above the floor and left a visible
-   ledge where the decision used to be. */
-.rowShell[data-arriving] > .rowShellInner,
-.rowShell[data-departing] > .rowShellInner,
-.rowDecision[data-departing] > .rowDecisionInner {
-  min-block-size: 0;
-  overflow: hidden;
-}
-
-/* A new note resolves in its final slot. The gap it needs opens underneath it
-   over the same 220ms it takes to arrive, so the neighbours settle once. */
-.rowShell[data-arriving] {
-  animation: notesRowArrive var(--motion-base) var(--ease-out) both;
-}
-
-.rowShell[data-arriving] > .rowShellInner {
-  animation: notesRowRise var(--motion-base) var(--ease-out) both;
-}
-
-/* Keep and Delete are the same movement, deliberately. The meaning of a
-   decision lives in its wording and in what is left behind, never in how the
-   pixels leave: a row that reads as flinching away is a row that says the
-   product had an opinion about the choice. */
-.rowShell[data-departing],
-.rowDecision[data-departing] {
-  pointer-events: none;
-  animation: notesRowDepart var(--motion-base) var(--ease-out) both;
-}
-
-@keyframes notesRowArrive {
-  from {
-    grid-template-rows: 0fr;
-    opacity: 0;
-  }
-
-  to {
-    grid-template-rows: 1fr;
-    opacity: 1;
-  }
-}
-
-@keyframes notesRowRise {
-  from {
-    transform: translateY(6px);
-  }
-
-  to {
-    transform: none;
-  }
-}
-
-@keyframes notesRowDepart {
-  from {
-    grid-template-rows: 1fr;
-    opacity: 1;
-  }
-
-  to {
-    grid-template-rows: 0fr;
-    opacity: 0;
-  }
-}
-
-/* The promotion, resolving where it happened. "To review" leaves this slot
-   and "In Tasks" takes it, so the chip fades up rather than appearing: no
-   flight to another surface, no receipt animation, no celebration. */
-.rowFlag[data-resolved] {
-  animation: notesChipResolve var(--motion-fast) var(--ease-out) both;
-}
-
-@keyframes notesChipResolve {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-/* A surface that has been handed different content settles into it. Never
-   from zero: walking the list with J/K swaps this every keystroke, and a
-   crossfade that reaches transparent would strobe rather than read. */
-.swapSettle {
-  animation: notesSwapSettle var(--motion-fast) var(--ease-out) both;
-}
-
-@keyframes notesSwapSettle {
-  from {
-    opacity: 0.55;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-/* ── Detail ───────────────────────────────────────────────────────────── */
-
-.detailPane {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  min-block-size: 0;
-  overflow: hidden;
-}
-
-.detailHeader {
-  display: flex;
-  min-block-size: 52px;
-  align-items: center;
-  padding-inline: var(--x-notes-gutter);
-  border-block-end: 1px solid var(--hairline-soft);
-}
-
-/* The header shares the note's own column, and the column starts at the
-   pane's gutter rather than floating in the middle of it. Centred, the note
-   and its header drifted with the width of the window and a short note left
-   two equal remainders either side of itself; anchored, the leftover is one
-   margin on the right, which is what a page has. */
-.detailHeaderInner {
-  display: flex;
-  flex-wrap: wrap;
-  inline-size: 100%;
-  max-inline-size: var(--x-notes-measure);
-  margin-inline-end: auto;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2) var(--space-4);
-}
-
-.detailMeta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-inline-size: 0;
-  color: var(--x-notes-quiet);
-  font-size: 13px;
-  line-height: var(--x-lead-ui);
-}
-
-.detailActions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.detailScroll {
-  min-block-size: 0;
-  padding: var(--space-6) var(--x-notes-gutter) var(--space-10);
-  overflow-y: auto;
-}
-
-/* Full height on purpose. A three-line note used to leave the record of when
-   it was captured floating a third of the way down an otherwise empty pane,
-   which reads as a page that stopped rather than one that ended. The note
-   starts at the top, the record sits at the foot, and the space between them
-   is the margin of a short page. */
-.detailInner {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-  inline-size: 100%;
-  max-inline-size: var(--x-notes-measure);
-  min-block-size: 100%;
-  margin-inline-end: auto;
-}
-
-.detailField {
-  inline-size: 100%;
-  min-block-size: 96px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--ink);
-  font-size: 17px;
-  line-height: var(--x-lead-read);
-  resize: none;
-  overflow: hidden;
-}
-
-.detailField:focus-visible {
-  outline: 2px solid var(--x-accent-focus, var(--accent));
-  outline-offset: 4px;
-}
-
-.detailFooter {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-3) var(--space-5);
-  margin-block-start: auto;
-  padding-block-start: var(--space-4);
-  border-block-start: 1px solid var(--hairline-soft);
-  color: var(--x-notes-quiet);
-  font-size: 12px;
-  line-height: var(--x-lead-ui);
-}
-
-.detailFooter dt {
-  display: inline;
-  font-weight: 400;
-}
-
-.detailFooter dd {
-  display: inline;
-  margin: 0 0 0 4px;
-  color: var(--ink-soft);
-}
-
-/* A div, not a span: a definition list may only have dt, dd and div as
-   direct children, and a span there is invalid markup that a screen reader
-   reads as an orphaned term. */
-.detailPair {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 4px;
-  min-inline-size: 0;
-}
-
-/* The one place the note-to-task relationship is stated. There used to be
-   two: an Open task button in the top-right of the header and this line at
-   the bottom-left of the note, opposite corners of the same pane saying the
-   same thing. The header keeps the verb that is still available (Turn into
-   task); once it has been used, the record lives here, with the wording that
-   actually crossed. */
-.taskReceipt {
-  flex: 1 1 100%;
-  align-items: baseline;
-}
-
-.taskReceipt dd {
-  min-inline-size: 0;
-  flex: 1 1 auto;
-}
-
-.linkedTask {
-  display: inline;
-  color: var(--x-accent-ink);
-  text-decoration: none;
+.readerTitle {
+  font-size: 22px;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--v3-text);
   overflow-wrap: anywhere;
 }
 
-.linkedTask:hover {
-  text-decoration: underline;
+.readerParagraph {
+  margin-top: 12px;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--v3-text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
-/* ── Empty states ─────────────────────────────────────────────────────── */
-
-/* One grammar for every empty state. Two of them, one left-aligned and one
-   centred, appeared in the same frame on an empty notebook. */
-.empty {
-  display: grid;
-  block-size: 100%;
-  align-content: center;
-  justify-items: center;
-  justify-self: center;
-  gap: 6px;
-  padding: var(--space-9) var(--x-notes-gutter);
-  max-inline-size: 44ch;
-  text-align: center;
+.editHint {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: none;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--v3-fill);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--v3-text-2);
 }
 
-.emptyCentred {
-  composes: empty;
-  block-size: 100%;
-  align-content: center;
-  justify-items: center;
-  justify-self: center;
-  text-align: center;
+.editHint svg {
+  width: 12px;
+  height: 12px;
 }
 
-.emptyTitle {
-  margin: 0;
-  color: var(--ink);
-  font-size: 15px;
-  font-weight: 600;
-  line-height: var(--x-lead-tight);
-  letter-spacing: -0.01em;
+@media (hover: hover) and (pointer: fine) {
+  .readerPage[role="button"]:hover {
+    background: var(--v3-hover);
+  }
+
+  .readerPage[role="button"]:hover .editHint {
+    display: inline-flex;
+    animation: notesFade 120ms var(--v3-ease) both;
+  }
 }
 
-.emptyBody {
-  margin: 0;
-  color: var(--x-notes-quiet);
-  font-size: 13px;
-  line-height: var(--x-lead-read);
+.editWrap {
+  margin: -12px -16px;
+  padding: 12px 16px;
+  border-radius: var(--v3-radius-lg);
+  box-shadow: inset 0 0 0 1px var(--v3-control-border), 0 0 0 4px var(--v3-accent-soft);
+  animation: notesFade 120ms var(--v3-ease) both;
 }
 
-/* ── Review ───────────────────────────────────────────────────────────── */
-
-.review {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  min-block-size: 100%;
+.readerField {
+  display: block;
+  width: 100%;
+  min-height: 140px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 17px;
+  line-height: 1.6;
+  resize: none;
   overflow: hidden;
+  outline: none;
 }
 
-.reviewProgress {
+.readerField:focus-visible {
+  outline: none;
+}
+
+/* The decision under the note, every verb named. */
+.decision {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--v3-border);
+}
+
+.decisionTitle {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
-  padding: 14px var(--x-notes-gutter);
-  border-block-end: 1px solid var(--hairline);
-  color: var(--x-notes-quiet);
+  gap: 10px;
+  margin-bottom: 12px;
   font-size: 13px;
-  font-variant-numeric: tabular-nums;
-  line-height: var(--x-lead-ui);
+  font-weight: 600;
+  color: var(--v3-text-2);
 }
 
-.progressTrack {
+.decisionBar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.decisionBar .primaryButton,
+.decisionBar .quietButton {
+  min-height: 44px;
+  padding: 0 16px;
+}
+
+.decisionMore {
+  display: none;
+}
+
+.decision .fieldHint {
+  margin-top: 10px;
+}
+
+.readerFacts {
+  margin-top: 40px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--v3-text-3);
+}
+
+.receipt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 32px;
+  padding: 12px 12px 12px 14px;
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-1), inset 0 0 0 1px var(--v3-border);
+}
+
+.receiptMark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--v3-success-soft);
+  color: var(--v3-success-text);
+}
+
+.receiptText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.receiptLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--v3-success-text);
+}
+
+.receiptWording {
+  font-size: 14px;
+  color: var(--v3-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.receiptLink {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 36px;
+  padding: 0 8px 0 10px;
+  border-radius: var(--v3-radius);
+  color: var(--v3-accent-text);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.receiptLink:hover {
+  background: var(--v3-accent-soft);
+}
+
+.panel {
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-1), inset 0 0 0 1px var(--v3-border-strong);
+}
+
+.panel[data-tone="warning"] {
+  background: var(--v3-warning-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--v3-warning-stroke) 45%, transparent);
+}
+
+.panel summary {
+  min-height: 32px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.panelTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--v3-text);
+}
+
+.panelBody {
+  margin-top: 4px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--v3-text-2);
+}
+
+.panelActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.conflictVersions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.conflictVersion {
+  padding: 10px 12px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-canvas);
+  box-shadow: inset 0 0 0 1px var(--v3-border);
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--v3-text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.conflictLabel {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--v3-text-2);
+}
+
+.detailField {
+  display: block;
+  width: 100%;
+  min-height: 96px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius);
+  background: var(--v3-canvas);
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.eyebrow {
+  margin: 28px 0 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--v3-text-2);
+}
+
+.sentWording {
+  font-size: 16px;
+  line-height: 1.45;
+  font-weight: 600;
+  color: var(--v3-text);
+  overflow-wrap: anywhere;
+}
+
+.sentBody {
+  margin-bottom: 24px;
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--v3-text-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.fieldHint {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--v3-text-2);
+}
+
+.panel .fieldHint {
+  margin-top: 10px;
+}
+
+/* ── review ─────────────────────────────────────────────────────────── */
+
+.review {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 32px 40px;
+}
+
+.reviewHead {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.reviewCount {
+  flex: none;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--v3-text);
+}
+
+.reviewTrack {
   position: relative;
-  /* Runs the width of the band. A 200px bar floating in an 1860px row was a
-     stub, not a rail. */
-  flex: 1 1 auto;
-  block-size: 3px;
-  border-radius: var(--radius-pill);
-  background: var(--paper-deep);
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--v3-fill);
+  box-shadow: inset 0 0 0 1px var(--v3-border);
   overflow: hidden;
 }
 
-.progressFill {
+.reviewFill {
   position: absolute;
-  inset-block: 0;
-  inset-inline-start: 0;
-  border-radius: var(--radius-pill);
-  background: var(--accent);
-  transition: inline-size var(--motion-base) var(--ease-out);
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  background: var(--v3-review);
+  transition: inline-size 240ms var(--v3-ease);
 }
 
-.reviewStage {
+.deck {
+  position: relative;
   display: grid;
-  /* Centred, not top-anchored. A 157px card pinned to the top of a 920px
-     field left 94% of the Review view empty, which reads as a page that
-     failed to load rather than one note asking for a decision. */
-  place-content: center;
-  justify-items: center;
-  block-size: 100%;
-  min-block-size: 0;
-  padding: var(--space-8) var(--x-notes-gutter) var(--space-9);
-  overflow-y: auto;
+  margin: 32px 0 30px;
+}
+
+.reviewCard,
+.ghost,
+.peek {
+  grid-area: 1 / 1;
+  border-radius: var(--v3-radius-xl);
+  background: var(--v3-surface);
 }
 
 .reviewCard {
-  display: grid;
-  gap: var(--space-5);
-  inline-size: 100%;
-  max-inline-size: var(--x-notes-measure);
+  position: relative;
+  z-index: 2;
+  min-height: 260px;
+  padding: 28px 32px 32px;
+  box-shadow: var(--v3-shadow-pop);
+  touch-action: pan-y;
+  transition: transform 200ms var(--v3-ease), box-shadow 160ms var(--v3-ease);
+}
+
+.reviewCard[data-swipe="task"] {
+  box-shadow: var(--v3-shadow-pop), inset 0 0 0 2px var(--v3-accent);
+}
+
+.reviewCard[data-swipe="delete"] {
+  box-shadow: var(--v3-shadow-pop), inset 0 0 0 2px var(--v3-danger);
+}
+
+.cardRise {
+  animation: notesCardRise 200ms var(--v3-ease) both;
+}
+
+@keyframes notesCardRise {
+  from {
+    transform: translateY(8px) scale(0.975);
+    opacity: 0.6;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+/* The next card, one edge showing under this one. */
+.peek {
+  position: relative;
+  z-index: 1;
+  align-self: end;
+  height: 100%;
+  transform: translateY(10px) scale(0.955);
+  transform-origin: bottom center;
+  box-shadow: inset 0 0 0 1px var(--v3-border);
+  opacity: 0.85;
+  overflow: hidden;
+}
+
+.peek > * {
+  visibility: hidden;
+}
+
+.ghost {
+  position: relative;
+  z-index: 3;
+  padding: 28px 32px 32px;
+  box-shadow: inset 0 0 0 1px var(--v3-border);
+  pointer-events: none;
+  overflow: hidden;
+  animation: notesExitRight 180ms var(--v3-ease) both;
+}
+
+.ghost[data-direction="delete"] {
+  animation-name: notesExitLeft;
+}
+
+.ghost[data-direction="later"] {
+  animation-name: notesExitDown;
+}
+
+@keyframes notesExitRight {
+  to {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
+@keyframes notesExitLeft {
+  to {
+    transform: translateX(-24px);
+    opacity: 0;
+  }
+}
+
+@keyframes notesExitDown {
+  to {
+    transform: translateY(24px);
+    opacity: 0;
+  }
 }
 
 .reviewMeta {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 6px 8px;
-  color: var(--x-notes-quiet);
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
   font-size: 13px;
-  line-height: var(--x-lead-ui);
+  color: var(--v3-text-2);
+}
+
+.reviewMeta svg {
+  color: var(--v3-text-3);
+}
+
+.swipeHint {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.swipeHint[data-tone="task"] {
+  background: var(--v3-accent-soft);
+  color: var(--v3-accent-text);
+}
+
+.swipeHint[data-tone="delete"] {
+  background: var(--v3-danger-soft);
+  color: var(--v3-danger-text);
 }
 
 .reviewBody {
-  margin: 0;
-  color: var(--ink);
-  font-size: 17px;
-  line-height: var(--x-lead-read);
+  font-size: 20px;
+  line-height: 1.55;
+  letter-spacing: -0.01em;
+  color: var(--v3-text);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
 .reviewActions {
   display: flex;
+  justify-content: center;
   flex-wrap: wrap;
+  gap: 10px;
+}
+
+.reviewButton {
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  padding-block-start: var(--space-3);
-  border-block-start: 1px solid var(--hairline-soft);
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px 0 16px;
+  border: 1px solid var(--v3-border-strong);
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-1);
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 120ms var(--v3-ease), border-color 120ms var(--v3-ease), transform 120ms var(--v3-ease);
 }
 
-.reviewSpacer {
-  flex: 1 1 auto;
+.reviewButton:hover {
+  background: var(--v3-hover);
+  border-color: var(--v3-control-border);
 }
 
-/* ── Sent ─────────────────────────────────────────────────────────────── */
+.reviewButton:active {
+  transform: scale(0.98);
+}
 
-.sentRowTask {
+.reviewButton .kbd {
+  margin-left: 4px;
+}
+
+.reviewPrimary {
+  border-color: transparent;
+  background: var(--v3-accent);
+  color: var(--v3-on-accent);
+}
+
+.reviewPrimary:hover {
+  background: var(--v3-accent-hover);
+  border-color: transparent;
+}
+
+.reviewPrimary .kbd {
+  border-color: color-mix(in srgb, var(--v3-on-accent) 45%, transparent);
+  background: transparent;
+  color: var(--v3-on-accent);
+}
+
+.reviewDanger {
+  color: var(--v3-danger-text);
+}
+
+.reviewDanger:hover {
+  background: var(--v3-danger-soft);
+}
+
+.laterButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: center;
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--v3-radius);
+  background: transparent;
+  color: var(--v3-text-2);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.laterButton:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.reviewEnd {
+  margin: auto;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
-  margin-block-start: 4px;
-  color: var(--ink-soft);
-  font-size: 13px;
-  line-height: var(--x-lead-ui);
+  gap: 12px;
+  max-width: 380px;
+  padding: 48px 0;
+  text-align: center;
 }
 
-.sentWording {
-  margin: 0;
-  padding: 10px 12px;
-  border-inline-start: 2px solid var(--accent-soft);
-  background: var(--paper-soft);
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
-  color: var(--ink-soft);
-  font-size: 15px;
-  line-height: var(--x-lead-read);
+.reviewEndMark {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  background: var(--v3-success-soft);
+  color: var(--v3-success-text);
+  animation: notesChipResolve 240ms var(--v3-ease) both;
 }
 
-/* ── Dialog ───────────────────────────────────────────────────────────── */
+.reviewEndTitle {
+  font-size: 20px;
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--v3-text);
+}
+
+.reviewEndBody {
+  margin-top: -6px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--v3-text-2);
+}
+
+.reviewEnd .primaryButton {
+  margin-top: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+}
+
+/* ── dialogs, menus, toasts ─────────────────────────────────────────── */
 
 .scrim {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: 100;
   display: grid;
   place-items: center;
-  padding: var(--space-4);
-  background: color-mix(in srgb, var(--ink) 28%, transparent);
+  padding: 16px;
+  background: var(--v3-scrim);
+  animation: notesFade 160ms var(--v3-ease) both;
 }
 
 .dialog {
-  inline-size: min(520px, 100%);
-  max-block-size: min(86dvh, 720px);
+  width: min(480px, 100%);
+  max-height: calc(100dvh - 32px);
   overflow-y: auto;
-  padding: var(--space-6);
-  border-radius: var(--radius-lg);
-  background: var(--paper);
-  box-shadow: var(--shadow-modal);
+  padding: 24px;
+  border-radius: var(--v3-radius-xl);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-pop);
+  animation: notesPop 180ms var(--v3-ease) both;
+}
+
+.dialogHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: -6px -8px 12px 0;
+}
+
+.dialogMark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 14px;
+  border-radius: 999px;
+  background: var(--v3-success-soft);
+  color: var(--v3-success-text);
 }
 
 .dialogTitle {
-  margin: 0 0 var(--space-2);
-  font-size: 20px;
+  font-size: 18px;
+  line-height: 1.3;
   font-weight: 600;
-  line-height: var(--x-lead-tight);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
+  color: var(--v3-text);
 }
 
 .dialogLede {
-  margin: 0 0 var(--space-5);
-  color: var(--x-notes-quiet);
-  font-size: 13px;
-  line-height: var(--x-lead-read);
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--v3-text-2);
 }
 
-.field {
-  display: grid;
-  gap: 6px;
-  margin-block-end: var(--space-4);
-}
-
-.fieldLabel {
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 500;
-  line-height: var(--x-lead-ui);
-}
-
-.fieldControl {
-  inline-size: 100%;
-  min-block-size: 38px;
-  padding: 8px 10px;
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-md);
-  background: var(--paper);
-  color: var(--ink);
-  font-size: 15px;
-  line-height: var(--x-lead-ui);
-}
-
-.fieldControl:focus-visible {
-  border-color: var(--accent);
-  outline-offset: 0;
-}
-
-textarea.fieldControl {
-  min-block-size: 92px;
-  line-height: var(--x-lead-read);
-  resize: vertical;
-}
-
-.fieldHint {
-  color: var(--x-notes-quiet);
-  font-size: 12px;
-  line-height: var(--x-lead-ui);
+.dialog .sentWording {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-fill);
 }
 
 .dialogActions {
   display: flex;
-  align-items: center;
   justify-content: flex-end;
-  gap: var(--space-2);
-  margin-block-start: var(--space-5);
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.dialogFoot {
+  margin-top: 16px;
+  font-size: 12.5px;
+  color: var(--v3-text-2);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 18px;
+}
+
+.fieldLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--v3-text);
+}
+
+.fieldControl {
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--v3-control-border);
+  border-radius: var(--v3-radius);
+  background: var(--v3-canvas);
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 14.5px;
+}
+
+.fieldControl:focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: 1px;
 }
 
 .errorText {
-  margin: 0;
-  color: var(--x-task-danger);
-  font-size: 13px;
-  line-height: var(--x-lead-read);
-}
-
-/* ── Inline decision panels ───────────────────────────────────────────── */
-
-.panel {
-  display: grid;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-md);
-  background: var(--paper-soft);
-}
-
-.panelTitle {
-  margin: 0;
-  color: var(--ink);
-  font-size: 15px;
-  font-weight: 500;
-  line-height: var(--x-lead-ui);
-}
-
-.panelBody {
-  margin: 0;
-  color: var(--x-notes-quiet);
-  font-size: 13px;
-  line-height: var(--x-lead-read);
-}
-
-.panelActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.conflictVersions {
-  display: grid;
-  gap: var(--space-3);
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-}
-
-.conflictVersion {
-  display: grid;
-  gap: 4px;
+  margin-top: 14px;
   padding: 10px 12px;
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-md);
-  background: var(--paper);
-  font-size: 13px;
-  line-height: var(--x-lead-read);
-  white-space: pre-wrap;
-  max-block-size: 180px;
-  overflow-y: auto;
+  border-radius: var(--v3-radius);
+  background: var(--v3-danger-soft);
+  color: var(--v3-danger-text);
+  font-size: 13.5px;
+  line-height: 1.45;
 }
 
-.conflictLabel {
-  color: var(--x-notes-quiet);
+.shortcuts {
+  width: min(640px, 100%);
+}
+
+.shortcutGroups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 28px;
+}
+
+.shortcutTitle {
+  margin-bottom: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--v3-text-2);
+}
+
+.shortcutList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shortcutRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13.5px;
+  color: var(--v3-text);
+}
+
+.shortcutRow dd {
+  display: inline-flex;
+  gap: 4px;
+  flex: none;
+}
+
+.menu {
+  position: fixed;
+  z-index: 120;
+  min-width: 200px;
+  padding: 4px;
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-pop);
+  display: flex;
+  flex-direction: column;
+  animation: notesPop 140ms var(--v3-ease) both;
+}
+
+/* The Filter menu hangs from its button inside the list head. */
+.filterMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 232px;
+}
+
+.menuHeading {
+  padding: 6px 10px 4px;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
+  color: var(--v3-text-3);
 }
 
-/* ── Toast ────────────────────────────────────────────────────────────── */
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--v3-radius);
+  background: transparent;
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 13.5px;
+  text-align: left;
+  cursor: pointer;
+}
 
-/* Above the scrim. A six-second undo rendered underneath a modal is a
-   six-second undo nobody can take. */
+.menuItem svg {
+  flex: none;
+  color: var(--v3-text-3);
+}
+
+.menuItem:hover:not(:disabled),
+.menuItem:focus-visible {
+  background: var(--v3-hover);
+  outline: none;
+}
+
+.menuItem[data-tone="danger"],
+.menuItem[data-tone="danger"] svg {
+  color: var(--v3-danger-text);
+}
+
+.menuItem:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.menuItem[aria-checked="true"] {
+  font-weight: 600;
+}
+
+.menuItem[aria-checked="true"] .menuCheck svg {
+  color: var(--v3-accent-text);
+}
+
+.menuCheck {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+}
+
+.menuCount {
+  margin-left: auto;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--v3-text-3);
+}
+
+.menuLegend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px -4px -4px;
+  padding: 10px 14px 12px;
+  border-top: 1px solid var(--v3-border);
+  border-radius: 0 0 var(--v3-radius-lg) var(--v3-radius-lg);
+  background: var(--v3-sunken);
+  font-size: 12.5px;
+  color: var(--v3-text-2);
+}
+
 .toastDock {
   position: fixed;
-  z-index: 70;
-  inset-block-end: calc(20px + env(safe-area-inset-bottom));
-  inset-inline-end: 20px;
-  display: grid;
-  gap: var(--space-2);
+  right: 24px;
+  bottom: 24px;
+  z-index: 110;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
   pointer-events: none;
 }
 
 .toast {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
-  padding: 10px 12px 10px 14px;
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-md);
-  background: var(--paper);
-  box-shadow: var(--shadow-modal);
-  color: var(--ink);
-  font-size: 13px;
-  line-height: var(--x-lead-ui);
+  gap: 12px;
+  max-width: min(420px, calc(100vw - 32px));
+  min-height: 44px;
+  padding: 6px 6px 6px 16px;
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-solid);
+  color: var(--v3-on-solid);
+  box-shadow: var(--v3-shadow-pop);
+  font-size: 13.5px;
   pointer-events: auto;
+  animation: notesToast 200ms var(--v3-ease) both;
 }
 
 .toast[data-tone="error"] {
-  border-color: color-mix(in srgb, var(--status-blocked) 34%, var(--hairline));
+  box-shadow: var(--v3-shadow-pop), inset 3px 0 0 var(--v3-danger);
 }
 
-/* The Undo for a delete. At 40x22 it missed WCAG 2.5.8; it is the last
-   chance to keep a note, so it gets a real target. */
+/* The Undo for a delete is the last chance to keep a note: a real target. */
 .toastAction {
-  min-block-size: 24px;
-  min-inline-size: 44px;
+  min-height: 32px;
+  min-width: 44px;
+  padding: 0 10px;
   border: 0;
-  background: transparent;
-  color: var(--x-accent-ink);
+  border-radius: var(--v3-radius);
+  background: color-mix(in srgb, var(--v3-on-solid) 14%, transparent);
+  color: var(--v3-on-solid);
+  font: inherit;
   font-size: 13px;
-  font-weight: 500;
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .toastAction:hover {
-  text-decoration: underline;
+  background: color-mix(in srgb, var(--v3-on-solid) 22%, transparent);
 }
 
-/* ── Mobile detail ────────────────────────────────────────────────────── */
-
-.backButton {
-  display: none;
-}
-
-/* ── Responsive ───────────────────────────────────────────────────────── */
-
-/* Past this width the extra pixels should go to the list, not to the gutters
-   either side of a fixed reading measure. 420px is the top of the range the
-   list was designed for. */
-@media (min-width: 1600px) {
-  .root {
-    --x-notes-list: 420px;
+@keyframes notesPop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 
-@media (max-width: 1279px) {
-  .root {
-    --x-notes-list: 336px;
+@keyframes notesFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
-@media (max-width: 1023px) {
-  .root {
-    --x-notes-list: 300px;
-    --x-notes-gutter: 20px;
-  }
-
-  .detailScroll {
-    padding-block-start: var(--space-5);
+@keyframes notesFadeOut {
+  to {
+    opacity: 0;
   }
 }
 
-/* One pane at a time. Below this width a split leaves neither side usable,
-   and opening a note over the list without being asked is how a list turns
-   into a trapdoor. */
-@media (max-width: 899px) {
-  /* A selected note is a focused reading/editing destination on a phone. The
-     capture and retrieval controls remain one Back away instead of consuming
-     half of the viewport above the note itself. */
-  .notebook[data-detail-open="true"] > .composerBand,
-  .notebook[data-detail-open="true"] > .toolbar {
-    display: none;
+@keyframes notesToast {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
   }
-
-  /* One pane at a time means there is no list beside the note to align to, so
-     the column is the width of the screen. */
-  .root {
-    --x-notes-capture: 100%;
-  }
-
-  .split {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .listPane {
-    border-inline-end: 0;
-  }
-
-  .split[data-detail-open="true"] .listPane {
-    display: none;
-  }
-
-  .split:not([data-detail-open="true"]) .detailPane {
-    display: none;
-  }
-
-  .backButton {
-    display: inline-flex;
-  }
-
-  .detailHeader {
-    position: sticky;
-    inset-block-start: 0;
-    z-index: 2;
-    background: var(--paper);
-  }
-
-  .composerBand {
-    padding: var(--space-4) var(--x-notes-gutter);
-  }
-
-  .toolbar {
-    min-block-size: 48px;
-  }
-
-  .toastDock {
-    inset-inline: 12px;
-    inset-block-end: calc(76px + env(safe-area-inset-bottom));
-  }
-
-  /* The product rail docks at the foot of the viewport below this width, so
-     the list has to end above it rather than under it. */
-  .list {
-    padding-block-end: calc(88px + env(safe-area-inset-bottom));
-  }
-
-  .detailScroll {
-    padding-block-end: calc(80px + env(safe-area-inset-bottom));
-  }
-
-  .popover,
-  .menu {
-    inset-inline: 12px;
-    inline-size: auto;
-  }
-
-  .reviewStage {
-    padding: var(--space-6) var(--x-notes-gutter) var(--space-9);
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 
-@media (max-width: 599px) {
-  .root {
-    --x-notes-gutter: 16px;
+@keyframes notesSheet {
+  from {
+    transform: translateY(24px);
+    opacity: 0.4;
   }
-
-  .header {
-    min-block-size: 44px;
-    padding-inline: 8px;
-    gap: 0;
+  to {
+    transform: none;
+    opacity: 1;
   }
+}
 
-  .views {
-    flex: 1 1 auto;
-    min-inline-size: 0;
-    gap: 0;
-    margin-inline-start: 0;
-  }
+/* The Filter button is an icon; its name is for assistive tech and the tooltip. */
 
-  .viewTab {
-    flex: 1 1 auto;
-    min-inline-size: 0;
-    min-block-size: 44px;
-    gap: 4px;
-    padding-inline: 6px;
-  }
-
-  .viewCount { display: none; }
-
-  .headerRight {
-    flex: none;
-    gap: 0;
-    margin-inline-end: 0;
-  }
-
-  .privacy,
-  .iconButton {
-    inline-size: 44px;
-    block-size: 44px;
-    min-block-size: 44px;
-    justify-content: center;
-    padding: 0;
-  }
-
-
-  /* 16px is the iOS zoom floor, not a step on the ramp. Below it Safari
-     zooms the whole page the moment the field takes focus. */
-  .composerField {
-    min-block-size: 48px;
-    font-size: 16px;
-  }
-
-  .composerFooter {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 6px;
-    padding: 8px;
-  }
-
-  .modeGroup {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .modeButton,
-  .primaryButton,
-  .quietButton {
-    min-block-size: 44px;
-  }
-
-  .modeButton {
-    justify-content: center;
-    padding-inline: 4px;
-  }
-
-  .rowActions .quietButton,
-  .rowActions .dangerButton {
-    min-block-size: 44px;
-    flex: 1 1 auto;
-    justify-content: center;
-  }
-
-  /* Save note takes the row it is on. Pushed to the right of a full-width
-     row of capture chips it left a dead L-shaped gap beside itself, which
-     read as a control that had come loose rather than as the end of the
-     composer. */
-  .composerRight {
-    justify-content: space-between;
-    min-inline-size: 0;
-  }
-
-  .composerRight .primaryButton {
-    flex: 1 1 auto;
-    justify-content: center;
-  }
-
-  .toolbar {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 4px;
-    padding-inline: 12px;
-  }
-
-  .toolbarRight {
-    min-inline-size: 0;
-    margin-inline-end: 0;
-  }
-
-  .select {
-    max-inline-size: 104px;
-    min-block-size: 44px;
-  }
-
-  .row {
-    max-inline-size: 100%;
-    min-inline-size: 0;
-    overflow: hidden;
-  }
-
-  /* The capture labels stay visible. Speaking a note matters most on the
-     device you carry, and that is where "Voice" was being dropped. */
-  .modeButton {
-    gap: 5px;
-    padding: 0 7px;
-  }
-
-  /* The privacy words give way to their padlock, but only visually: hidden
-     with display:none the button had no accessible name at all, which is the
-     same defect the capture modes had. Tapping it still says everything. */
-  .privacyText {
+@media all {
+  .filterLabel {
     position: absolute;
-    inline-size: 1px;
-    block-size: 1px;
-    padding: 0;
-    margin: -1px;
+    width: 1px;
+    height: 1px;
     overflow: hidden;
-    clip-path: inset(50%);
+    clip: rect(0, 0, 0, 0);
     white-space: nowrap;
   }
 
-  /* A keycap is advice for a keyboard nobody here has. */
-  .keycap {
+  .filterButton {
+    padding: 0;
+    width: 34px;
+  }
+}
+
+/* ── wide: one capture surface ──────────────────────────────────────── */
+
+@media (min-width: 900px) {
+  .root[data-main="capture"] .captureBar {
     display: none;
   }
 
-  /* Reversing the order is a desk refinement. On a phone the toolbar has room
-     for the search and for what is being shown, and that is the right two. */
-  .sortSelect {
+  .root[data-main="capture"] .newButton {
+    display: grid;
+  }
+}
+
+/* A narrow list keeps only the count that matters: what is waiting. */
+@container notes-list (max-width: 340px) {
+  .viewTab:not([data-view="review"]) .viewCount {
+    display: none;
+  }
+}
+
+/* ── mid widths ─────────────────────────────────────────────────────── */
+
+@media (min-width: 900px) and (max-width: 1099px) {
+  .frame {
+    grid-template-columns: 320px minmax(0, 1fr);
+  }
+
+  .canvasTips {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .canvasTips li {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 1099px) {
+  .readerFacts {
+    display: none;
+  }
+}
+
+/* ── below 900px: one pane at a time ────────────────────────────────── */
+
+@media (max-width: 899px) {
+  .root {
+    --notes-bottom-inset: calc(64px + env(safe-area-inset-bottom));
+  }
+
+  .frame {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas: "list" "dock";
+  }
+
+  .listPane {
+    border-right: 0;
+    background: var(--v3-canvas);
+  }
+
+  .root:not([data-main="capture"]) .listPane {
+    display: none;
+  }
+
+  .stage {
+    grid-area: 1 / 1 / 3 / 2;
+  }
+
+  .listHead {
+    padding: 16px 16px 6px;
+  }
+
+  .title {
+    font-size: 22px;
+  }
+
+  .newButton {
+    display: grid;
+  }
+
+  .captureBar {
     display: none;
   }
 
   .search {
-    max-inline-size: none;
+    height: 44px;
   }
 
-  /* The iOS zoom floor again, for the same reason. */
-  .detailField {
+  .searchInput {
     font-size: 16px;
   }
 
-  /* The mobile reading header keeps only orientation and actions. Source and
-     relative time remain in the note footer, avoiding a crowded, clipped top
-     row at the 320px reflow width. */
-  .detailHeader .detailMeta > :not(.backButton) {
+  .viewTab {
+    height: 38px;
+  }
+
+  .filterButton {
+    width: 44px;
+    height: 44px;
+  }
+
+  .listScroll {
+    padding: 0 8px 16px;
+  }
+
+  .groupLabel {
+    background: var(--v3-canvas);
+  }
+
+  .listFoot {
     display: none;
   }
 
-  .detailHeader .quietButton,
-  .detailHeader .primaryButton,
-  .detailHeader .iconButton {
-    min-block-size: 44px;
+  .row {
+    min-height: 64px;
+    padding: 11px 12px;
+  }
+
+  /* Capture: the bar at the foot of the screen, opening into a sheet. */
+  .canvas {
+    grid-area: dock;
+    display: block;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+    overflow: visible;
+    border-top: 1px solid var(--v3-border);
+    background: var(--v3-canvas);
+  }
+
+  .canvasInner {
+    max-width: 680px;
+    margin: 0 auto;
+    padding-top: 0;
+  }
+
+  .canvas:not(:focus-within):not(:has(.captureStage)) .canvasHead,
+  .canvas:not(:focus-within):not(:has(.captureStage)) .canvasAssurance,
+  .canvas:not(:focus-within):not(:has(.captureStage)) .canvasTips,
+  .canvas:not(:focus-within):not(:has(.captureStage)) .canvasTip,
+  .canvas:not(:focus-within):not(:has(.captureStage)) .moreWays,
+  .canvas:not(:focus-within):not(:has(.captureStage)) .restricted,
+  .canvas:not(:focus-within):not(:has(.captureStage)) .composerNotes,
+  .canvas:not(:focus-within):not(:has(.captureStage)) .composerStatus,
+  .canvas:not(:focus-within):not(:has(.captureStage)) .modeButton[data-mode-button="type"],
+  .canvas:not(:focus-within):not(:has(.captureStage)) .composerRight .primaryButton:disabled {
+    display: none;
+  }
+
+  .recent {
+    display: none;
+  }
+
+  .canvas:not(:focus-within):not(:has(.captureStage)) .composer {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 4px 0 0;
+    border-radius: 24px;
+    box-shadow: var(--v3-shadow-1);
+  }
+
+  .canvas:not(:focus-within):not(:has(.captureStage)) .composerField {
+    flex: 1;
+    min-width: 0;
+    min-height: 46px;
+    max-height: 46px;
+    padding: 12px 4px 12px 16px;
+    font-size: 16px;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .canvas:not(:focus-within):not(:has(.captureStage)) .composerFooter {
+    flex: none;
+    flex-wrap: nowrap;
+    padding: 0;
+    gap: 4px;
+  }
+
+  .canvas:not(:focus-within):not(:has(.captureStage)) .composerRight {
+    flex: none;
+  }
+
+  .canvas:not(:focus-within):not(:has(.captureStage)) .modeGroup {
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .canvas:not(:focus-within):not(:has(.captureStage)) .modeButton {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 999px;
+  }
+
+  .canvas:not(:focus-within):not(:has(.captureStage)) .modeButton span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  .canvas:not(:focus-within):not(:has(.captureStage)) .composerRight .primaryButton {
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 999px;
+  }
+
+  /* The sheet: focus in the bar, or a voice or photo stage under way. */
+  .canvas:focus-within,
+  .canvas:has(.captureStage) {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 95;
+    max-height: 88dvh;
+    overflow-y: auto;
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+    border-top: 0;
+    border-radius: var(--v3-radius-xl) var(--v3-radius-xl) 0 0;
+    background: var(--v3-surface);
+    box-shadow: 0 0 0 100vmax var(--v3-scrim), var(--v3-shadow-pop);
+    animation: notesSheet 240ms var(--v3-ease) both;
+  }
+
+  .canvas:focus-within .sheetClose {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 12px;
+    margin-right: -8px;
+    border: 0;
+    border-radius: var(--v3-radius);
+    background: transparent;
+    color: var(--v3-accent-text);
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .canvas:has(.captureStage) .sheetClose {
+    display: none;
+  }
+
+  .canvasTitle {
+    font-size: 17px;
+  }
+
+  .canvasHead {
+    margin-bottom: 10px;
+  }
+
+  .composerField {
+    min-height: 140px;
+  }
+
+  .canvasTips {
+    display: none;
+  }
+
+  /* The open note, full screen: back, meta, the page, decisions at the thumb. */
+  .backButton {
+    display: inline-flex;
+  }
+
+  .readerBar {
+    flex-wrap: wrap;
+    gap: 0 8px;
+    padding: 4px 12px 8px 16px;
+  }
+
+  .readerMeta {
+    order: 3;
+    flex: 1 1 100%;
+    padding-top: 2px;
+  }
+
+  .savePillSlot {
+    margin-left: auto;
+  }
+
+  .readerColumn {
+    padding: 20px 20px calc(120px + env(safe-area-inset-bottom));
+  }
+
+  .readerTitle {
+    font-size: 20px;
+  }
+
+  .readerParagraph,
+  .readerField {
+    font-size: 16px;
+  }
+
+  .readerPage,
+  .editWrap {
+    margin: -8px -10px;
+    padding: 8px 10px;
+  }
+
+  .decision {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    margin: 0;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--v3-border);
+    background: var(--v3-surface);
+  }
+
+  .decisionTitle {
+    display: none;
+  }
+
+  .decisionBar {
+    flex-wrap: nowrap;
+  }
+
+  .decisionBar [data-decision="task"] {
+    flex: 1;
+  }
+
+  .decisionBar [data-decision="keep"] {
+    flex: none;
+  }
+
+  .decisionBar [data-decision="delete"] {
+    display: none;
+  }
+
+  .decisionMore {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    margin-left: auto;
+  }
+
+  .decision .fieldHint {
+    margin-top: 8px;
+  }
+
+  .readerFacts {
+    margin-top: 28px;
+  }
+
+  .conflictVersions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .review {
+    /* Clear of the build's floating notice at the bottom edge. */
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  }
+
+  .deck {
+    margin: 20px 0;
+  }
+
+  .reviewCard,
+  .ghost {
+    min-height: 220px;
+    padding: 22px 20px 24px;
   }
 
   .reviewBody {
-    font-size: 15px;
+    font-size: 18px;
   }
 
-  .reviewActions .quietButton,
-  .reviewActions .primaryButton,
-  .reviewActions .dangerButton {
-    min-block-size: 44px;
-    flex: 1 1 auto;
-    justify-content: center;
+  .reviewActions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: auto;
+    order: 2;
   }
 
-  .reviewSpacer {
+  .reviewPrimary {
+    grid-column: 1 / -1;
+    order: -1;
+  }
+
+  /* Decide later sits under the card; the decisions stay at the thumb. */
+  .laterButton {
+    order: 1;
+    margin-top: 0;
+  }
+
+  .reviewButton {
+    padding: 0 10px;
+  }
+
+  .reviewButton .kbd,
+  .laterButton .kbd {
     display: none;
   }
-}
 
-@media (max-width: 359px) {
-  /* At the 320px / 400% reflow floor, the local navigation and utilities
-     share one exact-width row. The former negative margin plus two 32px
-     utilities produced a 345px descendant inside a 320px document, leaving
-     Notes options partly outside the viewport even though document overflow
-     appeared clean. */
-  .header {
-    gap: 0;
+  .toastDock {
+    left: 16px;
+    right: 16px;
+    bottom: calc(80px + env(safe-area-inset-bottom));
+    align-items: stretch;
   }
 
-  .views {
-    flex: 1 1 auto;
-    min-inline-size: 0;
-    gap: 0;
-    margin-inline-start: 0;
+  .toast {
+    max-width: none;
   }
 
-  .viewTab {
-    min-inline-size: 0;
-    min-block-size: 44px;
-    gap: 4px;
-    padding-inline: 6px;
-  }
-
-  .headerRight {
-    flex: none;
-    gap: 0;
-    margin-inline-end: 0;
-  }
-
-  .privacy,
-  .iconButton {
-    inline-size: 44px;
-    block-size: 44px;
-    min-block-size: 44px;
-    justify-content: center;
+  .scrim {
+    place-items: end stretch;
     padding: 0;
   }
 
-  /* Capture modes and the save action become two deliberate rows. Nothing
-     is clipped and every action keeps its full accessible name and 44px
-     touch target. */
-  .composerFooter {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 6px;
+  .dialog {
+    width: 100%;
+    max-height: 90dvh;
+    border-radius: var(--v3-radius-xl) var(--v3-radius-xl) 0 0;
+    padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+    animation: notesSheet 240ms var(--v3-ease) both;
   }
 
-  .modeGroup {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .dialogActions .primaryButton,
+  .dialogActions .quietButton {
+    flex: 1;
+    min-height: 44px;
   }
 
-  .modeButton,
-  .primaryButton,
-  .quietButton {
-    min-block-size: 44px;
+  .shortcutGroups {
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .modeButton {
-    justify-content: center;
-    padding-inline: 4px;
+  /* The build's floating notice rises clear of whatever sits at the foot:
+     the capture bar, the reader's decisions or the review buttons. */
+  :global(body):has(.root[data-main="capture"]) :global(.signal-devbanner),
+  :global(body):has(.root[data-main="reader"]) :global(.signal-devbanner) {
+    bottom: calc(var(--notes-devbanner-lift, 76px) + env(safe-area-inset-bottom));
   }
 
-  .composerRight {
-    justify-content: space-between;
-    min-inline-size: 0;
-  }
-
-  .stageActions,
-  .stageActionsRight {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .stageActions > *,
-  .stageActionsRight > * {
-    inline-size: 100%;
-    justify-content: center;
+  /* Review keeps its decisions at the thumb; the notice floats above them. */
+  :global(body):has(.root[data-main="review"]) :global(.signal-devbanner) {
+    bottom: calc(136px + env(safe-area-inset-bottom));
   }
 }
 
-/* ── Reduced motion ───────────────────────────────────────────────────── */
+@media (min-width: 600px) and (max-width: 899px) {
+  .listHead,
+  .readerColumn {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+/* Touch targets on coarse pointers. */
+@media (pointer: coarse) {
+  .primaryButton,
+  .quietButton,
+  .menuItem {
+    min-height: 44px;
+  }
+
+  .iconButton {
+    width: 44px;
+    height: 44px;
+  }
+
+  .linkButton {
+    min-height: 44px;
+  }
+
+  .viewTab {
+    height: 40px;
+  }
+
+  .filterChip {
+    height: 36px;
+  }
+}
+
+/* At the 320px reflow floor the view row shares one exact-width line. */
+@media (max-width: 359px) {
+  .viewTab {
+    padding: 0 4px;
+    font-size: 12.5px;
+  }
+
+  .viewTab:not([aria-current="page"]) .viewCount {
+    display: none;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .root *,
   .root *::before,
-  .root *::after {
+  .root *::after,
+  .menu,
+  .menu * {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
 
-  .spinner {
+  .savePill[data-tone="saved"] {
+    animation: notesFadeOut 100ms linear 1.2s forwards !important;
+  }
+
+  .spinner,
+  .recordDot {
     animation: none !important;
-    border-block-start-color: var(--accent);
   }
 
   .level {
     transform: none !important;
   }
 
-  /* The capture beats keep their state and lose their travel. The duration
-     rule above already lands every keyframe on its end state in the first
-     frame — a note is simply there, a decided row is simply gone — but the
-     rise is spatial, so it is removed outright rather than run at 0.001ms. */
-  .rowShell[data-arriving] > .rowShellInner {
-    animation: none !important;
+  /* The beats keep their state and lose their travel. */
+  .rowShell[data-arriving] > .rowShellInner,
+  .cardRise {
+    animation-name: notesFade !important;
+  }
+
+  .ghost {
+    animation-name: notesFadeOut !important;
+  }
+
+  .reviewCard {
     transform: none !important;
   }
 }

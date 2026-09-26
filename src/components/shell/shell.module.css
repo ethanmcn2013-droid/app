@@ -1,0 +1,782 @@
+/* Signal Studio v3 shell: one persistent sidebar and top bar for every /app page.
+   Reference: docs/design/redesign-2026-09 (key frames 10–13, 01). */
+
+.shell {
+  display: flex;
+  height: 100dvh;
+  width: 100%;
+  background: var(--v3-chrome);
+  color: var(--v3-text);
+  font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+}
+
+/* ── sidebar ─────────────────────────────────────────────────────── */
+
+.sidebar {
+  width: var(--v3-sidebar-w);
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 10px 10px 8px;
+  background: var(--v3-chrome);
+  /* The sidebar is ink in both themes (founder): its tokens are the dark
+     set, scoped here, so every control inside keeps AA contrast. */
+  color-scheme: dark;
+  --v3-canvas: #1c1c1c;
+  --v3-surface: #242424;
+  --v3-sunken: #0f0f0f;
+  --v3-fill: rgba(255, 255, 255, 0.07);
+  --v3-hover: rgba(255, 255, 255, 0.06);
+  --v3-selected: rgba(255, 255, 255, 0.1);
+  --v3-border: #2c2c2c;
+  --v3-border-strong: #3b3b3b;
+  --v3-text: #ececec;
+  --v3-text-2: #b8b8b8;
+  --v3-text-3: #8f8f8f;
+  --v3-accent: #8b87f8;
+  --v3-accent-hover: #a3a0fa;
+  --v3-accent-soft: rgba(139, 135, 248, 0.18);
+  --v3-accent-text: #9f9bf6;
+  --v3-on-accent: #0e0e12;
+  --v3-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  color: var(--v3-text);
+  transition: width 180ms var(--v3-ease);
+}
+.shell[data-collapsed] .sidebar { width: 60px; }
+
+.brandRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 4px 0 6px;
+  margin-bottom: 8px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  flex: 1;
+  color: var(--v3-text);
+  text-decoration: none;
+  border-radius: var(--v3-radius);
+}
+.brandMark {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+.brandName {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.iconButton {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--v3-radius);
+  background: transparent;
+  color: var(--v3-text-3);
+  cursor: pointer;
+  transition: background-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
+}
+.iconButton:hover { background: var(--v3-hover); color: var(--v3-text); }
+
+.searchTrigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 32px;
+  padding: 0 8px 0 9px;
+  margin-bottom: 10px;
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius);
+  background: var(--v3-canvas);
+  color: var(--v3-text-3);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
+}
+.searchTrigger:hover { border-color: var(--v3-border-strong); color: var(--v3-text-2); }
+.searchTrigger span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.kbd {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10.5px;
+  line-height: 1;
+  padding: 3px 5px;
+  border-radius: 5px;
+  border: 1px solid var(--v3-border);
+  color: var(--v3-text-3);
+  background: var(--v3-sunken);
+  flex: none;
+}
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin: 0 -4px;
+  padding: 0 4px;
+  scrollbar-width: thin;
+}
+
+.section { display: flex; flex-direction: column; gap: 1px; }
+.section + .section { margin-top: 14px; }
+
+.label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 24px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--v3-text-3);
+}
+.label a { color: inherit; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 6px; }
+.label a:hover { background: var(--v3-hover); color: var(--v3-text); }
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: var(--v3-radius);
+  border: 1px solid transparent;
+  color: var(--v3-text-2);
+  font-size: 13.5px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  background: transparent;
+  width: 100%;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
+}
+.item svg { flex: none; color: var(--v3-text-3); transition: color 120ms var(--v3-ease); }
+.item:hover { background: var(--v3-hover); color: var(--v3-text); }
+.item:hover svg { color: var(--v3-text-2); }
+.item[aria-current="page"],
+.item[data-active] {
+  background: var(--v3-selected);
+  border-color: var(--v3-border);
+  box-shadow: var(--v3-shadow-1);
+  color: var(--v3-text);
+}
+.item[aria-current="page"] svg,
+.item[data-active] svg { color: var(--v3-text); }
+.itemLabel { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.count {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--v3-text-3);
+}
+/* Unread counts sit a touch smaller than a person's avatar (18px), so the
+   count reads as a mark on the row rather than a second avatar. */
+.badge {
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--v3-notify);
+  color: var(--v3-on-notify);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.projectSquare {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0;
+}
+.projectsEmpty {
+  padding: 4px 8px 2px;
+  font-size: 12.5px;
+  color: var(--v3-text-3);
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-top: 8px;
+  margin-top: 8px;
+  border-top: 1px solid var(--v3-border);
+}
+.account {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  padding: 0 6px;
+  border-radius: var(--v3-radius);
+}
+.accountLabel { font-size: 13px; font-weight: 500; color: var(--v3-text-2); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* collapsed rail: icons only */
+.shell[data-collapsed] .brandName,
+.shell[data-collapsed] .itemLabel,
+.shell[data-collapsed] .count,
+.shell[data-collapsed] .label,
+.shell[data-collapsed] .searchTrigger span,
+.shell[data-collapsed] .searchTrigger .kbd,
+.shell[data-collapsed] .projectsEmpty,
+.shell[data-collapsed] .accountLabel { display: none; }
+.shell[data-collapsed] .item { justify-content: center; padding: 0; }
+.shell[data-collapsed] .searchTrigger { justify-content: center; padding: 0; }
+.shell[data-collapsed] .brandRow { flex-direction: column; height: auto; gap: 6px; }
+.shell[data-collapsed] .badge { position: absolute; transform: translate(9px, -8px); min-width: 14px; height: 14px; font-size: 9px; }
+.shell[data-collapsed] .item { position: relative; }
+
+/* ── main column ─────────────────────────────────────────────────── */
+
+.main {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin: 8px 8px 8px 0;
+  background: var(--v3-canvas);
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--v3-shadow-1);
+}
+
+.topbar {
+  height: var(--v3-topbar-h);
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px 0 16px;
+  border-bottom: 1px solid var(--v3-border);
+  background: var(--v3-canvas);
+}
+.menuButton { display: none; }
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+  font-size: 13px;
+  color: var(--v3-text-3);
+  white-space: nowrap;
+}
+.crumbs a { color: inherit; text-decoration: none; border-radius: 6px; padding: 2px 4px; margin: 0 -4px; }
+.crumbs a:hover { color: var(--v3-text); background: var(--v3-hover); }
+.crumbCurrent { color: var(--v3-text); font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
+.crumbSep { color: var(--v3-border-strong); }
+
+.topActions { display: flex; align-items: center; gap: 6px; flex: none; }
+.topSearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  width: 240px;
+  padding: 0 6px 0 9px;
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius);
+  background: var(--v3-sunken);
+  color: var(--v3-text-3);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.topSearch span { flex: 1; text-align: left; }
+.topSearch:hover { border-color: var(--v3-border-strong); color: var(--v3-text-2); }
+
+.newButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px 0 9px;
+  border: 0;
+  border-radius: var(--v3-radius);
+  background: var(--v3-accent);
+  color: var(--v3-on-accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 120ms var(--v3-ease);
+}
+.newButton:hover { background: var(--v3-accent-hover); }
+
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 200px;
+  padding: 5px;
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-canvas);
+  box-shadow: var(--v3-shadow-pop);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  animation: pop 160ms var(--v3-ease);
+}
+.menu a, .menu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--v3-radius);
+  background: transparent;
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 13.5px;
+  text-decoration: none;
+  cursor: pointer;
+  text-align: left;
+}
+.menu a svg, .menu button svg { color: var(--v3-text-3); }
+.menu a:hover, .menu button:hover, .menu a:focus-visible, .menu button:focus-visible { background: var(--v3-hover); outline: none; }
+.menuHint { margin-left: auto; font-size: 11.5px; color: var(--v3-text-3); }
+.menuLabel { padding: 8px 10px 4px; font-size: 12px; font-weight: 600; color: var(--v3-text-3); }
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  margin: 6px 0 2px;
+  padding: 2px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-sunken);
+  border: 1px solid var(--v3-border);
+}
+.segmented button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--v3-text-3);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.segmented button:hover { color: var(--v3-text); }
+.segmented button[aria-pressed="true"] { background: var(--v3-canvas); box-shadow: var(--v3-shadow-1); color: var(--v3-text); }
+
+@keyframes pop {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+.content {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  position: relative;
+}
+
+.scrim { display: none; }
+
+
+/* ── tablet and phone: sidebar becomes a drawer ─────────────────── */
+
+@media (max-width: 899px) {
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 80;
+    width: min(300px, 86vw);
+    transform: translateX(-102%);
+    transition: transform 220ms var(--v3-ease);
+    box-shadow: var(--v3-shadow-pop);
+  }
+  .shell[data-mobile-open] .sidebar { transform: none; }
+  .shell[data-collapsed] .sidebar { width: min(300px, 86vw); }
+  .scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    background: var(--v3-scrim);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 220ms var(--v3-ease);
+  }
+  .shell[data-mobile-open] .scrim { opacity: 1; pointer-events: auto; }
+  .main { margin: 0; border: 0; border-radius: 0; box-shadow: none; }
+  .menuButton { display: grid; }
+  .topSearch { width: 36px; padding: 0; justify-content: center; }
+  .topSearch span, .topSearch .kbd { display: none; }
+  .newButton span { display: none; }
+  .newButton { padding: 0 8px; }
+  .collapseButton { display: none; }
+}
+
+/* Phones: the trail keeps its last two steps so the current page is never
+   the crumb that gets cut (Signal Studio / Apps and tools / Notes → Apps and tools / Notes). */
+@media (max-width: 599px) {
+  .crumbs { overflow: hidden; }
+  .crumbs > span:nth-last-child(n+3) { display: none !important; }
+  .crumbs > span:nth-last-child(2):not(:first-child) > .crumbSep { display: none; }
+  /* The parent gives way first: the page you are on is never the crumb
+     that ends in an ellipsis. */
+  .crumbs a { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .crumbCurrent { flex: 0 0 auto; max-width: 100%; }
+}
+
+/* Narrow phones: a parent cut to "Apps a…" helps nobody, so only the page
+   you are on is named; the sidebar carries the way back. */
+@media (max-width: 419px) {
+  .crumbs > span:nth-last-child(2) { display: none !important; }
+  .crumbs > span:last-child > .crumbSep { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar, .scrim, .menu { transition: none; animation: none; }
+}
+
+/* Chat: Channels and Direct messages. Unread rows read in full weight, the
+   way a channel list does; the badge counts what is waiting for you. */
+.item[data-unread] { color: var(--v3-text); font-weight: 650; }
+.item[data-unread] svg { color: var(--v3-text-2); }
+.chatAvatar {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0;
+}
+.chatTag {
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--v3-accent-soft);
+  color: var(--v3-accent-text);
+}
+.chatAdd { color: var(--v3-text-3); }
+
+.chatAvatarWrap { position: relative; flex: none; display: inline-grid; }
+/* Online: a green dot on the avatar's lower right, ringed in the sidebar's
+   own colour so it reads as a cut-out. */
+.presence {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #2fb36b;
+  box-shadow: 0 0 0 2px var(--v3-chrome);
+}
+.item:hover .presence { box-shadow: 0 0 0 2px color-mix(in srgb, #fff 6%, var(--v3-chrome)); }
+.chatTag { height: 15px; font-size: 10px; padding: 0 5px; }
+
+/* ── Sidebar, world-class pass (26 Sep 2026) ─────────────────────────
+   One "you are here" fill with no border or shadow; icons one step brighter
+   so they carry the row; section headers that fold; a quiet gap between
+   the work and the wider view; one footer row. */
+
+.sidebar { padding: 12px 10px 10px; }
+
+.brandRow { height: 34px; padding: 0 2px 0 6px; margin-bottom: 10px; }
+.brandName { font-size: 14.5px; font-weight: 650; letter-spacing: -0.015em; }
+.brand:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: 2px; }
+
+/* The collapse control shows when the sidebar is in use, not all the time. */
+.collapseButton { opacity: 0; transition: opacity 140ms var(--v3-ease), background-color 120ms var(--v3-ease), color 120ms var(--v3-ease); }
+.sidebar:hover .collapseButton,
+.sidebar:focus-within .collapseButton,
+.shell[data-collapsed] .collapseButton { opacity: 1; }
+@media (hover: none) { .collapseButton { opacity: 1; } }
+
+.searchTrigger {
+  height: 32px;
+  margin-bottom: 14px;
+  border-color: color-mix(in srgb, var(--v3-text) 9%, transparent);
+  background: color-mix(in srgb, var(--v3-text) 4%, transparent);
+  color: var(--v3-text-3);
+}
+.searchTrigger:hover { background: color-mix(in srgb, var(--v3-text) 7%, transparent); }
+.kbd { background: transparent; border-color: color-mix(in srgb, var(--v3-text) 12%, transparent); font-size: 10px; letter-spacing: 0.02em; }
+
+/* A soft fade where the list scrolls under the footer. */
+.scroll {
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent);
+  padding-bottom: 12px;
+}
+
+.section { gap: 1px; }
+.section + .section { margin-top: 18px; }
+.navSlot { display: flex; flex-direction: column; }
+.navSlot[data-gap] { margin-top: 10px; }
+
+.item {
+  height: 30px;
+  gap: 10px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 7px;
+  color: color-mix(in srgb, var(--v3-text) 78%, transparent);
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: -0.003em;
+}
+.item svg { color: color-mix(in srgb, var(--v3-text) 58%, transparent); }
+.item:hover { background: var(--v3-hover); color: var(--v3-text); }
+.item:hover svg { color: color-mix(in srgb, var(--v3-text) 80%, transparent); }
+.item:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: -2px; }
+.item[aria-current="page"],
+.item[data-active] {
+  background: color-mix(in srgb, var(--v3-text) 9%, transparent);
+  border: 0;
+  box-shadow: none;
+  color: var(--v3-text);
+}
+.item[aria-current="page"] svg,
+.item[data-active] svg { color: var(--v3-text); }
+.item:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Unread chat rows: full colour and only a hair heavier; read rows step
+   back. Colour carries "new", so it never out-shouts the navigation. */
+.item[data-unread] { color: var(--v3-text); font-weight: 560; }
+.item[data-unread] svg { color: color-mix(in srgb, var(--v3-text) 80%, transparent); }
+
+/* The open Project: a small accent dot, so there is never a second
+   "you are here" highlight. */
+.item[data-current-project] { color: var(--v3-text); }
+.currentDot {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--v3-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--v3-accent) 22%, transparent);
+}
+.count { font-size: 11.5px; color: color-mix(in srgb, var(--v3-text) 45%, transparent); }
+
+/* Section headers: the name folds its section; actions appear on hover. */
+.label { height: 26px; padding: 0 2px 0 0; margin-bottom: 1px; }
+.labelToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 6px 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: color-mix(in srgb, var(--v3-text) 48%, transparent);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+}
+.labelToggle:hover { color: var(--v3-text); background: var(--v3-hover); }
+.labelToggle:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: -2px; }
+.labelChevron { opacity: 0; transition: transform 160ms var(--v3-ease), opacity 120ms var(--v3-ease); }
+.section:hover .labelChevron,
+.labelToggle:focus-visible .labelChevron,
+.section[data-folded] .labelChevron { opacity: 1; }
+.section[data-folded] .labelChevron { transform: rotate(-90deg); }
+.labelActions { display: inline-flex; align-items: center; gap: 2px; opacity: 0; transition: opacity 120ms var(--v3-ease); }
+.section:hover .labelActions,
+.section:focus-within .labelActions { opacity: 1; }
+@media (hover: none) { .labelActions, .labelChevron { opacity: 1; } }
+.label a { width: 22px; height: 22px; color: color-mix(in srgb, var(--v3-text) 55%, transparent); }
+.label a:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: -2px; opacity: 1; }
+
+.projectSquare { width: 18px; height: 18px; border-radius: 5px; font-size: 9.5px; }
+.chatAdd { color: color-mix(in srgb, var(--v3-text) 50%, transparent); }
+
+/* Footer: Settings, then help and theme as icons on the same row. */
+.footer {
+  flex-direction: row;
+  align-items: center;
+  gap: 2px;
+  padding-top: 8px;
+  margin-top: 6px;
+  border-top: 1px solid color-mix(in srgb, var(--v3-text) 8%, transparent);
+}
+.footer > .item { flex: 1; min-width: 0; }
+.footerTools { display: flex; align-items: center; gap: 2px; flex: none; }
+.footerTools .iconButton { width: 30px; height: 30px; color: color-mix(in srgb, var(--v3-text) 58%, transparent); }
+.footerTools .iconButton:hover { color: var(--v3-text); }
+
+/* Collapsed rail: icons only, sections without headers, footer stacked. */
+.shell[data-collapsed] .label,
+.shell[data-collapsed] .currentDot,
+.shell[data-collapsed] .chatTag { display: none; }
+.shell[data-collapsed] .section + .section { margin-top: 10px; padding-top: 10px; border-top: 1px solid color-mix(in srgb, var(--v3-text) 8%, transparent); }
+.shell[data-collapsed] .navSlot[data-gap] { margin-top: 6px; }
+.shell[data-collapsed] .footer { flex-direction: column; }
+.shell[data-collapsed] .footer > .item { flex: none; width: 100%; }
+.shell[data-collapsed] .footerTools { flex-direction: column; }
+.shell[data-collapsed] .item[data-current-project] { box-shadow: inset 2px 0 0 var(--v3-accent); }
+
+.section[aria-label="Channels"] .item:not([data-unread]):not([aria-current="page"]),
+.section[aria-label="Direct messages"] .item:not([data-unread]):not([aria-current="page"]):not(.chatAdd) { color: color-mix(in srgb, var(--v3-text) 62%, transparent); }
+
+/* No keyboard, no shortcut hint. */
+@media (hover: none) and (pointer: coarse) { .searchTrigger .kbd { display: none; } }
+
+/* ── Icons: duotone states and one deliberate motion each ────────────
+   At rest the body is a quiet 14% tint. Hover lifts it; the page you are
+   on fills it with brand indigo under a white outline. Each icon's motion
+   says what it is (a folder opens, bars grow, a tick draws itself) and
+   runs once per hover. Reduced motion keeps the states, drops the motion. */
+
+.item svg [data-fill],
+.footerTools svg [data-fill] {
+  transition: fill 160ms var(--v3-ease), fill-opacity 160ms var(--v3-ease);
+}
+.item:hover svg [data-fill],
+.footerTools .iconButton:hover svg [data-fill] { fill-opacity: 0.24; }
+.item[aria-current="page"] svg [data-fill] {
+  fill: var(--v3-accent);
+  fill-opacity: 0.95;
+}
+.item[aria-current="page"] svg { color: #fff; }
+.item[aria-current="page"] svg [data-part="dots"] { fill: #fff; }
+
+.item svg [data-part],
+.footerTools svg [data-part] {
+  transform-box: fill-box;
+  transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Inbox: the arrow drops into the tray. */
+.item:hover svg [data-part="drop"] { transform: translateY(1.25px); }
+
+/* Tasks, My tasks, Overview, task threads: the mark draws itself. */
+@keyframes iconDraw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+.item:hover svg [data-part="draw"] {
+  stroke-dasharray: 1;
+  animation: iconDraw 420ms var(--v3-ease) both;
+}
+
+/* Projects: the folder's front flap opens. */
+.item svg [data-part="flap"] { transform-origin: 50% 100%; }
+.item:hover svg [data-part="flap"] { transform: perspective(40px) rotateX(-18deg); }
+
+/* Timeline: the bars slide along, one after another. */
+.item svg [data-part="bars"] rect { transform-box: fill-box; transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+.item:hover svg [data-part="bars"] rect:nth-child(1) { transform: translateX(1px); }
+.item:hover svg [data-part="bars"] rect:nth-child(2) { transform: translateX(-1.25px); transition-delay: 40ms; }
+.item:hover svg [data-part="bars"] rect:nth-child(3) { transform: translateX(1.75px); transition-delay: 80ms; }
+
+/* Chat: the three dots bounce like someone typing. */
+@keyframes iconDot { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-1.4px); } }
+.item svg [data-part="dots"] circle { transform-box: fill-box; }
+.item:hover svg [data-part="dots"] circle { animation: iconDot 520ms var(--v3-ease) both; }
+.item:hover svg [data-part="dots"] circle:nth-child(2) { animation-delay: 90ms; }
+.item:hover svg [data-part="dots"] circle:nth-child(3) { animation-delay: 180ms; }
+
+/* Files: the page tips forward. */
+.item svg [data-part="page"] { transform-origin: 30% 100%; }
+.item:hover svg [data-part="page"] { transform: rotate(-6deg); }
+
+/* Analytics: the bars grow from the baseline. */
+@keyframes iconGrow { from { transform: scaleY(0.35); } to { transform: scaleY(1); } }
+.item svg [data-part="grow"] rect { transform-box: fill-box; transform-origin: 50% 100%; }
+.item:hover svg [data-part="grow"] rect { animation: iconGrow 380ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.item:hover svg [data-part="grow"] rect:nth-child(2) { animation-delay: 60ms; }
+.item:hover svg [data-part="grow"] rect:nth-child(3) { animation-delay: 120ms; }
+
+/* Apps and tools: the plus turns a quarter. */
+.item svg [data-part="plus"] { transform-origin: 50% 50%; }
+.item:hover svg [data-part="plus"] { transform: rotate(90deg); }
+
+/* Settings: the gear turns. */
+.item svg [data-part="turn"] { transform-origin: 50% 50%; transition-duration: 520ms; }
+.item:hover svg [data-part="turn"] { transform: rotate(60deg); }
+
+/* Help: the question mark nods. */
+.footerTools svg [data-part="nod"] { transform-origin: 50% 100%; }
+.footerTools .iconButton:hover svg [data-part="nod"] { transform: rotate(-12deg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .item svg [data-part],
+  .item svg [data-part] *,
+  .footerTools svg [data-part] { transition: none !important; animation: none !important; transform: none !important; }
+}
+
+/* ── Avatars and project tiles: a finished surface ──────────────────
+   A soft light from the top and a hairline inner ring give the identity
+   colour depth instead of a flat disc; initials sit optically centred. */
+.chatAvatar,
+.projectSquare {
+  background-image: linear-gradient(160deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0) 58%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16), 0 1px 2px rgba(0, 0, 0, 0.35);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.22);
+}
+.chatAvatar {
+  width: 20px;
+  height: 20px;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.projectSquare { border-radius: 6px; font-size: 10px; }
+.presence {
+  width: 8px;
+  height: 8px;
+  right: -1.5px;
+  bottom: -1.5px;
+  background: radial-gradient(circle at 35% 35%, #4ade80, #22a55b);
+}
+
+/* Analytics draws solid bars (outlines muddy at 16px): soft at rest, full
+   on hover, indigo for the page you are on. */
+.item svg [data-bar] { fill-opacity: 0.62; transition: fill 160ms var(--v3-ease), fill-opacity 160ms var(--v3-ease); }
+.item:hover svg [data-bar] { fill-opacity: 0.9; }
+.item[aria-current="page"] svg [data-bar] { fill: var(--v3-accent); fill-opacity: 1; }

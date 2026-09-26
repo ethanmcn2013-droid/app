@@ -133,21 +133,23 @@ async function runCase(name,width,fn){
  }catch(error){receipt.cases.push({name,width,passed:false,error:String(error),errors});await page.screenshot({path:path.join(out,'failure-'+name+'-'+width+'.png'),fullPage:true});throw error}
  finally{await context.close()}
 }
+// v3 Notes opens a note to read; one press on the text enters editing.
+async function editor(page){if(!(await page.locator('#note-body').count()))await page.locator('[data-note-display]').click();return page.locator('#note-body')}
 async function openB(page){await page.locator('[data-note-id="'+noteIds[1]+'"]').click();await page.waitForTimeout(100)}
 try{
  for(const width of [1440,390]){
   await runCase('back-forward-reload',width,async page=>{
-   await openB(page);await page.locator('#note-body').fill('Exact private words — café\nSecond line');
+   await openB(page);await (await editor(page)).fill('Exact private words — café\nSecond line');
    const before=page.url();await page.goBack();await page.waitForTimeout(100);
    await page.goForward();await page.waitForTimeout(100);
-   assert.equal(await page.locator('#note-body').inputValue(),'Exact private words — café\nSecond line');
+   assert.equal(await (await editor(page)).inputValue(),'Exact private words — café\nSecond line');
    assert.equal(new URL(page.url()).searchParams.get('workspaceId'),'project-b');
    assert.equal((await page.evaluate(()=>window.actionCalls)).length,0);
    await page.reload();await page.waitForTimeout(200);
-   assert.equal(await page.locator('#note-body').inputValue(),'Exact private words — café\nSecond line');
+   assert.equal(await (await editor(page)).inputValue(),'Exact private words — café\nSecond line');
    await page.screenshot({path:path.join(out,'recovered-'+width+'.png'),fullPage:true});
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal overflow');
-   return{before,after:page.url(),body:await page.locator('#note-body').inputValue()};
+   return{before,after:page.url(),body:await (await editor(page)).inputValue()};
   });
   await runCase('authorized-navigation',width,async page=>{
    await openB(page);
@@ -158,6 +160,8 @@ try{
    assert.equal(viewLinks.length,3);
    assert.ok(viewLinks.every(href=>new URL(href,locationOrigin()).searchParams.get('workspaceId')==='project-b'));
    const review=page.locator('[data-notes-workspace] nav a').nth(1);
+   // On a phone the open note fills the screen; its back button returns to the list and views.
+   if(!(await review.isVisible())){await page.locator('[data-notes-back]').click();await page.waitForTimeout(100)}
    await review.focus();await page.keyboard.press('Enter');await page.waitForTimeout(100);
    assert.equal(new URL(page.url()).searchParams.get('view'),'review');
    assert.equal(new URL(page.url()).searchParams.get('workspaceId'),'project-b');
@@ -173,7 +177,7 @@ try{
  }
  await runCase('project-account-isolation',1440,async page=>{
   await page.locator('[data-notes-hybrid-capture]').fill('Project B draft');
-  await openB(page);await page.locator('#note-body').fill('Actor A edit');
+  await openB(page);await (await editor(page)).fill('Actor A edit');
   await page.evaluate(()=>window.changeFrame('b','project-b'));await page.waitForTimeout(150);
   assert.ok(!(await page.locator('[data-notes-workspace]').innerText()).includes('Actor A edit'));
   assert.equal(await page.locator('[data-notes-hybrid-capture]').inputValue(),'');
@@ -181,38 +185,38 @@ try{
   assert.equal(await page.locator('[data-notes-hybrid-capture]').inputValue(),'');
   await page.evaluate(()=>window.changeFrame('a','project-b'));await page.waitForTimeout(150);
   assert.equal(await page.locator('[data-notes-hybrid-capture]').inputValue(),'Project B draft');
-  await openB(page);assert.equal(await page.locator('#note-body').inputValue(),'Actor A edit');
+  await openB(page);assert.equal(await (await editor(page)).inputValue(),'Actor A edit');
   return{calls:await page.evaluate(()=>window.actionCalls)};
  });
  await runCase('late-response-keeps-newer-edit',1440,async page=>{
   await openB(page);await page.evaluate(()=>window.mode='pending');
-  await page.locator('#note-body').fill('First version');await page.locator('#note-body').press('Control+s');
-  await page.locator('#note-body').fill('Newer exact words');await page.evaluate(()=>window.release());await page.waitForTimeout(150);
+  await (await editor(page)).fill('First version');await (await editor(page)).press('Control+s');
+  await (await editor(page)).fill('Newer exact words');await page.evaluate(()=>window.release());await page.waitForTimeout(150);
   await page.goBack();await page.goForward();await page.waitForTimeout(100);
-  assert.equal(await page.locator('#note-body').inputValue(),'Newer exact words');
-  await page.locator('#note-body').press('Control+s');await page.waitForTimeout(100);
+  assert.equal(await (await editor(page)).inputValue(),'Newer exact words');
+  await (await editor(page)).press('Control+s');await page.waitForTimeout(100);
   const calls=await page.evaluate(()=>window.actionCalls);assert.equal(calls[1].expectedUpdatedAt,calls[0].expectedUpdatedAt+1);
   return{calls};
  });
  await runCase('lost-edit-response-reload',390,async page=>{
-  await openB(page);await page.evaluate(()=>window.mode='lost-reply');await page.locator('#note-body').fill('Committed but reply lost');await page.locator('#note-body').press('Control+s');await page.waitForTimeout(100);
-  await page.reload();await page.waitForTimeout(200);assert.equal(await page.locator('#note-body').inputValue(),'Committed but reply lost');
+  await openB(page);await page.evaluate(()=>window.mode='lost-reply');await (await editor(page)).fill('Committed but reply lost');await (await editor(page)).press('Control+s');await page.waitForTimeout(100);
+  await page.reload();await page.waitForTimeout(200);assert.equal(await (await editor(page)).inputValue(),'Committed but reply lost');
   assert.equal(await page.getByText('This note changed somewhere else',{exact:true}).count(),0);
-  return{body:await page.locator('#note-body').inputValue()};
+  return{body:await (await editor(page)).inputValue()};
  });
  await runCase('late-response-after-reverting-text',1440,async page=>{
   await openB(page);await page.evaluate(()=>window.mode='pending');
-  await page.locator('#note-body').fill('Earlier pending edit');await page.locator('#note-body').press('Control+s');
-  await page.locator('#note-body').fill('Original B');await page.evaluate(()=>window.release());await page.waitForTimeout(150);
+  await (await editor(page)).fill('Earlier pending edit');await (await editor(page)).press('Control+s');
+  await (await editor(page)).fill('Original B');await page.evaluate(()=>window.release());await page.waitForTimeout(150);
   await page.reload();await page.waitForTimeout(200);
-  assert.equal(await page.locator('#note-body').inputValue(),'Original B');
+  assert.equal(await (await editor(page)).inputValue(),'Original B');
   return{retained:'Original B',savedServerRow:'Earlier pending edit'};
  });
  await runCase('storage-failure-back',390,async page=>{
   await openB(page);await page.evaluate(()=>{Storage.prototype.setItem=function(){throw Error('Storage denied')}});
-  await page.locator('#note-body').fill('Kept in this live notebook');await page.goBack();await page.goForward();await page.waitForTimeout(150);
-  assert.equal(await page.locator('#note-body').inputValue(),'Kept in this live notebook');
-  return{body:await page.locator('#note-body').inputValue(),durableReload:false};
+  await (await editor(page)).fill('Kept in this live notebook');await page.goBack();await page.goForward();await page.waitForTimeout(150);
+  assert.equal(await (await editor(page)).inputValue(),'Kept in this live notebook');
+  return{body:await (await editor(page)).inputValue(),durableReload:false};
  });
  await runCase('flag-off-authorized-navigation',390,async page=>{
   await page.evaluate(()=>{window.v3=false;window.renderFixture()});await page.waitForTimeout(150);

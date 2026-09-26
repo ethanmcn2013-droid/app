@@ -26,10 +26,17 @@ const primitiveSource = readFileSync(
   "utf8",
 );
 
+// The v3 board opens one task menu (src/components/tasks/task-menu.tsx),
+// built on the same Radix dropdown this primitive wraps.
 const boardSource = readFileSync(
-  resolve(__dirname, "../hybrid/options/a/board-view.tsx"),
+  resolve(__dirname, "../tasks/board-view.tsx"),
   "utf8",
 );
+const taskMenuSource = readFileSync(
+  resolve(__dirname, "../tasks/task-menu.tsx"),
+  "utf8",
+);
+const uiSource = readFileSync(resolve(__dirname, "../tasks/ui.tsx"), "utf8");
 
 // ── 1. Both Radix menu roots are present in the primitive ────────────────────
 
@@ -142,74 +149,36 @@ test("context-actions: the DropdownMenu trigger button exposes aria-label={trigg
   );
 });
 
-// ── 9. Board-view imports ContextActions (single menu system) ────────────────
+// ── 9. The board has one menu system: right-click, "…" and "." open it ─────
 
-test("board-view: imports ContextActions from the primitives module", () => {
-  assert.ok(
-    boardSource.includes("@/components/primitives/context-actions"),
-    "board-view must import from @/components/primitives/context-actions",
-  );
-  assert.ok(
-    boardSource.includes("ContextActions"),
-    "board-view must reference ContextActions",
-  );
+test("board-view: every card route opens the single task menu", () => {
+  assert.ok(boardSource.includes("onContextMenu"), "cards must open the menu on right-click");
+  assert.ok(boardSource.includes("surface.openMenu"), "cards must open the shared task menu");
+  assert.ok(boardSource.includes('aria-haspopup="menu"'), "the card's … button must announce a menu");
 });
 
-// ── 10. Board-view does NOT import the old hand-rolled TaskContextMenu ────────
+// ── 10. No hand-rolled menu survives ──────────────────────────────────────────
 
 test("board-view: does not import the old TaskContextMenu or useTaskContextMenu", () => {
-  assert.ok(
-    !boardSource.includes("useTaskContextMenu"),
-    "board-view must NOT use the old useTaskContextMenu hook (consolidated into ContextActions)",
-  );
-  assert.ok(
-    !boardSource.includes("TaskContextMenu"),
-    "board-view must NOT render the old TaskContextMenu (consolidated into ContextActions)",
-  );
+  for (const source of [boardSource, taskMenuSource]) {
+    assert.ok(!source.includes("useTaskContextMenu"), "the old useTaskContextMenu hook is retired");
+    assert.ok(!source.includes("TaskContextMenu"), "the old TaskContextMenu is retired");
+  }
+  assert.ok(uiSource.includes("@radix-ui/react-dropdown-menu"), "the task menu is built on the Radix dropdown");
 });
 
-// ── 11. Board-view action registry covers all required action labels ──────────
+// ── 11. The task menu covers every act a card can take ────────────────────────
 
-test("board-view: buildTaskActions registry includes all required brand-voice labels", () => {
-  const requiredLabels = [
-    "Open",
-    "Copy link",
-    "Change status",
-    "Set priority",
-    "Move to",
-    "Duplicate",
-    "Archive",
-    "Delete",
-  ];
+test("task-menu: includes all required brand-voice labels", () => {
+  const requiredLabels = ["Open", "Copy link", "Move to", "Priority", "Duplicate", "Archive", "Delete"];
   for (const label of requiredLabels) {
-    assert.ok(
-      boardSource.includes(`"${label}"`),
-      `board-view registry must include the label "${label}"`,
-    );
+    assert.ok(new RegExp(`>\\s*${label}\\s*<`).test(taskMenuSource), `task menu must include the label ${label}`);
   }
 });
 
-// ── 12. Board-view uses ContextActions wrapping the card article ──────────────
+// ── 12. The menu is named for what it does, and the card for its task ─────────
 
-test("board-view: wraps each task card in ContextActions (both trigger and target props present)", () => {
-  // T·132 pass 5: the label is a constant now, not a template. Interpolating
-  // the task title made a screen reader speak it four times per card, so the
-  // trigger says what it does and the card's own label names the task. The
-  // contract is that a label is passed at all, in either form.
-  assert.ok(
-    /triggerLabel=[{"]/.test(boardSource),
-    "board-view must pass triggerLabel prop to ContextActions",
-  );
-  assert.ok(
-    boardSource.includes("triggerClassName={"),
-    "board-view must pass triggerClassName prop to ContextActions",
-  );
-  assert.ok(
-    boardSource.includes("trigger={<Icon"),
-    "board-view must pass Icon as the trigger prop to ContextActions",
-  );
-  assert.ok(
-    boardSource.includes("target={"),
-    "board-view must pass the card article as the target prop to ContextActions",
-  );
+test("board-view: the … trigger is labelled and the card carries the task name", () => {
+  assert.ok(/aria-label=\{`Actions for \$\{task\.title\}`\}/.test(boardSource), "the … trigger must be labelled");
+  assert.ok(boardSource.includes("aria-label={task.title}"), "the card article must be named by its task");
 });

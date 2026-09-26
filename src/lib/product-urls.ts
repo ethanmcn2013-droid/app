@@ -1,7 +1,7 @@
 import suiteContracts from "./suite-contracts.v1.json";
 
 export type ProductId = "notes" | "tasks" | "timeline" | "signal";
-export type TasksViewId = "board" | "list" | "timeline" | "calendar";
+export type TasksViewId = "board" | "list" | "calendar";
 
 const suiteProducts = suiteContracts.products;
 
@@ -33,14 +33,14 @@ export const PRODUCT_APP_PATHS: Readonly<Record<ProductId, string>> =
 /**
  * Canonical Tasks view destinations.
  *
- * Keep this map explicit: `/app/timeline` belongs to the Timeline product,
- * while the Tasks timeline view lives at `/app/tasks/timeline`.
+ * Keep this map explicit: `/app/timeline` belongs to the Timeline product.
+ * Tasks has three views. The retired Schedule view's old address,
+ * `/app/tasks/timeline`, redirects to the board and is never emitted.
  */
 export const TASKS_VIEW_PATHS: Readonly<Record<TasksViewId, string>> =
   Object.freeze({
     board: PRODUCT_APP_PATHS.tasks,
     list: `${PRODUCT_APP_PATHS.tasks}/list`,
-    timeline: `${PRODUCT_APP_PATHS.tasks}/timeline`,
     calendar: `${PRODUCT_APP_PATHS.tasks}/calendar`,
   });
 

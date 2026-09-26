@@ -88,7 +88,6 @@ const NOTES_VIEWS: readonly ProjectNotesView[] = ["notebook", "review", "sent"];
 const TASKS_VIEWS: readonly TasksViewId[] = [
   "board",
   "list",
-  "timeline",
   "calendar",
 ];
 

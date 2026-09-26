@@ -2,10 +2,15 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import styles from "./_components/timeline-index.module.css";
 
 /**
- * Error boundary for the Timeline /app/timeline/* routes.
- * Keeps a per-user DB failure recoverable and scopes "go back" to the dashboard.
+ * Error boundary for the Timeline /app/timeline/* routes (v3, round 2).
+ * Keeps a per-user failure recoverable, says what happened in plain words,
+ * and offers the one way back that fits where it happened: All projects for
+ * a plan, Projects for All projects. It makes no promise about work it cannot
+ * check.
  */
 export default function AppError({
   error,
@@ -14,53 +19,43 @@ export default function AppError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const pathname = usePathname() ?? "";
+  const onPlan = /^\/app\/timeline\/(?!audience)[^/]+/.test(pathname);
+
   useEffect(() => {
     console.error("timeline/app: uncaught error", error);
   }, [error]);
 
   return (
-    <div data-timeline-module className="mx-auto w-full max-w-md py-20 px-6 text-center">
-      <p
-        className="mb-2 text-xs font-semibold uppercase tracking-widest"
-        style={{ color: "var(--brand)", letterSpacing: "0.12em" }}
-      >
-        Something went wrong
-      </p>
-      <h1
-        className="mb-2 text-2xl font-semibold"
-        style={{ letterSpacing: "-0.02em", color: "var(--ink)" }}
-      >
-        Your workspace hit a snag.
-      </h1>
-      <p className="mb-6 text-sm leading-relaxed" style={{ color: "var(--ink-soft)" }}>
-        Timeline could not finish loading. Try again, or return to your
-        projects.
-      </p>
-      {error.digest ? (
-        <p
-          className="mb-4 font-mono text-[11px] tabular-nums"
-          style={{ color: "var(--ink-quiet)" }}
-        >
-          ref · {error.digest}
-        </p>
-      ) : null}
-      <div className="flex flex-wrap items-center justify-center gap-2">
-        <button
-          type="button"
-          onClick={reset}
-          className="inline-flex min-h-[44px] items-center rounded-lg px-4 text-sm font-medium text-white transition-all"
-          style={{ background: "var(--brand)" }}
-        >
-          Try again
-        </button>
-        <Link
-          href="/app/timeline"
-          className="inline-flex min-h-[44px] items-center rounded-lg border px-4 text-sm font-medium transition-colors"
-          style={{ borderColor: "var(--border)", color: "var(--ink-soft)" }}
-        >
-          Back to timelines
-        </Link>
-      </div>
+    <div data-timeline-module className={styles.page}>
+      <section className={styles.card} aria-labelledby="timeline-error-title">
+        <span className={styles.mark} aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="6.25" stroke="currentColor" strokeWidth="1.4" />
+            <path d="M8 4.75v3.75" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            <circle cx="8" cy="10.9" r="0.9" fill="currentColor" />
+          </svg>
+        </span>
+        <h1 id="timeline-error-title" className={styles.title}>
+          {onPlan ? "This plan didn’t load" : "Timeline didn’t load"}
+        </h1>
+        <p className={styles.body}>Something went wrong while loading it. Try again in a moment.</p>
+        {error.digest ? <p className={styles.digest}>Reference {error.digest}</p> : null}
+        <div className={styles.actions}>
+          <button type="button" onClick={reset} className={styles.primary}>
+            Try again
+          </button>
+          {onPlan ? (
+            <Link href="/app/timeline" className={styles.secondary}>
+              Back to all projects
+            </Link>
+          ) : (
+            <Link href="/app/project" className={styles.secondary}>
+              Open Projects
+            </Link>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

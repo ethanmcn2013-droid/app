@@ -18,7 +18,6 @@ test("every V3 destination carries workspaceId and no V2 vocabulary", () => {
   const destinations: ProjectDestination[] = [
     { surface: "tasks" },
     { surface: "tasks", view: "list" },
-    { surface: "tasks", view: "timeline" },
     { surface: "tasks", view: "calendar" },
     { surface: "timeline" },
     { surface: "timeline", timelineSlug: "our-day", mode: "edit" },
@@ -50,11 +49,13 @@ test("the canonical routes match the locked URL contract", () => {
     buildProjectUrl({ surface: "tasks", view: "list" }, A),
     "/app/tasks/list?workspaceId=ws-a",
   );
-  // The Tasks time view lives under /app/tasks; /app/timeline is the product.
+  // Tasks has three views; /app/timeline is the Timeline product and the
+  // retired Schedule view is no longer a destination anyone can mint.
   assert.equal(
-    buildProjectUrl({ surface: "tasks", view: "timeline" }, A),
-    "/app/tasks/timeline?workspaceId=ws-a",
+    buildProjectUrl({ surface: "tasks", view: "calendar" }, A),
+    "/app/tasks/calendar?workspaceId=ws-a",
   );
+  assert.equal(parseProjectDestination({ surface: "tasks", view: "timeline" }), null);
   assert.equal(
     buildProjectUrl({ surface: "timeline", timelineSlug: "our-day", mode: "edit" }, A),
     "/app/timeline/our-day?workspaceId=ws-a&mode=edit",

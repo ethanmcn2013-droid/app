@@ -59,6 +59,31 @@ export type HomeReviewRow = {
   href: string;
 };
 
+export type HomeStats = {
+  open: number;
+  dueToday: number;
+  overdue: number;
+  inReview: number;
+  doneThisWeek: number;
+};
+
+export type HomeTaskRow = {
+  id: string;
+  title: string;
+  source: string;
+  lane: TaskSignal["lane"];
+  priority: number;
+  /** Short timing label ("Today", "Tomorrow", "Fri", "3 Oct") or null. */
+  due: string | null;
+  overdue: boolean;
+  href: string;
+};
+
+export type HomeDeadlineGroup = {
+  label: string;
+  rows: HomeTaskRow[];
+};
+
 export type HomeData =
   | { kind: "new-user" }
   | {
@@ -79,11 +104,17 @@ export type HomeData =
       } | null;
       comingUp: HomeComingRow[];
       needsReview: HomeReviewRow[];
+      stats: HomeStats;
+      myTasks: HomeTaskRow[];
+      deadlines: HomeDeadlineGroup[];
     };
 
 const COMING_UP_WINDOW_DAYS = 14;
 const COMING_UP_CAP = 4;
 const REVIEW_CAP = 3;
+const MY_TASKS_CAP = 8;
+const DEADLINE_CAP = 8;
+const DAY_MS = 86_400_000;
 
 function taskHref(id: string): string {
   return `/app/task/${encodeURIComponent(id)}`;
@@ -213,6 +244,67 @@ export async function loadHomeData(opts: {
         }
       : null;
 
+  const openSignals = signals.filter((signal) => signal.lane !== "shipped");
+  const daysOutOf = (dueAt: number) => calendarDayDifference(dueAt, now, timezone);
+  const shortDue = (dueAt: number): string => {
+    const days = daysOutOf(dueAt);
+    if (days === 0) return "Today";
+    if (days === 1) return "Tomorrow";
+    if (days === -1) return "Yesterday";
+    if (days > 1 && days < 7) return localWeekday(dueAt, timezone).slice(0, 3);
+    return new Date(dueAt).toLocaleDateString("en-GB", { timeZone: timezone, day: "numeric", month: "short" });
+  };
+  const toTaskRow = (signal: TaskSignal): HomeTaskRow => ({
+    id: signal.id,
+    title: signal.title,
+    source: signal.sourceLabel,
+    lane: signal.lane,
+    priority: signal.priority,
+    due: signal.dueAt != null ? shortDue(signal.dueAt) : null,
+    overdue: signal.dueAt != null && daysOutOf(signal.dueAt) < 0,
+    href: taskHref(signal.id),
+  });
+
+  const stats: HomeStats = {
+    open: openSignals.length,
+    dueToday: openSignals.filter((signal) => signal.dueAt != null && daysOutOf(signal.dueAt) === 0).length,
+    overdue: openSignals.filter((signal) => signal.dueAt != null && daysOutOf(signal.dueAt) < 0).length,
+    inReview: openSignals.filter((signal) => signal.lane === "review").length,
+    doneThisWeek: signals.filter(
+      (signal) => signal.lane === "shipped" && signal.movedToShippedAt != null && now - signal.movedToShippedAt <= 7 * DAY_MS,
+    ).length,
+  };
+
+  // My tasks: what is in motion first, then by urgency (overdue, due soon,
+  // priority), so the list reads as "what to pick up next".
+  const laneRank: Record<string, number> = { "in-flight": 0, review: 1, next: 2 };
+  const myTasks = [...openSignals]
+    .sort((a, b) => {
+      const lane = (laneRank[a.lane] ?? 3) - (laneRank[b.lane] ?? 3);
+      if (lane !== 0) return lane;
+      const due = (a.dueAt ?? Number.MAX_SAFE_INTEGER) - (b.dueAt ?? Number.MAX_SAFE_INTEGER);
+      if (due !== 0) return due;
+      return b.priority - a.priority;
+    })
+    .slice(0, MY_TASKS_CAP)
+    .map(toTaskRow);
+
+  const dated = openSignals
+    .filter((signal): signal is TaskSignal & { dueAt: number } => signal.dueAt != null)
+    .map((signal) => ({ signal, days: daysOutOf(signal.dueAt) }))
+    .filter(({ days }) => days <= COMING_UP_WINDOW_DAYS)
+    .sort((a, b) => a.signal.dueAt - b.signal.dueAt)
+    .slice(0, DEADLINE_CAP);
+  const groupOrder = ["Overdue", "Today", "Tomorrow", "This week", "Later"] as const;
+  const groupFor = (days: number) =>
+    days < 0 ? "Overdue" : days === 0 ? "Today" : days === 1 ? "Tomorrow" : days < 7 ? "This week" : "Later";
+  const deadlines: HomeDeadlineGroup[] = groupOrder
+    .map((label) => ({
+      label,
+      rows: dated.filter(({ days }) => groupFor(days) === label).map(({ signal }) => toTaskRow(signal)),
+    }))
+    .filter((group) => group.rows.length > 0);
+
   const dateLabel = new Date(now)
     .toLocaleDateString("en-GB", {
       timeZone: timezone,
@@ -233,5 +325,8 @@ export async function loadHomeData(opts: {
     allClear,
     comingUp,
     needsReview,
+    stats,
+    myTasks,
+    deadlines,
   };
 }

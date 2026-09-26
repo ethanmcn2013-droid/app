@@ -11,9 +11,9 @@ const base: LabRouteState = {
 };
 const b = assertProjectId("ws-b-owned");
 
-test("an open production task stays selected across every B Floor view", () => {
+test("an open production task stays selected across every Tasks view in B", () => {
   const open = withInspectedTask(base, "task-owned-by-b");
-  for (const view of ["board", "list", "timeline", "calendar"] as LabView[]) {
+  for (const view of ["board", "list", "calendar"] as LabView[]) {
     const href = new URL(floorViewHref(view, b, open.task), "https://example.invalid");
     assert.equal(href.searchParams.get("workspaceId"), b);
     assert.equal(href.searchParams.get("task"), "task-owned-by-b");

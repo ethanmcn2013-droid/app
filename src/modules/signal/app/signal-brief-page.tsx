@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
-import { QuietBriefingLedger } from "../components/brief/quiet-briefing-ledger";
+import { OverviewView } from "../components/overview/overview-view";
 import { EvidenceDrawer } from "../components/signal/evidence-drawer";
 import { formatInstant } from "../components/signal/format";
+import { buildOverviewModel } from "../lib/overview/overview-model";
 import { planningPeriodsEnabled } from "../lib/planning-periods/scope";
 import { parseBriefingReadScopeHint } from "../lib/planning-periods/read-scope-hint";
 import { AnalyticsApiError } from "../server/analytics/api-error";
@@ -92,10 +93,18 @@ export async function SignalBriefPage({
     context.state.query.scope,
   );
 
+  // The progressive engine reads observations, not the task list, so the
+  // Overview renders its attention and risk rows and omits the sections that
+  // are built from signals. Nothing is filled in to make the page look full.
+  const model = buildOverviewModel({
+    ledger,
+    timezone: result.view.meta.period.timezone,
+  });
+
   return (
-    <div data-signal-module>
-      <section id="signal-main-content" tabIndex={-1}>
-        <QuietBriefingLedger ledger={ledger} />
+    <div data-signal-module className="contents">
+      <section id="signal-main-content" tabIndex={-1} className="contents">
+        <OverviewView model={model} />
       </section>
       {selectedEvidence ? (
         <EvidenceDrawer

@@ -1,93 +1,41 @@
 "use client";
 
-// Production mount for the approved hybrid interior. Renders the verbatim
-// OptionHybrid (brief + view bar + view + planning rail) minus its own SuiteRail
-// — production's left rail and top header remain, per the founder's spec — and
-// backs it with real workspace data through HybridStoreProvider.
+/**
+ * The data host for the Tasks surface.
+ *
+ * Backs the Tasks workspace with real project data: it installs the runtime
+ * people and label registries (so cards resolve faces and label names on
+ * first paint) and mounts HybridStoreProvider, which routes every mutation
+ * through the production dispatchers (optimistic, persisted, synced). The
+ * page itself is TasksWorkspace (src/components/tasks/tasks-workspace.tsx).
+ */
 
-import { useCallback, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 import { useTagDefs, useWorkspaceMembers } from "@/lib/domain-context";
-import { useRoomTools } from "@/components/app/room/room-tools-context";
-import { TASKS_VIEW_PATHS } from "@/lib/product-urls";
+import { TasksWorkspace } from "@/components/tasks/tasks-workspace";
+import type { TasksViewId } from "@/lib/product-urls";
 import { HybridStoreProvider } from "./hybrid-store";
-import { useLabStore } from "./store";
 import { setRuntimeLabels, setRuntimePeople } from "./fixtures";
 import { tagToLabel, userToPerson } from "./adapter";
-import { OptionHybrid } from "./options/hybrid/option-hybrid";
-import { BulkToolbar } from "./shared/bulk-toolbar";
-import { withInspectedTask } from "./selected-task-route";
-import type { LabLabel, LabPerson, LabRouteState, LabView } from "./types";
-import styles from "./hybrid-workspace.module.css";
+import type { LabLabel, LabPerson } from "./types";
 
 export type HybridWorkspaceProps = {
-  view: LabView;
+  view: TasksViewId;
+  /** False when the verified project does not let this person edit tasks. */
+  canEdit?: boolean;
+  /** True when this person manages the project (columns, invites). */
+  canManage?: boolean;
   people?: LabPerson[];
   labels?: LabLabel[];
 };
 
-function Experience({ route, onRouteChange }: { route: LabRouteState; onRouteChange: (patch: Partial<LabRouteState>) => void }) {
-  const store = useLabStore();
-  const selectedRoute = useMemo(
-    () => withInspectedTask(route, store.inspectedId),
-    [route, store.inspectedId],
-  );
-
-  // Chrome-level surfaces (command palette via ⌘K, quick-create via "c",
-  // and the task detail panel) are production's own, mounted globally in the
-  // app layout — the hybrid interior defers to them rather than shipping the
-  // lab stubs, so their interaction contracts stay intact. We keep only the
-  // two surface-local shortcuts the lab owns: Escape clears a selection, and
-  // Enter on the empty surface opens the active/first task's detail panel.
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement;
-      const editing = target.matches("input, textarea, select, [contenteditable=true]");
-      if (editing) return;
-      const onSurface = target === document.body || target.dataset.workSurface === "true";
-      if (event.key === "Escape" && store.selectedIds.length > 0 && !store.inspectedId) {
-        if (target.closest('[data-task-menu="true"], [role="dialog"]')) return;
-        event.preventDefault();
-        store.clearSelection();
-        return;
-      }
-      if (event.key === "Enter" && onSurface) {
-        const id = store.activeId ?? store.tasks[0]?.id;
-        if (id) {
-          event.preventDefault();
-          store.openTask(id);
-        }
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [store]);
-
-  return (
-    <div className={styles.root} data-density={route.density} data-task-count={store.tasks.length} data-floor-runtime="true">
-      <div className={styles.stage}>
-        <OptionHybrid onRouteChange={onRouteChange} route={selectedRoute} />
-      </div>
-      <BulkToolbar />
-      <div aria-live="polite" className={styles.srOnly}>{store.announcement}</div>
-    </div>
-  );
-}
-
-export function HybridWorkspace({ view, people, labels }: HybridWorkspaceProps) {
-  const router = useRouter();
+export function HybridWorkspace({ view, canEdit = true, canManage = true, people, labels }: HybridWorkspaceProps) {
   const tagDefs = useTagDefs();
   const memberMeta = useWorkspaceMembers();
-  // Density lives in the room tools (T·125) so saved views capture and
-  // restore it — the panel promises "view, filters, sort, and density".
-  const { density, setDensity } = useRoomTools();
 
-  // Populate the runtime registries so avatars/labels resolve to live workspace
-  // data on first paint. Labels come from the workspace tag definitions so chips
-  // render in their real colours; people come from real workspace members so
-  // the assign menu offers colleagues, never design-lab fixtures. Both set
-  // unconditionally: an empty workspace roster must read as empty, not fall
-  // back to fake people. Idempotent; safe to run each render.
+  // Labels come from the project's tag definitions so chips render in their
+  // real colours; people come from real members so the assign picker offers
+  // colleagues, never fixtures. An empty roster reads as empty.
   const resolvedLabels = useMemo<LabLabel[]>(
     () => labels ?? tagDefs.map((tag) => tagToLabel(tag.name, tag.color)),
     [labels, tagDefs],
@@ -105,40 +53,17 @@ export function HybridWorkspace({ view, people, labels }: HybridWorkspaceProps) 
       ),
     [people, memberMeta],
   );
-  // Module-safe initializer, not a bare render-phase mutation. Card, row
-  // and chip render read these registries SYNCHRONOUSLY (labelById /
-  // personById), so the install has to land before children render — an
-  // effect would paint one frame of unresolved avatars and stale chips,
-  // and module state is not reactive, so nothing would re-render to fix
-  // it. What made the old call unsafe was that it cleared and rebuilt two
-  // Maps on every render, including renders React abandons and the
-  // duplicate render Strict Mode performs. The setters are idempotent now
-  // (fixtures.ts compares field by field before touching anything) and the
-  // memo keys the call to the rosters themselves, so this runs when the
-  // roster actually changes and never otherwise.
+  // Card and row render read these registries synchronously, so the install
+  // lands before children render. The setters are idempotent and the memo is
+  // keyed to the rosters, so this runs only when a roster actually changes.
   useMemo(() => {
     setRuntimeLabels(resolvedLabels);
     setRuntimePeople(resolvedPeople);
   }, [resolvedLabels, resolvedPeople]);
 
-  const route = useMemo<LabRouteState>(
-    () => ({ option: "hybrid", view, dataset: "normal", density, mode: "default", task: null }),
-    [density, view],
-  );
-
-  const onRouteChange = useCallback(
-    (patch: Partial<LabRouteState>) => {
-      if (patch.density) setDensity(patch.density);
-      if (patch.view && patch.view !== view) {
-        router.push(TASKS_VIEW_PATHS[patch.view]);
-      }
-    },
-    [router, view],
-  );
-
   return (
-    <HybridStoreProvider>
-      <Experience onRouteChange={onRouteChange} route={route} />
+    <HybridStoreProvider readOnly={!canEdit}>
+      <TasksWorkspace view={view} readOnly={!canEdit} canManage={canManage && canEdit} />
     </HybridStoreProvider>
   );
 }

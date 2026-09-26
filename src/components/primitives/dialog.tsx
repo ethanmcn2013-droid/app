@@ -141,11 +141,10 @@ export function Dialog({
               onClick={(e) => e.stopPropagation()}
               onKeyDown={trapTab}
               tabIndex={-1}
-              className="overflow-hidden rounded-[14px] border border-line bg-bg-elevated"
+              className="max-w-[calc(100vw-32px)] overflow-hidden rounded-[var(--v3-radius-xl)] border border-[color:var(--v3-border)] bg-[color:var(--v3-surface)]"
               style={{
                 width,
-                boxShadow:
-                  "0 28px 60px -20px rgba(20,21,26,0.28), 0 10px 20px -8px rgba(20,21,26,0.10)",
+                boxShadow: "var(--v3-shadow-pop)",
               }}
             >
               {children}

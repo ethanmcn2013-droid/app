@@ -10,11 +10,11 @@ function source(...parts: string[]) {
 describe("Wave 3 interface contracts", () => {
   it("derives every demo task count and scheduling obligation from fixtures and selectors", () => {
     const tree = source("src", "server", "actions", "projects-tree.ts");
-    const schedule = source("src", "components", "hybrid", "options", "a", "timeline-view.tsx");
-    const calendar = source("src", "components", "hybrid", "options", "b", "calendar-view.tsx");
+    // Schedule is retired; the calendar's tray and the header's "need a
+    // date" fact read the one selector, so they can never disagree.
+    const calendar = source("src", "components", "tasks", "calendar-view.tsx");
     assert.match(tree, /taskCount: demoTasks\(\)\.length/);
-    assert.match(schedule, /activeUnscheduledTasks\(tasks\)/);
-    assert.match(calendar, /activeUnscheduledTasks\(tasks\)/);
+    assert.match(calendar, /activeUnscheduledTasks\(surface\.visible\)/);
   });
 
   it("requires an explicit, informed action before either Tasks AI request", () => {
@@ -30,25 +30,30 @@ describe("Wave 3 interface contracts", () => {
   it("keeps 320px Notes descendants and forced-colour sharing focus inside the usable viewport", () => {
     const notes = source("src", "modules", "notes", "app", "workspace", "notes-workspace.module.css");
     const sharing = source("src", "modules", "timeline", "app", "audience", "share-controls.module.css");
-    assert.match(notes, /@media \(max-width: 359px\)[\s\S]*?\.views \{[\s\S]*?min-inline-size: 0/);
-    assert.match(notes, /\.privacy,[\s\S]*?\.iconButton \{[\s\S]*?inline-size: 44px/);
+    // v3 Notes: the view tabs tighten at 320px instead of a shrinking .views row.
+    assert.match(notes, /@media \(max-width: 359px\)[\s\S]*?\.viewTab \{[\s\S]*?padding: 0 4px/);
+    assert.match(notes, /@media \(pointer: coarse\)[\s\S]*?\.iconButton \{[\s\S]*?width: 44px/);
     assert.match(sharing, /@media \(forced-colors: active\)/);
     assert.match(sharing, /outline: 2px solid Highlight !important/);
   });
 
   it("owns completion motion by event and keeps Timeline feedback under 300ms", () => {
-    const taskCss = source("src", "components", "hybrid", "shared", "shared.module.css");
+    // The drawn tick belongs to the completion event (aria-pressed flips on
+    // the press), never to a checked state discovered on mount, and it
+    // stands still under reduced motion.
+    const taskCss = source("src", "components", "tasks", "atoms.module.css");
     const timelineCss = source("src", "modules", "timeline", "components", "artifact", "timeline-artifact.module.css");
-    assert.match(taskCss, /completionTarget\[data-completion-event\]/);
-    assert.match(taskCss, /\.completionGlyph\s*\{[\s\S]*?pointer-events:\s*none/);
-    assert.doesNotMatch(taskCss, /:has\(\.controlInput:checked\)[^{]*\{[^}]*animation:/);
+    assert.match(taskCss, /\.toggle\[aria-pressed="true"\] \.glyphTick \{\s*animation: draw 180ms/);
+    assert.match(taskCss, /prefers-reduced-motion: reduce\)[\s\S]*?\.glyphTick[\s\S]*?animation: none/);
+    assert.doesNotMatch(taskCss, /:has\([^)]*:checked\)[^{]*\{[^}]*animation:/);
     assert.match(timelineCss, /timeline-target-ring 220ms/);
     assert.doesNotMatch(timelineCss, /timeline-target-ring 700ms/);
   });
 
   it("presents one plain-language Timeline link lifecycle", () => {
     const manager = source("src", "modules", "timeline", "app", "audience", "audience-manager.tsx");
-    const panel = source("src", "modules", "timeline", "app", "plan", "[projectSlug]", "_components", "share-panel.tsx");
+    // v3: the share popover became the plan's share sheet; one lifecycle still.
+    const panel = source("src", "modules", "timeline", "app", "plan", "[projectSlug]", "_components", "v3", "share-sheet.tsx");
     assert.doesNotMatch(manager, /Canonical workspace <code/);
     assert.match(manager, /Source plan/);
     assert.match(manager, /set-aside decision/);

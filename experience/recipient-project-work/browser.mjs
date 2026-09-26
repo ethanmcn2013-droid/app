@@ -38,7 +38,7 @@ window.refresh=async()=>{const res=await fetch('/view'+location.search),v=await 
 };window.addEventListener('popstate',window.refresh);window.refresh();
 `;
 const plugin = { name: 'recipient-request-boundaries', setup(build) {
-  const names = new Set(['server-only','next/link','@/lib/auth-context','@/lib/tasks/tasks-context','@/lib/tasks/use-task-panel','@/lib/domain-context','@/components/app/room/room-brief-context','@/components/app/add-task/add-task-context','@/server/actions/seed','@/server/actions/tasks-project-arrival','@/server/projects/route-authz','@/lib/projects/flags','@/components/app/active-project-route-sync']);
+  const names = new Set(['server-only','next/link','@/lib/auth-context','@/lib/tasks/tasks-context','@/lib/tasks/use-task-panel','@/lib/domain-context','@/components/app/room/room-brief-context','@/components/app/add-task/add-task-context','@/server/actions/seed','@/server/actions/tasks-project-arrival','@/server/projects/route-authz','@/lib/projects/flags','@/components/app/active-project-route-sync','@/components/app/page-header']);
   build.onResolve({ filter: /.*/ }, a => {
     if (a.path === './active-project-route-sync') return { path: '@/components/app/active-project-route-sync', namespace: 'fixture' };
     return names.has(a.path) ? { path: a.path, namespace: 'fixture' } : undefined;
@@ -49,14 +49,17 @@ const plugin = { name: 'recipient-request-boundaries', setup(build) {
     else if (a.path.endsWith('/auth-context')) contents = `export const useCurrentUser=()=>window.view.actor;`;
     else if (a.path.endsWith('/tasks-context')) contents = `export const useTasksState=()=>({tasks:window.tasks});export const useTasksDispatch=()=>({toggleComplete:id=>window.toggled.push(id)});`;
     else if (a.path.endsWith('/use-task-panel')) contents = `export const useTaskPanel=()=>({taskId:null,openTask:window.openTask});`;
-    else if (a.path.endsWith('/domain-context')) contents = `export const useActiveWorkspace=()=>({id:window.view.arrival.project?.workspaceId});export const usePersonalization=()=>({headline:'Your project starts here',body:'Add the first piece of work.',firstTaskExample:'Add your first task'});export const useColumnConfig=()=>null;export const useWorkspaceMembers=()=>[];`;
-    else if (a.path.endsWith('/room-brief-context')) contents = `export const useCalendarFrame=()=>({nowIso:'2027-01-21T12:00:00Z',timeZone:'UTC',locale:'en-GB'});`;
+    else if (a.path.endsWith('/domain-context')) contents = `export const useActiveWorkspace=()=>({id:window.view.arrival.project?.workspaceId});export const usePersonalization=()=>({headline:'Your project starts here',body:'Add the first piece of work.',firstTaskExample:'Add your first task'});export const useColumnConfig=()=>null;export const useWorkspaceMembers=()=>[];export const useDomain=()=>({workspaceName:window.view.arrival.project?.name??null,boardName:null,workspaceTitle:''});`;
+    else if (a.path.endsWith('/room-brief-context')) contents = `export const useCalendarFrame=()=>({nowIso:'2027-01-21T12:00:00Z',today:'2027-01-21',timeZone:'UTC',locale:'en-GB',source:'review',planningPeriod:null});`;
     else if (a.path.endsWith('/add-task-context')) contents = `export const useAddTask=()=>({openDialog:()=>window.openTask('new')});`;
     else if (a.path.endsWith('/seed')) contents = `export const seedDomainAction=()=>{throw Error('Reset forbidden in personal view fixture')};`;
     else if (a.path.endsWith('/tasks-project-arrival')) contents = `export const openTasksProjectAction=(...args)=>window.recover(...args);`;
     else if (a.path.endsWith('/route-authz')) contents = `export const resolveProjectForRoute=()=>{throw Error('Authorization runs only on the local server')};`;
     else if (a.path.endsWith('/flags')) contents = `export const isActiveProjectV3Enabled=()=>window.view.v3;`;
     else if (a.path.endsWith('/active-project-route-sync')) contents = `export const ActiveProjectRouteSync=()=>null;`;
+    // My tasks renders its own page header (description + filter). The
+    // fixture keeps its header above; the stub carries only the slots.
+    else if (a.path.endsWith('/page-header')) contents = `import React from 'react';export const AppPageHeader=({description,actions})=><div data-fixture-page-header=''><p className='px-6 text-sm text-ink-soft'>{description}</p>{actions}</div>;`;
     return { contents, loader: 'tsx', resolveDir: root };
   });
 } };
@@ -64,7 +67,9 @@ const bundle = await esbuild.build({ bundle: true, metafile: true, platform: 'br
 const css = await postcss([tailwind({ base: root })]).process(await fs.readFile(path.join(root,'src/app/globals.css'),'utf8'), { from: path.join(root,'src/app/globals.css') });
 await fs.writeFile(path.join(out,'app.css'),css.css);
 const js = await fs.readFile(path.join(out,'bundle.js'));
-const html = `<!doctype html><html lang='en'><head><meta name='viewport' content='width=device-width,initial-scale=1'><link rel='stylesheet' href='/app.css'><style>:root{--font-sans:Arial;--font-mono:monospace}body{font-family:Arial;margin:0}#root{min-height:100vh;display:flex;flex-direction:column}</style></head><body><div id='root'></div><script src='/bundle.js'></script></body></html>`;
+// Page CSS modules (my-tasks.module.css) land beside the bundle, as in floor-calendar-browser.
+const moduleCss = await fs.readFile(path.join(out,'bundle.css')).catch(() => '');
+const html = `<!doctype html><html lang='en'><head><meta name='viewport' content='width=device-width,initial-scale=1'><link rel='stylesheet' href='/app.css'><link rel='stylesheet' href='/bundle.css'><style>:root{--font-sans:Arial;--font-mono:monospace}body{font-family:Arial;margin:0}#root{min-height:100vh;display:flex;flex-direction:column}</style></head><body><div id='root'></div><script src='/bundle.js'></script></body></html>`;
 const server = createServer(async (req,res) => {
   try {
     const url = new URL(req.url,'http://fixture.invalid');
@@ -80,8 +85,8 @@ const server = createServer(async (req,res) => {
       let result;try{result=await recovery(null,form)}catch(error){if(!error.href)throw error;result={href:error.href}}
       res.setHeader('Content-Type','application/json');res.end(JSON.stringify(result));return;
     }
-    res.setHeader('Content-Type',url.pathname==='/bundle.js'?'text/javascript':url.pathname==='/app.css'?'text/css':'text/html');
-    res.end(url.pathname==='/bundle.js'?js:url.pathname==='/app.css'?css.css:html);
+    res.setHeader('Content-Type',url.pathname==='/bundle.js'?'text/javascript':url.pathname==='/app.css'||url.pathname==='/bundle.css'?'text/css':'text/html');
+    res.end(url.pathname==='/bundle.js'?js:url.pathname==='/app.css'?css.css:url.pathname==='/bundle.css'?moduleCss:html);
   }catch(error){res.statusCode=500;res.end('Fixture failed');console.error(error)}
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
@@ -96,7 +101,7 @@ try {
     await page.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
     await page.goto(origin+'/app/my-tasks?workspaceId=project-b');
     // The row title is a real keyboard-operable button, independent of Done.
-    await page.getByRole('heading',{name:'Without a date',exact:true}).waitFor();
+    await page.getByRole('heading',{name:'No date',exact:true}).waitFor();
     assert.equal(await page.getByText('Check the final arrival plan',{exact:true}).count(),1);
     assert.equal(await page.getByText('Prepare the shared checklist',{exact:true}).count(),0);
     const titleButton=page.locator('button').filter({hasText:'Confirm the guest access list'});
@@ -107,15 +112,15 @@ try {
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
     await page.getByRole('link',{name:'Project A',exact:true}).click();
     await page.getByRole('button',{name:/Add your first task/}).waitFor();
-    await page.goBack();await page.getByRole('heading',{name:'Without a date',exact:true}).waitFor();
-    await page.reload();await page.getByRole('heading',{name:'Without a date',exact:true}).waitFor();
+    await page.goBack();await page.getByRole('heading',{name:'No date',exact:true}).waitFor();
+    await page.reload();await page.getByRole('heading',{name:'No date',exact:true}).waitFor();
     assert.equal(f.state.cookieWrites.length,0);
     receipt.checks.push({width,name:'authorized B stale A, keyboard row, all date states, owner empty, Back and reload',passed:true});
     f.state.v3=false;f.cookies();await page.reload();
     await page.getByRole('button',{name:'Open Project B',exact:true}).waitFor();
     await page.screenshot({path:path.join(out,`recovery-${width}.png`),fullPage:true});
     await page.getByRole('button',{name:'Open Project B',exact:true}).click();
-    await page.getByRole('heading',{name:'Without a date',exact:true}).waitFor();
+    await page.getByRole('heading',{name:'No date',exact:true}).waitFor();
     assert.equal(f.state.cookieWrites.length,2);assert.equal(f.state.cookies.get('tasks_active_ws'),'project-b');
     receipt.checks.push({width,name:'flag-off explicit recovery actual POST and both cookies',passed:true});
     f.state.actor='creator';await page.reload();await page.getByRole('heading',{name:'No tasks assigned to you yet'}).waitFor();

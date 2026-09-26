@@ -1,0 +1,562 @@
+/* The task sheet's lower sections (Subtasks, Files and links, Activity)
+   share one grammar: a 13px/600 heading, a muted count, one trailing ghost
+   action, then the section's rows. Tokens only from src/ds/v3.css, so light
+   and dark both hold. */
+
+.section {
+  position: relative;
+  padding: 20px 24px;
+  border-top: 1px solid var(--v3-border);
+  transition: background-color 120ms var(--v3-ease);
+}
+
+.section[data-dragging] {
+  background: var(--v3-sunken);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  margin-bottom: 8px;
+}
+
+.title {
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--v3-text);
+}
+
+.count {
+  color: var(--v3-text-3);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  margin-left: auto;
+  padding: 0 8px;
+  border-radius: var(--v3-radius-sm);
+  color: var(--v3-text-2);
+  font-size: 12.5px;
+  font-weight: 500;
+  transition: background-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
+}
+
+.action:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.action:disabled {
+  color: var(--v3-text-3);
+  cursor: default;
+}
+
+.note {
+  margin: 0 0 10px;
+  color: var(--v3-text-2);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.noteAction {
+  min-height: 28px;
+  margin-left: 4px;
+  padding: 0 6px;
+  border-radius: var(--v3-radius-sm);
+  color: var(--v3-accent-text);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.noteAction:hover {
+  background: var(--v3-hover);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 -8px;
+}
+
+/* ── Files and links ──────────────────────────────────────────────── */
+.drop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  margin-top: 8px;
+  padding: 0 6px 0 12px;
+  border-radius: var(--v3-radius);
+  color: var(--v3-text-3);
+}
+
+.drop[data-empty] {
+  margin-top: 0;
+  border: 1px dashed var(--v3-control-border);
+  background: var(--v3-sunken);
+}
+
+.drop:not([data-empty]) {
+  border: 1px solid var(--v3-border);
+}
+
+.drop:focus-within {
+  border-color: var(--v3-accent);
+  box-shadow: 0 0 0 3px var(--v3-accent-soft);
+}
+
+.dropInput {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  border: 0;
+  background: transparent;
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.dropInput::placeholder {
+  color: var(--v3-text-3);
+}
+
+.dropInput:disabled {
+  opacity: 0.6;
+}
+
+.solid {
+  flex: none;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: var(--v3-radius-sm);
+  background: var(--v3-accent);
+  color: var(--v3-on-accent);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.solid:hover {
+  background: var(--v3-accent-hover);
+}
+
+.solid:disabled {
+  opacity: 0.6;
+}
+
+.ghost {
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: var(--v3-radius-sm);
+  color: var(--v3-text-2);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.ghost:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.overlay {
+  position: absolute;
+  inset: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px dashed var(--v3-accent);
+  border-radius: var(--v3-radius-lg);
+  background: color-mix(in srgb, var(--v3-surface) 88%, transparent);
+  color: var(--v3-accent-text);
+  font-size: 13px;
+  font-weight: 500;
+  pointer-events: none;
+}
+
+.resource {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 6px 8px;
+  border-radius: var(--v3-radius);
+  transition: background-color 120ms var(--v3-ease);
+}
+
+.resource:hover {
+  background: var(--v3-hover);
+}
+
+.resourceLink {
+  flex: 1;
+  min-width: 0;
+}
+
+.resourceTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--v3-text);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+.resource[data-pending] .resourceTitle {
+  color: var(--v3-text-2);
+}
+
+.resourceNote {
+  margin-top: 2px;
+  color: var(--v3-text-2);
+  font-size: 12px;
+}
+
+.resourceMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  color: var(--v3-text-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.badge {
+  padding: 0 5px;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px var(--v3-border);
+  color: var(--v3-text-2);
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.tile {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-fill);
+  box-shadow: inset 0 0 0 1px var(--v3-border);
+  color: var(--v3-text-2);
+  background-size: cover;
+  background-position: center;
+}
+
+.remove {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--v3-radius-sm);
+  color: var(--v3-text-3);
+  opacity: 0;
+  transition: opacity 120ms var(--v3-ease), background-color 120ms var(--v3-ease);
+}
+
+.resource:hover .remove,
+.remove:focus-visible,
+.remove[aria-expanded="true"] {
+  opacity: 1;
+}
+
+.remove:hover {
+  background: var(--v3-surface);
+  color: var(--v3-danger-text);
+}
+
+.confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 6px;
+}
+
+.confirmText {
+  padding: 4px 6px 0;
+  color: var(--v3-text-2);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.danger {
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: var(--v3-radius-sm);
+  background: var(--v3-danger);
+  color: var(--v3-on-accent);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.spinner {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--v3-accent-soft);
+  border-top-color: var(--v3-accent);
+  border-radius: 999px;
+}
+
+/* ── Subtasks ─────────────────────────────────────────────────────── */
+.subtask {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 0 8px;
+  border-radius: var(--v3-radius);
+  transition: background-color 120ms var(--v3-ease);
+}
+
+.subtask:hover {
+  background: var(--v3-hover);
+}
+
+.check {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  box-shadow: inset 0 0 0 1.5px var(--v3-control-border);
+  background: var(--v3-surface);
+  color: transparent;
+  transition: background-color 120ms var(--v3-ease), box-shadow 120ms var(--v3-ease);
+}
+
+.check:hover {
+  box-shadow: inset 0 0 0 1.5px var(--v3-text-2);
+}
+
+.check[aria-pressed="true"] {
+  background: var(--v3-success);
+  box-shadow: none;
+  color: var(--v3-on-accent);
+}
+
+.subtaskTitle {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--v3-text);
+  font-size: 13px;
+  line-height: 20px;
+  text-align: left;
+}
+
+.subtaskTitle:disabled {
+  cursor: default;
+}
+
+.subtaskTitle[data-done] {
+  color: var(--v3-text-3);
+  text-decoration: line-through;
+  text-decoration-color: var(--v3-border-strong);
+}
+
+.composer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 0 8px;
+  border-radius: var(--v3-radius);
+  color: var(--v3-text-3);
+}
+
+.composer:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text-2);
+}
+
+.composer:focus-within {
+  background: var(--v3-surface);
+  box-shadow: inset 0 0 0 1px var(--v3-accent), 0 0 0 3px var(--v3-accent-soft);
+  color: var(--v3-text-2);
+}
+
+.composerGlyph {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 16px;
+}
+
+.composerInput {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  border: 0;
+  background: transparent;
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.composerInput::placeholder {
+  color: var(--v3-text-3);
+}
+
+/* ── Activity ─────────────────────────────────────────────────────── */
+.quiet {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  color: var(--v3-text-3);
+  font-size: 12.5px;
+  line-height: 20px;
+}
+
+@media (max-width: 767px) {
+  .section {
+    padding: 20px 16px;
+  }
+  .action,
+  .noteAction,
+  .ghost,
+  .solid,
+  .danger {
+    min-height: 44px;
+  }
+  .remove {
+    width: 44px;
+    height: 44px;
+    opacity: 1;
+  }
+  .subtask,
+  .composer {
+    min-height: 44px;
+  }
+  .check {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@media (pointer: coarse) {
+  .remove {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section,
+  .action,
+  .resource,
+  .remove,
+  .subtask,
+  .check {
+    transition: none;
+  }
+}
+
+/* ── Description ──────────────────────────────────────────────────── */
+/* Reads as prose, and shows it can be edited: a soft fill on hover, a
+   plain "Add a description" when there is none. */
+.desc {
+  display: block;
+  width: calc(100% + 16px);
+  margin: 0 -8px;
+  padding: 6px 8px;
+  border-radius: var(--v3-radius);
+  color: var(--v3-text);
+  font-size: 13.5px;
+  line-height: 1.6;
+  text-align: left;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  cursor: text;
+  transition: background-color 120ms var(--v3-ease);
+}
+
+.desc:hover {
+  background: var(--v3-hover);
+}
+
+.desc[data-empty] {
+  color: var(--v3-text-3);
+}
+
+.descInput {
+  display: block;
+  width: calc(100% + 16px);
+  margin: 0 -8px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--v3-radius);
+  background: var(--v3-surface);
+  box-shadow: inset 0 0 0 1px var(--v3-accent), 0 0 0 3px var(--v3-accent-soft);
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+}
+
+/* ── Contact (a property value like the others) ───────────────────── */
+.contact {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 32px;
+  padding: 6px 8px;
+  border-radius: var(--v3-radius);
+  color: var(--v3-text);
+  font-size: 13px;
+  line-height: 20px;
+  text-align: left;
+  transition: background-color 120ms var(--v3-ease);
+}
+
+.contact:hover,
+.contact[aria-expanded="true"] {
+  background: var(--v3-hover);
+}
+
+.contact[data-empty] {
+  color: var(--v3-text-3);
+}
+
+.contactName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contactEmail {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--v3-text-2);
+  font-size: 12.5px;
+}

@@ -21,13 +21,21 @@ for (const locale of [
       const createdDate = page.locator("dt").filter({ hasText: /^Created$/ })
         .locator("..").locator("dd");
       await expect(createdDate).toContainText(/\d/);
-      // StudioBar's browser snapshot changes this label on Windows/Linux;
-      // waiting for it confirms the page reached hydration, not only SSR.
-      const expectedKey = await page.evaluate(() =>
-        /Mac|iPhone|iPad|iPod/.test(navigator.platform) ? "⌘K" : "Ctrl K",
-      );
-      await expect(page.getByRole("button", { name: "Search tasks and projects" }))
-        .toContainText(expectedKey);
+      // Hydration probe. This used to wait on the StudioBar's platform
+      // shortcut label, which the v3 shell no longer renders. The Settings
+      // section rail only answers a click once React has hydrated, so
+      // selecting a section and seeing it become current confirms the page
+      // reached hydration, not only SSR. Nothing here writes: sections switch
+      // client-side and review content stays inert.
+      const rail = page.getByRole("navigation", { name: "Settings sections" });
+      const members = rail.getByRole("button", { name: "Members" });
+      await expect(async () => {
+        await members.click();
+        await expect(members).toHaveAttribute("aria-current", "page", { timeout: 500 });
+      }).toPass();
+      // Back on General, the hydrated client snapshot still shows the date.
+      await rail.getByRole("button", { name: "General" }).click();
+      await expect(createdDate).toContainText(/\d/);
       expect(errors).toEqual([]);
     });
   });
