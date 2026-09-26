@@ -1,0 +1,2748 @@
+/*
+ * The morning edition. One reading column with marginal notes.
+ * Colour comes only from --v3-* tokens; the two local custom properties
+ * below are derived from them.
+ */
+
+.page {
+  --col: 680px;
+  --rail: 208px;
+  --gap: 56px;
+  --hang: 34px;
+  /* Tracked-changes ink: amber stroke (3:1+) and its wash. */
+  --chg-ink: var(--v3-warning-stroke);
+  --chg-wash: color-mix(in srgb, var(--v3-warning) 18%, transparent);
+
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: var(--v3-canvas);
+  color: var(--v3-text);
+  scroll-behavior: smooth;
+}
+
+/* Inline glyphs sit on the text baseline (preflight makes svg block). */
+.page svg {
+  display: inline-block;
+  flex: none;
+}
+
+/* ── running head and reading progress ─────────────────────────── */
+
+.runhead {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  height: 0;
+}
+
+.runheadInner {
+  position: relative;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--v3-canvas);
+  border-bottom: 1px solid var(--v3-border);
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition:
+    opacity 220ms var(--v3-ease),
+    transform 220ms var(--v3-ease);
+}
+
+.runhead[data-show] .runheadInner {
+  opacity: 1;
+  transform: none;
+}
+
+.runheadText {
+  font-size: 13px;
+  color: var(--v3-text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 32px);
+}
+
+.runheadText strong {
+  color: var(--v3-text);
+  font-weight: 600;
+}
+
+.runheadSection {
+  color: var(--v3-text-2);
+}
+
+.runheadSep {
+  margin: 0 8px;
+  color: var(--v3-border-strong);
+}
+
+.progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  opacity: 1;
+}
+
+.progressBar {
+  display: block;
+  height: 100%;
+  background: var(--v3-accent);
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+}
+
+/* ── sheet and grid ────────────────────────────────────────────── */
+
+.sheet {
+  max-width: calc(var(--col) + var(--gap) + var(--rail) + 80px);
+  margin: 0 auto;
+  padding: 64px 40px 40px;
+  display: grid;
+  grid-template-columns: minmax(0, var(--col)) var(--rail);
+  column-gap: var(--gap);
+}
+
+.sheet[data-calm] {
+  padding-top: 120px;
+}
+
+.masthead,
+.body,
+.row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+}
+
+.body {
+  animation: fadeIn 420ms var(--v3-ease) backwards;
+}
+
+.mastMain {
+  grid-column: 1;
+}
+
+.h1 {
+  margin: 0;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--v3-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.h1Date {
+  font-weight: 400;
+  color: var(--v3-text-3);
+}
+
+.datelineSep {
+  margin: 0 8px;
+  color: var(--v3-text-3);
+}
+
+.lede {
+  margin: 16px 0 0;
+  font-size: 38px;
+  line-height: 1.16;
+  font-weight: 500;
+  letter-spacing: -0.028em;
+  color: var(--v3-text);
+  text-wrap: pretty;
+}
+
+.sheet[data-calm] .lede {
+  font-size: 42px;
+  line-height: 1.14;
+}
+
+.ledeQuiet {
+  color: var(--v3-text-3);
+}
+
+/* Top-aligned with the first line of the lede. */
+.mastRail {
+  grid-column: 2;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 42px;
+  padding-left: 14px;
+  border-left: 2px solid var(--v3-border-strong);
+}
+
+.mastStack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-radius: 4px;
+}
+
+.mastLabel {
+  font-size: 12px;
+  color: var(--v3-text-3);
+}
+
+.mastBig {
+  font-size: 17px;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--v3-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.mastSub {
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--v3-text-2);
+}
+
+/* ── toolbar: scope sentence and reading controls ─────────────── */
+
+.toolbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  flex-wrap: wrap;
+  margin-top: 28px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--v3-border);
+}
+
+.scope {
+  margin: 0 0 0 -6px;
+  font-size: 14px;
+  color: var(--v3-text-3);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0;
+}
+
+.scopeLead {
+  padding-left: 6px;
+}
+
+.scopeWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+/* One control language across the toolbar: 28px, borderless, a fill on
+   hover, and a fill that stays when pressed or chosen. */
+.scopeBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: var(--v3-radius);
+  background: none;
+  font: inherit;
+  font-weight: 550;
+  color: var(--v3-text);
+  cursor: pointer;
+  transition: background-color 120ms var(--v3-ease);
+}
+
+.scopeBtn:hover,
+.scopeBtn[aria-expanded="true"] {
+  background: var(--v3-hover);
+}
+
+.scopeBtn .tile {
+  width: 18px;
+  height: 18px;
+  font-size: 9px;
+  border-radius: 5px;
+}
+
+.scopeChevron {
+  width: 14px;
+  height: 14px;
+  color: var(--v3-text-3);
+  transition: transform 160ms var(--v3-ease);
+}
+
+.scopeBtn[aria-expanded="true"] .scopeChevron {
+  transform: rotate(180deg);
+}
+
+.scopeSlash {
+  color: var(--v3-border-strong);
+  margin: 0 2px;
+}
+
+.scopeAlt {
+  padding: 4px 2px;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--v3-text-2);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--v3-border-strong);
+  text-underline-offset: 4px;
+}
+
+.scopeAlt:hover {
+  color: var(--v3-text);
+  text-decoration-color: var(--v3-text-3);
+}
+
+.scopeMenu {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 320px;
+  padding: 6px;
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-pop);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  animation: popIn 160ms var(--v3-ease) backwards;
+}
+
+.scopeOption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 0;
+  border-radius: var(--v3-radius);
+  background: none;
+  text-align: left;
+  font: inherit;
+  color: var(--v3-text);
+  cursor: pointer;
+}
+
+.scopeOption:hover,
+.scopeOption:focus-visible {
+  background: var(--v3-hover);
+}
+
+.scopeOption:focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: -2px;
+}
+
+.scopeOption:first-child {
+  margin-bottom: 4px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius) var(--v3-radius) 0 0;
+}
+
+.scopeOptText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.scopeOptName {
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.scopeOptMeta {
+  font-size: 12px;
+  color: var(--v3-text-3);
+}
+
+.scopeOptMeta[data-needs] {
+  color: var(--v3-warning-text);
+}
+
+.scopeCheck {
+  width: 16px;
+  height: 16px;
+  color: var(--v3-accent-text);
+}
+
+.tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  font-size: 10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  background: var(--tone);
+  color: var(--v3-project-ink);
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+
+.tileAll {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+
+.tileAll span {
+  border-radius: 2px;
+}
+
+.tileLg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--tone);
+  color: var(--v3-project-ink);
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #000 8%, transparent);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.segment {
+  display: inline-flex;
+  gap: 2px;
+  margin-right: 6px;
+  padding-right: 8px;
+  border-right: 1px solid var(--v3-border);
+}
+
+.segBtn,
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: var(--v3-radius);
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--v3-text-2);
+  cursor: pointer;
+  transition: background-color 140ms var(--v3-ease), color 140ms var(--v3-ease);
+}
+
+.segBtn:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.segBtn[aria-checked="true"] {
+  background: var(--v3-fill);
+  color: var(--v3-text);
+}
+
+.toggle svg {
+  width: 15px;
+  height: 15px;
+}
+
+.toggle:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.toggle[aria-pressed="true"] {
+  background: var(--v3-fill);
+  color: var(--v3-text);
+}
+
+.toggleCount {
+  margin-left: -2px;
+  font-size: 12.5px;
+  color: var(--v3-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The marker it turns on, drawn small. */
+.toggleSwatch,
+.sinceSwatch {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--v3-warning-soft);
+  box-shadow: inset 0 0 0 1px var(--v3-warning-stroke);
+}
+
+/* ── sections ──────────────────────────────────────────────────── */
+
+.row {
+  margin-top: 64px;
+  scroll-margin-top: 60px;
+}
+
+.body > .row:first-child {
+  margin-top: 48px;
+}
+
+.sheet[data-calm] .row {
+  margin-top: 72px;
+}
+
+.prose {
+  grid-column: 1;
+  position: relative;
+  min-width: 0;
+  font-size: 17px;
+  line-height: 1.64;
+  letter-spacing: -0.006em;
+  color: var(--v3-text);
+}
+
+.prose p {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.prose p + p {
+  margin-top: 12px;
+}
+
+.row[data-tone="calm"] .prose {
+  color: var(--v3-text-2);
+}
+
+.h2 {
+  scroll-margin-top: 64px;
+  outline: none;
+  margin: 0 0 10px;
+  font-size: 20px;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--v3-text);
+}
+
+.topic {
+  counter-reset: decision;
+}
+
+.more {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 380ms var(--v3-ease),
+    opacity 160ms var(--v3-ease);
+}
+
+.more[data-open] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition:
+    grid-template-rows 380ms var(--v3-ease),
+    opacity 280ms 120ms var(--v3-ease);
+}
+
+.moreInner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Once open, let hover cards escape the fold. */
+.more[data-open] .moreInner {
+  animation: unclip 0s 400ms forwards;
+}
+
+.moreInner > :first-child {
+  margin-top: 12px;
+}
+
+.aside {
+  color: var(--v3-text-2);
+}
+
+/* Decisions hang a small counter in the left margin. */
+.decision {
+  position: relative;
+  counter-increment: decision;
+  scroll-margin-top: 120px;
+}
+
+.decision + .decision {
+  margin-top: 22px;
+}
+
+/* One number badge, shared by the decisions and the diff. */
+.decision::before,
+.num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px var(--v3-border-strong);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--v3-text-3);
+  font-variant-numeric: tabular-nums;
+  transition: background-color 200ms var(--v3-ease), color 200ms var(--v3-ease);
+}
+
+.num[data-on] {
+  background: var(--chg-ink);
+  box-shadow: none;
+  color: var(--v3-canvas);
+}
+
+/* Centred on the first line of 17px text at a 28px line. */
+.decision::before {
+  content: counter(decision);
+  position: absolute;
+  left: calc(var(--hang) * -1);
+  top: 4px;
+}
+
+.decision:focus {
+  outline: none;
+}
+
+.decision:focus::after {
+  content: "";
+  position: absolute;
+  inset: -6px -10px;
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-accent-soft);
+  z-index: -1;
+  animation: flash 1400ms var(--v3-ease) forwards;
+}
+
+.topic {
+  position: relative;
+  z-index: 0;
+}
+
+.decisionDone {
+  color: var(--v3-text-2);
+}
+
+.decisionDone::before {
+  content: none;
+}
+
+.doneTick {
+  position: absolute;
+  left: calc(var(--hang) * -1);
+  top: 4px;
+  width: 20px;
+  height: 20px;
+  padding: 3px;
+  border-radius: 50%;
+  background: var(--v3-success-soft);
+  color: var(--v3-success-text);
+}
+
+.finished {
+  color: var(--v3-text);
+}
+
+/* ── rewrite and tracked changes ───────────────────────────────── */
+
+.rw {
+  animation: rewrite 520ms var(--v3-ease) backwards;
+}
+
+.chg {
+  transition: background-color 300ms var(--v3-ease);
+}
+
+/* A warm tint on the changed words, like a marker pen; no box. */
+.chgOn {
+  background-image: linear-gradient(var(--chg-ink), var(--chg-ink));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 100% 0;
+  background-color: var(--chg-wash);
+  border-radius: 2px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  transition: background-size 200ms var(--v3-ease);
+  animation: sweep 720ms var(--v3-ease) backwards;
+  animation-delay: calc(var(--i) * 110ms);
+}
+
+/* The change the navigator is on: a 2px amber underline. */
+.chgOn[data-current] {
+  background-size: 100% 2px;
+}
+
+/* A real superscript, which takes up its own space. */
+.chgNum {
+  margin-left: 2px;
+  font-size: 0.62em;
+  font-weight: 650;
+  line-height: 0;
+  vertical-align: super;
+  letter-spacing: 0;
+  color: var(--v3-warning-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── pills: live handles in the prose ──────────────────────────── */
+
+.pillWrap {
+  position: relative;
+}
+
+.pill {
+  cursor: pointer;
+  border-radius: 5px;
+  font-weight: inherit;
+  color: var(--v3-text);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  transition:
+    background-color 140ms var(--v3-ease),
+    box-shadow 140ms var(--v3-ease),
+    text-decoration-color 140ms var(--v3-ease);
+}
+
+.pill:focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: 1px;
+}
+
+/* Every resting handle looks the same: body text with a quiet underline.
+   A small leading mark appears only where it carries state, so state colour
+   stays rare enough to be seen. The fill arrives on hover, focus or open. */
+.pill {
+  padding: 0.02em 0.1em 0.06em;
+  margin: 0 -0.1em;
+}
+
+.pill .pillText {
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  /* text-3 at full strength clears 3:1 on canvas in both themes. */
+  text-decoration-color: var(--v3-text-3);
+  transition: text-decoration-color 140ms var(--v3-ease);
+}
+
+.pill:hover,
+.pill[data-open] {
+  background: var(--v3-fill);
+}
+
+.pill:hover .pillText,
+.pill[data-open] .pillText {
+  text-decoration-color: var(--v3-text);
+}
+
+.pill_date {
+  white-space: nowrap;
+}
+
+/* Only work (tasks and files) carries a resting underline. People and dates
+   read as plain words and show a dotted rule only while their paragraph is
+   under the pointer or holds focus; they stay in the tab order. */
+.pill_person .pillText,
+.pill_date .pillText {
+  text-decoration-style: dotted;
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: transparent;
+}
+
+.prose p:hover .pill_person .pillText,
+.prose p:hover .pill_date .pillText,
+.prose p:focus-within .pill_person .pillText,
+.prose p:focus-within .pill_date .pillText {
+  text-decoration-color: var(--v3-text-3);
+}
+
+.prose p .pill_person:hover .pillText,
+.prose p .pill_date:hover .pillText,
+.pill_person[data-open] .pillText,
+.pill_date[data-open] .pillText {
+  text-decoration-color: var(--v3-text);
+}
+
+/* At display size the underline scales with the type. */
+.lede .mark,
+.lede .projectLink .tile {
+  display: none;
+}
+
+/* At display size: no padding, so the rule starts and ends with the glyphs.
+   The hover fill is a spread shadow, which takes no room. */
+.lede .pill,
+.lede .jump,
+.lede .projectLink {
+  padding: 0;
+  margin: 0;
+  border-radius: 0.12em;
+  text-decoration: none;
+}
+
+.lede .pill:hover,
+.lede .pill[data-open],
+.lede .jump:hover,
+.lede .projectLink:hover {
+  background: var(--v3-fill);
+  box-shadow: 0 0 0 0.08em var(--v3-fill);
+}
+
+.lede .pillText,
+.lede .jumpText,
+.lede .projectText {
+  text-decoration-line: underline;
+  text-decoration-style: solid;
+  text-decoration-thickness: max(1.5px, 0.04em);
+  text-underline-offset: 0.16em;
+  text-decoration-skip-ink: auto;
+  text-decoration-color: var(--v3-text-3);
+  transition: text-decoration-color 140ms var(--v3-ease);
+}
+
+.lede .pill:hover .pillText,
+.lede .pill[data-open] .pillText,
+.lede .jump:hover .jumpText,
+.lede .projectLink:hover .projectText {
+  text-decoration-color: var(--v3-text);
+}
+
+.lede .ledeQuiet .pill .pillText {
+  color: var(--v3-text);
+}
+
+.pillLead {
+  white-space: nowrap;
+}
+
+/* The state mark: late, stalled or done. */
+.mark {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 0.34em 0 0.1em;
+  border-radius: 50%;
+  vertical-align: 0.18em;
+}
+
+.mark[data-state="late"] {
+  background: var(--v3-danger);
+}
+
+.mark[data-state="stalled"] {
+  background: var(--v3-warning-stroke);
+}
+
+.fileTileLg[data-kind="doc"] {
+  --kind: var(--v3-kind-doc);
+}
+
+.fileTileLg[data-kind="sheet"] {
+  --kind: var(--v3-kind-sheet);
+}
+
+.fileTileLg[data-kind="image"] {
+  --kind: var(--v3-kind-image);
+}
+
+.fileTileLg[data-kind="design"] {
+  --kind: var(--v3-kind-design);
+}
+
+.fileTileLg[data-kind="slides"] {
+  --kind: var(--v3-kind-slides);
+}
+
+.fileTileLg[data-kind="neutral"] {
+  --kind: var(--v3-kind-neutral);
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  border-radius: 50%;
+  background: var(--tone);
+  color: var(--v3-project-ink);
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  font-style: normal;
+}
+
+/* xs: a 16px disc with one initial, sitting on the text line. */
+.avatar_xs {
+  width: 16px;
+  height: 16px;
+  font-size: 9px;
+  font-weight: 600;
+  margin: 0 0.3em 0 0.06em;
+  vertical-align: -0.12em;
+}
+
+.avatar_sm {
+  font-size: 10px;
+  width: 24px;
+  height: 24px;
+}
+
+.avatar_md {
+  font-size: 12px;
+  width: 34px;
+  height: 34px;
+}
+
+.avatar_lg {
+  font-size: 14px;
+  width: 44px;
+  height: 44px;
+}
+
+/* ── the hover card ────────────────────────────────────────────── */
+
+.card {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 8px);
+  left: -8px;
+  width: 320px;
+  display: block;
+  padding: 14px 14px 12px;
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-pop);
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--v3-text);
+  text-align: left;
+  white-space: normal;
+  cursor: default;
+  animation: cardIn 180ms var(--v3-ease) backwards;
+  transform-origin: 24px top;
+}
+
+.card[data-up] {
+  top: auto;
+  bottom: calc(100% + 8px);
+  transform-origin: 24px bottom;
+}
+
+.card[data-right] {
+  left: auto;
+  right: -8px;
+}
+
+/* Opened from the lede: hangs below the whole paragraph (top and left are
+   set inline from a measurement), so it never covers the other handle. */
+.card[data-anchored] {
+  right: auto;
+  bottom: auto;
+  transform-origin: 40px top;
+}
+
+.cardHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.cardHeading {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+.cardGlyph {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  align-self: flex-start;
+  margin-top: 1px;
+}
+
+.cardClose {
+  display: none;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  margin: -6px -6px 0 0;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--v3-radius);
+  background: none;
+  color: var(--v3-text-3);
+  cursor: pointer;
+}
+
+.cardSub {
+  display: block;
+  margin: 2px 0 0 26px;
+  font-size: 12px;
+  color: var(--v3-text-3);
+}
+
+.cardSubInline {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--v3-text-3);
+}
+
+.personHead {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cardRows {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  row-gap: 6px;
+  column-gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--v3-border);
+}
+
+.cardRow {
+  display: contents;
+}
+
+.cardKey {
+  color: var(--v3-text-3);
+}
+
+.cardVal {
+  color: var(--v3-text);
+  min-width: 0;
+}
+
+.inlinePerson {
+  display: inline-flex;
+  align-items: center;
+}
+
+.inlinePerson .avatar_xs {
+  vertical-align: 0;
+  margin: 0 6px 0 0;
+}
+
+.toneDanger {
+  color: var(--v3-danger-text);
+}
+
+.toneSuccess {
+  color: var(--v3-success-text);
+}
+
+.cardList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--v3-border);
+}
+
+.cardEvent {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--v3-text);
+}
+
+.cardEventDot {
+  flex: none;
+  width: 14px;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.cardEventDot::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--v3-accent);
+  transform: translateY(-1px);
+}
+
+.cardDivider {
+  display: block;
+  height: 1px;
+  margin: 2px 0;
+  background: var(--v3-border);
+}
+
+.cardTaskRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--v3-text-2);
+}
+
+.cardRowGlyph {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.cardTaskTitle {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardTaskRow .avatar_xs {
+  margin: 0;
+  vertical-align: 0;
+}
+
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.cardPrimary,
+.cardSecondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 6px 0 10px;
+  border-radius: 7px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 120ms var(--v3-ease), transform 120ms var(--v3-ease);
+}
+
+.cardPrimary:active,
+.cardSecondary:active {
+  transform: scale(0.97);
+}
+
+.cardPrimary {
+  border: 0;
+  background: var(--v3-accent);
+  color: var(--v3-on-accent);
+}
+
+.cardPrimary:hover {
+  background: var(--v3-accent-hover);
+}
+
+.cardActions .kbd {
+  transition: opacity 140ms var(--v3-ease);
+}
+
+.card:not([data-pinned]) .cardActions .kbd {
+  opacity: 0.6;
+}
+
+.cardSecondary {
+  border: 1px solid var(--v3-border-strong);
+  background: var(--v3-surface);
+  color: var(--v3-text);
+}
+
+.cardSecondary:hover {
+  background: var(--v3-hover);
+}
+
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  /* The UI face, where O and 0 are clearly different letters. */
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1;
+  color: inherit;
+}
+
+.dateTile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-fill);
+  color: var(--v3-text-2);
+}
+
+.fileTileLg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--v3-radius);
+  background: color-mix(in srgb, var(--kind) 14%, var(--v3-surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--kind) 45%, transparent);
+  color: var(--v3-text-2);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.scrim {
+  display: none;
+}
+
+/* ── decision verbs, inside the sentence ───────────────────────── */
+
+.act,
+.jump,
+.see {
+  display: inline;
+  padding: 0.02em 0.1em 0.06em;
+  margin: 0 -0.1em;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  text-align: inherit;
+  cursor: pointer;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  transition:
+    background-color 140ms var(--v3-ease),
+    text-decoration-color 140ms var(--v3-ease);
+}
+
+/* A verb you can press: accent ink, accent underline. */
+.act {
+  color: var(--v3-accent-text);
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--v3-accent);
+}
+
+.act:hover {
+  background: var(--v3-accent-soft);
+}
+
+.act:focus-visible,
+.actPrimary:focus-visible,
+.jump:focus-visible,
+.see:focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: 0;
+}
+
+.act:active,
+.actPrimary:active {
+  transform: none;
+  background: color-mix(in srgb, var(--v3-accent) 22%, transparent);
+}
+
+/* The only filled button on the page, for the most urgent call. */
+.actPrimary {
+  display: inline-block;
+  padding: 1px 9px 2px 11px;
+  margin: 0 1px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--v3-accent);
+  color: var(--v3-on-accent);
+  font: inherit;
+  font-size: 0.9em;
+  font-weight: 550;
+  line-height: 1.45;
+  letter-spacing: 0;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 1px 0 color-mix(in srgb, #000 12%, transparent);
+  transition:
+    background-color 140ms var(--v3-ease),
+    transform 120ms var(--v3-ease);
+}
+
+.actPrimary:hover {
+  background: var(--v3-accent-hover);
+}
+
+.actPrimary:active {
+  transform: scale(0.97);
+  background: var(--v3-accent-hover);
+}
+
+.actArrow {
+  width: 0.9em;
+  height: 0.9em;
+  margin-left: 5px;
+  vertical-align: -0.12em;
+  transition: transform 160ms var(--v3-ease);
+}
+
+.actPrimary:hover .actArrow {
+  transform: translateX(2px);
+}
+
+/* The Enter hint shows only while a verb has keyboard focus. */
+.actHint {
+  display: none;
+}
+
+/* It floats above the end of the verb, so focus never reflows the line. */
+.act,
+.actPrimary {
+  position: relative;
+}
+
+.act:focus-visible .actHint,
+.actPrimary:focus-visible .actHint {
+  display: inline-flex;
+  position: absolute;
+  right: -4px;
+  bottom: calc(100% + 4px);
+  line-height: 1;
+  text-decoration: none;
+  pointer-events: none;
+}
+
+.actHint .kbd {
+  box-shadow: var(--v3-shadow-1);
+}
+
+/* A phrase that jumps elsewhere on the page reads like a handle. */
+.jump {
+  color: inherit;
+}
+
+.jump .jumpText {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--v3-text-3);
+}
+
+.jump:hover {
+  background: var(--v3-fill);
+}
+
+.jump:hover .jumpText {
+  text-decoration-color: var(--v3-text);
+}
+
+
+/* A back-reference to a decision: small, quiet, like a footnote. */
+.see {
+  margin-left: 2px;
+  font-size: 0.82em;
+  color: var(--v3-text-2);
+  white-space: nowrap;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--v3-text-3);
+}
+
+.see:hover {
+  color: var(--v3-text);
+  background: var(--v3-fill);
+}
+
+/* ── marginalia ────────────────────────────────────────────────── */
+
+/* Each note travels with its paragraph while the section is on screen.
+   Its label sits on the heading's baseline: the h2 baseline is about 20px
+   down its 26px line, the label's about 12px down its 16px line. */
+.rail {
+  grid-column: 2;
+  min-width: 0;
+}
+
+.note {
+  position: sticky;
+  top: 64px;
+  margin: 0;
+  padding-top: 8px;
+  font-size: 12px;
+  color: var(--v3-text-2);
+}
+
+.noteCaption {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--v3-text-3);
+}
+
+.noteLabel {
+  display: block;
+  font-size: 12px;
+  color: var(--v3-text-3);
+}
+
+.noteBig {
+  display: block;
+  margin-top: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--v3-text);
+}
+
+.spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 64px;
+}
+
+.sparkCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  width: 24px;
+  height: 100%;
+}
+
+.sparkVal {
+  font-size: 12px;
+  color: var(--v3-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.sparkBar {
+  width: 100%;
+  height: calc(var(--h) * 44px);
+  border-radius: 3px 3px 1px 1px;
+  background: var(--v3-control-border);
+  transform-origin: 50% 100%;
+  animation: grow 600ms var(--v3-ease) backwards;
+}
+
+.sparkBarNow {
+  background: var(--v3-accent);
+}
+
+.ruler {
+  display: flex;
+  flex-direction: column;
+}
+
+.rulerRow {
+  display: grid;
+  grid-template-columns: 52px 12px 1fr;
+  align-items: center;
+  height: 3px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.rulerRow[data-tall] {
+  height: 19px;
+}
+
+.rulerDay {
+  padding-right: 8px;
+  text-align: right;
+  color: var(--v3-text-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rulerRow[data-today] .rulerDay {
+  color: var(--v3-accent-text);
+  font-weight: 600;
+}
+
+.rulerTick {
+  position: relative;
+  height: 100%;
+  border-left: 1px solid var(--v3-control-border);
+}
+
+.rulerTick::after {
+  content: none;
+}
+
+.rulerMark {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: -9px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--v3-text);
+  white-space: nowrap;
+}
+
+.rulerMark::before {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--v3-surface);
+  box-shadow: inset 0 0 0 1.5px var(--v3-text-2);
+}
+
+.rulerMark[data-tone="accent"]::before {
+  background: var(--v3-accent);
+  box-shadow: none;
+}
+
+.rulerMark[data-tone="danger"]::before {
+  background: var(--v3-danger);
+  box-shadow: none;
+}
+
+.load {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.loadRow {
+  display: grid;
+  grid-template-columns: auto 48px 1fr 16px;
+  align-items: center;
+  gap: 0 6px;
+  height: 20px;
+}
+
+.loadRow .avatar_xs {
+  vertical-align: 0;
+  margin: 0;
+}
+
+.loadName {
+  color: var(--v3-text-2);
+}
+
+.loadName[data-you] {
+  color: var(--v3-text);
+  font-weight: 600;
+}
+
+.loadTrack {
+  position: relative;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--v3-fill);
+  overflow: hidden;
+}
+
+.loadOpen,
+.loadWeek {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 3px;
+  transition: width 420ms var(--v3-ease);
+}
+
+.loadOpen {
+  background: var(--v3-control-border);
+}
+
+.loadWeek {
+  background: var(--v3-accent);
+}
+
+.loadNum {
+  text-align: right;
+  color: var(--v3-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.by {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.byRow {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.byNum {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px var(--v3-border-strong);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--v3-text-3);
+  font-variant-numeric: tabular-nums;
+  transition: background-color 300ms var(--v3-ease);
+}
+
+.byRow[data-done] .byNum {
+  background: var(--v3-success-soft);
+  box-shadow: none;
+  color: var(--v3-success-text);
+}
+
+.byTick {
+  width: 13px;
+  height: 13px;
+}
+
+.byText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.byLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--v3-text);
+}
+
+.byRow[data-done] .byLabel {
+  color: var(--v3-text-2);
+}
+
+.byWhen {
+  font-size: 12px;
+  color: var(--v3-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.byWhen[data-soon] {
+  color: var(--v3-danger-text);
+  font-weight: 500;
+}
+
+.decidedBig {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  font-size: 17px;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--v3-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.decidedDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px var(--v3-control-border);
+  transition: background-color 300ms var(--v3-ease), box-shadow 300ms var(--v3-ease);
+}
+
+.decidedDot[data-on] {
+  background: var(--v3-success);
+  box-shadow: none;
+}
+
+.chain {
+  display: flex;
+  flex-direction: column;
+}
+
+.chainStep {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 0 0 12px 20px;
+}
+
+.chainStep::before {
+  content: "";
+  position: absolute;
+  left: 4.5px;
+  top: 14px;
+  bottom: 0;
+  width: 1px;
+  background: var(--v3-border-strong);
+}
+
+.chainStep:last-child {
+  padding-bottom: 0;
+}
+
+.chainStep:last-child::before {
+  content: none;
+}
+
+.chainDot {
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--v3-canvas);
+  box-shadow: inset 0 0 0 1.5px var(--v3-control-border);
+}
+
+.chainStep[data-state="waiting"] .chainDot {
+  background: var(--v3-warning);
+  box-shadow: none;
+}
+
+.chainStep[data-state="moved"] .chainDot {
+  background: var(--v3-accent);
+  box-shadow: none;
+}
+
+.chainStep[data-state="ok"] .chainDot {
+  box-shadow: inset 0 0 0 1.5px var(--v3-success);
+}
+
+.chainLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--v3-text);
+}
+
+.chainMeta {
+  font-size: 12px;
+  color: var(--v3-text-3);
+}
+
+.meterNum {
+  display: block;
+  font-size: 24px;
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--v3-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.meterOf {
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--v3-text-3);
+}
+
+.meter {
+  display: block;
+  height: 6px;
+  margin-top: 10px;
+  border-radius: 3px;
+  background: var(--v3-fill);
+  overflow: hidden;
+}
+
+.meterFill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--v3-accent);
+}
+
+.meterFill[data-tone="warning"] {
+  background: var(--v3-warning-stroke);
+}
+
+.meterFill[data-tone="success"] {
+  background: var(--v3-success);
+}
+
+/* On a phone the note folds into a footnote chip under its paragraph. */
+.footChip {
+  display: none;
+}
+
+/* ── portfolio dispatches ──────────────────────────────────────── */
+
+.dispatchHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dispatchHead .tileLg {
+  position: absolute;
+  left: -58px;
+  top: -7px;
+}
+
+.dispatchName {
+  display: flex;
+  flex-direction: column;
+}
+
+.dispatch {
+  display: block;
+}
+
+.readMore {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--v3-accent-text);
+  cursor: pointer;
+}
+
+.readMore svg {
+  width: 14px;
+  height: 14px;
+  transition: transform 160ms var(--v3-ease);
+}
+
+.readMore:hover svg {
+  transform: translateX(2px);
+}
+
+.projectLink {
+  display: inline;
+  padding: 0 0.12em;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--v3-text-3);
+}
+
+.projectLink:hover {
+  background: var(--v3-fill);
+  text-decoration-color: var(--v3-text-3);
+}
+
+
+.projectLink .tile {
+  font-size: 0.22em;
+  width: 3.6em;
+  height: 3.6em;
+  border-radius: 0.9em;
+  margin-right: 1.4em;
+  vertical-align: 0.9em;
+  text-decoration: none;
+}
+
+.ghostList {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ghostItem {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 16px;
+  border: 1px dashed var(--v3-border-strong);
+  border-radius: var(--v3-radius-lg);
+  line-height: 1.4;
+}
+
+.ghostHead {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--v3-text-2);
+}
+
+.ghostDesc {
+  font-size: 13.5px;
+  color: var(--v3-text-3);
+}
+
+/* ── since you last read: one line after the decisions ───────── */
+
+.since {
+  grid-column: 1;
+  margin-top: 36px;
+  padding: 12px 0;
+  border-top: 1px solid var(--v3-border);
+  border-bottom: 1px solid var(--v3-border);
+}
+
+.sinceLine {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--v3-text-2);
+}
+
+.sinceSwatch {
+  transform: translateY(1px);
+}
+
+.sinceBtn {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 500;
+  color: var(--v3-text);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--v3-text-3);
+}
+
+.sinceBtn:hover {
+  text-decoration-color: var(--v3-text);
+}
+
+.sinceBtn:focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.sinceChev {
+  width: 13px;
+  height: 13px;
+  margin-left: 2px;
+  vertical-align: -0.12em;
+  color: var(--v3-text-3);
+  transition: transform 160ms var(--v3-ease);
+}
+
+.sinceBtn[aria-expanded="true"] .sinceChev {
+  transform: rotate(180deg);
+}
+
+.since .moreInner > :first-child {
+  margin-top: 8px;
+}
+
+.diff {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+}
+
+.diffRow {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--v3-border);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.diffRow:last-child {
+  border-bottom: 0;
+}
+
+
+
+.diffMain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 12px;
+  min-width: 0;
+}
+
+.diffSubject {
+  font-weight: 500;
+  color: var(--v3-text);
+}
+
+.diffChange {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+
+/* Style by meaning, not by operation: the old value just recedes. */
+.del {
+  color: var(--v3-text-3);
+  text-decoration: line-through;
+  text-decoration-color: var(--v3-text-3);
+  text-decoration-thickness: 1px;
+}
+
+.diffArrow {
+  color: var(--v3-text-3);
+}
+
+.ins {
+  color: var(--v3-text);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+/* Tone rides on a small leading dot, the same state mark the prose uses. */
+.insDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  vertical-align: 0.12em;
+}
+
+.insDot[data-tone="late"] {
+  background: var(--v3-danger);
+}
+
+.insDot[data-tone="you"] {
+  background: var(--v3-accent);
+}
+
+.insDot[data-tone="good"] {
+  background: var(--v3-success);
+}
+
+.diffBy {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  font-size: 12.5px;
+  color: var(--v3-text-3);
+  white-space: nowrap;
+}
+
+.diffBy .avatar_xs {
+  margin: 0 6px 0 0;
+  vertical-align: 0;
+}
+
+/* ── colophon ──────────────────────────────────────────────────── */
+
+.colophon {
+  grid-column: 1;
+  margin-top: 64px;
+  padding-top: 20px;
+  padding-bottom: 96px;
+  border-top: 1px solid var(--v3-border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.colophonNote {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--v3-text-2);
+}
+
+.colophonTools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-left: -8px;
+}
+
+.pop {
+  position: relative;
+}
+
+.colophonBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--v3-radius);
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--v3-text-2);
+  cursor: pointer;
+}
+
+.colophonBtn:hover,
+.colophonBtn[aria-expanded="true"] {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.colophonChev {
+  width: 14px;
+  height: 14px;
+  color: var(--v3-text-3);
+}
+
+.popMenu {
+  position: absolute;
+  z-index: 40;
+  bottom: calc(100% + 6px);
+  left: 0;
+  width: 290px;
+  padding: 6px;
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-pop);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  animation: popIn 160ms var(--v3-ease) backwards;
+}
+
+.popItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--v3-radius);
+  background: none;
+  font: inherit;
+  text-align: left;
+  color: var(--v3-text);
+  cursor: pointer;
+}
+
+.popItem:hover,
+.popItem:focus-visible {
+  background: var(--v3-hover);
+}
+
+.popItemText {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.popItemName {
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.popItemNote {
+  font-size: 12px;
+  color: var(--v3-text-3);
+}
+
+.popKeys {
+  width: 300px;
+  padding: 12px 14px;
+  gap: 8px;
+}
+
+.popKeyRow {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--v3-text-2);
+}
+
+.popKeyKeys {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.chevUp {
+  transform: rotate(180deg);
+}
+
+/* ── tracked changes navigator ─────────────────────────────────── */
+
+/* Hangs from the top of the reading area, under the running head. */
+.chgNav {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 2;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  transform: translateX(-50%);
+  transition: top 220ms var(--v3-ease);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 4px 4px 12px;
+  border-radius: 999px;
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-pop), inset 0 0 0 1px var(--chg-ink);
+  font-size: 13px;
+  animation: navIn 240ms var(--v3-ease) backwards;
+}
+
+@keyframes navIn {
+  from {
+    opacity: 0;
+    translate: 0 -8px;
+  }
+}
+
+.chgNavSwatch {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-right: 4px;
+  border-radius: 3px;
+  background: var(--v3-warning-soft);
+  box-shadow: inset 0 0 0 1px var(--v3-warning-stroke);
+}
+
+.chgNavText {
+  padding-right: 6px;
+  color: var(--v3-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.chgNavBtn,
+.chgNavDone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  font: inherit;
+  color: var(--v3-text-2);
+  cursor: pointer;
+}
+
+.chgNavBtn {
+  width: 30px;
+}
+
+.chgNavBtn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.chgNavDone {
+  padding: 0 12px;
+  background: var(--v3-fill);
+  font-weight: 500;
+  color: var(--v3-text);
+}
+
+.chgNavBtn:hover,
+.chgNavDone:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.runhead[data-show] .chgNav {
+  top: 56px;
+}
+
+.note > .noteBig:first-child {
+  margin-top: 0;
+}
+
+.noteLabel + .noteBig {
+  margin-top: 2px;
+}
+
+/* ── toast ─────────────────────────────────────────────────────── */
+
+.toast {
+  position: sticky;
+  bottom: 72px;
+  z-index: 45;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  margin: -64px auto 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px 6px 12px;
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-solid);
+  color: var(--v3-on-solid);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+  font-size: 13.5px;
+  animation: toastIn 260ms var(--v3-ease) backwards;
+}
+
+.toastTick {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--v3-success);
+}
+
+.toastText {
+  min-width: 0;
+  padding: 5px 0;
+}
+
+.toastUndo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 6px 0 10px;
+  border: 0;
+  border-radius: var(--v3-radius);
+  background: color-mix(in srgb, var(--v3-on-solid) 14%, transparent);
+  color: var(--v3-on-solid);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.toastUndo:hover {
+  background: color-mix(in srgb, var(--v3-on-solid) 22%, transparent);
+}
+
+/* ── motion ────────────────────────────────────────────────────── */
+
+@keyframes rewrite {
+  from {
+    opacity: 0;
+    filter: blur(3px);
+  }
+}
+
+/* The rewrite: the old clause leaves, the new one writes in under a marker. */
+.rwOut {
+  animation: rwOut 160ms var(--v3-ease) forwards;
+}
+
+.rwIn {
+  --mk: var(--v3-warning-soft);
+  border-radius: 0.1em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  animation:
+    rwIn 440ms var(--v3-ease) backwards,
+    marker 1400ms var(--v3-ease) forwards;
+}
+
+@keyframes rwOut {
+  to {
+    opacity: 0;
+    filter: blur(4px);
+  }
+}
+
+@keyframes rwIn {
+  from {
+    opacity: 0;
+    filter: blur(5px);
+  }
+}
+
+/* An inset shadow sweeps left to right across each line, holds, and then
+   settles to nothing. Offsets past the line width are clipped to it. */
+@keyframes marker {
+  0% {
+    box-shadow: inset 0 0 0 0 var(--mk);
+  }
+  32% {
+    box-shadow: inset 40em 0 0 0 var(--mk);
+  }
+  62% {
+    box-shadow: inset 40em 0 0 0 var(--mk);
+  }
+  100% {
+    box-shadow: inset 40em 0 0 0 transparent;
+  }
+}
+
+@keyframes sweep {
+  from {
+    background-color: transparent;
+  }
+}
+
+@keyframes flash {
+  0%,
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.97);
+  }
+}
+
+@keyframes sheetIn {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+}
+
+@keyframes grow {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+@keyframes rwFade {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes rwFadeIn {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes unclip {
+  to {
+    overflow: visible;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page {
+    scroll-behavior: auto;
+  }
+
+  .rw,
+  .body,
+  .card,
+  .chgOn,
+  .toast,
+  .sparkBar,
+  .scopeMenu {
+    animation-duration: 1ms;
+    animation-delay: 0ms;
+  }
+
+  /* A plain crossfade, with no blur and no sweep. */
+  .rwOut {
+    animation: rwFade 200ms linear forwards;
+  }
+
+  .rwIn {
+    animation:
+      rwFadeIn 240ms linear backwards,
+      marker 1ms linear forwards;
+  }
+
+  .more,
+  .more[data-open],
+  .runheadInner,
+  .loadOpen,
+  .loadWeek {
+    transition-duration: 1ms;
+    transition-delay: 0ms;
+  }
+}
+
+/* In the brief edition, tall notes step aside so the column stays short. */
+@media (min-width: 1101px) and (prefers-reduced-motion: no-preference) {
+  .row:not([data-brief]) .rail {
+    animation: fadeIn 360ms 180ms var(--v3-ease) backwards;
+  }
+}
+
+@media (min-width: 1101px) {
+  .row[data-brief] .rail {
+    display: none;
+  }
+}
+
+/* ── narrower screens: the rail folds into footnotes ───────────── */
+
+@media (max-width: 1100px) {
+  .sheet {
+    max-width: calc(var(--col) + 80px);
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mastRail {
+    grid-column: 1;
+    margin-top: 20px;
+  }
+
+  .rail {
+    grid-column: 1;
+    display: none;
+    margin-top: 10px;
+    padding: 16px;
+    border-radius: var(--v3-radius-lg);
+    background: var(--v3-sunken);
+    box-shadow: inset 0 0 0 1px var(--v3-border);
+    animation: popIn 200ms var(--v3-ease) backwards;
+  }
+
+  .rail[data-open] {
+    display: block;
+  }
+
+  .footChip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    margin-top: 12px;
+    padding: 0 8px 0 10px;
+    border: 1px solid var(--v3-border);
+    border-radius: 999px;
+    background: var(--v3-surface);
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--v3-text-2);
+    cursor: pointer;
+  }
+
+  .footChip[aria-expanded="true"] {
+    background: var(--v3-fill);
+    color: var(--v3-text);
+  }
+
+  .footMark {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--v3-accent);
+  }
+
+  .footChevron {
+    width: 14px;
+    height: 14px;
+    color: var(--v3-text-3);
+    transition: transform 160ms var(--v3-ease);
+  }
+
+  .footChip[aria-expanded="true"] .footChevron {
+    transform: rotate(180deg);
+  }
+}
+
+@media (max-width: 760px) {
+  .page {
+    --hang: 0px;
+  }
+
+  .sheet {
+    padding: 28px 16px 24px;
+  }
+
+  .sheet[data-calm] {
+    padding-top: 56px;
+  }
+
+  .lede {
+    font-size: 26px;
+    line-height: 1.2;
+    letter-spacing: -0.022em;
+  }
+
+  .sheet[data-calm] .lede {
+    font-size: 30px;
+  }
+
+  .toolbar {
+    margin-top: 22px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .controls {
+    justify-content: space-between;
+  }
+
+  .prose {
+    font-size: 16.5px;
+    line-height: 1.6;
+  }
+
+  .row {
+    margin-top: 48px;
+  }
+
+  .h2 {
+    font-size: 19px;
+  }
+
+  .decision {
+    padding-left: 30px;
+  }
+
+  .decision::before,
+  .doneTick {
+    left: 0;
+  }
+
+  .dispatchHead .tileLg {
+    position: static;
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+    border-radius: 8px;
+  }
+
+  .diffRow {
+    grid-template-columns: 20px minmax(0, 1fr);
+  }
+
+  .cardActions .kbd {
+    display: none;
+  }
+
+  .diffBy {
+    grid-column: 2;
+  }
+
+  .scopeSlash,
+  .scopeAlt {
+    display: none;
+  }
+
+  .toast {
+    bottom: 16px;
+  }
+}
+
+/* On a phone the hover card becomes a bottom sheet. */
+@media (max-width: 640px) {
+  .scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    background: var(--v3-scrim);
+    animation: fadeIn 200ms var(--v3-ease) backwards;
+  }
+
+  .card,
+  .card[data-up],
+  .card[data-right] {
+    position: fixed;
+    z-index: 61;
+    top: auto;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    width: auto;
+    padding: 18px 18px 14px;
+    border-radius: var(--v3-radius-xl);
+    font-size: 14px;
+    animation: sheetIn 280ms var(--v3-ease) backwards;
+  }
+
+  .cardClose {
+    display: inline-flex;
+  }
+
+  .cardActions {
+    margin-top: 18px;
+  }
+
+  .cardPrimary,
+  .cardSecondary {
+    flex: 1;
+    justify-content: center;
+    height: 44px;
+    font-size: 14px;
+  }
+
+  .cardPrimary .kbd,
+  .cardSecondary .kbd,
+  .actHint {
+    display: none;
+  }
+}

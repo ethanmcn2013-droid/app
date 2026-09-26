@@ -1,0 +1,50 @@
+/* Mini preview pages. Local paper tokens keep thumbnails calm in both themes. */
+.page {
+  --pv-paper: #ffffff;
+  --pv-ink: #2a2926;
+  --pv-line: #c9c6c0;
+  --pv-line-soft: #e4e1dc;
+  --pv-gold: #b88a3e;
+  --pv-sign: #2c4a8a;
+  --pv-blueprint: #f6f8fb;
+  --pv-grid: #e3e8f0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+:global(html[data-theme="dark"]) .page {
+  --pv-paper: #26262a;
+  --pv-ink: #e4e4e8;
+  --pv-line: #5b5b62;
+  --pv-line-soft: #3b3b41;
+  --pv-gold: #d2a95d;
+  --pv-sign: #9db6f0;
+  --pv-blueprint: #202329;
+  --pv-grid: #2b3038;
+}
+
+.title {
+  font: 600 11px/1 var(--font-sans, system-ui), system-ui, sans-serif;
+}
+
+.serif {
+  font: italic 500 13px/1 Georgia, "Times New Roman", serif;
+}
+
+.serifSmall {
+  font: 500 10px/1 Georgia, "Times New Roman", serif;
+  letter-spacing: 0.02em;
+}
+
+.small {
+  font: 600 8px/1 system-ui, sans-serif;
+}
+
+.tiny {
+  font: 600 7px/1 system-ui, sans-serif;
+}
+
+.micro {
+  font: 500 5px/1 system-ui, sans-serif;
+}

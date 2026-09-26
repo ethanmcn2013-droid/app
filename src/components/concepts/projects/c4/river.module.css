@@ -1,0 +1,650 @@
+/* Phone: the map turns into a river, time running top to bottom. */
+
+.river {
+  --c4-good: var(--v3-success);
+  --c4-watch: var(--v3-warning-stroke);
+  --c4-help: var(--v3-danger);
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 16px 32px;
+  background: var(--v3-canvas);
+  color: var(--v3-text);
+}
+
+.head {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  margin: 0 -16px;
+  padding: 18px 16px 10px;
+  background: color-mix(in srgb, var(--v3-canvas) 92%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--v3-border);
+}
+
+.h1 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.reading {
+  margin: 2px 0 0;
+  font-size: 13.5px;
+  color: var(--v3-text-2);
+}
+
+.crunchWord {
+  color: var(--v3-warning-text);
+  font-weight: 600;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.segmented {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border-radius: 10px;
+  background: var(--v3-sunken);
+  border: 1px solid var(--v3-border);
+}
+
+.seg {
+  height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--v3-text-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.seg[aria-pressed="true"] {
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  box-shadow: var(--v3-shadow-1), 0 0 0 1px var(--v3-border);
+}
+
+.seg:focus-visible,
+.listBtn:focus-visible,
+.rowBtn:focus-visible,
+.pastRow:focus-visible,
+.openBtn:focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: 2px;
+}
+
+.listBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--v3-border);
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.key {
+  display: flex;
+  gap: 14px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--v3-text-2);
+}
+
+.keyItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.past {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: var(--v3-radius-lg);
+  border: 1px dashed var(--v3-border-strong);
+  background: color-mix(in srgb, var(--v3-text) 2.5%, transparent);
+}
+
+.pastTitle {
+  margin: 0 0 4px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--v3-text-2);
+}
+
+.pastRow,
+.undatedRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--v3-text);
+  font: inherit;
+  text-align: left;
+}
+
+.pastName {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pastMeta {
+  font-size: 12.5px;
+  color: var(--v3-danger-text);
+  white-space: nowrap;
+}
+
+.undatedRow .pastMeta {
+  color: var(--v3-text-3);
+}
+
+.flow {
+  position: relative;
+  padding-top: 8px;
+  touch-action: pan-y;
+}
+
+.track {
+  position: absolute;
+  top: 18px;
+  bottom: 0;
+  left: 8px;
+  width: 52px;
+  pointer-events: none;
+}
+
+.track span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 2px;
+}
+
+.track span[data-col="0"] {
+  left: 10px;
+  background: color-mix(in srgb, var(--v3-success) 30%, transparent);
+}
+
+.track span[data-col="1"] {
+  left: 26px;
+  background: color-mix(in srgb, var(--v3-warning) 38%, transparent);
+}
+
+.track span[data-col="2"] {
+  left: 42px;
+  background: color-mix(in srgb, var(--v3-danger) 30%, transparent);
+}
+
+.today {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 30px;
+}
+
+.today::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  background: var(--v3-accent);
+  border-radius: 2px;
+}
+
+.todayDot {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  margin-left: 29px;
+  border-radius: 50%;
+  background: var(--v3-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--v3-accent) 22%, transparent);
+}
+
+.todayText {
+  position: relative;
+  margin-left: 30px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--v3-on-accent);
+  background: var(--v3-accent);
+}
+
+.month {
+  position: relative;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  padding-left: 72px;
+}
+
+.month::before {
+  content: "";
+  position: absolute;
+  left: 60px;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--v3-border-strong);
+}
+
+.month span {
+  position: relative;
+  padding-right: 8px;
+  font-size: 13px;
+  font-weight: 650;
+  background: var(--v3-canvas);
+}
+
+.crunch {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-left: 64px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--v3-warning-text);
+  background: color-mix(in srgb, var(--v3-warning) 16%, var(--v3-surface));
+  box-shadow: 0 0 24px 2px color-mix(in srgb, var(--v3-warning) 20%, transparent);
+}
+
+.crunch svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+.crunch strong {
+  display: block;
+  font-weight: 650;
+}
+
+.row {
+  position: relative;
+  border-radius: 12px;
+}
+
+.row[data-crunch]::before {
+  content: "";
+  position: absolute;
+  inset: -4px 0 -4px 60px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--v3-warning) 9%, transparent);
+  pointer-events: none;
+}
+
+.row[data-open] {
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-pop);
+}
+
+.rowBtn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 70px;
+  padding: 8px 8px 8px 72px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: var(--v3-text);
+  font: inherit;
+  text-align: left;
+}
+
+.marker {
+  position: absolute;
+  top: calc(50% - var(--r));
+  width: calc(var(--r) * 2);
+  height: calc(var(--r) * 2);
+}
+
+.marker > svg {
+  position: relative;
+}
+
+.spanBar {
+  position: absolute;
+  left: calc(var(--r) - 3px);
+  top: var(--r);
+  width: 6px;
+  border-radius: 6px;
+  opacity: 0.45;
+}
+
+.rowText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.rowLine1 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rowName {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.005em;
+}
+
+.overdue {
+  flex: none;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--v3-danger-text);
+}
+
+.rowLine2 {
+  font-size: 12.5px;
+  color: var(--v3-text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.rowLine2 strong {
+  color: var(--v3-text);
+  font-weight: 600;
+}
+
+.rowLine3 {
+  font-size: 12.5px;
+  color: var(--v3-text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowEnd {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.chev {
+  color: var(--v3-text-3);
+  transition: transform 200ms var(--v3-ease);
+}
+
+.row[data-open] .chev {
+  transform: rotate(90deg);
+}
+
+.expand {
+  overflow: hidden;
+}
+
+.expandInner {
+  padding: 0 14px 16px;
+}
+
+.expandHead {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.signal {
+  font-size: 13px;
+  color: var(--v3-text-2);
+  line-height: 1.4;
+}
+
+.openBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 44px;
+  margin-top: 8px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--v3-accent);
+  color: var(--v3-on-accent);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.undated {
+  margin-top: 24px;
+  padding: 10px 12px;
+  border-radius: var(--v3-radius-lg);
+  border: 1px solid var(--v3-border);
+  background: var(--v3-sunken);
+}
+
+.pinchHint {
+  margin: 16px 0 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--v3-text-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chev {
+    transition: none;
+  }
+}
+
+/* ── one sentence for the crunch, as on the map ─────────────────────── */
+
+.crunchLine {
+  display: block;
+  margin-top: 2px;
+  color: var(--v3-warning-text);
+  font-weight: 600;
+}
+
+.month {
+  scroll-margin-top: 200px;
+}
+
+/* ── Months: an overview, one row a month ───────────────────────────── */
+
+.months {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.monthRow {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 12px 12px 14px;
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.monthRow:focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: 2px;
+}
+
+.monthHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.monthName {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.monthCount {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--v3-text-2);
+  background: var(--v3-fill);
+  font-variant-numeric: tabular-nums;
+}
+
+.monthHead .chev {
+  margin-left: auto;
+}
+
+.strip {
+  position: relative;
+  height: 26px;
+  border-radius: 7px;
+  background: var(--v3-sunken);
+  overflow: visible;
+}
+
+.stripWeek {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid var(--v3-border);
+}
+
+.stripWeek:first-child {
+  border-left: 0;
+}
+
+.stripWeek[data-hot] {
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--v3-warning) 30%, transparent);
+  box-shadow: inset 0 -2px 0 var(--v3-warning-stroke);
+}
+
+.stripPast {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 7px 0 0 7px;
+  background-image: repeating-linear-gradient(135deg, color-mix(in srgb, var(--v3-text) 10%, transparent) 0 1px, transparent 1px 5px);
+}
+
+.stripDot {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: var(--dot);
+  box-shadow: 0 0 0 2px var(--v3-surface);
+  transform: translateY(var(--lift, 0));
+}
+
+.monthSummary {
+  font-size: 12.5px;
+  color: var(--v3-text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.monthCrunch {
+  color: var(--v3-warning-text);
+  font-weight: 600;
+}
+
+/* ── an open card keeps the lanes running past it ──────────────────── */
+
+.openSpines {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 8px;
+  width: 52px;
+  pointer-events: none;
+}
+
+.openSpines span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 2px;
+  opacity: 0.45;
+}
+
+.openSpines span[data-own] {
+  opacity: 1;
+}
+
+.openSpines span[data-col="0"] {
+  left: 10px;
+  background: color-mix(in srgb, var(--v3-success) 55%, transparent);
+}
+
+.openSpines span[data-col="1"] {
+  left: 26px;
+  background: color-mix(in srgb, var(--v3-warning) 65%, transparent);
+}
+
+.openSpines span[data-col="2"] {
+  left: 42px;
+  background: color-mix(in srgb, var(--v3-danger) 55%, transparent);
+}
+
+.row[data-open] .expandInner {
+  padding-left: 64px;
+}
