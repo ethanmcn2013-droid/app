@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { boundedResponseText, dryRunHostedWorkload, runHostedWorkload, sessionCleanupAccepted, validateHostedEnvelope, validateHostedHtml } from "./hosted-workload";
+import { boundedResponseText, dryRunHostedWorkload, reconcileHostedEffects, runHostedWorkload, sessionCleanupAccepted, validateHostedEnvelope, validateHostedHtml } from "./hosted-workload";
 import { hostedTargetHash, type HostedFixture } from "./hosted-seed";
 
 function fixture() {
@@ -54,5 +54,18 @@ test("workload acceptance requires all created sessions to be revoked", () => {
   assert.equal(sessionCleanupAccepted(complete), true);
   assert.equal(sessionCleanupAccepted({ ...complete, ok: false }), false);
   assert.equal(sessionCleanupAccepted({ ...complete, revoked: 9, unresolved: 1 }), false);
+  assert.equal(sessionCleanupAccepted({ ...complete, attempted: 0, revoked: 0 }), false);
   assert.equal(sessionCleanupAccepted({ ...complete, errors: [{ code: "CLERK_REVOKE_FAILED", actorHash: "sha256:" + "0".repeat(64) }] }), false);
+});
+
+test("database reconciliation reports each real verification query, excluding unacknowledged operations", async () => {
+  let calls = 0;
+  const client = { execute: async () => { calls++; return { rows: [{ id: `effect-${calls}`, workspace_id: "synthetic-project" }] }; } };
+  const observations = ["one", "two", "three"].map((id) => ({ logicalOperationId: id, acknowledged: id !== "three", effectIds: [], actualProjectIds: [] }));
+  const requests = new Map(["one", "two", "three"].map((id) => [id, { actorId: "synthetic-actor", requestId: id,
+    conversationId: "conversation", projectId: "synthetic-project", task: id === "two" }]));
+  const counted = await reconcileHostedEffects(client as never, observations as never, requests);
+  assert.equal(counted, 2);
+  assert.equal(calls, 2);
+  assert.deepEqual(observations[2].effectIds, []);
 });

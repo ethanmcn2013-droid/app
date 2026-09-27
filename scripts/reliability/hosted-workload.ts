@@ -23,7 +23,7 @@ const ERROR_CODES = new Set(["unavailable", "unauthenticated", "temporarily_unav
 
 export function sessionCleanupAccepted(receipt: SessionCleanupReceipt) {
   return receipt.ok === true && receipt.unresolved === 0 && receipt.errors.length === 0 &&
-    Number.isSafeInteger(receipt.attempted) && receipt.attempted >= 0 && receipt.attempted <= 10 && receipt.revoked === receipt.attempted;
+    Number.isSafeInteger(receipt.attempted) && receipt.attempted === 10 && receipt.revoked === 10;
 }
 
 export function dryRunHostedWorkload(manifest: HostedManifest, fixture: HostedFixture) {
@@ -93,9 +93,11 @@ function requestForSlot(slot: Slot, room: HostedFixture["rooms"][number], fixtur
 
 /** Resolve each acknowledged logical write through the exact committed source and request receipt. */
 export async function reconcileHostedEffects(client: Client, observations: Observation[], requests: Map<string, { actorId: string; requestId: string; conversationId: string; projectId: string; task: boolean }>) {
+  let verificationQueries = 0;
   for (const [id, request] of requests) {
     const attempts = observations.filter((observation) => observation.logicalOperationId === id);
     if (!attempts.some((observation) => observation.acknowledged)) continue;
+    verificationQueries++;
     const result = request.task ? await client.execute({ sql: `SELECT t.id,t.workspace_id FROM work_operation_receipts r JOIN tasks t ON t.id=r.task_id JOIN work_links l ON l.id=r.work_link_id AND l.task_id=t.id
       WHERE r.actor_id=? AND r.client_request_id=? AND r.source_conversation_id=?`, args: [request.actorId, request.requestId, request.conversationId] }) :
       await client.execute({ sql: `SELECT m.id,m.workspace_id FROM conversation_receipts r JOIN conversation_messages m ON m.id=r.message_id AND m.conversation_id=r.conversation_id
@@ -104,6 +106,7 @@ export async function reconcileHostedEffects(client: Client, observations: Obser
     const actualProjectIds = result.rows.map((row) => String(row.workspace_id));
     for (const attempt of attempts) { attempt.effectIds = effectIds; attempt.actualProjectIds = actualProjectIds; }
   }
+  return verificationQueries;
 }
 
 /** Execution is dormant until root supplies an attested runtime and explicit authorization. */
@@ -132,10 +135,10 @@ export async function runHostedWorkload(input: HostedInput) {
     let verificationQueries = 0;
     let mutationSourceIndex = 0;
     let negativeScopeProof = false;
-    let summary: { completed: boolean; appRequests: number; droppedIterations: number; outputDirectory: string; identityTraffic: unknown; sessionCleanup?: SessionCleanupReceipt } | undefined;
+    let summary: { completed: boolean; appRequests: number; actualAppTransportRequests: number; droppedIterations: number; outputDirectory: string; identityTraffic: unknown; sessionCleanup?: SessionCleanupReceipt } | undefined;
     const flush = async (repetition: number, complete: boolean) => {
       const current = observations.filter((observation) => observation.logicalOperationId.startsWith(`${repetition}:`));
-      await reconcileHostedEffects(client, current, requests);
+      verificationQueries += await reconcileHostedEffects(client, current, requests);
       const expected = expectedOperations.filter((operation) => operation.id.startsWith(`${repetition}:`));
       const correctness = reconcileRun({ manifest: { ...input.manifest, measuredDurationSeconds: (WORKLOAD.warmupMs + WORKLOAD.measuredMs) / 1_000 }, observations: current, expectedOperations: expected,
         scheduledRequestCount: dryRun.schedule.events.filter((event) => event.repetition === repetition).length, requestCap: WORKLOAD.totalRequestCap });
@@ -153,7 +156,8 @@ export async function runHostedWorkload(input: HostedInput) {
       if (visibilityP95 !== null && visibilityP95 > 1_500) reconciliation.findings.push({ code: "MESSAGE_VISIBILITY_LATENCY_BREACH", detail: `observed p95 ${visibilityP95}ms exceeds 1500ms` });
       reconciliation.ok = reconciliation.findings.length === 0;
       const receipt = { repetition, complete, acceptancePendingSessionCleanup: true, evidenceScope: input.manifest.executionMode, runtime: input.manifest.runtime,
-        appRequests, droppedIterations, verificationQueries, negativeScopeProof, observations: current, reconciliation, allWritesCorrectness: correctness,
+        appRequests, actualAppTransportRequests: (manager.getMetrics() as { app?: { requests?: number } }).app?.requests ?? 0,
+        droppedIterations, verificationQueries, negativeScopeProof, observations: current, reconciliation, allWritesCorrectness: correctness,
         messageVisibility: { samples: visible.length, p95InitiationMs: visibilityP95, missing: waiting, timings: visible },
         identityTraffic: manager.getMetrics(), limitations: dryRun.limitations, runtimeIdentity: input.manifest.environment.identity };
       await writeFile(join(input.outputDirectory, `run-${repetition}.json`), JSON.stringify(receipt, null, 2));
@@ -267,7 +271,9 @@ export async function runHostedWorkload(input: HostedInput) {
       }
       await Promise.all(inFlight);
       const final = await flush(repetition, !fatal && repetition === 3);
-      summary = { completed: !fatal && repetition === 3 && final.ok && droppedIterations === 0, appRequests, droppedIterations, outputDirectory: input.outputDirectory, identityTraffic: manager.getMetrics() };
+      summary = { completed: !fatal && repetition === 3 && final.ok && droppedIterations === 0, appRequests,
+        actualAppTransportRequests: (manager.getMetrics() as { app?: { requests?: number } }).app?.requests ?? 0,
+        droppedIterations, outputDirectory: input.outputDirectory, identityTraffic: manager.getMetrics() };
     } finally {
       try {
         const cleanup = await manager.cleanup();
@@ -276,6 +282,7 @@ export async function runHostedWorkload(input: HostedInput) {
           summary.sessionCleanup = cleanup;
           summary.completed &&= sessionCleanupAccepted(cleanup);
           summary.identityTraffic = manager.getMetrics();
+          summary.actualAppTransportRequests = (summary.identityTraffic as { app?: { requests?: number } }).app?.requests ?? 0;
           await writeFile(join(input.outputDirectory, "summary.json"), JSON.stringify({ ...summary, evidenceScope: input.manifest.executionMode, runtime: input.manifest.runtime }, null, 2));
         }
       } finally { client.close(); }
