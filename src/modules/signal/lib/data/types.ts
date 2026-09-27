@@ -35,7 +35,7 @@ export interface ProjectRead {
   members: UserRef[];
   /** Always null in v1, Tasks doesn't model project-level deadlines. */
   deadline: string | null;
-  /** Max task.updatedAt across tasks bearing this tag, ISO. */
+  /** Max task activity proxy across tasks bearing this tag, ISO. */
   lastActivityAt: string;
   /** Min task.createdAt across tasks bearing this tag, ISO. */
   createdAt: string;
@@ -63,9 +63,9 @@ export interface TaskRead {
   dueDate: string | null;
   /** Other task ids that block this one. */
   blockedBy: string[];
-  /** Most recent status change, ISO. */
+  /** Legacy update-time proxy, ISO; does not prove a status transition. */
   lastStatusChangeAt: string;
-  /** Most recent activity timestamp, ISO. */
+  /** Update-time proxy advanced by valid recorded comments, ISO; history is not complete. */
   lastActivityAt: string;
   /** ISO timestamp when the task was created. */
   createdAt: string;

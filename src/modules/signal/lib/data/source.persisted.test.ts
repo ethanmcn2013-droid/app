@@ -74,9 +74,148 @@ test("raw done excluded by configured doneKeys remains open", async () => {
   assert.notEqual((await readTask("configured", "raw-done")).status, "shipped");
 });
 test("review stays review while dependency identifiers remain available", async () => {
-  await workspace("review"); await task("review", "review-task", { lane: "review", blocked: ["dependency"] });
+  await workspace("review"); await task("review", "dependency", { lane: "doing" }); await task("review", "review-task", { lane: "review", blocked: ["dependency"] });
   const row = await readTask("review", "review-task");
   assert.deepEqual({ status: row.status, blockedBy: row.blockedBy }, { status: "review", blockedBy: ["dependency"] });
+});
+
+test("completed dependencies clear without changing historical task timestamps", async () => {
+  await workspace("dependency-clear");
+  await task("dependency-clear", "clear-upstream", { completed: NOW - DAY });
+  await task("dependency-clear", "clear-dependent", { lane: "doing", blocked: ["clear-upstream"] });
+  const row = await readTask("dependency-clear", "clear-dependent");
+  assert.equal(row.status, "in-flight"); assert.deepEqual(row.blockedBy, []);
+  assert.equal(row.lastStatusChangeAt, new Date(NOW - 3_600_000).toISOString());
+  assert.equal(row.lastActivityAt, row.lastStatusChangeAt);
+  await fixture.client.execute("UPDATE tasks SET lane='doing' WHERE id='clear-upstream'");
+  const reopened = await readTask("dependency-clear", "clear-dependent");
+  assert.equal(reopened.status, "blocked"); assert.deepEqual(reopened.blockedBy, ["clear-upstream"]);
+});
+
+test("later validated comment creation advances only activity proxy", async () => {
+  await workspace("comment-evidence"); await task("comment-evidence", "comment-target", { lane: "doing", updated: NOW - 10 * DAY });
+  await event("comment-evidence", "comment-target", "real-comment", NOW - DAY, "commentAdd", { kind: "commentAdd", commentId: "comment-proof" });
+  const row = await readTask("comment-evidence", "comment-target");
+  assert.equal(row.lastActivityAt, new Date(NOW - DAY).toISOString());
+  assert.equal(row.lastStatusChangeAt, new Date(NOW - 10 * DAY).toISOString());
+  assert.deepEqual(row.blockedBy, []); assert.equal(row.status, "in-flight");
+});
+
+for (const fault of ["older", "equal", "foreign", "mismatched-column", "mismatched-payload", "deleted", "missing-id", "numeric-id", "malformed", "future", "precreation", "invalid-time"] as const) {
+  test(`comment evidence excludes ${fault} without moving activity backward`, async () => {
+    const id = `comment-${fault}`; await task("comment-evidence", id, { lane: "doing", updated: NOW - 10 * DAY });
+    const at = fault === "older" ? NOW - 20 * DAY : fault === "equal" ? NOW - 10 * DAY : fault === "future" ? NOW + DAY : fault === "precreation" ? NOW - 50 * DAY : NOW - DAY;
+    const eventId = `${id}-event`;
+    await event(fault === "foreign" ? "foreign-workspace" : "comment-evidence", id, eventId, at, fault === "mismatched-column" ? "update" : "commentAdd", { kind: fault === "deleted" ? "commentRemove" : fault === "mismatched-payload" ? "update" : "commentAdd", commentId: fault === "missing-id" ? " " : fault === "numeric-id" ? 17 : "valid-comment" });
+    if (fault === "malformed") await fixture.client.execute({ sql: "UPDATE activities SET payload='{broken' WHERE id=?", args: [eventId] });
+    if (fault === "invalid-time") await fixture.client.execute({ sql: "UPDATE activities SET created_at='invalid' WHERE id=?", args: [eventId] });
+    const row = await readTask("comment-evidence", id);
+    assert.equal(row.lastActivityAt, new Date(NOW - 10 * DAY).toISOString());
+    assert.equal(row.lastStatusChangeAt, row.lastActivityAt);
+  });
+}
+
+test("invalid latest comment cannot evict earlier eligible positive evidence", async () => {
+  await task("comment-evidence", "comment-valid-earlier", { lane: "doing", updated: NOW - 10 * DAY });
+  await event("comment-evidence", "comment-valid-earlier", "comment-eligible", NOW - 2 * DAY, "commentAdd", { kind: "commentAdd", commentId: "valid" });
+  await event("comment-evidence", "comment-valid-earlier", "comment-ineligible", NOW + DAY, "commentAdd", { kind: "commentAdd", commentId: "future" });
+  assert.equal((await readTask("comment-evidence", "comment-valid-earlier")).lastActivityAt, new Date(NOW - 2 * DAY).toISOString());
+});
+
+test("invalid future activity proxy or creation never permits comment fallback", async () => {
+  await task("comment-evidence", "comment-future-proxy", { lane: "doing", updated: NOW + DAY });
+  await event("comment-evidence", "comment-future-proxy", "future-proxy-event", NOW - DAY, "commentAdd", { kind: "commentAdd", commentId: "valid" });
+  assert.equal((await readTask("comment-evidence", "comment-future-proxy")).lastActivityAt, new Date(NOW + DAY).toISOString());
+  await task("comment-evidence", "comment-future-creation", { lane: "doing", updated: NOW - 10 * DAY });
+  await fixture.client.execute({ sql: "UPDATE tasks SET created_at=? WHERE id='comment-future-creation'", args: [(NOW + DAY) / 1000] });
+  await event("comment-evidence", "comment-future-creation", "future-creation-event", NOW - DAY, "commentAdd", { kind: "commentAdd", commentId: "valid" });
+  assert.equal((await readTask("comment-evidence", "comment-future-creation")).lastActivityAt, new Date(NOW - 10 * DAY).toISOString());
+});
+
+test("comment evidence query failure rejects the whole read", async () => {
+  const raw = clientModule.getTasksClient(); assert.ok(raw); const original = raw.execute;
+  raw.execute = async (...args: Parameters<typeof raw.execute>) => {
+    const input: unknown = args[0], query = typeof input === "string" ? input : (input as { sql: string }).sql;
+    if (/MAX\(a.created_at\)/.test(query)) throw new Error("synthetic comment evidence unavailable");
+    return original.apply(raw, args);
+  };
+  try { await assert.rejects(source.tasksDbSource.read("comment-evidence")); }
+  finally { raw.execute = original; }
+});
+
+test("configured terminal dependencies clear but configured raw done remains a blocker", async () => {
+  await workspace("dependency-configured", acceptedConfig);
+  await task("dependency-configured", "configured-upstream", { lane: "doing", column: "accepted" });
+  await task("dependency-configured", "configured-open-upstream");
+  await task("dependency-configured", "configured-dependent", { lane: "review", blocked: ["configured-upstream", "configured-open-upstream"] });
+  const row = await readTask("dependency-configured", "configured-dependent");
+  assert.equal(row.status, "review"); assert.deepEqual(row.blockedBy, ["configured-open-upstream"]);
+});
+
+test("archived and child terminal dependencies clear without becoming visible rows", async () => {
+  await workspace("dependency-hidden");
+  await task("dependency-hidden", "hidden-dependent", { lane: "doing", blocked: ["hidden-archived", "hidden-child"] });
+  await task("dependency-hidden", "hidden-archived", { archived: NOW - DAY });
+  await task("dependency-hidden", "hidden-child", { parent: "hidden-dependent" });
+  const read = await source.tasksDbSource.read("dependency-hidden");
+  assert.deepEqual(read.tasks.map(row => row.id), ["hidden-dependent"]);
+  assert.deepEqual(read.tasks[0].blockedBy, []); assert.equal(read.tasks[0].status, "in-flight");
+});
+
+test("cleared dependencies do not release an explicit waiting column", async () => {
+  await workspace("dependency-waiting"); await task("dependency-waiting", "waiting-upstream");
+  await task("dependency-waiting", "waiting-dependent", { lane: "doing", column: "waiting", blocked: ["waiting-upstream"] });
+  const row = await readTask("dependency-waiting", "waiting-dependent");
+  assert.equal(row.status, "blocked"); assert.deepEqual(row.blockedBy, []);
+});
+
+for (const fault of ["missing", "foreign", "mixed", "malformed"] as const) {
+  test(`unknown ${fault} dependencies reject open-source claims`, async () => {
+    const id = `dependency-unknown-${fault}`; await workspace(id);
+    await task(id, `${id}-done`);
+    if (fault === "foreign") {
+      await workspace(`${id}-foreign`); await task(`${id}-foreign`, `${id}-unresolved`);
+    }
+    await task(id, `${id}-dependent`, { lane: "review", blocked: fault === "mixed" ? [`${id}-done`, `${id}-unresolved`] : [`${id}-unresolved`] });
+    if (fault === "malformed") await fixture.client.execute({ sql: "UPDATE tasks SET blocked_by=? WHERE id=?", args: [JSON.stringify([null, 17, ""]), `${id}-dependent`] });
+    await assert.rejects(source.tasksDbSource.read(id), /Signal dependency state unavailable/);
+  });
+}
+
+test("unknown dependencies on already terminal work do not invent an open dependency claim", async () => {
+  await workspace("dependency-terminal-unknown"); await task("dependency-terminal-unknown", "terminal-unknown", { blocked: ["absent"] });
+  assert.equal((await readTask("dependency-terminal-unknown", "terminal-unknown")).status, "shipped");
+});
+
+test("more than500 hidden dependency targets use bounded scoped terminal-field queries", async () => {
+  const id = "dependency-query-growth"; await workspace(id);
+  const blocked = Array.from({ length: 501 }, (_, index) => `dependency-hidden-${index}`);
+  await fixture.client.batch(blocked.map(target => ({ sql: "INSERT INTO tasks(id,workspace_id,seq,title,lane,priority,assignees,tags,blocked_by,created_at,updated_at,archived_at) VALUES (?,?,?,'Hidden private title','done','p2','[]','[]','[]',?,?,?)", args: [target, id, ++sequence, (NOW - 40 * DAY) / 1000, NOW / 1000, NOW / 1000] })), "write");
+  await task(id, "many-dependencies", { lane: "doing", blocked });
+  const raw = clientModule.getTasksClient(); assert.ok(raw);
+  const original = raw.execute, queries: string[] = [];
+  raw.execute = async (...args: Parameters<typeof raw.execute>) => {
+    const input: unknown = args[0]; queries.push(typeof input === "string" ? input : (input as { sql: string }).sql);
+    return original.apply(raw, args);
+  };
+  try {
+    const read = await source.tasksDbSource.read(id);
+    assert.equal(read.tasks.length, 1); assert.deepEqual(read.tasks[0].blockedBy, []);
+    const dependencyQueries = queries.filter(query => /from "tasks"/.test(query) && !/"title"/.test(query));
+    assert.equal(dependencyQueries.length, 2); assert.equal(queries.length, 5);
+    assert.ok(dependencyQueries.every(query => /"workspace_id"/.test(query) && /"board_column_key"/.test(query)));
+  } finally { raw.execute = original; }
+});
+
+test("dependency terminal lookup failure rejects instead of returning partial edges", async () => {
+  const raw = clientModule.getTasksClient(); assert.ok(raw); const original = raw.execute;
+  raw.execute = async (...args: Parameters<typeof raw.execute>) => {
+    const input: unknown = args[0], query = typeof input === "string" ? input : (input as { sql: string }).sql;
+    if (/from "tasks"/.test(query) && !/"title"/.test(query)) throw new Error("synthetic dependency unavailable");
+    return original.apply(raw, args);
+  };
+  try { await assert.rejects(source.tasksDbSource.read("dependency-hidden")); }
+  finally { raw.execute = original; }
 });
 test("effective custom column overrides a raw review lane", async () => {
   await task("review", "custom-open", { lane: "review", column: "custom-open" });
@@ -251,8 +390,9 @@ test("config and targeted completion reads grow by bounded batches rather than p
     const reads = await source.tasksDbSource.readMany!(ids);
     assert.equal(reads.flatMap(read => read.tasks).length, 501);
     assert.ok(reads.flatMap(read => read.tasks).every(row => row.completedAt === null));
-    assert.equal(queries.length, 4, "one Tasks query, one config query and two <=500-target evidence queries");
+    assert.equal(queries.length, 6, "one Tasks query, one config query, two <=500-target completion queries and two <=500-target comment queries");
     assert.equal(queries.filter(query => /WITH ranked/.test(query)).length, 2);
+    assert.equal(queries.filter(query => /MAX\(a.created_at\)/.test(query)).length, 2);
   } finally { raw.execute = original; }
 });
 test("substantial per-task history reports local cost and returns only newest timestamp groups", async (context) => {
@@ -278,7 +418,7 @@ test("substantial per-task history reports local cost and returns only newest ti
   try {
     const started = performance.now(); const read = await source.tasksDbSource.read(workspaceId); const elapsedMs = performance.now() - started;
     assert.equal(read.tasks.length, 500); assert.ok(read.tasks.every(row => row.completedAt === new Date(NOW - 60_000).toISOString()));
-    assert.equal(queries, 3); assert.equal(historyRows, 500);
+    assert.equal(queries, 4); assert.equal(historyRows, 500);
     context.diagnostic(JSON.stringify({ evidence: "local-history-query-cost", tasks: 500, persistedTransitions: 50_000, queries, historyRows, historyElapsedMs, elapsedMs, limitation: "window ranks matching history; bounded returned evidence does not bound scan work or prove remote latency" }));
   } finally { raw.execute = original; }
 });

@@ -63,10 +63,10 @@ after(() => {
     if (saved[key] === undefined) delete process.env[key]; else process.env[key] = saved[key];
   }
 });
-async function task(id: string, options: { lane?: string; column?: string; completed?: number; archived?: number; parent?: string; blocked?: string[] } = {}) {
+async function task(id: string, options: { lane?: string; column?: string; completed?: number; archived?: number; parent?: string; blocked?: string[]; updated?: number } = {}) {
   await fixture.client.execute({
     sql: "INSERT INTO tasks(id,workspace_id,seq,title,lane,board_column_key,priority,assignees,tags,blocked_by,due_at,created_at,updated_at,completed_at,archived_at,parent_task_id) VALUES (?,?,?,?,?,?,'p2','[]','[]',?,?,?,?,?,?,?)",
-    args: [id, WORKSPACE, (await fixture.client.execute("SELECT COUNT(*) AS count FROM tasks")).rows[0].count as number + 1, id, options.lane ?? "done", options.column ?? null, JSON.stringify(options.blocked ?? []), (NOW - DAY) / 1000, (NOW - 40 * DAY) / 1000, (NOW - 3_600_000) / 1000, options.completed == null ? null : options.completed / 1000, options.archived == null ? null : options.archived / 1000, options.parent ?? null],
+    args: [id, WORKSPACE, (await fixture.client.execute("SELECT COUNT(*) AS count FROM tasks")).rows[0].count as number + 1, id, options.lane ?? "done", options.column ?? null, JSON.stringify(options.blocked ?? []), (NOW - DAY) / 1000, (NOW - 40 * DAY) / 1000, (options.updated ?? NOW - 3_600_000) / 1000, options.completed == null ? null : options.completed / 1000, options.archived == null ? null : options.archived / 1000, options.parent ?? null],
   });
 }
 async function build() {
@@ -102,10 +102,56 @@ test("actual Home recognizes configured terminal as finished", async () => {
   const view = await home(); assert.deepEqual({ open: view.stats.open, done: view.stats.doneThisWeek }, { open: 0, done: 1 });
 });
 test("actual Home preserves review even with dependencies", async () => {
+  await task("dependency", { lane: "doing" });
   await task("review", { lane: "review", blocked: ["dependency"] });
   const view = await home(); assert.equal(view.stats.inReview, 1);
-  assert.equal((await build()).signals[0].lane, "review");
+  assert.equal((await build()).signals.find(row => row.id === "review")?.lane, "review");
 });
+
+test("completed hidden dependency stops stale blocked claims in actual Home and legacy ledger", async () => {
+  await task("cleared-upstream", { completed: NOW - 10 * DAY, archived: NOW - DAY });
+  await task("dependent", { lane: "doing", blocked: ["cleared-upstream"], updated: NOW - 10 * DAY });
+  await fixture.client.execute("UPDATE tasks SET due_at=NULL WHERE id='dependent'");
+  const beforeHashes = await hashes(), result = await build(), view = await home();
+  assert.deepEqual(result.signals.map(row => ({ id: row.id, blockedBy: row.blockedBy })), [{ id: "dependent", blockedBy: [] }]);
+  assert.equal(view.stats.open, 1); assert.ok(view.signalRows.every(row => row.trigger !== "blocked-too-long"));
+  const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", scopeLabel: result.authorizedScope.label, scopeKind: "workspace", allowedAppOrigin: "https://app.signalstudio.ie" });
+  assert.doesNotMatch(JSON.stringify(ledger), /upstream|cleared-upstream|has not cleared|have not cleared/);
+  assert.deepEqual(await hashes(), beforeHashes);
+  await fixture.client.execute("UPDATE tasks SET lane='doing' WHERE id='cleared-upstream'");
+  const reopened = await build();
+  assert.deepEqual(reopened.signals[0].blockedBy, ["cleared-upstream"]);
+  assert.ok((await home()).signalRows.some(row => row.trigger === "blocked-too-long"));
+  const reopenedLedger = ledgerFromLegacyBriefing(reopened.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
+  assert.match(JSON.stringify(reopenedLedger), /upstream item has not cleared/);
+});
+
+test("proven recent comment reaches actual Home and ledger without altering dependency lifecycle or stores", async () => {
+  await task("upstream", { lane: "doing", updated: NOW - 10 * DAY });
+  await task("commented-dependent", { lane: "doing", blocked: ["upstream"], updated: NOW - 10 * DAY });
+  await fixture.client.execute("UPDATE tasks SET due_at=NULL");
+  assert.ok((await home()).signalRows.some(row => row.id === "commented-dependent" && row.trigger === "blocked-too-long"));
+  await fixture.client.execute({ sql: "INSERT INTO activities(id,workspace_id,task_id,user_id,kind,payload,created_at) VALUES ('proven-comment',?,'commented-dependent','synthetic-owner','commentAdd',?,?)", args: [WORKSPACE, JSON.stringify({ kind: "commentAdd", commentId: "transactional-comment" }), (NOW - DAY) / 1000] });
+  const beforeHashes = await hashes(), result = await build(), view = await home();
+  const signal = result.signals.find(row => row.id === "commented-dependent");
+  assert.ok(signal); assert.equal(signal.idleDays, 1); assert.deepEqual(signal.blockedBy, ["upstream"]);
+  assert.ok(view.signalRows.every(row => row.id !== "commented-dependent"));
+  const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
+  assert.doesNotMatch(JSON.stringify(ledger), /commented-dependent|transactional-comment|proven-comment/);
+  assert.deepEqual(await hashes(), beforeHashes);
+});
+
+for (const fault of ["missing", "foreign", "mixed"] as const) {
+  test(`actual Home and orchestrator decline unknown ${fault} dependency claims without state writes`, async () => {
+    await task("known-completed", { completed: NOW - DAY });
+    if (fault === "foreign") await fixture.client.execute({ sql: "INSERT INTO tasks(id,workspace_id,seq,title,lane,priority,assignees,tags,blocked_by,created_at,updated_at) VALUES ('unresolved','synthetic-foreign-project',1,'Foreign secret title','done','p2','[]','[]','[]',?,?)", args: [(NOW - DAY) / 1000, NOW / 1000] });
+    await task("dependent", { lane: "doing", blocked: fault === "mixed" ? ["known-completed", "unresolved"] : ["unresolved"], updated: NOW - 10 * DAY });
+    const beforeHashes = await hashes();
+    await assert.rejects(home(), /Signal dependency state unavailable/);
+    await assert.rejects(orchestrator.buildBriefingForUser({ clerkId: ACTOR, cadence: "daily", recordReadState: true, scope: { kind: "workspace", workspaceId: WORKSPACE } }), /Signal dependency state unavailable/);
+    assert.deepEqual(await hashes(), beforeHashes);
+  });
+}
 test("metadata edit never makes an old completion count this week", async () => {
   await task("old", { completed: NOW - 30 * DAY });
   assert.equal((await home()).stats.doneThisWeek, 0);
