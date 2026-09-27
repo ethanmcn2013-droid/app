@@ -15,10 +15,10 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { after, before, describe, it } from "node:test";
+import { after, before, describe, it, mock } from "node:test";
 import { createClient } from "@libsql/client";
 import { decodeValue, encodeValue, takeBackup, tableHash } from "./backup.mjs";
-import { compare, compareDdl, measure, restoreInto } from "./restore-verify.mjs";
+import { compare, compareDdl, main, measure, restoreInto } from "./restore-verify.mjs";
 
 const DDL = [
   `CREATE TABLE workspaces (
@@ -209,6 +209,73 @@ describe("backup and restore", () => {
     } finally {
       await client.close();
     }
+  });
+
+  it("the actual verifier refuses a weakened same-name trigger against the original manifest", async () => {
+    const { body, manifest } = await takeBackup(source, { label: "trigger-integrity", url: `file:${sourcePath}` });
+    const altered = body.replace("SELECT RAISE(ABORT, 'ledger is append-only')", "SELECT 1");
+    assert.notEqual(altered, body);
+    const backupPath = path.join(workDir, "altered-trigger.jsonl");
+    const manifestPath = path.join(workDir, "altered-trigger.manifest.json");
+    fs.writeFileSync(backupPath, altered);
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest));
+    await assert.rejects(
+      () => main([`--backup=${backupPath}`, `--manifest=${manifestPath}`, "--keep"]),
+      /backup digest differs from manifest/,
+    );
+  });
+
+  it("validates restored relationships, enables FK enforcement and closes failed replay handles", async () => {
+    const fixturePath = path.join(workDir, "fk-source.db");
+    const fixture = createClient({ url: `file:${fixturePath}` });
+    try {
+      await fixture.executeMultiple("CREATE TABLE parent(id TEXT PRIMARY KEY); CREATE TABLE child(id TEXT PRIMARY KEY,parent_id TEXT REFERENCES parent(id)); INSERT INTO parent VALUES ('p'); INSERT INTO child VALUES ('c','p');");
+      const valid = await takeBackup(fixture, { label: "fk-valid", url: `file:${fixturePath}` });
+      const target = path.join(workDir, "fk-valid-restored.db");
+      const { client } = await restoreInto(`file:${target}`, valid.body);
+      try {
+        assert.equal(Number((await client.execute("PRAGMA foreign_keys")).rows[0].foreign_keys), 1);
+        assert.equal((await client.execute("PRAGMA foreign_key_check")).rows.length, 0);
+        await assert.rejects(() => client.execute("INSERT INTO child VALUES ('new-orphan','missing')"), /FOREIGN KEY/);
+      } finally { client.close(); }
+
+      // A real source may already contain inconsistent rows if a writer had
+      // enforcement disabled. Its own backup hashes still agree perfectly.
+      await fixture.execute("PRAGMA foreign_keys = OFF");
+      await fixture.execute("UPDATE child SET parent_id='missing' WHERE id='c'");
+      const orphan = await takeBackup(fixture, { label: "fk-orphan", url: `file:${fixturePath}` });
+      const backupPath = path.join(workDir, "orphan.jsonl");
+      const manifestPath = path.join(workDir, "orphan.manifest.json");
+      fs.writeFileSync(backupPath, orphan.body);
+      fs.writeFileSync(manifestPath, JSON.stringify(orphan.manifest));
+      await assert.rejects(
+        () => main([`--backup=${backupPath}`, `--manifest=${manifestPath}`, "--keep"]),
+        /foreign-key violation/,
+      );
+
+      // Observe real native-client closure on a rejected replay, then prove
+      // that a separate handle can reopen the disposable target.
+      const failedTarget = path.join(workDir, "fk-failed-restored.db");
+      const closeSpy = mock.method(Object.getPrototypeOf(fixture), "close");
+      try {
+        await assert.rejects(() => restoreInto(`file:${failedTarget}`, orphan.body), /foreign-key violation/);
+        assert.equal(closeSpy.mock.callCount(), 1);
+        assert.notEqual(closeSpy.mock.calls[0].this, fixture);
+        const failedClient = closeSpy.mock.calls[0].this;
+        await assert.rejects(() => failedClient.execute("SELECT 1"), /closed/i);
+      } finally { closeSpy.mock.restore(); }
+      const reopened = createClient({ url: `file:${failedTarget}` });
+      try {
+        await reopened.execute("BEGIN EXCLUSIVE");
+        await reopened.execute("UPDATE child SET parent_id='p'");
+        await reopened.execute("COMMIT");
+        assert.equal((await reopened.execute("PRAGMA foreign_key_check")).rows.length, 0);
+      } finally { reopened.close(); }
+
+      const freshTarget = path.join(workDir, "fk-fresh-after-failure.db");
+      const fresh = await restoreInto(`file:${freshTarget}`, valid.body);
+      fresh.client.close();
+    } finally { fixture.close(); }
   });
 
   it("FAILS when a row is missing from the restore", async () => {

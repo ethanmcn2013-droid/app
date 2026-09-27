@@ -1,0 +1,285 @@
+import { mkdir, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { createClient, type Client } from "@libsql/client";
+import { runWithTargetGuard } from "./contracts/target-manifest.mjs";
+import { buildMixedWorkloadSchedule, WORKLOAD } from "./contracts/workload-schedule.mjs";
+import { reconcileRun } from "./contracts/result-reconciliation.mjs";
+import { hostedTargetHash, type HostedFixture, type HostedManifest, type HostedObserved } from "./hosted-seed";
+
+export type SessionCleanupReceipt = { ok: boolean; attempted: number; revoked: number; unresolved: number; errors: Array<{ code: string; actorHash: string }> };
+export type HostedSessions = { createSession(actorHash: string): Promise<unknown>;
+  fetchAuthenticated(handle: unknown, url: string, init?: RequestInit): Promise<Response>;
+  cleanup(): Promise<SessionCleanupReceipt>; getMetrics(): unknown };
+type HostedInput = { manifest: HostedManifest; observed: HostedObserved; fixture: HostedFixture; tasksUrl: string; tasksToken: string;
+  executionAuthorized: boolean; createSessions: () => Promise<HostedSessions> | HostedSessions; outputDirectory: string };
+type Slot = ReturnType<typeof buildMixedWorkloadSchedule>["events"][number];
+type Observation = { logicalOperationId: string; attemptId: string; attemptNumber: number; journey: string; phase: string; latencyMs: number;
+  response: { statusCode: number; valid: boolean; success: boolean; errorEnvelope: boolean }; acknowledged: boolean;
+  scopeAuthorized: boolean; actualProjectIds: string[]; unauthorizedContent: boolean; effectIds: string[]; bytes: number; finishedAtMs: number; errorCode?: string };
+type Expected = { id: string; journey: string; expectedOutcome: "write" | "read"; projectId: string };
+type Envelope = { ok: boolean; value?: Record<string, unknown>; code?: string };
+const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
+const ERROR_CODES = new Set(["unavailable", "unauthenticated", "temporarily_unavailable", "audience_changed", "read_only", "invalid_input", "revision_conflict", "request_conflict", "rate_limited", "archived"]);
+
+export function sessionCleanupAccepted(receipt: SessionCleanupReceipt) {
+  return receipt.ok === true && receipt.unresolved === 0 && receipt.errors.length === 0 &&
+    Number.isSafeInteger(receipt.attempted) && receipt.attempted >= 0 && receipt.attempted <= 10 && receipt.revoked === receipt.attempted;
+}
+
+export function dryRunHostedWorkload(manifest: HostedManifest, fixture: HostedFixture) {
+  const schedule = buildMixedWorkloadSchedule();
+  if (!fixture || fixture.fixtureNamespace !== manifest.fixtureNamespace || fixture.actors.length !== 2 || fixture.rooms.length !== 10) throw new Error("hosted_fixture_manifest_mismatch");
+  if (Object.entries(fixture.counts).some(([key, count]) => count !== ({ projects: 10, tasks: 1_000, messages: 10_000, resources: 500 } as Record<string, number>)[key])) throw new Error("hosted_fixture_counts_mismatch");
+  for (const room of fixture.rooms) {
+    if (!room.projectId.startsWith(`${fixture.fixtureNamespace}_project_`) || !room.sourceMessageId || !room.conversationId || room.audienceEpoch < 1) throw new Error("hosted_fixture_scope_invalid");
+  }
+  if (!Array.isArray(fixture.rooms[0].unusedSourceMessageIds) || fixture.rooms[0].unusedSourceMessageIds.length < schedule.events.filter((event) => event.journey === "task.mutate").length) throw new Error("hosted_unused_source_pool_insufficient");
+  const manifestActorHashes = new Set((manifest.testActors ?? []).map((actor: { actorHash: string }) => actor.actorHash));
+  if (!fixture.actors.every((actor) => manifestActorHashes.has(actor.actorHash))) throw new Error("hosted_fixture_actor_unattested");
+  return { schedule, executionMode: `${manifest.environment.kind}-arrival-schedule`, noNetworkRequests: true,
+    limitations: ["API task.mutate is message-to-task outcome creation; ordinary task update/complete requires separate browser proof", "HTML route latency includes server render, excludes browser paint/hydration", "fixed arrival-rate schedule; existing client poller closed-loop behavior requires separate browser probe"] };
+}
+
+export async function boundedResponseText(response: Response, maximumBytes = 4_000_000) {
+  const reader = response.body?.getReader();
+  if (!reader) return { text: "", bytes: 0 };
+  const chunks: Uint8Array[] = []; let bytes = 0;
+  try {
+    while (true) {
+      const next = await reader.read();
+      if (next.done) break;
+      bytes += next.value.byteLength;
+      if (bytes > maximumBytes) { await reader.cancel(); throw new Error("hosted_response_size_cap_exceeded"); }
+      chunks.push(next.value);
+    }
+  } finally { reader.releaseLock(); }
+  const joined = new Uint8Array(bytes); let offset = 0;
+  for (const chunk of chunks) { joined.set(chunk, offset); offset += chunk.byteLength; }
+  return { text: new TextDecoder().decode(joined), bytes };
+}
+
+export function validateHostedHtml(journey: string, text: string, projectName: string) {
+  const markers: Record<string, string[]> = {
+    "home.read": ["Home · Signal Studio", 'id="my-tasks"'], "files.read": ["Files · Signal Studio", ">Files</h1>"],
+    "analytics.read": ["Analytics · Signal Studio", 'id="an-status"'], "conversation.list": ["Chat · Signal Studio", 'id="app-main-content"'],
+  };
+  const unavailable = /Chat is unavailable|No project open|Project unavailable|NEXT_HTTP_ERROR_FALLBACK|NEXT_REDIRECT|Application error:|"digest":"[0-9]+"/.test(text);
+  return !unavailable && Boolean(markers[journey]?.every((marker) => text.includes(marker))) && text.includes(projectName);
+}
+
+export function validateHostedEnvelope(action: string, raw: unknown): raw is Envelope {
+  if (!object(raw) || typeof raw.ok !== "boolean") return false;
+  if (!raw.ok) return typeof raw.code === "string" && ERROR_CODES.has(raw.code);
+  if (!object(raw.value)) return false;
+  if (action === "send") return typeof raw.value.messageId === "string" && Number.isSafeInteger(raw.value.createSeq) && Number.isSafeInteger(raw.value.changeSeq);
+  if (action === "promote-task") return typeof raw.value.taskId === "string" && typeof raw.value.workLinkId === "string";
+  if (action === "history" || action === "messages") return Array.isArray(raw.value.messages) && raw.value.messages.every((message) => object(message) && typeof message.id === "string") && Number.isSafeInteger(raw.value.throughChangeSeq);
+  return false;
+}
+
+function requestForSlot(slot: Slot, room: HostedFixture["rooms"][number], fixture: HostedFixture, origin: string) {
+  const clientRequestId = `${fixture.fixtureNamespace.slice(0, 60)}_${slot.repetition}_${slot.sessionId}_${slot.journey.replaceAll(".", "_")}_${slot.atMs}`;
+  const query = new URLSearchParams({ projectId: room.projectId, conversationId: room.conversationId });
+  const common = { projectId: room.projectId, conversationId: room.conversationId, clientRequestId, expectedAudienceEpoch: room.audienceEpoch };
+  if (slot.journey === "chat.send") return { action: "send", clientRequestId, url: `${origin}/api/conversations`, body: { ...common, action: "send", body: "Synthetic measured update", rootId: null, mentionUserIds: [] } };
+  if (slot.journey === "task.mutate") return { action: "promote-task", clientRequestId, url: `${origin}/api/conversations`, body: { ...common, action: "promote-task", messageId: room.sourceMessageId,
+    expectedRevision: 1, destinationProjectId: room.projectId, title: "Synthetic measured task", ownerUserId: fixture.actors[1].actorId, dueDate: "2026-10-25" } };
+  if (slot.journey === "chat.poll") { query.set("action", "history"); query.set("afterChangeSeq", "0"); return { action: "history", clientRequestId, url: `${origin}/api/conversations?${query}`, body: null }; }
+  const paths: Record<string, string> = { "conversation.list": `/app/messages?projectId=${encodeURIComponent(room.projectId)}`,
+    "home.read": `/app/home?workspaceId=${encodeURIComponent(room.projectId)}`, "files.read": `/app/files?workspaceId=${encodeURIComponent(room.projectId)}`,
+    "analytics.read": `/app/analytics?workspaceId=${encodeURIComponent(room.projectId)}` };
+  return { action: "html", clientRequestId, url: origin + paths[slot.journey], body: null };
+}
+
+/** Resolve each acknowledged logical write through the exact committed source and request receipt. */
+export async function reconcileHostedEffects(client: Client, observations: Observation[], requests: Map<string, { actorId: string; requestId: string; conversationId: string; projectId: string; task: boolean }>) {
+  for (const [id, request] of requests) {
+    const attempts = observations.filter((observation) => observation.logicalOperationId === id);
+    if (!attempts.some((observation) => observation.acknowledged)) continue;
+    const result = request.task ? await client.execute({ sql: `SELECT t.id,t.workspace_id FROM work_operation_receipts r JOIN tasks t ON t.id=r.task_id JOIN work_links l ON l.id=r.work_link_id AND l.task_id=t.id
+      WHERE r.actor_id=? AND r.client_request_id=? AND r.source_conversation_id=?`, args: [request.actorId, request.requestId, request.conversationId] }) :
+      await client.execute({ sql: `SELECT m.id,m.workspace_id FROM conversation_receipts r JOIN conversation_messages m ON m.id=r.message_id AND m.conversation_id=r.conversation_id
+        WHERE r.actor_id=? AND r.client_request_id=? AND r.conversation_id=? AND r.operation='send'`, args: [request.actorId, request.requestId, request.conversationId] });
+    const effectIds = result.rows.map((row) => String(row.id));
+    const actualProjectIds = result.rows.map((row) => String(row.workspace_id));
+    for (const attempt of attempts) { attempt.effectIds = effectIds; attempt.actualProjectIds = actualProjectIds; }
+  }
+}
+
+/** Execution is dormant until root supplies an attested runtime and explicit authorization. */
+export async function runHostedWorkload(input: HostedInput) {
+  const dryRun = dryRunHostedWorkload(input.manifest, input.fixture);
+  if (!input.executionAuthorized) return dryRun;
+  const local = input.manifest.environment.kind === "authenticated-local-test";
+  if ((!local && input.manifest.environment.kind !== "hosted-test") || hostedTargetHash(input.tasksUrl) !== input.manifest.expectedTargetHashes.tasks || (local ? !/^file:/i.test(input.tasksUrl) : !/^libsql:\/\//i.test(input.tasksUrl) || !input.tasksToken)) throw new Error("hosted_workload_binding_refused");
+  return runWithTargetGuard({ manifest: input.manifest, observed: input.observed, write: async () => {
+    await mkdir(input.outputDirectory, { recursive: true });
+    const manager = await input.createSessions();
+    const client = createClient({ url: input.tasksUrl, ...(local ? {} : { authToken: input.tasksToken }) });
+    const observations: Observation[] = [];
+    const expectedOperations: Expected[] = [];
+    const requests = new Map<string, { actorId: string; requestId: string; conversationId: string; projectId: string; task: boolean }>();
+    const handles = new Map<string, unknown>();
+    const polling = new Set<string>();
+    const inFlight = new Set<Promise<void>>();
+    const origin = input.observed.origin;
+    let appRequests = 0; let droppedIterations = 0; let fatal = false;
+    let start = 0;
+    const cursors = new Map<string, number>();
+    const pendingVisibility = new Map<string, { actorHash: string; began: number; acknowledgedAt: number; repetition: number; measured: boolean }>();
+    const visibilitySamples: Array<{ repetition: number; initiationMs: number; postAckMs: number }> = [];
+    const authorizedMessages = new Map<string, { projectId: string; conversationId: string }>();
+    let verificationQueries = 0;
+    let mutationSourceIndex = 0;
+    let negativeScopeProof = false;
+    let summary: { completed: boolean; appRequests: number; droppedIterations: number; outputDirectory: string; identityTraffic: unknown; sessionCleanup?: SessionCleanupReceipt } | undefined;
+    const flush = async (repetition: number, complete: boolean) => {
+      const current = observations.filter((observation) => observation.logicalOperationId.startsWith(`${repetition}:`));
+      await reconcileHostedEffects(client, current, requests);
+      const expected = expectedOperations.filter((operation) => operation.id.startsWith(`${repetition}:`));
+      const correctness = reconcileRun({ manifest: { ...input.manifest, measuredDurationSeconds: (WORKLOAD.warmupMs + WORKLOAD.measuredMs) / 1_000 }, observations: current, expectedOperations: expected,
+        scheduledRequestCount: dryRun.schedule.events.filter((event) => event.repetition === repetition).length, requestCap: WORKLOAD.totalRequestCap });
+      const measured = current.filter((observation) => observation.phase === "measured");
+      const measuredIds = new Set(measured.map((observation) => observation.logicalOperationId));
+      const reconciliation = reconcileRun({ manifest: { ...input.manifest, measuredDurationSeconds: WORKLOAD.measuredMs / 1_000 }, observations: measured,
+        expectedOperations: expected.filter((operation) => measuredIds.has(operation.id)), scheduledRequestCount: dryRun.schedule.events.filter((event) => event.repetition === repetition && event.phase === "measured").length,
+        requestCap: WORKLOAD.totalRequestCap });
+      if (!correctness.ok) reconciliation.findings.push(...correctness.findings);
+      const visible = visibilitySamples.filter((sample) => sample.repetition === repetition);
+      const waiting = [...pendingVisibility.values()].filter((pending) => pending.repetition === repetition && pending.measured).length;
+      if (complete && waiting) reconciliation.findings.push({ code: "MESSAGE_VISIBILITY_MISSING", detail: `${waiting} measured sends have no different-actor observer proof` });
+      const sortedVisibility = visible.map((sample) => sample.initiationMs).sort((left, right) => left - right);
+      const visibilityP95 = sortedVisibility.length ? sortedVisibility[Math.ceil(sortedVisibility.length * .95) - 1] : null;
+      if (visibilityP95 !== null && visibilityP95 > 1_500) reconciliation.findings.push({ code: "MESSAGE_VISIBILITY_LATENCY_BREACH", detail: `observed p95 ${visibilityP95}ms exceeds 1500ms` });
+      reconciliation.ok = reconciliation.findings.length === 0;
+      const receipt = { repetition, complete, acceptancePendingSessionCleanup: true, evidenceScope: input.manifest.executionMode, runtime: input.manifest.runtime,
+        appRequests, droppedIterations, verificationQueries, negativeScopeProof, observations: current, reconciliation, allWritesCorrectness: correctness,
+        messageVisibility: { samples: visible.length, p95InitiationMs: visibilityP95, missing: waiting, timings: visible },
+        identityTraffic: manager.getMetrics(), limitations: dryRun.limitations, runtimeIdentity: input.manifest.environment.identity };
+      await writeFile(join(input.outputDirectory, `run-${repetition}.json`), JSON.stringify(receipt, null, 2));
+      return reconciliation;
+    };
+    try {
+      const projectIds = input.fixture.rooms.map((room) => room.projectId);
+      const sourceMessages = await client.execute({ sql: `SELECT id,workspace_id,conversation_id FROM conversation_messages WHERE workspace_id IN (${projectIds.map(() => "?").join(",")})`, args: projectIds });
+      verificationQueries++;
+      for (const row of sourceMessages.rows) authorizedMessages.set(String(row.id), { projectId: String(row.workspace_id), conversationId: String(row.conversation_id) });
+      for (const type of ["chat", "browsing", "hidden"]) for (let index = 1; index <= (type === "hidden" ? 2 : 4); index++) {
+        handles.set(`${type}-${index}`, await manager.createSession(input.fixture.actors[index % 2].actorHash));
+      }
+      const deniedRoom = input.fixture.rooms.find((room) => room.projectId === input.fixture.deniedProjectForObserver);
+      if (!deniedRoom) throw new Error("negative_scope_fixture_missing");
+      appRequests++;
+      const deniedUrl = new URL(`${origin}/api/conversations`);
+      for (const [key, value] of Object.entries({ action: "history", projectId: deniedRoom.projectId, conversationId: deniedRoom.conversationId, afterChangeSeq: "0" })) deniedUrl.searchParams.set(key, value);
+      const deniedResponse = await manager.fetchAuthenticated(handles.get("chat-1"), deniedUrl.href, { redirect: "manual" });
+      const deniedBody = await boundedResponseText(deniedResponse);
+      const deniedEnvelope: unknown = JSON.parse(deniedBody.text);
+      if (deniedResponse.status !== 404 || !object(deniedEnvelope) || deniedEnvelope.ok !== false || deniedEnvelope.code !== "unavailable" || "value" in deniedEnvelope) throw new Error("negative_scope_disclosure_or_effect");
+      negativeScopeProof = true;
+      start = performance.now();
+      async function perform(slot: Slot) {
+        const room = input.fixture.rooms[0];
+        const request = requestForSlot(slot, room, input.fixture, origin);
+        if (request.action === "promote-task" && request.body && "messageId" in request.body) request.body.messageId = room.unusedSourceMessageIds[mutationSourceIndex++];
+        if (request.action === "history") {
+          const pollUrl = new URL(request.url);
+          pollUrl.searchParams.set("afterChangeSeq", String(cursors.get(slot.sessionId) ?? 0));
+          request.url = pollUrl.href;
+        }
+        const actor = input.fixture.actors[Number(slot.sessionId.split("-")[1]) % 2];
+        const expectedOutcome = request.body ? "write" as const : "read" as const;
+        expectedOperations.push({ id: slot.logicalOperationId, journey: slot.journey, expectedOutcome, projectId: room.projectId });
+        if (request.body) requests.set(slot.logicalOperationId, { actorId: actor.actorId, requestId: request.clientRequestId, conversationId: room.conversationId, projectId: room.projectId, task: request.action === "promote-task" });
+        const began = performance.now(); let observation: Observation;
+        try {
+          if (appRequests >= WORKLOAD.totalRequestCap) { fatal = true; throw new Error("aggregate_request_cap_exceeded"); }
+          appRequests++;
+          const response = await manager.fetchAuthenticated(handles.get(slot.sessionId), request.url, { method: request.body ? "POST" : "GET", redirect: "manual",
+            headers: { origin, ...(request.body ? { "content-type": "application/json" } : { accept: "text/html" }) }, body: request.body ? JSON.stringify(request.body) : undefined });
+          const body = await boundedResponseText(response);
+          const httpLatencyMs = performance.now() - began;
+          let envelope: unknown;
+          if (request.action !== "html") { try { envelope = JSON.parse(body.text); } catch { /* failed validation recorded below */ } }
+          const valid = request.action === "html" ? response.headers.get("content-type")?.includes("text/html") === true && validateHostedHtml(slot.journey, body.text, room.projectName) : validateHostedEnvelope(request.action, envelope);
+          const success = response.status === 200 && valid && (request.action === "html" || (envelope as Envelope).ok === true);
+          const value = object(envelope) && object(envelope.value) ? envelope.value : {};
+          let scopeAuthorized = false;
+          let actualProjectIds: string[] = [];
+          let unauthorizedContent = false;
+          if (success && request.action === "history") {
+            const ids = (value.messages as Array<{ id: string }>).map((message) => message.id);
+            const known = ids.map((id) => authorizedMessages.get(id));
+            actualProjectIds = [...new Set(known.flatMap((row) => row ? [row.projectId] : []))];
+            scopeAuthorized = known.every((row) => row?.projectId === room.projectId && row.conversationId === room.conversationId);
+            unauthorizedContent = !scopeAuthorized;
+          } else if (success && request.action === "html") {
+            // HTML includes the explicitly requested synthetic Project marker; source row proof is provided by writer/reader checks.
+            scopeAuthorized = true; actualProjectIds = [room.projectId];
+          } else if (success && request.body) {
+            const committed = request.action === "send" ? await client.execute({ sql: "SELECT id,workspace_id,conversation_id FROM conversation_messages WHERE id=? AND client_request_id=? AND author_id=?",
+              args: [String(value.messageId), request.clientRequestId, actor.actorId] }) : await client.execute({ sql: "SELECT t.id,t.workspace_id FROM tasks t JOIN work_operation_receipts r ON r.task_id=t.id WHERE t.id=? AND r.client_request_id=? AND r.actor_id=?",
+              args: [String(value.taskId), request.clientRequestId, actor.actorId] });
+            verificationQueries++;
+            actualProjectIds = committed.rows.map((row) => String(row.workspace_id));
+            scopeAuthorized = committed.rows.length === 1 && committed.rows[0].workspace_id === room.projectId;
+            unauthorizedContent = !scopeAuthorized;
+            if (scopeAuthorized && request.action === "send") authorizedMessages.set(String(value.messageId), { projectId: room.projectId, conversationId: room.conversationId });
+          }
+          if (success && request.action === "send" && typeof value.messageId === "string") pendingVisibility.set(value.messageId,
+            { actorHash: actor.actorHash, began, acknowledgedAt: performance.now(), repetition: slot.repetition, measured: slot.phase === "measured" });
+          if (success && request.action === "history") {
+            cursors.set(slot.sessionId, Number(value.throughChangeSeq));
+            for (const message of value.messages as Array<{ id: string }>) {
+              const pending = pendingVisibility.get(message.id);
+              if (pending && pending.actorHash !== actor.actorHash) {
+                if (pending.measured) visibilitySamples.push({ repetition: pending.repetition, initiationMs: performance.now() - pending.began, postAckMs: performance.now() - pending.acknowledgedAt });
+                pendingVisibility.delete(message.id);
+              }
+            }
+          }
+          observation = { logicalOperationId: slot.logicalOperationId, attemptId: `${slot.logicalOperationId}:attempt:1`, attemptNumber: 1,
+            journey: slot.journey, phase: slot.phase, latencyMs: httpLatencyMs, response: { statusCode: response.status, valid, success, errorEnvelope: object(envelope) && envelope.ok === false },
+            acknowledged: expectedOutcome === "write" && success, scopeAuthorized, actualProjectIds, unauthorizedContent,
+            effectIds: success && request.body ? [String(request.action === "send" ? value.messageId : value.taskId)] : [], bytes: body.bytes,
+            finishedAtMs: performance.now() - start,
+            ...(object(envelope) && typeof envelope.code === "string" && ERROR_CODES.has(envelope.code) ? { errorCode: envelope.code } : {}) };
+          if (!valid || unauthorizedContent || [401, 403].includes(response.status)) fatal = true;
+        } catch {
+          observation = { logicalOperationId: slot.logicalOperationId, attemptId: `${slot.logicalOperationId}:attempt:1`, attemptNumber: 1, journey: slot.journey, phase: slot.phase,
+            latencyMs: performance.now() - began, response: { statusCode: 503, valid: true, success: false, errorEnvelope: true }, acknowledged: false,
+            scopeAuthorized: false, actualProjectIds: [], unauthorizedContent: false, effectIds: [], bytes: 0, finishedAtMs: performance.now() - start, errorCode: "transport_failure" };
+        }
+        observations.push(observation);
+        const recent = observations.filter((item) => item.finishedAtMs >= observation.finishedAtMs - 60_000);
+        if (observation.finishedAtMs >= 60_000 && recent.length > 0 && recent.filter((item) => !item.response.success).length / recent.length > .05) fatal = true;
+      }
+      let repetition = 1;
+      for (const slot of dryRun.schedule.events) {
+        if (fatal) break;
+        if (slot.repetition !== repetition) { await Promise.all(inFlight); const result = await flush(repetition, true); if (!result.ok) { fatal = true; break; } repetition = slot.repetition; }
+        const delay = start + slot.atMs - performance.now();
+        if (delay > 0) await new Promise((resolve) => setTimeout(resolve, Math.min(delay, 60_000)));
+        if ((slot.journey === "chat.poll" && polling.has(slot.sessionId)) || inFlight.size >= 16) { droppedIterations++; continue; }
+        if (slot.journey === "chat.poll") polling.add(slot.sessionId);
+        const work = perform(slot).finally(() => { if (slot.journey === "chat.poll") polling.delete(slot.sessionId); inFlight.delete(work); });
+        inFlight.add(work);
+      }
+      await Promise.all(inFlight);
+      const final = await flush(repetition, !fatal && repetition === 3);
+      summary = { completed: !fatal && repetition === 3 && final.ok && droppedIterations === 0, appRequests, droppedIterations, outputDirectory: input.outputDirectory, identityTraffic: manager.getMetrics() };
+    } finally {
+      try {
+        const cleanup = await manager.cleanup();
+        await writeFile(join(input.outputDirectory, "session-cleanup.json"), JSON.stringify(cleanup, null, 2));
+        if (summary) {
+          summary.sessionCleanup = cleanup;
+          summary.completed &&= sessionCleanupAccepted(cleanup);
+          summary.identityTraffic = manager.getMetrics();
+          await writeFile(join(input.outputDirectory, "summary.json"), JSON.stringify({ ...summary, evidenceScope: input.manifest.executionMode, runtime: input.manifest.runtime }, null, 2));
+        }
+      } finally { client.close(); }
+    }
+    return summary!;
+  } });
+}
