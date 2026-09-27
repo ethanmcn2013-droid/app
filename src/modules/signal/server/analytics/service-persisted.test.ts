@@ -99,12 +99,12 @@ before(async () => {
   process.env.TASKS_DATABASE_URL = tasksUrl;
   const directory = mkdtempSync(join(tmpdir(), "signal-full-service-"));
   stores = { tasks: tasksFixture.client };
-  for (const module of ["notes", "timeline", "signal"]) {
-    const url = pathToFileURL(join(directory, `${module}.db`)).href;
+  for (const storeName of ["notes", "timeline", "signal"]) {
+    const url = pathToFileURL(join(directory, `${storeName}.db`)).href;
     assertScratchFile(url);
-    process.env[`${module.toUpperCase()}_DATABASE_URL`] = url;
-    const client = createClient({ url }); stores[module] = client;
-    const migrations = new URL(`../../../../../drizzle-${module}/`, import.meta.url);
+    process.env[`${storeName.toUpperCase()}_DATABASE_URL`] = url;
+    const client = createClient({ url }); stores[storeName] = client;
+    const migrations = new URL(`../../../../../drizzle-${storeName}/`, import.meta.url);
     for (const file of readdirSync(migrations).filter(name => /^\d{4}_.+\.sql$/.test(name)).sort()) {
       await client.executeMultiple(readFileSync(new URL(file, migrations), "utf8"));
     }
