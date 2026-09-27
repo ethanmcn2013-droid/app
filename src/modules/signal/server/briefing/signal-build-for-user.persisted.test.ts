@@ -1,0 +1,169 @@
+import assert from "node:assert/strict";
+import { after, before, beforeEach, mock, test } from "node:test";
+import { createHash } from "node:crypto";
+import { mkdtempSync, readFileSync, readdirSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
+import { pathToFileURL } from "node:url";
+import { createClient, type Client } from "@libsql/client";
+import { freshFileDb } from "@/server/db/memory-test-db";
+import { ledgerFromLegacyBriefing } from "../../lib/analytics/ledger-adapters";
+
+// Actual source, scope authorization, orchestrator, engine, Home and ledger.
+// Only isolated DB URLs and the clock are controlled; no source is mocked.
+const NOW = Date.parse("2026-09-27T12:00:00Z"), DAY = 86_400_000;
+const WORKSPACE = "synthetic-lifecycle", ACTOR = "synthetic-lifecycle-clerk";
+let fixture: Awaited<ReturnType<typeof freshFileDb>>, signalStore: Client;
+let orchestrator: typeof import("./signal-build-for-user");
+let homeModule: typeof import("@/app/app/home/home-data");
+let tasksClientModule: typeof import("../tasks-db/signal-tasks-db-client");
+const envNames = ["TASKS_DATABASE_URL", "TASKS_AUTH_TOKEN", "SIGNAL_DATABASE_URL", "SIGNAL_AUTH_TOKEN", "SIGNAL_ACCESS_MODE", "NEXT_PUBLIC_SIGNAL_ACCESS_MODE", "SIGNAL_PERIOD_SIGNAL_ENABLED", "VERCEL_ENV"];
+const saved = Object.fromEntries(envNames.map(key => [key, process.env[key]]));
+
+function scratchUrl(file: string) {
+  const child = relative(resolve(tmpdir()), resolve(file));
+  assert.ok(child && !isAbsolute(child) && child !== ".." && !child.startsWith(`..${sep}`), "database must be inside process scratch");
+  return pathToFileURL(file).href;
+}
+before(async () => {
+  for (const key of envNames) delete process.env[key];
+  process.env.SIGNAL_ACCESS_MODE = "production";
+  mock.timers.enable({ apis: ["Date"], now: NOW });
+  fixture = await freshFileDb();
+  const file = (await fixture.client.execute("PRAGMA database_list")).rows.find(row => row.name === "main")?.file;
+  assert.equal(typeof file, "string"); process.env.TASKS_DATABASE_URL = scratchUrl(String(file));
+  const directory = mkdtempSync(join(tmpdir(), "signal-lifecycle-consumer-"));
+  process.env.SIGNAL_DATABASE_URL = scratchUrl(join(directory, "signal.db"));
+  signalStore = createClient({ url: process.env.SIGNAL_DATABASE_URL });
+  const migrations = new URL("../../../../../drizzle-signal/", import.meta.url);
+  for (const name of readdirSync(migrations).filter(name => /^\d{4}_.+\.sql$/.test(name)).sort()) {
+    await signalStore.executeMultiple(readFileSync(new URL(name, migrations), "utf8"));
+  }
+  await fixture.client.executeMultiple(`
+    INSERT INTO users(id,clerk_id,email,color,initials) VALUES ('synthetic-owner','${ACTOR}','owner@example.invalid','blue','SO'),('synthetic-foreign','synthetic-foreign-clerk','owner@example.invalid','blue','SF');
+    INSERT INTO workspaces(id,slug,name,owner_user_id) VALUES ('${WORKSPACE}','${WORKSPACE}','Synthetic lifecycle','synthetic-owner'),('synthetic-foreign-project','synthetic-foreign-project','Foreign project','synthetic-foreign');
+  `);
+  const today = Math.floor(NOW / DAY);
+  await signalStore.executeMultiple(`
+    INSERT INTO analytics_users(clerk_id,linked_workspace_id,timezone) VALUES ('${ACTOR}','${WORKSPACE}','UTC');
+    INSERT INTO briefing_feedback(clerk_id,item_key,verdict,trigger_id) VALUES ('${ACTOR}','dismissed-task','not-useful','idle');
+    INSERT INTO surfaced_items(clerk_id,item_key,trigger_id,first_day,last_day,run_days) VALUES ('${ACTOR}','carry-task','idle',${today - 2},${today - 1},2);
+    INSERT INTO phrasing_rotations(clerk_id,trigger_id,last_index,last_fired_at) VALUES ('${ACTOR}','idle',4,${NOW / 1000 - DAY / 1000});
+  `);
+  orchestrator = await import("./signal-build-for-user");
+  homeModule = await import("@/app/app/home/home-data");
+  tasksClientModule = await import("../tasks-db/signal-tasks-db-client");
+});
+beforeEach(async () => {
+  await fixture.client.executeMultiple("DELETE FROM activities; DELETE FROM tasks; DELETE FROM meta;");
+});
+after(() => {
+  tasksClientModule?.getTasksClient()?.close(); signalStore?.close(); fixture?.cleanup(); mock.timers.reset();
+  for (const key of envNames) {
+    if (saved[key] === undefined) delete process.env[key]; else process.env[key] = saved[key];
+  }
+});
+async function task(id: string, options: { lane?: string; column?: string; completed?: number; archived?: number; parent?: string; blocked?: string[] } = {}) {
+  await fixture.client.execute({
+    sql: "INSERT INTO tasks(id,workspace_id,seq,title,lane,board_column_key,priority,assignees,tags,blocked_by,due_at,created_at,updated_at,completed_at,archived_at,parent_task_id) VALUES (?,?,?,?,?,?,'p2','[]','[]',?,?,?,?,?,?,?)",
+    args: [id, WORKSPACE, (await fixture.client.execute("SELECT COUNT(*) AS count FROM tasks")).rows[0].count as number + 1, id, options.lane ?? "done", options.column ?? null, JSON.stringify(options.blocked ?? []), (NOW - DAY) / 1000, (NOW - 40 * DAY) / 1000, (NOW - 3_600_000) / 1000, options.completed == null ? null : options.completed / 1000, options.archived == null ? null : options.archived / 1000, options.parent ?? null],
+  });
+}
+async function build() {
+  const result = await orchestrator.buildBriefingForUser({ clerkId: ACTOR, cadence: "daily", recordReadState: false, scope: { kind: "workspace", workspaceId: WORKSPACE } });
+  assert.equal(result.kind, "ok"); if (result.kind !== "ok") throw new Error("authorized fixture unexpectedly refused");
+  return result;
+}
+async function home() {
+  const result = await homeModule.loadHomeData({ clerkId: ACTOR, scope: { kind: "workspace", workspaceId: WORKSPACE } });
+  assert.equal(result.kind, "ok"); if (result.kind !== "ok") throw new Error("authorized Home fixture unexpectedly refused");
+  return result;
+}
+async function config(value: string) {
+  await fixture.client.execute({ sql: "INSERT INTO meta(key,value,updated_at) VALUES (?,?,?)", args: [`board:${WORKSPACE}:columns`, value, NOW / 1000] });
+}
+async function hashes() {
+  const out: Record<string, string> = {};
+  for (const [name, store] of Object.entries({ tasks: fixture.client, signal: signalStore })) {
+    const catalog = (await store.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")).rows;
+    const tables = [];
+    for (const table of catalog) {
+      const tableName = String(table.name), escaped = tableName.replaceAll('"', '""');
+      tables.push({ name: tableName, rows: (await store.execute(`SELECT * FROM "${escaped}"`)).rows.map(row => JSON.stringify(row)).sort() });
+    }
+    out[name] = createHash("sha256").update(JSON.stringify(tables)).digest("hex");
+  }
+  return out;
+}
+
+test("actual Home recognizes configured terminal as finished", async () => {
+  await config(JSON.stringify({ custom: [{ key: "accepted", name: "Accepted" }], doneKeys: ["accepted"] }));
+  await task("accepted", { lane: "doing", column: "accepted", completed: NOW - DAY });
+  const view = await home(); assert.deepEqual({ open: view.stats.open, done: view.stats.doneThisWeek }, { open: 0, done: 1 });
+});
+test("actual Home preserves review even with dependencies", async () => {
+  await task("review", { lane: "review", blocked: ["dependency"] });
+  const view = await home(); assert.equal(view.stats.inReview, 1);
+  assert.equal((await build()).signals[0].lane, "review");
+});
+test("metadata edit never makes an old completion count this week", async () => {
+  await task("old", { completed: NOW - 30 * DAY });
+  assert.equal((await home()).stats.doneThisWeek, 0);
+  assert.equal((await build()).signals[0].movedToShippedAt, NOW - 30 * DAY);
+});
+test("terminal without completion evidence stays unknown in orchestrator and Home", async () => {
+  await task("unknown"); assert.equal((await build()).signals[0].movedToShippedAt, null);
+  assert.equal((await home()).stats.doneThisWeek, 0);
+});
+test("future completion is never attributed as recent", async () => {
+  await task("future", { completed: NOW + DAY });
+  assert.equal((await home()).stats.doneThisWeek, 0);
+  assert.equal((await build()).signals[0].movedToShippedAt, null);
+});
+test("reopened stale stamp stays open without shipped time", async () => {
+  await task("reopened", { lane: "doing", completed: NOW - DAY });
+  assert.equal((await build()).signals[0].movedToShippedAt, null);
+  assert.deepEqual({ open: (await home()).stats.open, done: (await home()).stats.doneThisWeek }, { open: 1, done: 0 });
+});
+test("archived and child records reach neither Home counts nor source signals", async () => {
+  await task("parent", { lane: "doing" }); await task("archived", { lane: "doing", archived: NOW - DAY }); await task("child", { lane: "doing", parent: "parent" });
+  assert.equal((await home()).stats.open, 1); assert.deepEqual((await build()).signals.map(row => row.id), ["parent"]);
+});
+test("persisted real terminal event reaches orchestrator completion", async () => {
+  await task("transition");
+  await fixture.client.execute({ sql: "INSERT INTO activities(id,workspace_id,task_id,user_id,kind,payload,created_at) VALUES ('terminal-event',?,'transition','synthetic-owner','move',?,?)", args: [WORKSPACE, JSON.stringify({ from: "doing", to: "done" }), (NOW - 2 * DAY) / 1000] });
+  assert.equal((await build()).signals[0].movedToShippedAt, NOW - 2 * DAY);
+});
+test("malformed config cannot produce a completed/default Home response", async () => {
+  await config("{broken"); await task("bad-config"); await assert.rejects(home());
+});
+test("read-only orchestrator, Home and opaque ledger preserve all persisted state", async () => {
+  await task("visible", { lane: "doing" });
+  const beforeHashes = await hashes(), result = await build(); await home();
+  const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", scopeLabel: result.authorizedScope.label, scopeKind: "workspace", allowedAppOrigin: "https://app.signalstudio.ie" });
+  assert.ok(ledger.entries.length <= 3); assert.doesNotMatch(JSON.stringify(ledger), /synthetic-lifecycle-clerk|synthetic-owner|terminal-event/);
+  assert.deepEqual(await hashes(), beforeHashes);
+});
+test("same-email foreign subject cannot inherit selected workspace", async () => {
+  await task("private-task", { lane: "doing" });
+  const result = await orchestrator.buildBriefingForUser({ clerkId: "synthetic-foreign-clerk", cadence: "daily", recordReadState: false, scope: { kind: "workspace", workspaceId: WORKSPACE } });
+  assert.equal(result.kind, "no-workspace");
+});
+for (const fault of ["missing", "duplicate", "foreign"] as const) {
+  test(`orchestrator rejects ${fault} source workspace before persisted state writes`, async () => {
+    await task("contract-task", { lane: "doing" });
+    const { dataSource } = await import("../../lib/data/source");
+    const original = dataSource.readMany; assert.ok(original);
+    const beforeHashes = await hashes();
+    dataSource.readMany = async function (ids) {
+      const actual = await original.call(this, ids);
+      if (fault === "missing") return [];
+      if (fault === "duplicate") return [actual[0], actual[0]];
+      return [{ ...actual[0], workspaceId: "synthetic-foreign-project" }];
+    };
+    try {
+      await assert.rejects(orchestrator.buildBriefingForUser({ clerkId: ACTOR, cadence: "daily", recordReadState: true, scope: { kind: "workspace", workspaceId: WORKSPACE } }), /Signal source workspace coverage mismatch/);
+      assert.deepEqual(await hashes(), beforeHashes);
+    } finally { dataSource.readMany = original; }
+  });
+}

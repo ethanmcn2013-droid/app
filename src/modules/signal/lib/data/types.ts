@@ -13,7 +13,7 @@
  */
 
 /** Task status, mirrors Tasks's schema. */
-export type Status = "next" | "in-flight" | "blocked" | "shipped" | "refused";
+export type Status = "next" | "in-flight" | "review" | "blocked" | "shipped" | "refused";
 
 /** A user (assignee) in the workspace. Opaque id only, no PII. */
 export interface UserRef {
@@ -57,6 +57,8 @@ export interface TaskRead {
   title: string;
   assignee: UserRef | null;
   status: Status;
+  /** Valid completion evidence for currently terminal work; unknown is null. */
+  completedAt?: string | null;
   /** ISO date if set. */
   dueDate: string | null;
   /** Other task ids that block this one. */

@@ -31,6 +31,9 @@ import {
   PROGRAM_AXIS_NOT_CARRIED,
   type AnalyticsQuery,
 } from "../../../lib/analytics/contracts";
+import { calculateMetrics } from "../../../lib/analytics/metrics";
+import { buildBriefing } from "../../../lib/analytics/rules";
+import { getAnalyticsFixture } from "../../../lib/analytics/fixtures";
 
 const SCRATCH_DIR = mkdtempSync(join(tmpdir(), "wp4-tasks-provider-"));
 const TASKS_URL = pathToFileURL(join(SCRATCH_DIR, "tasks.db")).href;
@@ -87,7 +90,9 @@ async function createSchema(): Promise<void> {
       is_milestone INTEGER NOT NULL DEFAULT 0,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL,
-      completed_at INTEGER
+      completed_at INTEGER,
+      archived_at INTEGER,
+      parent_task_id TEXT
     );
     CREATE TABLE activities (
       id TEXT PRIMARY KEY NOT NULL,
@@ -125,14 +130,17 @@ interface TaskSeed {
   createdAt?: number;
   updatedAt?: number;
   completedAt?: number | null;
+  archivedAt?: number | null;
+  parentTaskId?: string | null;
+  dueAt?: number | null;
 }
 
 async function seedTask(seed: TaskSeed): Promise<void> {
   await client.execute({
     sql: `INSERT INTO tasks
             (id, workspace_id, title, lane, board_column_key, priority, assignees,
-             tags, blocked_by, is_milestone, created_at, updated_at, completed_at)
-          VALUES (?, ?, ?, ?, ?, 'normal', ?, ?, ?, 0, ?, ?, ?)`,
+             tags, blocked_by, is_milestone, created_at, updated_at, completed_at, archived_at, parent_task_id, due_at)
+          VALUES (?, ?, ?, ?, ?, 'normal', ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)`,
     args: [
       seed.id,
       seed.workspaceId ?? WORKSPACE,
@@ -145,6 +153,9 @@ async function seedTask(seed: TaskSeed): Promise<void> {
       seed.createdAt ?? 1_752_000_000,
       seed.updatedAt ?? 1_752_000_000,
       seed.completedAt ?? null,
+      seed.archivedAt ?? null,
+      seed.parentTaskId ?? null,
+      seed.dueAt ?? null,
     ],
   });
 }
@@ -152,6 +163,64 @@ async function seedTask(seed: TaskSeed): Promise<void> {
 before(async () => {
   client = createClient({ url: TASKS_URL });
   await createSchema();
+});
+
+async function persistedMetrics() {
+  const { TasksAnalyticsProvider } = await load();
+  const readQuery = query(), result = await new TasksAnalyticsProvider().read(readQuery);
+  const fixture = getAnalyticsFixture("empty");
+  const snapshot = { ...fixture.snapshot, scope: readQuery.scope, capturedAt: "2026-07-31T12:00:00Z", tasks: result.tasks, events: result.events, coverage: { ...fixture.snapshot.coverage, providers: { ...fixture.snapshot.coverage.providers, tasks: result.coverage } } };
+  return { result, metrics: calculateMetrics(snapshot, readQuery), briefing: buildBriefing(snapshot, readQuery) };
+}
+test("persisted archive state is carried explicitly by the actual provider", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  await seedTask({ id: "archive-marked", lane: "doing", archivedAt: 1_752_100_000 });
+  await seedTask({ id: "archive-active", lane: "doing" });
+  const { result } = await persistedMetrics();
+  assert.equal(Reflect.get(result.tasks.find(task => task.id === "archive-marked")!, "archived"), true);
+  assert.equal(Reflect.get(result.tasks.find(task => task.id === "archive-active")!, "archived"), false);
+});
+test("persisted archived open work contributes no current metrics or observations", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  await seedTask({ id: "archive-current-concern", lane: "doing", boardColumnKey: "waiting", archivedAt: 1_752_100_000, dueAt: 1_752_000_000 });
+  const { metrics, briefing } = await persistedMetrics();
+  assert.equal(metrics.open_work.value?.count, 0);
+  for (const key of ["open_overdue_work", "open_work_age", "stalled_work", "blocked_work", "unowned_work", "workload_distribution"] as const) assert.ok(metrics[key].sources.every(source => source.id !== "archive-current-concern"));
+  assert.ok(briefing.observations.every(observation => observation.sources.every(source => source.id !== "archive-current-concern")));
+});
+test("persisted archived completion remains part of period history", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  await seedTask({ id: "archive-history", lane: "done", archivedAt: 1_752_100_000, completedAt: Date.parse("2026-07-15T12:00:00Z") / 1000 });
+  const { result, metrics } = await persistedMetrics();
+  assert.equal(result.tasks.length, 1); assert.equal(metrics.work_completed.value?.count, 1);
+});
+test("restoring a persisted archived open task re-enables current metrics", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  await seedTask({ id: "archive-restore", lane: "doing", archivedAt: 1_752_100_000 });
+  assert.equal((await persistedMetrics()).metrics.open_work.value?.count, 0);
+  await client.execute("UPDATE tasks SET archived_at=NULL WHERE id='archive-restore'");
+  assert.equal((await persistedMetrics()).metrics.open_work.value?.count, 1);
+});
+test("persisted children are excluded before the provider's 2001-record bound", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  await client.batch(Array.from({ length: 2_001 }, (_, index) => ({ sql: "INSERT INTO tasks(id,workspace_id,title,lane,priority,is_milestone,created_at,updated_at,parent_task_id) VALUES (?,?,'Synthetic child','doing','normal',0,1752000000,1752000000,'zz-top-level-parent')", args: [`aa-child-${index.toString().padStart(4, "0")}`, WORKSPACE] })), "write");
+  await seedTask({ id: "zz-top-level-parent", lane: "doing" });
+  const { result } = await persistedMetrics();
+  assert.equal(result.tasks.length, 1);
+  assert.deepEqual(result.tasks.map(task => task.id), ["zz-top-level-parent"]);
+  assert.ok(!result.coverage.issues.includes("tasks_record_limit_reached"));
+});
+test("archived completed dependencies remain resolved while excluded children stay unknown", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  const completedAt = Date.parse("2026-07-15T12:00:00Z") / 1000;
+  await seedTask({ id: "dependency-archived", lane: "done", archivedAt: 1_752_100_000, completedAt });
+  await seedTask({ id: "dependency-child", lane: "done", parentTaskId: "dependency-main", completedAt });
+  await seedTask({ id: "dependency-main", lane: "doing", blockedBy: ["dependency-archived", "dependency-child"] });
+  const { result, metrics } = await persistedMetrics();
+  const main = result.tasks.find(task => task.id === "dependency-main"); assert.ok(main);
+  assert.deepEqual(main.blocking.unresolvedDependencyIds, ["dependency-child"]);
+  assert.ok(!result.tasks.some(task => task.id === "dependency-child"));
+  assert.equal(metrics.work_completed.value?.count, 1);
 });
 
 after(() => {

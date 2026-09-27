@@ -10,7 +10,11 @@
  *   runs offline.
  */
 
-import { eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { effectiveColumnKey, isTaskDone, WAITING_COLUMN_KEY } from "@/lib/board-columns";
+import type { ColumnConfig } from "@/lib/board-config";
+import { readWorkspaceColumnConfigs } from "../../server/analytics/providers/column-config";
+import type { TasksDb } from "../../server/tasks-db/signal-tasks-db-client";
 import type { WorkRead, TaskRead, ProjectRead, Status } from "./types";
 import { getTasksDb, tasksDbConfigured } from "@/modules/signal/server/tasks-db/signal-tasks-db-client";
 import {
@@ -18,6 +22,7 @@ import {
   workspaces as workspacesTable,
   users as usersTable,
   workspaceMembers as workspaceMembersTable,
+  activities as activitiesTable,
 } from "@/modules/signal/server/tasks-db/signal-tasks-db-schema";
 
 export interface WorkspaceCandidate {
@@ -97,42 +102,86 @@ export const mockSource: DataSource = mockSourceWith({
  *, triggers never see Tasks's vocabulary.
  *
  * Derivation rules:
- *  - `blocked` is NOT lane-derived. A task is `blocked` when
- *    `blockedBy.length > 0` and the lane hasn't reached done. Tasks
- *    models blocking via the `blockedBy` array, not via a lane. Applied
- *    in deriveStatus.
+ *  - Terminal state uses the workspace's configured effective column.
+ *    Review remains review even when dependency identifiers are present.
  *  - `refused` does not materialize from Tasks's data, Tasks has no
  *    rejected/cancelled state. Triggers must not assume it appears in
  *    real WorkRead snapshots from tasksDbSource.
- *  - Unknown lanes are logged once and mapped to `"next"` (safest
- *    fallback, no false-positive triggers).
+ *  - Other nonterminal effective columns remain in flight.
  *
  * Documented in PRODUCT.md §6.
  */
-const LANE_TO_STATUS: Record<string, Status> = {
-  todo: "next",
-  doing: "in-flight",
-  review: "in-flight",
-  done: "shipped",
-};
+function deriveStatus(row: typeof tasksTable.$inferSelect, blockedBy: string[], config: ColumnConfig | null): Status {
+  if (isTaskDone(row, config)) return "shipped";
+  const key = effectiveColumnKey(row);
+  if (key === "review") return "review";
+  if (key === WAITING_COLUMN_KEY || blockedBy.length > 0) return "blocked";
+  return key === "todo" ? "next" : "in-flight";
+}
 
-const warnedLanes = new Set<string>();
+function validCompletion(value: Date | null, now: number): string | null {
+  const time = value?.getTime();
+  return time !== undefined && Number.isFinite(time) && time >= 0 && time <= now
+    ? new Date(time).toISOString() : null;
+}
 
-function deriveStatus(lane: string, blockedBy: string[]): Status {
-  const mapped = LANE_TO_STATUS[lane];
-  const base: Status =
-    mapped ??
-    (() => {
-      if (!warnedLanes.has(lane)) {
-        warnedLanes.add(lane);
-        console.warn(
-          `[tasksDbSource] Unknown Tasks lane "${lane}", mapping to "next".`,
-        );
-      }
-      return "next";
-    })();
-  if (blockedBy.length > 0 && base !== "shipped") return "blocked";
-  return base;
+const MAX_COMPLETION_TRANSITIONS = 128;
+
+type CompletionTransition = { id: string; workspaceId: string; taskId: string; kind: string; payload: string; createdAt: number; historyRank: number; latestAt: number };
+
+/** Latest actual transition only; historical custom keys have no semantic snapshot. */
+function completionFromHistory(rows: readonly CompletionTransition[], now: number): string | null {
+  // Random event IDs break ties for transport only; they cannot establish
+  // chronology. Every event in the latest timestamp group must agree.
+  if (rows.length === 0 || rows.length > MAX_COMPLETION_TRANSITIONS) return null;
+  for (const event of rows) {
+    let payload: Record<string, unknown>;
+    try { payload = JSON.parse(event.payload) as Record<string, unknown>; } catch { return null; }
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
+    // A same-lane move can clear a custom-column claim and really complete
+    // work. Its historical effective state is absent, so never skip it.
+    if (event.kind === "move" && payload.from === payload.to) return null;
+    const at = validCompletion(new Date(event.createdAt * 1000), now);
+    if (!at) return null;
+    // These kinds record canonical done/open intent. A custom key cannot be
+    // classified using today's config, and a newer reopen supersedes done.
+    if (payload.to !== "done") return null;
+    if (event.kind === "move" && !["todo", "doing", "review", "waiting", "open"].includes(String(payload.from))) return null;
+  }
+  return validCompletion(new Date(rows[0].createdAt * 1000), now);
+}
+
+async function readCompletionHistory(db: TasksDb, targets: readonly (typeof tasksTable.$inferSelect)[], now: number): Promise<Map<string, string | null>> {
+  const completions = new Map<string, string | null>();
+  // Bound bind parameters as well as evidence per task. This is one query per
+  // 500 unstamped terminal tasks, rather than one remote query per task.
+  for (let offset = 0; offset < targets.length; offset += 500) {
+    const chunk = targets.slice(offset, offset + 500);
+    const byWorkspace = new Map<string, string[]>();
+    for (const target of chunk) {
+      const bucket = byWorkspace.get(target.workspaceId!) ?? [];
+      bucket.push(target.id); byWorkspace.set(target.workspaceId!, bucket);
+    }
+    const predicate = or(...Array.from(byWorkspace, ([id, taskIds]) => and(eq(activitiesTable.workspaceId, id), inArray(activitiesTable.taskId, taskIds))));
+    const rows = await db.all<CompletionTransition>(sql`
+      WITH ranked AS (
+        SELECT id, workspace_id AS workspaceId, task_id AS taskId, kind, payload,
+          created_at AS createdAt,
+          ROW_NUMBER() OVER (PARTITION BY workspace_id, task_id ORDER BY created_at DESC, id DESC) AS historyRank,
+          MAX(created_at) OVER (PARTITION BY workspace_id, task_id) AS latestAt
+        FROM activities
+        WHERE ${predicate} AND kind IN ('move', 'toggleComplete')
+      )
+      SELECT * FROM ranked WHERE createdAt = latestAt AND historyRank <= ${MAX_COMPLETION_TRANSITIONS + 1}
+      ORDER BY workspaceId, taskId, historyRank
+    `);
+    const grouped = new Map<string, CompletionTransition[]>();
+    for (const row of rows) {
+      const bucket = grouped.get(row.taskId) ?? []; bucket.push(row); grouped.set(row.taskId, bucket);
+    }
+    for (const target of chunk) completions.set(target.id, completionFromHistory(grouped.get(target.id) ?? [], now));
+  }
+  return completions;
 }
 
 /**
@@ -204,6 +253,8 @@ export async function _listForUserFromDb(db: any, identity: UserIdentity): Promi
 function buildWorkRead(
   workspaceId: string,
   rows: Array<typeof tasksTable.$inferSelect>,
+  config: ColumnConfig | null = null,
+  completions: ReadonlyMap<string, string | null> = new Map(),
 ): WorkRead {
     const taskReads: TaskRead[] = rows.map((t) => {
       const tags = Array.isArray(t.tags) ? t.tags : [];
@@ -218,7 +269,8 @@ function buildWorkRead(
         projectSlugs: tags,
         title: t.title,
         assignee: assignees[0] ? { id: assignees[0] } : null,
-        status: deriveStatus(t.lane, blockedBy),
+        status: deriveStatus(t, blockedBy, config),
+        completedAt: completions.get(t.id) ?? null,
         dueDate,
         blockedBy,
         // No separate status-change timestamp in Tasks's schema;
@@ -287,22 +339,41 @@ export const tasksDbSource: DataSource = {
         "tasksDbSource called without TASKS_DATABASE_URL configured",
       );
     }
-    const ids = Array.from(new Set(workspaceIds.filter(Boolean))).slice(0, 50);
+    const ids = Array.from(new Set(workspaceIds.filter(Boolean)));
     if (ids.length === 0) return [];
-    const rows = await tasksDb
-      .select()
-      .from(tasksTable)
-      .where(inArray(tasksTable.workspaceId, ids));
-    const byWorkspace = new Map<string, Array<typeof tasksTable.$inferSelect>>();
-    for (const row of rows) {
-      if (!row.workspaceId || !ids.includes(row.workspaceId)) continue;
-      const bucket = byWorkspace.get(row.workspaceId) ?? [];
-      bucket.push(row);
-      byWorkspace.set(row.workspaceId, bucket);
+    const reads: WorkRead[] = [];
+    const now = Date.now();
+    // Every requested workspace is read exactly once; a failed later batch
+    // rejects the complete operation instead of returning a partial snapshot.
+    for (let offset = 0; offset < ids.length; offset += 50) {
+      const batch = ids.slice(offset, offset + 50);
+      const rows = await tasksDb.select().from(tasksTable)
+        .where(and(inArray(tasksTable.workspaceId, batch), isNull(tasksTable.archivedAt), isNull(tasksTable.parentTaskId)))
+        .orderBy(asc(tasksTable.id));
+      const configurations = await readWorkspaceColumnConfigs(tasksDb, batch);
+      if (Array.from(configurations.values()).some(config => config.unreadable)) throw new Error("Signal workspace column configuration unavailable");
+      const completionTargets = rows.filter(row => {
+        const config = configurations.get(row.workspaceId!)!.config;
+        // A custom terminal move has no historical event; an older canonical
+        // done event cannot prove when this current custom completion happened.
+        // A present corrupt/future durable stamp is unknown, not permission
+        // to resurrect a potentially superseded historical completion.
+        return effectiveColumnKey(row) === "done" && isTaskDone(row, config) && row.completedAt === null;
+      });
+      const historicalCompletions = await readCompletionHistory(tasksDb, completionTargets, now);
+      for (const workspaceId of batch) {
+        const columnConfig = configurations.get(workspaceId)!;
+        const workspaceRows = rows.filter(row => row.workspaceId === workspaceId);
+        const completions = new Map<string, string | null>();
+        for (const row of workspaceRows) {
+          if (!isTaskDone(row, columnConfig.config)) { completions.set(row.id, null); continue; }
+          const durable = validCompletion(row.completedAt, now);
+          completions.set(row.id, durable ?? historicalCompletions.get(row.id) ?? null);
+        }
+        reads.push(buildWorkRead(workspaceId, workspaceRows, columnConfig.config, completions));
+      }
     }
-    return ids.map((workspaceId) =>
-      buildWorkRead(workspaceId, byWorkspace.get(workspaceId) ?? []),
-    );
+    return reads;
   },
 
   async listForUser(identity: UserIdentity): Promise<WorkspaceCandidate[]> {

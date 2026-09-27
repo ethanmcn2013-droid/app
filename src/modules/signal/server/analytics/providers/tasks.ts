@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, eq, gte, inArray, lt } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNull, lt } from "drizzle-orm";
 import type {
   AnalyticsDate,
   AnalyticsEvent,
@@ -71,7 +71,7 @@ export class TasksAnalyticsProvider implements TasksProvider {
       db
         .select()
         .from(tasks)
-        .where(eq(tasks.workspaceId, query.scope.workspaceId))
+        .where(and(eq(tasks.workspaceId, query.scope.workspaceId), isNull(tasks.parentTaskId)))
         .orderBy(asc(tasks.id))
         .limit(MAX_TASKS + 1),
       readWorkspaceColumnConfig(db, query.scope.workspaceId),
@@ -173,6 +173,7 @@ export class TasksAnalyticsProvider implements TasksProvider {
         title: row.title,
         status: effectiveColumnKey(row),
         terminal: terminalTaskIds.has(row.id),
+        archived: row.archivedAt !== null,
         ownerIds: assigneeIds,
         owners: assigneeIds.map((id) => people.get(id) ?? { id, displayName: null }),
         due: analyticsDate(row.dueAt, row.due),

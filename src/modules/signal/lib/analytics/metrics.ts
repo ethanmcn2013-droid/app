@@ -198,7 +198,7 @@ function result<K extends MetricKey>(
 }
 
 function isOpen(task: TaskRecord): boolean {
-  return !task.terminal;
+  return !task.terminal && !task.archived;
 }
 
 function completionMoments(

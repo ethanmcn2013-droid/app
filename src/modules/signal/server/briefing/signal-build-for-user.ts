@@ -297,12 +297,17 @@ export async function buildBriefingForUser(opts: {
         : await Promise.all(
             workspaceIds.map((wid) => dataSource.read(wid)),
           );
+      const returnedIds = workspaces.map(work => work.workspaceId);
+      if (returnedIds.length !== workspaceIds.length || new Set(returnedIds).size !== returnedIds.length || returnedIds.some(id => !workspaceIds.includes(id))) {
+        throw new Error("Signal source workspace coverage mismatch");
+      }
       return workspaces.flatMap((work) =>
         work.tasks.map((t) => ({
           id: t.id,
           title: t.title,
           lane: ((): import("../../lib/briefing/types").Lane => {
             if (t.status === "shipped") return "shipped";
+            if (t.status === "review") return "review";
             if (t.status === "in-flight") return "in-flight";
             if (t.status === "blocked") return "in-flight";
             if (t.status === "next") return "next";
@@ -321,9 +326,8 @@ export async function buildBriefingForUser(opts: {
           blockedBy: t.blockedBy,
           sourceLabel: `Tasks · ${workspaceNames.get(work.workspaceId) ?? "Workspace"}`,
           movedToShippedAt:
-            t.status === "shipped"
-              ? new Date(t.lastStatusChangeAt).getTime()
-              : null,
+            t.status === "shipped" && t.completedAt && Number.isFinite(Date.parse(t.completedAt)) && Date.parse(t.completedAt) >= 0 && Date.parse(t.completedAt) <= now
+              ? Date.parse(t.completedAt) : null,
           workspaceId: work.workspaceId,
           planningPeriodId: authorizedScope!.period?.id ?? null,
         })),
