@@ -163,6 +163,82 @@ test("keeps the application timeout active through response-body consumption", a
   await manager.cleanup();
 });
 
+test("does not issue an authenticated application request for an already-aborted caller", async () => {
+  const manager = createAuthenticatedSessionManager({ ...baseOptions, fetchImpl: async (url) => {
+    if (url.endsWith("/v1/sessions")) return sessionResponse("sess_pre_aborted");
+    if (url.endsWith("/tokens")) return tokenResponse();
+    throw new Error("unexpected_application_request");
+  } });
+  const handle = await manager.createSession(actorHash(0));
+  const identityRequestsBeforeAbort = manager.getMetrics().identityProvider.tokenRequests;
+  const controller = new AbortController(); controller.abort();
+  await assert.rejects(manager.fetchAuthenticated(handle, "https://preview-test.example/api/read", { signal: controller.signal }), { code: "APPLICATION_REQUEST_ABORTED" });
+  assert.equal(manager.getMetrics().app.requests, 0);
+  assert.equal(manager.getMetrics().identityProvider.tokenRequests, identityRequestsBeforeAbort);
+  await manager.cleanup();
+});
+
+test("composes caller cancellation with request timeout and aborts the underlying fetch", async () => {
+  let markApplicationStarted;
+  const applicationStarted = new Promise((resolve) => { markApplicationStarted = resolve; });
+  let underlyingSignal;
+  const manager = createAuthenticatedSessionManager({ ...baseOptions, fetchImpl: async (url, init) => {
+    if (url.endsWith("/v1/sessions")) return sessionResponse("sess_abort_fetch");
+    if (url.endsWith("/tokens")) return tokenResponse();
+    underlyingSignal = init.signal;
+    markApplicationStarted();
+    return new Promise((_resolve, reject) => init.signal.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" })), { once: true }));
+  } });
+  const handle = await manager.createSession(actorHash(0));
+  const controller = new AbortController();
+  const pending = manager.fetchAuthenticated(handle, "https://preview-test.example/api/read", { signal: controller.signal });
+  await applicationStarted;
+  controller.abort();
+  await assert.rejects(pending, { code: "APPLICATION_REQUEST_ABORTED" });
+  assert.equal(underlyingSignal.aborted, true);
+  assert.equal(manager.getMetrics().app.failures, 1);
+  await manager.cleanup();
+});
+
+test("caller cancellation after headers aborts underlying response-body consumption", async () => {
+  let bodySignal;
+  const manager = createAuthenticatedSessionManager({ ...baseOptions, fetchImpl: async (url, init) => {
+    if (url.endsWith("/v1/sessions")) return sessionResponse("sess_abort_body");
+    if (url.endsWith("/tokens")) return tokenResponse();
+    bodySignal = init.signal;
+    return new Response(new ReadableStream({
+      start(controller) { init.signal.addEventListener("abort", () => controller.error(Object.assign(new Error("aborted"), { name: "AbortError" })), { once: true }); },
+    }), { status: 200 });
+  } });
+  const handle = await manager.createSession(actorHash(0));
+  const controller = new AbortController();
+  const response = await manager.fetchAuthenticated(handle, "https://preview-test.example/api/slow-body", { signal: controller.signal });
+  const reading = response.text();
+  controller.abort();
+  await assert.rejects(reading, { code: "APPLICATION_REQUEST_ABORTED" });
+  assert.equal(bodySignal.aborted, true);
+  await manager.cleanup();
+});
+
+test("does not relabel an ordinary response-stream failure as caller cancellation", async () => {
+  const manager = createAuthenticatedSessionManager({ ...baseOptions, fetchImpl: async (url, init) => {
+    if (url.endsWith("/v1/sessions")) return sessionResponse("sess_abort_race");
+    if (url.endsWith("/tokens")) return tokenResponse();
+    return new Response(new ReadableStream({
+      start(controller) {
+        init.signal.addEventListener("abort", () => controller.error(new Error("ordinary response stream failure")), { once: true });
+      },
+    }), { status: 200 });
+  } });
+  const handle = await manager.createSession(actorHash(0));
+  const controller = new AbortController();
+  const response = await manager.fetchAuthenticated(handle, "https://preview-test.example/api/racing-body", { signal: controller.signal });
+  const reading = response.text();
+  controller.abort();
+  await assert.rejects(reading, { code: "APPLICATION_RESPONSE_BODY_FAILED" });
+  await manager.cleanup();
+});
+
 test("refreshes a token inside the expiry safety window and accounts refresh separately", async () => {
   let time = 1_800_000_000_000;
   let tokenIssue = 0;

@@ -43,7 +43,7 @@ test("actual development DB module leaves an explicit task-populated, comment-em
     const locations = await client.execute("PRAGMA database_list");
     const databasePath = String(locations.rows.find((row) => row.name === "main")?.file ?? "");
     assert.ok(databasePath);
-    const environment: NodeJS.ProcessEnv = {};
+    const environment: NodeJS.ProcessEnv = { NODE_ENV: "development" };
     for (const key of ["PATH", "Path", "APPDATA", "LOCALAPPDATA", "USERPROFILE", "SYSTEMROOT", "SystemRoot", "TEMP", "TMP", "COMSPEC", "ComSpec"]) {
       if (process.env[key]) environment[key] = process.env[key];
     }

@@ -100,6 +100,33 @@ function makeTimeoutSignal(timeoutMs) {
   return { signal: controller.signal, clear: () => clearTimeout(timeout) };
 }
 
+function composeRequestSignal(callerSignal, timeout) {
+  const controller = new AbortController();
+  let abortSource;
+  const forward = (source, signal) => {
+    if (controller.signal.aborted) return;
+    abortSource = source;
+    controller.abort(signal.reason);
+  };
+  const onCallerAbort = () => forward("caller", callerSignal);
+  const onTimeoutAbort = () => forward("timeout", timeout.signal);
+  if (callerSignal) {
+    if (callerSignal.aborted) onCallerAbort();
+    else callerSignal.addEventListener("abort", onCallerAbort, { once: true });
+  }
+  if (timeout.signal.aborted) onTimeoutAbort();
+  else timeout.signal.addEventListener("abort", onTimeoutAbort, { once: true });
+  return {
+    signal: controller.signal,
+    get abortSource() { return abortSource; },
+    clear() {
+      callerSignal?.removeEventListener("abort", onCallerAbort);
+      timeout.signal.removeEventListener("abort", onTimeoutAbort);
+      timeout.clear();
+    },
+  };
+}
+
 /**
  * Manages Clerk development sessions and authenticated app calls for two allowlisted actors.
  * Secret keys and JWTs remain private to the manager and are never included in errors or metrics.
@@ -342,21 +369,28 @@ export function createAuthenticatedSessionManager({
     try { parsed = new URL(url); } catch { throw fail("APPLICATION_ORIGIN_NOT_ALLOWED", "Application request URL is invalid"); }
     if (!allowedOriginSet.has(parsed.origin)) throw fail("APPLICATION_ORIGIN_NOT_ALLOWED", "Application request origin is not allowlisted");
     if (parsed.username || parsed.password) throw fail("APPLICATION_ORIGIN_NOT_ALLOWED", "Application request URLs cannot contain embedded credentials");
+    if (init.signal?.aborted) throw fail("APPLICATION_REQUEST_ABORTED", "Authenticated application request was cancelled before it started");
     const jwt = await ensureToken(record);
+    if (init.signal?.aborted) throw fail("APPLICATION_REQUEST_ABORTED", "Authenticated application request was cancelled before it started");
     const headers = new Headers(init.headers ?? {});
     headers.set("Authorization", `Bearer ${jwt}`);
     const timeout = makeTimeoutSignal(requestTimeoutMs);
+    const request = composeRequestSignal(init.signal, timeout);
+    if (request.abortSource === "caller") {
+      request.clear();
+      throw fail("APPLICATION_REQUEST_ABORTED", "Authenticated application request was cancelled before it started");
+    }
     metrics.app.requests += 1;
     try {
       const response = await fetchImpl(parsed.href, {
         ...init,
         headers,
         redirect: "error",
-        signal: timeout.signal,
+        signal: request.signal,
       });
       metrics.app.responses += 1;
       if (!response.body || [204, 205, 304].includes(response.status)) {
-        timeout.clear();
+        request.clear();
         return response;
       }
       const reader = response.body.getReader();
@@ -365,26 +399,31 @@ export function createAuthenticatedSessionManager({
           try {
             const { done, value } = await reader.read();
             if (done) {
-              timeout.clear();
+              request.clear();
               controller.close();
             } else {
               controller.enqueue(value);
             }
-          } catch {
-            timeout.clear();
-            controller.error(fail("APPLICATION_RESPONSE_BODY_FAILED", "Authenticated application response body did not complete"));
+          } catch (error) {
+            request.clear();
+            const callerCancelled = request.abortSource === "caller" && error?.name === "AbortError";
+            controller.error(fail(callerCancelled ? "APPLICATION_REQUEST_ABORTED" : "APPLICATION_RESPONSE_BODY_FAILED",
+              callerCancelled ? "Authenticated application request was cancelled" : "Authenticated application response body did not complete"));
           }
         },
         async cancel(reason) {
-          timeout.clear();
+          request.clear();
           await reader.cancel(reason);
         },
       });
       return new Response(boundedBody, { status: response.status, statusText: response.statusText, headers: response.headers });
     } catch (error) {
-      timeout.clear();
+      request.clear();
       metrics.app.failures = (metrics.app.failures ?? 0) + 1;
-      throw fail(error?.name === "AbortError" ? "APPLICATION_REQUEST_TIMEOUT" : "APPLICATION_REQUEST_FAILED", "Authenticated application request did not complete");
+      const callerCancelled = request.abortSource === "caller" && error?.name === "AbortError";
+      const timedOut = request.abortSource === "timeout" && error?.name === "AbortError";
+      throw fail(callerCancelled ? "APPLICATION_REQUEST_ABORTED" : timedOut ? "APPLICATION_REQUEST_TIMEOUT" : "APPLICATION_REQUEST_FAILED",
+        callerCancelled ? "Authenticated application request was cancelled" : timedOut ? "Authenticated application request timed out" : "Authenticated application request did not complete");
     }
   }
 
