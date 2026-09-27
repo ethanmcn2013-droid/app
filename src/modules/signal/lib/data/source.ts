@@ -184,6 +184,15 @@ async function readCompletionHistory(db: TasksDb, targets: readonly (typeof task
   return completions;
 }
 
+class DependencyStateUnavailableError extends Error {
+  readonly code = "SIGNAL_DEPENDENCY_STATE_UNAVAILABLE";
+
+  constructor() {
+    super("Signal dependency state unavailable");
+    this.name = "DependencyStateUnavailableError";
+  }
+}
+
 type DependencyState = Pick<typeof tasksTable.$inferSelect, "id" | "workspaceId" | "lane" | "boardColumnKey">;
 
 /** Positive comment creation evidence can advance the existing activity proxy.
@@ -262,13 +271,13 @@ async function readOpenDependencies(
   for (const row of rows) {
     const config = configurations.get(row.workspaceId!)!.config;
     const terminal = isTaskDone(row, config);
-    if (row.blockedBy !== null && !Array.isArray(row.blockedBy) && !terminal) throw new Error("Signal dependency state unavailable");
+    if (row.blockedBy !== null && !Array.isArray(row.blockedBy) && !terminal) throw new DependencyStateUnavailableError();
     const blockedBy = Array.isArray(row.blockedBy) ? row.blockedBy : [];
     edges.set(row.id, blockedBy.filter(id => {
       const dependency = validId(id) ? byWorkspace.get(row.workspaceId!)?.get(id) : undefined;
       // Unknown is not cleared or a confirmed open blocker. The existing
       // unavailable path prevents an open-task claim from using partial truth.
-      if (!dependency && !terminal) throw new Error("Signal dependency state unavailable");
+      if (!dependency && !terminal) throw new DependencyStateUnavailableError();
       return !dependency || !isTaskDone(dependency, config);
     }));
   }

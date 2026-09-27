@@ -147,8 +147,9 @@ for (const fault of ["missing", "foreign", "mixed"] as const) {
     if (fault === "foreign") await fixture.client.execute({ sql: "INSERT INTO tasks(id,workspace_id,seq,title,lane,priority,assignees,tags,blocked_by,created_at,updated_at) VALUES ('unresolved','synthetic-foreign-project',1,'Foreign secret title','done','p2','[]','[]','[]',?,?)", args: [(NOW - DAY) / 1000, NOW / 1000] });
     await task("dependent", { lane: "doing", blocked: fault === "mixed" ? ["known-completed", "unresolved"] : ["unresolved"], updated: NOW - 10 * DAY });
     const beforeHashes = await hashes();
-    await assert.rejects(home(), /Signal dependency state unavailable/);
-    await assert.rejects(orchestrator.buildBriefingForUser({ clerkId: ACTOR, cadence: "daily", recordReadState: true, scope: { kind: "workspace", workspaceId: WORKSPACE } }), /Signal dependency state unavailable/);
+    const unavailable = { name: "DependencyStateUnavailableError", code: "SIGNAL_DEPENDENCY_STATE_UNAVAILABLE", message: "Signal dependency state unavailable" };
+    await assert.rejects(home(), unavailable);
+    await assert.rejects(orchestrator.buildBriefingForUser({ clerkId: ACTOR, cadence: "daily", recordReadState: true, scope: { kind: "workspace", workspaceId: WORKSPACE } }), unavailable);
     assert.deepEqual(await hashes(), beforeHashes);
   });
 }

@@ -178,7 +178,11 @@ for (const fault of ["missing", "foreign", "mixed", "malformed"] as const) {
     }
     await task(id, `${id}-dependent`, { lane: "review", blocked: fault === "mixed" ? [`${id}-done`, `${id}-unresolved`] : [`${id}-unresolved`] });
     if (fault === "malformed") await fixture.client.execute({ sql: "UPDATE tasks SET blocked_by=? WHERE id=?", args: [JSON.stringify([null, 17, ""]), `${id}-dependent`] });
-    await assert.rejects(source.tasksDbSource.read(id), /Signal dependency state unavailable/);
+    await assert.rejects(source.tasksDbSource.read(id), {
+      name: "DependencyStateUnavailableError",
+      code: "SIGNAL_DEPENDENCY_STATE_UNAVAILABLE",
+      message: "Signal dependency state unavailable",
+    });
   });
 }
 
