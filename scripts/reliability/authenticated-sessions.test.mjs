@@ -60,7 +60,12 @@ test("creates only allowlisted sessions, requests an untemplated JWT and authori
   const fetchImpl = async (url, init) => {
     calls.push({ url, init });
     if (url.endsWith("/v1/sessions")) return sessionResponse("sess_owned_1");
-    if (url.endsWith("/tokens")) return tokenResponse();
+    if (url.endsWith("/tokens")) {
+      if (init.headers["Content-Type"] !== "application/json" || init.body !== "{}") {
+        return jsonResponse({ errors: [{ code: "unsupported_content_type" }] }, 415);
+      }
+      return tokenResponse();
+    }
     return jsonResponse({ ok: true });
   };
   const manager = createAuthenticatedSessionManager({ ...baseOptions, fetchImpl });
@@ -76,7 +81,8 @@ test("creates only allowlisted sessions, requests an untemplated JWT and authori
   assert.equal(calls[0].url, "https://api.clerk.com/v1/sessions");
   assert.deepEqual(JSON.parse(calls[0].init.body), { user_id: ids[0] });
   assert.equal(calls[1].url, "https://api.clerk.com/v1/sessions/sess_owned_1/tokens");
-  assert.equal(calls[1].init.body, undefined);
+  assert.equal(calls[1].init.headers["Content-Type"], "application/json");
+  assert.deepEqual(JSON.parse(calls[1].init.body), {});
   assert.equal(calls[2].init.headers.get("Authorization").startsWith("Bearer header."), true);
   assert.notEqual(calls[2].init.headers.get("Authorization"), "Bearer caller-supplied");
   assert.equal(calls[2].init.redirect, "error");
@@ -84,6 +90,30 @@ test("creates only allowlisted sessions, requests an untemplated JWT and authori
   assert.equal(manager.getMetrics().app.requests, 1);
   assert.equal((await manager.cleanup()).ok, true);
   assert.match(calls[3].url, /\/v1\/sessions\/sess_owned_1\/revoke$/);
+});
+
+test("keeps the cleanup receipt when token setup fails after a session was created", async () => {
+  let revokes = 0;
+  const fetchImpl = async (url, init) => {
+    if (url.endsWith("/v1/sessions")) return sessionResponse("sess_cleanup_receipt");
+    if (url.endsWith("/tokens")) return jsonResponse({ errors: [{ code: "unsupported_content_type" }] }, 415);
+    if (url.endsWith("/revoke")) { revokes += 1; return jsonResponse({}); }
+    throw new Error("unexpected request");
+  };
+  const manager = createAuthenticatedSessionManager({ ...baseOptions, fetchImpl });
+  let earlyReceipt;
+  await assert.rejects(manager.createSession(actorHash(0)), (error) => {
+    assert.equal(error.code, "CLERK_PROVIDER_HTTP_REJECTED");
+    earlyReceipt = error.cleanupReport;
+    assert.equal(earlyReceipt.ok, true);
+    assert.equal(earlyReceipt.attempted, 1);
+    assert.equal(earlyReceipt.revoked, 1);
+    assert.equal(earlyReceipt.unresolved, 0);
+    return true;
+  });
+  assert.strictEqual(await manager.cleanup(), earlyReceipt);
+  assert.equal(revokes, 1);
+  assert.equal(manager.getMetrics().identityProvider.revokeRequests, 1);
 });
 
 test("refuses cross-origin bearer disclosure and handles from another manager", async () => {
@@ -215,6 +245,37 @@ test("returns an explicit unresolved cleanup receipt so callers can fail accepta
   assert.equal(receipt.unresolved, 1);
   assert.equal(receipt.errors[0].code, "CLERK_PROVIDER_HTTP_ERROR");
   assert.equal(JSON.stringify(receipt).includes("do not expose"), false);
+});
+
+test("retries only unresolved revocations, reports unique session counts, and caches final success", async () => {
+  let revokes = 0;
+  const fetchImpl = async (url) => {
+    if (url.endsWith("/v1/sessions")) return sessionResponse("sess_cleanup_retry");
+    if (url.endsWith("/tokens")) return tokenResponse();
+    if (url.endsWith("/revoke")) {
+      revokes += 1;
+      return revokes === 1 ? jsonResponse({}, 503) : jsonResponse({ status: "revoked" });
+    }
+    return jsonResponse({});
+  };
+  const manager = createAuthenticatedSessionManager({ ...baseOptions, fetchImpl, identityRequestCap: 8, maxRetries: 2 });
+  await manager.createSession(actorHash(0));
+  const first = await manager.cleanup();
+  assert.equal(first.ok, false);
+  assert.equal(first.attempted, 1);
+  assert.equal(first.revoked, 0);
+  assert.equal(first.unresolved, 1);
+  const completed = await manager.cleanup();
+  assert.equal(completed.ok, true);
+  assert.equal(completed.attempted, 1);
+  assert.equal(completed.revoked, 1);
+  assert.equal(completed.unresolved, 0);
+  assert.strictEqual(await manager.cleanup(), completed);
+  assert.equal(revokes, 2);
+  assert.equal(manager.getMetrics().identityProvider.revokeRequests, 2);
+  assert.equal(completed.revoked, completed.attempted);
+  assert.ok(completed.attempted <= 10);
+  await assert.rejects(manager.createSession(actorHash(1)), { code: "SESSION_MANAGER_CLOSED" });
 });
 
 test("records an ambiguous create timeout without retrying or pretending it can revoke an unknown ID", async () => {

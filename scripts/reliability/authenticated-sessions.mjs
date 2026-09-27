@@ -136,6 +136,9 @@ export function createAuthenticatedSessionManager({
   const usedSessionIds = new Set();
   let closed = false;
   let cleanupInFlight;
+  let completedCleanupReceipt;
+  const cleanupAttemptedSessionIds = new Set();
+  let cleanupRevokedCount = 0;
   let creationQueue = Promise.resolve();
   const metrics = {
     identityProvider: { requests: 0, successes: 0, failures: 0, retries: 0, createRequests: 0, tokenRequests: 0, revokeRequests: 0, ambiguousCreateFailures: 0 },
@@ -206,6 +209,7 @@ export function createAuthenticatedSessionManager({
   }
 
   async function cleanup() {
+    if (completedCleanupReceipt) return completedCleanupReceipt;
     if (cleanupInFlight) return cleanupInFlight;
     cleanupInFlight = (async () => {
       closed = true;
@@ -213,6 +217,7 @@ export function createAuthenticatedSessionManager({
       for (const record of [...sessions.values()].reverse()) {
         if (record.revoked) continue;
         report.attempted += 1;
+        cleanupAttemptedSessionIds.add(record.sessionId);
         try {
           await providerRequest(`/v1/sessions/${encodeURIComponent(record.sessionId)}/revoke`, {
             retries: 0,
@@ -220,11 +225,20 @@ export function createAuthenticatedSessionManager({
           });
           record.revoked = true;
           report.revoked += 1;
+          cleanupRevokedCount += 1;
         } catch (error) {
           report.ok = false;
           report.unresolved += 1;
           report.errors.push({ code: error.code ?? "CLERK_REVOKE_FAILED", actorHash: record.actorHash });
         }
+      }
+      // Receipt counts are unique owned sessions; raw retry traffic remains in provider metrics.
+      report.attempted = cleanupAttemptedSessionIds.size;
+      report.revoked = cleanupRevokedCount;
+      if (report.ok) {
+        report.errors = Object.freeze([...report.errors]);
+        completedCleanupReceipt = Object.freeze(report);
+        return completedCleanupReceipt;
       }
       return report;
     })();
@@ -300,6 +314,9 @@ export function createAuthenticatedSessionManager({
     if (record.tokenRefresh) return record.tokenRefresh;
     record.tokenRefresh = (async () => {
       const payload = await providerRequest(`/v1/sessions/${encodeURIComponent(record.sessionId)}/tokens`, {
+        // Clerk's no-template token endpoint rejected an absent content type in the bounded probe.
+        // An empty JSON object supplies the required type without selecting a JWT template.
+        body: {},
         retries: maxRetries,
         kind: "token",
       });
