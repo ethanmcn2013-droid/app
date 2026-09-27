@@ -220,7 +220,6 @@
     "src/modules/signal/lib/briefing/build.test.ts",
     "src/modules/signal/lib/briefing/wedding-briefing-selectivity.test.ts",
     "src/modules/signal/lib/overview/overview-model.test.ts",
-    "src/modules/signal/server/briefing/signal-build-for-user.test.ts",
     "src/modules/signal/signal-public-url-contract.test.ts",
     "src/modules/signal/signal-suite-context.test.ts"
   ],
@@ -232,6 +231,10 @@
     "./src/test/register-server-only.mjs",
     "--test",
     "src/server/crypto/secret-box.test.ts",
+    "src/modules/signal/server/briefing/signal-build-for-user.test.ts",
+    "src/modules/signal/server/briefing/signal-build-for-user.persisted.test.ts",
+    "src/modules/signal/lib/data/source.persisted.test.ts",
+    "src/modules/signal/server/analytics/providers/column-config.test.ts",
     "src/server/connections/google-oauth-state.test.ts",
     "src/server/provider-token-custody.test.ts",
     "src/server/attachment-client-upload-security.test.ts",
