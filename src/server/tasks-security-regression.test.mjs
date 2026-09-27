@@ -751,7 +751,17 @@ test("demo and review cannot bind or seed the configured database", () => {
   );
   assert.match(
     dbIndex,
-    /process\.env\.NODE_ENV === "development"\s*&&\s*!demoMode\s*&&/,
+    /const authToken = demoMode \? undefined : process\.env\.TASKS_AUTH_TOKEN/,
+  );
+  assert.match(
+    dbIndex,
+    /import \{ shouldSeedImplicitDevelopmentDatabase \} from "\.\/development-seed-policy"/,
+  );
+  // The policy's runtime matrix lives beside it; pin its real inputs and the
+  // guarded seed call here so extracting it cannot bypass the demo boundary.
+  assert.match(
+    dbIndex,
+    /if \(shouldSeedImplicitDevelopmentDatabase\(process\.env, \{\s*demoMode,\s*productionMode: isProductionMode\(\),\s*alreadySeeded: globalForDb\._seeded === true,\s*\}\)\) \{\s*globalForDb\._seeded = true;[\s\S]*?void seedIfEmpty\(db\)\.catch/,
   );
 });
 

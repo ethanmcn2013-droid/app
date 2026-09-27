@@ -31,7 +31,7 @@ test("production deployment, production access, demo and non-development runtime
   assert.equal(shouldSeedImplicitDevelopmentDatabase(development, { ...localState, demoMode: true }), false);
 });
 
-test("actual development DB module leaves an explicit task-populated, comment-empty target untouched", async () => {
+test("actual DB module preserves explicit data and binds demo/review to empty memory without seeding", async () => {
   const { client, cleanup } = await freshFileDb();
   try {
     await client.executeMultiple(`
@@ -49,22 +49,44 @@ test("actual development DB module leaves an explicit task-populated, comment-em
     }
     Object.assign(environment, { NODE_ENV: "development", TASKS_DATABASE_URL: pathToFileURL(databasePath).href });
     const indexUrl = pathToFileURL(fileURLToPath(new URL("./index.ts", import.meta.url))).href;
-    const childCode = `(async()=>{const module=await import(${JSON.stringify(indexUrl)});const db=module.db??module.default?.db;if(!db)throw new Error("db_module_export_missing");await new Promise(resolve=>setImmediate(resolve));const result={seedFlag:globalThis._seeded??null};db.$client.close();console.log(JSON.stringify(result));})().catch(error=>{console.error(error);process.exitCode=1;});`;
-    for (const accessMode of ["development", "production"]) {
+    const childCode = `(async()=>{
+      globalThis.fetch=()=>{throw new Error("unexpected_network_request");};
+      const module=await import(${JSON.stringify(indexUrl)});
+      const db=module.db??module.default?.db;
+      if(!db)throw new Error("db_module_export_missing");
+      try {
+        await new Promise(resolve=>setImmediate(resolve));
+        const locations=await db.$client.execute("PRAGMA database_list");
+        const tables=await db.$client.execute("SELECT COUNT(*) count FROM sqlite_master WHERE type='table'");
+        console.log(JSON.stringify({seedFlag:globalThis._seeded??null,
+          databasePath:locations.rows.find(row=>row.name==='main')?.file,
+          tableCount:Number(tables.rows[0].count)}));
+      } finally {db.$client.close();}
+    })().catch(error=>{console.error(error);process.exitCode=1;});`;
+    const expectedCounts = { users: 1, workspaces: 1, members: 1, tasks: 1, comments: 0, periods: 0 };
+    for (const accessMode of ["development", "production", "demo", "review"]) {
+      const memoryOnly = accessMode === "demo" || accessMode === "review";
       const child = spawnSync(process.execPath, ["--import", "tsx", "--import", "./src/test/register-server-only.mjs", "--eval", childCode],
-        { cwd: process.cwd(), env: { ...environment, SIGNAL_ACCESS_MODE: accessMode, NEXT_PUBLIC_SIGNAL_ACCESS_MODE: accessMode },
+        { cwd: process.cwd(), env: { ...environment, SIGNAL_ACCESS_MODE: accessMode, NEXT_PUBLIC_SIGNAL_ACCESS_MODE: accessMode,
+          ...(memoryOnly ? { TASKS_AUTH_TOKEN: "synthetic-token-must-not-reach-memory-client" } : {}) },
           encoding: "utf8", windowsHide: true, timeout: 30_000 });
       assert.equal(child.status, 0, child.stderr);
-      assert.deepEqual(JSON.parse(child.stdout.trim()), { seedFlag: null });
+      const observed = JSON.parse(child.stdout.trim());
+      assert.equal(observed.seedFlag, null, accessMode);
+      assert.equal(observed.databasePath, memoryOnly ? "" : databasePath, accessMode);
+      if (memoryOnly) assert.equal(observed.tableCount, 0, `${accessMode} must have an empty in-memory database`);
+      else assert.ok(observed.tableCount > 0, `${accessMode} must retain the migrated configured database`);
       assert.doesNotMatch(child.stderr, /seedIfEmpty failed|incomplete_task_comment/);
+      const counts = await client.execute(`SELECT
+        (SELECT COUNT(*) FROM users) users,
+        (SELECT COUNT(*) FROM workspaces) workspaces,
+        (SELECT COUNT(*) FROM workspace_members) members,
+        (SELECT COUNT(*) FROM tasks) tasks,
+        (SELECT COUNT(*) FROM comments) comments,
+        (SELECT COUNT(*) FROM planning_periods) periods`);
+      assert.deepEqual(counts.rows[0], expectedCounts, `${accessMode} must not seed the configured target`);
+      const task = await client.execute("SELECT id,workspace_id,title FROM tasks");
+      assert.deepEqual(task.rows, [{ id: "configured-task", workspace_id: "configured-project", title: "Synthetic configured task" }]);
     }
-    const counts = await client.execute(`SELECT
-      (SELECT COUNT(*) FROM users) users,
-      (SELECT COUNT(*) FROM workspaces) workspaces,
-      (SELECT COUNT(*) FROM workspace_members) members,
-      (SELECT COUNT(*) FROM tasks) tasks,
-      (SELECT COUNT(*) FROM comments) comments,
-      (SELECT COUNT(*) FROM planning_periods) periods`);
-    assert.deepEqual(counts.rows[0], { users: 1, workspaces: 1, members: 1, tasks: 1, comments: 0, periods: 0 });
   } finally { cleanup(); }
 });
