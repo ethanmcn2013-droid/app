@@ -39,6 +39,12 @@ export function reconcileRun({ manifest, observations, expectedOperations, sched
   if (!Number.isInteger(requestCap) || requestCap < 1 || observations.length > requestCap || !Number.isInteger(scheduledRequestCount) || scheduledRequestCount < 0 || scheduledRequestCount > requestCap) {
     fail("REQUEST_CAP_BREACHED", `scheduled ${scheduledRequestCount} requests and observed ${observations.length} attempts against cap ${requestCap}`);
   }
+  const unmaterializedScheduledRequests = Number.isInteger(scheduledRequestCount)
+    ? Math.max(0, scheduledRequestCount - expectedOperations.length)
+    : 0;
+  if (Number.isInteger(scheduledRequestCount) && scheduledRequestCount !== expectedOperations.length) {
+    fail("SCHEDULE_MISMATCH", `schedule offered ${scheduledRequestCount} workload slots but expectedOperations contains ${expectedOperations.length}; each offered slot must have one expected logical operation, while retries belong in observations`);
+  }
 
   const expectedById = new Map();
   for (const [journey, target] of Object.entries(manifest?.acceptanceTargets ?? {})) {
@@ -200,6 +206,7 @@ export function reconcileRun({ manifest, observations, expectedOperations, sched
       missingLogicalOperations: missingLogicalOperations.length,
       malformedObservations: malformed,
       unauthorizedEffects: unauthorized,
+      unmaterializedScheduledRequests,
     },
     offeredRequests,
     startedAttempts,

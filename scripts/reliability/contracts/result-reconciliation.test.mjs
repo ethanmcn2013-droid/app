@@ -22,6 +22,31 @@ test("reconciles healthy writes with latency, throughput and sample counts", () 
   assert.equal(result.byJourney["chat.send"].p95Ms, 200);
 });
 
+test("fails a dropped scheduled slot even when expected operations cover only started work", () => {
+  const result = reconcileRun({ manifest, observations, expectedOperations, scheduledRequestCount: 3 });
+  assert.equal(result.ok, false);
+  assert.equal(result.offeredRequests, 3);
+  assert.equal(result.startedAttempts, 2);
+  assert.equal(result.achievedRequests, 2);
+  assert.equal(result.counts.unmaterializedScheduledRequests, 1);
+  assert.ok(result.findings.some((finding) => finding.code === "SCHEDULE_MISMATCH"));
+});
+
+test("keeps scheduled logical operations separate from multiple retry attempts", () => {
+  const retried = [
+    { ...observations[0], attemptId: "task-1/1", attemptNumber: 1 },
+    { ...observations[0], attemptId: "task-1/2", attemptNumber: 2 },
+  ];
+  const result = reconcileRun({ manifest, observations: retried, expectedOperations: [expectedOperations[0]], scheduledRequestCount: 1 });
+  assert.equal(result.ok, true, JSON.stringify(result.findings));
+  assert.equal(result.offeredRequests, 1);
+  assert.equal(result.startedAttempts, 2);
+  assert.equal(result.counts.expectedLogicalOperations, 1);
+  assert.equal(result.counts.acknowledgedOperations, 1);
+  assert.equal(result.counts.unmaterializedScheduledRequests, 0);
+  assert.ok(!result.findings.some((finding) => finding.code === "SCHEDULE_MISMATCH"));
+});
+
 test("detects a lost acknowledged write and duplicate effect despite a successful HTTP result", () => {
   const corrupted = structuredClone(observations);
   corrupted[0].effectIds = [];
