@@ -14,6 +14,17 @@ async function fixture(fn) {
       if(value === undefined) delete process.env[key]; else process.env[key] = value;
   }
 }
+test("shared action fixture resolves the actor once and rechecks ambient membership", () => fixture(async f => {
+  const auth = f.load("src/server/auth.ts");
+  assert.deepEqual(await auth.getCurrentUserAndActiveWorkspaceOrNull(), ["owner", "a"]);
+  f.state.ambient = "b"; // Forged cookie: owner belongs only to a.
+  assert.deepEqual(await auth.getCurrentUserAndActiveWorkspaceOrNull(), ["owner", "a"]);
+  f.state.actor = "outsider";
+  f.state.ambient = "a"; // Forged cookie: outsider belongs only to b.
+  assert.deepEqual(await auth.getCurrentUserAndActiveWorkspaceOrNull(), ["outsider", "b"]);
+  await f.db.delete(f.schema.workspaceMembers).where(eq(f.schema.workspaceMembers.userId, "outsider"));
+  assert.deepEqual(await auth.getCurrentUserAndActiveWorkspaceOrNull(), ["outsider", null]);
+}));
 test("actual task action commits one activity and seven-field minute-rounded durable intent", () => fixture(async f => {
   await f.action({ id: "task-a", title: "PRIVATE TASK CONTENT", projectId: "a" });
   assert.deepEqual(await f.counts(), { tasks: 1, activities: 1, sponsored_use_intents: 1, sponsored_use_subjects: 1 });

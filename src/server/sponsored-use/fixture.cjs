@@ -6,7 +6,7 @@ const { tmpdir } = require("node:os");
 const root = path.resolve(__dirname, "../../..");
 const dep = createRequire(root + "/package.json"), ts = dep("typescript");
 const { createClient } = dep("@libsql/client"), { drizzle } = dep("drizzle-orm/libsql");
-const { eq } = dep("drizzle-orm");
+const { and, asc, eq } = dep("drizzle-orm");
 const SALT = "synthetic-only-usage-salt-for-fixtures";
 async function usageFixture(options = {}) {
   const directory = fs.mkdtempSync(path.join(tmpdir(), "usage-action-"));
@@ -18,10 +18,35 @@ async function usageFixture(options = {}) {
   const state = { actor: "owner", ambient: "a", demo: false, afterAuth: null };
   const cache = new Map();
   let visitSequence = 0;
+  const getCurrentUser = async () => state.actor;
+  async function getCurrentUserAndActiveWorkspaceOrNull() {
+    const me = await getCurrentUser();
+    if (state.demo) return [me, state.ambient];
+    // The fixture's ambient value stands for the cookie. Like auth.ts, only
+    // honor it after a fresh membership read for this exact resolved actor.
+    if (state.ambient) {
+      const [match] = await db.select({ workspaceId: schema.workspaceMembers.workspaceId })
+        .from(schema.workspaceMembers)
+        .where(and(eq(schema.workspaceMembers.userId, me), eq(schema.workspaceMembers.workspaceId, state.ambient)))
+        .limit(1);
+      if (match) return [me, state.ambient];
+    }
+    const [first] = await db.select({ workspaceId: schema.workspaceMembers.workspaceId })
+      .from(schema.workspaceMembers)
+      .innerJoin(schema.workspaces, eq(schema.workspaces.id, schema.workspaceMembers.workspaceId))
+      .where(eq(schema.workspaceMembers.userId, me))
+      .orderBy(asc(schema.workspaces.position), asc(schema.workspaces.name), asc(schema.workspaces.id))
+      .limit(1);
+    return [me, first?.workspaceId ?? null];
+  }
   function load(name) {
     const file = [name, name + ".ts", name + ".tsx", name + "/index.ts"].find(f => fs.existsSync(root + "/" + f) && fs.statSync(root + "/" + f).isFile()) ?? name;
     if (file === "src/server/db/index.ts") return { db };
-    if (file === "src/server/auth.ts") return { getCurrentUser: async () => state.actor, getActiveWorkspaceOrNull: async () => state.ambient };
+    if (file === "src/server/auth.ts") return {
+      getCurrentUser,
+      getCurrentUserAndActiveWorkspaceOrNull,
+      getActiveWorkspaceOrNull: async () => state.ambient,
+    };
     if (file === "src/lib/access-mode.ts") return { isDemoMode: () => state.demo };
     if (file === "src/server/db/queries.ts") return {
       getTasks: async ws => db.select().from(schema.tasks).where(eq(schema.tasks.workspaceId, ws)),
