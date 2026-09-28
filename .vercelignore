@@ -6,6 +6,7 @@ node_modules
 .git
 .githooks
 *.tsbuildinfo
+next-env.d.ts
 /out/
 /build/
 
