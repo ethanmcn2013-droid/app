@@ -127,6 +127,135 @@ export function validateHostedEnvelope(action: string, raw: unknown): raw is Env
   return false;
 }
 
+type MessageScope = { projectId: string; conversationId: string };
+type MessageScopeRow = { id: unknown; workspace_id: unknown; conversation_id: unknown; client_request_id: unknown; author_id: unknown };
+type VisibilitySample = { repetition: number; initiationMs: number; postAckMs: number; priorToAck: boolean };
+type InFlightSend = { actorHash: string; actorId: string; began: number; repetition: number; measured: boolean };
+type PendingSend = InFlightSend & { acknowledgedAt: number };
+
+/** Joins a history sighting to its send even when history wins the post-ack DB readback race. */
+export class HostedMessageVisibility {
+  readonly authorizedMessages = new Map<string, MessageScope>();
+  readonly pendingVisibility = new Map<string, PendingSend>();
+  readonly visibilitySamples: VisibilitySample[] = [];
+  private readonly inFlightSends = new Map<string, InFlightSend>();
+  private readonly earlySightings = new Map<string, { requestId: string; byActor: Map<string, number> }>();
+  private readonly discoveredSendRequests = new Map<string, { requestId: string; authorId: string }>();
+  private readonly finalizedVisibility = new Map<string, { pending: PendingSend; seenAt: number; sampleIndex: number | null }>();
+
+  constructor(rows: Iterable<Record<string, unknown>> = []) {
+    this.loadAuthorized(rows);
+  }
+
+  loadAuthorized(rows: Iterable<Record<string, unknown>>) {
+    for (const row of rows) this.authorizedMessages.set(String(row.id),
+      { projectId: String(row.workspace_id), conversationId: String(row.conversation_id) });
+  }
+
+  beginSend(requestId: string, send: InFlightSend) {
+    if (this.inFlightSends.has(requestId) || this.inFlightSends.size >= 16) throw new Error("hosted_duplicate_or_excess_in_flight_send");
+    this.inFlightSends.set(requestId, send);
+  }
+
+  cancelSend(requestId: string) {
+    this.inFlightSends.delete(requestId);
+    for (const [id, sighting] of this.earlySightings) if (sighting.requestId === requestId) this.earlySightings.delete(id);
+    for (const [id, send] of this.discoveredSendRequests) if (send.requestId === requestId) this.discoveredSendRequests.delete(id);
+  }
+
+  private recordVisibility(messageId: string, pending: PendingSend, seenAt: number) {
+    const finalized = this.finalizedVisibility.get(messageId);
+    if (finalized && seenAt >= finalized.seenAt) return;
+    const sample: VisibilitySample = { repetition: pending.repetition,
+      initiationMs: Math.max(0, seenAt - pending.began), postAckMs: Math.max(0, seenAt - pending.acknowledgedAt),
+      priorToAck: seenAt < pending.acknowledgedAt };
+    if (finalized) {
+      finalized.seenAt = seenAt;
+      if (finalized.sampleIndex !== null) this.visibilitySamples[finalized.sampleIndex] = sample;
+      return;
+    }
+    if (this.finalizedVisibility.size >= 512) throw new Error("hosted_visibility_capacity_exceeded");
+    const sampleIndex = pending.measured ? this.visibilitySamples.length : null;
+    if (sampleIndex !== null) this.visibilitySamples.push(sample);
+    this.finalizedVisibility.set(messageId, { pending, seenAt, sampleIndex });
+  }
+
+  confirmSend(requestId: string, messageId: string, acknowledgedAt: number, scope: MessageScope) {
+    const send = this.inFlightSends.get(requestId);
+    if (!send || !Number.isFinite(acknowledgedAt)) throw new Error("hosted_send_visibility_untracked");
+    this.authorizedMessages.set(messageId, scope);
+    const pending = { ...send, acknowledgedAt };
+    const sighting = this.earlySightings.get(messageId);
+    const observed = sighting?.requestId === requestId
+      ? [...sighting.byActor].filter(([actorHash, at]) => actorHash !== send.actorHash && at >= send.began).map(([, at]) => at)
+      : [];
+    if (observed.length) this.recordVisibility(messageId, pending, Math.min(...observed));
+    else this.pendingVisibility.set(messageId, pending);
+    this.earlySightings.delete(messageId);
+    this.discoveredSendRequests.delete(messageId);
+    this.inFlightSends.delete(requestId);
+  }
+
+  /** Unknown IDs are looked up before classification; missing/error means unverified, never foreign. */
+  async observeHistory(ids: string[], actorHash: string, receivedAt: number, scope: MessageScope,
+    lookup: (ids: string[]) => Promise<MessageScopeRow[]>) {
+    if (ids.length > 100 || !Number.isFinite(receivedAt)) throw new Error("hosted_history_scope_unverified");
+    const unknown = [...new Set(ids)].filter((id) => !this.authorizedMessages.has(id));
+    const discovered = new Map<string, MessageScopeRow>();
+    if (unknown.length) {
+      let rows: MessageScopeRow[];
+      try { rows = await lookup(unknown); }
+      catch { throw new Error("hosted_history_scope_unverified"); }
+      if (!Array.isArray(rows)) throw new Error("hosted_history_scope_unverified");
+      for (const row of rows) {
+        if (typeof row.id !== "string" || !unknown.includes(row.id) || discovered.has(row.id) ||
+            typeof row.workspace_id !== "string" || typeof row.conversation_id !== "string" ||
+            typeof row.client_request_id !== "string" || typeof row.author_id !== "string")
+          throw new Error("hosted_history_scope_unverified");
+        discovered.set(row.id, row);
+      }
+      if (discovered.size !== unknown.length) throw new Error("hosted_history_scope_unverified");
+      for (const row of discovered.values()) {
+        this.authorizedMessages.set(row.id as string,
+          { projectId: row.workspace_id as string, conversationId: row.conversation_id as string });
+        if (this.inFlightSends.has(row.client_request_id as string)) this.discoveredSendRequests.set(row.id as string,
+          { requestId: row.client_request_id as string, authorId: row.author_id as string });
+      }
+    }
+    const known = ids.map((id) => this.authorizedMessages.get(id));
+    const actualProjectIds = [...new Set(known.map((row) => row!.projectId))];
+    const scopeAuthorized = known.every((row) => row?.projectId === scope.projectId && row.conversationId === scope.conversationId);
+    if (scopeAuthorized) for (const id of ids) {
+      const pending = this.pendingVisibility.get(id);
+      if (pending && pending.actorHash !== actorHash && receivedAt >= pending.began) {
+        this.recordVisibility(id, pending, receivedAt);
+        this.pendingVisibility.delete(id);
+        continue;
+      }
+      const finalized = this.finalizedVisibility.get(id);
+      if (finalized && finalized.pending.actorHash !== actorHash && receivedAt >= finalized.pending.began) {
+        this.recordVisibility(id, finalized.pending, receivedAt);
+        continue;
+      }
+      const source = this.discoveredSendRequests.get(id);
+      const requestId = source?.requestId;
+      const send = requestId ? this.inFlightSends.get(requestId) : undefined;
+      if (requestId && send && send.actorHash !== actorHash && send.actorId === source?.authorId && receivedAt >= send.began) {
+        let sighting = this.earlySightings.get(id);
+        if (!sighting) { sighting = { requestId, byActor: new Map() }; this.earlySightings.set(id, sighting); }
+        const prior = sighting.byActor.get(actorHash);
+        if (prior === undefined || receivedAt < prior) sighting.byActor.set(actorHash, receivedAt);
+      }
+    }
+    return { actualProjectIds, scopeAuthorized, unauthorizedContent: !scopeAuthorized };
+  }
+}
+
+export function committedEffectMatchesScope(action: string, rows: ReadonlyArray<Record<string, unknown>>, scope: MessageScope) {
+  return (action === "send" || action === "promote-task") && rows.length === 1 && rows[0].workspace_id === scope.projectId &&
+    (action !== "send" || rows[0].conversation_id === scope.conversationId);
+}
+
 function requestForSlot(slot: Slot, room: HostedFixture["rooms"][number], fixture: HostedFixture, origin: string) {
   const clientRequestId = `${fixture.fixtureNamespace.slice(0, 60)}_${slot.repetition}_${slot.sessionId}_${slot.journey.replaceAll(".", "_")}_${slot.atMs}`;
   const query = new URLSearchParams({ projectId: room.projectId, conversationId: room.conversationId });
@@ -179,9 +308,8 @@ export async function runHostedWorkload(input: HostedInput) {
     let appRequests = 0; let droppedIterations = 0; let fatal = false;
     let start = 0;
     const cursors = new Map<string, number>();
-    const pendingVisibility = new Map<string, { actorHash: string; began: number; acknowledgedAt: number; repetition: number; measured: boolean }>();
-    const visibilitySamples: Array<{ repetition: number; initiationMs: number; postAckMs: number }> = [];
-    const authorizedMessages = new Map<string, { projectId: string; conversationId: string }>();
+    const visibility = new HostedMessageVisibility();
+    const { pendingVisibility, visibilitySamples } = visibility;
     let verificationQueries = 0;
     let mutationSourceIndex = 0;
     let negativeScopeProof = false;
@@ -218,7 +346,7 @@ export async function runHostedWorkload(input: HostedInput) {
       const projectIds = input.fixture.rooms.map((room) => room.projectId);
       const sourceMessages = await client.execute({ sql: `SELECT id,workspace_id,conversation_id FROM conversation_messages WHERE workspace_id IN (${projectIds.map(() => "?").join(",")})`, args: projectIds });
       verificationQueries++;
-      for (const row of sourceMessages.rows) authorizedMessages.set(String(row.id), { projectId: String(row.workspace_id), conversationId: String(row.conversation_id) });
+      visibility.loadAuthorized(sourceMessages.rows);
       for (const type of ["chat", "browsing", "hidden"]) for (let index = 1; index <= (type === "hidden" ? 2 : 4); index++) {
         handles.set(`${type}-${index}`, await manager.createSession(input.fixture.actors[index % 2].actorHash));
       }
@@ -247,12 +375,15 @@ export async function runHostedWorkload(input: HostedInput) {
         expectedOperations.push({ id: slot.logicalOperationId, journey: slot.journey, expectedOutcome, projectId: room.projectId });
         if (request.body) requests.set(slot.logicalOperationId, { actorId: actor.actorId, requestId: request.clientRequestId, conversationId: room.conversationId, projectId: room.projectId, task: request.action === "promote-task" });
         const began = performance.now(); let observation: Observation;
+        if (request.action === "send") visibility.beginSend(request.clientRequestId,
+          { actorHash: actor.actorHash, actorId: actor.actorId, began, repetition: slot.repetition, measured: slot.phase === "measured" });
         try {
           if (appRequests >= WORKLOAD.totalRequestCap) { fatal = true; throw new Error("aggregate_request_cap_exceeded"); }
           appRequests++;
           const response = await manager.fetchAuthenticated(handles.get(slot.sessionId), request.url, { method: request.body ? "POST" : "GET", redirect: "manual",
             headers: { origin, ...(request.body ? { "content-type": "application/json" } : { accept: "text/html" }) }, body: request.body ? JSON.stringify(request.body) : undefined });
           const body = await boundedResponseText(response);
+          const bodyReceivedAt = performance.now();
           const httpLatencyMs = performance.now() - began;
           let envelope: unknown;
           if (request.action !== "html") { try { envelope = JSON.parse(body.text); } catch { /* failed validation recorded below */ } }
@@ -264,10 +395,14 @@ export async function runHostedWorkload(input: HostedInput) {
           let unauthorizedContent = false;
           if (success && request.action === "history") {
             const ids = (value.messages as Array<{ id: string }>).map((message) => message.id);
-            const known = ids.map((id) => authorizedMessages.get(id));
-            actualProjectIds = [...new Set(known.flatMap((row) => row ? [row.projectId] : []))];
-            scopeAuthorized = known.every((row) => row?.projectId === room.projectId && row.conversationId === room.conversationId);
-            unauthorizedContent = !scopeAuthorized;
+            const history = await visibility.observeHistory(ids, actor.actorHash, bodyReceivedAt,
+              { projectId: room.projectId, conversationId: room.conversationId }, async (unknown) => {
+                verificationQueries++;
+                const rows = await client.execute({ sql: `SELECT id,workspace_id,conversation_id,client_request_id,author_id FROM conversation_messages WHERE id IN (${unknown.map(() => "?").join(",")})`, args: unknown });
+                return rows.rows.map((row) => ({ id: row.id, workspace_id: row.workspace_id,
+                  conversation_id: row.conversation_id, client_request_id: row.client_request_id, author_id: row.author_id }));
+              });
+            ({ actualProjectIds, scopeAuthorized, unauthorizedContent } = history);
           } else if (success && request.action === "html") {
             // HTML includes the explicitly requested synthetic Project marker; source row proof is provided by writer/reader checks.
             scopeAuthorized = true; actualProjectIds = [room.projectId];
@@ -277,21 +412,14 @@ export async function runHostedWorkload(input: HostedInput) {
               args: [String(value.taskId), request.clientRequestId, actor.actorId] });
             verificationQueries++;
             actualProjectIds = committed.rows.map((row) => String(row.workspace_id));
-            scopeAuthorized = committed.rows.length === 1 && committed.rows[0].workspace_id === room.projectId;
+            scopeAuthorized = committedEffectMatchesScope(request.action, committed.rows,
+              { projectId: room.projectId, conversationId: room.conversationId });
             unauthorizedContent = !scopeAuthorized;
-            if (scopeAuthorized && request.action === "send") authorizedMessages.set(String(value.messageId), { projectId: room.projectId, conversationId: room.conversationId });
+            if (scopeAuthorized && request.action === "send") visibility.confirmSend(request.clientRequestId, String(value.messageId), bodyReceivedAt,
+              { projectId: room.projectId, conversationId: room.conversationId });
           }
-          if (success && request.action === "send" && typeof value.messageId === "string") pendingVisibility.set(value.messageId,
-            { actorHash: actor.actorHash, began, acknowledgedAt: performance.now(), repetition: slot.repetition, measured: slot.phase === "measured" });
           if (success && request.action === "history") {
             cursors.set(slot.sessionId, Number(value.throughChangeSeq));
-            for (const message of value.messages as Array<{ id: string }>) {
-              const pending = pendingVisibility.get(message.id);
-              if (pending && pending.actorHash !== actor.actorHash) {
-                if (pending.measured) visibilitySamples.push({ repetition: pending.repetition, initiationMs: performance.now() - pending.began, postAckMs: performance.now() - pending.acknowledgedAt });
-                pendingVisibility.delete(message.id);
-              }
-            }
           }
           observation = { logicalOperationId: slot.logicalOperationId, attemptId: `${slot.logicalOperationId}:attempt:1`, attemptNumber: 1,
             serverTiming: parseHostedServerTiming(response.headers.get("server-timing")),
@@ -301,11 +429,15 @@ export async function runHostedWorkload(input: HostedInput) {
             finishedAtMs: performance.now() - start,
             ...(object(envelope) && typeof envelope.code === "string" && ERROR_CODES.has(envelope.code) ? { errorCode: envelope.code } : {}) };
           if (!valid || unauthorizedContent || [401, 403].includes(response.status)) fatal = true;
-        } catch {
+        } catch (error) {
+          const scopeUnverified = error instanceof Error && error.message === "hosted_history_scope_unverified";
+          if (scopeUnverified) fatal = true;
           observation = { logicalOperationId: slot.logicalOperationId, attemptId: `${slot.logicalOperationId}:attempt:1`, attemptNumber: 1, journey: slot.journey, phase: slot.phase,
             latencyMs: performance.now() - began, response: { statusCode: 503, valid: true, success: false, errorEnvelope: true }, acknowledged: false,
-            scopeAuthorized: false, actualProjectIds: [], unauthorizedContent: false, effectIds: [], bytes: 0, finishedAtMs: performance.now() - start, errorCode: "transport_failure" };
+            scopeAuthorized: false, actualProjectIds: [], unauthorizedContent: false, effectIds: [], bytes: 0, finishedAtMs: performance.now() - start,
+            errorCode: scopeUnverified ? "history_scope_unverified" : "transport_failure" };
         }
+        if (request.action === "send") visibility.cancelSend(request.clientRequestId);
         observations.push(observation);
         const recent = observations.filter((item) => item.finishedAtMs >= observation.finishedAtMs - 60_000);
         if (observation.finishedAtMs >= 60_000 && recent.length > 0 && recent.filter((item) => !item.response.success).length / recent.length > .05) fatal = true;

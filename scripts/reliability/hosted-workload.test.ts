@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { boundedResponseText, dryRunHostedWorkload, hostedMeasurementAttribution, parseHostedServerTiming, reconcileHostedEffects, runHostedWorkload, sessionCleanupAccepted, validateHostedEnvelope, validateHostedHtml } from "./hosted-workload";
+import { boundedResponseText, committedEffectMatchesScope, dryRunHostedWorkload, HostedMessageVisibility, hostedMeasurementAttribution, parseHostedServerTiming, reconcileHostedEffects, runHostedWorkload, sessionCleanupAccepted, validateHostedEnvelope, validateHostedHtml } from "./hosted-workload";
 import { hostedTargetHash, type HostedFixture } from "./hosted-seed";
 
 function fixture() {
@@ -104,4 +104,106 @@ test("database reconciliation reports each real verification query, excluding un
   assert.equal(counted, 2);
   assert.equal(calls, 2);
   assert.deepEqual(observations[2].effectIds, []);
+});
+
+test("actual visibility tracker joins committed history that beats sender effect readback", async () => {
+  const tracker = new HostedMessageVisibility();
+  const scope = { projectId: "owned-project", conversationId: "owned-room" };
+  const row = { id: "committed-message", workspace_id: scope.projectId, conversation_id: scope.conversationId,
+    client_request_id: "owned-request", author_id: "writer-id" };
+  tracker.beginSend("owned-request", { actorHash: "writer", actorId: "writer-id", began: 10, repetition: 1, measured: true });
+  let releaseReadback: (() => void) | undefined;
+  const readback = new Promise<void>((resolve) => { releaseReadback = resolve; });
+  const sender = (async () => { await readback; tracker.confirmSend("owned-request", row.id, 30, scope); })();
+  let lookupCalls = 0;
+  const first = await tracker.observeHistory([row.id], "observer", 20, scope, async (ids) => {
+    lookupCalls++; assert.deepEqual(ids, [row.id]); return [row];
+  });
+  assert.deepEqual(first, { actualProjectIds: [scope.projectId], scopeAuthorized: true, unauthorizedContent: false });
+  assert.equal(tracker.pendingVisibility.size, 0);
+  // A second observer sees a known ID before sender readback. Keep the first sighting.
+  await tracker.observeHistory([row.id], "other-observer", 25, scope, async () => { throw new Error("duplicate_lookup"); });
+  await tracker.observeHistory([row.id], "writer", 26, scope, async () => { throw new Error("duplicate_lookup"); });
+  releaseReadback?.();
+  await sender;
+  assert.equal(lookupCalls, 1);
+  assert.equal(tracker.pendingVisibility.size, 0);
+  assert.deepEqual(tracker.visibilitySamples, [{ repetition: 1, initiationMs: 10, postAckMs: 0, priorToAck: true }]);
+});
+
+test("history lookup completing after sender readback consumes pending at original body time", async () => {
+  const tracker = new HostedMessageVisibility();
+  const scope = { projectId: "owned-project", conversationId: "owned-room" };
+  const row = { id: "message", workspace_id: scope.projectId, conversation_id: scope.conversationId,
+    client_request_id: "request", author_id: "writer-id" };
+  tracker.beginSend("request", { actorHash: "writer", actorId: "writer-id", began: 10, repetition: 2, measured: true });
+  let releaseLookup: ((rows: typeof row[]) => void) | undefined;
+  const lookup = new Promise<typeof row[]>((resolve) => { releaseLookup = resolve; });
+  const observer = tracker.observeHistory([row.id], "observer", 18, scope, () => lookup);
+  tracker.confirmSend("request", row.id, 20, scope);
+  assert.equal(tracker.pendingVisibility.size, 1);
+  releaseLookup?.([row]);
+  assert.equal((await observer).scopeAuthorized, true);
+  assert.equal(tracker.pendingVisibility.size, 0);
+  assert.deepEqual(tracker.visibilitySamples, [{ repetition: 2, initiationMs: 8, postAckMs: 0, priorToAck: true }]);
+});
+
+test("earlier validated body revises a later finalized visibility sample after delayed lookup", async () => {
+  const tracker = new HostedMessageVisibility();
+  const scope = { projectId: "owned-project", conversationId: "owned-room" };
+  const row = { id: "message", workspace_id: scope.projectId, conversation_id: scope.conversationId,
+    client_request_id: "request", author_id: "writer-id" };
+  tracker.beginSend("request", { actorHash: "writer", actorId: "writer-id", began: 10, repetition: 2, measured: true });
+  let releaseLookup: ((rows: typeof row[]) => void) | undefined;
+  const lookup = new Promise<typeof row[]>((resolve) => { releaseLookup = resolve; });
+  const earlier = tracker.observeHistory([row.id], "observer", 18, scope, () => lookup);
+  tracker.confirmSend("request", row.id, 20, scope);
+  await tracker.observeHistory([row.id], "other-observer", 25, scope, async () => { throw new Error("duplicate_lookup"); });
+  assert.deepEqual(tracker.visibilitySamples, [{ repetition: 2, initiationMs: 15, postAckMs: 5, priorToAck: false }]);
+  releaseLookup?.([row]);
+  assert.equal((await earlier).scopeAuthorized, true);
+  assert.equal(tracker.pendingVisibility.size, 0);
+  assert.deepEqual(tracker.visibilitySamples, [{ repetition: 2, initiationMs: 8, postAckMs: 0, priorToAck: true }]);
+});
+
+test("same actor and pre-initiation sightings never satisfy different-actor visibility", async () => {
+  const tracker = new HostedMessageVisibility();
+  const scope = { projectId: "owned-project", conversationId: "owned-room" };
+  const row = { id: "message", workspace_id: scope.projectId, conversation_id: scope.conversationId,
+    client_request_id: "request", author_id: "writer-id" };
+  tracker.beginSend("request", { actorHash: "writer", actorId: "writer-id", began: 10, repetition: 1, measured: true });
+  await tracker.observeHistory([row.id], "writer", 15, scope, async () => [row]);
+  await tracker.observeHistory([row.id], "observer", 5, scope, async () => { throw new Error("duplicate_lookup"); });
+  tracker.confirmSend("request", row.id, 20, scope);
+  assert.equal(tracker.visibilitySamples.length, 0);
+  assert.equal(tracker.pendingVisibility.size, 1);
+  await tracker.observeHistory([row.id], "observer", 25, scope, async () => { throw new Error("duplicate_lookup"); });
+  assert.deepEqual(tracker.visibilitySamples, [{ repetition: 1, initiationMs: 15, postAckMs: 5, priorToAck: false }]);
+});
+
+test("foreign history IDs fail scope; missing or failed DB lookup is unverified, not fabricated cross-scope", async () => {
+  const scope = { projectId: "owned-project", conversationId: "owned-room" };
+  const foreign = new HostedMessageVisibility();
+  const result = await foreign.observeHistory(["foreign"], "observer", 10, scope, async () => [{ id: "foreign",
+    workspace_id: "foreign-project", conversation_id: "foreign-room", client_request_id: "foreign-request", author_id: "foreign-writer" }]);
+  assert.deepEqual(result, { actualProjectIds: ["foreign-project"], scopeAuthorized: false, unauthorizedContent: true });
+  assert.equal(foreign.visibilitySamples.length, 0);
+  const missing = new HostedMessageVisibility();
+  await assert.rejects(missing.observeHistory(["missing"], "observer", 10, scope, async () => []), /hosted_history_scope_unverified/);
+  await assert.rejects(missing.observeHistory(["unknown"], "observer", 10, scope,
+    async () => { throw new Error("private_database_error"); }), /hosted_history_scope_unverified/);
+  assert.equal(missing.authorizedMessages.size, 0);
+  assert.equal(missing.visibilitySamples.length, 0);
+});
+
+test("committed send readback requires the actual conversation as well as Project", () => {
+  const scope = { projectId: "owned-project", conversationId: "owned-room" };
+  assert.equal(committedEffectMatchesScope("send", [{ workspace_id: scope.projectId,
+    conversation_id: scope.conversationId }], scope), true);
+  assert.equal(committedEffectMatchesScope("send", [{ workspace_id: scope.projectId,
+    conversation_id: "other-room" }], scope), false);
+  assert.equal(committedEffectMatchesScope("send", [{ workspace_id: "other-project",
+    conversation_id: scope.conversationId }], scope), false);
+  assert.equal(committedEffectMatchesScope("send", [], scope), false);
+  assert.equal(committedEffectMatchesScope("promote-task", [{ workspace_id: scope.projectId }], scope), true);
 });
