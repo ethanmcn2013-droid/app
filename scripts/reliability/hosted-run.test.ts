@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { join, resolve } from "node:path";
 import { type HostedFixture } from "./hosted-seed";
 import { buildMixedWorkloadSchedule } from "./contracts/workload-schedule.mjs";
-import { previewScopedFetch, runHostedLaunch, validateHostedPreflight, type HostedRunConfig } from "./hosted-run";
+import { previewScopedFetch, previewScopedAccessFetch, validateVercelProtectionCookie, runHostedLaunch, validateHostedPreflight, type HostedRunConfig } from "./hosted-run";
 
 const sha = (value: string) => createHash("sha256").update(value).digest("hex");
 const digest = (value: string) => `sha256:${sha(value)}`;
@@ -93,6 +93,24 @@ test("Preview bypass is sent only to the pinned application origin", async () =>
   await fetcher("https://isolated-preview.example.test/api/conversations");
   await fetcher("https://api.clerk.com/v1/sessions", { headers: { "x-vercel-protection-bypass": "must-not-leak" } });
   assert.deepEqual(calls.map((call) => call.bypass), ["synthetic-preview-bypass", null]);
+});
+
+test("the exact Preview share cookie stays on the pinned origin and malformed cookies fail closed", async () => {
+  const cookie = `_vercel_jwt=${"a".repeat(24)}.${"b".repeat(24)}.${"c".repeat(24)}`;
+  const calls: Array<{ url: string; cookie: string | null }> = [];
+  const underlying = async (url: RequestInfo | URL, init?: RequestInit) => {
+    calls.push({ url: String(url), cookie: new Headers(init?.headers).get("cookie") });
+    return new Response(null, { status: 204 });
+  };
+  const fetcher = previewScopedAccessFetch("https://isolated-preview.example.test", { cookie }, underlying as typeof fetch);
+  await fetcher("https://isolated-preview.example.test/api/conversations");
+  await fetcher("https://api.clerk.com/v1/sessions", { headers: { cookie: "must-not-leak" } });
+  assert.deepEqual(calls.map((call) => call.cookie), [cookie, null]);
+  for (const bad of ["_vercel_jwt=x;other=y", "_vercel_jwt=x\r\nheader:y", "other=x", "_vercel_jwt=x.y", "_vercel_jwt=x.y.z; "]) {
+    assert.throws(() => validateVercelProtectionCookie(bad), /hosted_preview_cookie_invalid/);
+  }
+  assert.throws(() => previewScopedAccessFetch("https://isolated-preview.example.test", { cookie, bypassToken: "bypass" }),
+    /hosted_preview_access_conflict/);
 });
 
 test("wrong or missing live attestation cannot reach any write or session", async () => {

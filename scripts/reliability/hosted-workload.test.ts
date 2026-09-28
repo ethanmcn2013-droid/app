@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { boundedResponseText, dryRunHostedWorkload, reconcileHostedEffects, runHostedWorkload, sessionCleanupAccepted, validateHostedEnvelope, validateHostedHtml } from "./hosted-workload";
+import { boundedResponseText, dryRunHostedWorkload, hostedMeasurementAttribution, parseHostedServerTiming, reconcileHostedEffects, runHostedWorkload, sessionCleanupAccepted, validateHostedEnvelope, validateHostedHtml } from "./hosted-workload";
 import { hostedTargetHash, type HostedFixture } from "./hosted-seed";
 
 function fixture() {
@@ -47,6 +47,42 @@ test("a 200 unavailable page or malformed API envelope never satisfies a journey
 
 test("response bodies are capped before parsing or evidence collection", async () => {
   await assert.rejects(boundedResponseText(new Response("a".repeat(20)), 10), /response_size_cap_exceeded/);
+});
+
+test("server timing keeps only named numeric durations, with no descriptions or arbitrary names", () => {
+  assert.deepEqual(parseHostedServerTiming(null), { status: "absent", durationsMs: {} });
+  const parsed = parseHostedServerTiming('analytics;dur=12.3;desc="private detail", total;dur=45, private_identifier;dur=99');
+  assert.deepEqual(parsed, { status: "parsed", durationsMs: { analytics: 12.3, total: 45 } });
+  assert.doesNotMatch(JSON.stringify(parsed), /private|detail|99/);
+  assert.deepEqual(parseHostedServerTiming("total;dur=0"), { status: "parsed", durationsMs: { total: 0 } });
+  assert.deepEqual(parseHostedServerTiming("unknown;dur=1"), { status: "parsed", durationsMs: {} });
+});
+
+test("malformed, ambiguous and oversized server timing metadata is rejected without echoing input", () => {
+  for (const header of ["", "total", "total;dur=-1", "total;dur=NaN", "total;dur=Infinity", "total;dur=1e3",
+    "total;dur=1ms", "total;dur=1;dur=2", "total;dur=1, total;dur=2", "total;dur=1\r\nprivate: detail",
+    'total;dur=1;desc="unclosed', "total;dur=1," + "a".repeat(2_048), Array(33).fill("unknown;dur=1").join(",")]) {
+    assert.deepEqual(parseHostedServerTiming(header), { status: "rejected", durationsMs: {} });
+  }
+});
+
+test("measurement denominators separate planned, reached warmup and measured windows from overrun", () => {
+  const complete = hostedMeasurementAttribution(75 * 60_000 + 123);
+  assert.equal(complete.controlledIdentities, 2);
+  assert.equal(complete.configuredSessions, 10);
+  assert.equal(complete.scheduledActiveSessions, 8);
+  assert.deepEqual(complete.plannedWindowMs, { warmup: 900_000, measured: 3_600_000, total: 4_500_000 });
+  assert.deepEqual(complete.reachedWindowMs, complete.plannedWindowMs);
+  assert.deepEqual(complete.scheduledActiveSessionHours, { warmup: 2, measured: 8 });
+  assert.equal(complete.overrunMs, 123);
+  // Stop two minutes into repetition two's warmup: never count its unrun measured phase.
+  const partial = hostedMeasurementAttribution(27 * 60_000);
+  assert.deepEqual(partial.reachedWindowMs, { warmup: 420_000, measured: 1_200_000, total: 1_620_000 });
+  assert.equal(partial.metricScope.applicationDbOperations, "unavailable");
+  assert.equal(partial.metricScope.applicationDbDurationMs, "unavailable");
+  assert.equal(partial.metricScope.billedExecutionDurationMs, "unavailable");
+  assert.deepEqual(hostedMeasurementAttribution(0).reachedWindowMs, { warmup: 0, measured: 0, total: 0 });
+  for (const invalid of [-1, Infinity, NaN]) assert.throws(() => hostedMeasurementAttribution(invalid), /elapsed_invalid/);
 });
 
 test("workload acceptance requires all created sessions to be revoked", () => {

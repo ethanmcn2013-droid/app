@@ -36,6 +36,7 @@ export type HostedRunConfig = {
   appRequestCap: number;
   identityRequestCap: number;
   vercelProtectionBypassToken?: string;
+  vercelProtectionCookie?: string;
 };
 
 type Attestation = {
@@ -129,13 +130,21 @@ export function validateHostedPreflight(config: HostedRunConfig, attestation: At
     storeHashes: expected.stores } };
 }
 
-export async function fetchHostedAttestation(origin: string, token: string, bypassToken?: string, fetchImpl: typeof fetch = fetch): Promise<Attestation> {
+export function validateVercelProtectionCookie(cookie: string): void {
+  if (!/^_vercel_jwt=[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(cookie) || cookie.length > 8192)
+    fail("hosted_preview_cookie_invalid");
+}
+
+export async function fetchHostedAttestation(origin: string, token: string, bypassToken?: string, fetchImpl: typeof fetch = fetch,
+  cookie?: string): Promise<Attestation> {
   if (!/^[A-Za-z0-9_-]{43}$/.test(token)) fail("hosted_attestation_token_invalid");
+  if (cookie) validateVercelProtectionCookie(cookie);
+  if (cookie && bypassToken) fail("hosted_preview_access_conflict");
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
   try {
     const response = await fetchImpl(`${origin}/api/internal/reliability-target`, { headers: { authorization: `Bearer ${token}`,
-      ...(bypassToken ? { "x-vercel-protection-bypass": bypassToken } : {}) },
+      ...(bypassToken ? { "x-vercel-protection-bypass": bypassToken } : {}), ...(cookie ? { cookie } : {}) },
       redirect: "error", cache: "no-store", signal: controller.signal });
     if (!response.ok || response.headers.get("content-type")?.includes("application/json") !== true) fail("hosted_attestation_unavailable");
     const body = await response.text();
@@ -147,14 +156,24 @@ export async function fetchHostedAttestation(origin: string, token: string, bypa
 
 /** A Preview bypass token must never accompany Clerk or any other origin. */
 export function previewScopedFetch(origin: string, bypassToken: string, fetchImpl: typeof fetch = fetch): typeof fetch {
+  return previewScopedAccessFetch(origin, { bypassToken }, fetchImpl);
+}
+
+/** Removes any Preview credential on foreign origins, including Clerk. */
+export function previewScopedAccessFetch(origin: string, access: { bypassToken?: string; cookie?: string },
+  fetchImpl: typeof fetch = fetch): typeof fetch {
+  if (access.cookie) validateVercelProtectionCookie(access.cookie);
+  if (access.cookie && access.bypassToken) fail("hosted_preview_access_conflict");
   return (url, init) => {
     const target = new URL(typeof url === "string" ? url : url instanceof URL ? url.href : url.url);
     const headers = new Headers(init?.headers);
     if (target.origin !== origin) {
       headers.delete("x-vercel-protection-bypass");
+      headers.delete("cookie");
       return fetchImpl(url, { ...init, headers });
     }
-    headers.set("x-vercel-protection-bypass", bypassToken);
+    if (access.bypassToken) headers.set("x-vercel-protection-bypass", access.bypassToken);
+    if (access.cookie) headers.set("cookie", access.cookie);
     return fetchImpl(url, { ...init, headers });
   };
 }
@@ -188,8 +207,10 @@ export async function runHostedLaunch(config: HostedRunConfig, execute: boolean,
       ["app.signalstudio.ie", "signalstudio.ie"].includes(proposedOrigin.hostname) ||
       config.productionExclusions?.origins?.includes(proposedOrigin.origin)) fail("hosted_origin_refused");
   if (config.vercelProtectionBypassToken !== undefined && !/^[A-Za-z0-9_-]{12,256}$/.test(config.vercelProtectionBypassToken)) fail("hosted_preview_bypass_token_invalid");
+  if (config.vercelProtectionCookie !== undefined) validateVercelProtectionCookie(config.vercelProtectionCookie);
+  if (config.vercelProtectionCookie && config.vercelProtectionBypassToken) fail("hosted_preview_access_conflict");
   const attestation = await (dependencies.fetchAttestation ?? fetchHostedAttestation)(config.expectedRuntime.origin, config.attestationToken,
-    config.vercelProtectionBypassToken);
+    config.vercelProtectionBypassToken, fetch, config.vercelProtectionCookie);
   const preflight = validateHostedPreflight(config, attestation);
   if (!execute) return { mode: "read-only-preflight", accepted: true, attestedRuntime: preflight.attestedRuntime,
     nominalAppRequests: preflight.schedule.nominalRequests + 1, appRequestCap: config.appRequestCap, seedDomainWriteCap: config.seedDomainWriteCap,
@@ -219,8 +240,9 @@ export async function runHostedLaunch(config: HostedRunConfig, execute: boolean,
           actors: config.actors.map((actor) => ({ userId: actor.clerkId, actorHash: actor.actorHash, ownershipConfirmed: true })) },
         allowedApplicationOrigins: [config.expectedRuntime.origin], maxSessions: 10, identityRequestCap: config.identityRequestCap,
         requestTimeoutMs: 60_000, maxRetries: 2,
-        fetchImpl: config.vercelProtectionBypassToken
-          ? previewScopedFetch(config.expectedRuntime.origin, config.vercelProtectionBypassToken) : fetch }) });
+        fetchImpl: config.vercelProtectionBypassToken || config.vercelProtectionCookie
+          ? previewScopedAccessFetch(config.expectedRuntime.origin, { bypassToken: config.vercelProtectionBypassToken,
+            cookie: config.vercelProtectionCookie }) : fetch }) });
   } catch (error) { runFailure = object(error) && typeof error.message === "string" && /^[a-z0-9_-]{1,100}$/i.test(error.message) ? error.message : "hosted_run_failed"; }
   finally {
     if (fixture) {

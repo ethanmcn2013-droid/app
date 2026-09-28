@@ -14,12 +14,62 @@ type HostedInput = { manifest: HostedManifest; observed: HostedObserved; fixture
   executionAuthorized: boolean; createSessions: () => Promise<HostedSessions> | HostedSessions; outputDirectory: string };
 type Slot = ReturnType<typeof buildMixedWorkloadSchedule>["events"][number];
 type Observation = { logicalOperationId: string; attemptId: string; attemptNumber: number; journey: string; phase: string; latencyMs: number;
+  serverTiming?: ReturnType<typeof parseHostedServerTiming>;
   response: { statusCode: number; valid: boolean; success: boolean; errorEnvelope: boolean }; acknowledged: boolean;
   scopeAuthorized: boolean; actualProjectIds: string[]; unauthorizedContent: boolean; effectIds: string[]; bytes: number; finishedAtMs: number; errorCode?: string };
 type Expected = { id: string; journey: string; expectedOutcome: "write" | "read"; projectId: string };
 type Envelope = { ok: boolean; value?: Record<string, unknown>; code?: string };
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
 const ERROR_CODES = new Set(["unavailable", "unauthenticated", "temporarily_unavailable", "audience_changed", "read_only", "invalid_input", "revision_conflict", "request_conflict", "rate_limited", "archived"]);
+
+/** Deliberately accepts a bounded subset; descriptions and unknown metric names never enter evidence. */
+export function parseHostedServerTiming(header: string | null): {
+  status: "absent" | "parsed" | "rejected"; durationsMs: Partial<Record<"analytics" | "total", number>>;
+} {
+  if (header === null) return { status: "absent", durationsMs: {} };
+  const rejected = { status: "rejected" as const, durationsMs: {} };
+  if (!header.trim() || header.length > 2_048 || /[\r\n]/.test(header)) return rejected;
+  const metrics = header.split(",");
+  if (metrics.length > 32) return rejected;
+  const durationsMs: Partial<Record<"analytics" | "total", number>> = {};
+  for (const metric of metrics) {
+    const match = /^\s*([A-Za-z][A-Za-z0-9_-]{0,63})\s*;\s*dur=([0-9]{1,12}(?:\.[0-9]{1,6})?)\s*(?:;\s*desc="[^"\\,\r\n]{0,128}"\s*)?$/.exec(metric);
+    if (!match) return rejected;
+    const name = match[1];
+    if (name !== "analytics" && name !== "total") continue;
+    if (durationsMs[name] !== undefined) return rejected;
+    durationsMs[name] = Number(match[2]);
+  }
+  return { status: "parsed", durationsMs };
+}
+
+export function hostedMeasurementAttribution(elapsedMs: number) {
+  if (!Number.isFinite(elapsedMs) || elapsedMs < 0) throw new Error("hosted_measurement_elapsed_invalid");
+  const repetitionMs = WORKLOAD.warmupMs + WORKLOAD.measuredMs;
+  const plannedMs = WORKLOAD.repetitions * repetitionMs;
+  let warmupMs = 0; let measuredMs = 0;
+  for (let repetition = 0; repetition < WORKLOAD.repetitions; repetition++) {
+    const reached = Math.max(0, Math.min(repetitionMs, elapsedMs - repetition * repetitionMs));
+    warmupMs += Math.min(WORKLOAD.warmupMs, reached);
+    measuredMs += Math.max(0, reached - WORKLOAD.warmupMs);
+  }
+  const activeSessions = WORKLOAD.sessions.chat + WORKLOAD.sessions.browsing;
+  return {
+    controlledIdentities: 2, configuredSessions: activeSessions + WORKLOAD.sessions.hidden, scheduledActiveSessions: activeSessions,
+    plannedWindowMs: { warmup: WORKLOAD.repetitions * WORKLOAD.warmupMs, measured: WORKLOAD.repetitions * WORKLOAD.measuredMs, total: plannedMs },
+    observedElapsedMs: elapsedMs, reachedWindowMs: { warmup: warmupMs, measured: measuredMs, total: warmupMs + measuredMs },
+    overrunMs: Math.max(0, elapsedMs - plannedMs),
+    scheduledActiveSessionHours: { warmup: activeSessions * warmupMs / 3_600_000, measured: activeSessions * measuredMs / 3_600_000 },
+    denominatorScope: "Scheduled windows intersected with elapsed monotonic runtime; setup, cleanup and overrun excluded. Session-hours are not distinct-user hours; interrupted runs use only reached windows.",
+    metricScope: {
+      latencyMs: "Client elapsed HTTP time including response body; not server execution duration",
+      serverTiming: "Optional allowlisted Server-Timing durations: analytics = calculation, total = route; partial coverage, neither is asserted to be DB time or billed execution",
+      bytes: "Observed response-body bytes, not total wire transfer or request bytes",
+      verificationQueries: "Harness reconciliation queries only; not application DB operation count",
+      applicationDbOperations: "unavailable", applicationDbDurationMs: "unavailable", billedExecutionDurationMs: "unavailable",
+    },
+  };
+}
 
 export function sessionCleanupAccepted(receipt: SessionCleanupReceipt) {
   return receipt.ok === true && receipt.unresolved === 0 && receipt.errors.length === 0 &&
@@ -135,7 +185,8 @@ export async function runHostedWorkload(input: HostedInput) {
     let verificationQueries = 0;
     let mutationSourceIndex = 0;
     let negativeScopeProof = false;
-    let summary: { completed: boolean; appRequests: number; actualAppTransportRequests: number; droppedIterations: number; outputDirectory: string; identityTraffic: unknown; sessionCleanup?: SessionCleanupReceipt } | undefined;
+    let summary: { completed: boolean; appRequests: number; actualAppTransportRequests: number; droppedIterations: number; outputDirectory: string; identityTraffic: unknown; sessionCleanup?: SessionCleanupReceipt;
+      measurementAttribution: ReturnType<typeof hostedMeasurementAttribution> } | undefined;
     const flush = async (repetition: number, complete: boolean) => {
       const current = observations.filter((observation) => observation.logicalOperationId.startsWith(`${repetition}:`));
       verificationQueries += await reconcileHostedEffects(client, current, requests);
@@ -243,6 +294,7 @@ export async function runHostedWorkload(input: HostedInput) {
             }
           }
           observation = { logicalOperationId: slot.logicalOperationId, attemptId: `${slot.logicalOperationId}:attempt:1`, attemptNumber: 1,
+            serverTiming: parseHostedServerTiming(response.headers.get("server-timing")),
             journey: slot.journey, phase: slot.phase, latencyMs: httpLatencyMs, response: { statusCode: response.status, valid, success, errorEnvelope: object(envelope) && envelope.ok === false },
             acknowledged: expectedOutcome === "write" && success, scopeAuthorized, actualProjectIds, unauthorizedContent,
             effectIds: success && request.body ? [String(request.action === "send" ? value.messageId : value.taskId)] : [], bytes: body.bytes,
@@ -270,10 +322,11 @@ export async function runHostedWorkload(input: HostedInput) {
         inFlight.add(work);
       }
       await Promise.all(inFlight);
+      const measurementAttribution = hostedMeasurementAttribution(performance.now() - start);
       const final = await flush(repetition, !fatal && repetition === 3);
       summary = { completed: !fatal && repetition === 3 && final.ok && droppedIterations === 0, appRequests,
         actualAppTransportRequests: (manager.getMetrics() as { app?: { requests?: number } }).app?.requests ?? 0,
-        droppedIterations, outputDirectory: input.outputDirectory, identityTraffic: manager.getMetrics() };
+        droppedIterations, outputDirectory: input.outputDirectory, identityTraffic: manager.getMetrics(), measurementAttribution };
     } finally {
       try {
         const cleanup = await manager.cleanup();
