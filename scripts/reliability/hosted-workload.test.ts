@@ -3,8 +3,9 @@ import test from "node:test";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { boundedResponseText, committedEffectMatchesScope, dryRunHostedWorkload, finalizeHostedRepetition, HostedMessageVisibility, hostedMeasurementAttribution, parseHostedServerTiming, reconcileHostedEffects, runHostedWorkload, sessionCleanupAccepted, validateHostedEnvelope, validateHostedHtml } from "./hosted-workload";
+import { boundedResponseText, committedEffectMatchesScope, dryRunHostedWorkload, finalizeHostedRepetition, HostedMessageVisibility, hostedFlushDiagnostic, hostedMeasurementAttribution, hostedMeasurementAttributionFromWindows, parseHostedServerTiming, reconcileHostedEffects, runHostedArrivalSchedule, runHostedWorkload, sessionCleanupAccepted, validateHostedEnvelope, validateHostedHtml, writeHostedUnverifiedFlushDiagnostic } from "./hosted-workload";
 import { hostedTargetHash, type HostedFixture } from "./hosted-seed";
+import { buildMixedWorkloadSchedule, WORKLOAD } from "./contracts/workload-schedule.mjs";
 
 function fixture() {
   const namespace = "reliability-hosted-test-1234";
@@ -86,6 +87,233 @@ test("measurement denominators separate planned, reached warmup and measured win
   assert.equal(partial.metricScope.billedExecutionDurationMs, "unavailable");
   assert.deepEqual(hostedMeasurementAttribution(0).reachedWindowMs, { warmup: 0, measured: 0, total: 0 });
   for (const invalid of [-1, Infinity, NaN]) assert.throws(() => hostedMeasurementAttribution(invalid), /elapsed_invalid/);
+});
+
+test("actual arrival loop reanchors all 3 windows after slow drain and 3s/15s flushes", async () => {
+  const schedule = buildMixedWorkloadSchedule();
+  const duration = WORKLOAD.warmupMs + WORKLOAD.measuredMs;
+  const lastFirstSlotId = schedule.events.filter((event) => event.repetition === 1).at(-1)?.logicalOperationId;
+  let now = 0;
+  let releaseDrain: (() => void) | undefined;
+  let drainScheduled = false;
+  const offered: Array<{ id: string; repetition: number; phase: string; at: number }> = [];
+  const result = await runHostedArrivalSchedule({ events: schedule.events, startedAt: 0, now: () => now,
+    sleep: async (ms) => {
+      now += ms;
+      if (now >= duration && releaseDrain && !drainScheduled) {
+        drainScheduled = true;
+        setImmediate(() => { now += 4_000; releaseDrain?.(); });
+      }
+    },
+    perform: async (slot) => {
+      offered.push({ id: slot.logicalOperationId, repetition: slot.repetition, phase: slot.phase, at: now });
+      if (slot.logicalOperationId === lastFirstSlotId) await new Promise<void>((resolve) => { releaseDrain = resolve; });
+    },
+    flush: async (repetition) => { now += repetition === 1 ? 3_000 : 15_000; return { ok: true, findings: [] }; },
+    isFatal: () => false });
+  assert.equal(result.droppedIterations, 0);
+  assert.equal(offered.length, schedule.events.length);
+  assert.deepEqual(offered.map((event) => event.id), schedule.events.map((event) => event.logicalOperationId));
+  for (const repetition of [1, 2, 3]) {
+    const expected = schedule.events.filter((event) => event.repetition === repetition);
+    const actual = offered.filter((event) => event.repetition === repetition);
+    assert.deepEqual(actual.map((event) => event.phase), expected.map((event) => event.phase));
+    assert.ok(actual.every((event, index) => event.at === result.windows[repetition - 1].startedAtMs +
+      expected[index].atMs - (repetition - 1) * duration));
+    assert.equal(result.windows[repetition - 1].activeEndedAtMs - result.windows[repetition - 1].startedAtMs, duration);
+  }
+  assert.equal(result.windows[1].startedAtMs, duration + 7_000);
+  assert.equal(result.windows[2].startedAtMs, 2 * duration + 22_000);
+  assert.equal(result.windows[0].boundary!.drainFinishedAtMs - result.windows[0].boundary!.drainStartedAtMs, 4_000);
+  const attribution = hostedMeasurementAttributionFromWindows(now, result.windows,
+    { finalDrainMs: result.finalDrainMs, finalReconciliationMs: 0, sessionCleanupMs: 0 });
+  assert.deepEqual(attribution.reachedWindowMs, { warmup: 900_000, measured: 3_600_000, total: 4_500_000 });
+  assert.equal(attribution.boundaryPausedMs, 22_000);
+  assert.equal(attribution.overrunMs, 0);
+  assert.deepEqual(attribution.scheduledActiveSessionHours, { warmup: 2, measured: 8 });
+});
+
+test("arrival deadlines recheck an early waking timer and do not burst after a >60s flush", async () => {
+  const schedule = buildMixedWorkloadSchedule();
+  const events = schedule.events.filter((slot) => slot.repetition <= 2 && slot.atMs % 60_000 < 2_000);
+  const duration = WORKLOAD.warmupMs + WORKLOAD.measuredMs;
+  let now = 0; let earlyWakes = 0;
+  const offered: Array<{ repetition: number; localAt: number; actualAt: number }> = [];
+  const result = await runHostedArrivalSchedule({ events, startedAt: 0, now: () => now,
+    sleep: async (ms) => { if (earlyWakes++ < 3) now += Math.max(1, Math.floor(ms / 2)); else now += ms; },
+    perform: async (slot) => { offered.push({ repetition: slot.repetition,
+      localAt: slot.atMs - (slot.repetition - 1) * duration, actualAt: now }); },
+    flush: async () => { now += 65_000; return { ok: true, findings: [] }; }, isFatal: () => false });
+  assert.equal(result.droppedIterations, 0);
+  assert.equal(offered.length, events.length);
+  assert.equal(result.windows[1].startedAtMs, duration + 65_000);
+  assert.ok(offered.every((slot) => slot.actualAt >= result.windows[slot.repetition - 1].startedAtMs + slot.localAt));
+  assert.equal(result.windows[0].boundary?.nextAnchorAtMs, duration + 65_000);
+});
+
+test("the final window remains a full 25 minutes while a long final drain stays outside active hours", async () => {
+  const schedule = buildMixedWorkloadSchedule();
+  const duration = WORKLOAD.warmupMs + WORKLOAD.measuredMs;
+  const finalSlot = schedule.events.filter((slot) => slot.repetition === 1).at(-1)!;
+  let now = 0;
+  let releaseDrain: (() => void) | undefined;
+  let scheduled = false;
+  const result = await runHostedArrivalSchedule({ events: [finalSlot], startedAt: 0, now: () => now,
+    sleep: async (ms) => {
+      now += ms;
+      if (now >= duration && releaseDrain && !scheduled) {
+        scheduled = true;
+        setImmediate(() => { now += 8_000; releaseDrain?.(); });
+      }
+    },
+    perform: async () => new Promise<void>((resolve) => { releaseDrain = resolve; }),
+    flush: async () => { throw new Error("no_boundary_expected"); }, isFatal: () => false });
+  assert.equal(result.windows.length, 1);
+  assert.equal(result.windows[0].activeEndedAtMs, duration);
+  assert.equal(result.finalDrainMs, 8_000);
+  const attribution = hostedMeasurementAttributionFromWindows(now, result.windows,
+    { finalDrainMs: result.finalDrainMs, finalReconciliationMs: 0, sessionCleanupMs: 0 });
+  assert.deepEqual(attribution.reachedWindowMs, { warmup: 300_000, measured: 1_200_000, total: duration });
+  assert.equal(attribution.finalDrainMs, 8_000);
+  assert.equal(attribution.overrunMs, 0);
+});
+
+test("aborted windows count only reached phases, and final drain/reconciliation/cleanup remain separate", async () => {
+  const schedule = buildMixedWorkloadSchedule();
+  const duration = WORKLOAD.warmupMs + WORKLOAD.measuredMs;
+  for (const abortAt of [120_000, WORKLOAD.warmupMs + 120_000]) {
+    let now = 0; let fatal = false;
+    const result = await runHostedArrivalSchedule({ events: schedule.events, startedAt: 0, now: () => now,
+      sleep: async (ms) => { now += ms; },
+      perform: async (slot) => { if (slot.repetition === 2 && slot.atMs - duration >= abortAt) fatal = true; },
+      flush: async () => { now += 3_000; return { ok: true, findings: [] }; }, isFatal: () => fatal });
+    assert.equal(result.windows.length, 2);
+    assert.equal(result.boundaryFailure, null);
+    const attribution = hostedMeasurementAttributionFromWindows(now + 9_000, result.windows,
+      { finalDrainMs: 2_000, finalReconciliationMs: 3_000, sessionCleanupMs: 4_000 });
+    assert.equal(attribution.reachedWindowMs.warmup, WORKLOAD.warmupMs + Math.min(abortAt, WORKLOAD.warmupMs));
+    assert.equal(attribution.reachedWindowMs.measured, WORKLOAD.measuredMs + Math.max(0, abortAt - WORKLOAD.warmupMs));
+    assert.equal(attribution.boundaryPausedMs, 3_000);
+    assert.equal(attribution.finalDrainMs, 2_000);
+    assert.equal(attribution.finalReconciliationMs, 3_000);
+    assert.equal(attribution.sessionCleanupMs, 4_000);
+  }
+});
+
+test("failed or thrown boundary flush never anchors the next repetition", async () => {
+  const schedule = buildMixedWorkloadSchedule();
+  const duration = WORKLOAD.warmupMs + WORKLOAD.measuredMs;
+  const events = schedule.events.filter((slot) => slot.repetition <= 2 && slot.atMs % 60_000 < 2_000);
+  for (const throws of [false, true]) {
+    let now = 0; let flushes = 0; let secondOffered = 0;
+    const run = runHostedArrivalSchedule({ events, startedAt: 0, now: () => now,
+      sleep: async (ms) => { now += ms; }, perform: async (slot) => { if (slot.repetition === 2) secondOffered++; },
+      flush: async () => { flushes++; if (throws) throw new Error("synthetic_flush_failure");
+        return { ok: false, findings: [{ code: "SCHEDULE_MISMATCH", detail: "synthetic" }] }; }, isFatal: () => false });
+    const result = await run;
+    assert.equal(result.windows.length, 1);
+    assert.deepEqual(result.boundaryFailure?.reconciliation.findings.map((finding) => finding.code),
+      [throws ? "BOUNDARY_FLUSH_FAILED" : "SCHEDULE_MISMATCH"]);
+    assert.equal(result.boundaryFailure?.kind, throws ? "flush_threw" : "reconciliation_failed");
+    assert.equal(result.windows[0].boundary?.nextAnchorAtMs, undefined);
+    if (throws) {
+      assert.equal(result.windows[0].boundary?.flushFailedAtMs, duration);
+      const directory = await mkdtemp(join(tmpdir(), "hosted-boundary-unverified-"));
+      try {
+        const diagnostic = { repetition: 1, complete: false, verification: "unverified", failureCode: "BOUNDARY_FLUSH_FAILED",
+          windowTiming: result.windows[0], observations: [{ logicalOperationId: "1:owned-synthetic-operation", acknowledged: true }] };
+        await writeHostedUnverifiedFlushDiagnostic(directory, 1, "boundary", diagnostic);
+        const first = await readFile(join(directory, "run-1-boundary-failure.json"), "utf8");
+        assert.deepEqual(JSON.parse(first), diagnostic);
+        await assert.rejects(writeHostedUnverifiedFlushDiagnostic(directory, 1, "boundary", { rawError: "must-not-overwrite" }), /EEXIST/);
+        assert.equal(await readFile(join(directory, "run-1-boundary-failure.json"), "utf8"), first);
+        await writeHostedUnverifiedFlushDiagnostic(directory, 3, "final", diagnostic);
+        assert.deepEqual(JSON.parse(await readFile(join(directory, "run-3-final-failure.json"), "utf8")), diagnostic);
+      } finally { await rm(directory, { recursive: true, force: true }); }
+    }
+    assert.equal(flushes, 1);
+    assert.equal(secondOffered, 0);
+  }
+});
+
+test("a fatal result during an otherwise successful flush retains run receipt and no next anchor", async () => {
+  const schedule = buildMixedWorkloadSchedule();
+  const events = schedule.events.filter((slot) => slot.repetition <= 2 && slot.atMs % 60_000 < 2_000);
+  let now = 0; let fatal = false; let flushes = 0; let secondOffered = 0;
+  const result = await runHostedArrivalSchedule({ events, startedAt: 0, now: () => now,
+    sleep: async (ms) => { now += ms; }, perform: async (slot) => { if (slot.repetition === 2) secondOffered++; },
+    flush: async () => { flushes++; now += 3_000; fatal = true; return { ok: true, findings: [] }; }, isFatal: () => fatal });
+  assert.equal(flushes, 1);
+  assert.equal(secondOffered, 0);
+  assert.equal(result.repetition, 1);
+  assert.equal(result.windows.length, 1);
+  assert.equal(result.windows[0].boundary?.nextAnchorAtMs, undefined);
+  assert.equal(result.boundaryFailure?.kind, "fatal_after_flush");
+  assert.deepEqual(result.boundaryFailure?.reconciliation.findings.map((finding) => finding.code), ["FATAL_WORKLOAD_ABORT"]);
+  const finalized = await finalizeHostedRepetition({ repetition: result.repetition, fatal,
+    droppedIterations: result.droppedIterations, boundaryFailure: result.boundaryFailure,
+    flush: async () => { flushes++; throw new Error("duplicate_flush"); } });
+  assert.equal(flushes, 1);
+  assert.deepEqual(finalized.failure?.codes, ["FATAL_WORKLOAD_ABORT", "REPETITIONS_INCOMPLETE"]);
+});
+
+test("fatal result arriving during boundary drain does not start or flush the next window", async () => {
+  const schedule = buildMixedWorkloadSchedule();
+  const duration = WORKLOAD.warmupMs + WORKLOAD.measuredMs;
+  const lastFirstSlot = schedule.events.filter((slot) => slot.repetition === 1).at(-1)!;
+  const firstSecondSlot = schedule.events.find((slot) => slot.repetition === 2)!;
+  let now = 0; let fatal = false; let release: (() => void) | undefined; let scheduled = false;
+  let flushes = 0; let secondOffered = 0;
+  const result = await runHostedArrivalSchedule({ events: [lastFirstSlot, firstSecondSlot], startedAt: 0,
+    now: () => now, sleep: async (ms) => {
+      now += ms;
+      if (now >= duration && release && !scheduled) {
+        scheduled = true;
+        setImmediate(() => { now += 4_000; fatal = true; release?.(); });
+      }
+    },
+    perform: async (slot) => {
+      if (slot.repetition === 2) secondOffered++;
+      if (slot.logicalOperationId === lastFirstSlot.logicalOperationId)
+        await new Promise<void>((resolve) => { release = resolve; });
+    },
+    flush: async () => { flushes++; return { ok: true, findings: [] }; }, isFatal: () => fatal });
+  assert.equal(flushes, 0);
+  assert.equal(secondOffered, 0);
+  assert.equal(result.repetition, 1);
+  assert.equal(result.windows.length, 1);
+  assert.equal(result.windows[0].activeEndedAtMs, duration);
+  assert.equal(result.windows[0].boundary?.drainFinishedAtMs, duration + 4_000);
+  assert.equal(result.windows[0].boundary?.flushStartedAtMs, undefined);
+  const finalizedAt = now;
+  const finalized = await finalizeHostedRepetition({ repetition: result.repetition, fatal,
+    droppedIterations: result.droppedIterations, boundaryFailure: result.boundaryFailure,
+    flush: async (repetition, complete) => {
+      assert.equal(repetition, 1); assert.equal(complete, false);
+      now += 3_000; // One final reconciliation after the aborted boundary drain.
+      return { ok: false, findings: [{ code: "FATAL_WORKLOAD_ABORT", detail: "synthetic" }] };
+    } });
+  assert.equal(finalized.failure?.codes.includes("FATAL_WORKLOAD_ABORT"), true);
+  const attribution = hostedMeasurementAttributionFromWindows(now, result.windows,
+    { finalDrainMs: result.finalDrainMs, finalReconciliationMs: now - finalizedAt, sessionCleanupMs: 0 });
+  assert.equal(attribution.boundaryPausedMs, 4_000);
+  assert.equal(attribution.finalReconciliationMs, 3_000);
+  assert.equal(attribution.observedElapsedMs, duration + 7_000);
+  assert.equal(attribution.overrunMs, 0);
+});
+
+test("flush diagnostics contain only fixed phase and cause categories", () => {
+  assert.deepEqual(hostedFlushDiagnostic({ code: "ETIMEDOUT", message: "private-url" }, "receipt_reconciliation"),
+    { phase: "receipt_reconciliation", causeCategory: "timeout" });
+  assert.deepEqual(hostedFlushDiagnostic({ code: "ECONNRESET", message: "secret-token" }, "receipt_reconciliation"),
+    { phase: "receipt_reconciliation", causeCategory: "transport" });
+  assert.deepEqual(hostedFlushDiagnostic({ code: "ENOSPC", path: "private-file" }, "receipt_persistence"),
+    { phase: "receipt_persistence", causeCategory: "filesystem" });
+  assert.deepEqual(hostedFlushDiagnostic(new TypeError("private-content"), "metric_computation"),
+    { phase: "metric_computation", causeCategory: "contract" });
+  assert.deepEqual(hostedFlushDiagnostic(new Error("opaque private error")),
+    { phase: "unclassified", causeCategory: "unclassified" });
+  assert.doesNotMatch(JSON.stringify(hostedFlushDiagnostic({ code: "ETIMEDOUT", message: "secret-token" })), /secret|token/);
 });
 
 test("workload acceptance requires all created sessions to be revoked", () => {

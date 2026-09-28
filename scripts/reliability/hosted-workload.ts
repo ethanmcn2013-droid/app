@@ -71,6 +71,39 @@ export function hostedMeasurementAttribution(elapsedMs: number) {
   };
 }
 
+export type HostedWindowTiming = {
+  repetition: number; startedAtMs: number; plannedEndAtMs: number; activeEndedAtMs: number;
+  boundary?: { drainStartedAtMs: number; drainFinishedAtMs: number; flushStartedAtMs?: number;
+    reconciliationFinishedAtMs?: number; flushReturnedAtMs?: number; flushFailedAtMs?: number; nextAnchorAtMs?: number };
+};
+
+/** Wall time and offered-load time are separate: reconciliation never earns active-session hours. */
+export function hostedMeasurementAttributionFromWindows(wallElapsedMs: number, windows: HostedWindowTiming[],
+  finalization: { finalDrainMs: number; finalReconciliationMs: number; sessionCleanupMs: number }) {
+  if (!Number.isFinite(wallElapsedMs) || wallElapsedMs < 0) throw new Error("hosted_measurement_elapsed_invalid");
+  let warmupMs = 0; let measuredMs = 0; let boundaryPausedMs = 0;
+  for (const window of windows) {
+    const reached = Math.max(0, Math.min(WORKLOAD.warmupMs + WORKLOAD.measuredMs, window.activeEndedAtMs - window.startedAtMs));
+    warmupMs += Math.min(WORKLOAD.warmupMs, reached);
+    measuredMs += Math.max(0, reached - WORKLOAD.warmupMs);
+    if (window.boundary) boundaryPausedMs += Math.max(0,
+      (window.boundary.nextAnchorAtMs ?? window.boundary.flushReturnedAtMs ?? window.boundary.flushFailedAtMs ?? window.boundary.reconciliationFinishedAtMs ??
+        window.boundary.flushStartedAtMs ?? window.boundary.drainFinishedAtMs) - window.activeEndedAtMs);
+  }
+  const base = hostedMeasurementAttribution(0);
+  const activeSessions = WORKLOAD.sessions.chat + WORKLOAD.sessions.browsing;
+  const reachedTotalMs = warmupMs + measuredMs;
+  const { finalDrainMs, finalReconciliationMs, sessionCleanupMs } = finalization;
+  for (const duration of [finalDrainMs, finalReconciliationMs, sessionCleanupMs])
+    if (!Number.isFinite(duration) || duration < 0) throw new Error("hosted_measurement_elapsed_invalid");
+  return { ...base, observedElapsedMs: wallElapsedMs,
+    reachedWindowMs: { warmup: warmupMs, measured: measuredMs, total: reachedTotalMs },
+    boundaryPausedMs, finalDrainMs, finalReconciliationMs, sessionCleanupMs,
+    overrunMs: Math.max(0, wallElapsedMs - reachedTotalMs - boundaryPausedMs - finalDrainMs - finalReconciliationMs - sessionCleanupMs),
+    scheduledActiveSessionHours: { warmup: activeSessions * warmupMs / 3_600_000, measured: activeSessions * measuredMs / 3_600_000 },
+    denominatorScope: "Actual repetition-local scheduled windows reached before abort, excluding boundary drain/reconciliation, final drain/reconciliation and session cleanup; session-hours are not distinct-user hours." };
+}
+
 export function sessionCleanupAccepted(receipt: SessionCleanupReceipt) {
   return receipt.ok === true && receipt.unresolved === 0 && receipt.errors.length === 0 &&
     Number.isSafeInteger(receipt.attempted) && receipt.attempted === 10 && receipt.revoked === 10;
@@ -87,7 +120,7 @@ export function dryRunHostedWorkload(manifest: HostedManifest, fixture: HostedFi
   const manifestActorHashes = new Set((manifest.testActors ?? []).map((actor: { actorHash: string }) => actor.actorHash));
   if (!fixture.actors.every((actor) => manifestActorHashes.has(actor.actorHash))) throw new Error("hosted_fixture_actor_unattested");
   return { schedule, executionMode: `${manifest.environment.kind}-arrival-schedule`, noNetworkRequests: true,
-    limitations: ["API task.mutate is message-to-task outcome creation; ordinary task update/complete requires separate browser proof", "HTML route latency includes server render, excludes browser paint/hydration", "fixed arrival-rate schedule; existing client poller closed-loop behavior requires separate browser probe"] };
+    limitations: ["API task.mutate is message-to-task outcome creation; ordinary task update/complete requires separate browser proof", "HTML route latency includes server render, excludes browser paint/hydration", "chat.poll uses fixed initial-history afterChangeSeq=0, not incremental client polling; existing client poller closed-loop behavior requires separate probe"] };
 }
 
 export async function boundedResponseText(response: Response, maximumBytes = 4_000_000) {
@@ -289,11 +322,37 @@ export async function reconcileHostedEffects(client: Client, observations: Obser
 }
 
 type HostedReconciliation = { ok: boolean; findings: Array<{ code: string; detail: string }> };
+type HostedFlushPhase = "receipt_reconciliation" | "metric_computation" | "receipt_persistence" | "unclassified";
+type HostedCauseCategory = "transport" | "timeout" | "filesystem" | "contract" | "unclassified";
+type HostedFlushDiagnostic = { phase: HostedFlushPhase; causeCategory: HostedCauseCategory };
+class HostedFlushFailure extends Error {
+  constructor(readonly diagnostic: HostedFlushDiagnostic) { super("hosted_flush_failed"); }
+}
+
+/** Use only fixed categories; raw provider errors, messages and URLs never enter receipts. */
+export function hostedFlushDiagnostic(error: unknown, phase: HostedFlushPhase = "unclassified"): HostedFlushDiagnostic {
+  if (error instanceof HostedFlushFailure) return error.diagnostic;
+  const code = object(error) && typeof error.code === "string" ? error.code : "";
+  const name = object(error) && typeof error.name === "string" ? error.name : "";
+  let causeCategory: HostedCauseCategory = "unclassified";
+  if (["ETIMEDOUT", "ESOCKETTIMEDOUT", "UND_ERR_CONNECT_TIMEOUT", "TIMEOUT"].includes(code) || name === "TimeoutError") causeCategory = "timeout";
+  else if (["ECONNRESET", "ECONNREFUSED", "ENETUNREACH", "EHOSTUNREACH", "EPIPE", "UND_ERR_SOCKET"].includes(code)) causeCategory = "transport";
+  else if (["EEXIST", "ENOSPC", "EACCES", "EPERM", "ENOENT", "EROFS"].includes(code)) causeCategory = "filesystem";
+  else if (phase === "metric_computation" && error instanceof Error) causeCategory = "contract";
+  return { phase, causeCategory };
+}
+type HostedBoundaryFailure = { repetition: number; reconciliation: HostedReconciliation;
+  kind?: "reconciliation_failed" | "fatal_after_flush" | "flush_threw"; diagnostic?: HostedFlushDiagnostic };
+
+export async function writeHostedUnverifiedFlushDiagnostic(outputDirectory: string, repetition: number,
+  stage: "boundary" | "final", diagnostic: Record<string, unknown>) {
+  await writeFile(join(outputDirectory, `run-${repetition}-${stage}-failure.json`), JSON.stringify(diagnostic, null, 2), { flag: "wx" });
+}
 
 /** A failed boundary already has its immutable run-N receipt. Never flush it again. */
 export async function finalizeHostedRepetition(input: {
   repetition: number; fatal: boolean; droppedIterations: number;
-  boundaryFailure: { repetition: number; reconciliation: HostedReconciliation } | null;
+  boundaryFailure: HostedBoundaryFailure | null;
   flush: (repetition: number, complete: boolean) => Promise<HostedReconciliation>;
 }) {
   if (input.boundaryFailure && (input.boundaryFailure.repetition !== input.repetition || input.boundaryFailure.reconciliation.ok))
@@ -306,6 +365,90 @@ export async function finalizeHostedRepetition(input: {
   if (input.repetition !== WORKLOAD.repetitions) codes.push("REPETITIONS_INCOMPLETE");
   if (input.droppedIterations > 0) codes.push("DROPPED_ITERATIONS");
   return { reconciliation, failure: codes.length ? { repetition: input.repetition, codes: [...new Set(codes)] } : null };
+}
+
+/** The same arrival loop used by the hosted run, with an injected monotonic clock for bounded offline tests. */
+export async function runHostedArrivalSchedule(input: {
+  events: readonly Slot[]; startedAt: number; now: () => number; sleep: (ms: number) => Promise<void>;
+  perform: (slot: Slot) => Promise<void>; flush: (repetition: number, timing: HostedWindowTiming, droppedIterations: number) => Promise<HostedReconciliation>;
+  isFatal: () => boolean;
+}) {
+  if (input.events.length === 0) throw new Error("hosted_schedule_empty");
+  const durationMs = WORKLOAD.warmupMs + WORKLOAD.measuredMs;
+  const inFlight = new Set<Promise<void>>();
+  const polling = new Set<string>();
+  const windows: HostedWindowTiming[] = [];
+  const elapsed = () => input.now() - input.startedAt;
+  const waitUntil = async (target: number) => {
+    while (input.now() < target) await input.sleep(Math.min(target - input.now(), 60_000));
+  };
+  let repetition = input.events[0].repetition;
+  let anchor = input.startedAt;
+  let windowClosed = false;
+  let droppedIterations = 0;
+  let boundaryFailure: HostedBoundaryFailure | null = null;
+  const firstStartedAtMs = 0;
+  let timing: HostedWindowTiming = { repetition, startedAtMs: firstStartedAtMs,
+    plannedEndAtMs: firstStartedAtMs + durationMs, activeEndedAtMs: firstStartedAtMs };
+  windows.push(timing);
+  for (const slot of input.events) {
+    if (input.isFatal()) break;
+    if (slot.repetition !== repetition) {
+      // The last admitted slot precedes the 25-minute end. Wait for the whole declared window.
+      await waitUntil(anchor + durationMs);
+      if (input.isFatal()) break;
+      timing.activeEndedAtMs = elapsed();
+      windowClosed = true;
+      const boundary: NonNullable<HostedWindowTiming["boundary"]> = {
+        drainStartedAtMs: elapsed(), drainFinishedAtMs: elapsed(),
+      };
+      timing.boundary = boundary;
+      await Promise.all(inFlight);
+      boundary.drainFinishedAtMs = elapsed();
+      if (input.isFatal()) break;
+      boundary.flushStartedAtMs = elapsed();
+      let result: HostedReconciliation;
+      try { result = await input.flush(repetition, timing, droppedIterations); }
+      catch (error) {
+        boundary.flushFailedAtMs = elapsed();
+        boundaryFailure = { repetition, kind: "flush_threw", reconciliation: { ok: false,
+          findings: [{ code: "BOUNDARY_FLUSH_FAILED", detail: "Boundary reconciliation or receipt persistence failed; effects remain unverified" }] },
+          diagnostic: hostedFlushDiagnostic(error) };
+        break;
+      }
+      boundary.flushReturnedAtMs = elapsed();
+      if (!result.ok) { boundaryFailure = { repetition, kind: "reconciliation_failed", reconciliation: result }; break; }
+      if (input.isFatal()) {
+        boundaryFailure = { repetition, kind: "fatal_after_flush", reconciliation: { ok: false,
+          findings: [{ code: "FATAL_WORKLOAD_ABORT", detail: "Fatal request result arrived while the boundary flushed" }] } };
+        break;
+      }
+      repetition = slot.repetition;
+      anchor = input.now();
+      const startedAtMs = anchor - input.startedAt;
+      boundary.nextAnchorAtMs = startedAtMs;
+      timing = { repetition, startedAtMs, plannedEndAtMs: startedAtMs + durationMs, activeEndedAtMs: startedAtMs };
+      windows.push(timing);
+      windowClosed = false;
+    }
+    const localAtMs = slot.atMs - (slot.repetition - 1) * durationMs;
+    await waitUntil(anchor + localAtMs);
+    if (input.isFatal()) break;
+    if ((slot.journey === "chat.poll" && polling.has(slot.sessionId)) || inFlight.size >= 16) { droppedIterations++; continue; }
+    if (slot.journey === "chat.poll") polling.add(slot.sessionId);
+    const work = input.perform(slot).finally(() => { if (slot.journey === "chat.poll") polling.delete(slot.sessionId); inFlight.delete(work); });
+    inFlight.add(work);
+  }
+  if (!boundaryFailure && !windowClosed) {
+    if (!input.isFatal()) await waitUntil(anchor + durationMs);
+    timing.activeEndedAtMs = elapsed();
+  }
+  const finalDrainStartedAtMs = elapsed();
+  await Promise.all(inFlight);
+  const finalDrainFinishedAtMs = elapsed();
+  return { repetition, boundaryFailure, droppedIterations, windows,
+    finalDrainMs: finalDrainFinishedAtMs - finalDrainStartedAtMs,
+    finalDrainStartedAtMs, finalDrainFinishedAtMs };
 }
 
 /** Execution is dormant until root supplies an attested runtime and explicit authorization. */
@@ -322,8 +465,6 @@ export async function runHostedWorkload(input: HostedInput) {
     const expectedOperations: Expected[] = [];
     const requests = new Map<string, { actorId: string; requestId: string; conversationId: string; projectId: string; task: boolean }>();
     const handles = new Map<string, unknown>();
-    const polling = new Set<string>();
-    const inFlight = new Set<Promise<void>>();
     const origin = input.observed.origin;
     let appRequests = 0; let droppedIterations = 0; let fatal = false;
     let start = 0;
@@ -334,10 +475,18 @@ export async function runHostedWorkload(input: HostedInput) {
     let mutationSourceIndex = 0;
     let negativeScopeProof = false;
     let summary: { completed: boolean; failure: { repetition: number; codes: string[] } | null; appRequests: number; actualAppTransportRequests: number; droppedIterations: number; outputDirectory: string; identityTraffic: unknown; sessionCleanup?: SessionCleanupReceipt;
-      measurementAttribution: ReturnType<typeof hostedMeasurementAttribution> } | undefined;
-    const flush = async (repetition: number, complete: boolean) => {
+      windowTimings: HostedWindowTiming[]; boundaryDiagnosticPersisted?: boolean; finalDiagnosticPersisted?: boolean;
+      flushFailureDiagnostic?: HostedFlushDiagnostic;
+      measurementAttribution: ReturnType<typeof hostedMeasurementAttributionFromWindows> } | undefined;
+    let windowTimings: HostedWindowTiming[] = [];
+    let finalDrainMs = 0;
+    let finalReconciliationMs = 0;
+    const flush = async (repetition: number, complete: boolean, timing?: HostedWindowTiming) => {
+      let phase: HostedFlushPhase = "receipt_reconciliation";
+      try {
       const current = observations.filter((observation) => observation.logicalOperationId.startsWith(`${repetition}:`));
       verificationQueries += await reconcileHostedEffects(client, current, requests);
+      phase = "metric_computation";
       const expected = expectedOperations.filter((operation) => operation.id.startsWith(`${repetition}:`));
       const correctness = reconcileRun({ manifest: { ...input.manifest, measuredDurationSeconds: (WORKLOAD.warmupMs + WORKLOAD.measuredMs) / 1_000 }, observations: current, expectedOperations: expected,
         scheduledRequestCount: dryRun.schedule.events.filter((event) => event.repetition === repetition).length, requestCap: WORKLOAD.totalRequestCap });
@@ -354,13 +503,17 @@ export async function runHostedWorkload(input: HostedInput) {
       const visibilityP95 = sortedVisibility.length ? sortedVisibility[Math.ceil(sortedVisibility.length * .95) - 1] : null;
       if (visibilityP95 !== null && visibilityP95 > 1_500) reconciliation.findings.push({ code: "MESSAGE_VISIBILITY_LATENCY_BREACH", detail: `observed p95 ${visibilityP95}ms exceeds 1500ms` });
       reconciliation.ok = reconciliation.findings.length === 0;
+      const windowTiming = timing ?? windowTimings.find((window) => window.repetition === repetition);
+      if (windowTiming?.boundary?.flushStartedAtMs !== undefined) windowTiming.boundary.reconciliationFinishedAtMs = performance.now() - start;
       const receipt = { repetition, complete, acceptancePendingSessionCleanup: true, evidenceScope: input.manifest.executionMode, runtime: input.manifest.runtime,
         appRequests, actualAppTransportRequests: (manager.getMetrics() as { app?: { requests?: number } }).app?.requests ?? 0,
         droppedIterations, verificationQueries, negativeScopeProof, observations: current, reconciliation, allWritesCorrectness: correctness,
         messageVisibility: { samples: visible.length, p95InitiationMs: visibilityP95, missing: waiting, timings: visible },
-        identityTraffic: manager.getMetrics(), limitations: dryRun.limitations, runtimeIdentity: input.manifest.environment.identity };
+        windowTiming, identityTraffic: manager.getMetrics(), limitations: dryRun.limitations, runtimeIdentity: input.manifest.environment.identity };
+      phase = "receipt_persistence";
       await writeFile(join(input.outputDirectory, `run-${repetition}.json`), JSON.stringify(receipt, null, 2), { flag: "wx" });
       return reconciliation;
+      } catch (error) { throw new HostedFlushFailure(hostedFlushDiagnostic(error, phase)); }
     };
     try {
       const projectIds = input.fixture.rooms.map((room) => room.projectId);
@@ -462,33 +615,76 @@ export async function runHostedWorkload(input: HostedInput) {
         const recent = observations.filter((item) => item.finishedAtMs >= observation.finishedAtMs - 60_000);
         if (observation.finishedAtMs >= 60_000 && recent.length > 0 && recent.filter((item) => !item.response.success).length / recent.length > .05) fatal = true;
       }
-      let repetition = 1;
-      let boundaryFailure: { repetition: number; reconciliation: HostedReconciliation } | null = null;
-      for (const slot of dryRun.schedule.events) {
-        if (fatal) break;
-        if (slot.repetition !== repetition) { await Promise.all(inFlight); const result = await flush(repetition, true); if (!result.ok) { boundaryFailure = { repetition, reconciliation: result }; fatal = true; break; } repetition = slot.repetition; }
-        const delay = start + slot.atMs - performance.now();
-        if (delay > 0) await new Promise((resolve) => setTimeout(resolve, Math.min(delay, 60_000)));
-        if ((slot.journey === "chat.poll" && polling.has(slot.sessionId)) || inFlight.size >= 16) { droppedIterations++; continue; }
-        if (slot.journey === "chat.poll") polling.add(slot.sessionId);
-        const work = perform(slot).finally(() => { if (slot.journey === "chat.poll") polling.delete(slot.sessionId); inFlight.delete(work); });
-        inFlight.add(work);
+      const scheduled = await runHostedArrivalSchedule({ events: dryRun.schedule.events, startedAt: start,
+        now: () => performance.now(), sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+        perform, flush: (repetition, timing, dropped) => { droppedIterations = dropped; return flush(repetition, true, timing); },
+        isFatal: () => fatal });
+      droppedIterations = scheduled.droppedIterations;
+      windowTimings = scheduled.windows;
+      finalDrainMs = scheduled.finalDrainMs;
+      let boundaryDiagnosticPersisted: boolean | undefined;
+      if (scheduled.boundaryFailure?.kind === "flush_threw") {
+        const failedRepetition = scheduled.boundaryFailure.repetition;
+        const diagnostic = { repetition: failedRepetition, complete: false, verification: "unverified",
+          failureCode: "BOUNDARY_FLUSH_FAILED", ...scheduled.boundaryFailure.diagnostic,
+          appRequests, droppedIterations, verificationQueries,
+          actualAppTransportRequests: (manager.getMetrics() as { app?: { requests?: number } }).app?.requests ?? 0,
+          windowTiming: windowTimings.find((window) => window.repetition === failedRepetition),
+          observations: observations.filter((observation) => observation.logicalOperationId.startsWith(`${failedRepetition}:`)) };
+        try {
+          await writeHostedUnverifiedFlushDiagnostic(input.outputDirectory, failedRepetition, "boundary", diagnostic);
+          boundaryDiagnosticPersisted = true;
+        } catch {
+          boundaryDiagnosticPersisted = false;
+          scheduled.boundaryFailure.reconciliation.findings.push({ code: "BOUNDARY_DIAGNOSTIC_WRITE_FAILED",
+            detail: "Could not persist the separate unverified boundary diagnostic" });
+        }
       }
-      await Promise.all(inFlight);
-      const measurementAttribution = hostedMeasurementAttribution(performance.now() - start);
-      const final = await finalizeHostedRepetition({ repetition, fatal, droppedIterations, boundaryFailure, flush });
+      const reconciliationStartedAt = performance.now();
+      let final: Awaited<ReturnType<typeof finalizeHostedRepetition>>;
+      let finalDiagnosticPersisted: boolean | undefined;
+      let flushFailureDiagnostic = scheduled.boundaryFailure?.diagnostic;
+      try {
+        final = await finalizeHostedRepetition({ repetition: scheduled.repetition, fatal, droppedIterations,
+          boundaryFailure: scheduled.boundaryFailure, flush });
+      } catch (error) {
+        flushFailureDiagnostic = hostedFlushDiagnostic(error);
+        const diagnostic = { repetition: scheduled.repetition, complete: false, verification: "unverified",
+          failureCode: "FINAL_FLUSH_FAILED", ...flushFailureDiagnostic, appRequests, droppedIterations, verificationQueries,
+          actualAppTransportRequests: (manager.getMetrics() as { app?: { requests?: number } }).app?.requests ?? 0,
+          windowTiming: windowTimings.find((window) => window.repetition === scheduled.repetition),
+          observations: observations.filter((observation) => observation.logicalOperationId.startsWith(`${scheduled.repetition}:`)) };
+        try {
+          await writeHostedUnverifiedFlushDiagnostic(input.outputDirectory, scheduled.repetition, "final", diagnostic);
+          finalDiagnosticPersisted = true;
+        } catch { finalDiagnosticPersisted = false; }
+        const findings = [{ code: "FINAL_FLUSH_FAILED", detail: "Final reconciliation or receipt persistence failed; effects remain unverified" },
+          ...(finalDiagnosticPersisted ? [] : [{ code: "FINAL_DIAGNOSTIC_WRITE_FAILED", detail: "Could not persist the separate unverified final diagnostic" }]),
+          ...(fatal ? [{ code: "FATAL_WORKLOAD_ABORT", detail: "A fatal request result preceded final reconciliation" }] : [])];
+        final = await finalizeHostedRepetition({ repetition: scheduled.repetition, fatal, droppedIterations,
+          boundaryFailure: { repetition: scheduled.repetition, reconciliation: { ok: false, findings } },
+          flush: async () => { throw new Error("hosted_duplicate_final_flush_blocked"); } });
+      }
+      finalReconciliationMs = performance.now() - reconciliationStartedAt;
       summary = { completed: final.failure === null, failure: final.failure, appRequests,
         actualAppTransportRequests: (manager.getMetrics() as { app?: { requests?: number } }).app?.requests ?? 0,
-        droppedIterations, outputDirectory: input.outputDirectory, identityTraffic: manager.getMetrics(), measurementAttribution };
+        droppedIterations, outputDirectory: input.outputDirectory, identityTraffic: manager.getMetrics(), windowTimings,
+        boundaryDiagnosticPersisted, finalDiagnosticPersisted, flushFailureDiagnostic,
+        measurementAttribution: hostedMeasurementAttributionFromWindows(performance.now() - start, windowTimings,
+          { finalDrainMs, finalReconciliationMs, sessionCleanupMs: 0 }) };
     } finally {
       try {
+        const cleanupStartedAt = performance.now();
         const cleanup = await manager.cleanup();
+        const sessionCleanupMs = performance.now() - cleanupStartedAt;
         await writeFile(join(input.outputDirectory, "session-cleanup.json"), JSON.stringify(cleanup, null, 2));
         if (summary) {
           summary.sessionCleanup = cleanup;
           summary.completed &&= sessionCleanupAccepted(cleanup);
           summary.identityTraffic = manager.getMetrics();
           summary.actualAppTransportRequests = (summary.identityTraffic as { app?: { requests?: number } }).app?.requests ?? 0;
+          summary.measurementAttribution = hostedMeasurementAttributionFromWindows(performance.now() - start, windowTimings,
+            { finalDrainMs, finalReconciliationMs, sessionCleanupMs });
           await writeFile(join(input.outputDirectory, "summary.json"), JSON.stringify({ ...summary, evidenceScope: input.manifest.executionMode, runtime: input.manifest.runtime }, null, 2));
         }
       } finally { client.close(); }
