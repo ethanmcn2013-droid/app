@@ -1,9 +1,53 @@
-# Mirrors .gitignore for sensitive bits but keeps tasks.db in the
-# upload — the seeded DB is the source of truth on Vercel until we
-# wire a persistent libsql/Turso URL.
+# Vercel installs dependencies and builds from source. Runtime databases and
+# credentials are supplied by the deployment environment, never this upload.
 node_modules
 .next
-.env*.local
+.vercel
+.git
+.githooks
+*.tsbuildinfo
+/out/
+/build/
+
+# Local credentials, controlled-session packets, databases and uploaded bytes.
+.env*
+.clerk/
+.data/
+.db-*/
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.pem
+*.key
+.spike-state.json
+.spike-findings-*.json
+
+# Agent state and scratch/evaluation copies are not application dependencies.
+.claude/
+.codex/
+/work/
+/scratch/
+/outputs/
+.playwright-cli/
+/playwright-report/
+/test-results/
+/coverage/
 .DS_Store
 *.log
-.vercel
+
+# Historical documentation/evidence is not read by the Next build or runtime.
+# Keep migration SQL, metadata and ledgers; omit recorded receipts and backups.
+/docs/
+/drizzle*/receipts/
+/drizzle*/backups/
+/experience/**/output/
+/experience/reviews/**/*.zip
+/experience/reviews/**/*.tar
+/experience/reviews/**/*.tar.gz
+/experience/reviews/**/*.tgz
+/experience/reviews/**/*.7z
+
+# Keep src, public, scripts and experience source/test fixtures in the upload.
