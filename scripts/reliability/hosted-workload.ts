@@ -288,6 +288,26 @@ export async function reconcileHostedEffects(client: Client, observations: Obser
   return verificationQueries;
 }
 
+type HostedReconciliation = { ok: boolean; findings: Array<{ code: string; detail: string }> };
+
+/** A failed boundary already has its immutable run-N receipt. Never flush it again. */
+export async function finalizeHostedRepetition(input: {
+  repetition: number; fatal: boolean; droppedIterations: number;
+  boundaryFailure: { repetition: number; reconciliation: HostedReconciliation } | null;
+  flush: (repetition: number, complete: boolean) => Promise<HostedReconciliation>;
+}) {
+  if (input.boundaryFailure && (input.boundaryFailure.repetition !== input.repetition || input.boundaryFailure.reconciliation.ok))
+    throw new Error("hosted_boundary_failure_invalid");
+  const reconciliation = input.boundaryFailure?.reconciliation ??
+    await input.flush(input.repetition, !input.fatal && input.repetition === WORKLOAD.repetitions);
+  const codes = [...new Set(reconciliation.findings.map((finding) => finding.code))];
+  if (!reconciliation.ok && codes.length === 0) codes.push("RECONCILIATION_FAILED");
+  if (input.fatal && codes.length === 0) codes.push("FATAL_WORKLOAD_ABORT");
+  if (input.repetition !== WORKLOAD.repetitions) codes.push("REPETITIONS_INCOMPLETE");
+  if (input.droppedIterations > 0) codes.push("DROPPED_ITERATIONS");
+  return { reconciliation, failure: codes.length ? { repetition: input.repetition, codes: [...new Set(codes)] } : null };
+}
+
 /** Execution is dormant until root supplies an attested runtime and explicit authorization. */
 export async function runHostedWorkload(input: HostedInput) {
   const dryRun = dryRunHostedWorkload(input.manifest, input.fixture);
@@ -313,7 +333,7 @@ export async function runHostedWorkload(input: HostedInput) {
     let verificationQueries = 0;
     let mutationSourceIndex = 0;
     let negativeScopeProof = false;
-    let summary: { completed: boolean; appRequests: number; actualAppTransportRequests: number; droppedIterations: number; outputDirectory: string; identityTraffic: unknown; sessionCleanup?: SessionCleanupReceipt;
+    let summary: { completed: boolean; failure: { repetition: number; codes: string[] } | null; appRequests: number; actualAppTransportRequests: number; droppedIterations: number; outputDirectory: string; identityTraffic: unknown; sessionCleanup?: SessionCleanupReceipt;
       measurementAttribution: ReturnType<typeof hostedMeasurementAttribution> } | undefined;
     const flush = async (repetition: number, complete: boolean) => {
       const current = observations.filter((observation) => observation.logicalOperationId.startsWith(`${repetition}:`));
@@ -339,7 +359,7 @@ export async function runHostedWorkload(input: HostedInput) {
         droppedIterations, verificationQueries, negativeScopeProof, observations: current, reconciliation, allWritesCorrectness: correctness,
         messageVisibility: { samples: visible.length, p95InitiationMs: visibilityP95, missing: waiting, timings: visible },
         identityTraffic: manager.getMetrics(), limitations: dryRun.limitations, runtimeIdentity: input.manifest.environment.identity };
-      await writeFile(join(input.outputDirectory, `run-${repetition}.json`), JSON.stringify(receipt, null, 2));
+      await writeFile(join(input.outputDirectory, `run-${repetition}.json`), JSON.stringify(receipt, null, 2), { flag: "wx" });
       return reconciliation;
     };
     try {
@@ -443,9 +463,10 @@ export async function runHostedWorkload(input: HostedInput) {
         if (observation.finishedAtMs >= 60_000 && recent.length > 0 && recent.filter((item) => !item.response.success).length / recent.length > .05) fatal = true;
       }
       let repetition = 1;
+      let boundaryFailure: { repetition: number; reconciliation: HostedReconciliation } | null = null;
       for (const slot of dryRun.schedule.events) {
         if (fatal) break;
-        if (slot.repetition !== repetition) { await Promise.all(inFlight); const result = await flush(repetition, true); if (!result.ok) { fatal = true; break; } repetition = slot.repetition; }
+        if (slot.repetition !== repetition) { await Promise.all(inFlight); const result = await flush(repetition, true); if (!result.ok) { boundaryFailure = { repetition, reconciliation: result }; fatal = true; break; } repetition = slot.repetition; }
         const delay = start + slot.atMs - performance.now();
         if (delay > 0) await new Promise((resolve) => setTimeout(resolve, Math.min(delay, 60_000)));
         if ((slot.journey === "chat.poll" && polling.has(slot.sessionId)) || inFlight.size >= 16) { droppedIterations++; continue; }
@@ -455,8 +476,8 @@ export async function runHostedWorkload(input: HostedInput) {
       }
       await Promise.all(inFlight);
       const measurementAttribution = hostedMeasurementAttribution(performance.now() - start);
-      const final = await flush(repetition, !fatal && repetition === 3);
-      summary = { completed: !fatal && repetition === 3 && final.ok && droppedIterations === 0, appRequests,
+      const final = await finalizeHostedRepetition({ repetition, fatal, droppedIterations, boundaryFailure, flush });
+      summary = { completed: final.failure === null, failure: final.failure, appRequests,
         actualAppTransportRequests: (manager.getMetrics() as { app?: { requests?: number } }).app?.requests ?? 0,
         droppedIterations, outputDirectory: input.outputDirectory, identityTraffic: manager.getMetrics(), measurementAttribution };
     } finally {

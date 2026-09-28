@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { boundedResponseText, committedEffectMatchesScope, dryRunHostedWorkload, HostedMessageVisibility, hostedMeasurementAttribution, parseHostedServerTiming, reconcileHostedEffects, runHostedWorkload, sessionCleanupAccepted, validateHostedEnvelope, validateHostedHtml } from "./hosted-workload";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { boundedResponseText, committedEffectMatchesScope, dryRunHostedWorkload, finalizeHostedRepetition, HostedMessageVisibility, hostedMeasurementAttribution, parseHostedServerTiming, reconcileHostedEffects, runHostedWorkload, sessionCleanupAccepted, validateHostedEnvelope, validateHostedHtml } from "./hosted-workload";
 import { hostedTargetHash, type HostedFixture } from "./hosted-seed";
 
 function fixture() {
@@ -206,4 +209,39 @@ test("committed send readback requires the actual conversation as well as Projec
     conversation_id: scope.conversationId }], scope), false);
   assert.equal(committedEffectMatchesScope("send", [], scope), false);
   assert.equal(committedEffectMatchesScope("promote-task", [{ workspace_id: scope.projectId }], scope), true);
+});
+
+test("failed repetition boundary keeps its first receipt and exact finding through finalization", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "hosted-boundary-proof-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const receiptPath = join(directory, "run-1.json");
+  const boundary = { ok: false, findings: [{ code: "MESSAGE_VISIBILITY_MISSING", detail: "synthetic missing observer" }] };
+  await writeFile(receiptPath, JSON.stringify({ repetition: 1, complete: true, reconciliation: boundary }), { flag: "wx" });
+  let secondFlushes = 0;
+  const result = await finalizeHostedRepetition({ repetition: 1, fatal: true, droppedIterations: 0,
+    boundaryFailure: { repetition: 1, reconciliation: boundary },
+    flush: async () => {
+      secondFlushes++;
+      await writeFile(receiptPath, JSON.stringify({ repetition: 1, complete: false, reconciliation: { ok: true, findings: [] } }));
+      return { ok: true, findings: [] };
+    } });
+  assert.equal(secondFlushes, 0);
+  assert.deepEqual(JSON.parse(await readFile(receiptPath, "utf8")), { repetition: 1, complete: true, reconciliation: boundary });
+  assert.deepEqual(result.failure, { repetition: 1, codes: ["MESSAGE_VISIBILITY_MISSING", "REPETITIONS_INCOMPLETE"] });
+});
+
+test("last repetition flushes once and reports final findings or dropped demand", async () => {
+  let flushes = 0;
+  const complete = await finalizeHostedRepetition({ repetition: 3, fatal: false, droppedIterations: 0,
+    boundaryFailure: null, flush: async (repetition, final) => {
+      flushes++;
+      assert.equal(repetition, 3);
+      assert.equal(final, true);
+      return { ok: true, findings: [] };
+    } });
+  assert.equal(flushes, 1);
+  assert.equal(complete.failure, null);
+  const dropped = await finalizeHostedRepetition({ repetition: 3, fatal: false, droppedIterations: 2,
+    boundaryFailure: null, flush: async () => ({ ok: false, findings: [{ code: "SCHEDULE_MISMATCH", detail: "synthetic" }] }) });
+  assert.deepEqual(dropped.failure, { repetition: 3, codes: ["SCHEDULE_MISMATCH", "DROPPED_ITERATIONS"] });
 });
