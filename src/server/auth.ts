@@ -10,6 +10,7 @@ import { ensureUserProvisioned } from "@/server/db/ensure-user";
 import { isDemoMode } from "@/lib/access-mode";
 import { firstMembershipByCatalogOrder } from "@/server/projects/catalog";
 import { DEMO_USER_ID, DEMO_WORKSPACE_ID } from "@/server/demo/tasks-demo";
+import { beginIdentityTiming } from "@/server/diagnostics/identity-timing";
 
 /**
  * Auth resolution. Two layers:
@@ -56,73 +57,78 @@ export async function getCurrentUser(): Promise<UserId> {
   // short-circuits in queries.ts. Never touches Clerk or the DB.
   if (isDemoMode()) return DEMO_USER_ID;
 
-  const isProd = process.env.NODE_ENV === "production";
-
-  if (!clerkConfigured()) {
-    if (isProd) {
-      throw new Error(
-        "Clerk is not configured. NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY must be set in production.",
-      );
-    }
-    return DEV_FALLBACK_USER;
-  }
-
+  const timing = beginIdentityTiming();
   try {
-    const { userId: clerkId } = await auth();
-    if (!clerkId) {
+    const isProd = process.env.NODE_ENV === "production";
+
+    if (!clerkConfigured()) {
       if (isProd) {
-        throw new Error("Unauthenticated request reached getCurrentUser in production.");
+        throw new Error(
+          "Clerk is not configured. NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY must be set in production.",
+        );
       }
       return DEV_FALLBACK_USER;
     }
 
-    // P0-1 hardening (DECISIONS.md D1 / ARCH_SPEC.md §1):
-    // Idempotently provision the users row on every authed board entry.
-    // This closes the webhook-race hole from the Tasks side: a user who
-    // arrives via the shared Clerk session (cross-product hop) before the
-    // `user.created` webhook fires will have a users row so Analytics
-    // `listForUser` can resolve via clerk_id. ensureUserProvisioned uses
-    // INSERT OR IGNORE, safe to call on every request; DB round-trip is
-    // cheap relative to the auth() call already above.
-    //
-    // B6 (Phase 3.6): pass email so ensureUserProvisioned can backfill
-    // the email column for rows provisioned before the column existed
-    // (pre-migration NULL-email recurrence risk, pm's finding). currentUser()
-    // is a Clerk server helper that fetches the full user object; it is
-    // slightly more expensive than auth() (one extra Clerk API call) but only
-    // fires on the already-auth-gated path. We use the primary email address.
-    const clerkUserObj = await currentUser();
-    const clerkEmail =
-      clerkUserObj?.emailAddresses?.find(
-        (e) => e.id === clerkUserObj.primaryEmailAddressId,
-      )?.emailAddress ?? null;
-    // C2: pass first/last name so ensureUserProvisioned can backfill the
-    // name column if the row was provisioned before the webhook fired.
-    await ensureUserProvisioned(
-      clerkId,
-      clerkEmail,
-      clerkUserObj?.firstName ?? null,
-      clerkUserObj?.lastName ?? null,
-    );
+    try {
+      const { userId: clerkId } = await timing.measure("auth", () => auth());
+      if (!clerkId) {
+        if (isProd) {
+          throw new Error("Unauthenticated request reached getCurrentUser in production.");
+        }
+        return DEV_FALLBACK_USER;
+      }
 
-    // Clerk id IS the internal user id post-Phase-A. The webhook
-    // provisions the row; this query is the safety net in case a
-    // protected page renders before the webhook lands (rare, but
-    // possible on the very first signup before Clerk fires the event).
-    const [row] = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.clerkId, clerkId));
-    if (row) return row.id;
+      // P0-1 hardening (DECISIONS.md D1 / ARCH_SPEC.md §1):
+      // Idempotently provision the users row on every authed board entry.
+      // This closes the webhook-race hole from the Tasks side: a user who
+      // arrives via the shared Clerk session (cross-product hop) before the
+      // `user.created` webhook fires will have a users row so Analytics
+      // `listForUser` can resolve via clerk_id. ensureUserProvisioned uses
+      // INSERT OR IGNORE, safe to call on every request; DB round-trip is
+      // cheap relative to the auth() call already above.
+      //
+      // B6 (Phase 3.6): pass email so ensureUserProvisioned can backfill
+      // the email column for rows provisioned before the column existed
+      // (pre-migration NULL-email recurrence risk, pm's finding). currentUser()
+      // is a Clerk server helper that fetches the full user object; it is
+      // slightly more expensive than auth() (one extra Clerk API call) but only
+      // fires on the already-auth-gated path. We use the primary email address.
+      const clerkUserObj = await timing.measure("clerkProfile", () => currentUser());
+      const clerkEmail =
+        clerkUserObj?.emailAddresses?.find(
+          (e) => e.id === clerkUserObj.primaryEmailAddressId,
+        )?.emailAddress ?? null;
+      // C2: pass first/last name so ensureUserProvisioned can backfill the
+      // name column if the row was provisioned before the webhook fired.
+      await timing.measure("provision", () => ensureUserProvisioned(
+        clerkId,
+        clerkEmail,
+        clerkUserObj?.firstName ?? null,
+        clerkUserObj?.lastName ?? null,
+      ));
 
-    // Webhook hasn't fired yet, return the Clerk id directly so
-    // anything queryable by user id still works. Subsequent requests
-    // pick up the row once it's persisted.
-    return clerkId;
-  } catch (err) {
-    // Re-throw in production so we never silently run as "david".
-    if (isProd) throw err;
-    return DEV_FALLBACK_USER;
+      // Clerk id IS the internal user id post-Phase-A. The webhook
+      // provisions the row; this query is the safety net in case a
+      // protected page renders before the webhook lands (rare, but
+      // possible on the very first signup before Clerk fires the event).
+      const [row] = await timing.measure("persistedId", () => db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.clerkId, clerkId)));
+      if (row) return row.id;
+
+      // Webhook hasn't fired yet, return the Clerk id directly so
+      // anything queryable by user id still works. Subsequent requests
+      // pick up the row once it's persisted.
+      return clerkId;
+    } catch (err) {
+      // Re-throw in production so we never silently run as "david".
+      if (isProd) throw err;
+      return DEV_FALLBACK_USER;
+    }
+  } finally {
+    timing.finish();
   }
 }
 

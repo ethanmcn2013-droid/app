@@ -109,6 +109,9 @@ function fixture() {
       counters.provision++;
       if (state.failProvision) throw Error("provision failed");
     } },
+    "@/server/diagnostics/identity-timing": { beginIdentityTiming: () => ({
+      measure: (_stage, work) => work(), finish() {},
+    }) },
     "@/lib/access-mode": demo,
     "@/server/projects/catalog": {
       firstMembershipByCatalogOrder: async (_db, actor) => {
