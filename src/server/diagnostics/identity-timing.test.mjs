@@ -8,6 +8,8 @@ const require = createRequire(import.meta.url);
 const ts = require("typescript");
 const helperPath = fileURLToPath(new URL("./identity-timing.ts", import.meta.url));
 const authPath = fileURLToPath(new URL("../auth.ts", import.meta.url));
+const operationalLogPath = fileURLToPath(new URL("../operational-log.ts", import.meta.url));
+const scrubPath = fileURLToPath(new URL("../../lib/sentry-scrub.ts", import.meta.url));
 const marker = "isolated-clerk-preview-v1";
 const optIn = "isolated-preview-auth-timing-v1";
 
@@ -35,9 +37,10 @@ function enabledEnv() {
   };
 }
 
-function helperFixture() {
+function helperFixture(operationalLog) {
   let request = 1;
   const callbacks = new Map();
+  const logs = [];
   const cache = implementation => {
     const values = new Map();
     return () => {
@@ -53,8 +56,11 @@ function helperFixture() {
       bucket.push(callback); callbacks.set(request, bucket);
     }},
     "@/lib/auth/recipient-proof-authorized-parties": {SPRINT_PREVIEW_AUTH_MARKER: marker},
+    "@/server/operational-log": operationalLog ?? {opLog: (level, scope, message, fields) => {
+      logs.push({level, scope, message, fields});
+    }},
   });
-  return {helper, callbacks, setRequest: next => { request = next; }};
+  return {helper, callbacks, logs, setRequest: next => { request = next; }};
 }
 
 test("opt-in requires the exact isolated Preview markers and a short live expiry", () => {
@@ -76,6 +82,40 @@ test("opt-in requires the exact isolated Preview markers and a short live expiry
     {NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_live_synthetic"},
     {CLERK_SECRET_KEY: "sk_live_synthetic"},
   ]) assert.equal(helper.identityTimingEnabled({...env, ...change}, now), false);
+});
+
+test("real operational logger retains the approved fixed numeric fields", async () => {
+  const scrub = loadSource(scrubPath, {});
+  const operationalLog = loadSource(operationalLogPath, {"@/lib/sentry-scrub": scrub});
+  const {helper, callbacks} = helperFixture(operationalLog);
+  const env = enabledEnv();
+  const saved = Object.fromEntries(Object.keys(env).map(key => [key, process.env[key]]));
+  const originalWarn = console.warn;
+  const lines = [];
+  Object.assign(process.env, env);
+  console.warn = line => lines.push(String(line));
+  try {
+    const timing = helper.beginIdentityTiming();
+    assert.equal(await timing.measure("auth", async () => "private-user@example.invalid"), "private-user@example.invalid");
+    timing.finish();
+    assert.equal(callbacks.get(1)?.length, 1);
+    callbacks.get(1)[0]();
+    assert.equal(lines.length, 1);
+    assert.match(lines[0], /^\[signal\.identity\.timing\.v1\] sample version=1 /);
+    const fields = Object.fromEntries([...lines[0].matchAll(/\b([A-Za-z]+_[A-Za-z]+_(?:count|totalMs|maxMs))=([^ ]+)/g)]
+      .map(([, key, value]) => [key, value]));
+    assert.equal(Object.keys(fields).length, 30);
+    assert.equal(fields.unclassified_auth_count, "1");
+    assert.equal(fields.unclassified_total_count, "1");
+    assert.equal(fields.routeResolver_total_count, "0");
+    assert.ok(Object.values(fields).every(value => /^(?:0|[0-9]+(?:\.[0-9]+)?)$/.test(value)));
+    assert.doesNotMatch(lines[0], /private|example\.invalid|\[redacted\]/i);
+  } finally {
+    console.warn = originalWarn;
+    for (const [key, value] of Object.entries(saved)) {
+      if (value === undefined) delete process.env[key]; else process.env[key] = value;
+    }
+  }
 });
 
 test("numeric collector emits once, with no result, error or cross-collector data", async () => {
@@ -137,14 +177,11 @@ test("schedule and emit failures do not change the measured result or error", as
 });
 
 test("real getCurrentUser keeps result, failure and demo behavior while timing buckets stay isolated", async () => {
-  const {helper, callbacks, setRequest} = helperFixture();
+  const {helper, callbacks, logs, setRequest} = helperFixture();
   const env = enabledEnv();
   const keys = Object.keys(env);
   const saved = Object.fromEntries(keys.map(key => [key, process.env[key]]));
-  const originalInfo = console.info;
-  const emitted = [];
   Object.assign(process.env, env);
-  console.info = value => emitted.push(JSON.parse(value));
   const state = {demo: false, failProfile: false, authCalls: 0, profileCalls: 0, provisions: 0, selects: 0};
   const profileError = new Error("secret-profile-failure");
   const authModule = loadSource(authPath, {
@@ -174,19 +211,30 @@ test("real getCurrentUser keeps result, failure and demo behavior while timing b
     assert.deepEqual([state.authCalls, state.profileCalls, state.provisions, state.selects], [2, 2, 2, 2]);
     assert.equal(callbacks.get(1)?.length, 1);
     callbacks.get(1)[0]();
-    assert.equal(emitted[0].unclassified.total.count, 1);
-    assert.equal(emitted[0].routeResolver.total.count, 1);
+    assert.equal(logs[0].fields.unclassified_total_count, 1);
+    assert.equal(logs[0].fields.routeResolver_total_count, 1);
 
     setRequest(2); state.failProfile = true;
     await assert.rejects(authModule.getCurrentUser(), error => error === profileError);
     assert.equal(callbacks.get(2)?.length, 1);
     callbacks.get(2)[0]();
-    assert.equal(emitted[1].unclassified.auth.count, 1);
-    assert.equal(emitted[1].unclassified.clerkProfile.count, 1);
-    assert.equal(emitted[1].unclassified.provision.count, 0);
-    assert.equal(emitted[1].unclassified.total.count, 1);
-    assert.equal(emitted[1].routeResolver.total.count, 0);
-    assert.doesNotMatch(JSON.stringify(emitted), /private|secret|example\.invalid/i);
+    assert.equal(logs[1].fields.unclassified_auth_count, 1);
+    assert.equal(logs[1].fields.unclassified_clerkProfile_count, 1);
+    assert.equal(logs[1].fields.unclassified_provision_count, 0);
+    assert.equal(logs[1].fields.unclassified_total_count, 1);
+    assert.equal(logs[1].fields.routeResolver_total_count, 0);
+    assert.equal(logs.length, 2);
+    for (const log of logs) {
+      assert.deepEqual([log.level, log.scope, log.message], ["warn", "signal.identity.timing.v1", "sample"]);
+      const expectedKeys = ["version"];
+      for (const scope of ["unclassified", "routeResolver"])
+        for (const stage of ["auth", "clerkProfile", "provision", "persistedId", "total"])
+          for (const metric of ["count", "totalMs", "maxMs"])
+            expectedKeys.push(`${scope}_${stage}_${metric}`);
+      assert.deepEqual(Object.keys(log.fields).sort(), expectedKeys.sort());
+      assert.ok(Object.values(log.fields).every(value => typeof value === "number" && Number.isFinite(value)));
+    }
+    assert.doesNotMatch(JSON.stringify(logs), /private|secret|example\.invalid/i);
 
     setRequest(3); state.demo = true;
     assert.equal(await authModule.getCurrentUser(), "synthetic-demo");
@@ -196,8 +244,8 @@ test("real getCurrentUser keeps result, failure and demo behavior while timing b
     process.env.VERCEL_ENV = "production";
     assert.equal(await authModule.getCurrentUser(), "private-internal-user");
     assert.equal(callbacks.has(4), false, "production cannot emit diagnostic timing");
+    assert.equal(logs.length, 2);
   } finally {
-    console.info = originalInfo;
     for (const key of keys) {if (saved[key] === undefined) delete process.env[key]; else process.env[key] = saved[key];}
   }
 });

@@ -5,6 +5,7 @@ import { performance } from "node:perf_hooks";
 import { after } from "next/server";
 import { cache } from "react";
 import { SPRINT_PREVIEW_AUTH_MARKER } from "@/lib/auth/recipient-proof-authorized-parties";
+import { opLog, type SafeLogFields } from "@/server/operational-log";
 
 const OPT_IN = "isolated-preview-auth-timing-v1";
 const TAG = "signal.identity.timing.v1";
@@ -96,9 +97,22 @@ export function createIdentityTimingCollector(input: {
 }
 
 const phase = new AsyncLocalStorage<Scope>();
+/** The approved operational sink accepts scalars only. Every key comes from fixed enums. */
+function summaryFields(summary: IdentityTimingSummary): SafeLogFields {
+  const fields: SafeLogFields = {version: summary.version};
+  for (const scope of ["unclassified", "routeResolver"] as const) {
+    for (const stage of STAGES) {
+      fields[`${scope}_${stage}_count`] = summary[scope][stage].count;
+      fields[`${scope}_${stage}_totalMs`] = summary[scope][stage].totalMs;
+      fields[`${scope}_${stage}_maxMs`] = summary[scope][stage].maxMs;
+    }
+  }
+  return fields;
+}
+
 const collectorForRender = cache(() => createIdentityTimingCollector({
   schedule: callback => after(callback),
-  emit: summary => console.info(JSON.stringify(summary)),
+  emit: summary => opLog("warn", TAG, "sample", summaryFields(summary)),
   now: () => performance.now(),
 }));
 
