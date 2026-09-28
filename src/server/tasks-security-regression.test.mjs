@@ -273,7 +273,7 @@ test("routed task and subtask creation writes to the displayed Project, not an a
   assert.match(body, /const ws = grant\.projectId/);
   assert.match(body, /workspaceId:\s*ws/);
   // A refused explicit B write must reject the optimistic B card. Returning
-  // neutralTaskList(ambient) would hydrate A's tasks into the B provider.
+  // A neutral ambient-list fallback would hydrate A's tasks into the B provider.
   assert.match(body, /if \(!grant\.ok\)\s*\{[\s\S]*?if \(input\.projectId != null\) throw/);
   assert.match(body, /if \(!created\)\s*\{[\s\S]*?if \(input\.projectId != null\) throw/);
 });
@@ -329,7 +329,7 @@ test("demo and review actions exit before tenant, database, or disk access", () 
     "removeTaskAction",
     "setTaskMilestoneAction",
   ]) {
-    assertDemoGuardBefore(actions, name, "getActiveWorkspace");
+    assertDemoGuardBefore(actions, name, "getCurrentUserAndActiveWorkspaceOrNull");
   }
   // WP3 renegotiation (ADR 0001 §9). This guard's subject is the ORDERING —
   // demo/review must exit before the action resolves a tenant — and not the

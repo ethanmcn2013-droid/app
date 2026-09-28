@@ -57,10 +57,20 @@ function exportedBody(src, name) {
   return src.slice(start, after === -1 ? src.length : after);
 }
 
+function failClosedSelectionBody() {
+  const wrapper = exportedBody(authSrc, "getActiveWorkspaceOrNull");
+  assert.ok(wrapper.includes("activeWorkspaceOrNullForUser(me)"),
+    "the public fail-closed accessor must delegate to the shared actor-bound selection");
+  const start = authSrc.indexOf("async function activeWorkspaceOrNullForUser(");
+  assert.notEqual(start, -1, "the actor-bound selection must remain implemented");
+  const after = authSrc.indexOf("\nexport ", start + 1);
+  return authSrc.slice(start, after === -1 ? authSrc.length : after);
+}
+
 // ── 1. The fail-closed accessor ─────────────────────────────────────────────
 
 test("getActiveWorkspaceOrNull returns null where getActiveWorkspace returns ws-legacy", () => {
-  const failClosed = exportedBody(authSrc, "getActiveWorkspaceOrNull");
+  const failClosed = failClosedSelectionBody();
   const ambient = exportedBody(authSrc, "getActiveWorkspace");
 
   // The defect it exists to avoid, pinned on the function that still has it,
@@ -94,7 +104,7 @@ test("getActiveWorkspaceOrNull returns null where getActiveWorkspace returns ws-
 });
 
 test("getActiveWorkspaceOrNull still validates cookie membership before honouring it", () => {
-  const body = exportedBody(authSrc, "getActiveWorkspaceOrNull");
+  const body = failClosedSelectionBody();
   for (const needle of [
     "cookieValue",
     "workspaceMembers.userId",
@@ -128,7 +138,9 @@ test("getActiveWorkspaceOrNull still validates cookie membership before honourin
  */
 test("both ambient accessors resolve first-membership through one ordered implementation", () => {
   for (const fn of ["getActiveWorkspace", "getActiveWorkspaceOrNull"]) {
-    const body = exportedBody(authSrc, fn);
+    const body = fn === "getActiveWorkspaceOrNull"
+      ? failClosedSelectionBody()
+      : exportedBody(authSrc, fn);
     assert.ok(
       body.includes("firstMembershipByCatalogOrder("),
       `${fn} no longer resolves its first-membership fallback through ` +

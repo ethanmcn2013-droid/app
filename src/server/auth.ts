@@ -235,6 +235,18 @@ export async function getActiveWorkspaceOrNull(): Promise<string | null> {
   if (isDemoMode()) return DEMO_WORKSPACE_ID;
 
   const me = await getCurrentUser();
+  return activeWorkspaceOrNullForUser(me);
+}
+
+/** Resolve identity once, then select a fresh ambient Project for that actor. */
+export async function getCurrentUserAndActiveWorkspaceOrNull(): Promise<readonly [UserId, string | null]> {
+  const me = await getCurrentUser();
+  return [me, await activeWorkspaceOrNullForUser(me)];
+}
+
+async function activeWorkspaceOrNullForUser(me: UserId): Promise<string | null> {
+  if (isDemoMode()) return DEMO_WORKSPACE_ID;
+
   const c = await cookies();
   const cookieValue = c.get(ACTIVE_WORKSPACE_COOKIE)?.value;
 
