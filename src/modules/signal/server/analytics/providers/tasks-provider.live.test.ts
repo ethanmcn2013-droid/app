@@ -366,10 +366,132 @@ test("the provider declares only capabilities it can actually serve", async () =
   const result = await new TasksAnalyticsProvider().read(query());
 
   assert.ok(result.coverage.capabilities.includes("task_read"));
+  assert.ok(result.coverage.capabilities.includes("task_completion_timestamps"));
+  assert.ok(result.coverage.capabilities.includes("task_status_history"));
+  assert.ok(!result.coverage.capabilities.includes("task_meaningful_activity"));
+  assert.equal(result.coverage.status, "partial");
+  assert.ok(result.coverage.issues.includes("tasks_meaningful_activity_history_unverified"));
   assert.ok(
     !result.coverage.capabilities.includes("decision_read"),
     "the Tasks provider cannot read decisions and must not claim to",
   );
+});
+
+test("missing history cannot become creation-time inactivity while overdue and completion facts survive", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  await seedTask({id: "old-unknown-activity", lane: "doing", createdAt: Date.parse("2026-07-02T00:00:00Z") / 1000,
+    dueAt: Date.parse("2026-07-10T00:00:00Z") / 1000});
+  await seedTask({id: "known-completion", lane: "done", completedAt: Date.parse("2026-07-15T00:00:00Z") / 1000});
+  const {result, metrics, briefing} = await persistedMetrics();
+  assert.equal(result.tasks.find(task => task.id === "old-unknown-activity")?.lastMeaningfulActivityAt, null);
+  assert.equal(metrics.stalled_work.status, "unsupported");
+  assert.equal(metrics.stalled_work.value, null);
+  assert.equal(metrics.open_overdue_work.value?.count, 1);
+  assert.deepEqual(metrics.open_overdue_work.sources.map(source => [source.id, source.date]),
+    [["old-unknown-activity", "2026-07-10T00:00:00.000Z"]]);
+  assert.equal(metrics.work_completed.value?.count, 1);
+  assert.ok(!briefing.observations.some(observation => observation.metric.key === "stalled_work"));
+  const fixture = getAnalyticsFixture("empty");
+  const readQuery = query();
+  const contradicted = {...fixture.snapshot, scope: readQuery.scope, capturedAt: "2026-07-31T12:00:00Z",
+    tasks: result.tasks, events: result.events,
+    coverage: {...fixture.snapshot.coverage, providers: {...fixture.snapshot.coverage.providers,
+      tasks: {...result.coverage, capabilities: [...result.coverage.capabilities, "task_meaningful_activity" as const]}}}};
+  assert.equal(calculateMetrics(contradicted, readQuery).stalled_work.value, null,
+    "a contradictory capability claim cannot turn a null task timestamp into a zero count");
+});
+
+test("validated positive activity is retained without certifying bounded or foreign history", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  await seedTask({id: "positive-task", lane: "doing"});
+  const recent = Date.parse("2026-07-28T10:00:00Z") / 1000;
+  await client.execute({sql: "INSERT INTO activities(id,workspace_id,task_id,user_id,kind,payload,created_at) VALUES (?,?,?,?,?,?,?)",
+    args: ["owned-positive", WORKSPACE, "positive-task", "user_a", "commentAdd", "{}", recent]});
+  await client.execute({sql: "INSERT INTO activities(id,workspace_id,task_id,user_id,kind,payload,created_at) VALUES (?,?,?,?,?,?,?)",
+    args: ["foreign-positive", OTHER_WORKSPACE, "positive-task", "user_a", "commentAdd", "{}", recent + 100]});
+  const {result, metrics} = await persistedMetrics();
+  assert.equal(result.tasks[0]?.lastMeaningfulActivityAt, "2026-07-28T10:00:00.000Z");
+  assert.deepEqual(result.events.map(event => event.id), ["owned-positive"]);
+  assert.equal(result.coverage.status, "partial");
+  assert.ok(!result.coverage.capabilities.includes("task_meaningful_activity"));
+  assert.equal(metrics.stalled_work.value, null);
+});
+
+test("future activity within a queried period does not become positive evidence", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  await seedTask({id: "future-activity-task", lane: "doing"});
+  await client.execute({sql: "INSERT INTO activities(id,workspace_id,task_id,user_id,kind,payload,created_at) VALUES (?,?,?,?,?,?,?)",
+    args: ["future-positive", WORKSPACE, "future-activity-task", "user_a", "commentAdd", "{}",
+      Date.parse("2099-07-20T10:00:00Z") / 1000]});
+  const {TasksAnalyticsProvider} = await load();
+  const result = await new TasksAnalyticsProvider().read(query({period: {...query().period,
+    start: "2099-07-01T00:00:00Z", end: "2099-08-01T00:00:00Z"}}));
+  assert.equal(result.tasks[0]?.lastMeaningfulActivityAt, null);
+  assert.deepEqual(result.events, []);
+  assert.ok(result.coverage.issues.includes("tasks_activity_timestamp_invalid_or_future"));
+});
+
+test("a truncated history retains observed positives but cannot certify inactivity", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  await seedTask({id: "truncated-activity-task", lane: "doing"});
+  const start = Date.parse("2026-07-20T00:00:00Z") / 1000;
+  await client.batch(Array.from({length: 5_001}, (_, index) => ({
+    sql: "INSERT INTO activities(id,workspace_id,task_id,user_id,kind,payload,created_at) VALUES (?,?,?,?,?,?,?)",
+    args: [`bounded-${index}`, WORKSPACE, "truncated-activity-task", "user_a", "commentAdd", "{}", start + index],
+  })), "write");
+  const {result, metrics} = await persistedMetrics();
+  assert.equal(result.events.length, 5_000);
+  assert.ok(result.tasks[0]?.lastMeaningfulActivityAt);
+  assert.ok(result.coverage.issues.includes("tasks_activity_limit_reached"));
+  assert.ok(!result.coverage.capabilities.includes("task_meaningful_activity"));
+  assert.equal(metrics.stalled_work.status, "unsupported");
+  assert.equal(metrics.stalled_work.value, null);
+});
+
+test("an activity query failure is not an empty successful history", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  await seedTask({id: "activity-query-failure", lane: "doing"});
+  await client.execute("ALTER TABLE activities RENAME TO activities_unreadable");
+  try {
+    const {TasksAnalyticsProvider} = await load();
+    await assert.rejects(new TasksAnalyticsProvider().read(query()));
+  } finally {
+    await client.execute("ALTER TABLE activities_unreadable RENAME TO activities");
+  }
+});
+
+test("malformed persisted activity does not become evidence of recent progress", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  await seedTask({id: "malformed-activity-task", lane: "doing"});
+  await client.execute({sql: "INSERT INTO activities(id,workspace_id,task_id,user_id,kind,payload,created_at) VALUES (?,?,?,?,?,?,?)",
+    args: ["malformed-activity", WORKSPACE, "malformed-activity-task", "user_a", "update", "not-json",
+      Date.parse("2026-07-28T10:00:00Z") / 1000]});
+  const {TasksAnalyticsProvider} = await load();
+  await assert.rejects(new TasksAnalyticsProvider().read(query()));
+});
+
+test("metric defense uses proved activity, never creation recency, when a provider claims full history", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  await seedTask({id: "metric-defence", lane: "doing", createdAt: Date.parse("2026-07-30T00:00:00Z") / 1000});
+  const {result} = await persistedMetrics();
+  const readQuery = query();
+  const fixture = getAnalyticsFixture("empty");
+  const task = result.tasks[0]!;
+  const snapshot = {...fixture.snapshot, scope: readQuery.scope, capturedAt: "2026-07-31T12:00:00Z",
+    tasks: [{...task, lastMeaningfulActivityAt: "2026-07-01T00:00:00Z"}], events: result.events,
+    coverage: {...fixture.snapshot.coverage, providers: {...fixture.snapshot.coverage.providers,
+      tasks: {...result.coverage, capabilities: [...result.coverage.capabilities, "task_meaningful_activity" as const]}}}};
+  assert.equal(calculateMetrics(snapshot, readQuery).stalled_work.value?.count, 1,
+    "recent creation must not suppress a stall backed by old complete activity history");
+  const recent = {id: "proved-recent", workspaceId: WORKSPACE, labelIds: [], entityType: "task" as const,
+    entityId: task.id, kind: "commented" as const, at: "2026-07-30T10:00:00Z", meaningful: true};
+  assert.equal(calculateMetrics({...snapshot, events: [recent]}, readQuery).stalled_work.value?.count, 0,
+    "a newer validated event can establish positive recency when the capability is genuinely present");
+  for (const lastMeaningfulActivityAt of [null, "2099-01-01T00:00:00Z", "invalid"]) {
+    const unknown = calculateMetrics({...snapshot, tasks: [{...task, lastMeaningfulActivityAt}]}, readQuery).stalled_work;
+    assert.equal(unknown.status, "unsupported");
+    assert.equal(unknown.value, null);
+  }
 });
 
 /**

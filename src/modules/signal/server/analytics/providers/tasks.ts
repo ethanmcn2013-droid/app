@@ -111,6 +111,9 @@ export class TasksAnalyticsProvider implements TasksProvider {
 
     const activityTruncated = activityRows.length > MAX_ACTIVITIES;
     const boundedActivities = activityRows.slice(0, MAX_ACTIVITIES);
+    const calculatedAtMs = Date.parse(calculatedAt);
+    const validActivities = boundedActivities.filter((entry) =>
+      Number.isFinite(entry.createdAt.getTime()) && entry.createdAt.getTime() <= calculatedAtMs);
     const workspaceOwnerIds = Array.from(new Set(boundedRows.flatMap((row) => stringArray(row.assignees))));
     const ownerIds = workspaceOwnerIds.slice(0, MAX_NAVIGATION_OWNERS);
     const ownerRows = ownerIds.length
@@ -123,8 +126,8 @@ export class TasksAnalyticsProvider implements TasksProvider {
       ownerRows.map((row) => [row.id, { id: row.id, displayName: row.name ?? null }]),
     );
 
-    const rawByTask = new Map<string, typeof boundedActivities>();
-    for (const row of boundedActivities) {
+    const rawByTask = new Map<string, typeof validActivities>();
+    for (const row of validActivities) {
       const bucket = rawByTask.get(row.taskId);
       if (bucket) bucket.push(row);
       else rawByTask.set(row.taskId, [row]);
@@ -140,7 +143,7 @@ export class TasksAnalyticsProvider implements TasksProvider {
     const labelIdsByTask = new Map(
       scopedRows.map((row) => [row.id, stringArray(row.tags).map(labelIdFromTag)]),
     );
-    const events = boundedActivities.flatMap((row) =>
+    const events = validActivities.flatMap((row) =>
       mapActivity(row, labelIdsByTask.get(row.taskId) ?? [], query.scope.workspaceId),
     );
     const taskRecords = scopedRows.map((row): TaskRecord => {
@@ -154,6 +157,9 @@ export class TasksAnalyticsProvider implements TasksProvider {
       // post-0024 rows.
       const explicitBlocking = effectiveColumnKey(row) === WAITING_COLUMN_KEY;
       const taskActivities = rawByTask.get(row.id) ?? [];
+      // The bounded activity read can prove a positive event, but neither an
+      // empty result nor a recent event proves that all meaningful writers and
+      // older history were covered. Ignore future/invalid dates as evidence.
       const meaningful = taskActivities.filter((entry) => isMeaningfulActivity(entry.kind, entry.payload));
       // T·122: tasks.completedAt is the durable completion moment; the
       // activity-log reconstruction remains only as the fallback for rows
@@ -181,7 +187,7 @@ export class TasksAnalyticsProvider implements TasksProvider {
         completedAt: completion ? iso(completion) : null,
         lastMeaningfulActivityAt: meaningful.length
           ? iso(meaningful[meaningful.length - 1]!.createdAt)
-          : iso(row.createdAt),
+          : null,
         blocking: {
           explicit: explicitBlocking,
           dependencyIds: dependencies,
@@ -195,7 +201,7 @@ export class TasksAnalyticsProvider implements TasksProvider {
       };
     });
 
-    const historyDates = boundedActivities.map((row) => iso(row.createdAt));
+    const historyDates = validActivities.map((row) => iso(row.createdAt));
     const historyWindow = queriedHistoryWindow(
       historyStart,
       periodEnd,
@@ -203,6 +209,8 @@ export class TasksAnalyticsProvider implements TasksProvider {
       historyDates.at(-1) ?? null,
     );
     const issues: string[] = [];
+    issues.push("tasks_meaningful_activity_history_unverified");
+    if (validActivities.length !== boundedActivities.length) issues.push("tasks_activity_timestamp_invalid_or_future");
     if (isTruncated) issues.push("tasks_record_limit_reached");
     if (activityTruncated) issues.push("tasks_activity_limit_reached");
     if (workspaceOwnerIds.length > MAX_NAVIGATION_OWNERS) {
@@ -246,7 +254,6 @@ export class TasksAnalyticsProvider implements TasksProvider {
           "task_read",
           "task_completion_timestamps",
           "task_status_history",
-          "task_meaningful_activity",
           "task_dependencies",
           "task_owners",
           "cross_product_links",

@@ -189,6 +189,81 @@ test("actual policy denies a foreign project before service and canonical self s
   });
 });
 
+test("partial Tasks activity coverage keeps the overdue source in actual briefing and ledger selection", async () => {
+  await assertReadOnly(async () => {
+    actor = "synthetic-owner-clerk";
+    const result = await service.calculateSignalView(await context(), "briefing", "metric:open_overdue_work");
+    const tasksCoverage = result.view.meta.coverage.providers.tasks;
+    assert.equal(tasksCoverage?.status, "partial");
+    assert.ok(tasksCoverage.capabilities.includes("task_read"));
+    assert.ok(tasksCoverage.capabilities.includes("task_completion_timestamps"));
+    assert.ok(!tasksCoverage.capabilities.includes("task_meaningful_activity"));
+    assert.ok(tasksCoverage.issues.includes("tasks_meaningful_activity_history_unverified"));
+    assert.equal(tasksCoverage.sourceRecordCount, 2);
+    assert.equal(result.view.meta.coverage.status, "partial");
+    const overdue = result.view.observations.find(observation => observation.metric.key === "open_overdue_work");
+    assert.ok(overdue, "known overdue work must survive the three-observation selection");
+    assert.equal(overdue.metric.value, 2);
+    assert.deepEqual(overdue.sources.map(source => [source.id, source.date]).sort(), [
+      ["synthetic-task-member", new Date(NOW-DAY).toISOString()],
+      ["synthetic-task-owner", new Date(NOW-DAY).toISOString()],
+    ]);
+    assert.ok(!result.view.observations.some(observation => observation.metric.key === "stalled_work"));
+    const dto = ledger.buildProgressiveLedgerDTO(result.view, {generatedAtLabel: "Synthetic service read",
+      scopeLabel: "Synthetic service project", evidenceHref: id => `/app/home/briefing?evidence=${encodeURIComponent(id)}`});
+    assert.equal(dto.freshness, "partial");
+    assert.equal(dto.readCounts, null);
+    const overdueEntry = dto.entries.find(entry => entry.text === overdue.title);
+    assert.ok(overdueEntry, "known overdue work must survive the ledger adapter");
+    assert.ok(overdueEntry.primaryAction?.href.startsWith("/app/tasks"));
+    assert.ok(overdueEntry.evidenceHref?.startsWith("/app/home/briefing?evidence="));
+    assert.equal(overdueEntry.receipt.evidenceCount, 2);
+    assert.doesNotMatch(JSON.stringify(dto), new RegExp(FOREIGN_CANARY));
+  });
+});
+
+test("an empty authorized Project stays partial and never receives a healthy all-clear", async () => {
+  const empty = "synthetic-empty-activity-project";
+  await stores.tasks.execute({sql: "INSERT INTO workspaces(id,slug,name,owner_user_id) VALUES (?,?,?,?)",
+    args: [empty, empty, "Synthetic empty project", "synthetic-owner"]});
+  try {
+    await assertReadOnly(async () => {
+      actor = "synthetic-owner-clerk";
+      const result = await service.calculateSignalView(await context("workspace", empty), "briefing");
+      assert.equal(result.view.meta.coverage.providers.tasks?.status, "partial");
+      assert.equal(result.view.meta.coverage.providers.tasks?.sourceRecordCount, 0);
+      assert.equal(result.view.meta.freshness, "partial");
+      assert.equal(result.view.observations.length, 0);
+      assert.equal(result.view.emptyState?.headline, "Signal has only part of the picture.");
+      const dto = ledger.buildProgressiveLedgerDTO(result.view, {generatedAtLabel: "Synthetic service read",
+        scopeLabel: "Synthetic empty project", evidenceHref: id => `/app/home/briefing?evidence=${encodeURIComponent(id)}`});
+      assert.equal(dto.readCounts, null);
+      assert.equal(dto.freshness, "partial");
+      assert.equal(dto.emptyState?.kind, "coverage");
+      assert.ok(dto.emptyState.body.length > 0);
+      assert.doesNotMatch(dto.emptyState.headline, /nothing needs/i);
+    });
+  } finally { await stores.tasks.execute({sql: "DELETE FROM workspaces WHERE id=?", args: [empty]}); }
+});
+
+test("durable completion remains available through the real service while activity certainty is withheld", async () => {
+  const id = "synthetic-durable-completion";
+  await stores.tasks.execute({sql: `INSERT INTO tasks(id,workspace_id,seq,title,lane,priority,assignees,tags,blocked_by,
+    completed_at,created_at,updated_at) VALUES (?,?,4,'Synthetic completed work','done','p1',?,'[]','[]',?,?,?)`,
+    args: [id, PROJECT, JSON.stringify(["synthetic-owner"]), Math.floor((NOW-DAY)/1000),
+      Math.floor((NOW-10*DAY)/1000), Math.floor((NOW-DAY)/1000)]});
+  try {
+    await assertReadOnly(async () => {
+      actor = "synthetic-owner-clerk";
+      const result = await service.calculateSignalView(await context(), "briefing", "metric:work_completed");
+      assert.equal(result.view.meta.coverage.providers.tasks?.status, "partial");
+      assert.ok(result.view.meta.coverage.providers.tasks?.capabilities.includes("task_completion_timestamps"));
+      assert.deepEqual(result.evidence?.records.map(record => record.id), [id]);
+      assert.ok(!result.view.observations.some(observation => observation.metric.key === "stalled_work"));
+    });
+  } finally { await stores.tasks.execute({sql: "DELETE FROM tasks WHERE id=?", args: [id]}); }
+});
+
 test("real Notes missing-column failure becomes unavailable coverage without an invented quiet success", async () => {
   await stores.notes.execute("ALTER TABLE notes RENAME COLUMN extract_body TO unavailable_extract_body");
   try {
