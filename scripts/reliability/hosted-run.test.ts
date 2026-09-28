@@ -2,9 +2,15 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createHash } from "node:crypto";
 import { join, resolve } from "node:path";
+import { createClient } from "@libsql/client";
+import { initializeLocalServiceSchema } from "./local-service-harness";
+import { assertProjectId } from "../../src/lib/projects/project-ref";
+import { createLocalConversationDatabaseAdapter } from "../../src/server/conversations/database";
+import { createConversationService } from "../../src/server/conversations/service";
+import { createConversationTaskOutcomeService } from "../../src/server/conversations/work-links";
 import { type HostedFixture } from "./hosted-seed";
 import { buildMixedWorkloadSchedule } from "./contracts/workload-schedule.mjs";
-import { previewScopedFetch, previewScopedAccessFetch, validateVercelProtectionCookie, runHostedLaunch, validateHostedPreflight, type HostedRunConfig } from "./hosted-run";
+import { previewScopedFetch, previewScopedAccessFetch, validateVercelProtectionCookie, cleanupHostedNamespace, runHostedLaunch, validateHostedPreflight, type HostedRunConfig } from "./hosted-run";
 
 const sha = (value: string) => createHash("sha256").update(value).digest("hex");
 const digest = (value: string) => `sha256:${sha(value)}`;
@@ -118,7 +124,7 @@ test("wrong or missing live attestation cannot reach any write or session", asyn
   const calls: string[] = [];
   const dependencies = { fetchAttestation: async () => ({ ...attestation, deploymentId: "dpl_wrong" }),
     seed: async () => { calls.push("seed"); throw new Error("unexpected"); }, workload: async () => { calls.push("workload"); throw new Error("unexpected"); },
-    cleanup: async () => { calls.push("cleanup"); return { ok: true, deletedProjects: 0, remainingProjects: 0 }; },
+    cleanup: async () => { calls.push("cleanup"); return { ok: true, deletedProjects: 0, remainingProjects: 0, residualScopedRows: 0, checkedScopedTables: [] }; },
     write: async () => { calls.push("write"); }, makeDirectory: async () => { calls.push("directory"); return undefined; } };
   await assert.rejects(runHostedLaunch(config, true, dependencies), /hosted_immutable_runtime_mismatch/);
   assert.deepEqual(calls, []);
@@ -133,7 +139,7 @@ test("read-only preflight makes no writes; execute seeds and runs once, then cle
   const dependencies = { fetchAttestation: async () => attestation, seed: async () => { calls.push("seed"); return fixture; },
     workload: async () => { calls.push("workload"); return { completed: true, appRequests: 20_401, droppedIterations: 0,
       sessionCleanup: { ok: true, attempted: 10, revoked: 10, unresolved: 0, errors: [] } }; },
-    cleanup: async () => { calls.push("cleanup"); return { ok: true, deletedProjects: 10, remainingProjects: 0 }; },
+    cleanup: async () => { calls.push("cleanup"); return { ok: true, deletedProjects: 10, remainingProjects: 0, residualScopedRows: 0, checkedScopedTables: [] }; },
     write: async (path: string, body: string) => { calls.push(`write:${path}`); written.push(body); },
     makeDirectory: async () => { calls.push("directory"); return undefined; } };
   const dry = await runHostedLaunch(config, false, dependencies);
@@ -147,16 +153,153 @@ test("read-only preflight makes no writes; execute seeds and runs once, then cle
   assert.ok(written.every((body) => !body.includes(config.tasksToken) && !body.includes(config.clerkSecretKey) && !body.includes(config.attestationToken)));
 });
 
-test("failure after seeding still attempts scoped cleanup and emits sanitized summary", async () => {
+test("failed workload retains its fixture for reconciliation and emits sanitized summary", async () => {
   const { config, attestation, fixture } = example();
   let cleaned = 0;
   const written: string[] = [];
   const result = await runHostedLaunch(config, true, { fetchAttestation: async () => attestation, seed: async () => fixture,
     workload: async () => { throw new Error("secret: private-tasks-token"); },
-    cleanup: async () => { cleaned++; return { ok: true, deletedProjects: 10, remainingProjects: 0 }; },
+    cleanup: async () => { cleaned++; return { ok: true, deletedProjects: 10, remainingProjects: 0, residualScopedRows: 0, checkedScopedTables: [] }; },
     write: async (_path: string, body: string) => { written.push(body); }, makeDirectory: async () => undefined });
   assert.equal(result.completed, false);
   assert.equal(result.runFailure, "hosted_run_failed");
-  assert.equal(cleaned, 1);
+  assert.equal(cleaned, 0);
+  assert.equal((result.namespaceCleanup as { retainedForReconciliation: boolean }).retainedForReconciliation, true);
   assert.ok(written.every((body) => !body.includes(config.tasksToken)));
+});
+
+test("workload result without verified ten-session cleanup retains fixture", async () => {
+  const { config, attestation, fixture } = example();
+  let cleaned = 0;
+  const result = await runHostedLaunch(config, true, { fetchAttestation: async () => attestation, seed: async () => fixture,
+    workload: async () => ({ completed: true, sessionCleanup: { ok: false, attempted: 10, revoked: 9, unresolved: 1, errors: [] } }),
+    cleanup: async () => { cleaned++; return { ok: true, deletedProjects: 10, remainingProjects: 0, residualScopedRows: 0, checkedScopedTables: [] }; },
+    write: async () => undefined, makeDirectory: async () => undefined });
+  assert.equal(result.completed, false);
+  assert.equal(cleaned, 0);
+  assert.equal((result.namespaceCleanup as { retainedForReconciliation: boolean }).retainedForReconciliation, true);
+});
+
+test("scoped cleanup removes non-cascading task/activity/outbox rows and refuses residual false success", async () => {
+  const { config } = example();
+  const ids = Array.from({ length: 10 }, (_, index) => `${config.manifest.fixtureNamespace}_project_${index}`);
+  const sql: string[] = [];
+  let closed = false;
+  let deleted = false;
+  let committed = false;
+  let rolledBack = false;
+  const fakeClient = { execute: async (statement: { sql: string; args?: readonly unknown[] }) => {
+    sql.push(statement.sql);
+    if (statement.sql.startsWith("SELECT id,owner_user_id FROM workspaces"))
+      return { rows: ids.map((id) => ({ id, owner_user_id: config.actors[0].actorId })), rowsAffected: 0 };
+    if (statement.sql.startsWith("SELECT id,workspace_id FROM conversations"))
+      return { rows: ids.map((id, index) => ({ id: `project_synthetic_${index}`, workspace_id: id })), rowsAffected: 0 };
+    if (statement.sql.startsWith("DELETE FROM workspaces")) { deleted = true; return { rows: [], rowsAffected: 10 }; }
+    if (statement.sql.startsWith("SELECT id FROM workspaces")) return { rows: deleted ? [] : ids.map((id) => ({ id })), rowsAffected: 0 };
+    if (statement.sql.startsWith("SELECT COUNT(*)")) return { rows: [{ count: statement.sql.includes("FROM activities") ? 1 : 0 }], rowsAffected: 0 };
+    return { rows: [], rowsAffected: 0 };
+  }, transaction: async () => ({ execute: fakeClient.execute, closed: false,
+    commit: async () => { committed = true; }, rollback: async () => { rolledBack = true; } }), close: () => { closed = true; } };
+  const result = await cleanupHostedNamespace(config, (() => fakeClient) as unknown as typeof import("@libsql/client").createClient);
+  assert.equal(result.ok, false);
+  assert.equal(result.residualScopedRows, 1);
+  assert.equal(closed, true);
+  assert.equal(committed, false);
+  assert.equal(rolledBack, true);
+  for (const table of ["work_operation_receipts", "suite_outbox", "activities", "tasks", "resources", "conversation_messages"])
+    assert.ok(sql.some((statement) => statement.startsWith(`DELETE FROM ${table}`)), `missing ${table} cleanup`);
+});
+
+test("scoped cleanup refuses a missing or foreign project before deleting anything", async () => {
+  const { config } = example();
+  const sql: string[] = [];
+  const fakeClient = { execute: async (statement: { sql: string }) => { sql.push(statement.sql); return { rows: [], rowsAffected: 0 }; },
+    transaction: async () => ({ execute: fakeClient.execute, closed: false, rollback: async () => {} }), close: () => {} };
+  await assert.rejects(cleanupHostedNamespace(config, (() => fakeClient) as unknown as typeof import("@libsql/client").createClient),
+    /hosted_cleanup_scope_refused/);
+  assert.equal(sql.some((statement) => statement.startsWith("DELETE")), false);
+});
+
+test("real migrated schema cleanup preserves external state and refuses cross-boundary references before any delete", async () => {
+  for (const foreignKeys of [false, true]) for (const scenario of ["healthy", "outgoing-link", "incoming-link", "resource-mismatch", "outbox-mismatch", "task-project-mismatch", "mid-delete-failure"]) {
+    const { config } = example();
+    const db = createClient({ url: "file::memory:" });
+    let deleteStatements = 0;
+    try {
+      await initializeLocalServiceSchema(db);
+      await db.execute(`PRAGMA foreign_keys = ${foreignKeys ? "ON" : "OFF"}`);
+      const [writer, observer] = config.actors;
+      for (const actor of config.actors) await db.execute({ sql: "INSERT INTO users(id,clerk_id,name,color,initials) VALUES (?,?,?,'#444444','S')",
+        args: [actor.actorId, actor.clerkId, "Synthetic cleanup actor"] });
+      const projects = Array.from({ length: 10 }, (_, index) => assertProjectId(`${config.manifest.fixtureNamespace}_project_${index}`));
+      const external = assertProjectId("external_cleanup_sentinel_project");
+      const adapter = createLocalConversationDatabaseAdapter({ client: db });
+      const conversations = createConversationService(adapter);
+      const outcomes = createConversationTaskOutcomeService(adapter, { captureConfig: { enabled: false, now: 0 } });
+      const rooms = [];
+      for (const projectId of [...projects, external]) {
+        await db.execute({ sql: "INSERT INTO workspaces(id,slug,name,owner_user_id,context_type) VALUES (?,?,?,?,'project')",
+          args: [projectId, projectId, "Synthetic cleanup project", writer.actorId] });
+        for (const actor of config.actors) await db.execute({ sql: "INSERT INTO workspace_members(workspace_id,user_id,role) VALUES (?,?,'member')", args: [projectId, actor.actorId] });
+        const room = await conversations.ensureProjectConversation({ actorId: writer.actorId, projectId });
+        assert.ok(room.ok); rooms.push(room.value);
+      }
+      const source = scenario === "incoming-link" ? rooms[10] : rooms[0];
+      const sent = await conversations.sendMessage({ actorId: writer.actorId, input: { projectId: assertProjectId(source.projectId),
+        conversationId: source.conversationId, expectedAudienceEpoch: source.audienceEpoch, clientRequestId: "cleanup_message_1234",
+        body: "Synthetic cleanup message", rootId: null, mentionUserIds: [observer.actorId] } });
+      assert.ok(sent.ok);
+      const task = await outcomes.promoteMessageToTask({ actorId: writer.actorId, input: { clientRequestId: "cleanup_task_1234",
+        sourceProjectId: assertProjectId(source.projectId), destinationProjectId: scenario === "outgoing-link" ? external : projects[0],
+        conversationId: source.conversationId, messageId: sent.value.messageId, expectedRevision: 1, expectedAudienceEpoch: source.audienceEpoch,
+        title: "Synthetic cleanup task", ownerUserId: observer.actorId, dueDate: "2026-10-25" as never } });
+      assert.ok(task.ok);
+      await db.execute({ sql: "INSERT INTO resources(id,workspace_id,task_id,kind,provider,title,added_at,access_state) VALUES ('cleanup-resource',?,?,'link','url','Synthetic',1,'ok')",
+        args: [scenario === "outgoing-link" || scenario === "resource-mismatch" ? external : projects[0], task.value.taskId] });
+      if (scenario === "outbox-mismatch") await db.execute({ sql: "UPDATE suite_outbox SET workspace_id=?", args: [external] });
+      if (scenario === "task-project-mismatch") await db.execute({ sql: "UPDATE tasks SET workspace_id=? WHERE id=?", args: [projects[1], task.value.taskId] });
+      const tables = ["workspaces", "workspace_members", "tasks", "activities", "resources", "suite_outbox", "work_links", "work_operation_receipts",
+        "conversations", "conversation_messages", "conversation_attention", "conversation_outbox", "conversation_receipts", "conversation_changes", "conversation_participants"];
+      const snapshot = async () => {
+        const values: Record<string, string[]> = {};
+        for (const table of tables) values[table] = (await db.execute(`SELECT * FROM ${table}`)).rows.map(row => JSON.stringify(row)).sort();
+        return values;
+      };
+      const before = await snapshot();
+      const makeClient = (() => ({ transaction: async (mode: "write") => {
+        assert.equal(mode, "write");
+        // Keep the in-memory database on one connection: libSQL's transaction()
+        // detaches it. These are its actual SQLite write-transaction boundaries.
+        await db.execute("BEGIN IMMEDIATE");
+        let closed = false;
+        return { get closed() { return closed; },
+          commit: async () => { await db.execute("COMMIT"); closed = true; },
+          rollback: async () => { await db.execute("ROLLBACK"); closed = true; },
+          execute: async (statement: string | { sql: string; args: string[] }) => {
+            if ((typeof statement === "string" ? statement : statement.sql).startsWith("DELETE")) {
+              deleteStatements++;
+              if (scenario === "mid-delete-failure" && deleteStatements === 4) throw new Error("injected_cleanup_failure");
+            }
+            return db.execute(statement);
+          } };
+      }, close: () => {} })) as unknown as typeof createClient;
+      if (scenario === "mid-delete-failure") {
+        await assert.rejects(cleanupHostedNamespace(config, makeClient), /injected_cleanup_failure/);
+        assert.equal(deleteStatements, 4);
+        assert.deepEqual(await snapshot(), before, "mid-delete failure must roll back every prior deletion");
+      } else if (scenario !== "healthy") {
+        await assert.rejects(cleanupHostedNamespace(config, makeClient), /hosted_cleanup_reference_scope_refused/, `${scenario}, FK=${foreignKeys}`);
+        assert.equal(deleteStatements, 0, `${scenario} must be refused before the first DELETE`);
+        assert.deepEqual(await snapshot(), before, `${scenario} must preserve every fixture and external row`);
+      } else {
+        const result = await cleanupHostedNamespace(config, makeClient);
+        assert.equal(result.ok, true); assert.equal(result.deletedProjects, 10); assert.equal(result.residualScopedRows, 0);
+        for (const table of ["tasks", "activities", "resources", "suite_outbox", "work_links", "work_operation_receipts", "conversation_messages", "conversation_attention", "conversation_outbox"])
+          assert.equal(Number((await db.execute(`SELECT COUNT(*) AS n FROM ${table}`)).rows[0].n), 0, table);
+        assert.equal((await db.execute({ sql: "SELECT id FROM workspaces WHERE id=?", args: [external] })).rows.length, 1);
+        assert.equal((await db.execute({ sql: "SELECT user_id FROM workspace_members WHERE workspace_id=?", args: [external] })).rows.length, 2);
+        assert.equal((await db.execute("PRAGMA foreign_key_check")).rows.length, 0);
+      }
+    } finally { db.close(); }
+  }
 });

@@ -6,7 +6,7 @@ import { validateTargetManifest } from "./contracts/target-manifest.mjs";
 import { buildMixedWorkloadSchedule, WORKLOAD } from "./contracts/workload-schedule.mjs";
 import { createAuthenticatedSessionManager } from "./authenticated-sessions.mjs";
 import { hostedTargetHash, seedHostedFixture, type HostedActor, type HostedFixture, type HostedManifest } from "./hosted-seed";
-import { runHostedWorkload } from "./hosted-workload";
+import { runHostedWorkload, sessionCleanupAccepted } from "./hosted-workload";
 
 const STORE_NAMES = ["TASKS_DATABASE_URL", "NOTES_DATABASE_URL", "TIMELINE_DATABASE_URL", "SIGNAL_DATABASE_URL", "ENTITLEMENTS_DATABASE_URL"] as const;
 const TARGET_NAMES = ["tasks", "notes", "timeline", "signal", "entitlements"] as const;
@@ -178,23 +178,127 @@ export function previewScopedAccessFetch(origin: string, access: { bypassToken?:
   };
 }
 
-export async function cleanupHostedNamespace(config: HostedRunConfig) {
+export async function cleanupHostedNamespace(config: HostedRunConfig, createClientImpl: typeof createClient = createClient) {
   const namespace = config.manifest.fixtureNamespace;
   if (!/^reliability-[a-z0-9-]{8,64}$/.test(namespace)) fail("hosted_cleanup_namespace_invalid");
-  const client = createClient({ url: config.storeUrls.TASKS_DATABASE_URL, authToken: config.tasksToken });
+  const connection = createClientImpl({ url: config.storeUrls.TASKS_DATABASE_URL, authToken: config.tasksToken });
+  let transaction: Awaited<ReturnType<typeof connection.transaction>> | undefined;
   const ids = Array.from({ length: 10 }, (_, index) => `${namespace}_project_${index}`);
+  const placeholders = ids.map(() => "?").join(",");
+  const scopedPattern = `${namespace.replaceAll("_", "\\_")}\\_project\\_%`;
   try {
-    const rows = await client.execute({ sql: "SELECT id,owner_user_id FROM workspaces WHERE id LIKE ? ESCAPE '\\'", args: [`${namespace.replaceAll("_", "\\_")}_project_%`] });
-    if (rows.rows.some((row) => !ids.includes(String(row.id)) || row.owner_user_id !== config.actors[0].actorId)) fail("hosted_cleanup_scope_refused");
-    let deleted = 0;
-    for (const id of ids) {
-      await client.execute({ sql: "DELETE FROM resources WHERE workspace_id=? AND id LIKE ? ESCAPE '\\'", args: [id, `${namespace.replaceAll("_", "\\_")}_resource_%`] });
-      const result = await client.execute({ sql: "DELETE FROM workspaces WHERE id=? AND owner_user_id=?", args: [id, config.actors[0].actorId] });
-      deleted += result.rowsAffected;
+    // Keep the validated reference graph stable and roll back partial cleanup.
+    const client = await connection.transaction("write");
+    transaction = client;
+    const rows = await client.execute({ sql: "SELECT id,owner_user_id FROM workspaces WHERE id LIKE ? ESCAPE '\\'", args: [scopedPattern] });
+    if (rows.rows.length !== ids.length || rows.rows.some((row) => !ids.includes(String(row.id)) || row.owner_user_id !== config.actors[0].actorId))
+      fail("hosted_cleanup_scope_refused");
+    const conversations = await client.execute({ sql: `SELECT id,workspace_id FROM conversations WHERE workspace_id IN (${placeholders})`, args: ids });
+    if (conversations.rows.length !== ids.length || conversations.rows.some((row) => typeof row.id !== "string" || !ids.includes(String(row.workspace_id))) ||
+        new Set(conversations.rows.map((row) => row.workspace_id)).size !== ids.length)
+      fail("hosted_cleanup_conversation_scope_refused");
+    const conversationIds = conversations.rows.map((row) => String(row.id));
+    // Migration cleanup triggers run even when remote foreign-key cascading does
+    // not. Refuse unexpected/cross-project relationships before the first DELETE,
+    // rather than discover lost external provenance in a residual-row check.
+    const scopeCte = `WITH cleanup_projects(id) AS (VALUES ${ids.map(() => "(?)").join(",")}),
+      cleanup_tasks AS (SELECT id FROM tasks WHERE workspace_id IN (SELECT id FROM cleanup_projects)),
+      cleanup_rooms AS (SELECT id FROM conversations WHERE workspace_id IN (SELECT id FROM cleanup_projects)),
+      cleanup_messages AS (SELECT id FROM conversation_messages WHERE workspace_id IN (SELECT id FROM cleanup_projects)
+        OR conversation_id IN (SELECT id FROM cleanup_rooms))`;
+    const inProjects = (column: string) => `${column} IN (SELECT id FROM cleanup_projects)`;
+    const inTasks = (column: string) => `${column} IN (SELECT id FROM cleanup_tasks)`;
+    const inRooms = (column: string) => `${column} IN (SELECT id FROM cleanup_rooms)`;
+    const inMessages = (column: string) => `${column} IN (SELECT id FROM cleanup_messages)`;
+    const guards = [
+      `SELECT 1 FROM work_links l LEFT JOIN tasks t ON t.id=l.task_id
+        LEFT JOIN conversations c ON c.id=l.source_conversation_id LEFT JOIN conversation_messages m ON m.id=l.source_message_id
+        WHERE (${inProjects("l.source_project_id")} OR ${inProjects("l.destination_project_id")} OR ${inTasks("l.task_id")}
+          OR ${inRooms("l.source_conversation_id")} OR ${inMessages("l.source_message_id")})
+        AND (NOT ${inProjects("l.source_project_id")} OR NOT ${inProjects("l.destination_project_id")}
+          OR c.workspace_id IS NOT l.source_project_id OR m.workspace_id IS NOT l.source_project_id
+          OR m.conversation_id IS NOT l.source_conversation_id OR t.workspace_id IS NOT l.destination_project_id)`,
+      `SELECT 1 FROM work_operation_receipts r LEFT JOIN work_links l ON l.id=r.work_link_id
+        WHERE (${inProjects("r.source_project_id")} OR ${inProjects("r.destination_project_id")} OR ${inTasks("r.task_id")}
+          OR ${inRooms("r.source_conversation_id")} OR ${inProjects("l.source_project_id")} OR ${inProjects("l.destination_project_id")})
+        AND (NOT ${inProjects("r.source_project_id")} OR NOT ${inProjects("r.destination_project_id")}
+          OR l.source_project_id IS NOT r.source_project_id OR l.destination_project_id IS NOT r.destination_project_id
+          OR l.task_id IS NOT r.task_id OR l.source_conversation_id IS NOT r.source_conversation_id)`,
+      `SELECT 1 FROM conversation_messages m LEFT JOIN conversations c ON c.id=m.conversation_id
+        LEFT JOIN conversation_messages root ON root.id=m.root_id
+        WHERE (${inProjects("m.workspace_id")} OR ${inRooms("m.conversation_id")} OR ${inMessages("m.root_id")})
+        AND (NOT ${inProjects("m.workspace_id")} OR c.workspace_id IS NOT m.workspace_id
+          OR (m.root_id IS NOT NULL AND (root.workspace_id IS NOT m.workspace_id OR root.conversation_id IS NOT m.conversation_id)))`,
+      ...["activities", "resources"].map(table => `SELECT 1 FROM ${table} r LEFT JOIN tasks t ON t.id=r.task_id
+        WHERE (${inProjects("r.workspace_id")} OR ${inTasks("r.task_id")}) AND
+          (NOT ${inProjects("r.workspace_id")} OR r.workspace_id IS NULL OR t.workspace_id IS NOT r.workspace_id)`),
+      ...["conversation_attention", "conversation_outbox"].map(table => `SELECT 1 FROM ${table} r
+        LEFT JOIN conversations c ON c.id=r.conversation_id LEFT JOIN conversation_messages m ON m.id=r.message_id
+        WHERE (${inProjects("r.workspace_id")} OR ${inRooms("r.conversation_id")} OR ${inMessages("r.message_id")})
+        AND (NOT ${inProjects("r.workspace_id")} OR c.workspace_id IS NOT r.workspace_id
+          OR m.workspace_id IS NOT r.workspace_id OR m.conversation_id IS NOT r.conversation_id)`),
+      ...["conversation_receipts", "conversation_changes"].map(table => `SELECT 1 FROM ${table} r
+        LEFT JOIN conversation_messages m ON m.id=r.message_id WHERE (${inRooms("r.conversation_id")} OR ${inMessages("r.message_id")})
+        AND (NOT ${inRooms("r.conversation_id")} OR (r.message_id IS NOT NULL AND m.conversation_id IS NOT r.conversation_id))`),
+      `SELECT 1 FROM suite_outbox r LEFT JOIN tasks t ON t.id=CASE WHEN json_valid(r.object_ref) THEN json_extract(r.object_ref,'$.taskId') END
+        LEFT JOIN work_links l ON l.id=CASE WHEN json_valid(r.object_ref) THEN json_extract(r.object_ref,'$.workLinkId') END
+        WHERE (${inProjects("r.workspace_id")} OR ${inTasks("t.id")} OR ${inProjects("l.source_project_id")} OR ${inProjects("l.destination_project_id")})
+        AND (r.workspace_id IS NULL OR NOT ${inProjects("r.workspace_id")} OR r.type<>'task.created'
+          OR t.workspace_id IS NOT r.workspace_id OR l.destination_project_id IS NOT r.workspace_id OR l.task_id IS NOT t.id)`,
+      // These journeys do not create attachments, discussion, child tasks or
+      // entitlement/capture grants. Their presence means this is not our bounded fixture.
+      ...["attachments", "comments", "notifications", "task_discussion_state", "task_comment_attention", "task_comment_outbox"]
+        .map(table => `SELECT 1 FROM ${table} WHERE ${inTasks("task_id")} OR ${inProjects("workspace_id")}`),
+      ...["task_comment_changes", "task_comment_receipts"].map(table => `SELECT 1 FROM ${table} WHERE ${inTasks("task_id")}`),
+      `SELECT 1 FROM tasks WHERE ${inTasks("parent_task_id")} OR (${inProjects("workspace_id")} AND (parent_task_id IS NOT NULL OR source_note_id IS NOT NULL))`,
+      `SELECT 1 FROM entitlements WHERE ${inProjects("workspace_id")}`,
+    ];
+    for (const guard of guards) {
+      const unexpected = await client.execute({ sql: `${scopeCte} ${guard} LIMIT 1`, args: ids });
+      if (unexpected.rows.length) fail("hosted_cleanup_reference_scope_refused");
     }
-    const remaining = await client.execute({ sql: "SELECT id FROM workspaces WHERE id LIKE ? ESCAPE '\\'", args: [`${namespace.replaceAll("_", "\\_")}_project_%`] });
-    return { ok: remaining.rows.length === 0, deletedProjects: deleted, remainingProjects: remaining.rows.length };
-  } finally { client.close(); }
+    const deleteScoped = (table: string, column: string, values: string[]) => client.execute({
+      sql: `DELETE FROM ${table} WHERE ${column} IN (${values.map(() => "?").join(",")})`, args: values });
+    // These tables do not all cascade from workspaces. Explicitly remove only
+    // rows attached to the ten verified synthetic projects and rooms.
+    await client.execute({ sql: `DELETE FROM work_operation_receipts WHERE source_project_id IN (${placeholders}) AND destination_project_id IN (${placeholders})`, args: [...ids, ...ids] });
+    await deleteScoped("suite_outbox", "workspace_id", ids);
+    await client.execute({ sql: `DELETE FROM work_links WHERE source_project_id IN (${placeholders}) AND destination_project_id IN (${placeholders})`, args: [...ids, ...ids] });
+    for (const table of ["activities", "tasks", "resources", "conversation_outbox", "conversation_attention"])
+      await deleteScoped(table, "workspace_id", ids);
+    for (const table of ["conversation_receipts", "conversation_changes", "conversation_participants"])
+      await deleteScoped(table, "conversation_id", conversationIds);
+    await deleteScoped("conversation_messages", "workspace_id", ids);
+    await deleteScoped("conversations", "workspace_id", ids);
+    await deleteScoped("workspace_members", "workspace_id", ids);
+    const deleted = await client.execute({ sql: `DELETE FROM workspaces WHERE id IN (${placeholders}) AND owner_user_id=?`, args: [...ids, config.actors[0].actorId] });
+    const checked: Array<[string, string, string[]]> = [
+      ...["workspaces", "workspace_members"].map((table): [string, string, string[]] => [table, table === "workspaces" ? "id" : "workspace_id", ids]),
+      ...["tasks", "activities", "suite_outbox", "resources", "conversation_messages", "conversation_outbox", "conversation_attention", "conversations"]
+        .map((table): [string, string, string[]] => [table, "workspace_id", ids]),
+      ...["work_links", "work_operation_receipts"].flatMap((table): Array<[string, string, string[]]> =>
+        [[table, "source_project_id", ids], [table, "destination_project_id", ids]]),
+      ...["conversation_receipts", "conversation_changes", "conversation_participants"]
+        .map((table): [string, string, string[]] => [table, "conversation_id", conversationIds]),
+    ];
+    let residualScopedRows = 0;
+    for (const [table, column, values] of checked) {
+      const result = await client.execute({ sql: `SELECT COUNT(*) AS count FROM ${table} WHERE ${column} IN (${values.map(() => "?").join(",")})`, args: values });
+      const count = Number(result.rows[0]?.count);
+      if (!Number.isSafeInteger(count) || count < 0) fail("hosted_cleanup_reconciliation_invalid");
+      residualScopedRows += count;
+    }
+    const remaining = await client.execute({ sql: "SELECT id FROM workspaces WHERE id LIKE ? ESCAPE '\\'", args: [scopedPattern] });
+    const result = { ok: deleted.rowsAffected === ids.length && remaining.rows.length === 0 && residualScopedRows === 0,
+      deletedProjects: deleted.rowsAffected, remainingProjects: remaining.rows.length, residualScopedRows,
+      checkedScopedTables: [...new Set(checked.map(([table]) => table))] };
+    if (result.ok) await client.commit();
+    else await client.rollback();
+    return result;
+  } finally {
+    try { if (transaction && !transaction.closed) await transaction.rollback(); }
+    finally { connection.close(); }
+  }
 }
 
 export async function runHostedLaunch(config: HostedRunConfig, execute: boolean, dependencies: {
@@ -245,10 +349,12 @@ export async function runHostedLaunch(config: HostedRunConfig, execute: boolean,
             cookie: config.vercelProtectionCookie }) : fetch }) });
   } catch (error) { runFailure = object(error) && typeof error.message === "string" && /^[a-z0-9_-]{1,100}$/i.test(error.message) ? error.message : "hosted_run_failed"; }
   finally {
-    if (fixture) {
+    if (fixture && runFailure === null && object(workload) && workload.completed === true &&
+        object(workload.sessionCleanup) && sessionCleanupAccepted(workload.sessionCleanup as Parameters<typeof sessionCleanupAccepted>[0])) {
       try { cleanup = await (dependencies.cleanup ?? cleanupHostedNamespace)(config); }
       catch { cleanup = { ok: false, code: "hosted_namespace_cleanup_failed" }; }
-    } else cleanup = { ok: false, code: "fixture_seed_incomplete_cleanup_requires_review" };
+    } else if (fixture) cleanup = { ok: false, retainedForReconciliation: true, code: "hosted_incomplete_workload_fixture_preserved" };
+    else cleanup = { ok: false, retainedForReconciliation: true, code: "fixture_seed_incomplete_cleanup_requires_review" };
     await safeWrite(join(outputDirectory, "launcher-summary.json"), JSON.stringify({ runId: config.manifest.runId,
       completed: runFailure === null && object(workload) && workload.completed === true && object(cleanup) && cleanup.ok === true,
       runFailure, namespaceCleanup: cleanup, workloadSummary: object(workload) ? { completed: workload.completed, appRequests: workload.appRequests,
