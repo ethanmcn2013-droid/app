@@ -59,11 +59,11 @@ test("the count is set as a sentence: the number, then what it counts", () => {
   assert.match(styles, /\.countValue\[data-scale="long"\]\s*\{/);
 });
 
-test("on a phone each row stacks, figure over title over date", () => {
+test("on a phone each row stacks, the figure over the title and its date", () => {
   const phone = styles.match(/@container timeline-artifact \(max-width: 620px\) \{([\s\S]*?)\n\}\n/);
   assert.ok(phone, "the phone arrangement must exist");
   assert.match(phone[1], /\.row\s*\{[^}]*grid-template-columns:\s*1rem minmax\(0, 1fr\);/);
-  assert.match(phone[1], /\.rowFigureCell,\s*\n\s*\.rowText,\s*\n\s*\.rowDate\s*\{\s*grid-column:\s*2;/);
+  assert.match(phone[1], /\.rowFigureCell,\s*\n\s*\.rowText\s*\{\s*grid-column:\s*2;/);
 });
 
 test("rows can be reached from the strip and land clear of the top edge", () => {

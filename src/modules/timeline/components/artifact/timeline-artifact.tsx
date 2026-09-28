@@ -13,7 +13,7 @@ import type { AudienceTimelineDto } from "@/modules/timeline/lib/audience-timeli
 import { PRODUCT_MARKETING_URLS } from "@/lib/product-urls";
 import {
   NO_TIMING_LABEL,
-  milestonePlace,
+
   timelineNouns,
 } from "@/modules/timeline/lib/vocabulary";
 import {
@@ -247,28 +247,34 @@ function ProductIdentity({
   onShare,
   shareLabel,
 }: Pick<TimelineArtifactProps, "timeline" | "onShare" | "shareLabel">) {
+  // "Shared by Mara & Finn" above a page titled "Mara & Finn" says the same
+  // name twice. The byline shows only when it adds someone the title does not.
+  const byline = timeline.ownerDisplayLabel && !timeline.ownerDisplayLabel.includes(timeline.label) ? timeline.ownerDisplayLabel : null;
   return (
     <div className={styles.productHeader}>
       <span className={styles.productMark} aria-label="timeline" data-timeline-wordmark>
         timeline<span aria-hidden="true" />
       </span>
       <div className={styles.productMeta}>
-        <span>{timeline.ownerDisplayLabel ?? "Shared timeline"}</span>
+        {byline ? <span>{byline}</span> : null}
         <ShareButton onShare={onShare} shareLabel={shareLabel} className={styles.textButton} />
       </div>
     </div>
   );
 }
 
-/* ── Hero: the count, the day, what is next ───────────────────────────────── */
+/* ── Hero: the count and the day ──────────────────────────────────────────── */
 
 function Hero({ timeline, model, nouns }: { timeline: AudienceTimelineDto; model: TimelineArtifactModel; nouns: ReturnType<typeof timelineNouns> }) {
   const day = timeline.primaryDate;
   const countdown = buildTimelineCountdown(day?.date, timeline.today);
-  const next = model.points.find((point) => point.isNext) ?? null;
-  const nextIn = next?.item.date ? daysBetween(timeline.today, next.item.date) : null;
   const dayName = day?.label.toLowerCase() ?? "";
   const completion = `${model.completedCount} of ${model.totalCount} complete`;
+  // A plan with no day still has an end: its last dated milestone.
+  // Only claimed when every milestone is dated; an undated one could land later.
+  const lastDate = model.points.every((point) => point.item.date)
+    ? model.points.reduce<string | null>((latest, point) => (point.item.date && (!latest || point.item.date > latest) ? point.item.date : latest), null)
+    : null;
 
   // A plan with a day counts down to it. A plan without one leads with what is
   // done, stated as one count rather than a percentage.
@@ -287,57 +293,131 @@ function Hero({ timeline, model, nouns }: { timeline: AudienceTimelineDto; model
     value = String(countdown.days);
     unit = `${plural(countdown.days, "day", "days")} since the ${dayName}`;
     spoken = `${countdown.days} ${plural(countdown.days, "day", "days")} since the ${dayName}`;
+  } else if (model.completedCount === 0) {
+    // Nothing done yet: a giant zero is a sad way to open a plan, so the page
+    // leads with what is ahead instead.
+    value = String(model.remainingCount);
+    unit = `${plural(model.remainingCount, "milestone", "milestones")} still to come`;
+    spoken = `${model.remainingCount} ${plural(model.remainingCount, "milestone", "milestones")} still to come`;
   } else {
     value = String(model.completedCount);
     unit = `of ${model.totalCount} ${plural(model.totalCount, "milestone", "milestones")} complete`;
     spoken = `${model.completedCount} of ${model.totalCount} milestones complete`;
   }
+  const aside = day
+    ? completion
+    : model.completedCount === 0
+      ? "None complete yet"
+      : `${model.remainingCount} still to come`;
 
+  // What the next moment is lives in its row and on the strip, one scroll
+  // away; the hero says only what no other part of the page says.
   return (
     <div className={styles.hero}>
       <p className={styles.heroKicker}>{nouns.kicker}</p>
       <h1>{timeline.label}</h1>
-      <div className={styles.count} data-timeline-metric data-count-kind={countdown?.kind ?? "progress"} role="group" aria-label={spoken}>
-        <strong className={styles.countValue} data-scale={value.length >= 4 ? "long" : undefined} aria-hidden="true" data-timeline-metric-value>
-          {value}
-        </strong>
-        <span className={styles.countUnit} aria-hidden="true">{unit}</span>
-      </div>
-      <div className={styles.heroLine}>
-        <p className={styles.heroFacts}>
+      <div className={styles.heroBody}>
+        <div className={styles.count} data-timeline-metric data-count-kind={countdown?.kind ?? "progress"} role="group" aria-label={spoken}>
+          <strong className={styles.countValue} data-scale={value.length >= 4 ? "long" : undefined} aria-hidden="true" data-timeline-metric-value>
+            {value}
+          </strong>
+          <span className={styles.countUnit} aria-hidden="true">{unit}</span>
+        </div>
+        <div className={styles.heroAside}>
           {day ? (
-            <>
+            <p className={styles.heroDay}>
               <time dateTime={day.date}>{weekdayDate(day.date)}</time>
-              <span aria-hidden="true"> · </span>
-            </>
+            </p>
           ) : null}
-          <span>{completion}</span>
-        </p>
-        <CalendarButton timeline={timeline} />
+          {!day && lastDate ? (
+            <p className={styles.heroDay}>
+              Ends <time dateTime={lastDate}>{weekdayDate(lastDate)}</time>
+            </p>
+          ) : null}
+          <p className={styles.heroFacts}>{aside}</p>
+          {day && countdown?.kind !== "past" ? <CalendarButton timeline={timeline} /> : null}
+        </div>
       </div>
-      {next ? (
-        <p className={styles.nextUp} data-state={next.state}>
-          <span className={styles.nextLabel}>{timelinePointStatus(next)}</span>
-          <a href={`#m-${next.item.publicId}`} className={styles.nextTitle}>{next.item.title}</a>
-          <span className={styles.nextWhen}>
-            {next.item.date ? formatTimelineDate(next.item.date, "long") : NO_TIMING_LABEL}
-            {nextIn !== null && nextIn > 0 ? `, in ${nextIn} ${plural(nextIn, "day", "days")}` : nextIn === 0 ? ", today" : ""}
-          </span>
-        </p>
-      ) : null}
     </div>
   );
 }
 
-/* ── A · the strip: the whole run of time, to scale ───────────────────────── */
+/* ── A · the strip: the run of time still to come, to scale ───────────────── */
+
+const DAY_MS = 86_400_000;
+const dayOf = (value: string) => Date.parse(`${value}T00:00:00.000Z`);
+/* The artifact's own three letters: en-GB would print "Sept" beside "Sep". */
+const STRIP_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+type StripGeometry = Readonly<{
+  /** Rail-percent for a calendar date, inside the drawn range. */
+  at: (value: string) => number;
+  /** Where the drawn range starts; left of it sits the stub for earlier work. */
+  base: number;
+  /** Milestones dated before the drawn range, summarised by the stub. */
+  earlier: readonly TimelineArtifactPoint[];
+  earliestDate: string | null;
+  months: readonly { label: string; position: number }[];
+  todayAt: number | null;
+  frontier: number;
+}>;
+
+/**
+ * The strip is for the time a guest cares about: from a little before today
+ * to the day. Work finished long ago would otherwise take most of the line,
+ * as it did when the strip began at the plan's first milestone, and squeeze
+ * everything still to come into its last third. Earlier work folds into a
+ * short stub at the left edge that says what it holds.
+ */
+function stripGeometry(timeline: AudienceTimelineDto, model: TimelineArtifactModel): StripGeometry | null {
+  const dated = model.points.filter((point) => point.item.date);
+  if (model.axis.mode !== "dated" || dated.length < 2) return null;
+  const times = dated.map((point) => dayOf(point.item.date as string));
+  const today = dayOf(timeline.today);
+  const first = Math.min(...times);
+  const end = Math.max(...times, timeline.primaryDate ? dayOf(timeline.primaryDate.date) : -Infinity);
+  if (!Number.isFinite(today) || end <= first) return null;
+  const lead = 12 * DAY_MS;
+  const start = today >= end ? first : today < first ? today : Math.max(first, today - lead);
+  const earlier = dated.filter((point) => dayOf(point.item.date as string) < start);
+  const base = earlier.length ? 9 : 1.5;
+  const span = Math.max(DAY_MS, end - start);
+  const toAt = (time: number) => base + ((time - start) / span) * (98.5 - base);
+  const months: { label: string; position: number }[] = [];
+  const cursor = new Date(start);
+  cursor.setUTCDate(1);
+  cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+  while (cursor.getTime() <= end) {
+    months.push({ label: STRIP_MONTHS[cursor.getUTCMonth()], position: toAt(cursor.getTime()) });
+    cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+  }
+  const doneInRange = dated.filter((point) => point.state === "complete" && dayOf(point.item.date as string) >= start);
+  const frontier = doneInRange.length
+    ? Math.max(...doneInRange.map((point) => toAt(dayOf(point.item.date as string))))
+    : earlier.some((point) => point.state === "complete")
+      ? base
+      : 0;
+  return {
+    at: (value) => toAt(dayOf(value)),
+    base,
+    earlier,
+    earliestDate: earlier.length ? (earlier[0].item.date as string) : null,
+    months,
+    todayAt: today >= start && today <= end ? toAt(today) : null,
+    frontier,
+  };
+}
 
 function Strip({ timeline, model, finaleId }: { timeline: AudienceTimelineDto; model: TimelineArtifactModel; finaleId: string }) {
-  if (model.axis.mode !== "dated" || model.points.length < 2) return null;
+  const geometry = stripGeometry(timeline, model);
+  if (!geometry) return null;
   const next = model.points.find((point) => point.isNext);
   const last = model.points[model.points.length - 1];
-  const align = (position: number) => (position < 14 ? "start" : position > 86 ? "end" : "middle");
   const destination = timeline.primaryDate && last.item.date === timeline.primaryDate.date ? last : null;
+  const inRange = model.points.filter((point) => point.item.date && !geometry.earlier.includes(point));
+  const align = (position: number) => (position < 14 ? "start" : position > 86 ? "end" : "middle");
   const at = (position: number): PositionStyle => ({ "--at": `${position}%` });
+  const earlierDone = geometry.earlier.filter((point) => point.state === "complete").length;
 
   return (
     <figure className={styles.strip} aria-label={timelineAxisDescription(model)}>
@@ -348,47 +428,57 @@ function Strip({ timeline, model, finaleId }: { timeline: AudienceTimelineDto; m
           aria-label="Milestone completion"
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-valuenow={Math.round(model.completedFrontier ?? 0)}
+          aria-valuenow={Math.round(geometry.frontier)}
           aria-valuetext={`${model.completedCount} of ${model.totalCount} milestones complete`}
         >
           {/* The ink runs to the furthest completed dot, never to a count
               percentage, so the line and the dots make one statement. */}
-          <span className={styles.stripInk} style={{ transform: `scaleX(${(model.completedFrontier ?? 0) / 100})` }} aria-hidden="true" />
+          <span className={styles.stripInk} style={{ transform: `scaleX(${geometry.frontier / 100})` }} aria-hidden="true" />
         </div>
-        {model.monthTicks.map((tick) => (
+        {geometry.earlier.length ? (
+          <a className={styles.stripStub} href={`#m-${geometry.earlier[0].item.publicId}`} tabIndex={-1} style={at(geometry.base)} aria-hidden="true">
+            <span>
+              {earlierDone === geometry.earlier.length ? `${earlierDone} done` : `${geometry.earlier.length} earlier`}
+              {geometry.earliestDate ? <small>since {formatTimelineDate(geometry.earliestDate).replace(/ \d{4}$/, "")}</small> : null}
+            </span>
+          </a>
+        ) : null}
+        {geometry.months.map((tick) => (
           <span className={styles.stripMonth} key={`${tick.label}-${tick.position}`} style={at(tick.position)} aria-hidden="true">
             <span>{tick.label}</span>
           </span>
         ))}
-        {model.todayPosition !== null ? (
-          <span className={styles.stripToday} data-today-marker style={at(model.todayPosition)} role="img" aria-label={`Today, ${formatTimelineDate(timeline.today, "long")}`}>
+        {geometry.todayAt !== null ? (
+          <span className={styles.stripToday} data-today-marker style={at(geometry.todayAt)} role="img" aria-label={`Today, ${formatTimelineDate(timeline.today, "long")}`}>
             <span aria-hidden="true">Today</span>
           </span>
         ) : null}
-        {model.points.map((point) => {
+        {/* The dots are a pointer's shortcut into the rows. The rows are the
+            keyboard's path, so the dots stay out of the tab order. */}
+        {inRange.map((point) => {
           const isDestination = point === destination;
           return (
             <a
               key={point.item.publicId}
               className={styles.stripDot}
               href={isDestination ? `#${finaleId}` : `#m-${point.item.publicId}`}
+              tabIndex={-1}
               data-state={point.state}
               data-next={point.isNext ? "true" : undefined}
               data-destination={isDestination ? "true" : undefined}
-              style={at(point.position)}
-              aria-label={`${point.item.title}, ${point.item.date ? formatTimelineDate(point.item.date, "long") : NO_TIMING_LABEL}`}
+              style={at(geometry.at(point.item.date as string))}
+              aria-label={`${point.item.title}, ${formatTimelineDate(point.item.date as string, "long")}`}
             />
           );
         })}
-        {next ? (
-          <span className={styles.stripLabel} data-align={align(next.position)} data-kind="next" style={at(next.position)} aria-hidden="true">
+        {next?.item.date && !geometry.earlier.includes(next) ? (
+          <span className={styles.stripLabel} data-align={align(geometry.at(next.item.date))} data-kind="next" style={at(geometry.at(next.item.date))} aria-hidden="true">
             <small>Next</small>
             {next.item.title}
           </span>
         ) : null}
-        {destination && destination !== next ? (
-          <span className={styles.stripLabel} data-align="end" data-kind="destination" style={at(destination.position)} aria-hidden="true">
-            <small>{formatTimelineDate(destination.item.date ?? "")}</small>
+        {destination?.item.date && destination !== next ? (
+          <span className={styles.stripLabel} data-align="end" data-kind="destination" style={at(geometry.at(destination.item.date))} aria-hidden="true">
             {destination.item.title}
           </span>
         ) : null}
@@ -400,19 +490,11 @@ function Strip({ timeline, model, finaleId }: { timeline: AudienceTimelineDto; m
 /* ── B · the rows: every moment with its own number ───────────────────────── */
 
 function RowFigure({ point, today }: { point: TimelineArtifactPoint; today: string }) {
-  if (point.state === "complete") {
-    return (
-      <span className={styles.rowFigure} data-kind="done">
-        <small>Done</small>
-      </span>
-    );
-  }
   const days = point.item.date ? daysBetween(today, point.item.date) : null;
   if (days === null) {
     return (
-      <span className={styles.rowFigure} data-kind="undated">
-        <strong aria-hidden="true">–</strong>
-        <small>{NO_TIMING_LABEL}</small>
+      <span className={styles.rowFigure} data-kind="undated" aria-hidden="true">
+        <strong>–</strong>
       </span>
     );
   }
@@ -426,15 +508,13 @@ function RowFigure({ point, today }: { point: TimelineArtifactPoint; today: stri
   if (days < 0) {
     return (
       <span className={styles.rowFigure} data-kind="late">
-        <strong>{-days}</strong>
-        <small>{plural(-days, "day late", "days late")}</small>
+        <strong>{-days}</strong> <small>{plural(-days, "day late", "days late")}</small>
       </span>
     );
   }
   return (
     <span className={styles.rowFigure} data-kind="ahead">
-      <strong>{days}</strong>
-      <small>{plural(days, "day", "days")}</small>
+      <strong>{days}</strong> <small>{plural(days, "day", "days")}</small>
     </span>
   );
 }
@@ -463,14 +543,14 @@ function Rows({
   const points = model.points.filter((point) => point.item.publicId !== destinationId);
   const done = points.filter((point) => point.state === "complete");
   const ahead = points.filter((point) => point.state !== "complete");
-  const total = model.points.length;
-  const ordinal = (point: TimelineArtifactPoint) => model.points.indexOf(point) + 1;
 
+  // Every row is plain, readable text in reading order, so a screen reader
+  // hears what a sighted guest sees: the count, the status where it matters,
+  // the title and the date. Only the decorative pin is hidden.
   const row = (point: TimelineArtifactPoint, index: number, previous: TimelineArtifactPoint | null) => {
-    const status = timelinePointStatus(point);
-    const gap = previous && point.state !== "complete" ? gapWords(previous.item.date, point.item.date) : null;
+    const complete = point.state === "complete";
+    const gap = previous && !complete ? gapWords(previous.item.date, point.item.date) : null;
     const rowStyle: RowStyle = { "--row-delay": `${Math.min(80 + index * 40, 440)}ms` };
-    const timing = point.item.date ? formatTimelineDate(point.item.date, "long") : NO_TIMING_LABEL;
     return (
       <li
         key={point.item.publicId}
@@ -478,28 +558,31 @@ function Rows({
         className={styles.row}
         data-state={point.state}
         data-next={point.isNext ? "true" : undefined}
+        data-gap={gap ? "true" : undefined}
         style={rowStyle}
         aria-current={point.isNext ? "step" : undefined}
-        aria-label={`${point.item.title}. ${status}. ${timing}. ${milestonePlace(ordinal(point), total)}.`}
       >
-        {gap ? <span className={styles.gap} aria-hidden="true">{gap}</span> : null}
+        {gap ? <span className={styles.gap}>{gap}</span> : null}
         <span className={styles.pin} aria-hidden="true">
-          {point.state === "complete" ? (
+          {complete ? (
             <svg viewBox="0 0 16 16" width="16" height="16">
               <circle cx="8" cy="8" r="7" fill="currentColor" />
               <path d="M5 8.3 7.1 10.4 11 6" fill="none" stroke="var(--paper)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           ) : null}
         </span>
-        <span aria-hidden="true" className={styles.rowFigureCell}>
-          <RowFigure point={point} today={timeline.today} />
-        </span>
-        <span className={styles.rowText} aria-hidden="true">
-          {point.isNext || point.state === "overdue" ? <span className={styles.rowStatus}>{status}</span> : null}
+        {complete ? null : (
+          <span className={styles.rowFigureCell}>
+            <RowFigure point={point} today={timeline.today} />
+          </span>
+        )}
+        <span className={styles.rowText}>
+          {complete ? <span className={styles.screenReaderOnly}>{timelinePointStatus(point)}: </span> : null}
+          {point.isNext || point.state === "overdue" ? <span className={styles.rowStatus}>{timelinePointStatus(point)}</span> : null}
           <span className={styles.rowTitle}>{point.item.title}</span>
-        </span>
-        <span className={styles.rowDate} aria-hidden="true">
-          {point.item.date ? <time dateTime={point.item.date}>{formatTimelineDate(point.item.date, "long")}</time> : NO_TIMING_LABEL}
+          <span className={styles.rowDate}>
+            {point.item.date ? <time dateTime={point.item.date}>{formatTimelineDate(point.item.date, "long")}</time> : NO_TIMING_LABEL}
+          </span>
         </span>
       </li>
     );
@@ -508,7 +591,11 @@ function Rows({
   return (
     <section className={styles.moments} id={sectionId} aria-labelledby={`${sectionId}-title`}>
       <h2 className={styles.screenReaderOnly} id={`${sectionId}-title`}>{heading}</h2>
-      {points.length === 0 ? (
+      {points.length === 0 && destinationId ? (
+        <p className={styles.empty} data-kind="only-the-day">
+          <span>Nothing else is planned before the day.</span>
+        </p>
+      ) : points.length === 0 ? (
         <p className={styles.empty}>
           <strong>No milestones shared yet.</strong>
           <span>Milestones will appear here when they are ready.</span>
@@ -520,7 +607,7 @@ function Rows({
               {done.map((point, index) => row(point, index, null))}
             </ol>
           ) : null}
-          {model.todayPosition !== null || done.length ? (
+          {done.length && ahead.length ? (
             <p className={styles.todayRule} data-today-marker>
               <span className={styles.todayDot} aria-hidden="true" />
               <span>Today</span>
@@ -543,6 +630,14 @@ function Rows({
 
 /* ── D · the finale: the day itself ───────────────────────────────────────── */
 
+/** "11 weeks and 2 days to go": the same wait as the hero's number, felt differently. */
+function waitWords(days: number): string {
+  if (days < 14) return `${days} ${plural(days, "day", "days")} to go.`;
+  const weeks = Math.floor(days / 7);
+  const rest = days % 7;
+  return `${weeks} weeks${rest ? ` and ${rest} ${plural(rest, "day", "days")}` : ""} to go.`;
+}
+
 function Finale({
   timeline,
   id,
@@ -553,7 +648,7 @@ function Finale({
   if (!day) return null;
   const countdown = buildTimelineCountdown(day.date, timeline.today);
   const line = countdown?.kind === "future"
-    ? `${countdown.days} ${plural(countdown.days, "day", "days")} to go.`
+    ? waitWords(countdown.days)
     : countdown?.kind === "today"
       ? "It is today."
       : countdown?.kind === "past"
@@ -566,10 +661,11 @@ function Finale({
       </p>
       <h2 className={styles.finaleTitle} id={`${id}-title`}>The {day.label.toLowerCase()}</h2>
       {line ? <p className={styles.finaleLine}>{line}</p> : null}
-      <div className={styles.finaleActions}>
-        {countdown?.kind !== "past" ? <CalendarButton timeline={timeline} /> : null}
-        <ShareButton onShare={onShare} shareLabel={shareLabel} className={styles.pillButton} />
-      </div>
+      {onShare ? (
+        <div className={styles.finaleActions}>
+          <ShareButton onShare={onShare} shareLabel={shareLabel} className={styles.pillButton} />
+        </div>
+      ) : null}
     </section>
   );
 }

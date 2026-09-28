@@ -76,10 +76,60 @@ test("owner surfaces embed the exact artifact without claiming a document-height
 });
 
 test("the completed ink is drawn to the frontier dot, never the count percentage", () => {
-  assert.match(artifactCode, /scaleX\(\$\{\(model\.completedFrontier \?\? 0\) \/ 100\}\)/);
-  assert.match(artifactCode, /aria-valuenow=\{Math\.round\(model\.completedFrontier \?\? 0\)\}/);
+  // The strip draws only the time still to come, so it maps dates itself; its
+  // ink still stops at the furthest completed dot inside that range.
+  assert.match(artifactCode, /doneInRange\.map\(\(point\) => toAt\(dayOf\(point\.item\.date as string\)\)\)/);
+  assert.match(artifactCode, /scaleX\(\$\{geometry\.frontier \/ 100\}\)/);
+  assert.match(artifactCode, /aria-valuenow=\{Math\.round\(geometry\.frontier\)\}/);
   assert.doesNotMatch(artifactCode, /model\.percent/);
   assert.match(artifactCode, /aria-valuetext=\{`\$\{model\.completedCount\} of \$\{model\.totalCount\} milestones complete`\}/);
+});
+
+test("the strip spends its width on what is still to come", () => {
+  // Starting at the plan's first milestone gave most of the line to months
+  // already behind the couple. It starts a little before today, and earlier
+  // work folds into a stub that says what it holds.
+  assert.match(artifactCode, /const lead = 12 \* DAY_MS;/);
+  assert.match(artifactCode, /className=\{styles\.stripStub\}/);
+  assert.match(artifactCode, /since \{formatTimelineDate/);
+});
+
+test("rows are read as they are seen, and the strip stays out of the keyboard's way", () => {
+  // Row text used to be aria-hidden behind a label on the list item, which
+  // several screen readers ignore, so a milestone could read as nothing.
+  const rowBlock = artifactCode.slice(artifactCode.indexOf("const row = ("), artifactCode.indexOf("<section className={styles.moments}"));
+  assert.doesNotMatch(rowBlock, /<li[^>]*aria-label/);
+  assert.doesNotMatch(rowBlock, /className=\{styles\.rowText\} aria-hidden/);
+  assert.doesNotMatch(rowBlock, /className=\{styles\.rowFigureCell\} aria-hidden|aria-hidden="true" className=\{styles\.rowFigureCell\}/);
+  assert.match(rowBlock, /className=\{styles\.pin\} aria-hidden="true"/);
+  // The dots repeat the rows for a pointer; the keyboard takes the rows.
+  const strip = artifactCode.slice(artifactCode.indexOf("function Strip("), artifactCode.indexOf("function RowFigure("));
+  assert.equal((strip.match(/tabIndex=\{-1\}/g) ?? []).length, 2);
+});
+
+test("the page says each thing once", () => {
+  // The next moment lives in its row and on the strip; the hero no longer
+  // repeats it. Add to my calendar lives in the hero; the finale offers the
+  // wait in other words rather than the same number again.
+  const hero = artifactCode.slice(artifactCode.indexOf("function Hero("), artifactCode.indexOf("const DAY_MS"));
+  assert.doesNotMatch(hero, /isNext|nextUp/);
+  const finale = artifactCode.slice(artifactCode.indexOf("function Finale("), artifactCode.indexOf("function PlanningDecisions("));
+  assert.doesNotMatch(finale, /CalendarButton/);
+  assert.match(artifactCode, /weeks\$\{rest \? ` and \$\{rest\} \$\{plural\(rest, "day", "days"\)\}` : ""\} to go\./);
+  assert.match(artifactCode, /!timeline\.ownerDisplayLabel\.includes\(timeline\.label\)/);
+});
+
+test("every state says something true", () => {
+  // Nothing done yet leads with what is ahead, not a zero; a plan with undated
+  // work never claims an end date; the day alone is not "no milestones".
+  assert.match(artifactCode, /model\.completedCount === 0/);
+  assert.match(artifactCode, /model\.points\.every\(\(point\) => point\.item\.date\)/);
+  assert.match(artifactCode, /Nothing else is planned before the day\./);
+  assert.doesNotMatch(artifactCode, /"Sept"|month: "short"/);
+});
+
+test("rows hold a reading measure", () => {
+  assert.match(block(".moments"), /max-width:\s*60rem;/);
 });
 
 test("the reader never chooses a layout: the width does", () => {
@@ -148,7 +198,8 @@ test("the countdown is the hero, and it supersedes the rule that the counter nev
   const h1 = artifactCode.indexOf("<h1>");
   const count = artifactCode.indexOf("data-timeline-metric-value");
   assert.ok(h1 > 0 && count > h1, "the name is read before the number");
-  assert.match(block(".countValue"), /font-family:\s*var\(--font-mono\);/);
+  assert.match(block(".countValue"), /font-family:\s*var\(--font-sans\);/);
+  assert.doesNotMatch(styles, /--font-mono/);
   assert.match(block(".countValue"), /font-variant-numeric:\s*tabular-nums;/);
   assert.match(artifactCode, /role="group" aria-label=\{spoken\}/);
 });

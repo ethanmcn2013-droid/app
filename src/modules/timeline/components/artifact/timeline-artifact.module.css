@@ -184,8 +184,6 @@
 
 .productMeta button:focus-visible,
 .pillButton:focus-visible,
-.nextTitle:focus-visible,
-.stripDot:focus-visible,
 .decisions summary:focus-visible {
   outline: 2px solid var(--x-accent-focus, var(--accent));
   outline-offset: 3px;
@@ -233,8 +231,8 @@
 
 .heroKicker,
 .hero h1,
-.heroFacts,
-.nextUp {
+.heroDay,
+.heroFacts {
   margin: 0;
 }
 
@@ -262,22 +260,57 @@
   font-size: clamp(1.75rem, 3.4cqw, 2.75rem);
 }
 
-/* The number is the page's hero. Geist Mono at display size is the one place
-   mono earns its keep here: a countdown is a figure, and tabular mono keeps
-   it steady from 79 to 78. */
+/* The number is the page's hero, set in Geist with tabular figures so it
+   holds its width from 79 to 78. Mono was tried and dropped: its slashed zero
+   turned "20" into "2Ø", and the register keeps mono for strings to copy. */
+/* The number and the day share one line on a wide page, so the space
+   beside the count carries the date instead of standing empty. */
+.heroBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: end;
+  gap: var(--space-6) clamp(var(--space-8), 6cqw, 6rem);
+  margin-block-start: clamp(var(--space-7), 5cqw, var(--space-10));
+}
+
+@container timeline-artifact (min-width: 1000px) {
+  .heroBody {
+    grid-template-columns: minmax(0, 1fr) minmax(17rem, 24rem);
+  }
+}
+
+.heroAside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  border-block-start: 1px solid var(--ink);
+  padding-block-start: var(--space-4);
+}
+
+.heroDay {
+  font-size: clamp(1.25rem, 2cqw, 1.625rem);
+  font-weight: var(--weight-semibold);
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.heroAside .pillButton {
+  margin-block-start: var(--space-2);
+}
+
 .count {
   display: flex;
   align-items: flex-end;
   flex-wrap: wrap;
   gap: var(--space-2) var(--space-6);
-  margin-block-start: clamp(var(--space-7), 5cqw, var(--space-10));
 }
 
 .countValue {
   margin-inline-start: -0.05em;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: clamp(7rem, 21cqw, 17.5rem);
-  font-weight: 380;
+  font-weight: 400;
   line-height: 0.78;
   letter-spacing: -0.065em;
   font-variant-numeric: tabular-nums;
@@ -297,16 +330,6 @@
   text-wrap: balance;
 }
 
-.heroLine {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: var(--space-4) var(--space-6);
-  margin-block-start: var(--space-7);
-  border-block-start: 1px solid var(--ink);
-  padding-block-start: var(--space-4);
-}
 
 .heroFacts {
   color: var(--ink-soft);
@@ -314,51 +337,18 @@
   font-variant-numeric: tabular-nums;
 }
 
-.heroFacts time {
-  color: var(--ink);
-  font-weight: var(--weight-medium);
-}
 
-.nextUp {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-3);
-  margin-block-start: var(--space-5);
-  font-size: var(--text-body);
-}
 
-.nextLabel {
-  color: var(--accent);
-  font-size: var(--text-body-sm);
-  font-weight: var(--weight-semibold);
-}
 
-.nextUp[data-state="overdue"] .nextLabel {
-  color: var(--x-danger-text, var(--accent));
-}
 
-.nextTitle {
-  color: var(--ink);
-  font-weight: var(--weight-medium);
-  text-decoration: none;
-  border-block-end: 1px solid var(--hairline);
-}
 
-.nextTitle:hover {
-  border-block-end-color: var(--ink);
-}
 
-.nextWhen {
-  color: var(--ink-soft);
-  font-variant-numeric: tabular-nums;
-}
 
 /* ── A · the strip: the whole run of time, to scale ───────────────────────── */
 
 .strip {
   --line: 3.75rem;
-  margin: var(--x-timeline-rhythm) 0 0;
+  margin: var(--x-timeline-rhythm-tight) 0 0;
   padding: 0 var(--space-3);
   animation: timeline-rise 260ms var(--ease-out) 80ms backwards;
 }
@@ -433,6 +423,37 @@
   font-size: var(--text-caption);
   font-weight: var(--weight-semibold);
   white-space: nowrap;
+}
+
+/* Earlier work, folded: a short dashed run at the left edge that says what
+   it holds, so the line can give its width to what is still to come. */
+.stripStub {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-start: calc(var(--line) - 0.5px);
+  width: var(--at);
+  height: 2px;
+  background: repeating-linear-gradient(to right, var(--ink) 0 4px, transparent 4px 8px);
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.stripStub > span {
+  position: absolute;
+  inset-block-start: 0.75rem;
+  inset-inline-start: 0;
+  display: flex;
+  flex-direction: column;
+  font-size: var(--text-caption);
+  font-weight: var(--weight-medium);
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.stripStub small {
+  color: var(--x-timeline-quiet);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-regular, 400);
 }
 
 /* Every dot is a way into its row; the hit area is larger than the mark. */
@@ -516,8 +537,11 @@
 
 /* ── B · the rows: every moment with its own number ───────────────────────── */
 
+/* The rows keep a reading measure; the eye should not cross a whole
+   screen to get from a number to its name. */
 .moments {
-  margin-block-start: var(--x-timeline-rhythm);
+  max-width: 60rem;
+  margin-block-start: var(--x-timeline-rhythm-tight);
 }
 
 .list {
@@ -529,7 +553,7 @@
 .row {
   position: relative;
   display: grid;
-  grid-template-columns: 1rem minmax(7.5rem, 12rem) minmax(0, 1fr) auto;
+  grid-template-columns: 1rem minmax(7.5rem, 10.5rem) minmax(0, 1fr);
   column-gap: clamp(var(--space-4), 3cqw, var(--space-9));
   align-items: baseline;
   border-block-start: 1px solid var(--hairline);
@@ -546,12 +570,18 @@
   animation: timeline-target-ring 900ms var(--ease-out);
 }
 
-/* "2 weeks later": time passing, said once, between the rows it separates. */
+/* "2 weeks later": time passing, said once, on the line between the two
+   rows it separates. */
 .gap {
-  grid-column: 2 / -1;
-  margin-block-end: var(--space-3);
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: calc(1rem + clamp(var(--space-4), 3cqw, var(--space-9)));
+  translate: 0 -50%;
+  padding-inline: 0 var(--space-3);
+  background: var(--paper);
   color: var(--x-timeline-quiet);
   font-size: var(--text-caption);
+  line-height: 1.4;
 }
 
 .pin {
@@ -595,9 +625,9 @@
 }
 
 .rowFigure strong {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: clamp(2.5rem, 5cqw, 4.25rem);
-  font-weight: 380;
+  font-weight: 400;
   line-height: 0.9;
   letter-spacing: -0.05em;
   font-variant-numeric: tabular-nums;
@@ -665,15 +695,23 @@
 
 .row[data-state="complete"] .rowTitle {
   color: var(--ink-soft);
+  font-size: var(--text-body);
   font-weight: var(--weight-regular, 400);
 }
 
 .rowDate {
   color: var(--ink-soft);
   font-size: var(--text-body-sm);
-  text-align: end;
-  white-space: nowrap;
   font-variant-numeric: tabular-nums;
+}
+
+/* Done work reads as a quiet record: a tick, the name and its date. */
+.list[data-part="done"] .rowText {
+  grid-column: 2 / -1;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--space-4);
 }
 
 /* Done work reads as a quiet record: smaller figures, softer names. */
@@ -991,11 +1029,6 @@
     padding-block-end: 0;
   }
 
-  .heroLine {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
   .row {
     grid-template-columns: 1rem minmax(0, 1fr);
     column-gap: var(--space-4);
@@ -1009,34 +1042,16 @@
   }
 
   .rowFigureCell,
-  .rowText,
-  .rowDate {
+  .rowText {
     grid-column: 2;
-  }
-
-  .rowDate {
-    text-align: start;
   }
 
   .rowFigure strong {
     font-size: 2.75rem;
   }
 
-  .list[data-part="done"] .row {
-    grid-template-columns: 1rem auto minmax(0, 1fr);
-    align-items: center;
-  }
-
-  .list[data-part="done"] .rowFigureCell {
-    grid-column: 2;
-  }
-
-  .list[data-part="done"] .rowText {
-    grid-column: 3;
-  }
-
-  .list[data-part="done"] .rowDate {
-    grid-column: 3;
+  .gap {
+    inset-inline-start: calc(1rem + var(--space-4));
   }
 
   .list[data-part="done"] .pin {
