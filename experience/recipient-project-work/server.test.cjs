@@ -5,6 +5,21 @@ const { createRequire } = require('node:module'), path = require('node:path');
 const dep = createRequire(path.join(__dirname, '../../package.json'));
 const { renderToStaticMarkup } = dep('react-dom/server');
 
+test('task-action auth fixture resolves one actor and falls back only through live membership', async () => {
+  const f = await recipientFixture();
+  try {
+    const auth = f.load('src/server/auth');
+    f.state.actor = 'creator';
+    f.cookies('project-a'); // Creator is not a member of the cookie Project.
+    const before = f.state.authCalls;
+    assert.deepEqual(await auth.getCurrentUserAndActiveWorkspaceOrNull(), ['creator', 'project-b']);
+    assert.equal(f.state.authCalls, before + 1);
+    await f.client.execute("DELETE FROM workspace_members WHERE workspace_id='project-b' AND user_id='creator'");
+    assert.deepEqual(await auth.getCurrentUserAndActiveWorkspaceOrNull(), ['creator', null]);
+    assert.equal(f.state.authCalls, before + 2);
+  } finally { f.close(); }
+});
+
 // v3 (Sep 2026): My tasks no longer greets. Home owns the greeting and the
 // date; this page leads with the list. The member-name contract that the
 // greeting used to prove still matters in its negative form: a personal list
