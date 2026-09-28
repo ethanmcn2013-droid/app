@@ -497,22 +497,49 @@ svg.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor;
 .prod-tx p { margin-top: 12px; font-size: 15px; color: var(--v3-text-2); text-wrap: pretty; }
 .prod-tx .fine { margin-top: 20px; font-size: 12px; color: var(--v3-text-3); }
 
-.note { background: var(--v3-surface); border: 1px solid var(--v3-border); border-radius: 12px; box-shadow: var(--v3-shadow-1); overflow: hidden; }
-.note-tb { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 14px; border-bottom: 1px solid var(--v3-border); font-size: 13px; color: var(--v3-text-3); }
-.note-tb b { color: var(--v3-text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.note-tb .pv { white-space: nowrap; }
-.note-tb .pv { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
-.note-tb .pv .i { width: 13px; height: 13px; }
-.note-b { padding: 20px 22px 18px; }
-.note-d { font-size: 12px; font-weight: 500; color: var(--v3-text-3); }
-.note-h { margin-top: 4px; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
-.note-ls { margin-top: 14px; display: flex; flex-direction: column; gap: 2px; }
-.note-l { display: flex; align-items: center; gap: 12px; min-height: 36px; padding: 6px 10px; margin: 0 -10px; border-radius: 8px; font-size: 14.5px; color: var(--v3-text); }
-.note-l::before { content: ""; width: 5px; height: 5px; border-radius: 99px; background: var(--v3-text-3); flex: none; }
-.note-l > span:first-child { flex: 1; min-width: 0; }
-.note-l[data-on] { background: var(--v3-row-selected); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--v3-accent) 22%, transparent); }
-.note-l .btn { height: 28px; padding: 0 10px; font-size: 12.5px; }
-
+.pj { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.25fr); gap: 16px; align-items: start; }
+.pj-card { background: var(--v3-surface); border: 1.5px solid var(--v3-accent); border-radius: 12px; overflow: hidden; }
+.pj-top { display: flex; align-items: flex-start; gap: 10px; padding: 14px 14px 0; }
+.pj .tile { width: 32px; height: 32px; border-radius: 8px; font-size: 11px; }
+.pj-nm { flex: 1; min-width: 0; }
+.pj-n { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pj-d { font-size: 12.5px; color: var(--v3-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pdot { width: 6px; height: 6px; border-radius: 99px; background: var(--v3-success); margin-right: 6px; }
+.pj-pr { display: flex; justify-content: space-between; padding: 16px 14px 8px; font-size: 12.5px; color: var(--v3-text-2); }
+.pj-pr b { color: var(--v3-text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.pj-bar { display: block; height: 6px; border-radius: 99px; background: var(--v3-fill); overflow: hidden; margin: 0 14px; }
+.pj-bar i { display: block; height: 100%; background: var(--v3-accent); border-radius: 99px; }
+.pj-ft { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 16px; padding: 12px 14px; border-top: 1px solid var(--v3-border); font-size: 12.5px; color: var(--v3-text-2); }
+.pj-ft > span { display: inline-flex; align-items: center; gap: 6px; }
+.pj-ft .i { width: 14px; height: 14px; color: var(--v3-text-3); }
+.pj-ft em { font-style: normal; color: var(--v3-danger-text); }
+.pj-ov { min-width: 0; }
+.pj-ov .tabs { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.pj-ov .tabs span { flex: none; }
+.pj-hd { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px; }
+.pj-hd .tile { width: 40px; height: 40px; border-radius: 10px; font-size: 13px; }
+.pj-t { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+.pj-d2 { margin-top: 2px; font-size: 12.5px; color: var(--v3-text-2); line-height: 1.45; }
+.pj-prog { margin-top: 12px; padding: 14px 0 0; overflow: hidden; }
+.pj-ph { display: flex; justify-content: space-between; align-items: center; padding: 0 14px; }
+.pj-big { padding: 6px 14px 10px; font-size: 34px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.pj-big small { font-size: 15px; color: var(--v3-text-2); margin-left: 2px; }
+.pj-big span { font-size: 13px; font-weight: 450; letter-spacing: 0; color: var(--v3-text-2); margin-left: 6px; }
+.pj-k { display: grid; grid-template-columns: repeat(3, 1fr); margin: 14px 14px 14px; border: 1px solid var(--v3-border); border-radius: 10px; }
+.pj-k > div { padding: 9px 12px; display: flex; flex-direction: column; gap: 2px; }
+.pj-k > div + div { border-left: 1px solid var(--v3-border); }
+.pj-k span { font-size: 12px; color: var(--v3-text-3); }
+.pj-k b { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.pj-k b[data-late] { color: var(--v3-danger-text); }
+.pj-new { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--v3-row-selected); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--v3-accent) 22%, transparent); }
+.tools { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 24px; align-items: center; padding: 20px 20px 20px 32px; border: 1px solid var(--v3-border); border-radius: var(--v3-radius-xl); background: var(--v3-canvas); }
+.tools-tx { grid-column: 1 / span 4; }
+.tools-s { margin-top: 10px; font-size: 14px; color: var(--v3-text-2); max-width: 32ch; }
+.tools-g { grid-column: 5 / span 8; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.tool { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--v3-border); border-radius: 12px; background: var(--v3-surface); }
+.tool .pt { width: 32px; height: 32px; }
+.tool b { display: block; font-size: 14px; font-weight: 600; }
+.tool b + span { display: block; font-size: 12.5px; color: var(--v3-text-2); }
 .board { display: grid; grid-template-columns: repeat(3, minmax(210px, 1fr)); gap: 12px; }
 .board .bcol { background: var(--v3-shell); }
 .tabs { display: inline-flex; gap: 2px; padding: 2px; border-radius: 8px; border: 1px solid var(--v3-border); background: var(--v3-sunken); }
@@ -655,6 +682,8 @@ svg.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor;
   .tr-l, .tr-r { grid-column: 1 / -1; position: static; }
   .prod-tx { grid-column: 1 / -1; padding: 8px 8px 0; }
   .prod-ui { grid-column: 1 / -1; }
+  .tools-tx, .tools-g { grid-column: 1 / -1; }
+  .tools { padding: 20px; }
   .who { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ref { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ref li:nth-child(3) { padding-left: 0; border-left: 0; }
@@ -683,10 +712,10 @@ svg.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor;
   .wl-row { flex-direction: column; }
   .wl-row .field { flex: none; width: 100%; }
   .flag .sep, .flag .m { display: none; }
-  .note-tb .nc { display: none; }
-  .note-l { flex-wrap: wrap; row-gap: 8px; }
-  .note-l .btn { margin-left: 17px; }
-  .note-b { padding: 16px 16px 14px; }
+  .pj { grid-template-columns: minmax(0, 1fr); }
+  .pj-new .chip { display: none; }
+  .tools-g { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .tools { padding: 16px; border-radius: 14px; }
   .wl-row .btn { width: 100%; height: 44px; }
   .field { height: 44px; font-size: 16px; }
   .stage { margin-top: 40px; padding-bottom: 32px; }
@@ -838,7 +867,7 @@ svg.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor;
       <div class="hero-grid">
         <h1 class="hero-h" id="hero-h">Project management, <span class="soft">in plain English.</span></h1>
         <div class="hero-side">
-          <p class="lede">Notes, Tasks and Timeline in one app. Every word on the screen is one you would say out loud, so there is nothing to learn first.</p>
+          <p class="lede">Projects, Tasks and Timeline in one app. Every word on the screen is one you would say out loud, so there is nothing to learn first.</p>
           <form class="wl" id="join" novalidate>
             <div class="wl-row">
               <label class="sr" for="em1">Email address</label>
@@ -985,29 +1014,35 @@ svg.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor;
   <section class="sec band" aria-labelledby="pr-h">
     <div class="wrap">
       <span class="kicker"><svg class="i" aria-hidden="true"><use href="#i-apps"/></svg>The product, in plain words</span>
-      <h2 class="h2" id="pr-h" style="max-width: 20ch">Notes is where it starts. Tasks is where it gets done. Timeline is what everyone else sees.</h2>
-      <p class="lede">Follow one line, "Ask the florist about peonies", through all three. Home tells you each morning what needs you.</p>
+      <h2 class="h2" id="pr-h" style="max-width: 23ch">A project holds the work. Tasks get it done. Timeline shows everyone where it stands.</h2>
+      <p class="lede">Follow one task, "Ask the florist about peonies", from the project to the board to the timeline. Home tells you each morning what needs you.</p>
 
       <div class="prods">
-        <article class="prod" aria-labelledby="p-notes">
+        <article class="prod" aria-labelledby="p-proj">
           <div class="prod-tx">
-            <p class="pl"><span class="pt" style="--c:var(--v3-project-5)"><svg class="i" aria-hidden="true"><use href="#i-notes"/></svg></span>Notes</p>
-            <h3 id="p-notes">Write it down before it goes.</h3>
-            <p>Your notes are yours alone. When a line is ready to become real work, send it on to Tasks.</p>
-            <p class="fine">Sample note · The Orchard, Co. Wicklow</p>
+            <p class="pl"><span class="pt" style="--c:var(--v3-project-6)"><svg class="i" aria-hidden="true"><use href="#i-projects"/></svg></span>Projects</p>
+            <h3 id="p-proj">One place for the whole job.</h3>
+            <p>A project holds everything for one piece of work: its tasks, its dates and the people on it. Give it a name you would say out loud and start adding what needs doing.</p>
+            <p class="fine">Sample project · The Orchard, Co. Wicklow</p>
           </div>
-          <div class="prod-ui" role="img" aria-label="A private note from a walk-through, with the line Ask the florist about peonies for the arch ready to send to Tasks.">
-            <div class="note">
-              <div class="note-tb"><svg class="i" aria-hidden="true"><use href="#i-notes"/></svg><span class="nc">Notes</span><span class="nc" style="color:var(--v3-border-strong)">/</span><b>Walk-through with Mara &amp; Finn</b><span class="pv"><svg class="i"><use href="#i-lock"/></svg>Only you</span></div>
-              <div class="note-b">
-                <p class="note-d">Tuesday 14 July · 11:40</p>
-                <p class="note-h">Walk-through, the lake lawn</p>
-                <div class="note-ls">
-                  <div class="note-l"><span>Arch goes by the lake, not the terrace.</span></div>
-                  <div class="note-l" data-on><span>Ask the florist about peonies for the arch.</span><span class="btn btn-s">Send to Tasks<svg class="i"><use href="#i-arrow"/></svg></span></div>
-                  <div class="note-l"><span>Finn's gran needs a seat near the door.</span></div>
-                  <div class="note-l"><span>If it rains, the bar moves into the orangery.</span></div>
+          <div class="prod-ui" role="img" aria-label="The Projects page. The Orchard, events is on track, 5 of 13 tasks done, 38 percent, target 3 October 2026. Its overview shows progress with 8 open, 1 overdue and 5 with no date, and a new task: Ask the florist about peonies for the arch.">
+            <div class="pj">
+              <div class="pj-card">
+                <div class="pj-top"><span class="tile" style="--c:var(--v3-project-7)">TO</span><div class="pj-nm"><p class="pj-n">The Orchard, events</p><p class="pj-d">Run Mara &amp; Finn's wedding from one place</p></div><span class="pill" data-tone="success"><span class="pdot"></span>On track</span></div>
+                <div class="pj-pr"><span>5 of 13 tasks done</span><b>38%</b></div>
+                <span class="pj-bar"><i style="width:38%"></i></span>
+                <div class="pj-ft"><span><svg class="i"><use href="#i-cal"/></svg>3 Oct 2026</span><span><span class="st st-sm" data-s="ip"></span>8 open <em>· 1 overdue</em></span></div>
+              </div>
+              <div class="pj-ov">
+                <div class="pj-hd"><span class="tile" style="--c:var(--v3-project-7)">TO</span><div class="pj-nm"><p class="pj-t">The Orchard, events</p><p class="pj-d2">Run Mara &amp; Finn's wedding from one place, with every supplier, date and decision accounted for.</p></div></div>
+                <span class="tabs"><span data-on><svg class="i"><use href="#i-grid"/></svg>Overview</span><span><svg class="i"><use href="#i-tasks"/></svg>Tasks</span><span><svg class="i"><use href="#i-timeline"/></svg>Timeline</span><span><svg class="i"><use href="#i-notes"/></svg>Notes</span></span>
+                <div class="card pj-prog">
+                  <div class="pj-ph"><span class="card-t">Progress</span><span class="meta">5 of 13 tasks</span></div>
+                  <p class="pj-big">38<small>%</small> <span>done</span></p>
+                  <span class="pj-bar"><i style="width:38%"></i></span>
+                  <div class="pj-k"><div><span>Open</span><b>8</b></div><div><span>Overdue</span><b data-late>1</b></div><div><span>No date</span><b>5</b></div></div>
                 </div>
+                <div class="pj-new"><span class="st"></span><div class="row-main"><span class="row-t">Ask the florist about peonies for the arch</span><span class="row-m">New task · Aoife · Mara &amp; Finn</span></div><span class="chip"><svg class="i"><use href="#i-cal"/></svg>Thu</span></div>
               </div>
             </div>
           </div>
@@ -1016,7 +1051,7 @@ svg.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor;
         <article class="prod" aria-labelledby="p-tasks">
           <div class="prod-tx">
             <p class="pl"><span class="pt" style="--c:var(--v3-project-1)"><svg class="i" aria-hidden="true"><use href="#i-tasks"/></svg></span>Tasks</p>
-            <h3 id="p-tasks">The line becomes a job, with an owner and a day.</h3>
+            <h3 id="p-tasks">Every task gets an owner and a day.</h3>
             <p>See it as a board, a list or a calendar. Move a card along as the work moves. Each column says what it means.</p>
             <p class="fine">Sample board · The Orchard, events</p>
           </div>
@@ -1055,7 +1090,7 @@ svg.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor;
           <div class="prod-ui" role="img" aria-label="Timeline with three sample projects on a month grid and a Today line at 16 July. A share panel shows a public link that anyone can read without an account.">
             <div class="tl">
               <div class="tl-r tl-hd"><div class="tl-p">Project</div><div class="tl-g"><span class="tl-m" style="left:0">Jun</span><span class="tl-m" style="left:50%">Aug</span><span class="tl-m" style="left:75%">Sep</span><span class="tl-tp" style="--x:37%">Today 16 Jul</span></div></div>
-              <div class="tl-r"><div class="tl-p"><span class="tile" style="--c:var(--v3-project-8)">MF</span><div style="min-width:0"><p class="tl-n">Mara &amp; Finn</p><p class="tl-s">On track · 55% · Sample</p></div></div><div class="tl-g"><span class="tl-today" style="--x:37%"></span><span class="tl-bar" style="--l:2%;--r:4%;--p:52%"><i></i></span><span class="dia" data-done style="--x:12%"></span><span class="dia" data-done style="--x:30%"></span><span class="dia" data-next style="--x:51%"></span><span class="dia" style="--x:80%"></span></div></div>
+              <div class="tl-r"><div class="tl-p"><span class="tile" style="--c:var(--v3-project-2)">NS</span><div style="min-width:0"><p class="tl-n">Kiln launch</p><p class="tl-s">On track · 55% · Sample</p></div></div><div class="tl-g"><span class="tl-today" style="--x:37%"></span><span class="tl-bar" style="--l:2%;--r:4%;--p:52%"><i></i></span><span class="dia" data-done style="--x:12%"></span><span class="dia" data-done style="--x:30%"></span><span class="dia" data-next style="--x:51%"></span><span class="dia" style="--x:80%"></span></div></div>
               <div class="tl-r"><div class="tl-p"><span class="tile" style="--c:var(--v3-project-7)">TO</span><div style="min-width:0"><p class="tl-n">The Orchard, events</p><p class="tl-s">On track · 38% · 1 late</p></div></div><div class="tl-g"><span class="tl-today" style="--x:37%"></span><span class="tl-bar" style="--l:0%;--r:12%;--p:40%"><i></i></span><span class="dia" data-done style="--x:22%"></span><span class="dia" data-next style="--x:44%"></span><span class="dia" style="--x:66%"></span></div></div>
               <div class="tl-r"><div class="tl-p"><span class="tile" style="--c:var(--v3-project-5)">KW</span><div style="min-width:0"><p class="tl-n">Kavanagh wedding</p><p class="tl-s" data-tone="warning">At risk · 40% · 2 late</p></div></div><div class="tl-g"><span class="tl-today" style="--x:37%"></span><span class="tl-bar" data-tone="warning" style="--l:6%;--r:0%;--p:36%"><i></i></span><span class="dia" data-next style="--x:58%"></span><span class="dia" style="--x:86%"></span></div></div>
               <div class="tl-r" style="min-height:156px"><div class="tl-p"></div><div class="tl-g"><span class="tl-today" style="--x:37%"></span></div></div>
@@ -1101,6 +1136,15 @@ svg.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor;
             </div>
           </div>
         </article>
+        <div class="tools" aria-labelledby="tools-h">
+          <div class="tools-tx"><p class="pl" id="tools-h"><span class="pt" style="--c:var(--v3-solid)"><svg class="i" aria-hidden="true" style="color:var(--v3-on-solid)"><use href="#i-apps"/></svg></span>Apps and tools</p><p class="tools-s">Around the three, in the same sidebar. Use them when you need them.</p></div>
+          <ul class="tools-g">
+            <li class="tool"><span class="pt" style="--c:var(--v3-project-5)"><svg class="i" aria-hidden="true"><use href="#i-notes"/></svg></span><span><b>Notes</b><span>Catch a thought before it goes</span></span></li>
+            <li class="tool"><span class="pt" style="--c:var(--v3-project-2)"><svg class="i" aria-hidden="true"><use href="#i-files"/></svg></span><span><b>Files</b><span>Every file in one place</span></span></li>
+            <li class="tool"><span class="pt" style="--c:var(--v3-project-8)"><svg class="i" aria-hidden="true"><use href="#i-chat"/></svg></span><span><b>Chat</b><span>Talk with your team</span></span></li>
+            <li class="tool"><span class="pt" style="--c:var(--v3-project-4)"><svg class="i" aria-hidden="true"><use href="#i-analytics"/></svg></span><span><b>Analytics</b><span>See how the work is going</span></span></li>
+          </ul>
+        </div>
       </div>
     </div>
   </section>
@@ -1196,7 +1240,7 @@ svg.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor;
         <a class="brand" href="#main"><svg class="mark" aria-hidden="true"><use href="#mk"/></svg>Signal Studio</a>
         <p class="foot-tag">Clarity, not configuration.</p>
       </div>
-      <nav aria-labelledby="f-prod"><h2 id="f-prod">Products</h2><ul><li><a href="#p-notes">Notes</a></li><li><a href="#p-tasks">Tasks</a></li><li><a href="#p-tl">Timeline</a></li></ul></nav>
+      <nav aria-labelledby="f-prod"><h2 id="f-prod">Products</h2><ul><li><a href="#p-proj">Projects</a></li><li><a href="#p-tasks">Tasks</a></li><li><a href="#p-tl">Timeline</a></li></ul></nav>
       <nav aria-labelledby="f-pages"><h2 id="f-pages">Pages</h2><ul><li><a href="#pricing">Pricing</a></li><li><a href="#about">About</a></li><li><a href="#principles">Principles</a></li><li><a href="#">Press</a></li><li><a href="#">Privacy</a></li><li><a href="#">Terms</a></li></ul></nav>
       <div><h2>Say hello</h2><ul><li><a href="mailto:hello@signalstudio.ie">hello@signalstudio.ie</a></li><li><a href="#join">Join the waitlist</a></li></ul></div>
     </div>
