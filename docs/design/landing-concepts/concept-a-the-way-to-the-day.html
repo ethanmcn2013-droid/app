@@ -1,5 +1,5 @@
 <title>The Site Is the App</title>
-<meta name="description" content="Project management for the 80% not in tech. Notes, Tasks and Timeline in one calm app. Launching January 2027.">
+<meta name="description" content="Project management for the 80% not in tech. Projects, Tasks and Timeline in one calm app. Launching January 2027.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -483,6 +483,38 @@ a.row:hover, .row[data-hover]:hover { background: var(--v3-hover); }
 .chapter .screen { margin-top: 18px; }
 .aside { margin-top: 12px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--v3-text-3); }
 
+/* Projects */
+.projHead { display: flex; gap: 14px; align-items: flex-start; margin-top: 10px; }
+.projTile { width: 44px; height: 44px; border-radius: 10px; font-size: 15px; }
+.projName { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+.projDesc { margin-top: 4px; font-size: 13.5px; color: var(--v3-text-2); }
+.projPills { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+.pdot { width: 6px; height: 6px; border-radius: 99px; background: currentColor; margin-right: 6px; }
+.pillLine { background: transparent; border: 1px solid var(--v3-border); gap: 5px; }
+.pillLine b { color: var(--v3-text); font-weight: 500; }
+.pillXs { height: 18px; padding: 0 6px; font-size: 11px; margin-left: 6px; vertical-align: 1px; }
+.projTabs { margin-top: 18px; }
+.projTabs span { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 6px; font-size: 12.5px; font-weight: 500; color: var(--v3-text-3); }
+.projTabs span.on { background: var(--v3-canvas); box-shadow: var(--v3-shadow-1); color: var(--v3-text); }
+.projGrid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 14px; margin-top: 14px; align-items: start; }
+.projProg { padding: 0 16px 12px; }
+.projProg .statValue small:last-child { margin-left: 10px; font-size: 13px; color: var(--v3-text-3); }
+.progBar { margin-top: 12px; height: 6px; border-radius: 99px; background: var(--v3-fill); overflow: hidden; }
+.progBar i { display: block; height: 100%; background: var(--v3-accent); border-radius: 99px; }
+.projStats { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0 16px 16px; border: 1px solid var(--v3-border); border-radius: 10px; }
+.projStats div { padding: 10px 14px; display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--v3-text-2); }
+.projStats div + div { border-left: 1px solid var(--v3-border); }
+.projStats b { font-size: 17px; font-weight: 600; color: var(--v3-text); font-variant-numeric: tabular-nums; }
+.projStats b[data-late] { color: var(--v3-danger-text); }
+.avLg { width: 32px; height: 32px; font-size: 11px; }
+.newTask { margin-top: 14px; border-color: color-mix(in srgb, var(--v3-accent) 45%, var(--v3-border)); box-shadow: 0 0 0 3px var(--v3-accent-soft); }
+@media (max-width: 720px) {
+  .projGrid { grid-template-columns: minmax(0, 1fr); }
+  .projTabs span:nth-child(n+3) { display: none; }
+  .newTask .pill { display: none; }
+  .projTile { width: 36px; height: 36px; font-size: 13px; }
+  .projName { font-size: 19px; }
+}
 /* Notes */
 .noteTitle { font-size: 20px; font-weight: 600; letter-spacing: -0.015em; }
 .noteMeta { margin-top: 4px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 12px; color: var(--v3-text-3); }
@@ -559,6 +591,9 @@ a.app1:hover { border-color: var(--v3-border-strong); background: var(--v3-hover
 .appName { font-size: 14px; font-weight: 600; }
 .appDesc { margin-top: 2px; font-size: 12.5px; color: var(--v3-text-2); }
 .apps.quiet .app1 { background: var(--v3-sunken); }
+.apps3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.apps2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.app1.wide { align-items: center; }
 .apps.quiet .appIcon { background: var(--v3-surface); border: 1px solid var(--v3-border); color: var(--v3-text-2); }
 .apps.quiet .appIcon svg [data-fill] { fill-opacity: 0.14; }
 .quote { margin-top: 28px; font-size: 13.5px; color: var(--v3-text-2); }
@@ -650,6 +685,7 @@ a.app1:hover { border-color: var(--v3-border-strong); background: var(--v3-hover
 /* ── 1180 and below ───────────────────────────────────────── */
 @media (max-width: 1180px) {
   .apps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .apps3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .story { grid-template-columns: 236px minmax(0, 1fr); gap: 24px; }
   .two { grid-template-columns: minmax(0, 1fr); }
 }
@@ -706,7 +742,8 @@ a.app1:hover { border-color: var(--v3-border-strong); background: var(--v3-hover
   .title { font-size: 22px; }
   .chTitle { font-size: 18px; }
   .screenBody { padding: 16px 14px 14px; }
-  .apps { grid-template-columns: minmax(0, 1fr); }
+  .apps, .apps3, .apps2 { grid-template-columns: minmax(0, 1fr); }
+  .app1.wide .pill { display: none; }
   .who .pill { display: none; }
   .who .whenTxt { display: block !important; }
   .table thead { display: none; }
@@ -761,10 +798,11 @@ a.app1:hover { border-color: var(--v3-border-strong); background: var(--v3-hover
     </div>
     <div class="navSec" aria-labelledby="nl-how">
       <div class="navLabel" id="nl-how">How it works</div>
-      <a class="item" href="#notes" data-nav="notes"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><g data-part="page"><path fill="currentColor" fill-opacity=".14" data-fill="" d="M9.25 2.75H5A1.25 1.25 0 0 0 3.75 4v8A1.25 1.25 0 0 0 5 13.25h6A1.25 1.25 0 0 0 12.25 12V5.75Z"/><path d="M9.25 2.75v3h3"/><path d="M6 8.75h4M6 11h2.5"/></g></svg><span class="itemLabel">Notes</span></a>
+      <a class="item" href="#projects" data-nav="projects"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2.5 6.1V4.35A1.25 1.25 0 0 1 3.75 3.1h2.5l1.4 1.5h4.6A1.25 1.25 0 0 1 13.5 5.85v.25"/><path data-part="flap" fill="currentColor" fill-opacity=".14" data-fill="" d="M2.5 6.6h11v5.15a1.25 1.25 0 0 1-1.25 1.25h-8.5a1.25 1.25 0 0 1-1.25-1.25Z"/></svg><span class="itemLabel">Projects</span></a>
       <a class="item" href="#tasks" data-nav="tasks"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect fill="currentColor" fill-opacity=".14" data-fill="" x="2.75" y="2.75" width="10.5" height="10.5" rx="3"/><path data-part="draw" pathLength="1" d="m5.5 8.15 1.75 1.75L10.6 6.4"/></svg><span class="itemLabel">Tasks</span></a>
       <a class="item" href="#timeline" data-nav="timeline"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2.75 2.75v10.5"/><g data-part="bars"><rect fill="currentColor" fill-opacity=".14" data-fill="" x="4.75" y="3.25" width="6.25" height="2.6" rx="1.3"/><rect fill="currentColor" fill-opacity=".14" data-fill="" x="6.75" y="6.7" width="6.5" height="2.6" rx="1.3"/><rect fill="currentColor" fill-opacity=".14" data-fill="" x="4.75" y="10.15" width="4.25" height="2.6" rx="1.3"/></g></svg><span class="itemLabel">Timeline</span></a>
       <a class="item" href="#briefing" data-nav="briefing"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect fill="currentColor" fill-opacity=".14" data-fill="" x="2.25" y="2.75" width="11.5" height="10.5" rx="2.75"/><path data-part="draw" pathLength="1" d="M4.4 8.4h1.7l1.1-2.65 1.8 4.6 1.1-1.95h1.5"/></svg><span class="itemLabel">Home briefing</span></a>
+      <a class="item" href="#products" data-nav="products"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect fill="currentColor" fill-opacity=".14" data-fill="" x="2.75" y="2.75" width="4.25" height="4.25" rx="1.4"/><rect fill="currentColor" fill-opacity=".14" data-fill="" x="9" y="2.75" width="4.25" height="4.25" rx="1.4"/><rect fill="currentColor" fill-opacity=".14" data-fill="" x="2.75" y="9" width="4.25" height="4.25" rx="1.4"/><path data-part="plus" d="M11.1 9.1v4M9.1 11.1h4"/></svg><span class="itemLabel">Apps and tools</span></a>
     </div>
     <div class="navSec" aria-labelledby="nl-you">
       <div class="navLabel" id="nl-you">For you</div>
@@ -813,7 +851,7 @@ a.app1:hover { border-color: var(--v3-border-strong); background: var(--v3-hover
           <div class="heroText">
             <p class="eyebrow"><span id="greet">Good morning</span> · <span id="today">Monday 28 September</span></p>
             <h1 class="h1" id="h1">Project management for the 80% <em>not</em> in tech.</h1>
-            <p class="heroSub">Notes, Tasks and Timeline, in one calm app. For people with work to manage, not software to manage.</p>
+            <p class="heroSub">Projects, Tasks and Timeline, in one calm app. For people with work to manage, not software to manage.</p>
           </div>
           <form class="join wl" novalidate aria-label="Join the waitlist">
             <div class="joinRow">
@@ -827,7 +865,7 @@ a.app1:hover { border-color: var(--v3-border-strong); background: var(--v3-hover
           </form>
         </div>
         <ul class="stats" aria-label="Signal Studio at a glance">
-          <li class="stat"><div class="statTop">Products<span class="statIcon" data-tone="accent"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 2.5 13.5 5.25 8 8 2.5 5.25Z"/><path d="m2.5 8 5.5 2.75L13.5 8M2.5 10.75 8 13.5l5.5-2.75"/></svg></span></div><p class="statValue">3</p><p class="statNote">Notes, Tasks, Timeline</p></li>
+          <li class="stat"><div class="statTop">Products<span class="statIcon" data-tone="accent"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 2.5 13.5 5.25 8 8 2.5 5.25Z"/><path d="m2.5 8 5.5 2.75L13.5 8M2.5 10.75 8 13.5l5.5-2.75"/></svg></span></div><p class="statValue">3</p><p class="statNote">Projects, Tasks, Timeline</p></li>
           <li class="stat"><div class="statTop">Setup<span class="statIcon"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3l2 1.25"/></svg></span></div><p class="statValue">0<small>steps</small></p><p class="statNote">Write the first line</p></li>
           <li class="stat"><div class="statTop">Launch<span class="statIcon"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="2.5" y="3.25" width="11" height="10.25" rx="2"/><path d="M2.5 6.75h11M5.5 2v2.5M10.5 2v2.5"/></svg></span></div><p class="statValue">Jan 2027</p><p class="statNote">Wedding venues first</p></li>
           <li class="stat"><div class="statTop">Free plan<span class="statIcon" data-tone="success"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="5.5"/><path d="m5.75 8.1 1.6 1.6 2.9-3.2"/></svg></span></div><p class="statValue">€0</p><p class="statNote">One project, three guests</p></li>
@@ -847,7 +885,7 @@ a.app1:hover { border-color: var(--v3-border-strong); background: var(--v3-hover
         <div class="story">
           <aside class="rail" aria-label="Countdown">
             <div class="stat countdown" aria-live="polite">
-              <div class="statTop"><span>Days to the wedding<span class="cdSmall" id="cdSmall">Friday 25 September · Notes</span></span><span class="statIcon" data-tone="accent"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.75 13.75V2.75"/><path d="M3.75 3.25h8l-1.75 2.75 1.75 2.75h-8"/></svg></span></div>
+              <div class="statTop"><span>Days to the wedding<span class="cdSmall" id="cdSmall">Friday 25 September · Projects</span></span><span class="statIcon" data-tone="accent"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.75 13.75V2.75"/><path d="M3.75 3.25h8l-1.75 2.75 1.75 2.75h-8"/></svg></span></div>
               <p class="statValue"><span class="cdNum" id="cdNum">239</span></p>
               <p class="statNote" id="cdNote">Friday 25 September</p>
               <div class="cdBar" aria-hidden="true"><i id="cdBar"></i></div>
@@ -855,7 +893,7 @@ a.app1:hover { border-color: var(--v3-border-strong); background: var(--v3-hover
             <div class="card steps">
               <div class="cardHead"><h3 class="cardTitle">The way to the day</h3><span class="cardCount">Sample</span></div>
               <ol class="list" id="steps">
-                <li><a class="row" href="#notes" data-step="0" aria-current="step"><span class="st" data-s="prog"></span><span class="rowMain"><span class="rowTitle">Notes</span><span class="rowMeta">Fri 25 Sep · at the gate</span></span></a></li>
+                <li><a class="row" href="#projects" data-step="0" aria-current="step"><span class="st" data-s="prog"></span><span class="rowMain"><span class="rowTitle">Projects</span><span class="rowMeta">Fri 25 Sep · the walk-through</span></span></a></li>
                 <li><a class="row" href="#tasks" data-step="1"><span class="st" data-s="todo"></span><span class="rowMain"><span class="rowTitle">Tasks</span><span class="rowMeta">Mon 28 Sep · on the board</span></span></a></li>
                 <li><a class="row" href="#briefing" data-step="2"><span class="st" data-s="todo"></span><span class="rowMain"><span class="rowTitle">Home</span><span class="rowMeta">Tue 29 Sep · the next morning</span></span></a></li>
                 <li><a class="row" href="#timeline" data-step="3"><span class="st" data-s="todo"></span><span class="rowMain"><span class="rowTitle">Timeline</span><span class="rowMeta">Thu 1 Oct · on the link</span></span></a></li>
@@ -864,33 +902,52 @@ a.app1:hover { border-color: var(--v3-border-strong); background: var(--v3-hover
           </aside>
 
           <div class="chapters">
-            <!-- 1 · Notes -->
-            <article class="chapter" id="notes" data-chapter="0" data-days="239" data-date="Friday 25 September" data-crumb="How it works / Notes" aria-labelledby="c1">
-              <p class="chHead"><span class="tile tileLg" style="background-color:var(--v3-project-6)"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><g data-part="page"><path fill="currentColor" fill-opacity=".14" data-fill="" d="M9.25 2.75H5A1.25 1.25 0 0 0 3.75 4v8A1.25 1.25 0 0 0 5 13.25h6A1.25 1.25 0 0 0 12.25 12V5.75Z"/><path d="M9.25 2.75v3h3"/><path d="M6 8.75h4M6 11h2.5"/></g></svg></span><b>Notes</b> · Friday 25 September</p>
-              <h3 class="chTitle" id="c1">It starts as a thought at the gate.</h3>
-              <p class="chText">Aoife walks the grounds with Mara and Finn and types what they ask for as they go. The note is hers alone. When one line needs doing, she sends it on to Tasks and hands it to Orla. The rest stays private.</p>
-              <figure class="screen" aria-label="Notes, sample: a walk-through note with one line sent on to Tasks">
-                <div class="screenBar">Notes<span class="crumbSep">/</span><b>Walk-through with Mara &amp; Finn</b><span class="spacer"></span><span class="chip"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3.25" y="7" width="9.5" height="6.5" rx="1.75"/><path d="M5.25 7V5.25a2.75 2.75 0 0 1 5.5 0V7"/></svg> Only you</span></div>
+            <!-- 1 · Projects -->
+            <article class="chapter" id="projects" data-chapter="0" data-days="239" data-date="Friday 25 September" data-crumb="How it works / Projects" aria-labelledby="c1">
+              <p class="chHead"><span class="tile tileLg" style="background-color:var(--v3-project-7)"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2.5 6.1V4.35A1.25 1.25 0 0 1 3.75 3.1h2.5l1.4 1.5h4.6A1.25 1.25 0 0 1 13.5 5.85v.25"/><path data-part="flap" fill="currentColor" fill-opacity=".14" data-fill="" d="M2.5 6.6h11v5.15a1.25 1.25 0 0 1-1.25 1.25h-8.5a1.25 1.25 0 0 1-1.25-1.25Z"/></svg></span><b>Projects</b> · Friday 25 September</p>
+              <h3 class="chTitle" id="c1">It starts in one place.</h3>
+              <p class="chText">Mara and Finn's wedding is one project at The Orchard. Every supplier, date and decision lives in it. On the walk-through, the couple ask for one more thing, and Aoife adds it to the project before they reach the car park.</p>
+              <figure class="screen" aria-label="Projects, sample: The Orchard, events project overview with a new task just added">
+                <div class="screenBar">Projects<span class="crumbSep">/</span><b>The Orchard, events</b></div>
                 <div class="screenBody">
-                  <p class="noteTitle">Walk-through with Mara &amp; Finn</p>
-                  <p class="noteMeta"><span>Friday 25 September · at the gate</span><span>Aoife Walsh</span></p>
-                  <div class="noteLines">
-                    <p class="line"><span>Finn's gran needs a chair near the door for the speeches.</span></p>
-                    <p class="line"><span>Long table on the terrace. Candles, not flowers.</span></p>
-                    <p class="line" data-picked><span>Hold the side room for the family after six.</span><span class="btn btnSm" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.5 8h9M9 4.5 12.5 8 9 11.5"/></svg> Send to Tasks</span></p>
-                    <p class="sent"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect fill="currentColor" fill-opacity=".14" data-fill="" x="2.75" y="2.75" width="10.5" height="10.5" rx="3"/><path data-part="draw" pathLength="1" d="m5.5 8.15 1.75 1.75L10.6 6.4"/></svg> Sent to Tasks · Orla · Monday</p>
-                    <p class="line"><span>Photos by the old apple wall, around five.</span></p>
+                  <p class="eyebrow">Project overview</p>
+                  <div class="projHead">
+                    <span class="tile projTile" style="background-color:var(--v3-project-7)">TO</span>
+                    <div class="rowMain">
+                      <p class="projName">The Orchard, events</p>
+                      <p class="projDesc">Run Mara &amp; Finn's wedding from one place, with every supplier, date and decision accounted for.</p>
+                      <p class="projPills"><span class="pill" data-tone="success"><span class="pdot"></span>On track</span><span class="pill pillLine"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="2.5" y="3.25" width="11" height="10.25" rx="2"/><path d="M2.5 6.75h11M5.5 2v2.5M10.5 2v2.5"/></svg> Target <b>22 May 2027</b></span></p>
+                    </div>
+                  </div>
+                  <div class="seg projTabs" aria-hidden="true"><span class="on"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect fill="currentColor" fill-opacity=".14" data-fill="" x="2.75" y="2.75" width="4.25" height="4.25" rx="1.4"/><rect fill="currentColor" fill-opacity=".14" data-fill="" x="9" y="2.75" width="4.25" height="4.25" rx="1.4"/><rect fill="currentColor" fill-opacity=".14" data-fill="" x="2.75" y="9" width="4.25" height="4.25" rx="1.4"/><path data-part="plus" d="M11.1 9.1v4M9.1 11.1h4"/></svg> Overview</span><span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect fill="currentColor" fill-opacity=".14" data-fill="" x="2.75" y="2.75" width="10.5" height="10.5" rx="3"/><path data-part="draw" pathLength="1" d="m5.5 8.15 1.75 1.75L10.6 6.4"/></svg> Tasks</span><span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2.75 2.75v10.5"/><g data-part="bars"><rect fill="currentColor" fill-opacity=".14" data-fill="" x="4.75" y="3.25" width="6.25" height="2.6" rx="1.3"/><rect fill="currentColor" fill-opacity=".14" data-fill="" x="6.75" y="6.7" width="6.5" height="2.6" rx="1.3"/><rect fill="currentColor" fill-opacity=".14" data-fill="" x="4.75" y="10.15" width="4.25" height="2.6" rx="1.3"/></g></svg> Timeline</span><span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><g data-part="page"><path fill="currentColor" fill-opacity=".14" data-fill="" d="M9.25 2.75H5A1.25 1.25 0 0 0 3.75 4v8A1.25 1.25 0 0 0 5 13.25h6A1.25 1.25 0 0 0 12.25 12V5.75Z"/><path d="M9.25 2.75v3h3"/><path d="M6 8.75h4M6 11h2.5"/></g></svg> Notes</span></div>
+                  <div class="projGrid">
+                    <div class="card">
+                      <div class="cardHead"><p class="cardTitle">Progress</p><span class="cardCount">5 of 13 tasks</span></div>
+                      <div class="projProg"><p class="statValue" style="font-size:36px">38<small>%</small><small>done</small></p><div class="progBar"><i style="width:38%"></i></div></div>
+                      <div class="projStats"><div><span>Open</span><b>8</b></div><div><span>Overdue</span><b data-late>1</b></div><div><span>No date</span><b>5</b></div></div>
+                    </div>
+                    <div class="card">
+                      <div class="cardHead"><p class="cardTitle">Team <span class="cardCount">2</span></p></div>
+                      <ul class="list">
+                        <li class="row"><span class="av avLg">OR</span><span class="rowMain"><span class="rowTitle">Orla <span class="pill pillLine pillXs">Owner</span></span><span class="rowMeta">Events lead</span></span></li>
+                        <li class="row"><span class="av avLg" style="background:color-mix(in srgb,var(--v3-project-2) 16%,var(--v3-surface));color:var(--v3-project-2)">AW</span><span class="rowMain"><span class="rowTitle">Aoife Walsh</span><span class="rowMeta">Events team</span></span></li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div class="card newTask">
+                    <div class="cardHead"><p class="cardTitle">Just added</p><span class="cardCount">by Aoife · Friday 25 September</span></div>
+                    <ul class="list"><li class="row"><span class="st" data-s="todo"></span><span class="rowMain"><span class="rowTitle">Hold the side room for the family after six</span><span class="rowMeta">Tasks · The Orchard, events · Mara &amp; Finn · High priority</span></span><span class="pill">To do</span><span class="due">No date yet</span></li></ul>
                   </div>
                 </div>
               </figure>
-              <p class="aside"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3.25" y="7" width="9.5" height="6.5" rx="1.75"/><path d="M5.25 7V5.25a2.75 2.75 0 0 1 5.5 0V7"/></svg> Private until you send a line on. Only that line travels.</p>
+              <p class="aside"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2.5 6.1V4.35A1.25 1.25 0 0 1 3.75 3.1h2.5l1.4 1.5h4.6A1.25 1.25 0 0 1 13.5 5.85v.25"/><path data-part="flap" fill="currentColor" fill-opacity=".14" data-fill="" d="M2.5 6.6h11v5.15a1.25 1.25 0 0 1-1.25 1.25h-8.5a1.25 1.25 0 0 1-1.25-1.25Z"/></svg> One project holds the tasks, the timeline, the files and the notes. Nothing lives in a side document.</p>
             </article>
 
             <!-- 2 · Tasks -->
             <article class="chapter" id="tasks" data-chapter="1" data-days="236" data-date="Monday 28 September" data-crumb="How it works / Tasks" aria-labelledby="c2">
               <p class="chHead"><span class="tile tileLg" style="background-color:var(--v3-project-1)"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect fill="currentColor" fill-opacity=".14" data-fill="" x="2.75" y="2.75" width="10.5" height="10.5" rx="3"/><path data-part="draw" pathLength="1" d="m5.5 8.15 1.75 1.75L10.6 6.4"/></svg></span><b>Tasks</b> · Monday 28 September</p>
               <h3 class="chTitle" id="c2">Now it's a job with a name and a day.</h3>
-              <p class="chText">The line lands on the board as a card: Orla's, for Tuesday. No forms to fill in, nothing to set up. When she starts on it, it moves along, and the whole team can see where it is.</p>
+              <p class="chText">The request lands on the board as a card: Orla's, for Tuesday. No forms to fill in, nothing to set up. When she starts on it, it moves along, and the whole team can see where it is.</p>
               <figure class="screen" aria-label="Tasks board, sample: the new card sits at the top of To do">
                 <div class="screenBar"><span class="tile" style="background-color:var(--v3-project-7)">T</span>The Orchard, events<span class="crumbSep">/</span><b>Tasks</b><span class="spacer"></span><span class="chip">Board</span></div>
                 <div class="boardWrap"><div class="board">
@@ -898,7 +955,7 @@ a.app1:hover { border-color: var(--v3-border-strong); background: var(--v3-hover
                     <p class="colHead"><span class="st" data-s="todo"></span>To do <span class="cardCount">3</span></p>
                     <p class="colDesc">Agreed and ready to start</p>
                     <div class="tcard" data-new>
-                      <p class="from"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><g data-part="page"><path fill="currentColor" fill-opacity=".14" data-fill="" d="M9.25 2.75H5A1.25 1.25 0 0 0 3.75 4v8A1.25 1.25 0 0 0 5 13.25h6A1.25 1.25 0 0 0 12.25 12V5.75Z"/><path d="M9.25 2.75v3h3"/><path d="M6 8.75h4M6 11h2.5"/></g></svg> From Aoife's note</p>
+                      <p class="from"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2.5 6.1V4.35A1.25 1.25 0 0 1 3.75 3.1h2.5l1.4 1.5h4.6A1.25 1.25 0 0 1 13.5 5.85v.25"/><path data-part="flap" fill="currentColor" fill-opacity=".14" data-fill="" d="M2.5 6.6h11v5.15a1.25 1.25 0 0 1-1.25 1.25h-8.5a1.25 1.25 0 0 1-1.25-1.25Z"/></svg> Added by Aoife</p>
                       <p class="tcardTop"><span class="st" data-s="todo"></span>Hold the side room for the family after six</p>
                       <p class="tcardFoot"><span class="chip" data-tone="accent"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="2.5" y="3.25" width="11" height="10.25" rx="2"/><path d="M2.5 6.75h11M5.5 2v2.5M10.5 2v2.5"/></svg> 29 Sep</span><span class="pri" data-p="3"><i></i><i></i><i></i></span><span class="chip"><span class="dot"></span>Mara &amp; Finn</span><span class="av">OR</span></p>
                     </div>
@@ -1009,22 +1066,27 @@ a.app1:hover { border-color: var(--v3-border-strong); background: var(--v3-hover
           <div>
             <p class="eyebrow">Products</p>
             <h2 class="title" id="pr-t">Three products, one app</h2>
-            <p class="subtitle">Notes is where it starts. Tasks is where it gets done. Timeline is what everyone else sees. Home ties them together each morning.</p>
+            <p class="subtitle">Projects hold the work. Tasks is where it gets done. Timeline is what everyone else sees. Everything else sits around them as tools.</p>
           </div>
         </div>
-        <h3 class="groupTitle">Your apps</h3>
-        <div class="apps">
-          <a class="app1" href="#notes"><span class="appIcon" style="background:var(--v3-project-6)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><g data-part="page"><path fill="currentColor" fill-opacity=".14" data-fill="" d="M9.25 2.75H5A1.25 1.25 0 0 0 3.75 4v8A1.25 1.25 0 0 0 5 13.25h6A1.25 1.25 0 0 0 12.25 12V5.75Z"/><path d="M9.25 2.75v3h3"/><path d="M6 8.75h4M6 11h2.5"/></g></svg></span><span><span class="appName">Notes</span><span class="appDesc" style="display:block">Catch a thought before it goes. Private until you send a line on.</span></span></a>
-          <a class="app1" href="#tasks"><span class="appIcon" style="background:var(--v3-project-1)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect fill="currentColor" fill-opacity=".14" data-fill="" x="2.75" y="2.75" width="10.5" height="10.5" rx="3"/><path data-part="draw" pathLength="1" d="m5.5 8.15 1.75 1.75L10.6 6.4"/></svg></span><span><span class="appName">Tasks</span><span class="appDesc" style="display:block">The line becomes a job with a person and a day. Board, list or calendar.</span></span></a>
+        <h3 class="groupTitle">The three products</h3>
+        <div class="apps apps3">
+          <a class="app1" href="#projects"><span class="appIcon" style="background:var(--v3-project-7)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2.5 6.1V4.35A1.25 1.25 0 0 1 3.75 3.1h2.5l1.4 1.5h4.6A1.25 1.25 0 0 1 13.5 5.85v.25"/><path data-part="flap" fill="currentColor" fill-opacity=".14" data-fill="" d="M2.5 6.6h11v5.15a1.25 1.25 0 0 1-1.25 1.25h-8.5a1.25 1.25 0 0 1-1.25-1.25Z"/></svg></span><span><span class="appName">Projects</span><span class="appDesc" style="display:block">One place for a piece of work: its tasks, timeline, files and notes, together.</span></span></a>
+          <a class="app1" href="#tasks"><span class="appIcon" style="background:var(--v3-project-1)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect fill="currentColor" fill-opacity=".14" data-fill="" x="2.75" y="2.75" width="10.5" height="10.5" rx="3"/><path data-part="draw" pathLength="1" d="m5.5 8.15 1.75 1.75L10.6 6.4"/></svg></span><span><span class="appName">Tasks</span><span class="appDesc" style="display:block">Every job with a person and a day. Board, list or calendar.</span></span></a>
           <a class="app1" href="#timeline"><span class="appIcon" style="background:var(--v3-project-3)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2.75 2.75v10.5"/><g data-part="bars"><rect fill="currentColor" fill-opacity=".14" data-fill="" x="4.75" y="3.25" width="6.25" height="2.6" rx="1.3"/><rect fill="currentColor" fill-opacity=".14" data-fill="" x="6.75" y="6.7" width="6.5" height="2.6" rx="1.3"/><rect fill="currentColor" fill-opacity=".14" data-fill="" x="4.75" y="10.15" width="4.25" height="2.6" rx="1.3"/></g></svg></span><span><span class="appName">Timeline</span><span class="appDesc" style="display:block">One page that shows everyone where things stand. Share it as a link.</span></span></a>
-          <a class="app1" href="#briefing"><span class="appIcon" style="background:var(--v3-project-2)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path fill="currentColor" fill-opacity=".14" data-fill="" d="M2.75 7.1 8 2.9l5.25 4.2v5.65a1 1 0 0 1-1 1H9.75V10.5h-3.5v3.25h-2.5a1 1 0 0 1-1-1Z"/></svg></span><span><span class="appName">Home</span><span class="appDesc" style="display:block">The front door. Today's Signal: what needs you today, and nothing else.</span></span></a>
         </div>
-        <h3 class="groupTitle" style="margin-top:28px">Also in the sidebar</h3>
-        <div class="apps quiet">
-          <div class="app1"><span class="appIcon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path fill="currentColor" fill-opacity=".14" data-fill="" d="M13.25 7.6c0 2.7-2.35 4.8-5.25 4.8-.72 0-1.4-.13-2.03-.37L3 13.2l.9-2.5A4.55 4.55 0 0 1 2.75 7.6c0-2.7 2.35-4.85 5.25-4.85s5.25 2.15 5.25 4.85Z"/><g data-part="dots" fill="currentColor" stroke="none"><circle cx="5.7" cy="7.65" r=".85"/><circle cx="8" cy="7.65" r=".85"/><circle cx="10.3" cy="7.65" r=".85"/></g></svg></span><span><span class="appName">Chat</span><span class="appDesc" style="display:block">Talk with your team, beside the work</span></span></div>
-          <div class="app1"><span class="appIcon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><g data-part="page"><path fill="currentColor" fill-opacity=".14" data-fill="" d="M9.25 2.75H5A1.25 1.25 0 0 0 3.75 4v8A1.25 1.25 0 0 0 5 13.25h6A1.25 1.25 0 0 0 12.25 12V5.75Z"/><path d="M9.25 2.75v3h3"/><path d="M6 8.75h4M6 11h2.5"/></g></svg></span><span><span class="appName">Files</span><span class="appDesc" style="display:block">Every file, attached to its task</span></span></div>
-          <div class="app1"><span class="appIcon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><g data-part="grow" fill="currentColor" stroke="none"><rect data-bar="" x="2.75" y="8.25" width="2.9" height="5" rx="1.1"/><rect data-bar="" x="6.55" y="3" width="2.9" height="10.25" rx="1.1"/><rect data-bar="" x="10.35" y="5.75" width="2.9" height="7.5" rx="1.1"/></g></svg></span><span><span class="appName">Analytics</span><span class="appDesc" style="display:block">See how the work is going</span></span></div>
-          <div class="app1"><span class="appIcon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect fill="currentColor" fill-opacity=".14" data-fill="" x="2.75" y="2.75" width="4.25" height="4.25" rx="1.4"/><rect fill="currentColor" fill-opacity=".14" data-fill="" x="9" y="2.75" width="4.25" height="4.25" rx="1.4"/><rect fill="currentColor" fill-opacity=".14" data-fill="" x="2.75" y="9" width="4.25" height="4.25" rx="1.4"/><path data-part="plus" d="M11.1 9.1v4M9.1 11.1h4"/></svg></span><span><span class="appName">Apps and tools</span><span class="appDesc" style="display:block">Works with Google Drive, and more to come</span></span></div>
+        <p class="quote"><b>Home</b> is the front door. Each morning, Today's Signal tells you what needs you today, and nothing else.</p>
+        <h3 class="groupTitle" style="margin-top:28px">Apps and tools</h3>
+        <div class="apps">
+          <div class="app1"><span class="appIcon" style="background:var(--v3-project-6)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><g data-part="page"><path fill="currentColor" fill-opacity=".14" data-fill="" d="M9.25 2.75H5A1.25 1.25 0 0 0 3.75 4v8A1.25 1.25 0 0 0 5 13.25h6A1.25 1.25 0 0 0 12.25 12V5.75Z"/><path d="M9.25 2.75v3h3"/><path d="M6 8.75h4M6 11h2.5"/></g></svg></span><span><span class="appName">Notes</span><span class="appDesc" style="display:block">Catch a thought before it goes</span></span></div>
+          <div class="app1"><span class="appIcon" style="background:var(--v3-project-2)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><g data-part="page"><path fill="currentColor" fill-opacity=".14" data-fill="" d="M9.25 2.75H5A1.25 1.25 0 0 0 3.75 4v8A1.25 1.25 0 0 0 5 13.25h6A1.25 1.25 0 0 0 12.25 12V5.75Z"/><path d="M9.25 2.75v3h3"/><path d="M6 8.75h4M6 11h2.5"/></g></svg></span><span><span class="appName">Files</span><span class="appDesc" style="display:block">Every file in one place</span></span></div>
+          <div class="app1"><span class="appIcon" style="background:var(--v3-project-4)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><g data-part="grow" fill="currentColor" stroke="none"><rect data-bar="" x="2.75" y="8.25" width="2.9" height="5" rx="1.1"/><rect data-bar="" x="6.55" y="3" width="2.9" height="10.25" rx="1.1"/><rect data-bar="" x="10.35" y="5.75" width="2.9" height="7.5" rx="1.1"/></g></svg></span><span><span class="appName">Analytics</span><span class="appDesc" style="display:block">See how the work is going</span></span></div>
+          <div class="app1"><span class="appIcon" style="background:var(--v3-project-8)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path fill="currentColor" fill-opacity=".14" data-fill="" d="M13.25 7.6c0 2.7-2.35 4.8-5.25 4.8-.72 0-1.4-.13-2.03-.37L3 13.2l.9-2.5A4.55 4.55 0 0 1 2.75 7.6c0-2.7 2.35-4.85 5.25-4.85s5.25 2.15 5.25 4.85Z"/><g data-part="dots" fill="currentColor" stroke="none"><circle cx="5.7" cy="7.65" r=".85"/><circle cx="8" cy="7.65" r=".85"/><circle cx="10.3" cy="7.65" r=".85"/></g></svg></span><span><span class="appName">Chat</span><span class="appDesc" style="display:block">Talk with your team</span></span></div>
+        </div>
+        <h3 class="groupTitle" style="margin-top:28px">Works with</h3>
+        <div class="apps apps2 quiet">
+          <div class="app1 wide"><span class="appIcon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><g data-part="page"><path fill="currentColor" fill-opacity=".14" data-fill="" d="M9.25 2.75H5A1.25 1.25 0 0 0 3.75 4v8A1.25 1.25 0 0 0 5 13.25h6A1.25 1.25 0 0 0 12.25 12V5.75Z"/><path d="M9.25 2.75v3h3"/><path d="M6 8.75h4M6 11h2.5"/></g></svg></span><span class="rowMain"><span class="appName">Google Drive</span><span class="appDesc" style="display:block">Keep project files in your Drive</span></span><span class="pill">Coming soon</span></div>
+          <div class="app1 wide"><span class="appIcon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 2.5 13.5 5.25 8 8 2.5 5.25Z"/><path d="m2.5 8 5.5 2.75L13.5 8M2.5 10.75 8 13.5l5.5-2.75"/></svg></span><span class="rowMain"><span class="appName">Google Sheets</span><span class="appDesc" style="display:block">Tables that update from your tasks</span></span><span class="pill">Coming soon</span></div>
         </div>
       </section>
 
@@ -1168,7 +1230,7 @@ a.app1:hover { border-color: var(--v3-border-strong); background: var(--v3-hover
             <p class="footBrand"><svg class="mark" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.52" stroke-width="1.96"/><circle cx="12" cy="12" r="4.715"/></svg>Signal Studio</p>
             <p class="footTag">Clarity, not configuration.</p>
           </div>
-          <nav class="footCol" aria-labelledby="f1"><h2 id="f1">Products</h2><a href="#notes">Notes</a><a href="#tasks">Tasks</a><a href="#timeline">Timeline</a></nav>
+          <nav class="footCol" aria-labelledby="f1"><h2 id="f1">Products</h2><a href="#projects">Projects</a><a href="#tasks">Tasks</a><a href="#timeline">Timeline</a></nav>
           <nav class="footCol" aria-labelledby="f2"><h2 id="f2">Pages</h2><a href="#pricing">Pricing</a><a href="#about">About</a><a href="#principles">Principles</a><a href="/press">Press</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></nav>
           <div class="footCol"><h2>Contact</h2><a href="mailto:hello@signalstudio.ie">hello@signalstudio.ie</a><p>Launching January 2027</p></div>
         </div>
@@ -1187,7 +1249,7 @@ a.app1:hover { border-color: var(--v3-border-strong); background: var(--v3-hover
   <div class="palFoot"><span><kbd class="kbd">↑↓</kbd>to move</span><span><kbd class="kbd">↵</kbd>to jump</span></div>
 </div>
 <template id="palIcons">
-  <span data-i="top"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path fill="currentColor" fill-opacity=".14" data-fill="" d="M2.75 7.1 8 2.9l5.25 4.2v5.65a1 1 0 0 1-1 1H9.75V10.5h-3.5v3.25h-2.5a1 1 0 0 1-1-1Z"/></svg></span><span data-i="how"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle fill="currentColor" fill-opacity=".14" data-fill="" cx="8" cy="8" r="5.75"/><path d="m9.9 6.1-1.1 2.7-2.7 1.1 1.1-2.7Z"/></svg></span><span data-i="notes"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><g data-part="page"><path fill="currentColor" fill-opacity=".14" data-fill="" d="M9.25 2.75H5A1.25 1.25 0 0 0 3.75 4v8A1.25 1.25 0 0 0 5 13.25h6A1.25 1.25 0 0 0 12.25 12V5.75Z"/><path d="M9.25 2.75v3h3"/><path d="M6 8.75h4M6 11h2.5"/></g></svg></span><span data-i="tasks"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect fill="currentColor" fill-opacity=".14" data-fill="" x="2.75" y="2.75" width="10.5" height="10.5" rx="3"/><path data-part="draw" pathLength="1" d="m5.5 8.15 1.75 1.75L10.6 6.4"/></svg></span><span data-i="briefing"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect fill="currentColor" fill-opacity=".14" data-fill="" x="2.25" y="2.75" width="11.5" height="10.5" rx="2.75"/><path data-part="draw" pathLength="1" d="M4.4 8.4h1.7l1.1-2.65 1.8 4.6 1.1-1.95h1.5"/></svg></span><span data-i="timeline"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2.75 2.75v10.5"/><g data-part="bars"><rect fill="currentColor" fill-opacity=".14" data-fill="" x="4.75" y="3.25" width="6.25" height="2.6" rx="1.3"/><rect fill="currentColor" fill-opacity=".14" data-fill="" x="6.75" y="6.7" width="6.5" height="2.6" rx="1.3"/><rect fill="currentColor" fill-opacity=".14" data-fill="" x="4.75" y="10.15" width="4.25" height="2.6" rx="1.3"/></g></svg></span><span data-i="products"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect fill="currentColor" fill-opacity=".14" data-fill="" x="2.75" y="2.75" width="4.25" height="4.25" rx="1.4"/><rect fill="currentColor" fill-opacity=".14" data-fill="" x="9" y="2.75" width="4.25" height="4.25" rx="1.4"/><rect fill="currentColor" fill-opacity=".14" data-fill="" x="2.75" y="9" width="4.25" height="4.25" rx="1.4"/><path data-part="plus" d="M11.1 9.1v4M9.1 11.1h4"/></svg></span><span data-i="who"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle fill="currentColor" fill-opacity=".14" data-fill="" cx="6.25" cy="5.75" r="2.5"/><path d="M2.5 13c.4-2.1 1.9-3.4 3.75-3.4S9.6 10.9 10 13"/><path data-part="plus" d="M10.4 3.6a2.3 2.3 0 0 1 0 4.3M11.6 9.9c1 .5 1.7 1.6 1.9 3.1"/></svg></span><span data-i="principles"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle fill="currentColor" fill-opacity=".14" data-fill="" cx="8" cy="8" r="5.75"/><path data-part="draw" pathLength="1" d="m5.6 8.1 1.65 1.65 3.15-3.3"/></svg></span><span data-i="pricing"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path fill="currentColor" fill-opacity=".14" data-fill="" d="M2.75 3.75a1 1 0 0 1 1-1h4.1l5.4 5.4a1 1 0 0 1 0 1.4l-3.7 3.7a1 1 0 0 1-1.4 0l-5.4-5.4Z"/><circle cx="5.9" cy="5.9" r=".9" fill="currentColor" stroke="none"/></svg></span><span data-i="about"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path fill="currentColor" fill-opacity=".14" data-fill="" d="M13.25 7.6c0 2.7-2.35 4.8-5.25 4.8-.72 0-1.4-.13-2.03-.37L3 13.2l.9-2.5A4.55 4.55 0 0 1 2.75 7.6c0-2.7 2.35-4.85 5.25-4.85s5.25 2.15 5.25 4.85Z"/><g data-part="dots" fill="currentColor" stroke="none"><circle cx="5.7" cy="7.65" r=".85"/><circle cx="8" cy="7.65" r=".85"/><circle cx="10.3" cy="7.65" r=".85"/></g></svg></span><span data-i="join"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="2.25" y="3.5" width="11.5" height="9" rx="1.75"/><path d="m2.75 4.5 5.25 4 5.25-4"/></svg></span>
+  <span data-i="top"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path fill="currentColor" fill-opacity=".14" data-fill="" d="M2.75 7.1 8 2.9l5.25 4.2v5.65a1 1 0 0 1-1 1H9.75V10.5h-3.5v3.25h-2.5a1 1 0 0 1-1-1Z"/></svg></span><span data-i="how"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle fill="currentColor" fill-opacity=".14" data-fill="" cx="8" cy="8" r="5.75"/><path d="m9.9 6.1-1.1 2.7-2.7 1.1 1.1-2.7Z"/></svg></span><span data-i="projects"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2.5 6.1V4.35A1.25 1.25 0 0 1 3.75 3.1h2.5l1.4 1.5h4.6A1.25 1.25 0 0 1 13.5 5.85v.25"/><path data-part="flap" fill="currentColor" fill-opacity=".14" data-fill="" d="M2.5 6.6h11v5.15a1.25 1.25 0 0 1-1.25 1.25h-8.5a1.25 1.25 0 0 1-1.25-1.25Z"/></svg></span><span data-i="tasks"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect fill="currentColor" fill-opacity=".14" data-fill="" x="2.75" y="2.75" width="10.5" height="10.5" rx="3"/><path data-part="draw" pathLength="1" d="m5.5 8.15 1.75 1.75L10.6 6.4"/></svg></span><span data-i="briefing"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect fill="currentColor" fill-opacity=".14" data-fill="" x="2.25" y="2.75" width="11.5" height="10.5" rx="2.75"/><path data-part="draw" pathLength="1" d="M4.4 8.4h1.7l1.1-2.65 1.8 4.6 1.1-1.95h1.5"/></svg></span><span data-i="timeline"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2.75 2.75v10.5"/><g data-part="bars"><rect fill="currentColor" fill-opacity=".14" data-fill="" x="4.75" y="3.25" width="6.25" height="2.6" rx="1.3"/><rect fill="currentColor" fill-opacity=".14" data-fill="" x="6.75" y="6.7" width="6.5" height="2.6" rx="1.3"/><rect fill="currentColor" fill-opacity=".14" data-fill="" x="4.75" y="10.15" width="4.25" height="2.6" rx="1.3"/></g></svg></span><span data-i="products"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect fill="currentColor" fill-opacity=".14" data-fill="" x="2.75" y="2.75" width="4.25" height="4.25" rx="1.4"/><rect fill="currentColor" fill-opacity=".14" data-fill="" x="9" y="2.75" width="4.25" height="4.25" rx="1.4"/><rect fill="currentColor" fill-opacity=".14" data-fill="" x="2.75" y="9" width="4.25" height="4.25" rx="1.4"/><path data-part="plus" d="M11.1 9.1v4M9.1 11.1h4"/></svg></span><span data-i="who"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle fill="currentColor" fill-opacity=".14" data-fill="" cx="6.25" cy="5.75" r="2.5"/><path d="M2.5 13c.4-2.1 1.9-3.4 3.75-3.4S9.6 10.9 10 13"/><path data-part="plus" d="M10.4 3.6a2.3 2.3 0 0 1 0 4.3M11.6 9.9c1 .5 1.7 1.6 1.9 3.1"/></svg></span><span data-i="principles"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle fill="currentColor" fill-opacity=".14" data-fill="" cx="8" cy="8" r="5.75"/><path data-part="draw" pathLength="1" d="m5.6 8.1 1.65 1.65 3.15-3.3"/></svg></span><span data-i="pricing"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path fill="currentColor" fill-opacity=".14" data-fill="" d="M2.75 3.75a1 1 0 0 1 1-1h4.1l5.4 5.4a1 1 0 0 1 0 1.4l-3.7 3.7a1 1 0 0 1-1.4 0l-5.4-5.4Z"/><circle cx="5.9" cy="5.9" r=".9" fill="currentColor" stroke="none"/></svg></span><span data-i="about"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path fill="currentColor" fill-opacity=".14" data-fill="" d="M13.25 7.6c0 2.7-2.35 4.8-5.25 4.8-.72 0-1.4-.13-2.03-.37L3 13.2l.9-2.5A4.55 4.55 0 0 1 2.75 7.6c0-2.7 2.35-4.85 5.25-4.85s5.25 2.15 5.25 4.85Z"/><g data-part="dots" fill="currentColor" stroke="none"><circle cx="5.7" cy="7.65" r=".85"/><circle cx="8" cy="7.65" r=".85"/><circle cx="10.3" cy="7.65" r=".85"/></g></svg></span><span data-i="join"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="2.25" y="3.5" width="11.5" height="9" rx="1.75"/><path d="m2.75 4.5 5.25 4 5.25-4"/></svg></span>
 </template>
 
 <script>
@@ -1260,8 +1322,8 @@ a.app1:hover { border-color: var(--v3-border-strong); background: var(--v3-hover
   /* the palette: search that actually jumps */
   const sections = [
     ["top", "Home", "The front page"], ["how", "How it works", "One line, from a note to the day"],
-    ["notes", "Notes", "How it works"], ["tasks", "Tasks", "How it works"], ["briefing", "Home briefing", "How it works"], ["timeline", "Timeline", "How it works"],
-    ["products", "Three products, one app", "Products"], ["who", "Who it's for", "For you"], ["principles", "Principles", "For you"],
+    ["projects", "Projects", "How it works"], ["tasks", "Tasks", "How it works"], ["briefing", "Home briefing", "How it works"], ["timeline", "Timeline", "How it works"],
+    ["products", "Apps and tools", "Notes, Files, Chat, Analytics"], ["who", "Who it's for", "For you"], ["principles", "Principles", "For you"],
     ["pricing", "Pricing", "For you"], ["about", "About", "From the founder"], ["join", "Join the waitlist", "Launching January 2027"],
   ];
   const iconOf = {}; $$("span", $("#palIcons").content).forEach((s) => (iconOf[s.dataset.i] = s.innerHTML));
@@ -1303,7 +1365,7 @@ a.app1:hover { border-color: var(--v3-border-strong); background: var(--v3-hover
 
   /* where you are: breadcrumb and sidebar follow the page, as in the app */
   const crumb = $("#crumb");
-  const navFor = { top: "top", how: "notes", notes: "notes", tasks: "tasks", briefing: "briefing", timeline: "timeline", products: "top", who: "who", principles: "principles", pricing: "pricing", about: "about", join: "top" };
+  const navFor = { top: "top", how: "projects", projects: "projects", tasks: "tasks", briefing: "briefing", timeline: "timeline", products: "products", who: "who", principles: "principles", pricing: "pricing", about: "about", join: "top" };
   const marks = $$("[data-sec], [data-chapter]");
   let lastKey = "";
   const whereAmI = () => {
@@ -1321,7 +1383,7 @@ a.app1:hover { border-color: var(--v3-border-strong); background: var(--v3-hover
   const chapters = $$("[data-chapter]");
   const num = $("#cdNum"), note = $("#cdNote"), small = $("#cdSmall"), bar = $("#cdBar"), stepRows = $$("#steps [data-step]");
   const tick = $("#tick"), tickRow = $("#tickRow"), tickPill = $("#tickPill");
-  const names2 = ["Notes", "Tasks", "Home", "Timeline"];
+  const names2 = ["Projects", "Tasks", "Home", "Timeline"];
   let chapter = -1;
   const setTick = (done) => {
     tick.dataset.s = done ? "done" : "prog";
