@@ -294,7 +294,7 @@ h1 .l { display: block; }
 .cur-dot { width: 6px; height: 6px; flex: none; border-radius: 999px; background: var(--v3-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--v3-accent) 22%, transparent); }
 .tile {
   width: 18px; height: 18px; flex: none; border-radius: 6px; display: inline-grid; place-items: center;
-  font-size: 10px; font-weight: 700; color: #fff; letter-spacing: 0; line-height: 1;
+  font-size: 7.5px; font-weight: 700; color: #fff; letter-spacing: 0; line-height: 1;
   background-image: linear-gradient(160deg, rgba(255,255,255,.3), rgba(255,255,255,0) 58%);
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.16), 0 1px 2px rgba(0,0,0,.25);
   text-shadow: 0 1px 1px rgba(0,0,0,.22);
@@ -665,6 +665,99 @@ button.st:hover { box-shadow: 0 0 0 3px var(--v3-hover); }
 .toast button:hover { background: var(--v3-hover); }
 </style>
 <style>
+/* ── Projects ─────────────────────────────────────────────── */
+.p-inner { max-width: 1180px; margin: 0 auto; padding: 28px 32px 48px; }
+.p-row { display: grid; grid-template-columns: minmax(0, 358px) minmax(0, 1fr); gap: 14px; }
+.pcard { border: 1px solid var(--v3-border); border-radius: var(--v3-radius-lg); background: var(--v3-surface); box-shadow: var(--v3-shadow-1); overflow: hidden; text-align: left; padding: 0; width: 100%; }
+.pcard[data-sel] { border: 2px solid var(--v3-accent); }
+.pc-top { display: flex; gap: 12px; padding: 16px 16px 0; align-items: flex-start; }
+.ptile { width: 36px; height: 36px; border-radius: 9px; font-size: 12.5px; letter-spacing: .04em; }
+.pc-n { font-size: 14px; font-weight: 600; }
+.pc-d { font-size: 12.5px; color: var(--v3-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.pc-prog { display: flex; justify-content: space-between; padding: 16px 16px 8px; font-size: 12.5px; color: var(--v3-text-2); }
+.pc-prog b { color: var(--v3-text); font-weight: 600; }
+.abar { height: 5px; border-radius: 999px; background: var(--v3-fill); overflow: hidden; margin: 0 16px 16px; }
+.abar i { display: block; height: 100%; background: var(--v3-accent); border-radius: 999px; }
+.pc-foot { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-top: 1px solid var(--v3-border); font-size: 12.5px; color: var(--v3-text-2); }
+.pc-foot > span { white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.pc-foot .late { color: var(--v3-danger-text); }
+.pc-foot .pill { margin-left: auto; }
+.pnew { background-color: transparent; font: inherit; display: flex; align-items: center; gap: 16px; padding: 20px 24px; border: 1px dashed var(--v3-border-strong); border-radius: var(--v3-radius-lg); background-image: radial-gradient(color-mix(in srgb, var(--v3-text) 10%, transparent) 1px, transparent 1px); background-size: 14px 14px; background-position: right; text-align: left; width: 100%; color: var(--v3-text); }
+.pnew .stat-ic { width: 36px; height: 36px; flex: none; }
+.pnew b { display: block; font-size: 14px; font-weight: 600; }
+.pnew span.s { display: block; font-size: 13px; color: var(--v3-text-2); margin-top: 2px; }
+.pnew .go { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; color: var(--v3-accent-text); font-size: 13px; font-weight: 600; flex: none; }
+.p-hr { height: 1px; background: var(--v3-border); margin: 32px 0 30px; }
+.p-ov { display: flex; gap: 14px; margin-top: 12px; }
+.p-ov .ptile { width: 44px; height: 44px; border-radius: 10px; font-size: 14px; flex: none; }
+.p-ov h3 { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+.p-ov p { font-size: 13.5px; color: var(--v3-text-2); margin-top: 6px; }
+.p-pills { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.p-pills .tp { height: 26px; }
+.p-pills .tp.ol { background: transparent; border: 1px solid var(--v3-border); }
+.p-pills .tp.ol b { color: var(--v3-text); }
+.p-tabs { margin-top: 20px; }
+.p-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 20px; margin-top: 20px; align-items: start; }
+.pg-big { display: flex; align-items: baseline; gap: 6px; padding: 0 16px; }
+.pg-big b { font-size: 40px; font-weight: 600; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+.pg-big span { font-size: 18px; color: var(--v3-text-2); }
+.pg-big em { font-style: normal; font-size: 13px; color: var(--v3-text-2); margin-left: 8px; }
+.pg-bar { height: 8px; margin: 16px 16px 14px; }
+.pg-cells { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0 16px 16px; border: 1px solid var(--v3-border); border-radius: 10px; }
+.pg-cells div { padding: 10px 14px; font-size: 12.5px; color: var(--v3-text-2); }
+.pg-cells div + div { border-left: 1px solid var(--v3-border); }
+.pg-cells b { display: block; font-size: 18px; font-weight: 600; color: var(--v3-text); margin-top: 2px; font-variant-numeric: tabular-nums; }
+.pg-cells .late b { color: var(--v3-danger-text); }
+.pg-foot { padding: 10px 16px; border-top: 1px solid var(--v3-border); background: var(--v3-sunken); font-size: 12.5px; color: var(--v3-text-2); }
+.mem { display: flex; align-items: center; gap: 12px; padding: 8px 16px; }
+.mem b { font-size: 13.5px; font-weight: 600; }
+.mem .own { font-size: 11px; font-weight: 500; padding: 1px 6px; border: 1px solid var(--v3-border); border-radius: 999px; color: var(--v3-text-2); margin-left: 6px; }
+.mem span.e { display: block; font-size: 12px; color: var(--v3-text-2); }
+.mem-inv { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-top: 1px solid var(--v3-border); font-size: 13px; font-weight: 500; }
+.mem-inv i { width: 28px; height: 28px; border-radius: 999px; border: 1px dashed var(--v3-border-strong); display: grid; place-items: center; color: var(--v3-text-3); }
+.dt { display: flex; justify-content: space-between; padding: 10px 16px; border-top: 1px solid var(--v3-border); font-size: 13px; color: var(--v3-text-2); }
+.dt b { color: var(--v3-text); font-weight: 500; }
+
+/* ── Apps and tools ───────────────────────────────────────── */
+.a-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.a-find { width: 320px; height: 40px; }
+.a-sec { margin-top: 28px; }
+.a-sec h3 { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+.a-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.a-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.acard { display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--v3-border); border-radius: var(--v3-radius-lg); background: var(--v3-surface); text-align: left; width: 100%; color: var(--v3-text); min-width: 0; transition: border-color 120ms var(--v3-ease), background-color 120ms var(--v3-ease); }
+button.acard:hover { border-color: var(--v3-border-strong); }
+.acard .ai { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; flex: none; color: #fff; }
+.acard .ai.soft { border: 1px solid color-mix(in srgb, var(--c) 30%, transparent); background: color-mix(in srgb, var(--c) 12%, transparent); color: var(--c); }
+.acard .atx { flex: 1; min-width: 0; }
+.acard b { display: block; font-size: 14px; font-weight: 600; }
+.acard span.s { display: block; font-size: 12.5px; color: var(--v3-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+.acard > svg { color: var(--v3-text-3); flex: none; }
+.acard.soon { background: var(--v3-sunken); }
+.acard.dash { border-style: dashed; background: transparent; }
+.acard[data-here] { border-color: var(--v3-accent); box-shadow: 0 0 0 1px var(--v3-accent); }
+
+@container main (max-width: 900px) { .a-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .p-grid { grid-template-columns: minmax(0, 1fr); } }
+@container main (max-width: 600px) {
+  .p-inner { padding: 20px 16px 40px; }
+  .p-row, .a-grid, .a-grid.two { grid-template-columns: minmax(0, 1fr); }
+  .pnew { padding: 16px; }
+  .pnew span.s, .a-find, .pc-foot .pill { display: none; }
+  .p-ov .ptile { width: 36px; height: 36px; }
+  .p-tabs { overflow-x: auto; max-width: 100%; }
+}
+
+/* flow: a project card inside the section */
+.f-proj { border: 1px solid var(--v3-border); border-radius: 10px; overflow: hidden; }
+.f-proj .pc-top { padding: 12px 12px 0; }
+.f-proj .pc-prog { padding: 12px 12px 6px; }
+.f-proj .abar { margin: 0 12px 12px; }
+.f-proj .pc-foot { padding: 9px 12px; }
+.f-share { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-top: 1px solid var(--v3-border); font-family: var(--mono); font-size: 11.5px; color: var(--v3-text-2); }
+.f-share span.u { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.f-share .pill { font-family: var(--font); }
+</style>
+<style>
 /* ── the app responds to its own width, like the real shell ── */
 @container stage (max-width: 1100px) {
   .sb { width: 60px; }
@@ -966,7 +1059,7 @@ footer { border-top: 1px solid var(--v3-border); padding: 44px 0 32px; font-size
           <p class="locked">Project management for the 80% <em>not</em> in tech.</p>
         </div>
         <div class="hero-side">
-          <p class="lede">Pick your kind of work below. The app fills in with jobs like yours, in the words you would use. Tick things off, drag cards along, send someone the timeline.</p>
+          <p class="lede">Projects, Tasks and Timeline in one calm app. Pick your kind of work below and it fills in with jobs like yours, in the words you would use. Tick things off, drag cards along, send someone the timeline.</p>
           <form class="form" data-waitlist novalidate>
             <div class="field">
               <label class="sr" for="em1">Email address</label>
@@ -1002,7 +1095,7 @@ footer { border-top: 1px solid var(--v3-border); padding: 44px 0 32px; font-size
           <div class="toast" id="toast" role="status" aria-live="polite"><span class="ok" aria-hidden="true"></span><span id="toastMsg"></span><button type="button" id="toastBtn"></button></div>
           <p class="sr" id="appLive" aria-live="polite"></p>
         </div>
-        <p class="stage-cap"><span><b>A working sample.</b> Every name in it is made up, and nothing you do here leaves this page.</span><span class="kinds">Try it: tick a task · drag a card · Share on Timeline</span></p>
+        <p class="stage-cap"><span><b>A working sample.</b> Every name in it is made up, and nothing you do here leaves this page.</span><span class="kinds">Try it: tick a task · drag a card · open Projects · Share on Timeline</span></p>
       </div>
     </div>
   </section>
@@ -1012,9 +1105,9 @@ footer { border-top: 1px solid var(--v3-border); padding: 44px 0 32px; font-size
       <div class="sec-top">
         <div>
           <p class="sec-l">How it fits together</p>
-          <h2 class="sec-h" id="how-h">One line, from your head to everyone's page.</h2>
+          <h2 class="sec-h" id="how-h">One project, from the first task to everyone's page.</h2>
         </div>
-        <p class="sec-p">Notes is where it starts. Tasks is where it gets done. Timeline is what everyone else sees. Nothing to set up in between.</p>
+        <p class="sec-p">A project holds the work. Tasks is where it gets done. Timeline is what everyone else sees. Nothing to set up in between.</p>
       </div>
       <div class="flow" id="flow"></div>
     </div>
@@ -1157,7 +1250,7 @@ footer { border-top: 1px solid var(--v3-border); padding: 44px 0 32px; font-size
       </div>
       <div>
         <h3>Products</h3>
-        <ul><li><a href="/notes">Notes</a></li><li><a href="/tasks">Tasks</a></li><li><a href="/timeline">Timeline</a></li></ul>
+        <ul><li><a href="/projects">Projects</a></li><li><a href="/tasks">Tasks</a></li><li><a href="/timeline">Timeline</a></li></ul>
       </div>
       <div>
         <h3>Pages</h3>
@@ -1295,7 +1388,7 @@ const WORLDS = [
     port: [
       ["Kavanagh wedding", "KW", 8, "risk", 40, 2, -120, 45, [-80, -40, 12, 25, 38]],
       ["The Orchard, events", "TO", 7, "track", 38, 1, -200, 96, [-120, -60, -20, 10, 40, 70]],
-      ["Mara & Finn", "MF", 2, "track", 55, 0, -190, 236, [-140, -60, -20, 4, 18]],
+      ["Mara & Finn", "MF", 8, "track", 55, 0, -190, 236, [-140, -60, -20, 4, 18]],
       ["Open day, spring", "OD", 3, "none", 10, 0, 20, 150, [60, 150]],
       ["Harvest supper club", "HS", 6, "paused", 30, 0, -90, 40, [-50]],
     ],
@@ -1562,6 +1655,8 @@ const task = (id) => st().tasks.find((t) => t.id === id);
 const open = (t) => t.lane !== "done";
 const mine = (t) => t.who === 0;
 const hue = (h) => `var(--p${h})`;
+/* One source for a project's tile letters, used on every screen and in every size. */
+const initials = (n) => n.split(/[\s,]+/).filter((w) => /^[A-Za-z0-9\u00C0-\u024F]/.test(w)).slice(0, 2).map((w) => w[0].toUpperCase()).join("");
 
 const win = $("#win"), sb = $("#sb"), content = $("#content"), viewEl = $("#view"), layer = $("#layer"), scrim = $("#scrim");
 const isPhone = () => $("#stage").clientWidth < 720;
@@ -1619,7 +1714,7 @@ function renderSb() {
     const b = id === "chat" && chatBadge() ? `<span class="badge" aria-label="${chatBadge()} unread">${chatBadge()}</span>` : "";
     return `<button type="button" class="it" data-nav="${id}" ${cur === id ? 'aria-current="page"' : ""}>${I[ic]}<span class="lbl">${label}</span>${b}</button>`;
   }).join("")).join("");
-  const projects = w.projects.map((p, i) => `<button type="button" class="it" data-nav="tasks" ${i === 0 ? "data-current-project" : ""}>${tileEl(p[1], p[2])}<span class="lbl" ${i === 0 ? 'style="color:var(--v3-text)"' : ""}>${esc(p[0])}</span>${i === 0 ? `<span class="cur-dot" aria-hidden="true"></span><span class="cnt">${openCount}</span>` : ""}</button>`).join("");
+  const projects = w.projects.map((p, i) => `<button type="button" class="it" data-nav="tasks" ${i === 0 ? "data-current-project" : ""}>${tileEl(initials(p[0]), p[2])}<span class="lbl" ${i === 0 ? 'style="color:var(--v3-text)"' : ""}>${esc(p[0])}</span>${i === 0 ? `<span class="cur-dot" aria-hidden="true"></span><span class="cnt">${openCount}</span>` : ""}</button>`).join("");
   const channels = w.channels.map((c, i) => {
     const n = i === 0 && s.chRead ? 0 : c[2];
     return `<button type="button" class="it ${n ? "" : "read"}" data-nav="chat" ${n ? "data-unread" : ""}>${I[c[1]]}<span class="lbl">${esc(c[0])}</span>${n ? `<span class="badge">${n}</span>` : ""}</button>`;
@@ -1761,7 +1856,7 @@ function vTasks() {
       }).join("")}</div></div>`;
   }
   return `<div class="t-inner">
-    <div class="t-proj">${tileEl(world.tile, world.hue)}<span class="t-proj-n" data-swap>${esc(world.org)}</span>
+    <div class="t-proj">${tileEl(initials(world.org), world.hue)}<span class="t-proj-n" data-swap>${esc(world.org)}</span>
       <div class="t-proj-r"><span class="stack" data-swap>${world.team.slice(0, 3).map((p) => pav(p, 24)).join("")}</span><button class="btn btn-ghost" type="button" data-act="share">${I.share}Share</button><button class="icon-btn more" type="button" aria-label="More options" data-act="more">${I.dots}</button><button class="btn btn-primary" type="button" data-act="newtask">${I.plus}New task</button></div></div>
     <h2 class="t-title">Tasks</h2>
     <div class="t-stats" data-swap>
@@ -1813,7 +1908,7 @@ function tlRow(p) {
   const dias = ms.filter((o) => o >= a && o <= b).map((o) => `<span class="dia" data-k="${o < 0 ? "done" : o === next ? "next" : "later"}" style="left:${x(o)}%" title="${fd(o)}"></span>`).join("");
   const endLbl = end <= b && end >= a ? `<span class="g-end" style="left:${x(end)}%">${s === "paused" ? "Paused" : fd(end) + " · " + pct + "%"}</span>` : "";
   const lines = ticks(a, b).map(([o]) => `<span class="g-month" style="left:${x(o)}%"></span>`).join("");
-  return `<div class="g-row g-proj"><div class="g-l">${tileEl(ini, h)}<div style="min-width:0"><p class="g-n">${esc(name)}</p><p class="g-s" ${s === "risk" ? 'data-tone="danger"' : ""}>${statusLine}</p></div></div>
+  return `<div class="g-row g-proj"><div class="g-l">${tileEl(initials(name), h)}<div style="min-width:0"><p class="g-n">${esc(name)}</p><p class="g-s" ${s === "risk" ? 'data-tone="danger"' : ""}>${statusLine}</p></div></div>
     <div class="g-r">${lines}<span class="g-today" style="left:${x(0)}%"></span><span class="g-bar" data-s="${s}" style="--tc:${col};left:${x(start)}%;width:${x(end) - x(start)}%">${s === "track" || s === "risk" ? `<i style="width:${pct}%"></i>` : ""}</span>${dias}${endLbl}</div></div>`;
 }
 function vTimeline() {
@@ -1866,7 +1961,7 @@ function msgHTML(m) {
 function vChat() {
   const s = st();
   return `<div class="c-wrap">
-    <div class="c-head"><div class="c-top">${tileEl(world.tile, world.hue)}<span class="c-name" data-swap># ${esc(world.channels[0][0])}</span><span class="stack" data-swap>${world.team.slice(1).map((p) => pav(p, 24)).join("")}</span></div>
+    <div class="c-head"><div class="c-top">${tileEl(initials(world.channels[0][0]), (world.port.find((r) => r[0] === world.channels[0][0]) || [0, 0, world.hue])[2])}<span class="c-name" data-swap># ${esc(world.channels[0][0])}</span><span class="stack" data-swap>${world.team.slice(1).map((p) => pav(p, 24)).join("")}</span></div>
       <div class="c-tabs"><span aria-current="page">Chat</span><span>Details</span></div></div>
     <div class="c-log" id="clog" data-swap><div class="c-day"><span>Today</span></div>${s.msgs.map(msgHTML).join("")}</div>
     <form class="c-comp" id="cform"><label class="sr" for="cin">Message</label><input id="cin" autocomplete="off" placeholder="Write to #${esc(world.channels[0][0])}, press '@' to mention someone">
@@ -1892,13 +1987,88 @@ function vNotes() {
   </div>`;
 }
 function vPlaceholder() {
-  const icons = { inbox: I.inbox, projects: I.projects, files: I.files, overview: I.pulse, analytics: I.analytics, settings: I.settings, help: I.help };
-  return `<div class="ph"><span class="stat-ic" data-tone="neutral">${icons[view] || I.apps}</span><h2 class="h-title" style="font-size:20px;margin:0">${TITLES[view]}</h2><p>${TITLES[view]} is part of the full app. This sample covers Home, My tasks, Tasks, Timeline, Chat and Notes.</p><button class="btn btn-secondary" type="button" data-nav="home">Back to Home</button></div>`;
+  const icons = { inbox: I.inbox, files: I.files, overview: I.pulse, analytics: I.analytics, settings: I.settings, help: I.help };
+  return `<div class="ph"><span class="stat-ic" data-tone="neutral">${icons[view] || I.apps}</span><h2 class="h-title" style="font-size:20px;margin:0">${TITLES[view]}</h2><p>${TITLES[view]} is part of the full app. This sample covers Home, My tasks, Projects, Tasks, Timeline, Chat and Apps and tools.</p><button class="btn btn-secondary" type="button" data-nav="home">Back to Home</button></div>`;
+}
+
+
+/* ───────── Projects (the first of the three products) ───────── */
+const DESC = {
+  venue: "Run Mara & Finn's wedding from one place, with every supplier, date and decision accounted for.",
+  planner: "The Harbour Lights gala for 180 guests, from sponsors and seating to the night itself.",
+  trades: "Every job on the go: the Ranelagh kitchen, the Clontarf stairs and the deck in Bray.",
+  agency: "A class-booking app for Kiln Pottery Dublin, from first screens to launch day.",
+  freelancer: "The heron cover for Little Island Press, the café mural and the money side.",
+  teacher: "Transition Year's study of the River Dargle, from permission slips to presentations.",
+  student: "The final-year hydrology report and the group presentation that goes with it.",
+};
+function projInfo() {
+  const s = st(), all = s.tasks, done = all.filter((t) => t.lane === "done").length;
+  const row = world.port.find((r) => r[0] === world.org);
+  const target = row ? row[7] : world.pub.ms[world.pub.ms.length - 1][1];
+  const status = row ? row[3] : "track";
+  const openN = all.filter(open).length;
+  const late = all.filter((t) => open(t) && t.due != null && t.due < 0).length;
+  const nodate = all.filter((t) => open(t) && t.due == null).length;
+  return { all: all.length, done, pct: Math.round((done / all.length) * 100), target, status, openN, late, nodate, row };
+}
+const statusPill = (s) => s === "risk" ? '<span class="pill" data-tone="warning">At risk</span>' : s === "paused" ? '<span class="pill">Paused</span>' : '<span class="pill" data-tone="success"><span class="d" style="width:6px;height:6px;border-radius:9px;background:currentColor;margin-right:6px"></span>On track</span>';
+function projCard(sel, tag = "button") {
+  const p = projInfo();
+  return `<${tag} ${tag === "button" ? 'type="button" data-nav="tasks"' : ""} class="pcard" ${sel ? "data-sel" : ""}>
+    <div class="pc-top">${tileEl(initials(world.org), world.hue, "ptile")}<div style="flex:1;min-width:0"><p class="pc-n">${esc(world.org)}</p><p class="pc-d">${esc(DESC[world.id])}</p></div>${statusPill(p.status)}</div>
+    <div class="pc-prog"><span>${p.done} of ${p.all} tasks done</span><b>${p.pct}%</b></div>
+    <div class="abar" aria-hidden="true"><i style="width:${p.pct}%"></i></div>
+    <div class="pc-foot"><span>${I.cal}${fd(p.target)}</span><span>${stEl("todo")}${p.openN} open${p.late ? `<span class="late">&nbsp;· ${p.late} overdue</span>` : ""}</span>${sel ? '<span class="pill" data-tone="review">Viewing</span>' : ""}</div>
+  </${tag}>`;
+}
+function vProjects() {
+  const p = projInfo();
+  const n = world.projects.length;
+  const dom = world.org.split(",")[0].toLowerCase().replace(/[^a-z]/g, "") + ".example";
+  return `<div class="p-inner">
+    <div class="h-head"><div><h2 class="h-title">Projects</h2><p class="h-sub" data-swap>${n} active projects. The first one's overview is below.</p></div>
+      <div class="h-actions"><button class="btn btn-primary" type="button" data-act="newproject">${I.plus}New project</button></div></div>
+    <div class="p-row" data-swap>${projCard(true)}
+      <button type="button" class="pnew" data-act="newproject"><span class="stat-ic" data-tone="accent">${I.plus}</span><span><b>New project</b><span class="s">Give it a name. Its tasks, notes and timeline stay together.</span></span><span class="go">Start ${I.arrowRight}</span></button></div>
+    <div class="p-hr"></div>
+    <p class="eyebrow">Project overview</p>
+    <div class="p-ov" data-swap>${tileEl(initials(world.org), world.hue, "ptile")}<div><h3>${esc(world.org)}</h3><p>${esc(DESC[world.id])}</p>
+      <div class="p-pills">${statusPill(p.status)}<span class="tp ol">${I.calM}Target <b>${fd(p.target)}</b></span></div></div></div>
+    <div class="segv p-tabs" role="group" aria-label="Project views"><button type="button" aria-pressed="true">${I.overview}Overview</button><button type="button" data-nav="tasks" aria-pressed="false">${I.tasks}Tasks</button><button type="button" data-nav="timeline" aria-pressed="false">${I.timeline}Timeline</button><button type="button" data-nav="notes" aria-pressed="false">${I.notes}Notes</button></div>
+    <div class="p-grid" data-swap>
+      <section class="card" aria-labelledby="pgh"><div class="card-head"><h3 class="card-title" id="pgh">Progress</h3><span class="card-count">${p.done} of ${p.all} tasks</span></div>
+        <div class="pg-big"><b>${p.pct}</b><span>%</span><em>done</em></div>
+        <div class="abar pg-bar" aria-hidden="true"><i style="width:${p.pct}%"></i></div>
+        <div class="pg-cells"><div>Open<b>${p.openN}</b></div><div class="${p.late ? "late" : ""}">Overdue<b>${p.late}</b></div><div>No date<b>${p.nodate}</b></div></div>
+        <p class="pg-foot">Progress is counted from tasks. Status is what the owner says it is.</p></section>
+      <div class="col-stack">
+        <section class="card" aria-labelledby="tmh"><div class="card-head"><h3 class="card-title" id="tmh">Team <span class="card-count">${world.team.length}</span></h3></div>
+          ${world.team.map((m, i) => `<div class="mem">${pav(m, 32)}<div style="min-width:0"><b>${esc(first(m[0]))}</b>${i === 0 ? '<span class="own">Owner</span>' : ""}<span class="e">${esc(first(m[0]).toLowerCase().normalize("NFD").replace(/[^a-z]/g, ""))}@${dom}</span></div></div>`).join("")}
+          <div class="mem-inv"><i>${I.plus}</i>Invite a team member</div></section>
+        <section class="card" aria-labelledby="dth"><div class="card-head"><h3 class="card-title" id="dth">Details</h3></div>
+          <div class="dt"><span>Owner</span><b>${esc(first(me()[0]))}</b></div><div class="dt"><span>Target</span><b>${fd(p.target)}</b></div><div class="dt"><span>Shared timeline</span><b>${st().shared ? "Public link on" : "Off"}</b></div></section>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ───────── Apps and tools (Notes lives here, as one tool) ───────── */
+function vApps() {
+  const mine = [["tasks", "Tasks", "Plan and track work together", I.tasks, 1], ["timeline", "Timeline", "Dates and the run of the day", I.timeline, 3], ["notes", "Notes", "Catch a thought before it goes", I.notes, 5], ["files", "Files", "Every file in one place", I.files, 2], ["analytics", "Analytics", "See how the work is going", I.analytics, 4], ["chat", "Chat", "Talk with your team", I.chat, 8], ["projects", "Projects", "Every project you are part of", I.projects, 6]];
+  const soon = [["Wedding planner", "Guests, suppliers, the day", 8], ["Student hub", "Deadlines and group work", 2], ["Teacher toolkit", "Lessons and classes", 3], ["Process map", "Map how work flows", 3], ["Whiteboard", "A canvas for rough ideas", 5], ["Docs", "Long writing, beside tasks", 1], ["Forms", "Answers arrive as tasks", 6]];
+  return `<div class="p-inner">
+    <div class="a-head"><div><h2 class="h-title">Apps and tools</h2><p class="h-sub">Everything in Signal Studio, and what we are building next.</p></div>
+      <span class="t-find a-find" aria-hidden="true">${I.search}<span style="flex:1;font-size:14px">Find an app or tool</span><kbd class="kbd">/</kbd></span></div>
+    <div class="a-sec"><h3>Your apps</h3><div class="a-grid">${mine.map(([v, n, d, ic, h]) => `<button type="button" class="acard" data-nav="${v}" ${v === "notes" ? "data-here" : ""}><span class="ai" style="background:${hue(h)}">${ic}</span><span class="atx"><b>${n}</b><span class="s">${d}</span></span></button>`).join("")}</div></div>
+    <div class="a-sec"><h3>Works with</h3><div class="a-grid two">${[["Google Drive", "Keep project files in your Drive", I.files], ["Google Sheets", "Tables that update from your tasks", I.overview]].map(([n, d, ic]) => `<div class="acard soon"><span class="ai soft" style="--c:var(--v3-text-2)">${ic}</span><span class="atx"><b>${n}</b><span class="s">${d}</span></span><span class="pill">Coming soon</span></div>`).join("")}</div></div>
+    <div class="a-sec"><h3>Coming soon</h3><div class="a-grid">${soon.map(([n, d, h]) => `<div class="acard"><span class="ai soft" style="--c:${hue(h)}">${I.apps}</span><span class="atx"><b>${n}</b><span class="s">${d}</span></span>${I.chevronRight}</div>`).join("")}<div class="acard dash"><span class="ai soft" style="--c:var(--v3-text-2)">${I.plus}</span><span class="atx"><b>Missing something?</b><span class="s">Tell us what you need</span></span></div></div></div>
+  </div>`;
 }
 
 /* ───────── render ───────── */
 function renderView() {
-  const map = { home: vHome, mytasks: vMy, tasks: vTasks, timeline: vTimeline, chat: vChat, notes: vNotes };
+  const map = { home: vHome, mytasks: vMy, projects: vProjects, tasks: vTasks, timeline: vTimeline, chat: vChat, apps: vApps, notes: vNotes };
   viewEl.dataset.v = view;
   viewEl.style.height = view === "chat" || view === "notes" ? "100%" : "";
   viewEl.innerHTML = (map[view] || vPlaceholder)();
@@ -1907,7 +2077,6 @@ function renderView() {
 function renderAll() { renderSb(); renderTop(); renderView(); renderFlow(); renderPub(); }
 
 function go(v, focus) {
-  if (v === "apps") v = "notes";
   if (v === "chat") st().chRead = true;
   closeLayer(); closeDrawer();
   view = v;
@@ -1920,42 +2089,44 @@ function go(v, focus) {
 
 /* ───────── page sections that follow the chosen world ───────── */
 function renderFlow() {
-  const s = st(), n = world.notes, line = s.lines[n.key];
-  const sentTask = s.tasks.find((t) => t.fromNote);
-  const t = sentTask || { id: "preview", t: n.task, lane: "todo", due: off(n.due), tag: n.tag, hi: false, who: 0, c: 0 };
-  const p = world.port.find((r) => r[0] === world.pub.title) || world.port.find((r) => r[3] === "track") || world.port[0];
+  const s = st();
+  if (!s.flowId) { const c = s.tasks.filter((t) => mine(t) && open(t) && t.due != null && t.due >= 0).sort(byUrgency)[0] || s.tasks.find(open); s.flowId = c.id; }
+  const t = task(s.flowId);
+  const p = world.port.find((r) => r[0] === world.org) || world.port.find((r) => r[3] === "track") || world.port[0];
   const nextMs = world.pub.ms.find((m) => m[1] >= 0);
   const [a, b] = [Math.min(p[6], -30), Math.max(p[7], 60)];
   const x = (o) => ((Math.max(a, Math.min(b, o)) - a) / (b - a)) * 100;
   const next = p[8].find((o) => o >= 0);
   $("#flow").innerHTML = `
     <div class="fstep">
-      <section class="card" aria-label="Notes">
-        <div class="card-head"><span class="card-title"><span class="f-ic" style="background:var(--p5);color:#fff">${I.notes}</span>Notes</span><span class="f-meta">Private to you</span></div>
-        <div class="f-body" data-swap><p class="f-note-t">${esc(n.title)}</p>${s.lines.map((l, i) => lineHTML(l, i, "flow")).join("")}</div>
+      <section class="card" aria-label="Projects">
+        <div class="card-head"><span class="card-title"><span class="f-ic" style="background:var(--p6);color:#fff">${I.projects}</span>Projects</span><span class="f-meta">Holds the work</span></div>
+        <div class="f-body" data-swap><div class="f-proj">${projCard(false, "div")}</div></div>
       </section>
-      <div class="fcap"><span class="n">01</span><p><b>Write it down.</b> Before it slips away. It stays private until you send a line on.</p></div>
+      <div class="fcap"><span class="n">01</span><p><b>Start a project.</b> One place for the job: its tasks, its people, its dates.</p></div>
     </div>
     <div class="conn" aria-hidden="true">${I.arrowRight}</div>
     <div class="fstep">
       <section class="card" aria-label="Tasks">
         <div class="card-head"><span class="card-title"><span class="f-ic" style="background:var(--p1);color:#fff">${I.tasks}</span>Tasks</span><span class="f-meta" data-swap>${esc(world.org)}</span></div>
-        <div class="f-body" data-swap><div class="fcol"><div class="colm-h">${stEl("todo")}<b>To do</b><span class="card-count">${sentTask ? 1 : 0}</span></div>
-          ${line.sent ? `<div class="cards">${card(t).replace('tabindex="0"', "")}</div>` : `<p class="f-wait">Send the line on and it lands here as a job, with a person and a day.</p>`}</div></div>
+        <div class="f-body" data-swap><div class="fcol"><div class="colm-h">${stEl(t.lane)}<b>${laneName(t.lane)}</b><span class="card-count">${s.tasks.filter((k) => k.lane === t.lane).length}</span></div>
+          <div class="cards">${card(t).replace('tabindex="0"', "")}</div></div>
+          <p class="f-meta" style="margin-top:10px">Try it: tick the ring.</p></div>
       </section>
-      <div class="fcap"><span class="n">02</span><p><b>Give it a person and a day.</b> The line becomes a job. Tick it when it's done.</p></div>
+      <div class="fcap"><span class="n">02</span><p><b>Give each task a person and a day.</b> Tick it when it's done. Everyone can see who has what.</p></div>
     </div>
     <div class="conn" aria-hidden="true">${I.arrowRight}</div>
     <div class="fstep">
       <section class="card" aria-label="Timeline">
         <div class="card-head"><span class="card-title"><span class="f-ic" style="background:var(--p3);color:#fff">${I.timeline}</span>Timeline</span><span class="f-meta">Shared</span></div>
         <div class="f-body" data-swap><div class="f-tl">
-          <div class="f-tl-row">${tileEl(p[1], p[2])}<div style="min-width:0"><p class="g-n" style="font-size:13.5px">${esc(p[0])}</p><p class="g-s">${p[3] === "risk" ? "At risk" : "On track"} · ${p[4]}%</p></div></div>
+          <div class="f-tl-row">${tileEl(initials(p[0]), p[2])}<div style="min-width:0"><p class="g-n" style="font-size:13.5px">${esc(p[0])}</p><p class="g-s">${p[3] === "risk" ? "At risk" : "On track"} · ${p[4]}%</p></div></div>
           <div class="f-tl-track"><span class="g-bar" data-s="${p[3]}" style="--tc:${p[3] === "risk" ? "var(--v3-warning)" : "var(--v3-success)"};left:${x(p[6])}%;width:${x(p[7]) - x(p[6])}%"><i style="width:${p[4]}%"></i></span>${p[8].map((o) => `<span class="dia" data-k="${o < 0 ? "done" : o === next ? "next" : "later"}" style="left:${x(o)}%"></span>`).join("")}<span class="g-today" style="left:${x(0)}%;top:6px;bottom:6px"></span></div>
           <div class="f-tl-foot">${nextMs ? `Next: <b>${esc(nextMs[0])}</b> · ${inText(nextMs[1])}` : "Finished"}</div>
+          <div class="f-share">${I.link}<span class="u">signalstudio.ie/t/${world.pub.slug}</span><span class="pill" data-tone="success">No account needed</span></div>
         </div></div>
       </section>
-      <div class="fcap"><span class="n">03</span><p><b>Everyone sees where it stands.</b> One page, in plain words, for the people who keep asking.</p></div>
+      <div class="fcap"><span class="n">03</span><p><b>Everyone sees where it stands.</b> Send the timeline as one link. They open it on any phone, no account needed.</p></div>
     </div>`;
 }
 function renderPub() {
@@ -2228,12 +2399,13 @@ win.addEventListener("click", (e) => {
   if (a === "drawer") return win.hasAttribute("data-drawer") ? closeDrawer() : openDrawer();
   if (a === "drawer-close") return closeDrawer();
   if (a === "newtask") return openQuickAdd();
+  if (a === "newproject") { toast("New projects open with the full app in January"); return; }
   if (a === "new") return openMenu(act, "Create", [
     { label: "New task", icon: I.tasks, hint: isPhone() ? "" : "C", act: () => openQuickAdd() },
-    { label: "New note", icon: I.notes, act: () => { go("notes"); setTimeout(() => $("#nadd") && $("#nadd").focus(), 60); } },
+    { label: "New project", icon: I.projects, act: () => go("projects", true) },
     { label: "New message", icon: I.chat, act: () => { go("chat"); setTimeout(() => $("#cin") && $("#cin").focus(), 60); } },
   ]);
-  if (a === "search") return openMenu(act, "Jump to", [["home", "Home", I.home], ["mytasks", "My tasks", I.myTasks], ["tasks", "Tasks", I.tasks], ["timeline", "Timeline", I.timeline], ["chat", "Chat", I.chat], ["notes", "Notes", I.notes]].map(([v, l, ic]) => ({ label: l, icon: ic, act: () => go(v, true) })));
+  if (a === "search") return openMenu(act, "Jump to", [["home", "Home", I.home], ["mytasks", "My tasks", I.myTasks], ["tasks", "Tasks", I.tasks], ["projects", "Projects", I.projects], ["timeline", "Timeline", I.timeline], ["chat", "Chat", I.chat], ["apps", "Apps and tools", I.apps]].map(([v, l, ic]) => ({ label: l, icon: ic, act: () => go(v, true) })));
   if (a === "bell") return openMenu(act, "Notifications", [
     { label: `${first(world.team[1][0])} mentioned you in Chat`, icon: I.chat, act: () => go("chat", true) },
     { label: `${kpis().late} overdue in ${world.org}`, icon: I.alert, act: () => go("mytasks", true) },
@@ -2288,8 +2460,8 @@ document.addEventListener("click", (e) => { if (layer.children.length && !win.co
 
 /* the flow section shares the same state */
 $("#flow").addEventListener("click", (e) => {
-  const b = e.target.closest("[data-send]");
-  if (b) { sendLine(+b.dataset.send); const chip = $("#flow .f-line[data-key] .chip"); chip && chip.setAttribute("tabindex", "-1"); }
+  const b = e.target.closest("[data-tick]");
+  if (b) { tick(b.dataset.tick); setTimeout(() => { const k = $(`#flow [data-tick="${b.dataset.tick}"]`); k && k.focus({ preventScroll: true }); }, 900); }
 });
 
 /* ───────── the work switcher: the one orchestrated moment ───────── */
