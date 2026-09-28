@@ -1,0 +1,1288 @@
+<title>The Way to the Day</title>
+<meta name="description" content="Project management for the 80% not in tech. Notes, Tasks and Timeline: one calm system for people with work to manage, not software to manage.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* ─────────────────────────────────────────────────────────────
+   Concept A · The way to the day
+   One line, from first thought to the finished day.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  color-scheme: light;
+  --canvas: #f5f4f1;
+  --surface: #ffffff;
+  --sunken: #f8f7f5;
+  --fill: #f1f0ee;
+  --col: rgba(24, 20, 14, 0.035);
+  --border: #e8e6e3;
+  --border-strong: #d9d6d1;
+  --hair: rgba(24, 20, 14, 0.1);
+  --text: #141414;
+  --text-2: #46443f;
+  --text-3: #5f5c56;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-soft: rgba(79, 70, 229, 0.1);
+  --accent-text: #4f46e5;
+  --on-accent: #ffffff;
+  --rose: #be185d;
+  --rose-soft: rgba(190, 24, 93, 0.08);
+  --teal: #0f766e;
+  --amber: #b45309;
+  --blue: #2563eb;
+  --orange: #c2410c;
+  --danger-text: #ac272c;
+  --danger-soft: rgba(205, 43, 49, 0.1);
+  --control: #898783;
+  --shadow-1: 0 1px 2px rgba(20, 18, 14, 0.06);
+  --shadow-pop: 0 18px 40px -14px rgba(20, 18, 14, 0.18), 0 2px 6px rgba(20, 18, 14, 0.04), 0 0 0 1px var(--border);
+  --shadow-lift: 0 26px 50px -14px rgba(20, 18, 14, 0.3), 0 0 0 1px var(--border-strong);
+  --panel: rgba(255, 255, 255, 0.46);
+  --panel-line: rgba(24, 20, 14, 0.07);
+  --dawn-a: #e6eaf1;
+  --dawn-b: #f5eee6;
+  --day-a: #f6f5f2;
+  --day-b: #f2f0eb;
+  --gold-a: #f7efe3;
+  --gold-b: #f1d8b4;
+  --sun: rgba(255, 184, 96, 0.42);
+  --dawn-sun: rgba(255, 214, 178, 0.55);
+  --paper: #fbf8f3;
+  --paper-ink: #1f1714;
+  --paper-2: #62544e;
+  --paper-line: #e6dccf;
+  --bezel: #141414;
+  --chat: #ece7df;
+  --bubble: #ffffff;
+  --btn: #141414;
+  --on-btn: #ffffff;
+  --field: #ffffff;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --serif: "Instrument Serif", "Iowan Old Style", "Palatino Linotype", Georgia, "Times New Roman", serif;
+  --gutter: clamp(16px, 4.4vw, 64px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --canvas: #111113;
+    --surface: #1b1b1e;
+    --sunken: #151517;
+    --fill: rgba(255, 255, 255, 0.06);
+    --col: rgba(255, 255, 255, 0.03);
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.14);
+    --hair: rgba(255, 255, 255, 0.1);
+    --text: #ededef;
+    --text-2: #b9b9c0;
+    --text-3: #92929a;
+    --accent: #8b87f8;
+    --accent-hover: #a3a0fa;
+    --accent-soft: rgba(139, 135, 248, 0.16);
+    --accent-text: #a6a2fa;
+    --on-accent: #0e0e12;
+    --rose: #f06fa6;
+    --rose-soft: rgba(240, 111, 166, 0.12);
+    --teal: #3cc2b3;
+    --amber: #f0a650;
+    --blue: #6ea8fe;
+    --orange: #f08a57;
+    --danger-text: #f07d82;
+    --danger-soft: rgba(240, 100, 106, 0.16);
+    --control: #75757c;
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-pop: 0 22px 48px -16px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--border);
+    --shadow-lift: 0 30px 60px -14px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--border-strong);
+    --panel: rgba(30, 30, 34, 0.42);
+    --panel-line: rgba(255, 255, 255, 0.06);
+    --dawn-a: #0b0d14;
+    --dawn-b: #151621;
+    --day-a: #121214;
+    --day-b: #141416;
+    --gold-a: #141110;
+    --gold-b: #2a1b0f;
+    --sun: rgba(236, 146, 62, 0.26);
+    --dawn-sun: rgba(120, 130, 190, 0.16);
+    --paper: #1e1a17;
+    --paper-ink: #f1e9e1;
+    --paper-2: #b7a99f;
+    --paper-line: rgba(255, 240, 225, 0.1);
+    --bezel: #000000;
+    --chat: #1a1a1d;
+    --bubble: #26262a;
+    --btn: #ededef;
+    --on-btn: #111113;
+    --field: #1b1b1e;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --canvas: #111113;
+  --surface: #1b1b1e;
+  --sunken: #151517;
+  --fill: rgba(255, 255, 255, 0.06);
+  --col: rgba(255, 255, 255, 0.03);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --hair: rgba(255, 255, 255, 0.1);
+  --text: #ededef;
+  --text-2: #b9b9c0;
+  --text-3: #92929a;
+  --accent: #8b87f8;
+  --accent-hover: #a3a0fa;
+  --accent-soft: rgba(139, 135, 248, 0.16);
+  --accent-text: #a6a2fa;
+  --on-accent: #0e0e12;
+  --rose: #f06fa6;
+  --rose-soft: rgba(240, 111, 166, 0.12);
+  --teal: #3cc2b3;
+  --amber: #f0a650;
+  --blue: #6ea8fe;
+  --orange: #f08a57;
+  --danger-text: #f07d82;
+  --danger-soft: rgba(240, 100, 106, 0.16);
+  --control: #75757c;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-pop: 0 22px 48px -16px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--border);
+  --shadow-lift: 0 30px 60px -14px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--border-strong);
+  --panel: rgba(30, 30, 34, 0.42);
+  --panel-line: rgba(255, 255, 255, 0.06);
+  --dawn-a: #0b0d14;
+  --dawn-b: #151621;
+  --day-a: #121214;
+  --day-b: #141416;
+  --gold-a: #141110;
+  --gold-b: #2a1b0f;
+  --sun: rgba(236, 146, 62, 0.26);
+  --dawn-sun: rgba(120, 130, 190, 0.16);
+  --paper: #1e1a17;
+  --paper-ink: #f1e9e1;
+  --paper-2: #b7a99f;
+  --paper-line: rgba(255, 240, 225, 0.1);
+  --bezel: #000000;
+  --chat: #1a1a1d;
+  --bubble: #26262a;
+  --btn: #ededef;
+  --on-btn: #111113;
+  --field: #1b1b1e;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+}
+h1, h2, h3, p, ol, ul, figure { margin: 0; }
+ol, ul { padding: 0; list-style: none; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+.vh { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.skip { position: absolute; left: 16px; top: -60px; z-index: 50; background: var(--btn); color: var(--on-btn); padding: 10px 14px; border-radius: 10px; text-decoration: none; font-weight: 500; }
+.skip:focus { top: 12px; }
+.wrap { width: 100%; max-width: 1360px; margin: 0 auto; padding-inline: var(--gutter); }
+.mono { font-family: var(--mono); }
+svg.i { width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── Sky: the light across the story ─────────────────────────── */
+.sky { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+.sky i { position: absolute; inset: 0; will-change: opacity; }
+.sky-day { background: linear-gradient(180deg, var(--day-a), var(--day-b)); }
+.sky-dawn {
+  background:
+    radial-gradient(120% 70% at 78% 108%, var(--dawn-sun), transparent 60%),
+    linear-gradient(180deg, var(--dawn-a) 0%, var(--dawn-b) 100%);
+}
+.sky-gold { opacity: 0; background: linear-gradient(180deg, var(--gold-a) 0%, var(--gold-b) 100%); }
+.sky-sun {
+  opacity: 0;
+  background: radial-gradient(70% 55% at 70% 100%, var(--sun), transparent 70%);
+  will-change: opacity, transform;
+}
+
+/* ── Wordmarks ───────────────────────────────────────────────── */
+.mark { font-weight: 500; letter-spacing: -0.025em; font-size: 19px; text-decoration: none; color: var(--text); display: inline-flex; align-items: baseline; }
+.mark b, .pm b { color: var(--accent); font-weight: inherit; }
+.mark b { display: inline-block; animation: umbrella 5.2s ease-in-out infinite; transform-origin: 50% 80%; }
+@keyframes umbrella { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.55; transform: scale(0.82); } }
+.pm { font-family: var(--sans); font-weight: 500; letter-spacing: -0.025em; color: var(--text); }
+
+/* ── Nav ─────────────────────────────────────────────────────── */
+.nav { display: flex; align-items: center; justify-content: space-between; height: 76px; }
+.nav ul { display: flex; align-items: center; gap: 4px; }
+.nav a.l { text-decoration: none; color: var(--text-2); font-size: 14.5px; padding: 10px 12px; border-radius: 8px; transition: color .2s, background .2s; }
+.nav a.l:hover { color: var(--text); background: var(--hover, rgba(127,127,127,.08)); }
+.btn { appearance: none; border: 0; cursor: pointer; font: inherit; font-weight: 500; font-size: 14.5px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 12px; text-decoration: none; background: var(--accent); color: var(--on-accent); transition: background .2s var(--ease), transform .2s var(--ease); white-space: nowrap; }
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.98); }
+.btn-quiet { background: var(--btn); color: var(--on-btn); }
+.btn-quiet:hover { background: var(--btn); opacity: .88; }
+.nav .btn { min-height: 40px; font-size: 14px; padding: 0 14px; margin-left: 8px; }
+
+/* ── Hero ────────────────────────────────────────────────────── */
+.hero { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: clamp(32px, 5vw, 88px); align-items: center; padding-top: clamp(28px, 6vh, 72px); padding-bottom: clamp(56px, 9vh, 104px); }
+.hero h1 { font-size: clamp(44px, 5.3vw, 78px); line-height: 0.98; letter-spacing: -0.045em; font-weight: 600; }
+.hero h1 .l { display: block; }
+.hero h1 em { font-style: normal; color: var(--accent-text); }
+.hero .lede { margin-top: 28px; font-size: clamp(17px, 1.45vw, 20px); line-height: 1.5; color: var(--text-2); max-width: 34em; text-wrap: pretty; }
+.hero .lede strong { color: var(--text); font-weight: 500; }
+.wl { margin-top: 32px; max-width: 470px; }
+.wl-row { display: flex; gap: 6px; padding: 6px; background: var(--field); border-radius: 16px; box-shadow: var(--shadow-pop); }
+.wl-row input { flex: 1; min-width: 0; border: 0; background: transparent; font: inherit; font-size: 16px; color: var(--text); padding: 0 12px; min-height: 44px; border-radius: 10px; }
+.wl-row input::placeholder { color: var(--text-3); }
+.wl-row input:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; }
+.wl-meta { margin-top: 14px; font-family: var(--mono); font-size: 12.5px; color: var(--text-3); display: flex; flex-wrap: wrap; gap: 6px 22px; }
+.wl-meta span { display: inline-flex; align-items: center; gap: 7px; }
+.wl-meta .live { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.wl-ok { display: none; align-items: flex-start; gap: 12px; padding: 16px 18px; background: var(--field); border-radius: 16px; box-shadow: var(--shadow-pop); font-weight: 500; }
+.wl-ok svg { color: var(--accent); width: 20px; height: 20px; margin-top: 2px; }
+.wl-ok span { color: var(--text-2); font-weight: 400; display: block; }
+.wl.done .wl-row { display: none; }
+.wl.done .wl-ok { display: flex; animation: rise .5s var(--ease); }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+
+/* hero composition: the note, and the line that will travel */
+.still { position: relative; }
+.note-card { background: var(--surface); border-radius: 20px; box-shadow: var(--shadow-pop); overflow: hidden; }
+.win-head { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 16px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text-3); white-space: nowrap; }
+.win-head .pm { font-size: 14px; }
+.win-head .crumb { overflow: hidden; text-overflow: ellipsis; }
+.win-head .sep { color: var(--border-strong); }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border-radius: 7px; background: var(--fill); color: var(--text-2); font-size: 12px; font-weight: 500; white-space: nowrap; }
+.chip-ghost { background: transparent; border: 1px solid var(--border); }
+.win-head .chip { margin-left: auto; }
+.note-body { padding: 24px 26px 26px; }
+.note-body .title { font-size: 17px; font-weight: 600; letter-spacing: -0.015em; }
+.note-body .when { font-size: 13px; color: var(--text-3); margin-top: 2px; }
+.nlines { margin-top: 16px; display: grid; gap: 2px; }
+.nl { font-size: 15px; color: var(--text-2); padding: 7px 0; }
+.nl-hero { margin: 10px -10px 4px; padding: 14px 10px; font-size: clamp(22px, 2.05vw, 29px); line-height: 1.22; letter-spacing: -0.028em; color: var(--text); font-weight: 500; border-radius: 12px; background: linear-gradient(90deg, var(--accent-soft), transparent 85%); text-wrap: balance; }
+.caret { display: inline-block; width: 2px; height: 1.02em; margin-left: 3px; vertical-align: -0.14em; background: var(--accent); border-radius: 1px; animation: blink 1.1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.nudge { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-family: var(--mono); font-size: 12px; color: var(--text-3); }
+.nudge svg { animation: nudge 2.6s var(--ease) infinite; }
+@keyframes nudge { 0%, 55%, 100% { transform: translateX(0); } 30% { transform: translateX(6px); } }
+
+.route { margin-top: 26px; padding: 0 6px; }
+.route-line { position: relative; height: 2px; margin: 0 7px; background: repeating-linear-gradient(90deg, var(--border-strong) 0 4px, transparent 4px 9px); overflow: hidden; border-radius: 2px; }
+.route-line .spark { position: absolute; inset: 0; transform: translateX(-100%); animation: sweep 5.2s cubic-bezier(.45,.05,.3,1) infinite; }
+.route-line .spark::after { content: ""; position: absolute; right: 0; top: 0; height: 2px; width: 120px; background: linear-gradient(90deg, transparent, var(--accent)); border-radius: 2px; }
+@keyframes sweep { 0% { transform: translateX(-100%); } 70%, 100% { transform: translateX(100%); } }
+.route ol { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: -8px; }
+.route li { position: relative; padding-top: 22px; font-size: 12.5px; line-height: 1.35; color: var(--text-3); }
+.route li::before { content: ""; position: absolute; top: 2px; left: 0; width: 12px; height: 12px; border-radius: 50%; background: var(--canvas); border: 1.5px solid var(--control); }
+.route li:last-child { text-align: right; }
+.route li:last-child::before { left: auto; right: 0; border-color: var(--text); box-shadow: inset 0 0 0 2.5px var(--canvas); background: var(--text); }
+.route li:nth-child(2), .route li:nth-child(3) { text-align: center; }
+.route li:nth-child(2)::before, .route li:nth-child(3)::before { left: 50%; margin-left: -6px; }
+.route li .pm { display: block; font-size: 13.5px; color: var(--text); }
+.route li.day .pm { font-family: var(--serif); font-size: 17px; letter-spacing: 0; font-weight: 400; }
+
+.follow { display: inline-flex; align-items: center; gap: 10px; margin-top: 44px; font-size: 14px; color: var(--text-2); text-decoration: none; padding: 8px 14px 8px 8px; border-radius: 999px; transition: background .2s; }
+.follow:hover { background: var(--panel); }
+.follow i { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border-strong); }
+.follow i svg { animation: down 2.4s var(--ease) infinite; }
+@keyframes down { 0%, 60%, 100% { transform: none; } 30% { transform: translateY(3px); } }
+
+/* ── Story ───────────────────────────────────────────────────── */
+.story { position: relative; padding-top: clamp(24px, 6vh, 64px); }
+.story-intro { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 72px; padding-bottom: 8px; }
+.story-intro .k { font-family: var(--mono); font-size: 12.5px; color: var(--text-3); padding-top: 14px; }
+.story-intro h2 { font-size: clamp(32px, 3.6vw, 52px); line-height: 1.02; letter-spacing: -0.04em; font-weight: 600; max-width: 14em; text-wrap: balance; }
+.story-intro p { margin-top: 18px; font-size: 18px; color: var(--text-2); max-width: 34em; text-wrap: pretty; }
+.story-grid { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 72px; align-items: start; }
+
+/* the rail (countdown) */
+.rail { position: sticky; top: 72px; padding-top: 72px; align-self: start; }
+.rail-k { font-family: var(--mono); font-size: 12px; color: var(--text-3); }
+.cd { display: flex; align-items: baseline; gap: 12px; margin-top: 8px; white-space: nowrap; }
+.cd-num { font-family: var(--serif); font-size: 128px; line-height: 0.9; letter-spacing: -0.02em; font-variant-numeric: tabular-nums lining-nums; min-width: 1.5em; display: inline-block; transform-origin: 0 100%; }
+.cd-unit { font-family: var(--serif); font-style: italic; font-size: 28px; color: var(--text-2); }
+.cd-date { margin-top: 10px; font-size: 14px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.rail.arrived .cd-num { font-size: 104px; letter-spacing: -0.025em; min-width: 0; }
+.rail.arrived .cd-unit { display: none; }
+.steps { position: relative; margin-top: 36px; display: grid; gap: 0; }
+.steps::before, .steps::after { content: ""; position: absolute; left: 5px; top: 8px; bottom: 8px; width: 2px; border-radius: 2px; background: var(--hair); }
+.steps::after { background: var(--accent); transform-origin: 50% 0; transform: scaleY(var(--sf, 1)); }
+.steps li { position: relative; display: flex; align-items: center; gap: 14px; height: 36px; font-size: 14px; color: var(--text-3); transition: color .35s var(--ease); }
+.steps li::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--canvas); border: 1.5px solid var(--control); flex: none; position: relative; z-index: 1; transition: background .35s var(--ease), border-color .35s var(--ease), transform .35s var(--ease); }
+.steps li.past::before { background: var(--accent); border-color: var(--accent); }
+.steps li.now { color: var(--text); font-weight: 500; }
+.steps li.now::before { background: var(--accent); border-color: var(--accent); transform: scale(1.25); box-shadow: 0 0 0 5px var(--accent-soft); }
+.steps li .pm { font-size: 13.5px; margin-left: auto; color: var(--text-3); font-weight: 500; }
+.steps li.day { font-family: var(--serif); font-size: 19px; }
+.rail-cta { margin-top: 36px; font-size: 14px; color: var(--text-3); }
+.rail-cta a { color: var(--accent-text); font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.rail-cta a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* chapters */
+.ch { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: clamp(32px, 4vw, 64px); align-items: center; padding-block: clamp(56px, 9vh, 96px); }
+.ch-stack { grid-template-columns: minmax(0, 1fr); gap: 36px; }
+.ch-flip { grid-template-columns: minmax(0, 1fr) minmax(0, 320px); }
+.ch-flip .ch-text { order: 2; }
+.kicker { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 12.5px; color: var(--text-3); }
+.kicker .pm { font-size: 15px; }
+.kicker .dotsep { width: 3px; height: 3px; border-radius: 50%; background: currentColor; }
+.ch h3 { margin-top: 14px; font-size: clamp(26px, 2.6vw, 36px); line-height: 1.08; letter-spacing: -0.035em; font-weight: 600; text-wrap: balance; }
+.ch-text p { margin-top: 14px; font-size: 16.5px; color: var(--text-2); text-wrap: pretty; }
+.ch-stack .ch-text { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px 48px; align-items: end; }
+.ch-stack .ch-text .kicker { grid-column: 1 / -1; }
+.ch-stack .ch-text h3, .ch-stack .ch-text p { margin-top: 0; }
+.ch-text .quote { margin-top: 18px; font-family: var(--serif); font-style: italic; font-size: 22px; color: var(--text); line-height: 1.25; }
+
+.scene { --p: 1; position: relative; border-radius: 28px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--panel-line); padding: clamp(18px, 3vw, 40px); }
+
+/* scene 1: Notes */
+.s-notes { --a: clamp(0, calc((var(--p) - 0.12) / 0.36), 1); --b: clamp(0, calc((var(--p) - 0.56) / 0.16), 1); --sx: calc(var(--a) * (1 - var(--b))); --sent: clamp(0, calc((var(--p) - 0.64) / 0.18), 1); }
+.s-notes .note-card { max-width: 560px; }
+.nl-key { position: relative; margin: 6px -12px; border-radius: 12px; overflow: hidden; }
+.nl-under { position: absolute; inset: 0; display: flex; align-items: center; gap: 8px; padding-left: 16px; background: var(--accent); color: var(--on-accent); font-size: 13.5px; font-weight: 500; }
+.nl-row { position: relative; display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--surface); color: var(--text); font-size: 17px; font-weight: 500; letter-spacing: -0.01em; transform: translateX(calc(var(--sx) * 188px)); box-shadow: -12px 0 24px -12px rgba(0,0,0, calc(var(--sx) * .35)); }
+.nl-row::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 3px; background: var(--accent); transform: scaleY(var(--sent)); }
+.nl-row .caret { opacity: calc(1 - var(--sent)); }
+.sent { display: flex; align-items: center; gap: 8px; margin: 2px 0 6px; padding-left: 0; font-size: 12.5px; color: var(--text-3); opacity: var(--sent); transform: translateY(calc((1 - var(--sent)) * -6px)); }
+.sent .pm { font-size: 13px; color: var(--text); }
+.av { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--c, var(--orange)); color: #fff; font-size: 9.5px; font-weight: 600; letter-spacing: 0.02em; flex: none; }
+:root[data-theme="dark"] .av { color: #111113; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .av { color: #111113; } }
+.aside-note { display: flex; gap: 8px; align-items: center; margin-top: 16px; padding-left: 4px; font-family: var(--mono); font-size: 12px; line-height: 1.5; color: var(--text-3); }
+.aside-note svg { color: var(--text-2); }
+
+/* scene 2: Tasks board */
+.s-board { --m: clamp(0, calc((var(--p) - 0.28) / 0.46), 1); --e: calc(var(--m) * var(--m) * (3 - 2 * var(--m))); --l: calc(var(--m) * (1 - var(--m)) * 4); }
+.board-win { background: var(--surface); border-radius: 18px; box-shadow: var(--shadow-pop); overflow: hidden; }
+.board-win .win-head { gap: 12px; }
+.proj { display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 10px; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-weight: 500; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--c, var(--rose)); flex: none; }
+.tabs { display: inline-flex; margin-left: auto; padding: 3px; gap: 2px; background: var(--fill); border-radius: 9px; }
+.tabs span { padding: 3px 10px; border-radius: 7px; font-size: 12.5px; }
+.tabs .on { background: var(--surface); color: var(--text); box-shadow: var(--shadow-1); font-weight: 500; }
+.board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 16px; background: var(--sunken); }
+.col { background: var(--col); border-radius: 14px; padding: 10px; display: grid; gap: 8px; align-content: start; box-shadow: inset 0 0 0 1px var(--border); }
+.col-h { display: flex; align-items: center; gap: 8px; padding: 4px 4px 6px; font-size: 13.5px; font-weight: 600; }
+.col-h .n { position: relative; color: var(--text-3); font-weight: 500; display: inline-grid; }
+.col-h .n b { grid-area: 1 / 1; font-weight: 500; }
+.col-h .n .n0 { opacity: clamp(0, calc((0.5 - var(--m)) * 20), 1); }
+.col-h .n .n1 { opacity: clamp(0, calc((var(--m) - 0.5) * 20), 1); }
+.st { width: 14px; height: 14px; border-radius: 50%; border: 1.6px solid var(--control); flex: none; }
+.st-prog { border-color: var(--amber); background: linear-gradient(90deg, var(--amber) 50%, transparent 50%); }
+.st-done { border-color: var(--success, #2f9e6a); background: var(--success, #2f9e6a); position: relative; }
+.card { position: relative; background: var(--surface); border-radius: 11px; padding: 11px 12px 10px; box-shadow: var(--shadow-1), 0 0 0 1px var(--border); font-size: 13.5px; }
+.card .t { font-weight: 500; line-height: 1.35; letter-spacing: -0.005em; }
+.card .meta { display: flex; align-items: center; gap: 6px; margin-top: 9px; flex-wrap: wrap; }
+.card .meta .av { margin-left: auto; }
+.card .chip { height: 22px; font-size: 11.5px; padding: 0 7px; }
+.card.done .t { color: var(--text-3); text-decoration: line-through; text-decoration-color: var(--accent); text-decoration-thickness: 1.5px; }
+.slot { position: relative; height: 112px; border-radius: 11px; }
+.slot-from { box-shadow: inset 0 0 0 1.5px var(--border); background-image: repeating-linear-gradient(135deg, transparent 0 7px, var(--col) 7px 8px); }
+.slot-from::after, .slot-to::after { content: ""; position: absolute; inset: 0; border-radius: 11px; border: 1.5px dashed var(--border-strong); }
+.slot-from::after { opacity: var(--m); }
+.slot-from { box-shadow: none; background-image: none; }
+.slot-to::after { opacity: calc(1 - var(--m)); }
+.trav { position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column; justify-content: space-between; transform: translate(calc(var(--dx, 0px) * var(--e)), calc(var(--dy, 0px) * var(--e))) rotate(calc(var(--l) * -2.2deg)) scale(calc(1 + var(--l) * 0.035)); box-shadow: 0 calc(var(--l) * 22px) calc(var(--l) * 40px) calc(var(--l) * -12px) rgba(20, 18, 14, 0.35), 0 0 0 1px var(--accent), 0 0 0 calc(4px - var(--m) * 4px) var(--accent-soft); }
+.from { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--accent-text); font-weight: 500; }
+.from i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: tpulse 2.2s var(--ease) infinite; }
+@keyframes tpulse { 0% { box-shadow: 0 0 0 0 var(--accent-soft); } 70% { box-shadow: 0 0 0 7px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+.cal { color: var(--text-2); }
+
+/* scene 3: Home on the phone */
+.s-home { --c: clamp(0, calc((var(--p) - 0.5) / 0.25), 1); --lt: clamp(0, calc(var(--p) / 0.6), 1); display: grid; place-items: center; padding-block: clamp(28px, 4vw, 48px); overflow: hidden; }
+.phone { position: relative; width: 300px; max-width: 100%; border-radius: 48px; padding: 10px; background: var(--bezel); box-shadow: 0 40px 80px -30px rgba(20, 18, 14, 0.45), 0 0 0 1px rgba(255,255,255,.06) inset; }
+.screen { position: relative; border-radius: 38px; background: var(--surface); overflow: hidden; min-height: 580px; padding: 14px 20px 22px; }
+.screen::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(185deg, rgba(255, 200, 130, 0.30), rgba(255, 220, 170, 0.08) 38%, transparent 60%); opacity: var(--lt); }
+.sbar { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; padding: 2px 6px 0; }
+.sbar .isl { width: 86px; height: 24px; border-radius: 14px; background: var(--bezel); }
+.sbar .bat { display: inline-flex; gap: 4px; align-items: center; }
+.sbar .bat i { width: 20px; height: 10px; border-radius: 3px; border: 1.3px solid currentColor; position: relative; opacity: .8; }
+.sbar .bat i::after { content: ""; position: absolute; inset: 1.5px 5px 1.5px 1.5px; background: currentColor; border-radius: 1px; }
+.appbar { position: relative; display: flex; justify-content: space-between; align-items: center; margin-top: 18px; }
+.appbar .mark { font-size: 15px; }
+.brief-k { position: relative; margin-top: 26px; font-family: var(--mono); font-size: 11.5px; color: var(--text-3); }
+.brief-h { position: relative; margin-top: 8px; font-size: 25px; line-height: 1.12; letter-spacing: -0.03em; font-weight: 600; }
+.brief-s { position: relative; margin-top: 6px; font-size: 15px; color: var(--text-2); }
+.brief { position: relative; margin-top: 20px; border-top: 1px solid var(--border); }
+.brief li { display: grid; grid-template-columns: 22px 1fr; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--border); }
+.tick { width: 20px; height: 20px; border-radius: 50%; border: 1.6px solid var(--control); position: relative; margin-top: 1px; }
+.brief .t { font-size: 14.5px; font-weight: 500; line-height: 1.32; position: relative; display: inline; }
+.brief .m { display: flex; align-items: center; gap: 6px; margin-top: 5px; font-size: 12px; color: var(--text-3); }
+.brief .late { color: var(--danger-text); font-weight: 500; }
+.brief li.first .tick { border-color: color-mix(in srgb, var(--accent) calc(var(--c) * 100%), var(--control)); background: color-mix(in srgb, var(--accent) calc(var(--c) * 100%), transparent); }
+.brief li.first .tick svg { position: absolute; inset: 2px; width: 13px; height: 13px; color: var(--on-accent); stroke-width: 2.4; stroke-dasharray: 20; stroke-dashoffset: calc(20 - var(--c) * 20); }
+.brief li.first .t { background-image: linear-gradient(var(--accent), var(--accent)); background-repeat: no-repeat; background-size: calc(var(--c) * 100%) 1.5px; background-position: 0 58%; }
+.brief-foot { position: relative; margin-top: 16px; font-size: 13px; color: var(--text-3); }
+.brief-btn { position: relative; margin-top: 16px; display: flex; justify-content: center; align-items: center; height: 42px; border-radius: 12px; border: 1px solid var(--border-strong); font-size: 13.5px; font-weight: 500; }
+.phone-time { position: absolute; left: clamp(18px, 3vw, 40px); top: clamp(18px, 3vw, 40px); font-family: var(--mono); font-size: 12px; color: var(--text-3); }
+
+/* scene 4: the shared timeline */
+.s-share { --f: clamp(0, calc((var(--p) - 0.08) / 0.5), 1); --nw: clamp(0, calc((var(--p) - 0.5) / 0.22), 1); display: grid; grid-template-columns: minmax(0, 330px) minmax(0, 1fr); gap: clamp(24px, 4vw, 56px); align-items: start; }
+.chatwrap { position: relative; margin-top: 56px; }
+.chatwrap::after { content: ""; position: absolute; left: 100%; top: 150px; width: clamp(24px, 4vw, 56px); height: 2px; background: repeating-linear-gradient(90deg, var(--rose) 0 4px, transparent 4px 8px); opacity: .6; }
+.chat-note { margin-top: 18px; font-size: 13.5px; color: var(--text-3); max-width: 280px; }
+.chat-k { font-family: var(--mono); font-size: 11.5px; color: var(--text-3); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.bubble { background: var(--bubble); border-radius: 16px 16px 16px 5px; box-shadow: var(--shadow-pop); padding: 10px 10px 8px; font-size: 13.5px; }
+.bubble .who { font-size: 12px; font-weight: 600; color: var(--rose); padding: 0 4px; }
+.bubble .msg { padding: 2px 4px 8px; }
+.linkcard { display: grid; grid-template-columns: 40px 1fr; gap: 10px; align-items: center; padding: 9px; border-radius: 10px; background: var(--fill); }
+.linkcard .ic { width: 40px; height: 40px; border-radius: 8px; background: var(--paper); display: grid; place-items: center; font-family: var(--serif); font-size: 17px; color: var(--paper-ink); box-shadow: 0 0 0 1px var(--paper-line); }
+.linkcard b { display: block; font-size: 13px; font-weight: 600; }
+.linkcard span { display: block; font-size: 11.5px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bubble time { display: block; text-align: right; font-size: 10.5px; color: var(--text-3); margin-top: 5px; padding-right: 4px; }
+.tl-page { width: 100%; max-width: 600px; justify-self: end; background: var(--paper); color: var(--paper-ink); border-radius: 18px; box-shadow: var(--shadow-pop); padding: clamp(22px, 3vw, 36px); }
+.tl-page .from-l { font-size: 12.5px; color: var(--paper-2); }
+.tl-page .names { font-family: var(--serif); font-size: clamp(40px, 4.4vw, 58px); line-height: 1; margin-top: 10px; letter-spacing: -0.01em; }
+.tl-page .names em { font-style: normal; color: var(--rose); }
+.tl-page .wd { margin-top: 10px; font-size: 13.5px; color: var(--paper-2); }
+.tl-page .togo { display: flex; align-items: baseline; gap: 8px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--paper-line); }
+.tl-page .togo b { font-family: var(--serif); font-weight: 400; font-size: 44px; line-height: 1; }
+.tl-page .togo i { font-family: var(--serif); font-size: 19px; color: var(--paper-2); }
+.ms { position: relative; margin-top: 18px; display: grid; }
+.ms::before, .ms::after { content: ""; position: absolute; left: 5px; top: 10px; bottom: 30px; width: 2px; background-image: repeating-linear-gradient(180deg, var(--paper-2) 0 2px, transparent 2px 6px); opacity: .55; }
+.ms::after { background: var(--rose); background-image: none; opacity: 1; bottom: auto; height: 172px; transform-origin: 50% 0; transform: scaleY(var(--f)); }
+.ms li { position: relative; display: flex; align-items: baseline; gap: 14px; padding: 5px 0 5px 26px; font-size: 13.5px; }
+.ms li::before { content: ""; position: absolute; left: 1px; top: 11px; width: 10px; height: 10px; border-radius: 50%; background: var(--rose); }
+.ms li.fut::before { background: var(--paper); border: 1.5px solid var(--paper-2); }
+.ms li span { margin-left: auto; font-size: 12px; color: var(--paper-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ms li.new { margin: 4px -10px; padding: 9px 10px 9px 36px; border-radius: 10px; background: color-mix(in srgb, var(--rose) calc(var(--nw) * 10%), transparent); font-weight: 500; }
+.ms li.new::before { left: 11px; top: 15px; box-shadow: 0 0 0 calc(var(--nw) * 5px) color-mix(in srgb, var(--rose) 22%, transparent); }
+.ms li.new .tag { margin-left: 8px; font-size: 10.5px; font-weight: 600; color: var(--rose); border: 1px solid color-mix(in srgb, var(--rose) 40%, transparent); padding: 1px 6px; border-radius: 6px; opacity: var(--nw); }
+.ms li.here { color: var(--rose); font-weight: 600; font-size: 12.5px; padding-top: 2px; padding-bottom: 2px; }
+.ms li.here::before { width: 14px; height: 14px; left: -1px; top: 6px; background: var(--rose); box-shadow: 0 0 0 4px color-mix(in srgb, var(--rose) 20%, transparent); }
+.ms li.theday { font-family: var(--serif); font-size: 19px; }
+.ms li.theday::before { width: 14px; height: 14px; left: -1px; top: 10px; background: var(--paper); border: 1.5px solid var(--paper-ink); box-shadow: inset 0 0 0 3px var(--paper), inset 0 0 0 10px var(--rose); }
+.noacct { display: flex; align-items: center; gap: 8px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--paper-line); font-size: 12px; color: var(--paper-2); }
+
+/* the months between */
+.months-ch { padding-block: clamp(56px, 10vh, 104px); }
+.months { --f: 1; position: relative; margin-top: 44px; height: 170px; }
+.months .track { position: absolute; left: 0; right: 0; top: 84px; height: 2px; background: var(--hair); border-radius: 2px; }
+.months .track i { position: absolute; inset: 0; background: var(--accent); transform-origin: 0 50%; transform: scaleX(var(--f)); border-radius: 2px; }
+.months .mo { position: absolute; top: 76px; transform: translateX(-50%); font-family: var(--mono); font-size: 11.5px; color: var(--text-3); height: 18px; }
+.months .mo::before { content: ""; position: absolute; left: 50%; top: 4px; width: 1px; height: 10px; background: var(--border-strong); }
+.months .mo span { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
+.months .m { position: absolute; left: var(--x); width: 0; }
+.months .m::before { content: ""; position: absolute; left: -7px; top: 78px; width: 14px; height: 14px; border-radius: 50%; background: var(--canvas); border: 1.6px solid var(--control); transition: background .3s var(--ease), border-color .3s var(--ease), transform .3s var(--ease); }
+.months .m.done::before { background: var(--accent); border-color: var(--accent); }
+.months .m div { position: absolute; left: -2px; width: 150px; font-size: 13px; line-height: 1.3; color: var(--text-2); }
+.months .m div b { display: block; font-weight: 500; color: var(--text); transition: color .3s; }
+.months .m div span { font-family: var(--mono); font-size: 11.5px; color: var(--text-3); }
+.months .m.up div { bottom: -60px; top: auto; }
+.months .m.up div { top: 16px; }
+.months .m.dn div { top: 120px; }
+.months .m.last div { left: auto; right: -2px; text-align: right; }
+.months .m::after { content: ""; position: absolute; left: -0.5px; width: 1px; background: var(--border-strong); }
+.months .m.up::after { top: 52px; height: 24px; }
+.months .m.dn::after { top: 94px; height: 22px; }
+.months .end { position: absolute; right: 0; top: 74px; transform: translateX(50%); width: 22px; height: 22px; border-radius: 50%; border: 1.6px solid var(--text); background: var(--canvas); box-shadow: inset 0 0 0 4px var(--canvas), inset 0 0 0 12px var(--text); }
+
+/* the day */
+.ch-day { --p: 1; display: block; padding-top: clamp(72px, 14vh, 140px); padding-bottom: clamp(88px, 16vh, 160px); }
+.ch-day { --f: clamp(0, calc(var(--p) / 0.7), 1); --c: clamp(0, calc((var(--p) - 0.35) / 0.3), 1); }
+.day-big { display: none; }
+.day-where { font-family: var(--mono); font-size: 12.5px; color: var(--text-2); }
+.ch h3.day-line { font-weight: 400; margin-top: 20px; font-family: var(--serif); font-size: clamp(40px, 5.1vw, 76px); line-height: 1.04; letter-spacing: -0.01em; max-width: 13em; text-wrap: balance; }
+.ch h3.day-line em { color: var(--text-2); }
+.reprise { margin-top: 44px; display: flex; align-items: flex-start; gap: 14px; max-width: 560px; padding: 18px 20px; background: var(--surface); border-radius: 16px; box-shadow: var(--shadow-pop); }
+.reprise .tick { width: 22px; height: 22px; flex: none; margin-top: 2px; border-color: var(--accent); background: var(--accent); }
+.reprise .tick svg { position: absolute; inset: 3px; width: 14px; height: 14px; color: var(--on-accent); stroke-width: 2.4; }
+.reprise .t { font-size: 18px; font-weight: 500; letter-spacing: -0.015em; line-height: 1.35; background-image: linear-gradient(var(--accent), var(--accent)); background-repeat: no-repeat; background-size: calc(var(--c) * 100%) 1.5px; background-position: 0 60%; display: inline; }
+.reprise .m { margin-top: 6px; font-size: 13px; color: var(--text-3); }
+.arc { margin-top: 48px; max-width: 760px; }
+.arc .line { position: relative; height: 2px; margin: 0 8px; background: var(--hair); border-radius: 2px; }
+.arc .line i { position: absolute; inset: 0; background: var(--accent); transform-origin: 0 50%; transform: scaleX(var(--f)); border-radius: 2px; }
+.arc ol { display: grid; grid-template-columns: repeat(5, 1fr); margin-top: -9px; }
+.arc li { position: relative; padding-top: 24px; font-size: 12.5px; color: var(--text-3); line-height: 1.35; }
+.arc li::before { content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); }
+.arc li .pm { display: block; font-size: 13.5px; }
+.arc li:last-child { text-align: right; }
+.arc li:last-child::before { left: auto; right: -3px; top: -2px; width: 22px; height: 22px; background: var(--canvas); border: 1.6px solid var(--text); box-shadow: inset 0 0 0 4px var(--canvas), inset 0 0 0 12px var(--accent); }
+.arc li:last-child .pm { font-family: var(--serif); font-weight: 400; font-size: 18px; letter-spacing: 0; }
+.day-coda { margin-top: 36px; font-size: 17px; color: var(--text-2); max-width: 32em; }
+.sample-note { margin-top: 16px; font-family: var(--mono); font-size: 12px; color: var(--text-3); }
+
+/* ── After the day ───────────────────────────────────────────── */
+.after { position: relative; background: var(--canvas); }
+.after::before { content: ""; position: absolute; left: 0; right: 0; top: -160px; height: 160px; background: linear-gradient(180deg, transparent, var(--canvas)); pointer-events: none; }
+.sec { padding-block: clamp(72px, 12vh, 128px); }
+.sec { position: relative; }
+.sec + .sec::before { content: ""; position: absolute; top: 0; left: var(--gutter); right: var(--gutter); height: 1px; background: var(--hair); }
+.sec-k { font-family: var(--mono); font-size: 12.5px; color: var(--text-3); }
+.sec h2 { font-size: clamp(32px, 3.9vw, 56px); line-height: 1.02; letter-spacing: -0.04em; font-weight: 600; text-wrap: balance; }
+.sec .sub { margin-top: 16px; font-size: 18px; color: var(--text-2); max-width: 34em; text-wrap: pretty; }
+
+.trio { font-size: clamp(28px, 3.4vw, 50px); line-height: 1.12; letter-spacing: -0.035em; font-weight: 500; max-width: 22em; text-wrap: balance; }
+.trio .pm { font-weight: 600; }
+.trio .soft { color: var(--text-3); }
+.trio-foot { margin-top: 22px; font-size: 16px; color: var(--text-2); max-width: 40em; }
+
+.shapes-head { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 48px; align-items: end; margin-top: clamp(64px, 10vh, 112px); }
+.shapes { margin-top: 44px; border-top: 1px solid var(--hair); }
+.shape { --f: clamp(0, calc(var(--p) / 0.8), 1); display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 48px; align-items: center; padding: 30px 0; border-bottom: 1px solid var(--hair); }
+.shape .who { font-family: var(--mono); font-size: 12px; color: var(--text-3); }
+.shape h3 { margin-top: 4px; font-size: 20px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.25; }
+.mini .line { position: relative; height: 2px; margin: 0 6px; background: var(--hair); }
+.mini .line i { position: absolute; inset: 0; background: var(--c, var(--accent)); transform-origin: 0 50%; transform: scaleX(var(--f)); }
+.mini ol { display: grid; grid-template-columns: 1.3fr 1fr 1fr; margin-top: -7px; gap: 16px; }
+.mini li { position: relative; padding-top: 22px; font-size: 13.5px; line-height: 1.35; color: var(--text); }
+.mini li::before { content: ""; position: absolute; top: 1px; left: 0; width: 10px; height: 10px; border-radius: 50%; background: var(--c, var(--accent)); }
+.mini li .pm { display: block; font-size: 12.5px; color: var(--text-3); margin-bottom: 2px; }
+.mini li:last-child { text-align: right; }
+.mini li:last-child::before { left: auto; right: -4px; top: -3px; width: 18px; height: 18px; background: var(--canvas); border: 1.5px solid var(--text); box-shadow: inset 0 0 0 3px var(--canvas), inset 0 0 0 9px var(--c, var(--accent)); }
+.mini li:last-child .pm { font-family: var(--serif); font-size: 15px; font-weight: 400; letter-spacing: 0; }
+.mini li:nth-child(2) { text-align: center; }
+.mini li:nth-child(2)::before { left: 50%; margin-left: -5px; }
+.for { margin-top: 28px; font-size: 15px; color: var(--text-3); max-width: 44em; }
+
+.refuse { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 48px; }
+.refuse h2 { max-width: 10em; }
+.nolist li { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 8px; padding: 24px 0; border-top: 1px solid var(--hair); }
+.nolist li:last-child { border-bottom: 1px solid var(--hair); }
+.nolist .n { font-family: var(--mono); font-size: 12.5px; color: var(--text-3); padding-top: 5px; }
+.nolist h3 { font-size: 21px; font-weight: 600; letter-spacing: -0.02em; }
+.nolist p { margin-top: 4px; color: var(--text-2); font-size: 16px; }
+.clar { margin-top: 28px; font-family: var(--serif); font-style: italic; font-size: 26px; color: var(--text); }
+
+.prices { margin-top: 44px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); }
+.price { padding: 28px 28px 30px 0; }
+.price + .price { padding-left: 28px; border-left: 1px solid var(--hair); }
+.price h3 { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.price .amt { margin-top: 18px; font-size: 40px; letter-spacing: -0.04em; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.price .amt small { font-size: 15px; letter-spacing: 0; font-weight: 400; color: var(--text-3); margin-left: 4px; }
+.price .alt { margin-top: 6px; font-size: 13px; color: var(--text-3); min-height: 1.4em; }
+.price p { margin-top: 16px; font-size: 14.5px; color: var(--text-2); }
+.price .pill { font-size: 11px; font-weight: 500; color: var(--accent-text); background: var(--accent-soft); padding: 2px 7px; border-radius: 6px; }
+.price-foot { margin-top: 20px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 14px; color: var(--text-3); }
+.tlink { color: var(--accent-text); text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+.tlink:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+.founder { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 48px; }
+.founder blockquote { margin: 0; font-size: clamp(21px, 2vw, 27px); line-height: 1.42; letter-spacing: -0.02em; color: var(--text); }
+.founder blockquote p + p { margin-top: 18px; }
+.founder blockquote .soft { color: var(--text-2); }
+.sig { margin-top: 26px; display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--text-3); }
+.sig b { display: block; color: var(--text); font-weight: 500; }
+.fmark { width: 36px; height: 36px; border-radius: 50%; background: #000; display: grid; place-items: center; flex: none; }
+.fmark i { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #534dff; display: grid; place-items: center; }
+.fmark i::after { content: ""; width: 5px; height: 5px; border-radius: 50%; background: #534dff; }
+.sig .av { width: 36px; height: 36px; font-size: 12px; --c: var(--text); }
+
+.join { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 48px; align-items: end; }
+.join h2 { font-size: clamp(40px, 5.6vw, 84px); }
+.join .wl { margin-top: 0; justify-self: end; width: 100%; }
+
+.foot { position: relative; padding-block: 56px 40px; font-size: 14px; color: var(--text-2); }
+.foot::before { content: ""; position: absolute; top: 0; left: var(--gutter); right: var(--gutter); height: 1px; background: var(--hair); }
+.foot-grid { display: grid; grid-template-columns: minmax(0, 5fr) repeat(3, minmax(0, 2fr)); gap: 32px; }
+.foot h2 { font-size: 13px; font-weight: 500; color: var(--text-3); margin-bottom: 12px; font-family: var(--mono); }
+.foot li { margin: 7px 0; }
+.foot a { text-decoration: none; }
+.foot a:hover { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+.foot .tag { margin-top: 10px; color: var(--text-3); }
+.foot-bottom { margin-top: 48px; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; font-size: 12.5px; color: var(--text-3); font-family: var(--mono); }
+
+/* ── 1024-ish ───────────────────────────────────────────────── */
+@media (max-width: 1180px) {
+  .story-intro, .story-grid { grid-template-columns: 220px minmax(0, 1fr); gap: 44px; }
+  .cd-num { font-size: 96px; }
+  .rail.arrived .cd-num { font-size: 76px; }
+  .cd-unit { font-size: 22px; }
+  .steps li .pm { display: none; }
+  .ch, .ch-flip { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+  .ch-flip .ch-text { order: 0; }
+  .ch-text { max-width: 40em; }
+  .ch-stack .ch-text { display: block; }
+  .ch-stack .ch-text h3 { margin-top: 14px; }
+  .ch-stack .ch-text p { margin-top: 14px; }
+  .s-share { grid-template-columns: minmax(0, 250px) minmax(0, 1fr); }
+  .hero { grid-template-columns: minmax(0, 1fr) minmax(0, 0.86fr); }
+}
+
+/* ── Phone ─────────────────────────────────────────────────── */
+@media (max-width: 760px) {
+  body { font-size: 15.5px; }
+  .nav { height: 64px; }
+  .nav ul li.hide-sm { display: none; }
+  .nav .btn { margin-left: 0; }
+  .hero { grid-template-columns: minmax(0, 1fr); gap: 40px; padding-top: 20px; padding-bottom: 48px; }
+  .hero h1 { font-size: clamp(40px, 11.6vw, 54px); letter-spacing: -0.045em; }
+  .hero .lede { margin-top: 20px; font-size: 17px; }
+  .wl-row { flex-direction: column; padding: 6px; }
+  .wl-row input { min-height: 48px; }
+  .wl-row .btn { min-height: 48px; }
+  .follow { margin-top: 28px; }
+  .note-body { padding: 18px 18px 20px; }
+  .route li { font-size: 11.5px; }
+  .route li .pm { font-size: 12.5px; }
+  .route li.day .pm { font-size: 15px; }
+
+  .story-intro { display: block; }
+  .story-intro .k { padding: 0 0 10px; }
+  .story-grid { display: block; }
+  .rail { position: sticky; top: 0; z-index: 30; padding: 10px var(--gutter) 10px; margin-inline: calc(var(--gutter) * -1); display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; align-items: center; background: color-mix(in srgb, var(--canvas) 80%, transparent); -webkit-backdrop-filter: saturate(1.4) blur(14px); backdrop-filter: saturate(1.4) blur(14px); box-shadow: 0 1px 0 var(--hair); }
+  .rail-k { display: none; }
+  .cd { grid-row: 1 / span 2; margin: 0; }
+  .cd-num { font-size: 46px; min-width: 1.55em; }
+  .rail.arrived .cd-num { font-size: 36px; }
+  .cd-unit { display: block; font-size: 17px; }
+  .cd { display: block; }
+  .cd-unit { display: none; }
+  .cd-date { grid-column: 2; margin: 0; font-size: 12.5px; color: var(--text-3); line-height: 1.3; }
+  .cd-date::before { content: attr(data-unit); display: block; font-family: var(--serif); font-style: italic; font-size: 19px; color: var(--text); line-height: 1.1; }
+  .steps { grid-column: 2; margin-top: 7px; display: flex; justify-content: space-between; height: 10px; }
+  .steps::before, .steps::after { left: 4px; right: 4px; top: 4px; bottom: auto; width: auto; height: 2px; }
+  .steps::after { transform-origin: 0 50%; transform: scaleX(var(--sf, 1)); }
+  .steps li { height: 10px; width: 10px; gap: 0; font-size: 0; overflow: visible; }
+  .steps li::before { width: 10px; height: 10px; }
+  .steps li .lbl, .steps li .pm { display: none; }
+  .steps li.now::before { transform: scale(1.2); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .rail-cta { display: none; }
+
+  .ch { padding-block: 64px 24px; gap: 24px; }
+  .ch h3 { font-size: 28px; }
+  .scene { border-radius: 22px; padding: 12px; margin-inline: -4px; }
+  .nl-row { font-size: 16px; transform: translateX(calc(var(--sx) * 150px)); }
+  .note-card .win-head .crumb, .note-card .win-head .sep { display: none; }
+
+  .board { grid-template-columns: minmax(0, 1fr); padding: 10px; gap: 10px; }
+  .board .hide-sm { display: none; }
+  .board-win .tabs span:not(.on) { display: none; }
+  .slot { height: 104px; }
+
+  .s-home { padding-block: 28px; }
+  .phone { width: 286px; }
+  .phone-time { display: none; }
+
+  .s-share { display: flex; flex-direction: column; gap: 16px; }
+  .chatwrap { margin-top: 0; width: 100%; }
+  .chatwrap::after { left: 36px; top: 100%; width: 2px; height: 16px; background: repeating-linear-gradient(180deg, var(--rose) 0 4px, transparent 4px 8px); }
+  .chat-note { display: none; }
+  .tl-page { width: 100%; padding: 20px; }
+  .ms li { font-size: 13px; }
+
+  .months { height: auto; margin-top: 28px; padding-left: 28px; }
+  .months .track { left: 6px; right: auto; top: 6px; bottom: 6px; width: 2px; height: auto; }
+  .months .track i { transform-origin: 50% 0; transform: scaleY(var(--f)); }
+  .months .mo, .months .end { display: none; }
+  .months .m { position: relative; left: auto; width: auto; padding: 10px 0 14px; }
+  .months .m::before { left: -29px; top: 13px; }
+  .months .m::after { display: none; }
+  .months .m div, .months .m.up div, .months .m.dn div, .months .m.last div { position: static; width: auto; text-align: left; }
+
+  .ch-day { padding-top: 72px; padding-bottom: 88px; }
+  .day-big { display: block; font-family: var(--serif); font-size: 76px; line-height: 0.95; letter-spacing: -0.02em; margin-top: 12px; }
+  .ch h3.day-line { font-size: 36px; margin-top: 20px; }
+  .reprise { padding: 16px; }
+  .reprise .t { font-size: 16.5px; }
+  .arc ol { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .arc li { font-size: 0; }
+  .arc li .pm { font-size: 12px; }
+  .arc li:last-child .pm { font-size: 15px; }
+
+  .shapes-head, .shape, .refuse, .founder, .join { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .shape { gap: 18px; padding: 26px 0 30px; }
+  .mini ol { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .mini li { font-size: 12.5px; }
+  .prices { grid-template-columns: minmax(0, 1fr); border-bottom: 0; }
+  .price, .price + .price { padding: 22px 0; border-left: 0; border-bottom: 1px solid var(--hair); display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 16px; }
+  .price h3 { grid-column: 1; }
+  .price .amt { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; font-size: 30px; text-align: right; }
+  .price .alt { grid-column: 2; grid-row: 3; text-align: right; }
+  .price p { grid-column: 1; grid-row: 2 / span 2; margin-top: 6px; }
+  .join .wl { justify-self: stretch; }
+  .foot-grid { grid-template-columns: 1fr 1fr; }
+  .foot-grid > div:first-child { grid-column: 1 / -1; }
+}
+
+/* ── Reduced motion: the whole story, still ───────────────── */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .route-line .spark { display: none; }
+  .sky-dawn, .sky-gold, .sky-sun { opacity: 0 !important; }
+  .ch-day { background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--gold-b) 70%, transparent) 30%, color-mix(in srgb, var(--gold-b) 70%, transparent) 70%, transparent); }
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-lock" viewBox="0 0 16 16"><rect x="3.2" y="7" width="9.6" height="6.6" rx="1.6"/><path d="M5.3 7V5.2a2.7 2.7 0 0 1 5.4 0V7"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4"/></symbol>
+  <symbol id="i-down" viewBox="0 0 16 16"><path d="M8 3v10M4 9l4 4 4-4"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 16 16"><rect x="2.5" y="3.5" width="11" height="10" rx="1.8"/><path d="M2.5 6.8h11M5.5 2v3M10.5 2v3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 16 16"><path d="M3.5 8.4l2.9 2.8 6.1-6.4"/></symbol>
+  <symbol id="i-link" viewBox="0 0 16 16"><path d="M6.8 9.2a2.6 2.6 0 0 0 3.7 0l2.2-2.2a2.6 2.6 0 0 0-3.7-3.7l-.7.7"/><path d="M9.2 6.8a2.6 2.6 0 0 0-3.7 0L3.3 9a2.6 2.6 0 0 0 3.7 3.7l.7-.7"/></symbol>
+  <symbol id="i-swipe" viewBox="0 0 16 16"><path d="M2 8h9M8 5l3 3-3 3M14 3v10"/></symbol>
+</svg>
+
+<div class="sky" aria-hidden="true"><i class="sky-day"></i><i class="sky-dawn"></i><i class="sky-gold"></i><i class="sky-sun"></i></div>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="wrap">
+  <nav class="nav" aria-label="Main">
+    <a class="mark" href="#top" aria-label="Signal Studio, home">signal studio<b>.</b></a>
+    <ul>
+      <li class="hide-sm"><a class="l" href="#pricing">Pricing</a></li>
+      <li class="hide-sm"><a class="l" href="#about">About</a></li>
+      <li class="hide-sm"><a class="l" href="#principles">Principles</a></li>
+      <li><a class="btn" href="#join">Join the waitlist</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main id="main">
+  <!-- ── Hero ──────────────────────────────────────────────── -->
+  <section class="hero wrap" id="top" aria-labelledby="h1">
+    <div>
+      <h1 id="h1"><span class="l">Project management</span> <span class="l">for the 80% <em>not</em></span> <span class="l">in tech.</span></h1>
+      <p class="lede"><strong>Notes, Tasks and Timeline.</strong> One calm system for people with work to manage, not software to manage.</p>
+      <form class="wl" novalidate>
+        <div class="wl-row">
+          <label class="vh" for="em1">Email address</label>
+          <input id="em1" type="email" name="email" autocomplete="email" placeholder="you@example.com" required>
+          <button class="btn" type="submit">Join the waitlist</button>
+        </div>
+        <p class="wl-ok" role="status" tabindex="-1"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg><span><b style="font-weight:500;color:var(--text)">You're on the list.</b> <span style="display:inline">We'll write when your access opens.</span></span></p>
+        <p class="wl-meta"><span><i class="live" aria-hidden="true"></i>Launching January 2027</span><span>Joining never charges you</span></p>
+      </form>
+      <a class="follow" href="#story"><i aria-hidden="true"><svg class="i"><use href="#i-down"/></svg></i>Follow one line to the day</a>
+    </div>
+
+    <figure class="still" aria-label="A sample note in Signal Studio Notes. One line reads: Ask the venue to hold the side room after six. Below it, the route that line will take: Tasks on Monday, Home on Tuesday, Timeline on Thursday, and the day itself on Saturday 22 May 2027.">
+      <div class="note-card" aria-hidden="true">
+        <div class="win-head"><span class="pm">notes<b>.</b></span><span class="sep">/</span><span class="crumb">Walk-through with Mara &amp; Finn</span><span class="chip"><svg class="i"><use href="#i-lock"/></svg>Only you</span></div>
+        <div class="note-body">
+          <p class="when">Friday 25 September · at the gate</p>
+          <div class="nlines">
+            <p class="nl">Finn's gran needs a chair near the door for the speeches.</p>
+            <p class="nl">Long table on the terrace. Candles, not flowers.</p>
+            <p class="nl nl-hero">Ask the venue to hold the side room after six<span class="caret"></span></p>
+          </div>
+          <p class="nudge"><svg class="i"><use href="#i-arrow"/></svg>Swipe a line to send it on</p>
+        </div>
+      </div>
+      <div class="route" aria-hidden="true">
+        <div class="route-line"><span class="spark"></span></div>
+        <ol>
+          <li><span class="pm">tasks<b>.</b></span>Monday</li>
+          <li><span class="pm">home</span>Tuesday</li>
+          <li><span class="pm">timeline<b>.</b></span>Thursday</li>
+          <li class="day"><span class="pm">The day</span>22 May 2027</li>
+        </ol>
+      </div>
+    </figure>
+  </section>
+
+  <!-- ── The story ─────────────────────────────────────────── -->
+  <section class="story" id="story" aria-labelledby="story-h">
+    <div class="story-intro wrap">
+      <p class="k">A sample wedding, start to finish</p>
+      <div>
+        <h2 id="story-h">One small job, from the moment someone thinks of it to the moment it matters.</h2>
+        <p>Mara and Finn are getting married at The Orchard on Saturday 22 May 2027. They're a sample couple, and this is the whole way to their day.</p>
+      </div>
+    </div>
+
+    <div class="story-grid wrap">
+      <aside class="rail" id="rail" aria-label="Countdown to the sample wedding">
+        <p class="rail-k">Mara &amp; Finn · The Orchard</p>
+        <p class="cd"><span class="cd-num" id="cdNum">239</span> <span class="cd-unit" id="cdUnit">days to go</span></p>
+        <p class="cd-date" id="cdDate" data-unit="days to go">Friday 25 September 2026</p>
+        <ol class="steps" id="steps">
+          <li class="now"><span class="lbl">At the gate</span><span class="pm">notes<b>.</b></span></li>
+          <li><span class="lbl">On the board</span><span class="pm">tasks<b>.</b></span></li>
+          <li><span class="lbl">The next morning</span><span class="pm">home</span></li>
+          <li><span class="lbl">On the link</span><span class="pm">timeline<b>.</b></span></li>
+          <li><span class="lbl">The months between</span></li>
+          <li class="day"><span class="lbl">The day</span></li>
+        </ol>
+        <p class="rail-cta">Your work has a day too.<br><a href="#join">Join the waitlist <svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg></a></p>
+      </aside>
+
+      <div class="chapters">
+        <!-- 1 · Notes -->
+        <article class="ch" data-cd="239" data-step="0" aria-labelledby="c1">
+          <div class="ch-text">
+            <p class="kicker"><span class="pm">notes<b>.</b></span><i class="dotsep"></i>Friday 25 September</p>
+            <h3 id="c1">It starts as a thought at the gate.</h3>
+            <p>Aoife walks the grounds with Mara and Finn and types what they ask for as they go. The note is hers alone. When one line needs doing, she swipes it on to Tasks and hands it to Orla. The rest stays private.</p>
+          </div>
+          <div class="scene s-notes" data-scene role="img" aria-label="Aoife's private note, Walk-through with Mara and Finn. She swipes the line Ask the venue to hold the side room after six, and it is sent to Tasks for Orla on Monday.">
+            <div class="note-card" aria-hidden="true">
+              <div class="win-head"><span class="pm">notes<b>.</b></span><span class="sep">/</span><span class="crumb">Walk-through with Mara &amp; Finn</span><span class="chip"><svg class="i"><use href="#i-lock"/></svg>Only you</span></div>
+              <div class="note-body">
+                <p class="title">Walk-through with Mara &amp; Finn</p>
+                <p class="when">Friday 25 September · at the gate</p>
+                <div class="nlines">
+                  <p class="nl">Finn's gran needs a chair near the door for the speeches.</p>
+                  <p class="nl">Long table on the terrace. Candles, not flowers.</p>
+                  <div class="nl-key">
+                    <div class="nl-under"><svg class="i"><use href="#i-arrow"/></svg>Send to Tasks</div>
+                    <p class="nl-row">Ask the venue to hold the side room after six<span class="caret"></span></p>
+                  </div>
+                  <p class="sent"><svg class="i" style="color:var(--accent)"><use href="#i-check"/></svg>Sent to <span class="pm">tasks<b>.</b></span> · <span class="av" style="--c:var(--orange);width:18px;height:18px;font-size:8px">OR</span> Orla · Monday</p>
+                  <p class="nl">Photos by the old apple wall, around five.</p>
+                </div>
+              </div>
+            </div>
+            <p class="aside-note" aria-hidden="true"><svg class="i"><use href="#i-lock"/></svg>Private until you send a line on. Only that line travels.</p>
+          </div>
+        </article>
+
+        <!-- 2 · Tasks -->
+        <article class="ch ch-stack" data-cd="236" data-step="1" aria-labelledby="c2">
+          <div class="ch-text">
+            <p class="kicker"><span class="pm">tasks<b>.</b></span><i class="dotsep"></i>Monday 28 September</p>
+            <h3 id="c2">Now it's a job with a name and a day.</h3>
+            <p>The line lands on the board as a card: Orla's, for Monday. No forms to fill in, nothing to set up. When she starts on it, it moves along, and the whole team can see where it is.</p>
+          </div>
+          <div class="scene s-board" data-scene role="img" aria-label="The Tasks board for Mara and Finn. The card Ask the venue to hold the side room after six, owned by Orla and due Monday, moves from To do to In progress.">
+            <div class="board-win" aria-hidden="true">
+              <div class="win-head"><span class="pm">tasks<b>.</b></span><span class="proj"><i class="dot"></i>Mara &amp; Finn</span><span class="tabs"><span class="on">Board</span><span>List</span><span>Calendar</span></span></div>
+              <div class="board">
+                <div class="col">
+                  <p class="col-h"><span class="st"></span>To do <span class="n"><b class="n0">3</b><b class="n1">2</b></span></p>
+                  <div class="slot slot-from" id="slotFrom">
+                    <div class="card trav" id="trav">
+                      <p class="from"><i></i>From Aoife's note</p>
+                      <p class="t">Ask the venue to hold the side room after six</p>
+                      <div class="meta"><span class="chip cal"><svg class="i"><use href="#i-cal"/></svg>Mon</span><span class="chip chip-ghost"><i class="dot"></i>Mara &amp; Finn</span><span class="av" style="--c:var(--orange)">OR</span></div>
+                    </div>
+                  </div>
+                  <div class="card"><p class="t">Confirm marquee sides with the hire company</p><div class="meta"><span class="chip"><svg class="i"><use href="#i-cal"/></svg>Wed</span><span class="av" style="--c:var(--accent)">AO</span></div></div>
+                  <div class="card hide-sm"><p class="t">Test the festoon lights on the terrace</p><div class="meta"><span class="chip"><svg class="i"><use href="#i-cal"/></svg>Thu</span><span class="chip chip-ghost"><i class="dot" style="--c:var(--teal)"></i>Venue</span><span class="av" style="--c:var(--teal)">DP</span></div></div>
+                </div>
+                <div class="col">
+                  <p class="col-h"><span class="st st-prog"></span>In progress <span class="n"><b class="n0">1</b><b class="n1">2</b></span></p>
+                  <div class="slot slot-to" id="slotTo"></div>
+                  <div class="card"><p class="t">Build the Saturday run-sheet</p><div class="meta"><span class="chip"><svg class="i"><use href="#i-cal"/></svg>Tue</span><span class="av" style="--c:var(--blue)">SK</span></div></div>
+                </div>
+                <div class="col">
+                  <p class="col-h"><span class="st st-done"></span>Done <span class="n">11</span></p>
+                  <div class="card done"><p class="t">Book the extra cloakroom attendant</p><div class="meta"><span class="av" style="--c:var(--teal)">DP</span></div></div>
+                  <div class="card done hide-sm"><p class="t">Send the band the arrival times</p><div class="meta"><span class="av" style="--c:var(--blue)">SK</span></div></div>
+                  <div class="card done hide-sm"><p class="t">Chase the florist deposit</p><div class="meta"><span class="av" style="--c:var(--orange)">OR</span></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- 3 · Home -->
+        <article class="ch ch-flip" data-cd="235" data-step="2" aria-labelledby="c3">
+          <div class="ch-text">
+            <p class="kicker"><span class="pm">home</span><i class="dotsep"></i>Tuesday 29 September</p>
+            <h3 id="c3">In the morning, it's waiting for her.</h3>
+            <p>Orla opens her phone before work. Home gives her a short briefing: what needs her today, in plain words, and nothing else. She makes the call, the side room is held, and she ticks it off.</p>
+            <p class="quote">A briefing, not a dashboard.</p>
+          </div>
+          <div class="scene s-home" data-scene role="img" aria-label="Home on Orla's phone at 7:40 on Tuesday. Today's Signal reads: Good morning, Orla. Three things need you today. Hold the side room after six, order tonic and the good olives, and call the florist about peonies. The first one gets ticked off.">
+            <p class="phone-time" aria-hidden="true">7:40 am · before work</p>
+            <div class="phone" aria-hidden="true">
+              <div class="screen">
+                <div class="sbar"><span>7:40</span><span class="isl"></span><span class="bat"><i></i></span></div>
+                <div class="appbar"><span class="mark">signal studio<b>.</b></span><span class="av" style="--c:var(--orange);width:28px;height:28px;font-size:10.5px">OR</span></div>
+                <p class="brief-k">Today's Signal · Tuesday 29 September</p>
+                <p class="brief-h">Good morning, Orla.</p>
+                <p class="brief-s">Three things need you today.</p>
+                <ol class="brief">
+                  <li class="first"><span class="tick"><svg class="i"><use href="#i-check"/></svg></span><div><p class="t">Ask the venue to hold the side room after six</p><p class="m"><i class="dot"></i>Mara &amp; Finn · Today</p></div></li>
+                  <li><span class="tick"></span><div><p class="t">Order tonic and the good olives</p><p class="m"><i class="dot" style="--c:var(--teal)"></i>The Orchard · <span class="late">Due yesterday</span></p></div></li>
+                  <li><span class="tick"></span><div><p class="t">Call the florist about peonies</p><p class="m"><i class="dot"></i>Mara &amp; Finn · Before 11</p></div></li>
+                </ol>
+                <p class="brief-foot">Everything else can wait.</p>
+                <p class="brief-btn">Read the full briefing</p>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- 4 · Timeline -->
+        <article class="ch ch-stack" data-cd="233" data-step="3" aria-labelledby="c4">
+          <div class="ch-text">
+            <p class="kicker"><span class="pm">timeline<b>.</b></span><i class="dotsep"></i>Thursday 1 October</p>
+            <h3 id="c4">The families see it without asking.</h3>
+            <p>Mara drops one link into the family group chat. Anyone can open it. No account, no app. The evening in the side room is on the timeline now, beside everything else that's settled.</p>
+          </div>
+          <div class="scene s-share" data-scene role="img" aria-label="A family group chat. Mara shares a link to the Mara and Finn timeline, with no sign-up needed. The shared timeline shows 233 days to go and a new line: Evening in the side room, held from six.">
+            <div class="chatwrap" aria-hidden="true">
+              <p class="chat-k">The families · group chat</p>
+              <div class="bubble">
+                <p class="who">Mara</p>
+                <p class="msg">Everything for the wedding is on here now. No sign-up, just tap it.</p>
+                <div class="linkcard"><span class="ic">M&amp;F</span><div><b>Mara &amp; Finn · 22 May 2027</b><span>app.signalstudio.ie/s/mara-and-finn</span></div></div>
+                <time>8:12 pm</time>
+              </div>
+              <p class="chat-note">Grandparents, cousins, the best man. Whoever taps it sees the same page.</p>
+            </div>
+            <div class="tl-page" aria-hidden="true">
+              <p class="from-l">A shared plan from Mara and Finn</p>
+              <p class="names">Mara <em>&amp;</em> Finn</p>
+              <p class="wd">Saturday 22 May 2027 · The Orchard, Co. Wicklow</p>
+              <p class="togo"><b>233</b><i>days to go</i></p>
+              <ol class="ms">
+                <li>We said yes <span>14 Feb</span></li>
+                <li>The Orchard is booked <span>21 Mar</span></li>
+                <li>Save the dates are out <span>2 May</span></li>
+                <li>Photographer and band booked <span>8 Sep</span></li>
+                <li class="new">Evening in the side room, held from six <em class="tag">New</em><span>1 Oct</span></li>
+                <li class="here">You are here</li>
+                <li class="fut">Invitations go out <span>12 Nov</span></li>
+                <li class="fut theday">The day itself <span style="font-family:var(--sans)">22 May</span></li>
+              </ol>
+              <p class="noacct"><svg class="i"><use href="#i-link"/></svg>Opened from a link. No account needed.</p>
+            </div>
+          </div>
+        </article>
+
+        <!-- The months between -->
+        <article class="ch ch-stack months-ch" data-step="4" aria-labelledby="c45">
+          <span data-cd="233" data-step="4" aria-hidden="true"></span>
+          <div class="ch-text">
+            <p class="kicker">October to May</p>
+            <h3 id="c45">Then the months go by, calmly.</h3>
+            <p>Invitations, tastings, replies, seating. Each one moves the same way: a line, then a job, then a date everyone can see. Nobody has to ask where things are.</p>
+          </div>
+          <div class="months" id="months" role="list" aria-label="What happened between October and May">
+            <div class="track" aria-hidden="true"><i></i></div>
+            <span class="mo" data-date="2026-11-01" aria-hidden="true"><span>Nov</span></span>
+            <span class="mo" data-date="2026-12-01" aria-hidden="true"><span>Dec</span></span>
+            <span class="mo" data-date="2027-01-01" aria-hidden="true"><span>Jan</span></span>
+            <span class="mo" data-date="2027-02-01" aria-hidden="true"><span>Feb</span></span>
+            <span class="mo" data-date="2027-03-01" aria-hidden="true"><span>Mar</span></span>
+            <span class="mo" data-date="2027-04-01" aria-hidden="true"><span>Apr</span></span>
+            <span class="mo" data-date="2027-05-01" aria-hidden="true"><span>May</span></span>
+            <div class="m up done" role="listitem" data-date="2026-11-12"><div><b>Invitations in the post</b><span>12 November</span></div></div>
+            <div class="m dn done" role="listitem" data-date="2027-01-22"><div><b>Menu tasting at The Orchard</b><span>22 January</span></div></div>
+            <div class="m up done" role="listitem" data-date="2027-03-12"><div><b>Replies are in</b><span>12 March</span></div></div>
+            <div class="m dn done" role="listitem" data-date="2027-04-09"><div><b>Final numbers to The Orchard</b><span>9 April</span></div></div>
+            <div class="m up done last" role="listitem" data-date="2027-04-30"><div><b>Seating plan final</b><span>30 April</span></div></div>
+            <span class="end" aria-hidden="true"></span>
+          </div>
+          <span data-cd="1" data-step="4.9" aria-hidden="true"></span>
+        </article>
+
+        <!-- 5 · The day -->
+        <article class="ch ch-day" data-cd="0" data-step="5" data-scene aria-labelledby="c5">
+          <p class="day-where">Saturday 22 May 2027 · The Orchard</p>
+          <p class="day-big" aria-hidden="true">The day.</p>
+          <h3 class="day-line" id="c5">Everyone knew where things stood. <em>So on the day, everyone could just be there.</em></h3>
+          <div class="reprise">
+            <span class="tick" aria-hidden="true"><svg class="i"><use href="#i-check"/></svg></span>
+            <div><p class="t">Ask the venue to hold the side room after six</p><p class="m">Done by Orla · Tuesday 29 September · 235 days early</p></div>
+          </div>
+          <div class="arc" aria-label="The route the line took">
+            <div class="line" aria-hidden="true"><i></i></div>
+            <ol>
+              <li><span class="pm">notes<b>.</b></span>Fri 25 Sep</li>
+              <li><span class="pm">tasks<b>.</b></span>Mon 28 Sep</li>
+              <li><span class="pm">home</span>Tue 29 Sep</li>
+              <li><span class="pm">timeline<b>.</b></span>Thu 1 Oct</li>
+              <li><span class="pm">The day</span>Sat 22 May</li>
+            </ol>
+          </div>
+          <p class="day-coda">At six, the side room is ready. Nobody had to chase it, and nobody had to learn anything to see it.</p>
+          <p class="sample-note">Mara, Finn, The Orchard and its team are a sample. Your work has its own day.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── After the day ─────────────────────────────────────── -->
+  <div class="after">
+    <section class="sec wrap" aria-labelledby="shapes-h">
+      <p class="trio"><span class="pm">notes<b>.</b></span> is where it starts. <span class="pm">tasks<b>.</b></span> is where it gets done. <span class="pm">timeline<b>.</b></span> is what everyone else sees.</p>
+      <p class="trio-foot">Home ties them together each morning. Messages, files and a few simple tools sit alongside, for when you want them.</p>
+
+      <div class="shapes-head">
+        <h2 id="shapes-h">Not only weddings.</h2>
+        <p class="sub">Any work with a day at the end has the same shape. A thought, a job with a name on it, and a date the people around you can see.</p>
+      </div>
+      <div class="shapes">
+        <div class="shape" data-scene>
+          <div><p class="who">A student group · sample</p><h3>St Brigid's College river study</h3></div>
+          <div class="mini" style="--c:var(--blue)">
+            <div class="line" aria-hidden="true"><i></i></div>
+            <ol>
+              <li><span class="pm">notes<b>.</b></span>Borrow the flow meter from the lab</li>
+              <li><span class="pm">tasks<b>.</b></span>Cian · Thursday</li>
+              <li><span class="pm">The day</span>Report in · Fri 14 May</li>
+            </ol>
+          </div>
+        </div>
+        <div class="shape" data-scene>
+          <div><p class="who">A small agency · sample</p><h3>Northlight Studio launches Kiln for Kiln Pottery Dublin</h3></div>
+          <div class="mini" style="--c:var(--amber)">
+            <div class="line" aria-hidden="true"><i></i></div>
+            <ol>
+              <li><span class="pm">notes<b>.</b></span>Write the launch email for Kiln</li>
+              <li><span class="pm">tasks<b>.</b></span>Ruth · Wednesday</li>
+              <li><span class="pm">The day</span>Kiln goes live · Tue 2 March</li>
+            </ol>
+          </div>
+        </div>
+        <div class="shape" data-scene>
+          <div><p class="who">A tradesperson · sample</p><h3>A kitchen fit in Bray</h3></div>
+          <div class="mini" style="--c:var(--teal)">
+            <div class="line" aria-hidden="true"><i></i></div>
+            <ol>
+              <li><span class="pm">notes<b>.</b></span>Order the worktop, oak, 3.2 metres</li>
+              <li><span class="pm">tasks<b>.</b></span>Me · Friday</li>
+              <li><span class="pm">The day</span>Handover · Fri 9 April</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+      <p class="for">Made for wedding planners and venues, event teams, tradespeople, small agencies, freelancers, small-business owners, teachers and students. People with real work and real dates.</p>
+    </section>
+
+    <section class="sec wrap" id="principles" aria-labelledby="refuse-h">
+      <div class="refuse">
+        <div>
+          <p class="sec-k">What we left out</p>
+          <h2 id="refuse-h" style="margin-top:14px">Project management without the project-manager energy.</h2>
+          <p class="clar">Clarity, not configuration.</p>
+        </div>
+        <ol class="nolist">
+          <li><span class="n">01</span><div><h3>No setup.</h3><p>Open it and write your first line. There is nothing to build before you start.</p></div></li>
+          <li><span class="n">02</span><div><h3>No jargon.</h3><p>A job has a person and a day. You won't need to learn a new language to run your own work.</p></div></li>
+          <li><span class="n">03</span><div><h3>Nothing to configure.</h3><p>No fields to design, no settings to get right first. It works the way you'd expect.</p></div></li>
+          <li><span class="n">04</span><div><h3>No account to look.</h3><p>The people you share a timeline with just open the link. Family, clients, a whole class.</p></div></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="sec wrap" id="pricing" aria-labelledby="price-h">
+      <p class="sec-k">Pricing</p>
+      <h2 id="price-h" style="margin-top:14px">Simple prices. VAT included.</h2>
+      <div class="prices">
+        <div class="price"><h3>Free</h3><p class="amt">€0</p><p class="alt">&nbsp;</p><p>One project, with three guests who can edit.</p></div>
+        <div class="price"><h3>Student</h3><p class="amt">€9.99<small>a year</small></p><p class="alt">Checked once a year</p><p>Three projects, with three guests who can edit.</p></div>
+        <div class="price"><h3>Pro</h3><p class="amt">€12<small>a month</small></p><p class="alt">or €120 a year</p><p>As many projects as you need.</p></div>
+        <div class="price"><h3>Enterprise</h3><p class="amt">Let's talk</p><p class="alt">&nbsp;</p><p>A conversation with the founder about what your team needs.</p></div>
+      </div>
+      <div class="price-foot"><span>Joining the waitlist never charges you.</span><a class="tlink" href="#pricing">See full pricing <svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg></a></div>
+    </section>
+
+    <section class="sec wrap" id="about" aria-labelledby="founder-h">
+      <div class="founder">
+        <div>
+          <p class="sec-k">From the founder</p>
+          <h2 id="founder-h" style="margin-top:14px">Why I'm building this.</h2>
+        </div>
+        <div>
+          <blockquote>
+            <p>I'm a PMP and a Lean Six Sigma Black Belt. I've spent years inside project software, and I think most of it has become needlessly confusing.</p>
+            <p class="soft">Good project work has a real discipline, and it's worth keeping. The jargon, the setup and the translation layer are not. So I'm building something that keeps the first and drops the rest, for people who run real work and never wanted to become project managers.</p>
+          </blockquote>
+          <p class="sig"><span class="fmark" aria-hidden="true"><i></i></span><span><b>The founder</b>Signal Studio · hello@signalstudio.ie</span></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec wrap" id="join" aria-labelledby="join-h">
+      <div class="join">
+        <div>
+          <p class="sec-k">Launching January 2027</p>
+          <h2 id="join-h" style="margin-top:14px">Start with one line.</h2>
+          <p class="sub">Wedding venues are in private preview now. Access opens in stages from January, and we'll write to you when yours is ready.</p>
+        </div>
+        <form class="wl" novalidate>
+          <div class="wl-row">
+            <label class="vh" for="em2">Email address</label>
+            <input id="em2" type="email" name="email" autocomplete="email" placeholder="you@example.com" required>
+            <button class="btn" type="submit">Join the waitlist</button>
+          </div>
+          <p class="wl-ok" role="status" tabindex="-1"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg><span><b style="font-weight:500;color:var(--text)">You're on the list.</b> <span style="display:inline">We'll write when your access opens.</span></span></p>
+          <p class="wl-meta"><span>Joining never charges you</span><span>No spam, one email when it's your turn</span></p>
+        </form>
+      </div>
+    </section>
+
+    <footer class="foot wrap">
+      <div class="foot-grid">
+        <div>
+          <a class="mark" href="#top">signal studio<b>.</b></a>
+          <p class="tag">Clarity, not configuration.</p>
+        </div>
+        <div>
+          <h2>Products</h2>
+          <ul><li><a class="pm" href="#story">notes<b>.</b></a></li><li><a class="pm" href="#story">tasks<b>.</b></a></li><li><a class="pm" href="#story">timeline<b>.</b></a></li></ul>
+        </div>
+        <div>
+          <h2>Pages</h2>
+          <ul><li><a href="#pricing">Pricing</a></li><li><a href="#about">About</a></li><li><a href="#principles">Principles</a></li><li><a href="#press">Press</a></li><li><a href="#privacy">Privacy</a></li><li><a href="#terms">Terms</a></li></ul>
+        </div>
+        <div>
+          <h2>Contact</h2>
+          <ul><li><a href="mailto:hello@signalstudio.ie">hello@signalstudio.ie</a></li><li>Launching January 2027</li></ul>
+        </div>
+      </div>
+      <div class="foot-bottom"><span>© 2026 Signal Studio</span><span>Every name and project on this page is a sample.</span></div>
+    </footer>
+  </div>
+</main>
+
+<script>
+(() => {
+  const doc = document.documentElement;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)");
+  const WED = Date.UTC(2027, 4, 22);
+  const DAY = 864e5;
+  const fmt = new Intl.DateTimeFormat("en-IE", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+  const dateFor = (d) => fmt.format(new Date(WED - d * DAY));
+  const daysTo = (s) => Math.round((WED - Date.parse(s + "T00:00:00Z")) / DAY);
+  const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+
+  /* ── waitlist forms: in-page success only ── */
+  document.querySelectorAll("form.wl").forEach((f) => {
+    f.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const input = f.querySelector("input");
+      if (!input.value || !input.checkValidity()) { input.setAttribute("aria-invalid", "true"); input.focus(); input.reportValidity && input.reportValidity(); return; }
+      input.removeAttribute("aria-invalid");
+      f.classList.add("done");
+      const ok = f.querySelector(".wl-ok");
+      requestAnimationFrame(() => ok.focus({ preventScroll: true }));
+    });
+  });
+
+  /* ── months: place markers by their real date ── */
+  const START = 233;
+  const months = document.getElementById("months");
+  const ms = [...months.querySelectorAll("[data-date]")].map((el) => {
+    const d = daysTo(el.dataset.date);
+    el.style.setProperty(el.classList.contains("mo") ? "left" : "--x", ((START - d) / START) * 100 + "%");
+    return { el, d, m: el.classList.contains("m") };
+  });
+
+  /* ── cached geometry ── */
+  const rail = document.getElementById("rail");
+  const numEl = document.getElementById("cdNum");
+  const dateEl = document.getElementById("cdDate");
+  const steps = [...document.querySelectorAll("#steps li")];
+  const stepsBox = document.getElementById("steps");
+  const sky = { dawn: document.querySelector(".sky-dawn"), gold: document.querySelector(".sky-gold"), sun: document.querySelector(".sky-sun") };
+  const anchorEls = [...document.querySelectorAll("[data-cd]")];
+  const scenes = [...document.querySelectorAll("[data-scene]")].map((el) => ({ el, tgt: 0, cur: 0, last: -1, top: 0, h: 0 }));
+  const trav = document.getElementById("trav");
+  const slotFrom = document.getElementById("slotFrom");
+  const slotTo = document.getElementById("slotTo");
+  let anchors = [], vh = innerHeight;
+
+  const docTop = (el) => el.getBoundingClientRect().top + scrollY;
+  function measure() {
+    vh = innerHeight;
+    anchors = anchorEls.map((el) => ({ y: docTop(el), d: +el.dataset.cd, s: +el.dataset.step })).sort((a, b) => a.y - b.y);
+    scenes.forEach((s) => { s.top = docTop(s.el); s.h = s.el.offsetHeight; });
+    const a = slotFrom.getBoundingClientRect(), b = slotTo.getBoundingClientRect();
+    trav.style.setProperty("--dx", (b.left - a.left) + "px");
+    trav.style.setProperty("--dy", (b.top - a.top) + "px");
+  }
+
+  /* ── countdown ── */
+  let shownDay = null, lastTick = 0, shownStep = -1;
+  function interp(ref) {
+    if (!anchors.length || ref <= anchors[0].y) return { d: anchors[0] ? anchors[0].d : 239, s: 0 };
+    for (let i = 0; i < anchors.length - 1; i++) {
+      const a = anchors[i], b = anchors[i + 1];
+      if (ref < b.y) { const t = (ref - a.y) / Math.max(1, b.y - a.y); return { d: a.d + (b.d - a.d) * t, s: a.s + (b.s - a.s) * t }; }
+    }
+    const l = anchors[anchors.length - 1];
+    return { d: l.d, s: l.s };
+  }
+  function renderCount(dRaw, sRaw) {
+    const d = Math.max(0, Math.round(dRaw));
+    if (d !== shownDay) {
+      const arrived = d === 0;
+      numEl.textContent = arrived ? "The day" : String(d);
+      rail.classList.toggle("arrived", arrived);
+      const unit = d === 1 ? "day to go" : "days to go";
+      document.getElementById("cdUnit").textContent = unit;
+      dateEl.dataset.unit = arrived ? "Saturday" : unit;
+      dateEl.textContent = arrived ? "Saturday 22 May 2027 · The Orchard" : dateFor(d);
+      if (arrived) dateEl.dataset.unit = "";
+      const now = performance.now();
+      if (!reduce.matches && shownDay !== null && now - lastTick > 160 && numEl.animate) {
+        numEl.animate([{ transform: "translateY(0.12em)", opacity: 0.4 }, { transform: "none", opacity: 1 }], { duration: 460, easing: "cubic-bezier(.2,.8,.2,1)" });
+      }
+      lastTick = now;
+      shownDay = d;
+      if (!reduce.matches) {
+        months.style.setProperty("--f", clamp((START - d) / START).toFixed(4));
+        ms.forEach((m) => { if (m.m) m.el.classList.toggle("done", d <= m.d); });
+      }
+    }
+    const si = Math.min(5, Math.floor(sRaw + 0.02));
+    if (si !== shownStep) {
+      steps.forEach((li, i) => { li.classList.toggle("past", i < si); li.classList.toggle("now", i === si); });
+      shownStep = si;
+    }
+    stepsBox.style.setProperty("--sf", clamp(sRaw / 5).toFixed(4));
+    if (!reduce.matches) {
+      const dawn = 1 - clamp(sRaw / 1.6);
+      const gold = clamp((sRaw - 3.9) / 1.1);
+      sky.dawn.style.opacity = dawn.toFixed(3);
+      sky.gold.style.opacity = gold.toFixed(3);
+      sky.sun.style.opacity = gold.toFixed(3);
+      sky.sun.style.transform = "translate3d(0," + ((1 - gold) * 90).toFixed(1) + "px,0)";
+    }
+  }
+
+  /* ── scroll-linked scenes, latched and eased ── */
+  let raf = 0;
+  function frame() {
+    raf = 0;
+    const y = scrollY;
+    const c = interp(y + vh * 0.55);
+    renderCount(c.d, c.s);
+    if (reduce.matches) return;
+    let moving = false;
+    for (const s of scenes) {
+      const top = s.top - y;
+      const raw = clamp((vh * 0.9 - top) / (vh * 0.62));
+      if (raw > s.tgt) s.tgt = raw;
+      s.cur += (s.tgt - s.cur) * 0.12;
+      if (Math.abs(s.tgt - s.cur) < 0.002) s.cur = s.tgt; else moving = true;
+      if (s.cur !== s.last) { s.el.style.setProperty("--p", s.cur.toFixed(4)); s.last = s.cur; }
+    }
+    if (moving) raf = requestAnimationFrame(frame);
+  }
+  const kick = () => { if (!raf) raf = requestAnimationFrame(frame); };
+
+  function setup() {
+    measure();
+    if (reduce.matches) {
+      scenes.forEach((s) => s.el.style.removeProperty("--p"));
+    } else {
+      const y = scrollY;
+      scenes.forEach((s) => {
+        s.tgt = s.cur = clamp((vh * 0.9 - (s.top - y)) / (vh * 0.62));
+        s.el.style.setProperty("--p", s.cur.toFixed(4));
+      });
+    }
+    frame();
+  }
+  addEventListener("scroll", kick, { passive: true });
+  addEventListener("resize", () => { measure(); kick(); });
+  reduce.addEventListener && reduce.addEventListener("change", setup);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measure(); kick(); });
+  if ("ResizeObserver" in window) new ResizeObserver(() => { measure(); kick(); }).observe(document.body);
+  setup();
+
+  /* ── pause ambient loops when the hero is off screen ── */
+  const hero = document.querySelector(".hero");
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(([e]) => {
+      hero.querySelectorAll(".caret, .spark, .nudge svg").forEach((n) => { n.style.animationPlayState = e.isIntersecting ? "running" : "paused"; });
+    }).observe(hero);
+  }
+})();
+</script>
