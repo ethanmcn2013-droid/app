@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { db } from "@/server/db";
 import * as schema from "@/server/db/schema";
@@ -75,6 +75,41 @@ export async function ensureUserProvisionedWith(
     // If deletion commits first, no row is recreated. If provisioning commits
     // first, deletion observes and erases that row after installing its fence.
     if (await hasAccountDeletionStartedWith(tx, clerkUserId)) return false;
+
+    // Warm authenticated entry: prove the existing derived rows and profile
+    // backfills are already complete under the same write lock. The normal
+    // statements below remain the sole fallback for new or partial accounts.
+    // A different persisted user id is valid; all dependent rows must bind to it.
+    const [complete] = await tx.select({
+      userId: schema.users.id,
+      name: schema.users.name,
+      email: schema.users.email,
+      periodOwnerId: schema.planningPeriods.ownerUserId,
+      workspaceOwnerId: schema.workspaces.ownerUserId,
+      workspacePlanningPeriodId: schema.workspaces.planningPeriodId,
+      workspaceContextType: schema.workspaces.contextType,
+      workspaceUpdatedAt: schema.workspaces.updatedAt,
+      memberUserId: schema.workspaceMembers.userId,
+      memberRole: schema.workspaceMembers.role,
+    }).from(schema.users)
+      .leftJoin(schema.planningPeriods, eq(schema.planningPeriods.id, planningPeriodId))
+      .leftJoin(schema.workspaces, eq(schema.workspaces.id, workspaceId))
+      .leftJoin(schema.workspaceMembers, and(
+        eq(schema.workspaceMembers.workspaceId, workspaceId),
+        eq(schema.workspaceMembers.userId, schema.users.id),
+      ))
+      .where(eq(schema.users.clerkId, clerkUserId))
+      .limit(1);
+    if (complete &&
+        (!name || complete.name !== null) &&
+        (!email || complete.email !== null) &&
+        complete.periodOwnerId === complete.userId &&
+        complete.workspaceOwnerId === complete.userId &&
+        complete.workspacePlanningPeriodId !== null &&
+        complete.workspaceContextType === "project" &&
+        complete.workspaceUpdatedAt !== null &&
+        complete.memberUserId === complete.userId &&
+        complete.memberRole === "owner") return true;
 
     await tx.run(sql`
       INSERT OR IGNORE INTO users (id, clerk_id, handle, color, initials)
