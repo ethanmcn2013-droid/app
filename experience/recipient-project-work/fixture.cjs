@@ -81,6 +81,10 @@ async function recipientFixture(options = {}) {
     if (name === 'src/lib/access-mode') return { isDemoMode: () => state.demo, isProductionMode: () => !state.demo, getAccessMode: () => state.demo ? 'review' : 'production' };
     if (name === 'src/lib/projects/flags') return { isActiveProjectV3Enabled: () => state.v3 };
     if (name === 'src/server/events') return { emitTasksChanged: () => {} };
+    if (name === 'src/server/diagnostics/task-timing') return {
+      withTaskActionTiming: (_scope, work) => work(), measureTaskStage: (_stage, work) => work(),
+      measureTaskBoardQuery: work => work(), measureTaskBoardMap: (_rows, work) => work(),
+    };
     if (name === 'src/server/actions/seed') return { seedDomainAction: () => { throw Error('No reset is allowed in recipient entry'); } };
     if (cache.has(name)) return cache.get(name).exports;
     const file = [name, name + '.ts', name + '.tsx', name + '/index.ts', name + '/index.tsx'].find(f => fs.existsSync(path.join(root, f)) && fs.statSync(path.join(root, f)).isFile());

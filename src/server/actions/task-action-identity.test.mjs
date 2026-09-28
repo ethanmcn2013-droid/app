@@ -24,6 +24,7 @@ function loadSource(path, dependencies) {
 
 function fixture() {
   const counters = { auth: 0, currentUser: 0, provision: 0, update: 0, activity: 0, list: 0 };
+  const timing = { scopes: [], stages: [] };
   const state = {
     actor: "user_alice",
     cookie: "project_alice",
@@ -143,6 +144,10 @@ function fixture() {
     "@/server/diagnostics/identity-outbound": {
       withIdentityOutboundScope: (_scope, work) => work(),
     },
+    "@/server/diagnostics/task-timing": {
+      withTaskActionTiming: (scope, work) => { timing.scopes.push(scope); return work(); },
+      measureTaskStage: (stage, work) => { timing.stages.push(stage); return work(); },
+    },
     "@/server/actions/private-task-db-write": { privateTaskDbWrite: (operation) => operation() },
     "@/server/actions/project-authz": {
       authorizeProjectCandidate: async ({ candidateProjectId, actorUserId }) => state.memberships.get(actorUserId)?.has(candidateProjectId)
@@ -161,7 +166,7 @@ function fixture() {
     "@/server/demo/tasks-demo": { demoTasks: () => [{ id: "demo_task" }] },
     "@/lib/data": { LANE_ORDER: ["todo", "done"] },
   });
-  return { counters, state, authModule, actionModule };
+  return { counters, state, authModule, actionModule, timing };
 }
 
 async function withProductionEnvironment(run) {
@@ -181,9 +186,11 @@ async function withProductionEnvironment(run) {
 }
 
 test("real update action resolves and provisions its actor once", async () => withProductionEnvironment(async () => {
-  const { counters, actionModule } = fixture();
+  const { counters, actionModule, timing } = fixture();
   assert.deepEqual(await actionModule.updateTaskAction("task_alice", { title: "Changed" }), [{ id: "list_for_project_alice" }]);
   assert.deepEqual(counters, { auth: 1, currentUser: 1, provision: 1, update: 1, activity: 1, list: 1 });
+  assert.deepEqual(timing.scopes, ["edit"]);
+  assert.deepEqual(timing.stages, ["identity", "projectProof", "projectProof", "writeAndActivity", "finalRead"]);
 }));
 
 test("forged or revoked cookie falls back only to the same actor's live membership", async () => withProductionEnvironment(async () => {

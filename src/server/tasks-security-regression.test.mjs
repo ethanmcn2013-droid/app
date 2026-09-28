@@ -242,7 +242,7 @@ test("updateTaskAction resolves an owned row before emitting activity", () => {
   const activityWrite = body.indexOf("recordActivity(id");
   assert.ok(ownedRead >= 0, "update must read the target with workspace scope");
   assert.ok(activityWrite > ownedRead, "activity must follow the owned-row guard");
-  assert.match(body, /if\s*\(!ownedTask\)\s*return\s*getTasks\(ws\)/);
+  assert.match(body, /if\s*\(!ownedTask\)\s*return\s*(?:measureTaskStage\("finalRead",\s*\(\)\s*=>\s*)?getTasks\(ws\)/);
 });
 
 test("addTaskAction validates parent ownership and top-level shape", () => {

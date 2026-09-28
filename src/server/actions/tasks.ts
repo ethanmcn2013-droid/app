@@ -22,6 +22,7 @@ import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
 import { getCurrentUser, getCurrentUserAndActiveWorkspaceOrNull } from "@/server/auth";
 import { withIdentityOutboundScope } from "@/server/diagnostics/identity-outbound";
+import { measureTaskStage, withTaskActionTiming } from "@/server/diagnostics/task-timing";
 import { privateTaskDbWrite } from "@/server/actions/private-task-db-write";
 import {
   authorizeProjectCandidate,
@@ -202,22 +203,25 @@ export async function moveTaskAction(
 
 export async function toggleCompleteAction(id: string): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  const [me, ambient] = await withIdentityOutboundScope("taskAction", getCurrentUserAndActiveWorkspaceOrNull);
-  const scope = await scopeForTask(id, me);
+  return withTaskActionTiming("complete", async () => {
+  const [me, ambient] = await measureTaskStage("identity", () => withIdentityOutboundScope("taskAction", getCurrentUserAndActiveWorkspaceOrNull));
+  const scope = await measureTaskStage("projectProof", () => scopeForTask(id, me));
   if (!scope.ok) return neutralTaskList(ambient, me);
   const ws = scope.ws;
   // Re-read under the proved Project: a foreign or moved row is refused here
   // rather than toggled.
-  const [row] = await db
+  const [row] = await measureTaskStage("projectProof", () => db
     .select()
     .from(tasks)
-    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
-  if (!row) return getTasks(ws);
+    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws))));
+  if (!row) return measureTaskStage("finalRead", () => getTasks(ws));
 
   // Recurring tasks that are being completed don't go to "done", they
   // bounce back to "todo" with the due date advanced by one interval.
-  if (row.recurrence && row.lane !== "done") {
-    const nextDueAt = advanceDate(row.dueAt ?? new Date(), row.recurrence);
+  const recurrence = row.recurrence;
+  if (recurrence && row.lane !== "done") {
+    await measureTaskStage("writeAndActivity", async () => {
+    const nextDueAt = advanceDate(row.dueAt ?? new Date(), recurrence);
     await db
       .update(tasks)
       .set({
@@ -245,18 +249,20 @@ export async function toggleCompleteAction(id: string): Promise<Task[]> {
       },
       true,
     );
+    });
     revalidatePath("/app", "layout");
     emitTasksChanged({ kind: "tasks" });
-    return getTasks(ws);
+    return measureTaskStage("finalRead", () => getTasks(ws));
   }
 
   // Done-ness is the config predicate: a task in a custom done column
   // reopens to todo; anything open completes into the canonical done
   // lane. Both directions clear any custom-column claim so the card
   // lands where the action says it does.
-  const columnConfig = await readWorkspaceColumnConfig(ws);
+  const columnConfig = await measureTaskStage("projectProof", () => readWorkspaceColumnConfig(ws));
   const wasDone = isTaskDone(row, columnConfig);
   const target: LaneId = wasDone ? "todo" : "done";
+  await measureTaskStage("writeAndActivity", async () => {
   await db
     .update(tasks)
     .set({
@@ -284,9 +290,11 @@ export async function toggleCompleteAction(id: string): Promise<Task[]> {
   if (!wasDone) {
     await maybeAwardCompletionMilestone(me, id).catch(() => {});
   }
+  });
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });
-  return getTasks(ws);
+  return measureTaskStage("finalRead", () => getTasks(ws));
+  });
 }
 
 /** Walk `d` forward to the next day matching `weekday` (0-6). Capped
@@ -437,8 +445,9 @@ export async function updateTaskAction(
   patch: Partial<Omit<Task, "id">>,
 ): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  const [me, ambient] = await withIdentityOutboundScope("taskAction", getCurrentUserAndActiveWorkspaceOrNull);
-  const scope = await scopeForTask(id, me);
+  return withTaskActionTiming("edit", async () => {
+  const [me, ambient] = await measureTaskStage("identity", () => withIdentityOutboundScope("taskAction", getCurrentUserAndActiveWorkspaceOrNull));
+  const scope = await measureTaskStage("projectProof", () => scopeForTask(id, me));
   if (!scope.ok) return neutralTaskList(ambient, me);
   const ws = scope.ws;
   // Resolve the target through the *proved* Project before doing any
@@ -455,7 +464,7 @@ export async function updateTaskAction(
   // The extra columns are for the sponsored-use diff: a patch that rewrites
   // identical values is not a reassignment or a reschedule, and comparing
   // costs nothing on a read this function already performs.
-  const [ownedTask] = await db
+  const [ownedTask] = await measureTaskStage("projectProof", () => db
     .select({
       id: tasks.id,
       lane: tasks.lane,
@@ -466,8 +475,8 @@ export async function updateTaskAction(
       durationDays: tasks.durationDays,
     })
     .from(tasks)
-    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
-  if (!ownedTask) return getTasks(ws);
+    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws))));
+  if (!ownedTask) return measureTaskStage("finalRead", () => getTasks(ws));
   // Build the SET payload from only explicitly allowed columns.
   // This is an action-boundary allowlist, it strips ownership /
   // structural / identity columns (workspaceId, parentTaskId,
@@ -488,7 +497,7 @@ export async function updateTaskAction(
   // clear any custom-column claim and stamp the done transition so no
   // write path can change done-ness without moving completedAt (T·122).
   if ("lane" in cleaned) {
-    const columnConfig = await readWorkspaceColumnConfig(ws);
+    const columnConfig = await measureTaskStage("projectProof", () => readWorkspaceColumnConfig(ws));
     cleaned.boardColumnKey = null;
     Object.assign(
       cleaned,
@@ -501,6 +510,7 @@ export async function updateTaskAction(
   // Workspace guard: a write only lands when the row belongs to the
   // caller's active workspace. Without this clause an authenticated
   // user who knows any task id could overwrite cross-tenant rows.
+  await measureTaskStage("writeAndActivity", async () => {
   await privateTaskDbWrite(() => db
     .update(tasks)
     .set({ ...cleaned, ...bump() })
@@ -544,10 +554,12 @@ export async function updateTaskAction(
       );
     }
   }
+  });
 
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });
-  return getTasks(ws);
+  return measureTaskStage("finalRead", () => getTasks(ws));
+  });
 }
 
 export async function addTaskAction(input: {
@@ -588,12 +600,13 @@ export async function addTaskAction(input: {
   projectId?: string;
 }): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  const [me, ambient] = await withIdentityOutboundScope("taskAction", getCurrentUserAndActiveWorkspaceOrNull);
-  const grant = await authorizeProjectCandidate({
+  return withTaskActionTiming("create", async () => {
+  const [me, ambient] = await measureTaskStage("identity", () => withIdentityOutboundScope("taskAction", getCurrentUserAndActiveWorkspaceOrNull));
+  const grant = await measureTaskStage("projectProof", () => authorizeProjectCandidate({
     candidateProjectId: input.projectId ?? ambient,
     capability: "createOrEditTasks",
     actorUserId: me,
-  });
+  }));
   // No proved Project means no destination. The old accessor would have
   // offered LEGACY_WORKSPACE_ID here and this would have created the task
   // inside it (D-005).
@@ -607,7 +620,7 @@ export async function addTaskAction(input: {
   const id =
     input.id ??
     `t-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).slice(0, 8)}`;
-  const created = await db.transaction(async (tx) => {
+  const created = await measureTaskStage("writeAndActivity", () => db.transaction(async (tx) => {
     const current = await authorizeStoredProject({
       storedProjectId: ws, actorUserId: me, capability: "createOrEditTasks",
       archivePolicy: "enforce", executor: tx,
@@ -680,14 +693,15 @@ export async function addTaskAction(input: {
     }, task);
     await captureTaskCreated(tx, { actorUserId: me, projectId: ws });
     return true;
-  }, { behavior: "immediate" });
+  }, { behavior: "immediate" }));
   if (!created) {
     if (input.projectId != null) throw new Error("Task Project is unavailable");
     return neutralTaskList(ambient, me);
   }
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });
-  return getTasks(ws);
+  return measureTaskStage("finalRead", () => getTasks(ws));
+  });
 }
 
 /**

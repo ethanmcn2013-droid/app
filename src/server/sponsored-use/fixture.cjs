@@ -47,6 +47,12 @@ async function usageFixture(options = {}) {
       getCurrentUserAndActiveWorkspaceOrNull,
       getActiveWorkspaceOrNull: async () => state.ambient,
     };
+    if (file === "src/server/diagnostics/task-timing.ts") return {
+      withTaskActionTiming: (_scope, work) => work(),
+      measureTaskStage: (_stage, work) => work(),
+      measureTaskBoardQuery: work => work(),
+      measureTaskBoardMap: (_rows, work) => work(),
+    };
     if (file === "src/lib/access-mode.ts") return { isDemoMode: () => state.demo };
     if (file === "src/server/db/queries.ts") return {
       getTasks: async ws => db.select().from(schema.tasks).where(eq(schema.tasks.workspaceId, ws)),
