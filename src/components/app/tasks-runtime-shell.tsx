@@ -29,12 +29,14 @@ import { getWorkspacePersonalization } from "@/lib/onboarding/personalization";
 import { TasksProvider } from "@/lib/tasks/tasks-context";
 import { isDemoMode } from "@/lib/access-mode";
 import { requireAppAccessTasks } from "@/server/app-access";
-import { getCurrentUser, listMyWorkspaces } from "@/server/auth";
+import { getCurrentUser } from "@/server/auth";
 import { resolveProjectForRoute } from "@/server/projects/route-authz";
 import { parseProjectId } from "@/lib/projects/project-ref";
 import { getBoardName, getColumnConfig } from "@/server/actions/board";
 import { getWorkspaceMemberMeta } from "@/server/db/members";
-import { getProjectsTreeData } from "@/server/actions/projects-tree";
+import { listMyWorkspacesForUser } from "@/server/projects/member-workspaces";
+import { getProjectsTreeForWorkspaces } from "@/server/projects/projects-tree-read";
+import { startTasksRenderReads } from "@/server/projects/tasks-render-reads";
 import { getRoomBriefData } from "@/server/actions/room";
 import { getTagDefs } from "@/server/actions/tags";
 import { db } from "@/server/db";
@@ -141,6 +143,18 @@ export async function TasksRuntimeShell({
     redirect("/welcome");
   }
 
+  const demo = isDemoMode();
+  const renderReads = startTasksRenderReads({
+    getCurrentUser,
+    listMyWorkspacesForUser,
+    getProjectsTreeForWorkspaces,
+    getEdition: async (actor) => editionLabel(
+      (await resolveEntitlement(actor)).source as EntitlementSource | null,
+    ),
+  }, demo);
+  // Defer each independent read into its own promise so synchronous failures
+  // cannot strand a dependent identity/list/tree/edition rejection.
+  const read = <T,>(operation: () => Promise<T> | T): Promise<T> => Promise.resolve().then(operation);
   const [
     tasks,
     domain,
@@ -153,11 +167,12 @@ export async function TasksRuntimeShell({
     columnConfig,
     tagDefs,
     members,
+    edition,
   ] = await Promise.all([
-    getTasks(workspaceId),
-    getActiveDomain(workspaceId),
-    getCurrentUser(),
-    isDemoMode()
+    read(() => getTasks(workspaceId)),
+    read(() => getActiveDomain(workspaceId)),
+    renderReads.currentUser,
+    read(() => demo
       ? Promise.resolve({
           name: DEMO_WORKSPACE_NAME,
           slug: DEMO_WORKSPACE_SLUG,
@@ -188,14 +203,15 @@ export async function TasksRuntimeShell({
           })
           .from(workspaces)
           .where(eq(workspaces.id, workspaceId))
-          .then((rows) => rows[0]),
-    listMyWorkspaces(),
-    getRoomBriefData(workspaceId),
-    getProjectsTreeData(),
-    getBoardName(workspaceId),
-    getColumnConfig(workspaceId),
-    getTagDefs(workspaceId),
-    getWorkspaceMemberMeta(workspaceId),
+          .then((rows) => rows[0])),
+    renderReads.myWorkspaces,
+    read(() => getRoomBriefData(workspaceId)),
+    renderReads.projectsTree,
+    read(() => getBoardName(workspaceId)),
+    read(() => getColumnConfig(workspaceId)),
+    read(() => getTagDefs(workspaceId)),
+    read(() => getWorkspaceMemberMeta(workspaceId)),
+    renderReads.edition,
     // The theme preference used to be read here, for a data-theme attribute
     // this shell hung on a display:contents wrapper. The app layout owns the
     // resolved theme now (src/app/app/theme-runtime.tsx) — one read for all
@@ -206,11 +222,6 @@ export async function TasksRuntimeShell({
   const workspaceSlug = workspace?.slug ?? workspaceId;
   // Account edition badge only (Venue/School), never the current project's
   // plan or an upgrade gate. Project billing uses getEffectiveTier(me, ws).
-  const edition = isDemoMode()
-    ? null
-    : editionLabel(
-        (await resolveEntitlement(currentUser)).source as EntitlementSource | null,
-      );
   const personalization = getWorkspacePersonalization({
     primaryUseCase: workspace?.primaryUseCase,
     activeDomain: domain,

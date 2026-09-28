@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/server/db";
-import { users, workspaceMembers, workspaces } from "@/server/db/schema";
+import { users, workspaceMembers } from "@/server/db/schema";
 import type { UserId } from "@/lib/data";
 import { LEGACY_WORKSPACE_ID } from "@/server/db/seed";
 import { ensureUserProvisioned } from "@/server/db/ensure-user";
@@ -12,6 +12,7 @@ import { firstMembershipByCatalogOrder } from "@/server/projects/catalog";
 import { DEMO_USER_ID, DEMO_WORKSPACE_ID } from "@/server/demo/tasks-demo";
 import { beginIdentityTiming } from "@/server/diagnostics/identity-timing";
 import { observeCurrentUserOutbound } from "@/server/diagnostics/identity-outbound";
+import { demoMemberWorkspaces, listMyWorkspacesForUser } from "@/server/projects/member-workspaces";
 
 /**
  * Auth resolution. Two layers:
@@ -281,29 +282,8 @@ async function activeWorkspaceOrNullForUser(me: UserId): Promise<string | null> 
 export async function listMyWorkspaces(): Promise<
   Array<{ id: string; name: string; slug: string; role: string }>
 > {
-  if (isDemoMode()) {
-    return [
-      {
-        id: DEMO_WORKSPACE_ID,
-        name: "The Orchard, events",
-        slug: "the-orchard",
-        role: "owner",
-      },
-    ];
-  }
-
-  const me = await getCurrentUser();
-  const rows = await db
-    .select({
-      id: workspaces.id,
-      name: workspaces.name,
-      slug: workspaces.slug,
-      role: workspaceMembers.role,
-    })
-    .from(workspaceMembers)
-    .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
-    .where(eq(workspaceMembers.userId, me));
-  return rows;
+  if (isDemoMode()) return demoMemberWorkspaces();
+  return listMyWorkspacesForUser(await getCurrentUser());
 }
 
 export const ACTIVE_WORKSPACE_COOKIE_NAME = ACTIVE_WORKSPACE_COOKIE;

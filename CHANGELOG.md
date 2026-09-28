@@ -4,6 +4,10 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-09-28 · Preview candidate · Fewer repeated Tasks reads
+
+Tasks now reuse one fresh user lookup and workspace list within each render, and read the account badge alongside the other page data. Project permissions, task counts, navigation refreshes and the visual design are unchanged. Hosted performance verification is pending.
+
 ## 2026-09-28 · Preview candidate · Board changes stay with their project
 
 Board names and column settings now carry the project displayed on screen, so another tab changing the active project cannot redirect a column edit. Each write rechecks membership and deletion state inside its transaction. Switching projects also discards old optimistic column state; local regression checks pass and controlled Preview browser receiving is pending. The visual design is unchanged.
