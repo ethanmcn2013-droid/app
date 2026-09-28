@@ -201,6 +201,10 @@ test("real getCurrentUser keeps result, failure and demo behavior while timing b
     "@/server/db/ensure-user": {ensureUserProvisioned: async () => {state.provisions++;}},
     "@/lib/access-mode": {isDemoMode: () => state.demo},
     "@/server/projects/catalog": {},
+    "@/server/projects/member-workspaces": {
+      demoMemberWorkspaces: () => {throw Error("unexpected-member-workspaces-read");},
+      listMyWorkspacesForUser: () => {throw Error("unexpected-member-workspaces-read");},
+    },
     "@/server/demo/tasks-demo": {DEMO_USER_ID: "synthetic-demo", DEMO_WORKSPACE_ID: "synthetic-demo-project"},
     "@/server/diagnostics/identity-timing": helper,
     "@/server/diagnostics/identity-outbound": {observeCurrentUserOutbound: work => work()},

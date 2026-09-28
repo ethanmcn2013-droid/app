@@ -194,6 +194,10 @@ test("real getCurrentUser wiring scopes one Clerk event without changing provisi
     "@/server/db/ensure-user": {ensureUserProvisioned: async () => {provisionCalls++;}},
     "@/lib/access-mode": {isDemoMode: () => false},
     "@/server/projects/catalog": {},
+    "@/server/projects/member-workspaces": {
+      demoMemberWorkspaces: () => {throw Error("unexpected-member-workspaces-read");},
+      listMyWorkspacesForUser: () => {throw Error("unexpected-member-workspaces-read");},
+    },
     "@/server/demo/tasks-demo": {DEMO_USER_ID: "demo", DEMO_WORKSPACE_ID: "demo-project"},
     "@/server/diagnostics/identity-timing": {beginIdentityTiming: () => ({measure: (_stage, work) => work(), finish() {}})},
     "@/server/diagnostics/identity-outbound": f.outbound,
