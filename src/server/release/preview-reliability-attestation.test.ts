@@ -114,3 +114,76 @@ test("every configured external provider prevents a receipt", () => {
     assert.equal(response.body, null);
   }
 });
+
+const diagnosticRequest = (authorization = `Bearer ${token}`) => new Request(
+  environment.SIGNAL_RELIABILITY_ORIGIN + "/api/internal/reliability-target?diagnostic=1", { headers: { authorization } });
+
+test("protected diagnostic returns only the fixed boolean predicates and no attestation identity", async () => {
+  const response = previewReliabilityAttestation(diagnosticRequest(), environment, now);
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.deepEqual(Object.keys(body).sort(), ["predicates", "schema"]);
+  assert.equal(body.schema, "isolated-reliability-diagnostic/1");
+  assert.deepEqual(Object.keys(body.predicates).sort(), ["originMatches", "originHttps", "testPublishableKey", "testSecretKey",
+    "deploymentIdFormat", "projectIdFormat", "sourceShaFormat", "storesPresent", "providersDisabled", "serverAccessProduction",
+    "publicAccessProduction", "identityOverridesAbsent", "testIssuerParseable", "conversationInternalEnabled", "conversationSendsEnabled",
+    "conversationDeliveryDisabled", "conversationDirectMessagesDisabled", "twoConversationActors", "conversationRemoteTarget"].sort());
+  assert.ok(Object.values(body.predicates).every(value => value === true));
+  assert.doesNotMatch(JSON.stringify(body), /synthetic|https:|libsql:|sk_test_|pk_test_|SIGNAL_|CLERK_|DATABASE_URL|dpl_|prj_/);
+  const normal = previewReliabilityAttestation(request(), environment, now);
+  for (const name of ["Cache-Control", "CDN-Cache-Control", "Vercel-CDN-Cache-Control", "Referrer-Policy", "X-Robots-Tag"])
+    assert.equal(response.headers.get(name), normal.headers.get(name));
+  assert.equal((await normal.json()).schema, "isolated-reliability-runtime/2");
+});
+
+test("diagnostic cannot bypass method, deployment classification, marker, expiry or constant-time Bearer gate", () => {
+  for (const patch of [{ VERCEL: "" }, { VERCEL_ENV: "production" }, { VERCEL_TARGET_ENV: "production" },
+    { VERCEL_TARGET_ENV: undefined }, { NODE_ENV: "development" }, { SIGNAL_RELIABILITY_ATTEST: "" },
+    { SIGNAL_RELIABILITY_ATTEST_UNTIL_MS: String(now) }, { SIGNAL_RELIABILITY_ATTEST_UNTIL_MS: "invalid" },
+    { SIGNAL_RELIABILITY_ATTEST_UNTIL_MS: String(now + 6 * 3600000 + 1) }, { SIGNAL_RELIABILITY_ATTEST_TOKEN: "short" }]) {
+    const response = previewReliabilityAttestation(diagnosticRequest(), { ...environment, ...patch }, now);
+    assert.equal(response.status, 404); assert.equal(response.body, null);
+  }
+  for (const authorization of ["", token, "Bearer short", `Bearer ${"b".repeat(43)}`]) {
+    const response = previewReliabilityAttestation(diagnosticRequest(authorization), environment, now);
+    assert.equal(response.status, 404); assert.equal(response.body, null);
+  }
+  assert.equal(previewReliabilityAttestation(new Request(diagnosticRequest(), { method: "POST" }), environment, now).status, 404);
+  assert.equal(previewReliabilityAttestation(diagnosticRequest(), {}, now).status, 404);
+});
+
+test("bad source identity is diagnosed without making normal attestation pass", async () => {
+  const invalid = { ...environment, VERCEL_GIT_COMMIT_SHA: "private-invalid-source" };
+  const diagnostic = await previewReliabilityAttestation(diagnosticRequest(), invalid, now).json();
+  assert.equal(diagnostic.predicates.sourceShaFormat, false);
+  assert.ok(Object.values(diagnostic.predicates).every(value => typeof value === "boolean"));
+  assert.doesNotMatch(JSON.stringify(diagnostic), /private-invalid-source/);
+  assert.equal(previewReliabilityAttestation(request(), invalid, now).status, 404);
+  const disabledQuery = new Request(request().url + "?diagnostic=0", { headers: { authorization: `Bearer ${token}` } });
+  assert.equal(previewReliabilityAttestation(disabledQuery, invalid, now).status, 404);
+});
+
+test("remaining configuration failures are boolean-only and normal mode stays hidden", async () => {
+  const failures = [
+    [{ SIGNAL_RELIABILITY_ORIGIN: "https://private-other.example" }, "originMatches"],
+    [{ SIGNAL_RELIABILITY_ORIGIN: "http://private-other.example" }, "originHttps"],
+    [{ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "" }, "testPublishableKey"], [{ CLERK_SECRET_KEY: "" }, "testSecretKey"],
+    [{ VERCEL_DEPLOYMENT_ID: "" }, "deploymentIdFormat"], [{ VERCEL_PROJECT_ID: "" }, "projectIdFormat"],
+    [{ TASKS_DATABASE_URL: "" }, "storesPresent"], [{ RESEND_API_KEY: "private-provider-value" }, "providersDisabled"],
+    [{ SIGNAL_ACCESS_MODE: "review" }, "serverAccessProduction"], [{ NEXT_PUBLIC_SIGNAL_ACCESS_MODE: "review" }, "publicAccessProduction"],
+    [{ CLERK_DOMAIN: "private-domain" }, "identityOverridesAbsent"], [{ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_invalid" }, "testIssuerParseable"],
+    [{ SIGNAL_CONVERSATION_INTERNAL_ENABLED: "false" }, "conversationInternalEnabled"], [{ SIGNAL_CONVERSATION_SEND_ENABLED: "false" }, "conversationSendsEnabled"],
+    [{ SIGNAL_CONVERSATION_DELIVERY_ENABLED: "true" }, "conversationDeliveryDisabled"], [{ SIGNAL_CONVERSATION_DM_ENABLED: "true" }, "conversationDirectMessagesDisabled"],
+    [{ SIGNAL_CONVERSATION_INTERNAL_ACTOR_IDS: "one-private-actor" }, "twoConversationActors"], [{ TASKS_AUTH_TOKEN: "" }, "conversationRemoteTarget"],
+  ] as const;
+  for (const [patch, predicate] of failures) {
+    const env = { ...environment, ...patch };
+    const response = previewReliabilityAttestation(diagnosticRequest(), env, now);
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.predicates[predicate], false, predicate);
+    assert.ok(Object.values(body.predicates).every(value => typeof value === "boolean"));
+    assert.equal(previewReliabilityAttestation(request(), env, now).status, 404, predicate);
+    assert.doesNotMatch(JSON.stringify(body), /private-|one-private-actor/);
+  }
+});

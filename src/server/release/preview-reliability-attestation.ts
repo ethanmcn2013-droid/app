@@ -35,6 +35,33 @@ export function previewReliabilityAttestation(request: Request, env: Environment
       Buffer.byteLength(presented) !== Buffer.byteLength(token) ||
       !timingSafeEqual(Buffer.from(presented), Buffer.from(token))) return hidden();
   const origin = env.SIGNAL_RELIABILITY_ORIGIN ?? (env.VERCEL_URL ? `https://${env.VERCEL_URL}` : undefined);
+  // Diagnostics disclose only fixed predicates after the same short-lived Preview authentication gate.
+  // They are not a runtime attestation and never supply substitute deployment or store identity.
+  if (new URL(request.url).searchParams.get("diagnostic") === "1") {
+    const controls = resolveConversationControls(env);
+    const target = resolveConversationRuntimeTarget(env, false);
+    return Response.json({ schema: "isolated-reliability-diagnostic/1", predicates: {
+      originMatches: Boolean(origin) && new URL(request.url).origin === origin,
+      originHttps: origin?.startsWith("https://") === true,
+      testPublishableKey: env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith("pk_test_") === true,
+      testSecretKey: env.CLERK_SECRET_KEY?.startsWith("sk_test_") === true,
+      deploymentIdFormat: /^dpl_[A-Za-z0-9]+$/.test(env.VERCEL_DEPLOYMENT_ID ?? ""),
+      projectIdFormat: /^prj_[A-Za-z0-9]+$/.test(env.VERCEL_PROJECT_ID ?? ""),
+      sourceShaFormat: /^[a-f0-9]{40}$/.test(env.VERCEL_GIT_COMMIT_SHA ?? ""),
+      storesPresent: STORE_KEYS.every(key => Boolean(env[key])),
+      providersDisabled: !PROVIDER_KEYS.some(key => Boolean(env[key])),
+      serverAccessProduction: env.SIGNAL_ACCESS_MODE === "production",
+      publicAccessProduction: env.NEXT_PUBLIC_SIGNAL_ACCESS_MODE === "production",
+      identityOverridesAbsent: !IDENTITY_OVERRIDE_KEYS.some(key => Boolean(env[key])),
+      testIssuerParseable: testIssuerHash(env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) !== null,
+      conversationInternalEnabled: controls.internalEnabled,
+      conversationSendsEnabled: controls.sendsEnabled,
+      conversationDeliveryDisabled: !controls.deliveryEnabled,
+      conversationDirectMessagesDisabled: !controls.directMessagesEnabled,
+      twoConversationActors: controls.allowedActorIds.size === 2,
+      conversationRemoteTarget: target.mode === "remote",
+    } }, { headers });
+  }
   if (!origin || new URL(request.url).origin !== origin || !origin.startsWith("https://") ||
       !env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith("pk_test_") || !env.CLERK_SECRET_KEY?.startsWith("sk_test_") ||
       !/^dpl_[A-Za-z0-9]+$/.test(env.VERCEL_DEPLOYMENT_ID ?? "") ||
