@@ -21,18 +21,18 @@
  * format (steps 3/4 of T·69, shipped before step 5), it is interpreted
  * as `{ system: <that record>, custom: [], order: LANE_ORDER }`.
  *
- * Workspace-scoping is done by encoding the workspaceId into the key
- * AND by requiring the caller to own the active workspace (auth guard
- * matches every other action in this suite).
+ * Configuration writes take the Project carried by the rendered Board,
+ * re-proved under the write lock before its id enters the meta key.
  */
 
 import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
-import { meta, tasks } from "@/server/db/schema";
-import { getActiveWorkspaceOrNull, getCurrentUser } from "@/server/auth";
+import { meta, tasks, users, workspaces } from "@/server/db/schema";
+import { getCurrentUser } from "@/server/auth";
+import { hasAccountDeletionStartedWith } from "@/server/account-deletion-lifecycle";
+import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
 import {
-  authorizeProjectCandidate,
   authorizeStoredProject,
   scopeForTask,
 } from "@/server/actions/project-authz";
@@ -82,24 +82,58 @@ export type { ColumnConfig, CustomColumn } from "@/lib/board-config";
  * makes these the sharpest kind of ambient site: a wrong id does not fail, it
  * silently reconfigures another Project's board.
  *
- * Two changes. The cookie is read through the fail-closed accessor, so it can
- * no longer decay to `LEGACY_WORKSPACE_ID` and rewrite a workspace the caller
- * has proved nothing about (D-005). And membership is proved before the key is
- * built, rather than assumed because a cookie parsed.
+ * The Board's existing DomainProvider carries its server-verified rendered
+ * Project. The client sends that id with each write; a stale shared cookie
+ * cannot silently redirect a write to another Project.
  *
  * `createOrEditTasks` rather than `manageProject`: renaming a column is
  * ordinary board work that every member does today, and WP3 is not the place
  * to introduce a role gate the product has never had.
  */
-async function provedBoardProject(candidate: string | null): Promise<string> {
-  const grant = await authorizeProjectCandidate({
-    candidateProjectId: candidate,
-    capability: "createOrEditTasks",
-  });
-  // One neutral message for every refusal: "no such Project", "not a member"
-  // and "no Project at all" must not be tellable apart (ADR 0001 §4).
-  if (!grant.ok) throw new Error("That project isn’t available.");
-  return grant.projectId;
+type BoardWriteExecutor = Pick<typeof db, "select" | "run">;
+
+async function assertBoardMutationNotDeleting(
+  executor: Pick<typeof db, "select">,
+  projectId: string,
+  actorUserId: string,
+): Promise<void> {
+  await assertProjectNotDeleting(executor, projectId);
+  const [actor] = await executor
+    .select({ clerkId: users.clerkId })
+    .from(users)
+    .where(eq(users.id, actorUserId))
+    .limit(1);
+  if (!actor || await hasAccountDeletionStartedWith(executor, actor.clerkId ?? actorUserId)) {
+    throw new Error("That project isn’t available.");
+  }
+  const [owner] = await executor
+    .select({ id: users.id, clerkId: users.clerkId })
+    .from(workspaces)
+    .innerJoin(users, eq(users.id, workspaces.ownerUserId))
+    .where(eq(workspaces.id, projectId))
+    .limit(1);
+  if (owner && await hasAccountDeletionStartedWith(executor, owner.clerkId ?? owner.id)) {
+    throw new Error("That project isn’t available.");
+  }
+}
+
+/** Re-prove membership and capability under the same write lock as the meta row. */
+async function withBoardConfigWrite<T>(
+  candidateProjectId: string,
+  mutate: (workspaceId: string, executor: BoardWriteExecutor) => Promise<T>,
+): Promise<T> {
+  const actorUserId = await getCurrentUser();
+  return db.transaction(async (tx) => {
+    const grant = await authorizeStoredProject({
+      storedProjectId: candidateProjectId,
+      capability: "createOrEditTasks",
+      actorUserId,
+      executor: tx,
+    });
+    if (!grant.ok) throw new Error("That project isn’t available.");
+    await assertBoardMutationNotDeleting(tx, grant.projectId, actorUserId);
+    return mutate(grant.projectId, tx);
+  }, { behavior: "immediate" });
 }
 
 // ─── Key helpers ──────────────────────────────────────────────────────────────
@@ -164,23 +198,24 @@ export async function getBoardName(
 }
 
 /**
- * Upsert the board-name override for the caller's active workspace.
+ * Upsert the board-name override for the explicitly rendered Project.
  * Trims, rejects empty, clamps to MAX_NAME_LEN.
  */
-export async function renameBoardAction(name: string): Promise<{ ok: true }> {
+export async function renameBoardAction(projectId: string, name: string): Promise<{ ok: true }> {
   const trimmed = name.trim();
   if (!trimmed) throw new Error("Board name can’t be empty.");
   if (isDemoMode()) return { ok: true };
-  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
   const clamped = trimmed.slice(0, MAX_NAME_LEN);
-  const key = boardNameKey(ws);
-  await db.run(sql`
-    INSERT INTO meta (key, value, updated_at)
-    VALUES (${key}, ${clamped}, unixepoch())
-    ON CONFLICT(key) DO UPDATE SET
-      value = excluded.value,
-      updated_at = excluded.updated_at
-  `);
+  await withBoardConfigWrite(projectId, async (ws, tx) => {
+    const key = boardNameKey(ws);
+    await tx.run(sql`
+      INSERT INTO meta (key, value, updated_at)
+      VALUES (${key}, ${clamped}, unixepoch())
+      ON CONFLICT(key) DO UPDATE SET
+        value = excluded.value,
+        updated_at = excluded.updated_at
+    `);
+  });
   revalidatePath("/app", "layout");
   return { ok: true };
 }
@@ -207,33 +242,32 @@ export async function getColumnConfig(
  * For custom columns, the name is updated in `config.custom[]`.
  */
 export async function renameColumnAction(
+  projectId: string,
   columnKey: string,
   name: string,
 ): Promise<{ ok: true }> {
   const trimmed = name.trim();
   if (!trimmed) throw new Error("Column name can’t be empty.");
   if (isDemoMode()) return { ok: true };
-  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
   const clamped = trimmed.slice(0, MAX_NAME_LEN);
+  await withBoardConfigWrite(projectId, async (ws, tx) => {
+    const existing = (await readColumnConfig(ws, tx)) ?? defaultColumnConfig();
 
-  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
+    if ((LANE_ORDER as string[]).includes(columnKey)) {
+      existing.system = {
+        ...existing.system,
+        [columnKey as LaneId]: clamped,
+      };
+    } else {
+      const idx = existing.custom.findIndex((c) => c.key === columnKey);
+      if (idx === -1) throw new Error(`Unknown column key: ${columnKey}`);
+      existing.custom = existing.custom.map((c) =>
+        c.key === columnKey ? { ...c, name: clamped } : c,
+      );
+    }
 
-  if ((LANE_ORDER as string[]).includes(columnKey)) {
-    // System lane rename.
-    existing.system = {
-      ...existing.system,
-      [columnKey as LaneId]: clamped,
-    };
-  } else {
-    // Custom column rename.
-    const idx = existing.custom.findIndex((c) => c.key === columnKey);
-    if (idx === -1) throw new Error(`Unknown column key: ${columnKey}`);
-    existing.custom = existing.custom.map((c) =>
-      c.key === columnKey ? { ...c, name: clamped } : c,
-    );
-  }
-
-  await writeColumnConfig(ws, existing);
+    await writeColumnConfig(ws, existing, tx);
+  });
   revalidatePath("/app", "layout");
   return { ok: true };
 }
@@ -244,22 +278,18 @@ export async function renameColumnAction(
  * T·96.
  */
 export async function setColumnColorAction(
+  projectId: string,
   columnKey: string,
   color: ColumnColorKey,
 ): Promise<{ ok: true }> {
   if (!isColumnColorKey(color)) throw new Error("Unknown column colour.");
   if (isDemoMode()) return { ok: true };
-  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
-
-  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
-
-  // Store the chosen colour explicitly, including "neutral", so an owner
-  // can override a system lane's semantic default back to no tint. The
-  // client's boardColumnColor() treats a stored value as the owner's
-  // choice and never overrides it with a default.
-  existing.colors = { ...existing.colors, [columnKey]: color };
-
-  await writeColumnConfig(ws, existing);
+  await withBoardConfigWrite(projectId, async (ws, tx) => {
+    const existing = (await readColumnConfig(ws, tx)) ?? defaultColumnConfig();
+    // "neutral" is an explicit override of the semantic default.
+    existing.colors = { ...existing.colors, [columnKey]: color };
+    await writeColumnConfig(ws, existing, tx);
+  });
   revalidatePath("/app", "layout");
   return { ok: true };
 }
@@ -270,17 +300,17 @@ export async function setColumnColorAction(
  * column then shows no description, not its static default). Phase 2.
  */
 export async function setColumnDescriptionAction(
+  projectId: string,
   columnKey: string,
   description: string,
 ): Promise<{ ok: true }> {
   if (isDemoMode()) return { ok: true };
-  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
   const clamped = description.trim().slice(0, MAX_DESCRIPTION_LEN);
-
-  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
-  existing.descriptions = { ...existing.descriptions, [columnKey]: clamped };
-
-  await writeColumnConfig(ws, existing);
+  await withBoardConfigWrite(projectId, async (ws, tx) => {
+    const existing = (await readColumnConfig(ws, tx)) ?? defaultColumnConfig();
+    existing.descriptions = { ...existing.descriptions, [columnKey]: clamped };
+    await writeColumnConfig(ws, existing, tx);
+  });
   revalidatePath("/app", "layout");
   return { ok: true };
 }
@@ -292,6 +322,7 @@ export async function setColumnDescriptionAction(
  * ever blocked.
  */
 export async function setColumnLimitAction(
+  projectId: string,
   columnKey: string,
   limit: number | null,
 ): Promise<{ ok: true }> {
@@ -301,15 +332,14 @@ export async function setColumnLimitAction(
     }
   }
   if (isDemoMode()) return { ok: true };
-  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
-
-  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
-  const limits = { ...existing.limits };
-  if (limit === null || limit === 0) delete limits[columnKey];
-  else limits[columnKey] = limit;
-  existing.limits = limits;
-
-  await writeColumnConfig(ws, existing);
+  await withBoardConfigWrite(projectId, async (ws, tx) => {
+    const existing = (await readColumnConfig(ws, tx)) ?? defaultColumnConfig();
+    const limits = { ...existing.limits };
+    if (limit === null || limit === 0) delete limits[columnKey];
+    else limits[columnKey] = limit;
+    existing.limits = limits;
+    await writeColumnConfig(ws, existing, tx);
+  });
   revalidatePath("/app", "layout");
   return { ok: true };
 }
@@ -320,22 +350,22 @@ export async function setColumnLimitAction(
  * exports would have nothing to count — unmarking the last one throws.
  */
 export async function setColumnDoneAction(
+  projectId: string,
   columnKey: string,
   isDone: boolean,
 ): Promise<{ ok: true }> {
   if (isDemoMode()) return { ok: true };
-  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
-
-  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
-  const current = new Set(resolveDoneKeys(existing));
-  if (isDone) current.add(columnKey);
-  else current.delete(columnKey);
-  if (current.size === 0) {
-    throw new Error("At least one column must count as done.");
-  }
-  existing.doneKeys = [...current];
-
-  await writeColumnConfig(ws, existing);
+  await withBoardConfigWrite(projectId, async (ws, tx) => {
+    const existing = (await readColumnConfig(ws, tx)) ?? defaultColumnConfig();
+    const current = new Set(resolveDoneKeys(existing));
+    if (isDone) current.add(columnKey);
+    else current.delete(columnKey);
+    if (current.size === 0) {
+      throw new Error("At least one column must count as done.");
+    }
+    existing.doneKeys = [...current];
+    await writeColumnConfig(ws, existing, tx);
+  });
   revalidatePath("/app", "layout");
   return { ok: true };
 }
@@ -363,6 +393,7 @@ export type AddColumnOptions = {
  * Returns the new column's key so the client can optimistically render it.
  */
 export async function addColumnAction(
+  projectId: string,
   name: string,
   opts: AddColumnOptions = {},
 ): Promise<{ ok: true; key: string }> {
@@ -384,45 +415,41 @@ export async function addColumnAction(
   if (isDemoMode()) {
     return { ok: true, key: `col-${slug || "column"}-demo` };
   }
-  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
+  const key = await withBoardConfigWrite(projectId, async (ws, tx) => {
+    const existing = (await readColumnConfig(ws, tx)) ?? defaultColumnConfig();
+    if (existing.custom.length >= MAX_CUSTOM_COLUMNS) {
+      throw new Error(
+        `Workspace is at the column limit (${MAX_CUSTOM_COLUMNS} custom columns).`,
+      );
+    }
 
-  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
+    // Format: `col-<slug>-<4-hex>` so duplicate names can coexist.
+    const rand = Math.floor(Math.random() * 0xffff)
+      .toString(16)
+      .padStart(4, "0");
+    const newKey = `col-${slug || "column"}-${rand}`;
 
-  if (existing.custom.length >= MAX_CUSTOM_COLUMNS) {
-    throw new Error(
-      `Workspace is at the column limit (${MAX_CUSTOM_COLUMNS} custom columns).`,
-    );
-  }
+    existing.custom = [...existing.custom, { key: newKey, name: clamped }];
+    if (!existing.order.length) existing.order = [...LANE_ORDER];
+    if (
+      typeof opts.position === "number" &&
+      opts.position >= 0 &&
+      opts.position < existing.order.length
+    ) {
+      const next = [...existing.order];
+      next.splice(opts.position, 0, newKey);
+      existing.order = next;
+    } else {
+      existing.order = [...existing.order, newKey];
+    }
+    if (color) existing.colors = { ...existing.colors, [newKey]: color };
+    if (description) {
+      existing.descriptions = { ...existing.descriptions, [newKey]: description };
+    }
 
-  // Generate a stable, collision-resistant key.
-  // Format: `col-<slug>-<4-hex>` so two columns named "Staging" can coexist.
-  const rand = Math.floor(Math.random() * 0xffff)
-    .toString(16)
-    .padStart(4, "0");
-  const key = `col-${slug || "column"}-${rand}`;
-
-  existing.custom = [...existing.custom, { key, name: clamped }];
-  // Ensure default order exists before inserting.
-  if (!existing.order.length) {
-    existing.order = [...LANE_ORDER];
-  }
-  if (
-    typeof opts.position === "number" &&
-    opts.position >= 0 &&
-    opts.position < existing.order.length
-  ) {
-    const next = [...existing.order];
-    next.splice(opts.position, 0, key);
-    existing.order = next;
-  } else {
-    existing.order = [...existing.order, key];
-  }
-  if (color) existing.colors = { ...existing.colors, [key]: color };
-  if (description) {
-    existing.descriptions = { ...existing.descriptions, [key]: description };
-  }
-
-  await writeColumnConfig(ws, existing);
+    await writeColumnConfig(ws, existing, tx);
+    return newKey;
+  });
   revalidatePath("/app", "layout");
   return { ok: true, key };
 }
@@ -440,40 +467,39 @@ export async function addColumnAction(
  * ever has (≤24 total).
  */
 export async function reorderColumnsAction(
+  projectId: string,
   newOrder: string[],
 ): Promise<{ ok: true }> {
   if (isDemoMode()) return { ok: true };
-  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
-  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
+  await withBoardConfigWrite(projectId, async (ws, tx) => {
+    const existing = (await readColumnConfig(ws, tx)) ?? defaultColumnConfig();
 
-  const allKeys = new Set([
-    ...LANE_ORDER,
-    ...existing.custom.map((c) => c.key),
-  ]);
+    const allKeys = new Set([
+      ...LANE_ORDER,
+      ...existing.custom.map((c) => c.key),
+    ]);
 
-  // Deduplicate the incoming order.
-  const seen = new Set<string>();
-  const deduped = newOrder.filter((k) => {
-    if (seen.has(k)) return false;
-    seen.add(k);
-    return true;
+    const seen = new Set<string>();
+    const deduped = newOrder.filter((k) => {
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+
+    for (const key of allKeys) {
+      if (!deduped.includes(key)) {
+        throw new Error(`Reorder is missing column key: ${key}`);
+      }
+    }
+    for (const key of deduped) {
+      if (!allKeys.has(key)) {
+        throw new Error(`Unknown column key in reorder: ${key}`);
+      }
+    }
+
+    existing.order = deduped;
+    await writeColumnConfig(ws, existing, tx);
   });
-
-  // Reject if any canonical key is missing.
-  for (const key of allKeys) {
-    if (!deduped.includes(key)) {
-      throw new Error(`Reorder is missing column key: ${key}`);
-    }
-  }
-  // Reject unknown keys.
-  for (const key of deduped) {
-    if (!allKeys.has(key)) {
-      throw new Error(`Unknown column key in reorder: ${key}`);
-    }
-  }
-
-  existing.order = deduped;
-  await writeColumnConfig(ws, existing);
   revalidatePath("/app", "layout");
   return { ok: true };
 }
@@ -503,6 +529,7 @@ export async function reorderColumnsAction(
  *   throw new Error(`Column "${name}" has ${count} tasks. Move them first.`)
  */
 export async function deleteColumnAction(
+  projectId: string,
   columnKey: string,
   destinationKey?: string,
 ): Promise<{ ok: true; tasksReassigned: number }> {
@@ -512,7 +539,7 @@ export async function deleteColumnAction(
 
   if (isDemoMode()) return { ok: true, tasksReassigned: 0 };
 
-  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
+  const ws = projectId;
   const actorUserId = await getCurrentUser();
   const tasksReassigned = await db.transaction(async (tx) => {
     // Keep the membership proof, task reassignment and config write under the
@@ -525,6 +552,7 @@ export async function deleteColumnAction(
       executor: tx,
     });
     if (!grant.ok) throw new Error("That project isn’t available.");
+    await assertBoardMutationNotDeleting(tx, grant.projectId, actorUserId);
 
     // A fresh workspace still shows the default Waiting custom column.
     const existing = (await readColumnConfig(ws, tx)) ?? defaultColumnConfig();

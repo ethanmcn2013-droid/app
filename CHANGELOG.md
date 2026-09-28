@@ -4,6 +4,10 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-09-28 · Preview candidate · Board changes stay with their project
+
+Board names and column settings now carry the project displayed on screen, so another tab changing the active project cannot redirect a column edit. Each write rechecks membership and deletion state inside its transaction. Switching projects also discards old optimistic column state; local regression checks pass and controlled Preview browser receiving is pending. The visual design is unchanged.
+
 ## 2026-09-23 · Production candidate · Inbox timing and contributor names
 
 Inbox and the daily digest now describe assigned Tasks due in the next 24 hours as a rolling window, so a Task due tomorrow no longer appears under a “Due today” heading tonight. The query and stored due dates are unchanged. Inbox uses the saved profile name, handle or email local part when available; otherwise its greeting stays neutral. Resources shows that same permitted contributor name after the Task access check instead of displaying “Someone” for a known account. Production receiving remains open.

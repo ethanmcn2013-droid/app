@@ -131,6 +131,7 @@
     "./src/test/register-server-only.mjs",
     "--test",
     "src/components/redeem/redeem-expiry-date.test.ts",
+    "src/components/tasks/column-config-state.test.mjs",
     "src/lib/image/metadata.test.ts",
     "src/lib/keepsake/keepsake.test.ts",
     "src/lib/tasks/dayparts.test.ts",

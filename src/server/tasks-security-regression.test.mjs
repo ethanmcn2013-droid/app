@@ -287,6 +287,19 @@ test("subtask reads include both parent id and workspace scope", () => {
   assert.match(body, /eq\(tasks\.parentTaskId, parentTaskId\)/);
 });
 
+test("board configuration actions require a rendered Project and re-prove it at the write lock", () => {
+  for (const name of [
+    "renameBoardAction", "renameColumnAction", "setColumnColorAction",
+    "setColumnDescriptionAction", "setColumnLimitAction", "setColumnDoneAction",
+    "addColumnAction", "reorderColumnsAction", "deleteColumnAction",
+  ]) {
+    const body = exportedActionBody(boardActions, name);
+    assert.match(body, /projectId:\s*string/);
+    assert.doesNotMatch(body, /getActiveWorkspace/);
+  }
+  assert.match(boardActions, /async function withBoardConfigWrite[\s\S]*?db\.transaction\(async \(tx\) => \{[\s\S]*?authorizeStoredProject\(\{[\s\S]*?storedProjectId: candidateProjectId/);
+});
+
 test("public routes use the explicit allowlisted projection", () => {
   assert.match(publicTask, /id:\s*task\.id/);
   assert.match(publicTask, /title:\s*task\.title/);
@@ -353,21 +366,20 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   }
   for (const [name, boundaries] of [
     ["getBoardName", ["await db"]],
-    ["renameBoardAction", ["getActiveWorkspace", "db.run", "revalidatePath"]],
+    ["renameBoardAction", ["withBoardConfigWrite", "revalidatePath"]],
     ["getColumnConfig", ["readColumnConfig"]],
-    ["renameColumnAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
-    ["setColumnLimitAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
-    ["setColumnDoneAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
-    ["addColumnAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
-    ["reorderColumnsAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
-    ["deleteColumnAction", ["getActiveWorkspace", "readColumnConfig", "await db", "writeColumnConfig"]],
+    ["renameColumnAction", ["withBoardConfigWrite", "readColumnConfig", "writeColumnConfig"]],
+    ["setColumnLimitAction", ["withBoardConfigWrite", "readColumnConfig", "writeColumnConfig"]],
+    ["setColumnDoneAction", ["withBoardConfigWrite", "readColumnConfig", "writeColumnConfig"]],
+    ["addColumnAction", ["withBoardConfigWrite", "readColumnConfig", "writeColumnConfig"]],
+    ["reorderColumnsAction", ["withBoardConfigWrite", "readColumnConfig", "writeColumnConfig"]],
+    ["deleteColumnAction", ["db.transaction", "authorizeStoredProject", "writeColumnConfig"]],
     // WP3 renegotiation (ADR 0001 §9), same reasoning as getSubtasksAction
     // above: moveTaskToColumnAction is an object operation, so it derives the
     // dragged card's own Project instead of resolving one ambiently, and has
     // no `getActiveWorkspace*` left to point at. The ordering invariant — demo
-    // exits before tenant resolution — is unchanged; only the name of the call
-    // that resolves the tenant has. Every other entry in this table is a
-    // create/list site that still resolves ambiently and keeps the old token.
+    // exits before tenant resolution — is unchanged. Configuration writes now
+    // receive the rendered Project and prove it under the write lock.
     ["moveTaskToColumnAction", ["scopeForTask", "await db", "revalidatePath"]],
   ]) {
     for (const boundary of boundaries) {
