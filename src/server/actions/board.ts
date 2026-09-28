@@ -26,13 +26,14 @@
  * matches every other action in this suite).
  */
 
-import { and, eq, isNull, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
 import { meta, tasks } from "@/server/db/schema";
 import { getActiveWorkspaceOrNull, getCurrentUser } from "@/server/auth";
 import {
   authorizeProjectCandidate,
+  authorizeStoredProject,
   scopeForTask,
 } from "@/server/actions/project-authz";
 import { LANE_ORDER, type LaneId } from "@/lib/data";
@@ -45,6 +46,7 @@ import {
   MAX_CUSTOM_COLUMNS,
   MAX_DESCRIPTION_LEN,
   MAX_NAME_LEN,
+  configRemoveColumn,
   parseColumnConfig,
   serializeColumnConfig,
   type ColumnConfig,
@@ -114,9 +116,10 @@ function columnsKey(workspaceId: string): string {
 
 async function readColumnConfig(
   workspaceId: string,
+  executor: Pick<typeof db, "select"> = db,
 ): Promise<ColumnConfig | null> {
   const key = columnsKey(workspaceId);
-  const [row] = await db
+  const [row] = await executor
     .select({ value: meta.value })
     .from(meta)
     .where(eq(meta.key, key));
@@ -127,10 +130,11 @@ async function readColumnConfig(
 async function writeColumnConfig(
   workspaceId: string,
   config: ColumnConfig,
+  executor: Pick<typeof db, "run"> = db,
 ): Promise<void> {
   const key = columnsKey(workspaceId);
   const value = serializeColumnConfig(config);
-  await db.run(sql`
+  await executor.run(sql`
     INSERT INTO meta (key, value, updated_at)
     VALUES (${key}, ${value}, unixepoch())
     ON CONFLICT(key) DO UPDATE SET
@@ -509,90 +513,88 @@ export async function deleteColumnAction(
   if (isDemoMode()) return { ok: true, tasksReassigned: 0 };
 
   const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
-  // A fresh workspace holds no stored config but still shows the default
-  // board, whose Waiting column is deletable like any custom column — so
-  // the delete bases on the default config rather than refusing.
-  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
+  const actorUserId = await getCurrentUser();
+  const tasksReassigned = await db.transaction(async (tx) => {
+    // Keep the membership proof, task reassignment and config write under the
+    // same write lock. A revoked member or a concurrent board edit cannot
+    // change what this transaction means after its reads.
+    const grant = await authorizeStoredProject({
+      storedProjectId: ws,
+      capability: "createOrEditTasks",
+      actorUserId,
+      executor: tx,
+    });
+    if (!grant.ok) throw new Error("That project isn’t available.");
 
-  const col = existing.custom.find((c) => c.key === columnKey);
-  if (!col) throw new Error(`Unknown custom column key: ${columnKey}`);
+    // A fresh workspace still shows the default Waiting custom column.
+    const existing = (await readColumnConfig(ws, tx)) ?? defaultColumnConfig();
+    const col = existing.custom.find((c) => c.key === columnKey);
+    if (!col) throw new Error(`Unknown custom column key: ${columnKey}`);
 
-  // Validate the destination (when supplied). It must be a real, different
-  // column — a system lane or another custom column — so tasks never land
-  // in the column being deleted.
-  let destination: string | null = null;
-  if (destinationKey && destinationKey !== columnKey) {
-    const isSystem = (LANE_ORDER as string[]).includes(destinationKey);
-    const isCustom = existing.custom.some((c) => c.key === destinationKey);
-    if (!isSystem && !isCustom) {
-      throw new Error(`Unknown destination column: ${destinationKey}`);
+    let destination: string | null = null;
+    if (destinationKey && destinationKey !== columnKey) {
+      const isSystem = (LANE_ORDER as string[]).includes(destinationKey);
+      const isCustom = existing.custom.some((c) => c.key === destinationKey);
+      if (!isSystem && !isCustom) {
+        throw new Error(`Unknown destination column: ${destinationKey}`);
+      }
+      destination = destinationKey;
     }
-    destination = destinationKey;
-  }
+    const nextConfig = configRemoveColumn(existing, columnKey);
 
-  // A task belongs to this column through its claim (boardColumnKey) OR,
-  // for a non-canonical key, through raw `lane` text — the pre-0024 shape
-  // of the Waiting column and any other stray value that ever leaked into
-  // the unconstrained lane column. Deleting the column must move both
-  // kinds, or the raw-lane rows would re-materialise as an orphan column.
-  // The tenant clause stays inline at every callsite below so the
-  // tenant-scope contract can verify it; only the column-membership OR is
-  // shared.
-  const memberOfDeletedColumn = or(
-    eq(tasks.boardColumnKey, columnKey),
-    and(isNull(tasks.boardColumnKey), eq(tasks.lane, columnKey as LaneId)),
-  );
+    // Include both claimed rows and legacy raw-lane rows. Scope every read
+    // and update to the proved Project, independent of the claim predicate.
+    const memberOfDeletedColumn = or(
+      eq(tasks.boardColumnKey, columnKey),
+      and(isNull(tasks.boardColumnKey), eq(tasks.lane, columnKey as LaneId)),
+    );
+    const [countRow] = await tx
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(tasks)
+      .where(and(eq(tasks.workspaceId, ws), memberOfDeletedColumn));
+    const count = Number(countRow?.count ?? 0);
 
-  // Count tasks in this column before moving, for the toast copy.
-  const [countRow] = await db
-    .select({ count: sql<number>`COUNT(*)` })
-    .from(tasks)
-    .where(and(eq(tasks.workspaceId, ws), memberOfDeletedColumn));
-  const tasksReassigned = Number(countRow?.count ?? 0);
-
-  // Move the tasks. With an explicit destination the client picked where
-  // they go: into a system lane (set `lane`, clear boardColumnKey) or
-  // another custom column (set boardColumnKey, canonicalising any raw
-  // lane text to "doing"). Without one, fall back to clearing the claim
-  // so tasks return to their canonical system lane — no data loss either
-  // way, and no raw-text lane survives the delete.
-  const canonicalisedLane = sql`CASE WHEN ${tasks.lane} = ${columnKey} THEN 'doing' ELSE ${tasks.lane} END`;
-  if (tasksReassigned > 0) {
-    if (destination && (LANE_ORDER as string[]).includes(destination)) {
-      await db
-        .update(tasks)
-        .set({ lane: destination as LaneId, boardColumnKey: null, idleDays: null })
-        .where(and(eq(tasks.workspaceId, ws), memberOfDeletedColumn));
-    } else if (destination) {
-      await db
-        .update(tasks)
-        .set({
+    if (count > 0) {
+      const updatedAt = new Date();
+      const completedAtSeconds = Math.floor(updatedAt.getTime() / 1000);
+      const wasDone = isDoneColumnKey(columnKey, existing);
+      const canonicalisedLane = sql`CASE WHEN ${tasks.lane} = ${columnKey} THEN 'doing' ELSE ${tasks.lane} END`;
+      if (destination && (LANE_ORDER as string[]).includes(destination)) {
+        const nowDone = isDoneColumnKey(destination, nextConfig);
+        await tx.update(tasks).set({
+          lane: destination as LaneId,
+          boardColumnKey: null,
+          idleDays: null,
+          updatedAt,
+          ...(wasDone === nowDone ? {} : { completedAt: nowDone ? updatedAt : null }),
+        }).where(and(eq(tasks.workspaceId, ws), memberOfDeletedColumn)).run();
+      } else if (destination) {
+        const nowDone = isDoneColumnKey(destination, nextConfig);
+        await tx.update(tasks).set({
           boardColumnKey: destination,
           lane: canonicalisedLane as unknown as LaneId,
-        })
-        .where(and(eq(tasks.workspaceId, ws), memberOfDeletedColumn));
-    } else {
-      await db
-        .update(tasks)
-        .set({
+          updatedAt,
+          ...(wasDone === nowDone ? {} : { completedAt: nowDone ? updatedAt : null }),
+        }).where(and(eq(tasks.workspaceId, ws), memberOfDeletedColumn)).run();
+      } else {
+        // Clearing a claim returns each task to its own canonical lane, so
+        // mixed underlying lanes can cross the done boundary differently.
+        const nextDone = inArray(canonicalisedLane, resolveDoneKeys(nextConfig));
+        const completion = wasDone
+          ? sql`CASE WHEN ${nextDone} THEN ${tasks.completedAt} ELSE NULL END`
+          : sql`CASE WHEN ${nextDone} THEN ${completedAtSeconds} ELSE ${tasks.completedAt} END`;
+        await tx.update(tasks).set({
           boardColumnKey: null,
           lane: canonicalisedLane as unknown as LaneId,
-        })
-        .where(and(eq(tasks.workspaceId, ws), memberOfDeletedColumn));
+          completedAt: completion as unknown as Date,
+          updatedAt,
+        }).where(and(eq(tasks.workspaceId, ws), memberOfDeletedColumn)).run();
+      }
     }
-  }
 
-  // Remove the column from config, including any colour / description it held.
-  existing.custom = existing.custom.filter((c) => c.key !== columnKey);
-  existing.order = existing.order.filter((k) => k !== columnKey);
-  const nextColors = { ...existing.colors };
-  delete nextColors[columnKey];
-  existing.colors = nextColors;
-  const nextDescriptions = { ...existing.descriptions };
-  delete nextDescriptions[columnKey];
-  existing.descriptions = nextDescriptions;
-
-  await writeColumnConfig(ws, existing);
+    await writeColumnConfig(ws, nextConfig, tx);
+    return count;
+  }, { behavior: "immediate" });
   revalidatePath("/app", "layout");
   return { ok: true, tasksReassigned };
 }
@@ -631,51 +633,53 @@ export async function moveTaskToColumnAction(
   if (!scope.ok) return { ok: true }; // neutral: refused and unknown look alike
   const ws = scope.ws;
   const isSystemLane = (LANE_ORDER as string[]).includes(columnKey);
+  const changed = await db.transaction(async (tx) => {
+    const grant = await authorizeStoredProject({
+      storedProjectId: ws,
+      capability: "createOrEditTasks",
+      actorUserId: me,
+      executor: tx,
+    });
+    if (!grant.ok) return false;
+    const [row] = await tx
+      .select({ lane: tasks.lane, boardColumnKey: tasks.boardColumnKey })
+      .from(tasks)
+      .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
+    if (!row) return false; // re-read under the proved Project and write lock
 
-  const [row] = await db
-    .select({ lane: tasks.lane, boardColumnKey: tasks.boardColumnKey })
-    .from(tasks)
-    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
-  if (!row) return { ok: true }; // re-read under the proved Project
-
-  // Done transitions stamp completedAt whichever way the claim moves —
-  // a custom "Paid" column that counts as done completes the task the
-  // same as the canonical Done lane (T·122).
-  const config = await readColumnConfig(ws);
-  const wasDone = isTaskDone(row, config);
-  if (isSystemLane) {
-    const toLane = columnKey as LaneId;
-    if (row.lane === toLane && !row.boardColumnKey) return { ok: true };
-    await db
-      .update(tasks)
-      .set({
+    // A custom done column and the system Done lane share this transition
+    // rule. The same timestamp also advances the existing activity proxy for
+    // every actual card move; no-op and refused moves never touch the row.
+    const config = await readColumnConfig(ws, tx);
+    const wasDone = isTaskDone(row, config);
+    const updatedAt = new Date();
+    if (isSystemLane) {
+      const toLane = columnKey as LaneId;
+      if (row.lane === toLane && !row.boardColumnKey) return false;
+      const nowDone = isDoneColumnKey(toLane, config);
+      await tx.update(tasks).set({
         lane: toLane,
         boardColumnKey: null,
         idleDays: null,
-        ...(wasDone === isDoneColumnKey(toLane, config)
-          ? {}
-          : { completedAt: isDoneColumnKey(toLane, config) ? new Date() : null }),
-      })
-      .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
-  } else {
-    // Custom column: set the claim. Lane normally stays canonical; a row
-    // still holding raw lane text (pre-0024 "waiting") is canonicalised to
-    // "doing" on touch so stray text never outlives a deliberate move.
-    if (row.boardColumnKey === columnKey) return { ok: true };
-    const laneIsCanonical = (LANE_ORDER as string[]).includes(row.lane);
-    const nowDone = isDoneColumnKey(columnKey, config);
-    await db
-      .update(tasks)
-      .set({
+        updatedAt,
+        ...(wasDone === nowDone ? {} : { completedAt: nowDone ? updatedAt : null }),
+      }).where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws))).run();
+    } else {
+      // Custom claims keep the canonical lane, except legacy raw lane text
+      // which is normalised to doing on a deliberate move.
+      if (row.boardColumnKey === columnKey) return false;
+      const laneIsCanonical = (LANE_ORDER as string[]).includes(row.lane);
+      const nowDone = isDoneColumnKey(columnKey, config);
+      await tx.update(tasks).set({
         boardColumnKey: columnKey,
         ...(laneIsCanonical ? {} : { lane: "doing" as LaneId }),
-        ...(wasDone === nowDone
-          ? {}
-          : { completedAt: nowDone ? new Date() : null }),
-      })
-      .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
-  }
-
+        updatedAt,
+        ...(wasDone === nowDone ? {} : { completedAt: nowDone ? updatedAt : null }),
+      }).where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws))).run();
+    }
+    return true;
+  }, { behavior: "immediate" });
+  if (!changed) return { ok: true };
   revalidatePath("/app", "layout");
   return { ok: true };
 }
