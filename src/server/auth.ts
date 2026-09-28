@@ -11,6 +11,7 @@ import { isDemoMode } from "@/lib/access-mode";
 import { firstMembershipByCatalogOrder } from "@/server/projects/catalog";
 import { DEMO_USER_ID, DEMO_WORKSPACE_ID } from "@/server/demo/tasks-demo";
 import { beginIdentityTiming } from "@/server/diagnostics/identity-timing";
+import { observeCurrentUserOutbound } from "@/server/diagnostics/identity-outbound";
 
 /**
  * Auth resolution. Two layers:
@@ -94,7 +95,7 @@ export async function getCurrentUser(): Promise<UserId> {
       // is a Clerk server helper that fetches the full user object; it is
       // slightly more expensive than auth() (one extra Clerk API call) but only
       // fires on the already-auth-gated path. We use the primary email address.
-      const clerkUserObj = await timing.measure("clerkProfile", () => currentUser());
+      const clerkUserObj = await timing.measure("clerkProfile", () => observeCurrentUserOutbound(() => currentUser()));
       const clerkEmail =
         clerkUserObj?.emailAddresses?.find(
           (e) => e.id === clerkUserObj.primaryEmailAddressId,

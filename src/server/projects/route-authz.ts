@@ -51,6 +51,7 @@ import {
 import { projectCapabilities } from "@/server/projects/capabilities";
 import { getCurrentUser } from "@/server/auth";
 import { withRouteResolverIdentityTiming } from "@/server/diagnostics/identity-timing";
+import { withIdentityOutboundScope } from "@/server/diagnostics/identity-outbound";
 import { readActiveProjectCookies } from "@/server/projects/active-project-cookie";
 import { resolveActiveProjectForRoute } from "@/server/projects/request-scope";
 import {
@@ -191,7 +192,7 @@ export async function resolveProjectForRoute(
 ): Promise<RouteProjectDecision> {
   if (isDemoMode()) return demoDecision();
 
-  const actorUserId = await withRouteResolverIdentityTiming(getCurrentUser);
+  const actorUserId = await withIdentityOutboundScope("routeResolver", () => withRouteResolverIdentityTiming(getCurrentUser));
   const { unified, legacy } = await readActiveProjectCookies();
 
   return toDecision(
@@ -261,7 +262,7 @@ export async function authorizeObjectProject(
       : { kind: "unavailable" };
   }
 
-  const actorUserId = await withRouteResolverIdentityTiming(getCurrentUser);
+  const actorUserId = await withIdentityOutboundScope("routeResolver", () => withRouteResolverIdentityTiming(getCurrentUser));
   const decision = toDecision(
     await resolveActiveProjectForRoute({
       actorUserId,

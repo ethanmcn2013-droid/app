@@ -112,6 +112,10 @@ function fixture() {
     "@/server/diagnostics/identity-timing": { beginIdentityTiming: () => ({
       measure: (_stage, work) => work(), finish() {},
     }) },
+    "@/server/diagnostics/identity-outbound": {
+      observeCurrentUserOutbound: work => work(),
+      withIdentityOutboundScope: (_scope, work) => work(),
+    },
     "@/lib/access-mode": demo,
     "@/server/projects/catalog": {
       firstMembershipByCatalogOrder: async (_db, actor) => {
@@ -136,6 +140,9 @@ function fixture() {
     } },
     "@/server/events": { emitTasksChanged() {} },
     "@/server/auth": authModule,
+    "@/server/diagnostics/identity-outbound": {
+      withIdentityOutboundScope: (_scope, work) => work(),
+    },
     "@/server/actions/private-task-db-write": { privateTaskDbWrite: (operation) => operation() },
     "@/server/actions/project-authz": {
       authorizeProjectCandidate: async ({ candidateProjectId, actorUserId }) => state.memberships.get(actorUserId)?.has(candidateProjectId)
@@ -268,6 +275,9 @@ test("demo action never reaches Clerk or provisioning", async () => withProducti
 
 test("all paired Task actions use the one-resolution entry point", () => {
   const source = readFileSync(actionsPath, "utf8");
-  assert.equal((source.match(/await getCurrentUserAndActiveWorkspaceOrNull\(\)/g) ?? []).length, 9);
+  const direct = (source.match(/await getCurrentUserAndActiveWorkspaceOrNull\(\)/g) ?? []).length;
+  const scoped = (source.match(/withIdentityOutboundScope\("taskAction", getCurrentUserAndActiveWorkspaceOrNull\)/g) ?? []).length;
+  assert.equal(direct + scoped, 9);
+  assert.equal(scoped, 3);
   assert.doesNotMatch(source, /getCurrentUser\(\),\s*getActiveWorkspaceOrNull\(\)/);
 });

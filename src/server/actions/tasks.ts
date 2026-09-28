@@ -21,6 +21,7 @@ import { getSubtasks, getTasks } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
 import { getCurrentUser, getCurrentUserAndActiveWorkspaceOrNull } from "@/server/auth";
+import { withIdentityOutboundScope } from "@/server/diagnostics/identity-outbound";
 import { privateTaskDbWrite } from "@/server/actions/private-task-db-write";
 import {
   authorizeProjectCandidate,
@@ -61,7 +62,7 @@ export async function getTasksAction(candidateProjectId: string): Promise<Task[]
   if (isDemoMode()) return demoTasks();
   // Missing, malformed and inaccessible candidates stay neutral. Never replace
   // an explicit B store with the caller's authorized ambient A task list.
-  const ws = await readableProjectOrNull(candidateProjectId);
+  const ws = await withIdentityOutboundScope("readControl", () => readableProjectOrNull(candidateProjectId));
   return ws ? getTasks(ws) : [];
 }
 
@@ -201,7 +202,7 @@ export async function moveTaskAction(
 
 export async function toggleCompleteAction(id: string): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  const [me, ambient] = await getCurrentUserAndActiveWorkspaceOrNull();
+  const [me, ambient] = await withIdentityOutboundScope("taskAction", getCurrentUserAndActiveWorkspaceOrNull);
   const scope = await scopeForTask(id, me);
   if (!scope.ok) return neutralTaskList(ambient, me);
   const ws = scope.ws;
@@ -436,7 +437,7 @@ export async function updateTaskAction(
   patch: Partial<Omit<Task, "id">>,
 ): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  const [me, ambient] = await getCurrentUserAndActiveWorkspaceOrNull();
+  const [me, ambient] = await withIdentityOutboundScope("taskAction", getCurrentUserAndActiveWorkspaceOrNull);
   const scope = await scopeForTask(id, me);
   if (!scope.ok) return neutralTaskList(ambient, me);
   const ws = scope.ws;
@@ -587,7 +588,7 @@ export async function addTaskAction(input: {
   projectId?: string;
 }): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  const [me, ambient] = await getCurrentUserAndActiveWorkspaceOrNull();
+  const [me, ambient] = await withIdentityOutboundScope("taskAction", getCurrentUserAndActiveWorkspaceOrNull);
   const grant = await authorizeProjectCandidate({
     candidateProjectId: input.projectId ?? ambient,
     capability: "createOrEditTasks",

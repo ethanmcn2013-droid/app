@@ -16,6 +16,7 @@
     "scripts/db/integrity-check.test.mjs",
     "src/server/operational-log-contract.test.mjs",
     "src/server/diagnostics/identity-timing.test.mjs",
+    "src/server/diagnostics/identity-outbound.test.mjs",
     "scripts/test-provision-fast.test.mjs",
     "src/server/actions/private-task-db-write.test.cjs"
   ],

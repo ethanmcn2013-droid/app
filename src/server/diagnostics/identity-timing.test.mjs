@@ -203,6 +203,7 @@ test("real getCurrentUser keeps result, failure and demo behavior while timing b
     "@/server/projects/catalog": {},
     "@/server/demo/tasks-demo": {DEMO_USER_ID: "synthetic-demo", DEMO_WORKSPACE_ID: "synthetic-demo-project"},
     "@/server/diagnostics/identity-timing": helper,
+    "@/server/diagnostics/identity-outbound": {observeCurrentUserOutbound: work => work()},
   });
   try {
     setRequest(1);
