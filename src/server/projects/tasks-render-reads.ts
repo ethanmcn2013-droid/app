@@ -13,7 +13,7 @@ type Dependencies = {
 };
 
 /** New promises on every render. Attach all four to the shell's next Promise.all. */
-export function startTasksRenderReads(dependencies: Dependencies, demo: boolean) {
+export function startTasksRenderReads(dependencies: Dependencies, demo: boolean, resolvedActor?: UserId) {
   if (demo) {
     return {
       currentUser: Promise.resolve(DEMO_USER_ID),
@@ -24,7 +24,9 @@ export function startTasksRenderReads(dependencies: Dependencies, demo: boolean)
   }
 
   // Starting from a settled promise also captures synchronous adapter throws.
-  const currentUser = Promise.resolve().then(() => dependencies.getCurrentUser());
+  // Only trusted server callers may supply the actor from their own fresh route proof.
+  // This is a value handoff, never a cross-render or action authentication cache.
+  const currentUser = Promise.resolve().then(() => resolvedActor ?? dependencies.getCurrentUser());
   const myWorkspaces = currentUser.then((actor) => dependencies.listMyWorkspacesForUser(actor));
   const projectsTree = myWorkspaces.then((mine) => dependencies.getProjectsTreeForWorkspaces(mine));
   const edition = currentUser.then((actor) => dependencies.getEdition(actor));

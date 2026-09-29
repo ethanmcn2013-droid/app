@@ -30,7 +30,7 @@ import { TasksProvider } from "@/lib/tasks/tasks-context";
 import { isDemoMode } from "@/lib/access-mode";
 import { requireAppAccessTasks } from "@/server/app-access";
 import { getCurrentUser } from "@/server/auth";
-import { resolveProjectForRoute } from "@/server/projects/route-authz";
+import { resolveProjectForRouteWithActor } from "@/server/projects/route-authz";
 import { parseProjectId } from "@/lib/projects/project-ref";
 import { getBoardName, getColumnConfig } from "@/server/actions/board";
 import { getWorkspaceMemberMeta } from "@/server/db/members";
@@ -127,7 +127,7 @@ export async function TasksRuntimeShell({
 }) {
   await requireAppAccessTasks();
 
-  const project = await resolveProjectForRoute(
+  const { actorUserId, decision: project } = await resolveProjectForRouteWithActor(
     parseProjectId(requestedProjectId) ?? undefined,
   );
 
@@ -151,7 +151,7 @@ export async function TasksRuntimeShell({
     getEdition: async (actor) => editionLabel(
       (await resolveEntitlement(actor)).source as EntitlementSource | null,
     ),
-  }, demo);
+  }, demo, actorUserId);
   // Defer each independent read into its own promise so synchronous failures
   // cannot strand a dependent identity/list/tree/edition rejection.
   const read = <T,>(operation: () => Promise<T> | T): Promise<T> => Promise.resolve().then(operation);

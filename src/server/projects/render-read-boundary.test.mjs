@@ -9,6 +9,8 @@ const ts = require('typescript');
 const actionPath = fileURLToPath(new URL('../actions/projects-tree.ts', import.meta.url));
 const authPath = fileURLToPath(new URL('../auth.ts', import.meta.url));
 const shellPath = fileURLToPath(new URL('../../components/app/tasks-runtime-shell.tsx', import.meta.url));
+const routePath = fileURLToPath(new URL('./route-authz.ts', import.meta.url));
+const pagePath = fileURLToPath(new URL('../../app/app/tasks/page.tsx', import.meta.url));
 
 function loadSource(path, dependencies) {
   const compiled = ts.transpileModule(readFileSync(path, 'utf8'), {
@@ -95,4 +97,23 @@ test('trusted actor/list readers stay server-only and outside the public action 
   assert.match(shell, /renderReads\.myWorkspaces/);
   assert.match(shell, /renderReads\.projectsTree/);
   assert.match(shell, /renderReads\.edition/);
+});
+
+test('the shell reuses only its own freshly proved actor after access, route and first-run gates', () => {
+  const shell = readFileSync(shellPath, 'utf8');
+  const route = readFileSync(routePath, 'utf8');
+  const page = readFileSync(pagePath, 'utf8');
+  const body = shell.slice(shell.indexOf('export async function TasksRuntimeShell'));
+  const access = body.indexOf('await requireAppAccessTasks()');
+  const routeProof = body.indexOf('resolveProjectForRouteWithActor(');
+  const firstRun = body.indexOf('await isFirstRun(workspaceId)');
+  const graph = body.indexOf('startTasksRenderReads(');
+  assert.ok(access >= 0 && access < routeProof && routeProof < firstRun && firstRun < graph);
+  assert.match(body, /\{ actorUserId, decision: project \} = await resolveProjectForRouteWithActor\(/);
+  assert.match(body.slice(graph), /\}, demo, actorUserId\)/);
+  assert.match(route, /^import "server-only";/);
+  assert.doesNotMatch(route, /^"use server";/);
+  assert.match(route, /export async function resolveProjectForRoute\([\s\S]*return \(await resolveProjectForRouteWithActor\(requestedWorkspaceId\)\)\.decision/);
+  assert.doesNotMatch(page, /<TasksRuntimePageMount[^>]*actorUserId/,
+    'the page must not hand its earlier actor to the separately authorized shell');
 });

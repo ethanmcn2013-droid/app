@@ -67,6 +67,19 @@ test("persisted member list and tree preserve actor scope, roles, grouping, arch
     const afterRevocation = await listMyWorkspacesForUser("internal_b", db);
     assert.deepEqual(afterRevocation.map((row) => row.id), ["ws_c"]);
     assert.deepEqual((await getProjectsTreeForWorkspaces(afterRevocation, db)).archived, []);
+    const freshRender = startTasksRenderReads({
+      getCurrentUser: () => { throw Error("fresh route actor must be reused"); },
+      listMyWorkspacesForUser: (id) => listMyWorkspacesForUser(id, db),
+      getProjectsTreeForWorkspaces: (mine) => getProjectsTreeForWorkspaces(mine, db),
+      getEdition: async (id) => `edition:${id}`,
+    }, false, "internal_b");
+    const [renderActor, renderMine, renderTree, renderEdition] = await Promise.all([
+      freshRender.currentUser, freshRender.myWorkspaces, freshRender.projectsTree, freshRender.edition,
+    ]);
+    assert.equal(renderActor, "internal_b");
+    assert.deepEqual(renderMine.map((row) => row.id), ["ws_c"]);
+    assert.deepEqual(renderTree.archived, []);
+    assert.equal(renderEdition, "edition:internal_b");
   } finally { client.close(); }
 });
 
@@ -167,6 +180,38 @@ test("two overlapping renders and a later invocation never mix actors or retain 
   assert.equal(fresh[2].groups[0].workspaces[0].id,
     'a-after-revocation');
   assert.equal(identityCalls, 3); assert.equal(listCalls, 3);
+});
+
+test("two route-proved actors stay isolated and do not authenticate again in their read graphs", async () => {
+  const seen: string[] = [];
+  const make = (actor: string) => startTasksRenderReads({
+    getCurrentUser: () => { throw Error("render graph called identity again"); },
+    listMyWorkspacesForUser: async (id) => { seen.push(`list:${id}`); return [{ id: `ws_${id}`, name: id, slug: id, role: "owner" }]; },
+    getProjectsTreeForWorkspaces: async (mine) => ({ groups: [{ periodId: null, periodName: null,
+      dateRange: null, workspaces: mine.map((row) => ({ id: row.id, name: row.name, taskCount: 0 })) }], archived: [] }),
+    getEdition: async (id) => { seen.push(`edition:${id}`); return `edition:${id}`; },
+  }, false, actor);
+  const read = (actor: string) => {
+    const graph = make(actor);
+    return Promise.all([graph.currentUser, graph.myWorkspaces, graph.projectsTree, graph.edition]);
+  };
+  const [a, b] = await Promise.all([read("internal_a"), read("internal_b")]);
+  assert.equal(a[0], "internal_a"); assert.equal(b[0], "internal_b");
+  assert.equal(a[2].groups[0].workspaces[0].id, "ws_internal_a");
+  assert.equal(b[2].groups[0].workspaces[0].id, "ws_internal_b");
+  assert.deepEqual(seen.sort(), ["edition:internal_a", "edition:internal_b", "list:internal_a", "list:internal_b"]);
+});
+
+test("a route-proved actor never turns failed membership or edition reads into an empty shell", async () => {
+  for (const failure of ["list", "edition"]) {
+    const reads = startTasksRenderReads({
+      getCurrentUser: () => { throw Error("identity must not be repeated"); },
+      listMyWorkspacesForUser: async () => { if (failure === "list") throw Error("membership rejected"); return []; },
+      getProjectsTreeForWorkspaces: async () => ({ groups: [], archived: [] }),
+      getEdition: async () => { if (failure === "edition") throw Error("edition rejected"); return null; },
+    }, false, "internal_a");
+    await assert.rejects(Promise.all(Object.values(reads)), new RegExp(`${failure === "list" ? "membership" : "edition"} rejected`));
+  }
 });
 
 test("demo render uses exact fixtures without calling authentication, DB or entitlement adapters", async () => {

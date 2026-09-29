@@ -41,6 +41,7 @@ import "server-only";
  */
 
 import { redirect } from "next/navigation";
+import type { UserId } from "@/lib/data";
 import { isDemoMode } from "@/lib/access-mode";
 import {
   assertProjectId,
@@ -55,6 +56,7 @@ import { withIdentityOutboundScope } from "@/server/diagnostics/identity-outboun
 import { readActiveProjectCookies } from "@/server/projects/active-project-cookie";
 import { resolveActiveProjectForRoute } from "@/server/projects/request-scope";
 import {
+  DEMO_USER_ID,
   DEMO_WORKSPACE_ID,
   DEMO_WORKSPACE_NAME,
   DEMO_WORKSPACE_SLUG,
@@ -187,15 +189,15 @@ function toDecision(
  * the caller belongs to nothing, the answer is `empty` — never
  * `LEGACY_WORKSPACE_ID` (DECISIONS D-005).
  */
-export async function resolveProjectForRoute(
+export async function resolveProjectForRouteWithActor(
   requestedWorkspaceId?: string | readonly string[] | null,
-): Promise<RouteProjectDecision> {
-  if (isDemoMode()) return demoDecision();
+): Promise<{ actorUserId: UserId; decision: RouteProjectDecision }> {
+  if (isDemoMode()) return { actorUserId: DEMO_USER_ID, decision: demoDecision() };
 
   const actorUserId = await withIdentityOutboundScope("routeResolver", () => withRouteResolverIdentityTiming(getCurrentUser));
   const { unified, legacy } = await readActiveProjectCookies();
 
-  return toDecision(
+  const decision = toDecision(
     await resolveActiveProjectForRoute({
       actorUserId,
       requestedWorkspaceId,
@@ -203,6 +205,14 @@ export async function resolveProjectForRoute(
       legacyCookieWorkspaceId: legacy,
     }),
   );
+  return { actorUserId, decision };
+}
+
+/** Public route callers retain the existing neutral decision shape. */
+export async function resolveProjectForRoute(
+  requestedWorkspaceId?: string | readonly string[] | null,
+): Promise<RouteProjectDecision> {
+  return (await resolveProjectForRouteWithActor(requestedWorkspaceId)).decision;
 }
 
 /**

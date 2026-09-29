@@ -263,6 +263,7 @@
     "src/server/projects/resolve.test.ts",
     "src/server/projects/service-lifecycle.test.ts",
     "src/server/projects/render-read-reuse.test.ts",
+    "src/app/app/tasks/wedding-date-entry.test.ts",
     "src/app/app/task/task-deep-link-contract.test.ts",
     "src/modules/timeline/server/unpublished-timeline-boundary.test.ts",
     "src/modules/timeline/server/sync/milestone-safety-regression.test.ts",

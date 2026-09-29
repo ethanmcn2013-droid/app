@@ -37,6 +37,7 @@ const boardPage = readFileSync(
   join(serverDir, "..", "app", "app", "tasks", "page.tsx"),
   "utf8",
 );
+const routeAuthz = readFileSync(join(serverDir, "projects", "route-authz.ts"), "utf8");
 const inboxPage = readFileSync(
   join(serverDir, "..", "app", "app", "inbox", "page.tsx"),
   "utf8",
@@ -637,11 +638,15 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   const welcomeStart = boardPage.indexOf('if (sp.welcome === "venue")');
   const welcomeBody = boardPage.slice(welcomeStart);
   assert.ok(welcomeStart >= 0, "board must retain the venue welcome branch");
+  const resolverBody = routeAuthz.slice(routeAuthz.indexOf("export async function resolveProjectForRouteWithActor"));
   assert.ok(
-    welcomeBody.indexOf("isDemoMode()") <
-      welcomeBody.indexOf("getCurrentUser()"),
-    "venue review fixture must resolve before auth or entitlement access",
+    resolverBody.indexOf("if (isDemoMode())") < resolverBody.indexOf("withRouteResolverIdentityTiming(getCurrentUser)"),
+    "the route must resolve the demo actor before Clerk or provisioning",
   );
+  assert.ok(boardPage.indexOf("resolveTasksArrival(sp.workspaceId)") < welcomeStart,
+    "the Tasks page must settle the guarded arrival before venue reads");
+  assert.doesNotMatch(welcomeBody, /getCurrentUser\s*\(/,
+    "the venue read must reuse the guarded server actor, not repeat identity");
   assert.ok(
     welcomeBody.indexOf("isDemoMode()") <
       welcomeBody.indexOf("detectVenueWelcome"),
