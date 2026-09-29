@@ -12,6 +12,7 @@ import { emitTasksChanged } from "@/server/events";
 import { getCurrentUser } from "@/server/auth";
 import { scopeForTask } from "@/server/actions/project-authz";
 import { isDemoMode } from "@/lib/access-mode";
+import { dateOnlyDueLabel, isDateOnlyDue, offsetStoredDueAt } from "@/lib/tasks/stored-due-transition";
 
 /**
  * "Repeat this task", clone the source task N times, each copy shifted
@@ -119,6 +120,7 @@ export async function duplicateTaskAction(
   }
 
   const sourceDue = source.dueAt ?? null;
+  const sourceDateOnly = isDateOnlyDue(source.due, sourceDue);
   const stamp = new Date(nowSeconds() * 1000);
 
   // 4. Build all N rows up front, then insert atomically.
@@ -131,10 +133,9 @@ export async function duplicateTaskAction(
     let nextDueAt: Date | null = null;
     let nextDueLabel: string | null = source.due ?? null;
     if (sourceDue) {
-      const d = new Date(sourceDue);
-      d.setDate(d.getDate() + offset * safeStep);
+      const d = offsetStoredDueAt(sourceDue, offset * safeStep, sourceDateOnly);
       nextDueAt = d;
-      nextDueLabel = formatDueLabelForStorage(d);
+      nextDueLabel = sourceDateOnly ? dateOnlyDueLabel(d) : formatDueLabelForStorage(d);
     }
 
     return {

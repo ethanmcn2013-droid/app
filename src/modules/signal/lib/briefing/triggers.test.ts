@@ -117,6 +117,14 @@ describe("detectDueSoon", () => {
     assert.equal(out.length, 1);
   });
 
+  test("a timed deadline earlier today is overdue without a whole-day claim", () => {
+    const past = detectDueSoon([makeTask({ id: "past-hour", dueAt: NOW - 3_600_000 })], NOW, "UTC")[0];
+    const future = detectDueSoon([makeTask({ id: "future-hour", dueAt: NOW + 3_600_000 })], NOW, "UTC")[0];
+    assert.ok(past.severity > future.severity);
+    assert.equal(past.reasons[0], "Signal flags anything past its time.");
+    assert.equal(future.reasons[0], "Signal flags anything due inside two days.");
+  });
+
   test("ignores tasks without a dueAt", () => {
     const out = detectDueSoon([makeTask({ dueAt: null })], NOW);
     assert.equal(out.length, 0);

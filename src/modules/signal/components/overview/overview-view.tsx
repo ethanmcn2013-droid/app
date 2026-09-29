@@ -125,7 +125,7 @@ export function OverviewView({
           {hasSide ? (
             <div className={styles.column}>
               {model.runway ? <DatesAhead runway={model.runway} /> : null}
-              {model.finished ? <Finished rows={model.finished} /> : null}
+              {model.finished ? <Finished rows={model.finished} coverageComplete={model.finishedCoverageComplete} /> : null}
             </div>
           ) : null}
         </div>
@@ -408,7 +408,9 @@ function DatesAhead({ runway }: { runway: OverviewRunway }) {
           </ul>
         ) : (
           <p className={styles.quiet}>
-            {key ? `Nothing is dated between now and ${key.label.toLowerCase()}.` : "Nothing is dated in this window."}
+            {runway.dateCoverageComplete
+              ? key ? `Nothing is dated between now and ${key.label.toLowerCase()}.` : "Nothing is dated in this window."
+              : "Some dates could not be checked."}
           </p>
         )}
         {runway.more > 0 ? (
@@ -423,7 +425,7 @@ function DatesAhead({ runway }: { runway: OverviewRunway }) {
 
 /* ── Finished this week ──────────────────────────────────────────────── */
 
-function Finished({ rows }: { rows: OverviewFinishedRow[] }) {
+function Finished({ rows, coverageComplete }: { rows: OverviewFinishedRow[]; coverageComplete: boolean }) {
   return (
     <section className={styles.card} aria-labelledby="overview-finished">
       <div className={styles.cardHead}>
@@ -435,7 +437,7 @@ function Finished({ rows }: { rows: OverviewFinishedRow[] }) {
         </div>
       </div>
       {rows.length === 0 ? (
-        <p className={styles.empty}>Nothing finished in the last seven days.</p>
+        <p className={styles.empty}>{coverageComplete ? "Nothing finished in the last seven days." : "Some completion dates could not be checked."}</p>
       ) : (
         <ul className={styles.list}>
           {rows.map((row) => (

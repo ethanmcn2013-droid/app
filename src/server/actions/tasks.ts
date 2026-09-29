@@ -31,6 +31,7 @@ import {
   scopeForTask,
 } from "@/server/actions/project-authz";
 import { isDemoMode } from "@/lib/access-mode";
+import { advanceRecurringDueAt, dateOnlyDueLabel, isDateOnlyDue } from "@/lib/tasks/stored-due-transition";
 import { maybeAwardCompletionMilestone } from "@/server/milestones";
 import { demoTasks } from "@/server/demo/tasks-demo";
 import {
@@ -221,7 +222,8 @@ export async function toggleCompleteAction(id: string): Promise<Task[]> {
   const recurrence = row.recurrence;
   if (recurrence && row.lane !== "done") {
     await measureTaskStage("writeAndActivity", async () => {
-    const nextDueAt = advanceDate(row.dueAt ?? new Date(), recurrence);
+    const dateOnly = isDateOnlyDue(row.due, row.dueAt);
+    const nextDueAt = advanceRecurringDueAt(row.dueAt ?? new Date(), recurrence, dateOnly);
     await db
       .update(tasks)
       .set({
@@ -229,7 +231,7 @@ export async function toggleCompleteAction(id: string): Promise<Task[]> {
         boardColumnKey: null,
         idleDays: null,
         dueAt: nextDueAt,
-        due: formatDueLabelForStorage(nextDueAt),
+        due: dateOnly ? dateOnlyDueLabel(nextDueAt) : formatDueLabelForStorage(nextDueAt),
         // The recurring task bounces back open, but a completion DID
         // happen — completedAt records the moment it was last finished.
         completedAt: new Date(),
@@ -295,59 +297,6 @@ export async function toggleCompleteAction(id: string): Promise<Task[]> {
   emitTasksChanged({ kind: "tasks" });
   return measureTaskStage("finalRead", () => getTasks(ws));
   });
-}
-
-/** Walk `d` forward to the next day matching `weekday` (0-6). Capped
- *  at 7 iterations: a valid weekday is always reachable within a
- *  week, so a corrupt value (e.g. 8 from a bad migration row) can no
- *  longer spin the server action forever, it just stops after a
- *  full week and returns whatever day it's on. */
-function walkToWeekday(d: Date, weekday: number): void {
-  for (let i = 0; i < 7 && d.getDay() !== weekday; i++) {
-    d.setDate(d.getDate() + 1);
-  }
-}
-
-function advanceDate(from: Date, r: RecurrenceSpec): Date {
-  const d = new Date(from);
-
-  if (r.kind === "weekly") {
-    // Advance to the next occurrence of the target weekday.
-    d.setDate(d.getDate() + 7);
-    walkToWeekday(d, r.weekday);
-  } else if (r.kind === "monthly-day") {
-    // Same calendar day next month.
-    d.setMonth(d.getMonth() + 1);
-    d.setDate(r.day);
-  } else if (r.kind === "monthly-first-weekday") {
-    // First occurrence of the target weekday next month.
-    d.setMonth(d.getMonth() + 1);
-    d.setDate(1);
-    walkToWeekday(d, r.weekday);
-  }
-
-  // If the computed date is already in the past, keep advancing by
-  // one interval until we land in the future. Hard-capped at 600
-  // iterations (~50 years of monthly steps) so a malformed spec or
-  // a clock skew can't hang the request, well past any real
-  // recurrence horizon.
-  const now = Date.now();
-  for (let guard = 0; d.getTime() < now && guard < 600; guard++) {
-    if (r.kind === "weekly") {
-      d.setDate(d.getDate() + 7);
-    } else if (r.kind === "monthly-day") {
-      d.setMonth(d.getMonth() + 1);
-      d.setDate(r.day);
-    } else if (r.kind === "monthly-first-weekday") {
-      d.setMonth(d.getMonth() + 1);
-      d.setDate(1);
-      walkToWeekday(d, r.weekday);
-    } else {
-      break;
-    }
-  }
-
-  return d;
 }
 
 const DOW_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];

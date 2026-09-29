@@ -83,16 +83,18 @@ export function ledgerFromLegacyBriefing(
 
   return buildSignalLedger({
     heading:
-      summaryLine(briefing) || "A short read of what deserves attention.",
+      briefing.coverageStatus === "partial" && briefing.needsAttention.length === 0 && briefing.quietRisks.length > 0
+        ? `${briefing.quietRisks.length} ${briefing.quietRisks.length === 1 ? "risk" : "risks"} worth watching.`
+        : summaryLine(briefing) || "A short read of what deserves attention.",
     generatedAt: new Date(briefing.generatedAt).toISOString(),
     generatedAtLabel: options.generatedAtLabel,
     scopeLabel: options.scopeLabel,
     scopeKind: options.scopeKind,
     freshness: "fresh",
-    coverageStatus: "complete",
+    coverageStatus: briefing.coverageStatus ?? "complete",
     candidates,
-    readCount: briefing.readCount,
-    triggeredCount: briefing.triggeredCount,
+    readCount: briefing.coverageStatus === "partial" ? null : briefing.readCount,
+    triggeredCount: briefing.coverageStatus === "partial" ? null : briefing.triggeredCount,
     healthyEmptyState: {
       headline:
         briefing.emptyStateHeadline ??

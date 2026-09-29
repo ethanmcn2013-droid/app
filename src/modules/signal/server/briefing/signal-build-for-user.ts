@@ -15,6 +15,7 @@ import { signalAnalyticsDb as db } from "../db/signal-analytics-client";
 import { analyticsUsers } from "../db/signal-analytics-schema";
 import type { Cadence } from "../../lib/db/signal-prefs-schema";
 import { dataSource } from "../../lib/data/source";
+import { storedDeadline } from "../../lib/data/deadline";
 import { buildBriefing } from "../../lib/briefing/build";
 import type { Briefing, TaskSignal } from "../../lib/briefing/types";
 import type { BriefingSource } from "../../lib/briefing/source";
@@ -39,10 +40,7 @@ import {
   type PlanningCatalog,
   type SignalScope,
 } from "../../lib/planning-periods/scope";
-import {
-  calendarDayDifference,
-  dateOnlyToTimestamp,
-} from "../../lib/briefing/calendar-time";
+import { calendarDayDifference } from "../../lib/briefing/calendar-time";
 import { REVIEW_SUITE_FIXTURE } from "@/lib/review-suite-fixture";
 import { PINNED_REVIEW_CALENDAR_FRAME } from "@/lib/calendar-frame";
 
@@ -290,6 +288,7 @@ export async function buildBriefingForUser(opts: {
           : onboarding?.primaryUseCase,
   });
 
+  let coverageStatus: "complete" | "partial" = "complete";
   const source: BriefingSource = {
     getSignalsForUser: async () => {
       const workspaces = dataSource.readMany
@@ -301,11 +300,14 @@ export async function buildBriefingForUser(opts: {
       if (returnedIds.length !== workspaceIds.length || new Set(returnedIds).size !== returnedIds.length || returnedIds.some(id => !workspaceIds.includes(id))) {
         throw new Error("Signal source workspace coverage mismatch");
       }
+      if (workspaces.some(work => work.coverage && Object.values(work.coverage).includes("partial"))) {
+        coverageStatus = "partial";
+      }
       return workspaces.flatMap((work) =>
         work.tasks.map((t) => ({
           id: t.id,
           title: t.title,
-          lane: ((): import("../../lib/briefing/types").Lane => {
+          lane: t.canonicalLane ?? ((): import("../../lib/briefing/types").Lane => {
             if (t.status === "shipped") return "shipped";
             if (t.status === "review") return "review";
             if (t.status === "in-flight") return "in-flight";
@@ -313,9 +315,10 @@ export async function buildBriefingForUser(opts: {
             if (t.status === "next") return "next";
             return "next";
           })(),
-          priority: 2 as const,
-          dueAt: t.dueDate ? dateOnlyToTimestamp(t.dueDate) : null,
-          idleDays: (() => {
+          priority: t.priority ?? null,
+          deadline: t.deadline === undefined ? storedDeadline(t.dueDate, null) : t.deadline,
+          dueAt: t.deadline?.kind === "instant" ? t.deadline.at : null,
+          idleDays: work.coverage?.activity === "partial" ? null : (() => {
             const last = new Date(t.lastActivityAt).getTime();
             return Math.max(
               0,
@@ -324,6 +327,7 @@ export async function buildBriefingForUser(opts: {
           })(),
           commentCount: 0,
           blockedBy: t.blockedBy,
+          dependencyCoverage: t.dependencyCoverage,
           sourceLabel: `Tasks · ${workspaceNames.get(work.workspaceId) ?? "Workspace"}`,
           movedToShippedAt:
             t.status === "shipped" && t.completedAt && Number.isFinite(Date.parse(t.completedAt)) && Date.parse(t.completedAt) >= 0 && Date.parse(t.completedAt) <= now
@@ -374,6 +378,7 @@ export async function buildBriefingForUser(opts: {
     kind: "ok",
     briefing: {
       ...briefing,
+      coverageStatus,
       emptyStateHeadline: emptyCopy.headline,
       emptyStateBody: emptyCopy.body,
     },

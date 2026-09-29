@@ -9,6 +9,7 @@
 
 import type { Trigger, Insight } from "./types";
 import { daysUntilDate, primaryProjectName } from "./_helpers";
+import { deadlineDayDifference, deadlineIsOverdue } from "../briefing/calendar-time";
 
 export const overdue: Trigger = {
   id: "overdue",
@@ -16,10 +17,16 @@ export const overdue: Trigger = {
   detect(work) {
     const insights: Insight[] = [];
     for (const task of work.tasks) {
-      if (!task.dueDate) continue;
+      if (!task.dueDate && !task.deadline) continue;
       if (task.status === "shipped" || task.status === "refused") continue;
-      const daysUntil = daysUntilDate(work, task.dueDate);
-      if (daysUntil >= 0) continue; // not overdue yet
+      const daysUntil = task.deadline === undefined
+        ? daysUntilDate(work, task.dueDate!)
+        : deadlineDayDifference(task.deadline, Date.parse(work.snapshotAt), "UTC");
+      if (daysUntil === null) continue;
+      const isOverdue = task.deadline === undefined
+        ? daysUntil < 0
+        : deadlineIsOverdue(task.deadline, Date.parse(work.snapshotAt), "UTC");
+      if (!isOverdue) continue;
 
       const daysOver = -daysUntil;
 

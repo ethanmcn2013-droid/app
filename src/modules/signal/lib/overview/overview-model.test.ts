@@ -179,12 +179,73 @@ test("the verdict reads the engine's buckets and never calls a thin read clear",
   assert.equal(quiet.verdict.tone, "success");
   assert.equal(quiet.emptyState?.kind, "healthy");
 
-  const { ledger } = await build();
+  const { ledger, briefing, read } = await build();
   const coverage = buildOverviewModel({
-    ledger: { ...ledger, entries: [], emptyState: { kind: "coverage", headline: "Signal has only part of the picture.", body: "…" } },
+    ledger: { ...ledger, coverageNote: "Some work could not be checked in this read.", readCounts: null, entries: [], emptyState: { kind: "coverage", headline: "Signal has only part of the picture.", body: "…" } },
     timezone: "Europe/Dublin",
   });
   assert.deepEqual(coverage.verdict, { tone: "warning", sentence: "Signal has only part of the picture." });
+
+  const partial = { ...ledger, coverageNote: "Some work could not be checked in this read.", readCounts: null, emptyState: null };
+  const riskOnly = buildOverviewModel({ ledger: { ...partial, entries: ledger.entries.filter(entry => entry.section === "risks") }, timezone: "Europe/Dublin" });
+  assert.match(riskOnly.verdict.sentence, /^1 thing is at risk\. Some work could not be checked\.$/);
+  assert.doesNotMatch(riskOnly.verdict.sentence, /Nothing is urgent/);
+
+  const completedOnly = buildOverviewModel({ ledger: { ...partial, entries: [] }, timezone: "Europe/Dublin", legacy: { briefing, signals: read, authorizedScope: orchard } });
+  assert.deepEqual(completedOnly.verdict, { tone: "warning", sentence: "2 finished this week. Some work could not be checked." });
+});
+
+test("Overview caps mixed date-only and timed rows after reader-local day ordering", async () => {
+  const base: TaskSignal = {
+    id: "base", title: "Date", lane: "next", priority: 2, dueAt: null, idleDays: null,
+    commentCount: 0, blockedBy: [], sourceLabel: "Tasks · The Orchard, events", movedToShippedAt: null,
+  };
+  const dated = Array.from({ length: 5 }, (_, index): TaskSignal => ({
+    ...base, id: `date-${index}`, deadline: { kind: "date-only", date: "2026-07-17" },
+  }));
+  const at = Date.parse("2026-07-17T10:00:00.000Z");
+  const timed: TaskSignal = { ...base, id: "timed", dueAt: at, deadline: { kind: "instant", at } };
+  const west = await build([...dated, timed], { ...orchard, timezone: "Etc/GMT+12" });
+  assert.equal(west.model.runway?.rows[0]?.key, "timed");
+  const east = await build([...dated, timed], { ...orchard, timezone: "Pacific/Kiritimati" });
+  assert.ok(east.model.runway?.rows.every(row => row.key !== "timed"));
+});
+
+test("Overview keeps an expired same-day instant ahead of the date cap", async () => {
+  const base: TaskSignal = {
+    id: "base", title: "Date", lane: "next", priority: 2, dueAt: null, idleDays: null,
+    commentCount: 0, blockedBy: [], sourceLabel: "Tasks", movedToShippedAt: null,
+  };
+  const date = Array.from({ length: 5 }, (_, index): TaskSignal => ({
+    ...base, id: `today-${index}`, deadline: { kind: "date-only", date: "2026-07-16" },
+  }));
+  const late = { ...base, id: "past-time", dueAt: NOW - 3_600_000, deadline: { kind: "instant" as const, at: NOW - 3_600_000 } };
+  const { model } = await build([...date, late]);
+  assert.equal(model.runway?.overdue, 1);
+  assert.equal(model.runway?.rows[0]?.key, "past-time");
+  assert.equal(model.runway?.rows[0]?.relative, "Past its time today");
+  assert.equal(model.runway?.rows[0]?.tone, "danger");
+});
+
+test("Overview qualifies empty date and completion branches when those facts are unknown", async () => {
+  const base: TaskSignal = {
+    id: "unknown", title: "Unknown", lane: "next", priority: 2, dueAt: null, idleDays: null,
+    commentCount: 0, blockedBy: [], sourceLabel: "Tasks", movedToShippedAt: null,
+    deadline: { kind: "unknown" },
+  };
+  const { model } = await build([base, { ...base, id: "done-unknown", lane: "shipped", deadline: null }]);
+  assert.equal(model.runway?.dateCoverageComplete, false);
+  assert.equal(model.finishedCoverageComplete, false);
+  const { OverviewView } = loadView();
+  const html = renderToStaticMarkup(createElement(OverviewView, { model }));
+  assert.match(html, /Some dates could not be checked/);
+  assert.match(html, /Some completion dates could not be checked/);
+  assert.doesNotMatch(html, /Nothing is dated|Nothing finished/);
+  const known = { ...base, id: "known-date", title: "Known date", dueAt: NOW + DAY, deadline: { kind: "instant" as const, at: NOW + DAY } };
+  const withKnown = await build([base, known]);
+  assert.equal(withKnown.model.runway?.dateCoverageComplete, false);
+  assert.equal(withKnown.model.runway?.rows[0]?.key, "known-date");
+  assert.match(renderToStaticMarkup(createElement(OverviewView, { model: withKnown.model })), /Known date/);
 });
 
 test("the progressive engine renders its rows and omits every signals-derived section", async () => {

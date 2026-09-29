@@ -401,6 +401,21 @@ test("missing history cannot become creation-time inactivity while overdue and c
     "a contradictory capability claim cannot turn a null task timestamp into a zero count");
 });
 
+test("provider keeps picker dates separate from real instants and marks conflicting labels incomplete", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  for (const id of ["picker-date", "timed-date", "conflicting-date"]) {
+    await seedTask({ id, lane: "doing", dueAt: Date.parse("2026-10-25T09:00:00.000Z") / 1000 });
+  }
+  await client.execute({ sql: "UPDATE tasks SET due='2026-10-25' WHERE id='picker-date'" });
+  await client.execute({ sql: "UPDATE tasks SET due='2026-10-26' WHERE id='conflicting-date'" });
+  const { result } = await persistedMetrics();
+  const byId = new Map(result.tasks.map(row => [row.id, row]));
+  assert.deepEqual(byId.get("picker-date")?.due, { kind: "date", value: "2026-10-25" });
+  assert.deepEqual(byId.get("timed-date")?.due, { kind: "instant", value: "2026-10-25T09:00:00.000Z" });
+  assert.equal(byId.get("conflicting-date")?.due, null);
+  assert.ok(result.coverage.issues.includes("tasks_due_kind_ambiguous"));
+});
+
 test("validated positive activity is retained without certifying bounded or foreign history", async () => {
   await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
   await seedTask({id: "positive-task", lane: "doing"});

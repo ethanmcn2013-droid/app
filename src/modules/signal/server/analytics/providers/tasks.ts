@@ -29,6 +29,7 @@ import {
 } from "../../tasks-db/signal-tasks-db-schema";
 import { readWorkspaceColumnConfig } from "./column-config";
 import { providerCoverage } from "./coverage";
+import { storedDeadline } from "../../../lib/data/deadline";
 import { queriedHistoryWindow } from "./history-window";
 
 const MAX_TASKS = 2_000;
@@ -36,7 +37,6 @@ const MAX_ACTIVITIES = 5_000;
 const MAX_NAVIGATION_LABELS = 500;
 const MAX_NAVIGATION_OWNERS = 500;
 const MAX_NAVIGATION_STATUSES = 100;
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 export class TasksAnalyticsProvider implements TasksProvider {
   async read(query: AnalyticsQuery, signal?: AbortSignal): Promise<TasksProviderResult> {
@@ -210,6 +210,9 @@ export class TasksAnalyticsProvider implements TasksProvider {
     );
     const issues: string[] = [];
     issues.push("tasks_meaningful_activity_history_unverified");
+    if (boundedRows.some(row => storedDeadline(row.due, row.dueAt)?.kind === "unknown")) {
+      issues.push("tasks_due_kind_ambiguous");
+    }
     if (validActivities.length !== boundedActivities.length) issues.push("tasks_activity_timestamp_invalid_or_future");
     if (isTruncated) issues.push("tasks_record_limit_reached");
     if (activityTruncated) issues.push("tasks_activity_limit_reached");
@@ -373,14 +376,10 @@ function isMeaningfulActivity(kind: string, payload: unknown): boolean {
 }
 
 function analyticsDate(dueAt: Date | null, due: string | null): AnalyticsDate | null {
-  if (dueAt) return { kind: "instant", value: iso(dueAt) };
-  if (due && ISO_DATE.test(due) && validDateOnly(due)) return { kind: "date", value: due };
+  const deadline = storedDeadline(due, dueAt);
+  if (deadline?.kind === "date-only") return { kind: "date", value: deadline.date };
+  if (deadline?.kind === "instant") return { kind: "instant", value: new Date(deadline.at).toISOString() };
   return null;
-}
-
-function validDateOnly(value: string): boolean {
-  const date = new Date(`${value}T00:00:00.000Z`);
-  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 
 function objectValue(value: unknown): Record<string, unknown> {

@@ -14,8 +14,9 @@ import { and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { effectiveColumnKey, isTaskDone, WAITING_COLUMN_KEY } from "@/lib/board-columns";
 import type { ColumnConfig } from "@/lib/board-config";
 import { readWorkspaceColumnConfigs } from "../../server/analytics/providers/column-config";
+import { storedDeadline } from "./deadline";
 import type { TasksDb } from "../../server/tasks-db/signal-tasks-db-client";
-import type { WorkRead, TaskRead, ProjectRead, Status } from "./types";
+import type { WorkRead, TaskRead, ProjectRead, Status, KnownPriority } from "./types";
 import { getTasksDb, tasksDbConfigured } from "@/modules/signal/server/tasks-db/signal-tasks-db-client";
 import {
   tasks as tasksTable,
@@ -119,6 +120,22 @@ function deriveStatus(row: typeof tasksTable.$inferSelect, blockedBy: string[], 
   return key === "todo" ? "next" : "in-flight";
 }
 
+function canonicalLane(row: typeof tasksTable.$inferSelect, config: ColumnConfig | null): "next" | "in-flight" | "review" | "shipped" {
+  if (isTaskDone(row, config)) return "shipped";
+  const key = effectiveColumnKey(row);
+  return key === "todo" ? "next" : key === "review" ? "review" : "in-flight";
+}
+
+function knownPriority(value: unknown): KnownPriority | null {
+  switch (value) {
+    case "p0": return 0;
+    case "p1": return 1;
+    case "p2": return 2;
+    case "p3": return 3;
+    default: return null;
+  }
+}
+
 function validCompletion(value: Date | null, now: number): string | null {
   const time = value?.getTime();
   return time !== undefined && Number.isFinite(time) && time >= 0 && time <= now
@@ -184,16 +201,8 @@ async function readCompletionHistory(db: TasksDb, targets: readonly (typeof task
   return completions;
 }
 
-class DependencyStateUnavailableError extends Error {
-  readonly code = "SIGNAL_DEPENDENCY_STATE_UNAVAILABLE";
-
-  constructor() {
-    super("Signal dependency state unavailable");
-    this.name = "DependencyStateUnavailableError";
-  }
-}
-
 type DependencyState = Pick<typeof tasksTable.$inferSelect, "id" | "workspaceId" | "lane" | "boardColumnKey">;
+type DependencyRead = { open: Map<string, string[]>; unknown: Set<string> };
 
 /** Positive comment creation evidence can advance the existing activity proxy.
  * Absence never proves inactivity: the general activity recorder is best effort.
@@ -238,7 +247,7 @@ async function readOpenDependencies(
   db: TasksDb,
   rows: readonly (typeof tasksTable.$inferSelect)[],
   configurations: ReadonlyMap<string, { config: ColumnConfig | null }>,
-): Promise<Map<string, string[]>> {
+): Promise<DependencyRead> {
   const byWorkspace = new Map<string, Map<string, DependencyState>>();
   for (const row of rows) {
     const bucket = byWorkspace.get(row.workspaceId!) ?? new Map<string, DependencyState>();
@@ -268,20 +277,20 @@ async function readOpenDependencies(
     for (const dependency of dependencies) byWorkspace.get(dependency.workspaceId!)!.set(dependency.id, dependency);
   }
   const edges = new Map<string, string[]>();
+  const unknown = new Set<string>();
   for (const row of rows) {
     const config = configurations.get(row.workspaceId!)!.config;
-    const terminal = isTaskDone(row, config);
-    if (row.blockedBy !== null && !Array.isArray(row.blockedBy) && !terminal) throw new DependencyStateUnavailableError();
+    if (row.blockedBy !== null && !Array.isArray(row.blockedBy)) unknown.add(row.id);
     const blockedBy = Array.isArray(row.blockedBy) ? row.blockedBy : [];
     edges.set(row.id, blockedBy.filter(id => {
       const dependency = validId(id) ? byWorkspace.get(row.workspaceId!)?.get(id) : undefined;
-      // Unknown is not cleared or a confirmed open blocker. The existing
-      // unavailable path prevents an open-task claim from using partial truth.
-      if (!dependency && !terminal) throw new DependencyStateUnavailableError();
-      return !dependency || !isTaskDone(dependency, config);
+      // A missing, malformed or foreign reference is neither cleared nor a
+      // confirmed blocker; retain the task and mark this predicate unknown.
+      if (!dependency) { unknown.add(row.id); return false; }
+      return !isTaskDone(dependency, config);
     }));
   }
-  return edges;
+  return { open: edges, unknown };
 }
 
 /**
@@ -355,16 +364,16 @@ function buildWorkRead(
   rows: Array<typeof tasksTable.$inferSelect>,
   config: ColumnConfig | null = null,
   completions: ReadonlyMap<string, string | null> = new Map(),
-  dependencies: ReadonlyMap<string, string[]> = new Map(),
+  dependencies: DependencyRead = { open: new Map(), unknown: new Set() },
   activity: ReadonlyMap<string, string> = new Map(),
 ): WorkRead {
     const taskReads: TaskRead[] = rows.map((t) => {
       const tags = Array.isArray(t.tags) ? t.tags : [];
       const assignees = Array.isArray(t.assignees) ? t.assignees : [];
-      const blockedBy = dependencies.get(t.id) ?? (Array.isArray(t.blockedBy) ? t.blockedBy : []);
-      const dueDate = t.dueAt
-        ? t.dueAt.toISOString().slice(0, 10)
-        : t.due ?? null;
+      const blockedBy = dependencies.open.get(t.id) ?? [];
+      const deadline = storedDeadline(t.due, t.dueAt);
+      const dueDate = deadline?.kind === "date-only" ? deadline.date
+        : deadline?.kind === "instant" ? new Date(deadline.at).toISOString() : null;
 
       return {
         id: t.id,
@@ -372,9 +381,13 @@ function buildWorkRead(
         title: t.title,
         assignee: assignees[0] ? { id: assignees[0] } : null,
         status: deriveStatus(t, blockedBy, config),
+        canonicalLane: canonicalLane(t, config),
+        priority: knownPriority(t.priority),
         completedAt: completions.get(t.id) ?? null,
+        deadline,
         dueDate,
         blockedBy,
+        dependencyCoverage: dependencies.unknown.has(t.id) ? "partial" : "complete",
         // No separate status-change timestamp in Tasks's schema;
         // updatedAt is the closest proxy. Cycle 6.4 may revisit if
         // any trigger needs strict status-change semantics.
@@ -422,6 +435,12 @@ function buildWorkRead(
       snapshotAt: new Date().toISOString(),
       projects,
       tasks: taskReads,
+      coverage: {
+        activity: "partial",
+        dependencies: taskReads.some(task => task.dependencyCoverage === "partial") ? "partial" : "complete",
+        dates: taskReads.some(task => task.deadline?.kind === "unknown") ? "partial" : "complete",
+        priorities: taskReads.some(task => task.priority === null) ? "partial" : "complete",
+      },
       // Activities deferred, v1 trigger set keys off task fields.
       // Cycle 6.4 will populate this if any trigger needs the event log.
       events: [],

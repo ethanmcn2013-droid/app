@@ -23,6 +23,7 @@ export const streak: Trigger = {
   id: "streak",
   defaultBlock: "moving-well",
   detect(work) {
+    if (work.coverage?.activity === "partial") return [];
     const counts = new Map<string, number>();
     for (const task of work.tasks) {
       if (!isCompleted(task.status)) continue;

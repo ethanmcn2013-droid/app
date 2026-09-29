@@ -12,8 +12,12 @@
  * Plan 6 · Cycle 6.1 (Architecture + data layer).
  */
 
+import type { Deadline } from "./deadline";
+
 /** Task status, mirrors Tasks's schema. */
 export type Status = "next" | "in-flight" | "review" | "blocked" | "shipped" | "refused";
+export type KnownPriority = 0 | 1 | 2 | 3;
+export type EvidenceCoverage = "complete" | "partial";
 
 /** A user (assignee) in the workspace. Opaque id only, no PII. */
 export interface UserRef {
@@ -57,12 +61,19 @@ export interface TaskRead {
   title: string;
   assignee: UserRef | null;
   status: Status;
+  /** Canonical board position before any dependency-derived blocked state. */
+  canonicalLane?: "next" | "in-flight" | "review" | "shipped";
+  /** Unknown/corrupt canonical priority stays null, not fabricated P2. */
+  priority?: KnownPriority | null;
   /** Valid completion evidence for currently terminal work; unknown is null. */
   completedAt?: string | null;
-  /** ISO date if set. */
+  /** Explicit internal deadline; absent on older injected test sources. */
+  deadline?: Deadline;
+  /** Legacy date reader; exact date or ISO instant only when proved. */
   dueDate: string | null;
-  /** Other task ids that block this one. */
+  /** Known-open task ids only; unresolved references stay opaque. */
   blockedBy: string[];
+  dependencyCoverage?: EvidenceCoverage;
   /** Legacy update-time proxy, ISO; does not prove a status transition. */
   lastStatusChangeAt: string;
   /** Update-time proxy advanced by valid recorded comments, ISO; history is not complete. */
@@ -90,6 +101,13 @@ export interface WorkRead {
   snapshotAt: string;
   projects: ProjectRead[];
   tasks: TaskRead[];
+  /** Missing event history is never evidence that nothing happened. */
+  coverage?: Readonly<{
+    activity: EvidenceCoverage;
+    dependencies: EvidenceCoverage;
+    dates: EvidenceCoverage;
+    priorities: EvidenceCoverage;
+  }>;
   /** Recent activity events (last ~30 days, scoped per trigger needs). */
   events: ActivityEvent[];
 }

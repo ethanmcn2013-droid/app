@@ -6,7 +6,7 @@ import ts from "typescript";
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { buildBriefing } from "@/modules/signal/lib/briefing/build";
-import { calendarDayDifference, localWeekday } from "@/modules/signal/lib/briefing/calendar-time";
+import { compareDeadlines, deadlineDayDifference, deadlineIsOverdue, deadlineShortDate, deadlineWeekday, signalDeadline } from "@/modules/signal/lib/briefing/calendar-time";
 import type { TaskSignal } from "@/modules/signal/lib/briefing/types";
 import type { PlanningCatalog, SignalScope } from "@/modules/signal/lib/planning-periods/scope";
 import type { BriefingForUserResult } from "@/modules/signal/home";
@@ -40,14 +40,16 @@ const signals = (count: number, dueAt: number | null = null): TaskSignal[] => Ar
   id: `task-${index}`, title: `Work ${index}`, lane: "in-flight", priority: 2, dueAt,
   idleDays: 0, commentCount: 0, blockedBy: [], sourceLabel: "Tasks · project-b", movedToShippedAt: null, workspaceId: "project-b",
 }));
-async function fixture(items: TaskSignal[], scope: SignalScope = { kind: "workspace", workspaceId: "project-b" }) {
+async function fixture(items: TaskSignal[], scope: SignalScope = { kind: "workspace", workspaceId: "project-b" }, coverageStatus?: "partial", timezoneOverride?: string) {
   const authorizedScope = scopeApi.authorizeSignalScope(catalog, scope);
   assert.ok(authorizedScope);
+  const readScope = timezoneOverride ? { ...authorizedScope, timezone: timezoneOverride } : authorizedScope;
   const briefing = await buildBriefing({ getSignalsForUser: async () => items }, { userId: "synthetic", email: "fixture@example.test" }, now);
-  const result: BriefingForUserResult = { kind: "ok", briefing, authorizedScope, catalog, signals: items };
+  if (coverageStatus) briefing.coverageStatus = coverageStatus;
+  const result: BriefingForUserResult = { kind: "ok", briefing, authorizedScope: readScope, catalog, signals: items };
   const calls: unknown[] = [];
   const home = load<typeof import("./home-data")>("./home-data.ts", {
-    "@/modules/signal/home": { calendarDayDifference, localWeekday, buildBriefingForUser: async (input: unknown) => { calls.push(input); return result; } },
+    "@/modules/signal/home": { compareDeadlines, deadlineDayDifference, deadlineIsOverdue, deadlineShortDate, deadlineWeekday, signalDeadline, buildBriefingForUser: async (input: unknown) => { calls.push(input); return result; } },
   });
   const data = await home.loadHomeData({ clerkId: "synthetic" });
   assert.equal(data.kind, "ok");
@@ -79,6 +81,54 @@ test("an aggregate across projects labels and carries the whole planning scope",
   const params = new URL(row.href, "https://fixture.invalid").searchParams;
   assert.equal(params.get("planningPeriodId"), "season");
   assert.equal(params.has("workspaceId"), false);
+});
+
+test("known due row remains while partial date evidence qualifies positive Home totals", async () => {
+  const known = { ...signals(1, now)[0], id: "known-date" };
+  const unknown = { ...signals(1)[0], id: "unknown-date", deadline: { kind: "unknown" } as const };
+  const { data } = await fixture([known, unknown], { kind: "workspace", workspaceId: "project-b" }, "partial");
+  assert.equal(data.stats.dueToday, 1);
+  assert.equal(data.dateCoverageComplete, false);
+  assert.equal(data.allClear, null);
+  const link = ({ href, children }: { href: string; children: ReactNode }) => createElement("a", { href }, children);
+  const view = load<typeof import("@/components/app/home/home-view")>("../../../components/app/home/home-view.tsx", {
+    "next/link": { default: link }, "./home-analytics": { HomeViewedPing: () => null },
+    "./home.module.css": { default: new Proxy({}, { get: (_target, key) => String(key) }) },
+  });
+  const html = renderToStaticMarkup(createElement(view.HomeView, { data }));
+  assert.match(html, /Some dates could not be checked/);
+  assert.match(html, /Known dates only/);
+  assert.match(html, /href="\/app\/task\/known-date"/);
+  assert.doesNotMatch(html, /A clear day|Nothing slipped/);
+});
+
+test("mixed calendar-day deadlines sort before Home's cap in each reader zone", async () => {
+  const date = Array.from({ length: 8 }, (_, index): TaskSignal => ({
+    ...signals(1)[0], id: `date-${index}`, deadline: { kind: "date-only", date: "2026-09-05" },
+  }));
+  const instant: TaskSignal = { ...signals(1)[0], id: "timed", dueAt: Date.parse("2026-09-05T10:00:00.000Z"), deadline: { kind: "instant", at: Date.parse("2026-09-05T10:00:00.000Z") } };
+  const west = await fixture([...date, instant], undefined, undefined, "Etc/GMT+12");
+  assert.equal(west.data.myTasks[0]?.id, "timed", "local Sep 4 instant precedes Sep 5 date-only");
+  assert.equal(west.data.myTasks.length, 8);
+  const east = await fixture([...date, instant], undefined, undefined, "Pacific/Kiritimati");
+  assert.ok(east.data.myTasks.every(row => row.id !== "timed"), "local Sep 6 instant follows eight Sep 5 dates");
+});
+
+test("an expired same-day instant survives eight date-only-today rows before Home's cap", async () => {
+  const date = Array.from({ length: 8 }, (_, index): TaskSignal => ({
+    ...signals(1)[0], id: `date-today-${index}`, deadline: { kind: "date-only", date: "2026-09-04" },
+  }));
+  const late: TaskSignal = {
+    ...signals(1)[0], id: "past-at-eleven", dueAt: now - 3_600_000,
+    deadline: { kind: "instant", at: now - 3_600_000 },
+  };
+  const { data } = await fixture([...date, late], undefined, undefined, "UTC");
+  assert.equal(data.stats.dueToday, 9);
+  assert.equal(data.stats.overdue, 1);
+  assert.equal(data.myTasks[0]?.id, late.id);
+  assert.equal(data.myTasks[0]?.overdue, true);
+  assert.equal(data.deadlines[0]?.label, "Overdue");
+  assert.equal(data.deadlines[0]?.rows[0]?.id, late.id);
 });
 
 test("ordinary tasks retain their object route and safe path encoding", async () => {

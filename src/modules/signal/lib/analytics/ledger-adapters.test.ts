@@ -56,6 +56,15 @@ function legacyBriefing(
 }
 
 describe("legacy Signal ledger adapter", () => {
+  it("keeps a known risk count without calling a partial read a quiet day", () => {
+    const options = { generatedAtLabel: "Sunday, 09:00", scopeLabel: "Personal", scopeKind: "workspace" as const, allowedAppOrigin: APP_ORIGIN };
+    const partial = ledgerFromLegacyBriefing(legacyBriefing([legacyItem("known-risk")], { coverageStatus: "partial" }), options);
+    const complete = ledgerFromLegacyBriefing(legacyBriefing([legacyItem("known-risk")], { coverageStatus: "complete" }), options);
+    assert.equal(partial.heading, "1 risk worth watching.");
+    assert.equal(complete.heading, "A quiet day. One risk worth watching.");
+    assert.equal(partial.entries.length, 1);
+    assert.equal(partial.readCounts, null);
+  });
   it("groups exact same-title signals in the same authorized scope", () => {
     const briefing = legacyBriefing([
       legacyItem("task-private-one"),

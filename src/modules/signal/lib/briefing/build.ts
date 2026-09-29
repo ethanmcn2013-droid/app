@@ -11,9 +11,11 @@ import {
 } from "./triggers";
 import type { BriefItem, Briefing, FocusItem, TriggerKind } from "./types";
 import {
-  calendarDayDifference,
+  deadlineDayDifference,
+  deadlineIsOverdue,
+  deadlineWeekday,
   localHour,
-  localWeekday,
+  signalDeadline,
 } from "./calendar-time";
 
 const BUCKET_CAP = 3;
@@ -206,10 +208,7 @@ function toItem(
   titlesById: Map<string, string>,
   timezone: string,
 ): BriefItem {
-  const daysOut =
-    t.task.dueAt != null
-      ? calendarDayDifference(t.task.dueAt, now, timezone)
-      : undefined;
+  const daysOut = deadlineDayDifference(signalDeadline(t.task), now, timezone) ?? undefined;
   const blockedByTitles = t.task.blockedBy
     .map((id) => titlesById.get(id))
     .filter((title): title is string => Boolean(title));
@@ -218,8 +217,9 @@ function toItem(
   // observation, never the title, so a reader who returns tomorrow
   // still recognises the same row.
   const detail = phraseFor(t.trigger, t.task, rotation, {
-    idleDays: t.task.idleDays,
+    idleDays: t.task.idleDays ?? undefined,
     daysOut,
+    pastToday: t.trigger === "due-soon" && daysOut === 0 && deadlineIsOverdue(signalDeadline(t.task), now, timezone),
     blockedByTitles,
   });
   return {
@@ -263,12 +263,14 @@ function headline(t: Triggered): string {
 }
 
 function focusDue(t: Triggered, now: number, timezone: string): string {
-  if (t.trigger === "due-soon" && t.task.dueAt != null) {
-    const daysOut = calendarDayDifference(t.task.dueAt, now, timezone);
-    if (daysOut < 0) return "overdue";
+  if (t.trigger === "due-soon") {
+    const deadline = signalDeadline(t.task);
+    const daysOut = deadlineDayDifference(deadline, now, timezone);
+    if (daysOut === null) return "this week";
+    if (deadlineIsOverdue(deadline, now, timezone)) return "overdue";
     if (daysOut < 1) return "today";
     if (daysOut < 2) return "tomorrow";
-    if (daysOut < 5) return `by ${localWeekday(t.task.dueAt, timezone)}`;
+    if (daysOut < 5) return `by ${deadlineWeekday(deadline, timezone)}`;
     return "this week";
   }
   if (t.trigger === "overload") return "today";

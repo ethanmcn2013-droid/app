@@ -190,6 +190,7 @@ export function phraseFor(
   context?: {
     idleDays?: number;
     daysOut?: number;
+    pastToday?: boolean;
     /** Resolved titles of upstream blocker tasks (in order). */
     blockedByTitles?: string[];
   },
@@ -197,12 +198,15 @@ export function phraseFor(
   const options = LIBRARY[trigger];
   const phrasing = options[rotationIndex % options.length];
   if (trigger === "stuck-work")
-    return phrasing(task, context?.idleDays ?? task.idleDays);
-  if (trigger === "due-soon") return phrasing(task, context?.daysOut ?? 0);
+    return phrasing(task, context?.idleDays ?? task.idleDays ?? 0);
+  if (trigger === "due-soon") {
+    if (context?.pastToday) return "Past its time today.";
+    return phrasing(task, context?.daysOut ?? 0);
+  }
   if (trigger === "blocked-too-long") {
     return phrasing(
       task,
-      context?.idleDays ?? task.idleDays,
+      context?.idleDays ?? task.idleDays ?? 0,
       context?.blockedByTitles ?? [],
     );
   }

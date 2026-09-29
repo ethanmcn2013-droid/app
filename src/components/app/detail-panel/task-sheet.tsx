@@ -33,7 +33,7 @@ import { SheetSkeleton } from "@/components/tasks/skeletons";
 import { dayLabel, shortDate } from "@/components/tasks/time";
 import { buildTaskDetailActions } from "@/components/app/task-detail/task-detail-actions";
 import { ExistingTaskHistory } from "@/components/app/task-detail/existing-task-history";
-import { calendarDateInTimeZone } from "@/lib/planning/dates";
+import { taskDueCalendarDate, taskDuePickerValue } from "@/lib/tasks/anchor-due";
 import { EditedStamp } from "./panel-header";
 import sx from "./sheet-sections.module.css";
 import { DescriptionEditor } from "./description-editor";
@@ -457,7 +457,7 @@ function Properties({ task, grid = false }: { task: Task; grid?: boolean }) {
     return { id, name: member?.name ?? "Someone", initials: member?.initials };
   });
   const priority = priorityToLab(task.priority);
-  const dueIso = task.dueAt ? calendarDateInTimeZone(task.dueAt, calendar.timeZone) : null;
+  const dueIso = taskDueCalendarDate(task.due, task.dueAt ?? null, calendar.timeZone);
   const overdue = dueIso && !isTaskDone(task, columnConfig) && dueIso < calendar.today;
   const labels = task.tags ?? [];
   const hasAmount = (task.cents ?? 0) > 0;
@@ -616,7 +616,7 @@ function Properties({ task, grid = false }: { task: Task; grid?: boolean }) {
         <div className={styles.duePicker}>
           <DueCalendar
             today={new Date(`${calendar.today}T12:00:00`)}
-            value={task.dueAt ?? null}
+            value={taskDuePickerValue(task.due, task.dueAt ?? null)}
             anchorDate={anchor.date}
             anchorNote={anchor.date && anchor.label ? `${anchor.label}: ${shortDate(anchor.date)}` : null}
             onSelect={(date) => setDue(isoFromLocal(date))}

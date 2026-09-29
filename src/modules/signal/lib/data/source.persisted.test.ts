@@ -170,7 +170,7 @@ test("cleared dependencies do not release an explicit waiting column", async () 
 });
 
 for (const fault of ["missing", "foreign", "mixed", "malformed"] as const) {
-  test(`unknown ${fault} dependencies reject open-source claims`, async () => {
+  test(`unknown ${fault} dependencies retain known rows without false clearance`, async () => {
     const id = `dependency-unknown-${fault}`; await workspace(id);
     await task(id, `${id}-done`);
     if (fault === "foreign") {
@@ -178,17 +178,30 @@ for (const fault of ["missing", "foreign", "mixed", "malformed"] as const) {
     }
     await task(id, `${id}-dependent`, { lane: "review", blocked: fault === "mixed" ? [`${id}-done`, `${id}-unresolved`] : [`${id}-unresolved`] });
     if (fault === "malformed") await fixture.client.execute({ sql: "UPDATE tasks SET blocked_by=? WHERE id=?", args: [JSON.stringify([null, 17, ""]), `${id}-dependent`] });
-    await assert.rejects(source.tasksDbSource.read(id), {
-      name: "DependencyStateUnavailableError",
-      code: "SIGNAL_DEPENDENCY_STATE_UNAVAILABLE",
-      message: "Signal dependency state unavailable",
-    });
+    const read = await source.tasksDbSource.read(id);
+    const dependent = read.tasks.find(row => row.id === `${id}-dependent`);
+    assert.ok(dependent);
+    assert.equal(dependent.dependencyCoverage, "partial");
+    assert.deepEqual(dependent.blockedBy, []);
+    assert.equal(read.coverage?.dependencies, "partial");
+    assert.ok(read.tasks.some(row => row.id === `${id}-done`), "known completed task remains visible");
   });
 }
 
 test("unknown dependencies on already terminal work do not invent an open dependency claim", async () => {
   await workspace("dependency-terminal-unknown"); await task("dependency-terminal-unknown", "terminal-unknown", { blocked: ["absent"] });
   assert.equal((await readTask("dependency-terminal-unknown", "terminal-unknown")).status, "shipped");
+});
+test("one unknown edge does not erase a separate proved-open blocker", async () => {
+  await workspace("dependency-mixed-open");
+  await task("dependency-mixed-open", "known-open", { lane: "doing" });
+  await task("dependency-mixed-open", "mixed-dependent", { lane: "review", blocked: ["known-open", "missing-edge"] });
+  const read = await source.tasksDbSource.read("dependency-mixed-open");
+  const dependent = read.tasks.find(row => row.id === "mixed-dependent");
+  assert.ok(dependent);
+  assert.deepEqual(dependent.blockedBy, ["known-open"]);
+  assert.equal(dependent.dependencyCoverage, "partial");
+  assert.equal(read.coverage?.dependencies, "partial");
 });
 
 test("more than500 hidden dependency targets use bounded scoped terminal-field queries", async () => {

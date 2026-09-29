@@ -165,8 +165,8 @@ const COVERAGE_COPY: Readonly<
   // says the read happens when you open Signal.
   partial: {
     headline: "Signal has only part of the picture.",
-    body: "What is below came from the sources that answered. The rest is still unread, not clear.",
-    note: "One source did not answer. This read covers the rest.",
+    body: "What is below comes from work Signal could check. Some work is still unknown.",
+    note: "Some work could not be checked in this read.",
   },
   stale: {
     headline: "This read is older than today.",

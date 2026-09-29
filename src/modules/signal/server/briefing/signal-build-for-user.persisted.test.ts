@@ -8,6 +8,7 @@ import { pathToFileURL } from "node:url";
 import { createClient, type Client } from "@libsql/client";
 import { freshFileDb } from "@/server/db/memory-test-db";
 import { ledgerFromLegacyBriefing } from "../../lib/analytics/ledger-adapters";
+import { dueInstantForDay, toCalendarDate } from "@/lib/tasks/anchor-due";
 
 // Actual source, scope authorization, orchestrator, engine, Home and ledger.
 // Only isolated DB URLs and the clock are controlled; no source is mocked.
@@ -121,35 +122,80 @@ test("completed hidden dependency stops stale blocked claims in actual Home and 
   await fixture.client.execute("UPDATE tasks SET lane='doing' WHERE id='cleared-upstream'");
   const reopened = await build();
   assert.deepEqual(reopened.signals[0].blockedBy, ["cleared-upstream"]);
-  assert.ok((await home()).signalRows.some(row => row.trigger === "blocked-too-long"));
+  assert.deepEqual((await build()).signals[0].blockedBy, ["cleared-upstream"]);
+  assert.ok((await home()).signalRows.every(row => row.trigger !== "blocked-too-long"), "incomplete activity history cannot establish blocker age");
   const reopenedLedger = ledgerFromLegacyBriefing(reopened.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
-  assert.match(JSON.stringify(reopenedLedger), /upstream item has not cleared/);
+  assert.equal(reopenedLedger.emptyState?.kind, "coverage");
+  assert.equal(reopenedLedger.readCounts, null);
 });
 
 test("proven recent comment reaches actual Home and ledger without altering dependency lifecycle or stores", async () => {
   await task("upstream", { lane: "doing", updated: NOW - 10 * DAY });
   await task("commented-dependent", { lane: "doing", blocked: ["upstream"], updated: NOW - 10 * DAY });
   await fixture.client.execute("UPDATE tasks SET due_at=NULL");
-  assert.ok((await home()).signalRows.some(row => row.id === "commented-dependent" && row.trigger === "blocked-too-long"));
+  assert.ok((await home()).signalRows.every(row => row.id !== "commented-dependent"), "updatedAt cannot establish inactivity");
   await fixture.client.execute({ sql: "INSERT INTO activities(id,workspace_id,task_id,user_id,kind,payload,created_at) VALUES ('proven-comment',?,'commented-dependent','synthetic-owner','commentAdd',?,?)", args: [WORKSPACE, JSON.stringify({ kind: "commentAdd", commentId: "transactional-comment" }), (NOW - DAY) / 1000] });
   const beforeHashes = await hashes(), result = await build(), view = await home();
   const signal = result.signals.find(row => row.id === "commented-dependent");
-  assert.ok(signal); assert.equal(signal.idleDays, 1); assert.deepEqual(signal.blockedBy, ["upstream"]);
+  assert.ok(signal); assert.equal(signal.idleDays, null); assert.deepEqual(signal.blockedBy, ["upstream"]);
   assert.ok(view.signalRows.every(row => row.id !== "commented-dependent"));
   const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
   assert.doesNotMatch(JSON.stringify(ledger), /commented-dependent|transactional-comment|proven-comment/);
   assert.deepEqual(await hashes(), beforeHashes);
 });
 
+test("actual picker date survives source, briefing and Home in extreme reader zones", async () => {
+  const selected = new Date(2026, 8, 28, 12);
+  const day = toCalendarDate(selected), instant = dueInstantForDay(selected);
+  assert.equal(day, "2026-09-28"); assert.ok(instant);
+  await task("picked-date", { lane: "doing" });
+  await fixture.client.execute({ sql: "UPDATE tasks SET due=?,due_at=? WHERE id='picked-date'", args: [day, instant.getTime() / 1000] });
+  try {
+    for (const [zone, expected] of [["Etc/GMT+12", 0], ["Pacific/Kiritimati", 1], ["Europe/Dublin", 0]] as const) {
+      await signalStore.execute({ sql: "UPDATE analytics_users SET timezone=? WHERE clerk_id=?", args: [zone, ACTOR] });
+      const result = await build(), view = await home();
+      assert.deepEqual(result.signals[0].deadline, { kind: "date-only", date: day });
+      assert.equal(view.stats.dueToday, expected, zone);
+      assert.equal(view.myTasks[0]?.due, expected ? "Today" : "Tomorrow", zone);
+      assert.equal(view.dateCoverageComplete, true);
+    }
+  } finally {
+    await signalStore.execute({ sql: "UPDATE analytics_users SET timezone='UTC' WHERE clerk_id=?", args: [ACTOR] });
+  }
+});
+
+test("canonical priorities order equal-lane undated Home tasks P0 through P3 with unknown last", async () => {
+  for (const priority of ["p3", "p1", "p0", "p2", "unexpected"]) {
+    await task(`priority-${priority}`, { lane: "doing" });
+    await fixture.client.execute({ sql: "UPDATE tasks SET priority=?,due=NULL,due_at=NULL WHERE id=?", args: [priority, `priority-${priority}`] });
+  }
+  const result = await build(), view = await home();
+  assert.deepEqual(Object.fromEntries(result.signals.map(signal => [signal.id, signal.priority])), {
+    "priority-p3": 3, "priority-p1": 1, "priority-p0": 0, "priority-p2": 2, "priority-unexpected": null,
+  });
+  assert.deepEqual(view.myTasks.map(row => row.id), ["priority-p0", "priority-p1", "priority-p2", "priority-p3", "priority-unexpected"]);
+  assert.equal(view.allClear, null, "unknown evidence cannot show healthy all-clear");
+});
+
 for (const fault of ["missing", "foreign", "mixed"] as const) {
-  test(`actual Home and orchestrator decline unknown ${fault} dependency claims without state writes`, async () => {
+  test(`actual Home and ledger retain known work beside unknown ${fault} dependency`, async () => {
     await task("known-completed", { completed: NOW - DAY });
     if (fault === "foreign") await fixture.client.execute({ sql: "INSERT INTO tasks(id,workspace_id,seq,title,lane,priority,assignees,tags,blocked_by,created_at,updated_at) VALUES ('unresolved','synthetic-foreign-project',1,'Foreign secret title','done','p2','[]','[]','[]',?,?)", args: [(NOW - DAY) / 1000, NOW / 1000] });
     await task("dependent", { lane: "doing", blocked: fault === "mixed" ? ["known-completed", "unresolved"] : ["unresolved"], updated: NOW - 10 * DAY });
     const beforeHashes = await hashes();
-    const unavailable = { name: "DependencyStateUnavailableError", code: "SIGNAL_DEPENDENCY_STATE_UNAVAILABLE", message: "Signal dependency state unavailable" };
-    await assert.rejects(home(), unavailable);
-    await assert.rejects(orchestrator.buildBriefingForUser({ clerkId: ACTOR, cadence: "daily", recordReadState: true, scope: { kind: "workspace", workspaceId: WORKSPACE } }), unavailable);
+    const view = await home();
+    const result = await build();
+    const dependent = result.signals.find(row => row.id === "dependent");
+    assert.ok(dependent);
+    assert.equal(dependent.dependencyCoverage, "partial");
+    assert.deepEqual(dependent.blockedBy, []);
+    assert.equal(result.briefing.coverageStatus, "partial");
+    assert.equal(view.allClear, null);
+    assert.ok(view.signalRows.some(row => row.id === "dependent" && row.trigger === "due-soon"), "known urgent date remains visible");
+    assert.ok(view.signalRows.every(row => row.id !== "dependent" || row.trigger !== "blocked-too-long"));
+    const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
+    assert.equal(ledger.readCounts, null);
+    assert.ok(ledger.coverageNote);
     assert.deepEqual(await hashes(), beforeHashes);
   });
 }

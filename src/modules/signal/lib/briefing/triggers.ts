@@ -1,5 +1,5 @@
 import type { Lane, TaskSignal, TriggerKind } from "./types";
-import { calendarDayDifference } from "./calendar-time";
+import { deadlineDayDifference, deadlineIsOverdue, signalDeadline } from "./calendar-time";
 import { capitalise, numberWord, plural } from "./prose";
 
 const DAY = 86_400_000;
@@ -57,8 +57,9 @@ export function detectStuckWork(signals: TaskSignal[]): Triggered[] {
     .filter(
       (s) =>
         s.lane !== "shipped" &&
-        s.idleDays >= 3 &&
-        s.blockedBy.length === 0,
+        s.idleDays != null && s.idleDays >= 3 &&
+        s.blockedBy.length === 0 &&
+        s.dependencyCoverage !== "partial",
     )
     .map((task) => ({
       task,
@@ -73,7 +74,7 @@ export function detectStuckWork(signals: TaskSignal[]): Triggered[] {
         lanePosition(task.lane),
         ...(task.priority === 0 ? ["You marked this high priority."] : []),
       ],
-      severity: Math.min(100, task.idleDays * 4 + (3 - task.priority) * 6),
+      severity: Math.min(100, task.idleDays! * 4 + (task.priority === null ? 0 : (3 - task.priority) * 6)),
     }));
 }
 
@@ -84,19 +85,18 @@ export function detectDueSoon(
   timezone = "UTC",
 ): Triggered[] {
   return signals
-    .filter((s) => s.lane !== "shipped" && s.dueAt != null)
+    .filter((s) => s.lane !== "shipped" && deadlineDayDifference(signalDeadline(s), now, timezone) !== null)
     .map((task): Triggered | null => {
-      const dueAt = task.dueAt!;
-      const daysOut = calendarDayDifference(dueAt, now, timezone);
+      const daysOut = deadlineDayDifference(signalDeadline(task), now, timezone)!;
       if (daysOut > 2) return null;
-      const isOverdue = daysOut < 0;
+      const isOverdue = deadlineIsOverdue(signalDeadline(task), now, timezone);
       const overdueDays = Math.round(Math.abs(daysOut));
       // The row already states the date position, so neither line here
       // repeats it. Line one names the rule that fired; line two is the
       // fact the date alone does not give you, which is whether anyone
       // has touched it and where it is sitting.
       const evidence =
-        task.idleDays >= 1
+        task.idleDays != null && task.idleDays >= 1
           ? `No update on it in ${plural(task.idleDays, "day", "days")}.`
           : lanePosition(task.lane);
       return {
@@ -104,7 +104,7 @@ export function detectDueSoon(
         trigger: "due-soon",
         reasons: [
           isOverdue
-            ? "Signal flags anything past its date."
+            ? daysOut === 0 ? "Signal flags anything past its time." : "Signal flags anything past its date."
             : "Signal flags anything due inside two days.",
           evidence,
           // Gated at P0, not at P0-or-P1. At the old threshold the line
@@ -141,7 +141,7 @@ export function detectJustShipped(
           ? "You had it marked high priority before it closed."
           : "Nothing is being asked of you here.",
       ],
-      severity: 40 + (3 - task.priority) * 5,
+      severity: 40 + (task.priority === null ? 0 : (3 - task.priority) * 5),
     }));
 }
 
@@ -161,14 +161,14 @@ export function detectCrowdedWeek(
   const upcoming = signals.filter(
     (s) =>
       s.lane !== "shipped" &&
-      s.dueAt != null &&
-      calendarDayDifference(s.dueAt, now, timezone) > 0 &&
-      calendarDayDifference(s.dueAt, now, timezone) <= 7,
+      deadlineDayDifference(signalDeadline(s), now, timezone) !== null &&
+      deadlineDayDifference(signalDeadline(s), now, timezone)! > 0 &&
+      deadlineDayDifference(signalDeadline(s), now, timezone)! <= 7,
   );
   if (upcoming.length < 3) return [];
 
   const soonest = Math.min(
-    ...upcoming.map((s) => calendarDayDifference(s.dueAt!, now, timezone)),
+    ...upcoming.map((s) => deadlineDayDifference(signalDeadline(s), now, timezone)!),
   );
 
   const synthetic: TaskSignal = {
@@ -210,7 +210,8 @@ export function detectBlockedTooLong(signals: TaskSignal[]): Triggered[] {
       (s) =>
         s.lane !== "shipped" &&
         s.blockedBy.length > 0 &&
-        s.idleDays >= 5,
+        s.dependencyCoverage !== "partial" &&
+        s.idleDays != null && s.idleDays >= 5,
     )
     .map((task) => ({
       task,
@@ -222,7 +223,7 @@ export function detectBlockedTooLong(signals: TaskSignal[]): Triggered[] {
           ? "One upstream item has not cleared."
           : `${capitalise(numberWord(task.blockedBy.length))} upstream items have not cleared.`,
       ],
-      severity: Math.min(90, 30 + task.idleDays * 3 + task.blockedBy.length * 4),
+      severity: Math.min(90, 30 + task.idleDays! * 3 + task.blockedBy.length * 4),
     }));
 }
 

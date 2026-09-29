@@ -144,6 +144,13 @@ describe("buildBriefing, focus ranking", () => {
     const b = await buildBriefing(source(signals), CTX, NOW);
     assert.equal(b.suggestedFocus[0]?.id, "overdue");
   });
+
+  test("an instant past its time today reads overdue without inventing a day late", async () => {
+    const b = await buildBriefing(source([task({ id: "past-hour", dueAt: NOW - 3_600_000 })]), CTX, NOW);
+    const item = [...b.needsAttention, ...b.quietRisks].find((row) => row.id === "past-hour");
+    assert.equal(item?.detail, "Past its time today.");
+    assert.equal(b.suggestedFocus.find((row) => row.id === "past-hour")?.due, "overdue");
+  });
 });
 
 describe("buildBriefing, prose rotation determinism", () => {
