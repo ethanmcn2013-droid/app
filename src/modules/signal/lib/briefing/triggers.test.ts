@@ -618,14 +618,14 @@ describe("reasons carry evidence, not restatement", () => {
     ]);
   });
 
-  test("high priority is stated as its own fact, never welded to another", () => {
+  test("high priority states saved status without attributing a reader action", () => {
     const [fired] = detectStuckWork([makeTask({ idleDays: 5, priority: 0 })]);
-    assert.equal(fired.reasons.at(-1), "You marked this high priority.");
+    assert.equal(fired.reasons.at(-1), "This is marked high priority.");
   });
 
   // At the old P0-or-P1 threshold the line appeared on very nearly every
   // row, so it discriminated nothing and read as decoration.
-  test("the priority line only appears on work the reader marked P0", () => {
+  test("the priority line only appears on work with saved P0", () => {
     for (const priority of [1, 2, 3] as const) {
       for (const fired of [
         detectStuckWork([makeTask({ idleDays: 5, priority })])[0]!,
@@ -641,7 +641,7 @@ describe("reasons carry evidence, not restatement", () => {
       detectDueSoon(
         [makeTask({ dueAt: NOW - DAY, priority: 0 })],
         NOW,
-      )[0]!.reasons.includes("You marked this high priority."),
+      )[0]!.reasons.includes("This is marked high priority."),
     );
     assert.equal(
       detectJustShipped(

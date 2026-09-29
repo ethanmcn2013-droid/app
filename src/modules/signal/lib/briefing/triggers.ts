@@ -74,7 +74,7 @@ export function detectStuckWork(signals: TaskSignal[]): Triggered[] {
       reasons: [
         "Signal flags anything quiet for three days or more.",
         lanePosition(task.lane),
-        ...(task.priority === 0 ? ["You marked this high priority."] : []),
+        ...(task.priority === 0 ? ["This is marked high priority."] : []),
       ],
       severity: Math.min(100, task.idleDays! * 4 + (task.priority === null ? 0 : (3 - task.priority) * 6)),
     }));
@@ -112,7 +112,7 @@ export function detectDueSoon(
           // Gated at P0, not at P0-or-P1. At the old threshold the line
           // appeared on very nearly every row, so it discriminated
           // nothing and read as decoration.
-          ...(task.priority === 0 ? ["You marked this high priority."] : []),
+          ...(task.priority === 0 ? ["This is marked high priority."] : []),
         ],
         severity: isOverdue
           ? 80 + Math.min(20, overdueDays * 2)
