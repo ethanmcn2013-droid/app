@@ -64,6 +64,7 @@ function validateBrowserContract(manifest, contract, targetErrors) {
     "deploymentEnvironment",
     "locale",
     "reducedMotion",
+    "projectDriveUi",
     "timezoneId",
   ];
   const exactDeterminism = {
@@ -73,6 +74,7 @@ function validateBrowserContract(manifest, contract, targetErrors) {
     deploymentEnvironment: "preview",
     locale: "en-GB",
     reducedMotion: "reduce",
+    projectDriveUi: "true",
     timezoneId: "Europe/London",
   };
   if (!hasExactKeys(contract.determinism, determinismKeys)) {
@@ -427,6 +429,45 @@ for (const entry of critical) {
   if (!fixtureById.has(entry.id)) errors.push(`${entry.id}: missing critical fixture mapping`);
 }
 
+// Supplemental core cases are rendered and attested, but never enter the
+// critical mapping writer or imply full required-state coverage.
+const supplementalIds = new Set(["tasks.resources.drive-upload", "tasks.page.app-messages"]);
+function validateSupplementalCore(items, registered, mapped, targetErrors) {
+  if (!Array.isArray(items) || items.length !== supplementalIds.size) {
+    targetErrors.push("supplementalCoreRendered must contain exactly the two approved core cases");
+  }
+  const seen = new Set();
+  for (const item of Array.isArray(items) ? items : []) {
+    const label = `supplemental ${item?.id ?? "<missing-id>"}`;
+    if (!item || typeof item !== "object" || Array.isArray(item) ||
+        !supplementalIds.has(item.id) || seen.has(item.id) || mapped.has(item.id)) {
+      targetErrors.push(`${label}: missing, duplicate, or critical-mapped ID`);
+      continue;
+    }
+    seen.add(item.id);
+    const entry = registered.experiences.find((candidate) => candidate.id === item.id);
+    if (!entry || entry.reviewTier !== "core" || entry.source !== item.source || item.evidence !== "rendered") {
+      targetErrors.push(`${label}: registry core tier, exact source and rendered evidence are required`);
+    }
+    const route = item.id === "tasks.page.app-messages";
+    const fields = route
+      ? ["assertions", "caseName", "evidence", "id", "path", "source", "states"]
+      : ["assertions", "caseName", "evidence", "id", "interaction", "source", "states"];
+    if (!hasExactKeys(item, fields) || !isNonEmptyString(item.caseName) ||
+        (route ? item.path !== "/app/messages" : item.interaction !== "task-detail-panel")) {
+      targetErrors.push(`${label}: exact case shape and surface are required`);
+    }
+    if (!Array.isArray(item.states) || item.states.some((state) => !entry?.requiredStates?.includes(state))) {
+      targetErrors.push(`${label}: states must be declared on its own registered surface`);
+    }
+    validateRenderedAssertions(item, label, targetErrors);
+  }
+  for (const id of supplementalIds) {
+    if (!seen.has(id)) targetErrors.push(`${id}: missing supplemental core case`);
+  }
+}
+validateSupplementalCore(fixtures.supplementalCoreRendered, registry, fixtureById, errors);
+
 const nextRegistry = structuredClone(registry);
 applyMappedFixtureEvidence(nextRegistry, fixtureById, fixtures.generatedAt, errors);
 
@@ -487,6 +528,25 @@ if (selfTest) {
   );
   if (!browserContractErrors.some((error) => error.includes("exactly match Playwright projects"))) {
     throw new Error("self-test failed: Playwright project drift was not rejected");
+  }
+
+  const supplementalEntries = nextRegistry.experiences.filter((entry) => supplementalIds.has(entry.id));
+  if (supplementalEntries.some((entry) => entry.reviewTier !== "core") ||
+      supplementalEntries.some((entry) => JSON.stringify(entry) !== JSON.stringify(registry.experiences.find((previous) => previous.id === entry.id)))) {
+    throw new Error("self-test failed: supplemental core entries were rewritten by the critical mapping writer");
+  }
+  for (const [name, mutated] of [
+    ["missing case", fixtures.supplementalCoreRendered.slice(1)],
+    ["core retiered", fixtures.supplementalCoreRendered],
+    ["foreign source", fixtures.supplementalCoreRendered.map((item, index) => index === 0 ? { ...item, source: "tasks/src/foreign.tsx" } : item)],
+    ["wrong route", fixtures.supplementalCoreRendered.map((item, index) => index === 1 ? { ...item, path: "/app/home" } : item)],
+    ["missing assertion", fixtures.supplementalCoreRendered.map((item, index) => index === 0 ? { ...item, assertions: [] } : item)],
+  ]) {
+    const candidateRegistry = name === "core retiered" ? structuredClone(registry) : registry;
+    if (name === "core retiered") candidateRegistry.experiences.find((entry) => entry.id === "tasks.resources.drive-upload").reviewTier = "critical";
+    const rejected = [];
+    validateSupplementalCore(mutated, candidateRegistry, fixtureById, rejected);
+    if (!rejected.length) throw new Error(`self-test failed: supplemental ${name} was accepted`);
   }
 
   console.log(

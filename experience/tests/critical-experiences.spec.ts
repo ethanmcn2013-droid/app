@@ -47,6 +47,16 @@ type FixtureEntry = {
 
 type FixtureManifest = {
   experiences: FixtureEntry[];
+  supplementalCoreRendered: Array<{
+    id: "tasks.resources.drive-upload" | "tasks.page.app-messages";
+    source: string;
+    evidence: "rendered";
+    caseName: string;
+    path?: string;
+    interaction?: "task-detail-panel";
+    states: string[];
+    assertions: StateAssertion[];
+  }>;
 };
 
 const manifest = JSON.parse(
@@ -549,4 +559,53 @@ test("tasks.surface.task-detail-panel / populated task", async ({ page }, testIn
     null,
     timelineEvidence,
   );
+});
+
+test("tasks.resources.drive-upload / Drive intake review in populated task", async ({ page }, testInfo) => {
+  const fixture = manifest.supplementalCoreRendered.find((entry) => entry.id === "tasks.resources.drive-upload");
+  expect(fixture?.caseName).toBe("Drive intake review in populated task");
+  const runtime = watchRuntime(page);
+  const timelineEvidence = watchTimelineRuntime(page);
+  const uploadRequests: string[] = [];
+  page.on("request", (request) => {
+    if (/\/api\/attachments\/upload$/.test(new URL(request.url()).pathname) ||
+        /(^|\.)googleapis\.com$/.test(new URL(request.url()).hostname)) uploadRequests.push(request.url());
+  });
+  await page.goto("/app/tasks", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "Tasks", level: 1 })).toBeVisible();
+  await enterDeterministicMotionMode(page);
+  await page.keyboard.press("Enter");
+  const panel = page.getByRole("dialog", { name: "Confirm marquee sides with the hire company" });
+  await expect(panel).toBeVisible();
+  const files = panel.locator("[data-sheet-files]");
+  await expect(files).toHaveCount(1);
+  await expect(files.getByText("The destination is checked when you attach. If Drive is unavailable before sending, you can choose Signal Studio.")).toBeVisible();
+  await files.getByRole("combobox", { name: "Upload review state" }).selectOption("paused");
+  await expect(files.getByText(/Upload not confirmed\. Retry checks the same file in Drive/)).toBeVisible();
+  await files.getByLabel("Files to attach").setInputFiles({ name: "review-only.txt", mimeType: "text/plain", buffer: Buffer.from("review only") });
+  await expect(page.getByText("No file was uploaded. Review fixtures never contact Google or storage.")).toBeVisible();
+  expect(uploadRequests).toEqual([]);
+  await auditCurrentSurface(page, testInfo, fixture!.id, fixture!.caseName, fixture!.assertions,
+    runtime, null, true, null, timelineEvidence);
+  expect(uploadRequests).toEqual([]);
+});
+
+test("tasks.page.app-messages / Project conversation in demo", async ({ page }, testInfo) => {
+  const fixture = manifest.supplementalCoreRendered.find((entry) => entry.id === "tasks.page.app-messages");
+  expect(fixture?.path).toBe("/app/messages");
+  const runtime = watchRuntime(page);
+  const timelineEvidence = watchTimelineRuntime(page);
+  const response = await page.goto(fixture!.path!, { waitUntil: "domcontentloaded" });
+  expect(response?.status()).toBe(200);
+  await enterDeterministicMotionMode(page);
+  await expect(page.getByRole("navigation", { name: "Conversations" })).toBeVisible();
+  await expect(page.getByText("Project conversation", { exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: /Messages in / })).toBeVisible();
+  const composer = page.getByRole("textbox", { name: /Message The Orchard/ });
+  await expect(composer).toBeEnabled();
+  await composer.fill("Review-only project message");
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.getByText("Review-only project message", { exact: true })).toBeVisible();
+  await auditCurrentSurface(page, testInfo, fixture!.id, fixture!.caseName, fixture!.assertions,
+    runtime, null, true, response, timelineEvidence);
 });

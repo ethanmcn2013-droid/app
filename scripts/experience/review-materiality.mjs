@@ -16,6 +16,7 @@ import {
   ARTIFACT_PATH,
   ATTESTATION_SCHEMA,
   RECEIPT_SCHEMA,
+  canonicalEvidenceDigest,
   canonicalJson,
   normalizedFileHash,
   playwrightEvidenceFromAttestation,
@@ -116,6 +117,9 @@ function performReview({ registry, fixtures, repoRoot, args, reviewedAt }) {
 
   let previous = null;
   if (existsSync(receiptFile)) previous = readCanonicalJson(receiptFile, `${evidence} receipt`).value;
+  if (previous && (previous.experienceId !== id || previous.source !== matches[0].source)) {
+    throw new Error(`${id}: existing receipt belongs to a different experience or source`);
+  }
   const attestationPath = requiredValue(
     args.attestation ?? previous?.playwrightEvidence?.attestationPath,
     "--attestation",
@@ -145,6 +149,7 @@ function performReview({ registry, fixtures, repoRoot, args, reviewedAt }) {
     playwrightEvidence: playwrightEvidenceFromAttestation({
       repoRoot,
       attestationPath,
+      experienceId: id,
       fixtureId,
       caseName,
       requireArtifact: true,
@@ -185,7 +190,7 @@ function runSelfTest() {
     writeFileSync(path.join(root, "src", "app", "page.tsx"), "export default function Root(){return null}\n");
     writeFileSync(
       path.join(root, "experience", "browser-contract.json"),
-      canonicalJson({ projects: [{ name: "mobile" }, { name: "desktop" }] }),
+      canonicalJson({ projects: ["mobile", "tablet", "desktop", "wide"].map((name) => ({ name })) }),
     );
     writeFileSync(
       path.join(root, "experience", "critical-fixtures.json"),
@@ -193,31 +198,49 @@ function runSelfTest() {
         experiences: [
           {
             id: "tasks.page.app",
-            evidence: "rendered",
-            cases: [{ name: "populated demo workspace" }],
+            evidence: "source-contract",
           },
-          { id: "tasks.page.root", evidence: "rendered", cases: [{ name: "home" }] },
+          { id: "tasks.page.root", evidence: "source-contract" },
         ],
+        supplementalCoreRendered: [{ id: "tasks.page.app-tasks", source: "tasks/src/app/app/tasks/page.tsx",
+          evidence: "rendered", path: "/app/tasks", caseName: "populated demo workspace",
+          states: ["default"], assertions: [{ kind: "role", role: "heading", name: "Tasks", proves: ["default"] }] }],
       }),
     );
     writeFileSync(path.join(root, "experience", "playwright.config.ts"), "export default {}\n");
     writeFileSync(path.join(root, "experience", "tests", "critical-experiences.spec.ts"), "test\n");
     const artifactFile = path.join(root, ...ARTIFACT_PATH.split("/"));
-    writeFileSync(artifactFile, "raw-playwright-artifact\n");
-    const canonicalEvidenceSha256 = sha256("canonical-outcomes");
+    writeFileSync(artifactFile, JSON.stringify({ suites: [{ specs: [{
+      title: "tasks.page.app-tasks / populated demo workspace",
+      tests: ["mobile", "tablet", "desktop", "wide"].map((projectName) => ({ projectName, expectedStatus: "passed",
+        status: "expected", results: [{ status: "passed", errors: [] }] })),
+    }] }], stats: { unexpected: 0, skipped: 0 } }));
+    const outcomes = ["desktop", "mobile", "tablet", "wide"].map((project) => ({
+      title: "tasks.page.app-tasks / populated demo workspace",
+      project,
+      expectedStatus: "passed",
+      status: "expected",
+      finalResultStatus: "passed",
+      errorCount: 0,
+    }));
+    const hashes = {
+      browserContractSha256: normalizedFileHash(path.join(root, "experience", "browser-contract.json")),
+      fixtureManifestSha256: normalizedFileHash(path.join(root, "experience", "critical-fixtures.json")),
+      playwrightConfigSha256: normalizedFileHash(path.join(root, "experience", "playwright.config.ts")),
+      playwrightSpecSha256: normalizedFileHash(path.join(root, "experience", "tests", "critical-experiences.spec.ts")),
+    };
+    const canonicalEvidenceSha256 = canonicalEvidenceDigest({ outcomes, hashes });
     const attestation = {
       schemaVersion: ATTESTATION_SCHEMA,
       runId: `tasks-playwright-${canonicalEvidenceSha256.slice(0, 24)}`,
       canonicalEvidenceSha256,
       rawArtifactSha256: sha256(readFileSync(artifactFile)),
       artifactPath: ARTIFACT_PATH,
-      browserContractSha256: normalizedFileHash(path.join(root, "experience", "browser-contract.json")),
-      fixtureManifestSha256: normalizedFileHash(path.join(root, "experience", "critical-fixtures.json")),
-      playwrightConfigSha256: normalizedFileHash(path.join(root, "experience", "playwright.config.ts")),
-      playwrightSpecSha256: normalizedFileHash(path.join(root, "experience", "tests", "critical-experiences.spec.ts")),
-      projects: [{ name: "mobile", tests: 1 }, { name: "desktop", tests: 1 }],
-      testCount: 2,
-      passedCount: 2,
+      ...hashes,
+      outcomes,
+      projects: ["mobile", "tablet", "desktop", "wide"].map((name) => ({ name, tests: 1 })),
+      testCount: 4,
+      passedCount: 4,
       unexpectedCount: 0,
       startedAt: "2026-07-15T00:00:00.000Z",
     };
@@ -226,16 +249,17 @@ function runSelfTest() {
     const evidence = "experience/reviews/self-test.json";
     const registry = {
       experiences: [
-        { id: "tasks.page.app-tasks", source: "tasks/src/app/app/tasks/page.tsx" },
+        { id: "tasks.page.app-tasks", source: "tasks/src/app/app/tasks/page.tsx", reviewTier: "core" },
         { id: "tasks.page.root", source: "tasks/src/app/page.tsx" },
       ],
     };
+    writeFileSync(path.join(root, "experience", "registry.json"), canonicalJson(registry));
     const fixtures = JSON.parse(readFileSync(path.join(root, "experience", "critical-fixtures.json"), "utf8"));
     const commonArgs = {
       id: "tasks.page.app-tasks",
       evidence,
       attestation: attestationPath,
-      fixtureId: "tasks.page.app",
+      fixtureId: "tasks.page.app-tasks",
       caseName: "populated demo workspace",
       reviewer: "self-test",
       reviewedChange: "Deterministic review-mode source isolation.",
@@ -256,6 +280,14 @@ function runSelfTest() {
 
     const receiptFile = path.join(root, ...evidence.split("/"));
     const validReceipt = JSON.parse(readFileSync(receiptFile, "utf8"));
+    const rawArtifact = readFileSync(artifactFile);
+    rmSync(artifactFile);
+    validateMaterialityReceipt({ repoRoot: root, evidencePath: evidence });
+    let missingRawRejected = false;
+    try { validateMaterialityReceipt({ repoRoot: root, evidencePath: evidence, requireArtifact: true }); }
+    catch { missingRawRejected = true; }
+    if (!missingRawRejected) throw new Error("self-test failed: review creation accepted absent raw outcome evidence");
+    writeFileSync(artifactFile, rawArtifact);
     for (const [label, mutate] of [
       ["extra receipt field", (value) => { value.extra = true; }],
       ["raw digest mismatch", (value) => { value.playwrightEvidence.rawArtifactSha256 = "0".repeat(64); }],
@@ -269,6 +301,57 @@ function runSelfTest() {
       if (!caught) throw new Error(`self-test failed: ${label} was accepted`);
     }
     writeFileSync(receiptFile, canonicalJson(validReceipt));
+    const unrelatedReceipt = { ...validReceipt, experienceId: "tasks.page.root" };
+    writeFileSync(receiptFile, canonicalJson(unrelatedReceipt));
+    let overwriteRejected = false;
+    try { performReview({ registry, fixtures, repoRoot: root, args: commonArgs, reviewedAt: "2026-07-15" }); }
+    catch { overwriteRejected = true; }
+    if (!overwriteRejected) throw new Error("self-test failed: unrelated receipt was overwritten");
+    writeFileSync(receiptFile, canonicalJson(validReceipt));
+
+    // Rebind all hashes around a forged raw report missing one viewport;
+    // the exact supplemental outcome check must still refuse it.
+    const validArtifact = readFileSync(artifactFile);
+    const validRecord = JSON.parse(readFileSync(path.join(root, ...attestationPath.split("/")), "utf8"));
+    const missingRecordedViewport = { ...validRecord, outcomes: validRecord.outcomes.slice(1) };
+    missingRecordedViewport.canonicalEvidenceSha256 = canonicalEvidenceDigest({
+      outcomes: missingRecordedViewport.outcomes,
+      hashes,
+    });
+    missingRecordedViewport.runId = `tasks-playwright-${missingRecordedViewport.canonicalEvidenceSha256.slice(0, 24)}`;
+    const missingRecordedText = canonicalJson(missingRecordedViewport);
+    writeFileSync(path.join(root, ...attestationPath.split("/")), missingRecordedText);
+    writeFileSync(receiptFile, canonicalJson({ ...validReceipt, playwrightEvidence: {
+      ...validReceipt.playwrightEvidence,
+      runId: missingRecordedViewport.runId,
+      canonicalEvidenceSha256: missingRecordedViewport.canonicalEvidenceSha256,
+      attestationSha256: sha256(missingRecordedText),
+    } }));
+    let missingRecordedRejected = false;
+    try { validateMaterialityReceipt({ repoRoot: root, evidencePath: evidence }); }
+    catch { missingRecordedRejected = true; }
+    if (!missingRecordedRejected) throw new Error("self-test failed: hash-rebound missing viewport outcome was accepted");
+    writeFileSync(path.join(root, ...attestationPath.split("/")), canonicalJson(validRecord));
+    writeFileSync(receiptFile, canonicalJson(validReceipt));
+    const missingViewport = JSON.parse(validArtifact.toString("utf8"));
+    missingViewport.suites[0].specs[0].tests.pop();
+    const missingBytes = Buffer.from(JSON.stringify(missingViewport));
+    writeFileSync(artifactFile, missingBytes);
+    const changedRecord = { ...validRecord, rawArtifactSha256: sha256(missingBytes) };
+    const changedRecordText = canonicalJson(changedRecord);
+    writeFileSync(path.join(root, ...attestationPath.split("/")), changedRecordText);
+    writeFileSync(receiptFile, canonicalJson({ ...validReceipt, playwrightEvidence: {
+      ...validReceipt.playwrightEvidence,
+      rawArtifactSha256: changedRecord.rawArtifactSha256,
+      attestationSha256: sha256(changedRecordText),
+    } }));
+    let missingViewportRejected = false;
+    try { validateMaterialityReceipt({ repoRoot: root, evidencePath: evidence, requireArtifact: true }); }
+    catch { missingViewportRejected = true; }
+    if (!missingViewportRejected) throw new Error("self-test failed: supplemental case missing one viewport was accepted");
+    writeFileSync(artifactFile, validArtifact);
+    writeFileSync(path.join(root, ...attestationPath.split("/")), canonicalJson(validRecord));
+    writeFileSync(receiptFile, canonicalJson(validReceipt));
     for (const [id, message] of [
       ["tasks.page.*", "wildcard ID"],
       ["tasks.page.root", "mapped critical fixture"],
@@ -279,6 +362,11 @@ function runSelfTest() {
       } catch { caught = true; }
       if (!caught) throw new Error(`self-test failed: ${message} was accepted`);
     }
+    let unrelatedRejected = false;
+    try { performReview({ registry, fixtures, repoRoot: root,
+      args: { ...commonArgs, fixtureId: "tasks.page.app" }, reviewedAt: "2026-07-15" }); }
+    catch { unrelatedRejected = true; }
+    if (!unrelatedRejected) throw new Error("self-test failed: unrelated critical fixture was accepted for core review");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

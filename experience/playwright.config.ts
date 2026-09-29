@@ -12,6 +12,7 @@ const browserContract = JSON.parse(
     locale: string;
     timezoneId: string;
     colorScheme: "light" | "dark" | "no-preference";
+    projectDriveUi: "true";
   };
   projects: Array<{
     name: string;
@@ -70,6 +71,8 @@ export default defineConfig({
       SIGNAL_ACCESS_MODE: browserContract.determinism.accessMode,
       NEXT_PUBLIC_SIGNAL_ACCESS_MODE: browserContract.determinism.accessMode,
       NEXT_PUBLIC_TASKS_FIRST_COMPLETION: "off",
+      // Only this isolated demo evidence build renders the local Drive review.
+      NEXT_PUBLIC_PROJECT_DRIVE_UI: browserContract.determinism.projectDriveUi,
       SIGNAL_ANALYTICS_V1_ENABLED: "false",
       // D-011 split the one analytics flag into an engine switch and a Home
       // view switch. Both must be pinned off here, or the browser matrix would
