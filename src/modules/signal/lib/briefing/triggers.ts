@@ -22,6 +22,8 @@ export type Triggered = {
   trigger: TriggerKind;
   reasons: string[];
   severity: number; // higher = more attention
+  /** Visible same-workspace dependent selected deterministically; never an opaque id. */
+  relatedTaskTitle?: string;
 };
 
 /**
@@ -225,6 +227,56 @@ export function detectBlockedTooLong(signals: TaskSignal[]): Triggered[] {
       ],
       severity: Math.min(90, 30 + task.idleDays! * 3 + task.blockedBy.length * 4),
     }));
+}
+
+/** A current open prerequisite of visible, near-due work. The blocker is the
+ * row identity; the dependent contributes context but not a borrowed due date.
+ * Unknown edges elsewhere do not invalidate a confirmed current open edge. */
+export function detectBlockingDueWork(signals: TaskSignal[], now: number = Date.now(), timezone = "UTC"): Triggered[] {
+  const visible = new Map(signals.filter(s => s.workspaceId).map(s => [`${s.workspaceId}:${s.id}`, s]));
+  const dependents = [...signals].filter(s => s.lane !== "shipped" && s.workspaceId)
+    .map(task => ({ task, days: deadlineDayDifference(signalDeadline(task), now, timezone) }))
+    .filter((entry): entry is { task: TaskSignal; days: number } => entry.days !== null && entry.days <= 2)
+    .sort((a, b) => a.days - b.days || a.task.id.localeCompare(b.task.id) || a.task.workspaceId!.localeCompare(b.task.workspaceId!));
+  const selected = new Map<string, Triggered>();
+  for (const { task: dependent, days } of dependents) {
+    for (const id of new Set(dependent.blockedBy)) {
+      if (id === dependent.id) continue;
+      const blocker = visible.get(`${dependent.workspaceId}:${id}`);
+      if (!blocker || blocker.lane === "shipped" || selected.has(`${blocker.workspaceId}:${blocker.id}`)) continue;
+      selected.set(`${blocker.workspaceId}:${blocker.id}`, {
+        task: blocker,
+        trigger: "blocking-due-work",
+        relatedTaskTitle: dependent.title,
+        reasons: [
+          "This open task is a listed prerequisite for another open task.",
+          days < 0 || deadlineIsOverdue(signalDeadline(dependent), now, timezone)
+            ? "The dependent task is past its saved deadline."
+            : days === 0 ? "The dependent task is due today." : days === 1 ? "The dependent task is due tomorrow." : "The dependent task is due in two days.",
+        ],
+        severity: 0,
+      });
+    }
+  }
+  return [...selected.values()];
+}
+
+/** Current completed-prerequisite evidence, not a transition or start claim. */
+export function detectPrerequisitesComplete(signals: TaskSignal[], now: number = Date.now(), timezone = "UTC"): Triggered[] {
+  return signals.flatMap(task => {
+    if (task.lane === "shipped" || task.dependencyCoverage !== "complete" ||
+        task.blockedBy.length !== 0 || task.hasCompletedListedPrerequisite !== true) return [];
+    const deadline = signalDeadline(task);
+    const days = deadlineDayDifference(deadline, now, timezone);
+    if (days === null || days < 0 || days > 7 || deadlineIsOverdue(deadline, now, timezone) ||
+        (deadline?.kind === "instant" && deadline.at <= now)) return [];
+    return [{
+      task,
+      trigger: "prerequisites-complete" as const,
+      reasons: ["At least one listed prerequisite is complete and none remain open.", "The task has a saved deadline within seven days."],
+      severity: 0,
+    }];
+  });
 }
 
 /** Overload: > 5 in-flight tasks for the user. The triggered

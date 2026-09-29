@@ -85,11 +85,28 @@ test("completed dependencies clear without changing historical task timestamps",
   await task("dependency-clear", "clear-dependent", { lane: "doing", blocked: ["clear-upstream"] });
   const row = await readTask("dependency-clear", "clear-dependent");
   assert.equal(row.status, "in-flight"); assert.deepEqual(row.blockedBy, []);
+  assert.equal(row.hasCompletedListedPrerequisite, true);
   assert.equal(row.lastStatusChangeAt, new Date(NOW - 3_600_000).toISOString());
   assert.equal(row.lastActivityAt, row.lastStatusChangeAt);
   await fixture.client.execute("UPDATE tasks SET lane='doing' WHERE id='clear-upstream'");
   const reopened = await readTask("dependency-clear", "clear-dependent");
   assert.equal(reopened.status, "blocked"); assert.deepEqual(reopened.blockedBy, ["clear-upstream"]);
+  assert.equal(reopened.hasCompletedListedPrerequisite, false);
+});
+
+test("hidden child completion is internal proof while a missing edge keeps coverage partial", async () => {
+  await workspace("child-proof");
+  await task("child-proof", "child-parent", { lane: "doing" });
+  await task("child-proof", "completed-child", { parent: "child-parent", completed: NOW - DAY });
+  await task("child-proof", "child-dependent", { lane: "doing", blocked: ["completed-child", "missing-child"] });
+  const read = await source.tasksDbSource.read("child-proof");
+  assert.deepEqual(read.tasks.map(row => row.id), ["child-dependent", "child-parent"]);
+  const dependent = read.tasks[0]!;
+  assert.equal(dependent.hasCompletedListedPrerequisite, true);
+  assert.equal(dependent.dependencyCoverage, "partial");
+  assert.deepEqual(dependent.blockedBy, []);
+  await fixture.client.execute("UPDATE tasks SET lane='doing' WHERE id='completed-child'");
+  assert.equal((await readTask("child-proof", "child-dependent")).hasCompletedListedPrerequisite, false);
 });
 
 test("later validated comment creation advances only activity proxy", async () => {

@@ -88,22 +88,22 @@ function formatDateLabel(label: string): string {
 }
 
 function summaryLine(stats: HomeStats, scopeLabel: string, dateCoverageComplete: boolean): string {
-  const uncertainty = dateCoverageComplete ? "" : " Some dates could not be checked.";
+  const uncertainty = dateCoverageComplete ? " Counts use saved dates." : " Counts use saved dates. Some open tasks have no confirmed date.";
   if (stats.overdue > 0 && stats.dueToday > 0) {
     return `${scopeLabel} · ${stats.dueToday} due today and ${stats.overdue} overdue.${uncertainty}`;
   }
   if (stats.overdue > 0) return `${scopeLabel} · ${stats.overdue} ${stats.overdue === 1 ? "task is" : "tasks are"} overdue.${uncertainty}`;
   if (stats.dueToday > 0) return `${scopeLabel} · ${stats.dueToday} ${stats.dueToday === 1 ? "task is" : "tasks are"} due today.${uncertainty}`;
   return dateCoverageComplete
-    ? `${scopeLabel} · Nothing is due today.`
-    : `${scopeLabel} · Some dates could not be checked.`;
+    ? `${scopeLabel} · No saved deadlines due today.`
+    : `${scopeLabel} · Counts use saved dates. Some open tasks have no confirmed date.`;
 }
 
 function Stats({ stats, dateCoverageComplete }: { stats: HomeStats; dateCoverageComplete: boolean }) {
   const items = [
     { label: "Open tasks", value: stats.open, note: `${stats.inReview} in review`, icon: <ShellIcon.layers size={14} />, tone: "accent" },
-    { label: "Due today", value: stats.dueToday, note: dateCoverageComplete ? (stats.dueToday === 0 ? "A clear day" : "Worth a look first") : "Known dates only", icon: <ShellIcon.clock size={14} />, tone: undefined },
-    { label: "Overdue", value: stats.overdue, note: dateCoverageComplete ? (stats.overdue === 0 ? "Nothing slipped" : "Past their date") : "Known dates only", icon: <ShellIcon.alert size={14} />, tone: stats.overdue > 0 ? "danger" : undefined },
+    { label: "Due today", value: stats.dueToday, note: dateCoverageComplete ? (stats.dueToday === 0 ? "No saved deadlines due today" : "Worth a look first") : "Counts use saved dates", icon: <ShellIcon.clock size={14} />, tone: undefined },
+    { label: "Overdue", value: stats.overdue, note: dateCoverageComplete ? (stats.overdue === 0 ? "No saved deadlines overdue" : "Past their date") : "Counts use saved dates", icon: <ShellIcon.alert size={14} />, tone: stats.overdue > 0 ? "danger" : undefined },
     { label: "Done this week", value: stats.doneThisWeek, note: "Last 7 days", icon: <ShellIcon.checkCircle size={14} />, tone: "success" },
   ];
   return (
@@ -181,7 +181,7 @@ function Deadlines({ groups, dateCoverageComplete }: { groups: HomeDeadlineGroup
         </Link>
       </div>
       {groups.length === 0 ? (
-        <p className={styles.empty}>{dateCoverageComplete ? "Nothing dated in the next two weeks." : "No known deadlines in the next two weeks; some dates could not be checked."}</p>
+        <p className={styles.empty}>{dateCoverageComplete ? "Nothing dated in the next two weeks." : "No known saved deadlines in the next two weeks; some open tasks have no confirmed date."}</p>
       ) : (
         groups.map((group) => (
           <div key={group.label} className={styles.group}>

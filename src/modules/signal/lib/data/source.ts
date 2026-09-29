@@ -202,7 +202,7 @@ async function readCompletionHistory(db: TasksDb, targets: readonly (typeof task
 }
 
 type DependencyState = Pick<typeof tasksTable.$inferSelect, "id" | "workspaceId" | "lane" | "boardColumnKey">;
-type DependencyRead = { open: Map<string, string[]>; unknown: Set<string> };
+type DependencyRead = { open: Map<string, string[]>; unknown: Set<string>; hasCompleted: Set<string> };
 
 /** Positive comment creation evidence can advance the existing activity proxy.
  * Absence never proves inactivity: the general activity recorder is best effort.
@@ -278,19 +278,24 @@ async function readOpenDependencies(
   }
   const edges = new Map<string, string[]>();
   const unknown = new Set<string>();
+  const hasCompleted = new Set<string>();
   for (const row of rows) {
     const config = configurations.get(row.workspaceId!)!.config;
     if (row.blockedBy !== null && !Array.isArray(row.blockedBy)) unknown.add(row.id);
     const blockedBy = Array.isArray(row.blockedBy) ? row.blockedBy : [];
+    const seen = new Set<string>();
     edges.set(row.id, blockedBy.filter(id => {
+      if (seen.has(id)) return false;
+      seen.add(id);
       const dependency = validId(id) ? byWorkspace.get(row.workspaceId!)?.get(id) : undefined;
       // A missing, malformed or foreign reference is neither cleared nor a
       // confirmed blocker; retain the task and mark this predicate unknown.
       if (!dependency) { unknown.add(row.id); return false; }
-      return !isTaskDone(dependency, config);
+      if (isTaskDone(dependency, config)) { hasCompleted.add(row.id); return false; }
+      return true;
     }));
   }
-  return { open: edges, unknown };
+  return { open: edges, unknown, hasCompleted };
 }
 
 /**
@@ -364,7 +369,7 @@ function buildWorkRead(
   rows: Array<typeof tasksTable.$inferSelect>,
   config: ColumnConfig | null = null,
   completions: ReadonlyMap<string, string | null> = new Map(),
-  dependencies: DependencyRead = { open: new Map(), unknown: new Set() },
+  dependencies: DependencyRead = { open: new Map(), unknown: new Set(), hasCompleted: new Set() },
   activity: ReadonlyMap<string, string> = new Map(),
 ): WorkRead {
     const taskReads: TaskRead[] = rows.map((t) => {
@@ -388,6 +393,7 @@ function buildWorkRead(
         dueDate,
         blockedBy,
         dependencyCoverage: dependencies.unknown.has(t.id) ? "partial" : "complete",
+        hasCompletedListedPrerequisite: dependencies.hasCompleted.has(t.id),
         // No separate status-change timestamp in Tasks's schema;
         // updatedAt is the closest proxy. Cycle 6.4 may revisit if
         // any trigger needs strict status-change semantics.

@@ -109,6 +109,7 @@ export type HomeData =
       comingUp: HomeComingRow[];
       needsReview: HomeReviewRow[];
       stats: HomeStats;
+      /** Open scoped tasks all have interpretable saved deadlines; empty open scope is complete. */
       dateCoverageComplete: boolean;
       myTasks: HomeTaskRow[];
       deadlines: HomeDeadlineGroup[];
@@ -159,6 +160,7 @@ export async function loadHomeData(opts: {
   const dueById = new Map(
     briefing.suggestedFocus.map((item) => [item.id, item.due]),
   );
+  const signalById = new Map(signals.map(signal => [signal.id, signal]));
   // An aggregate describes the authorized reading scope, not one task or the
   // first project that happened to contribute. Its destination rebuilds and
   // authorizes that same scope; no synthetic ID enters an object route.
@@ -171,13 +173,17 @@ export async function loadHomeData(opts: {
   const aggregateHref = `${BRIEFING_APP_PATH}?${scopeParams.toString()}`;
   const toSignalRow = (item: BriefItem): HomeSignalRow => {
     const aggregate = item.trigger === "overload" || item.trigger === "crowded-week";
+    const source = signalById.get(item.id);
+    const ownDeadline = source ? signalDeadline(source) : null;
+    const blockerWithoutDate = item.trigger === "blocking-due-work" &&
+      (!ownDeadline || ownDeadline.kind === "unknown");
     return {
       id: item.id,
       destination: aggregate ? "briefing" : "task",
       title: item.text,
       why: item.detail,
       source: aggregate ? `Tasks · ${authorizedScope.label}` : item.sourceLabel,
-      due: dueById.get(item.id) ?? null,
+      due: blockerWithoutDate ? null : dueById.get(item.id) ?? null,
       trigger: item.trigger,
       href: aggregate ? aggregateHref : taskHref(item.id),
     };
@@ -231,12 +237,20 @@ export async function loadHomeData(opts: {
       href: taskHref(signal.id),
     }));
 
+  const openSignals = signals.filter((signal) => signal.lane !== "shipped");
+  // This is reassurance coverage for open scoped Tasks, not a statement
+  // about dates outside the authorized read.
+  const dateCoverageComplete = openSignals.every(signal => {
+    const deadline = signalDeadline(signal);
+    return deadline !== null && deadline.kind !== "unknown";
+  });
+
   // All-clear only when nothing is asking. The engine's honesty guard
   // carries over: when something shipped recently, the quiet state
   // names it instead of claiming nothing happened.
   const shippedCount = briefing.movingWell.length;
   const allClear =
-    signalRows.length === 0 && briefing.coverageStatus !== "partial"
+    signalRows.length === 0 && briefing.coverageStatus !== "partial" && dateCoverageComplete
       ? {
           headline:
             briefing.emptyStateHeadline ?? "Nothing needs you right now.",
@@ -252,7 +266,6 @@ export async function loadHomeData(opts: {
         }
       : null;
 
-  const openSignals = signals.filter((signal) => signal.lane !== "shipped");
   const shortDue = (signal: TaskSignal): string | null => {
     const days = daysOutOf(signal);
     if (days === null) return null;
@@ -334,7 +347,7 @@ export async function loadHomeData(opts: {
     comingUp,
     needsReview,
     stats,
-    dateCoverageComplete: signals.every(signal => signalDeadline(signal)?.kind !== "unknown"),
+    dateCoverageComplete,
     myTasks,
     deadlines,
   };

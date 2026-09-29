@@ -96,10 +96,39 @@ test("known due row remains while partial date evidence qualifies positive Home 
     "./home.module.css": { default: new Proxy({}, { get: (_target, key) => String(key) }) },
   });
   const html = renderToStaticMarkup(createElement(view.HomeView, { data }));
-  assert.match(html, /Some dates could not be checked/);
-  assert.match(html, /Known dates only/);
+  assert.match(html, /Some open tasks have no confirmed date/);
+  assert.match(html, /Counts use saved dates/);
   assert.match(html, /href="\/app\/task\/known-date"/);
   assert.doesNotMatch(html, /A clear day|Nothing slipped/);
+});
+
+test("Home saved-date reassurance distinguishes open undated, malformed, terminal and empty scope", async () => {
+  const open = { ...signals(1)[0], id: "open-undated", dueAt: null };
+  const cleared = { ...open, id: "explicitly-cleared", deadline: null };
+  const malformed = { ...open, id: "malformed", deadline: { kind: "unknown" } as const };
+  for (const item of [open, cleared, malformed]) {
+    const { data } = await fixture([item]);
+    assert.equal(data.dateCoverageComplete, false);
+    assert.equal(data.allClear, null);
+    assert.deepEqual({ dueToday: data.stats.dueToday, overdue: data.stats.overdue }, { dueToday: 0, overdue: 0 });
+  }
+  assert.equal((await fixture([{ ...open, lane: "shipped" }])).data.dateCoverageComplete, true);
+  assert.equal((await fixture([])).data.dateCoverageComplete, true);
+  const dated = await fixture([{ ...open, deadline: { kind: "date-only", date: "2026-09-05" } }]);
+  assert.equal(dated.data.dateCoverageComplete, true);
+  const link = ({ href, children }: { href: string; children: ReactNode }) => createElement("a", { href }, children);
+  const view = load<typeof import("@/components/app/home/home-view")>("../../../components/app/home/home-view.tsx", {
+    "next/link": { default: link }, "./home-analytics": { HomeViewedPing: () => null },
+    "./home.module.css": { default: new Proxy({}, { get: (_target, key) => String(key) }) },
+  });
+  const emptyHtml = renderToStaticMarkup(createElement(view.HomeView, { data: (await fixture([])).data }));
+  assert.match(emptyHtml, /No saved deadlines due today/);
+  assert.match(emptyHtml, /No saved deadlines overdue/);
+  const partialHtml = renderToStaticMarkup(createElement(view.HomeView, { data: (await fixture([open])).data }));
+  assert.match(partialHtml, /Counts use saved dates/);
+  assert.match(partialHtml, /Some open tasks have no confirmed date/);
+  assert.doesNotMatch(partialHtml, /Some dates could not be checked/);
+  assert.doesNotMatch(partialHtml, /No saved deadlines due today|No saved deadlines overdue/);
 });
 
 test("mixed calendar-day deadlines sort before Home's cap in each reader zone", async () => {

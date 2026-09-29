@@ -28,6 +28,8 @@ export type TaskSignal = {
   commentCount: number;
   blockedBy: string[]; // task ids
   dependencyCoverage?: "complete" | "partial";
+  /** Current terminal evidence for a listed prerequisite; no identity leaves this read model. */
+  hasCompletedListedPrerequisite?: boolean;
   sourceLabel: string; // e.g. "Tasks · Wedding 2026"
   // Recent shipped detection
   movedToShippedAt: number | null;
@@ -70,12 +72,14 @@ export type TriggerKind =
   | "just-shipped"
   | "overload"
   | "crowded-week"
-  | "blocked-too-long";
+  | "blocked-too-long"
+  | "blocking-due-work"
+  | "prerequisites-complete";
 
 export type FocusItem = {
   id: string;
   text: string;
-  due: string; // "today" | "by Friday" | "this week" | ISO-ish
+  due: string; // own saved-date phrase or an explicit no-confirmed-date state
   trigger: TriggerKind;
 };
 

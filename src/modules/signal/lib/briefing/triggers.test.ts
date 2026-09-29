@@ -2,16 +2,60 @@ import { strict as assert } from "node:assert";
 import { describe, test } from "node:test";
 import {
   detectBlockedTooLong,
+  detectBlockingDueWork,
   detectCrowdedWeek,
   detectDueSoon,
   detectJustShipped,
   detectOverload,
+  detectPrerequisitesComplete,
   detectStuckWork,
 } from "./triggers";
 import type { TaskSignal } from "./types";
 
 const DAY = 86_400_000;
 const NOW = 1_700_000_000_000;
+
+describe("current dependency relevance", () => {
+  test("one visible same-workspace blocker is selected for the nearest due dependent without age evidence", () => {
+    const blocker = makeTask({ id: "open-blocker", title: "Inspect the venue", workspaceId: "owned", idleDays: null });
+    const later = makeTask({ id: "later", title: "Later work", workspaceId: "owned", dueAt: NOW + 2 * DAY, blockedBy: ["open-blocker"] });
+    const earlier = makeTask({ id: "earlier", title: "Near work", workspaceId: "owned", dueAt: NOW + DAY, blockedBy: ["open-blocker", "unknown"], dependencyCoverage: "partial" });
+    const result = detectBlockingDueWork([later, blocker, earlier], NOW);
+    assert.deepEqual(result.map(row => [row.task.id, row.trigger, row.relatedTaskTitle]), [["open-blocker", "blocking-due-work", "Near work"]]);
+    assert.deepEqual(detectBlockingDueWork([earlier, blocker, later], NOW), result);
+  });
+
+  test("rejects self, foreign, hidden, completed blocker, terminal dependent and distant due work", () => {
+    const blocker = makeTask({ id: "blocker", workspaceId: "owned" });
+    const due = makeTask({ id: "due", workspaceId: "owned", dueAt: NOW + DAY, blockedBy: ["blocker"] });
+    assert.deepEqual(detectBlockingDueWork([blocker, { ...due, blockedBy: ["due"] }], NOW), []);
+    assert.deepEqual(detectBlockingDueWork([{ ...blocker, workspaceId: "foreign" }, due], NOW), []);
+    assert.deepEqual(detectBlockingDueWork([due], NOW), []);
+    assert.deepEqual(detectBlockingDueWork([{ ...blocker, lane: "shipped" }, due], NOW), []);
+    assert.deepEqual(detectBlockingDueWork([blocker, { ...due, lane: "shipped" }], NOW), []);
+    assert.deepEqual(detectBlockingDueWork([blocker, { ...due, dueAt: NOW + 3 * DAY }], NOW), []);
+  });
+
+  test("completed listed prerequisite needs complete coverage and a future saved deadline", () => {
+    const ready = makeTask({ id: "ready", workspaceId: "owned", dueAt: NOW + 3 * DAY,
+      blockedBy: [], dependencyCoverage: "complete", hasCompletedListedPrerequisite: true, idleDays: null });
+    assert.deepEqual(detectPrerequisitesComplete([ready], NOW).map(row => row.trigger), ["prerequisites-complete"]);
+    for (const changed of [
+      { hasCompletedListedPrerequisite: false }, { dependencyCoverage: "partial" as const },
+      { blockedBy: ["still-open"] }, { dueAt: null }, { dueAt: NOW }, { dueAt: NOW - DAY },
+      { dueAt: NOW + 8 * DAY }, { lane: "shipped" as const },
+    ]) assert.deepEqual(detectPrerequisitesComplete([{ ...ready, ...changed }], NOW), []);
+  });
+
+  test("date-only horizon follows reader calendar across DST and extreme offsets", () => {
+    const clock = Date.parse("2026-03-29T12:00:00Z");
+    const ready = makeTask({ id: "ready-date", dependencyCoverage: "complete", hasCompletedListedPrerequisite: true,
+      deadline: { kind: "date-only", date: "2026-04-06" } });
+    assert.equal(detectPrerequisitesComplete([ready], clock, "Pacific/Kiritimati").length, 1);
+    assert.equal(detectPrerequisitesComplete([ready], clock, "Etc/GMT+12").length, 0);
+    assert.equal(detectPrerequisitesComplete([ready], clock, "Europe/Dublin").length, 0);
+  });
+});
 
 function makeTask(overrides: Partial<TaskSignal> = {}): TaskSignal {
   return {

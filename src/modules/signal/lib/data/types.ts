@@ -74,6 +74,8 @@ export interface TaskRead {
   /** Known-open task ids only; unresolved references stay opaque. */
   blockedBy: string[];
   dependencyCoverage?: EvidenceCoverage;
+  /** At least one listed same-workspace prerequisite is currently terminal. Internal proof only. */
+  hasCompletedListedPrerequisite?: boolean;
   /** Legacy update-time proxy, ISO; does not prove a status transition. */
   lastStatusChangeAt: string;
   /** Update-time proxy advanced by valid recorded comments, ISO; history is not complete. */

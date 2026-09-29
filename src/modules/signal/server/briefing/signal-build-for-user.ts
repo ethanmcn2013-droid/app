@@ -328,6 +328,7 @@ export async function buildBriefingForUser(opts: {
           commentCount: 0,
           blockedBy: t.blockedBy,
           dependencyCoverage: t.dependencyCoverage,
+          hasCompletedListedPrerequisite: t.hasCompletedListedPrerequisite,
           sourceLabel: `Tasks · ${workspaceNames.get(work.workspaceId) ?? "Workspace"}`,
           movedToShippedAt:
             t.status === "shipped" && t.completedAt && Number.isFinite(Date.parse(t.completedAt)) && Date.parse(t.completedAt) >= 0 && Date.parse(t.completedAt) <= now

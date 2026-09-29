@@ -129,6 +129,42 @@ test("completed hidden dependency stops stale blocked claims in actual Home and 
   assert.equal(reopenedLedger.readCounts, null);
 });
 
+test("persisted hidden completion produces dated prerequisite observation in Home and ledger, then reopen removes it", async () => {
+  await task("completed-prerequisite", { completed: NOW - DAY, archived: NOW - DAY });
+  await task("dated-dependent", { lane: "doing", blocked: ["completed-prerequisite"] });
+  await fixture.client.execute({ sql: "UPDATE tasks SET due_at=? WHERE id='dated-dependent'", args: [(NOW + 3 * DAY) / 1000] });
+  const before = await hashes(), result = await build(), view = await home();
+  assert.deepEqual(result.signals.map(signal => [signal.id, signal.hasCompletedListedPrerequisite, signal.dependencyCoverage]),
+    [["dated-dependent", true, "complete"]]);
+  assert.equal(view.signalRows.find(row => row.id === "dated-dependent")?.trigger, "prerequisites-complete");
+  assert.match(view.signalRows.find(row => row.id === "dated-dependent")?.why ?? "", /listed prerequisites are complete/i);
+  assert.match(view.signalRows.find(row => row.id === "dated-dependent")?.why ?? "", /30 Sep/);
+  const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
+  assert.ok(ledger.entries.some(entry => entry.detail?.includes("listed prerequisites are complete") && entry.detail?.includes("30 Sep")));
+  assert.doesNotMatch(JSON.stringify(ledger), /completed-prerequisite/);
+  assert.deepEqual(await hashes(), before);
+  await fixture.client.execute("UPDATE tasks SET lane='doing' WHERE id='completed-prerequisite'");
+  const reopened = await build();
+  assert.equal(reopened.signals[0]?.hasCompletedListedPrerequisite, false);
+  assert.ok((await home()).signalRows.every(row => row.trigger !== "prerequisites-complete"));
+});
+
+test("persisted visible blocker of near-due work has its own Home and ledger observation without activity-age claims", async () => {
+  await task("open-prerequisite", { lane: "doing" });
+  await task("near-due-dependent", { lane: "doing", blocked: ["open-prerequisite"] });
+  await fixture.client.execute("UPDATE tasks SET due_at=NULL WHERE id='open-prerequisite'");
+  await fixture.client.execute({ sql: "UPDATE tasks SET due_at=? WHERE id='near-due-dependent'", args: [(NOW + DAY) / 1000] });
+  const before = await hashes(), result = await build(), view = await home();
+  assert.deepEqual(view.signalRows.map(row => [row.id, row.trigger]),
+    [["near-due-dependent", "due-soon"], ["open-prerequisite", "blocking-due-work"]]);
+  assert.equal(view.signalRows.find(row => row.id === "open-prerequisite")?.due, null, "the blocker has no borrowed deadline");
+  assert.ok(result.signals.every(signal => signal.idleDays === null));
+  const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
+  assert.ok(ledger.entries.some(entry => entry.text === "Open-prerequisite" && entry.detail?.includes("near-due-dependent")));
+  assert.doesNotMatch(JSON.stringify(ledger), /for five days|idleDays|blocked-too-long/);
+  assert.deepEqual(await hashes(), before);
+});
+
 test("proven recent comment reaches actual Home and ledger without altering dependency lifecycle or stores", async () => {
   await task("upstream", { lane: "doing", updated: NOW - 10 * DAY });
   await task("commented-dependent", { lane: "doing", blocked: ["upstream"], updated: NOW - 10 * DAY });
@@ -164,6 +200,21 @@ test("actual picker date survives source, briefing and Home in extreme reader zo
   }
 });
 
+test("actual saved-date reassurance is conservative for open unset, cleared and malformed dates", async () => {
+  assert.equal((await home()).dateCoverageComplete, true, "empty open scope is complete");
+  await task("undated", { lane: "doing" });
+  await fixture.client.execute("UPDATE tasks SET due=NULL,due_at=NULL WHERE id='undated'");
+  assert.equal((await home()).dateCoverageComplete, false, "never-set open date is not reassurance");
+  await fixture.client.execute({ sql: "UPDATE tasks SET due='2026-09-28',due_at=? WHERE id='undated'", args: [(NOW + DAY) / 1000] });
+  assert.equal((await home()).dateCoverageComplete, true);
+  await fixture.client.execute("UPDATE tasks SET due=NULL,due_at=NULL WHERE id='undated'");
+  assert.equal((await home()).dateCoverageComplete, false, "explicit clear has the same saved state");
+  await fixture.client.execute("UPDATE tasks SET due='unreadable',due_at=NULL WHERE id='undated'");
+  assert.equal((await home()).dateCoverageComplete, false, "malformed saved date stays unknown");
+  await fixture.client.execute("UPDATE tasks SET lane='done' WHERE id='undated'");
+  assert.equal((await home()).dateCoverageComplete, true, "terminal undated work does not limit open coverage");
+});
+
 test("canonical priorities order equal-lane undated Home tasks P0 through P3 with unknown last", async () => {
   for (const priority of ["p3", "p1", "p0", "p2", "unexpected"]) {
     await task(`priority-${priority}`, { lane: "doing" });
@@ -175,6 +226,21 @@ test("canonical priorities order equal-lane undated Home tasks P0 through P3 wit
   });
   assert.deepEqual(view.myTasks.map(row => row.id), ["priority-p0", "priority-p1", "priority-p2", "priority-p3", "priority-unexpected"]);
   assert.equal(view.allClear, null, "unknown evidence cannot show healthy all-clear");
+});
+
+test("persisted tied deadline observations honor P0 through unknown in Home and ledger cap", async () => {
+  for (const [id, priority] of [["a-unknown", "invalid"], ["b-p3", "p3"], ["c-p2", "p2"], ["d-p1", "p1"], ["z-p0", "p0"]] as const) {
+    await task(id, { lane: "doing" });
+    await fixture.client.execute({ sql: "UPDATE tasks SET priority=?,due_at=? WHERE id=?", args: [priority, (NOW + DAY) / 1000, id] });
+  }
+  const result = await build(), view = await home();
+  assert.deepEqual(Object.fromEntries(result.signals.map(signal => [signal.id, signal.priority])), {
+    "a-unknown": null, "b-p3": 3, "c-p2": 2, "d-p1": 1, "z-p0": 0,
+  });
+  assert.deepEqual(view.signalRows.map(row => row.id), ["z-p0", "d-p1", "c-p2"]);
+  const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
+  assert.deepEqual(ledger.entries.map(entry => entry.text), ["Z-p0", "D-p1", "C-p2"]);
+  assert.equal(result.briefing.triggeredCount, 5);
 });
 
 for (const fault of ["missing", "foreign", "mixed"] as const) {

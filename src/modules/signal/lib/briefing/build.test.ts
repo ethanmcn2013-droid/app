@@ -47,6 +47,63 @@ test("Priority Compression caps the whole briefing at three with stable ties", a
   assert.deepEqual(ids(first), ids(second));
 });
 
+test("near-due dependent and its real blocker can each surface with distinct read-state identities", async () => {
+  const blocker = task({ id: "inspection", title: "Inspect the venue", workspaceId: "owned", idleDays: null });
+  const dependent = task({ id: "plan", title: "Finish the plan", workspaceId: "owned", dueAt: NOW + DAY,
+    blockedBy: ["inspection"], dependencyCoverage: "complete", idleDays: null });
+  const first = await buildBriefing(source([dependent, blocker]), CTX, NOW);
+  assert.deepEqual(first.needsAttention.map(item => [item.id, item.trigger]), [["plan", "due-soon"], ["inspection", "blocking-due-work"]]);
+  assert.match(first.needsAttention[1]!.detail, /Finish the plan/);
+  assert.equal(first.triggeredCount, 2);
+  const suppressed = await buildBriefing(source([blocker, dependent]), CTX, NOW, {
+    suppressed: new Set(["blocking-due-work:inspection"]),
+  });
+  assert.deepEqual(suppressed.needsAttention.map(item => item.id), ["plan"]);
+  const aged = await buildBriefing(source([blocker, dependent]), CTX, NOW, {
+    ages: new Map([ ["blocking-due-work:inspection", 3] ]),
+  });
+  assert.equal(aged.needsAttention.find(item => item.id === "inspection")?.ageDays, 3);
+});
+
+test("completed listed prerequisite enters attention, but a stronger due-soon observation wins on the same task", async () => {
+  const ready = task({ id: "ready", title: "Install the lights", workspaceId: "owned", dueAt: NOW + 3 * DAY,
+    dependencyCoverage: "complete", hasCompletedListedPrerequisite: true, idleDays: null });
+  const briefing = await buildBriefing(source([ready]), CTX, NOW);
+  assert.equal(briefing.needsAttention[0]?.trigger, "prerequisites-complete");
+  assert.match(briefing.needsAttention[0]!.detail, /listed prerequisites are complete/i);
+  assert.doesNotMatch(briefing.needsAttention[0]!.detail, /just|newly|started/i);
+  const urgent = await buildBriefing(source([{ ...ready, dueAt: NOW + DAY }]), CTX, NOW);
+  assert.deepEqual(urgent.needsAttention.map(item => item.trigger), ["due-soon"]);
+  const nextWeek = await buildBriefing(source([{ ...ready, dueAt: NOW + 6 * DAY }]), CTX, NOW);
+  assert.match(nextWeek.needsAttention[0]!.detail, /saved deadline/i);
+  assert.notEqual(nextWeek.suggestedFocus[0]?.due, "this week", "a future date must not inherit a calendar-week claim");
+});
+
+test("equal rule and severity honor P0..P3 then unknown before adverse IDs and the cap", async () => {
+  const rows = [
+    task({ id: "a-unknown", dueAt: NOW + DAY, priority: null }),
+    task({ id: "b-p3", dueAt: NOW + DAY, priority: 3 }),
+    task({ id: "c-p2", dueAt: NOW + DAY, priority: 2 }),
+    task({ id: "d-p1", dueAt: NOW + DAY, priority: 1 }),
+    task({ id: "z-p0", dueAt: NOW + DAY, priority: 0 }),
+  ];
+  const expected = ["z-p0", "d-p1", "c-p2"];
+  for (const input of [rows, [...rows].reverse(), [rows[2]!, rows[4]!, rows[0]!, rows[3]!, rows[1]!]]) {
+    const brief = await buildBriefing(source(input), CTX, NOW);
+    assert.deepEqual(brief.needsAttention.map(item => item.id), expected);
+    assert.equal(brief.triggeredCount, 5);
+  }
+  const tail = await buildBriefing(source(rows.slice(0, 2)), CTX, NOW);
+  assert.deepEqual(tail.needsAttention.map(item => item.id), ["b-p3", "a-unknown"]);
+});
+
+test("stronger deadline severity and trigger tier still precede declared priority", async () => {
+  const urgent = task({ id: "late-p3", priority: 3, dueAt: NOW - DAY });
+  const later = task({ id: "later-p0", priority: 0, dueAt: NOW + DAY });
+  const brief = await buildBriefing(source([later, urgent]), CTX, NOW);
+  assert.deepEqual(brief.needsAttention.map(item => item.id), ["late-p3", "later-p0"]);
+});
+
 // ─────────────────────────────────────────────────────────────
 // Engine output
 // ─────────────────────────────────────────────────────────────

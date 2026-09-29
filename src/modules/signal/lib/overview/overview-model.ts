@@ -211,6 +211,8 @@ function triggerChip(
   const byTrigger: Record<Exclude<TriggerKind, "due-soon">, OverviewChip> = {
     "stuck-work": { label: "Stalled", tone: "warning" },
     "blocked-too-long": { label: "Waiting on other work", tone: "warning" },
+    "blocking-due-work": { label: "Holding up due work", tone: "warning" },
+    "prerequisites-complete": { label: "Earlier work done", tone: "neutral" },
     overload: { label: "Workload", tone: "warning" },
     "crowded-week": { label: "Busy week", tone: "warning" },
     "just-shipped": { label: "Finished", tone: "success" },

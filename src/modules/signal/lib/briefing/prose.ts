@@ -29,6 +29,8 @@ type Phrasing = (
    *  titles → "X and Y" (both named, conversational). Three+ →
    *  "X and N more" (named lead + count). */
   byTitles?: string[],
+  relatedTaskTitle?: string,
+  savedDateLabel?: string,
 ) => string;
 
 const STUCK: Phrasing[] = [
@@ -170,6 +172,23 @@ const BLOCKED_TOO_LONG: Phrasing[] = [
   },
 ];
 
+function namedDependent(title: string | undefined): string {
+  const name = title?.trim().replace(/\s+/g, " ");
+  return name ? `“${name}”` : "another open task";
+}
+
+const BLOCKING_DUE_WORK: Phrasing[] = [
+  (_task, _days, _titles, title) => `This is holding up ${namedDependent(title)}.`,
+  (_task, _days, _titles, title) => `The task ${namedDependent(title)} is waiting on this.`,
+  (_task, _days, _titles, title) => `This remains a listed prerequisite for ${namedDependent(title)}.`,
+];
+
+const PREREQUISITES_COMPLETE: Phrasing[] = [
+  (_task, _days, _titles, _title, date) => `Its listed prerequisites are complete. Saved deadline: ${date ?? "within seven days"}.`,
+  (_task, _days, _titles, _title, date) => `The listed prerequisites are complete, and its saved deadline is ${date ?? "within seven days"}.`,
+  (_task, _days, _titles, _title, date) => `Its listed prerequisites are complete. The saved deadline is ${date ?? "within seven days"}.`,
+];
+
 const LIBRARY: Record<TriggerKind, Phrasing[]> = {
   "stuck-work": STUCK,
   "due-soon": DUE_SOON,
@@ -177,6 +196,8 @@ const LIBRARY: Record<TriggerKind, Phrasing[]> = {
   overload: OVERLOAD,
   "crowded-week": CROWDED_WEEK,
   "blocked-too-long": BLOCKED_TOO_LONG,
+  "blocking-due-work": BLOCKING_DUE_WORK,
+  "prerequisites-complete": PREREQUISITES_COMPLETE,
 };
 
 /**
@@ -193,10 +214,14 @@ export function phraseFor(
     pastToday?: boolean;
     /** Resolved titles of upstream blocker tasks (in order). */
     blockedByTitles?: string[];
+    relatedTaskTitle?: string;
+    savedDateLabel?: string;
   },
 ): string {
   const options = LIBRARY[trigger];
   const phrasing = options[rotationIndex % options.length];
+  if (trigger === "blocking-due-work" || trigger === "prerequisites-complete")
+    return phrasing(task, undefined, undefined, context?.relatedTaskTitle, context?.savedDateLabel);
   if (trigger === "stuck-work")
     return phrasing(task, context?.idleDays ?? task.idleDays ?? 0);
   if (trigger === "due-soon") {
