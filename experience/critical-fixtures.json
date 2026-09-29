@@ -1496,15 +1496,15 @@
         {
           "kind": "role",
           "role": "heading",
-          "name": "Chat",
+          "name": "#The Orchard, events",
           "proves": [
             "default"
           ]
         },
         {
           "kind": "role",
-          "role": "button",
-          "name": "New message",
+          "role": "combobox",
+          "name": "Message The Orchard, events",
           "proves": [
             "default"
           ]

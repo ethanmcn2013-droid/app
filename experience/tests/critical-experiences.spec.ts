@@ -20,7 +20,7 @@ type FixtureCase = {
   assertions: StateAssertion[];
 };
 
-type AssertionRole = "button" | "dialog" | "heading" | "link" | "textbox";
+type AssertionRole = "button" | "combobox" | "dialog" | "heading" | "link" | "textbox";
 type StateAssertion =
   | { kind: "url"; pathname: string; proves: string[] }
   | { kind: "text"; text: string; proves: string[] }
@@ -598,10 +598,21 @@ test("tasks.page.app-messages / Project conversation in demo", async ({ page }, 
   const response = await page.goto(fixture!.path!, { waitUntil: "domcontentloaded" });
   expect(response?.status()).toBe(200);
   await enterDeterministicMotionMode(page);
-  await expect(page.getByRole("navigation", { name: "Conversations" })).toBeVisible();
-  await expect(page.getByText("Project conversation", { exact: true })).toBeVisible();
-  await expect(page.getByRole("region", { name: /Messages in / })).toBeVisible();
-  const composer = page.getByRole("textbox", { name: /Message The Orchard/ });
+  // Mobile starts at the conversation list; the wider layouts open the
+  // selected Project channel. Receive each existing responsive flow.
+  if (testInfo.project.name === "mobile") {
+    const conversations = page.getByRole("navigation", { name: "Conversations" });
+    await expect(conversations).toBeVisible();
+    await auditCurrentSurface(page, testInfo, fixture!.id, `${fixture!.caseName} / conversation list`,
+      [
+        { kind: "role", role: "heading", name: "Chat", proves: ["default"] },
+        { kind: "role", role: "button", name: "New message", proves: ["default"] },
+      ], runtime, null, true, response, timelineEvidence);
+    await conversations.getByRole("button", { name: "The Orchard, events", exact: true }).click();
+  }
+  await expect(page.getByRole("navigation", { name: "Conversation views" })).toContainText("Project conversation");
+  await expect(page.getByRole("region", { name: "Messages in The Orchard, events", exact: true })).toBeVisible();
+  const composer = page.getByRole("combobox", { name: "Message The Orchard, events", exact: true });
   await expect(composer).toBeEnabled();
   await composer.fill("Review-only project message");
   await page.getByRole("button", { name: "Send message" }).click();
