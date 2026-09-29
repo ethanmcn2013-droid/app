@@ -1,5 +1,5 @@
 import type { RecurrenceSpec } from "@/lib/data";
-import { storedDeadline } from "@/modules/signal/lib/data/deadline";
+import { storedDeadline } from "./stored-deadline";
 
 /** Preserve a proven picker day when an existing writer advances its date. */
 export function isDateOnlyDue(due: string | null, dueAt: Date | null): boolean {
