@@ -125,7 +125,7 @@ export async function TasksRuntimeShell({
    * selects or authorizes data. */
   snapshotRequestedProjectId?: string | null;
 }) {
-  await requireAppAccessTasks();
+  await requireAppAccessTasks("tasksShell");
 
   const { actorUserId, decision: project } = await resolveProjectForRouteWithActor(
     parseProjectId(requestedProjectId) ?? undefined,

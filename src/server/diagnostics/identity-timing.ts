@@ -8,20 +8,32 @@ import { SPRINT_PREVIEW_AUTH_MARKER } from "@/lib/auth/recipient-proof-authorize
 import { opLog, type SafeLogFields } from "@/server/operational-log";
 
 const OPT_IN = "isolated-preview-auth-timing-v1";
-const TAG = "signal.identity.timing.v1";
+const TAG = "signal.identity.timing.v2";
 const MAX_LIFETIME_MS = 6 * 60 * 60 * 1_000;
 const STAGES = ["auth", "clerkProfile", "provision", "persistedId", "total"] as const;
 type Stage = typeof STAGES[number];
 type Scope = "unclassified" | "routeResolver";
+export type AppGateSite = "layout" | "tasksShell" | "other";
+type GateStage = "profile" | "membership";
+const TRACE_LIMIT = 16;
+// Numeric stage codes are fixed here; no user, Project, URL or result is retained.
+const TRACE_CODE = {
+  layoutEntry: 1, layoutProfile: 2, layoutMembership: 3, layoutTotal: 4,
+  shellEntry: 5, shellProfile: 6, shellMembership: 7, shellTotal: 8,
+  routeProfile: 9,
+} as const;
+type TraceStage = keyof typeof TRACE_CODE;
+type TraceEvent = { stage: number; ordinal: number; offsetMs: number; durationMs: number };
 type Environment = Readonly<Record<string, string | undefined>>;
 type Clock = () => number;
 type StageCount = { count: number; totalMs: number; maxMs: number };
 type ScopeCounts = Record<Stage, StageCount>;
 export type IdentityTimingSummary = Readonly<{
   tag: typeof TAG;
-  version: 1;
+  version: 2;
   unclassified: ScopeCounts;
   routeResolver: ScopeCounts;
+  gateTrace: Readonly<{ events: TraceEvent[]; overflow: number; dropped: number }>;
 }>;
 
 /** This flag alone cannot enable logging on production or an unrelated Preview. */
@@ -57,10 +69,30 @@ export function createIdentityTimingCollector(input: {
 }) {
   const unclassified = emptyScope();
   const routeResolver = emptyScope();
+  const events: TraceEvent[] = [];
+  let overflow = 0;
+  let dropped = 0;
+  let origin: number | null = null;
   let scheduled = false;
   const scopeCounts = (scope: Scope) => scope === "routeResolver" ? routeResolver : unclassified;
-  const summary = (): IdentityTimingSummary => ({tag: TAG, version: 1,
-    unclassified: structuredClone(unclassified), routeResolver: structuredClone(routeResolver)});
+  const summary = (): IdentityTimingSummary => ({tag: TAG, version: 2,
+    unclassified: structuredClone(unclassified), routeResolver: structuredClone(routeResolver),
+    gateTrace: {events: events.map(event => ({...event})), overflow, dropped}});
+  const now = (): number | null => {
+    try { const value = input.now(); return Number.isFinite(value) && value >= 0 ? value : null; }
+    catch { return null; }
+  };
+  const markStart = (started: number | null) => {
+    if (started !== null && origin === null) origin = started;
+  };
+  const trace = (stage: TraceStage, started: number, ended: number) => {
+    if (origin === null || !Number.isFinite(started) || !Number.isFinite(ended) || ended < started || started < origin) {
+      dropped++; return;
+    }
+    if (events.length >= TRACE_LIMIT) { overflow++; return; }
+    events.push({stage: TRACE_CODE[stage], ordinal: events.length + 1,
+      offsetMs: safeMilliseconds(started - origin), durationMs: safeMilliseconds(ended - started)});
+  };
   const record = (scope: Scope, stage: Stage, elapsed: number) => {
     const counter = scopeCounts(scope)[stage];
     const duration = safeMilliseconds(elapsed);
@@ -77,18 +109,57 @@ export function createIdentityTimingCollector(input: {
   return {
     begin(scope: Scope) {
       scheduleOnce();
-      const started = input.now();
+      const started = now();
+      markStart(started);
       let finished = false;
       return {
         async measure<T>(stage: Exclude<Stage, "total">, work: () => Promise<T>): Promise<T> {
-          const stageStarted = input.now();
+          const stageStarted = now();
+          markStart(stageStarted);
           try { return await work(); }
-          finally { record(scope, stage, input.now() - stageStarted); }
+          finally { try {
+            const ended = now();
+            if (stageStarted !== null && ended !== null && ended >= stageStarted) {
+              record(scope, stage, ended - stageStarted);
+              if (scope === "routeResolver" && stage === "clerkProfile") trace("routeProfile", stageStarted, ended);
+            } else if (scope === "routeResolver" && stage === "clerkProfile") dropped++;
+          } catch { /* Preserve the original result or error. */ } }
         },
         finish() {
           if (finished) return;
           finished = true;
-          record(scope, "total", input.now() - started);
+          try { const ended = now(); if (started !== null && ended !== null && ended >= started)
+            record(scope, "total", ended - started); } catch { /* Preserve work. */ }
+        },
+      };
+    },
+    beginGate(site: Exclude<AppGateSite, "other">) {
+      scheduleOnce();
+      const prefix = site === "layout" ? "layout" : "shell";
+      const started = now();
+      markStart(started);
+      if (started !== null) trace(`${prefix}Entry` as TraceStage, started, started);
+      else dropped++;
+      let finished = false;
+      return {
+        async measure<T>(stage: GateStage, work: () => Promise<T>): Promise<T> {
+          const stageStarted = now();
+          markStart(stageStarted);
+          try { return await work(); }
+          finally { try { const ended = now();
+            if (stageStarted !== null && ended !== null) trace(`${prefix}${stage === "profile" ? "Profile" : "Membership"}` as TraceStage,
+              stageStarted, ended);
+            else dropped++;
+          } catch { /* Preserve the original result or error. */ } }
+        },
+        finish() {
+          if (finished) return;
+          finished = true;
+          try { const ended = now();
+            if (started !== null && ended !== null) trace(`${prefix}Total` as TraceStage, started, ended);
+            else dropped++;
+          }
+          catch { /* Preserve work. */ }
         },
       };
     },
@@ -107,6 +178,16 @@ function summaryFields(summary: IdentityTimingSummary): SafeLogFields {
       fields[`${scope}_${stage}_maxMs`] = summary[scope][stage].maxMs;
     }
   }
+  fields.gateTrace_count = summary.gateTrace.events.length;
+  fields.gateTrace_overflow = summary.gateTrace.overflow;
+  fields.gateTrace_dropped = summary.gateTrace.dropped;
+  for (let index = 0; index < TRACE_LIMIT; index++) {
+    const event = summary.gateTrace.events[index];
+    fields[`gateTrace_${index}_stage`] = event?.stage ?? 0;
+    fields[`gateTrace_${index}_ordinal`] = event?.ordinal ?? 0;
+    fields[`gateTrace_${index}_offsetMs`] = event?.offsetMs ?? 0;
+    fields[`gateTrace_${index}_durationMs`] = event?.durationMs ?? 0;
+  }
   return fields;
 }
 
@@ -120,6 +201,17 @@ const NO_TIMING = {
   measure: <T>(_stage: Exclude<Stage, "total">, work: () => Promise<T>) => work(),
   finish: () => {},
 };
+const NO_GATE_TIMING = {
+  measure: <T>(_stage: GateStage, work: () => Promise<T>) => work(),
+  finish: () => {},
+};
+
+/** Fixed-site numeric spans share the render collector with route profile timing. */
+export function beginAppGateTiming(site: AppGateSite) {
+  if ((site !== "layout" && site !== "tasksShell") || !identityTimingEnabled()) return NO_GATE_TIMING;
+  try { return collectorForRender().beginGate(site); }
+  catch { return NO_GATE_TIMING; }
+}
 
 /** No identity or authorization result is cached; only fixed numeric counters are shared per render. */
 export function beginIdentityTiming() {

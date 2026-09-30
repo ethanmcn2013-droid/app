@@ -59,7 +59,7 @@ async function SharedAppGate({ children }: { children: React.ReactNode }) {
   // create that row — invite acceptance directly, and redemption via
   // ensureUserProvisioned(), which comp.ts calls before writing the entitlement
   // — so this covers the sponsored couple as well as the invited collaborator.
-  await requireAppAccessTasks();
+  await requireAppAccessTasks("layout");
   return children;
 }
 
