@@ -45,7 +45,8 @@ function fixture() {
   const workspaceMembers = { userId: "members.userId", workspaceId: "members.workspaceId" };
   const tasks = { id: "tasks.id", workspaceId: "tasks.workspaceId", lane: "tasks.lane" };
   const workspaces = { id: "workspaces.id", ownerUserId: "workspaces.ownerUserId" };
-  const schema = { users, workspaceMembers, tasks, workspaces };
+  const meta = { key: "meta.key" };
+  const schema = { users, workspaceMembers, tasks, workspaces, meta };
   const eq = (column, value) => ({ kind: "eq", column, value });
   const and = (...parts) => ({ kind: "and", parts });
   const matches = (row, expression) => expression.kind === "and"
@@ -57,11 +58,13 @@ function fixture() {
         from(table) {
           const query = {
             innerJoin() { return query; },
+            leftJoin() { return query; },
             where(expression) {
               if (table === workspaceMembers) state.ambientReads++;
               const internalActor = state.mappedIds.get(state.actor) ?? state.actor;
               const rows = table === users
-                ? [ { "users.id": internalActor, "users.clerkId": state.actor, id: internalActor } ]
+                ? [ { "users.id": internalActor, "users.clerkId": state.actor, id: internalActor,
+                  actorClerkId: state.actor, ownerId: internalActor, ownerClerkId: state.actor } ]
                 : table === workspaceMembers
                   ? [...(state.memberships.get(internalActor) ?? [])].map((workspaceId) => ({
                     "members.userId": internalActor, "members.workspaceId": workspaceId, workspaceId,
@@ -135,10 +138,12 @@ function fixture() {
     "@/server/demo/tasks-demo": { DEMO_USER_ID: "demo_user", DEMO_WORKSPACE_ID: "demo_project" },
   });
   const actionModule = loadSource(actionsPath, {
-    "drizzle-orm": { and, eq },
+    "drizzle-orm": { and, eq, inArray: (column, values) => ({kind: "inArray", column, values}) },
+    "drizzle-orm/sqlite-core": { alias: () => ({id: "owner_user.id", clerkId: "owner_user.clerkId"}) },
     "next/cache": { revalidatePath() {} },
     "@/server/db": { db },
     "@/server/db/schema": schema,
+    "@/server/account-deletion-key": { accountDeletionTombstoneKey: value => `account-deletion:${value}` },
     "@/server/db/queries": { getTasks: async (workspaceId) => {
       counters.list++;
       return [{ id: `list_for_${workspaceId}` }];

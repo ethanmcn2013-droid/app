@@ -1,6 +1,7 @@
 "use server";
 
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/sqlite-core";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
 import { readWorkspaceColumnConfig } from "@/server/db/board-config-read";
@@ -11,6 +12,7 @@ import {
   activities,
   attachments,
   comments,
+  meta,
   notifications,
   resources,
   tasks,
@@ -51,7 +53,7 @@ import { deleteNativeByteCleanupTargetConfirmed } from "@/server/attachments/nat
 import { repairExactNativeByteCleanupReceipts } from "@/server/attachments/native-upload-cleanup";
 import { deleteNativeAttachmentRowsInTransaction } from "@/server/attachments/native-upload-custody";
 import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
-import { hasAccountDeletionStartedWith } from "@/server/account-deletion-lifecycle";
+import { accountDeletionTombstoneKey } from "@/server/account-deletion-key";
 import { captureTaskCreated } from "@/server/sponsored-use/capture";
 
 /**
@@ -107,6 +109,40 @@ async function neutralTaskList(ambient: string | null, actorUserId: UserId): Pro
   return ws ? getTasks(ws) : [];
 }
 
+const taskOwnerUser = alias(users, "task_owner_user");
+
+/** Keep actor and owner deletion fences on the same immediate writer snapshot. */
+async function taskWriterAccountsOpen(executor: Pick<typeof db, "select">, ws: string, me: UserId): Promise<boolean> {
+  const [identity] = await executor.select({
+    actorClerkId: users.clerkId,
+    ownerId: taskOwnerUser.id,
+    ownerClerkId: taskOwnerUser.clerkId,
+  }).from(users)
+    .leftJoin(workspaces, eq(workspaces.id, ws))
+    .leftJoin(taskOwnerUser, eq(taskOwnerUser.id, workspaces.ownerUserId))
+    .where(eq(users.id, me)).limit(1);
+  if (!identity) return false;
+
+  const actorKey = accountDeletionTombstoneKey(identity.actorClerkId ?? me);
+  let ownerKey: string | null = null;
+  let ownerKeyError: unknown;
+  if (identity.ownerId !== null && identity.ownerId !== undefined) {
+    try {
+      ownerKey = accountDeletionTombstoneKey(identity.ownerClerkId ?? identity.ownerId);
+    } catch (error) {
+      // The old order checks the actor tombstone before deriving the owner
+      // key. Preserve that refusal even if the owner identifier is malformed.
+      ownerKeyError = error;
+    }
+  }
+  const keys = ownerKey && ownerKey !== actorKey ? [actorKey, ownerKey] : [actorKey];
+  const tombstones = await executor.select({ key: meta.key }).from(meta)
+    .where(inArray(meta.key, keys)).limit(keys.length);
+  if (tombstones.some(({ key }) => key === actorKey)) return false;
+  if (ownerKeyError !== undefined) throw ownerKeyError;
+  return tombstones.length === 0;
+}
+
 /** Prove the stored Project and deletion fences on the immediate writer snapshot. */
 async function taskWriteTarget(executor: Pick<typeof db, "select">, id: string, me: UserId) {
   const [target] = await executor.select({ workspaceId: tasks.workspaceId }).from(tasks).where(eq(tasks.id, id));
@@ -117,11 +153,7 @@ async function taskWriteTarget(executor: Pick<typeof db, "select">, id: string, 
   if (!grant.ok) return null;
   const ws = grant.projectId;
   await assertProjectNotDeleting(executor, ws);
-  const [actor] = await executor.select({ clerkId: users.clerkId }).from(users).where(eq(users.id, me)).limit(1);
-  if (!actor || await hasAccountDeletionStartedWith(executor, actor.clerkId ?? me)) return null;
-  const [owner] = await executor.select({ id: users.id, clerkId: users.clerkId }).from(workspaces)
-    .innerJoin(users, eq(users.id, workspaces.ownerUserId)).where(eq(workspaces.id, ws)).limit(1);
-  if (owner && await hasAccountDeletionStartedWith(executor, owner.clerkId ?? owner.id)) return null;
+  if (!await taskWriterAccountsOpen(executor, ws, me)) return null;
   const [row] = await executor.select().from(tasks).where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
   return row ? { ws, row } : null;
 }
@@ -510,11 +542,7 @@ export async function addTaskAction(input: {
     });
     if (!current.ok) return false;
     await assertProjectNotDeleting(tx, ws);
-    const [actor] = await tx.select({ clerkId: users.clerkId }).from(users).where(eq(users.id, me)).limit(1);
-    if (!actor || await hasAccountDeletionStartedWith(tx, actor.clerkId ?? me)) return false;
-    const [owner] = await tx.select({ id: users.id, clerkId: users.clerkId }).from(workspaces)
-      .innerJoin(users, eq(users.id, workspaces.ownerUserId)).where(eq(workspaces.id, ws)).limit(1);
-    if (owner && await hasAccountDeletionStartedWith(tx, owner.clerkId ?? owner.id)) return false;
+    if (!await taskWriterAccountsOpen(tx, ws, me)) return false;
     if (input.parentTaskId) {
       // A subtask inherits its parent's tenant. Require a top-level parent in
       // the active workspace; this rejects both foreign-parent injection and

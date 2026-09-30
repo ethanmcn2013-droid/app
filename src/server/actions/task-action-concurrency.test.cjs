@@ -79,6 +79,148 @@ test('committed membership and account tombstones refuse writes without secondar
   } finally { f.close(); }
 });
 
+test('distinct actor and owner tombstones each fence create, edit, and completion', async () => {
+  for (const fenced of ['member', 'owner']) {
+    const f = await usageFixture({ seedClaim: false });
+    try {
+      await f.action({ id: 'account-fenced-task', title: 'Original', projectId: 'a' });
+      const before = await task(f, 'account-fenced-task');
+      const activities = await count(f, 'activities');
+      const tombstoneKey = f.load('src/server/account-deletion-key.ts')
+        .accountDeletionTombstoneKey(`clerk-${fenced}`);
+      await f.client.execute({ sql: 'INSERT INTO meta(key,value) VALUES (?,?)',
+        args: [tombstoneKey, 'erasure-requested:v1'] });
+      f.state.actor = 'member';
+      const actions = f.load('src/server/actions/tasks.ts');
+      await assert.rejects(actions.addTaskAction({ id: 'refused-create', title: 'Denied', projectId: 'a' }),
+        /Task Project is unavailable/);
+      await actions.updateTaskAction('account-fenced-task', { title: 'Denied' });
+      await actions.toggleCompleteAction('account-fenced-task');
+      assert.equal(await task(f, 'refused-create'), undefined);
+      assert.deepEqual(await task(f, 'account-fenced-task'), before);
+      assert.equal(await count(f, 'activities'), activities);
+    } finally { f.close(); }
+  }
+});
+
+test('legacy null Clerk ID uses internal owner ID; malformed owner preserves actor refusal order', async () => {
+  const f = await usageFixture({ seedClaim: false });
+  try {
+    await f.action({ id: 'legacy-owner-task', title: 'Original', projectId: 'a' });
+    const actions = f.load('src/server/actions/tasks.ts');
+    const activities = await count(f, 'activities');
+    await f.client.execute("UPDATE users SET clerk_id=NULL WHERE id='owner'");
+    const legacyKey = f.load('src/server/account-deletion-key.ts').accountDeletionTombstoneKey('owner');
+    await f.client.execute({ sql: 'INSERT INTO meta(key,value) VALUES (?,?)', args: [legacyKey, 'erasure-requested:v1'] });
+    f.state.actor = 'member';
+    await actions.updateTaskAction('legacy-owner-task', { title: 'Denied by legacy owner' });
+    assert.equal((await task(f, 'legacy-owner-task')).title, 'Original');
+    assert.equal(await count(f, 'activities'), activities);
+
+    await f.client.execute({ sql: 'DELETE FROM meta WHERE key=?', args: [legacyKey] });
+    await f.client.execute("UPDATE users SET clerk_id='   ' WHERE id='owner'");
+    const actorKey = f.load('src/server/account-deletion-key.ts').accountDeletionTombstoneKey('clerk-member');
+    await f.client.execute({ sql: 'INSERT INTO meta(key,value) VALUES (?,?)', args: [actorKey, 'erasure-requested:v1'] });
+    await actions.updateTaskAction('legacy-owner-task', { title: 'Denied by actor first' });
+    assert.equal((await task(f, 'legacy-owner-task')).title, 'Original');
+    await f.client.execute({ sql: 'DELETE FROM meta WHERE key=?', args: [actorKey] });
+    await assert.rejects(actions.updateTaskAction('legacy-owner-task', { title: 'Malformed owner' }),
+      /clerkId is required/);
+    assert.equal(await count(f, 'activities'), activities);
+  } finally { f.close(); }
+});
+
+test('an empty owner ID is still a present account for its tombstone fence', async () => {
+  const f = await usageFixture({ seedClaim: false });
+  try {
+    await f.action({ id: 'owner-presence-task', title: 'Before', projectId: 'a' });
+    f.state.actor = 'member';
+    const actions = f.load('src/server/actions/tasks.ts');
+    await f.client.execute("INSERT INTO users(id,clerk_id,initials,color) VALUES ('','clerk-empty','FX','fixture')");
+    await f.client.execute("UPDATE workspaces SET owner_user_id='' WHERE id='a'");
+    const key = f.load('src/server/account-deletion-key.ts').accountDeletionTombstoneKey('clerk-empty');
+    await f.client.execute({ sql: 'INSERT INTO meta(key,value) VALUES (?,?)', args: [key, 'erasure-requested:v1'] });
+    const activities = await count(f, 'activities');
+    await actions.updateTaskAction('owner-presence-task', { title: 'Denied empty owner' });
+    assert.equal((await task(f, 'owner-presence-task')).title, 'Before');
+    assert.equal(await count(f, 'activities'), activities);
+  } finally { f.close(); }
+});
+
+test('an orphaned legacy owner row preserves the prior missing-owner behavior', async () => {
+  const f = await usageFixture({ seedClaim: false });
+  try {
+    await f.action({ id: 'orphan-owner-task', title: 'Before', projectId: 'a' });
+    // Model an older inconsistent store without changing the production FK.
+    await f.client.execute('PRAGMA foreign_keys=OFF');
+    await f.client.execute("UPDATE workspaces SET owner_user_id='absent-owner' WHERE id='a'");
+    await f.client.execute('PRAGMA foreign_keys=ON');
+    f.state.actor = 'member';
+    await f.load('src/server/actions/tasks.ts').updateTaskAction('orphan-owner-task', { title: 'Allowed' });
+    assert.equal((await task(f, 'orphan-owner-task')).title, 'Allowed');
+  } finally { f.close(); }
+});
+
+test('a missing persisted actor row refuses writes even when stale membership remains', async () => {
+  const f = await usageFixture({ seedClaim: false });
+  try {
+    await f.action({ id: 'missing-actor-task', title: 'Before', projectId: 'a' });
+    const activities = await count(f, 'activities');
+    // Model a stale legacy membership with no actor profile row.
+    await f.client.execute('PRAGMA foreign_keys=OFF');
+    await f.client.execute("DELETE FROM users WHERE id='member'");
+    await f.client.execute('PRAGMA foreign_keys=ON');
+    f.state.actor = 'member';
+    const actions = f.load('src/server/actions/tasks.ts');
+    await assert.rejects(actions.addTaskAction({ id: 'missing-actor-create', title: 'Denied', projectId: 'a' }),
+      /Task Project is unavailable/);
+    await actions.updateTaskAction('missing-actor-task', { title: 'Denied' });
+    await actions.toggleCompleteAction('missing-actor-task');
+    assert.equal(await task(f, 'missing-actor-create'), undefined);
+    assert.equal((await task(f, 'missing-actor-task')).title, 'Before');
+    assert.equal((await task(f, 'missing-actor-task')).lane, 'todo');
+    assert.equal(await count(f, 'activities'), activities);
+  } finally { f.close(); }
+});
+
+test('a competing owner tombstone serializes after an immediate task writer', async () => {
+  const f = await usageFixture({ seedClaim: false });
+  const contender = secondClient(f);
+  let gate;
+  let contenderClosed = false;
+  try {
+    await f.action({ id: 'tombstone-race-task', title: 'Before', projectId: 'a' });
+    f.state.actor = 'member';
+    gate = holdFirstTransaction(f, drizzle(contender, { schema: f.schema }));
+    const actions = f.load('src/server/actions/tasks.ts');
+    const first = actions.updateTaskAction('tombstone-race-task', { title: 'Committed first' });
+    await gate.ready;
+    const ownerKey = f.load('src/server/account-deletion-key.ts').accountDeletionTombstoneKey('clerk-owner');
+    const insert = { sql: 'INSERT INTO meta(key,value) VALUES (?,?)', args: [ownerKey, 'erasure-requested:v1'] };
+    assert.equal(await busyResult(contender.execute(insert)), 'SQLITE_BUSY');
+    gate.release();
+    await first;
+    gate.restore();
+    assert.equal((await task(f, 'tombstone-race-task')).title, 'Committed first');
+    assert.equal((await f.client.execute({sql: "SELECT count(*) AS n FROM activities WHERE task_id=? AND kind='update'",
+      args: ['tombstone-race-task']})).rows[0].n, 1);
+    contender.close();
+    contenderClosed = true;
+    const later = secondClient(f);
+    try { assert.equal((await later.execute(insert)).rowsAffected, 1); }
+    finally { later.close(); }
+    await actions.updateTaskAction('tombstone-race-task', { title: 'Denied later' });
+    assert.equal((await task(f, 'tombstone-race-task')).title, 'Committed first');
+    assert.equal((await f.client.execute({sql: "SELECT count(*) AS n FROM activities WHERE task_id=? AND kind='update'",
+      args: ['tombstone-race-task']})).rows[0].n, 1);
+  } finally {
+    gate?.release();
+    gate?.restore();
+    if (!contenderClosed) contender.close();
+    f.close();
+  }
+});
+
 test('two sequential completions serialize from current state and keep one completed activity', async () => {
   const f = await usageFixture({ seedClaim: false });
   try {
