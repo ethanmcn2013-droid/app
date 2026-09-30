@@ -44,13 +44,16 @@ async function recipientFixture(options = {}) {
   const getCurrentUser = async () => { state.authCalls++; return state.actor; };
   async function getCurrentUserAndActiveWorkspaceOrNull() {
     const me = await getCurrentUser();
+    return [me, await activeWorkspaceOrNullForUser(me)];
+  }
+  async function activeWorkspaceOrNullForUser(me) {
     const cookieValue = state.cookies.get('tasks_active_ws');
     if (cookieValue) {
       const [match] = await db.select({ workspaceId: schema.workspaceMembers.workspaceId })
         .from(schema.workspaceMembers)
         .where(and(eq(schema.workspaceMembers.userId, me), eq(schema.workspaceMembers.workspaceId, cookieValue)))
         .limit(1);
-      if (match) return [me, cookieValue];
+      if (match) return cookieValue;
     }
     const [first] = await db.select({ workspaceId: schema.workspaceMembers.workspaceId })
       .from(schema.workspaceMembers)
@@ -58,7 +61,7 @@ async function recipientFixture(options = {}) {
       .where(eq(schema.workspaceMembers.userId, me))
       .orderBy(asc(schema.workspaces.position), asc(schema.workspaces.name), asc(schema.workspaces.id))
       .limit(1);
-    return [me, first?.workspaceId ?? null];
+    return first?.workspaceId ?? null;
   }
   const boundary = {
     'server-only': {}, 'client-only': {},
@@ -75,6 +78,7 @@ async function recipientFixture(options = {}) {
     if (!options.actualAuth && name === 'src/server/auth') return {
       ACTIVE_WORKSPACE_COOKIE_NAME: 'tasks_active_ws', getCurrentUser,
       getCurrentUserAndActiveWorkspaceOrNull,
+      activeWorkspaceOrNullForUser,
       getCurrentUserOrNull: async () => state.actor,
       getActiveWorkspaceOrNull: async () => state.cookies.get('tasks_active_ws') ?? null,
     };

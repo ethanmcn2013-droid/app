@@ -14,8 +14,11 @@ test('task-action auth fixture resolves one actor and falls back only through li
     const before = f.state.authCalls;
     assert.deepEqual(await auth.getCurrentUserAndActiveWorkspaceOrNull(), ['creator', 'project-b']);
     assert.equal(f.state.authCalls, before + 1);
+    assert.equal(await auth.activeWorkspaceOrNullForUser('creator'), 'project-b');
+    assert.equal(f.state.authCalls, before + 1, 'actor-bound selection must not resolve identity again');
     await f.client.execute("DELETE FROM workspace_members WHERE workspace_id='project-b' AND user_id='creator'");
     assert.deepEqual(await auth.getCurrentUserAndActiveWorkspaceOrNull(), ['creator', null]);
+    assert.equal(await auth.activeWorkspaceOrNullForUser('creator'), null);
     assert.equal(f.state.authCalls, before + 2);
   } finally { f.close(); }
 });
