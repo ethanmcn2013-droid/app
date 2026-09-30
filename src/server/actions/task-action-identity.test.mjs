@@ -44,7 +44,8 @@ function fixture() {
   const users = { id: "users.id", clerkId: "users.clerkId" };
   const workspaceMembers = { userId: "members.userId", workspaceId: "members.workspaceId" };
   const tasks = { id: "tasks.id", workspaceId: "tasks.workspaceId", lane: "tasks.lane" };
-  const schema = { users, workspaceMembers, tasks };
+  const workspaces = { id: "workspaces.id", ownerUserId: "workspaces.ownerUserId" };
+  const schema = { users, workspaceMembers, tasks, workspaces };
   const eq = (column, value) => ({ kind: "eq", column, value });
   const and = (...parts) => ({ kind: "and", parts });
   const matches = (row, expression) => expression.kind === "and"
@@ -54,7 +55,8 @@ function fixture() {
     select() {
       return {
         from(table) {
-          return {
+          const query = {
+            innerJoin() { return query; },
             where(expression) {
               if (table === workspaceMembers) state.ambientReads++;
               const internalActor = state.mappedIds.get(state.actor) ?? state.actor;
@@ -65,7 +67,9 @@ function fixture() {
                     "members.userId": internalActor, "members.workspaceId": workspaceId, workspaceId,
                   }))
                   : table === tasks
-                    ? [{ "tasks.id": "task_alice", "tasks.workspaceId": "project_alice", id: "task_alice", lane: "todo" }]
+                    ? [{ "tasks.id": "task_alice", "tasks.workspaceId": "project_alice", id: "task_alice", workspaceId: "project_alice", lane: "todo" }]
+                    : table === workspaces
+                      ? [{ "workspaces.id": "project_alice", "workspaces.ownerUserId": "user_alice", id: "user_alice", clerkId: "user_alice" }]
                     : [];
               const selected = rows.filter((row) => matches(row, expression));
               return {
@@ -73,7 +77,7 @@ function fixture() {
                 limit: (count) => Promise.resolve(selected.slice(0, count)),
               };
             },
-          };
+          }; return query;
         },
       };
     },
@@ -82,11 +86,12 @@ function fixture() {
       return {
         set() {
           return {
-            async where() { counters.update++; },
+            where() { return { async returning() { counters.update++; return [{ id: "task_alice" }]; } }; },
           };
         },
       };
     },
+    transaction: async work => work(db),
   };
   const demo = { isDemoMode: () => state.demo };
   const authModule = loadSource(authPath, {
@@ -153,6 +158,9 @@ function fixture() {
     },
     "@/server/actions/private-task-db-write": { privateTaskDbWrite: (operation) => operation() },
     "@/server/actions/project-authz": {
+      authorizeStoredProject: async ({ storedProjectId, actorUserId }) =>
+        state.memberships.get(actorUserId)?.has(storedProjectId)
+          ? { ok: true, projectId: storedProjectId } : { ok: false },
       authorizeProjectCandidate: async ({ candidateProjectId, actorUserId }) => state.memberships.get(actorUserId)?.has(candidateProjectId)
         ? { ok: true, projectId: candidateProjectId }
         : { ok: false },
@@ -168,6 +176,8 @@ function fixture() {
     "@/lib/access-mode": demo,
     "@/server/demo/tasks-demo": { demoTasks: () => [{ id: "demo_task" }] },
     "@/lib/data": { LANE_ORDER: ["todo", "done"] },
+    "@/server/projects/project-deletion-fence": { assertProjectNotDeleting: async () => {} },
+    "@/server/account-deletion-lifecycle": { hasAccountDeletionStartedWith: async () => false },
   });
   return { counters, state, authModule, actionModule, timing };
 }
@@ -193,7 +203,7 @@ test("real update action resolves and provisions its actor once", async () => wi
   assert.deepEqual(await actionModule.updateTaskAction("task_alice", { title: "Changed" }), [{ id: "list_for_project_alice" }]);
   assert.deepEqual(counters, { auth: 1, currentUser: 1, provision: 1, update: 1, activity: 1, list: 1 });
   assert.deepEqual(timing.scopes, ["edit"]);
-  assert.deepEqual(timing.stages, ["identity", "projectProof", "projectProof", "writeAndActivity", "finalRead"]);
+  assert.deepEqual(timing.stages, ["identity", "writeAndActivity", "projectProof", "finalRead"]);
   assert.equal(state.ambientReads, 0);
 }));
 

@@ -107,6 +107,25 @@ async function neutralTaskList(ambient: string | null, actorUserId: UserId): Pro
   return ws ? getTasks(ws) : [];
 }
 
+/** Prove the stored Project and deletion fences on the immediate writer snapshot. */
+async function taskWriteTarget(executor: Pick<typeof db, "select">, id: string, me: UserId) {
+  const [target] = await executor.select({ workspaceId: tasks.workspaceId }).from(tasks).where(eq(tasks.id, id));
+  if (!target?.workspaceId) return null;
+  const grant = await authorizeStoredProject({
+    storedProjectId: target.workspaceId, capability: "createOrEditTasks", actorUserId: me, executor,
+  });
+  if (!grant.ok) return null;
+  const ws = grant.projectId;
+  await assertProjectNotDeleting(executor, ws);
+  const [actor] = await executor.select({ clerkId: users.clerkId }).from(users).where(eq(users.id, me)).limit(1);
+  if (!actor || await hasAccountDeletionStartedWith(executor, actor.clerkId ?? me)) return null;
+  const [owner] = await executor.select({ id: users.id, clerkId: users.clerkId }).from(workspaces)
+    .innerJoin(users, eq(users.id, workspaces.ownerUserId)).where(eq(workspaces.id, ws)).limit(1);
+  if (owner && await hasAccountDeletionStartedWith(executor, owner.clerkId ?? owner.id)) return null;
+  const [row] = await executor.select().from(tasks).where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
+  return row ? { ws, row } : null;
+}
+
 function nowSeconds(): number {
   return Math.floor(Date.now() / 1000);
 }
@@ -205,97 +224,38 @@ export async function moveTaskAction(
 export async function toggleCompleteAction(id: string): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
   return withTaskActionTiming("complete", async () => {
-  const me = await measureTaskStage("identity", () => withIdentityOutboundScope("taskAction", getCurrentUser));
-  const scope = await measureTaskStage("projectProof", () => scopeForTask(id, me));
-  if (!scope.ok) return neutralTaskList(await activeWorkspaceOrNullForUser(me), me);
-  const ws = scope.ws;
-  // Re-read under the proved Project: a foreign or moved row is refused here
-  // rather than toggled.
-  const [row] = await measureTaskStage("projectProof", () => db
-    .select()
-    .from(tasks)
-    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws))));
-  if (!row) return measureTaskStage("finalRead", () => getTasks(ws));
-
-  // Recurring tasks that are being completed don't go to "done", they
-  // bounce back to "todo" with the due date advanced by one interval.
-  const recurrence = row.recurrence;
-  if (recurrence && row.lane !== "done") {
-    await measureTaskStage("writeAndActivity", async () => {
-    const dateOnly = isDateOnlyDue(row.due, row.dueAt);
-    const nextDueAt = advanceRecurringDueAt(row.dueAt ?? new Date(), recurrence, dateOnly);
-    await db
-      .update(tasks)
-      .set({
-        lane: "todo",
-        boardColumnKey: null,
-        idleDays: null,
-        dueAt: nextDueAt,
-        due: dateOnly ? dateOnlyDueLabel(nextDueAt) : formatDueLabelForStorage(nextDueAt),
-        // The recurring task bounces back open, but a completion DID
-        // happen — completedAt records the moment it was last finished.
-        completedAt: new Date(),
+    const me = await measureTaskStage("identity", () => withIdentityOutboundScope("taskAction", getCurrentUser));
+    const outcome = await measureTaskStage("writeAndActivity", () => db.transaction(async (tx) => {
+      const target = await measureTaskStage("projectProof", () => taskWriteTarget(tx, id, me));
+      if (!target) return null;
+      const { ws, row } = target;
+      const recurring = Boolean(row.recurrence && row.lane !== "done");
+      const columnConfig = recurring ? null : await measureTaskStage("projectProof", () => readWorkspaceColumnConfig(ws, tx));
+      const wasDone = recurring ? false : isTaskDone(row, columnConfig);
+      const lane: LaneId = recurring ? "todo" : wasDone ? "todo" : "done";
+      const recurrenceUpdate = recurring ? (() => {
+        const dateOnly = isDateOnlyDue(row.due, row.dueAt);
+        const nextDueAt = advanceRecurringDueAt(row.dueAt ?? new Date(), row.recurrence!, dateOnly);
+        return { dueAt: nextDueAt, due: dateOnly ? dateOnlyDueLabel(nextDueAt) : formatDueLabelForStorage(nextDueAt) };
+      })() : {};
+      const updated = await privateTaskDbWrite(() => tx.update(tasks).set({
+        lane, boardColumnKey: null, idleDays: null,
+        ...(recurring ? { ...recurrenceUpdate, completedAt: new Date() } : completionStamp(wasDone, !wasDone)),
         ...bump(),
-      })
-      .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
-    await recordActivity(id, { kind: "toggleComplete", to: "done" }, { workspaceId: ws, userId: me });
-    // Recurrence path always records a completion — award milestones accordingly.
-    await maybeAwardCompletionMilestone(me, id).catch(() => {});
-    await recordSponsoredUse(
-      {
-        product: "tasks",
-        kind: "task_completed",
-        objectKey: id,
-        subjectId: me,
-        workspaceId: ws,
-      },
-      true,
-    );
-    });
+      }).where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws))).returning({ id: tasks.id }));
+      if (updated.length !== 1) return null;
+      await recordActivity(id, { kind: "toggleComplete", to: wasDone ? "open" : "done" },
+        { workspaceId: ws, userId: me, executor: tx });
+      if (!wasDone) await maybeAwardCompletionMilestone(me, id, { executor: tx, expectedWorkspaceId: ws });
+      return { ws, sponsoredKind: recurring ? "task_completed" as const : classifyLaneTransition(row.lane, lane) };
+    }, { behavior: "immediate" }));
+    if (!outcome) return neutralTaskList(await activeWorkspaceOrNullForUser(me), me);
+    if (outcome.sponsoredKind) await recordSponsoredUse({
+      product: "tasks", kind: outcome.sponsoredKind, objectKey: id, subjectId: me, workspaceId: outcome.ws,
+    }, true);
     revalidatePath("/app", "layout");
     emitTasksChanged({ kind: "tasks" });
-    return measureTaskStage("finalRead", () => getTasks(ws));
-  }
-
-  // Done-ness is the config predicate: a task in a custom done column
-  // reopens to todo; anything open completes into the canonical done
-  // lane. Both directions clear any custom-column claim so the card
-  // lands where the action says it does.
-  const columnConfig = await measureTaskStage("projectProof", () => readWorkspaceColumnConfig(ws));
-  const wasDone = isTaskDone(row, columnConfig);
-  const target: LaneId = wasDone ? "todo" : "done";
-  await measureTaskStage("writeAndActivity", async () => {
-  await db
-    .update(tasks)
-    .set({
-      lane: target,
-      boardColumnKey: null,
-      idleDays: null,
-      ...completionStamp(wasDone, !wasDone),
-      ...bump(),
-    })
-    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
-  await recordActivity(id, {
-    kind: "toggleComplete",
-    to: wasDone ? "open" : "done",
-  }, { workspaceId: ws, userId: me });
-  {
-    const transition = classifyLaneTransition(row.lane, target);
-    if (transition) {
-      await recordSponsoredUse(
-        { product: "tasks", kind: transition, objectKey: id, subjectId: me, workspaceId: ws },
-        true,
-      );
-    }
-  }
-  // Only award a milestone when the task actually became done.
-  if (!wasDone) {
-    await maybeAwardCompletionMilestone(me, id).catch(() => {});
-  }
-  });
-  revalidatePath("/app", "layout");
-  emitTasksChanged({ kind: "tasks" });
-  return measureTaskStage("finalRead", () => getTasks(ws));
+    return measureTaskStage("finalRead", () => getTasks(outcome.ws));
   });
 }
 
@@ -396,36 +356,10 @@ export async function updateTaskAction(
   if (isDemoMode()) return demoTasks();
   return withTaskActionTiming("edit", async () => {
   const me = await measureTaskStage("identity", () => withIdentityOutboundScope("taskAction", getCurrentUser));
-  const scope = await measureTaskStage("projectProof", () => scopeForTask(id, me));
-  if (!scope.ok) return neutralTaskList(await activeWorkspaceOrNullForUser(me), me);
-  const ws = scope.ws;
-  // Resolve the target through the *proved* Project before doing any
-  // side-effects. Without this read, a foreign id is a no-op update but
-  // still emits activity against the foreign task.
-  //
-  // This read stays even though `scopeForTask` has already touched the row:
-  // it re-reads under the proved scope, so a task that changed Project
-  // between the proof and the write is refused instead of updated, and the
-  // extra columns below are needed anyway. The ordering it pins —
-  // owned row resolved before any activity is emitted — is asserted by
-  // `tasks-security-regression.test.mjs`.
-  //
-  // The extra columns are for the sponsored-use diff: a patch that rewrites
-  // identical values is not a reassignment or a reschedule, and comparing
-  // costs nothing on a read this function already performs.
-  const [ownedTask] = await measureTaskStage("projectProof", () => db
-    .select({
-      id: tasks.id,
-      lane: tasks.lane,
-      assignees: tasks.assignees,
-      due: tasks.due,
-      dueAt: tasks.dueAt,
-      startDay: tasks.startDay,
-      durationDays: tasks.durationDays,
-    })
-    .from(tasks)
-    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws))));
-  if (!ownedTask) return measureTaskStage("finalRead", () => getTasks(ws));
+  const outcome = await measureTaskStage("writeAndActivity", () => db.transaction(async (tx) => {
+  const target = await measureTaskStage("projectProof", () => taskWriteTarget(tx, id, me));
+  if (!target) return null;
+  const { ws, row: ownedTask } = target;
   // Build the SET payload from only explicitly allowed columns.
   // This is an action-boundary allowlist, it strips ownership /
   // structural / identity columns (workspaceId, parentTaskId,
@@ -446,7 +380,7 @@ export async function updateTaskAction(
   // clear any custom-column claim and stamp the done transition so no
   // write path can change done-ness without moving completedAt (T·122).
   if ("lane" in cleaned) {
-    const columnConfig = await measureTaskStage("projectProof", () => readWorkspaceColumnConfig(ws));
+    const columnConfig = await measureTaskStage("projectProof", () => readWorkspaceColumnConfig(ws, tx));
     cleaned.boardColumnKey = null;
     Object.assign(
       cleaned,
@@ -456,23 +390,22 @@ export async function updateTaskAction(
       ),
     );
   }
-  // Workspace guard: a write only lands when the row belongs to the
-  // caller's active workspace. Without this clause an authenticated
-  // user who knows any task id could overwrite cross-tenant rows.
-  await measureTaskStage("writeAndActivity", async () => {
-  await privateTaskDbWrite(() => db
+  // Confirm the scoped row changed before activity or usage effects.
+  const updated = await privateTaskDbWrite(() => tx
     .update(tasks)
     .set({ ...cleaned, ...bump() })
-    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws))));
+    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)))
+    .returning({ id: tasks.id }));
+  if (updated.length !== 1) return null;
 
-  // Emit one activity per tracked field (parallel; observability,
-  // not transactional). Untracked fields like `idleDays` are skipped.
+  // Emit one best-effort activity per tracked field on this writer transaction.
+  // Untracked fields like `idleDays` are skipped.
   const trackedKeys = Object.keys(patch).filter((k): k is UpdateField =>
     TRACKED_UPDATE_FIELDS.has(k as UpdateField),
   );
   await Promise.all(
     trackedKeys.map((field) =>
-      recordActivity(id, { kind: "update", field }, { workspaceId: ws, userId: me }),
+      recordActivity(id, { kind: "update", field }, { workspaceId: ws, userId: me, executor: tx }),
     ),
   );
 
@@ -496,18 +429,16 @@ export async function updateTaskAction(
       );
       if (transition) emits.push(transition);
     }
-    for (const kind of emits) {
-      await recordSponsoredUse(
-        { product: "tasks", kind, objectKey: id, subjectId: me, workspaceId: ws },
-        true,
-      );
-    }
+    return { ws, emits };
   }
-  });
+  }, { behavior: "immediate" }));
+  if (!outcome) return neutralTaskList(await activeWorkspaceOrNullForUser(me), me);
+  for (const kind of outcome.emits) await recordSponsoredUse(
+    { product: "tasks", kind, objectKey: id, subjectId: me, workspaceId: outcome.ws }, true);
 
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });
-  return measureTaskStage("finalRead", () => getTasks(ws));
+  return measureTaskStage("finalRead", () => getTasks(outcome.ws));
   });
 }
 

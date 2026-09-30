@@ -1,5 +1,5 @@
 import "server-only";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "./index";
 import { notifications, tasks } from "./schema";
 import type { NotificationPayload, UserId } from "@/lib/data";
@@ -22,7 +22,9 @@ function newId(): string {
 export async function notify(
   userId: UserId,
   payload: NotificationPayload,
+  opts: { executor?: Pick<typeof db, "select" | "insert">; expectedWorkspaceId?: string } = {},
 ): Promise<void> {
+  const executor = opts.executor ?? db;
   // Don't notify yourself: an actor mentioning themselves shouldn't
   // ping their own inbox. Same guard for nudges (sendNudgeAction already
   // blocks self-nudge at the action layer; this is a belt-and-suspenders
@@ -40,13 +42,15 @@ export async function notify(
   const taskId =
     "taskId" in payload && payload.taskId ? payload.taskId : null;
   if (!taskId) return;
-  const [parent] = await db
+  const [parent] = await executor
     .select({ workspaceId: tasks.workspaceId })
     .from(tasks)
-    .where(eq(tasks.id, taskId));
+    .where(opts.expectedWorkspaceId
+      ? and(eq(tasks.id, taskId), eq(tasks.workspaceId, opts.expectedWorkspaceId))
+      : eq(tasks.id, taskId));
   if (!parent) return;
 
-  await db.insert(notifications).values({
+  await executor.insert(notifications).values({
     id: newId(),
     workspaceId: parent.workspaceId,
     userId,

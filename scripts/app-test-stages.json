@@ -20,7 +20,8 @@
     "src/server/diagnostics/task-timing.test.mjs",
     "scripts/test-provision-fast.test.mjs",
     "scripts/test-board-fidelity.test.mjs",
-    "src/server/actions/private-task-db-write.test.cjs"
+    "src/server/actions/private-task-db-write.test.cjs",
+    "src/server/actions/task-action-concurrency.test.cjs"
   ],
   [
     "node",

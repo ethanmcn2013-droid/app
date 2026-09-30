@@ -239,11 +239,13 @@ test("updateTaskAction resolves an owned row before emitting activity", () => {
   const end = actions.indexOf("export async function addTaskAction", start);
   assert.ok(start >= 0 && end > start);
   const body = actions.slice(start, end);
-  const ownedRead = body.indexOf("eq(tasks.id, id), eq(tasks.workspaceId, ws)");
+  const ownedRead = actions.indexOf("eq(tasks.id, id), eq(tasks.workspaceId, ws)", actions.indexOf("async function taskWriteTarget"));
   const activityWrite = body.indexOf("recordActivity(id");
-  assert.ok(ownedRead >= 0, "update must read the target with workspace scope");
-  assert.ok(activityWrite > ownedRead, "activity must follow the owned-row guard");
-  assert.match(body, /if\s*\(!ownedTask\)\s*return\s*(?:measureTaskStage\("finalRead",\s*\(\)\s*=>\s*)?getTasks\(ws\)/);
+  assert.ok(ownedRead >= 0, "shared writer must read the target with workspace scope");
+  assert.match(body, /taskWriteTarget\(tx, id, me\)/);
+  assert.ok(activityWrite > body.indexOf("if (updated.length !== 1) return null"),
+    "activity must follow the confirmed scoped update");
+  assert.match(body, /if \(!outcome\) return neutralTaskList\(/);
 });
 
 test("addTaskAction validates parent ownership and top-level shape", () => {

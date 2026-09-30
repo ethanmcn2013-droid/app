@@ -82,18 +82,18 @@ async function usageFixture(options = {}) {
         userAgentHint: userAgent ? userAgent.slice(0, 60) : null,
       }),
     };
-    if (file === "src/server/db/board-config-read.ts") return { readWorkspaceColumnConfig: async () => null };
-    if (file === "src/lib/board-columns.ts") return { isDoneColumnKey: lane => lane === "done",
+    if (file === "src/server/db/board-config-read.ts" && !options.actualBoardConfig) return { readWorkspaceColumnConfig: async () => null };
+    if (file === "src/lib/board-columns.ts" && !options.actualBoardConfig) return { isDoneColumnKey: lane => lane === "done",
       isTaskDone: row => row.lane === "done" };
     if (file === "src/server/db/seed.ts") return { LEGACY_WORKSPACE_ID: "legacy" };
     if (file === "src/server/events.ts") return { emitTasksChanged: () => {} };
     if (file === "src/server/demo/tasks-demo.ts") return { demoTasks: () => [] };
-    if (file === "src/server/milestones.ts") return { maybeAwardCompletionMilestone: async () => {} };
+    if (file === "src/server/milestones.ts" && !options.actualMilestones) return { maybeAwardCompletionMilestone: async () => {} };
     if (file.startsWith("src/server/attachments/")) return {};
     if (cache.has(file)) return cache.get(file).exports;
     const mod = { exports: {} }; cache.set(file, mod);
     if (file.endsWith(".json")) { mod.exports = JSON.parse(fs.readFileSync(root + "/" + file)); return mod.exports; }
-    const source = fs.readFileSync(root + "/" + file, "utf8");
+    const source = options.sourceOverrides?.[file] ?? fs.readFileSync(root + "/" + file, "utf8");
     const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
     const req = spec => {
       if (spec === "server-only") return {};
@@ -144,7 +144,7 @@ async function usageFixture(options = {}) {
   }
   const issued = options.seedClaim === false ? null : await seedClaim();
   const usageSchema = load("src/server/sponsored-use/schema.ts");
-  return { db, client, schema, usageSchema, state, load, now, issued, seedClaim,
+  return { db, client, directory, schema, usageSchema, state, load, now, issued, seedClaim,
     action: load("src/server/actions/tasks.ts").addTaskAction,
     counts: async () => {
       const out = {};

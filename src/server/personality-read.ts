@@ -21,11 +21,12 @@ import {
  */
 export async function readPersonalityPrefs(
   userId: string,
+  executor: Pick<typeof db, "get"> = db,
 ): Promise<PersonalityPrefs> {
   if (isDemoMode()) return { ...PERSONALITY_DEFAULTS };
 
   try {
-    const row = await db.get<{ value: string }>(sql`
+    const row = await executor.get<{ value: string }>(sql`
       SELECT value FROM meta WHERE key = ${`personality:${userId}`}
     `);
     if (!row) return { ...PERSONALITY_DEFAULTS };
