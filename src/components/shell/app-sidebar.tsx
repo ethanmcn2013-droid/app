@@ -34,8 +34,11 @@ import {
 import styles from "./shell.module.css";
 
 /** Stable project colour from its id: identity, never status. */
-/* v3 identity tokens: white initials pass AA on every hue (src/ds/v3.css). */
-const PROJECT_HUES = Array.from({ length: 8 }, (_, index) => `var(--v3-project-${index + 1})`);
+/* v3 identity tokens: white initials pass AA on every hue (src/ds/v3.css).
+   Amber (5), orange (6), red (7) and pink (8) are left out so an assigned
+   colour never reads as a warning or as late work next to a red count;
+   people can still pick them by hand. */
+const PROJECT_HUES = [1, 2, 3, 4, 9].map((n) => `var(--v3-project-${n})`);
 export function projectColor(id: string): string {
   let hash = 0;
   for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) >>> 0;

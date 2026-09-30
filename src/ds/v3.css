@@ -79,6 +79,8 @@ html:root {
   --v3-project-6: #c2410c;
   --v3-project-7: #dc2626;
   --v3-project-8: #be185d;
+  /* Purple: a fifth calm hue for assigned colours (white text 5.4:1). */
+  --v3-project-9: #9333ea;
   --v3-project-ink: #ffffff;
   --v3-tap: 44px;
   --x-accent-focus: var(--v3-accent);
