@@ -91,7 +91,7 @@ test('trusted actor/list readers stay server-only and outside the public action 
   assert.match(member, /^import "server-only";/);
   assert.match(tree, /^import "server-only";/);
   assert.doesNotMatch(action, /export (?:async )?function .*For(?:User|Workspaces)/);
-  assert.ok(shell.indexOf('await requireAppAccessTasks()') < shell.indexOf('startTasksRenderReads('));
+  assert.ok(shell.indexOf('await requireAppAccessTasks("tasksShell")') < shell.indexOf('startTasksRenderReads('));
   assert.ok(shell.indexOf('await isFirstRun(workspaceId)') < shell.indexOf('startTasksRenderReads('));
   assert.match(shell, /renderReads\.currentUser/);
   assert.match(shell, /renderReads\.myWorkspaces/);
@@ -104,7 +104,7 @@ test('the shell reuses only its own freshly proved actor after access, route and
   const route = readFileSync(routePath, 'utf8');
   const page = readFileSync(pagePath, 'utf8');
   const body = shell.slice(shell.indexOf('export async function TasksRuntimeShell'));
-  const access = body.indexOf('await requireAppAccessTasks()');
+  const access = body.indexOf('await requireAppAccessTasks("tasksShell")');
   const routeProof = body.indexOf('resolveProjectForRouteWithActor(');
   const firstRun = body.indexOf('await isFirstRun(workspaceId)');
   const graph = body.indexOf('startTasksRenderReads(');
