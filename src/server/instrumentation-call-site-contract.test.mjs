@@ -67,15 +67,19 @@ test("Notes emits the edit only after the compare-and-swap succeeded", () => {
 });
 
 test("task completion is classified, never assumed", () => {
-  assert.match(tasks, /classifyLaneTransition\(row\.lane, target\)/);
+  assert.match(tasks, /classifyLaneTransition\(row\.lane, lane\)/);
   assert.match(tasks, /classifyLaneTransition\(row\.lane, toLane\)/);
 });
 
 test("the update path diffs against a pre-read rather than trusting the patch", () => {
-  assert.match(tasks, /assignees: tasks\.assignees/);
-  assert.match(tasks, /startDay: tasks\.startDay/);
-  assert.match(tasks, /task_reassigned/);
-  assert.match(tasks, /task_rescheduled/);
+  const targetRead = tasks.slice(tasks.indexOf("async function taskWriteTarget"), tasks.indexOf("function nowSeconds"));
+  const update = tasks.slice(tasks.indexOf("export async function updateTaskAction"), tasks.indexOf("export async function addTaskAction"));
+  assert.match(targetRead, /executor\.select\(\)\.from\(tasks\)\.where\(and\(eq\(tasks\.id, id\), eq\(tasks\.workspaceId, ws\)\)\)/);
+  assert.match(update, /const \{ ws, row: ownedTask \} = target/);
+  assert.match(update, /JSON\.stringify\(ownedTask\[key\]\)/);
+  assert.match(update, /if \(changed\("assignees"\)\) emits\.push\("task_reassigned"\)/);
+  assert.match(update, /\["due", "dueAt", "startDay", "durationDays"\]\.some/);
+  assert.match(update, /emits\.push\("task_rescheduled"\)/);
 });
 
 test("Task write paths reuse one resolved subject for their ambient Project", () => {
