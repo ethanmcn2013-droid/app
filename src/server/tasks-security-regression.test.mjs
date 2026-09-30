@@ -336,14 +336,14 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   assertDemoGuardBefore(actions, "getTasksAction", "readableProjectOrNull");
   for (const name of [
     "moveTaskAction",
-    "toggleCompleteAction",
-    "updateTaskAction",
-    "addTaskAction",
     "reorderTaskAction",
     "removeTaskAction",
     "setTaskMilestoneAction",
   ]) {
     assertDemoGuardBefore(actions, name, "getCurrentUserAndActiveWorkspaceOrNull");
+  }
+  for (const name of ["toggleCompleteAction", "updateTaskAction", "addTaskAction"]) {
+    assertDemoGuardBefore(actions, name, "getCurrentUser");
   }
   // WP3 renegotiation (ADR 0001 §9). This guard's subject is the ORDERING —
   // demo/review must exit before the action resolves a tenant — and not the

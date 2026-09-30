@@ -35,6 +35,7 @@ function fixture() {
     noSession: false,
     failProvision: false,
     mappedIds: new Map(),
+    ambientReads: 0,
     memberships: new Map([
       ["user_alice", new Set(["project_alice"])],
       ["user_bob", new Set(["project_bob"])],
@@ -55,6 +56,7 @@ function fixture() {
         from(table) {
           return {
             where(expression) {
+              if (table === workspaceMembers) state.ambientReads++;
               const internalActor = state.mappedIds.get(state.actor) ?? state.actor;
               const rows = table === users
                 ? [ { "users.id": internalActor, "users.clerkId": state.actor, id: internalActor } ]
@@ -120,6 +122,7 @@ function fixture() {
     "@/lib/access-mode": demo,
     "@/server/projects/catalog": {
       firstMembershipByCatalogOrder: async (_db, actor) => {
+        state.ambientReads++;
         if (state.failCatalog) throw Error("catalog failed");
         return [...(state.memberships.get(actor) ?? [])].sort()[0] ?? null;
       },
@@ -186,11 +189,12 @@ async function withProductionEnvironment(run) {
 }
 
 test("real update action resolves and provisions its actor once", async () => withProductionEnvironment(async () => {
-  const { counters, actionModule, timing } = fixture();
+  const { counters, state, actionModule, timing } = fixture();
   assert.deepEqual(await actionModule.updateTaskAction("task_alice", { title: "Changed" }), [{ id: "list_for_project_alice" }]);
   assert.deepEqual(counters, { auth: 1, currentUser: 1, provision: 1, update: 1, activity: 1, list: 1 });
   assert.deepEqual(timing.scopes, ["edit"]);
   assert.deepEqual(timing.stages, ["identity", "projectProof", "projectProof", "writeAndActivity", "finalRead"]);
+  assert.equal(state.ambientReads, 0);
 }));
 
 test("forged or revoked cookie falls back only to the same actor's live membership", async () => withProductionEnvironment(async () => {
@@ -232,14 +236,40 @@ test("workspace proof uses a persisted internal ID distinct from the Clerk subje
 }));
 
 test("auth or provisioning failure cannot continue to task mutation", async () => withProductionEnvironment(async () => {
-  for (const failure of ["failAuth", "noSession", "failCurrentUser", "failProvision", "failCatalog"]) {
+  for (const failure of ["failAuth", "noSession", "failCurrentUser", "failProvision"]) {
     const { counters, state, actionModule } = fixture();
     state[failure] = true;
-    if (failure === "failCatalog") state.cookie = "project_bob";
     await assert.rejects(actionModule.updateTaskAction("task_alice", {}));
     assert.equal(counters.update, 0);
     assert.equal(counters.list, 0);
   }
+}));
+
+test("successful stored-Project edit ignores an unavailable ambient fallback", async () => withProductionEnvironment(async () => {
+  const { state, actionModule, counters } = fixture();
+  state.cookie = "project_bob";
+  state.failCatalog = true;
+  assert.deepEqual(await actionModule.updateTaskAction("task_alice", { title: "Changed" }),
+    [{ id: "list_for_project_alice" }]);
+  assert.equal(state.ambientReads, 0);
+  assert.deepEqual([counters.auth, counters.currentUser, counters.provision, counters.update], [1, 1, 1, 1]);
+}));
+
+test("missing target resolves the same actor's ambient Project only for its neutral reply", async () => withProductionEnvironment(async () => {
+  const { state, actionModule, counters } = fixture();
+  state.cookie = "project_bob";
+  assert.deepEqual(await actionModule.updateTaskAction("missing", {}), [{ id: "list_for_project_alice" }]);
+  assert.ok(state.ambientReads >= 2);
+  assert.deepEqual([counters.auth, counters.currentUser, counters.provision, counters.update], [1, 1, 1, 0]);
+}));
+
+test("explicit foreign create refuses without consulting ambient membership", async () => withProductionEnvironment(async () => {
+  const { state, actionModule, counters } = fixture();
+  state.failCatalog = true;
+  await assert.rejects(actionModule.addTaskAction({ title: "Denied", projectId: "project_bob" }),
+    /Task Project is unavailable/);
+  assert.equal(state.ambientReads, 0);
+  assert.deepEqual([counters.auth, counters.currentUser, counters.provision, counters.update], [1, 1, 1, 0]);
 }));
 
 const changedActions = [
@@ -280,11 +310,11 @@ test("demo action never reaches Clerk or provisioning", async () => withProducti
   assert.equal(counters.provision, 0);
 }));
 
-test("all paired Task actions use the one-resolution entry point", () => {
+test("only ambient-dependent Task actions use the paired entry point", () => {
   const source = readFileSync(actionsPath, "utf8");
   const direct = (source.match(/await getCurrentUserAndActiveWorkspaceOrNull\(\)/g) ?? []).length;
   const scoped = (source.match(/withIdentityOutboundScope\("taskAction", getCurrentUserAndActiveWorkspaceOrNull\)/g) ?? []).length;
-  assert.equal(direct + scoped, 9);
-  assert.equal(scoped, 3);
+  assert.equal(direct + scoped, 6);
+  assert.equal(scoped, 0);
   assert.doesNotMatch(source, /getCurrentUser\(\),\s*getActiveWorkspaceOrNull\(\)/);
 });

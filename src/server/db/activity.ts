@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "./index";
 import { activities, tasks } from "./schema";
 import { getCurrentUser } from "@/server/auth";
@@ -30,6 +30,17 @@ export async function recordActivity(
     // contract. Never infer it from taskId: a caller who knows a foreign
     // task id must not be able to create an activity row in that tenant.
     if (!opts.workspaceId) return;
+    if (opts.userId != null) {
+      // The actor is already resolved by the action. Keep the parent scope
+      // guard in the same statement as the write, so a moved or removed task
+      // cannot acquire an activity row between a separate read and insert.
+      await db.run(sql`INSERT INTO activities (id, workspace_id, task_id, user_id, kind, payload, created_at)
+        SELECT ${newActivityId()}, ${opts.workspaceId}, ${tasks.id}, ${opts.userId},
+          ${payload.kind}, ${JSON.stringify(payload)}, ${Math.floor(Date.now() / 1000)}
+        FROM ${tasks}
+        WHERE ${and(eq(tasks.id, taskId), eq(tasks.workspaceId, opts.workspaceId))}`);
+      return;
+    }
     const [parent] = await db
       .select({ workspaceId: tasks.workspaceId })
       .from(tasks)

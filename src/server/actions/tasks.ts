@@ -20,7 +20,7 @@ import {
 import { getSubtasks, getTasks } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
-import { getCurrentUser, getCurrentUserAndActiveWorkspaceOrNull } from "@/server/auth";
+import { activeWorkspaceOrNullForUser, getCurrentUser, getCurrentUserAndActiveWorkspaceOrNull } from "@/server/auth";
 import { withIdentityOutboundScope } from "@/server/diagnostics/identity-outbound";
 import { measureTaskStage, withTaskActionTiming } from "@/server/diagnostics/task-timing";
 import { privateTaskDbWrite } from "@/server/actions/private-task-db-write";
@@ -205,9 +205,9 @@ export async function moveTaskAction(
 export async function toggleCompleteAction(id: string): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
   return withTaskActionTiming("complete", async () => {
-  const [me, ambient] = await measureTaskStage("identity", () => withIdentityOutboundScope("taskAction", getCurrentUserAndActiveWorkspaceOrNull));
+  const me = await measureTaskStage("identity", () => withIdentityOutboundScope("taskAction", getCurrentUser));
   const scope = await measureTaskStage("projectProof", () => scopeForTask(id, me));
-  if (!scope.ok) return neutralTaskList(ambient, me);
+  if (!scope.ok) return neutralTaskList(await activeWorkspaceOrNullForUser(me), me);
   const ws = scope.ws;
   // Re-read under the proved Project: a foreign or moved row is refused here
   // rather than toggled.
@@ -395,9 +395,9 @@ export async function updateTaskAction(
 ): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
   return withTaskActionTiming("edit", async () => {
-  const [me, ambient] = await measureTaskStage("identity", () => withIdentityOutboundScope("taskAction", getCurrentUserAndActiveWorkspaceOrNull));
+  const me = await measureTaskStage("identity", () => withIdentityOutboundScope("taskAction", getCurrentUser));
   const scope = await measureTaskStage("projectProof", () => scopeForTask(id, me));
-  if (!scope.ok) return neutralTaskList(ambient, me);
+  if (!scope.ok) return neutralTaskList(await activeWorkspaceOrNullForUser(me), me);
   const ws = scope.ws;
   // Resolve the target through the *proved* Project before doing any
   // side-effects. Without this read, a foreign id is a no-op update but
@@ -550,7 +550,10 @@ export async function addTaskAction(input: {
 }): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
   return withTaskActionTiming("create", async () => {
-  const [me, ambient] = await measureTaskStage("identity", () => withIdentityOutboundScope("taskAction", getCurrentUserAndActiveWorkspaceOrNull));
+  const [me, ambient] = await measureTaskStage("identity", () => withIdentityOutboundScope("taskAction", async () => {
+    const actor = await getCurrentUser();
+    return [actor, input.projectId == null ? await activeWorkspaceOrNullForUser(actor) : null] as const;
+  }));
   const grant = await measureTaskStage("projectProof", () => authorizeProjectCandidate({
     candidateProjectId: input.projectId ?? ambient,
     capability: "createOrEditTasks",

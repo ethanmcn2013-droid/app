@@ -39,12 +39,30 @@ async function usageFixture(options = {}) {
       .limit(1);
     return [me, first?.workspaceId ?? null];
   }
+  async function activeWorkspaceOrNullForUser(me) {
+    // Same actor-bound, fail-closed selection as the production accessor.
+    if (state.ambient) {
+      const [match] = await db.select({ workspaceId: schema.workspaceMembers.workspaceId })
+        .from(schema.workspaceMembers)
+        .where(and(eq(schema.workspaceMembers.userId, me), eq(schema.workspaceMembers.workspaceId, state.ambient)))
+        .limit(1);
+      if (match) return state.ambient;
+    }
+    const [first] = await db.select({ workspaceId: schema.workspaceMembers.workspaceId })
+      .from(schema.workspaceMembers)
+      .innerJoin(schema.workspaces, eq(schema.workspaces.id, schema.workspaceMembers.workspaceId))
+      .where(eq(schema.workspaceMembers.userId, me))
+      .orderBy(asc(schema.workspaces.position), asc(schema.workspaces.name), asc(schema.workspaces.id))
+      .limit(1);
+    return first?.workspaceId ?? null;
+  }
   function load(name) {
     const file = [name, name + ".ts", name + ".tsx", name + "/index.ts"].find(f => fs.existsSync(root + "/" + f) && fs.statSync(root + "/" + f).isFile()) ?? name;
     if (file === "src/server/db/index.ts") return { db };
     if (file === "src/server/auth.ts") return {
       getCurrentUser,
       getCurrentUserAndActiveWorkspaceOrNull,
+      activeWorkspaceOrNullForUser,
       getActiveWorkspaceOrNull: async () => state.ambient,
     };
     if (file === "src/server/diagnostics/task-timing.ts") return {
@@ -65,11 +83,13 @@ async function usageFixture(options = {}) {
       }),
     };
     if (file === "src/server/db/board-config-read.ts") return { readWorkspaceColumnConfig: async () => null };
-    if (file === "src/lib/board-columns.ts") return { isDoneColumnKey: lane => lane === "done" };
+    if (file === "src/lib/board-columns.ts") return { isDoneColumnKey: lane => lane === "done",
+      isTaskDone: row => row.lane === "done" };
     if (file === "src/server/db/seed.ts") return { LEGACY_WORKSPACE_ID: "legacy" };
     if (file === "src/server/events.ts") return { emitTasksChanged: () => {} };
     if (file === "src/server/demo/tasks-demo.ts") return { demoTasks: () => [] };
-    if (file.startsWith("src/server/attachments/") || file === "src/server/milestones.ts") return {};
+    if (file === "src/server/milestones.ts") return { maybeAwardCompletionMilestone: async () => {} };
+    if (file.startsWith("src/server/attachments/")) return {};
     if (cache.has(file)) return cache.get(file).exports;
     const mod = { exports: {} }; cache.set(file, mod);
     if (file.endsWith(".json")) { mod.exports = JSON.parse(fs.readFileSync(root + "/" + file)); return mod.exports; }

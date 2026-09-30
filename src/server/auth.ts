@@ -252,7 +252,7 @@ export async function getCurrentUserAndActiveWorkspaceOrNull(): Promise<readonly
   return [me, await activeWorkspaceOrNullForUser(me)];
 }
 
-async function activeWorkspaceOrNullForUser(me: UserId): Promise<string | null> {
+export async function activeWorkspaceOrNullForUser(me: UserId): Promise<string | null> {
   if (isDemoMode()) return DEMO_WORKSPACE_ID;
 
   const c = await cookies();
