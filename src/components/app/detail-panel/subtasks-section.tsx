@@ -8,6 +8,7 @@ import {
   useTransition,
 } from "react";
 import type { Task } from "@/lib/data";
+import { useAuthoritativeTaskRevision } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { useActiveWorkspace, useColumnConfig } from "@/lib/domain-context";
 import { isTaskDone } from "@/lib/board-columns";
@@ -38,6 +39,7 @@ import sx from "./sheet-sections.module.css";
  * the parent thanks to `useTaskPanel`'s pushState contract.
  */
 export function SubtasksSection({ task }: { task: Task }) {
+  const authoritativeRevision = useAuthoritativeTaskRevision(task.id);
   const { openTask } = useTaskPanel();
   const activeWorkspace = useActiveWorkspace();
   const projectId = activeWorkspace?.id ?? task.workspaceId ?? undefined;
@@ -45,10 +47,7 @@ export function SubtasksSection({ task }: { task: Task }) {
   const [subtasks, setSubtasks] = useState<Task[] | null>(null);
   const [, startServerSync] = useTransition();
 
-  // Refresh whenever the parent task or its updatedAt changes, the
-  // latter catches server-side reconciliations after a child mutation
-  // (revalidatePath on the parent's /app layout flips updatedAt).
-  const refreshKey = task.updatedAt?.getTime();
+  // Server snapshots refresh this section; optimistic timestamp changes do not.
 
   useEffect(() => {
     let ignore = false;
@@ -67,7 +66,7 @@ export function SubtasksSection({ task }: { task: Task }) {
       ignore = true;
     };
 
-  }, [task.id, refreshKey]);
+  }, [task.id, authoritativeRevision]);
 
   const toggle = useCallback(
     (sub: Task) => {

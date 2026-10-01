@@ -16,7 +16,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Task } from "@/lib/data";
-import { useTasksDispatch, useTasksState } from "@/lib/tasks/tasks-context";
+import { useAuthoritativeTaskRevision, useTasksDispatch, useTasksState } from "@/lib/tasks/tasks-context";
 import { useColumnConfig, useDomain, useTagDefs, useWorkspaceAnchor, useWorkspaceMembers } from "@/lib/domain-context";
 import { effectiveColumnKey, isTaskDone, resolveBoardColumns } from "@/lib/board-columns";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
@@ -69,9 +69,10 @@ function isoFromLocal(date: Date): string {
 
 export function TaskSheet({ task, mode, onClose, onNavigate, onExpand, position, overlay = false }: TaskSheetProps) {
   const dispatchers = useTasksDispatch();
+  const authoritativeRevision = useAuthoritativeTaskRevision(task.id);
   const columnConfig = useColumnConfig();
   const done = isTaskDone(task, columnConfig);
-  const conversation = useTaskConversation(task);
+  const conversation = useTaskConversation(task, authoritativeRevision);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   // Keys inside the sheet: walk the view's order, open the full page, close.

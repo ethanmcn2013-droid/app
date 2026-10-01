@@ -139,6 +139,7 @@
     "src/lib/tasks/dayparts.test.ts",
     "src/lib/tasks/anchor-due.test.ts",
     "src/lib/tasks/stored-due-transition.test.ts",
+    "src/lib/tasks/authoritative-refresh.test.ts",
     "src/lib/tasks/delight-events.test.ts",
     "src/lib/project-truth-fixture.test.ts",
     "src/lib/public-task.test.ts",

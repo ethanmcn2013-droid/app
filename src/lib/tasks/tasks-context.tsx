@@ -9,6 +9,7 @@ import {
   useMemo,
   useReducer,
   useRef,
+  useState,
   type ReactNode,
 } from "react";
 import {
@@ -43,6 +44,7 @@ import { setParentAction } from "@/server/actions/set-parent";
 import { useRealtimeSync } from "./use-realtime-sync";
 import { beginTaskSync, type TaskAckOperation } from "./delight-events";
 import { maybeFireFirstCompletion } from "@/components/app/done-dopamine/first-completion-moment";
+import { reconcileAuthoritativeTasks, type AuthoritativeTaskVersions } from "./authoritative-refresh";
 
 /** Gap-numbered float position so inserts never need to renumber the
  *  whole lane. Conventions:
@@ -137,6 +139,7 @@ export type TasksDispatchers = {
 
 const TasksStateContext = createContext<TasksState | null>(null);
 const TasksDispatchContext = createContext<TasksDispatchers | null>(null);
+const AuthoritativeTaskContext = createContext<AuthoritativeTaskVersions | null>(null);
 
 function commitTasksState(
   _currentState: TasksState,
@@ -162,6 +165,10 @@ export function TasksProvider({
     tasks: (initialTasks ?? SEED_TASKS).map((t) => ({ ...t })),
     previousLane: initialPreviousLane ?? {},
   });
+  const [authoritativeVersions, setAuthoritativeVersions] = useState<AuthoritativeTaskVersions>(
+    () => reconcileAuthoritativeTasks(new Map(), initialTasks ?? SEED_TASKS),
+  );
+  const authoritativeVersionsRef = useRef(authoritativeVersions);
 
   // Track latest state so dispatchers can capture pre-mutation
   // snapshots for revert without becoming stale closures or being
@@ -182,6 +189,14 @@ export function TasksProvider({
     },
     [commitState],
   );
+  const hydrateAuthoritative = useCallback((fresh: Task[]) => {
+    const next = reconcileAuthoritativeTasks(authoritativeVersionsRef.current, fresh);
+    if (next !== authoritativeVersionsRef.current) {
+      authoritativeVersionsRef.current = next;
+      setAuthoritativeVersions(next);
+    }
+    dispatch({ type: "hydrate", tasks: fresh });
+  }, [dispatch]);
 
   // Realtime cross-tab sync: subscribe to SSE peer-mutation events
   // and replace local state with the server's authoritative result.
@@ -190,7 +205,7 @@ export function TasksProvider({
   useRealtimeSync({
     projectId,
     actorId,
-    onChange: (fresh) => dispatch({ type: "hydrate", tasks: fresh }),
+    onChange: hydrateAuthoritative,
   });
 
   // When the server-rendered layout passes a fresh `initialTasks`
@@ -202,8 +217,8 @@ export function TasksProvider({
     if (!initialTasks) return;
     if (initialTasks === lastInitialRef.current) return;
     lastInitialRef.current = initialTasks;
-    dispatch({ type: "hydrate", tasks: initialTasks });
-  }, [dispatch, initialTasks]);
+    hydrateAuthoritative(initialTasks);
+  }, [hydrateAuthoritative, initialTasks]);
 
   /** Run an optimistic action: dispatch locally for snappy UI, then
    *  reconcile with the server's authoritative result. Revert on
@@ -226,7 +241,7 @@ export function TasksProvider({
       startTransition(async () => {
         try {
           const fresh = await server();
-          dispatch({ type: "hydrate", tasks: fresh });
+          hydrateAuthoritative(fresh);
           finishSync();
         } catch (err) {
           console.warn("tasks: server action failed; reverting", err);
@@ -235,7 +250,7 @@ export function TasksProvider({
         }
       });
     },
-    [dispatch],
+    [dispatch, hydrateAuthoritative],
   );
 
   // Reconciliation belongs to this provider's displayed Project. The runtime
@@ -269,7 +284,7 @@ export function TasksProvider({
             // lanes reconcile through withServerSync and never re-read here.
             const landed = fresh.find((task) => task.id === id);
             const effective = landed ? landed.boardColumnKey || landed.lane : null;
-            if (effective === columnKey) dispatch({ type: "hydrate", tasks: fresh });
+            if (effective === columnKey) hydrateAuthoritative(fresh);
           } catch (err) {
             if (!mounted.current) return;
             console.warn("tasks: moveTaskToColumn failed; reverting", err);
@@ -360,7 +375,7 @@ export function TasksProvider({
         startTransition(async () => {
           try {
             const fresh = await duplicateTaskAction(id);
-            dispatch({ type: "hydrate", tasks: fresh });
+            hydrateAuthoritative(fresh);
             finishSync();
           } catch (err) {
             console.warn("tasks: duplicateTask failed", err);
@@ -380,7 +395,7 @@ export function TasksProvider({
           try {
             const result = await setParentAction(id, parentId);
             if (result.ok) {
-              dispatch({ type: "hydrate", tasks: result.tasks });
+              hydrateAuthoritative(result.tasks);
               finishSync();
             } else {
               console.warn("tasks: setParent failed;", result.error);
@@ -396,16 +411,25 @@ export function TasksProvider({
       },
     }),
 
-    [dispatch, withServerSync, projectId],
+    [dispatch, hydrateAuthoritative, withServerSync, projectId],
   );
 
   return (
-    <TasksStateContext.Provider value={state}>
-      <TasksDispatchContext.Provider value={dispatchers}>
-        {children}
-      </TasksDispatchContext.Provider>
-    </TasksStateContext.Provider>
+    <AuthoritativeTaskContext.Provider value={authoritativeVersions}>
+      <TasksStateContext.Provider value={state}>
+        <TasksDispatchContext.Provider value={dispatchers}>
+          {children}
+        </TasksDispatchContext.Provider>
+      </TasksStateContext.Provider>
+    </AuthoritativeTaskContext.Provider>
   );
+}
+
+/** Changes only when the server's task snapshot changes, never optimistically. */
+export function useAuthoritativeTaskRevision(taskId: string): number {
+  const versions = useContext(AuthoritativeTaskContext);
+  if (!versions) throw new Error("useAuthoritativeTaskRevision must be used within <TasksProvider>");
+  return versions.get(taskId)?.revision ?? 0;
 }
 
 export function useTasksState(): TasksState {

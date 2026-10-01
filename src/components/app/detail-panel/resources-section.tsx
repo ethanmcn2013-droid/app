@@ -11,6 +11,7 @@ import {
   type DragEvent,
 } from "react";
 import type { Task } from "@/lib/data";
+import { useAuthoritativeTaskRevision } from "@/lib/tasks/tasks-context";
 import { useCurrentUser } from "@/lib/auth-context";
 import { Avatar } from "@/components/showcase/avatar";
 import { EASE_OUT_TOKEN } from "@/components/primitives/anchored-layer";
@@ -177,10 +178,11 @@ function finalizeMessage(reason: string): string {
  * on local disk for local-disk deployments.
  */
 export function ResourcesSection({ task }: { task: Task }) {
-  return <TaskResources key={task.id} task={task} />;
+  const authoritativeRevision = useAuthoritativeTaskRevision(task.id);
+  return <TaskResources key={task.id} task={task} authoritativeRevision={authoritativeRevision} />;
 }
 
-function TaskResources({ task }: { task: Task }) {
+function TaskResources({ task, authoritativeRevision }: { task: Task; authoritativeRevision: number }) {
   const reduceMotion = useReducedMotion();
   const me = useCurrentUser();
   const { toast } = useToast();
@@ -214,8 +216,6 @@ function TaskResources({ task }: { task: Task }) {
     }
   });
 
-  const refreshKey = task.updatedAt?.getTime();
-
   useEffect(() => {
     let ignore = false;
     const sequence = ++resourceRead.current;
@@ -232,7 +232,7 @@ function TaskResources({ task }: { task: Task }) {
       ignore = true;
       resourceRead.current += 1;
     };
-  }, [task.id, refreshKey, reload]);
+  }, [task.id, authoritativeRevision, reload]);
 
   // ── Upload handler (unchanged path) ──────────────────────────────────
 

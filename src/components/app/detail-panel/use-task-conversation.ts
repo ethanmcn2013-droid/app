@@ -16,15 +16,13 @@ import { loadTaskConversationAction } from "@/server/actions/task-conversation";
 import type { TaskConversationSurface } from "@/server/conversations/task-history-loader";
 import { readTaskConversationWithSoftDeadline } from "@/components/app/task-detail/conversation-read";
 
-export function useTaskConversation(task: Task) {
+export function useTaskConversation(task: Task, authoritativeRevision: number) {
   const [resolved, setResolved] = useState<{ taskId: string; value: TaskConversationSurface } | null>(null);
   const surface = resolved?.taskId === task.id ? resolved.value : null;
   const [loading, setLoading] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
   const activeTaskRef = useRef<string | null>(task.id);
   const requestGenerationRef = useRef(0);
-
-  const refreshKey = task.updatedAt?.getTime();
 
   const beginRequest = useCallback((taskId: string) => {
     if (activeTaskRef.current !== taskId) return null;
@@ -98,7 +96,7 @@ export function useTaskConversation(task: Task) {
       signal.ignored = true;
       window.clearTimeout(timer);
     };
-  }, [task.id, refreshKey, fetchConversation]);
+  }, [task.id, authoritativeRevision, fetchConversation]);
 
   // Compatibility history is read-only, but authorization is still live.
   // Re-read only this mode so a removed Project member does not retain a
