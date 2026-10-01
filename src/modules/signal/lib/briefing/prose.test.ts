@@ -444,3 +444,18 @@ describe("phraseFor, voice rules from BRAND.md / COLLABORATION_LOOP.md", () => {
     assert.equal(a, b);
   });
 });
+
+test("all due-soon rotations keep exact-instant pressure without overstating time", () => {
+  for (let rotation = 0; rotation < 3; rotation++) {
+    const exact = phraseFor("due-soon", task(), rotation, { daysOut: 0, instantRemainingMs: 7_200_000 });
+    assert.match(exact, /two hours/);
+    const fractional = phraseFor("due-soon", task(), rotation,
+      { daysOut: 0, instantRemainingMs: 7_200_001 });
+    assert.match(fractional, /under two hours and one minute/);
+    assert.match(phraseFor("due-soon", task(), rotation,
+      { daysOut: 0, instantRemainingMs: 59_999 }), /under a minute/);
+    assert.doesNotMatch(phraseFor("due-soon", task(), rotation, { daysOut: 0 }), /hour|minute/);
+    assert.equal(phraseFor("due-soon", task(), rotation,
+      { daysOut: 0, pastToday: true, instantRemainingMs: 1 }), "Past its time today.");
+  }
+});

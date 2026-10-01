@@ -71,6 +71,10 @@ export async function buildBriefing(
   const crowded = detectCrowdedWeek(signals, now, timezone).filter(notDismissed);
   const blocked = detectBlockedTooLong(signals).filter(notDismissed);
   const blockingDueWork = detectBlockingDueWork(signals, now, timezone).filter(notDismissed);
+  // An open prerequisite can have its own deadline. Keep the winning row's
+  // trigger/rank/history identity, but retain the separately eligible and
+  // unsuppressed relationship in that row's explanation.
+  const dependencyByTask = new Map(blockingDueWork.map((item) => [item.task.id, item]));
   const prerequisitesComplete = detectPrerequisitesComplete(signals, now, timezone).filter(notDismissed);
 
   // Build a {taskId → title} map once so blocked-too-long prose can
@@ -164,7 +168,7 @@ export async function buildBriefing(
     ageOf(t) >= 2 ? { ...item, ageDays: ageOf(t) } : item;
 
   const needsAttention: BriefItem[] = freshFirst(attention).map((t) =>
-    withAge(t, toItem(t, rotationIndex, now, titlesById, timezone)),
+    withAge(t, toItem(t, rotationIndex, now, titlesById, timezone, dependencyByTask.get(t.task.id))),
   );
   const movingWell: BriefItem[] = moving.map((t) =>
     toItem(t, rotationIndex, now, titlesById, timezone),
@@ -216,8 +220,10 @@ function toItem(
   now: number,
   titlesById: Map<string, string>,
   timezone: string,
+  dependency?: Triggered,
 ): BriefItem {
-  const daysOut = deadlineDayDifference(signalDeadline(t.task), now, timezone) ?? undefined;
+  const deadline = signalDeadline(t.task);
+  const daysOut = deadlineDayDifference(deadline, now, timezone) ?? undefined;
   const blockedByTitles = t.task.blockedBy
     .map((id) => titlesById.get(id))
     .filter((title): title is string => Boolean(title));
@@ -225,21 +231,31 @@ function toItem(
   // phrasing is the observation about it. Rotation moves the
   // observation, never the title, so a reader who returns tomorrow
   // still recognises the same row.
-  const detail = phraseFor(t.trigger, t.task, rotation, {
+  const primaryDetail = phraseFor(t.trigger, t.task, rotation, {
     idleDays: t.task.idleDays ?? undefined,
     daysOut,
-    pastToday: t.trigger === "due-soon" && daysOut === 0 && deadlineIsOverdue(signalDeadline(t.task), now, timezone),
+    pastToday: t.trigger === "due-soon" && daysOut === 0 && deadlineIsOverdue(deadline, now, timezone),
+    instantRemainingMs: t.trigger === "due-soon" && deadline?.kind === "instant" && deadline.at > now
+      ? deadline.at - now : undefined,
     blockedByTitles,
     relatedTaskTitle: t.relatedTaskTitle,
     savedDateLabel: t.trigger === "prerequisites-complete" ? deadlineShortDate(signalDeadline(t.task), timezone) ?? undefined : undefined,
   });
+  const related = t.trigger === "due-soon" && dependency?.trigger === "blocking-due-work" &&
+    dependency.task.workspaceId === t.task.workspaceId
+    ? dependency : undefined;
+  const detail = related
+    ? `${primaryDetail} ${phraseFor("blocking-due-work", related.task, rotation, {
+        relatedTaskTitle: related.relatedTaskTitle,
+      })}`
+    : primaryDetail;
   return {
     id: t.task.id,
     text: headline(t),
     detail,
     sourceLabel: t.task.sourceLabel,
     trigger: t.trigger,
-    reasons: t.reasons,
+    reasons: related ? [...t.reasons, ...related.reasons] : t.reasons,
     workspaceId: t.task.workspaceId,
     planningPeriodId: t.task.planningPeriodId,
   };
