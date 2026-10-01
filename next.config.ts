@@ -306,6 +306,21 @@ const embedFrameHeaders = [
   ),
 ];
 
+// This optional browser-only diagnostic is compiled into one short-lived Preview.
+// Vercel supplies the deployment URL at build time; no host is guessed.
+const taskAckUntil = Number(process.env.SIGNAL_RELIABILITY_ATTEST_UNTIL_MS);
+const taskAckBuildEnabled =
+  process.env.SIGNAL_TASK_ACK_DIAGNOSTIC === "isolated-preview-task-ack-v1" &&
+  process.env.VERCEL === "1" && process.env.VERCEL_ENV === "preview" &&
+  process.env.VERCEL_TARGET_ENV === "preview" && process.env.NODE_ENV === "production" &&
+  process.env.SIGNAL_ACCESS_MODE === "production" &&
+  process.env.NEXT_PUBLIC_SIGNAL_ACCESS_MODE === "production" &&
+  process.env.SIGNAL_RELIABILITY_ATTEST === "isolated-reliability-v1" &&
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith("pk_test_") === true &&
+  /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.vercel\.app$/.test(process.env.VERCEL_URL ?? "") &&
+  Number.isSafeInteger(taskAckUntil) && taskAckUntil > Date.now() &&
+  taskAckUntil - Date.now() <= 6 * 60 * 60 * 1_000;
+
 const nextConfig: NextConfig = {
   // Dev-only: the floating dev-tools badge sits over the bottom-nav Home tab
   // at 375px and contaminates every mobile design capture. No production effect.
@@ -316,6 +331,9 @@ const nextConfig: NextConfig = {
     // literal on both sides of hydration; an unset production build still
     // fails closed inside access-mode.ts.
     NEXT_PUBLIC_SIGNAL_DEPLOYMENT_ENV: process.env.VERCEL_ENV ?? "",
+    NEXT_PUBLIC_SIGNAL_TASK_ACK_DIAGNOSTIC: taskAckBuildEnabled ? "isolated-preview-task-ack-v1" : "",
+    NEXT_PUBLIC_SIGNAL_TASK_ACK_ORIGIN: taskAckBuildEnabled ? `https://${process.env.VERCEL_URL}` : "",
+    NEXT_PUBLIC_SIGNAL_TASK_ACK_UNTIL_MS: taskAckBuildEnabled ? String(taskAckUntil) : "",
   },
   experimental: {
     // Tree-shake heavy barrel imports — Clerk is used in 17 files across

@@ -41,7 +41,7 @@ import { moveTaskToColumnAction } from "@/server/actions/board";
 import { isDemoMode } from "@/lib/access-mode";
 import { setParentAction } from "@/server/actions/set-parent";
 import { useRealtimeSync } from "./use-realtime-sync";
-import { beginTaskSync } from "./delight-events";
+import { beginTaskSync, type TaskAckOperation } from "./delight-events";
 import { maybeFireFirstCompletion } from "@/components/app/done-dopamine/first-completion-moment";
 
 /** Gap-numbered float position so inserts never need to renumber the
@@ -209,7 +209,7 @@ export function TasksProvider({
    *  reconcile with the server's authoritative result. Revert on
    *  failure. */
   const withServerSync = useCallback(
-    (optimistic: () => void, server: () => Promise<Task[]>) => {
+    (optimistic: () => void, server: () => Promise<Task[]>, operation: TaskAckOperation = "other") => {
       // Demo/review posture: the server actions are stateless no-ops that
       // return the seed, so reconciling would visibly revert every edit
       // ~1s after it was made — a board that appears to reject its user.
@@ -219,9 +219,10 @@ export function TasksProvider({
         optimistic();
         return;
       }
+      const startedAt = performance.now();
       const prior = stateRef.current.tasks;
       optimistic();
-      const finishSync = beginTaskSync();
+      const finishSync = beginTaskSync(operation, startedAt);
       startTransition(async () => {
         try {
           const fresh = await server();
@@ -230,7 +231,7 @@ export function TasksProvider({
         } catch (err) {
           console.warn("tasks: server action failed; reverting", err);
           dispatch({ type: "hydrate", tasks: prior });
-          finishSync(err);
+          finishSync(err, true);
         }
       });
     },
@@ -299,6 +300,7 @@ export function TasksProvider({
         withServerSync(
           () => dispatch({ type: "update", id, patch }),
           () => updateTaskAction(id, patch),
+          "edit",
         ),
       setMilestone: (id, isMilestone) =>
         withServerSync(
@@ -327,6 +329,7 @@ export function TasksProvider({
         withServerSync(
           () => dispatch({ type: "add", task }),
           () => addTaskAction({ ...input, id: task.id, projectId }),
+          "create",
         );
         return task;
       },
@@ -349,10 +352,11 @@ export function TasksProvider({
         withServerSync(
           () => dispatch({ type: "toggleComplete", id }),
           () => toggleCompleteAction(id),
+          "complete",
         );
       },
       duplicateTask: (id) => {
-        const finishSync = beginTaskSync();
+        const finishSync = beginTaskSync("other", performance.now());
         startTransition(async () => {
           try {
             const fresh = await duplicateTaskAction(id);
@@ -360,13 +364,14 @@ export function TasksProvider({
             finishSync();
           } catch (err) {
             console.warn("tasks: duplicateTask failed", err);
-            finishSync(err);
+            finishSync(err, true);
           }
         });
       },
       setParent: (id, parentId) => {
+        const startedAt = performance.now();
         const prior = stateRef.current.tasks;
-        const finishSync = beginTaskSync();
+        const finishSync = beginTaskSync("other", startedAt);
         // Optimistically remove from board when reparenting (task becomes a subtask
         // and leaves the flat lane view). Promoting to top-level (null) has no
         // optimistic visual since the task re-enters at an unknown position.
@@ -380,12 +385,12 @@ export function TasksProvider({
             } else {
               console.warn("tasks: setParent failed;", result.error);
               dispatch({ type: "hydrate", tasks: prior });
-              finishSync(new Error(result.error));
+              finishSync(new Error(result.error), true);
             }
           } catch (err) {
             console.warn("tasks: setParent threw; reverting", err);
             dispatch({ type: "hydrate", tasks: prior });
-            finishSync(err);
+            finishSync(err, true);
           }
         });
       },
