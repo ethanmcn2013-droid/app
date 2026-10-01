@@ -103,9 +103,9 @@ try {
   const html=`<!doctype html><html lang="en" data-theme="light"><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><link rel="stylesheet" href="/bundle.css"><style>${fontCss}\n:root{--font-geist-sans:Geist,Arial,sans-serif;--font-geist-mono:'Geist Mono',monospace}body{margin:0}#root{min-height:100vh}</style></head><body><div id="root"></div><script src="/bundle.js"></script></body></html>`;
   if(prepare){receipt.prepared={surfaces,projects:declaredProjects,widths:declaredProjects.map(project=>project.viewport.width),clientModules:[...f.clientModules]};console.log('Prepared actual route trees, browser bundle and CSS. No browser capture.');}
   else {
-    // Only actions exercised by this matrix: selection POST and detail reads.
+    // Only actions exercised by this matrix: selection POST and preference/catalog reads.
     // Imported write/provider actions remain visible UI but fail if invoked.
-    const allowedActions=new Set(['openTasksProjectAction','getSubtasksAction','loadTaskConversationAction','listTaskResourcesAction','getPersonalityPrefs','loadProjectCatalogAction']);
+    const allowedActions=new Set(['openTasksProjectAction','getPersonalityPrefs','loadProjectCatalogAction']);
     const requestErrors=[];
     const json=(res,value,status=200)=>{res.statusCode=status;res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');res.end(JSON.stringify(value));};
     function reviveArgs(value){if(!value||typeof value!=='object')return value;if(value.$form){const form=new FormData();for(const [key,entry] of value.$form)form.append(key,entry);return form;}return Array.isArray(value)?value.map(reviveArgs):Object.fromEntries(Object.entries(value).map(([key,entry])=>[key,reviveArgs(entry)]));}
@@ -119,6 +119,16 @@ try {
           if(!allowedActions.has(name)||!actionModules.get(file)?.has(name))throw Error('Action outside bounded fixture: '+name);
           try {json(res,{result:await f.load(file)[name](...reviveArgs(args))});}catch(error){if(error.href)json(res,{redirect:error.href});else throw error;}
           return;
+        }
+        if(url.pathname==='/api/tasks/detail-read'){
+          let body='';for await(const chunk of req){body+=chunk;if(body.length>65536)throw Error('Fixture body limit');}
+          // The actual route delegates to the same live identity/stored-task readers.
+          // This adapter replaces only Node HTTP -> Web Request, not authorization.
+          const response=await f.load('src/app/api/tasks/detail-read/route.ts').POST(new Request(
+            new URL(req.url,`http://${req.headers.host}`),{method:req.method,headers:req.headers,
+              ...(req.method==='GET'||req.method==='HEAD'?{}:{body})}));
+          res.statusCode=response.status;response.headers.forEach((value,name)=>res.setHeader(name,value));
+          res.end(Buffer.from(await response.arrayBuffer()));return;
         }
         if(url.pathname==='/api/events'){res.statusCode=204;res.end();return;}
         if(url.pathname.startsWith('/api/'))throw Error('API outside bounded fixture: '+url.pathname);
@@ -141,6 +151,17 @@ try {
         const context=await browser.newContext({viewport:{width,height},reducedMotion:'reduce'}),page=await context.newPage(),errors=[];
         page.on('pageerror',error=>{errors.push(error.message);console.error('BROWSER',error.message)});
         page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
+        await page.addInitScript(()=>{
+          const nativeFetch=window.fetch.bind(window);
+          window.fetch=(input,init)=>{
+            const url=new URL(typeof input==='string'?input:input.url,location.href);
+            if(url.origin===location.origin&&url.pathname==='/api/tasks/detail-read'){
+              const body=JSON.parse(init?.body??'null');
+              window.routeFixture?.requests.push({transport:'task-detail-read-http',section:body?.section,taskId:body?.taskId});
+            }
+            return nativeFetch(input,init);
+          };
+        });
         await page.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
         async function evidence(surface,state){
           const name=`${surface}-${state}-${width}`;
@@ -165,7 +186,12 @@ try {
           assert.equal(await page.getByText('ONLY A ARCHIVED TASK',{exact:true}).count(),0);
           assert.equal(await page.getByText('PRIVATE C TASK',{exact:true}).count(),0);
           if(surface.id==='tasks.page.app-tasks')await page.getByText('B arrival board',{exact:true}).first().waitFor({timeout:5000});
-          else if(f.state.v3)await page.locator('aside button[data-active]').filter({hasText:'Arrival project B'}).waitFor({timeout:5000});
+          else if(f.state.v3){
+            // Current shell marks the open Project, replacing the former Tasks tree.
+            const currentProject=page.getByRole('navigation',{name:'Projects',exact:true}).locator('button[data-current-project]');
+            await currentProject.getByText('Arrival project B',{exact:true}).waitFor({timeout:5000});
+            assert.equal(await currentProject.count(),1);
+          }
           assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
         }
         for(const surface of surfaces){
@@ -243,7 +269,7 @@ try {
         await page.getByRole('textbox',{name:'Task title',exact:true}).waitFor();
         assert.equal(await page.getByRole('textbox',{name:'Task title',exact:true}).inputValue(),'Confirm the guest access list');
         assert.equal(new URL(page.url()).searchParams.get('workspaceId'),'project-b');
-        await page.waitForFunction(()=>['loadTaskConversationAction','getSubtasksAction','listTaskResourcesAction'].every(name=>window.routeFixture.requests.some(r=>r.name===name)));
+        await page.waitForFunction(()=>['conversation','subtasks','resources'].every(section=>window.routeFixture.requests.some(r=>r.transport==='task-detail-read-http'&&r.section===section&&r.taskId==='undated-b')));
         await page.locator('[data-existing-task-history][data-read-only]').waitFor();
         const viewNav=page.getByRole('navigation',{name:'Task views'});
         for(const [label,pathname] of [['Board','/app/tasks'],['List','/app/tasks/list'],['Calendar','/app/tasks/calendar']]){

@@ -16,9 +16,9 @@ import type { ColumnConfig } from "@/lib/board-config";
 import { ReorderList, positionForDrop } from "@/components/ui/reorder-list";
 import {
   addTaskAction,
-  getSubtasksAction,
   updateTaskAction,
 } from "@/server/actions/tasks";
+import { readSubtasks } from "@/lib/tasks/detail-read-transport";
 import sx from "./sheet-sections.module.css";
 
 /**
@@ -51,7 +51,7 @@ export function SubtasksSection({ task }: { task: Task }) {
 
   useEffect(() => {
     let ignore = false;
-    getSubtasksAction(task.id)
+    readSubtasks(task.id)
       .then((rows) => {
         if (!ignore) setSubtasks(rows);
       })
@@ -130,7 +130,7 @@ export function SubtasksSection({ task }: { task: Task }) {
           });
           // Refetch so the temp row gets replaced by the real one with
           // its server-assigned id (so subsequent toggles work).
-          const fresh = await getSubtasksAction(task.id);
+          const fresh = await readSubtasks(task.id);
           setSubtasks(fresh);
         } catch (err) {
 
@@ -167,7 +167,7 @@ export function SubtasksSection({ task }: { task: Task }) {
           await updateTaskAction(moved.id, { position });
         } catch (err) {
           console.warn("subtasks: reorder failed; reverting", err);
-          const fresh = await getSubtasksAction(task.id);
+          const fresh = await readSubtasks(task.id);
           setSubtasks(fresh);
         }
       });

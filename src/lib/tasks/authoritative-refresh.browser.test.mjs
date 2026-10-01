@@ -13,7 +13,7 @@ export async function getSubtasksAction(id){window.actualReads.subtasks.push(id)
 export const addTaskAction=()=>Promise.reject(Error('unused'));export const duplicateTaskAction=addTaskAction;
 export const getTasksAction=addTaskAction;export const moveTaskAction=addTaskAction;export const removeTaskAction=addTaskAction;
 export const reorderTaskAction=addTaskAction;export const setTaskArchivedAction=addTaskAction;
-export const setTaskMilestoneAction=addTaskAction;export const toggleCompleteAction=addTaskAction;`,
+export const setTaskMilestoneAction=addTaskAction;export async function toggleCompleteAction(){window.completeDispatched=true;return await new Promise(resolve=>window.resolveToggle=resolve)}`,
   "@/server/actions/board": "export const moveTaskToColumnAction=()=>Promise.reject(Error('unused'));",
   "@/server/actions/set-parent": "export const setParentAction=()=>Promise.reject(Error('unused'));",
   "@/lib/access-mode": "export const isDemoMode=()=>false;",
@@ -60,8 +60,9 @@ import {useTaskConversation} from './src/components/app/detail-panel/use-task-co
 const root=createRoot(document.getElementById('root'));window.reads=[];
 window.actualReads={subtasks:[],resources:[],conversation:[]};window.linkEvents=[];
 window.readSubtasks=async()=>[];window.readResource=async()=>[];window.readConversation=async()=>({ok:true,value:{mode:'discussion',discussion:{}}});
-function Probe(){const state=useTasksState();const {updateTask}=useTasksDispatch();const task=state.tasks[0];const id=task?.id??'one';const revision=useAuthoritativeTaskRevision(id);
-  window.mutate=(target='one')=>updateTask(target,{title:'Optimistic'});useEffect(()=>{window.reads.push([id,revision])},[id,revision]);
+window.fetch=async (_url,init)=>{const {section,taskId}=JSON.parse(init.body);if(!Object.hasOwn(window.actualReads,section))throw Error('Unexpected detail section');window.actualReads[section].push(taskId);try{const value=await ({subtasks:window.readSubtasks,resources:window.readResource,conversation:window.readConversation})[section](taskId);return Response.json({value})}catch{return new Response(null,{status:500})}};
+function Probe(){const state=useTasksState();const {updateTask,toggleComplete}=useTasksDispatch();const task=state.tasks[0];const id=task?.id??'one';const revision=useAuthoritativeTaskRevision(id);
+  window.mutate=(target='one')=>updateTask(target,{title:'Optimistic'});window.toggle=(target='one')=>toggleComplete(target);useEffect(()=>{window.reads.push([id,revision])},[id,revision]);
   return <div><span id='title'>{task?.title}</span><span id='revision'>{revision}</span>
     {task?<><SubtasksSection key={task.id} task={task}/><ResourcesSection key={task.id} task={task}/><ConversationProbe task={task} revision={revision}/></>:null}</div>}
 function ConversationProbe({task,revision}){const c=useTaskConversation(task,revision);return <span id='conversation'>{c.surface?.mode??'empty'}</span>}
@@ -203,6 +204,37 @@ test("mounted provider suppresses optimistic detail reads, coalesces RSC, and re
     await page.waitForFunction(() => typeof window.resolveUnmountedConversation === "function" && document.getElementById("title")?.textContent === "Final refresh");
     await page.evaluate(() => window.stop());
     await page.evaluate(() => window.resolveUnmountedConversation({ ok: true, value: { mode: "discussion", discussion: {} } }));
+    assert.deepEqual(errors, []);
+    await page.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test("pending mounted detail HTTP reads do not queue update or completion dispatch", async () => {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    const errors = [];
+    page.on("pageerror", error => errors.push(error.message));
+    await page.setContent("<!doctype html><div id='root'></div>");
+    await page.addScriptTag({ content: built.outputFiles[0].text });
+    await page.evaluate(() => window.show([window.task("one")]));
+    await page.waitForFunction(() => Object.values(window.actualReads).every(rows => rows.length === 1));
+    await page.evaluate(() => {
+      window.readSubtasks = () => new Promise(resolve => { window.releaseSubtasks = resolve; });
+      window.readResource = () => new Promise(resolve => { window.releaseResources = resolve; });
+      window.readConversation = () => new Promise(resolve => { window.releaseConversation = resolve; });
+      window.peerHydrate([window.task("one", "Peer update")]);
+    });
+    await page.waitForFunction(() => Object.values(window.actualReads).every(rows => rows.length === 2));
+    await page.evaluate(() => window.mutate());
+    await page.waitForFunction(() => typeof window.resolveTaskAction === "function");
+    assert.deepEqual(await page.evaluate(() => Object.values(window.actualReads).map(rows => rows.length)), [2, 2, 2]);
+    await page.evaluate(() => window.resolveTaskAction([window.task("one", "Persisted")]));
+    await page.waitForFunction(() => document.getElementById("title")?.textContent === "Persisted");
+    await page.evaluate(() => window.toggle());
+    await page.waitForFunction(() => window.completeDispatched === true && typeof window.resolveToggle === "function");
     assert.deepEqual(errors, []);
     await page.close();
   } finally {

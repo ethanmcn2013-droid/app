@@ -12,7 +12,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Task } from "@/lib/data";
-import { loadTaskConversationAction } from "@/server/actions/task-conversation";
+import { readTaskConversation } from "@/lib/tasks/detail-read-transport";
 import type { TaskConversationSurface } from "@/server/conversations/task-history-loader";
 import { readTaskConversationWithSoftDeadline } from "@/components/app/task-detail/conversation-read";
 
@@ -49,7 +49,7 @@ export function useTaskConversation(task: Task, authoritativeRevision: number) {
 
       void readTaskConversationWithSoftDeadline({
         taskId,
-        load: loadTaskConversationAction,
+        load: readTaskConversation,
         isCurrent: () => !signal.ignored && isCurrentRequest(taskId, generation),
         onEvent: (event) => {
           if (event.kind === "slow") {
@@ -111,7 +111,7 @@ export function useTaskConversation(task: Task, authoritativeRevision: number) {
       if (generation === null) return;
       inFlight = true;
       try {
-        const result = await loadTaskConversationAction(task.id);
+        const result = await readTaskConversation(task.id);
         if (signal.ignored || !isCurrentRequest(task.id, generation)) return;
         setLoading(false);
         if (result.ok) setResolved({ taskId: task.id, value: result.value });

@@ -31,10 +31,28 @@ const boundaryPlugin = { name: 'explicit-drive-fixture-boundaries', setup(build)
   build.onLoad({ filter: /[\\/]project-drive-ui\.ts$/ }, args => ({ contents: fs.readFileSync(args.path, 'utf8').replace('process.env.NEXT_PUBLIC_PROJECT_DRIVE_UI', 'window.__driveFlag'), loader: 'ts' }));
   build.onResolve({ filter: /^@\/server\// }, args => { if (!Object.hasOwn(sources,args.path)) throw Error('Unexpected server import '+args.path); });
 } };
+// The real ResourcesSection now reads JSON over HTTP. Keep the existing local
+// list port (including deferred loading, failures and refreshed rows) as its fixture.
+const detailReadFetchAdapter = `(() => {
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = async (input, init) => {
+    const url = new URL(typeof input === 'string' ? input : input.url, location.href);
+    if (url.origin === location.origin && url.pathname === '/api/tasks/detail-read') {
+      const body = JSON.parse(init?.body ?? 'null');
+      if (init?.method !== 'POST' || new Headers(init.headers).get('content-type') !== 'application/json' ||
+          url.search || !body || Object.keys(body).sort().join(',') !== 'section,taskId' ||
+          body.section !== 'resources' || body.taskId !== 'drive-task') throw Error('Detail read outside acceptance slice');
+      const headers = {'Content-Type':'application/json','Cache-Control':'private, no-store, max-age=0',Vary:'Cookie'};
+      try { return new Response(JSON.stringify({value:await window.__drive.list(body.taskId)}), {headers}); }
+      catch { return new Response(null, {status:500,headers}); }
+    }
+    return nativeFetch(input, init);
+  };
+})();`;
 const client = path.join(path.dirname(fileURLToPath(import.meta.url)), 'client.jsx');
-const result = await esbuild.build({ entryPoints: [client], absWorkingDir: root, bundle: true, write: false, format: 'iife', platform: 'browser', jsx: 'automatic', alias: { '@': path.join(root,'src') }, nodePaths: [path.join(principal,'node_modules')], define: { 'process.env.NODE_ENV': '"production"', 'process.env': '{}' }, plugins: [boundaryPlugin] });
+const result = await esbuild.build({ banner: { js: detailReadFetchAdapter }, entryPoints: [client], absWorkingDir: root, bundle: true, write: false, format: 'iife', platform: 'browser', jsx: 'automatic', alias: { '@': path.join(root,'src') }, nodePaths: [path.join(principal,'node_modules')], define: { 'process.env.NODE_ENV': '"production"', 'process.env': '{}' }, plugins: [boundaryPlugin] });
 fs.writeFileSync(path.join(scratch,label+'.bundle.js'),result.outputFiles[0].contents);
-fs.writeFileSync(path.join(scratch,label+'.adapters.json'),JSON.stringify({root,source:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),port,sources,other:['Actual SectionHeader extracted verbatim to avoid importing unrelated Settings tree.','Actual flag function uses window fixture value in place of build environment.','Actual CurrentUserProvider with synthetic david; actual ToastRoot and upload controller/hooks.','Byte transfer and all action results are local injected ports; no provider/service/DB lifecycle claimed.','Normal frozen CSS/fonts copied from completed principal build.']},null,2));
+fs.writeFileSync(path.join(scratch,label+'.adapters.json'),JSON.stringify({root,source:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),port,sources,detailReadFetchAdapter,other:['Actual SectionHeader extracted verbatim to avoid importing unrelated Settings tree.','Actual flag function uses window fixture value in place of build environment.','Actual CurrentUserProvider with synthetic david; actual ToastRoot and upload controller/hooks.','Byte transfer and all action results are local injected ports; no provider/service/DB lifecycle claimed.','Normal frozen CSS/fonts copied from completed principal build.']},null,2));
 const css=fs.readdirSync(path.join(staticRoot,'chunks')).filter(file=>file.endsWith('.css'));
 const fontClasses=css.flatMap(file=>[...fs.readFileSync(path.join(staticRoot,'chunks',file),'utf8').matchAll(/\.([a-zA-Z0-9_-]+)\s*\{\s*--font-geist-(?:sans|mono):[^}]+}/g)].map(m=>m[1]));
 const server=http.createServer((req,res)=>{

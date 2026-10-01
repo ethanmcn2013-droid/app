@@ -32,10 +32,10 @@ import {
 } from "@/lib/upload-limit";
 import {
   addLinkResourceAction,
-  listTaskResourcesAction,
   removeResourceAction,
   type ResourceRow,
 } from "@/server/actions/resources";
+import { readTaskResources } from "@/lib/tasks/detail-read-transport";
 import { Popover } from "./popover";
 import sx from "./sheet-sections.module.css";
 import { isDemoMode } from "@/lib/access-mode";
@@ -208,7 +208,7 @@ function TaskResources({ task, authoritativeRevision }: { task: Task; authoritat
     // A completion returned by the probe alone never fabricates a visible row.
     const sequence = ++resourceRead.current;
     try {
-      const rows = await listTaskResourcesAction(task.id);
+      const rows = await readTaskResources(task.id);
       if (resourceRead.current === sequence) { setItems(rows.map(toDisplayRow)); setLoadFailed(false); }
     } catch {
       if (resourceRead.current === sequence) setLoadFailed(true);
@@ -219,7 +219,7 @@ function TaskResources({ task, authoritativeRevision }: { task: Task; authoritat
   useEffect(() => {
     let ignore = false;
     const sequence = ++resourceRead.current;
-    listTaskResourcesAction(task.id)
+    readTaskResources(task.id)
       .then((rows) => {
         if (!ignore && resourceRead.current === sequence) { setItems(rows.map(toDisplayRow)); setLoadFailed(false); }
       })
@@ -281,7 +281,7 @@ function TaskResources({ task, authoritativeRevision }: { task: Task; authoritat
             const result = await sendFile(task.id, file);
             window.clearTimeout(placeholderTimer);
             // Refresh from server to get the canonical resource row.
-            const rows = await listTaskResourcesAction(task.id);
+            const rows = await readTaskResources(task.id);
             setItems(rows.map(toDisplayRow));
             // Surface calm storage-usage warning if a threshold was crossed.
             if (result && result.warnThresholds.length > 0) {
