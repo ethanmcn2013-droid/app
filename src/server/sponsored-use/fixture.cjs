@@ -15,7 +15,7 @@ async function usageFixture(options = {}) {
   for (const file of fs.readdirSync(root + "/drizzle").filter(f => /^\d{4}_.+\.sql$/.test(f) && f >= "0014_").sort())
     await client.executeMultiple(fs.readFileSync(root + "/drizzle/" + file, "utf8"));
   let db;
-  const state = { actor: "owner", ambient: "a", demo: false, afterAuth: null };
+  const state = { actor: "owner", ambient: "a", demo: false };
   const cache = new Map();
   let visitSequence = 0;
   const getCurrentUser = async () => state.actor;
@@ -103,20 +103,6 @@ async function usageFixture(options = {}) {
       return dep(spec);
     };
     new Function("require", "module", "exports", "fetch", js)(req, mod, mod.exports, () => { throw Error("Real network forbidden"); });
-    if (file === "src/server/actions/project-authz.ts") {
-      const original = mod.exports.authorizeProjectCandidate;
-      mod.exports.authorizeProjectCandidate = async (...args) => {
-        const candidate = await original(...args);
-        // The fixture removes membership after preflight but before the
-        // action's immediate writer transaction reauthorizes stored truth.
-        if (state.afterAuth) {
-          const afterAuth = state.afterAuth;
-          state.afterAuth = null;
-          await afterAuth();
-        }
-        return candidate;
-      };
-    }
     return mod.exports;
   }
   const schema = load("src/server/db/schema.ts"); db = drizzle(client, { schema });

@@ -57,10 +57,21 @@ test("member task capability suffices; no project metadata change or new grant",
   assert.deepEqual(await f.db.select().from(f.schema.workspaces), before);
   assert.equal((await f.db.select().from(f.schema.entitlements)).length, 2);
 }));
-for (const denial of ["foreign", "removed-after-preflight", "archived", "account", "owner-account"])
+for (const denial of ["foreign", "removed-before-writer", "archived", "account", "owner-account"])
 test("actual action denies " + denial + " with no usage or task writes", () => fixture(async f => {
+  let writerBoundaryReached = 0;
+  let removedMemberships = 0;
   if(denial === "foreign") f.state.actor = "outsider";
-  if(denial === "removed-after-preflight") f.state.afterAuth = () => f.db.delete(f.schema.workspaceMembers).where(eq(f.schema.workspaceMembers.userId, "owner"));
+  if(denial === "removed-before-writer") {
+    const originalTransaction = f.db.transaction;
+    f.db.transaction = async function (work, options) {
+      writerBoundaryReached++;
+      // Commit the membership loss before the action starts its fresh writer proof.
+      const result = await f.client.execute("DELETE FROM workspace_members WHERE workspace_id='a' AND user_id='owner'");
+      removedMemberships += result.rowsAffected;
+      return originalTransaction.call(this, work, options);
+    };
+  }
   if(denial === "archived") await f.db.update(f.schema.workspaces).set({ archivedAt: new Date() }).where(eq(f.schema.workspaces.id, "a"));
   if(denial === "account") await f.load("src/server/account-deletion-lifecycle.ts").beginAccountDeletionWith(f.db, "clerk-owner");
   if(denial === "owner-account") {
@@ -72,6 +83,10 @@ test("actual action denies " + denial + " with no usage or task writes", () => f
     () => f.action({ id: "denied", title: "private", projectId: "a" }),
     /Task Project is unavailable/,
   );
+  if (denial === "removed-before-writer") {
+    assert.equal(writerBoundaryReached, 1, "the action must reach its writer transaction");
+    assert.equal(removedMemberships, 1, "membership loss must commit before the fresh proof");
+  }
   assert.deepEqual(await f.counts(), empty);
 }));
 test("flag-off and demo create no usage; wrong-project grant never supplies provenance", () => fixture(async f => {
