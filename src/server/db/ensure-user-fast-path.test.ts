@@ -46,6 +46,76 @@ function countStatements(database: ReturnType<typeof drizzle<typeof schema>>, fa
   return {database: counted, calls};
 }
 
+type FaultPlan = {
+  selectAt?: number;
+  runAt?: number;
+  error?: Error;
+  rejectedRead?: boolean;
+  rejectedWrite?: boolean;
+  beginError?: Error;
+  commitError?: Error;
+  rollbackError?: Error;
+  afterRollback?: () => Promise<void>;
+};
+
+/** Keep a real SQLite transaction while injecting faults at its actual await points. */
+function faultTransactions(
+  database: ReturnType<typeof drizzle<typeof schema>>,
+  plans: FaultPlan[],
+) {
+  const calls = {transactions: 0, selects: [] as number[], runs: [] as number[]};
+  const wrapped = new Proxy(database, {get(target, key, receiver) {
+    if (key !== "transaction") return Reflect.get(target, key, receiver);
+    return async (operation: (tx: typeof database) => Promise<boolean>, config: {behavior: "immediate"}) => {
+      const attempt = calls.transactions++;
+      const plan = plans[attempt] ?? {};
+      calls.selects[attempt] = 0;
+      calls.runs[attempt] = 0;
+      if (plan.beginError) throw plan.beginError;
+      let result: boolean;
+      try {
+        result = await target.transaction(async tx => operation(new Proxy(tx, {get(inner, method, innerReceiver) {
+          const original = Reflect.get(inner, method, innerReceiver);
+          if (method === "run") return (...args: unknown[]) => {
+            const ordinal = ++calls.runs[attempt];
+            if (plan.runAt === ordinal && plan.error) {
+              if (plan.rejectedWrite) return Promise.reject(plan.error);
+              throw plan.error;
+            }
+            return Reflect.apply(original, inner, args);
+          };
+          if (method !== "select") return original;
+          return (...args: unknown[]) => {
+            const ordinal = ++calls.selects[attempt];
+            const builder = Reflect.apply(original, inner, args);
+            const proxyBuilder = (value: object): object => new Proxy(value, {get(query, property, queryReceiver) {
+              const member = Reflect.get(query, property, queryReceiver);
+              if (typeof member !== "function") return member;
+              if (property === "then") return member.bind(query);
+              return (...queryArgs: unknown[]) => {
+                if (property === "limit" && plan.selectAt === ordinal && plan.error) {
+                  if (plan.rejectedRead) return Promise.reject(plan.error);
+                  throw plan.error;
+                }
+                const next = Reflect.apply(member, query, queryArgs);
+                return next && typeof next === "object" ? proxyBuilder(next) : next;
+              };
+            }});
+            return proxyBuilder(builder as object);
+          };
+        }}) as unknown as typeof database), config);
+      } catch (error) {
+        if (plan.afterRollback) await plan.afterRollback();
+        if (plan.rollbackError) throw plan.rollbackError;
+        throw error;
+      }
+      if (plan.commitError) throw plan.commitError;
+      return result;
+    };
+  }}) as typeof database;
+  return {database: wrapped, calls};
+}
+
 test("complete warm account does only tombstone and completeness reads, with no writes", async () => {
   const f = await freshDb();
   try {
@@ -254,5 +324,146 @@ test("failed fallback rolls back and a complete warm account still obeys tombsto
     const counted = countStatements(f.db);
     assert.equal(await ensureUserProvisionedWith(counted.database, actor), false);
     assert.deepEqual(counted.calls, {select: 1, run: 0});
+  } finally { f.cleanup(); }
+});
+
+test("transient tombstone and awaited completeness reads use fresh transactions", async () => {
+  const f = await freshDb();
+  try {
+    const actor = "user_retry_warm";
+    assert.equal(await ensureUserProvisionedWith(f.db, actor), true);
+    const tombstoneError = new Error("fetch failed", {cause: new Error("SocketError other side closed")});
+    const tombstone = faultTransactions(f.db, [{selectAt: 1, error: tombstoneError, rejectedRead: true}]);
+    assert.equal(await ensureUserProvisionedWith(tombstone.database, actor), true);
+    assert.deepEqual(tombstone.calls, {transactions: 2, selects: [1, 2], runs: [0, 0]});
+
+    const completenessError = new Error("fetch failed", {cause: new Error("SocketError other side closed")});
+    const completeness = faultTransactions(f.db, [{selectAt: 2, error: completenessError, rejectedRead: true}]);
+    assert.equal(await ensureUserProvisionedWith(completeness.database, actor), true);
+    assert.deepEqual(completeness.calls, {transactions: 2, selects: [2, 2], runs: [0, 0]});
+  } finally { f.cleanup(); }
+});
+
+test("pre-write retry stops after three attempts and does not retain a failed result", async () => {
+  const f = await freshDb();
+  try {
+    const actor = "user_retry_budget";
+    assert.equal(await ensureUserProvisionedWith(f.db, actor), true);
+    const errors = [0, 1, 2].map(n => new Error(`fetch failed ${n}`));
+    const succeeds = faultTransactions(f.db, errors.slice(0, 2).map(error => ({selectAt: 2, error})));
+    const started = Date.now();
+    assert.equal(await ensureUserProvisionedWith(succeeds.database, actor), true);
+    assert.deepEqual(succeeds.calls, {transactions: 3, selects: [2, 2, 2], runs: [0, 0, 0]});
+    assert.ok(Date.now() - started >= 100, "40 ms and 80 ms backoffs both elapsed");
+
+    const exhausted = faultTransactions(f.db, errors.map(error => ({selectAt: 2, error})));
+    await assert.rejects(ensureUserProvisionedWith(exhausted.database, actor), error => error === errors[2]);
+    assert.deepEqual(exhausted.calls, {transactions: 3, selects: [2, 2, 2], runs: [0, 0, 0]});
+    // A later call has its own budget, transaction and fresh completeness read.
+    assert.equal(await ensureUserProvisionedWith(exhausted.database, actor), true);
+    assert.equal(exhausted.calls.transactions, 4);
+  } finally { f.cleanup(); }
+});
+
+test("retry rechecks an account-deletion tombstone after the failed read rolls back", async () => {
+  const f = await freshDb();
+  try {
+    const actor = "user_retry_deletion";
+    const fault = new Error("fetch failed");
+    const injected = faultTransactions(f.db, [{selectAt: 1, error: fault,
+      afterRollback: async () => { await beginAccountDeletionWith(f.db, actor); }}]);
+    assert.equal(await ensureUserProvisionedWith(injected.database, actor), false);
+    assert.deepEqual(injected.calls, {transactions: 2, selects: [1, 1], runs: [0, 0]});
+    const users = await f.client.execute({sql: "SELECT count(*) AS n FROM users WHERE clerk_id=?", args: [actor]});
+    assert.equal(users.rows[0]?.n, 0);
+  } finally { f.cleanup(); }
+});
+
+test("first and later write failures, persisted-ID read failures, and commit failures never replay", async () => {
+  const f = await freshDb();
+  try {
+    const transient = new Error("fetch failed");
+    for (const [suffix, plan] of [
+      ["sync", {runAt: 1, error: transient}],
+      ["async", {runAt: 1, error: transient, rejectedWrite: true}],
+      ["persisted", {selectAt: 3, error: transient, rejectedRead: true}],
+      ["later", {runAt: 2, error: transient, rejectedWrite: true}],
+    ] as const) {
+      const actor = `user_retry_write_${suffix}`;
+      const injected = faultTransactions(f.db, [plan]);
+      await assert.rejects(ensureUserProvisionedWith(injected.database, actor), error => error === transient);
+      assert.equal(injected.calls.transactions, 1, suffix);
+      assert.equal(injected.calls.runs[0] >= 1, true, suffix);
+      const users = await f.client.execute({sql: "SELECT count(*) AS n FROM users WHERE clerk_id=?", args: [actor]});
+      assert.equal(users.rows[0]?.n, 0, `${suffix} rolled back`);
+    }
+
+    const completeActor = "user_retry_commit_warm";
+    assert.equal(await ensureUserProvisionedWith(f.db, completeActor), true);
+    const warmCommit = faultTransactions(f.db, [{commitError: transient}]);
+    await assert.rejects(ensureUserProvisionedWith(warmCommit.database, completeActor), error => error === transient);
+    assert.deepEqual(warmCommit.calls, {transactions: 1, selects: [2], runs: [0]});
+    await beginAccountDeletionWith(f.db, completeActor);
+    const deletionCommit = faultTransactions(f.db, [{commitError: transient}]);
+    await assert.rejects(ensureUserProvisionedWith(deletionCommit.database, completeActor), error => error === transient);
+    assert.deepEqual(deletionCommit.calls, {transactions: 1, selects: [1], runs: [0]});
+
+    // Model a successful commit whose response is lost: the transaction has
+    // applied writes, so even an apparently transient error cannot replay it.
+    const writtenActor = "user_written_commit_case";
+    const writtenCommit = faultTransactions(f.db, [{commitError: transient}]);
+    await assert.rejects(ensureUserProvisionedWith(writtenCommit.database, writtenActor), error => error === transient);
+    assert.equal(writtenCommit.calls.transactions, 1);
+    assert.ok(writtenCommit.calls.runs[0] > 0);
+    const written = await f.client.execute({sql: "SELECT count(*) AS n FROM users WHERE clerk_id=?", args: [writtenActor]});
+    assert.equal(written.rows[0]?.n, 1);
+  } finally { f.cleanup(); }
+});
+
+test("rollback, transaction setup, and nontransient failures propagate without retry", async () => {
+  const f = await freshDb();
+  try {
+    const readError = new Error("fetch failed");
+    const rollbackError = new Error("rollback failed");
+    const rollback = faultTransactions(f.db, [{selectAt: 1, error: readError, rollbackError}]);
+    await assert.rejects(ensureUserProvisionedWith(rollback.database, "user_retry_rollback"), error => error === rollbackError);
+    assert.equal(rollback.calls.transactions, 1);
+
+    const begin = faultTransactions(f.db, [{beginError: readError}]);
+    await assert.rejects(ensureUserProvisionedWith(begin.database, "user_retry_begin"), error => error === readError);
+    assert.equal(begin.calls.transactions, 1);
+
+    const malformed = new Error("no such column");
+    const nontransient = faultTransactions(f.db, [{selectAt: 2, error: malformed}]);
+    await assert.rejects(ensureUserProvisionedWith(nontransient.database, "user_retry_malformed"), error => error === malformed);
+    assert.deepEqual(nontransient.calls, {transactions: 1, selects: [2], runs: [0]});
+  } finally { f.cleanup(); }
+});
+
+test("same-subject serialization contains the full retry sequence and releases after failure", async () => {
+  const f = await freshDb();
+  try {
+    const actor = "user_retry_serialized";
+    assert.equal(await ensureUserProvisionedWith(f.db, actor), true);
+    let enterRollback!: () => void;
+    let releaseRollback!: () => void;
+    const entered = new Promise<void>(resolve => { enterRollback = resolve; });
+    const release = new Promise<void>(resolve => { releaseRollback = resolve; });
+    const fault = faultTransactions(f.db, [{selectAt: 2, error: new Error("fetch failed"),
+      afterRollback: async () => { enterRollback(); await release; }}]);
+    const first = ensureUserProvisionedWith(fault.database, actor);
+    await entered;
+    let secondSettled = false;
+    const second = ensureUserProvisionedWith(fault.database, actor).then(value => {
+      secondSettled = true;
+      return value;
+    });
+    await new Promise(resolve => setTimeout(resolve, 10));
+    assert.equal(secondSettled, false);
+    assert.equal(fault.calls.transactions, 1, "second call must wait for the retrying owner");
+    releaseRollback();
+    assert.equal(await first, true);
+    assert.equal(await second, true);
+    assert.deepEqual(fault.calls, {transactions: 3, selects: [2, 2, 2], runs: [0, 0, 0]});
   } finally { f.cleanup(); }
 });
