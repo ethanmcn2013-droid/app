@@ -37,14 +37,39 @@ test("actual action rolls task/activity/intent back when " + table + " fails; re
   await f.action({ id: "task-a", title: "private", projectId: "a" });
   assert.equal((await f.counts()).sponsored_use_intents, 1);
 }));
-test("member task capability suffices; no project metadata change or new grant", () => fixture(async f => {
+test("partner task uses the Project's sole gift; no project metadata change or new grant", () => fixture(async f => {
   f.state.actor = "member";
-  await f.seedClaim("member", "a", "b");
   const before = await f.db.select().from(f.schema.workspaces);
   await f.action({ id: "task-member", title: "member's task", projectId: "a" });
   assert.equal((await f.counts()).sponsored_use_intents, 1);
   assert.deepEqual(await f.db.select().from(f.schema.workspaces), before);
-  assert.equal((await f.db.select().from(f.schema.entitlements)).length, 2);
+  assert.equal((await f.db.select().from(f.schema.entitlements)).length, 1);
+}));
+test("overlapping Project comp grants fail closed for measurement without denying task access", () => fixture(async f => {
+  await f.seedClaim("member", "a", "b");
+  f.state.actor = "member";
+  await f.action({ id: "overlap", title: "private", projectId: "a" });
+  assert.equal((await f.counts()).tasks, 1);
+  assert.equal((await f.counts()).sponsored_use_intents, 0);
+}));
+test("recipient measurement withdrawal erases Project evidence while gift access remains", () => fixture(async f => {
+  await f.action({ id: "before-choice", title: "private", projectId: "a" });
+  await f.load("src/server/actions/preferences.ts").optOutOfSponsoredMeasurementAction();
+  const controls = await f.db.select().from(f.usageSchema.sponsoredUseIntents);
+  assert.equal(controls.length, 2);
+  assert.ok(controls.some(row => Object.keys(JSON.parse(row.payload)).join() === "workspaceIdHash,sponsorId"));
+  assert.equal((await f.db.select().from(f.schema.entitlements)).length, 1);
+  await f.action({ id: "after-choice", title: "private", projectId: "a" });
+  assert.equal((await f.counts()).tasks, 2);
+  assert.equal((await f.counts()).sponsored_use_intents, 2);
+  await f.load("src/server/actions/preferences.ts").optOutOfSponsoredMeasurementAction();
+  assert.equal((await f.counts()).sponsored_use_intents, 2);
+}));
+test("recipient withdrawal before any task still queues sponsor-scoped workspace erasure", () => fixture(async f => {
+  await f.load("src/server/actions/preferences.ts").optOutOfSponsoredMeasurementAction();
+  const controls = await f.db.select().from(f.usageSchema.sponsoredUseIntents);
+  assert.equal(controls.length, 1);
+  assert.deepEqual(Object.keys(JSON.parse(controls[0].payload)), ["workspaceIdHash", "sponsorId"]);
 }));
 for (const denial of ["foreign", "removed-after-preflight", "archived", "account", "owner-account"])
 test("actual action denies " + denial + " with no usage or task writes", () => fixture(async f => {
@@ -61,7 +86,8 @@ test("actual action denies " + denial + " with no usage or task writes", () => f
     () => f.action({ id: "denied", title: "private", projectId: "a" }),
     /Task Project is unavailable/,
   );
-  assert.deepEqual(await f.counts(), empty);
+  assert.deepEqual(await f.counts(), ["account", "owner-account"].includes(denial)
+    ? { ...empty, sponsored_use_intents: 1 } : empty);
 }));
 test("flag-off and demo create no usage; wrong-project grant never supplies provenance", () => fixture(async f => {
   delete process.env.SPONSOR_USAGE_EVENTS;
@@ -80,7 +106,8 @@ test("erasure fence removes receipts and retains exactly one pseudonymous contro
   const erase = f.load("src/server/account-deletion-lifecycle.ts").beginAccountDeletionWith;
   await erase(f.db, "clerk-owner"); await erase(f.db, "clerk-owner");
   const rows = await f.db.select().from(f.usageSchema.sponsoredUseIntents);
-  assert.equal(rows.length, 1); assert.equal(rows[0].kind, "erase"); assert.equal(rows[0].entitlementId, null);
+  assert.equal(rows.length, 2); assert.ok(rows.every(row => row.kind === "erase" && row.entitlementId === null));
+  assert.ok(rows.some(row => "workspaceIdHash" in JSON.parse(row.payload)));
   assert.ok(!JSON.stringify(rows).includes("clerk-owner"));
   await assert.rejects(
     () => f.action({ id: "late", title: "private", projectId: "a" }),
@@ -104,7 +131,7 @@ test("capture-off pauses positive delivery but keeps erasure and hard retention 
     send:async request=>{sent++;assert.ok(request.url.endsWith("/erase"));return Response.json({ok:true});}};
   assert.equal((await delivery(f.db,config)).delivered,0);assert.equal(sent,0);
   await f.load("src/server/account-deletion-lifecycle.ts").beginAccountDeletionWith(f.db,"clerk-owner");
-  assert.equal((await delivery(f.db,config)).delivered,1);
+  assert.equal((await delivery(f.db,config)).delivered,2);
   await delivery(f.db,{...config,now:f.now+36*86400000});
   assert.equal((await f.counts()).sponsored_use_intents,0);
 }));
@@ -114,6 +141,9 @@ for (const kind of ["event", "erase"]) test("exact bounded acknowledgement retai
   if(kind==="erase")await f.load("src/server/account-deletion-lifecycle.ts").beginAccountDeletionWith(f.db,"clerk-owner");
   const delivery=f.load("src/server/sponsored-use/delivery.ts").deliverUsage;
   const [original]=await f.db.select().from(f.usageSchema.sponsoredUseIntents);
+  if(kind==="erase") await f.db.delete(f.usageSchema.sponsoredUseIntents)
+    .where(eq(f.usageSchema.sponsoredUseIntents.id,
+      (await f.db.select().from(f.usageSchema.sponsoredUseIntents))[1].id));
   const config={enabled:kind==="event",studioOrigin:"http://studio.test",secret:"synthetic-secret-at-least-32-characters",now:f.now};
   const json=body=>new Response(body,{status:200,headers:{"content-type":"application/json"}});
   let oversizedCancelled=false;
@@ -144,6 +174,8 @@ for (const kind of ["event", "erase"]) test("exact bounded acknowledgement retai
 test("unfinished success JSON times out and leaves erasure retryable", () => fixture(async f => {
   await f.action({id:"slow-ack",title:"private",projectId:"a"});
   await f.load("src/server/account-deletion-lifecycle.ts").beginAccountDeletionWith(f.db,"clerk-owner");
+  const erasures=await f.db.select().from(f.usageSchema.sponsoredUseIntents);
+  await f.db.delete(f.usageSchema.sponsoredUseIntents).where(eq(f.usageSchema.sponsoredUseIntents.id,erasures[1].id));
   let cancelled=false;
   const result=await f.load("src/server/sponsored-use/delivery.ts").deliverUsage(f.db,{
     enabled:false,studioOrigin:"http://studio.test",secret:"synthetic-secret-at-least-32-characters",now:f.now,

@@ -25,6 +25,43 @@ test("actual authenticated App provenance binds durable event, exact canonical c
  const page=await (await f.handler(f.request({issuanceId:proof.issuanceId,cursor:"0"}))).json();
  assert.equal(page.claims.length,1);assert.equal(page.nextCursor,null);
 }));
+test("partner action is proved as the partner while the gift stays anchored to its recipient",()=>fixture(async f=>{
+  f.state.actor="member";
+  await f.action({id:"partner-task",title:"private",projectId:"a"});
+  const intents=await f.db.select().from(f.usageSchema.sponsoredUseIntents);
+  const partner=intents.find(row=>JSON.parse(row.payload).subjectIdHash!==JSON.parse(f.intent.payload).subjectIdHash);
+  assert.ok(partner);
+  const result=await (await f.handler(f.request({eventId:partner.id}))).json();
+  assert.equal(result.proof.subjectIdHash,JSON.parse(partner.payload).subjectIdHash);
+  assert.equal(result.proof.workspaceIdHash,JSON.parse(f.intent.payload).workspaceIdHash);
+  assert.equal(result.proof.measurementAllowed,true);
+  const page=await (await f.handler(f.request({issuanceId:f.issued.manifest.issuanceId,cursor:"0"}))).json();
+  assert.equal(page.claims.length,1);
+  assert.notEqual(page.claims[0].subjectIdHash,result.proof.subjectIdHash);
+}));
+test("recipient opt-out keeps claim in complete census as excluded while event proof disappears",()=>fixture(async f=>{
+  await f.load("src/server/actions/preferences.ts").optOutOfSponsoredMeasurementAction();
+  assert.equal((await (await f.handler(f.request({eventId:f.intent.id}))).json()).proof,null);
+  const page=await (await f.handler(f.request({issuanceId:f.issued.manifest.issuanceId,cursor:"0"}))).json();
+  assert.equal(page.claims.length,1);
+  assert.equal(page.claims[0].measurementAllowed,false);
+}));
+test("erased consumption cannot disappear from complete eligible census",()=>fixture(async f=>{
+  const canonical=f.load("src/server/venue-issuance/canonical.ts");
+  const code=f.issued.manifest.codes[0];
+  await f.db.delete(f.schema.entitlements).where(eq(f.schema.entitlements.id,"claim-owner"));
+  await f.db.insert(f.schema.meta).values({key:canonical.erasedConsumptionKey(f.issued.manifest.issuanceId,code.licenseCodeId),
+    value:JSON.stringify(canonical.erasedConsumptionReceipt(f.issued.manifest,code))});
+  const census=await f.handler(f.request({issuanceId:f.issued.manifest.issuanceId,cursor:"0"}));
+  assert.equal(census.status,503);
+}));
+test("a noncanonical overlapping Project comp grant invalidates the census",()=>fixture(async f=>{
+  await f.db.insert(f.schema.entitlements).values({id:"unrelated-comp",userId:"member",workspaceId:"a",
+    source:"comp",tier:"wedding",startedAt:new Date(f.now-1000),expiresAt:new Date(f.now+86400000),
+    notes:"comp:NONCANONICAL"});
+  const census=await f.handler(f.request({issuanceId:f.issued.manifest.issuanceId,cursor:"0"}));
+  assert.equal(census.status,503);
+}));
 for(const mutation of ["member","archive","revocation","owner-erasure","wrong-project","tamper"]){
  test("actual provenance refuses "+mutation,()=>fixture(async f=>{
   if(mutation==="member")await f.db.delete(f.schema.workspaceMembers).where(eq(f.schema.workspaceMembers.userId,"owner"));
@@ -34,6 +71,8 @@ for(const mutation of ["member","archive","revocation","owner-erasure","wrong-pr
   if(mutation==="wrong-project")await f.db.update(f.schema.entitlements).set({workspaceId:"b"});
   if(mutation==="tamper")await f.db.update(f.schema.meta).set({value:"{}"});
   assert.equal((await (await f.handler(f.request({eventId:f.intent.id}))).json()).proof,null);
+  const census=await f.handler(f.request({issuanceId:f.issued.manifest.issuanceId,cursor:"0"}));
+  assert.equal(census.status,503,"a present but unverifiable claim cannot lower a complete census");
  }));
 }
 test("provenance rejects foreign purpose/bounds and fails retryably on real store error",()=>fixture(async f=>{

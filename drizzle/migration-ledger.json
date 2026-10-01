@@ -512,6 +512,16 @@
       "policy": "forward",
       "receipt": "drizzle/receipts/project-drive-token-revocation-2026-09-23.json",
       "receiptSha256": "8e00d888797df1b0c208a703fb9a035a0ef4aac51d481b76b1df9b767accfbad"
+    },
+    {
+      "ordinal": 39,
+      "id": "0039_sponsored_measurement_choice",
+      "file": "drizzle/0039_sponsored_measurement_choice.sql",
+      "when": 1790812800000,
+      "sha256": "5c6e94d2305ef142d072266a6e69e7f9617eeadeaa129ecfaf947729b747e662",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/sponsored-measurement-choice-2026-10-01.json",
+      "receiptSha256": "150a1898cd5f12c8b5502264c112e5c1b9bdbcc3e64f3bffd1f43317bf898b10"
     }
   ]
 }
