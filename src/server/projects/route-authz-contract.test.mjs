@@ -48,6 +48,9 @@ function loadSourceWithMockedBoundaries(source, boundaries) {
   const loaded = { exports: {} };
   new Function("require", "module", "exports", compiled)(
     (name) => {
+      // Ordinary non-RSC calls remain fresh; render-guard-cache.test.mjs
+      // exercises the installed React server dispatcher and Flight renderer.
+      if (name === "react") return { cache: (work) => work };
       if (!Object.hasOwn(boundaries, name)) throw Error(`Unexpected fixture import ${name}`);
       return boundaries[name];
     }, loaded, loaded.exports,

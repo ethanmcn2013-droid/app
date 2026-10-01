@@ -41,6 +41,7 @@ import "server-only";
  */
 
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import type { UserId } from "@/lib/data";
 import { isDemoMode } from "@/lib/access-mode";
 import {
@@ -189,7 +190,7 @@ function toDecision(
  * the caller belongs to nothing, the answer is `empty` — never
  * `LEGACY_WORKSPACE_ID` (DECISIONS D-005).
  */
-export async function resolveProjectForRouteWithActor(
+async function resolveProjectForRouteWithActorFresh(
   requestedWorkspaceId?: string | readonly string[] | null,
 ): Promise<{ actorUserId: UserId; decision: RouteProjectDecision }> {
   if (isDemoMode()) return { actorUserId: DEMO_USER_ID, decision: demoDecision() };
@@ -208,11 +209,39 @@ export async function resolveProjectForRouteWithActor(
   return { actorUserId, decision };
 }
 
-/** Public route callers retain the existing neutral decision shape. */
+type RequestedClass = "absent" | "malformed" | "explicit";
+
+// Match request-scope's classification, but use primitive cache keys. In
+// particular, an array or malformed explicit URL must not become bare entry.
+function classifyRequestedForRender(value: string | readonly string[] | null | undefined): {
+  kind: RequestedClass;
+  id: string | null;
+} {
+  if (value === undefined || value === null || value === "") return { kind: "absent", id: null };
+  const id = parseProjectId(value);
+  return id === null ? { kind: "malformed", id: null } : { kind: "explicit", id };
+}
+
+const resolveForRender = cache(async (kind: RequestedClass, id: string | null) =>
+  resolveProjectForRouteWithActorFresh(
+    kind === "absent" ? undefined : kind === "malformed" ? " malformed " : id,
+  ),
+);
+
+/** Share identical page/shell proofs only within this RSC render. */
+export async function resolveProjectForRouteWithActor(
+  requestedWorkspaceId?: string | readonly string[] | null,
+): Promise<{ actorUserId: UserId; decision: RouteProjectDecision }> {
+  if (isDemoMode()) return { actorUserId: DEMO_USER_ID, decision: demoDecision() };
+  const key = classifyRequestedForRender(requestedWorkspaceId);
+  return resolveForRender(key.kind, key.id);
+}
+
+/** Also used by a Server Action: its identity and cookies must remain fresh. */
 export async function resolveProjectForRoute(
   requestedWorkspaceId?: string | readonly string[] | null,
 ): Promise<RouteProjectDecision> {
-  return (await resolveProjectForRouteWithActor(requestedWorkspaceId)).decision;
+  return (await resolveProjectForRouteWithActorFresh(requestedWorkspaceId)).decision;
 }
 
 /**

@@ -652,7 +652,7 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   const welcomeStart = boardPage.indexOf('if (sp.welcome === "venue")');
   const welcomeBody = boardPage.slice(welcomeStart);
   assert.ok(welcomeStart >= 0, "board must retain the venue welcome branch");
-  const resolverBody = routeAuthz.slice(routeAuthz.indexOf("export async function resolveProjectForRouteWithActor"));
+  const resolverBody = routeAuthz.slice(routeAuthz.indexOf("async function resolveProjectForRouteWithActorFresh"));
   assert.ok(
     resolverBody.indexOf("if (isDemoMode())") < resolverBody.indexOf("withRouteResolverIdentityTiming(getCurrentUser)"),
     "the route must resolve the demo actor before Clerk or provisioning",

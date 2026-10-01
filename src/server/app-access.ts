@@ -2,11 +2,16 @@ import "server-only";
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
+import { cache } from "react";
 import { isEmailAllowed } from "@/lib/access-allowlist";
 import { isProductionMode } from "@/lib/access-mode";
 import { db } from "@/server/db";
 import { users, workspaceMembers } from "@/server/db/schema";
 import { beginAppGateTiming, type AppGateSite } from "@/server/diagnostics/identity-timing";
+
+// Only the profile lookup is shared during one Server Component render. Each
+// gate still makes its own admission decision, including a live member read.
+const currentUserForRender = cache(async () => currentUser());
 
 /**
  * D-018 (grant-on-accept): Tasks-local access gate for /app surfaces.
@@ -33,7 +38,7 @@ export async function requireAppAccessTasks(site: AppGateSite = "other"): Promis
     // D-018: only enforce in production mode, exactly as the shared file does.
     if (!isProductionMode()) return;
 
-    const user = await timing.measure("profile", () => currentUser());
+    const user = await timing.measure("profile", () => currentUserForRender());
     const email = user
       ? (user.emailAddresses.find((e) => e.id === user.primaryEmailAddressId)
           ?.emailAddress ??

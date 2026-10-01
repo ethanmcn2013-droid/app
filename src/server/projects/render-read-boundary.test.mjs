@@ -99,7 +99,7 @@ test('trusted actor/list readers stay server-only and outside the public action 
   assert.match(shell, /renderReads\.edition/);
 });
 
-test('the shell reuses only its own freshly proved actor after access, route and first-run gates', () => {
+test('the shell consumes a route-proved actor after its own access and first-run gates', () => {
   const shell = readFileSync(shellPath, 'utf8');
   const route = readFileSync(routePath, 'utf8');
   const page = readFileSync(pagePath, 'utf8');
@@ -113,7 +113,7 @@ test('the shell reuses only its own freshly proved actor after access, route and
   assert.match(body.slice(graph), /\}, demo, actorUserId\)/);
   assert.match(route, /^import "server-only";/);
   assert.doesNotMatch(route, /^"use server";/);
-  assert.match(route, /export async function resolveProjectForRoute\([\s\S]*return \(await resolveProjectForRouteWithActor\(requestedWorkspaceId\)\)\.decision/);
+  assert.match(route, /export async function resolveProjectForRoute\([\s\S]*return \(await resolveProjectForRouteWithActorFresh\(requestedWorkspaceId\)\)\.decision/);
   assert.doesNotMatch(page, /<TasksRuntimePageMount[^>]*actorUserId/,
-    'the page must not hand its earlier actor to the separately authorized shell');
+    'the page must not pass an actor to the shell; the shell calls the route proof itself');
 });

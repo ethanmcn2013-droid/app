@@ -80,6 +80,7 @@
     "src/server/projects/active-project-contract.test.mjs",
     "src/server/actions/project-authz-contract.test.mjs",
     "src/server/projects/route-authz-contract.test.mjs",
+    "src/server/projects/render-guard-cache.test.mjs",
     "src/server/projects/render-read-boundary.test.mjs",
     "src/server/app-gate-contract.test.mjs",
     "src/server/app-gate-parity.test.mjs",
