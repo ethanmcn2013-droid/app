@@ -162,8 +162,7 @@ async function taskWriteTarget(executor: Pick<typeof db, "select">, id: string, 
   if (!await taskWriterState(executor, ws, me)) return null;
   // Drizzle's JSON columns can throw while mapping the result. Keep that
   // fallible read after deletion and account fences, as in the prior writer.
-  const [row] = await executor.select().from(tasks)
-    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
+  const [row] = await executor.select().from(tasks).where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
   return row ? { ws, row } : null;
 }
 
