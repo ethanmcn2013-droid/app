@@ -14,7 +14,7 @@ import { eq } from "drizzle-orm";
 import { signalAnalyticsDb as db } from "../db/signal-analytics-client";
 import { analyticsUsers } from "../db/signal-analytics-schema";
 import type { Cadence } from "../../lib/db/signal-prefs-schema";
-import { dataSource } from "../../lib/data/source";
+import { dataSource, type WorkspaceOnboarding } from "../../lib/data/source";
 import { storedDeadline } from "../../lib/data/deadline";
 import { buildBriefing } from "../../lib/briefing/build";
 import type { Briefing, TaskSignal } from "../../lib/briefing/types";
@@ -91,6 +91,26 @@ function captureSignals(inner: BriefingSource): {
 export const DEMO_BRIEFING_NOW = Date.parse(
   PINNED_REVIEW_CALENDAR_FRAME.nowIso,
 );
+
+/** Drain independent authorized reads; retain onboarding-first and read-state race errors. */
+export async function readBriefingContext(
+  onboarding: () => Promise<WorkspaceOnboarding | null>,
+  dismissed: () => Promise<Set<string>>,
+  ages: () => Promise<Map<string, number>>,
+) {
+  const onboardingRead = Promise.resolve().then(onboarding);
+  const dismissedRead = Promise.resolve().then(dismissed);
+  const agesRead = Promise.resolve().then(ages);
+  const [onboardingResult, stateResult] = await Promise.allSettled([
+    onboardingRead,
+    Promise.all([dismissedRead, agesRead]),
+    dismissedRead,
+    agesRead,
+  ] as const);
+  if (onboardingResult.status === "rejected") throw onboardingResult.reason;
+  if (stateResult.status === "rejected") throw stateResult.reason;
+  return [onboardingResult.value, stateResult.value] as const;
+}
 
 export async function buildBriefingForUser(opts: {
   clerkId: string;
@@ -276,8 +296,11 @@ export async function buildBriefingForUser(opts: {
   );
   const now = Date.now();
 
-  const onboarding =
-    (await dataSource.getWorkspaceOnboarding?.(workspaceIds[0]!)) ?? null;
+  const [onboarding, [suppressed, ages]] = await readBriefingContext(
+    async () => (await dataSource.getWorkspaceOnboarding?.(workspaceIds[0]!)) ?? null,
+    () => getDismissedKeys(clerkId),
+    () => getSurfacedAges(clerkId, now),
+  );
   const emptyCopy = getBriefingEmptyCopy({
     primaryUseCase:
       authorizedScope.period?.contextType === "wedding"
@@ -339,11 +362,6 @@ export async function buildBriefingForUser(opts: {
       );
     },
   };
-
-  const [suppressed, ages] = await Promise.all([
-    getDismissedKeys(clerkId),
-    getSurfacedAges(clerkId, now),
-  ]);
 
   const capture = captureSignals(source);
   const briefing = await buildBriefing(

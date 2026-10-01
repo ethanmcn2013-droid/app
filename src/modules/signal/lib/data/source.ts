@@ -453,6 +453,15 @@ function buildWorkRead(
     };
 }
 
+/** Bound callers to one batch; handle every rejection and retain the former serial error order. */
+export async function readSourceGroup<T extends readonly unknown[]>(
+  reads: { [K in keyof T]: () => PromiseLike<T[K]> },
+): Promise<T> {
+  const results = await Promise.allSettled(reads.map(read => Promise.resolve().then(read)));
+  for (const result of results) if (result.status === "rejected") throw result.reason;
+  return results.map(result => (result as PromiseFulfilledResult<unknown>).value) as unknown as T;
+}
+
 export const tasksDbSource: DataSource = {
   async read(workspaceId: string): Promise<WorkRead> {
     const reads = await this.readMany!([workspaceId]);
@@ -474,13 +483,13 @@ export const tasksDbSource: DataSource = {
     // rejects the complete operation instead of returning a partial snapshot.
     for (let offset = 0; offset < ids.length; offset += 50) {
       const batch = ids.slice(offset, offset + 50);
-      const rows = await tasksDb.select().from(tasksTable)
-        .where(and(inArray(tasksTable.workspaceId, batch), isNull(tasksTable.archivedAt), isNull(tasksTable.parentTaskId)))
-        .orderBy(asc(tasksTable.id));
-      const configurations = await readWorkspaceColumnConfigs(tasksDb, batch);
+      const [rows, configurations] = await readSourceGroup([
+        () => tasksDb.select().from(tasksTable)
+          .where(and(inArray(tasksTable.workspaceId, batch), isNull(tasksTable.archivedAt), isNull(tasksTable.parentTaskId)))
+          .orderBy(asc(tasksTable.id)),
+        () => readWorkspaceColumnConfigs(tasksDb, batch),
+      ] as const);
       if (Array.from(configurations.values()).some(config => config.unreadable)) throw new Error("Signal workspace column configuration unavailable");
-      const dependencies = await readOpenDependencies(tasksDb, rows, configurations);
-      const activity = await readCommentActivity(tasksDb, rows, now);
       const completionTargets = rows.filter(row => {
         const config = configurations.get(row.workspaceId!)!.config;
         // A custom terminal move has no historical event; an older canonical
@@ -489,7 +498,11 @@ export const tasksDbSource: DataSource = {
         // to resurrect a potentially superseded historical completion.
         return effectiveColumnKey(row) === "done" && isTaskDone(row, config) && row.completedAt === null;
       });
-      const historicalCompletions = await readCompletionHistory(tasksDb, completionTargets, now);
+      const [dependencies, activity, historicalCompletions] = await readSourceGroup([
+        () => readOpenDependencies(tasksDb, rows, configurations),
+        () => readCommentActivity(tasksDb, rows, now),
+        () => readCompletionHistory(tasksDb, completionTargets, now),
+      ] as const);
       for (const workspaceId of batch) {
         const columnConfig = configurations.get(workspaceId)!;
         const workspaceRows = rows.filter(row => row.workspaceId === workspaceId);

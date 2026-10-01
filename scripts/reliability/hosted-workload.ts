@@ -16,7 +16,8 @@ type Slot = ReturnType<typeof buildMixedWorkloadSchedule>["events"][number];
 type Observation = { logicalOperationId: string; attemptId: string; attemptNumber: number; journey: string; phase: string; latencyMs: number;
   serverTiming?: ReturnType<typeof parseHostedServerTiming>;
   response: { statusCode: number; valid: boolean; success: boolean; errorEnvelope: boolean }; acknowledged: boolean;
-  scopeAuthorized: boolean; actualProjectIds: string[]; unauthorizedContent: boolean; effectIds: string[]; bytes: number; finishedAtMs: number; errorCode?: string };
+  scopeAuthorized: boolean; actualProjectIds: string[]; unauthorizedContent: boolean; effectIds: string[]; bytes: number; finishedAtMs: number; errorCode?: string;
+  httpResponseObserved?: boolean; failureStage?: HostedAttemptStage; causeCategory?: HostedAttemptCauseCategory };
 type Expected = { id: string; journey: string; expectedOutcome: "write" | "read"; projectId: string };
 type Envelope = { ok: boolean; value?: Record<string, unknown>; code?: string };
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -162,6 +163,11 @@ export function validateHostedEnvelope(action: string, raw: unknown): raw is Env
 
 type MessageScope = { projectId: string; conversationId: string };
 type MessageScopeRow = { id: unknown; workspace_id: unknown; conversation_id: unknown; client_request_id: unknown; author_id: unknown };
+class HostedHistoryLookupUnverified extends Error {
+  constructor(readonly safeCauseCategory: HostedAttemptCauseCategory) {
+    super("hosted_history_scope_unverified");
+  }
+}
 type VisibilitySample = { repetition: number; initiationMs: number; postAckMs: number; priorToAck: boolean };
 type InFlightSend = { actorHash: string; actorId: string; began: number; repetition: number; measured: boolean };
 type PendingSend = InFlightSend & { acknowledgedAt: number };
@@ -238,7 +244,9 @@ export class HostedMessageVisibility {
     if (unknown.length) {
       let rows: MessageScopeRow[];
       try { rows = await lookup(unknown); }
-      catch { throw new Error("hosted_history_scope_unverified"); }
+      catch (error) {
+        throw new HostedHistoryLookupUnverified(hostedAttemptDiagnostic(error, "history_lookup_sql").causeCategory);
+      }
       if (!Array.isArray(rows)) throw new Error("hosted_history_scope_unverified");
       for (const row of rows) {
         if (typeof row.id !== "string" || !unknown.includes(row.id) || discovered.has(row.id) ||
@@ -289,6 +297,13 @@ export function committedEffectMatchesScope(action: string, rows: ReadonlyArray<
     (action !== "send" || rows[0].conversation_id === scope.conversationId);
 }
 
+export function classifyCommittedScope(action: string, rows: ReadonlyArray<Record<string, unknown>>, scope: MessageScope) {
+  return { actualProjectIds: rows.map((row) => String(row.workspace_id)),
+    scopeAuthorized: committedEffectMatchesScope(action, rows, scope),
+    unauthorizedContent: rows.some((row) => row.workspace_id !== scope.projectId ||
+      (action === "send" && row.conversation_id !== scope.conversationId)) };
+}
+
 function requestForSlot(slot: Slot, room: HostedFixture["rooms"][number], fixture: HostedFixture, origin: string) {
   const clientRequestId = `${fixture.fixtureNamespace.slice(0, 60)}_${slot.repetition}_${slot.sessionId}_${slot.journey.replaceAll(".", "_")}_${slot.atMs}`;
   const query = new URLSearchParams({ projectId: room.projectId, conversationId: room.conversationId });
@@ -324,6 +339,9 @@ export async function reconcileHostedEffects(client: Client, observations: Obser
 type HostedReconciliation = { ok: boolean; findings: Array<{ code: string; detail: string }> };
 type HostedFlushPhase = "receipt_reconciliation" | "metric_computation" | "receipt_persistence" | "unclassified";
 type HostedCauseCategory = "transport" | "timeout" | "filesystem" | "contract" | "unclassified";
+type HostedAttemptStage = "app_request" | "response_body" | "response_validation" |
+  "history_lookup_sql" | "history_scope_validation" | "write_effect_sql";
+type HostedAttemptCauseCategory = "transport" | "timeout" | "verification" | "response" | "unclassified";
 type HostedFlushDiagnostic = { phase: HostedFlushPhase; causeCategory: HostedCauseCategory };
 class HostedFlushFailure extends Error {
   constructor(readonly diagnostic: HostedFlushDiagnostic) { super("hosted_flush_failed"); }
@@ -340,6 +358,35 @@ export function hostedFlushDiagnostic(error: unknown, phase: HostedFlushPhase = 
   else if (["EEXIST", "ENOSPC", "EACCES", "EPERM", "ENOENT", "EROFS"].includes(code)) causeCategory = "filesystem";
   else if (phase === "metric_computation" && error instanceof Error) causeCategory = "contract";
   return { phase, causeCategory };
+}
+
+/** Fixed metadata only; never persist raw provider/SQL errors, URLs or response bodies. */
+export function hostedAttemptDiagnostic(error: unknown, stage: HostedAttemptStage):
+  { failureStage: HostedAttemptStage; causeCategory: HostedAttemptCauseCategory } {
+  if (error instanceof HostedHistoryLookupUnverified)
+    return { failureStage: stage, causeCategory: error.safeCauseCategory };
+  const code = object(error) && typeof error.code === "string" ? error.code : "";
+  const name = object(error) && typeof error.name === "string" ? error.name : "";
+  let causeCategory: HostedAttemptCauseCategory = "unclassified";
+  if (["ETIMEDOUT", "ESOCKETTIMEDOUT", "UND_ERR_CONNECT_TIMEOUT", "TIMEOUT", "APPLICATION_REQUEST_TIMEOUT"].includes(code) || name === "TimeoutError") causeCategory = "timeout";
+  else if (["ECONNRESET", "ECONNREFUSED", "ENETUNREACH", "EHOSTUNREACH", "EPIPE", "UND_ERR_SOCKET", "APPLICATION_REQUEST_FAILED"].includes(code)) causeCategory = "transport";
+  else if (code === "APPLICATION_RESPONSE_BODY_FAILED") causeCategory = "response";
+  else if (["history_lookup_sql", "history_scope_validation", "write_effect_sql"].includes(stage)) causeCategory = "verification";
+  else if (["response_body", "response_validation"].includes(stage)) causeCategory = "response";
+  return { failureStage: stage, causeCategory };
+}
+
+export function hostedFailureResponse(observedStatus: number | undefined, observedValid: boolean,
+  observedAppSuccess = false): Observation["response"] {
+  return { statusCode: observedStatus ?? 503, valid: observedStatus === undefined || observedValid,
+    success: observedStatus === 200 && observedValid && observedAppSuccess,
+    errorEnvelope: observedStatus === undefined };
+}
+/** Route acknowledgement and local verification are separate facts. */
+export function hostedUnverifiedAttemptEvidence(expectedOutcome: "write" | "read",
+  observedStatus: number | undefined, observedValid: boolean, observedAppSuccess: boolean) {
+  const response = hostedFailureResponse(observedStatus, observedValid, observedAppSuccess);
+  return { response, acknowledged: expectedOutcome === "write" && response.success };
 }
 type HostedBoundaryFailure = { repetition: number; reconciliation: HostedReconciliation;
   kind?: "reconciliation_failed" | "fatal_after_flush" | "flush_threw"; diagnostic?: HostedFlushDiagnostic };
@@ -548,6 +595,12 @@ export async function runHostedWorkload(input: HostedInput) {
         expectedOperations.push({ id: slot.logicalOperationId, journey: slot.journey, expectedOutcome, projectId: room.projectId });
         if (request.body) requests.set(slot.logicalOperationId, { actorId: actor.actorId, requestId: request.clientRequestId, conversationId: room.conversationId, projectId: room.projectId, task: request.action === "promote-task" });
         const began = performance.now(); let observation: Observation;
+        let failureStage: HostedAttemptStage = "app_request";
+        let observedHttpStatus: number | undefined;
+        let observedResponseValid = false;
+        let observedAppSuccess = false;
+        let observedHttpLatencyMs: number | undefined;
+        let observedBytes = 0;
         if (request.action === "send") visibility.beginSend(request.clientRequestId,
           { actorHash: actor.actorHash, actorId: actor.actorId, began, repetition: slot.repetition, measured: slot.phase === "measured" });
         try {
@@ -555,23 +608,33 @@ export async function runHostedWorkload(input: HostedInput) {
           appRequests++;
           const response = await manager.fetchAuthenticated(handles.get(slot.sessionId), request.url, { method: request.body ? "POST" : "GET", redirect: "manual",
             headers: { origin, ...(request.body ? { "content-type": "application/json" } : { accept: "text/html" }) }, body: request.body ? JSON.stringify(request.body) : undefined });
+          observedHttpStatus = response.status;
+          failureStage = "response_body";
           const body = await boundedResponseText(response);
+          observedBytes = body.bytes;
           const bodyReceivedAt = performance.now();
           const httpLatencyMs = performance.now() - began;
+          observedHttpLatencyMs = httpLatencyMs;
           let envelope: unknown;
           if (request.action !== "html") { try { envelope = JSON.parse(body.text); } catch { /* failed validation recorded below */ } }
+          failureStage = "response_validation";
           const valid = request.action === "html" ? response.headers.get("content-type")?.includes("text/html") === true && validateHostedHtml(slot.journey, body.text, room.projectName) : validateHostedEnvelope(request.action, envelope);
+          observedResponseValid = valid;
           const success = response.status === 200 && valid && (request.action === "html" || (envelope as Envelope).ok === true);
+          observedAppSuccess = success;
           const value = object(envelope) && object(envelope.value) ? envelope.value : {};
           let scopeAuthorized = false;
           let actualProjectIds: string[] = [];
           let unauthorizedContent = false;
           if (success && request.action === "history") {
+            failureStage = "history_scope_validation";
             const ids = (value.messages as Array<{ id: string }>).map((message) => message.id);
             const history = await visibility.observeHistory(ids, actor.actorHash, bodyReceivedAt,
               { projectId: room.projectId, conversationId: room.conversationId }, async (unknown) => {
+                failureStage = "history_lookup_sql";
                 verificationQueries++;
                 const rows = await client.execute({ sql: `SELECT id,workspace_id,conversation_id,client_request_id,author_id FROM conversation_messages WHERE id IN (${unknown.map(() => "?").join(",")})`, args: unknown });
+                failureStage = "history_scope_validation";
                 return rows.rows.map((row) => ({ id: row.id, workspace_id: row.workspace_id,
                   conversation_id: row.conversation_id, client_request_id: row.client_request_id, author_id: row.author_id }));
               });
@@ -580,14 +643,14 @@ export async function runHostedWorkload(input: HostedInput) {
             // HTML includes the explicitly requested synthetic Project marker; source row proof is provided by writer/reader checks.
             scopeAuthorized = true; actualProjectIds = [room.projectId];
           } else if (success && request.body) {
+            failureStage = "write_effect_sql";
             const committed = request.action === "send" ? await client.execute({ sql: "SELECT id,workspace_id,conversation_id FROM conversation_messages WHERE id=? AND client_request_id=? AND author_id=?",
               args: [String(value.messageId), request.clientRequestId, actor.actorId] }) : await client.execute({ sql: "SELECT t.id,t.workspace_id FROM tasks t JOIN work_operation_receipts r ON r.task_id=t.id WHERE t.id=? AND r.client_request_id=? AND r.actor_id=?",
               args: [String(value.taskId), request.clientRequestId, actor.actorId] });
             verificationQueries++;
-            actualProjectIds = committed.rows.map((row) => String(row.workspace_id));
-            scopeAuthorized = committedEffectMatchesScope(request.action, committed.rows,
-              { projectId: room.projectId, conversationId: room.conversationId });
-            unauthorizedContent = !scopeAuthorized;
+            ({ actualProjectIds, scopeAuthorized, unauthorizedContent } = classifyCommittedScope(request.action,
+              committed.rows, { projectId: room.projectId, conversationId: room.conversationId }));
+            if (!scopeAuthorized && !unauthorizedContent) throw new Error("hosted_write_effect_unverified");
             if (scopeAuthorized && request.action === "send") visibility.confirmSend(request.clientRequestId, String(value.messageId), bodyReceivedAt,
               { projectId: room.projectId, conversationId: room.conversationId });
           }
@@ -604,11 +667,16 @@ export async function runHostedWorkload(input: HostedInput) {
           if (!valid || unauthorizedContent || [401, 403].includes(response.status)) fatal = true;
         } catch (error) {
           const scopeUnverified = error instanceof Error && error.message === "hosted_history_scope_unverified";
-          if (scopeUnverified) fatal = true;
+          if (scopeUnverified || request.body) fatal = true;
+          const diagnostic = hostedAttemptDiagnostic(error, failureStage);
           observation = { logicalOperationId: slot.logicalOperationId, attemptId: `${slot.logicalOperationId}:attempt:1`, attemptNumber: 1, journey: slot.journey, phase: slot.phase,
-            latencyMs: performance.now() - began, response: { statusCode: 503, valid: true, success: false, errorEnvelope: true }, acknowledged: false,
-            scopeAuthorized: false, actualProjectIds: [], unauthorizedContent: false, effectIds: [], bytes: 0, finishedAtMs: performance.now() - start,
-            errorCode: scopeUnverified ? "history_scope_unverified" : "transport_failure" };
+            latencyMs: observedHttpLatencyMs ?? performance.now() - began,
+            ...hostedUnverifiedAttemptEvidence(expectedOutcome, observedHttpStatus, observedResponseValid, observedAppSuccess),
+            scopeAuthorized: false, actualProjectIds: [], unauthorizedContent: false, effectIds: [], bytes: observedBytes, finishedAtMs: performance.now() - start,
+            httpResponseObserved: observedHttpStatus !== undefined, ...diagnostic,
+            errorCode: scopeUnverified ? "history_scope_unverified" :
+              failureStage === "response_body" ? "response_unavailable" :
+                observedHttpStatus !== undefined ? "verification_unavailable" : "transport_failure" };
         }
         if (request.action === "send") visibility.cancelSend(request.clientRequestId);
         observations.push(observation);

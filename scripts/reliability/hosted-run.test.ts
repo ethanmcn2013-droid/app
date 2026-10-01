@@ -10,6 +10,7 @@ import { createConversationService } from "../../src/server/conversations/servic
 import { createConversationTaskOutcomeService } from "../../src/server/conversations/work-links";
 import { type HostedFixture } from "./hosted-seed";
 import { buildMixedWorkloadSchedule } from "./contracts/workload-schedule.mjs";
+import { JOURNEY_TARGETS } from "./contracts/result-reconciliation.mjs";
 import { previewScopedFetch, previewScopedAccessFetch, validateVercelProtectionCookie, cleanupHostedNamespace, runHostedLaunch, validateHostedPreflight, type HostedRunConfig } from "./hosted-run";
 
 const sha = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -38,6 +39,7 @@ function example() {
   const deliverySinks = [{ name: "conversation-delivery", configHash: digest("disabled"), mode: "disabled" }];
   const config: HostedRunConfig = {
     manifest: { schemaVersion: 1, runId, fixtureNamespace: namespace, environment, expectedTargetHashes: targetHashes, testActors,
+      acceptanceTargets: { ...JOURNEY_TARGETS },
       authentication, allowedOrigins: [origin], allowedNetworkOrigins: [origin, clerkIssuer, "https://api.clerk.com"],
       allowedDeliverySinks: deliverySinks, excludedStores: ["attachments"], executionMode: "hosted-authenticated-route" },
     expectedRuntime, productionExclusions: { origins: ["https://app.signalstudio.ie"], projectIds: [expectedRuntime.projectId],
@@ -87,6 +89,63 @@ test("same project Preview requires explicit authorization and still excludes pr
     (copy: HostedRunConfig) => { copy.productionExclusions.origins.push(copy.expectedRuntime.origin); },
     (copy: HostedRunConfig) => { copy.productionExclusions.storeHashes.push(copy.expectedRuntime.stores.TASKS_DATABASE_URL); },
   ]) { const changed = structuredClone(config); mutate(changed); assert.throws(() => validateHostedPreflight(changed, attestation)); }
+});
+
+test("malformed manifest field shapes and missing controls refuse before seed or output", async () => {
+  for (const field of ["authentication", "allowedOrigins", "allowedNetworkOrigins", "allowedDeliverySinks", "conversationControls"]) {
+    const { config, attestation } = example();
+    if (field === "conversationControls") Reflect.deleteProperty(attestation, field);
+    else Reflect.set(config.manifest, field, field === "authentication" ? null : "not-an-array");
+    const calls: string[] = [];
+    await assert.rejects(runHostedLaunch(config, true, {
+      fetchAttestation: async () => attestation,
+      seed: async () => { calls.push("seed"); throw new Error("unexpected_seed"); },
+      write: async () => { calls.push("write"); },
+      makeDirectory: async () => { calls.push("directory"); return undefined; },
+    }), field === "conversationControls" ? /hosted_conversation_controls_refused/ : /hosted_manifest_binding_mismatch/);
+    assert.deepEqual(calls, []);
+  }
+});
+
+test("missing seed result never starts workload or cleanup and retains the incomplete namespace", async () => {
+  const { config, attestation } = example();
+  const calls: string[] = [], records: Array<{ name: string; options: { flag: "wx" } }> = [];
+  const result = await runHostedLaunch(config, true, {
+    fetchAttestation: async () => attestation,
+    seed: async () => undefined,
+    workload: async () => { calls.push("workload"); throw new Error("unexpected_workload"); },
+    cleanup: async () => { calls.push("cleanup"); throw new Error("unexpected_cleanup"); },
+    write: async (name, _body, options) => { records.push({ name, options }); },
+    makeDirectory: async () => undefined,
+  });
+  assert.equal(result.completed, false);
+  assert.equal(result.runFailure, "hosted_fixture_missing");
+  assert.deepEqual(result.namespaceCleanup, { ok: false, retainedForReconciliation: true, code: "fixture_seed_incomplete_cleanup_requires_review" });
+  assert.deepEqual(calls, []);
+  assert.deepEqual(records.map(record => record.name), [join(config.outputDirectory, "preflight.json"), join(config.outputDirectory, "launcher-summary.json")]);
+  assert.ok(records.every(record => record.options.flag === "wx"));
+});
+
+test("missing, changed or extra hosted acceptance targets refuse before fixture seeding", async () => {
+  const { config, attestation } = example();
+  for (const mutate of [
+    (copy: HostedRunConfig) => { delete copy.manifest.acceptanceTargets; },
+    (copy: HostedRunConfig) => { copy.manifest.acceptanceTargets = { ...JOURNEY_TARGETS, "chat.send": 900 }; },
+    (copy: HostedRunConfig) => { copy.manifest.acceptanceTargets = { ...JOURNEY_TARGETS, extra: 2_000 }; },
+  ]) {
+    const changed = structuredClone(config); mutate(changed);
+    // Shared isolated-runtime preflight is also used by ordinary and cleanup tools.
+    assert.doesNotThrow(() => validateHostedPreflight(changed, attestation));
+    for (const execute of [false, true]) {
+      const calls: string[] = [];
+      await assert.rejects(runHostedLaunch(changed, execute, {
+        fetchAttestation: async () => { calls.push("attestation"); return attestation; },
+        seed: async () => { calls.push("seed"); throw new Error("unexpected_seed"); },
+        makeDirectory: async () => { calls.push("directory"); return undefined; },
+      }), /hosted_acceptance_targets_invalid/);
+      assert.deepEqual(calls, []);
+    }
+  }
 });
 
 test("Preview bypass is sent only to the pinned application origin", async () => {

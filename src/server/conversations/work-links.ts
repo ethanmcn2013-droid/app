@@ -11,7 +11,8 @@ import { createTaskInTransaction, prepareCanonicalTaskCreate, type TaskCreateOpe
 import * as schema from "@/server/db/schema";
 import { captureTaskCreated, type CaptureConfig } from "@/server/sponsored-use/capture";
 import type { ConversationDatabaseAdapter, ConversationSqlExecutor } from "./database";
-import { conversationWriteFencesClear } from "./write-fences";
+import { executeConversationBatch, type ConversationSqlStatement } from "./database";
+import { conversationProjectWriteFencesClear } from "./write-fences";
 
 export type PromoteMessageToTaskInput = Readonly<{
   clientRequestId: string;
@@ -234,8 +235,8 @@ export function createConversationTaskOutcomeService(
         }
         const access = await sourceAndDestination(executor, args.actorId, input, directMessagesEnabled);
         if (access !== "ok") return fail(access);
-        if (!await conversationWriteFencesClear(executor, args.actorId, input.sourceProjectId) ||
-            !await conversationWriteFencesClear(executor, args.actorId, input.destinationProjectId)) return fail("unavailable");
+        if (!await conversationProjectWriteFencesClear(executor, args.actorId,
+          [input.sourceProjectId, input.destinationProjectId])) return fail("unavailable");
         const taskId = `t-${hash(["conversation_task", args.actorId, input.clientRequestId]).slice(0, 24)}`;
         const workLinkId = `work-${hash([taskId, input.messageId, input.expectedRevision]).slice(0, 24)}`;
         const committedAt = Date.now();
@@ -250,16 +251,15 @@ export function createConversationTaskOutcomeService(
         // with the Task and cannot emit a duplicate on receipt replay.
         const captureDb = drizzle(executor as unknown as Client, { schema });
         await captureTaskCreated(captureDb, { actorUserId: args.actorId, projectId: input.destinationProjectId }, options.captureConfig);
-        await executor.execute({
+        const writes: ConversationSqlStatement[] = [{
           sql: `INSERT INTO work_links(id, source_project_id, source_conversation_id, source_message_id,
             source_revision, source_audience_epoch, destination_project_id, task_id, created_by, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           args: [workLinkId, input.sourceProjectId, input.conversationId, input.messageId, input.expectedRevision,
             input.expectedAudienceEpoch, input.destinationProjectId, taskId, args.actorId, committedAt],
-        });
-        await options.afterWrite?.("link");
+        }];
         const eventId = `event-${hash(["conversation_task", taskId]).slice(0, 24)}`;
-        await executor.execute({
+        writes.push({
           sql: `INSERT INTO suite_outbox(id, event_id, version, type, actor_user_id, workspace_id,
             object_ref, payload, trace_id, occurred_at, delivered_at, attempts, last_error)
             VALUES (?, ?, 1, 'task.created', ?, ?, ?, ?, ?, ?, NULL, 0, NULL)`,
@@ -267,15 +267,24 @@ export function createConversationTaskOutcomeService(
             JSON.stringify({ taskId, workLinkId }), JSON.stringify({ source: "conversation_message" }),
             input.clientRequestId, committedAt],
         });
-        await options.afterWrite?.("outbox");
-        await executor.execute({
+        writes.push({
           sql: `INSERT INTO work_operation_receipts(actor_id, client_request_id, operation, payload_hash,
             source_project_id, source_conversation_id, destination_project_id, task_id, work_link_id, committed_at)
             VALUES (?, ?, 'conversation_task', ?, ?, ?, ?, ?, ?, ?)`,
           args: [args.actorId, input.clientRequestId, payloadHash, input.sourceProjectId,
             input.conversationId, input.destinationProjectId, taskId, workLinkId, committedAt],
         });
-        await options.afterWrite?.("receipt");
+        if (options.afterWrite) {
+          // Preserve per-statement fault seams; the batch path has separate
+          // persisted statement-error coverage, not deferred hook callbacks.
+          const seams = ["link", "outbox", "receipt"] as const;
+          for (const [index, statement] of writes.entries()) {
+            await executor.execute(statement);
+            await options.afterWrite(seams[index]);
+          }
+        } else {
+          await executeConversationBatch(executor, writes);
+        }
         return { ok: true, value: { taskId, workLinkId, clientRequestId: input.clientRequestId, committedAt } };
       });
     } catch (error) {

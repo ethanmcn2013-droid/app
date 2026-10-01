@@ -47,10 +47,12 @@ async function getRuntimeServices(): Promise<RuntimeServices> {
   // also the executor for its membership proof and subsequent source write.
   const adapter = target.mode === "remote"
     ? createRemoteConversationDatabaseAdapter({ client: {
+        execute,
         transaction: async (mode) => {
           const transaction = await client.transaction(mode);
           return {
             execute: (statement) => transaction.execute(typeof statement === "string" ? statement : { sql: statement.sql, args: [...(statement.args ?? [])] }),
+            batch: (statements) => transaction.batch(statements.map(statement => typeof statement === "string" ? statement : { sql: statement.sql, args: [...(statement.args ?? [])] })),
             commit: () => transaction.commit(),
             rollback: () => transaction.rollback(),
           };

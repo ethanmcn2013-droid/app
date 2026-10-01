@@ -4,6 +4,7 @@ import { resolve, basename, join, relative, isAbsolute } from "node:path";
 import { createClient } from "@libsql/client";
 import { validateTargetManifest } from "./contracts/target-manifest.mjs";
 import { buildMixedWorkloadSchedule, WORKLOAD } from "./contracts/workload-schedule.mjs";
+import { JOURNEY_TARGETS } from "./contracts/result-reconciliation.mjs";
 import { createAuthenticatedSessionManager } from "./authenticated-sessions.mjs";
 import { hostedTargetHash, seedHostedFixture, type HostedActor, type HostedFixture, type HostedManifest } from "./hosted-seed";
 import { runHostedWorkload, sessionCleanupAccepted } from "./hosted-workload";
@@ -15,7 +16,7 @@ const SHA = /^[a-f0-9]{40}$/;
 const ATTACHMENTS_DISABLED = hostedTargetHash("isolated-preview-native-attachments-disabled-v1");
 const DELIVERY_SINK = { name: "conversation-delivery", configHash: hostedTargetHash("disabled"), mode: "disabled" };
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
-const fail = (code: string): never => { throw new Error(code); };
+function fail(code: string): never { throw new Error(code); }
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
 const exactKeys = (value: unknown, keys: readonly string[]) => object(value) && Object.keys(value).sort().join("|") === [...keys].sort().join("|");
 
@@ -106,19 +107,25 @@ export function validateHostedPreflight(config: HostedRunConfig, attestation: At
   if (config.seedDomainWriteCap !== 11_510 || config.appRequestCap !== WORKLOAD.totalRequestCap ||
       !Number.isInteger(config.identityRequestCap) || config.identityRequestCap < 100 || config.identityRequestCap > 2_500 ||
       buildMixedWorkloadSchedule().nominalRequests + 1 > config.appRequestCap) fail("hosted_budget_invalid");
-  if (!HASH.test(config.manifest.environment.configHash as string) ||
+  const authentication = config.manifest.authentication;
+  const allowedOrigins = config.manifest.allowedOrigins;
+  const allowedNetworkOrigins = config.manifest.allowedNetworkOrigins;
+  const allowedDeliverySinks = config.manifest.allowedDeliverySinks;
+  if (!object(authentication) || !Array.isArray(allowedOrigins) || !Array.isArray(allowedNetworkOrigins) ||
+      !Array.isArray(allowedDeliverySinks) || typeof config.manifest.environment.configHash !== "string" ||
+      !HASH.test(config.manifest.environment.configHash) ||
       config.manifest.environment.configHash !== hostedTargetHash(JSON.stringify(expected)) ||
       config.manifest.environment.identity !== `${expected.projectId}/${expected.deploymentId}/${expected.sourceSha}/${expected.region}` ||
-      config.manifest.authentication?.issuer !== config.clerkIssuer ||
-      config.manifest.authentication?.configHash !== hostedTargetHash(config.clerkPublishableKey) ||
-      config.manifest.allowedOrigins?.join("|") !== expected.origin ||
-      config.manifest.allowedNetworkOrigins?.join("|") !== [expected.origin, config.clerkIssuer, "https://api.clerk.com"].join("|") ||
-      config.manifest.allowedDeliverySinks?.length !== 1 || JSON.stringify(config.manifest.allowedDeliverySinks[0]) !== JSON.stringify(DELIVERY_SINK)) {
+      authentication.issuer !== config.clerkIssuer ||
+      authentication.configHash !== hostedTargetHash(config.clerkPublishableKey) ||
+      allowedOrigins.join("|") !== expected.origin ||
+      allowedNetworkOrigins.join("|") !== [expected.origin, config.clerkIssuer, "https://api.clerk.com"].join("|") ||
+      allowedDeliverySinks.length !== 1 || JSON.stringify(allowedDeliverySinks[0]) !== JSON.stringify(DELIVERY_SINK)) {
     fail("hosted_manifest_binding_mismatch");
   }
   const observed = { origin: expected.origin, environment: { ...config.manifest.environment }, targetHashes: { ...config.manifest.expectedTargetHashes },
     networkOrigins: [expected.origin, config.clerkIssuer, "https://api.clerk.com"], externalNetworkEnabled: true,
-    authentication: { ...config.manifest.authentication }, deliverySinks: [DELIVERY_SINK], externalDeliveryEnabled: false,
+    authentication: { ...authentication }, deliverySinks: [DELIVERY_SINK], externalDeliveryEnabled: false,
     testActors: config.actors.map((actor) => ({ actorHash: actor.actorHash, kind: "controlled-test", ownershipConfirmed: true })) };
   const guard = validateTargetManifest(config.manifest, observed);
   if (!guard.ok) fail("hosted_target_manifest_rejected");
@@ -303,8 +310,15 @@ export async function cleanupHostedNamespace(config: HostedRunConfig, createClie
 
 export async function runHostedLaunch(config: HostedRunConfig, execute: boolean, dependencies: {
   fetchAttestation?: typeof fetchHostedAttestation; seed?: typeof seedHostedFixture; workload?: typeof runHostedWorkload;
-  cleanup?: typeof cleanupHostedNamespace; write?: typeof writeFile; makeDirectory?: typeof mkdir;
+  cleanup?: typeof cleanupHostedNamespace;
+  write?: (path: string, body: string, options: { flag: "wx" }) => Promise<void>; makeDirectory?: typeof mkdir;
 } = {}) {
+  // Only this representative launcher promises the seven workload ceilings.
+  // Shared runtime attestation is also used by ordinary/browser cleanup tools.
+  const acceptanceTargets = config.manifest?.acceptanceTargets;
+  if (!object(acceptanceTargets) || !exactKeys(acceptanceTargets, Object.keys(JOURNEY_TARGETS)) ||
+      Object.entries(JOURNEY_TARGETS).some(([journey, limit]) => acceptanceTargets[journey] !== limit))
+    fail("hosted_acceptance_targets_invalid");
   let proposedOrigin: URL;
   try { proposedOrigin = new URL(config.expectedRuntime.origin); } catch { return fail("hosted_origin_refused"); }
   if (proposedOrigin.origin !== config.expectedRuntime.origin || proposedOrigin.protocol !== "https:" ||
@@ -334,6 +348,7 @@ export async function runHostedLaunch(config: HostedRunConfig, execute: boolean,
   try {
     fixture = await (dependencies.seed ?? seedHostedFixture)({ manifest: config.manifest, observed: preflight.observed,
       tasksUrl: config.storeUrls.TASKS_DATABASE_URL, tasksToken: config.tasksToken, actors: config.actors });
+    if (!fixture) fail("hosted_fixture_missing");
     await safeWrite(join(outputDirectory, "fixture.json"), JSON.stringify(fixture, null, 2), { flag: "wx" });
     workload = await (dependencies.workload ?? runHostedWorkload)({ manifest: config.manifest, observed: preflight.observed, fixture,
       tasksUrl: config.storeUrls.TASKS_DATABASE_URL, tasksToken: config.tasksToken, executionAuthorized: true, outputDirectory,

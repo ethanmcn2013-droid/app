@@ -39,6 +39,7 @@ export function remoteHarnessAdapter(client: Client) {
   return createRemoteConversationDatabaseAdapter({ client: { transaction: async (mode) => {
     const tx = await client.transaction(mode);
     return { execute: (statement) => tx.execute(typeof statement === "string" ? statement : { sql: statement.sql, args: [...(statement.args ?? [])] }),
+      batch: (statements) => tx.batch(statements.map(statement => typeof statement === "string" ? statement : { sql: statement.sql, args: [...(statement.args ?? [])] })),
       commit: () => tx.commit(), rollback: () => tx.rollback() };
   } } });
 }

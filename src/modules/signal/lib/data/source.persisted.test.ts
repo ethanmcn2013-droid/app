@@ -65,6 +65,87 @@ function completion(item: TaskRead, expected: number | null) {
 }
 const acceptedConfig = JSON.stringify({ custom: [{ key: "accepted", name: "Accepted" }], doneKeys: ["accepted"] });
 
+function deferred<T>() {
+  let resolve!: (value: T) => void, reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((yes, no) => { resolve = yes; reject = no; });
+  return { promise, resolve, reject };
+}
+const nextTurn = () => new Promise<void>(resolve => setImmediate(resolve));
+
+test("source group drains every started read and retains serial error precedence", async () => {
+  const first = deferred<number>(), last = deferred<number>();
+  const earlyError = new Error("earlier serial stage"), fastError = new Error("faster later stage");
+  const started: number[] = [];
+  let settled = false;
+  const result = source.readSourceGroup([
+    () => { started.push(0); return first.promise; },
+    () => { started.push(1); throw fastError; },
+    () => { started.push(2); return last.promise; },
+  ] as const);
+  const observed = result.then(() => { settled = true; }, error => { settled = true; return error; });
+  await nextTurn(); assert.deepEqual(started, [0, 1, 2]); assert.equal(settled, false);
+  first.reject(earlyError); await nextTurn(); assert.equal(settled, false);
+  last.resolve(3); assert.equal(await observed, earlyError);
+});
+
+test("actual SQLite source overlaps each dependency group but waits for rows and config", { timeout: 10_000 }, async () => {
+  const id = "concurrent-source";
+  await workspace(id); await task(id, "concurrent-hidden", { archived: NOW - DAY });
+  await task(id, "concurrent-target", { blocked: ["concurrent-hidden"] });
+  await event(id, "concurrent-target", "concurrent-completion", NOW - DAY, "move", { from: "doing", to: "done" });
+  const expected = await source.tasksDbSource.read(id);
+  const raw = clientModule.getTasksClient(); assert.ok(raw); const original = raw.execute;
+  const rowGate = deferred<void>(), configGate = deferred<void>(), evidenceGate = deferred<void>();
+  const initialStarted = deferred<void>(), evidenceStarted = deferred<void>();
+  const seen: string[] = [];
+  raw.execute = async (...args: Parameters<typeof raw.execute>) => {
+    const input: unknown = args[0], query = typeof input === "string" ? input : (input as { sql: string }).sql;
+    const kind = /from "meta"/i.test(query) ? "config" : /MAX\(a.created_at\)/.test(query) ? "comment"
+      : /WITH ranked/.test(query) ? "completion" : /from "tasks"/i.test(query) ? (/"archived_at" is null/.test(query) ? "rows" : "dependency") : null;
+    if (kind) {
+      seen.push(kind);
+      if (seen.includes("rows") && seen.includes("config")) initialStarted.resolve();
+      if (["dependency", "comment", "completion"].every(key => seen.includes(key))) evidenceStarted.resolve();
+      await (kind === "rows" ? rowGate.promise : kind === "config" ? configGate.promise : evidenceGate.promise);
+    }
+    return original.apply(raw, args);
+  };
+  const pending = source.tasksDbSource.read(id);
+  try {
+    await initialStarted.promise; assert.deepEqual([...seen].sort(), ["config", "rows"]);
+    rowGate.resolve(); await nextTurn(); assert.equal(seen.length, 2);
+    configGate.resolve(); await evidenceStarted.promise;
+    assert.deepEqual([...seen].sort(), ["comment", "completion", "config", "dependency", "rows"]);
+    evidenceGate.resolve(); assert.deepEqual(await pending, expected);
+  } finally {
+    rowGate.resolve(); configGate.resolve(); evidenceGate.resolve(); await pending.catch(() => {}); raw.execute = original;
+  }
+});
+
+test("actual row failure drains concurrent config and never starts evidence or the next batch", async () => {
+  const raw = clientModule.getTasksClient(); assert.ok(raw); const original = raw.execute;
+  const configGate = deferred<void>(), configStarted = deferred<void>();
+  const seen: string[] = []; let settled = false;
+  raw.execute = async (...args: Parameters<typeof raw.execute>) => {
+    const input: unknown = args[0], query = typeof input === "string" ? input : (input as { sql: string }).sql;
+    seen.push(query);
+    if (/from "tasks"/i.test(query)) throw new Error("synthetic initial rows unavailable");
+    if (/from "meta"/i.test(query)) { configStarted.resolve(); await configGate.promise; }
+    return original.apply(raw, args);
+  };
+  const ids = Array.from({ length: 51 }, (_, index) => `synthetic-failure-batch-${index}`);
+  const pending = source.tasksDbSource.readMany!(ids);
+  const observed = pending.then(() => { settled = true; return null; }, error => { settled = true; return error; });
+  try {
+    await configStarted.promise; await nextTurn(); assert.equal(settled, false);
+    assert.equal(seen.length, 2, "only the first batch rows and config may start");
+    configGate.resolve();
+    const error = await observed; assert.ok(error instanceof Error);
+    assert.match(String(error.cause), /synthetic initial rows unavailable/);
+    assert.equal(seen.length, 2, "failure must prevent evidence reads and every later workspace batch");
+  } finally { configGate.resolve(); await observed; raw.execute = original; }
+});
+
 test("configured custom terminal resolves through effective column", async () => {
   await workspace("configured", acceptedConfig); await task("configured", "accepted-task", { lane: "doing", column: "accepted", completed: NOW - DAY });
   assert.equal((await readTask("configured", "accepted-task")).status, "shipped");

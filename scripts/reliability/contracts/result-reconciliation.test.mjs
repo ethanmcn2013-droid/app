@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { reconcileRun } from "./result-reconciliation.mjs";
+import { JOURNEY_TARGETS, reconcileRun } from "./result-reconciliation.mjs";
 
 const manifest = { measuredDurationSeconds: 60, acceptanceTargets: { "task.mutate": 800, "chat.send": 800 } };
 const expectedOperations = [
@@ -85,4 +85,38 @@ test("enforces latency limits for explicitly named service-level journeys", () =
   const result = reconcileRun({ manifest: customManifest, observations: sample, expectedOperations: expected });
   assert.equal(result.evidenceScope, "local-service");
   assert.ok(result.findings.some((finding) => finding.code === "LATENCY_BREACH"));
+});
+
+test("fixed hosted targets remain the original seven published ceilings", () => {
+  assert.deepEqual(JOURNEY_TARGETS, { "task.mutate": 800, "chat.send": 800, "chat.poll": 1_000,
+    "conversation.list": 1_000, "home.read": 2_000, "files.read": 2_000, "analytics.read": 2_000 });
+});
+
+test("failed or unverifiable scope never becomes affirmative forbidden content", () => {
+  const failed = { ...observations[0], response: { statusCode: 503, valid: true, success: false,
+    errorEnvelope: true }, acknowledged: false, scopeAuthorized: false,
+    actualProjectIds: [], unauthorizedContent: false, effectIds: [], errorCode: "transport_failure" };
+  const result = reconcileRun({ manifest, observations: [failed], expectedOperations: [expectedOperations[0]] });
+  assert.equal(result.ok, false);
+  assert.equal(result.counts.unauthorizedEffects, 0);
+  assert.ok(result.findings.some((finding) => finding.code === "SCOPE_UNVERIFIED"));
+  assert.ok(result.findings.some((finding) => finding.code === "FAILURE_RATE_BREACH"));
+  assert.ok(!result.findings.some((finding) => finding.code === "FORBIDDEN_SCOPE_EFFECT"));
+  const observedHttpButUnprovedSql = { ...failed,
+    response: { statusCode: 200, valid: true, success: false, errorEnvelope: false },
+    errorCode: "verification_unavailable" };
+  const sqlResult = reconcileRun({ manifest, observations: [observedHttpButUnprovedSql],
+    expectedOperations: [expectedOperations[0]] });
+  assert.ok(sqlResult.findings.some((finding) => finding.code === "SCOPE_UNVERIFIED"));
+  assert.ok(!sqlResult.findings.some((finding) => finding.code === "FORBIDDEN_SCOPE_EFFECT"));
+});
+
+test("affirmative foreign content or returned Project remains forbidden", () => {
+  const foreignContent = { ...observations[0], scopeAuthorized: false, unauthorizedContent: true };
+  const contentResult = reconcileRun({ manifest, observations: [foreignContent], expectedOperations: [expectedOperations[0]] });
+  assert.ok(contentResult.findings.some((finding) => finding.code === "FORBIDDEN_SCOPE_EFFECT"));
+  const foreignProject = { ...observations[0], scopeAuthorized: false, actualProjectIds: ["project-b"],
+    unauthorizedContent: false };
+  const projectResult = reconcileRun({ manifest, observations: [foreignProject], expectedOperations: [expectedOperations[0]] });
+  assert.ok(projectResult.findings.some((finding) => finding.code === "FORBIDDEN_SCOPE_EFFECT"));
 });

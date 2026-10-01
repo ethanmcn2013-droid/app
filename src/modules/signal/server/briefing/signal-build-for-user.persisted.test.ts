@@ -308,6 +308,56 @@ test("same-email foreign subject cannot inherit selected workspace", async () =>
   const result = await orchestrator.buildBriefingForUser({ clerkId: "synthetic-foreign-clerk", cadence: "daily", recordReadState: false, scope: { kind: "workspace", workspaceId: WORKSPACE } });
   assert.equal(result.kind, "no-workspace");
 });
+
+function deferred<T>() {
+  let resolve!: (value: T) => void, reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((yes, no) => { resolve = yes; reject = no; });
+  return { promise, resolve, reject };
+}
+const nextTurn = () => new Promise<void>(resolve => setImmediate(resolve));
+
+test("context starts independent reads, drains all, and gives onboarding failure precedence", async () => {
+  const onboarding = deferred<null>(), ages = deferred<Map<string, number>>();
+  const primary = new Error("onboarding failure"), secondary = new Error("dismissal failure");
+  const started: string[] = []; let settled = false;
+  const result = orchestrator.readBriefingContext(
+    () => { started.push("onboarding"); return onboarding.promise; },
+    () => { started.push("dismissed"); throw secondary; },
+    () => { started.push("ages"); return ages.promise; },
+  );
+  const observed = result.then(() => { settled = true; }, error => { settled = true; return error; });
+  await nextTurn(); assert.deepEqual(started, ["onboarding", "dismissed", "ages"]); assert.equal(settled, false);
+  onboarding.reject(primary); await nextTurn(); assert.equal(settled, false);
+  ages.resolve(new Map()); assert.equal(await observed, primary);
+});
+
+test("context preserves the former dismissal/age Promise.all first rejection after draining", async () => {
+  const dismissed = deferred<Set<string>>(), ages = deferred<Map<string, number>>();
+  const first = new Error("ages first"), second = new Error("dismissed later"); let settled = false;
+  const result = orchestrator.readBriefingContext(async () => null, () => dismissed.promise, () => ages.promise);
+  const observed = result.then(() => { settled = true; }, error => { settled = true; return error; });
+  ages.reject(first); await nextTurn(); assert.equal(settled, false);
+  dismissed.reject(second); assert.equal(await observed, first);
+});
+
+test("authorized Home uses one Tasks source read; foreign scope starts neither context nor source", async () => {
+  await task("concurrent-home", { lane: "doing" });
+  const { dataSource } = await import("../../lib/data/source");
+  const originalRead = dataSource.readMany, originalOnboarding = dataSource.getWorkspaceOnboarding;
+  assert.ok(originalRead); assert.ok(originalOnboarding);
+  let sourceReads = 0, onboardingReads = 0;
+  dataSource.readMany = async function (ids) { sourceReads++; return originalRead.call(this, ids); };
+  dataSource.getWorkspaceOnboarding = async function (id) { onboardingReads++; return originalOnboarding.call(this, id); };
+  const beforeHashes = await hashes();
+  try {
+    const view = await home(); assert.equal(view.stats.open, 1);
+    assert.deepEqual({ sourceReads, onboardingReads }, { sourceReads: 1, onboardingReads: 1 });
+    const foreign = await orchestrator.buildBriefingForUser({ clerkId: "synthetic-foreign-clerk", cadence: "daily", recordReadState: false, scope: { kind: "workspace", workspaceId: WORKSPACE } });
+    assert.equal(foreign.kind, "no-workspace");
+    assert.deepEqual({ sourceReads, onboardingReads }, { sourceReads: 1, onboardingReads: 1 });
+    assert.deepEqual(await hashes(), beforeHashes);
+  } finally { dataSource.readMany = originalRead; dataSource.getWorkspaceOnboarding = originalOnboarding; }
+});
 for (const fault of ["missing", "duplicate", "foreign"] as const) {
   test(`orchestrator rejects ${fault} source workspace before persisted state writes`, async () => {
     await task("contract-task", { lane: "doing" });

@@ -1,4 +1,4 @@
-const JOURNEY_TARGETS = Object.freeze({
+export const JOURNEY_TARGETS = Object.freeze({
   "task.mutate": 800,
   "chat.send": 800,
   "chat.poll": 1_000,
@@ -101,9 +101,11 @@ export function reconcileRun({ manifest, observations, expectedOperations, sched
     if (expected.expectedOutcome === "denied" && observation.scopeAuthorized !== false) {
       fail("UNEXPECTED_AUTHORIZATION", `denied operation ${id} did not prove that scope was denied`);
     }
-    if (expected.expectedOutcome !== "denied" && observation.scopeAuthorized === false) {
-      unauthorized += 1;
-      fail("FORBIDDEN_SCOPE_EFFECT", `attempt ${observation.attemptId} was not authorized for its expected scope`);
+    if (expected.expectedOutcome !== "denied" && observation.scopeAuthorized === false &&
+        observation.unauthorizedContent !== true &&
+        !(Array.isArray(observation.actualProjectIds) &&
+          observation.actualProjectIds.some((projectId) => projectId !== expected.projectId))) {
+      fail("SCOPE_UNVERIFIED", `attempt ${observation.attemptId} did not establish its expected scope`);
     }
     if (observation.response?.success !== true && !expectedDenial) failedAttempts += 1;
     if (expected.expectedOutcome === "denied" && observation.response?.success === true) {
@@ -112,7 +114,7 @@ export function reconcileRun({ manifest, observations, expectedOperations, sched
     if (expected.expectedOutcome === "denied" && Array.isArray(observation.effectIds) && observation.effectIds.length > 0) {
       fail("UNEXPECTED_AUTHORIZATION_EFFECT", `denied operation ${id} produced an effect`);
     }
-    if (observation.unauthorizedContent === true || (observation.scopeAuthorized === false && expected.expectedOutcome !== "denied")) {
+    if (observation.unauthorizedContent === true) {
       unauthorized += 1;
       fail("FORBIDDEN_SCOPE_EFFECT", `attempt ${observation.attemptId} observed unauthorized scope or content`);
     }
@@ -188,7 +190,7 @@ export function reconcileRun({ manifest, observations, expectedOperations, sched
   }).length;
   const failureRate = offeredRequests ? failedAttempts / offeredRequests : 0;
   if (failureRate > maxFailureRate) fail("FAILURE_RATE_BREACH", `unexpected attempt failure rate ${(failureRate * 100).toFixed(3)}% exceeds ${(maxFailureRate * 100).toFixed(3)}%`);
-  for (const [journey, group] of Object.entries(byJourney)) {
+  for (const group of Object.values(byJourney)) {
     group.failureRate = group.offered ? group.failures / group.offered : 0;
     group.offeredPerSecond = group.offered / (manifest?.measuredDurationSeconds ?? 1);
     group.achievedPerSecond = group.achieved / (manifest?.measuredDurationSeconds ?? 1);

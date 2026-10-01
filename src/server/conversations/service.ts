@@ -19,6 +19,7 @@ import {
 } from "@/lib/conversations/contracts";
 import { isProjectId, type ProjectId } from "@/lib/projects/project-ref";
 import type { ConversationDatabaseAdapter, ConversationSqlExecutor } from "./database";
+import { executeConversationBatch, type ConversationSqlStatement } from "./database";
 import { conversationWriteFencesClear } from "./write-fences";
 
 export type ProjectConversationScope = Readonly<{
@@ -290,6 +291,16 @@ export function createConversationService(
 
   async function resolveActor(clerkId: string): Promise<string | null> {
     if (typeof clerkId !== "string" || clerkId.length < 3 || clerkId.length > 256) return null;
+    if (!adapter.available) return null;
+    if (adapter.readStatement) {
+      try {
+        const user = await adapter.readStatement({ sql: "SELECT id FROM users WHERE clerk_id = ? LIMIT 1", args: [clerkId] });
+        return user.rows[0] ? text(user.rows[0].id) : null;
+      } catch (error) {
+        if (isTransientDatabaseError(error)) return null;
+        throw error;
+      }
+    }
     const result = await inTransaction("read", async (executor) => {
       const user = await executor.execute({
         sql: "SELECT id FROM users WHERE clerk_id = ? LIMIT 1",
@@ -534,33 +545,29 @@ export function createConversationService(
         });
         if (root.rows.length !== 1) return failure("invalid_input");
       }
-      const sequence = await executor.execute({
-        sql: "SELECT next_create_seq, next_change_seq FROM conversations WHERE id = ?",
-        args: [input.conversationId],
-      });
-      const createSeq = integer(sequence.rows[0]?.next_create_seq);
-      const changeSeq = integer(sequence.rows[0]?.next_change_seq);
+      // Authorization selected c.* on this write transaction; intervening
+      // replay/fence/root checks are reads, so these counters are still current.
+      const createSeq = integer(authorized.value.row.next_create_seq);
+      const changeSeq = integer(authorized.value.row.next_change_seq);
       const committedAt = Date.now();
       const id = messageId(actorId, input.conversationId, input.clientRequestId);
-      await executor.execute({
+      const writes: ConversationSqlStatement[] = [{
         sql: `UPDATE conversations SET next_create_seq = next_create_seq + 1,
           next_change_seq = next_change_seq + 1 WHERE id = ?`,
         args: [input.conversationId],
-      });
-      await executor.execute({
+      }, {
         sql: `INSERT INTO conversation_messages
           (id, conversation_id, workspace_id, author_id, client_request_id, request_hash,
            root_id, create_seq, revision, body, created_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
         args: [id, input.conversationId, input.projectId, actorId, input.clientRequestId,
           payloadHash, input.rootId, createSeq, body, committedAt],
-      });
-      await executor.execute({
+      }, {
         sql: `INSERT INTO conversation_changes
           (conversation_id, change_seq, kind, message_id, revision, audience_epoch, happened_at)
           VALUES (?, ?, 'create', ?, 1, ?, ?)`,
         args: [input.conversationId, changeSeq, id, authorized.value.scope.audienceEpoch, committedAt],
-      });
+      }];
       // Membership grants history access; only explicit mentions direct attention.
       // The normalized set was validated against live members in this transaction.
       const recipients = authorized.value.scope.kind === "dm"
@@ -568,13 +575,13 @@ export function createConversationService(
         : mentions.filter((id) => id !== actorId);
       for (const recipientId of [...new Set(recipients)]) {
         const eventKey = hashTuple([input.conversationId, id, recipientId]).slice(0, 32);
-        await executor.execute({
+        writes.push({
           sql: `INSERT INTO conversation_attention
             (id, conversation_id, workspace_id, recipient_id, message_id, root_id, create_seq)
             VALUES (?, ?, ?, ?, ?, ?, ?)`,
           args: [`attention_${eventKey}`, input.conversationId, input.projectId, recipientId, id, input.rootId, createSeq],
         });
-        await executor.execute({
+        writes.push({
           sql: `INSERT INTO conversation_outbox
             (id, conversation_id, workspace_id, recipient_id, message_id, source_revision,
              audience_epoch, state, created_at)
@@ -583,13 +590,14 @@ export function createConversationService(
             authorized.value.scope.audienceEpoch, committedAt],
         });
       }
-      await executor.execute({
+      writes.push({
         sql: `INSERT INTO conversation_receipts
           (conversation_id, actor_id, client_request_id, operation, payload_hash,
            message_id, create_seq, change_seq, revision, committed_at)
           VALUES (?, ?, ?, 'send', ?, ?, ?, ?, 1, ?)`,
         args: [input.conversationId, actorId, input.clientRequestId, payloadHash, id, createSeq, changeSeq, committedAt],
       });
+      await executeConversationBatch(executor, writes);
       return { ok: true, value: { messageId: id, clientRequestId: input.clientRequestId, createSeq, changeSeq, revision: 1, committedAt } };
     });
   }

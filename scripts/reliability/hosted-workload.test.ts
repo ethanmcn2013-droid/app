@@ -3,9 +3,10 @@ import test from "node:test";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { boundedResponseText, committedEffectMatchesScope, dryRunHostedWorkload, finalizeHostedRepetition, HostedMessageVisibility, hostedFlushDiagnostic, hostedMeasurementAttribution, hostedMeasurementAttributionFromWindows, parseHostedServerTiming, reconcileHostedEffects, runHostedArrivalSchedule, runHostedWorkload, sessionCleanupAccepted, validateHostedEnvelope, validateHostedHtml, writeHostedUnverifiedFlushDiagnostic } from "./hosted-workload";
+import { boundedResponseText, classifyCommittedScope, committedEffectMatchesScope, dryRunHostedWorkload, finalizeHostedRepetition, HostedMessageVisibility, hostedAttemptDiagnostic, hostedFailureResponse, hostedFlushDiagnostic, hostedMeasurementAttribution, hostedMeasurementAttributionFromWindows, hostedUnverifiedAttemptEvidence, parseHostedServerTiming, reconcileHostedEffects, runHostedArrivalSchedule, runHostedWorkload, sessionCleanupAccepted, validateHostedEnvelope, validateHostedHtml, writeHostedUnverifiedFlushDiagnostic } from "./hosted-workload";
 import { hostedTargetHash, type HostedFixture } from "./hosted-seed";
 import { buildMixedWorkloadSchedule, WORKLOAD } from "./contracts/workload-schedule.mjs";
+import { reconcileRun } from "./contracts/result-reconciliation.mjs";
 
 function fixture() {
   const namespace = "reliability-hosted-test-1234";
@@ -316,6 +317,57 @@ test("flush diagnostics contain only fixed phase and cause categories", () => {
   assert.doesNotMatch(JSON.stringify(hostedFlushDiagnostic({ code: "ETIMEDOUT", message: "secret-token" })), /secret|token/);
 });
 
+test("post-response verification failure keeps actual HTTP status and bounded cause only", () => {
+  assert.deepEqual(hostedFailureResponse(200, true, true),
+    { statusCode: 200, valid: true, success: true, errorEnvelope: false });
+  assert.deepEqual(hostedFailureResponse(200, true),
+    { statusCode: 200, valid: true, success: false, errorEnvelope: false });
+  assert.deepEqual(hostedFailureResponse(200, false),
+    { statusCode: 200, valid: false, success: false, errorEnvelope: false });
+  assert.deepEqual(hostedFailureResponse(undefined, false),
+    { statusCode: 503, valid: true, success: false, errorEnvelope: true });
+  assert.deepEqual(hostedAttemptDiagnostic({ code: "ETIMEDOUT", message: "private SQL" }, "history_lookup_sql"),
+    { failureStage: "history_lookup_sql", causeCategory: "timeout" });
+  assert.deepEqual(hostedAttemptDiagnostic(new Error("private SQL"), "write_effect_sql"),
+    { failureStage: "write_effect_sql", causeCategory: "verification" });
+  assert.deepEqual(hostedAttemptDiagnostic(new Error("private body"), "response_body"),
+    { failureStage: "response_body", causeCategory: "response" });
+  assert.deepEqual(hostedAttemptDiagnostic({ code: "APPLICATION_REQUEST_TIMEOUT" }, "app_request"),
+    { failureStage: "app_request", causeCategory: "timeout" });
+  assert.deepEqual(hostedAttemptDiagnostic({ code: "APPLICATION_RESPONSE_BODY_FAILED" }, "response_body"),
+    { failureStage: "response_body", causeCategory: "response" });
+  assert.doesNotMatch(JSON.stringify(hostedAttemptDiagnostic({ code: "ETIMEDOUT", message: "private SQL" },
+    "history_lookup_sql")), /private|SQL/);
+});
+
+test("successful write response remains acknowledged when its local SQL proof fails", () => {
+  const evidence = hostedUnverifiedAttemptEvidence("write", 200, true, true);
+  assert.deepEqual(evidence, { response: { statusCode: 200, valid: true, success: true, errorEnvelope: false }, acknowledged: true });
+  const observation = { logicalOperationId: "write-1", attemptId: "write-1:attempt:1", attemptNumber: 1,
+    journey: "chat.send", phase: "measured", latencyMs: 100, ...evidence,
+    scopeAuthorized: false, actualProjectIds: [], unauthorizedContent: false, effectIds: [],
+    failureStage: "write_effect_sql", causeCategory: "verification" };
+  const result = reconcileRun({ manifest: { measuredDurationSeconds: 60, acceptanceTargets: { "chat.send": 800 } },
+    observations: [observation], expectedOperations: [{ id: "write-1", journey: "chat.send", expectedOutcome: "write", projectId: "owned-project" }] });
+  assert.equal(result.ok, false);
+  assert.ok(result.findings.some((finding: { code: string }) => finding.code === "SCOPE_UNVERIFIED"));
+  assert.ok(result.findings.some((finding: { code: string }) => finding.code === "ACKNOWLEDGED_WRITE_LOST"));
+  assert.ok(!result.findings.some((finding: { code: string }) => finding.code === "FORBIDDEN_SCOPE_EFFECT"));
+  assert.deepEqual(hostedUnverifiedAttemptEvidence("read", 200, true, true).acknowledged, false);
+  assert.deepEqual(hostedUnverifiedAttemptEvidence("write", undefined, false, false).acknowledged, false);
+});
+
+test("missing committed row is unverified; affirmative foreign row remains unauthorized", () => {
+  const scope = { projectId: "project-a", conversationId: "conversation-a" };
+  assert.deepEqual(classifyCommittedScope("promote-task", [], scope),
+    { actualProjectIds: [], scopeAuthorized: false, unauthorizedContent: false });
+  assert.deepEqual(classifyCommittedScope("promote-task", [{ workspace_id: "project-b" }], scope),
+    { actualProjectIds: ["project-b"], scopeAuthorized: false, unauthorizedContent: true });
+  assert.deepEqual(classifyCommittedScope("send", [{ workspace_id: "project-a",
+    conversation_id: "conversation-a" }], scope),
+    { actualProjectIds: ["project-a"], scopeAuthorized: true, unauthorizedContent: false });
+});
+
 test("workload acceptance requires all created sessions to be revoked", () => {
   const complete = { ok: true, attempted: 10, revoked: 10, unresolved: 0, errors: [] };
   assert.equal(sessionCleanupAccepted(complete), true);
@@ -425,6 +477,27 @@ test("foreign history IDs fail scope; missing or failed DB lookup is unverified,
     async () => { throw new Error("private_database_error"); }), /hosted_history_scope_unverified/);
   assert.equal(missing.authorizedMessages.size, 0);
   assert.equal(missing.visibilitySamples.length, 0);
+});
+
+test("actual history lookup rejection retains bounded nested timeout cause; missing row remains verification", async () => {
+  const scope = { projectId: "owned-project", conversationId: "owned-room" };
+  const tracker = new HostedMessageVisibility();
+  await assert.rejects(tracker.observeHistory(["missing"], "observer", 10, scope, async () => {
+    throw Object.assign(new Error("private SQL and credential text"), { code: "ETIMEDOUT" });
+  }), (error: unknown) => {
+    assert.equal((error as Error).message, "hosted_history_scope_unverified");
+    assert.deepEqual(hostedAttemptDiagnostic(error, "history_lookup_sql"),
+      { failureStage: "history_lookup_sql", causeCategory: "timeout" });
+    assert.doesNotMatch(JSON.stringify(hostedAttemptDiagnostic(error, "history_lookup_sql")), /private|SQL|credential/);
+    return true;
+  });
+  await assert.rejects(tracker.observeHistory(["missing"], "observer", 10, scope, async () => []), (error: unknown) => {
+    assert.equal((error as Error).message, "hosted_history_scope_unverified");
+    assert.deepEqual(hostedAttemptDiagnostic(error, "history_scope_validation"),
+      { failureStage: "history_scope_validation", causeCategory: "verification" });
+    return true;
+  });
+  assert.equal(tracker.authorizedMessages.size, 0);
 });
 
 test("committed send readback requires the actual conversation as well as Project", () => {

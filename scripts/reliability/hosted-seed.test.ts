@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createClient, type Client } from "@libsql/client";
-import { seedHostedFixture, verifyHostedSeedPrerequisites, sendHostedSeedMessage, hostedSeedRequestId, requireSeedSuccess } from "./hosted-seed";
+import { seedHostedFixture, verifyHostedSeedPrerequisites, sendHostedSeedMessage, hostedSeedRequestId, requireSeedSuccess, remoteHarnessAdapter } from "./hosted-seed";
+import { executeConversationBatch } from "../../src/server/conversations/database";
 import { ACTORS, allocateLocalServiceTarget, initializeLocalServiceSchema, seedLocalServiceFixture } from "./local-service-harness";
 import { localServiceManifest } from "./local-service-run";
 import { runWithTargetGuard } from "./contracts/target-manifest.mjs";
@@ -51,4 +52,24 @@ test("seed diagnostics emit only known failure enums", () => {
   assert.throws(() => requireSeedSuccess({ ok: false, code: "invalid_input" }, "message"), /hosted_seed_message_failed:invalid_input/);
   assert.throws(() => requireSeedSuccess({ ok: false, code: "private SQL details" as "invalid_input" }, "message"), /hosted_seed_message_failed:unknown_failure/);
   for (const kind of ["message", "task"] as const) for (const index of [0, 9_999]) assert.match(hostedSeedRequestId("reliability-abcdefgh", index, kind), /^[A-Za-z0-9_-]{16,128}$/);
+});
+
+test("remote seed batches delegate to the same interactive handle and roll back failures", async () => {
+  const trace: string[] = [];
+  let fail = false;
+  const client = { batch: async () => { throw Error("top_level_batch_refused"); }, transaction: async (mode: string) => {
+    trace.push(`begin:${mode}`);
+    return { execute: async () => { trace.push("proof"); return { rows: [] }; },
+      batch: async (statements: unknown[]) => { trace.push("batch"); assert.deepEqual(statements, [{ sql: "INSERT owned", args: ["actor"] }, "INSERT receipt"]);
+        if (fail) throw Error("synthetic_batch_failure"); return [{ rows: [] }, { rows: [] }]; },
+      commit: async () => { trace.push("commit"); }, rollback: async () => { trace.push("rollback"); } };
+  } } as unknown as Client;
+  const adapter = remoteHarnessAdapter(client);
+  const write = () => adapter.transaction("write", async executor => {
+    await executor.execute("SELECT proof");
+    await executeConversationBatch(executor, [{ sql: "INSERT owned", args: ["actor"] }, "INSERT receipt"]);
+  });
+  await write(); assert.deepEqual(trace, ["begin:write", "proof", "batch", "commit"]);
+  trace.length = 0; fail = true; await assert.rejects(write(), /synthetic_batch_failure/);
+  assert.deepEqual(trace, ["begin:write", "proof", "batch", "rollback"]);
 });
