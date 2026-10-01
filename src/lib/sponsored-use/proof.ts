@@ -4,6 +4,7 @@ export type UsageClaimProof = {
   sponsorId: string; environment: "internal_test" | "production";
   issuedAt: number; grantStartsAt: number; grantEndsAt: number;
   subjectIdHash: string; workspaceIdHash: string; epoch: string;
+  measurementAllowed: boolean;
 };
 export type UsageEventProof = UsageClaimProof & { eventId: string; eventDigest: string };
 export type UsageProofPage = { claims: UsageClaimProof[]; nextCursor: string | null };
@@ -15,9 +16,11 @@ export function parseClaimProof(value: unknown): UsageClaimProof | null {
     !["internal_test","production"].includes(p.environment) ||
     ![p.issuedAt,p.grantStartsAt,p.grantEndsAt].every(x => Number.isSafeInteger(x) && x > 0) ||
     p.grantStartsAt < p.issuedAt || p.grantEndsAt <= p.grantStartsAt ||
-    !/^[a-f0-9]{32}$/.test(p.subjectIdHash) || !/^[a-f0-9]{32}$/.test(p.workspaceIdHash) || !/^[a-f0-9]{8}$/.test(p.epoch)) return null;
+    !/^[a-f0-9]{32}$/.test(p.subjectIdHash) || !/^[a-f0-9]{32}$/.test(p.workspaceIdHash) || !/^[a-f0-9]{8}$/.test(p.epoch) ||
+    typeof p.measurementAllowed !== "boolean") return null;
   // Explicit projection drops all unknown fields at the response boundary.
   return { version:1, issuanceId:p.issuanceId,licenseCodeId:p.licenseCodeId,codeFingerprint:p.codeFingerprint,
     sponsorId:p.sponsorId,environment:p.environment,issuedAt:p.issuedAt,grantStartsAt:p.grantStartsAt,grantEndsAt:p.grantEndsAt,
-    subjectIdHash:p.subjectIdHash,workspaceIdHash:p.workspaceIdHash,epoch:p.epoch };
+    subjectIdHash:p.subjectIdHash,workspaceIdHash:p.workspaceIdHash,epoch:p.epoch,
+    measurementAllowed:p.measurementAllowed };
 }
