@@ -15,6 +15,11 @@ function hookHost(React) {
     useRef(value){const index=cursor++;return slots[index]??(slots[index]={current:value});},
     useMemo:memo,useCallback:(callback,deps)=>memo(()=>callback,deps),
     useEffect(effect,deps){const index=cursor++,old=slots[index];if(!old||!same(old.deps,deps)){pending.push({index,effect,old});slots[index]={deps};}},
+    useState(initial){const index=cursor++;if(!slots[index]){
+      const slot={value:typeof initial==='function'?initial():initial};
+      slot.setValue=next=>{const value=typeof next==='function'?next(slot.value):next;if(!Object.is(value,slot.value))slot.value=value;};
+      slots[index]=slot;
+    }return [slots[index].value,slots[index].setValue];},
     useReducer(reduce,initial){const index=cursor++;if(!slots[index])slots[index]={value:initial,dispatch:action=>{slots[index].value=reduce(slots[index].value,action);}};return [slots[index].value,slots[index].dispatch];},
     startTransition(callback){const promise=Promise.resolve(callback());transitions.push(promise);},
   };

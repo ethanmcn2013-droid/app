@@ -3,6 +3,13 @@ const {test}=require('node:test'),assert=require('node:assert/strict');
 const {realtimeFixture,deferred,until}=require('./realtime-fixture.cjs');
 const ids=tasks=>tasks.map(task=>task.id);
 const options=(f,more={})=>({projectId:'project-b',actorId:'recipient',onChange:f.onChange,...more});
+// The provider may add nonvisual contexts. Select by contract, not wrapper depth.
+function providerValue(tree,accept){
+  for(let node=tree;node?.props;node=node.props.children){if(accept(node.props.value))return node.props.value;}
+  throw Error('Expected TasksProvider context was not rendered');
+}
+const taskDispatchers=tree=>providerValue(tree,value=>typeof value?.moveTaskToColumn==='function');
+const taskState=tree=>providerValue(tree,value=>Array.isArray(value?.tasks));
 
 test('scoped action reauthorizes explicit B; missing/malformed/foreign/removed/wrong-account targets never substitute A',async()=>{
   const f=await realtimeFixture();
@@ -130,8 +137,8 @@ test('demo does not open a stream or read identity/database; custom-column optim
     f.state.demo=true;const before=f.state.authCalls;
     assert.ok((await f.actions.getTasksAction(undefined)).length>0);
     f.host.render(f.provider,{projectId:'demo',actorId:'demo',initialTasks:[{id:'demo-card',title:'Demo',lane:'todo',priority:'p2',assignees:[]}]});
-    const tree=f.host.render();tree.props.children.props.value.moveTaskToColumn('demo-card','col-extra');
-    assert.equal(f.host.render().props.value.tasks[0].boardColumnKey,'col-extra');
+    const tree=f.host.render();taskDispatchers(tree).moveTaskToColumn('demo-card','col-extra');
+    assert.equal(taskState(f.host.render()).tasks[0].boardColumnKey,'col-extra');
     assert.equal(f.host.transitions.length,0);assert.equal(f.streams.length,0);assert.equal(f.reads.length,0);assert.equal(f.state.authCalls,before);
   } finally {f.close();}
 });
@@ -142,9 +149,9 @@ test('custom-column actual write rereads displayed B rather than A and reconcile
     const initialTasks=await f.load('src/server/db/queries').getTasks('project-b');
     f.host.render(f.provider,{projectId:'project-b',actorId:'recipient',initialTasks});
     f.afterMove=()=>f.client.execute("UPDATE tasks SET title='B canonical post-write' WHERE id='b-live'");
-    f.host.render().props.children.props.value.moveTaskToColumn('b-live','col-extra');
+    taskDispatchers(f.host.render()).moveTaskToColumn('b-live','col-extra');
     await Promise.all(f.host.transitions);
-    assert.deepEqual(f.reads,[['project-b']]);const result=f.host.render().props.value.tasks;
+    assert.deepEqual(f.reads,[['project-b']]);const result=taskState(f.host.render()).tasks;
     assert.deepEqual(ids(result),['b-live']);assert.equal(result[0].title,'B canonical post-write');assert.equal(result[0].boardColumnKey,'col-extra');
     const a=(await f.client.execute("SELECT title,board_column_key FROM tasks WHERE id='a-live'")).rows[0];assert.equal(a.title,'Only A');assert.equal(a.board_column_key,null);
   } finally {f.close();}
@@ -159,10 +166,10 @@ test('custom-column response after unmount skips its reread; an in-flight reread
       const delay=async()=>{waiting=true;await hold.promise;};
       f.afterMove=async()=>{await f.client.execute("UPDATE tasks SET title='B server change' WHERE id='b-live'");if(phase==='write')await delay();};
       if(phase==='read')f.afterRead=delay;
-      f.host.render().props.children.props.value.moveTaskToColumn('b-live','col-extra');await until(()=>waiting);
+      taskDispatchers(f.host.render()).moveTaskToColumn('b-live','col-extra');await until(()=>waiting);
       f.host.unmount();hold.resolve();await Promise.all(f.host.transitions);
       assert.equal(f.reads.length,phase==='write'?0:1);
-      assert.equal(f.host.render().props.value.tasks[0].title,'Only B');
+      assert.equal(taskState(f.host.render()).tasks[0].title,'Only B');
     } finally {hold.resolve();f.close();}
   }
 });
