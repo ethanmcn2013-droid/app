@@ -2,7 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { db } from "@/server/db";
 import * as schema from "@/server/db/schema";
-import { hasAccountDeletionStartedWith } from "@/server/account-deletion-lifecycle";
+import { accountDeletionTombstoneKey } from "@/server/account-deletion-lifecycle";
 import { serializeProvisioning } from "@/server/db/serialized-provisioning";
 import { isTransient } from "@/server/db/retry";
 
@@ -82,13 +82,15 @@ export async function ensureUserProvisionedWith(
             // This read and every provisioning write share one immediate transaction.
             // If deletion commits first, no row is recreated. If provisioning commits
             // first, deletion observes and erases that row after installing its fence.
-            if (await hasAccountDeletionStartedWith(tx, clerkUserId)) return false;
-
-            // Warm authenticated entry: prove the existing derived rows and profile
-            // backfills are already complete under the same write lock. The normal
-            // statements below remain the sole fallback for new or partial accounts.
-            // A different persisted user id is valid; all dependent rows must bind to it.
+            // The one-row anchor preserves the deletion fence even when no user
+            // exists. The tombstone and warm completeness are read under the same
+            // write lock; deletion wins before any completion or fallback decision.
+            // A different persisted user id is valid; dependent rows bind to it.
             const [complete] = await tx.select({
+              deletionStarted: sql<number>`EXISTS (
+                SELECT 1 FROM ${schema.meta}
+                WHERE ${schema.meta.key} = ${accountDeletionTombstoneKey(clerkUserId)}
+              )`,
               userId: schema.users.id,
               name: schema.users.name,
               email: schema.users.email,
@@ -99,16 +101,18 @@ export async function ensureUserProvisionedWith(
               workspaceUpdatedAt: schema.workspaces.updatedAt,
               memberUserId: schema.workspaceMembers.userId,
               memberRole: schema.workspaceMembers.role,
-            }).from(schema.users)
+            }).from(sql`(SELECT 1) AS provision_anchor`)
+              .leftJoin(schema.users, eq(schema.users.clerkId, clerkUserId))
               .leftJoin(schema.planningPeriods, eq(schema.planningPeriods.id, planningPeriodId))
               .leftJoin(schema.workspaces, eq(schema.workspaces.id, workspaceId))
               .leftJoin(schema.workspaceMembers, and(
                 eq(schema.workspaceMembers.workspaceId, workspaceId),
                 eq(schema.workspaceMembers.userId, schema.users.id),
               ))
-              .where(eq(schema.users.clerkId, clerkUserId))
               .limit(1);
-            if (complete &&
+            if (!complete) throw new Error("Provisioning pre-write read returned no anchor row.");
+            if (complete.deletionStarted === 1) return false;
+            if (complete.userId !== null &&
                 (!name || complete.name !== null) &&
                 (!email || complete.email !== null) &&
                 complete.periodOwnerId === complete.userId &&

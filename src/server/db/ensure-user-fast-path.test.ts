@@ -7,7 +7,7 @@ import { pathToFileURL } from "node:url";
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 
-import { beginAccountDeletionWith } from "../account-deletion-lifecycle";
+import { accountDeletionTombstoneKey, beginAccountDeletionWith } from "../account-deletion-lifecycle";
 import { ensureUserProvisionedWith } from "./ensure-user";
 import * as schema from "./schema";
 
@@ -116,7 +116,7 @@ function faultTransactions(
   return {database: wrapped, calls};
 }
 
-test("complete warm account does only tombstone and completeness reads, with no writes", async () => {
+test("complete warm account does one combined tombstone and completeness read, with no writes", async () => {
   const f = await freshDb();
   try {
     const actor = "user_warm_complete";
@@ -130,7 +130,7 @@ test("complete warm account does only tombstone and completeness reads, with no 
     }
     const counted = countStatements(f.db);
     assert.equal(await ensureUserProvisionedWith(counted.database, actor, "warm@example.test", "Warm", "Person"), true);
-    assert.deepEqual(counted.calls, {select: 2, run: 0});
+    assert.deepEqual(counted.calls, {select: 1, run: 0});
   } finally { f.cleanup(); }
 });
 
@@ -217,7 +217,7 @@ test("mapped internal ID and existing custom period link remain valid on warm en
     await f.client.execute({sql: "UPDATE workspaces SET planning_period_id='custom-period', archived_at=123 WHERE owner_user_id=?", args: [internal]});
     const counted = countStatements(f.db);
     assert.equal(await ensureUserProvisionedWith(counted.database, actor, "new-address@example.test", "Changed", "Name"), true);
-    assert.deepEqual(counted.calls, {select: 2, run: 0});
+    assert.deepEqual(counted.calls, {select: 1, run: 0});
     const rows = await f.client.execute({sql: `SELECT u.id,u.name,u.email,w.planning_period_id,w.archived_at,m.user_id
       FROM users u JOIN workspaces w ON w.owner_user_id=u.id
       JOIN workspace_members m ON m.workspace_id=w.id WHERE u.clerk_id=?`, args: [actor]});
@@ -243,9 +243,9 @@ test("a completeness query failure propagates without falling through to writes"
     const actor = "user_query_failure";
     assert.equal(await ensureUserProvisionedWith(f.db, actor), true);
     const queryError = new Error("controlled completeness read failure");
-    const counted = countStatements(f.db, {at: 2, error: queryError});
+    const counted = countStatements(f.db, {at: 1, error: queryError});
     await assert.rejects(ensureUserProvisionedWith(counted.database, actor), error => error === queryError);
-    assert.deepEqual(counted.calls, {select: 2, run: 0});
+    assert.deepEqual(counted.calls, {select: 1, run: 0});
     const persisted = await f.client.execute({sql: "SELECT count(*) AS n FROM users WHERE clerk_id=?", args: [actor]});
     assert.equal(persisted.rows[0]?.n, 1);
   } finally { f.cleanup(); }
@@ -307,7 +307,7 @@ test("derived-ID collision falls through and preserves the original failure and 
   } finally { f.cleanup(); }
 });
 
-test("failed fallback rolls back and a complete warm account still obeys tombstone first", async () => {
+test("failed fallback rolls back and a deleted account still obeys tombstone first", async () => {
   const f = await freshDb();
   try {
     await f.client.execute(`CREATE TRIGGER fail_member_insert BEFORE INSERT ON workspace_members
@@ -327,7 +327,46 @@ test("failed fallback rolls back and a complete warm account still obeys tombsto
   } finally { f.cleanup(); }
 });
 
-test("transient tombstone and awaited completeness reads use fresh transactions", async () => {
+test("one anchored read gives tombstones precedence without a user and over a complete mapped user", async () => {
+  const f = await freshDb();
+  try {
+    const absent = "user_tombstone_absent";
+    await f.client.execute({
+      sql: "INSERT INTO meta(key,value) VALUES(?, 'erasure-requested:v1')",
+      args: [accountDeletionTombstoneKey(absent)],
+    });
+    const absentCounted = countStatements(f.db);
+    assert.equal(await ensureUserProvisionedWith(absentCounted.database, absent), false);
+    assert.deepEqual(absentCounted.calls, {select: 1, run: 0});
+    assert.equal((await f.client.execute({sql: "SELECT count(*) AS n FROM users WHERE clerk_id=?", args: [absent]})).rows[0]?.n, 0);
+
+    const mapped = "user_tombstone_mapped";
+    const internal = "internal-tombstone-mapped";
+    await f.client.execute({sql: "INSERT INTO users(id,clerk_id,color,initials) VALUES(?,?,'#123','TM')", args: [internal, mapped]});
+    assert.equal(await ensureUserProvisionedWith(f.db, mapped, "mapped@example.test", "Mapped", "Person"), true);
+    await f.client.execute({
+      sql: "INSERT INTO meta(key,value) VALUES(?, 'erasure-requested:v1')",
+      args: [accountDeletionTombstoneKey(mapped)],
+    });
+    const mappedCounted = countStatements(f.db);
+    assert.equal(await ensureUserProvisionedWith(mappedCounted.database, mapped, "mapped@example.test", "Mapped", "Person"), false);
+    assert.deepEqual(mappedCounted.calls, {select: 1, run: 0});
+    assert.equal((await f.client.execute({sql: "SELECT id FROM users WHERE clerk_id=?", args: [mapped]})).rows[0]?.id, internal);
+  } finally { f.cleanup(); }
+});
+
+test("an absent user with null joined owners enters the original writer", async () => {
+  const f = await freshDb();
+  try {
+    const actor = "user_null_join_absent";
+    const counted = countStatements(f.db);
+    assert.equal(await ensureUserProvisionedWith(counted.database, actor), true);
+    assert.equal(counted.calls.select >= 2, true, "the later persisted-ID read must run");
+    assert.equal(counted.calls.run > 0, true, "null joined owners cannot certify a missing user");
+  } finally { f.cleanup(); }
+});
+
+test("transient combined pre-write reads use fresh transactions", async () => {
   const f = await freshDb();
   try {
     const actor = "user_retry_warm";
@@ -335,12 +374,12 @@ test("transient tombstone and awaited completeness reads use fresh transactions"
     const tombstoneError = new Error("fetch failed", {cause: new Error("SocketError other side closed")});
     const tombstone = faultTransactions(f.db, [{selectAt: 1, error: tombstoneError, rejectedRead: true}]);
     assert.equal(await ensureUserProvisionedWith(tombstone.database, actor), true);
-    assert.deepEqual(tombstone.calls, {transactions: 2, selects: [1, 2], runs: [0, 0]});
+    assert.deepEqual(tombstone.calls, {transactions: 2, selects: [1, 1], runs: [0, 0]});
 
     const completenessError = new Error("fetch failed", {cause: new Error("SocketError other side closed")});
-    const completeness = faultTransactions(f.db, [{selectAt: 2, error: completenessError, rejectedRead: true}]);
+    const completeness = faultTransactions(f.db, [{selectAt: 1, error: completenessError}]);
     assert.equal(await ensureUserProvisionedWith(completeness.database, actor), true);
-    assert.deepEqual(completeness.calls, {transactions: 2, selects: [2, 2], runs: [0, 0]});
+    assert.deepEqual(completeness.calls, {transactions: 2, selects: [1, 1], runs: [0, 0]});
   } finally { f.cleanup(); }
 });
 
@@ -350,15 +389,15 @@ test("pre-write retry stops after three attempts and does not retain a failed re
     const actor = "user_retry_budget";
     assert.equal(await ensureUserProvisionedWith(f.db, actor), true);
     const errors = [0, 1, 2].map(n => new Error(`fetch failed ${n}`));
-    const succeeds = faultTransactions(f.db, errors.slice(0, 2).map(error => ({selectAt: 2, error})));
+    const succeeds = faultTransactions(f.db, errors.slice(0, 2).map(error => ({selectAt: 1, error})));
     const started = Date.now();
     assert.equal(await ensureUserProvisionedWith(succeeds.database, actor), true);
-    assert.deepEqual(succeeds.calls, {transactions: 3, selects: [2, 2, 2], runs: [0, 0, 0]});
+    assert.deepEqual(succeeds.calls, {transactions: 3, selects: [1, 1, 1], runs: [0, 0, 0]});
     assert.ok(Date.now() - started >= 100, "40 ms and 80 ms backoffs both elapsed");
 
-    const exhausted = faultTransactions(f.db, errors.map(error => ({selectAt: 2, error})));
+    const exhausted = faultTransactions(f.db, errors.map(error => ({selectAt: 1, error})));
     await assert.rejects(ensureUserProvisionedWith(exhausted.database, actor), error => error === errors[2]);
-    assert.deepEqual(exhausted.calls, {transactions: 3, selects: [2, 2, 2], runs: [0, 0, 0]});
+    assert.deepEqual(exhausted.calls, {transactions: 3, selects: [1, 1, 1], runs: [0, 0, 0]});
     // A later call has its own budget, transaction and fresh completeness read.
     assert.equal(await ensureUserProvisionedWith(exhausted.database, actor), true);
     assert.equal(exhausted.calls.transactions, 4);
@@ -386,7 +425,7 @@ test("first and later write failures, persisted-ID read failures, and commit fai
     for (const [suffix, plan] of [
       ["sync", {runAt: 1, error: transient}],
       ["async", {runAt: 1, error: transient, rejectedWrite: true}],
-      ["persisted", {selectAt: 3, error: transient, rejectedRead: true}],
+      ["persisted", {selectAt: 2, error: transient, rejectedRead: true}],
       ["later", {runAt: 2, error: transient, rejectedWrite: true}],
     ] as const) {
       const actor = `user_retry_write_${suffix}`;
@@ -402,7 +441,7 @@ test("first and later write failures, persisted-ID read failures, and commit fai
     assert.equal(await ensureUserProvisionedWith(f.db, completeActor), true);
     const warmCommit = faultTransactions(f.db, [{commitError: transient}]);
     await assert.rejects(ensureUserProvisionedWith(warmCommit.database, completeActor), error => error === transient);
-    assert.deepEqual(warmCommit.calls, {transactions: 1, selects: [2], runs: [0]});
+    assert.deepEqual(warmCommit.calls, {transactions: 1, selects: [1], runs: [0]});
     await beginAccountDeletionWith(f.db, completeActor);
     const deletionCommit = faultTransactions(f.db, [{commitError: transient}]);
     await assert.rejects(ensureUserProvisionedWith(deletionCommit.database, completeActor), error => error === transient);
@@ -434,9 +473,9 @@ test("rollback, transaction setup, and nontransient failures propagate without r
     assert.equal(begin.calls.transactions, 1);
 
     const malformed = new Error("no such column");
-    const nontransient = faultTransactions(f.db, [{selectAt: 2, error: malformed}]);
+    const nontransient = faultTransactions(f.db, [{selectAt: 1, error: malformed}]);
     await assert.rejects(ensureUserProvisionedWith(nontransient.database, "user_retry_malformed"), error => error === malformed);
-    assert.deepEqual(nontransient.calls, {transactions: 1, selects: [2], runs: [0]});
+    assert.deepEqual(nontransient.calls, {transactions: 1, selects: [1], runs: [0]});
   } finally { f.cleanup(); }
 });
 
@@ -449,7 +488,7 @@ test("same-subject serialization contains the full retry sequence and releases a
     let releaseRollback!: () => void;
     const entered = new Promise<void>(resolve => { enterRollback = resolve; });
     const release = new Promise<void>(resolve => { releaseRollback = resolve; });
-    const fault = faultTransactions(f.db, [{selectAt: 2, error: new Error("fetch failed"),
+    const fault = faultTransactions(f.db, [{selectAt: 1, error: new Error("fetch failed"),
       afterRollback: async () => { enterRollback(); await release; }}]);
     const first = ensureUserProvisionedWith(fault.database, actor);
     await entered;
@@ -464,6 +503,6 @@ test("same-subject serialization contains the full retry sequence and releases a
     releaseRollback();
     assert.equal(await first, true);
     assert.equal(await second, true);
-    assert.deepEqual(fault.calls, {transactions: 3, selects: [2, 2, 2], runs: [0, 0, 0]});
+    assert.deepEqual(fault.calls, {transactions: 3, selects: [1, 1, 1], runs: [0, 0, 0]});
   } finally { f.cleanup(); }
 });
