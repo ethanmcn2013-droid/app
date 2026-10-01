@@ -248,6 +248,18 @@ test("updateTaskAction resolves an owned row before emitting activity", () => {
   assert.match(body, /if \(!outcome\) return neutralTaskList\(/);
 });
 
+test("task writers read only the target Project before stored-Project authorization", () => {
+  const start = actions.indexOf("async function taskWriteTarget");
+  const end = actions.indexOf("function nowSeconds", start);
+  const body = actions.slice(start, end);
+  const scopeOnly = body.indexOf("select({ workspaceId: tasks.workspaceId }).from(tasks).where(eq(tasks.id, id))");
+  const proof = body.indexOf("authorizeStoredProject");
+  const fences = body.indexOf("taskWriterState(executor, ws, me)");
+  const privateRead = body.indexOf("executor.select().from(tasks)", fences);
+  assert.ok(scopeOnly >= 0 && proof > scopeOnly && fences > proof && privateRead > fences,
+    "the whole task row must only be decoded after Project authorization and deletion fences");
+});
+
 test("addTaskAction validates parent ownership and top-level shape", () => {
   const start = actions.indexOf("export async function addTaskAction");
   const end = actions.indexOf("export async function reorderTaskAction", start);
@@ -272,12 +284,12 @@ test("routed task and subtask creation writes to the displayed Project, not an a
   assert.match(subtasksSection, /addTaskAction\(\{[\s\S]*?parentTaskId:\s*task\.id,[\s\S]*?projectId,/);
 
   const body = exportedActionBody(actions, "addTaskAction");
-  assert.match(body, /candidateProjectId:\s*input\.projectId\s*\?\?\s*ambient/);
-  assert.match(body, /const ws = grant\.projectId/);
+  assert.match(body, /const ws = parseProjectId\(input\.projectId\s*\?\?\s*ambient\)/);
+  assert.match(body, /authorizeStoredProject\(\{[\s\S]*?storedProjectId: ws[\s\S]*?archivePolicy: "enforce", executor: tx/);
   assert.match(body, /workspaceId:\s*ws/);
   // A refused explicit B write must reject the optimistic B card. Returning
   // A neutral ambient-list fallback would hydrate A's tasks into the B provider.
-  assert.match(body, /if \(!grant\.ok\)\s*\{[\s\S]*?if \(input\.projectId != null\) throw/);
+  assert.match(body, /if \(!ws\)\s*\{[\s\S]*?if \(input\.projectId != null\) throw/);
   assert.match(body, /if \(!created\)\s*\{[\s\S]*?if \(input\.projectId != null\) throw/);
 });
 

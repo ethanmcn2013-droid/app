@@ -72,7 +72,10 @@ function fixture() {
                   : table === tasks
                     ? [{ "tasks.id": "task_alice", "tasks.workspaceId": "project_alice", id: "task_alice", workspaceId: "project_alice", lane: "todo" }]
                     : table === workspaces
-                      ? [{ "workspaces.id": "project_alice", "workspaces.ownerUserId": "user_alice", id: "user_alice", clerkId: "user_alice" }]
+                      ? [{ "workspaces.id": "project_alice", "workspaces.ownerUserId": "user_alice",
+                        projectDeleting: false, actorId: internalActor, actorClerkId: state.actor,
+                        ownerId: internalActor, ownerClerkId: state.actor,
+                        task: { id: "task_alice", workspaceId: "project_alice", lane: "todo" } }]
                     : [];
               const selected = rows.filter((row) => matches(row, expression));
               return {
@@ -144,6 +147,7 @@ function fixture() {
     "@/server/db": { db },
     "@/server/db/schema": schema,
     "@/server/account-deletion-key": { accountDeletionTombstoneKey: value => `account-deletion:${value}` },
+    "@/lib/projects/project-ref": { parseProjectId: value => typeof value === "string" && value.length > 0 ? value : null },
     "@/server/db/queries": { getTasks: async (workspaceId) => {
       counters.list++;
       return [{ id: `list_for_${workspaceId}` }];
@@ -181,7 +185,11 @@ function fixture() {
     "@/lib/access-mode": demo,
     "@/server/demo/tasks-demo": { demoTasks: () => [{ id: "demo_task" }] },
     "@/lib/data": { LANE_ORDER: ["todo", "done"] },
-    "@/server/projects/project-deletion-fence": { assertProjectNotDeleting: async () => {} },
+    "@/server/projects/project-deletion-fence": {
+      assertProjectNotDeleting: async () => {},
+      projectDeletionInProgress: () => false,
+      ProjectDeletionInProgressError: class ProjectDeletionInProgressError extends Error {},
+    },
     "@/server/account-deletion-lifecycle": { hasAccountDeletionStartedWith: async () => false },
   });
   return { counters, state, authModule, actionModule, timing };

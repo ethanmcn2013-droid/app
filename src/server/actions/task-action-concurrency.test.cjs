@@ -53,6 +53,154 @@ test('committed Project deletion intent fences edit and completion with task and
   } finally { f.close(); }
 });
 
+test('Project deletion error wins when the actor profile is also missing', async () => {
+  const f = await usageFixture({ seedClaim: false });
+  try {
+    await f.action({ id: 'precedence-task', title: 'Before', projectId: 'a' });
+    await f.client.execute('PRAGMA foreign_keys=OFF');
+    await f.client.execute("DELETE FROM users WHERE id='member'");
+    await f.client.execute("INSERT OR IGNORE INTO workspace_members(workspace_id,user_id,role) VALUES ('a','member','member')");
+    await f.client.execute('PRAGMA foreign_keys=ON');
+    await f.client.execute({ sql: 'INSERT INTO project_drive_operations(id,workspace_id,operation_kind,status,dedupe_key) VALUES (?,?,?,?,?)',
+      args: ['precedence-delete', 'a', 'project_delete', 'pending', 'e'.repeat(64)] });
+    f.state.actor = 'member';
+    const actions = f.load('src/server/actions/tasks.ts');
+    await assert.rejects(actions.updateTaskAction('precedence-task', { title: 'Denied' }), /being deleted/);
+    await assert.rejects(actions.toggleCompleteAction('precedence-task'), /being deleted/);
+    await assert.rejects(actions.addTaskAction({ id: 'precedence-create', title: 'Denied', projectId: 'a' }), /being deleted/);
+    assert.equal((await task(f, 'precedence-task')).title, 'Before');
+    assert.equal(await task(f, 'precedence-create'), undefined);
+  } finally { f.close(); }
+});
+
+test('malformed stored task JSON is decoded only after deletion and account fences', async () => {
+  for (const column of ['recurrence', 'tags']) {
+    const f = await usageFixture({ seedClaim: false });
+    try {
+      await f.action({ id: `bad-${column}`, title: 'Before', projectId: 'a' });
+      await f.client.execute({ sql: `UPDATE tasks SET ${column}='{' WHERE id=?`, args: [`bad-${column}`] });
+      const actions = f.load('src/server/actions/tasks.ts');
+      const edit = () => actions.updateTaskAction(`bad-${column}`, { title: 'After' });
+      const complete = () => actions.toggleCompleteAction(`bad-${column}`);
+      const assertBoth = async (expected) => {
+        await assert.rejects(edit(), expected);
+        await assert.rejects(complete(), expected);
+      };
+
+      await f.client.execute({ sql: 'INSERT INTO project_drive_operations(id,workspace_id,operation_kind,status,dedupe_key) VALUES (?,?,?,?,?)',
+        args: [`delete-${column}`, 'a', 'project_delete', 'pending', 'f'.repeat(64)] });
+      await assertBoth(/being deleted/);
+      await f.client.execute({ sql: 'DELETE FROM project_drive_operations WHERE id=?', args: [`delete-${column}`] });
+
+      await f.client.execute("INSERT INTO workspace_members(workspace_id,user_id,role) VALUES ('b','member','member')");
+      f.state.actor = 'member';
+      f.state.ambient = 'b';
+      const keyFor = value => f.load('src/server/account-deletion-key.ts').accountDeletionTombstoneKey(value);
+      const actorKey = keyFor('clerk-member');
+      await f.client.execute({ sql: 'INSERT INTO meta(key,value) VALUES (?,?)', args: [actorKey, 'erasure-requested:v1'] });
+      await edit();
+      await complete();
+      await f.client.execute({ sql: 'DELETE FROM meta WHERE key=?', args: [actorKey] });
+
+      const ownerKey = keyFor('clerk-owner');
+      await f.client.execute({ sql: 'INSERT INTO meta(key,value) VALUES (?,?)', args: [ownerKey, 'erasure-requested:v1'] });
+      await edit();
+      await complete();
+      await f.client.execute({ sql: 'DELETE FROM meta WHERE key=?', args: [ownerKey] });
+
+      await f.client.execute("UPDATE users SET clerk_id='   ' WHERE id='owner'");
+      await assertBoth(/clerkId is required/);
+      await f.client.execute("UPDATE users SET clerk_id='clerk-owner' WHERE id='owner'");
+      await assertBoth(SyntaxError);
+      assert.equal((await task(f, `bad-${column}`)).title, 'Before');
+    } finally { f.close(); }
+  }
+});
+
+test('create never decodes a preexisting empty-ID task before its deletion fence', async () => {
+  const f = await usageFixture({ seedClaim: false });
+  try {
+    await f.client.execute("INSERT INTO tasks(id,workspace_id,title,lane,priority,recurrence) VALUES ('','a','Legacy empty','todo','p2','{')");
+    await f.client.execute({ sql: 'INSERT INTO project_drive_operations(id,workspace_id,operation_kind,status,dedupe_key) VALUES (?,?,?,?,?)',
+      args: ['delete-empty-id', 'a', 'project_delete', 'pending', 'a'.repeat(64)] });
+    await assert.rejects(f.action({ id: 'new-task', title: 'Denied', projectId: 'a' }), /being deleted/);
+    assert.equal(await task(f, 'new-task'), undefined);
+  } finally { f.close(); }
+});
+
+test('all three task actions prove current membership inside the writer', async () => {
+  for (const actionName of ['create', 'edit', 'complete']) {
+    const f = await usageFixture({ seedClaim: false });
+    try {
+      await f.action({ id: 'fresh-proof-task', title: 'Before', projectId: 'a' });
+      const originalTransaction = f.db.transaction;
+      f.db.transaction = async function (work, options) {
+        await f.client.execute("DELETE FROM workspace_members WHERE workspace_id='a' AND user_id='member'");
+        return originalTransaction.call(this, work, options);
+      };
+      f.state.actor = 'member';
+      const actions = f.load('src/server/actions/tasks.ts');
+      if (actionName === 'create') {
+        await assert.rejects(actions.addTaskAction({ id: 'fresh-proof-create', title: 'Denied', projectId: 'a' }), /Task Project is unavailable/);
+        assert.equal(await task(f, 'fresh-proof-create'), undefined);
+      } else if (actionName === 'edit') {
+        await actions.updateTaskAction('fresh-proof-task', { title: 'Denied' });
+      } else {
+        await actions.toggleCompleteAction('fresh-proof-task');
+      }
+      assert.equal((await task(f, 'fresh-proof-task')).title, 'Before');
+      assert.equal((await task(f, 'fresh-proof-task')).lane, 'todo');
+    } finally { f.close(); }
+  }
+});
+
+test('create still enforces archived Project refusal inside the writer', async () => {
+  const f = await usageFixture({ seedClaim: false });
+  try {
+    await f.client.execute("UPDATE workspaces SET archived_at=123 WHERE id='a'");
+    await assert.rejects(f.action({ id: 'archived-create', title: 'Denied', projectId: 'a' }),
+      /Task Project is unavailable/);
+    assert.equal(await task(f, 'archived-create'), undefined);
+  } finally { f.close(); }
+});
+
+test('writer query trace retains one fresh proof and the reduced guard reads', async () => {
+  for (const actionName of ['create', 'edit', 'complete']) {
+    const f = await usageFixture({ seedClaim: false });
+    try {
+      if (actionName !== 'create') await f.action({ id: 'trace-task', title: 'Before', projectId: 'a' });
+      const originalTransaction = f.db.transaction;
+      const counts = [];
+      f.db.transaction = function (work, options) {
+        return originalTransaction.call(this, async tx => {
+          let beforeFirstMutation = true;
+          let reads = 0;
+          const traced = new Proxy(tx, { get(target, key) {
+            if (key === 'select') return (...args) => {
+              if (beforeFirstMutation) reads++;
+              return target.select(...args);
+            };
+            if (key === 'insert' || key === 'update') return (...args) => {
+              beforeFirstMutation = false;
+              counts.push(reads);
+              return target[key](...args);
+            };
+            return target[key];
+          } });
+          return work(traced);
+        }, options);
+      };
+      const actions = f.load('src/server/actions/tasks.ts');
+      if (actionName === 'create') await actions.addTaskAction({ id: 'trace-create', title: 'Created', projectId: 'a' });
+      else if (actionName === 'edit') await actions.updateTaskAction('trace-task', { title: 'After' });
+      else await actions.toggleCompleteAction('trace-task');
+      // Create also needs lane position; edit/complete decode the scoped row after the fences.
+      assert.equal(counts[0], actionName === 'create' ? 4 : 5,
+        `${actionName} should retain its reduced guard read count`);
+    } finally { f.close(); }
+  }
+});
+
 test('committed membership and account tombstones refuse writes without secondary effects', async () => {
   const f = await usageFixture({ seedClaim: false });
   try {
@@ -369,6 +517,26 @@ test('transactional completion preserves custom done-column and recurring behavi
     assert.ok(recurring.completed_at != null && recurring.due_at != null);
     const activity = (await f.client.execute("SELECT payload FROM activities WHERE task_id='weekly-recurring' AND kind='toggleComplete'")).rows;
     assert.deepEqual(activity.map(row => JSON.parse(row.payload).to), ['done']);
+  } finally { f.close(); }
+});
+
+test('joined task state retains timestamp and JSON decoding for recurrence', async () => {
+  const f = await usageFixture({ seedClaim: false });
+  try {
+    const dueAt = new Date(Date.now() + 2 * 86400000);
+    const weekday = dueAt.getDay();
+    await f.action({ id: 'typed-state-task', title: 'Repeat', projectId: 'a',
+      dueAt, tags: ['typed'], recurrence: { kind: 'weekly', weekday } });
+    const actions = f.load('src/server/actions/tasks.ts');
+    await actions.updateTaskAction('typed-state-task', { title: 'Repeat edited' });
+    await actions.toggleCompleteAction('typed-state-task');
+    const [row] = await f.db.select().from(f.schema.tasks)
+      .where(require('drizzle-orm').eq(f.schema.tasks.id, 'typed-state-task'));
+    assert.equal(row.title, 'Repeat edited');
+    assert.deepEqual(row.tags, ['typed']);
+    assert.deepEqual(row.recurrence, { kind: 'weekly', weekday });
+    assert.ok(row.dueAt instanceof Date && row.dueAt > dueAt);
+    assert.equal(row.lane, 'todo');
   } finally { f.close(); }
 });
 

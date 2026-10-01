@@ -27,7 +27,6 @@ import { withIdentityOutboundScope } from "@/server/diagnostics/identity-outboun
 import { measureTaskStage, withTaskActionTiming } from "@/server/diagnostics/task-timing";
 import { privateTaskDbWrite } from "@/server/actions/private-task-db-write";
 import {
-  authorizeProjectCandidate,
   authorizeStoredProject,
   readableProjectOrNull,
   scopeForTask,
@@ -52,8 +51,13 @@ import {
 import { deleteNativeByteCleanupTargetConfirmed } from "@/server/attachments/native-byte-cleanup";
 import { repairExactNativeByteCleanupReceipts } from "@/server/attachments/native-upload-cleanup";
 import { deleteNativeAttachmentRowsInTransaction } from "@/server/attachments/native-upload-custody";
-import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
+import {
+  assertProjectNotDeleting,
+  projectDeletionInProgress,
+  ProjectDeletionInProgressError,
+} from "@/server/projects/project-deletion-fence";
 import { accountDeletionTombstoneKey } from "@/server/account-deletion-key";
+import { parseProjectId } from "@/lib/projects/project-ref";
 import { captureTaskCreated } from "@/server/sponsored-use/capture";
 
 /**
@@ -111,24 +115,27 @@ async function neutralTaskList(ambient: string | null, actorUserId: UserId): Pro
 
 const taskOwnerUser = alias(users, "task_owner_user");
 
-/** Keep actor and owner deletion fences on the same immediate writer snapshot. */
-async function taskWriterAccountsOpen(executor: Pick<typeof db, "select">, ws: string, me: UserId): Promise<boolean> {
-  const [identity] = await executor.select({
+/** Read deletion and account guards before decoding any task columns. */
+async function taskWriterState(executor: Pick<typeof db, "select">, ws: string, me: UserId) {
+  const [state] = await executor.select({
+    projectDeleting: projectDeletionInProgress(ws),
     actorClerkId: users.clerkId,
+    actorId: users.id,
     ownerId: taskOwnerUser.id,
     ownerClerkId: taskOwnerUser.clerkId,
-  }).from(users)
-    .leftJoin(workspaces, eq(workspaces.id, ws))
+  }).from(workspaces)
+    .leftJoin(users, eq(users.id, me))
     .leftJoin(taskOwnerUser, eq(taskOwnerUser.id, workspaces.ownerUserId))
-    .where(eq(users.id, me)).limit(1);
-  if (!identity) return false;
+    .where(eq(workspaces.id, ws)).limit(1);
+  if (state?.projectDeleting) throw new ProjectDeletionInProgressError();
+  if (state?.actorId === null || state?.actorId === undefined) return null;
 
-  const actorKey = accountDeletionTombstoneKey(identity.actorClerkId ?? me);
+  const actorKey = accountDeletionTombstoneKey(state.actorClerkId ?? me);
   let ownerKey: string | null = null;
   let ownerKeyError: unknown;
-  if (identity.ownerId !== null && identity.ownerId !== undefined) {
+  if (state.ownerId !== null && state.ownerId !== undefined) {
     try {
-      ownerKey = accountDeletionTombstoneKey(identity.ownerClerkId ?? identity.ownerId);
+      ownerKey = accountDeletionTombstoneKey(state.ownerClerkId ?? state.ownerId);
     } catch (error) {
       // The old order checks the actor tombstone before deriving the owner
       // key. Preserve that refusal even if the owner identifier is malformed.
@@ -138,9 +145,9 @@ async function taskWriterAccountsOpen(executor: Pick<typeof db, "select">, ws: s
   const keys = ownerKey && ownerKey !== actorKey ? [actorKey, ownerKey] : [actorKey];
   const tombstones = await executor.select({ key: meta.key }).from(meta)
     .where(inArray(meta.key, keys)).limit(keys.length);
-  if (tombstones.some(({ key }) => key === actorKey)) return false;
+  if (tombstones.some(({ key }) => key === actorKey)) return null;
   if (ownerKeyError !== undefined) throw ownerKeyError;
-  return tombstones.length === 0;
+  return tombstones.length === 0 ? state : null;
 }
 
 /** Prove the stored Project and deletion fences on the immediate writer snapshot. */
@@ -152,9 +159,11 @@ async function taskWriteTarget(executor: Pick<typeof db, "select">, id: string, 
   });
   if (!grant.ok) return null;
   const ws = grant.projectId;
-  await assertProjectNotDeleting(executor, ws);
-  if (!await taskWriterAccountsOpen(executor, ws, me)) return null;
-  const [row] = await executor.select().from(tasks).where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
+  if (!await taskWriterState(executor, ws, me)) return null;
+  // Drizzle's JSON columns can throw while mapping the result. Keep that
+  // fallible read after deletion and account fences, as in the prior writer.
+  const [row] = await executor.select().from(tasks)
+    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
   return row ? { ws, row } : null;
 }
 
@@ -517,32 +526,25 @@ export async function addTaskAction(input: {
     const actor = await getCurrentUser();
     return [actor, input.projectId == null ? await activeWorkspaceOrNullForUser(actor) : null] as const;
   }));
-  const grant = await measureTaskStage("projectProof", () => authorizeProjectCandidate({
-    candidateProjectId: input.projectId ?? ambient,
-    capability: "createOrEditTasks",
-    actorUserId: me,
-  }));
-  // No proved Project means no destination. The old accessor would have
-  // offered LEGACY_WORKSPACE_ID here and this would have created the task
-  // inside it (D-005).
-  if (!grant.ok) {
+  const ws = parseProjectId(input.projectId ?? ambient);
+  // A missing or malformed candidate has no destination. A valid candidate
+  // still needs the fresh membership and archive proof in the writer below.
+  if (!ws) {
     // An explicitly displayed Project must never reconcile its optimistic
     // state with the caller's different ambient Project after a refusal.
     if (input.projectId != null) throw new Error("Task Project is unavailable");
     return neutralTaskList(ambient, me);
   }
-  const ws = grant.projectId;
   const id =
     input.id ??
     `t-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).slice(0, 8)}`;
   const created = await measureTaskStage("writeAndActivity", () => db.transaction(async (tx) => {
-    const current = await authorizeStoredProject({
+    const current = await measureTaskStage("projectProof", () => authorizeStoredProject({
       storedProjectId: ws, actorUserId: me, capability: "createOrEditTasks",
       archivePolicy: "enforce", executor: tx,
-    });
+    }));
     if (!current.ok) return false;
-    await assertProjectNotDeleting(tx, ws);
-    if (!await taskWriterAccountsOpen(tx, ws, me)) return false;
+    if (!await taskWriterState(tx, ws, me)) return false;
     if (input.parentTaskId) {
       // A subtask inherits its parent's tenant. Require a top-level parent in
       // the active workspace; this rejects both foreign-parent injection and
