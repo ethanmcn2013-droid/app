@@ -9,8 +9,12 @@ import { BRIEFING_APP_PATH } from "@/lib/product-urls";
  */
 import {
   buildBriefingForUser,
-  calendarDayDifference,
-  localWeekday,
+  deadlineDayDifference,
+  deadlineIsOverdue,
+  deadlineShortDate,
+  compareDeadlines,
+  deadlineWeekday,
+  signalDeadline,
   type BriefItem,
   type TaskSignal,
   type SignalScope,
@@ -55,7 +59,7 @@ export type HomeReviewRow = {
   id: string;
   title: string;
   source: string;
-  idleDays: number;
+  idleDays: number | null;
   href: string;
 };
 
@@ -72,7 +76,7 @@ export type HomeTaskRow = {
   title: string;
   source: string;
   lane: TaskSignal["lane"];
-  priority: number;
+  priority: TaskSignal["priority"];
   /** Short timing label ("Today", "Tomorrow", "Fri", "3 Oct") or null. */
   due: string | null;
   overdue: boolean;
@@ -105,6 +109,8 @@ export type HomeData =
       comingUp: HomeComingRow[];
       needsReview: HomeReviewRow[];
       stats: HomeStats;
+      /** Open scoped tasks all have interpretable saved deadlines; empty open scope is complete. */
+      dateCoverageComplete: boolean;
       myTasks: HomeTaskRow[];
       deadlines: HomeDeadlineGroup[];
     };
@@ -127,11 +133,11 @@ function greetingFor(hour: number): string {
   return "Good evening.";
 }
 
-function dueFromDays(daysOut: number, dueAt: number, timezone: string): string {
+function dueFromDays(daysOut: number, signal: TaskSignal, timezone: string): string {
   if (daysOut < 0) return "overdue";
   if (daysOut < 1) return "today";
   if (daysOut < 2) return "tomorrow";
-  if (daysOut < 7) return `by ${localWeekday(dueAt, timezone)}`;
+  if (daysOut < 7) return `by ${deadlineWeekday(signalDeadline(signal), timezone)}`;
   return "in the next two weeks";
 }
 
@@ -154,6 +160,7 @@ export async function loadHomeData(opts: {
   const dueById = new Map(
     briefing.suggestedFocus.map((item) => [item.id, item.due]),
   );
+  const signalById = new Map(signals.map(signal => [signal.id, signal]));
   // An aggregate describes the authorized reading scope, not one task or the
   // first project that happened to contribute. Its destination rebuilds and
   // authorizes that same scope; no synthetic ID enters an object route.
@@ -166,13 +173,17 @@ export async function loadHomeData(opts: {
   const aggregateHref = `${BRIEFING_APP_PATH}?${scopeParams.toString()}`;
   const toSignalRow = (item: BriefItem): HomeSignalRow => {
     const aggregate = item.trigger === "overload" || item.trigger === "crowded-week";
+    const source = signalById.get(item.id);
+    const ownDeadline = source ? signalDeadline(source) : null;
+    const blockerWithoutDate = item.trigger === "blocking-due-work" &&
+      (!ownDeadline || ownDeadline.kind === "unknown");
     return {
       id: item.id,
       destination: aggregate ? "briefing" : "task",
       title: item.text,
       why: item.detail,
       source: aggregate ? `Tasks · ${authorizedScope.label}` : item.sourceLabel,
-      due: dueById.get(item.id) ?? null,
+      due: blockerWithoutDate ? null : dueById.get(item.id) ?? null,
       trigger: item.trigger,
       href: aggregate ? aggregateHref : taskHref(item.id),
     };
@@ -187,25 +198,28 @@ export async function loadHomeData(opts: {
 
   const surfacedIds = new Set(signalRows.map((row) => row.id));
 
+  const daysOutOf = (signal: TaskSignal) => deadlineDayDifference(signalDeadline(signal), now, timezone);
+  const overdue = (signal: TaskSignal) => deadlineIsOverdue(signalDeadline(signal), now, timezone);
+  const sortDue = (a: TaskSignal, b: TaskSignal) => compareDeadlines(signalDeadline(a), signalDeadline(b), timezone, now);
   const comingUp: HomeComingRow[] = signals
     .filter(
-      (signal): signal is TaskSignal & { dueAt: number } =>
-        signal.dueAt != null &&
+      (signal) =>
+        daysOutOf(signal) !== null &&
         signal.lane !== "shipped" &&
         !surfacedIds.has(signal.id),
     )
     .map((signal) => ({
       signal,
-      daysOut: calendarDayDifference(signal.dueAt, now, timezone),
+      daysOut: daysOutOf(signal)!,
     }))
-    .filter(({ daysOut }) => daysOut >= 0 && daysOut <= COMING_UP_WINDOW_DAYS)
-    .sort((a, b) => a.signal.dueAt - b.signal.dueAt)
+    .filter(({ signal, daysOut }) => !overdue(signal) && daysOut >= 0 && daysOut <= COMING_UP_WINDOW_DAYS)
+    .sort((a, b) => sortDue(a.signal, b.signal))
     .slice(0, COMING_UP_CAP)
     .map(({ signal, daysOut }) => ({
       id: signal.id,
       title: signal.title,
       source: signal.sourceLabel,
-      due: dueFromDays(daysOut, signal.dueAt, timezone),
+      due: dueFromDays(daysOut, signal, timezone),
       href: taskHref(signal.id),
     }));
 
@@ -213,7 +227,7 @@ export async function loadHomeData(opts: {
     .filter(
       (signal) => signal.lane === "review" && !surfacedIds.has(signal.id),
     )
-    .sort((a, b) => b.idleDays - a.idleDays)
+    .sort((a, b) => (b.idleDays ?? -1) - (a.idleDays ?? -1))
     .slice(0, REVIEW_CAP)
     .map((signal) => ({
       id: signal.id,
@@ -223,12 +237,20 @@ export async function loadHomeData(opts: {
       href: taskHref(signal.id),
     }));
 
+  const openSignals = signals.filter((signal) => signal.lane !== "shipped");
+  // This is reassurance coverage for open scoped Tasks, not a statement
+  // about dates outside the authorized read.
+  const dateCoverageComplete = openSignals.every(signal => {
+    const deadline = signalDeadline(signal);
+    return deadline !== null && deadline.kind !== "unknown";
+  });
+
   // All-clear only when nothing is asking. The engine's honesty guard
   // carries over: when something shipped recently, the quiet state
   // names it instead of claiming nothing happened.
   const shippedCount = briefing.movingWell.length;
   const allClear =
-    signalRows.length === 0
+    signalRows.length === 0 && briefing.coverageStatus !== "partial" && dateCoverageComplete
       ? {
           headline:
             briefing.emptyStateHeadline ?? "Nothing needs you right now.",
@@ -244,15 +266,14 @@ export async function loadHomeData(opts: {
         }
       : null;
 
-  const openSignals = signals.filter((signal) => signal.lane !== "shipped");
-  const daysOutOf = (dueAt: number) => calendarDayDifference(dueAt, now, timezone);
-  const shortDue = (dueAt: number): string => {
-    const days = daysOutOf(dueAt);
+  const shortDue = (signal: TaskSignal): string | null => {
+    const days = daysOutOf(signal);
+    if (days === null) return null;
     if (days === 0) return "Today";
     if (days === 1) return "Tomorrow";
     if (days === -1) return "Yesterday";
-    if (days > 1 && days < 7) return localWeekday(dueAt, timezone).slice(0, 3);
-    return new Date(dueAt).toLocaleDateString("en-GB", { timeZone: timezone, day: "numeric", month: "short" });
+    if (days > 1 && days < 7) return deadlineWeekday(signalDeadline(signal), timezone)?.slice(0, 3) ?? null;
+    return deadlineShortDate(signalDeadline(signal), timezone);
   };
   const toTaskRow = (signal: TaskSignal): HomeTaskRow => ({
     id: signal.id,
@@ -260,15 +281,15 @@ export async function loadHomeData(opts: {
     source: signal.sourceLabel,
     lane: signal.lane,
     priority: signal.priority,
-    due: signal.dueAt != null ? shortDue(signal.dueAt) : null,
-    overdue: signal.dueAt != null && daysOutOf(signal.dueAt) < 0,
+    due: shortDue(signal),
+    overdue: overdue(signal),
     href: taskHref(signal.id),
   });
 
   const stats: HomeStats = {
     open: openSignals.length,
-    dueToday: openSignals.filter((signal) => signal.dueAt != null && daysOutOf(signal.dueAt) === 0).length,
-    overdue: openSignals.filter((signal) => signal.dueAt != null && daysOutOf(signal.dueAt) < 0).length,
+    dueToday: openSignals.filter((signal) => daysOutOf(signal) === 0).length,
+    overdue: openSignals.filter(overdue).length,
     inReview: openSignals.filter((signal) => signal.lane === "review").length,
     doneThisWeek: signals.filter(
       (signal) => signal.lane === "shipped" && signal.movedToShippedAt != null && now - signal.movedToShippedAt <= 7 * DAY_MS,
@@ -282,26 +303,26 @@ export async function loadHomeData(opts: {
     .sort((a, b) => {
       const lane = (laneRank[a.lane] ?? 3) - (laneRank[b.lane] ?? 3);
       if (lane !== 0) return lane;
-      const due = (a.dueAt ?? Number.MAX_SAFE_INTEGER) - (b.dueAt ?? Number.MAX_SAFE_INTEGER);
+      const due = sortDue(a, b);
       if (due !== 0) return due;
-      return b.priority - a.priority;
+      return (a.priority ?? Number.MAX_SAFE_INTEGER) - (b.priority ?? Number.MAX_SAFE_INTEGER);
     })
     .slice(0, MY_TASKS_CAP)
     .map(toTaskRow);
 
   const dated = openSignals
-    .filter((signal): signal is TaskSignal & { dueAt: number } => signal.dueAt != null)
-    .map((signal) => ({ signal, days: daysOutOf(signal.dueAt) }))
+    .filter((signal) => daysOutOf(signal) !== null)
+    .map((signal) => ({ signal, days: daysOutOf(signal)! }))
     .filter(({ days }) => days <= COMING_UP_WINDOW_DAYS)
-    .sort((a, b) => a.signal.dueAt - b.signal.dueAt)
+    .sort((a, b) => sortDue(a.signal, b.signal))
     .slice(0, DEADLINE_CAP);
   const groupOrder = ["Overdue", "Today", "Tomorrow", "This week", "Later"] as const;
-  const groupFor = (days: number) =>
-    days < 0 ? "Overdue" : days === 0 ? "Today" : days === 1 ? "Tomorrow" : days < 7 ? "This week" : "Later";
+  const groupFor = (signal: TaskSignal, days: number) =>
+    overdue(signal) ? "Overdue" : days === 0 ? "Today" : days === 1 ? "Tomorrow" : days < 7 ? "This week" : "Later";
   const deadlines: HomeDeadlineGroup[] = groupOrder
     .map((label) => ({
       label,
-      rows: dated.filter(({ days }) => groupFor(days) === label).map(({ signal }) => toTaskRow(signal)),
+      rows: dated.filter(({ signal, days }) => groupFor(signal, days) === label).map(({ signal }) => toTaskRow(signal)),
     }))
     .filter((group) => group.rows.length > 0);
 
@@ -326,6 +347,7 @@ export async function loadHomeData(opts: {
     comingUp,
     needsReview,
     stats,
+    dateCoverageComplete,
     myTasks,
     deadlines,
   };

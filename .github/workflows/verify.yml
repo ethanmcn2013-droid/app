@@ -11,10 +11,21 @@ concurrency:
 
 jobs:
   verify:
+    name: ${{ matrix.checkout == 'head' && github.event_name == 'pull_request' && 'verify-exact-head' || 'verify' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        checkout: ${{ fromJSON(github.event_name == 'pull_request' && '["merge","head"]' || '["head"]') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.checkout == 'head' && (github.event.pull_request.head.sha || github.sha) || github.sha }}
+      - name: Record verified source
+        run: |
+          git rev-parse HEAD
+          git rev-parse 'HEAD^{tree}'
       - uses: pnpm/action-setup@v4
         with:
           version: 11.9.0
@@ -60,6 +71,10 @@ jobs:
         run: rm -rf studio-parity
       - name: Project Drive lifecycle and recovery
         run: pnpm test:project-drive
+      - name: Install Chromium for isolated task Provider proof
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Task Provider ordering and snapshot freshness
+        run: node --test src/lib/tasks/task-provider-ordering.test.mjs src/lib/tasks/authoritative-refresh.browser.test.mjs
       - run: pnpm build
       # E08.10 — performance budgets, measured from the build above so this
       # costs no extra build time. The check ratchets: it fails when a

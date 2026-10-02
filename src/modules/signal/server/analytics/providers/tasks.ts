@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, eq, gte, inArray, lt } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNull, lt } from "drizzle-orm";
 import type {
   AnalyticsDate,
   AnalyticsEvent,
@@ -29,6 +29,7 @@ import {
 } from "../../tasks-db/signal-tasks-db-schema";
 import { readWorkspaceColumnConfig } from "./column-config";
 import { providerCoverage } from "./coverage";
+import { storedDeadline } from "../../../lib/data/deadline";
 import { queriedHistoryWindow } from "./history-window";
 
 const MAX_TASKS = 2_000;
@@ -36,7 +37,6 @@ const MAX_ACTIVITIES = 5_000;
 const MAX_NAVIGATION_LABELS = 500;
 const MAX_NAVIGATION_OWNERS = 500;
 const MAX_NAVIGATION_STATUSES = 100;
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 export class TasksAnalyticsProvider implements TasksProvider {
   async read(query: AnalyticsQuery, signal?: AbortSignal): Promise<TasksProviderResult> {
@@ -71,7 +71,7 @@ export class TasksAnalyticsProvider implements TasksProvider {
       db
         .select()
         .from(tasks)
-        .where(eq(tasks.workspaceId, query.scope.workspaceId))
+        .where(and(eq(tasks.workspaceId, query.scope.workspaceId), isNull(tasks.parentTaskId)))
         .orderBy(asc(tasks.id))
         .limit(MAX_TASKS + 1),
       readWorkspaceColumnConfig(db, query.scope.workspaceId),
@@ -111,6 +111,9 @@ export class TasksAnalyticsProvider implements TasksProvider {
 
     const activityTruncated = activityRows.length > MAX_ACTIVITIES;
     const boundedActivities = activityRows.slice(0, MAX_ACTIVITIES);
+    const calculatedAtMs = Date.parse(calculatedAt);
+    const validActivities = boundedActivities.filter((entry) =>
+      Number.isFinite(entry.createdAt.getTime()) && entry.createdAt.getTime() <= calculatedAtMs);
     const workspaceOwnerIds = Array.from(new Set(boundedRows.flatMap((row) => stringArray(row.assignees))));
     const ownerIds = workspaceOwnerIds.slice(0, MAX_NAVIGATION_OWNERS);
     const ownerRows = ownerIds.length
@@ -123,8 +126,8 @@ export class TasksAnalyticsProvider implements TasksProvider {
       ownerRows.map((row) => [row.id, { id: row.id, displayName: row.name ?? null }]),
     );
 
-    const rawByTask = new Map<string, typeof boundedActivities>();
-    for (const row of boundedActivities) {
+    const rawByTask = new Map<string, typeof validActivities>();
+    for (const row of validActivities) {
       const bucket = rawByTask.get(row.taskId);
       if (bucket) bucket.push(row);
       else rawByTask.set(row.taskId, [row]);
@@ -140,7 +143,7 @@ export class TasksAnalyticsProvider implements TasksProvider {
     const labelIdsByTask = new Map(
       scopedRows.map((row) => [row.id, stringArray(row.tags).map(labelIdFromTag)]),
     );
-    const events = boundedActivities.flatMap((row) =>
+    const events = validActivities.flatMap((row) =>
       mapActivity(row, labelIdsByTask.get(row.taskId) ?? [], query.scope.workspaceId),
     );
     const taskRecords = scopedRows.map((row): TaskRecord => {
@@ -154,6 +157,9 @@ export class TasksAnalyticsProvider implements TasksProvider {
       // post-0024 rows.
       const explicitBlocking = effectiveColumnKey(row) === WAITING_COLUMN_KEY;
       const taskActivities = rawByTask.get(row.id) ?? [];
+      // The bounded activity read can prove a positive event, but neither an
+      // empty result nor a recent event proves that all meaningful writers and
+      // older history were covered. Ignore future/invalid dates as evidence.
       const meaningful = taskActivities.filter((entry) => isMeaningfulActivity(entry.kind, entry.payload));
       // T·122: tasks.completedAt is the durable completion moment; the
       // activity-log reconstruction remains only as the fallback for rows
@@ -173,6 +179,7 @@ export class TasksAnalyticsProvider implements TasksProvider {
         title: row.title,
         status: effectiveColumnKey(row),
         terminal: terminalTaskIds.has(row.id),
+        archived: row.archivedAt !== null,
         ownerIds: assigneeIds,
         owners: assigneeIds.map((id) => people.get(id) ?? { id, displayName: null }),
         due: analyticsDate(row.dueAt, row.due),
@@ -180,7 +187,7 @@ export class TasksAnalyticsProvider implements TasksProvider {
         completedAt: completion ? iso(completion) : null,
         lastMeaningfulActivityAt: meaningful.length
           ? iso(meaningful[meaningful.length - 1]!.createdAt)
-          : iso(row.createdAt),
+          : null,
         blocking: {
           explicit: explicitBlocking,
           dependencyIds: dependencies,
@@ -194,7 +201,7 @@ export class TasksAnalyticsProvider implements TasksProvider {
       };
     });
 
-    const historyDates = boundedActivities.map((row) => iso(row.createdAt));
+    const historyDates = validActivities.map((row) => iso(row.createdAt));
     const historyWindow = queriedHistoryWindow(
       historyStart,
       periodEnd,
@@ -202,6 +209,11 @@ export class TasksAnalyticsProvider implements TasksProvider {
       historyDates.at(-1) ?? null,
     );
     const issues: string[] = [];
+    issues.push("tasks_meaningful_activity_history_unverified");
+    if (boundedRows.some(row => storedDeadline(row.due, row.dueAt)?.kind === "unknown")) {
+      issues.push("tasks_due_kind_ambiguous");
+    }
+    if (validActivities.length !== boundedActivities.length) issues.push("tasks_activity_timestamp_invalid_or_future");
     if (isTruncated) issues.push("tasks_record_limit_reached");
     if (activityTruncated) issues.push("tasks_activity_limit_reached");
     if (workspaceOwnerIds.length > MAX_NAVIGATION_OWNERS) {
@@ -245,7 +257,6 @@ export class TasksAnalyticsProvider implements TasksProvider {
           "task_read",
           "task_completion_timestamps",
           "task_status_history",
-          "task_meaningful_activity",
           "task_dependencies",
           "task_owners",
           "cross_product_links",
@@ -365,14 +376,10 @@ function isMeaningfulActivity(kind: string, payload: unknown): boolean {
 }
 
 function analyticsDate(dueAt: Date | null, due: string | null): AnalyticsDate | null {
-  if (dueAt) return { kind: "instant", value: iso(dueAt) };
-  if (due && ISO_DATE.test(due) && validDateOnly(due)) return { kind: "date", value: due };
+  const deadline = storedDeadline(due, dueAt);
+  if (deadline?.kind === "date-only") return { kind: "date", value: deadline.date };
+  if (deadline?.kind === "instant") return { kind: "instant", value: new Date(deadline.at).toISOString() };
   return null;
-}
-
-function validDateOnly(value: string): boolean {
-  const date = new Date(`${value}T00:00:00.000Z`);
-  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 
 function objectValue(value: unknown): Record<string, unknown> {

@@ -6,7 +6,7 @@ const { tmpdir } = require("node:os");
 const root = path.resolve(__dirname, "../../..");
 const dep = createRequire(root + "/package.json"), ts = dep("typescript");
 const { createClient } = dep("@libsql/client"), { drizzle } = dep("drizzle-orm/libsql");
-const { eq } = dep("drizzle-orm");
+const { and, asc, eq } = dep("drizzle-orm");
 const SALT = "synthetic-only-usage-salt-for-fixtures";
 async function usageFixture(options = {}) {
   const directory = fs.mkdtempSync(path.join(tmpdir(), "usage-action-"));
@@ -15,13 +15,62 @@ async function usageFixture(options = {}) {
   for (const file of fs.readdirSync(root + "/drizzle").filter(f => /^\d{4}_.+\.sql$/.test(f) && f >= "0014_").sort())
     await client.executeMultiple(fs.readFileSync(root + "/drizzle/" + file, "utf8"));
   let db;
-  const state = { actor: "owner", ambient: "a", demo: false, afterAuth: null };
+  const state = { actor: "owner", ambient: "a", demo: false };
   const cache = new Map();
   let visitSequence = 0;
+  const getCurrentUser = async () => state.actor;
+  async function getCurrentUserAndActiveWorkspaceOrNull() {
+    const me = await getCurrentUser();
+    if (state.demo) return [me, state.ambient];
+    // The fixture's ambient value stands for the cookie. Like auth.ts, only
+    // honor it after a fresh membership read for this exact resolved actor.
+    if (state.ambient) {
+      const [match] = await db.select({ workspaceId: schema.workspaceMembers.workspaceId })
+        .from(schema.workspaceMembers)
+        .where(and(eq(schema.workspaceMembers.userId, me), eq(schema.workspaceMembers.workspaceId, state.ambient)))
+        .limit(1);
+      if (match) return [me, state.ambient];
+    }
+    const [first] = await db.select({ workspaceId: schema.workspaceMembers.workspaceId })
+      .from(schema.workspaceMembers)
+      .innerJoin(schema.workspaces, eq(schema.workspaces.id, schema.workspaceMembers.workspaceId))
+      .where(eq(schema.workspaceMembers.userId, me))
+      .orderBy(asc(schema.workspaces.position), asc(schema.workspaces.name), asc(schema.workspaces.id))
+      .limit(1);
+    return [me, first?.workspaceId ?? null];
+  }
+  async function activeWorkspaceOrNullForUser(me) {
+    // Same actor-bound, fail-closed selection as the production accessor.
+    if (state.ambient) {
+      const [match] = await db.select({ workspaceId: schema.workspaceMembers.workspaceId })
+        .from(schema.workspaceMembers)
+        .where(and(eq(schema.workspaceMembers.userId, me), eq(schema.workspaceMembers.workspaceId, state.ambient)))
+        .limit(1);
+      if (match) return state.ambient;
+    }
+    const [first] = await db.select({ workspaceId: schema.workspaceMembers.workspaceId })
+      .from(schema.workspaceMembers)
+      .innerJoin(schema.workspaces, eq(schema.workspaces.id, schema.workspaceMembers.workspaceId))
+      .where(eq(schema.workspaceMembers.userId, me))
+      .orderBy(asc(schema.workspaces.position), asc(schema.workspaces.name), asc(schema.workspaces.id))
+      .limit(1);
+    return first?.workspaceId ?? null;
+  }
   function load(name) {
     const file = [name, name + ".ts", name + ".tsx", name + "/index.ts"].find(f => fs.existsSync(root + "/" + f) && fs.statSync(root + "/" + f).isFile()) ?? name;
     if (file === "src/server/db/index.ts") return { db };
-    if (file === "src/server/auth.ts") return { getCurrentUser: async () => state.actor, getActiveWorkspaceOrNull: async () => state.ambient };
+    if (file === "src/server/auth.ts") return {
+      getCurrentUser,
+      getCurrentUserAndActiveWorkspaceOrNull,
+      activeWorkspaceOrNullForUser,
+      getActiveWorkspaceOrNull: async () => state.ambient,
+    };
+    if (file === "src/server/diagnostics/task-timing.ts") return {
+      withTaskActionTiming: (_scope, work) => work(),
+      measureTaskStage: (_stage, work) => work(),
+      measureTaskBoardQuery: work => work(),
+      measureTaskBoardMap: (_rows, work) => work(),
+    };
     if (file === "src/lib/access-mode.ts") return { isDemoMode: () => state.demo };
     if (file === "src/server/db/queries.ts") return {
       getTasks: async ws => db.select().from(schema.tasks).where(eq(schema.tasks.workspaceId, ws)),
@@ -33,16 +82,18 @@ async function usageFixture(options = {}) {
         userAgentHint: userAgent ? userAgent.slice(0, 60) : null,
       }),
     };
-    if (file === "src/server/db/board-config-read.ts") return { readWorkspaceColumnConfig: async () => null };
-    if (file === "src/lib/board-columns.ts") return { isDoneColumnKey: lane => lane === "done" };
+    if (file === "src/server/db/board-config-read.ts" && !options.actualBoardConfig) return { readWorkspaceColumnConfig: async () => null };
+    if (file === "src/lib/board-columns.ts" && !options.actualBoardConfig) return { isDoneColumnKey: lane => lane === "done",
+      isTaskDone: row => row.lane === "done" };
     if (file === "src/server/db/seed.ts") return { LEGACY_WORKSPACE_ID: "legacy" };
     if (file === "src/server/events.ts") return { emitTasksChanged: () => {} };
     if (file === "src/server/demo/tasks-demo.ts") return { demoTasks: () => [] };
-    if (file.startsWith("src/server/attachments/") || file === "src/server/milestones.ts") return {};
+    if (file === "src/server/milestones.ts" && !options.actualMilestones) return { maybeAwardCompletionMilestone: async () => {} };
+    if (file.startsWith("src/server/attachments/")) return {};
     if (cache.has(file)) return cache.get(file).exports;
     const mod = { exports: {} }; cache.set(file, mod);
     if (file.endsWith(".json")) { mod.exports = JSON.parse(fs.readFileSync(root + "/" + file)); return mod.exports; }
-    const source = fs.readFileSync(root + "/" + file, "utf8");
+    const source = options.sourceOverrides?.[file] ?? fs.readFileSync(root + "/" + file, "utf8");
     const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
     const req = spec => {
       if (spec === "server-only") return {};
@@ -52,20 +103,6 @@ async function usageFixture(options = {}) {
       return dep(spec);
     };
     new Function("require", "module", "exports", "fetch", js)(req, mod, mod.exports, () => { throw Error("Real network forbidden"); });
-    if (file === "src/server/actions/project-authz.ts") {
-      const original = mod.exports.authorizeProjectCandidate;
-      mod.exports.authorizeProjectCandidate = async (...args) => {
-        const candidate = await original(...args);
-        // The fixture removes membership after preflight but before the
-        // action's immediate writer transaction reauthorizes stored truth.
-        if (state.afterAuth) {
-          const afterAuth = state.afterAuth;
-          state.afterAuth = null;
-          await afterAuth();
-        }
-        return candidate;
-      };
-    }
     return mod.exports;
   }
   const schema = load("src/server/db/schema.ts"); db = drizzle(client, { schema });
@@ -93,7 +130,7 @@ async function usageFixture(options = {}) {
   }
   const issued = options.seedClaim === false ? null : await seedClaim();
   const usageSchema = load("src/server/sponsored-use/schema.ts");
-  return { db, client, schema, usageSchema, state, load, now, issued, seedClaim,
+  return { db, client, directory, schema, usageSchema, state, load, now, issued, seedClaim,
     action: load("src/server/actions/tasks.ts").addTaskAction,
     counts: async () => {
       const out = {};

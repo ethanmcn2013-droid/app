@@ -1,6 +1,7 @@
 "use server";
 
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/sqlite-core";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
 import { readWorkspaceColumnConfig } from "@/server/db/board-config-read";
@@ -11,6 +12,7 @@ import {
   activities,
   attachments,
   comments,
+  meta,
   notifications,
   resources,
   tasks,
@@ -20,15 +22,17 @@ import {
 import { getSubtasks, getTasks } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
-import { getActiveWorkspaceOrNull, getCurrentUser } from "@/server/auth";
+import { activeWorkspaceOrNullForUser, getCurrentUser, getCurrentUserAndActiveWorkspaceOrNull } from "@/server/auth";
+import { withIdentityOutboundScope } from "@/server/diagnostics/identity-outbound";
+import { measureTaskStage, withTaskActionTiming } from "@/server/diagnostics/task-timing";
 import { privateTaskDbWrite } from "@/server/actions/private-task-db-write";
 import {
-  authorizeProjectCandidate,
   authorizeStoredProject,
   readableProjectOrNull,
   scopeForTask,
 } from "@/server/actions/project-authz";
 import { isDemoMode } from "@/lib/access-mode";
+import { advanceRecurringDueAt, dateOnlyDueLabel, isDateOnlyDue } from "@/lib/tasks/stored-due-transition";
 import { maybeAwardCompletionMilestone } from "@/server/milestones";
 import { demoTasks } from "@/server/demo/tasks-demo";
 import {
@@ -47,9 +51,15 @@ import {
 import { deleteNativeByteCleanupTargetConfirmed } from "@/server/attachments/native-byte-cleanup";
 import { repairExactNativeByteCleanupReceipts } from "@/server/attachments/native-upload-cleanup";
 import { deleteNativeAttachmentRowsInTransaction } from "@/server/attachments/native-upload-custody";
-import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
-import { hasAccountDeletionStartedWith } from "@/server/account-deletion-lifecycle";
+import {
+  assertProjectNotDeleting,
+  projectDeletionInProgress,
+  ProjectDeletionInProgressError,
+} from "@/server/projects/project-deletion-fence";
+import { accountDeletionTombstoneKey } from "@/server/account-deletion-key";
+import { parseProjectId } from "@/lib/projects/project-ref";
 import { captureTaskCreated } from "@/server/sponsored-use/capture";
+import { TaskMutationRefusedError, taskMutationExpectedProject } from "@/server/tasks/mutation-refusal";
 
 /**
  * Pure read pass-through used by the realtime sync hook to refetch
@@ -61,7 +71,7 @@ export async function getTasksAction(candidateProjectId: string): Promise<Task[]
   if (isDemoMode()) return demoTasks();
   // Missing, malformed and inaccessible candidates stay neutral. Never replace
   // an explicit B store with the caller's authorized ambient A task list.
-  const ws = await readableProjectOrNull(candidateProjectId);
+  const ws = await withIdentityOutboundScope("readControl", () => readableProjectOrNull(candidateProjectId));
   return ws ? getTasks(ws) : [];
 }
 
@@ -99,9 +109,62 @@ export async function getSubtasksAction(
  * channel for reading the Project it refused. `Task[]` has no room for "no",
  * so the honest neutral answer is the list the caller already had.
  */
-async function neutralTaskList(ambient: string | null): Promise<Task[]> {
-  const ws = await readableProjectOrNull(ambient);
+async function neutralTaskList(ambient: string | null, actorUserId: UserId): Promise<Task[]> {
+  const ws = await readableProjectOrNull(ambient, actorUserId);
   return ws ? getTasks(ws) : [];
+}
+
+const taskOwnerUser = alias(users, "task_owner_user");
+
+/** Read deletion and account guards before decoding any task columns. */
+async function taskWriterState(executor: Pick<typeof db, "select">, ws: string, me: UserId) {
+  const [state] = await executor.select({
+    projectDeleting: projectDeletionInProgress(ws),
+    actorClerkId: users.clerkId,
+    actorId: users.id,
+    ownerId: taskOwnerUser.id,
+    ownerClerkId: taskOwnerUser.clerkId,
+  }).from(workspaces)
+    .leftJoin(users, eq(users.id, me))
+    .leftJoin(taskOwnerUser, eq(taskOwnerUser.id, workspaces.ownerUserId))
+    .where(eq(workspaces.id, ws)).limit(1);
+  if (state?.projectDeleting) throw new ProjectDeletionInProgressError();
+  if (state?.actorId === null || state?.actorId === undefined) return null;
+
+  const actorKey = accountDeletionTombstoneKey(state.actorClerkId ?? me);
+  let ownerKey: string | null = null;
+  let ownerKeyError: unknown;
+  if (state.ownerId !== null && state.ownerId !== undefined) {
+    try {
+      ownerKey = accountDeletionTombstoneKey(state.ownerClerkId ?? state.ownerId);
+    } catch (error) {
+      // The old order checks the actor tombstone before deriving the owner
+      // key. Preserve that refusal even if the owner identifier is malformed.
+      ownerKeyError = error;
+    }
+  }
+  const keys = ownerKey && ownerKey !== actorKey ? [actorKey, ownerKey] : [actorKey];
+  const tombstones = await executor.select({ key: meta.key }).from(meta)
+    .where(inArray(meta.key, keys)).limit(keys.length);
+  if (tombstones.some(({ key }) => key === actorKey)) return null;
+  if (ownerKeyError !== undefined) throw ownerKeyError;
+  return tombstones.length === 0 ? state : null;
+}
+
+/** Prove the stored Project and deletion fences on the immediate writer snapshot. */
+async function taskWriteTarget(executor: Pick<typeof db, "select">, id: string, me: UserId) {
+  const [target] = await executor.select({ workspaceId: tasks.workspaceId }).from(tasks).where(eq(tasks.id, id));
+  if (!target?.workspaceId) return null;
+  const grant = await authorizeStoredProject({
+    storedProjectId: target.workspaceId, capability: "createOrEditTasks", actorUserId: me, executor,
+  });
+  if (!grant.ok) return null;
+  const ws = grant.projectId;
+  if (!await taskWriterState(executor, ws, me)) return null;
+  // Drizzle's JSON columns can throw while mapping the result. Keep that
+  // fallible read after deletion and account fences, as in the prior writer.
+  const [row] = await executor.select().from(tasks).where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
+  return row ? { ws, row } : null;
 }
 
 function nowSeconds(): number {
@@ -151,15 +214,12 @@ export async function moveTaskAction(
 ): Promise<Task[]> {
   if (!id || !LANE_ORDER.includes(toLane)) return [];
   if (isDemoMode()) return demoTasks();
-  // Same Promise.all shape as toggleCompleteAction, so resolving the subject
-  // adds no serial round-trip to a write path. `ambient` is context for the
-  // neutral response only; it is not an input to the authorization decision.
-  const [me, ambient] = await Promise.all([
-    getCurrentUser(),
-    getActiveWorkspaceOrNull(),
-  ]);
+  // Resolve the subject once for both the write and fresh ambient selection.
+  // `ambient` is context for the neutral response only; it is not an input to
+  // the authorization decision.
+  const [me, ambient] = await getCurrentUserAndActiveWorkspaceOrNull();
   const scope = await scopeForTask(id, me);
-  if (!scope.ok) return neutralTaskList(ambient);
+  if (!scope.ok) return neutralTaskList(ambient, me);
   const ws = scope.ws;
   // Pre-read prior lane under the proved Project, so a row that moved between
   // the proof and here is refused rather than written blind.
@@ -186,7 +246,7 @@ export async function moveTaskAction(
     kind: "move",
     from: row.lane,
     to: toLane,
-  }, { workspaceId: ws });
+  }, { workspaceId: ws, userId: me });
   {
     // The no-op guard above already returned, so any transition here is real.
     const transition = classifyLaneTransition(row.lane, toLane);
@@ -202,149 +262,50 @@ export async function moveTaskAction(
   return getTasks(ws);
 }
 
-export async function toggleCompleteAction(id: string): Promise<Task[]> {
-  if (isDemoMode()) return demoTasks();
-  const [me, ambient] = await Promise.all([
-    getCurrentUser(),
-    getActiveWorkspaceOrNull(),
-  ]);
-  const scope = await scopeForTask(id, me);
-  if (!scope.ok) return neutralTaskList(ambient);
-  const ws = scope.ws;
-  // Re-read under the proved Project: a foreign or moved row is refused here
-  // rather than toggled.
-  const [row] = await db
-    .select()
-    .from(tasks)
-    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
-  if (!row) return getTasks(ws);
-
-  // Recurring tasks that are being completed don't go to "done", they
-  // bounce back to "todo" with the due date advanced by one interval.
-  if (row.recurrence && row.lane !== "done") {
-    const nextDueAt = advanceDate(row.dueAt ?? new Date(), row.recurrence);
-    await db
-      .update(tasks)
-      .set({
-        lane: "todo",
-        boardColumnKey: null,
-        idleDays: null,
-        dueAt: nextDueAt,
-        due: formatDueLabelForStorage(nextDueAt),
-        // The recurring task bounces back open, but a completion DID
-        // happen — completedAt records the moment it was last finished.
-        completedAt: new Date(),
+export async function toggleCompleteAction(id: string, expectedProjectId?: string): Promise<Task[]> {
+  const expectedProject = taskMutationExpectedProject(expectedProjectId);
+  if (isDemoMode()) {
+    if (expectedProject !== undefined) throw new TaskMutationRefusedError();
+    return demoTasks();
+  }
+  return withTaskActionTiming("complete", async () => {
+    const me = await measureTaskStage("identity", () => withIdentityOutboundScope("taskAction", getCurrentUser));
+    const outcome = await measureTaskStage("writeAndActivity", () => db.transaction(async (tx) => {
+      const target = await measureTaskStage("projectProof", () => taskWriteTarget(tx, id, me));
+      if (!target) return null;
+      const { ws, row } = target;
+      if (expectedProject !== undefined && ws !== expectedProject) return null;
+      const recurring = Boolean(row.recurrence && row.lane !== "done");
+      const columnConfig = recurring ? null : await measureTaskStage("projectProof", () => readWorkspaceColumnConfig(ws, tx));
+      const wasDone = recurring ? false : isTaskDone(row, columnConfig);
+      const lane: LaneId = recurring ? "todo" : wasDone ? "todo" : "done";
+      const recurrenceUpdate = recurring ? (() => {
+        const dateOnly = isDateOnlyDue(row.due, row.dueAt);
+        const nextDueAt = advanceRecurringDueAt(row.dueAt ?? new Date(), row.recurrence!, dateOnly);
+        return { dueAt: nextDueAt, due: dateOnly ? dateOnlyDueLabel(nextDueAt) : formatDueLabelForStorage(nextDueAt) };
+      })() : {};
+      const updated = await privateTaskDbWrite(() => tx.update(tasks).set({
+        lane, boardColumnKey: null, idleDays: null,
+        ...(recurring ? { ...recurrenceUpdate, completedAt: new Date() } : completionStamp(wasDone, !wasDone)),
         ...bump(),
-      })
-      .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
-    await recordActivity(id, { kind: "toggleComplete", to: "done" }, { workspaceId: ws });
-    // Recurrence path always records a completion — award milestones accordingly.
-    await maybeAwardCompletionMilestone(me, id).catch(() => {});
-    await recordSponsoredUse(
-      {
-        product: "tasks",
-        kind: "task_completed",
-        objectKey: id,
-        subjectId: me,
-        workspaceId: ws,
-      },
-      true,
-    );
+      }).where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws))).returning({ id: tasks.id }));
+      if (updated.length !== 1) return null;
+      await recordActivity(id, { kind: "toggleComplete", to: wasDone ? "open" : "done" },
+        { workspaceId: ws, userId: me, executor: tx });
+      if (!wasDone) await maybeAwardCompletionMilestone(me, id, { executor: tx, expectedWorkspaceId: ws });
+      return { ws, sponsoredKind: recurring ? "task_completed" as const : classifyLaneTransition(row.lane, lane) };
+    }, { behavior: "immediate" }));
+    if (!outcome) {
+      if (expectedProject !== undefined) throw new TaskMutationRefusedError();
+      return neutralTaskList(await activeWorkspaceOrNullForUser(me), me);
+    }
+    if (outcome.sponsoredKind) await recordSponsoredUse({
+      product: "tasks", kind: outcome.sponsoredKind, objectKey: id, subjectId: me, workspaceId: outcome.ws,
+    }, true);
     revalidatePath("/app", "layout");
     emitTasksChanged({ kind: "tasks" });
-    return getTasks(ws);
-  }
-
-  // Done-ness is the config predicate: a task in a custom done column
-  // reopens to todo; anything open completes into the canonical done
-  // lane. Both directions clear any custom-column claim so the card
-  // lands where the action says it does.
-  const columnConfig = await readWorkspaceColumnConfig(ws);
-  const wasDone = isTaskDone(row, columnConfig);
-  const target: LaneId = wasDone ? "todo" : "done";
-  await db
-    .update(tasks)
-    .set({
-      lane: target,
-      boardColumnKey: null,
-      idleDays: null,
-      ...completionStamp(wasDone, !wasDone),
-      ...bump(),
-    })
-    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
-  await recordActivity(id, {
-    kind: "toggleComplete",
-    to: wasDone ? "open" : "done",
-  }, { workspaceId: ws });
-  {
-    const transition = classifyLaneTransition(row.lane, target);
-    if (transition) {
-      await recordSponsoredUse(
-        { product: "tasks", kind: transition, objectKey: id, subjectId: me, workspaceId: ws },
-        true,
-      );
-    }
-  }
-  // Only award a milestone when the task actually became done.
-  if (!wasDone) {
-    await maybeAwardCompletionMilestone(me, id).catch(() => {});
-  }
-  revalidatePath("/app", "layout");
-  emitTasksChanged({ kind: "tasks" });
-  return getTasks(ws);
-}
-
-/** Walk `d` forward to the next day matching `weekday` (0-6). Capped
- *  at 7 iterations: a valid weekday is always reachable within a
- *  week, so a corrupt value (e.g. 8 from a bad migration row) can no
- *  longer spin the server action forever, it just stops after a
- *  full week and returns whatever day it's on. */
-function walkToWeekday(d: Date, weekday: number): void {
-  for (let i = 0; i < 7 && d.getDay() !== weekday; i++) {
-    d.setDate(d.getDate() + 1);
-  }
-}
-
-function advanceDate(from: Date, r: RecurrenceSpec): Date {
-  const d = new Date(from);
-
-  if (r.kind === "weekly") {
-    // Advance to the next occurrence of the target weekday.
-    d.setDate(d.getDate() + 7);
-    walkToWeekday(d, r.weekday);
-  } else if (r.kind === "monthly-day") {
-    // Same calendar day next month.
-    d.setMonth(d.getMonth() + 1);
-    d.setDate(r.day);
-  } else if (r.kind === "monthly-first-weekday") {
-    // First occurrence of the target weekday next month.
-    d.setMonth(d.getMonth() + 1);
-    d.setDate(1);
-    walkToWeekday(d, r.weekday);
-  }
-
-  // If the computed date is already in the past, keep advancing by
-  // one interval until we land in the future. Hard-capped at 600
-  // iterations (~50 years of monthly steps) so a malformed spec or
-  // a clock skew can't hang the request, well past any real
-  // recurrence horizon.
-  const now = Date.now();
-  for (let guard = 0; d.getTime() < now && guard < 600; guard++) {
-    if (r.kind === "weekly") {
-      d.setDate(d.getDate() + 7);
-    } else if (r.kind === "monthly-day") {
-      d.setMonth(d.getMonth() + 1);
-      d.setDate(r.day);
-    } else if (r.kind === "monthly-first-weekday") {
-      d.setMonth(d.getMonth() + 1);
-      d.setDate(1);
-      walkToWeekday(d, r.weekday);
-    } else {
-      break;
-    }
-  }
-
-  return d;
+    return measureTaskStage("finalRead", () => getTasks(outcome.ws));
+  });
 }
 
 const DOW_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -440,42 +401,20 @@ const PATCHABLE_TASK_COLUMNS = new Set([
 export async function updateTaskAction(
   id: string,
   patch: Partial<Omit<Task, "id">>,
+  expectedProjectId?: string,
 ): Promise<Task[]> {
-  if (isDemoMode()) return demoTasks();
-  const [me, ambient] = await Promise.all([
-    getCurrentUser(),
-    getActiveWorkspaceOrNull(),
-  ]);
-  const scope = await scopeForTask(id, me);
-  if (!scope.ok) return neutralTaskList(ambient);
-  const ws = scope.ws;
-  // Resolve the target through the *proved* Project before doing any
-  // side-effects. Without this read, a foreign id is a no-op update but
-  // still emits activity against the foreign task.
-  //
-  // This read stays even though `scopeForTask` has already touched the row:
-  // it re-reads under the proved scope, so a task that changed Project
-  // between the proof and the write is refused instead of updated, and the
-  // extra columns below are needed anyway. The ordering it pins —
-  // owned row resolved before any activity is emitted — is asserted by
-  // `tasks-security-regression.test.mjs`.
-  //
-  // The extra columns are for the sponsored-use diff: a patch that rewrites
-  // identical values is not a reassignment or a reschedule, and comparing
-  // costs nothing on a read this function already performs.
-  const [ownedTask] = await db
-    .select({
-      id: tasks.id,
-      lane: tasks.lane,
-      assignees: tasks.assignees,
-      due: tasks.due,
-      dueAt: tasks.dueAt,
-      startDay: tasks.startDay,
-      durationDays: tasks.durationDays,
-    })
-    .from(tasks)
-    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
-  if (!ownedTask) return getTasks(ws);
+  const expectedProject = taskMutationExpectedProject(expectedProjectId);
+  if (isDemoMode()) {
+    if (expectedProject !== undefined) throw new TaskMutationRefusedError();
+    return demoTasks();
+  }
+  return withTaskActionTiming("edit", async () => {
+  const me = await measureTaskStage("identity", () => withIdentityOutboundScope("taskAction", getCurrentUser));
+  const outcome = await measureTaskStage("writeAndActivity", () => db.transaction(async (tx) => {
+  const target = await measureTaskStage("projectProof", () => taskWriteTarget(tx, id, me));
+  if (!target) return null;
+  const { ws, row: ownedTask } = target;
+  if (expectedProject !== undefined && ws !== expectedProject) return null;
   // Build the SET payload from only explicitly allowed columns.
   // This is an action-boundary allowlist, it strips ownership /
   // structural / identity columns (workspaceId, parentTaskId,
@@ -496,7 +435,7 @@ export async function updateTaskAction(
   // clear any custom-column claim and stamp the done transition so no
   // write path can change done-ness without moving completedAt (T·122).
   if ("lane" in cleaned) {
-    const columnConfig = await readWorkspaceColumnConfig(ws);
+    const columnConfig = await measureTaskStage("projectProof", () => readWorkspaceColumnConfig(ws, tx));
     cleaned.boardColumnKey = null;
     Object.assign(
       cleaned,
@@ -506,22 +445,22 @@ export async function updateTaskAction(
       ),
     );
   }
-  // Workspace guard: a write only lands when the row belongs to the
-  // caller's active workspace. Without this clause an authenticated
-  // user who knows any task id could overwrite cross-tenant rows.
-  await privateTaskDbWrite(() => db
+  // Confirm the scoped row changed before activity or usage effects.
+  const updated = await privateTaskDbWrite(() => tx
     .update(tasks)
     .set({ ...cleaned, ...bump() })
-    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws))));
+    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)))
+    .returning({ id: tasks.id }));
+  if (updated.length !== 1) return null;
 
-  // Emit one activity per tracked field (parallel; observability,
-  // not transactional). Untracked fields like `idleDays` are skipped.
+  // Emit one best-effort activity per tracked field on this writer transaction.
+  // Untracked fields like `idleDays` are skipped.
   const trackedKeys = Object.keys(patch).filter((k): k is UpdateField =>
     TRACKED_UPDATE_FIELDS.has(k as UpdateField),
   );
   await Promise.all(
     trackedKeys.map((field) =>
-      recordActivity(id, { kind: "update", field }, { workspaceId: ws }),
+      recordActivity(id, { kind: "update", field }, { workspaceId: ws, userId: me, executor: tx }),
     ),
   );
 
@@ -545,17 +484,20 @@ export async function updateTaskAction(
       );
       if (transition) emits.push(transition);
     }
-    for (const kind of emits) {
-      await recordSponsoredUse(
-        { product: "tasks", kind, objectKey: id, subjectId: me, workspaceId: ws },
-        true,
-      );
-    }
+    return { ws, emits };
   }
+  }, { behavior: "immediate" }));
+  if (!outcome) {
+    if (expectedProject !== undefined) throw new TaskMutationRefusedError();
+    return neutralTaskList(await activeWorkspaceOrNullForUser(me), me);
+  }
+  for (const kind of outcome.emits) await recordSponsoredUse(
+    { product: "tasks", kind, objectKey: id, subjectId: me, workspaceId: outcome.ws }, true);
 
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });
-  return getTasks(ws);
+  return measureTaskStage("finalRead", () => getTasks(outcome.ws));
+  });
 }
 
 export async function addTaskAction(input: {
@@ -594,42 +536,39 @@ export async function addTaskAction(input: {
    * value, so a Project the caller is not in is refused either way.
    */
   projectId?: string;
-}): Promise<Task[]> {
-  if (isDemoMode()) return demoTasks();
-  const [me, ambient] = await Promise.all([
-    getCurrentUser(),
-    getActiveWorkspaceOrNull(),
-  ]);
-  const grant = await authorizeProjectCandidate({
-    candidateProjectId: input.projectId ?? ambient,
-    capability: "createOrEditTasks",
-    actorUserId: me,
-  });
-  // No proved Project means no destination. The old accessor would have
-  // offered LEGACY_WORKSPACE_ID here and this would have created the task
-  // inside it (D-005).
-  if (!grant.ok) {
+}, expectedProjectId?: string): Promise<Task[]> {
+  const expectedProject = taskMutationExpectedProject(expectedProjectId);
+  if (expectedProject !== undefined && input.projectId !== expectedProject) {
+    throw new TaskMutationRefusedError();
+  }
+  if (isDemoMode()) {
+    if (expectedProject !== undefined) throw new TaskMutationRefusedError();
+    return demoTasks();
+  }
+  return withTaskActionTiming("create", async () => {
+  const [me, ambient] = await measureTaskStage("identity", () => withIdentityOutboundScope("taskAction", async () => {
+    const actor = await getCurrentUser();
+    return [actor, input.projectId == null ? await activeWorkspaceOrNullForUser(actor) : null] as const;
+  }));
+  const ws = parseProjectId(input.projectId ?? ambient);
+  // A missing or malformed candidate has no destination. A valid candidate
+  // still needs the fresh membership and archive proof in the writer below.
+  if (!ws) {
     // An explicitly displayed Project must never reconcile its optimistic
     // state with the caller's different ambient Project after a refusal.
     if (input.projectId != null) throw new Error("Task Project is unavailable");
-    return neutralTaskList(ambient);
+    return neutralTaskList(ambient, me);
   }
-  const ws = grant.projectId;
   const id =
     input.id ??
     `t-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).slice(0, 8)}`;
-  const created = await db.transaction(async (tx) => {
-    const current = await authorizeStoredProject({
+  const created = await measureTaskStage("writeAndActivity", () => db.transaction(async (tx) => {
+    const current = await measureTaskStage("projectProof", () => authorizeStoredProject({
       storedProjectId: ws, actorUserId: me, capability: "createOrEditTasks",
       archivePolicy: "enforce", executor: tx,
-    });
+    }));
     if (!current.ok) return false;
-    await assertProjectNotDeleting(tx, ws);
-    const [actor] = await tx.select({ clerkId: users.clerkId }).from(users).where(eq(users.id, me)).limit(1);
-    if (!actor || await hasAccountDeletionStartedWith(tx, actor.clerkId ?? me)) return false;
-    const [owner] = await tx.select({ id: users.id, clerkId: users.clerkId }).from(workspaces)
-      .innerJoin(users, eq(users.id, workspaces.ownerUserId)).where(eq(workspaces.id, ws)).limit(1);
-    if (owner && await hasAccountDeletionStartedWith(tx, owner.clerkId ?? owner.id)) return false;
+    if (!await taskWriterState(tx, ws, me)) return false;
     if (input.parentTaskId) {
       // A subtask inherits its parent's tenant. Require a top-level parent in
       // the active workspace; this rejects both foreign-parent injection and
@@ -691,14 +630,16 @@ export async function addTaskAction(input: {
     }, task);
     await captureTaskCreated(tx, { actorUserId: me, projectId: ws });
     return true;
-  }, { behavior: "immediate" });
+  }, { behavior: "immediate" }));
   if (!created) {
+    if (expectedProject !== undefined) throw new TaskMutationRefusedError();
     if (input.projectId != null) throw new Error("Task Project is unavailable");
-    return neutralTaskList(ambient);
+    return neutralTaskList(ambient, me);
   }
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });
-  return getTasks(ws);
+  return measureTaskStage("finalRead", () => getTasks(ws));
+  });
 }
 
 /**
@@ -727,12 +668,9 @@ export async function reorderTaskAction(
   }
   if (isDemoMode()) return demoTasks();
 
-  const [me, ambient] = await Promise.all([
-    getCurrentUser(),
-    getActiveWorkspaceOrNull(),
-  ]);
+  const [me, ambient] = await getCurrentUserAndActiveWorkspaceOrNull();
   const scope = await scopeForTask(id, me);
-  if (!scope.ok) return neutralTaskList(ambient);
+  if (!scope.ok) return neutralTaskList(ambient, me);
   const ws = scope.ws;
   // Re-read under the proved Project so a row that moved between the proof
   // and the write is refused rather than reordered.
@@ -767,7 +705,7 @@ export async function reorderTaskAction(
       kind: "move",
       from: row.lane,
       to: lane,
-    }, { workspaceId: ws });
+    }, { workspaceId: ws, userId: me });
   }
 
   revalidatePath("/app", "layout");
@@ -777,15 +715,12 @@ export async function reorderTaskAction(
 
 export async function removeTaskAction(id: string): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  const [me, ambient] = await Promise.all([
-    getCurrentUser(),
-    getActiveWorkspaceOrNull(),
-  ]);
+  const [me, ambient] = await getCurrentUserAndActiveWorkspaceOrNull();
   // Destructive, and it deletes a subtree. The capability proof is explicit
   // and precedes every read below, so no empty result anywhere in this
   // function is ever the thing that decides a delete may proceed.
   const scope = await scopeForTask(id, me);
-  if (!scope.ok) return neutralTaskList(ambient);
+  if (!scope.ok) return neutralTaskList(ambient, me);
   const ws = scope.ws;
 
   // FK cascade does NOT fire over Turso stateless HTTP, so delete the full
@@ -880,12 +815,9 @@ export async function setTaskArchivedAction(
   archived: boolean,
 ): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  const [me, ambient] = await Promise.all([
-    getCurrentUser(),
-    getActiveWorkspaceOrNull(),
-  ]);
+  const [me, ambient] = await getCurrentUserAndActiveWorkspaceOrNull();
   const scope = await scopeForTask(id, me);
-  if (!scope.ok) return neutralTaskList(ambient);
+  if (!scope.ok) return neutralTaskList(ambient, me);
   const ws = scope.ws;
 
   // Re-read under the proved Project before the cascade.
@@ -905,7 +837,7 @@ export async function setTaskArchivedAction(
     .update(tasks)
     .set({ archivedAt, ...bump() })
     .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
-  await recordActivity(id, activityPayload, { workspaceId: ws });
+  await recordActivity(id, activityPayload, { workspaceId: ws, userId: me });
 
   // Cascade to children — fetch their ids then update + record per-child.
   const children = await db
@@ -917,7 +849,7 @@ export async function setTaskArchivedAction(
       .update(tasks)
       .set({ archivedAt, ...bump() })
       .where(and(eq(tasks.id, child.id), eq(tasks.workspaceId, ws)));
-    await recordActivity(child.id, activityPayload, { workspaceId: ws });
+    await recordActivity(child.id, activityPayload, { workspaceId: ws, userId: me });
   }
 
   revalidatePath("/app", "layout");
@@ -943,12 +875,9 @@ function freshTaskId(): string {
  */
 export async function duplicateTaskAction(id: string): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  const [me, ambient] = await Promise.all([
-    getCurrentUser(),
-    getActiveWorkspaceOrNull(),
-  ]);
+  const [me, ambient] = await getCurrentUserAndActiveWorkspaceOrNull();
   const scope = await scopeForTask(id, me);
-  if (!scope.ok) return neutralTaskList(ambient);
+  if (!scope.ok) return neutralTaskList(ambient, me);
   const ws = scope.ws;
 
   const [source] = await db
@@ -1013,7 +942,7 @@ export async function duplicateTaskAction(id: string): Promise<Task[]> {
     }));
   }
 
-  await recordActivity(newId, { kind: "taskAdd", lane: source.lane }, { workspaceId: ws });
+  await recordActivity(newId, { kind: "taskAdd", lane: source.lane }, { workspaceId: ws, userId: me });
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });
   return getTasks(ws);
@@ -1045,12 +974,9 @@ export async function setTaskMilestoneAction(
   isMilestone: boolean,
 ): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  const [me, ambient] = await Promise.all([
-    getCurrentUser(),
-    getActiveWorkspaceOrNull(),
-  ]);
+  const [me, ambient] = await getCurrentUserAndActiveWorkspaceOrNull();
   const scope = await scopeForTask(id, me);
-  if (!scope.ok) return neutralTaskList(ambient);
+  if (!scope.ok) return neutralTaskList(ambient, me);
   const ws = scope.ws;
   await db
     .update(tasks)

@@ -201,6 +201,8 @@ export interface TaskRecord {
   title: string;
   status: string;
   terminal: boolean;
+  /** Canonical current visibility; archived top-level work retains history. */
+  archived?: boolean;
   ownerIds: string[];
   owners?: PersonRef[];
   due: AnalyticsDate | null;

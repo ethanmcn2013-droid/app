@@ -160,5 +160,10 @@ export function closingLine(needsAttention: number, isEmpty: boolean): string {
 }
 
 export function graceNote(b: Briefing): string {
+  // New dependency observations are current-state attention, not the old
+  // "quiet ones" described by the legacy two-bucket sign-off.
+  if (b.needsAttention.some(item => item.trigger === "blocking-due-work" || item.trigger === "prerequisites-complete")) {
+    return "That’s the read.";
+  }
   return closingLine(b.needsAttention.length, b.isEmpty);
 }

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { eq } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 import { parseColumnConfig, type ColumnConfig } from "@/lib/board-config";
 import type { TasksDb } from "../../tasks-db/signal-tasks-db-client";
 import { meta } from "../../tasks-db/signal-tasks-db-schema";
@@ -31,17 +31,33 @@ export async function readWorkspaceColumnConfig(
   db: TasksDb,
   workspaceId: string,
 ): Promise<WorkspaceColumnConfig> {
+  return (await readWorkspaceColumnConfigs(db, [workspaceId])).get(workspaceId)!;
+}
+
+/** One bounded config read for the legacy source's workspace batch. */
+export async function readWorkspaceColumnConfigs(
+  db: TasksDb,
+  workspaceIds: readonly string[],
+): Promise<Map<string, WorkspaceColumnConfig>> {
+  const ids = [...new Set(workspaceIds)];
+  if (ids.length === 0) return new Map();
+  const keys = ids.map(id => `board:${id}:columns`);
   try {
-    const [row] = await db
-      .select({ value: meta.value })
+    const rows = await db
+      .select({ key: meta.key, value: meta.value })
       .from(meta)
-      .where(eq(meta.key, `board:${workspaceId}:columns`))
-      .limit(1);
-    return { config: row ? parseColumnConfig(row.value) : null, unreadable: false };
+      .where(inArray(meta.key, keys));
+    const byKey = new Map(rows.map(row => [row.key, row.value]));
+    return new Map(ids.map(id => {
+      const raw = byKey.get(`board:${id}:columns`);
+      if (raw === undefined) return [id, { config: null, unreadable: false }];
+      const config = parseColumnConfig(raw);
+      return [id, { config, unreadable: config === null }];
+    }));
   } catch (error) {
     console.warn("[signal-analytics] board column config unavailable", {
       name: error instanceof Error ? error.name : "UnknownError",
     });
-    return { config: null, unreadable: true };
+    return new Map(ids.map(id => [id, { config: null, unreadable: true }]));
   }
 }

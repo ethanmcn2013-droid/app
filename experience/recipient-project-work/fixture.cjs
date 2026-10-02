@@ -5,6 +5,7 @@ const { pathToFileURL } = require('node:url');
 const root = path.resolve(__dirname, '../..'), dep = createRequire(path.join(root, 'package.json'));
 const ts = dep('typescript'), React = dep('react');
 const { createClient } = dep('@libsql/client'), { drizzle } = dep('drizzle-orm/libsql');
+const { and, asc, eq } = dep('drizzle-orm');
 
 async function recipientFixture(options = {}) {
   const scratch = path.join(root, 'experience/output/recipient-project-work/stores');
@@ -40,6 +41,28 @@ async function recipientFixture(options = {}) {
     'src/components/app/tasks-runtime-shell': { TasksRuntimeShell: passthrough },
   };
   let db, schema;
+  const getCurrentUser = async () => { state.authCalls++; return state.actor; };
+  async function getCurrentUserAndActiveWorkspaceOrNull() {
+    const me = await getCurrentUser();
+    return [me, await activeWorkspaceOrNullForUser(me)];
+  }
+  async function activeWorkspaceOrNullForUser(me) {
+    const cookieValue = state.cookies.get('tasks_active_ws');
+    if (cookieValue) {
+      const [match] = await db.select({ workspaceId: schema.workspaceMembers.workspaceId })
+        .from(schema.workspaceMembers)
+        .where(and(eq(schema.workspaceMembers.userId, me), eq(schema.workspaceMembers.workspaceId, cookieValue)))
+        .limit(1);
+      if (match) return cookieValue;
+    }
+    const [first] = await db.select({ workspaceId: schema.workspaceMembers.workspaceId })
+      .from(schema.workspaceMembers)
+      .innerJoin(schema.workspaces, eq(schema.workspaces.id, schema.workspaceMembers.workspaceId))
+      .where(eq(schema.workspaceMembers.userId, me))
+      .orderBy(asc(schema.workspaces.position), asc(schema.workspaces.name), asc(schema.workspaces.id))
+      .limit(1);
+    return first?.workspaceId ?? null;
+  }
   const boundary = {
     'server-only': {}, 'client-only': {},
     'next/cache': { revalidatePath: () => {} },
@@ -52,10 +75,20 @@ async function recipientFixture(options = {}) {
     if (overrides.has(name)) return overrides.get(name);
     if (!options.clientReferences && ui[name]) return ui[name];
     if (name === 'src/server/db/index' || name === 'src/server/db') return { db };
-    if (!options.actualAuth && name === 'src/server/auth') return { ACTIVE_WORKSPACE_COOKIE_NAME: 'tasks_active_ws', getCurrentUser: async () => { state.authCalls++; return state.actor; }, getCurrentUserOrNull: async () => state.actor, getActiveWorkspaceOrNull: async () => state.cookies.get('tasks_active_ws') ?? null };
+    if (!options.actualAuth && name === 'src/server/auth') return {
+      ACTIVE_WORKSPACE_COOKIE_NAME: 'tasks_active_ws', getCurrentUser,
+      getCurrentUserAndActiveWorkspaceOrNull,
+      activeWorkspaceOrNullForUser,
+      getCurrentUserOrNull: async () => state.actor,
+      getActiveWorkspaceOrNull: async () => state.cookies.get('tasks_active_ws') ?? null,
+    };
     if (name === 'src/lib/access-mode') return { isDemoMode: () => state.demo, isProductionMode: () => !state.demo, getAccessMode: () => state.demo ? 'review' : 'production' };
     if (name === 'src/lib/projects/flags') return { isActiveProjectV3Enabled: () => state.v3 };
     if (name === 'src/server/events') return { emitTasksChanged: () => {} };
+    if (name === 'src/server/diagnostics/task-timing') return {
+      withTaskActionTiming: (_scope, work) => work(), measureTaskStage: (_stage, work) => work(),
+      measureTaskBoardQuery: work => work(), measureTaskBoardMap: (_rows, work) => work(),
+    };
     if (name === 'src/server/actions/seed') return { seedDomainAction: () => { throw Error('No reset is allowed in recipient entry'); } };
     if (cache.has(name)) return cache.get(name).exports;
     const file = [name, name + '.ts', name + '.tsx', name + '/index.ts', name + '/index.tsx'].find(f => fs.existsSync(path.join(root, f)) && fs.statSync(path.join(root, f)).isFile());

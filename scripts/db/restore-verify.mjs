@@ -7,12 +7,14 @@
 // backup", and its rehearsal checkbox has never been ticked. This script is
 // the rehearsal, as a command anyone can run and anyone can re-run.
 //
-// It does four things, in order, and fails loudly on any of them:
+// It first checks the complete backup digest against its manifest, including
+// the recorded DDL, then does four things and fails loudly on any of them:
 //   1. Rebuilds the schema from the DDL recorded in the backup — tables,
 //      then rows, then indexes and triggers. Triggers land LAST because an
 //      append-only trigger installed before the rows are inserted would
 //      reject its own restore.
-//   2. Replays every row.
+//   2. Replays every row, checks foreign-key integrity and enables enforcement
+//      before handing the restored client back to callers.
 //   3. Reads the RESTORED database back and recomputes, per table, the row
 //      count and the content hash. This is the part that makes the check
 //      meaningful: it verifies what is in the restored database, not what
@@ -34,7 +36,7 @@ import os from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { createClient } from "@libsql/client";
-import { decodeValue, encodeValue, tableHash } from "./backup.mjs";
+import { decodeValue, encodeValue, sha256, tableHash } from "./backup.mjs";
 
 /**
  * Restore a backup body into a local file database.
@@ -48,7 +50,6 @@ export async function restoreInto(targetUrl, body) {
       `restore target must be a local file: URL, refusing "${targetUrl}"`,
     );
   }
-  const client = createClient({ url: targetUrl });
   const entries = body
     .trim()
     .split("\n")
@@ -61,29 +62,45 @@ export async function restoreInto(targetUrl, body) {
   const ddl = entries.filter((entry) => entry.kind === "ddl");
   const rows = entries.filter((entry) => entry.kind === "row");
 
-  // Foreign keys off for the duration: the dump is ordered alphabetically
-  // by table, not topologically, so a child row can legitimately land
-  // before its parent.
-  await client.execute("PRAGMA foreign_keys = OFF");
+  const client = createClient({ url: targetUrl });
+  try {
+    // Alphabetical replay can insert children before parents. Disable FK
+    // enforcement only during replay, then validate the complete graph.
+    await client.execute("PRAGMA foreign_keys = OFF");
 
-  for (const entry of ddl) {
-    if (entry.type !== "table") continue;
-    await client.execute(entry.sql);
-  }
-  for (const entry of rows) {
-    const quoted = entry.columns.map((c) => `"${c}"`).join(", ");
-    const placeholders = entry.columns.map(() => "?").join(", ");
-    await client.execute({
-      sql: `INSERT INTO "${entry.table}" (${quoted}) VALUES (${placeholders})`,
-      args: entry.values.map(decodeValue),
-    });
-  }
-  for (const entry of ddl) {
-    if (entry.type === "table") continue;
-    await client.execute(entry.sql);
-  }
+    for (const entry of ddl) {
+      if (entry.type !== "table") continue;
+      await client.execute(entry.sql);
+    }
+    for (const entry of rows) {
+      const quoted = entry.columns.map((c) => `"${c}"`).join(", ");
+      const placeholders = entry.columns.map(() => "?").join(", ");
+      await client.execute({
+        sql: `INSERT INTO "${entry.table}" (${quoted}) VALUES (${placeholders})`,
+        args: entry.values.map(decodeValue),
+      });
+    }
+    for (const entry of ddl) {
+      if (entry.type === "table") continue;
+      await client.execute(entry.sql);
+    }
 
-  return { client, tables: meta.tables, restoredRows: rows.length };
+    const violations = await client.execute("PRAGMA foreign_key_check");
+    if (violations.rows.length > 0) {
+      throw new Error(
+        `restore contains ${violations.rows.length} foreign-key violation(s); refusing to verify`,
+      );
+    }
+    await client.execute("PRAGMA foreign_keys = ON");
+    const enforcement = await client.execute("PRAGMA foreign_keys");
+    if (Number(enforcement.rows[0]?.foreign_keys) !== 1) {
+      throw new Error("restore could not enable foreign-key enforcement");
+    }
+    return { client, tables: meta.tables, restoredRows: rows.length };
+  } catch (error) {
+    client.close();
+    throw error;
+  }
 }
 
 /**
@@ -210,6 +227,11 @@ export async function main(argv) {
 
   const body = fs.readFileSync(backupPath, "utf8");
   const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+  // Row hashes and DDL names cannot detect changed trigger definitions.
+  // The existing manifest digest covers every byte, including the DDL.
+  if (sha256(body) !== manifest.backupSha256) {
+    throw new Error("backup digest differs from manifest; refusing to restore");
+  }
 
   const startedAt = Date.now();
   const workDir = fs.mkdtempSync(path.join(os.tmpdir(), "signal-restore-"));

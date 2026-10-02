@@ -47,6 +47,117 @@ test("Priority Compression caps the whole briefing at three with stable ties", a
   assert.deepEqual(ids(first), ids(second));
 });
 
+test("near-due dependent and its real blocker can each surface with distinct read-state identities", async () => {
+  const blocker = task({ id: "inspection", title: "Inspect the venue", workspaceId: "owned", idleDays: null });
+  const dependent = task({ id: "plan", title: "Finish the plan", workspaceId: "owned", dueAt: NOW + DAY,
+    blockedBy: ["inspection"], dependencyCoverage: "complete", idleDays: null });
+  const first = await buildBriefing(source([dependent, blocker]), CTX, NOW);
+  assert.deepEqual(first.needsAttention.map(item => [item.id, item.trigger]), [["plan", "due-soon"], ["inspection", "blocking-due-work"]]);
+  assert.match(first.needsAttention[1]!.detail, /Finish the plan/);
+  assert.equal(first.triggeredCount, 2);
+  const suppressed = await buildBriefing(source([blocker, dependent]), CTX, NOW, {
+    suppressed: new Set(["blocking-due-work:inspection"]),
+  });
+  assert.deepEqual(suppressed.needsAttention.map(item => item.id), ["plan"]);
+  const aged = await buildBriefing(source([blocker, dependent]), CTX, NOW, {
+    ages: new Map([ ["blocking-due-work:inspection", 3] ]),
+  });
+  assert.equal(aged.needsAttention.find(item => item.id === "inspection")?.ageDays, 3);
+});
+
+test("a blocker with its own deadline retains an eligible dependency in the winning row", async () => {
+  const blocker = task({ id: "inspection", title: "Inspect the venue", workspaceId: "owned",
+    dueAt: NOW + DAY, idleDays: null });
+  const dependent = task({ id: "installation", title: "Install the display", workspaceId: "owned",
+    dueAt: NOW + 2 * DAY, blockedBy: ["inspection"], dependencyCoverage: "complete", idleDays: null });
+  for (const rows of [[blocker, dependent], [dependent, blocker]]) {
+    const brief = await buildBriefing(source(rows), CTX, NOW);
+    const row = brief.needsAttention.find((item) => item.id === "inspection");
+    assert.equal(row?.trigger, "due-soon");
+    assert.match(row?.detail ?? "", /due|date/i);
+    assert.match(row?.detail ?? "", /Install the display/);
+    assert.ok(row?.reasons.some((reason) => /listed prerequisite/i.test(reason)));
+    assert.equal(brief.needsAttention.length, 2);
+    assert.equal(brief.triggeredCount, 2);
+  }
+  for (const key of ["blocking-due-work:inspection", "*:inspection"]) {
+    const brief = await buildBriefing(source([blocker, dependent]), CTX, NOW,
+      { suppressed: new Set([key]) });
+    const row = brief.needsAttention.find((item) => item.id === "inspection");
+    if (key.startsWith("*:")) assert.equal(row, undefined);
+    else {
+      assert.equal(row?.trigger, "due-soon");
+      assert.doesNotMatch(row?.detail ?? "", /Install the display/);
+      assert.ok(!row?.reasons.some((reason) => /listed prerequisite/i.test(reason)));
+    }
+  }
+  for (const changed of [
+    { ...dependent, workspaceId: "foreign" },
+    { ...dependent, blockedBy: ["unknown"] },
+    { ...blocker, lane: "shipped" as const },
+  ]) {
+    const rows = changed.id === blocker.id ? [changed, dependent] : [blocker, changed];
+    const brief = await buildBriefing(source(rows), CTX, NOW);
+    assert.doesNotMatch(brief.needsAttention.find((item) => item.id === "inspection")?.detail ?? "", /Install the display/);
+  }
+  const pressure = [
+    blocker, dependent,
+    task({ id: "urgent", workspaceId: "owned", dueAt: NOW - DAY, idleDays: null }),
+    task({ id: "another", workspaceId: "owned", dueAt: NOW + DAY, idleDays: null }),
+  ];
+  const aged = await buildBriefing(source(pressure), CTX, NOW, { ages: new Map([
+    ["due-soon:inspection", 3], ["blocking-due-work:inspection", 8],
+  ]) });
+  const withoutDependency = await buildBriefing(source(pressure), CTX, NOW, {
+    ages: new Map([["due-soon:inspection", 3]]),
+    suppressed: new Set(["blocking-due-work:inspection"]),
+  });
+  assert.deepEqual(aged.needsAttention.map(({ id, trigger }) => [id, trigger]),
+    withoutDependency.needsAttention.map(({ id, trigger }) => [id, trigger]));
+  assert.equal(aged.needsAttention.length, 3);
+  assert.equal(aged.needsAttention.find((row) => row.id === "inspection")?.ageDays, 3);
+  assert.match(aged.needsAttention.find((row) => row.id === "inspection")?.detail ?? "", /Install the display/);
+});
+
+test("completed listed prerequisite enters attention, but a stronger due-soon observation wins on the same task", async () => {
+  const ready = task({ id: "ready", title: "Install the lights", workspaceId: "owned", dueAt: NOW + 3 * DAY,
+    dependencyCoverage: "complete", hasCompletedListedPrerequisite: true, idleDays: null });
+  const briefing = await buildBriefing(source([ready]), CTX, NOW);
+  assert.equal(briefing.needsAttention[0]?.trigger, "prerequisites-complete");
+  assert.match(briefing.needsAttention[0]!.detail, /listed prerequisites are complete/i);
+  assert.doesNotMatch(briefing.needsAttention[0]!.detail, /just|newly|started/i);
+  const urgent = await buildBriefing(source([{ ...ready, dueAt: NOW + DAY }]), CTX, NOW);
+  assert.deepEqual(urgent.needsAttention.map(item => item.trigger), ["due-soon"]);
+  const nextWeek = await buildBriefing(source([{ ...ready, dueAt: NOW + 6 * DAY }]), CTX, NOW);
+  assert.match(nextWeek.needsAttention[0]!.detail, /saved deadline/i);
+  assert.notEqual(nextWeek.suggestedFocus[0]?.due, "this week", "a future date must not inherit a calendar-week claim");
+});
+
+test("equal rule and severity honor P0..P3 then unknown before adverse IDs and the cap", async () => {
+  const rows = [
+    task({ id: "a-unknown", dueAt: NOW + DAY, priority: null }),
+    task({ id: "b-p3", dueAt: NOW + DAY, priority: 3 }),
+    task({ id: "c-p2", dueAt: NOW + DAY, priority: 2 }),
+    task({ id: "d-p1", dueAt: NOW + DAY, priority: 1 }),
+    task({ id: "z-p0", dueAt: NOW + DAY, priority: 0 }),
+  ];
+  const expected = ["z-p0", "d-p1", "c-p2"];
+  for (const input of [rows, [...rows].reverse(), [rows[2]!, rows[4]!, rows[0]!, rows[3]!, rows[1]!]]) {
+    const brief = await buildBriefing(source(input), CTX, NOW);
+    assert.deepEqual(brief.needsAttention.map(item => item.id), expected);
+    assert.equal(brief.triggeredCount, 5);
+  }
+  const tail = await buildBriefing(source(rows.slice(0, 2)), CTX, NOW);
+  assert.deepEqual(tail.needsAttention.map(item => item.id), ["b-p3", "a-unknown"]);
+});
+
+test("stronger deadline severity and trigger tier still precede declared priority", async () => {
+  const urgent = task({ id: "late-p3", priority: 3, dueAt: NOW - DAY });
+  const later = task({ id: "later-p0", priority: 0, dueAt: NOW + DAY });
+  const brief = await buildBriefing(source([later, urgent]), CTX, NOW);
+  assert.deepEqual(brief.needsAttention.map(item => item.id), ["late-p3", "later-p0"]);
+});
+
 // ─────────────────────────────────────────────────────────────
 // Engine output
 // ─────────────────────────────────────────────────────────────
@@ -143,6 +254,39 @@ describe("buildBriefing, focus ranking", () => {
     ];
     const b = await buildBriefing(source(signals), CTX, NOW);
     assert.equal(b.suggestedFocus[0]?.id, "overdue");
+  });
+
+  test("an instant past its time today reads overdue without inventing a day late", async () => {
+    const b = await buildBriefing(source([task({ id: "past-hour", dueAt: NOW - 3_600_000 })]), CTX, NOW);
+    const item = [...b.needsAttention, ...b.quietRisks].find((row) => row.id === "past-hour");
+    assert.equal(item?.detail, "Past its time today.");
+    assert.equal(b.suggestedFocus.find((row) => row.id === "past-hour")?.due, "overdue");
+  });
+
+  test("future instant keeps truthful minute precision while date-only stays calendar-only", async () => {
+    const timed = task({ id: "timed", dueAt: NOW + 2 * 3_600_000 });
+    const nearBoundary = task({ id: "seconds", dueAt: NOW + 2 * 3_600_000 + 1_000 });
+    const dateOnly = task({ id: "date", dueAt: null,
+      deadline: { kind: "date-only", date: new Date(NOW).toISOString().slice(0, 10) } });
+    const first = await buildBriefing(source([timed, nearBoundary, dateOnly]), CTX, NOW);
+    const second = await buildBriefing(source([dateOnly, timed, nearBoundary]), CTX, NOW);
+    assert.deepEqual(first.needsAttention, second.needsAttention);
+    assert.match(first.needsAttention.find((row) => row.id === "timed")?.detail ?? "", /two hours/);
+    assert.match(first.needsAttention.find((row) => row.id === "seconds")?.detail ?? "", /under two hours and one minute/);
+    assert.doesNotMatch(first.needsAttention.find((row) => row.id === "date")?.detail ?? "", /hour|minute/);
+    const dstNow = Date.parse("2024-03-31T00:30:00Z");
+    const dst = await buildBriefing(source([task({ id: "dst", dueAt: dstNow + 2 * 3_600_000 })]),
+      CTX, dstNow, { timezone: "Europe/Dublin" });
+    assert.match(dst.needsAttention[0]?.detail ?? "", /two hours/);
+    const midnightNow = Date.parse("2024-10-27T22:30:00Z");
+    const midnight = await buildBriefing(source([
+      task({ id: "midnight", dueAt: midnightNow + 2 * 3_600_000 }),
+      task({ id: "beyond-cutoff", dueAt: midnightNow + DAY + 1 }),
+      task({ id: "calendar-only", dueAt: null, deadline: { kind: "date-only", date: "2024-10-28" } }),
+    ]), CTX, midnightNow, { timezone: "Europe/Dublin" });
+    assert.match(midnight.needsAttention.find((row) => row.id === "midnight")?.detail ?? "", /two hours/);
+    assert.doesNotMatch(midnight.needsAttention.find((row) => row.id === "beyond-cutoff")?.detail ?? "", /hour|minute/);
+    assert.doesNotMatch(midnight.needsAttention.find((row) => row.id === "calendar-only")?.detail ?? "", /hour|minute/);
   });
 });
 

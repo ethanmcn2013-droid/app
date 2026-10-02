@@ -1,5 +1,5 @@
 import type { Lane, TaskSignal, TriggerKind } from "./types";
-import { calendarDayDifference } from "./calendar-time";
+import { deadlineDayDifference, deadlineIsOverdue, signalDeadline } from "./calendar-time";
 import { capitalise, numberWord, plural } from "./prose";
 
 const DAY = 86_400_000;
@@ -22,6 +22,8 @@ export type Triggered = {
   trigger: TriggerKind;
   reasons: string[];
   severity: number; // higher = more attention
+  /** Visible same-workspace dependent selected deterministically; never an opaque id. */
+  relatedTaskTitle?: string;
 };
 
 /**
@@ -57,8 +59,9 @@ export function detectStuckWork(signals: TaskSignal[]): Triggered[] {
     .filter(
       (s) =>
         s.lane !== "shipped" &&
-        s.idleDays >= 3 &&
-        s.blockedBy.length === 0,
+        s.idleDays != null && s.idleDays >= 3 &&
+        s.blockedBy.length === 0 &&
+        s.dependencyCoverage !== "partial",
     )
     .map((task) => ({
       task,
@@ -71,9 +74,9 @@ export function detectStuckWork(signals: TaskSignal[]): Triggered[] {
       reasons: [
         "Signal flags anything quiet for three days or more.",
         lanePosition(task.lane),
-        ...(task.priority === 0 ? ["You marked this high priority."] : []),
+        ...(task.priority === 0 ? ["This is marked high priority."] : []),
       ],
-      severity: Math.min(100, task.idleDays * 4 + (3 - task.priority) * 6),
+      severity: Math.min(100, task.idleDays! * 4 + (task.priority === null ? 0 : (3 - task.priority) * 6)),
     }));
 }
 
@@ -84,19 +87,18 @@ export function detectDueSoon(
   timezone = "UTC",
 ): Triggered[] {
   return signals
-    .filter((s) => s.lane !== "shipped" && s.dueAt != null)
+    .filter((s) => s.lane !== "shipped" && deadlineDayDifference(signalDeadline(s), now, timezone) !== null)
     .map((task): Triggered | null => {
-      const dueAt = task.dueAt!;
-      const daysOut = calendarDayDifference(dueAt, now, timezone);
+      const daysOut = deadlineDayDifference(signalDeadline(task), now, timezone)!;
       if (daysOut > 2) return null;
-      const isOverdue = daysOut < 0;
+      const isOverdue = deadlineIsOverdue(signalDeadline(task), now, timezone);
       const overdueDays = Math.round(Math.abs(daysOut));
       // The row already states the date position, so neither line here
       // repeats it. Line one names the rule that fired; line two is the
       // fact the date alone does not give you, which is whether anyone
       // has touched it and where it is sitting.
       const evidence =
-        task.idleDays >= 1
+        task.idleDays != null && task.idleDays >= 1
           ? `No update on it in ${plural(task.idleDays, "day", "days")}.`
           : lanePosition(task.lane);
       return {
@@ -104,13 +106,13 @@ export function detectDueSoon(
         trigger: "due-soon",
         reasons: [
           isOverdue
-            ? "Signal flags anything past its date."
+            ? daysOut === 0 ? "Signal flags anything past its time." : "Signal flags anything past its date."
             : "Signal flags anything due inside two days.",
           evidence,
           // Gated at P0, not at P0-or-P1. At the old threshold the line
           // appeared on very nearly every row, so it discriminated
           // nothing and read as decoration.
-          ...(task.priority === 0 ? ["You marked this high priority."] : []),
+          ...(task.priority === 0 ? ["This is marked high priority."] : []),
         ],
         severity: isOverdue
           ? 80 + Math.min(20, overdueDays * 2)
@@ -141,7 +143,7 @@ export function detectJustShipped(
           ? "You had it marked high priority before it closed."
           : "Nothing is being asked of you here.",
       ],
-      severity: 40 + (3 - task.priority) * 5,
+      severity: 40 + (task.priority === null ? 0 : (3 - task.priority) * 5),
     }));
 }
 
@@ -161,14 +163,14 @@ export function detectCrowdedWeek(
   const upcoming = signals.filter(
     (s) =>
       s.lane !== "shipped" &&
-      s.dueAt != null &&
-      calendarDayDifference(s.dueAt, now, timezone) > 0 &&
-      calendarDayDifference(s.dueAt, now, timezone) <= 7,
+      deadlineDayDifference(signalDeadline(s), now, timezone) !== null &&
+      deadlineDayDifference(signalDeadline(s), now, timezone)! > 0 &&
+      deadlineDayDifference(signalDeadline(s), now, timezone)! <= 7,
   );
   if (upcoming.length < 3) return [];
 
   const soonest = Math.min(
-    ...upcoming.map((s) => calendarDayDifference(s.dueAt!, now, timezone)),
+    ...upcoming.map((s) => deadlineDayDifference(signalDeadline(s), now, timezone)!),
   );
 
   const synthetic: TaskSignal = {
@@ -210,7 +212,8 @@ export function detectBlockedTooLong(signals: TaskSignal[]): Triggered[] {
       (s) =>
         s.lane !== "shipped" &&
         s.blockedBy.length > 0 &&
-        s.idleDays >= 5,
+        s.dependencyCoverage !== "partial" &&
+        s.idleDays != null && s.idleDays >= 5,
     )
     .map((task) => ({
       task,
@@ -222,8 +225,58 @@ export function detectBlockedTooLong(signals: TaskSignal[]): Triggered[] {
           ? "One upstream item has not cleared."
           : `${capitalise(numberWord(task.blockedBy.length))} upstream items have not cleared.`,
       ],
-      severity: Math.min(90, 30 + task.idleDays * 3 + task.blockedBy.length * 4),
+      severity: Math.min(90, 30 + task.idleDays! * 3 + task.blockedBy.length * 4),
     }));
+}
+
+/** A current open prerequisite of visible, near-due work. The blocker is the
+ * row identity; the dependent contributes context but not a borrowed due date.
+ * Unknown edges elsewhere do not invalidate a confirmed current open edge. */
+export function detectBlockingDueWork(signals: TaskSignal[], now: number = Date.now(), timezone = "UTC"): Triggered[] {
+  const visible = new Map(signals.filter(s => s.workspaceId).map(s => [`${s.workspaceId}:${s.id}`, s]));
+  const dependents = [...signals].filter(s => s.lane !== "shipped" && s.workspaceId)
+    .map(task => ({ task, days: deadlineDayDifference(signalDeadline(task), now, timezone) }))
+    .filter((entry): entry is { task: TaskSignal; days: number } => entry.days !== null && entry.days <= 2)
+    .sort((a, b) => a.days - b.days || a.task.id.localeCompare(b.task.id) || a.task.workspaceId!.localeCompare(b.task.workspaceId!));
+  const selected = new Map<string, Triggered>();
+  for (const { task: dependent, days } of dependents) {
+    for (const id of new Set(dependent.blockedBy)) {
+      if (id === dependent.id) continue;
+      const blocker = visible.get(`${dependent.workspaceId}:${id}`);
+      if (!blocker || blocker.lane === "shipped" || selected.has(`${blocker.workspaceId}:${blocker.id}`)) continue;
+      selected.set(`${blocker.workspaceId}:${blocker.id}`, {
+        task: blocker,
+        trigger: "blocking-due-work",
+        relatedTaskTitle: dependent.title,
+        reasons: [
+          "This open task is a listed prerequisite for another open task.",
+          days < 0 || deadlineIsOverdue(signalDeadline(dependent), now, timezone)
+            ? "The dependent task is past its saved deadline."
+            : days === 0 ? "The dependent task is due today." : days === 1 ? "The dependent task is due tomorrow." : "The dependent task is due in two days.",
+        ],
+        severity: 0,
+      });
+    }
+  }
+  return [...selected.values()];
+}
+
+/** Current completed-prerequisite evidence, not a transition or start claim. */
+export function detectPrerequisitesComplete(signals: TaskSignal[], now: number = Date.now(), timezone = "UTC"): Triggered[] {
+  return signals.flatMap(task => {
+    if (task.lane === "shipped" || task.dependencyCoverage !== "complete" ||
+        task.blockedBy.length !== 0 || task.hasCompletedListedPrerequisite !== true) return [];
+    const deadline = signalDeadline(task);
+    const days = deadlineDayDifference(deadline, now, timezone);
+    if (days === null || days < 0 || days > 7 || deadlineIsOverdue(deadline, now, timezone) ||
+        (deadline?.kind === "instant" && deadline.at <= now)) return [];
+    return [{
+      task,
+      trigger: "prerequisites-complete" as const,
+      reasons: ["At least one listed prerequisite is complete and none remain open.", "The task has a saved deadline within seven days."],
+      severity: 0,
+    }];
+  });
 }
 
 /** Overload: > 5 in-flight tasks for the user. The triggered

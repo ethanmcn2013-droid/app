@@ -194,6 +194,12 @@ describe("graceNote", () => {
     );
   });
 
+  test("new dependency attention never calls the current relationship a quiet risk", () => {
+    assert.equal(graceNote(brief({ needsAttention: [
+      { trigger: "due-soon" }, { trigger: "blocking-due-work" },
+    ] as never[] })), "That’s the read.");
+  });
+
   test("never claims an order the page does not use", () => {
     for (const b of [
       brief(),

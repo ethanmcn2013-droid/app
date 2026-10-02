@@ -37,6 +37,7 @@ const boardPage = readFileSync(
   join(serverDir, "..", "app", "app", "tasks", "page.tsx"),
   "utf8",
 );
+const routeAuthz = readFileSync(join(serverDir, "projects", "route-authz.ts"), "utf8");
 const inboxPage = readFileSync(
   join(serverDir, "..", "app", "app", "inbox", "page.tsx"),
   "utf8",
@@ -238,11 +239,37 @@ test("updateTaskAction resolves an owned row before emitting activity", () => {
   const end = actions.indexOf("export async function addTaskAction", start);
   assert.ok(start >= 0 && end > start);
   const body = actions.slice(start, end);
-  const ownedRead = body.indexOf("eq(tasks.id, id), eq(tasks.workspaceId, ws)");
+  const ownedRead = actions.indexOf("eq(tasks.id, id), eq(tasks.workspaceId, ws)", actions.indexOf("async function taskWriteTarget"));
   const activityWrite = body.indexOf("recordActivity(id");
-  assert.ok(ownedRead >= 0, "update must read the target with workspace scope");
-  assert.ok(activityWrite > ownedRead, "activity must follow the owned-row guard");
-  assert.match(body, /if\s*\(!ownedTask\)\s*return\s*getTasks\(ws\)/);
+  assert.ok(ownedRead >= 0, "shared writer must read the target with workspace scope");
+  assert.match(body, /taskWriteTarget\(tx, id, me\)/);
+  assert.ok(activityWrite > body.indexOf("if (updated.length !== 1) return null"),
+    "activity must follow the confirmed scoped update");
+  const noEffect = /if \(!outcome\) \{\s*if \(expectedProject !== undefined\) throw new TaskMutationRefusedError\(\);\s*return neutralTaskList\(await activeWorkspaceOrNullForUser\(me\), me\);\s*\}/;
+  assert.match(body, noEffect);
+  const noEffectBranch = body.match(noEffect)[0];
+  assert.doesNotMatch(
+    noEffectBranch.replace("if (expectedProject !== undefined) throw new TaskMutationRefusedError();", ""),
+    noEffect,
+    "a bound no-effect result must remain an explicit refusal",
+  );
+  assert.doesNotMatch(
+    noEffectBranch.replace("return neutralTaskList(await activeWorkspaceOrNullForUser(me), me);", "return [];"),
+    noEffect,
+    "legacy callers must retain the authorized neutral Task list",
+  );
+});
+
+test("task writers read only the target Project before stored-Project authorization", () => {
+  const start = actions.indexOf("async function taskWriteTarget");
+  const end = actions.indexOf("function nowSeconds", start);
+  const body = actions.slice(start, end);
+  const scopeOnly = body.indexOf("select({ workspaceId: tasks.workspaceId }).from(tasks).where(eq(tasks.id, id))");
+  const proof = body.indexOf("authorizeStoredProject");
+  const fences = body.indexOf("taskWriterState(executor, ws, me)");
+  const privateRead = body.indexOf("executor.select().from(tasks)", fences);
+  assert.ok(scopeOnly >= 0 && proof > scopeOnly && fences > proof && privateRead > fences,
+    "the whole task row must only be decoded after Project authorization and deletion fences");
 });
 
 test("addTaskAction validates parent ownership and top-level shape", () => {
@@ -269,12 +296,12 @@ test("routed task and subtask creation writes to the displayed Project, not an a
   assert.match(subtasksSection, /addTaskAction\(\{[\s\S]*?parentTaskId:\s*task\.id,[\s\S]*?projectId,/);
 
   const body = exportedActionBody(actions, "addTaskAction");
-  assert.match(body, /candidateProjectId:\s*input\.projectId\s*\?\?\s*ambient/);
-  assert.match(body, /const ws = grant\.projectId/);
+  assert.match(body, /const ws = parseProjectId\(input\.projectId\s*\?\?\s*ambient\)/);
+  assert.match(body, /authorizeStoredProject\(\{[\s\S]*?storedProjectId: ws[\s\S]*?archivePolicy: "enforce", executor: tx/);
   assert.match(body, /workspaceId:\s*ws/);
   // A refused explicit B write must reject the optimistic B card. Returning
-  // neutralTaskList(ambient) would hydrate A's tasks into the B provider.
-  assert.match(body, /if \(!grant\.ok\)\s*\{[\s\S]*?if \(input\.projectId != null\) throw/);
+  // A neutral ambient-list fallback would hydrate A's tasks into the B provider.
+  assert.match(body, /if \(!ws\)\s*\{[\s\S]*?if \(input\.projectId != null\) throw/);
   assert.match(body, /if \(!created\)\s*\{[\s\S]*?if \(input\.projectId != null\) throw/);
 });
 
@@ -285,6 +312,19 @@ test("subtask reads include both parent id and workspace scope", () => {
   assert.match(body, /byWorkspace\(/);
   assert.match(body, /tasks\.workspaceId/);
   assert.match(body, /eq\(tasks\.parentTaskId, parentTaskId\)/);
+});
+
+test("board configuration actions require a rendered Project and re-prove it at the write lock", () => {
+  for (const name of [
+    "renameBoardAction", "renameColumnAction", "setColumnColorAction",
+    "setColumnDescriptionAction", "setColumnLimitAction", "setColumnDoneAction",
+    "addColumnAction", "reorderColumnsAction", "deleteColumnAction",
+  ]) {
+    const body = exportedActionBody(boardActions, name);
+    assert.match(body, /projectId:\s*string/);
+    assert.doesNotMatch(body, /getActiveWorkspace/);
+  }
+  assert.match(boardActions, /async function withBoardConfigWrite[\s\S]*?db\.transaction\(async \(tx\) => \{[\s\S]*?authorizeStoredProject\(\{[\s\S]*?storedProjectId: candidateProjectId/);
 });
 
 test("public routes use the explicit allowlisted projection", () => {
@@ -322,14 +362,14 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   assertDemoGuardBefore(actions, "getTasksAction", "readableProjectOrNull");
   for (const name of [
     "moveTaskAction",
-    "toggleCompleteAction",
-    "updateTaskAction",
-    "addTaskAction",
     "reorderTaskAction",
     "removeTaskAction",
     "setTaskMilestoneAction",
   ]) {
-    assertDemoGuardBefore(actions, name, "getActiveWorkspace");
+    assertDemoGuardBefore(actions, name, "getCurrentUserAndActiveWorkspaceOrNull");
+  }
+  for (const name of ["toggleCompleteAction", "updateTaskAction", "addTaskAction"]) {
+    assertDemoGuardBefore(actions, name, "getCurrentUser");
   }
   // WP3 renegotiation (ADR 0001 §9). This guard's subject is the ORDERING —
   // demo/review must exit before the action resolves a tenant — and not the
@@ -353,21 +393,20 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   }
   for (const [name, boundaries] of [
     ["getBoardName", ["await db"]],
-    ["renameBoardAction", ["getActiveWorkspace", "db.run", "revalidatePath"]],
+    ["renameBoardAction", ["withBoardConfigWrite", "revalidatePath"]],
     ["getColumnConfig", ["readColumnConfig"]],
-    ["renameColumnAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
-    ["setColumnLimitAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
-    ["setColumnDoneAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
-    ["addColumnAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
-    ["reorderColumnsAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
-    ["deleteColumnAction", ["getActiveWorkspace", "readColumnConfig", "await db", "writeColumnConfig"]],
+    ["renameColumnAction", ["withBoardConfigWrite", "readColumnConfig", "writeColumnConfig"]],
+    ["setColumnLimitAction", ["withBoardConfigWrite", "readColumnConfig", "writeColumnConfig"]],
+    ["setColumnDoneAction", ["withBoardConfigWrite", "readColumnConfig", "writeColumnConfig"]],
+    ["addColumnAction", ["withBoardConfigWrite", "readColumnConfig", "writeColumnConfig"]],
+    ["reorderColumnsAction", ["withBoardConfigWrite", "readColumnConfig", "writeColumnConfig"]],
+    ["deleteColumnAction", ["db.transaction", "authorizeStoredProject", "writeColumnConfig"]],
     // WP3 renegotiation (ADR 0001 §9), same reasoning as getSubtasksAction
     // above: moveTaskToColumnAction is an object operation, so it derives the
     // dragged card's own Project instead of resolving one ambiently, and has
     // no `getActiveWorkspace*` left to point at. The ordering invariant — demo
-    // exits before tenant resolution — is unchanged; only the name of the call
-    // that resolves the tenant has. Every other entry in this table is a
-    // create/list site that still resolves ambiently and keeps the old token.
+    // exits before tenant resolution — is unchanged. Configuration writes now
+    // receive the rendered Project and prove it under the write lock.
     ["moveTaskToColumnAction", ["scopeForTask", "await db", "revalidatePath"]],
   ]) {
     for (const boundary of boundaries) {
@@ -625,11 +664,15 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   const welcomeStart = boardPage.indexOf('if (sp.welcome === "venue")');
   const welcomeBody = boardPage.slice(welcomeStart);
   assert.ok(welcomeStart >= 0, "board must retain the venue welcome branch");
+  const resolverBody = routeAuthz.slice(routeAuthz.indexOf("async function resolveProjectForRouteWithActorFresh"));
   assert.ok(
-    welcomeBody.indexOf("isDemoMode()") <
-      welcomeBody.indexOf("getCurrentUser()"),
-    "venue review fixture must resolve before auth or entitlement access",
+    resolverBody.indexOf("if (isDemoMode())") < resolverBody.indexOf("withRouteResolverIdentityTiming(getCurrentUser)"),
+    "the route must resolve the demo actor before Clerk or provisioning",
   );
+  assert.ok(boardPage.indexOf("resolveTasksArrival(sp.workspaceId)") < welcomeStart,
+    "the Tasks page must settle the guarded arrival before venue reads");
+  assert.doesNotMatch(welcomeBody, /getCurrentUser\s*\(/,
+    "the venue read must reuse the guarded server actor, not repeat identity");
   assert.ok(
     welcomeBody.indexOf("isDemoMode()") <
       welcomeBody.indexOf("detectVenueWelcome"),
@@ -751,7 +794,17 @@ test("demo and review cannot bind or seed the configured database", () => {
   );
   assert.match(
     dbIndex,
-    /process\.env\.NODE_ENV === "development"\s*&&\s*!demoMode\s*&&/,
+    /const authToken = demoMode \? undefined : process\.env\.TASKS_AUTH_TOKEN/,
+  );
+  assert.match(
+    dbIndex,
+    /import \{ shouldSeedImplicitDevelopmentDatabase \} from "\.\/development-seed-policy"/,
+  );
+  // The policy's runtime matrix lives beside it; pin its real inputs and the
+  // guarded seed call here so extracting it cannot bypass the demo boundary.
+  assert.match(
+    dbIndex,
+    /if \(shouldSeedImplicitDevelopmentDatabase\(process\.env, \{\s*demoMode,\s*productionMode: isProductionMode\(\),\s*alreadySeeded: globalForDb\._seeded === true,\s*\}\)\) \{\s*globalForDb\._seeded = true;[\s\S]*?void seedIfEmpty\(db\)\.catch/,
   );
 });
 

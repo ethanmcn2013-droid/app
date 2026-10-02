@@ -16,6 +16,7 @@ export const inactiveProject: Trigger = {
   id: "inactive-project",
   defaultBlock: "quiet-risks",
   detect(work) {
+    if (work.coverage?.activity === "partial") return [];
     const insights: Insight[] = [];
 
     for (const project of work.projects) {

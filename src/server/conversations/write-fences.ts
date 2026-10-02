@@ -3,6 +3,18 @@ import "server-only";
 import { accountDeletionTombstoneKey } from "@/server/account-deletion-key";
 import type { ConversationSqlExecutor } from "./database";
 
+/** Repeated Project IDs share the same proof within the caller's write transaction. */
+export async function conversationProjectWriteFencesClear(
+  executor: ConversationSqlExecutor,
+  actorUserId: string,
+  projectIds: readonly string[],
+): Promise<boolean> {
+  for (const projectId of new Set(projectIds)) {
+    if (!await conversationWriteFencesClear(executor, actorUserId, projectId)) return false;
+  }
+  return true;
+}
+
 /**
  * Read January's Project and account deletion tombstones through the exact
  * transaction that will perform the conversation write. Call after resource

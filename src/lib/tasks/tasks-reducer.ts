@@ -8,7 +8,7 @@ export type TasksState = {
 };
 
 export type TasksAction =
-  | { type: "move"; id: string; toLane: LaneId }
+  | { type: "move"; id: string; toLane: LaneId; at?: Date }
   | {
       /**
        * Move a task to a board column identified by `columnKey`.
@@ -20,6 +20,7 @@ export type TasksAction =
       id: string;
       columnKey: string;
       isSystemLane: boolean;
+      at?: Date;
     }
   | { type: "reorder"; id: string; toIndex: number }
   | {
@@ -28,11 +29,12 @@ export type TasksAction =
       toLane: LaneId;
       toIndex: number;
       position: number;
+      at?: Date;
     }
-  | { type: "update"; id: string; patch: Partial<Omit<Task, "id">> }
+  | { type: "update"; id: string; patch: Partial<Omit<Task, "id">>; at?: Date }
   | { type: "add"; task: Task }
   | { type: "remove"; id: string }
-  | { type: "toggleComplete"; id: string }
+  | { type: "toggleComplete"; id: string; at?: Date }
   | { type: "hydrate"; tasks: Task[] };
 
 export function initialTasksState(seed: Task[]): TasksState {
@@ -57,7 +59,7 @@ export function tasksReducer(
         ...t,
         lane: action.toLane,
         idleDays: undefined,
-        updatedAt: new Date(),
+        updatedAt: action.at ?? new Date(),
       };
       // Any direct move clears a stale previousLane entry, the user
       // is taking explicit control, so the toggle source is invalidated.
@@ -78,7 +80,7 @@ export function tasksReducer(
           lane: action.columnKey as LaneId,
           boardColumnKey: null,
           idleDays: undefined,
-          updatedAt: new Date(),
+          updatedAt: action.at ?? new Date(),
         };
         const previousLane = { ...state.previousLane };
         delete previousLane[action.id];
@@ -88,7 +90,7 @@ export function tasksReducer(
         tasks[idx] = {
           ...t,
           boardColumnKey: action.columnKey,
-          updatedAt: new Date(),
+          updatedAt: action.at ?? new Date(),
         };
         return { ...state, tasks };
       }
@@ -140,7 +142,7 @@ export function tasksReducer(
         ...current,
         lane: action.toLane,
         idleDays: undefined,
-        updatedAt: new Date(),
+        updatedAt: action.at ?? new Date(),
         // position lives on the Task type once the backend lands; the
         // optional cast keeps this safe in the interim.
         position: action.position,
@@ -181,7 +183,7 @@ export function tasksReducer(
         ...tasks[idx],
         ...action.patch,
         id: tasks[idx].id,
-        updatedAt: new Date(),
+        updatedAt: action.at ?? new Date(),
       };
       return { ...state, tasks };
     }
@@ -211,7 +213,7 @@ export function tasksReducer(
       if (t.lane === "done") {
         // Un-complete: restore previous lane (default todo).
         const restoreTo = state.previousLane[action.id] ?? "todo";
-        tasks[idx] = { ...t, lane: restoreTo, updatedAt: new Date() };
+        tasks[idx] = { ...t, lane: restoreTo, updatedAt: action.at ?? new Date() };
         const previousLane = { ...state.previousLane };
         delete previousLane[action.id];
         return { tasks, previousLane };
@@ -222,7 +224,7 @@ export function tasksReducer(
         ...t,
         lane: "done",
         idleDays: undefined,
-        updatedAt: new Date(),
+        updatedAt: action.at ?? new Date(),
       };
       return {
         tasks,

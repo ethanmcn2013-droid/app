@@ -21,18 +21,19 @@
  * format (steps 3/4 of T·69, shipped before step 5), it is interpreted
  * as `{ system: <that record>, custom: [], order: LANE_ORDER }`.
  *
- * Workspace-scoping is done by encoding the workspaceId into the key
- * AND by requiring the caller to own the active workspace (auth guard
- * matches every other action in this suite).
+ * Configuration writes take the Project carried by the rendered Board,
+ * re-proved under the write lock before its id enters the meta key.
  */
 
-import { and, eq, isNull, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
-import { meta, tasks } from "@/server/db/schema";
-import { getActiveWorkspaceOrNull, getCurrentUser } from "@/server/auth";
+import { meta, tasks, users, workspaces } from "@/server/db/schema";
+import { getCurrentUser } from "@/server/auth";
+import { hasAccountDeletionStartedWith } from "@/server/account-deletion-lifecycle";
+import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
 import {
-  authorizeProjectCandidate,
+  authorizeStoredProject,
   scopeForTask,
 } from "@/server/actions/project-authz";
 import { LANE_ORDER, type LaneId } from "@/lib/data";
@@ -45,6 +46,7 @@ import {
   MAX_CUSTOM_COLUMNS,
   MAX_DESCRIPTION_LEN,
   MAX_NAME_LEN,
+  configRemoveColumn,
   parseColumnConfig,
   serializeColumnConfig,
   type ColumnConfig,
@@ -80,24 +82,58 @@ export type { ColumnConfig, CustomColumn } from "@/lib/board-config";
  * makes these the sharpest kind of ambient site: a wrong id does not fail, it
  * silently reconfigures another Project's board.
  *
- * Two changes. The cookie is read through the fail-closed accessor, so it can
- * no longer decay to `LEGACY_WORKSPACE_ID` and rewrite a workspace the caller
- * has proved nothing about (D-005). And membership is proved before the key is
- * built, rather than assumed because a cookie parsed.
+ * The Board's existing DomainProvider carries its server-verified rendered
+ * Project. The client sends that id with each write; a stale shared cookie
+ * cannot silently redirect a write to another Project.
  *
  * `createOrEditTasks` rather than `manageProject`: renaming a column is
  * ordinary board work that every member does today, and WP3 is not the place
  * to introduce a role gate the product has never had.
  */
-async function provedBoardProject(candidate: string | null): Promise<string> {
-  const grant = await authorizeProjectCandidate({
-    candidateProjectId: candidate,
-    capability: "createOrEditTasks",
-  });
-  // One neutral message for every refusal: "no such Project", "not a member"
-  // and "no Project at all" must not be tellable apart (ADR 0001 §4).
-  if (!grant.ok) throw new Error("That project isn’t available.");
-  return grant.projectId;
+type BoardWriteExecutor = Pick<typeof db, "select" | "run">;
+
+async function assertBoardMutationNotDeleting(
+  executor: Pick<typeof db, "select">,
+  projectId: string,
+  actorUserId: string,
+): Promise<void> {
+  await assertProjectNotDeleting(executor, projectId);
+  const [actor] = await executor
+    .select({ clerkId: users.clerkId })
+    .from(users)
+    .where(eq(users.id, actorUserId))
+    .limit(1);
+  if (!actor || await hasAccountDeletionStartedWith(executor, actor.clerkId ?? actorUserId)) {
+    throw new Error("That project isn’t available.");
+  }
+  const [owner] = await executor
+    .select({ id: users.id, clerkId: users.clerkId })
+    .from(workspaces)
+    .innerJoin(users, eq(users.id, workspaces.ownerUserId))
+    .where(eq(workspaces.id, projectId))
+    .limit(1);
+  if (owner && await hasAccountDeletionStartedWith(executor, owner.clerkId ?? owner.id)) {
+    throw new Error("That project isn’t available.");
+  }
+}
+
+/** Re-prove membership and capability under the same write lock as the meta row. */
+async function withBoardConfigWrite<T>(
+  candidateProjectId: string,
+  mutate: (workspaceId: string, executor: BoardWriteExecutor) => Promise<T>,
+): Promise<T> {
+  const actorUserId = await getCurrentUser();
+  return db.transaction(async (tx) => {
+    const grant = await authorizeStoredProject({
+      storedProjectId: candidateProjectId,
+      capability: "createOrEditTasks",
+      actorUserId,
+      executor: tx,
+    });
+    if (!grant.ok) throw new Error("That project isn’t available.");
+    await assertBoardMutationNotDeleting(tx, grant.projectId, actorUserId);
+    return mutate(grant.projectId, tx);
+  }, { behavior: "immediate" });
 }
 
 // ─── Key helpers ──────────────────────────────────────────────────────────────
@@ -114,9 +150,10 @@ function columnsKey(workspaceId: string): string {
 
 async function readColumnConfig(
   workspaceId: string,
+  executor: Pick<typeof db, "select"> = db,
 ): Promise<ColumnConfig | null> {
   const key = columnsKey(workspaceId);
-  const [row] = await db
+  const [row] = await executor
     .select({ value: meta.value })
     .from(meta)
     .where(eq(meta.key, key));
@@ -127,10 +164,11 @@ async function readColumnConfig(
 async function writeColumnConfig(
   workspaceId: string,
   config: ColumnConfig,
+  executor: Pick<typeof db, "run"> = db,
 ): Promise<void> {
   const key = columnsKey(workspaceId);
   const value = serializeColumnConfig(config);
-  await db.run(sql`
+  await executor.run(sql`
     INSERT INTO meta (key, value, updated_at)
     VALUES (${key}, ${value}, unixepoch())
     ON CONFLICT(key) DO UPDATE SET
@@ -160,23 +198,24 @@ export async function getBoardName(
 }
 
 /**
- * Upsert the board-name override for the caller's active workspace.
+ * Upsert the board-name override for the explicitly rendered Project.
  * Trims, rejects empty, clamps to MAX_NAME_LEN.
  */
-export async function renameBoardAction(name: string): Promise<{ ok: true }> {
+export async function renameBoardAction(projectId: string, name: string): Promise<{ ok: true }> {
   const trimmed = name.trim();
   if (!trimmed) throw new Error("Board name can’t be empty.");
   if (isDemoMode()) return { ok: true };
-  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
   const clamped = trimmed.slice(0, MAX_NAME_LEN);
-  const key = boardNameKey(ws);
-  await db.run(sql`
-    INSERT INTO meta (key, value, updated_at)
-    VALUES (${key}, ${clamped}, unixepoch())
-    ON CONFLICT(key) DO UPDATE SET
-      value = excluded.value,
-      updated_at = excluded.updated_at
-  `);
+  await withBoardConfigWrite(projectId, async (ws, tx) => {
+    const key = boardNameKey(ws);
+    await tx.run(sql`
+      INSERT INTO meta (key, value, updated_at)
+      VALUES (${key}, ${clamped}, unixepoch())
+      ON CONFLICT(key) DO UPDATE SET
+        value = excluded.value,
+        updated_at = excluded.updated_at
+    `);
+  });
   revalidatePath("/app", "layout");
   return { ok: true };
 }
@@ -203,33 +242,32 @@ export async function getColumnConfig(
  * For custom columns, the name is updated in `config.custom[]`.
  */
 export async function renameColumnAction(
+  projectId: string,
   columnKey: string,
   name: string,
 ): Promise<{ ok: true }> {
   const trimmed = name.trim();
   if (!trimmed) throw new Error("Column name can’t be empty.");
   if (isDemoMode()) return { ok: true };
-  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
   const clamped = trimmed.slice(0, MAX_NAME_LEN);
+  await withBoardConfigWrite(projectId, async (ws, tx) => {
+    const existing = (await readColumnConfig(ws, tx)) ?? defaultColumnConfig();
 
-  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
+    if ((LANE_ORDER as string[]).includes(columnKey)) {
+      existing.system = {
+        ...existing.system,
+        [columnKey as LaneId]: clamped,
+      };
+    } else {
+      const idx = existing.custom.findIndex((c) => c.key === columnKey);
+      if (idx === -1) throw new Error(`Unknown column key: ${columnKey}`);
+      existing.custom = existing.custom.map((c) =>
+        c.key === columnKey ? { ...c, name: clamped } : c,
+      );
+    }
 
-  if ((LANE_ORDER as string[]).includes(columnKey)) {
-    // System lane rename.
-    existing.system = {
-      ...existing.system,
-      [columnKey as LaneId]: clamped,
-    };
-  } else {
-    // Custom column rename.
-    const idx = existing.custom.findIndex((c) => c.key === columnKey);
-    if (idx === -1) throw new Error(`Unknown column key: ${columnKey}`);
-    existing.custom = existing.custom.map((c) =>
-      c.key === columnKey ? { ...c, name: clamped } : c,
-    );
-  }
-
-  await writeColumnConfig(ws, existing);
+    await writeColumnConfig(ws, existing, tx);
+  });
   revalidatePath("/app", "layout");
   return { ok: true };
 }
@@ -240,22 +278,18 @@ export async function renameColumnAction(
  * T·96.
  */
 export async function setColumnColorAction(
+  projectId: string,
   columnKey: string,
   color: ColumnColorKey,
 ): Promise<{ ok: true }> {
   if (!isColumnColorKey(color)) throw new Error("Unknown column colour.");
   if (isDemoMode()) return { ok: true };
-  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
-
-  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
-
-  // Store the chosen colour explicitly, including "neutral", so an owner
-  // can override a system lane's semantic default back to no tint. The
-  // client's boardColumnColor() treats a stored value as the owner's
-  // choice and never overrides it with a default.
-  existing.colors = { ...existing.colors, [columnKey]: color };
-
-  await writeColumnConfig(ws, existing);
+  await withBoardConfigWrite(projectId, async (ws, tx) => {
+    const existing = (await readColumnConfig(ws, tx)) ?? defaultColumnConfig();
+    // "neutral" is an explicit override of the semantic default.
+    existing.colors = { ...existing.colors, [columnKey]: color };
+    await writeColumnConfig(ws, existing, tx);
+  });
   revalidatePath("/app", "layout");
   return { ok: true };
 }
@@ -266,17 +300,17 @@ export async function setColumnColorAction(
  * column then shows no description, not its static default). Phase 2.
  */
 export async function setColumnDescriptionAction(
+  projectId: string,
   columnKey: string,
   description: string,
 ): Promise<{ ok: true }> {
   if (isDemoMode()) return { ok: true };
-  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
   const clamped = description.trim().slice(0, MAX_DESCRIPTION_LEN);
-
-  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
-  existing.descriptions = { ...existing.descriptions, [columnKey]: clamped };
-
-  await writeColumnConfig(ws, existing);
+  await withBoardConfigWrite(projectId, async (ws, tx) => {
+    const existing = (await readColumnConfig(ws, tx)) ?? defaultColumnConfig();
+    existing.descriptions = { ...existing.descriptions, [columnKey]: clamped };
+    await writeColumnConfig(ws, existing, tx);
+  });
   revalidatePath("/app", "layout");
   return { ok: true };
 }
@@ -288,6 +322,7 @@ export async function setColumnDescriptionAction(
  * ever blocked.
  */
 export async function setColumnLimitAction(
+  projectId: string,
   columnKey: string,
   limit: number | null,
 ): Promise<{ ok: true }> {
@@ -297,15 +332,14 @@ export async function setColumnLimitAction(
     }
   }
   if (isDemoMode()) return { ok: true };
-  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
-
-  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
-  const limits = { ...existing.limits };
-  if (limit === null || limit === 0) delete limits[columnKey];
-  else limits[columnKey] = limit;
-  existing.limits = limits;
-
-  await writeColumnConfig(ws, existing);
+  await withBoardConfigWrite(projectId, async (ws, tx) => {
+    const existing = (await readColumnConfig(ws, tx)) ?? defaultColumnConfig();
+    const limits = { ...existing.limits };
+    if (limit === null || limit === 0) delete limits[columnKey];
+    else limits[columnKey] = limit;
+    existing.limits = limits;
+    await writeColumnConfig(ws, existing, tx);
+  });
   revalidatePath("/app", "layout");
   return { ok: true };
 }
@@ -316,22 +350,22 @@ export async function setColumnLimitAction(
  * exports would have nothing to count — unmarking the last one throws.
  */
 export async function setColumnDoneAction(
+  projectId: string,
   columnKey: string,
   isDone: boolean,
 ): Promise<{ ok: true }> {
   if (isDemoMode()) return { ok: true };
-  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
-
-  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
-  const current = new Set(resolveDoneKeys(existing));
-  if (isDone) current.add(columnKey);
-  else current.delete(columnKey);
-  if (current.size === 0) {
-    throw new Error("At least one column must count as done.");
-  }
-  existing.doneKeys = [...current];
-
-  await writeColumnConfig(ws, existing);
+  await withBoardConfigWrite(projectId, async (ws, tx) => {
+    const existing = (await readColumnConfig(ws, tx)) ?? defaultColumnConfig();
+    const current = new Set(resolveDoneKeys(existing));
+    if (isDone) current.add(columnKey);
+    else current.delete(columnKey);
+    if (current.size === 0) {
+      throw new Error("At least one column must count as done.");
+    }
+    existing.doneKeys = [...current];
+    await writeColumnConfig(ws, existing, tx);
+  });
   revalidatePath("/app", "layout");
   return { ok: true };
 }
@@ -359,6 +393,7 @@ export type AddColumnOptions = {
  * Returns the new column's key so the client can optimistically render it.
  */
 export async function addColumnAction(
+  projectId: string,
   name: string,
   opts: AddColumnOptions = {},
 ): Promise<{ ok: true; key: string }> {
@@ -380,45 +415,41 @@ export async function addColumnAction(
   if (isDemoMode()) {
     return { ok: true, key: `col-${slug || "column"}-demo` };
   }
-  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
+  const key = await withBoardConfigWrite(projectId, async (ws, tx) => {
+    const existing = (await readColumnConfig(ws, tx)) ?? defaultColumnConfig();
+    if (existing.custom.length >= MAX_CUSTOM_COLUMNS) {
+      throw new Error(
+        `Workspace is at the column limit (${MAX_CUSTOM_COLUMNS} custom columns).`,
+      );
+    }
 
-  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
+    // Format: `col-<slug>-<4-hex>` so duplicate names can coexist.
+    const rand = Math.floor(Math.random() * 0xffff)
+      .toString(16)
+      .padStart(4, "0");
+    const newKey = `col-${slug || "column"}-${rand}`;
 
-  if (existing.custom.length >= MAX_CUSTOM_COLUMNS) {
-    throw new Error(
-      `Workspace is at the column limit (${MAX_CUSTOM_COLUMNS} custom columns).`,
-    );
-  }
+    existing.custom = [...existing.custom, { key: newKey, name: clamped }];
+    if (!existing.order.length) existing.order = [...LANE_ORDER];
+    if (
+      typeof opts.position === "number" &&
+      opts.position >= 0 &&
+      opts.position < existing.order.length
+    ) {
+      const next = [...existing.order];
+      next.splice(opts.position, 0, newKey);
+      existing.order = next;
+    } else {
+      existing.order = [...existing.order, newKey];
+    }
+    if (color) existing.colors = { ...existing.colors, [newKey]: color };
+    if (description) {
+      existing.descriptions = { ...existing.descriptions, [newKey]: description };
+    }
 
-  // Generate a stable, collision-resistant key.
-  // Format: `col-<slug>-<4-hex>` so two columns named "Staging" can coexist.
-  const rand = Math.floor(Math.random() * 0xffff)
-    .toString(16)
-    .padStart(4, "0");
-  const key = `col-${slug || "column"}-${rand}`;
-
-  existing.custom = [...existing.custom, { key, name: clamped }];
-  // Ensure default order exists before inserting.
-  if (!existing.order.length) {
-    existing.order = [...LANE_ORDER];
-  }
-  if (
-    typeof opts.position === "number" &&
-    opts.position >= 0 &&
-    opts.position < existing.order.length
-  ) {
-    const next = [...existing.order];
-    next.splice(opts.position, 0, key);
-    existing.order = next;
-  } else {
-    existing.order = [...existing.order, key];
-  }
-  if (color) existing.colors = { ...existing.colors, [key]: color };
-  if (description) {
-    existing.descriptions = { ...existing.descriptions, [key]: description };
-  }
-
-  await writeColumnConfig(ws, existing);
+    await writeColumnConfig(ws, existing, tx);
+    return newKey;
+  });
   revalidatePath("/app", "layout");
   return { ok: true, key };
 }
@@ -436,40 +467,39 @@ export async function addColumnAction(
  * ever has (≤24 total).
  */
 export async function reorderColumnsAction(
+  projectId: string,
   newOrder: string[],
 ): Promise<{ ok: true }> {
   if (isDemoMode()) return { ok: true };
-  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
-  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
+  await withBoardConfigWrite(projectId, async (ws, tx) => {
+    const existing = (await readColumnConfig(ws, tx)) ?? defaultColumnConfig();
 
-  const allKeys = new Set([
-    ...LANE_ORDER,
-    ...existing.custom.map((c) => c.key),
-  ]);
+    const allKeys = new Set([
+      ...LANE_ORDER,
+      ...existing.custom.map((c) => c.key),
+    ]);
 
-  // Deduplicate the incoming order.
-  const seen = new Set<string>();
-  const deduped = newOrder.filter((k) => {
-    if (seen.has(k)) return false;
-    seen.add(k);
-    return true;
+    const seen = new Set<string>();
+    const deduped = newOrder.filter((k) => {
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+
+    for (const key of allKeys) {
+      if (!deduped.includes(key)) {
+        throw new Error(`Reorder is missing column key: ${key}`);
+      }
+    }
+    for (const key of deduped) {
+      if (!allKeys.has(key)) {
+        throw new Error(`Unknown column key in reorder: ${key}`);
+      }
+    }
+
+    existing.order = deduped;
+    await writeColumnConfig(ws, existing, tx);
   });
-
-  // Reject if any canonical key is missing.
-  for (const key of allKeys) {
-    if (!deduped.includes(key)) {
-      throw new Error(`Reorder is missing column key: ${key}`);
-    }
-  }
-  // Reject unknown keys.
-  for (const key of deduped) {
-    if (!allKeys.has(key)) {
-      throw new Error(`Unknown column key in reorder: ${key}`);
-    }
-  }
-
-  existing.order = deduped;
-  await writeColumnConfig(ws, existing);
   revalidatePath("/app", "layout");
   return { ok: true };
 }
@@ -499,6 +529,7 @@ export async function reorderColumnsAction(
  *   throw new Error(`Column "${name}" has ${count} tasks. Move them first.`)
  */
 export async function deleteColumnAction(
+  projectId: string,
   columnKey: string,
   destinationKey?: string,
 ): Promise<{ ok: true; tasksReassigned: number }> {
@@ -508,91 +539,90 @@ export async function deleteColumnAction(
 
   if (isDemoMode()) return { ok: true, tasksReassigned: 0 };
 
-  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
-  // A fresh workspace holds no stored config but still shows the default
-  // board, whose Waiting column is deletable like any custom column — so
-  // the delete bases on the default config rather than refusing.
-  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
+  const ws = projectId;
+  const actorUserId = await getCurrentUser();
+  const tasksReassigned = await db.transaction(async (tx) => {
+    // Keep the membership proof, task reassignment and config write under the
+    // same write lock. A revoked member or a concurrent board edit cannot
+    // change what this transaction means after its reads.
+    const grant = await authorizeStoredProject({
+      storedProjectId: ws,
+      capability: "createOrEditTasks",
+      actorUserId,
+      executor: tx,
+    });
+    if (!grant.ok) throw new Error("That project isn’t available.");
+    await assertBoardMutationNotDeleting(tx, grant.projectId, actorUserId);
 
-  const col = existing.custom.find((c) => c.key === columnKey);
-  if (!col) throw new Error(`Unknown custom column key: ${columnKey}`);
+    // A fresh workspace still shows the default Waiting custom column.
+    const existing = (await readColumnConfig(ws, tx)) ?? defaultColumnConfig();
+    const col = existing.custom.find((c) => c.key === columnKey);
+    if (!col) throw new Error(`Unknown custom column key: ${columnKey}`);
 
-  // Validate the destination (when supplied). It must be a real, different
-  // column — a system lane or another custom column — so tasks never land
-  // in the column being deleted.
-  let destination: string | null = null;
-  if (destinationKey && destinationKey !== columnKey) {
-    const isSystem = (LANE_ORDER as string[]).includes(destinationKey);
-    const isCustom = existing.custom.some((c) => c.key === destinationKey);
-    if (!isSystem && !isCustom) {
-      throw new Error(`Unknown destination column: ${destinationKey}`);
+    let destination: string | null = null;
+    if (destinationKey && destinationKey !== columnKey) {
+      const isSystem = (LANE_ORDER as string[]).includes(destinationKey);
+      const isCustom = existing.custom.some((c) => c.key === destinationKey);
+      if (!isSystem && !isCustom) {
+        throw new Error(`Unknown destination column: ${destinationKey}`);
+      }
+      destination = destinationKey;
     }
-    destination = destinationKey;
-  }
+    const nextConfig = configRemoveColumn(existing, columnKey);
 
-  // A task belongs to this column through its claim (boardColumnKey) OR,
-  // for a non-canonical key, through raw `lane` text — the pre-0024 shape
-  // of the Waiting column and any other stray value that ever leaked into
-  // the unconstrained lane column. Deleting the column must move both
-  // kinds, or the raw-lane rows would re-materialise as an orphan column.
-  // The tenant clause stays inline at every callsite below so the
-  // tenant-scope contract can verify it; only the column-membership OR is
-  // shared.
-  const memberOfDeletedColumn = or(
-    eq(tasks.boardColumnKey, columnKey),
-    and(isNull(tasks.boardColumnKey), eq(tasks.lane, columnKey as LaneId)),
-  );
+    // Include both claimed rows and legacy raw-lane rows. Scope every read
+    // and update to the proved Project, independent of the claim predicate.
+    const memberOfDeletedColumn = or(
+      eq(tasks.boardColumnKey, columnKey),
+      and(isNull(tasks.boardColumnKey), eq(tasks.lane, columnKey as LaneId)),
+    );
+    const [countRow] = await tx
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(tasks)
+      .where(and(eq(tasks.workspaceId, ws), memberOfDeletedColumn));
+    const count = Number(countRow?.count ?? 0);
 
-  // Count tasks in this column before moving, for the toast copy.
-  const [countRow] = await db
-    .select({ count: sql<number>`COUNT(*)` })
-    .from(tasks)
-    .where(and(eq(tasks.workspaceId, ws), memberOfDeletedColumn));
-  const tasksReassigned = Number(countRow?.count ?? 0);
-
-  // Move the tasks. With an explicit destination the client picked where
-  // they go: into a system lane (set `lane`, clear boardColumnKey) or
-  // another custom column (set boardColumnKey, canonicalising any raw
-  // lane text to "doing"). Without one, fall back to clearing the claim
-  // so tasks return to their canonical system lane — no data loss either
-  // way, and no raw-text lane survives the delete.
-  const canonicalisedLane = sql`CASE WHEN ${tasks.lane} = ${columnKey} THEN 'doing' ELSE ${tasks.lane} END`;
-  if (tasksReassigned > 0) {
-    if (destination && (LANE_ORDER as string[]).includes(destination)) {
-      await db
-        .update(tasks)
-        .set({ lane: destination as LaneId, boardColumnKey: null, idleDays: null })
-        .where(and(eq(tasks.workspaceId, ws), memberOfDeletedColumn));
-    } else if (destination) {
-      await db
-        .update(tasks)
-        .set({
+    if (count > 0) {
+      const updatedAt = new Date();
+      const completedAtSeconds = Math.floor(updatedAt.getTime() / 1000);
+      const wasDone = isDoneColumnKey(columnKey, existing);
+      const canonicalisedLane = sql`CASE WHEN ${tasks.lane} = ${columnKey} THEN 'doing' ELSE ${tasks.lane} END`;
+      if (destination && (LANE_ORDER as string[]).includes(destination)) {
+        const nowDone = isDoneColumnKey(destination, nextConfig);
+        await tx.update(tasks).set({
+          lane: destination as LaneId,
+          boardColumnKey: null,
+          idleDays: null,
+          updatedAt,
+          ...(wasDone === nowDone ? {} : { completedAt: nowDone ? updatedAt : null }),
+        }).where(and(eq(tasks.workspaceId, ws), memberOfDeletedColumn)).run();
+      } else if (destination) {
+        const nowDone = isDoneColumnKey(destination, nextConfig);
+        await tx.update(tasks).set({
           boardColumnKey: destination,
           lane: canonicalisedLane as unknown as LaneId,
-        })
-        .where(and(eq(tasks.workspaceId, ws), memberOfDeletedColumn));
-    } else {
-      await db
-        .update(tasks)
-        .set({
+          updatedAt,
+          ...(wasDone === nowDone ? {} : { completedAt: nowDone ? updatedAt : null }),
+        }).where(and(eq(tasks.workspaceId, ws), memberOfDeletedColumn)).run();
+      } else {
+        // Clearing a claim returns each task to its own canonical lane, so
+        // mixed underlying lanes can cross the done boundary differently.
+        const nextDone = inArray(canonicalisedLane, resolveDoneKeys(nextConfig));
+        const completion = wasDone
+          ? sql`CASE WHEN ${nextDone} THEN ${tasks.completedAt} ELSE NULL END`
+          : sql`CASE WHEN ${nextDone} THEN ${completedAtSeconds} ELSE ${tasks.completedAt} END`;
+        await tx.update(tasks).set({
           boardColumnKey: null,
           lane: canonicalisedLane as unknown as LaneId,
-        })
-        .where(and(eq(tasks.workspaceId, ws), memberOfDeletedColumn));
+          completedAt: completion as unknown as Date,
+          updatedAt,
+        }).where(and(eq(tasks.workspaceId, ws), memberOfDeletedColumn)).run();
+      }
     }
-  }
 
-  // Remove the column from config, including any colour / description it held.
-  existing.custom = existing.custom.filter((c) => c.key !== columnKey);
-  existing.order = existing.order.filter((k) => k !== columnKey);
-  const nextColors = { ...existing.colors };
-  delete nextColors[columnKey];
-  existing.colors = nextColors;
-  const nextDescriptions = { ...existing.descriptions };
-  delete nextDescriptions[columnKey];
-  existing.descriptions = nextDescriptions;
-
-  await writeColumnConfig(ws, existing);
+    await writeColumnConfig(ws, nextConfig, tx);
+    return count;
+  }, { behavior: "immediate" });
   revalidatePath("/app", "layout");
   return { ok: true, tasksReassigned };
 }
@@ -631,51 +661,53 @@ export async function moveTaskToColumnAction(
   if (!scope.ok) return { ok: true }; // neutral: refused and unknown look alike
   const ws = scope.ws;
   const isSystemLane = (LANE_ORDER as string[]).includes(columnKey);
+  const changed = await db.transaction(async (tx) => {
+    const grant = await authorizeStoredProject({
+      storedProjectId: ws,
+      capability: "createOrEditTasks",
+      actorUserId: me,
+      executor: tx,
+    });
+    if (!grant.ok) return false;
+    const [row] = await tx
+      .select({ lane: tasks.lane, boardColumnKey: tasks.boardColumnKey })
+      .from(tasks)
+      .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
+    if (!row) return false; // re-read under the proved Project and write lock
 
-  const [row] = await db
-    .select({ lane: tasks.lane, boardColumnKey: tasks.boardColumnKey })
-    .from(tasks)
-    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
-  if (!row) return { ok: true }; // re-read under the proved Project
-
-  // Done transitions stamp completedAt whichever way the claim moves —
-  // a custom "Paid" column that counts as done completes the task the
-  // same as the canonical Done lane (T·122).
-  const config = await readColumnConfig(ws);
-  const wasDone = isTaskDone(row, config);
-  if (isSystemLane) {
-    const toLane = columnKey as LaneId;
-    if (row.lane === toLane && !row.boardColumnKey) return { ok: true };
-    await db
-      .update(tasks)
-      .set({
+    // A custom done column and the system Done lane share this transition
+    // rule. The same timestamp also advances the existing activity proxy for
+    // every actual card move; no-op and refused moves never touch the row.
+    const config = await readColumnConfig(ws, tx);
+    const wasDone = isTaskDone(row, config);
+    const updatedAt = new Date();
+    if (isSystemLane) {
+      const toLane = columnKey as LaneId;
+      if (row.lane === toLane && !row.boardColumnKey) return false;
+      const nowDone = isDoneColumnKey(toLane, config);
+      await tx.update(tasks).set({
         lane: toLane,
         boardColumnKey: null,
         idleDays: null,
-        ...(wasDone === isDoneColumnKey(toLane, config)
-          ? {}
-          : { completedAt: isDoneColumnKey(toLane, config) ? new Date() : null }),
-      })
-      .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
-  } else {
-    // Custom column: set the claim. Lane normally stays canonical; a row
-    // still holding raw lane text (pre-0024 "waiting") is canonicalised to
-    // "doing" on touch so stray text never outlives a deliberate move.
-    if (row.boardColumnKey === columnKey) return { ok: true };
-    const laneIsCanonical = (LANE_ORDER as string[]).includes(row.lane);
-    const nowDone = isDoneColumnKey(columnKey, config);
-    await db
-      .update(tasks)
-      .set({
+        updatedAt,
+        ...(wasDone === nowDone ? {} : { completedAt: nowDone ? updatedAt : null }),
+      }).where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws))).run();
+    } else {
+      // Custom claims keep the canonical lane, except legacy raw lane text
+      // which is normalised to doing on a deliberate move.
+      if (row.boardColumnKey === columnKey) return false;
+      const laneIsCanonical = (LANE_ORDER as string[]).includes(row.lane);
+      const nowDone = isDoneColumnKey(columnKey, config);
+      await tx.update(tasks).set({
         boardColumnKey: columnKey,
         ...(laneIsCanonical ? {} : { lane: "doing" as LaneId }),
-        ...(wasDone === nowDone
-          ? {}
-          : { completedAt: nowDone ? new Date() : null }),
-      })
-      .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
-  }
-
+        updatedAt,
+        ...(wasDone === nowDone ? {} : { completedAt: nowDone ? updatedAt : null }),
+      }).where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws))).run();
+    }
+    return true;
+  }, { behavior: "immediate" });
+  if (!changed) return { ok: true };
   revalidatePath("/app", "layout");
   return { ok: true };
 }

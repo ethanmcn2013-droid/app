@@ -50,7 +50,7 @@ export function HomeView({ data }: { data: OkHome }) {
             <h1 className={styles.title}>
               <HomeGreeting serverGreeting={data.greeting} pinned={isDemoMode()} />
             </h1>
-            <p className={styles.subtitle}>{summaryLine(data.stats, data.scopeLabel)}</p>
+            <p className={styles.subtitle}>{summaryLine(data.stats, data.scopeLabel, data.dateCoverageComplete)}</p>
           </div>
           <div className={styles.actions}>
             <Link href={data.briefingHref} className={styles.button}>
@@ -64,14 +64,14 @@ export function HomeView({ data }: { data: OkHome }) {
           </div>
         </header>
 
-        <Stats stats={data.stats} />
+        <Stats stats={data.stats} dateCoverageComplete={data.dateCoverageComplete} />
 
         <div className={styles.grid}>
           <div className={styles.column}>
             <MyTasks rows={data.myTasks} total={data.stats.open} />
           </div>
           <div className={styles.column}>
-            <Deadlines groups={data.deadlines} />
+            <Deadlines groups={data.deadlines} dateCoverageComplete={data.dateCoverageComplete} />
             {data.needsReview.length > 0 ? <NeedsReview rows={data.needsReview} /> : null}
           </div>
         </div>
@@ -87,20 +87,23 @@ function formatDateLabel(label: string): string {
     .replace(/(^|\s)([a-z])/g, (_match, space: string, letter: string) => `${space}${letter.toUpperCase()}`);
 }
 
-function summaryLine(stats: HomeStats, scopeLabel: string): string {
+function summaryLine(stats: HomeStats, scopeLabel: string, dateCoverageComplete: boolean): string {
+  const uncertainty = dateCoverageComplete ? " Counts use saved dates." : " Counts use saved dates. Some open tasks have no confirmed date.";
   if (stats.overdue > 0 && stats.dueToday > 0) {
-    return `${scopeLabel} · ${stats.dueToday} due today and ${stats.overdue} overdue.`;
+    return `${scopeLabel} · ${stats.dueToday} due today and ${stats.overdue} overdue.${uncertainty}`;
   }
-  if (stats.overdue > 0) return `${scopeLabel} · ${stats.overdue} ${stats.overdue === 1 ? "task is" : "tasks are"} overdue.`;
-  if (stats.dueToday > 0) return `${scopeLabel} · ${stats.dueToday} ${stats.dueToday === 1 ? "task is" : "tasks are"} due today.`;
-  return `${scopeLabel} · Nothing is due today.`;
+  if (stats.overdue > 0) return `${scopeLabel} · ${stats.overdue} ${stats.overdue === 1 ? "task is" : "tasks are"} overdue.${uncertainty}`;
+  if (stats.dueToday > 0) return `${scopeLabel} · ${stats.dueToday} ${stats.dueToday === 1 ? "task is" : "tasks are"} due today.${uncertainty}`;
+  return dateCoverageComplete
+    ? `${scopeLabel} · No saved deadlines due today.`
+    : `${scopeLabel} · Counts use saved dates. Some open tasks have no confirmed date.`;
 }
 
-function Stats({ stats }: { stats: HomeStats }) {
+function Stats({ stats, dateCoverageComplete }: { stats: HomeStats; dateCoverageComplete: boolean }) {
   const items = [
     { label: "Open tasks", value: stats.open, note: `${stats.inReview} in review`, icon: <ShellIcon.layers size={14} />, tone: "accent" },
-    { label: "Due today", value: stats.dueToday, note: stats.dueToday === 0 ? "A clear day" : "Worth a look first", icon: <ShellIcon.clock size={14} />, tone: undefined },
-    { label: "Overdue", value: stats.overdue, note: stats.overdue === 0 ? "Nothing slipped" : "Past their date", icon: <ShellIcon.alert size={14} />, tone: stats.overdue > 0 ? "danger" : undefined },
+    { label: "Due today", value: stats.dueToday, note: dateCoverageComplete ? (stats.dueToday === 0 ? "No saved deadlines due today" : "Worth a look first") : "Counts use saved dates", icon: <ShellIcon.clock size={14} />, tone: undefined },
+    { label: "Overdue", value: stats.overdue, note: dateCoverageComplete ? (stats.overdue === 0 ? "No saved deadlines overdue" : "Past their date") : "Counts use saved dates", icon: <ShellIcon.alert size={14} />, tone: stats.overdue > 0 ? "danger" : undefined },
     { label: "Done this week", value: stats.doneThisWeek, note: "Last 7 days", icon: <ShellIcon.checkCircle size={14} />, tone: "success" },
   ];
   return (
@@ -127,7 +130,7 @@ function TaskRow({ row, showLane = true }: { row: HomeTaskRow; showLane?: boolea
         <span className={styles.rowTitle}>{row.title}</span>
         <span className={styles.rowMeta}>
           {row.source}
-          {row.priority >= 3 ? " · Urgent" : row.priority === 2 ? " · High priority" : ""}
+          {row.priority === 0 ? " · Urgent" : row.priority === 1 ? " · High priority" : ""}
         </span>
       </span>
       {showLane ? (
@@ -168,7 +171,7 @@ function MyTasks({ rows, total }: { rows: HomeTaskRow[]; total: number }) {
   );
 }
 
-function Deadlines({ groups }: { groups: HomeDeadlineGroup[] }) {
+function Deadlines({ groups, dateCoverageComplete }: { groups: HomeDeadlineGroup[]; dateCoverageComplete: boolean }) {
   return (
     <section className={styles.card} aria-labelledby="deadlines">
       <div className={styles.cardHead}>
@@ -178,7 +181,7 @@ function Deadlines({ groups }: { groups: HomeDeadlineGroup[] }) {
         </Link>
       </div>
       {groups.length === 0 ? (
-        <p className={styles.empty}>Nothing dated in the next two weeks.</p>
+        <p className={styles.empty}>{dateCoverageComplete ? "Nothing dated in the next two weeks." : "No known saved deadlines in the next two weeks; some open tasks have no confirmed date."}</p>
       ) : (
         groups.map((group) => (
           <div key={group.label} className={styles.group}>
@@ -215,7 +218,7 @@ function NeedsReview({ rows }: { rows: HomeReviewRow[] }) {
                 <span className={styles.rowMeta}>{row.source}</span>
               </span>
               <span className={styles.pill} data-tone="review">
-                {row.idleDays > 0 ? `Waiting ${row.idleDays}d` : "In review"}
+                {row.idleDays != null && row.idleDays > 0 ? `Waiting ${row.idleDays}d` : "In review"}
               </span>
             </Link>
           </li>

@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 
-export const ATTESTATION_SCHEMA = "signal-playwright-attestation/1";
+export const ATTESTATION_SCHEMA = "signal-playwright-attestation/2";
 export const RECEIPT_SCHEMA = "signal-materiality-review/2";
 export const ARTIFACT_PATH = "experience/output/critical-evidence.json";
 
@@ -36,6 +36,7 @@ const ATTESTATION_KEYS = [
   "browserContractSha256",
   "canonicalEvidenceSha256",
   "fixtureManifestSha256",
+  "outcomes",
   "passedCount",
   "playwrightConfigSha256",
   "playwrightSpecSha256",
@@ -48,6 +49,7 @@ const ATTESTATION_KEYS = [
   "unexpectedCount",
 ];
 const ATTESTATION_PROJECT_KEYS = ["name", "tests"];
+const OUTCOME_KEYS = ["title", "project", "expectedStatus", "status", "finalResultStatus", "errorCount"];
 
 export function sha256(input) {
   return createHash("sha256").update(input).digest("hex");
@@ -63,6 +65,42 @@ export function normalizedFileHash(file) {
 
 export function canonicalJson(value) {
   return `${JSON.stringify(value, null, 2)}\n`;
+}
+
+export function collectPlaywrightOutcomes(report) {
+  const outcomes = [];
+  function visit(suite) {
+    for (const spec of suite.specs ?? []) {
+      for (const test of spec.tests ?? []) {
+        const finalResult = test.results?.at(-1);
+        outcomes.push({
+          title: spec.title,
+          project: test.projectName,
+          expectedStatus: test.expectedStatus,
+          status: test.status,
+          finalResultStatus: finalResult?.status ?? "missing",
+          errorCount: finalResult?.errors?.length ?? 0,
+        });
+      }
+    }
+    for (const child of suite.suites ?? []) visit(child);
+  }
+  for (const suite of report.suites ?? []) visit(suite);
+  return outcomes.sort((left, right) =>
+    left.title.localeCompare(right.title) || left.project.localeCompare(right.project));
+}
+
+export function canonicalEvidenceDigest({ outcomes, hashes }) {
+  return sha256(JSON.stringify({
+    schemaVersion: "signal-playwright-canonical/1",
+    browserContractSha256: hashes.browserContractSha256,
+    fixtureManifestSha256: hashes.fixtureManifestSha256,
+    playwrightConfigSha256: hashes.playwrightConfigSha256,
+    playwrightSpecSha256: hashes.playwrightSpecSha256,
+    outcomes: outcomes.map(({ title, project, expectedStatus, status, finalResultStatus, errorCount }) => ({
+      title, project, expectedStatus, status, finalResultStatus, errorCount,
+    })),
+  }));
 }
 
 export function exactKeys(value, expected, label) {
@@ -133,6 +171,20 @@ function readBrowserContract(repoRoot) {
   return contract;
 }
 
+function expectedRenderedTitles(repoRoot) {
+  const manifest = JSON.parse(readFileSync(path.join(repoRoot, "experience", "critical-fixtures.json"), "utf8"));
+  const critical = manifest.experiences
+    .filter((entry) => entry.evidence === "rendered")
+    .flatMap((entry) => entry.interaction
+      ? [`${entry.id} / ${entry.caseName}`]
+      : (entry.cases ?? []).map((item) => `${entry.id} / ${item.name}`));
+  const supplemental = (manifest.supplementalCoreRendered ?? [])
+    .map((entry) => `${entry.id} / ${entry.caseName}`);
+  const titles = [...critical, ...supplemental].sort();
+  if (new Set(titles).size !== titles.length) throw new Error("rendered case titles must be unique");
+  return titles;
+}
+
 function validateAttestationShape(attestation, label) {
   exactKeys(attestation, ATTESTATION_KEYS, label);
   if (attestation.schemaVersion !== ATTESTATION_SCHEMA) {
@@ -154,6 +206,19 @@ function validateAttestationShape(attestation, label) {
   if (!Array.isArray(attestation.projects) || attestation.projects.length === 0) {
     throw new Error(`${label} projects must be a non-empty array`);
   }
+  if (!Array.isArray(attestation.outcomes) || attestation.outcomes.length === 0) {
+    throw new Error(`${label} outcomes must be a non-empty array`);
+  }
+  for (const [index, outcome] of attestation.outcomes.entries()) {
+    exactKeys(outcome, OUTCOME_KEYS, `${label} outcomes[${index}]`);
+    nonEmptyString(outcome.title, `${label} outcomes[${index}].title`);
+    nonEmptyString(outcome.project, `${label} outcomes[${index}].project`);
+    exactInteger(outcome.errorCount, `${label} outcomes[${index}].errorCount`);
+    if (outcome.expectedStatus !== "passed" || outcome.status !== "expected" ||
+        outcome.finalResultStatus !== "passed" || outcome.errorCount !== 0) {
+      throw new Error(`${label} outcomes[${index}] must be one passing outcome`);
+    }
+  }
   for (const [index, project] of attestation.projects.entries()) {
     exactKeys(project, ATTESTATION_PROJECT_KEYS, `${label} projects[${index}]`);
     nonEmptyString(project.name, `${label} projects[${index}].name`);
@@ -164,6 +229,7 @@ function validateAttestationShape(attestation, label) {
   exactInteger(attestation.unexpectedCount, `${label} unexpectedCount`);
   if (
     attestation.testCount !== attestation.projects.reduce((sum, project) => sum + project.tests, 0) ||
+    attestation.testCount !== attestation.outcomes.length ||
     attestation.passedCount !== attestation.testCount ||
     attestation.unexpectedCount !== 0
   ) {
@@ -217,6 +283,19 @@ export function validateAttestationRecord({ repoRoot, attestationPath, requireAr
     throw new Error(`${attestationPath}: projects do not exactly match browser-contract.json`);
   }
 
+  const expectedPairs = expectedRenderedTitles(repoRoot)
+    .flatMap((title) => contractProjects.map((project) => `${project}\u0000${title}`)).sort();
+  const actualPairs = attestation.outcomes.map((outcome) => `${outcome.project}\u0000${outcome.title}`).sort();
+  if (JSON.stringify(actualPairs) !== JSON.stringify(expectedPairs) ||
+      attestation.projects.some((project) => project.tests !==
+        attestation.outcomes.filter((outcome) => outcome.project === project.name).length)) {
+    throw new Error(`${attestationPath}: outcome pairs do not cover every rendered case at every viewport`);
+  }
+  const hashes = Object.fromEntries(Object.keys(expectedHashes).map((key) => [key, attestation[key]]));
+  if (canonicalEvidenceDigest({ outcomes: attestation.outcomes, hashes }) !== attestation.canonicalEvidenceSha256) {
+    throw new Error(`${attestationPath}: canonical digest does not match recorded outcomes`);
+  }
+
   if (requireArtifact) {
     const artifactFile = path.resolve(repoRoot, ...attestation.artifactPath.split("/"));
     const expectedRoot = `${path.resolve(repoRoot, "experience", "output")}${path.sep}`;
@@ -225,6 +304,11 @@ export function validateAttestationRecord({ repoRoot, attestationPath, requireAr
     }
     if (sha256(readFileSync(artifactFile)) !== attestation.rawArtifactSha256) {
       throw new Error(`${attestationPath}: raw Playwright artifact digest does not match`);
+    }
+    const report = JSON.parse(readFileSync(artifactFile, "utf8"));
+    if (JSON.stringify(collectPlaywrightOutcomes(report)) !== JSON.stringify(attestation.outcomes) ||
+        report.stats?.unexpected !== 0 || report.stats?.skipped !== 0) {
+      throw new Error(`${attestationPath}: raw Playwright outcomes do not match the attestation`);
     }
   }
 
@@ -235,13 +319,24 @@ export function validateAttestationRecord({ repoRoot, attestationPath, requireAr
   };
 }
 
-function validateFixtureCase(repoRoot, fixtureId, caseName) {
+function validateFixtureCase(repoRoot, fixtureId, caseName, experienceId) {
   const manifest = JSON.parse(
     readFileSync(path.join(repoRoot, "experience", "critical-fixtures.json"), "utf8"),
   );
   const fixture = manifest.experiences?.find((candidate) => candidate.id === fixtureId);
   if (!fixture || fixture.evidence !== "rendered") {
-    throw new Error(`playwrightEvidence.fixtureId must name one rendered critical fixture (${fixtureId})`);
+    const supplemental = manifest.supplementalCoreRendered?.find((candidate) => candidate.id === fixtureId);
+    const registry = JSON.parse(readFileSync(path.join(repoRoot, "experience", "registry.json"), "utf8"));
+    const entry = registry.experiences?.find((candidate) => candidate.id === experienceId);
+    if (!supplemental || supplemental.evidence !== "rendered" ||
+        supplemental.id !== experienceId || entry?.reviewTier !== "core" ||
+        entry.source !== supplemental.source || supplemental.caseName !== caseName) {
+      throw new Error(`playwrightEvidence must name the target core experience's own rendered case (${fixtureId})`);
+    }
+    return { supplemental: true };
+  }
+  if (experienceId && fixtureId !== experienceId) {
+    throw new Error(`playwrightEvidence.fixtureId must equal the reviewed experience (${experienceId})`);
   }
   const caseNames = fixture.interaction
     ? [fixture.caseName]
@@ -250,6 +345,19 @@ function validateFixtureCase(repoRoot, fixtureId, caseName) {
     throw new Error(
       `playwrightEvidence.caseName must name an exact rendered case for ${fixtureId} (${caseName})`,
     );
+  }
+  return { supplemental: false };
+}
+
+function validateSupplementalOutcome({ fixtureId, caseName, record }) {
+  const title = `${fixtureId} / ${caseName}`;
+  const matching = record.attestation.outcomes.filter((outcome) => outcome.title === title);
+  const projects = record.attestation.projects.map((item) => item.name);
+  if (matching.length !== projects.length ||
+      projects.some((project) => matching.filter((item) => item.project === project).length !== 1) ||
+      matching.some((item) => item.expectedStatus !== "passed" || item.status !== "expected" ||
+        item.finalResultStatus !== "passed" || item.errorCount !== 0)) {
+    throw new Error(`supplemental rendered case lacks one passing outcome per viewport (${title})`);
   }
 }
 
@@ -320,7 +428,10 @@ export function validateMaterialityReceipt({
   if (JSON.stringify(evidence.projects) !== JSON.stringify(attestedProjects)) {
     throw new Error(`${evidencePath}: playwrightEvidence.projects do not exactly match the attestation`);
   }
-  validateFixtureCase(repoRoot, evidence.fixtureId, evidence.caseName);
+  const fixture = validateFixtureCase(repoRoot, evidence.fixtureId, evidence.caseName, receipt.experienceId);
+  if (fixture.supplemental) {
+    validateSupplementalOutcome({ fixtureId: evidence.fixtureId, caseName: evidence.caseName, record });
+  }
 
   return { receipt, receiptFile, ...record };
 }
@@ -328,14 +439,16 @@ export function validateMaterialityReceipt({
 export function playwrightEvidenceFromAttestation({
   repoRoot,
   attestationPath,
+  experienceId,
   fixtureId,
   caseName,
   requireArtifact = true,
 }) {
   nonEmptyString(fixtureId, "fixtureId");
   nonEmptyString(caseName, "caseName");
-  validateFixtureCase(repoRoot, fixtureId, caseName);
+  const fixture = validateFixtureCase(repoRoot, fixtureId, caseName, experienceId);
   const record = validateAttestationRecord({ repoRoot, attestationPath, requireArtifact });
+  if (fixture.supplemental) validateSupplementalOutcome({ fixtureId, caseName, record });
   return {
     attestationPath,
     attestationSha256: record.attestationSha256,

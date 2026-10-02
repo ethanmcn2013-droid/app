@@ -12,7 +12,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import Link from "next/link";
+import { SidebarIntentLink } from "./sidebar-intent-link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useActiveProject } from "@/components/app/active-project-provider";
 import { useSuiteContext } from "@/components/app/use-suite-context";
@@ -186,7 +186,7 @@ export function AppSidebar({
       : destination.href;
     const current = activeId === destination.id && !(destination.id === "messages" && chatRowOpen);
     return (
-      <Link
+      <SidebarIntentLink
         key={destination.id}
         href={href}
         className={styles.item}
@@ -197,7 +197,7 @@ export function AppSidebar({
         <Icon />
         <span className={styles.itemLabel}>{destination.label}</span>
         {extra}
-      </Link>
+      </SidebarIntentLink>
     );
   };
 
@@ -223,7 +223,7 @@ export function AppSidebar({
       ? count(entry.count, entry.kind === "dm" ? (entry.count === 1 ? "new message" : "new messages") : entry.count === 1 ? "mention" : "mentions")
       : entry.request ? <span className={styles.chatTag}>Request</span> : null;
     return (
-      <Link
+      <SidebarIntentLink
         key={entry.id}
         href={entry.href}
         className={styles.item}
@@ -245,7 +245,7 @@ export function AppSidebar({
           {entry.online ? <span className="sr-only">, online</span> : null}
         </span>
         {trailing}
-      </Link>
+      </SidebarIntentLink>
     );
   };
 
@@ -255,7 +255,7 @@ export function AppSidebar({
   return (
     <aside className={styles.sidebar} aria-label="Signal Studio">
       <div className={styles.brandRow}>
-        <Link href="/app/home" className={styles.brand} aria-label="Signal Studio home">
+        <SidebarIntentLink href="/app/home" className={styles.brand} aria-label="Signal Studio home">
           <span className={styles.brandMark} aria-hidden="true">
             {/* The Signal Studio mark, the same backgroundless ring and dot as
                 the tab icon, from the same geometry. */}
@@ -265,7 +265,7 @@ export function AppSidebar({
             </svg>
           </span>
           <span className={styles.brandName}>Signal Studio</span>
-        </Link>
+        </SidebarIntentLink>
         <button
           type="button"
           className={`${styles.iconButton} ${styles.collapseButton ?? ""}`}
@@ -332,19 +332,19 @@ export function AppSidebar({
                   );
                 })}
                 {rows && rows.length > PROJECT_LIMIT ? (
-                  <Link href="/app/project" className={styles.item} onClick={() => setMobileOpen(false)}>
+                  <SidebarIntentLink href="/app/project" className={styles.item} onClick={() => setMobileOpen(false)}>
                     <ShellIcon.chevronRight />
                     <span className={styles.itemLabel}>All {rows.length} projects</span>
-                  </Link>
+                  </SidebarIntentLink>
                 ) : null}
               </>,
               <>
-                <Link href="/app/archived" aria-label="Archived projects" title="Archived projects" onClick={() => setMobileOpen(false)}>
+                <SidebarIntentLink href="/app/archived" aria-label="Archived projects" title="Archived projects" onClick={() => setMobileOpen(false)}>
                   <ShellIcon.archive size={13} />
-                </Link>
-                <Link href="/app/project" aria-label="All projects" title="All projects" onClick={() => setMobileOpen(false)}>
+                </SidebarIntentLink>
+                <SidebarIntentLink href="/app/project" aria-label="All projects" title="All projects" onClick={() => setMobileOpen(false)}>
                   <ShellIcon.plus size={13} />
-                </Link>
+                </SidebarIntentLink>
               </>,
             )
           : null}
@@ -365,7 +365,7 @@ export function AppSidebar({
               <>
                 {directory.direct.map((entry) => chatLink(entry))}
                 {directory.newMessageHref ? (
-                  <Link
+                  <SidebarIntentLink
                     href={directory.newMessageHref}
                     className={`${styles.item} ${styles.chatAdd}`}
                     aria-current={here === directory.newMessageHref ? "page" : undefined}
@@ -373,13 +373,13 @@ export function AppSidebar({
                   >
                     <ShellIcon.plus />
                     <span className={styles.itemLabel}>New message</span>
-                  </Link>
+                  </SidebarIntentLink>
                 ) : null}
               </>,
               directory.newMessageHref ? (
-                <Link href={directory.newMessageHref} aria-label="New message" title="New message" onClick={() => setMobileOpen(false)}>
+                <SidebarIntentLink href={directory.newMessageHref} aria-label="New message" title="New message" onClick={() => setMobileOpen(false)}>
                   <ShellIcon.plus size={13} />
-                </Link>
+                </SidebarIntentLink>
               ) : null,
             )}
           </>

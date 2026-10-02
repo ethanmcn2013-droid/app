@@ -9,7 +9,8 @@
     "timezoneId": "Europe/London",
     "colorScheme": "light",
     "reducedMotion": "reduce",
-    "animationPolicy": "disabled"
+    "animationPolicy": "disabled",
+    "projectDriveUi": "true"
   },
   "breakpoints": [
     "mobile",
@@ -1441,5 +1442,74 @@
     "Production invite acceptance and redemption mutations require an isolated review tenant and expendable codes.",
     "Visual baseline approval remains founder-owned; generated screenshots are evidence, not approval.",
     "Timeline /app/timeline demo workspace (create-workspace gate) renders because demo mode short-circuits auth; full authed states require Clerk + Timeline Turso in production."
+  ],
+  "supplementalCoreRendered": [
+    {
+      "id": "tasks.resources.drive-upload",
+      "source": "tasks/src/components/app/detail-panel/resources-section.tsx",
+      "evidence": "rendered",
+      "interaction": "task-detail-panel",
+      "caseName": "Drive intake review in populated task",
+      "states": [
+        "first-use",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "assertions": [
+        {
+          "kind": "role",
+          "role": "heading",
+          "name": "Files and links",
+          "proves": [
+            "first-use"
+          ]
+        },
+        {
+          "kind": "role",
+          "role": "button",
+          "name": "Attach a file",
+          "proves": [
+            "first-use"
+          ]
+        },
+        {
+          "kind": "text",
+          "text": "Fictional upload review. No file is sent or saved.",
+          "proves": [
+            "first-use"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-messages",
+      "source": "tasks/src/app/app/messages/page.tsx",
+      "evidence": "rendered",
+      "path": "/app/messages",
+      "caseName": "Project conversation in demo",
+      "states": [
+        "default",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "assertions": [
+        {
+          "kind": "role",
+          "role": "heading",
+          "name": "#The Orchard, events",
+          "proves": [
+            "default"
+          ]
+        },
+        {
+          "kind": "role",
+          "role": "combobox",
+          "name": "Message The Orchard, events",
+          "proves": [
+            "default"
+          ]
+        }
+      ]
+    }
   ]
 }

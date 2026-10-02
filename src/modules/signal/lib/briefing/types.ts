@@ -7,6 +7,9 @@
  * dashboard.
  */
 
+import type { Deadline } from "../data/deadline";
+import type { KnownPriority } from "../data/types";
+
 export type Lane = "next" | "in-flight" | "review" | "shipped";
 
 /**
@@ -18,11 +21,15 @@ export type TaskSignal = {
   id: string;
   title: string;
   lane: Lane;
-  priority: 0 | 1 | 2 | 3; // 0 = P0 (highest)
-  dueAt: number | null; // unix ms; null = no due date
-  idleDays: number; // days since last activity
+  priority: KnownPriority | null; // 0 = P0 (highest); null = not known
+  dueAt: number | null; // legacy instant; date-only values use deadline
+  deadline?: Deadline;
+  idleDays: number | null; // null when activity history is incomplete
   commentCount: number;
   blockedBy: string[]; // task ids
+  dependencyCoverage?: "complete" | "partial";
+  /** Current terminal evidence for a listed prerequisite; no identity leaves this read model. */
+  hasCompletedListedPrerequisite?: boolean;
   sourceLabel: string; // e.g. "Tasks · Wedding 2026"
   // Recent shipped detection
   movedToShippedAt: number | null;
@@ -65,12 +72,14 @@ export type TriggerKind =
   | "just-shipped"
   | "overload"
   | "crowded-week"
-  | "blocked-too-long";
+  | "blocked-too-long"
+  | "blocking-due-work"
+  | "prerequisites-complete";
 
 export type FocusItem = {
   id: string;
   text: string;
-  due: string; // "today" | "by Friday" | "this week" | ISO-ish
+  due: string; // own saved-date phrase or an explicit no-confirmed-date state
   trigger: TriggerKind;
 };
 
@@ -86,6 +95,8 @@ export type Briefing = {
   // The brief is "empty" when no bucket has anything. Renderer
   // shows a quiet "Nothing to flag today" state, no email is sent.
   isEmpty: boolean;
+  /** A partial read may surface known facts but cannot assert all-clear. */
+  coverageStatus?: "complete" | "partial";
   /** Total signals the engine examined in scope on this run, surfaced
    *  or not. The product's claim is that it filters, so a count of what
    *  it showed without a count of what it read is an assertion rather

@@ -16,7 +16,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Task } from "@/lib/data";
-import { useTasksDispatch, useTasksState } from "@/lib/tasks/tasks-context";
+import { useAuthoritativeTaskRevision, useTasksDispatch, useTasksState } from "@/lib/tasks/tasks-context";
 import { useColumnConfig, useDomain, useTagDefs, useWorkspaceAnchor, useWorkspaceMembers } from "@/lib/domain-context";
 import { effectiveColumnKey, isTaskDone, resolveBoardColumns } from "@/lib/board-columns";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
@@ -33,7 +33,7 @@ import { SheetSkeleton } from "@/components/tasks/skeletons";
 import { dayLabel, shortDate } from "@/components/tasks/time";
 import { buildTaskDetailActions } from "@/components/app/task-detail/task-detail-actions";
 import { ExistingTaskHistory } from "@/components/app/task-detail/existing-task-history";
-import { calendarDateInTimeZone } from "@/lib/planning/dates";
+import { taskDueCalendarDate, taskDuePickerValue } from "@/lib/tasks/anchor-due";
 import { EditedStamp } from "./panel-header";
 import sx from "./sheet-sections.module.css";
 import { DescriptionEditor } from "./description-editor";
@@ -69,9 +69,10 @@ function isoFromLocal(date: Date): string {
 
 export function TaskSheet({ task, mode, onClose, onNavigate, onExpand, position, overlay = false }: TaskSheetProps) {
   const dispatchers = useTasksDispatch();
+  const authoritativeRevision = useAuthoritativeTaskRevision(task.id);
   const columnConfig = useColumnConfig();
   const done = isTaskDone(task, columnConfig);
-  const conversation = useTaskConversation(task);
+  const conversation = useTaskConversation(task, authoritativeRevision);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   // Keys inside the sheet: walk the view's order, open the full page, close.
@@ -457,7 +458,7 @@ function Properties({ task, grid = false }: { task: Task; grid?: boolean }) {
     return { id, name: member?.name ?? "Someone", initials: member?.initials };
   });
   const priority = priorityToLab(task.priority);
-  const dueIso = task.dueAt ? calendarDateInTimeZone(task.dueAt, calendar.timeZone) : null;
+  const dueIso = taskDueCalendarDate(task.due, task.dueAt ?? null, calendar.timeZone);
   const overdue = dueIso && !isTaskDone(task, columnConfig) && dueIso < calendar.today;
   const labels = task.tags ?? [];
   const hasAmount = (task.cents ?? 0) > 0;
@@ -616,7 +617,7 @@ function Properties({ task, grid = false }: { task: Task; grid?: boolean }) {
         <div className={styles.duePicker}>
           <DueCalendar
             today={new Date(`${calendar.today}T12:00:00`)}
-            value={task.dueAt ?? null}
+            value={taskDuePickerValue(task.due, task.dueAt ?? null)}
             anchorDate={anchor.date}
             anchorNote={anchor.date && anchor.label ? `${anchor.label}: ${shortDate(anchor.date)}` : null}
             onSelect={(date) => setDue(isoFromLocal(date))}

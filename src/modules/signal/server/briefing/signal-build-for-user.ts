@@ -14,7 +14,8 @@ import { eq } from "drizzle-orm";
 import { signalAnalyticsDb as db } from "../db/signal-analytics-client";
 import { analyticsUsers } from "../db/signal-analytics-schema";
 import type { Cadence } from "../../lib/db/signal-prefs-schema";
-import { dataSource } from "../../lib/data/source";
+import { dataSource, type WorkspaceOnboarding } from "../../lib/data/source";
+import { storedDeadline } from "../../lib/data/deadline";
 import { buildBriefing } from "../../lib/briefing/build";
 import type { Briefing, TaskSignal } from "../../lib/briefing/types";
 import type { BriefingSource } from "../../lib/briefing/source";
@@ -39,10 +40,7 @@ import {
   type PlanningCatalog,
   type SignalScope,
 } from "../../lib/planning-periods/scope";
-import {
-  calendarDayDifference,
-  dateOnlyToTimestamp,
-} from "../../lib/briefing/calendar-time";
+import { calendarDayDifference } from "../../lib/briefing/calendar-time";
 import { REVIEW_SUITE_FIXTURE } from "@/lib/review-suite-fixture";
 import { PINNED_REVIEW_CALENDAR_FRAME } from "@/lib/calendar-frame";
 
@@ -93,6 +91,26 @@ function captureSignals(inner: BriefingSource): {
 export const DEMO_BRIEFING_NOW = Date.parse(
   PINNED_REVIEW_CALENDAR_FRAME.nowIso,
 );
+
+/** Drain independent authorized reads; retain onboarding-first and read-state race errors. */
+export async function readBriefingContext(
+  onboarding: () => Promise<WorkspaceOnboarding | null>,
+  dismissed: () => Promise<Set<string>>,
+  ages: () => Promise<Map<string, number>>,
+) {
+  const onboardingRead = Promise.resolve().then(onboarding);
+  const dismissedRead = Promise.resolve().then(dismissed);
+  const agesRead = Promise.resolve().then(ages);
+  const [onboardingResult, stateResult] = await Promise.allSettled([
+    onboardingRead,
+    Promise.all([dismissedRead, agesRead]),
+    dismissedRead,
+    agesRead,
+  ] as const);
+  if (onboardingResult.status === "rejected") throw onboardingResult.reason;
+  if (stateResult.status === "rejected") throw stateResult.reason;
+  return [onboardingResult.value, stateResult.value] as const;
+}
 
 export async function buildBriefingForUser(opts: {
   clerkId: string;
@@ -278,8 +296,11 @@ export async function buildBriefingForUser(opts: {
   );
   const now = Date.now();
 
-  const onboarding =
-    (await dataSource.getWorkspaceOnboarding?.(workspaceIds[0]!)) ?? null;
+  const [onboarding, [suppressed, ages]] = await readBriefingContext(
+    async () => (await dataSource.getWorkspaceOnboarding?.(workspaceIds[0]!)) ?? null,
+    () => getDismissedKeys(clerkId),
+    () => getSurfacedAges(clerkId, now),
+  );
   const emptyCopy = getBriefingEmptyCopy({
     primaryUseCase:
       authorizedScope.period?.contextType === "wedding"
@@ -290,6 +311,7 @@ export async function buildBriefingForUser(opts: {
           : onboarding?.primaryUseCase,
   });
 
+  let coverageStatus: "complete" | "partial" = "complete";
   const source: BriefingSource = {
     getSignalsForUser: async () => {
       const workspaces = dataSource.readMany
@@ -297,20 +319,29 @@ export async function buildBriefingForUser(opts: {
         : await Promise.all(
             workspaceIds.map((wid) => dataSource.read(wid)),
           );
+      const returnedIds = workspaces.map(work => work.workspaceId);
+      if (returnedIds.length !== workspaceIds.length || new Set(returnedIds).size !== returnedIds.length || returnedIds.some(id => !workspaceIds.includes(id))) {
+        throw new Error("Signal source workspace coverage mismatch");
+      }
+      if (workspaces.some(work => work.coverage && Object.values(work.coverage).includes("partial"))) {
+        coverageStatus = "partial";
+      }
       return workspaces.flatMap((work) =>
         work.tasks.map((t) => ({
           id: t.id,
           title: t.title,
-          lane: ((): import("../../lib/briefing/types").Lane => {
+          lane: t.canonicalLane ?? ((): import("../../lib/briefing/types").Lane => {
             if (t.status === "shipped") return "shipped";
+            if (t.status === "review") return "review";
             if (t.status === "in-flight") return "in-flight";
             if (t.status === "blocked") return "in-flight";
             if (t.status === "next") return "next";
             return "next";
           })(),
-          priority: 2 as const,
-          dueAt: t.dueDate ? dateOnlyToTimestamp(t.dueDate) : null,
-          idleDays: (() => {
+          priority: t.priority ?? null,
+          deadline: t.deadline === undefined ? storedDeadline(t.dueDate, null) : t.deadline,
+          dueAt: t.deadline?.kind === "instant" ? t.deadline.at : null,
+          idleDays: work.coverage?.activity === "partial" ? null : (() => {
             const last = new Date(t.lastActivityAt).getTime();
             return Math.max(
               0,
@@ -319,22 +350,18 @@ export async function buildBriefingForUser(opts: {
           })(),
           commentCount: 0,
           blockedBy: t.blockedBy,
+          dependencyCoverage: t.dependencyCoverage,
+          hasCompletedListedPrerequisite: t.hasCompletedListedPrerequisite,
           sourceLabel: `Tasks · ${workspaceNames.get(work.workspaceId) ?? "Workspace"}`,
           movedToShippedAt:
-            t.status === "shipped"
-              ? new Date(t.lastStatusChangeAt).getTime()
-              : null,
+            t.status === "shipped" && t.completedAt && Number.isFinite(Date.parse(t.completedAt)) && Date.parse(t.completedAt) >= 0 && Date.parse(t.completedAt) <= now
+              ? Date.parse(t.completedAt) : null,
           workspaceId: work.workspaceId,
           planningPeriodId: authorizedScope!.period?.id ?? null,
         })),
       );
     },
   };
-
-  const [suppressed, ages] = await Promise.all([
-    getDismissedKeys(clerkId),
-    getSurfacedAges(clerkId, now),
-  ]);
 
   const capture = captureSignals(source);
   const briefing = await buildBriefing(
@@ -370,6 +397,7 @@ export async function buildBriefingForUser(opts: {
     kind: "ok",
     briefing: {
       ...briefing,
+      coverageStatus,
       emptyStateHeadline: emptyCopy.headline,
       emptyStateBody: emptyCopy.body,
     },

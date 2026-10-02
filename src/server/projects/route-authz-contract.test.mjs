@@ -2,6 +2,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
+const ts = require("typescript");
 // Keep the actual route/action/SQLite regressions in the existing Linux default
 // gate as well as the source contracts, without separate package wiring.
 import "../../../experience/recipient-project-work/server.test.cjs";
@@ -36,6 +39,127 @@ const attachmentRoute = read("src/app/api/attachments/[id]/route.ts");
 const printGate = read("src/app/print/print-project.tsx");
 const printLayout = read("src/app/print/layout.tsx");
 const shell = read("src/components/app/tasks-runtime-shell.tsx");
+const authSource = read("src/server/auth.ts");
+
+function loadSourceWithMockedBoundaries(source, boundaries) {
+  const compiled = ts.transpileModule(source, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText;
+  const loaded = { exports: {} };
+  new Function("require", "module", "exports", compiled)(
+    (name) => {
+      // Ordinary non-RSC calls remain fresh; render-guard-cache.test.mjs
+      // exercises the installed React server dispatcher and Flight renderer.
+      if (name === "react") return { cache: (work) => work };
+      if (!Object.hasOwn(boundaries, name)) throw Error(`Unexpected fixture import ${name}`);
+      return boundaries[name];
+    }, loaded, loaded.exports,
+  );
+  return loaded.exports;
+}
+
+const loadRouteWithMockedBoundaries = (boundaries) => loadSourceWithMockedBoundaries(routeAuthz, boundaries);
+
+test("actor-bearing resolver shares the freshly mapped actor with the exact authorized decision", async () => {
+  let demo = false;
+  let actor = "internal_a";
+  let authCalls = 0;
+  const seen = [];
+  const ready = { id: "project-b", name: "B" };
+  const route = loadRouteWithMockedBoundaries({
+    "server-only": {}, "next/navigation": { redirect: () => { throw Error("redirect"); } },
+    "@/lib/access-mode": { isDemoMode: () => demo },
+    "@/lib/projects/project-ref": { assertProjectId: (value) => value, parseProjectId: (value) => value },
+    "@/server/projects/capabilities": { projectCapabilities: () => ({}) },
+    "@/server/auth": { getCurrentUser: async () => {
+      authCalls++;
+      if (actor === "rejected") throw Error("fresh identity rejected");
+      return actor;
+    } },
+    "@/server/diagnostics/identity-timing": { withRouteResolverIdentityTiming: (work) => work() },
+    "@/server/diagnostics/identity-outbound": { withIdentityOutboundScope: (_scope, work) => work() },
+    "@/server/projects/active-project-cookie": { readActiveProjectCookies: async () => ({ unified: "project-a", legacy: null }) },
+    "@/server/projects/request-scope": { resolveActiveProjectForRoute: async (scope) => {
+      seen.push(scope);
+      return { state: { kind: "ready", project: ready, source: "url" }, redirectTo: null };
+    } },
+    "@/server/demo/tasks-demo": { DEMO_USER_ID: "demo_actor", DEMO_WORKSPACE_ID: "demo_ws",
+      DEMO_WORKSPACE_NAME: "Demo", DEMO_WORKSPACE_SLUG: "demo", demoTasks: () => [] },
+  });
+  const withActor = await route.resolveProjectForRouteWithActor("project-b");
+  assert.equal(withActor.actorUserId, "internal_a");
+  assert.equal(withActor.decision.kind, "ready");
+  assert.equal(withActor.decision.workspaceId, "project-b");
+  assert.deepEqual(seen[0], { actorUserId: "internal_a", requestedWorkspaceId: "project-b",
+    cookieWorkspaceId: "project-a", legacyCookieWorkspaceId: null });
+  assert.equal(authCalls, 1);
+  actor = "internal_b";
+  const publicDecision = await route.resolveProjectForRoute("project-b");
+  assert.equal(publicDecision.kind, "ready");
+  assert.equal(Object.hasOwn(publicDecision, "actorUserId"), false);
+  assert.equal(seen[1].actorUserId, "internal_b");
+  assert.equal(authCalls, 2);
+  actor = "rejected";
+  await assert.rejects(route.resolveProjectForRouteWithActor("project-b"), /fresh identity rejected/);
+  assert.equal(seen.length, 2, "an identity failure cannot authorize or read a project");
+  demo = true;
+  const demoResult = await route.resolveProjectForRouteWithActor("demo_ws");
+  assert.equal(demoResult.actorUserId, "demo_actor");
+  assert.equal(demoResult.decision.workspaceId, "demo_ws");
+  assert.equal(authCalls, 3);
+  assert.equal(seen.length, 2);
+});
+
+test("route actor is the mapped persisted user, not the Clerk subject, and provisioning stays in the fresh proof", async () => {
+  const oldSecret = process.env.CLERK_SECRET_KEY;
+  const oldPublic = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  process.env.CLERK_SECRET_KEY = "synthetic-secret";
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = "synthetic-public";
+  let provisionCalls = 0;
+  const scopes = [];
+  try {
+    const auth = loadSourceWithMockedBoundaries(authSource, {
+      "server-only": {}, "next/headers": { cookies: async () => ({ get: () => undefined }) },
+      "@clerk/nextjs/server": { auth: async () => ({ userId: "clerk_subject" }), currentUser: async () => null },
+      "drizzle-orm": { eq: (_column, value) => value, and: (...values) => values },
+      "@/server/db": { db: { select: () => ({ from: () => ({ where: async () => [{ id: "mapped_internal" }] }) }) } },
+      "@/server/db/schema": { users: { id: "users.id", clerkId: "users.clerkId" }, workspaceMembers: {} },
+      "@/server/db/seed": { LEGACY_WORKSPACE_ID: "legacy" },
+      "@/server/db/ensure-user": { ensureUserProvisioned: async () => { provisionCalls++; } },
+      "@/lib/access-mode": { isDemoMode: () => false },
+      "@/server/projects/catalog": { firstMembershipByCatalogOrder: async () => null },
+      "@/server/demo/tasks-demo": { DEMO_USER_ID: "demo_user", DEMO_WORKSPACE_ID: "demo_ws" },
+      "@/server/diagnostics/identity-timing": { beginIdentityTiming: () => ({ measure: (_name, work) => work(), finish() {} }) },
+      "@/server/diagnostics/identity-outbound": { observeCurrentUserOutbound: (work) => work() },
+      "@/server/projects/member-workspaces": { demoMemberWorkspaces: () => [], listMyWorkspacesForUser: async () => [] },
+    });
+    const route = loadRouteWithMockedBoundaries({
+      "server-only": {}, "next/navigation": { redirect: () => { throw Error("redirect"); } },
+      "@/lib/access-mode": { isDemoMode: () => false },
+      "@/lib/projects/project-ref": { assertProjectId: (value) => value, parseProjectId: (value) => value },
+      "@/server/projects/capabilities": { projectCapabilities: () => ({}) },
+      "@/server/auth": { getCurrentUser: auth.getCurrentUser },
+      "@/server/diagnostics/identity-timing": { withRouteResolverIdentityTiming: (work) => work() },
+      "@/server/diagnostics/identity-outbound": { withIdentityOutboundScope: (_scope, work) => work() },
+      "@/server/projects/active-project-cookie": { readActiveProjectCookies: async () => ({ unified: null, legacy: null }) },
+      "@/server/projects/request-scope": { resolveActiveProjectForRoute: async (scope) => {
+        scopes.push(scope);
+        return { state: { kind: "ready", project: { id: "project-b", name: "B" }, source: "url" }, redirectTo: null };
+      } },
+      "@/server/demo/tasks-demo": { DEMO_USER_ID: "demo_user", DEMO_WORKSPACE_ID: "demo_ws",
+        DEMO_WORKSPACE_NAME: "Demo", DEMO_WORKSPACE_SLUG: "demo", demoTasks: () => [] },
+    });
+    const result = await route.resolveProjectForRouteWithActor("project-b");
+    assert.equal(result.actorUserId, "mapped_internal");
+    assert.equal(scopes[0].actorUserId, "mapped_internal");
+    assert.notEqual(result.actorUserId, "clerk_subject");
+    assert.equal(provisionCalls, 1);
+  } finally {
+    if (oldSecret === undefined) delete process.env.CLERK_SECRET_KEY; else process.env.CLERK_SECRET_KEY = oldSecret;
+    if (oldPublic === undefined) delete process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+    else process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = oldPublic;
+  }
+});
 
 const PRINT_PAGES = ["board", "list", "calendar"].map((view) => [
   view,
@@ -280,7 +404,8 @@ test("/app/tasks reads workspaceId and refuses rather than rendering a wrong boa
   assert(resolveAt > 0, "the carried Project must actually be consumed");
   assert(resolveAt < renderAt, "it must be resolved before the board renders");
   assert.match(body, /return <TasksArrivalRefusal/);
-  assert.match(tasksArrival, /await resolveProjectForRoute\(requested\)/);
+  assert.match(tasksArrival, /await resolveProjectForRouteWithActor\(requested\)/);
+  assert.match(tasksArrival, /return \{ kind: "ready" as const, project, actorUserId \}/);
   assert.match(tasksArrival, /requested !== undefined && !isActiveProjectV3Enabled\(\)/);
 });
 
@@ -292,7 +417,8 @@ test("the venue-welcome demo guard still precedes every production boundary", ()
   const welcomeAt = body.indexOf('sp.welcome === "venue"');
   assert(arrivalGuard > 0 && arrivalGuard < welcomeAt);
   assert.match(routeAuthz, /if \(isDemoMode\(\)\)/);
-  assert(body.indexOf("if (isDemoMode())", welcomeAt) < body.indexOf("await getCurrentUser()", welcomeAt));
+  assert.match(body.slice(welcomeAt), /if \(isDemoMode\(\)\)[\s\S]*const me = arrival\.actorUserId/);
+  assert.doesNotMatch(body, /getCurrentUser\s*\(/, "the page reuses only its freshly resolved server actor");
 });
 
 /* ── Defect 5 · the runtime shell ───────────────────────────────────────── */
@@ -302,7 +428,7 @@ test("the shell fails closed and prefers an explicit Project", () => {
   const body = shell.slice(shell.indexOf("export async function TasksRuntimeShell"));
   assert.match(
     body,
-    /resolveProjectForRoute\(\s*parseProjectId\(requestedProjectId\) \?\? undefined,?\s*\)/,
+    /resolveProjectForRouteWithActor\(\s*parseProjectId\(requestedProjectId\) \?\? undefined,?\s*\)/,
     "an explicit Project is preferred, and still authorized rather than trusted",
   );
   assert.match(

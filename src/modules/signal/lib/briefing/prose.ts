@@ -29,6 +29,8 @@ type Phrasing = (
    *  titles → "X and Y" (both named, conversational). Three+ →
    *  "X and N more" (named lead + count). */
   byTitles?: string[],
+  relatedTaskTitle?: string,
+  savedDateLabel?: string,
 ) => string;
 
 const STUCK: Phrasing[] = [
@@ -170,6 +172,23 @@ const BLOCKED_TOO_LONG: Phrasing[] = [
   },
 ];
 
+function namedDependent(title: string | undefined): string {
+  const name = title?.trim().replace(/\s+/g, " ");
+  return name ? `“${name}”` : "another open task";
+}
+
+const BLOCKING_DUE_WORK: Phrasing[] = [
+  (_task, _days, _titles, title) => `This is holding up ${namedDependent(title)}.`,
+  (_task, _days, _titles, title) => `The task ${namedDependent(title)} is waiting on this.`,
+  (_task, _days, _titles, title) => `This remains a listed prerequisite for ${namedDependent(title)}.`,
+];
+
+const PREREQUISITES_COMPLETE: Phrasing[] = [
+  (_task, _days, _titles, _title, date) => `Its listed prerequisites are complete. Saved deadline: ${date ?? "within seven days"}.`,
+  (_task, _days, _titles, _title, date) => `The listed prerequisites are complete, and its saved deadline is ${date ?? "within seven days"}.`,
+  (_task, _days, _titles, _title, date) => `Its listed prerequisites are complete. The saved deadline is ${date ?? "within seven days"}.`,
+];
+
 const LIBRARY: Record<TriggerKind, Phrasing[]> = {
   "stuck-work": STUCK,
   "due-soon": DUE_SOON,
@@ -177,6 +196,8 @@ const LIBRARY: Record<TriggerKind, Phrasing[]> = {
   overload: OVERLOAD,
   "crowded-week": CROWDED_WEEK,
   "blocked-too-long": BLOCKED_TOO_LONG,
+  "blocking-due-work": BLOCKING_DUE_WORK,
+  "prerequisites-complete": PREREQUISITES_COMPLETE,
 };
 
 /**
@@ -190,23 +211,54 @@ export function phraseFor(
   context?: {
     idleDays?: number;
     daysOut?: number;
+    pastToday?: boolean;
+    /** Positive duration to an exact instant; date-only deadlines omit it. */
+    instantRemainingMs?: number;
     /** Resolved titles of upstream blocker tasks (in order). */
     blockedByTitles?: string[];
+    relatedTaskTitle?: string;
+    savedDateLabel?: string;
   },
 ): string {
   const options = LIBRARY[trigger];
   const phrasing = options[rotationIndex % options.length];
+  if (trigger === "blocking-due-work" || trigger === "prerequisites-complete")
+    return phrasing(task, undefined, undefined, context?.relatedTaskTitle, context?.savedDateLabel);
   if (trigger === "stuck-work")
-    return phrasing(task, context?.idleDays ?? task.idleDays);
-  if (trigger === "due-soon") return phrasing(task, context?.daysOut ?? 0);
+    return phrasing(task, context?.idleDays ?? task.idleDays ?? 0);
+  if (trigger === "due-soon") {
+    if (context?.pastToday) return "Past its time today.";
+    const remaining = context?.instantRemainingMs;
+    if (remaining !== undefined && remaining > 0 && remaining <= 86_400_000) {
+      const duration = remainingDuration(remaining);
+      const variant = rotationIndex % options.length;
+      return variant === 0 ? `Due in ${duration}.`
+        : variant === 1 ? `The deadline is in ${duration}.`
+          : `It comes due in ${duration}.`;
+    }
+    return phrasing(task, context?.daysOut ?? 0);
+  }
   if (trigger === "blocked-too-long") {
     return phrasing(
       task,
-      context?.idleDays ?? task.idleDays,
+      context?.idleDays ?? task.idleDays ?? 0,
       context?.blockedByTitles ?? [],
     );
   }
   return phrasing(task);
+}
+
+/** An upper bound for fractional minutes never overstates available time. */
+function remainingDuration(milliseconds: number): string {
+  if (milliseconds < 60_000) return "under a minute";
+  const roundedMinutes = Math.ceil(milliseconds / 60_000);
+  const exactMinute = milliseconds % 60_000 === 0;
+  const hours = Math.floor(roundedMinutes / 60);
+  const minutes = roundedMinutes % 60;
+  const units = hours === 0 ? plural(roundedMinutes, "minute", "minutes")
+    : minutes === 0 ? plural(hours, "hour", "hours")
+      : `${plural(hours, "hour", "hours")} and ${plural(minutes, "minute", "minutes")}`;
+  return exactMinute ? units : `under ${units}`;
 }
 
 // ─────────────────────────────────────────────────────────────

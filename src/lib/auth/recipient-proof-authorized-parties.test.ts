@@ -13,6 +13,7 @@ const production = [
   "https://tasks.signalstudio.ie",
 ];
 const previewOrigin = "https://signal-studio-sprint-ethanmcn2013-1730s-projects.vercel.app";
+const deploymentHost = "synthetic-app-a1b2c3-projects.vercel.app";
 const stores = ["TASKS", "NOTES", "TIMELINE", "SIGNAL", "ENTITLEMENTS"] as const;
 
 function syntheticPreview(overrides: Record<string, string | undefined> = {}) {
@@ -23,7 +24,8 @@ function syntheticPreview(overrides: Record<string, string | undefined> = {}) {
   const hashes = Object.fromEntries(stores.map((store) => [store, targets[store].hash])) as Record<(typeof stores)[number], string>;
   const env: Record<string, string | undefined> = {
     SIGNAL_SPRINT_PREVIEW_AUTH: SPRINT_PREVIEW_AUTH_MARKER,
-    VERCEL: "1", VERCEL_ENV: "preview", NODE_ENV: "production",
+    VERCEL: "1", VERCEL_ENV: "preview", VERCEL_TARGET_ENV: "preview", NODE_ENV: "production",
+    VERCEL_DEPLOYMENT_ID: "dpl_synthetic", VERCEL_PROJECT_ID: "prj_synthetic", VERCEL_URL: deploymentHost,
     NEXT_PUBLIC_SIGNAL_DEPLOYMENT_ENV: "preview", NEXT_PUBLIC_SIGNAL_ACCESS_MODE: "production",
     SIGNAL_ACCESS_MODE: "production",
     NEXT_PUBLIC_SITE_URL: previewOrigin, NEXT_PUBLIC_APP_URL: previewOrigin,
@@ -39,9 +41,9 @@ function syntheticPreview(overrides: Record<string, string | undefined> = {}) {
   return { env: { ...env, ...overrides }, hashes };
 }
 
-test("marked sprint preview admits only the nominated origin with five pinned synthetic stores", () => {
+test("marked sprint preview admits only the nominated alias and exact system deployment origin with five pinned stores", () => {
   const { env, hashes } = syntheticPreview();
-  assert.deepEqual(sprintPreviewAuthorizedPartiesForTargets(env, hashes), [...production, previewOrigin]);
+  assert.deepEqual(sprintPreviewAuthorizedPartiesForTargets(env, hashes), [...production, previewOrigin, `https://${deploymentHost}`]);
   assert.deepEqual(clerkAuthorizedParties({ ...env, SIGNAL_SPRINT_PREVIEW_AUTH: undefined }), production);
   // The production helper cannot be satisfied with synthetic database URLs.
   assert.throws(() => clerkAuthorizedParties(env), /verified isolated Tasks mode/);
@@ -51,7 +53,8 @@ test("sprint preview marker rejects wrong deployment, origin, keys, mode and out
   const denied = [
     { SIGNAL_SPRINT_PREVIEW_AUTH: "true" },
     { SIGNAL_RECIPIENT_IDENTITY_PROOF: RECIPIENT_IDENTITY_PROOF_MARKER },
-    { VERCEL: undefined }, { VERCEL_ENV: "production" }, { NODE_ENV: "development" },
+    { VERCEL: undefined }, { VERCEL_ENV: "production" }, { VERCEL_TARGET_ENV: "production" },
+    { VERCEL_TARGET_ENV: undefined }, { NODE_ENV: "development" },
     { NEXT_PUBLIC_SIGNAL_DEPLOYMENT_ENV: "production" },
     { NEXT_PUBLIC_SIGNAL_ACCESS_MODE: "review" },
     { SIGNAL_ACCESS_MODE: undefined }, { SIGNAL_ACCESS_MODE: "review" },
@@ -70,6 +73,24 @@ test("sprint preview marker rejects wrong deployment, origin, keys, mode and out
     const { env, hashes } = syntheticPreview(override);
     assert.throws(() => sprintPreviewAuthorizedPartiesForTargets(env, hashes), { name: "Error" }, JSON.stringify(override));
   }
+});
+
+test("immutable preview origin rejects absent or malformed system deployment identity and arbitrary host forms", () => {
+  for (const override of [
+    { VERCEL_DEPLOYMENT_ID: undefined }, { VERCEL_DEPLOYMENT_ID: "deployment" },
+    { VERCEL_PROJECT_ID: undefined }, { VERCEL_PROJECT_ID: "project" },
+    { VERCEL_URL: undefined },
+    ...["https://" + deploymentHost, deploymentHost + "/", deploymentHost + "/path", deploymentHost + "?q=1",
+      deploymentHost + "#fragment", "user@" + deploymentHost, deploymentHost + ":443", " " + deploymentHost,
+      deploymentHost + " ", "*.vercel.app", "other.example.test", "vercel.app", "nested.app.vercel.app",
+      "app.vercel.app.evil.test", "-bad.vercel.app", "bad-.vercel.app", "a".repeat(64) + ".vercel.app",
+      "bad\\.vercel.app"].map(VERCEL_URL => ({ VERCEL_URL })),
+  ]) {
+    const { env, hashes } = syntheticPreview(override);
+    assert.throws(() => sprintPreviewAuthorizedPartiesForTargets(env, hashes), /exact Vercel deployment identity/);
+  }
+  const { env } = syntheticPreview({ SIGNAL_SPRINT_PREVIEW_AUTH: undefined, VERCEL_URL: "other.vercel.app" });
+  assert.deepEqual(clerkAuthorizedParties(env), production);
 });
 
 test("sprint preview rejects a mixed, missing or unauthenticated store for each of five bindings", () => {

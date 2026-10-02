@@ -26,6 +26,8 @@ const ALL_TRIGGERS: TriggerKind[] = [
   "overload",
   "crowded-week",
   "blocked-too-long",
+  "blocking-due-work",
+  "prerequisites-complete",
 ];
 
 describe("phraseFor, every trigger × every rotation produces non-empty prose", () => {
@@ -86,6 +88,16 @@ describe("phraseFor, the observation never carries the title", () => {
 });
 
 describe("phraseFor, context propagation", () => {
+  test("new dependency observations name only visible context and saved date, never invented transition age", () => {
+    for (let rotation = 0; rotation < 3; rotation++) {
+      const blocker = phraseFor("blocking-due-work", task(), rotation, { relatedTaskTitle: "Finish the plan" });
+      const completed = phraseFor("prerequisites-complete", task(), rotation, { savedDateLabel: "2 Nov" });
+      assert.match(blocker, /Finish the plan/);
+      assert.match(completed, /2 Nov/);
+      assert.match(completed, /listed prerequisites are complete/i);
+      assert.doesNotMatch(`${blocker} ${completed}`, /just cleared|newly unblocked|ready to start|days without/i);
+    }
+  });
   test("stuck-work uses idleDays from context, not task field", () => {
     const t = task({ idleDays: 1 });
     const text = phraseFor("stuck-work", t, 0, { idleDays: 5 });
@@ -431,4 +443,19 @@ describe("phraseFor, voice rules from BRAND.md / COLLABORATION_LOOP.md", () => {
     const b = phraseFor("stuck-work", t, 5);
     assert.equal(a, b);
   });
+});
+
+test("all due-soon rotations keep exact-instant pressure without overstating time", () => {
+  for (let rotation = 0; rotation < 3; rotation++) {
+    const exact = phraseFor("due-soon", task(), rotation, { daysOut: 0, instantRemainingMs: 7_200_000 });
+    assert.match(exact, /two hours/);
+    const fractional = phraseFor("due-soon", task(), rotation,
+      { daysOut: 0, instantRemainingMs: 7_200_001 });
+    assert.match(fractional, /under two hours and one minute/);
+    assert.match(phraseFor("due-soon", task(), rotation,
+      { daysOut: 0, instantRemainingMs: 59_999 }), /under a minute/);
+    assert.doesNotMatch(phraseFor("due-soon", task(), rotation, { daysOut: 0 }), /hour|minute/);
+    assert.equal(phraseFor("due-soon", task(), rotation,
+      { daysOut: 0, pastToday: true, instantRemainingMs: 1 }), "Past its time today.");
+  }
 });

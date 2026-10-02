@@ -31,7 +31,13 @@ export type {
 } from "./lib/briefing/types";
 export {
   calendarDayDifference,
+  deadlineDayDifference,
+  deadlineIsOverdue,
+  deadlineShortDate,
+  compareDeadlines,
+  deadlineWeekday,
   localWeekday,
+  signalDeadline,
 } from "./lib/briefing/calendar-time";
 export { requireSignalUser } from "./server/signal-auth";
 export { parseBriefingReadScopeHint } from "./lib/planning-periods/read-scope-hint";

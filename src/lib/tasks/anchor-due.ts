@@ -16,10 +16,28 @@
  */
 
 import {
+  calendarDateInTimeZone,
   calendarDaysBetween,
   isCalendarDate,
   type CalendarDate,
 } from "@/lib/planning/dates";
+
+/** A canonical picker date retains its selected day in every reader zone. */
+export function taskDueCalendarDate(due: string | null | undefined, dueAt: Date | null, timeZone: string): CalendarDate | null {
+  if (!dueAt) return null;
+  if (isCalendarDate(due) && dueAt.getTime() === Date.parse(`${due}T09:00:00.000Z`)) return due;
+  return calendarDateInTimeZone(dueAt, timeZone);
+}
+
+/** Date-only picker value uses local calendar parts, never the stored 09Z instant. */
+export function taskDuePickerValue(due: string | null | undefined, dueAt: Date | null): Date | null {
+  if (!dueAt) return null;
+  if (isCalendarDate(due) && dueAt.getTime() === Date.parse(`${due}T09:00:00.000Z`)) {
+    const [year, month, day] = due.split("-").map(Number);
+    return new Date(year, month - 1, day, 12);
+  }
+  return dueAt;
+}
 
 export type DueAnchorRelation = Readonly<{
   /** Where the due date sits relative to the anchor. */

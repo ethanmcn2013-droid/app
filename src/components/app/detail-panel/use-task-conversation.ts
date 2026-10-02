@@ -12,19 +12,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Task } from "@/lib/data";
-import { loadTaskConversationAction } from "@/server/actions/task-conversation";
+import { readTaskConversation } from "@/lib/tasks/detail-read-transport";
 import type { TaskConversationSurface } from "@/server/conversations/task-history-loader";
 import { readTaskConversationWithSoftDeadline } from "@/components/app/task-detail/conversation-read";
 
-export function useTaskConversation(task: Task) {
+export function useTaskConversation(task: Task, authoritativeRevision: number) {
   const [resolved, setResolved] = useState<{ taskId: string; value: TaskConversationSurface } | null>(null);
   const surface = resolved?.taskId === task.id ? resolved.value : null;
   const [loading, setLoading] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
   const activeTaskRef = useRef<string | null>(task.id);
   const requestGenerationRef = useRef(0);
-
-  const refreshKey = task.updatedAt?.getTime();
 
   const beginRequest = useCallback((taskId: string) => {
     if (activeTaskRef.current !== taskId) return null;
@@ -51,7 +49,7 @@ export function useTaskConversation(task: Task) {
 
       void readTaskConversationWithSoftDeadline({
         taskId,
-        load: loadTaskConversationAction,
+        load: readTaskConversation,
         isCurrent: () => !signal.ignored && isCurrentRequest(taskId, generation),
         onEvent: (event) => {
           if (event.kind === "slow") {
@@ -98,7 +96,7 @@ export function useTaskConversation(task: Task) {
       signal.ignored = true;
       window.clearTimeout(timer);
     };
-  }, [task.id, refreshKey, fetchConversation]);
+  }, [task.id, authoritativeRevision, fetchConversation]);
 
   // Compatibility history is read-only, but authorization is still live.
   // Re-read only this mode so a removed Project member does not retain a
@@ -113,7 +111,7 @@ export function useTaskConversation(task: Task) {
       if (generation === null) return;
       inFlight = true;
       try {
-        const result = await loadTaskConversationAction(task.id);
+        const result = await readTaskConversation(task.id);
         if (signal.ignored || !isCurrentRequest(task.id, generation)) return;
         setLoading(false);
         if (result.ok) setResolved({ taskId: task.id, value: result.value });

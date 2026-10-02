@@ -38,13 +38,15 @@ export type { MilestoneThreshold } from "@/lib/milestones-pure";
 export async function maybeAwardCompletionMilestone(
   userId: string,
   taskId: string,
+  opts: { executor?: Pick<typeof db, "get" | "run" | "select" | "insert">; expectedWorkspaceId?: string } = {},
 ): Promise<void> {
   if (isDemoMode()) return;
 
   try {
+    const executor = opts.executor ?? db;
     // Count DISTINCT task_id to avoid inflating the total when a task is
     // toggled done multiple times (e.g. recurrence completion records).
-    const row = await db.get<{ n: number }>(sql`
+    const row = await executor.get<{ n: number }>(sql`
       SELECT COUNT(DISTINCT task_id) AS n
       FROM activities
       WHERE user_id = ${userId}
@@ -60,7 +62,7 @@ export async function maybeAwardCompletionMilestone(
       const key = `milestone:${userId}:${threshold}`;
 
       // Insert with DO NOTHING — the rowsAffected check is the exactly-once gate.
-      const result = await db.run(sql`
+      const result = await executor.run(sql`
         INSERT INTO meta (key, value, updated_at)
         VALUES (${key}, ${String(count)}, unixepoch())
         ON CONFLICT(key) DO NOTHING
@@ -71,7 +73,7 @@ export async function maybeAwardCompletionMilestone(
         // IMPORTANT: we always record the KV award above even when celebrations
         // is false, so the milestone counts as "awarded" for idempotency.
         // The notification is simply suppressed based on preference.
-        const prefs = await readPersonalityPrefs(userId);
+        const prefs = await readPersonalityPrefs(userId, executor);
         if (prefs.celebrations === false) continue;
 
         await notify(userId, {
@@ -79,7 +81,7 @@ export async function maybeAwardCompletionMilestone(
           taskId,
           threshold,
           count,
-        });
+        }, { executor, expectedWorkspaceId: opts.expectedWorkspaceId });
       }
     }
   } catch (err) {
