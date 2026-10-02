@@ -342,6 +342,10 @@ export function TasksProvider({
   const lastInitialRef = useRef<Task[] | undefined>(undefined);
   useEffect(() => {
     if (!initialTasks) return;
+    if (isDemoMode()) {
+      seedAcceptedRef.current = true;
+      return;
+    }
     if (initialTasks === lastInitialRef.current && seedAcceptedRef.current) return;
     lastInitialRef.current = initialTasks;
     const current = readTaskSnapshotEpoch();
@@ -370,6 +374,7 @@ export function TasksProvider({
   }, [initialTasks, initialTasksEpoch, markDirty, publishBase]);
 
   useEffect(() => {
+    if (isDemoMode()) return;
     if (!mounted.current || !seedAcceptedRef.current) return;
     if (browserFreshness === acceptedFreshnessRef.current) return;
     quarantinedRef.current = true;
