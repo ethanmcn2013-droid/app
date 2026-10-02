@@ -340,6 +340,7 @@ const nextConfig: NextConfig = {
     // the app + marketing; the full barrel ships ~6× what we actually call.
     // Roadmap's next.config carries the same shape (Phase 6.2).
     optimizePackageImports: ["@clerk/nextjs", "motion"],
+    turbopackChunking: { minChunkSize: 25000 },
     serverActions: {
       // Photo capture in Notes posts image bytes to a server action, and
       // base64 inflates them by about 1.37x, so the framework's 1 MB
