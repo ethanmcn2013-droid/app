@@ -59,6 +59,7 @@ import {
 import { accountDeletionTombstoneKey } from "@/server/account-deletion-key";
 import { parseProjectId } from "@/lib/projects/project-ref";
 import { captureTaskCreated } from "@/server/sponsored-use/capture";
+import { TaskMutationRefusedError, taskMutationExpectedProject } from "@/server/tasks/mutation-refusal";
 
 /**
  * Pure read pass-through used by the realtime sync hook to refetch
@@ -261,14 +262,19 @@ export async function moveTaskAction(
   return getTasks(ws);
 }
 
-export async function toggleCompleteAction(id: string): Promise<Task[]> {
-  if (isDemoMode()) return demoTasks();
+export async function toggleCompleteAction(id: string, expectedProjectId?: string): Promise<Task[]> {
+  const expectedProject = taskMutationExpectedProject(expectedProjectId);
+  if (isDemoMode()) {
+    if (expectedProject !== undefined) throw new TaskMutationRefusedError();
+    return demoTasks();
+  }
   return withTaskActionTiming("complete", async () => {
     const me = await measureTaskStage("identity", () => withIdentityOutboundScope("taskAction", getCurrentUser));
     const outcome = await measureTaskStage("writeAndActivity", () => db.transaction(async (tx) => {
       const target = await measureTaskStage("projectProof", () => taskWriteTarget(tx, id, me));
       if (!target) return null;
       const { ws, row } = target;
+      if (expectedProject !== undefined && ws !== expectedProject) return null;
       const recurring = Boolean(row.recurrence && row.lane !== "done");
       const columnConfig = recurring ? null : await measureTaskStage("projectProof", () => readWorkspaceColumnConfig(ws, tx));
       const wasDone = recurring ? false : isTaskDone(row, columnConfig);
@@ -289,7 +295,10 @@ export async function toggleCompleteAction(id: string): Promise<Task[]> {
       if (!wasDone) await maybeAwardCompletionMilestone(me, id, { executor: tx, expectedWorkspaceId: ws });
       return { ws, sponsoredKind: recurring ? "task_completed" as const : classifyLaneTransition(row.lane, lane) };
     }, { behavior: "immediate" }));
-    if (!outcome) return neutralTaskList(await activeWorkspaceOrNullForUser(me), me);
+    if (!outcome) {
+      if (expectedProject !== undefined) throw new TaskMutationRefusedError();
+      return neutralTaskList(await activeWorkspaceOrNullForUser(me), me);
+    }
     if (outcome.sponsoredKind) await recordSponsoredUse({
       product: "tasks", kind: outcome.sponsoredKind, objectKey: id, subjectId: me, workspaceId: outcome.ws,
     }, true);
@@ -392,14 +401,20 @@ const PATCHABLE_TASK_COLUMNS = new Set([
 export async function updateTaskAction(
   id: string,
   patch: Partial<Omit<Task, "id">>,
+  expectedProjectId?: string,
 ): Promise<Task[]> {
-  if (isDemoMode()) return demoTasks();
+  const expectedProject = taskMutationExpectedProject(expectedProjectId);
+  if (isDemoMode()) {
+    if (expectedProject !== undefined) throw new TaskMutationRefusedError();
+    return demoTasks();
+  }
   return withTaskActionTiming("edit", async () => {
   const me = await measureTaskStage("identity", () => withIdentityOutboundScope("taskAction", getCurrentUser));
   const outcome = await measureTaskStage("writeAndActivity", () => db.transaction(async (tx) => {
   const target = await measureTaskStage("projectProof", () => taskWriteTarget(tx, id, me));
   if (!target) return null;
   const { ws, row: ownedTask } = target;
+  if (expectedProject !== undefined && ws !== expectedProject) return null;
   // Build the SET payload from only explicitly allowed columns.
   // This is an action-boundary allowlist, it strips ownership /
   // structural / identity columns (workspaceId, parentTaskId,
@@ -472,7 +487,10 @@ export async function updateTaskAction(
     return { ws, emits };
   }
   }, { behavior: "immediate" }));
-  if (!outcome) return neutralTaskList(await activeWorkspaceOrNullForUser(me), me);
+  if (!outcome) {
+    if (expectedProject !== undefined) throw new TaskMutationRefusedError();
+    return neutralTaskList(await activeWorkspaceOrNullForUser(me), me);
+  }
   for (const kind of outcome.emits) await recordSponsoredUse(
     { product: "tasks", kind, objectKey: id, subjectId: me, workspaceId: outcome.ws }, true);
 
@@ -518,8 +536,15 @@ export async function addTaskAction(input: {
    * value, so a Project the caller is not in is refused either way.
    */
   projectId?: string;
-}): Promise<Task[]> {
-  if (isDemoMode()) return demoTasks();
+}, expectedProjectId?: string): Promise<Task[]> {
+  const expectedProject = taskMutationExpectedProject(expectedProjectId);
+  if (expectedProject !== undefined && input.projectId !== expectedProject) {
+    throw new TaskMutationRefusedError();
+  }
+  if (isDemoMode()) {
+    if (expectedProject !== undefined) throw new TaskMutationRefusedError();
+    return demoTasks();
+  }
   return withTaskActionTiming("create", async () => {
   const [me, ambient] = await measureTaskStage("identity", () => withIdentityOutboundScope("taskAction", async () => {
     const actor = await getCurrentUser();
@@ -607,6 +632,7 @@ export async function addTaskAction(input: {
     return true;
   }, { behavior: "immediate" }));
   if (!created) {
+    if (expectedProject !== undefined) throw new TaskMutationRefusedError();
     if (input.projectId != null) throw new Error("Task Project is unavailable");
     return neutralTaskList(ambient, me);
   }

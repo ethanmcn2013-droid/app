@@ -1,17 +1,14 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { getTasksAction } from "@/server/actions/tasks";
-import type { Task } from "@/lib/data";
 import { isDemoMode } from "@/lib/access-mode";
 
 type Options = {
   /** Server-proved runtime identity. The action reauthorizes the Project. */
   projectId: string;
   actorId: string;
-  /** Called with the freshly-fetched task list whenever a peer mutation
-   *  arrives via SSE. The provider passes its `hydrate` dispatcher here. */
-  onChange: (tasks: Task[]) => void;
+  /** Provider schedules a scope/epoch-fenced read; this hook never hydrates. */
+  onDirty: () => void;
   /** Stable per-tab id so the SSE stream can suppress this tab's own
    *  echo. If omitted, every event triggers a refetch, strictly
    *  correct, but the originator pays an extra round-trip. */
@@ -26,11 +23,11 @@ type Options = {
  * (browser-native). On `error` we just log; the next heartbeat cycle
  * (or visibility change) re-establishes the stream.
  */
-export function useRealtimeSync({ projectId, actorId, onChange, clientId }: Options) {
-  const onChangeRef = useRef(onChange);
+export function useRealtimeSync({ projectId, actorId, onDirty, clientId }: Options) {
+  const onDirtyRef = useRef(onDirty);
   useEffect(() => {
-    onChangeRef.current = onChange;
-  }, [onChange]);
+    onDirtyRef.current = onDirty;
+  }, [onDirty]);
 
   useEffect(() => {
     if (isDemoMode()) return;
@@ -40,46 +37,12 @@ export function useRealtimeSync({ projectId, actorId, onChange, clientId }: Opti
     const url = `/api/events${clientId ? `?cid=${encodeURIComponent(clientId)}` : ""}`;
     const es = new EventSource(url);
 
-    let inflight = false;
-    let pendingWhileInflight = false;
     let disposed = false;
-    let cooldown: ReturnType<typeof setTimeout> | undefined;
-    const fetchAndHydrate = async () => {
-      if (disposed) return;
-      // Coalesce bursts: a stream of 5 mutations in 30ms only refetches once.
-      // But remember that an event arrived during the in-flight window so we
-      // don't settle on pre-event state until some unrelated future event
-      // happens to trigger another refetch (lost-update).
-      if (inflight) {
-        pendingWhileInflight = true;
-        return;
-      }
-      inflight = true;
-      try {
-        const fresh = await getTasksAction(projectId);
-        if (!disposed) onChangeRef.current(fresh);
-      } catch (e) {
-        if (!disposed) console.warn("realtime: refetch failed", e);
-      } finally {
-        // Tiny gap so a follow-up mutation 50ms later doesn't get
-        // dropped, gives React a render tick to flush. If events were
-        // coalesced away while we were in flight, run exactly once more.
-        if (!disposed) {
-          cooldown = setTimeout(() => {
-            cooldown = undefined;
-            if (disposed) return;
-            inflight = false;
-            if (pendingWhileInflight) {
-              pendingWhileInflight = false;
-              void fetchAndHydrate();
-            }
-          }, 100);
-        }
-      }
-    };
-
     const onTasksChanged = () => {
-      void fetchAndHydrate();
+      if (disposed) return;
+      // The Provider coalesces while a read is in flight and remembers an
+      // intervening event for a follow-up scoped read.
+      onDirtyRef.current();
     };
     es.addEventListener("tasks-changed", onTasksChanged);
 
@@ -101,8 +64,6 @@ export function useRealtimeSync({ projectId, actorId, onChange, clientId }: Opti
 
     function dispose() {
       disposed = true;
-      pendingWhileInflight = false;
-      if (cooldown !== undefined) clearTimeout(cooldown);
       es.removeEventListener("tasks-changed", onTasksChanged);
       es.removeEventListener("error", onError);
       es.close();

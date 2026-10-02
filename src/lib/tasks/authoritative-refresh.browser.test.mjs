@@ -11,14 +11,22 @@ const adapters = {
   "@/server/actions/tasks": `export async function updateTaskAction(){return await new Promise((resolve,reject)=>{window.resolveTaskAction=resolve;window.rejectTaskAction=reject})}
 export async function getSubtasksAction(id){window.actualReads.subtasks.push(id);return await window.readSubtasks(id)}
 export const addTaskAction=()=>Promise.reject(Error('unused'));export const duplicateTaskAction=addTaskAction;
-export const getTasksAction=addTaskAction;export const moveTaskAction=addTaskAction;export const removeTaskAction=addTaskAction;
+export const getTasksAction=async()=>window.peerTasks;export const moveTaskAction=addTaskAction;export const removeTaskAction=addTaskAction;
 export const reorderTaskAction=addTaskAction;export const setTaskArchivedAction=addTaskAction;
 export const setTaskMilestoneAction=addTaskAction;export async function toggleCompleteAction(){window.completeDispatched=true;return await new Promise(resolve=>window.resolveToggle=resolve)}`,
   "@/server/actions/board": "export const moveTaskToColumnAction=()=>Promise.reject(Error('unused'));",
   "@/server/actions/set-parent": "export const setParentAction=()=>Promise.reject(Error('unused'));",
   "@/lib/access-mode": "export const isDemoMode=()=>false;",
-  "@/lib/tasks/use-realtime-sync": "export function useRealtimeSync({onChange}){window.peerHydrate=onChange;}",
-  "./use-realtime-sync": "export function useRealtimeSync({onChange}){window.peerHydrate=onChange;}",
+  "@/lib/tasks/use-realtime-sync": "export function useRealtimeSync({onDirty}){window.peerHydrate=(tasks)=>{window.peerTasks=tasks;onDirty()};}",
+  "./use-realtime-sync": "export function useRealtimeSync({onDirty}){window.peerHydrate=(tasks)=>{window.peerTasks=tasks;onDirty()};}",
+  "./task-transport": `export class TaskMutationRefusedError extends Error{}
+export class TaskMutationRequestRejectedError extends Error{}
+window.TaskMutationRefusedError=TaskMutationRefusedError;
+export const readTaskSnapshot=async()=>window.peerTasks;
+export const createTask=()=>Promise.reject(Error('unused'));
+export const editTask=()=>new Promise((resolve,reject)=>{window.resolveTaskAction=resolve;window.rejectTaskAction=reject});
+export const toggleTaskComplete=()=>new Promise(resolve=>{window.completeDispatched=true;window.resolveToggle=resolve});`,
+  "next/navigation": "export const useRouter=()=>({refresh(){window.refreshes=(window.refreshes??0)+1}});",
   "@/lib/tasks/delight-events": "export const beginTaskSync=()=>()=>{};",
   "./delight-events": "export const beginTaskSync=()=>()=>{};",
   "@/components/app/done-dopamine/first-completion-moment": "export const maybeFireFirstCompletion=()=>{};",
@@ -66,9 +74,9 @@ function Probe(){const state=useTasksState();const {updateTask,toggleComplete}=u
   return <div><span id='title'>{task?.title}</span><span id='revision'>{revision}</span>
     {task?<><SubtasksSection key={task.id} task={task}/><ResourcesSection key={task.id} task={task}/><ConversationProbe task={task} revision={revision}/></>:null}</div>}
 function ConversationProbe({task,revision}){const c=useTaskConversation(task,revision);return <span id='conversation'>{c.surface?.mode??'empty'}</span>}
-function App({tasks,href}){return <TasksProvider projectId='project' actorId='actor' initialTasks={tasks}><Probe/><SidebarIntentLink href={href} aria-label='Destination' ref={node=>window.linkRef=node} onPointerEnter={()=>window.linkEvents.push('enter')} onPointerLeave={()=>window.linkEvents.push('leave')} onFocus={()=>window.linkEvents.push('focus')} onBlur={()=>window.linkEvents.push('blur')} onClick={event=>{event.preventDefault();window.linkEvents.push('click')}}>Go</SidebarIntentLink></TasksProvider>}
+function App({tasks,href,epoch}){return <TasksProvider projectId='project' actorId='actor' initialTasks={tasks} initialTasksEpoch={epoch}><Probe/><SidebarIntentLink href={href} aria-label='Destination' ref={node=>window.linkRef=node} onPointerEnter={()=>window.linkEvents.push('enter')} onPointerLeave={()=>window.linkEvents.push('leave')} onFocus={()=>window.linkEvents.push('focus')} onBlur={()=>window.linkEvents.push('blur')} onClick={event=>{event.preventDefault();window.linkEvents.push('click')}}>Go</SidebarIntentLink></TasksProvider>}
 window.task=(id,title='Original')=>({id,title,updatedAt:new Date('2030-01-01T10:00:00Z'),lane:'todo',priority:'p2',assignees:[],parentTaskId:null,externalContactName:null,externalContactEmail:null,cents:null});
-window.show=(tasks,href='/app/tasks')=>root.render(<App tasks={tasks} href={href}/>);window.stop=()=>root.unmount();`,
+window.show=(tasks,href='/app/tasks')=>root.render(<App tasks={tasks} href={href} epoch={document.cookie.match(/signal_task_snapshot_epoch=([a-f0-9]{32})/)?.[1]??null}/>);window.stop=()=>root.unmount();`,
     loader: "tsx", resolveDir: root,
   },
   bundle: true, write: false, platform: "browser", format: "iife",
@@ -87,18 +95,23 @@ test("mounted provider suppresses optimistic detail reads, coalesces RSC, and re
     const page = await browser.newPage();
     const errors = [];
     page.on("pageerror", error => errors.push(error.message));
-    await page.setContent("<!doctype html><div id='root'></div>");
+    await page.route("http://localhost/**", route => route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><div id='root'></div>" }));
+    await page.goto("http://localhost/");
     await page.addScriptTag({ content: built.outputFiles[0].text });
+    await page.evaluate(() => { document.cookie = `signal_task_snapshot_epoch=${"a".repeat(32)}; Path=/; SameSite=Lax`; });
     await page.waitForTimeout(100);
     assert.deepEqual(errors, []);
     await page.evaluate(() => window.show([window.task("one")]));
     await page.waitForFunction(() => document.getElementById("title")?.textContent === "Original");
-    await page.waitForFunction(() => window.reads.length === 1);
-    assert.deepEqual(await page.evaluate(() => window.reads), [["one", 1]]);
-    await page.waitForFunction(() => Object.values(window.actualReads).every(rows => rows.length === 1));
+    await page.waitForFunction(() => window.reads.at(-1)?.[1] === 1);
+    assert.deepEqual(await page.evaluate(() => window.reads), [["one", 0], ["one", 1]]);
+    await page.waitForFunction(() => Object.values(window.actualReads).every(rows => rows.length === 2));
     assert.deepEqual(await page.evaluate(() => window.actualReads), {
-      subtasks: ["one"], resources: ["one"], conversation: ["one"],
+      subtasks: ["one", "one"], resources: ["one", "one"], conversation: ["one", "one"],
     });
+    // The unaccepted bootstrap never publishes an authoritative revision.
+    // Start subsequent delta assertions after its revision-0/1 reads settle.
+    await page.evaluate(() => { window.reads = [["one", 1]]; window.actualReads = { subtasks: ["one"], resources: ["one"], conversation: ["one"] }; });
     assert.deepEqual(errors, []);
     assert.equal(await page.locator("a").count(), 1, await page.locator("#root").innerHTML());
     assert.equal(await page.evaluate(() => window.linkRef === document.querySelector("a")), true);
@@ -186,13 +199,13 @@ test("mounted provider suppresses optimistic detail reads, coalesces RSC, and re
     assert.equal(await link.getAttribute("data-prefetch"), "false");
     await link.click({ noWaitAfter: true });
     assert.equal(await page.evaluate(() => window.linkEvents.filter(event => event === "click").length), 1);
-    assert.equal(page.url(), "about:blank");
+    assert.equal(page.url(), "http://localhost/");
 
     const beforeReject = await page.evaluate(() => Object.values(window.actualReads).map(rows => rows.length));
     const revisionBeforeReject = await page.locator("#revision").textContent();
     await page.evaluate(() => window.mutate("three"));
     await page.waitForFunction(() => document.getElementById("title")?.textContent === "Optimistic");
-    await page.evaluate(() => window.rejectTaskAction(false));
+    await page.evaluate(() => window.rejectTaskAction(new window.TaskMutationRefusedError("refused")));
     await page.waitForFunction(() => document.getElementById("title")?.textContent === "Original");
     assert.equal(await page.locator("#revision").textContent(), revisionBeforeReject);
     assert.deepEqual(await page.evaluate(() => Object.values(window.actualReads).map(rows => rows.length)), beforeReject);
@@ -217,10 +230,13 @@ test("pending mounted detail HTTP reads do not queue update or completion dispat
     const page = await browser.newPage();
     const errors = [];
     page.on("pageerror", error => errors.push(error.message));
-    await page.setContent("<!doctype html><div id='root'></div>");
+    await page.route("http://localhost/**", route => route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><div id='root'></div>" }));
+    await page.goto("http://localhost/");
     await page.addScriptTag({ content: built.outputFiles[0].text });
+    await page.evaluate(() => { document.cookie = `signal_task_snapshot_epoch=${"a".repeat(32)}; Path=/; SameSite=Lax`; });
     await page.evaluate(() => window.show([window.task("one")]));
-    await page.waitForFunction(() => Object.values(window.actualReads).every(rows => rows.length === 1));
+    await page.waitForFunction(() => window.reads.at(-1)?.[1] === 1 && Object.values(window.actualReads).every(rows => rows.length === 2));
+    await page.evaluate(() => { window.actualReads = { subtasks: ["one"], resources: ["one"], conversation: ["one"] }; });
     await page.evaluate(() => {
       window.readSubtasks = () => new Promise(resolve => { window.releaseSubtasks = resolve; });
       window.readResource = () => new Promise(resolve => { window.releaseResources = resolve; });

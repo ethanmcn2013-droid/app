@@ -245,7 +245,19 @@ test("updateTaskAction resolves an owned row before emitting activity", () => {
   assert.match(body, /taskWriteTarget\(tx, id, me\)/);
   assert.ok(activityWrite > body.indexOf("if (updated.length !== 1) return null"),
     "activity must follow the confirmed scoped update");
-  assert.match(body, /if \(!outcome\) return neutralTaskList\(/);
+  const noEffect = /if \(!outcome\) \{\s*if \(expectedProject !== undefined\) throw new TaskMutationRefusedError\(\);\s*return neutralTaskList\(await activeWorkspaceOrNullForUser\(me\), me\);\s*\}/;
+  assert.match(body, noEffect);
+  const noEffectBranch = body.match(noEffect)[0];
+  assert.doesNotMatch(
+    noEffectBranch.replace("if (expectedProject !== undefined) throw new TaskMutationRefusedError();", ""),
+    noEffect,
+    "a bound no-effect result must remain an explicit refusal",
+  );
+  assert.doesNotMatch(
+    noEffectBranch.replace("return neutralTaskList(await activeWorkspaceOrNullForUser(me), me);", "return [];"),
+    noEffect,
+    "legacy callers must retain the authorized neutral Task list",
+  );
 });
 
 test("task writers read only the target Project before stored-Project authorization", () => {

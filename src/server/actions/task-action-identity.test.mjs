@@ -8,6 +8,7 @@ const require = createRequire(import.meta.url);
 const ts = require("typescript");
 const authPath = fileURLToPath(new URL("../auth.ts", import.meta.url));
 const actionsPath = fileURLToPath(new URL("./tasks.ts", import.meta.url));
+const refusalPath = fileURLToPath(new URL("../tasks/mutation-refusal.ts", import.meta.url));
 
 // Execute the real auth and Task action source with only external boundaries
 // substituted. A source regex or an isolated helper test cannot catch a caller
@@ -141,6 +142,9 @@ function fixture() {
     "@/server/demo/tasks-demo": { DEMO_USER_ID: "demo_user", DEMO_WORKSPACE_ID: "demo_project" },
   });
   const actionModule = loadSource(actionsPath, {
+    "@/server/tasks/mutation-refusal": loadSource(refusalPath, {
+      "@/lib/projects/project-ref": { parseProjectId: value => typeof value === "string" && value.length > 0 ? value : null },
+    }),
     "drizzle-orm": { and, eq, inArray: (column, values) => ({kind: "inArray", column, values}) },
     "drizzle-orm/sqlite-core": { alias: () => ({id: "owner_user.id", clerkId: "owner_user.clerkId"}) },
     "next/cache": { revalidatePath() {} },
@@ -218,6 +222,12 @@ test("real update action resolves and provisions its actor once", async () => wi
   assert.deepEqual(timing.scopes, ["edit"]);
   assert.deepEqual(timing.stages, ["identity", "writeAndActivity", "projectProof", "finalRead"]);
   assert.equal(state.ambientReads, 0);
+}));
+
+test("bound update keeps one fresh identity and one final snapshot read", async () => withProductionEnvironment(async () => {
+  const { counters, actionModule } = fixture();
+  assert.deepEqual(await actionModule.updateTaskAction("task_alice", { title: "Changed" }, "project_alice"), [{ id: "list_for_project_alice" }]);
+  assert.deepEqual(counters, { auth: 1, currentUser: 1, provision: 1, update: 1, activity: 1, list: 1 });
 }));
 
 test("forged or revoked cookie falls back only to the same actor's live membership", async () => withProductionEnvironment(async () => {

@@ -21,7 +21,9 @@
     "scripts/test-provision-fast.test.mjs",
     "scripts/test-board-fidelity.test.mjs",
     "src/server/actions/private-task-db-write.test.cjs",
-    "src/server/actions/task-action-concurrency.test.cjs"
+    "src/server/actions/task-action-identity.test.mjs",
+    "src/server/actions/task-action-concurrency.test.cjs",
+    "src/server/actions/task-bound-mutation.test.cjs"
   ],
   [
     "node",
@@ -141,6 +143,9 @@
     "src/lib/tasks/anchor-due.test.ts",
     "src/lib/tasks/stored-due-transition.test.ts",
     "src/lib/tasks/authoritative-refresh.test.ts",
+    "src/lib/tasks/task-wire.test.ts",
+    "src/lib/tasks/task-transport.test.ts",
+    "src/server/tasks/mutation-http.test.ts",
     "src/lib/tasks/detail-read-transport.test.ts",
     "src/server/tasks/detail-read-http.test.ts",
     "src/lib/tasks/delight-events.test.ts",

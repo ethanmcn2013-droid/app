@@ -2,6 +2,7 @@ import "server-only";
 
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { CrossWorkspaceOverdue } from "@/components/app/cross-workspace-overdue";
 import { CrossWorkspaceSearch } from "@/components/app/cross-workspace-search";
 import { FirstCompletionMoment } from "@/components/app/done-dopamine/first-completion-moment";
@@ -27,6 +28,7 @@ import {
 } from "@/lib/entitlements-shared";
 import { getWorkspacePersonalization } from "@/lib/onboarding/personalization";
 import { TasksProvider } from "@/lib/tasks/tasks-context";
+import { normalizeTaskSnapshotEpoch, TASK_SNAPSHOT_EPOCH_COOKIE } from "@/lib/tasks/task-snapshot-epoch";
 import { isDemoMode } from "@/lib/access-mode";
 import { requireAppAccessTasks } from "@/server/app-access";
 import { getCurrentUser } from "@/server/auth";
@@ -143,6 +145,12 @@ export async function TasksRuntimeShell({
     redirect("/welcome");
   }
 
+  // This request's cookie is an immutable snapshot label for client hydration.
+  // It never selects the actor or Project and grants no access.
+  const initialTasksEpoch = normalizeTaskSnapshotEpoch(
+    (await cookies()).get(TASK_SNAPSHOT_EPOCH_COOKIE)?.value,
+  );
+
   const demo = isDemoMode();
   const renderReads = startTasksRenderReads({
     getCurrentUser,
@@ -250,6 +258,7 @@ export async function TasksRuntimeShell({
             actorId={currentUser}
             projectId={workspaceId}
             initialTasks={tasks}
+            initialTasksEpoch={initialTasksEpoch}
           >
             <RoomBriefProvider value={roomBrief}>
               <ToastRoot>

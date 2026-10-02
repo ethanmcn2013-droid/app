@@ -114,6 +114,34 @@ test("legacy truthy error caller remains an error and keeps its visible toast", 
   });
 });
 
+test("unknown outcome retains error diagnostics but never tells the user to replay", () => {
+  withBrowser(true, events => {
+    beginTaskSync("edit")(new Error("response lost"), true, true);
+    assert.deepEqual(events.filter(event => event.type === TASKS_ACK_DIAGNOSTIC_EVENT)
+      .map(event => (event.detail as TaskAckDiagnosticDetail).phase), ["start", "error"]);
+    const toast = events.find(event => event.type === "tasks:toast")?.detail as
+      { title: string; body: string } | undefined;
+    assert.ok(toast);
+    assert.match(toast.title, /could not be confirmed/);
+    assert.doesNotMatch(`${toast.title} ${toast.body}`, /not saved|restored|try.*again/i);
+  });
+});
+
+test("unmount cancellation clears a pending clock without stale success or toast", () => {
+  withBrowser(true, (events, announcePending) => {
+    const finish = beginTaskSync("edit");
+    announcePending();
+    finish.cancel();
+    finish();
+    announcePending();
+    assert.deepEqual(events.filter(event => event.type === TASKS_SYNC_EVENT)
+      .map(event => (event.detail as { phase: string }).phase), ["pending", "cancelled"]);
+    assert.deepEqual(events.filter(event => event.type === TASKS_ACK_DIAGNOSTIC_EVENT)
+      .map(event => (event.detail as TaskAckDiagnosticDetail).phase), ["start"]);
+    assert.equal(events.some(event => event.type === "tasks:toast"), false);
+  });
+});
+
 test("diagnostic gate refuses missing opt-in, wrong origin, expired window, and production", () => {
   withBrowser(false, events => {
     beginTaskSync("complete")();

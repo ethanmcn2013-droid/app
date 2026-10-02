@@ -20,7 +20,7 @@ function emitAckDiagnostic(detail: TaskAckDiagnosticDetail) {
   window.dispatchEvent(new CustomEvent<TaskAckDiagnosticDetail>(TASKS_ACK_DIAGNOSTIC_EVENT, { detail }));
 }
 
-export type TaskSyncPhase = "pending" | "success" | "error";
+export type TaskSyncPhase = "pending" | "success" | "error" | "cancelled";
 
 export type TaskSyncEventDetail = {
   id: string;
@@ -44,7 +44,7 @@ function emitSync(detail: TaskSyncEventDetail) {
 export function beginTaskSync(
   operation: TaskAckOperation = "other",
   startedAt: number = performance.now(),
-): (error?: unknown, rejected?: boolean) => void {
+): ((error?: unknown, rejected?: boolean, uncertain?: boolean) => void) & { cancel: () => void } {
   const id = `tasks-sync-${++syncSequence}`;
   emitAckDiagnostic({ id, operation, phase: "start", at: startedAt });
   let announcedPending = false;
@@ -57,7 +57,7 @@ export function beginTaskSync(
         emitSync({ id, phase: "pending" });
       }, 300);
 
-  return (error?: unknown, rejected = Boolean(error)) => {
+  const finish = (error?: unknown, rejected = Boolean(error), uncertain = false) => {
     if (finished) return;
     finished = true;
     if (timer !== undefined) window.clearTimeout(timer);
@@ -67,8 +67,10 @@ export function beginTaskSync(
       emitSync({ id, phase: "error" });
       window.dispatchEvent(new CustomEvent("tasks:toast", {
         detail: {
-          title: "The change was not saved",
-          body: "Tasks restored the last confirmed state. Try the action again.",
+          title: uncertain ? "The change could not be confirmed" : "The change was not saved",
+          body: uncertain
+            ? "Review the task before making another change."
+            : "Tasks restored the last confirmed state. Try the action again.",
           tone: "error",
         },
       }));
@@ -77,4 +79,11 @@ export function beginTaskSync(
 
     if (announcedPending) emitSync({ id, phase: "success" });
   };
+  finish.cancel = () => {
+    if (finished) return;
+    finished = true;
+    if (timer !== undefined) window.clearTimeout(timer);
+    if (announcedPending) emitSync({ id, phase: "cancelled" });
+  };
+  return finish;
 }

@@ -4,6 +4,10 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-10-02 · Preview candidate · Task saves keep their project and order
+
+Creating, editing and completing a Task now returns its project’s confirmed Task list directly. Each write rechecks the displayed project inside the existing transaction. Overlapping changes settle in order, and late snapshots cannot undo a newer save. Switching projects cancels old pending indicators and refreshes after an abandoned request settles. An uncertain save asks the user to review the Task rather than repeat a change that may already have committed. The visual design is preserved. Local browser and writer checks cover these boundaries; final CI and controlled hosted performance verification remain pending.
+
 ## 2026-09-29 · Preview candidate · Current prerequisites in the Home read
 
 Home and the Signal ledger can now surface a visible open Task that is holding up near-due work, and an open Task with a saved deadline whose listed prerequisites are complete. The read names only confirmed current relationships; it does not infer when work started or how long a dependency has been open. Home's date counts remain based on saved deadlines, while open Tasks without an interpretable saved date prevent an unqualified date all-clear. The existing visual design and task permissions are unchanged. This candidate still needs independent review, required checks and a fresh development comparison before any quality claim.
