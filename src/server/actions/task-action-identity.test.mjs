@@ -120,9 +120,10 @@ function fixture() {
     "@/server/db": { db },
     "@/server/db/schema": schema,
     "@/server/db/seed": { LEGACY_WORKSPACE_ID: "ws_legacy" },
-    "@/server/db/ensure-user": { ensureUserProvisioned: async () => {
+    "@/server/db/ensure-user": { resolveProvisionedUserId: async (clerkId) => {
       counters.provision++;
       if (state.failProvision) throw Error("provision failed");
+      return state.mappedIds.get(clerkId) ?? clerkId;
     } },
     "@/server/diagnostics/identity-timing": { beginIdentityTiming: () => ({
       measure: (_stage, work) => work(), finish() {},

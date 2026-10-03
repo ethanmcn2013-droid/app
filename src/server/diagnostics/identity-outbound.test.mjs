@@ -191,7 +191,7 @@ test("real getCurrentUser wiring scopes one Clerk event without changing provisi
     "@/server/db": {db: {select: () => ({from: () => ({where: async () => [{id: "private-persisted-id"}]})})}},
     "@/server/db/schema": {users: {id: "id", clerkId: "clerkId"}},
     "@/server/db/seed": {LEGACY_WORKSPACE_ID: "legacy"},
-    "@/server/db/ensure-user": {ensureUserProvisioned: async () => {provisionCalls++;}},
+    "@/server/db/ensure-user": {resolveProvisionedUserId: async () => {provisionCalls++; return "private-persisted-id";}},
     "@/lib/access-mode": {isDemoMode: () => false},
     "@/server/projects/catalog": {},
     "@/server/projects/member-workspaces": {
