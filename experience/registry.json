@@ -1855,7 +1855,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "23e712269919d749"
+      "materialityHash": "310af916c10025fb"
     },
     {
       "id": "tasks.page.app-task-by-id",
@@ -3653,10 +3653,10 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-09-25",
+      "lastReviewedAt": "2026-10-03",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "f2c26239838f8214"
+      "materialityHash": "1b45164993945cf9"
     },
     {
       "id": "tasks.resources.drive-upload-status",
@@ -3911,10 +3911,10 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-09-25",
+      "lastReviewedAt": "2026-10-03",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "7059937000cff5e0"
+      "materialityHash": "e7fbf84c50efd4b0"
     },
     {
       "id": "tasks.page.lab-project-conversation",
@@ -4309,10 +4309,10 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-25",
+      "lastReviewedAt": "2026-10-03",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "a5ceb7fe901db75c"
+      "materialityHash": "45e0fc19aaf3ca48"
     },
     {
       "id": "tasks.page.app-concepts",
