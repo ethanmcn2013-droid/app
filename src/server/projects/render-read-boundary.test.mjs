@@ -56,7 +56,7 @@ test('existing workspace action wrapper still authenticates and maps an internal
       'drizzle-orm': { eq: (_column, value) => value }, '@/server/db': { db },
       '@/server/db/schema': { users: { id: 'users.id', clerkId: 'users.clerkId' }, workspaceMembers: {} },
       '@/server/db/seed': { LEGACY_WORKSPACE_ID: 'legacy' },
-      '@/server/db/ensure-user': { ensureUserProvisioned: async () => { provisionCalls++; } },
+      '@/server/db/ensure-user': { resolveProvisionedUserId: async (clerkId) => { provisionCalls++; return internal[clerkId]; } },
       '@/lib/access-mode': { isDemoMode: () => demo },
       '@/server/projects/catalog': { firstMembershipByCatalogOrder: async () => null },
       '@/server/demo/tasks-demo': { DEMO_USER_ID: 'demo_user', DEMO_WORKSPACE_ID: 'demo_ws' },
