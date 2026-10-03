@@ -30,7 +30,6 @@ import type { ProjectsTreeData } from "@/server/actions/projects-tree";
 const VIEWS = [
   { href: TASKS_VIEW_PATHS.board, label: "Board", icon: "board" },
   { href: TASKS_VIEW_PATHS.list, label: "List", icon: "list" },
-  { href: TASKS_VIEW_PATHS.timeline, label: "Schedule", icon: "timeline" },
   { href: TASKS_VIEW_PATHS.calendar, label: "Calendar", icon: "calendar" },
 ] as const;
 

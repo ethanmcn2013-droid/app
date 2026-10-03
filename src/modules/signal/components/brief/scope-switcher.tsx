@@ -6,6 +6,7 @@ import type {
   SignalScope,
 } from "../../lib/planning-periods/scope";
 import { setSignalScope } from "../../server/signal-planning-scope-actions";
+import styles from "../overview/overview.module.css";
 
 function key(scope: SignalScope): string {
   return scope.kind === "workspace"
@@ -13,6 +14,19 @@ function key(scope: SignalScope): string {
     : `planningPeriod:${scope.planningPeriodId}`;
 }
 
+/**
+ * The Overview's project control: which Project the read covers. Sits in the
+ * page header beside the page's own actions.
+ *
+ * Per project only (founder direction, 24 Sep 2026: "no need for program
+ * views"). Planning periods are never offered here. A planning-period URL
+ * requested directly is still authorized and read by the server exactly as
+ * before; this control simply offers the way back to a single Project.
+ *
+ * Changing the select does not navigate on its own. Keyboard users move
+ * through options with the arrow keys, and a select that submits on change
+ * would reload the page under them; "Show" commits the choice.
+ */
 export function SignalScopeSwitcher({
   catalog,
   activeScope,
@@ -22,7 +36,8 @@ export function SignalScopeSwitcher({
   activeScope: SignalScope;
   demo?: boolean;
 }) {
-  const [selected, setSelected] = useState(key(activeScope));
+  const activeKey = activeScope.kind === "workspace" ? key(activeScope) : "";
+  const [selected, setSelected] = useState(activeKey);
   useEffect(() => {
     const url = new URL(window.location.href);
     url.searchParams.set("contextVersion", "2");
@@ -48,6 +63,11 @@ export function SignalScopeSwitcher({
     }
     window.location.assign(url);
   }
+  const unchanged = selected === activeKey;
+  // Nothing to choose: one Project, already the one being read.
+  if (catalog.workspaces.length < 2 && activeScope.kind === "workspace") {
+    return null;
+  }
   return (
     <form
       action={demo ? undefined : setSignalScope}
@@ -59,50 +79,49 @@ export function SignalScopeSwitcher({
             }
           : undefined
       }
-      className="mx-auto flex w-full max-w-[960px] items-end gap-3 px-6 pt-8 sm:px-8"
-      aria-label="Signal scope"
+      className={styles.scopeForm}
+      aria-label="Overview project"
     >
-      <label className="grid flex-1 gap-1">
-        {/* The ledger's mono metadata register (11px / 0.06em / --ink-quiet),
-            not a fourth uppercase micro-label at its own tracking. */}
-        <span
-          className="text-[11px] tracking-[0.06em] text-[color:var(--ink-quiet)]"
-          style={{ fontFamily: "var(--font-mono)" }}
-        >
-          Briefing scope
-        </span>
-        {/* min-h-[44px], never min-h-10: --space-10 is 64px in this system,
-            so the class would silently yield a 64px band. No component-level
-            ring either — the global :focus-visible outline is the only focus
-            mark, and --brand is deprecated. */}
+      <label className={styles.selectWrap}>
+        <span className="sr-only">Project</span>
         <select
           name="scope"
           value={selected}
           onChange={(event) => setSelected(event.target.value)}
-          className="min-h-[44px] border-0 border-b border-[color:var(--hairline)] bg-transparent text-[14px] font-normal normal-case tracking-normal text-[color:var(--ink)]"
+          className={styles.select}
         >
-          {catalog.periods.map((period) => (
-            <option key={period.id} value={`planningPeriod:${period.id}`}>
-              {period.name} · Planning period
+          {activeKey === "" ? (
+            <option value="" disabled>
+              Choose a project
             </option>
-          ))}
-          {catalog.workspaces.map((workspace) => (
-            <option key={workspace.id} value={`workspace:${workspace.id}`}>
-              {workspace.name} · Workspace
+          ) : null}
+          {catalog.workspaces.map((project) => (
+            <option key={project.id} value={`workspace:${project.id}`}>
+              {project.name}
             </option>
           ))}
         </select>
+        <svg
+          className={styles.selectChevron}
+          width="14"
+          height="14"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path d="m4.5 6.25 3.5 3.5 3.5-3.5" />
+        </svg>
       </label>
-      <button
-        type="submit"
-        disabled={selected === key(activeScope)}
-        /* Pill radius inline: the global :focus-visible rule also sets
-           border-radius: 6px, which squared the pill on focus. */
-        style={{ borderRadius: "var(--radius-pill)" }}
-        className="min-h-[44px] border border-[color:var(--hairline)] px-4 text-[13px] text-[color:var(--ink-soft)] disabled:opacity-40"
-      >
-        Show
-      </button>
+      {unchanged || selected === "" ? null : (
+        <button type="submit" className={styles.button}>
+          Show
+        </button>
+      )}
     </form>
   );
 }

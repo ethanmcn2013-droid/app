@@ -2,219 +2,220 @@ import Link from "next/link";
 import type { ProjectSummary } from "@/lib/projects/project-ref";
 import { buildProjectUrl } from "@/lib/projects/project-url";
 import type {
-  HomeComingRow,
   HomeData,
+  HomeDeadlineGroup,
   HomeReviewRow,
-  HomeSignalRow,
+  HomeStats,
+  HomeTaskRow,
 } from "@/app/app/home/home-data";
-import { HomeItemLink, HomeViewedPing } from "./home-analytics";
+import { ShellIcon } from "@/components/shell/shell-icons";
+import { isDemoMode } from "@/lib/access-mode";
+import { HomeViewedPing } from "./home-analytics";
+import { HomeGreeting } from "./home-greeting";
+import styles from "./home.module.css";
 
 /**
- * Home — the authenticated front door. One question: what matters now?
+ * Home v3: the authenticated front door, as a working dashboard.
  *
- * Three principal sections, never more (PROJECT.md): Today's Signal
- * (dominant, ≤3 rows straight from the briefing engine), Coming up
- * (≤4 dated rows), Needs review (≤3 rows). Sections other than Today's
- * Signal render only when they have something true to say — a stack of
- * empty placeholders is dashboard furniture, not calm.
+ * Laid out the way people scan their work: the numbers first, then the tasks
+ * in motion, with deadlines and reviews alongside. The full read across the
+ * Project lives in Overview. Every figure is derived from the same authorized
+ * briefing read; nothing is invented.
  *
- * Server component: the page is a read. The only client JS is the
- * analytics ping and per-row open events (no content in payloads).
+ * Server component. The only client JS is the analytics ping and per-row
+ * open events (no content in payloads).
  */
-export function HomeView({ data }: { data: Extract<HomeData, { kind: "ok" }> }) {
+type OkHome = Extract<HomeData, { kind: "ok" }>;
+
+const LANE_LABEL: Record<HomeTaskRow["lane"], string> = {
+  next: "To do",
+  "in-flight": "In progress",
+  review: "In review",
+  shipped: "Done",
+};
+
+const LANE_TONE: Partial<Record<HomeTaskRow["lane"], string>> = {
+  "in-flight": "warning",
+  review: "review",
+};
+
+export function HomeView({ data }: { data: OkHome }) {
   return (
-    <div className="thin-scroll flex-1 overflow-auto bg-bg px-5 py-6 md:px-10 md:py-9">
+    <div className={`${styles.page} thin-scroll`}>
       <HomeViewedPing />
-      <div className="mx-auto max-w-[760px]">
-        <header className="mb-9">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-quiet">
-            {data.dateLabel}
-          </p>
-          <h1 className="mt-2 text-[24px] font-medium tracking-tight text-ink md:text-[28px]">
-            {data.greeting}
-          </h1>
-          <p className="mt-1.5 text-[13px] text-ink-soft">{data.scopeLabel}</p>
+      <div className={styles.inner}>
+        <header className={styles.header}>
+          <div>
+            <p className={styles.eyebrow}>{formatDateLabel(data.dateLabel)}</p>
+            <h1 className={styles.title}>
+              <HomeGreeting serverGreeting={data.greeting} pinned={isDemoMode()} />
+            </h1>
+            <p className={styles.subtitle}>{summaryLine(data.stats, data.scopeLabel)}</p>
+          </div>
+          <div className={styles.actions}>
+            <Link href={data.briefingHref} className={styles.button}>
+              <ShellIcon.overview size={14} />
+              Overview
+            </Link>
+            <Link href="/app/tasks?create=task" className={styles.buttonPrimary}>
+              <ShellIcon.plus size={14} />
+              New task
+            </Link>
+          </div>
         </header>
 
-        <TodaysSignal rows={data.signalRows} allClear={data.allClear} briefingHref={data.briefingHref} />
+        <Stats stats={data.stats} />
 
-        {data.comingUp.length > 0 ? <ComingUp rows={data.comingUp} /> : null}
-
-        {data.needsReview.length > 0 ? (
-          <NeedsReview rows={data.needsReview} />
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-/** Tasks proved this Project exists, but Signal could not read its Home yet. */
-export function HomeProjectUnavailable({ project }: { project: ProjectSummary }) {
-  return <div className="thin-scroll flex-1 overflow-auto bg-bg px-5 py-6 md:px-10 md:py-9">
-    <div className="mx-auto flex min-h-[60dvh] max-w-[560px] flex-col justify-center">
-      <h1 className="text-[24px] font-medium tracking-tight text-ink md:text-[28px]">Home isn’t ready yet.</h1>
-      <p className="mt-3 max-w-[44ch] text-[14px] leading-relaxed text-ink-soft">
-        We couldn’t read {project.name} for Home right now. Your project is still available in Tasks.
-      </p>
-      <Link className="mt-7 w-fit rounded-lg bg-ink px-4 py-2.5 text-[13.5px] font-medium text-white" href={buildProjectUrl({ surface: "tasks" }, project.id)}>
-        Open Tasks <span aria-hidden>→</span>
-      </Link>
-    </div>
-  </div>;
-}
-
-function SectionLabel({
-  id,
-  children,
-  withDot = false,
-}: {
-  id: string;
-  children: React.ReactNode;
-  withDot?: boolean;
-}) {
-  return (
-    <h2
-      id={id}
-      className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-quiet"
-    >
-      {withDot ? (
-        <span
-          aria-hidden
-          className="inline-block h-[7px] w-[7px] rounded-full"
-          style={{ background: "var(--brand)" }}
-        />
-      ) : null}
-      {children}
-    </h2>
-  );
-}
-
-function TodaysSignal({
-  rows,
-  allClear,
-  briefingHref,
-}: {
-  rows: HomeSignalRow[];
-  allClear: Extract<HomeData, { kind: "ok" }>["allClear"];
-  briefingHref: string;
-}) {
-  return (
-    <section aria-labelledby="todays-signal" className="mb-10">
-      <SectionLabel id="todays-signal" withDot>
-        Today&rsquo;s Signal
-      </SectionLabel>
-
-      {allClear ? (
-        <div className="mt-5 rounded-xl border border-line-soft bg-bg-elevated px-6 py-8">
-          <p className="text-[17px] font-medium tracking-tight text-ink">
-            {allClear.headline}
-          </p>
-          <p className="mt-2 max-w-[46ch] text-[13.5px] leading-relaxed text-ink-soft">
-            {allClear.body}
-          </p>
-          {allClear.readLine ? (
-            <p className="mt-4 text-[12px] text-ink-quiet">{allClear.readLine}</p>
-          ) : null}
+        <div className={styles.grid}>
+          <div className={styles.column}>
+            <MyTasks rows={data.myTasks} total={data.stats.open} />
+          </div>
+          <div className={styles.column}>
+            <Deadlines groups={data.deadlines} />
+            {data.needsReview.length > 0 ? <NeedsReview rows={data.needsReview} /> : null}
+          </div>
         </div>
-      ) : (
-        <ul className="mt-3 divide-y divide-line-soft">
-          {rows.map((row) => (
-            <li key={`${row.trigger}:${row.id}`}>
-              <HomeItemLink
-                href={row.href}
-                event="home_signal_item_opened"
-                properties={{ trigger: row.trigger, due: row.due }}
-                className="group flex items-baseline gap-4 py-4 outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--bg)]"
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[15px] font-medium leading-snug text-ink group-hover:underline group-hover:decoration-line group-hover:underline-offset-4">
-                    {row.title}
-                  </span>
-                  <span className="mt-1 block text-[13px] leading-relaxed text-ink-soft">
-                    {row.why}
-                  </span>
-                  <span className="mt-1.5 block text-[11.5px] text-ink-quiet">
-                    {row.source}
-                    {row.due ? <> · {row.due}</> : null}
-                    {row.destination === "briefing" ? <span className="sr-only"> · Read full briefing</span> : null}
-                  </span>
-                </span>
-                <span
-                  aria-hidden
-                  className="flex-shrink-0 text-[13px] text-ink-quiet transition-transform group-hover:translate-x-0.5 group-hover:text-ink"
-                >
-                  {row.destination === "briefing" ? "Read →" : "Open →"}
-                </span>
-              </HomeItemLink>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <div className="mt-4">
-        <HomeItemLink
-          href={briefingHref}
-          event="home_briefing_opened"
-          properties={{}}
-          className="inline-flex items-center gap-1.5 rounded-md text-[13px] font-medium text-ink-soft outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-[color:var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--bg)]"
-        >
-          <span>Open full briefing</span>
-          <span aria-hidden>→</span>
-        </HomeItemLink>
       </div>
+    </div>
+  );
+}
+
+/** "WEDNESDAY 24 SEPTEMBER" from the loader reads as shouting here. */
+function formatDateLabel(label: string): string {
+  return label
+    .toLowerCase()
+    .replace(/(^|\s)([a-z])/g, (_match, space: string, letter: string) => `${space}${letter.toUpperCase()}`);
+}
+
+function summaryLine(stats: HomeStats, scopeLabel: string): string {
+  if (stats.overdue > 0 && stats.dueToday > 0) {
+    return `${scopeLabel} · ${stats.dueToday} due today and ${stats.overdue} overdue.`;
+  }
+  if (stats.overdue > 0) return `${scopeLabel} · ${stats.overdue} ${stats.overdue === 1 ? "task is" : "tasks are"} overdue.`;
+  if (stats.dueToday > 0) return `${scopeLabel} · ${stats.dueToday} ${stats.dueToday === 1 ? "task is" : "tasks are"} due today.`;
+  return `${scopeLabel} · Nothing is due today.`;
+}
+
+function Stats({ stats }: { stats: HomeStats }) {
+  const items = [
+    { label: "Open tasks", value: stats.open, note: `${stats.inReview} in review`, icon: <ShellIcon.layers size={14} />, tone: "accent" },
+    { label: "Due today", value: stats.dueToday, note: stats.dueToday === 0 ? "A clear day" : "Worth a look first", icon: <ShellIcon.clock size={14} />, tone: undefined },
+    { label: "Overdue", value: stats.overdue, note: stats.overdue === 0 ? "Nothing slipped" : "Past their date", icon: <ShellIcon.alert size={14} />, tone: stats.overdue > 0 ? "danger" : undefined },
+    { label: "Done this week", value: stats.doneThisWeek, note: "Last 7 days", icon: <ShellIcon.checkCircle size={14} />, tone: "success" },
+  ];
+  return (
+    <section className={styles.stats} aria-label="At a glance">
+      {items.map((item) => (
+        <Link key={item.label} href="/app/tasks" className={styles.stat}>
+          <span className={styles.statTop}>
+            {item.label}
+            <span className={styles.statIcon} data-tone={item.tone}>{item.icon}</span>
+          </span>
+          <span className={styles.statValue}>{item.value}</span>
+          <span className={styles.statNote}>{item.note}</span>
+        </Link>
+      ))}
     </section>
   );
 }
 
-function ComingUp({ rows }: { rows: HomeComingRow[] }) {
+function TaskRow({ row, showLane = true }: { row: HomeTaskRow; showLane?: boolean }) {
   return (
-    <section aria-labelledby="coming-up" className="mb-10">
-      <SectionLabel id="coming-up">Coming up</SectionLabel>
-      <ul className="mt-3 divide-y divide-line-soft">
-        {rows.map((row) => (
-          <li key={row.id}>
-            <Link
-              href={row.href}
-              className="group flex items-baseline gap-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--bg)]"
-            >
-              <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink group-hover:underline group-hover:underline-offset-4">
-                {row.title}
-              </span>
-              <span className="hidden flex-shrink-0 text-[11.5px] text-ink-quiet sm:block">
-                {row.source}
-              </span>
-              <span className="w-[9ch] flex-shrink-0 text-right text-[12px] font-medium text-ink-soft">
-                {row.due}
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+    <Link href={row.href} className={styles.row}>
+      <span className={styles.check} data-lane={row.lane} aria-hidden="true" />
+      <span className={styles.rowMain}>
+        <span className={styles.rowTitle}>{row.title}</span>
+        <span className={styles.rowMeta}>
+          {row.source}
+          {row.priority >= 3 ? " · Urgent" : row.priority === 2 ? " · High priority" : ""}
+        </span>
+      </span>
+      {showLane ? (
+        <span className={styles.laneCell}>
+          <span className={styles.pill} data-tone={LANE_TONE[row.lane]}>{LANE_LABEL[row.lane]}</span>
+        </span>
+      ) : null}
+      <span className={styles.due} data-overdue={row.overdue ? "" : undefined}>
+        {row.due ?? "No date"}
+      </span>
+    </Link>
+  );
+}
+
+function MyTasks({ rows, total }: { rows: HomeTaskRow[]; total: number }) {
+  return (
+    <section className={styles.card} aria-labelledby="my-tasks">
+      <div className={styles.cardHead}>
+        <h2 id="my-tasks" className={styles.cardTitle}>
+          My tasks <span className={styles.cardCount}>{total}</span>
+        </h2>
+        <Link href="/app/tasks" className={styles.cardLink}>
+          Open board <span aria-hidden="true">→</span>
+        </Link>
+      </div>
+      {rows.length === 0 ? (
+        <p className={styles.empty}>No open tasks. Add one when something needs doing.</p>
+      ) : (
+        <ul className={styles.list}>
+          {rows.map((row) => (
+            <li key={row.id}>
+              <TaskRow row={row} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function Deadlines({ groups }: { groups: HomeDeadlineGroup[] }) {
+  return (
+    <section className={styles.card} aria-labelledby="deadlines">
+      <div className={styles.cardHead}>
+        <h2 id="deadlines" className={styles.cardTitle}>Upcoming deadlines</h2>
+        <Link href="/app/timeline" className={styles.cardLink}>
+          Timeline <span aria-hidden="true">→</span>
+        </Link>
+      </div>
+      {groups.length === 0 ? (
+        <p className={styles.empty}>Nothing dated in the next two weeks.</p>
+      ) : (
+        groups.map((group) => (
+          <div key={group.label} className={styles.group}>
+            <p className={styles.groupLabel} data-tone={group.label === "Overdue" ? "danger" : undefined}>
+              {group.label}
+            </p>
+            <ul className={styles.list}>
+              {group.rows.map((row) => (
+                <li key={row.id}>
+                  <TaskRow row={row} showLane={false} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      )}
     </section>
   );
 }
 
 function NeedsReview({ rows }: { rows: HomeReviewRow[] }) {
   return (
-    <section aria-labelledby="needs-review" className="mb-10">
-      <SectionLabel id="needs-review">Needs review</SectionLabel>
-      <ul className="mt-3 divide-y divide-line-soft">
+    <section className={styles.card} aria-labelledby="needs-review">
+      <div className={styles.cardHead}>
+        <h2 id="needs-review" className={styles.cardTitle}>Needs review</h2>
+      </div>
+      <ul className={styles.list}>
         {rows.map((row) => (
           <li key={row.id}>
-            <Link
-              href={row.href}
-              className="group flex items-baseline gap-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--bg)]"
-            >
-              <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink group-hover:underline group-hover:underline-offset-4">
-                {row.title}
+            <Link href={row.href} className={styles.row}>
+              <span className={styles.check} data-lane="review" aria-hidden="true" />
+              <span className={styles.rowMain}>
+                <span className={styles.rowTitle}>{row.title}</span>
+                <span className={styles.rowMeta}>{row.source}</span>
               </span>
-              <span className="hidden flex-shrink-0 text-[11.5px] text-ink-quiet sm:block">
-                {row.source}
-              </span>
-              <span className="flex-shrink-0 text-[12px] text-ink-soft">
-                {row.idleDays > 0
-                  ? `waiting ${row.idleDays}d`
-                  : "in review"}
+              <span className={styles.pill} data-tone="review">
+                {row.idleDays > 0 ? `Waiting ${row.idleDays}d` : "In review"}
               </span>
             </Link>
           </li>
@@ -224,57 +225,65 @@ function NeedsReview({ rows }: { rows: HomeReviewRow[] }) {
   );
 }
 
+/** Tasks proved this Project exists, but Signal could not read its Home yet. */
+export function HomeProjectUnavailable({ project }: { project: ProjectSummary }) {
+  return (
+    <div className={`${styles.page} thin-scroll`}>
+      <div className={styles.inner}>
+        <div className={styles.centered}>
+          <h1 className={styles.title}>Home isn’t ready yet.</h1>
+          <p className={styles.subtitle}>
+            We couldn’t read {project.name} for Home right now. Your project is still available in Tasks.
+          </p>
+          <div className={styles.actions} style={{ marginTop: 24 }}>
+            <Link className={styles.buttonPrimary} href={buildProjectUrl({ surface: "tasks" }, project.id)}>
+              Open Tasks <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /**
- * New-user Home: no workspace connected yet. Welcoming, not empty —
- * points at the three products and the guided setup.
+ * New-user Home: no workspace connected yet. Welcoming, not empty:
+ * points at the guided setup and the three products.
  */
 export function HomeNewUser() {
+  const products = [
+    { href: "/app/notes", name: "Notes", line: "Capture the thinking.", icon: <ShellIcon.notes /> },
+    { href: "/app/tasks", name: "Tasks", line: "Move the work forward.", icon: <ShellIcon.tasks /> },
+    { href: "/app/timeline", name: "Timeline", line: "Make the plan visible.", icon: <ShellIcon.timeline /> },
+  ];
   return (
-    <div className="thin-scroll flex-1 overflow-auto bg-bg px-5 py-6 md:px-10 md:py-9">
-      <div className="mx-auto flex min-h-[60dvh] max-w-[560px] flex-col justify-center">
-        <span
-          aria-hidden
-          className="mb-5 inline-block h-[9px] w-[9px] rounded-full"
-          style={{ background: "var(--brand)" }}
-        />
-        <h1 className="text-[24px] font-medium tracking-tight text-ink md:text-[28px]">
-          Welcome to Signal Studio.
-        </h1>
-        <p className="mt-3 max-w-[44ch] text-[14px] leading-relaxed text-ink-soft">
-          Home is where the system tells you what matters — the briefing
-          fills as your work does. Start by setting up your workspace, or
-          step straight into a product.
-        </p>
-        <div className="mt-7">
-          <Link
-            href="/welcome"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-ink px-4 py-2.5 text-[13.5px] font-medium text-white outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[color:var(--accent)] focus-visible:ring-offset-2"
-          >
-            Set up your workspace
-            <span aria-hidden>→</span>
-          </Link>
+    <div className={`${styles.page} thin-scroll`}>
+      <div className={styles.inner}>
+        <div className={styles.centered}>
+          <h1 className={styles.title}>Welcome to Signal Studio.</h1>
+          <p className={styles.subtitle}>
+            Home shows what matters across your work, and it fills as your work does. Set up your workspace to begin.
+          </p>
+          <div className={styles.actions} style={{ marginTop: 24 }}>
+            <Link href="/welcome" className={styles.buttonPrimary}>
+              Set up your workspace <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+          <ul className={styles.productList}>
+            {products.map((product) => (
+              <li key={product.href}>
+                <Link href={product.href} className={styles.productLink}>
+                  <span className={styles.productIcon}>{product.icon}</span>
+                  <span className={styles.rowMain}>
+                    <span className={styles.rowTitle}>{product.name}</span>
+                    <span className={styles.rowMeta}>{product.line}</span>
+                  </span>
+                  <ShellIcon.arrowRight />
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
-        <ul className="mt-9 divide-y divide-line-soft border-t border-line-soft">
-          {[
-            { href: "/app/notes", name: "Notes", line: "Capture the thinking." },
-            { href: "/app/tasks", name: "Tasks", line: "Move the work forward." },
-            { href: "/app/timeline", name: "Timeline", line: "Make the plan visible." },
-          ].map((product) => (
-            <li key={product.href}>
-              <Link
-                href={product.href}
-                className="group flex items-baseline justify-between gap-4 py-3.5 outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)]"
-              >
-                <span className="text-[14px] font-medium text-ink group-hover:underline group-hover:underline-offset-4">
-                  {product.name}
-                </span>
-                <span className="text-[12.5px] text-ink-quiet">
-                  {product.line}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
       </div>
     </div>
   );

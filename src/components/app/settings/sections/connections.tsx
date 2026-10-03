@@ -13,7 +13,7 @@ import { changeProjectDriveOwnerAction, getProjectDriveHandoverAction } from "@/
 export function ConnectionsSection({ projectId, canManage }: { projectId: string | null; canManage: boolean }) {
   if (!projectDriveUiEnabled()) return null;
   if (isDemoMode()) return <ConnectionsReview />;
-  if (!projectId || !canManage) return <p className="text-[13px] text-ink-soft">A board owner can manage Connections and check Google Drive access. Ask them if you cannot open a file.</p>;
+  if (!projectId || !canManage) return <p className="text-[13px] text-[color:var(--v3-text-2)]">A board owner can manage Connections and check Google Drive access. Ask them if you cannot open a file.</p>;
   return <LiveConnections key={projectId} projectId={projectId} />;
 }
 
@@ -80,6 +80,6 @@ function LiveConnections({ projectId }: { projectId: string }) {
     } catch { setMessage("The change could not be confirmed. Check the current connection before trying again."); }
     finally { await refresh(); locked.current = false; }
   }
-  if (!status) return <section aria-label="Connections"><h2 className="text-[22px] font-semibold text-ink">Connections</h2><p role="status" className="my-4 text-[13px] text-ink-soft">{busy ? "Loading connection and Google access…" : message}</p>{!busy ? <button className={driveButton} onClick={() => void refresh()}>Check again</button> : null}</section>;
+  if (!status) return <section aria-label="Connections"><h2 className="text-[18px] font-semibold leading-7 tracking-[-0.015em] text-[color:var(--v3-text)]">Connections</h2><p role="status" className="my-4 text-[13px] text-[color:var(--v3-text-2)]">{busy ? "Loading connection and Google access…" : message}</p>{!busy ? <button className={driveButton} onClick={() => void refresh()}>Check again</button> : null}</section>;
   return <ConnectionsView status={status} busy={busy} message={message} confirmation={confirmation} onRefresh={() => void refresh()} onConnect={() => void act("connect")} onEnable={() => void act("enable")} onRestore={() => void act("restore")} onDisconnect={() => setConfirmation(true)} onCancelDisconnect={() => setConfirmation(false)} onConfirmDisconnect={() => void act("disconnect")} onRetryDisconnect={() => void act("disconnect")} handover={<DriveHandoverView read={handover} busy={busy} onSubmit={target => void changeOwner(target)} />} />;
 }

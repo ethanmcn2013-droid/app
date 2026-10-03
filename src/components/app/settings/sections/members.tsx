@@ -11,8 +11,14 @@ import {
   setMemberRoleAction,
 } from "@/server/actions/settings";
 import { SectionHeader } from "../settings-app";
+import { Avatar, Badge, Callout, DialogBody, Hint, Segmented, SettingsGroup, SettingsListRow, cx, ui } from "../settings-ui";
 import type { SettingsMember } from "../settings-app";
 import type { MemberCapacity } from "@/server/db/membership";
+
+const ROLE_OPTIONS = [
+  { value: "member", label: "Member" },
+  { value: "owner", label: "Owner" },
+] as const;
 
 function fmtJoined(iso: string | null): string {
   if (!iso) return "—";
@@ -157,7 +163,7 @@ export function MembersSection({
           projectId ?? undefined,
         );
         if (result.reason === "already-member") {
-          setInviteNotice(`${email} is already a member of this workspace.`);
+          setInviteNotice(`${email} is already a member of this project.`);
           return;
         }
         if (result.reason === "cooldown") {
@@ -233,7 +239,7 @@ export function MembersSection({
         if (result.reason === "already-member") {
           toast("Already a member", {
             tone: "info",
-            body: `${invite.email} has already joined the workspace.`,
+            body: `${invite.email} has already joined the project.`,
           });
           return;
         }
@@ -292,234 +298,209 @@ export function MembersSection({
   return (
     <div>
       <SectionHeader
-        eyebrow="Members"
-        title="Who’s in this project"
-        description="Roles, tenure, and the door. The owner controls who stays, everyone else can look but not touch."
+        title="Members"
+        description="Who can open this project. Owners invite people, change roles and remove access. Everyone else can see the list."
       />
 
       {/* Invite */}
-      <form
-        onSubmit={handleInvite}
-        className="rounded-xl border border-line-soft bg-bg-elevated p-5"
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-quiet">
-              Invite by email
-            </div>
-            <p className="mt-1 max-w-[520px] text-[12.5px] leading-[1.55] text-ink-soft">
-              Add their email to create a seven-day invite. If email delivery is
-              available, we&apos;ll send the link. Otherwise, copy it below and
-              share it with them. Only that email address can accept.
-            </p>
-          </div>
-          {showCounter ? (
-            <span
-              className={
-                "flex-shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums " +
-                (isCapped
-                  ? "bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-100"
-                  : "bg-bg-sunken text-ink-soft")
-              }
+      <SettingsGroup
+        title="Invite people"
+        description="Each invite lasts seven days. Only the email address it names can accept it."
+        aside={
+          showCounter ? (
+            <Badge
+              tone={isCapped ? "danger" : "neutral"}
               title="Free + Pro projects include the owner plus three editing guests."
             >
               {memberCapacity.current} of {memberCapacity.max} used
-            </span>
-          ) : null}
-        </div>
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-          <input
-            type="email"
-            value={inviteEmail}
-            onChange={(e) => { setInviteEmail(e.target.value); setInviteNotice(null); }}
-            placeholder="teammate@yourdomain.com"
-            disabled={!canEdit || pending || isCapped}
-            className="min-h-[44px] flex-1 rounded-md border border-line bg-white px-3 py-1.5 text-[13px] text-ink shadow-sm focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/15 disabled:opacity-60"
-          />
-          <select
-            value={inviteRole}
-            onChange={(e) => setInviteRole(e.target.value as "member" | "owner")}
-            disabled={!canEdit || pending || isCapped}
-            className="min-h-[44px] rounded-md border border-line bg-white px-2 py-1.5 text-[13px] text-ink shadow-sm focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/15 disabled:opacity-60"
-            aria-label="Role for invited member"
-          >
-            <option value="member">Member</option>
-            <option value="owner">Owner</option>
-          </select>
-          <button
-            type="submit"
-            disabled={!canEdit || pending || isCapped || !inviteEmail.trim()}
-            className="min-h-[44px] rounded-full bg-ink px-4 py-1.5 text-[12.5px] font-medium text-white shadow-sm hover:bg-ink-soft disabled:opacity-50"
-          >
-            Create invite
-          </button>
-        </div>
-        {inviteNotice ? (
-          <p className="mt-2 text-[12px] leading-[1.5] text-ink-soft">
-            {inviteNotice}
+            </Badge>
+          ) : null
+        }
+      >
+        <form onSubmit={handleInvite} className="px-4 py-4 md:px-5">
+          <label htmlFor="invite-email" className="text-[13.5px] font-medium leading-5 text-[color:var(--v3-text)]">
+            Email address
+          </label>
+          <p className="mt-0.5 text-[12.5px] leading-[1.5] text-[color:var(--v3-text-2)]">
+            If email delivery is available, we send the link. Otherwise, copy it
+            below and share it with them.
           </p>
-        ) : null}
-        {canEdit && manualInvite ? (
-          <div className="mt-3 rounded-lg border border-line-soft bg-bg-sunken/40 p-3">
-            <label htmlFor="manual-invite-link" className="block text-[12px] font-medium text-ink">
-              Link for {manualInvite.email}
-            </label>
-            <p className="mt-1 text-[11.5px] text-ink-soft">
-              Only someone signed in with this verified email can accept. The link expires with the invite.
-            </p>
-            <input id="manual-invite-link" type="text" readOnly value={manualInvite.url}
-              onFocus={(event) => event.currentTarget.select()}
-              aria-label={`Invite link for ${manualInvite.email}`}
-              className="mt-2 min-h-[44px] w-full rounded-md border border-line bg-white px-3 text-[12px] text-ink focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/15" />
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+            <input
+              id="invite-email"
+              type="email"
+              value={inviteEmail}
+              onChange={(e) => { setInviteEmail(e.target.value); setInviteNotice(null); }}
+              placeholder="teammate@yourdomain.com"
+              disabled={!canEdit || pending || isCapped}
+              className={cx(ui.input, "sm:flex-1")}
+            />
+            <Segmented
+              value={inviteRole}
+              onChange={setInviteRole}
+              disabled={!canEdit || pending || isCapped}
+              label="Role for invited member"
+              options={ROLE_OPTIONS}
+            />
+            <button
+              type="submit"
+              disabled={!canEdit || pending || isCapped || !inviteEmail.trim()}
+              className={ui.primary}
+            >
+              Create invite
+            </button>
           </div>
-        ) : null}
-        {!canEdit ? (
-          <p className="mt-2 text-[11.5px] text-ink-quiet">
-            Only the owner can invite. Ask them.
-          </p>
-        ) : isCapped ? (
-          <p className="mt-3 text-[11.5px] leading-[1.55] text-ink-soft">
-            All free seats are taken, owner plus three editing guests.{" "}
-            <a
-              href="https://signalstudio.ie/pricing"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-brand underline-offset-2 hover:underline"
-            >
-              Upgrade to Workspace
-            </a>{" "}
-            for unlimited members per workspace, no per-seat tax.
-          </p>
-        ) : showCounter ? (
-          <p className="mt-3 text-[11.5px] leading-[1.55] text-ink-quiet">
-            Free includes three editing guests beyond the owner.{" "}
-            <a
-              href="https://signalstudio.ie/pricing"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-ink-soft underline-offset-2 hover:text-ink hover:underline"
-            >
-              Workspace
-            </a>{" "}
-            unlocks unlimited members.
-          </p>
-        ) : null}
-      </form>
+          {inviteNotice ? (
+            <p className="mt-2.5 text-[12.5px] leading-[1.5] text-[color:var(--v3-text-2)]">
+              {inviteNotice}
+            </p>
+          ) : null}
+          {canEdit && manualInvite ? (
+            <div className="mt-3">
+              <Callout>
+                <label htmlFor="manual-invite-link" className="block text-[12.5px] font-medium text-[color:var(--v3-text)]">
+                  Link for {manualInvite.email}
+                </label>
+                <p className="mt-0.5">
+                  Only someone signed in with this verified email can accept. The link expires with the invite.
+                </p>
+                <input id="manual-invite-link" type="text" readOnly value={manualInvite.url}
+                  onFocus={(event) => event.currentTarget.select()}
+                  aria-label={`Invite link for ${manualInvite.email}`}
+                  className={cx(ui.input, "mt-2 font-mono text-[12px]")} />
+              </Callout>
+            </div>
+          ) : null}
+          {!canEdit ? (
+            <div className="mt-3">
+              <Hint>Only the owner can invite people. Ask them.</Hint>
+            </div>
+          ) : isCapped ? (
+            <p className="mt-3 text-[12.5px] leading-[1.55] text-[color:var(--v3-text-2)]">
+              All free seats are taken: the owner plus three editing guests.{" "}
+              <a
+                href="https://signalstudio.ie/pricing"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={ui.link}
+              >
+                Compare plans
+              </a>
+            </p>
+          ) : showCounter ? (
+            <p className="mt-3 text-[12.5px] leading-[1.55] text-[color:var(--v3-text-3)]">
+              Free includes three editing guests beyond the owner.{" "}
+              <a
+                href="https://signalstudio.ie/pricing"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={ui.link}
+              >
+                Compare plans
+              </a>
+            </p>
+          ) : null}
+        </form>
+      </SettingsGroup>
 
       {/* Pending invites */}
       {pendingInvites.length > 0 && (
-        <div className="mt-4 overflow-hidden rounded-xl border border-line-soft bg-bg-elevated">
-          <div className="flex items-center justify-between border-b border-line-soft/70 bg-bg-sunken/30 px-5 py-2.5">
-            <div className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-ink-quiet">
-              Pending invites
-            </div>
-            <div className="text-[11px] text-ink-quiet tabular-nums">
-              {pendingInvites.length}{" "}
-              awaiting
-            </div>
-          </div>
-          <ul>
-            {pendingInvites.map((invite) => (
-              <li
-                key={invite.token}
-                className="flex flex-wrap items-center gap-2 border-b border-line-soft/60 px-5 py-3 last:border-b-0"
-              >
-                <div className="min-w-[180px] flex-1">
-                  <div className="truncate text-[13px] font-medium text-ink">
-                    {invite.email}
-                  </div>
-                  <div className="text-[11.5px] text-ink-quiet">
-                    {invite.lastSentAt === null ? "Created" : "Sent"}{" "}
-                    {fmtAgo(invite.lastSentAt === null ? invite.createdAt : new Date(invite.lastSentAt).toISOString())} &middot;{" "}
-                    {fmtUntil(invite.expiresAt)}
-                  </div>
+        <SettingsGroup
+          title="Pending invites"
+          aside={
+            <span className="text-[12px] tabular-nums text-[color:var(--v3-text-3)]">
+              {pendingInvites.length} waiting
+            </span>
+          }
+        >
+          {pendingInvites.map((invite) => (
+            <SettingsListRow key={invite.token} className="flex-wrap">
+              <div className="min-w-[180px] flex-1">
+                <div className="truncate text-[13px] font-medium text-[color:var(--v3-text)]">
+                  {invite.email}
                 </div>
-                {canEdit ? (
-                  <button type="button" onClick={() => void handleCopyLink(invite)}
-                    className="min-h-[44px] rounded-full border border-line bg-white px-3 text-[11.5px] font-medium text-ink-soft hover:border-ink-soft/30 hover:text-ink">
-                    Copy link
-                  </button>
-                ) : null}
-                {canEdit ? (
-                  <button
-                    type="button"
-                    onClick={() => handleResend(invite)}
-                    disabled={pending}
-                    className="min-h-[44px] rounded-full border border-line bg-white px-3 text-[11.5px] font-medium text-ink-soft hover:border-ink-soft/30 hover:text-ink disabled:opacity-60"
-                  >
-                    {invite.lastSentAt === null ? "Send email" : "Resend"}
-                  </button>
-                ) : null}
-                {canEdit ? (
-                  <button
-                    type="button"
-                    onClick={() => handleRevoke(invite)}
-                    disabled={pending}
-                    className="min-h-[44px] min-w-[44px] rounded-md p-1.5 text-ink-quiet transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:opacity-60"
-                    aria-label={`Revoke invite for ${invite.email}`}
-                    title="Revoke invite"
-                  >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                    >
-                      <polyline points="3 6 5 6 21 6" />
-                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                    </svg>
-                  </button>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </div>
+                <div className="text-[12px] text-[color:var(--v3-text-3)]">
+                  {invite.lastSentAt === null ? "Created" : "Sent"}{" "}
+                  {fmtAgo(invite.lastSentAt === null ? invite.createdAt : new Date(invite.lastSentAt).toISOString())} &middot;{" "}
+                  {fmtUntil(invite.expiresAt)}
+                </div>
+              </div>
+              {canEdit ? (
+                <button type="button" onClick={() => void handleCopyLink(invite)} className={ui.button}>
+                  Copy link
+                </button>
+              ) : null}
+              {canEdit ? (
+                <button
+                  type="button"
+                  onClick={() => handleResend(invite)}
+                  disabled={pending}
+                  className={ui.button}
+                >
+                  {invite.lastSentAt === null ? "Send email" : "Resend"}
+                </button>
+              ) : null}
+              {canEdit ? (
+                <button
+                  type="button"
+                  onClick={() => handleRevoke(invite)}
+                  disabled={pending}
+                  className={ui.icon}
+                  aria-label={`Revoke invite for ${invite.email}`}
+                  title="Revoke invite"
+                >
+                  <TrashIcon />
+                </button>
+              ) : null}
+            </SettingsListRow>
+          ))}
+        </SettingsGroup>
       )}
 
-      {/* Member list */}
-      <div className="mt-4 overflow-hidden rounded-xl border border-line-soft bg-bg-elevated">
-        <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-4 border-b border-line-soft/70 bg-bg-sunken/30 px-5 py-2.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-ink-quiet">
-          <div>Person</div>
-          <div className="hidden sm:block">Joined</div>
-          <div>Role</div>
-          <div />
+      {/* Member list: a table from sm up (name, joined, role, remove), a
+          two-line list below it. The header row is visual only; each row
+          still says "Joined …" to assistive technology. */}
+      <SettingsGroup
+        title="People"
+        aside={
+          <span className="text-[12px] tabular-nums text-[color:var(--v3-text-3)]">
+            {members.length} {members.length === 1 ? "person" : "people"}
+          </span>
+        }
+      >
+        <div
+          aria-hidden
+          className="hidden grid-cols-[minmax(0,1fr)_120px_116px_32px] items-center gap-4 rounded-t-[var(--v3-radius-lg)] bg-[var(--v3-sunken)] px-5 py-2 text-[12px] font-medium text-[color:var(--v3-text-3)] sm:grid"
+        >
+          <span>Name</span>
+          <span>Joined</span>
+          <span>Role</span>
+          <span />
         </div>
-        <ul>
+        <ul className="divide-y divide-[color:var(--v3-border)]">
           {members.map((m) => {
             const isMe = m.userId === currentUserId;
             const isOwner = m.role === "owner";
             return (
               <li
                 key={m.userId}
-                className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-4 border-b border-line-soft/60 px-5 py-3 last:border-b-0"
+                className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_120px_116px_32px] sm:gap-4 md:px-5"
               >
                 <div className="flex min-w-0 items-center gap-3">
-                  <span
-                    className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white"
-                    style={{
-                      background: m.color ?? "var(--ink-quiet)",
-                    }}
-                    aria-hidden
-                  >
-                    {m.initials ?? "?"}
-                  </span>
+                  <Avatar initials={m.initials} color={m.color} />
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2 text-[13px] font-medium text-ink">
+                    <div className="flex items-center gap-2 text-[13.5px] font-medium text-[color:var(--v3-text)]">
                       <span className="truncate">{displayName(m)}</span>
-                      {isMe ? (
-                        <span className="rounded bg-bg-sunken px-1.5 py-0.5 text-[10px] font-medium text-ink-quiet">
-                          you
-                        </span>
-                      ) : null}
+                      {isMe && displayName(m).trim().toLowerCase() !== "you" ? <Badge>You</Badge> : null}
                     </div>
-                    <div className="truncate text-[11.5px] text-ink-quiet">
+                    <div className="truncate text-[12px] text-[color:var(--v3-text-3)]">
                       {m.email ?? m.handle ?? m.userId}
+                      <span className="sm:hidden"> &middot; {joinedLabel(m.joinedAt)}</span>
                     </div>
                   </div>
                 </div>
-                <div className="hidden text-[12px] tabular-nums text-ink-quiet sm:block">
+                <div className="hidden text-[12.5px] tabular-nums text-[color:var(--v3-text-2)] sm:block">
+                  <span className="sr-only">Joined </span>
                   {fmtJoined(m.joinedAt)}
                 </div>
                 <div>
@@ -530,31 +511,34 @@ export function MembersSection({
                           ref={ref}
                           onClick={onClick}
                           className={
-                            "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11.5px] font-medium transition-colors " +
+                            "inline-flex h-[26px] items-center gap-1 rounded-full py-0 pl-2.5 pr-2 text-[12px] font-medium transition-[background-color,box-shadow] focus-visible:rounded-full! pointer-coarse:h-[44px] " +
                             (isOwner
-                              ? "border-brand/30 bg-brand-soft text-brand hover:border-brand/50"
-                              : "border-line bg-white text-ink-soft hover:border-ink-soft/30 hover:text-ink")
+                              ? "bg-[var(--v3-accent-soft)] text-[color:var(--v3-accent)] hover:shadow-[0_0_0_1px_color-mix(in_srgb,var(--v3-accent)_45%,transparent)]"
+                              : "bg-[var(--v3-sunken)] text-[color:var(--v3-text-2)] shadow-[0_0_0_1px_var(--v3-border)] hover:text-[color:var(--v3-text)] hover:shadow-[0_0_0_1px_var(--v3-border-strong)]")
                           }
                         >
                           {isOwner ? "Owner" : "Member"}
                           <svg
-                            width="9"
-                            height="9"
-                            viewBox="0 0 24 24"
+                            width="12"
+                            height="12"
+                            viewBox="0 0 16 16"
                             fill="none"
                             stroke="currentColor"
-                            strokeWidth="2.4"
+                            strokeWidth="1.6"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
                           >
-                            <polyline points="6 9 12 15 18 9" />
+                            <path d="m4.5 6.5 3.5 3.5 3.5-3.5" />
                           </svg>
                         </button>
                       )}
                       align="end"
-                      width={170}
+                      width={200}
                       aria-label="Change member role"
                     >
                       {(close) => (
-                        <div className="flex flex-col">
+                        <div className="flex flex-col gap-0.5">
                           <RolePopoverItem
                             active={isOwner}
                             label="Owner"
@@ -575,81 +559,53 @@ export function MembersSection({
                       )}
                     </Popover>
                   ) : (
-                    <span
-                      className={
-                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11.5px] font-medium " +
-                        (isOwner
-                          ? "bg-brand-soft text-brand"
-                          : "bg-bg-sunken text-ink-quiet")
-                      }
-                    >
+                    <Badge tone={isOwner ? "accent" : "neutral"}>
                       {isOwner ? "Owner" : "Member"}
-                    </span>
+                    </Badge>
                   )}
                 </div>
-                <div>
+                <div className="flex justify-end">
                   {canEdit && !isMe ? (
                     <button
                       type="button"
                       onClick={() => setRemoveTarget(m)}
                       disabled={pending}
-                      className="rounded-md p-1.5 text-ink-quiet transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:opacity-60"
+                      className={ui.icon}
                       aria-label={`Remove ${displayName(m)}`}
+                      title="Remove"
                     >
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                      >
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                        <line x1="10" y1="11" x2="10" y2="17" />
-                        <line x1="14" y1="11" x2="14" y2="17" />
-                      </svg>
+                      <TrashIcon />
                     </button>
                   ) : (
-                    <span className="block w-[26px]" aria-hidden />
+                    <span className="block w-[30px]" aria-hidden />
                   )}
                 </div>
               </li>
             );
           })}
         </ul>
-      </div>
+      </SettingsGroup>
 
       {/* Recent activity, Sprint 2 cycle 10.4, plain-English prose */}
       {recentActivity.length > 0 && (
-        <div className="mt-6 overflow-hidden rounded-xl border border-line-soft bg-bg-elevated">
-          <div className="flex items-center justify-between border-b border-line-soft/70 bg-bg-sunken/30 px-5 py-2.5">
-            <div className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-ink-quiet">
-              Recent
-            </div>
-            <div className="text-[11px] text-ink-quiet">
-              Last 10 changes in plain English
-            </div>
-          </div>
-          <ul>
-            {recentActivity.map((line) => (
-              <li
-                key={line.id}
-                className="flex items-baseline justify-between gap-4 border-b border-line-soft/60 px-5 py-2.5 last:border-b-0"
+        <SettingsGroup
+          title="Recent changes"
+          description="The last 10 changes, in plain English."
+        >
+          {recentActivity.map((line) => (
+            <SettingsListRow key={line.id} className="items-baseline justify-between gap-4 py-2.5">
+              <p className="min-w-0 text-[13px] leading-[1.45] text-[color:var(--v3-text)]">
+                {line.sentence}
+              </p>
+              <span
+                className="shrink-0 text-[12px] tabular-nums text-[color:var(--v3-text-3)]"
+                title={new Date(line.createdAt).toLocaleString()}
               >
-                <p className="min-w-0 text-[13px] leading-[1.45] text-ink">
-                  {line.sentence}
-                </p>
-                <span
-                  className="flex-shrink-0 text-[11px] tabular-nums text-ink-quiet"
-                  title={new Date(line.createdAt).toLocaleString()}
-                >
-                  {line.relative}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+                {line.relative}
+              </span>
+            </SettingsListRow>
+          ))}
+        </SettingsGroup>
       )}
 
       {/* Remove confirmation */}
@@ -659,40 +615,61 @@ export function MembersSection({
         labelledBy="remove-member-title"
         width={420}
       >
-        <div className="px-5 py-5">
-          <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-rose-700">
-            Confirm
-          </div>
-          <h3
-            id="remove-member-title"
-            className="mt-1 text-[17px] font-semibold tracking-tight"
-          >
-            Remove {removeTarget ? displayName(removeTarget) : "this person"}?
-          </h3>
-          <p className="mt-2 text-[13px] leading-[1.55] text-ink-soft">
-            They lose access to the workspace immediately. Their tasks
-            and comments stay; only the membership is revoked.
-          </p>
-          <div className="mt-5 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setRemoveTarget(null)}
-              className="rounded-full border border-line bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink-soft hover:border-ink-soft/30 hover:text-ink"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => removeTarget && handleRemove(removeTarget)}
-              className="rounded-full bg-rose-600 px-3 py-1.5 text-[12.5px] font-medium text-white shadow-sm hover:bg-rose-700 disabled:opacity-60"
-            >
-              {pending ? "Removing…" : "Remove member"}
-            </button>
-          </div>
-        </div>
+        <DialogBody
+          titleId="remove-member-title"
+          tone="danger"
+          title={<>Remove {removeTarget ? displayName(removeTarget) : "this person"}?</>}
+          actions={
+            <>
+              <button
+                type="button"
+                onClick={() => setRemoveTarget(null)}
+                className={ui.button}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => removeTarget && handleRemove(removeTarget)}
+                className={ui.dangerSolid}
+              >
+                {pending ? "Removing…" : "Remove member"}
+              </button>
+            </>
+          }
+        >
+          They lose access to this project straight away. Their tasks and
+          comments stay; only the membership ends.
+        </DialogBody>
       </Dialog>
     </div>
+  );
+}
+
+function joinedLabel(iso: string | null): string {
+  const joined = fmtJoined(iso);
+  if (joined === "—") return "Joined date unknown";
+  return joined === "Today" ? "Joined today" : `Joined ${joined}`;
+}
+
+function TrashIcon() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M2.75 4.25h10.5M6.25 4.25V3a.75.75 0 0 1 .75-.75h2a.75.75 0 0 1 .75.75v1.25" />
+      <path d="M4 4.25 4.6 12.6a1 1 0 0 0 1 .9h4.8a1 1 0 0 0 1-.9l.6-8.35" />
+      <path d="M6.75 7v3.75M9.25 7v3.75" />
+    </svg>
   );
 }
 
@@ -712,29 +689,29 @@ function RolePopoverItem({
       type="button"
       onClick={onClick}
       className={
-        "flex items-start gap-2 rounded-md px-2 py-1.5 text-left transition-colors " +
-        (active ? "bg-brand-soft" : "hover:bg-bg-sunken")
+        "flex items-start gap-2.5 rounded-[var(--v3-radius-sm)] px-2 py-1.5 text-left transition-colors " +
+        (active ? "bg-[var(--v3-accent-soft)]" : "hover:bg-[var(--v3-hover)]")
       }
     >
       <span
         className={
-          "mt-0.5 flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center rounded-full border " +
+          "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border " +
           (active
-            ? "border-brand bg-brand text-white"
-            : "border-line bg-white")
+            ? "border-[color:var(--v3-accent)] bg-[var(--v3-accent)] text-[color:var(--v3-on-accent)]"
+            : "border-[color:var(--v3-border-strong)] bg-[var(--v3-surface)]")
         }
       >
         {active ? (
-          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5">
-            <polyline points="20 6 9 17 4 12" />
+          <svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="m3.5 8.5 3 3 6-7" />
           </svg>
         ) : null}
       </span>
       <span className="flex-1">
-        <span className="block text-[12.5px] font-medium text-ink">
+        <span className="block text-[13px] font-medium text-[color:var(--v3-text)]">
           {label}
         </span>
-        <span className="block text-[11px] text-ink-quiet">
+        <span className="block text-[12px] text-[color:var(--v3-text-3)]">
           {description}
         </span>
       </span>

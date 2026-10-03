@@ -45,5 +45,6 @@ export function isFloorPath(pathname: string): boolean {
 }
 
 export function isBareChromePath(pathname: string): boolean {
-  return isBareArtifactPath(pathname) || isTimelinePreviewPath(pathname) || isFloorPath(pathname);
+  // v3 shell: Tasks now lives inside the shared sidebar and top bar.
+  return isBareArtifactPath(pathname) || isTimelinePreviewPath(pathname);
 }

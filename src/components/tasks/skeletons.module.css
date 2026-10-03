@@ -1,0 +1,217 @@
+/* Tasks skeletons: the settled geometry in --v3-fill, shimmer only when
+   motion is welcome. */
+
+.bar {
+  display: block;
+  flex: none;
+  background: var(--v3-fill);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .bar::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--v3-surface) 55%, transparent), transparent);
+    animation: shimmer 1.2s var(--v3-ease) infinite;
+  }
+}
+
+@keyframes shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.tile {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: var(--v3-fill);
+}
+
+.faces {
+  display: inline-flex;
+}
+
+.faces span,
+.face {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--v3-fill);
+  box-shadow: 0 0 0 2px var(--v3-canvas);
+}
+
+.faces span + span {
+  margin-left: -5px;
+}
+
+.glyph {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border-radius: 999px;
+  border: 1.5px solid var(--v3-border-strong);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 32px 16px;
+}
+
+.board {
+  display: flex;
+  gap: 12px;
+  padding: 4px 32px 24px;
+  overflow: hidden;
+}
+
+.lane {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1 1 0;
+  min-width: 248px;
+  max-width: 340px;
+  padding: 12px;
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-sunken);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--v3-border);
+  background: var(--v3-surface);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  max-width: 1180px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 4px 32px 24px;
+}
+
+.listHead,
+.listRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 44px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--v3-border);
+}
+
+.calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 1180px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 4px 32px 24px;
+}
+
+.calendarBare {
+  width: 100%;
+}
+
+.calendarPhone {
+  display: none;
+}
+
+.calendarBody {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 16px;
+}
+
+.month {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius-lg);
+  overflow: hidden;
+}
+
+.day {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 96px;
+  padding: 8px;
+  border-right: 1px solid var(--v3-border);
+  border-bottom: 1px solid var(--v3-border);
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius-lg);
+}
+
+.agendaGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 0 8px;
+}
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px;
+}
+
+@media (max-width: 767px) {
+  .header,
+  .board,
+  .list,
+  .calendar {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .lane {
+    min-width: calc(100vw - 56px);
+  }
+  .calendarBody {
+    display: none;
+  }
+  .calendarPhone {
+    display: block;
+  }
+  .calendarPhone > div {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .pane {
+    display: none;
+  }
+}

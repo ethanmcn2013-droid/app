@@ -66,13 +66,13 @@ function ConversationWorkspaceActor({ actorId, projects, initialProjectId, initi
   const [direct, setDirect] = useState<DirectMessageScope | null>(null);
   const [savedScope, setSavedScope] = useState<SavedConversationScope | null>(null);
   const { drafts: draftCache, scroll: scrollCache, outgoing: outgoingCache } = useConversationCaches(actorId);
-  if (!projectId || projects.length === 0) return <main className={styles.noProjects}><h1>Messages</h1><p>Add a Project before starting a Project conversation.</p></main>;
+  if (!projectId || projects.length === 0) return <main className={styles.noProjects}><h1>Chat</h1><p>Add a Project before starting a Project conversation.</p></main>;
   const selected = projects.find((project) => project.id === projectId) ?? { id: projectId, name: "Project" };
   const directId = directMessagesEnabled ? (savedScope?.kind === "dm" ? savedScope.conversationId : direct?.conversationId) : undefined;
   const openSavedScope = (next: SavedConversationScope) => { if (next.kind === "dm" && !directMessagesEnabled) return; setDirect(null); setProjectId(next.projectId); setSavedScope(next); };
   return <section className={styles.workspace} data-view={view}>
     <aside className={styles.projectList}>
-      <div className={styles.listHeading}><h1>Messages</h1><span>Project conversations</span></div>
+      <div className={styles.listHeading}><h1>Chat</h1><span>Project conversations</span></div>
       {projects.map((project) => <button aria-current={project.id === selected.id ? "page" : undefined} aria-label={project.name} key={project.id} onClick={() => { setSavedScope(null); setDirect(null); setProjectId(project.id); }} type="button"><span>{project.name.slice(0, 2).toUpperCase()}</span><strong>{project.name}</strong></button>)}
       {directMessagesEnabled ? <DirectMessageDirectory key={selected.id} actorId={actorId} projectId={selected.id} fixtureActor={fixtureActor} selectedId={directId} onSelect={(next) => { setSavedScope(null); setDirect(next); }} /> : null}
       <TaskDiscussionDirectory key={`tasks:${selected.id}`} projectId={selected.id} fixtureActor={fixtureActor} />

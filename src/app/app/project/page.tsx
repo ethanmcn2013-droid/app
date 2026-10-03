@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getProjectOverviewData } from "@/server/actions/project-overview";
-import { ProjectOverview } from "@/components/app/project/project-overview";
+import { ProjectsHub } from "@/components/app/project/projects-hub";
+import { loadProjectHub } from "@/server/projects/project-hub";
 import { TasksRuntimePageMount } from "@/components/app/tasks-runtime-mount";
 import { resolveProjectForRoute } from "@/server/projects/route-authz";
 import { PROJECT_APP_PATH } from "@/lib/product-urls";
@@ -103,7 +104,13 @@ export default async function ProjectPage({
     redirect(canonicalProjectUrl(project.canonicalRedirectTo));
   }
 
-  const data = await getProjectOverviewData(authorized);
+  // The index of every Project the caller can open reads the same authorized
+  // membership catalog as the chooser (null with Active Project V3 off, which
+  // leaves the overview as the whole page). Read alongside the overview.
+  const [data, hub] = await Promise.all([
+    getProjectOverviewData(authorized),
+    loadProjectHub(authorized),
+  ]);
 
   // See the docblock. Refuse rather than render another Project's overview.
   if (data.workspaceId !== authorized) return <Unavailable />;
@@ -113,7 +120,7 @@ export default async function ProjectPage({
   // consumes it (D-022).
   return (
     <TasksRuntimePageMount searchParams={searchParams}>
-      <ProjectOverview key={authorized} data={data} />
+      <ProjectsHub key={authorized} hub={hub} data={data} />
     </TasksRuntimePageMount>
   );
 }

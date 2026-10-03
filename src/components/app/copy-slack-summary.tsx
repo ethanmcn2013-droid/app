@@ -125,7 +125,7 @@ export function CopySlackSummary({
       type="button"
       onClick={onCopy}
       aria-label="Copy this week as Slack-ready text"
-      className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-md border border-line-soft bg-white px-2.5 py-1.5 text-[12px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink"
+      className="inline-flex h-[30px] flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[var(--v3-radius)] border border-[color:var(--v3-border)] bg-[color:var(--v3-surface)] px-[11px] text-[12.5px] font-medium text-[color:var(--v3-text)] shadow-[var(--v3-shadow-1)] transition-colors hover:border-[color:var(--v3-border-strong)] hover:bg-[color:var(--v3-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--v3-accent)]"
     >
       {copied ? (
         <>

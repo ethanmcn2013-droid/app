@@ -18,6 +18,7 @@ import {
   getProjectsForWorkspace,
 } from "@/modules/timeline/server/db/timeline-queries";
 import { latestPublicationForProject } from "./project-publications";
+import styles from "./preview.module.css";
 
 export const metadata: Metadata = {
   title: "Preview · Timeline · Signal Studio",
@@ -48,7 +49,7 @@ export default async function TimelineProjectPreviewPage({
   searchParams,
 }: {
   params: Promise<{ projectSlug: string }>;
-  searchParams: Promise<{ workspaceId?: string; planningPeriodId?: string }>;
+  searchParams: Promise<{ workspaceId?: string; planningPeriodId?: string; device?: string }>;
 }) {
   const userId = await requireUser();
   const [{ projectSlug }, requested] = await Promise.all([params, searchParams]);
@@ -100,34 +101,22 @@ export default async function TimelineProjectPreviewPage({
 
   if (!publication) {
     return (
-      <div
-        data-timeline-module
-        className="mx-auto flex w-full max-w-3xl flex-1 items-center px-5 py-16 sm:px-8"
-      >
-        <section className="w-full rounded-2xl border border-dashed border-line-soft bg-bg-sunken p-7 text-center sm:p-10">
-          <p className="text-xs font-medium text-ink-quiet">
-            Preview
-          </p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-ink">
-            There is nothing to preview yet.
+      <div data-timeline-module className={styles.emptyPage}>
+        <section className={styles.emptyCard} aria-labelledby="preview-empty-title">
+          <p className={styles.emptyEyebrow}>Preview</p>
+          <h1 id="preview-empty-title" className={styles.emptyTitle}>
+            There is nothing to preview yet
           </h1>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-ink-soft">
-            A preview shows the page people actually receive, and that page only
-            exists once you publish. Your own plan is not it. Showing it here
-            would suggest people can read work they cannot.
+          <p className={styles.emptyBody}>
+            A preview shows the page guests actually receive, and that page only exists once you publish. Your own
+            plan is not it; showing it here would suggest guests can read work they cannot.
           </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-2">
-            <Link
-              href={manageHref}
-              className="inline-flex min-h-[44px] items-center rounded-lg bg-ink px-4 text-sm font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
-            >
-              Pick what to publish
+          <div className={styles.emptyActions}>
+            <Link href={manageHref} className={styles.primary}>
+              Choose what to share
             </Link>
-            <Link
-              href={backHref}
-              className="inline-flex min-h-[44px] items-center rounded-lg border border-line-soft bg-bg-elevated px-4 text-sm font-medium text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
-            >
-              Back to {project.name}
+            <Link href={backHref} className={styles.secondary}>
+              Back to timeline
             </Link>
           </div>
         </section>
@@ -149,43 +138,65 @@ export default async function TimelineProjectPreviewPage({
       ? "revoked"
       : publication.state;
 
+  const device = requested.device === "phone" ? "phone" : "desktop";
+  const deviceHref = (next: "desktop" | "phone") => {
+    const query = new URLSearchParams();
+    if (queryContext.workspaceId) query.set("workspaceId", queryContext.workspaceId);
+    if (queryContext.planningPeriodId) query.set("planningPeriodId", queryContext.planningPeriodId);
+    if (next === "phone") query.set("device", "phone");
+    const value = query.toString();
+    return `/app/timeline/${encodeURIComponent(project.slug)}/preview${value ? `?${value}` : ""}`;
+  };
+
   return (
-    <div data-timeline-module className="flex min-h-full w-full flex-1 flex-col bg-paper">
+    <div data-timeline-module className={styles.page}>
       {/* The only owner element on this route, and it says so. Everything
-          below the rule is the guest's page. */}
-      <div className="border-b border-line-soft bg-bg-sunken">
-        <div className="mx-auto flex w-full max-w-[100rem] flex-wrap items-center justify-between gap-x-4 gap-y-1 px-[clamp(1rem,4.2vw,4rem)] py-2">
-          {/* The way out, and the only owner control on this route. The suite
-              chrome is withheld here by pathname (components/app/
-              suite-chrome-gate.tsx), so leaving is an ordinary client
-              navigation and the rail and bar come straight back with it. */}
-          <Link
-            href={backHref}
-            className="inline-flex min-h-[44px] items-center gap-2 text-[13px] font-medium text-ink-soft hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="m12 19-7-7 7-7" />
-              <path d="M19 12H5" />
+          below the bar is the guest's page, unchanged. */}
+      <div className={styles.bar}>
+        <Link href={backHref} className={styles.back}>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M12.5 8h-9m3.5-3.5L3.5 8 7 11.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Back to timeline
+        </Link>
+        <p className={styles.what}>
+          <span className={styles.whatText}>This is what guests see</span>
+          <span className={styles.pill} data-live={linkLive ? "" : undefined}>
+            <span className={styles.pillDot} aria-hidden="true" />
+            {publicationStateLabel(effectiveState)}
+          </span>
+        </p>
+        <nav className={styles.devices} aria-label="Preview size">
+          <Link href={deviceHref("desktop")} className={styles.device} aria-current={device === "desktop" ? "page" : undefined} replace scroll={false}>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+              <path d="M5.5 13.75h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
             </svg>
-            Back to {project.name}
+            Desktop
           </Link>
-          {/* --ink-quiet (a deprecated alias for --ink-faint) measures 4.40:1
-              on the sunken strip this row sits on, which is under AA for
-              normal text at any size. --ink-soft clears it, and this is the
-              one line of owner chrome on a route that is otherwise the
-              guest's page. */}
-          <p className="flex items-center gap-2 text-xs font-medium text-ink-soft">
-            <span
-              aria-hidden
-              className="h-1.5 w-1.5 rounded-full"
-              style={{ background: linkLive ? "var(--accent)" : "var(--ink-ghost)" }}
-            />
-            Preview · {publicationStateLabel(effectiveState)}
-          </p>
-        </div>
+          <Link href={deviceHref("phone")} className={styles.device} aria-current={device === "phone" ? "page" : undefined} replace scroll={false}>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <rect x="4.25" y="1.75" width="7.5" height="12.5" rx="1.6" stroke="currentColor" strokeWidth="1.4" />
+              <path d="M7 12h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+            Phone
+          </Link>
+        </nav>
       </div>
 
-      <TimelineArtifact timeline={timeline} />
+      {device === "phone" ? (
+        <div className={styles.phoneStage}>
+          {/* The guest's own page at a phone's width, in a plain frame. */}
+          <div className={styles.phoneDevice}>
+            <div className={styles.phoneScreen}>
+              <TimelineArtifact timeline={timeline} compact />
+            </div>
+          </div>
+          <p className={styles.phoneNote}>The same page guests open on their phones. Looking at it here never counts as a view.</p>
+        </div>
+      ) : (
+        <TimelineArtifact timeline={timeline} />
+      )}
     </div>
   );
 }

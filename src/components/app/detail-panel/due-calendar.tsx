@@ -73,7 +73,13 @@ export function DueCalendar({
   anchorNote = null,
   onSelect,
   onClear,
+  today: todayProp,
+  showQuickPicks = true,
 }: {
+  /** The project's today (from the calendar frame). Defaults to the device clock. */
+  today?: Date;
+  /** Hosts that offer their own quick picks hide this row. */
+  showQuickPicks?: boolean;
   /** Currently-set due date, or null when unset. */
   value: Date | null;
   /** The workspace's anchor date as YYYY-MM-DD, the wedding day in a wedding
@@ -85,7 +91,7 @@ export function DueCalendar({
   onSelect: (date: Date, label: string) => void;
   onClear: () => void;
 }) {
-  const today = startOfDay(new Date());
+  const today = startOfDay(todayProp ?? new Date());
   const selected = value ? startOfDay(value) : null;
   // Parsed at noon so no timezone offset can roll the marked day backwards.
   const anchor = (() => {
@@ -139,7 +145,7 @@ export function DueCalendar({
       ) : null}
 
       {/* Quick picks */}
-      <div className="mb-1.5 flex items-center gap-1">
+      <div className={showQuickPicks ? "mb-1.5 flex items-center gap-1" : "hidden"}>
         {quicks.map((q) => (
           <button
             key={q.label}
@@ -182,7 +188,7 @@ export function DueCalendar({
       {/* Weekday header */}
       <div className="grid grid-cols-7 text-center">
         {DOW.map((d, i) => (
-          <span key={i} className="py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint leading-[var(--x-lead-tight)]">
+          <span key={i} className="py-1 text-[11px] font-semibold text-[color:var(--v3-text-3)] leading-[var(--x-lead-tight)]">
             {d}
           </span>
         ))}

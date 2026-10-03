@@ -1,0 +1,1291 @@
+/* Tasks workspace: page frame, header, toolbar, chips, floating layers.
+   Tokens only from src/ds/v3.css. Patterns match Home, Files and My tasks. */
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+/* ── Frame ────────────────────────────────────────────────────────── */
+.workspace {
+  --gutter: 32px;
+  --column-max: 1180px;
+  /* The left edge the header, the board's first column and the list share. */
+  --edge: max(var(--gutter), calc((100% - var(--column-max)) / 2 + var(--gutter)));
+  position: relative;
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  background: var(--v3-canvas);
+  color: var(--v3-text);
+}
+
+.main {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  container-type: inline-size;
+  container-name: tasks;
+}
+
+.headZone {
+  flex: none;
+}
+
+.toolZone {
+  flex: none;
+  z-index: 6;
+  background: var(--v3-canvas);
+}
+
+/* List and Calendar scroll as one page under a sticky tool zone; the
+   board keeps its own scrolling lanes. */
+.workspace[data-view="list"] .main,
+.workspace[data-view="calendar"] .main {
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.workspace[data-view="list"] .toolZone,
+.workspace[data-view="calendar"] .toolZone {
+  position: sticky;
+  top: 0;
+}
+
+.workspace[data-view="list"] .canvas,
+.workspace[data-view="calendar"] .canvas {
+  flex: none;
+  overflow: visible;
+}
+
+.column {
+  max-width: var(--column-max);
+  margin: 0 auto;
+  padding: 24px var(--gutter) 0;
+}
+
+.toolZone .column {
+  padding-top: 0;
+}
+
+.canvas {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
+/* ── Docked sheet (1280px and wider) ──────────────────────────────── */
+.dock {
+  flex: none;
+  width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-left: 1px solid transparent;
+  background: var(--v3-surface);
+  transition: width 200ms var(--v3-ease), border-color 200ms var(--v3-ease);
+}
+
+.dock[data-open] {
+  display: flex;
+  width: min(560px, 42%);
+  border-left-color: var(--v3-border);
+}
+
+.dock[hidden] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock {
+    transition: none;
+  }
+}
+
+/* ── Header ───────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  flex-direction: column;
+}
+
+.contextRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 32px;
+}
+
+.project {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: min(420px, 50%);
+  min-height: 32px;
+  padding-right: 4px;
+  border-radius: var(--v3-radius);
+  color: var(--v3-text-2);
+  font-size: 13px;
+  font-weight: 500;
+  transition: color 120ms var(--v3-ease);
+}
+
+.project:hover {
+  color: var(--v3-text);
+}
+
+.projectTile {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  color: var(--v3-project-ink);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.projectName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.collaborators {
+  display: inline-flex;
+  margin-right: 2px;
+}
+
+.shareSlot {
+  display: inline-flex;
+}
+
+.newTask {
+  padding-right: 8px;
+}
+
+.newTask kbd {
+  margin-left: 2px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.title {
+  font-size: 26px;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--v3-text);
+}
+
+.viewOnly {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--v3-fill);
+  box-shadow: inset 0 0 0 1px var(--v3-border);
+  color: var(--v3-text-2);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: help;
+}
+
+/* ── Progress and facts ───────────────────────────────────────────── */
+.progressRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  margin-top: 10px;
+}
+
+.progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 30px;
+  font-size: 13px;
+  color: var(--v3-text-2);
+}
+
+.progressText b {
+  color: var(--v3-text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.allDone {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--v3-success-text);
+  font-weight: 500;
+}
+
+.meter {
+  position: relative;
+  display: block;
+  width: 120px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--v3-fill);
+  box-shadow: inset 0 0 0 1px var(--v3-border);
+  overflow: hidden;
+}
+
+.meterFill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--v3-success);
+  transform-origin: left center;
+  transition: transform 400ms var(--v3-ease);
+}
+
+.period {
+  padding-left: 10px;
+  border-left: 1px solid var(--v3-border-strong);
+  color: var(--v3-text-3);
+}
+
+.facts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 11px 0 9px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 120ms var(--v3-ease), box-shadow 120ms var(--v3-ease), color 120ms var(--v3-ease);
+}
+
+.factCount {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.fact[data-tone="danger"] {
+  background: var(--v3-danger-soft);
+  color: var(--v3-danger-text);
+}
+
+.fact[data-tone="accent"] {
+  background: var(--v3-warning-soft);
+  color: var(--v3-warning-text);
+}
+
+.fact[data-tone="neutral"] {
+  background: var(--v3-fill);
+  color: var(--v3-text-2);
+}
+
+.fact:hover {
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.fact[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 1.5px currentColor;
+}
+
+.fact[data-zero] {
+  background: transparent;
+  color: var(--v3-text-3);
+  box-shadow: inset 0 0 0 1px var(--v3-border);
+  cursor: default;
+}
+
+/* ── Toolbar ──────────────────────────────────────────────────────── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0 14px;
+}
+
+.toolbarRight {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.viewSwitch {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-sunken);
+  box-shadow: inset 0 0 0 1px var(--v3-border);
+}
+
+.viewItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 11px 0 9px;
+  border-radius: calc(var(--v3-radius) - 2px);
+  color: var(--v3-text-2);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
+}
+
+.viewItem:hover {
+  color: var(--v3-text);
+}
+
+.viewItem[aria-current="page"],
+.viewItem[data-current] {
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  box-shadow: var(--v3-shadow-1), 0 0 0 1px var(--v3-border);
+}
+
+.viewItem[aria-current="page"] svg,
+.viewItem[data-current] svg {
+  color: var(--v3-accent-text);
+}
+
+/* While the project is still being confirmed the other views wait; the
+   current one keeps its place so the switch never looks broken. */
+.viewItem[aria-disabled="true"]:not([data-current]) {
+  color: var(--v3-text-3);
+  cursor: progress;
+}
+
+.search {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 240px;
+  height: 32px;
+  padding: 0 6px 0 10px;
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius);
+  background: var(--v3-surface);
+  color: var(--v3-text-3);
+  transition: border-color 120ms var(--v3-ease), box-shadow 120ms var(--v3-ease), width 200ms var(--v3-ease);
+}
+
+.search:focus-within {
+  border-color: var(--v3-accent);
+  box-shadow: 0 0 0 3px var(--v3-accent-soft);
+  width: 280px;
+}
+
+.search[data-filled] {
+  border-color: var(--v3-border-strong);
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: var(--v3-text-3);
+}
+
+.searchInput::-webkit-search-cancel-button {
+  display: none;
+}
+
+.searchKey {
+  display: inline-flex;
+  color: var(--v3-text-2);
+}
+
+.searchClear {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  color: var(--v3-text-3);
+}
+
+.searchClear:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.toolButton[data-active] {
+  border-color: color-mix(in srgb, var(--v3-accent) 40%, var(--v3-border));
+  background: var(--v3-accent-soft);
+  color: var(--v3-accent-text);
+}
+
+.toolButton[data-active] svg {
+  color: var(--v3-accent-text);
+}
+
+.toolCount {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--v3-accent);
+  color: var(--v3-on-accent);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.menuNote {
+  padding: 2px 8px 6px;
+  color: var(--v3-text-3);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.saveForm {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+}
+
+.saveInput {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--v3-border-strong);
+  border-radius: var(--v3-radius-sm);
+  background: var(--v3-canvas);
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.saveInput:focus {
+  outline: none;
+  border-color: var(--v3-accent);
+  box-shadow: 0 0 0 3px var(--v3-accent-soft);
+}
+
+.savedRow {
+  position: relative;
+}
+
+.savedDelete {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  transform: translateY(-50%);
+  border-radius: var(--v3-radius-sm);
+  color: var(--v3-text-3);
+  opacity: 0;
+}
+
+.savedRow:hover .savedDelete,
+.savedDelete:focus-visible {
+  opacity: 1;
+}
+
+.savedDelete:hover {
+  background: var(--v3-danger-soft);
+  color: var(--v3-danger-text);
+}
+
+/* ── Chips and hint ───────────────────────────────────────────────── */
+.chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: -4px 0 12px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 8px 0 10px;
+  border-radius: 999px;
+  background: var(--v3-accent-soft);
+  color: var(--v3-accent-text);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.chip:hover {
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.chipCount {
+  margin-left: 4px;
+  color: var(--v3-text-3);
+  font-size: 12.5px;
+}
+
+.clearAll {
+  height: 26px;
+  padding: 0 8px;
+  border-radius: var(--v3-radius-sm);
+  color: var(--v3-text-2);
+  font-size: 12.5px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--v3-border-strong);
+}
+
+.clearAll:hover {
+  color: var(--v3-text);
+}
+
+.hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: -2px 0 12px;
+  padding: 8px 8px 8px 12px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-sunken);
+  box-shadow: inset 0 0 0 1px var(--v3-border);
+  color: var(--v3-text-2);
+  font-size: 12.5px;
+}
+
+.hint svg:first-child {
+  flex: none;
+  color: var(--v3-accent-text);
+}
+
+.hintText {
+  flex: 1;
+}
+
+.hintClose {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  color: var(--v3-text-3);
+}
+
+.hintClose:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+/* ── Members popover ──────────────────────────────────────────────── */
+.membersPanel {
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+}
+
+.membersTitle {
+  padding: 8px 8px 6px;
+  color: var(--v3-text-3);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.membersList {
+  display: flex;
+  flex-direction: column;
+}
+
+.memberRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 8px;
+  border-radius: var(--v3-radius-sm);
+}
+
+.memberName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.memberRole {
+  color: var(--v3-text-3);
+  font-size: 12px;
+}
+
+.inviteLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  margin-top: 4px;
+  padding: 0 8px;
+  border-top: 1px solid var(--v3-border);
+  border-radius: 0 0 var(--v3-radius-sm) var(--v3-radius-sm);
+  color: var(--v3-text-2);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.inviteLink:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.inviteIcon {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px dashed var(--v3-control-border);
+}
+
+/* ── Pickers ──────────────────────────────────────────────────────── */
+.pickerHead {
+  padding: 10px 12px 4px;
+  color: var(--v3-text-3);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.dueQuick {
+  display: flex;
+  flex-direction: column;
+  padding: 5px;
+  border-bottom: 1px solid var(--v3-border);
+}
+
+.dueQuickItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+  padding: 0 8px;
+  border-radius: var(--v3-radius-sm);
+  color: var(--v3-text);
+  font-size: 13px;
+  text-align: left;
+}
+
+.dueQuickItem svg {
+  color: var(--v3-text-2);
+}
+
+.dueQuickItem span:first-of-type {
+  flex: 1;
+}
+
+.dueQuickItem:hover,
+.dueQuickItem:focus-visible {
+  background: var(--v3-hover);
+  outline: none;
+}
+
+.dueQuickHint {
+  color: var(--v3-text-3);
+  font-size: 12px;
+}
+
+.dueCalendar {
+  padding: 8px;
+}
+
+/* ── Floating: bulk bar, toast, FAB ───────────────────────────────── */
+.bulk {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--bulk-bottom, 20px) + env(safe-area-inset-bottom));
+  z-index: 62;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: calc(100vw - 32px);
+  padding: 5px 6px 5px 14px;
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-pop);
+  transform: translateX(-50%);
+  animation: rise 160ms var(--v3-ease);
+  overflow-x: auto;
+}
+
+.bulkCount {
+  padding-right: 8px;
+  color: var(--v3-text-2);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.bulkCount b {
+  color: var(--v3-text);
+  font-weight: 600;
+}
+
+.bulkDivider {
+  width: 1px;
+  height: 20px;
+  margin: 0 4px;
+  background: var(--v3-border);
+}
+
+.bulkDanger:hover {
+  background: var(--v3-danger-soft);
+  color: var(--v3-danger-text);
+}
+
+.bulkKeys {
+  display: inline-flex;
+  padding: 0 6px 0 2px;
+  color: var(--v3-text-3);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes riseLeft {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.toast {
+  position: fixed;
+  left: calc(var(--v3-sidebar-w, 248px) + 28px);
+  bottom: calc(var(--bulk-bottom, 20px) + var(--toast-lift, 0px) + env(safe-area-inset-bottom));
+  z-index: 63;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(460px, calc(100vw - 32px));
+  padding: 6px 6px 6px 10px;
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-solid);
+  color: var(--v3-on-solid);
+  box-shadow: var(--v3-shadow-pop);
+  animation: riseLeft 160ms var(--v3-ease);
+}
+
+.toastIcon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--v3-on-solid) 14%, transparent);
+}
+
+.toastText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 12.5px;
+  line-height: 1.3;
+}
+
+.toastText b {
+  font-weight: 600;
+}
+
+.toastTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.72;
+}
+
+.toastAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: var(--v3-radius);
+  color: var(--v3-on-solid);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.toastAction:hover {
+  background: color-mix(in srgb, var(--v3-on-solid) 12%, transparent);
+}
+
+.toastDepth {
+  padding-right: 6px;
+  font-size: 12px;
+  opacity: 0.6;
+  white-space: nowrap;
+}
+
+.fab {
+  display: none;
+}
+
+/* The floating layers share the foot of the screen with the shell's
+   "In development" pill (.signal-devbanner, fixed at bottom 18px, about
+   32px tall, centred). While it shows, the bulk bar sits above it, and the
+   undo toast stacks above the bulk bar when both are up, so no action is
+   ever covered. */
+.workspace {
+  --bulk-bottom: 20px;
+}
+
+:global(body:has(.signal-devbanner)) .workspace {
+  --bulk-bottom: 64px;
+}
+
+.workspace:has(.bulk) {
+  --toast-lift: 56px;
+}
+
+/* ── Confirm dialogs and shortcuts ────────────────────────────────── */
+.confirmScrim {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: var(--v3-scrim);
+  animation: fade 160ms var(--v3-ease);
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(420px, 100%);
+  padding: 20px;
+  border-radius: var(--v3-radius-xl);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-pop);
+  animation: pop 160ms var(--v3-ease);
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.98) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.confirmTitle {
+  font-size: 16px;
+  line-height: 1.35;
+  font-weight: 600;
+  color: var(--v3-text);
+}
+
+.confirmBody {
+  color: var(--v3-text-2);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.shortcuts {
+  display: flex;
+  flex-direction: column;
+  width: min(760px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  border-radius: var(--v3-radius-xl);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-pop);
+  animation: pop 160ms var(--v3-ease);
+}
+
+.shortcutsHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 8px 22px;
+}
+
+.iconClose {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--v3-radius);
+  color: var(--v3-text-2);
+}
+
+.iconClose:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.shortcutsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 32px;
+  padding: 4px 22px 8px;
+}
+
+.shortcutGroup {
+  padding: 8px 0;
+}
+
+.shortcutTitle {
+  margin-bottom: 6px;
+  color: var(--v3-text-3);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.shortcutRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 30px;
+  font-size: 13px;
+  color: var(--v3-text);
+}
+
+.shortcutRow dd {
+  display: inline-flex;
+  gap: 3px;
+  color: var(--v3-text-2);
+}
+
+.shortcutsFoot {
+  padding: 12px 22px 18px;
+  border-top: 1px solid var(--v3-border);
+  color: var(--v3-text-3);
+  font-size: 12.5px;
+}
+
+/* ── Tablet and phone ─────────────────────────────────────────────── */
+@container tasks (max-width: 860px) {
+  .toolLabel {
+    display: none;
+  }
+  .search {
+    width: 200px;
+  }
+  .search:focus-within {
+    width: 220px;
+  }
+}
+
+@media (max-width: 767px) {
+  .workspace {
+    --gutter: 16px;
+  }
+  /* On a phone the page scrolls as one; the tools scroll away with it and
+     the list's group rows stick to the top instead. */
+  .workspace[data-view="list"] .toolZone,
+  .workspace[data-view="calendar"] .toolZone {
+    position: static;
+  }
+  .main {
+    --tool-h: 0px !important;
+  }
+  .main {
+    overflow-y: auto;
+  }
+  .column {
+    padding-top: 12px;
+  }
+  .contextRow {
+    gap: 8px;
+  }
+  .titleRow {
+    margin-top: 2px;
+  }
+  .project {
+    max-width: none;
+    flex: 1;
+  }
+  .shareSlot,
+  .newTask {
+    display: none;
+  }
+  .title {
+    font-size: 24px;
+  }
+  /* Progress and the three facts share one row that scrolls sideways,
+     fading at the edge so the cut reads as "more this way". */
+  .progressRow {
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin: 8px calc(var(--gutter) * -1) 0;
+    padding: 0 var(--gutter);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, var(--v3-canvas) calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to right, var(--v3-canvas) calc(100% - 28px), transparent);
+  }
+  .progressRow::-webkit-scrollbar {
+    display: none;
+  }
+  .progress {
+    flex: none;
+    gap: 8px;
+  }
+  .meter {
+    width: 56px;
+  }
+  .facts {
+    flex: none;
+    padding-right: 28px;
+  }
+  .fact {
+    height: 36px;
+  }
+  /* One tools row: the current view keeps its name, the other two are
+     icons (named for screen readers and on hover). Search fills the rest
+     and takes the whole row while someone types. */
+  .toolbar {
+    gap: 8px;
+    padding: 12px 0 10px;
+  }
+  .viewSwitch {
+    flex: none;
+  }
+  .viewItem {
+    justify-content: center;
+    height: 40px;
+    padding: 0 10px;
+  }
+  .viewItem:not([aria-current="page"]):not([data-current]) {
+    min-width: 44px;
+  }
+  .viewItem:not([aria-current="page"]):not([data-current]) .viewLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+  .toolbarRight {
+    flex: 1;
+    min-width: 0;
+    gap: 4px;
+    margin-left: 0;
+  }
+  .search,
+  .search:focus-within {
+    flex: 1;
+    min-width: 44px;
+    width: auto;
+    height: 44px;
+  }
+  /* Empty and idle, search is a magnifier; it opens across the row as
+     soon as it has focus or holds a query. */
+  .toolbarRight {
+    justify-content: flex-end;
+  }
+  .search:not([data-filled]):not(:focus-within) {
+    flex: 0 0 44px;
+    padding: 0 0 0 13px;
+    border-color: transparent;
+    background: transparent;
+    color: var(--v3-text-2);
+    cursor: pointer;
+  }
+  .search:not([data-filled]):not(:focus-within) .searchInput::placeholder {
+    color: transparent;
+  }
+  .toolbar:has(.search:focus-within) .viewSwitch {
+    display: none;
+  }
+  .hint {
+    margin: 0 0 8px;
+    padding: 4px 4px 4px 12px;
+  }
+  .hintText {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .hintClose {
+    width: 32px;
+    height: 32px;
+  }
+  .searchKey {
+    display: none;
+  }
+  .period {
+    display: none;
+  }
+  .canvas {
+    min-height: auto;
+    flex: none;
+  }
+  /* Above the New task button on a phone. */
+  .workspace {
+    --bulk-bottom: 88px;
+  }
+  /* On a phone the pill sits at bottom 76px (about 36px tall). */
+  :global(body:has(.signal-devbanner)) .workspace {
+    --bulk-bottom: 124px;
+  }
+  /* On a phone the bulk actions are icons (still named for screen
+     readers), so all of them fit without scrolling sideways. */
+  .bulk {
+    gap: 0;
+    padding: 4px;
+    overflow: visible;
+  }
+  .bulkCount {
+    display: inline-grid;
+    place-items: center;
+    min-width: 36px;
+    padding: 0 4px;
+  }
+  .bulkWord,
+  .bulkLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+  .bulkWide {
+    display: none;
+  }
+  .bulk > button {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+  .toast {
+    left: 16px;
+    right: 16px;
+    max-width: none;
+  }
+  .fab {
+    position: fixed;
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    z-index: 55;
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 999px;
+    background: var(--v3-accent);
+    color: var(--v3-on-accent);
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--v3-accent) 40%, transparent), var(--v3-shadow-1);
+    transition: transform 120ms var(--v3-ease);
+  }
+  .fab:active {
+    transform: scale(0.94);
+  }
+  .shortcutsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (pointer: coarse) {
+  .viewItem {
+    height: 40px;
+  }
+  .search {
+    height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bulk,
+  .toast,
+  .confirm,
+  .shortcuts,
+  .confirmScrim {
+    animation: fade 100ms linear;
+  }
+  .meterFill,
+  .search {
+    transition: none;
+  }
+}

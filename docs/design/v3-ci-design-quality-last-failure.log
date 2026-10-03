@@ -1,0 +1,1303 @@
+registry-and-drift	UNKNOWN STEP	﻿2026-09-25T14:21:54.9278497Z Current runner version: '2.337.0'
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9304830Z ##[group]Runner Image Provisioner
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9305829Z Hosted Compute Agent
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9306443Z Version: 20260828.587
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9307155Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9307968Z Build Date: 2026-08-28T16:44:25Z
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9308710Z Worker ID: {c4e1a2ef-e88c-43b7-a0cb-a10d8afa3127}
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9309534Z Azure Region: northcentralus
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9310179Z ##[endgroup]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9311505Z ##[group]Operating System
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9312309Z Ubuntu
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9312901Z 24.04.5
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9313799Z LTS
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9314417Z ##[endgroup]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9314980Z ##[group]Runner Image
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9315716Z Image: ubuntu-24.04
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9316312Z Version: 20260920.314.1
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9317663Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260920.314/images/ubuntu/Ubuntu2404-Readme.md
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9319243Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260920.314
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9320349Z ##[endgroup]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9321495Z ##[group]GITHUB_TOKEN Permissions
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9324085Z Contents: read
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9324721Z Metadata: read
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9325428Z ##[endgroup]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9327612Z Secret source: Actions
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9328675Z Cache mode: write
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9329751Z Prepare workflow directory
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9671895Z Prepare all required actions
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:54.9721588Z Getting action download info
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:55.2322360Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:55.3697870Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:55.4695602Z Download action repository 'pnpm/action-setup@v4' (SHA:b906affcce14559ad1aafd4ab0e942779e9f58b1)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:55.9197430Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.1348080Z Complete job name: registry-and-drift
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.2187464Z ##[group]Run actions/checkout@v4
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.2188370Z with:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.2188793Z   fetch-depth: 0
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.2189269Z   repository: ethanmcn2013-droid/app
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.2193682Z   token: ***
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.2194141Z   ssh-strict: true
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.2194587Z   ssh-user: git
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.2195044Z   persist-credentials: true
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.2195539Z   clean: true
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.2196008Z   sparse-checkout-cone-mode: true
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.2196534Z   fetch-tags: false
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.2196996Z   show-progress: true
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.2197459Z   lfs: false
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.2197879Z   submodules: false
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.2198317Z   set-safe-directory: true
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.2198815Z   allow-unsafe-pr-checkout: false
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.2199574Z ##[endgroup]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3384648Z Syncing repository: ethanmcn2013-droid/app
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3387725Z ##[group]Getting Git version info
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3388884Z Working directory is '/home/runner/work/app/app'
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3390675Z [command]/usr/bin/git version
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3416497Z git version 2.55.0
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3436614Z ##[endgroup]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3450893Z Temporarily overriding HOME='/home/runner/work/_temp/08bfafd6-6a15-469e-8a43-4ac5ee5376b4' before making global git config changes
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3453416Z Adding repository directory to the temporary git global config as a safe directory
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3455823Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/app/app
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3509368Z Deleting the contents of '/home/runner/work/app/app'
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3512365Z ##[group]Initializing the repository
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3518271Z [command]/usr/bin/git init /home/runner/work/app/app
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3605590Z hint: Using 'master' as the name for the initial branch. This default branch name
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3607635Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3609104Z hint: to use in all of your new repositories, which will suppress this warning,
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3610279Z hint: call:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3611188Z hint:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3612009Z hint: 	git config --global init.defaultBranch <name>
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3612978Z hint:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3614101Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3615169Z hint: 'development'. The just-created branch can be renamed via this command:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3615953Z hint:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3616406Z hint: 	git branch -m <name>
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3616901Z hint:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3617537Z hint: Disable this message with "git config set advice.defaultBranchName false"
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3618465Z Initialized empty Git repository in /home/runner/work/app/app/.git/
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3624416Z [command]/usr/bin/git remote add origin https://github.com/ethanmcn2013-droid/app
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3671963Z ##[endgroup]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3673210Z ##[group]Disabling automatic garbage collection
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3677290Z [command]/usr/bin/git config --local gc.auto 0
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3711457Z ##[endgroup]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3712670Z ##[group]Setting up auth
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3718954Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.3756530Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.4117555Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.4156463Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.4417705Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.4456331Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.4698945Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.4742397Z ##[endgroup]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.4743202Z ##[group]Fetching the repository
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:21:56.4752851Z [command]/usr/bin/git -c protocol.version=2 fetch --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/* +c29a5c7af802abcff8733a7cac781d6cebb1b1b2:refs/remotes/pull/201/merge
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2252797Z From https://github.com/ethanmcn2013-droid/app
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2255180Z  * [new branch]        agent/header-planning-noun               -> origin/agent/header-planning-noun
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2256366Z  * [new branch]        agent/ui-95-wave-0-gate                  -> origin/agent/ui-95-wave-0-gate
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2257373Z  * [new branch]        agent/ui-95-wave-1                       -> origin/agent/ui-95-wave-1
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2258321Z  * [new branch]        agent/ui-95-wave-2                       -> origin/agent/ui-95-wave-2
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2259211Z  * [new branch]        agent/ui-95-wave-3                       -> origin/agent/ui-95-wave-3
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2259966Z  * [new branch]        agent/ui-95-wave-4                       -> origin/agent/ui-95-wave-4
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2260596Z  * [new branch]        agent/ui-95-wave-4-landmark              -> origin/agent/ui-95-wave-4-landmark
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2261238Z  * [new branch]        agent/ui-95-wave-5                       -> origin/agent/ui-95-wave-5
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2261891Z  * [new branch]        agent/ui-95-wave-6                       -> origin/agent/ui-95-wave-6
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2262896Z  * [new branch]        agent/venue-edition-fixed-1500           -> origin/agent/venue-edition-fixed-1500
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2264107Z  * [new branch]        chore/codex-operating-contract           -> origin/chore/codex-operating-contract
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2265098Z  * [new branch]        chore/cycle-queue-record                 -> origin/chore/cycle-queue-record
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2265927Z  * [new branch]        claude/board-truth-t112                  -> origin/claude/board-truth-t112
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2267027Z  * [new branch]        claude/board-truth-t115                  -> origin/claude/board-truth-t115
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2268066Z  * [new branch]        claude/board-truth-t116                  -> origin/claude/board-truth-t116
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2269195Z  * [new branch]        claude/board-truth-t119-people           -> origin/claude/board-truth-t119-people
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2270383Z  * [new branch]        claude/board-truth-t120-columns          -> origin/claude/board-truth-t120-columns
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2271491Z  * [new branch]        claude/board-truth-t122-done             -> origin/claude/board-truth-t122-done
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2272189Z  * [new branch]        claude/board-truth-t123-money            -> origin/claude/board-truth-t123-money
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2273173Z  * [new branch]        claude/design-mcp-integration-mxur6r     -> origin/claude/design-mcp-integration-mxur6r
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2274257Z  * [new branch]        claude/design-pages-research-8pei3c      -> origin/claude/design-pages-research-8pei3c
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2275138Z  * [new branch]        claude/elegant-mcnulty-cfcf0d            -> origin/claude/elegant-mcnulty-cfcf0d
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2275929Z  * [new branch]        claude/fix-switcher-flake                -> origin/claude/fix-switcher-flake
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2276882Z  * [new branch]        claude/founder-todos                     -> origin/claude/founder-todos
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2277538Z  * [new branch]        claude/integrate-app                     -> origin/claude/integrate-app
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2278356Z  * [new branch]        claude/modest-blackwell-100af5           -> origin/claude/modest-blackwell-100af5
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2279411Z  * [new branch]        claude/notes-product-design-d752ye       -> origin/claude/notes-product-design-d752ye
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2280202Z  * [new branch]        claude/notes-session-status-yo3g0e       -> origin/claude/notes-session-status-yo3g0e
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2281089Z  * [new branch]        claude/previous-session-status-92idgf    -> origin/claude/previous-session-status-92idgf
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2281978Z  * [new branch]        claude/product-north-star-zsadyh         -> origin/claude/product-north-star-zsadyh
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2282800Z  * [new branch]        claude/product-signal-tasks-review-hsr613 -> origin/claude/product-signal-tasks-review-hsr613
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2283938Z  * [new branch]        claude/project-drive-wp0                 -> origin/claude/project-drive-wp0
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2284598Z  * [new branch]        claude/retire-log-cycle                  -> origin/claude/retire-log-cycle
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2285404Z  * [new branch]        claude/signal-studio-feature-board-xv7ise -> origin/claude/signal-studio-feature-board-xv7ise
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2286432Z  * [new branch]        claude/signal-studio-folder-rename-o0p77t -> origin/claude/signal-studio-folder-rename-o0p77t
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2287263Z  * [new branch]        claude/signal-studio-google-drive-en0n5y -> origin/claude/signal-studio-google-drive-en0n5y
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2288069Z  * [new branch]        claude/signal-studio-hero-cards-ksso9t   -> origin/claude/signal-studio-hero-cards-ksso9t
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2288905Z  * [new branch]        claude/signal-timeline-design-review-5dyj30 -> origin/claude/signal-timeline-design-review-5dyj30
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2289684Z  * [new branch]        claude/stack-reset-data-layer            -> origin/claude/stack-reset-data-layer
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2290372Z  * [new branch]        claude/switcher-cold-render              -> origin/claude/switcher-cold-render
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2291343Z  * [new branch]        claude/vef-commercial-terms-v2           -> origin/claude/vef-commercial-terms-v2
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2292108Z  * [new branch]        claude/wp07-engineering                  -> origin/claude/wp07-engineering
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2292800Z  * [new branch]        claude/wp08-couple                       -> origin/claude/wp08-couple
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2293685Z  * [new branch]        claude/wp14-timeline                     -> origin/claude/wp14-timeline
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2294428Z  * [new branch]        claude/wp15-term-correctness             -> origin/claude/wp15-term-correctness
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2295190Z  * [new branch]        codex/checkout-return-flow               -> origin/codex/checkout-return-flow
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2295918Z  * [new branch]        codex/footer-ios-tasks                   -> origin/codex/footer-ios-tasks
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2296800Z  * [new branch]        codex/retire-duplicate-founder-list-20260808 -> origin/codex/retire-duplicate-founder-list-20260808
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2297705Z  * [new branch]        codex/tasks-brand-hardening              -> origin/codex/tasks-brand-hardening
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2298534Z  * [new branch]        codex/tasks-command-rail-20260730        -> origin/codex/tasks-command-rail-20260730
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2299318Z  * [new branch]        codex/tasks-copy-polish                  -> origin/codex/tasks-copy-polish
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2300250Z  * [new branch]        codex/tasks-four-view-design-lab         -> origin/codex/tasks-four-view-design-lab
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2301038Z  * [new branch]        codex/tasks-product-header               -> origin/codex/tasks-product-header
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2301813Z  * [new branch]        design/home-analytics-2026-08            -> origin/design/home-analytics-2026-08
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2302574Z  * [new branch]        design/master-suite-2026-08              -> origin/design/master-suite-2026-08
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2303704Z  * [new branch]        design/notes-exploration                 -> origin/design/notes-exploration
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2305318Z  * [new branch]        design/project-drive-connections-exploration -> origin/design/project-drive-connections-exploration
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2306604Z  * [new branch]        design/suite-redesign-v3                 -> origin/design/suite-redesign-v3
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2307655Z  * [new branch]        design/tasks-exploration                 -> origin/design/tasks-exploration
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2308796Z  * [new branch]        design/timeline-redesign-2026-08         -> origin/design/timeline-redesign-2026-08
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2310348Z  * [new branch]        design/weddings-exploration              -> origin/design/weddings-exploration
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2312095Z  * [new branch]        docs/wave-decisions-restore              -> origin/docs/wave-decisions-restore
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2313138Z  * [new branch]        docs/wp6-map-and-council-spec            -> origin/docs/wp6-map-and-council-spec
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2314302Z  * [new branch]        feat/analytics-writers                   -> origin/feat/analytics-writers
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2315218Z  * [new branch]        feat/auth-stage-spine-v2                 -> origin/feat/auth-stage-spine-v2
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2316085Z  * [new branch]        feat/closed-beta-gate                    -> origin/feat/closed-beta-gate
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2316762Z  * [new branch]        feat/design-link                         -> origin/feat/design-link
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2317434Z  * [new branch]        feat/floor-air-canon                     -> origin/feat/floor-air-canon
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2318160Z  * [new branch]        feat/home-operating-layer                -> origin/feat/home-operating-layer
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2319124Z  * [new branch]        feat/january-event-designation           -> origin/feat/january-event-designation
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2319897Z  * [new branch]        feat/january-event-export                -> origin/feat/january-event-export
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2320846Z  * [new branch]        feat/january-project-recovery            -> origin/feat/january-project-recovery
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2321610Z  * [new branch]        feat/kanban-board-upgrade                -> origin/feat/kanban-board-upgrade
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2322299Z  * [new branch]        feat/lab-parity                          -> origin/feat/lab-parity
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2323155Z  * [new branch]        feat/local-experience-lab-20260726       -> origin/feat/local-experience-lab-20260726
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2324142Z  * [new branch]        feat/my-week-dayparts                    -> origin/feat/my-week-dayparts
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2325043Z  * [new branch]        feat/option-b-signal-shell               -> origin/feat/option-b-signal-shell
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2325855Z  * [new branch]        feat/phase3-instant-jump-2026-05-17      -> origin/feat/phase3-instant-jump-2026-05-17
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2326808Z  * [new branch]        feat/planning-periods-v1                 -> origin/feat/planning-periods-v1
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2328014Z  * [new branch]        feat/premium-foundations                 -> origin/feat/premium-foundations
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2329302Z  * [new branch]        feat/production-conversation-remote      -> origin/feat/production-conversation-remote
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2330812Z  * [new branch]        feat/production-runtime-binding-attestation -> origin/feat/production-runtime-binding-attestation
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2332316Z  * [new branch]        feat/production-sprint-attention         -> origin/feat/production-sprint-attention
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2334074Z  * [new branch]        feat/project-drive-account-fence-orchestration -> origin/feat/project-drive-account-fence-orchestration
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2335595Z  * [new branch]        feat/project-drive-capability-authz      -> origin/feat/project-drive-capability-authz
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2337232Z  * [new branch]        feat/project-drive-operation-journal-service -> origin/feat/project-drive-operation-journal-service
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2339381Z  * [new branch]        feat/project-drive-operation-journal-service-hardening -> origin/feat/project-drive-operation-journal-service-hardening
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2340911Z  * [new branch]        feat/project-truth-wave                  -> origin/feat/project-truth-wave
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2342405Z  * [new branch]        feat/sponsor-identity-keystone-2026-05-16 -> origin/feat/sponsor-identity-keystone-2026-05-16
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2343801Z  * [new branch]        feat/studio-bar                          -> origin/feat/studio-bar
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2344847Z  * [new branch]        feat/tasks-hero-lab                      -> origin/feat/tasks-hero-lab
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2345876Z  * [new branch]        feat/tasks-hero-v2                       -> origin/feat/tasks-hero-v2
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2347214Z  * [new branch]        feat/tasks-hybrid-parity                 -> origin/feat/tasks-hybrid-parity
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2348274Z  * [new branch]        feat/tasks-wedding-demo                  -> origin/feat/tasks-wedding-demo
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2349013Z  * [new branch]        feat/timeline-artifact                   -> origin/feat/timeline-artifact
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2349856Z  * [new branch]        feat/workspace-annual-checkout-2026-05-16 -> origin/feat/workspace-annual-checkout-2026-05-16
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2350758Z  * [new branch]        feature/hero-ticker-director-pass        -> origin/feature/hero-ticker-director-pass
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2351541Z  * [new branch]        fix/backup-binary-views                  -> origin/fix/backup-binary-views
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2352216Z  * [new branch]        fix/c1-c6-clean                          -> origin/fix/c1-c6-clean
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2352971Z  * [new branch]        fix/chrome-source-of-truth-20260702      -> origin/fix/chrome-source-of-truth-20260702
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2354042Z  * [new branch]        fix/ci-drive-lifecycle-duration          -> origin/fix/ci-drive-lifecycle-duration
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2354759Z  * [new branch]        fix/ci-gates                             -> origin/fix/ci-gates
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2355829Z  * [new branch]        fix/conversation-audience-names          -> origin/fix/conversation-audience-names
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2357011Z  * [new branch]        fix/design-quality-main                  -> origin/fix/design-quality-main
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2358238Z  * [new branch]        fix/drive-upload-ack-reconciliation      -> origin/fix/drive-upload-ack-reconciliation
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2359041Z  * [new branch]        fix/experience-lf-pin                    -> origin/fix/experience-lf-pin
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2359816Z  * [new branch]        fix/home-project-context-truth           -> origin/fix/home-project-context-truth
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2360598Z  * [new branch]        fix/january-commercial-copy              -> origin/fix/january-commercial-copy
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2361356Z  * [new branch]        fix/january-floor-calendar               -> origin/fix/january-floor-calendar
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2362115Z  * [new branch]        fix/january-floor-recovery               -> origin/fix/january-floor-recovery
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2362920Z  * [new branch]        fix/january-recipient-project-work       -> origin/fix/january-recipient-project-work
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2363884Z  * [new branch]        fix/loading-hotfix                       -> origin/fix/loading-hotfix
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2364616Z  * [new branch]        fix/notes-capture-error-copy             -> origin/fix/notes-capture-error-copy
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2365511Z  * [new branch]        fix/notes-extract-exact-idempotency-20260718 -> origin/fix/notes-extract-exact-idempotency-20260718
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2366496Z  * [new branch]        fix/prod-migration-drift-and-auth-hardening -> origin/fix/prod-migration-drift-and-auth-hardening
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2367607Z  * [new branch]        fix/production-drive-disconnect          -> origin/fix/production-drive-disconnect
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2368514Z  * [new branch]        fix/production-inbox-experience-evidence -> origin/fix/production-inbox-experience-evidence
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2369805Z  * [new branch]        fix/suite-jump-dot                       -> origin/fix/suite-jump-dot
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2370974Z  * [new branch]        fix/suiteloader-hash                     -> origin/fix/suiteloader-hash
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2372124Z  * [new branch]        fix/task-detail-contrast                 -> origin/fix/task-detail-contrast
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2373497Z  * [new branch]        fix/timeline-mobile-vertical             -> origin/fix/timeline-mobile-vertical
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2374759Z  * [new branch]        fix/timeline-owner-scroll                -> origin/fix/timeline-owner-scroll
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2375944Z  * [new branch]        fix/timeline-suite-link                  -> origin/fix/timeline-suite-link
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2377083Z  * [new branch]        fix/unified-app-chrome                   -> origin/fix/unified-app-chrome
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2378309Z  * [new branch]        fix/unified-suite-header                 -> origin/fix/unified-suite-header
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2379575Z  * [new branch]        guard/ambient-ratchet                    -> origin/guard/ambient-ratchet
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2380724Z  * [new branch]        lab/lab-active-project                   -> origin/lab/lab-active-project
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2381786Z  * [new branch]        lab/lab-analytics                        -> origin/lab/lab-analytics
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2382771Z  * [new branch]        lab/timeline                             -> origin/lab/timeline
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2383931Z  * [new branch]        lab/welcome                              -> origin/lab/welcome
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2384981Z  * [new branch]        lane/wp0-truth-fixtures                  -> origin/lane/wp0-truth-fixtures
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2386130Z  * [new branch]        lane/wp1-timeline-safety                 -> origin/lane/wp1-timeline-safety
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2387208Z  * [new branch]        lane/wp2-followup                        -> origin/lane/wp2-followup
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2388687Z  * [new branch]        lane/wp2-project-platform                -> origin/lane/wp2-project-platform
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2389449Z  * [new branch]        lane/wp3a-action-authz                   -> origin/lane/wp3a-action-authz
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2390182Z  * [new branch]        lane/wp3b-route-authz                    -> origin/lane/wp3b-route-authz
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2390885Z  * [new branch]        lane/wp3c-settings                       -> origin/lane/wp3c-settings
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2391561Z  * [new branch]        lane/wp4-analytics                       -> origin/lane/wp4-analytics
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2392231Z  * [new branch]        lane/wp4-timeline                        -> origin/lane/wp4-timeline
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2392874Z  * [new branch]        lane/wp6-d022                            -> origin/lane/wp6-d022
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2393760Z  * [new branch]        lane/wp6-service                         -> origin/lane/wp6-service
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2394445Z  * [new branch]        lane/wp6-transition                      -> origin/lane/wp6-transition
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2395081Z  * [new branch]        main                                     -> origin/main
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2395735Z  * [new branch]        migration/unified-app                    -> origin/migration/unified-app
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2396457Z  * [new branch]        notes/budget-headroom                    -> origin/notes/budget-headroom
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2397473Z  * [new branch]        notes/evidence-refresh                   -> origin/notes/evidence-refresh
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2398667Z  * [new branch]        notes/evidence-refresh-2                 -> origin/notes/evidence-refresh-2
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2399619Z  * [new branch]        notes/mobile-button-names                -> origin/notes/mobile-button-names
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2400333Z  * [new branch]        notes/round-2-fixes                      -> origin/notes/round-2-fixes
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2401000Z  * [new branch]        notes/world-class                        -> origin/notes/world-class
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2401981Z  * [new branch]        ops/production-sprint-acceptance         -> origin/ops/production-sprint-acceptance
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2402815Z  * [new branch]        ops/recipient-identity-proof             -> origin/ops/recipient-identity-proof
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2403818Z  * [new branch]        polish/p4-tasks-loading-state            -> origin/polish/p4-tasks-loading-state
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2404582Z  * [new branch]        pre-roadmapwave-backup                   -> origin/pre-roadmapwave-backup
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2405299Z  * [new branch]        pre-seamless-backup                      -> origin/pre-seamless-backup
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2405958Z  * [new branch]        product-pass-2                           -> origin/product-pass-2
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2406775Z  * [new branch]        reconcile/tasks-board-account-2026-05-22 -> origin/reconcile/tasks-board-account-2026-05-22
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2407576Z  * [new branch]        release/january-2027                     -> origin/release/january-2027
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2408311Z  * [new branch]        roadmapwave-rw5-tasks                    -> origin/roadmapwave-rw5-tasks
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2409163Z  * [new branch]        roadmapwave-tasks-rw1                    -> origin/roadmapwave-tasks-rw1
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2409953Z  * [new branch]        sds/wave3-tokens                         -> origin/sds/wave3-tokens
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2410798Z  * [new branch]        seamless-ecosystem-2026-05-18            -> origin/seamless-ecosystem-2026-05-18
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2411586Z  * [new branch]        seamless-tasks                           -> origin/seamless-tasks
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2412537Z  * [new branch]        signal-home-consolidation                -> origin/signal-home-consolidation
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2413675Z  * [new branch]        signal/world-class-pass-t109             -> origin/signal/world-class-pass-t109
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2414577Z  * [new branch]        spike/drive-chain                        -> origin/spike/drive-chain
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2415593Z  * [new branch]        tasks/board-panel-remediation            -> origin/tasks/board-panel-remediation
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2416461Z  * [new branch]        tasks/board-world-class                  -> origin/tasks/board-world-class
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2417275Z  * [new branch]        tasks/task-focus-window                  -> origin/tasks/task-focus-window
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2418063Z  * [new branch]        tasks/window-run2                        -> origin/tasks/window-run2
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2418837Z  * [new branch]        test/jump-dot-guard                      -> origin/test/jump-dot-guard
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2419635Z  * [new branch]        test/loading-boot-guard                  -> origin/test/loading-boot-guard
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2420430Z  * [new branch]        timeline/world-class                     -> origin/timeline/world-class
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2421243Z  * [new branch]        ux-remediation-2026-05-17                -> origin/ux-remediation-2026-05-17
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2422082Z  * [new branch]        venue/commercial-terms-v2                -> origin/venue/commercial-terms-v2
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2422884Z  * [new branch]        voice/em-dash-purge                      -> origin/voice/em-dash-purge
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2423794Z  * [new branch]        voice/taste-calls                        -> origin/voice/taste-calls
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2424585Z  * [new branch]        wave5/founder-selection                  -> origin/wave5/founder-selection
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2425404Z  * [new branch]        wip-snapshot-2026-05-22                  -> origin/wip-snapshot-2026-05-22
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2426170Z  * [new ref]           c29a5c7af802abcff8733a7cac781d6cebb1b1b2 -> pull/201/merge
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2428077Z ##[endgroup]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2428594Z ##[group]Determining the checkout info
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2429195Z ##[endgroup]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2429568Z [command]/usr/bin/git sparse-checkout disable
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2430678Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2431822Z ##[group]Checking out the ref
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:12.2432558Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/201/merge
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.2444692Z Note: switching to 'refs/remotes/pull/201/merge'.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.2445326Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.2445574Z You are in 'detached HEAD' state. You can look around, make experimental
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.2446076Z changes and commit them, and you can discard any commits you make in this
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.2446561Z state without impacting any branches by switching back to a branch.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.2446845Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.2447034Z If you want to create a new branch to retain commits you create, you may
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.2447492Z do so (now or later) by using -c with the switch command. Example:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.2447744Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.2447866Z   git switch -c <new-branch-name>
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.2448034Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.2448230Z Or undo this operation with:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.2448390Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.2448499Z   git switch -
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.2448634Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.2448865Z Turn off this advice by setting config variable advice.detachedHead to false
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.2449181Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.2449535Z HEAD is now at c29a5c7a Merge d03700b6619cee538668d0cbe8fbcf02a6b9530f into dd6a3a6d0408468495917370e0535a1c55639bc6
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.2915847Z ##[endgroup]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.2971311Z [command]/usr/bin/git log -1 --format=%H
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.3003758Z c29a5c7af802abcff8733a7cac781d6cebb1b1b2
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.3268372Z ##[group]Run actions/setup-node@v4
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.3268666Z with:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.3268881Z   node-version: 22
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.3269104Z   always-auth: false
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.3269327Z   check-latest: false
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.3272048Z   token: ***
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.3272269Z ##[endgroup]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.4790869Z Found in cache @ /opt/hostedtoolcache/node/22.23.2/x64
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.4799349Z (node:2298) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.4800048Z (Use `node --trace-deprecation ...` to show where the warning was created)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.4803572Z ##[group]Environment details
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.8475222Z node: v22.23.2
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.8475634Z npm: 10.9.8
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.8475926Z yarn: 1.22.22
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.8476758Z ##[endgroup]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.8645575Z ##[group]Run pnpm/action-setup@v4
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.8645872Z with:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.8646083Z   version: 11.9.0
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.8646305Z   dest: ~/setup-pnpm
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.8646527Z   run_install: null
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.8646742Z   cache: false
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.8646975Z   cache_dependency_path: pnpm-lock.yaml
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.8647270Z   package_json_file: package.json
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.8647525Z   standalone: false
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:13.8647741Z ##[endgroup]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:14.0119552Z ##[group]Running self-installer...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:14.4408918Z (node:2341) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:14.4410119Z (Use `node --trace-deprecation ...` to show where the warning was created)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:14.7319804Z Progress: resolved 1, reused 0, downloaded 0, added 0
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:14.7424469Z Packages: +1
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:14.7453184Z +
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:15.0825568Z Progress: resolved 1, reused 0, downloaded 1, added 1, done
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:15.1193983Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:15.1203054Z dependencies:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:15.1203743Z + pnpm 11.9.0 (12.6.0 is available)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:15.1204081Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:15.1264586Z Done in 904ms
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:15.1458259Z ##[endgroup]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:15.1458743Z Installation Completed!
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:15.1596461Z ##[group]Run pnpm install --frozen-lockfile
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:15.1596917Z ^[[36;1mpnpm install --frozen-lockfile^[[0m
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:15.1839578Z shell: /usr/bin/bash -e {0}
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:15.1839860Z env:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:15.1840148Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:15.1840485Z ##[endgroup]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:15.9527523Z ? Verifying lockfile against supply-chain policies (941 entries)...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:15.9605993Z Lockfile is up to date, resolution step is skipped
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:16.0742768Z Progress: resolved 1, reused 0, downloaded 0, added 0
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:16.1375171Z Packages: +754
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:16.1385039Z ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:17.0872516Z Progress: resolved 754, reused 0, downloaded 0, added 0
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:18.0953847Z Progress: resolved 754, reused 0, downloaded 62, added 1
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:19.0970393Z Progress: resolved 754, reused 0, downloaded 161, added 9
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:20.0978385Z Progress: resolved 754, reused 0, downloaded 269, added 17
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:21.1069557Z Progress: resolved 754, reused 0, downloaded 476, added 36
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:22.1094819Z Progress: resolved 754, reused 0, downloaded 748, added 61
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:22.7135866Z ✓ Lockfile passes supply-chain policies (941 entries in 6.7s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:23.1072043Z Progress: resolved 754, reused 0, downloaded 754, added 418
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:23.4668463Z Progress: resolved 754, reused 0, downloaded 754, added 754, done
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:23.7425077Z .../node_modules/@clerk/shared postinstall$ node ./scripts/postinstall.mjs
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:23.7695226Z .../node_modules/unrs-resolver postinstall$ napi-postinstall unrs-resolver 1.11.1 check
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:23.8006557Z .../esbuild@0.25.12/node_modules/esbuild postinstall$ node install.js
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:23.8034978Z .../esbuild@0.27.7/node_modules/esbuild postinstall$ node install.js
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:23.8354921Z .../esbuild@0.18.20/node_modules/esbuild postinstall$ node install.js
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:23.8900581Z .../node_modules/@clerk/shared postinstall: Done
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:23.8954594Z .../node_modules/unrs-resolver postinstall: Done
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:23.9130067Z .../node_modules/@sentry/cli postinstall$ node ./scripts/install.js
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:23.9475063Z .../esbuild@0.27.7/node_modules/esbuild postinstall: Done
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:23.9554606Z .../esbuild@0.25.12/node_modules/esbuild postinstall: Done
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:23.9934646Z .../esbuild@0.18.20/node_modules/esbuild postinstall: Done
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.0564661Z .../node_modules/@sentry/cli postinstall: Done
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3516209Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3516821Z dependencies:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3517416Z + @ai-sdk/anthropic 3.0.75
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3517977Z + @clerk/nextjs 7.3.2
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3518442Z + @clerk/shared 4.10.1
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3518902Z + @libsql/client 0.17.3
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3519440Z + @radix-ui/react-context-menu 2.3.4
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3520389Z + @radix-ui/react-dropdown-menu 2.1.21
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3521209Z + @sentry/nextjs 10.51.0
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3521695Z + @types/papaparse 5.5.2
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3522113Z + @types/qrcode 1.5.6
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3522480Z + @vercel/blob 2.6.1
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3522817Z + ai 6.0.175
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3523114Z + chrono-node 2.9.1
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3523651Z + clsx 2.1.1
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3523988Z + drizzle-orm 0.45.2
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3524344Z + geist 1.7.0
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3524645Z + lenis 1.3.23
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3524947Z + motion 12.38.0
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3525212Z + next 16.3.6
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3525494Z + papaparse 5.5.3
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3525773Z + qrcode 1.5.4
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3526225Z + react 19.2.4
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3526527Z + react-dom 19.2.4
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3526833Z + react-markdown 10.1.0
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3527139Z + remark-gfm 4.0.1
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3527496Z + resend 6.12.3
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3527783Z + signal-ds 2.1.0
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3528047Z + stripe 22.1.1
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3528794Z + svix 1.92.2
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3528939Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3529071Z devDependencies:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3529382Z + @axe-core/playwright 4.12.1
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3529721Z + @clerk/testing 2.2.34
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3530036Z + @playwright/test 1.61.1
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3530385Z + @tailwindcss/postcss 4.2.4
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3530732Z + @types/node 20.19.39
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3531092Z + @types/react 19.2.14
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3531465Z + @types/react-dom 19.2.3
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3531826Z + drizzle-kit 0.31.10
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3532151Z + eslint 9.39.4
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3532497Z + eslint-config-next 16.3.6
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3532888Z + tailwindcss 4.2.4
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3533200Z + tsx 4.21.0
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3533753Z + typescript 5.9.3
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.3533945Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.4334898Z Done in 9.2s using pnpm v11.9.0
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.5641596Z ##[group]Run pnpm experience:self-test
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.5641959Z ^[[36;1mpnpm experience:self-test^[[0m
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.5711458Z shell: /usr/bin/bash -e {0}
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.5711729Z env:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.5712018Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:24.5712353Z ##[endgroup]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:25.0457064Z $ node scripts/experience/validate.mjs --self-test && node scripts/experience/critical-fixtures.mjs --self-test && node scripts/experience/review-materiality.mjs --self-test && node scripts/experience/attest-playwright.mjs --self-test && node scripts/experience/quality-council.mjs --self-test && node --import tsx scripts/experience/runtime-policy.self-test.ts
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:25.1207776Z experience:self-test: pass - line-ending hashes match; unregistered route, stale evidence waiver, and inexact receipt were rejected
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:25.1701595Z experience:critical-fixtures:self-test: pass - mapped-only writes, source literals, rendered states, and browser-project parity are enforced
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:25.2162513Z experience:review-materiality:self-test: pass - exact JSON receipt, attestation link, raw digest, and target isolation enforced
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:25.2651801Z experience:attest:self-test: pass - raw digest is exact; canonical identity is reproducible; receipt linkage rejects tampering
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:25.3383864Z experience:council:self-test: pass - exact 50/52 passes; 49/52, fractional scores, missing journey evidence, stale source, and tampered evidence fail
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:25.6725104Z experience:runtime-policy:self-test: pass - only a marked realtime teardown, an exact qualified-view POST 204 abort, and a cancelled same-origin build asset are benign
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:25.7070667Z ##[group]Run pnpm experience:validate
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:25.7071027Z ^[[36;1mpnpm experience:validate^[[0m
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:25.7139880Z shell: /usr/bin/bash -e {0}
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:25.7140143Z env:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:25.7140409Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:25.7140734Z ##[endgroup]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:26.1544765Z $ node scripts/experience/validate.mjs
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:26.2312809Z experience:validate: clean - 98 Tasks experiences, 553 required state variants, 392 breakpoint variants
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:26.2534955Z ##[group]Run pnpm experience:fixtures
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:26.2535490Z ^[[36;1mpnpm experience:fixtures^[[0m
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:26.2624914Z shell: /usr/bin/bash -e {0}
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:26.2625310Z env:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:26.2625712Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:26.2626225Z ##[endgroup]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:26.6940632Z $ node scripts/experience/critical-fixtures.mjs
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:26.7467688Z experience:critical-fixtures: clean - 37/37 critical experiences mapped, 28 rendered, 9 source-contract, 33 deterministic cases x 4 breakpoints
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:26.7714281Z ##[group]Run pnpm exec playwright install --with-deps chromium
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:26.7714810Z ^[[36;1mpnpm exec playwright install --with-deps chromium^[[0m
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:26.7786903Z shell: /usr/bin/bash -e {0}
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:26.7787181Z env:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:26.7787468Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:26.7787802Z ##[endgroup]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:27.7208948Z Installing dependencies...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:27.7268665Z Switching to root user to install dependencies...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:27.8074777Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:27.8330640Z Get:6 https://packages.microsoft.com/ubuntu/24.04/prod noble InRelease [3600 B]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:27.8425036Z Hit:2 http://azure.archive.ubuntu.com/ubuntu noble InRelease
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:27.8444697Z Get:3 http://azure.archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:27.8518177Z Get:4 http://azure.archive.ubuntu.com/ubuntu noble-backports InRelease [126 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:27.8564154Z Get:5 http://azure.archive.ubuntu.com/ubuntu noble-security InRelease [126 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:27.9763152Z Get:7 https://packages.microsoft.com/ubuntu/24.04/prod noble/main arm64 Packages [441 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:27.9924758Z Get:8 https://packages.microsoft.com/ubuntu/24.04/prod noble/main amd64 Packages [492 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:28.0298324Z Get:9 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [1318 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:28.0411267Z Get:10 http://azure.archive.ubuntu.com/ubuntu noble-updates/main Translation-en [299 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:28.0420410Z Get:11 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 Components [181 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:28.0442339Z Get:12 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [1698 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:28.0535043Z Get:13 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe Translation-en [340 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:28.0563093Z Get:14 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Components [388 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:28.0591264Z Get:15 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Packages [1654 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:28.0682395Z Get:16 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted Translation-en [377 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:28.0709896Z Get:17 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Components [940 B]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:28.0914875Z Get:18 http://azure.archive.ubuntu.com/ubuntu noble-backports/main amd64 Packages [40.6 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:28.1345101Z Get:19 http://azure.archive.ubuntu.com/ubuntu noble-backports/main amd64 Components [5764 B]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:28.1360884Z Get:20 http://azure.archive.ubuntu.com/ubuntu noble-backports/universe amd64 Packages [31.0 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:28.1371392Z Get:21 http://azure.archive.ubuntu.com/ubuntu noble-backports/universe Translation-en [18.6 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:28.1380279Z Get:22 http://azure.archive.ubuntu.com/ubuntu noble-backports/universe amd64 Components [12.6 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:28.1527847Z Get:23 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 Packages [1053 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:28.1590237Z Get:24 http://azure.archive.ubuntu.com/ubuntu noble-security/main Translation-en [219 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:28.1609722Z Get:25 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 Components [46.4 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:28.1624892Z Get:26 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 Packages [1220 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:28.1689392Z Get:27 http://azure.archive.ubuntu.com/ubuntu noble-security/universe Translation-en [245 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:28.1709754Z Get:28 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 Components [76.3 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:28.1724884Z Get:29 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted amd64 Packages [1535 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:28.1810037Z Get:30 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted Translation-en [353 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:33.0729201Z Fetched 12.4 MB in 1s (8502 kB/s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:33.9021892Z Reading package lists...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:33.9274270Z Reading package lists...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.1214412Z Building dependency tree...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.1221597Z Reading state information...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2785649Z libasound2t64 is already the newest version (1.2.11-1ubuntu0.3).
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2786504Z libasound2t64 set to manually installed.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2787253Z libatk-bridge2.0-0t64 is already the newest version (2.52.0-1build1).
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2787997Z libatk-bridge2.0-0t64 set to manually installed.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2788717Z libatk1.0-0t64 is already the newest version (2.52.0-1build1).
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2789245Z libatk1.0-0t64 set to manually installed.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2789677Z libatspi2.0-0t64 is already the newest version (2.52.0-1build1).
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2790103Z libatspi2.0-0t64 set to manually installed.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2790532Z libcairo2 is already the newest version (1.18.0-3build1).
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2790917Z libcairo2 set to manually installed.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2791330Z libcups2t64 is already the newest version (2.4.7-1.2ubuntu7.14).
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2791740Z libcups2t64 set to manually installed.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2792151Z libdbus-1-3 is already the newest version (1.14.10-4ubuntu4.1).
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2792537Z libdbus-1-3 set to manually installed.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2792947Z libdrm2 is already the newest version (2.4.125-1ubuntu0.1~24.04.2).
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2793703Z libdrm2 set to manually installed.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2794106Z libgbm1 is already the newest version (25.2.8-0ubuntu0.24.04.2).
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2794495Z libgbm1 set to manually installed.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2794885Z libnspr4 is already the newest version (2:4.35-1.1build1).
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2795437Z libnspr4 set to manually installed.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2796055Z libnss3 is already the newest version (2:3.98-1ubuntu0.2).
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2796649Z libnss3 set to manually installed.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2797322Z libpango-1.0-0 is already the newest version (1.52.1+ds-1build1).
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2797990Z libpango-1.0-0 set to manually installed.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2798624Z libx11-6 is already the newest version (2:1.8.7-1build1).
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2799205Z libx11-6 set to manually installed.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2799745Z libxcb1 is already the newest version (1.15-1ubuntu2).
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2800513Z libxcb1 set to manually installed.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2800927Z libxcomposite1 is already the newest version (1:0.4.5-1build3).
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2801334Z libxcomposite1 set to manually installed.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2801733Z libxdamage1 is already the newest version (1:1.1.6-1build1).
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2802113Z libxdamage1 set to manually installed.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2802494Z libxext6 is already the newest version (2:1.3.4-1build2).
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2802874Z libxext6 set to manually installed.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2803681Z libxfixes3 is already the newest version (1:6.0.0-2build1).
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2804187Z libxfixes3 set to manually installed.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2804917Z libxkbcommon0 is already the newest version (1.6.0-1build1).
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2805659Z libxkbcommon0 set to manually installed.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2806158Z libxrandr2 is already the newest version (2:1.5.2-2build1).
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2806786Z libxrandr2 set to manually installed.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2807453Z fonts-noto-color-emoji is already the newest version (2.047-0ubuntu0.24.04.1).
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2808322Z libfontconfig1 is already the newest version (2.15.0-1.1ubuntu2).
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2808900Z libfontconfig1 set to manually installed.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2809457Z libfreetype6 is already the newest version (2.13.2+dfsg-1ubuntu0.1).
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2810210Z libfreetype6 set to manually installed.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2810814Z fonts-liberation is already the newest version (1:2.1.5-3).
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2811490Z fonts-liberation set to manually installed.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2812237Z The following additional packages will be installed:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2812865Z   gir1.2-glib-2.0 libglib2.0-bin libglib2.0-data xfonts-encodings xfonts-utils
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2813620Z   xserver-common
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2814032Z Suggested packages:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2814436Z   low-memory-monitor
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2814882Z Recommended packages:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.2829974Z   fonts-ipafont-mincho fonts-tlwg-loma xfonts-base
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.3033531Z The following NEW packages will be installed:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.3034240Z   fonts-freefont-ttf fonts-ipafont-gothic fonts-tlwg-loma-otf fonts-unifont
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.3039342Z   fonts-wqy-zenhei xfonts-cyrillic xfonts-encodings xfonts-scalable
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.3039930Z   xfonts-utils
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.3042464Z The following packages will be upgraded:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.3047765Z   gir1.2-glib-2.0 libglib2.0-0t64 libglib2.0-bin libglib2.0-data
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.3048335Z   xserver-common xvfb
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.3224436Z 6 upgraded, 9 newly installed, 0 to remove and 26 not upgraded.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.3225047Z Need to get 23.9 MB of archives.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.3225490Z After this operation, 79.6 MB of additional disk space will be used.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.3225994Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.3645794Z Get:2 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-ipafont-gothic all 00303-21ubuntu1 [3513 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.4242104Z Get:3 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libglib2.0-data all 2.80.0-6ubuntu3.9 [50.1 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.4549647Z Get:4 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libglib2.0-bin amd64 2.80.0-6ubuntu3.9 [97.9 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.4855892Z Get:5 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 gir1.2-glib-2.0 amd64 2.80.0-6ubuntu3.9 [183 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.5168520Z Get:6 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libglib2.0-0t64 amd64 2.80.0-6ubuntu3.9 [1547 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.5526105Z Get:7 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 fonts-freefont-ttf all 20211204+svn4273-2 [5641 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.6319148Z Get:8 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-tlwg-loma-otf all 1:0.7.3-1 [107 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.6582861Z Get:9 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-unifont all 1:15.1.01-1build1 [2993 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.7111454Z Get:10 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-wqy-zenhei all 0.9.45-8 [7472 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.8159693Z Get:11 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xfonts-encodings all 1:1.0.5-0ubuntu2 [578 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.8509380Z Get:12 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xfonts-utils amd64 1:7.7+6build3 [94.4 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.8816774Z Get:13 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 xfonts-cyrillic all 1:1.0.5+nmu1 [384 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.9185079Z Get:14 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xfonts-scalable all 1:1.0.3-1.3 [304 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.9532834Z Get:15 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 xserver-common all 2:21.1.12-1ubuntu1.8 [34.8 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:34.9844461Z Get:16 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 xvfb amd64 2:21.1.12-1ubuntu1.8 [877 kB]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:35.2645257Z Fetched 23.9 MB in 1s (34.6 MB/s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:35.2856463Z Selecting previously unselected package fonts-ipafont-gothic.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:35.3067190Z (Reading database ... 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:35.3067903Z (Reading database ... 5%
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:35.3068531Z (Reading database ... 10%
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:35.3068945Z (Reading database ... 15%
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:35.3069478Z (Reading database ... 20%
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:35.3069725Z (Reading database ... 25%
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:35.3069962Z (Reading database ... 30%
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:35.3070208Z (Reading database ... 35%
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:35.3070468Z (Reading database ... 40%
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:35.3070970Z (Reading database ... 45%
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:35.3071219Z (Reading database ... 50%
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:35.3101185Z (Reading database ... 55%
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:35.3827057Z (Reading database ... 60%
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:35.5889153Z (Reading database ... 65%
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:35.7955928Z (Reading database ... 70%
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:35.9859500Z (Reading database ... 75%
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:36.1424867Z (Reading database ... 80%
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:36.3934244Z (Reading database ... 85%
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:36.5463730Z (Reading database ... 90%
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:36.7522998Z (Reading database ... 95%
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:36.7523678Z (Reading database ... 100%
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:36.7524140Z (Reading database ... 202190 files and directories currently installed.)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:36.7568839Z Preparing to unpack .../00-fonts-ipafont-gothic_00303-21ubuntu1_all.deb ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:36.7663600Z Unpacking fonts-ipafont-gothic (00303-21ubuntu1) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.0117080Z Preparing to unpack .../01-libglib2.0-data_2.80.0-6ubuntu3.9_all.deb ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.0130969Z Unpacking libglib2.0-data (2.80.0-6ubuntu3.9) over (2.80.0-6ubuntu3.8) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.0457193Z Preparing to unpack .../02-libglib2.0-bin_2.80.0-6ubuntu3.9_amd64.deb ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.0472083Z Unpacking libglib2.0-bin (2.80.0-6ubuntu3.9) over (2.80.0-6ubuntu3.8) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.0901857Z Preparing to unpack .../03-gir1.2-glib-2.0_2.80.0-6ubuntu3.9_amd64.deb ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.0917579Z Unpacking gir1.2-glib-2.0:amd64 (2.80.0-6ubuntu3.9) over (2.80.0-6ubuntu3.8) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.1298795Z Preparing to unpack .../04-libglib2.0-0t64_2.80.0-6ubuntu3.9_amd64.deb ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.1357892Z Unpacking libglib2.0-0t64:amd64 (2.80.0-6ubuntu3.9) over (2.80.0-6ubuntu3.8) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.1765875Z Selecting previously unselected package fonts-freefont-ttf.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.1896168Z Preparing to unpack .../05-fonts-freefont-ttf_20211204+svn4273-2_all.deb ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.1901753Z Unpacking fonts-freefont-ttf (20211204+svn4273-2) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.2697893Z Selecting previously unselected package fonts-tlwg-loma-otf.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.2827987Z Preparing to unpack .../06-fonts-tlwg-loma-otf_1%3a0.7.3-1_all.deb ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.2834821Z Unpacking fonts-tlwg-loma-otf (1:0.7.3-1) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.3036290Z Selecting previously unselected package fonts-unifont.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.3161803Z Preparing to unpack .../07-fonts-unifont_1%3a15.1.01-1build1_all.deb ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.3168265Z Unpacking fonts-unifont (1:15.1.01-1build1) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.4248275Z Selecting previously unselected package fonts-wqy-zenhei.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.4380946Z Preparing to unpack .../08-fonts-wqy-zenhei_0.9.45-8_all.deb ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.4486530Z Unpacking fonts-wqy-zenhei (0.9.45-8) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.9187460Z Selecting previously unselected package xfonts-encodings.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.9318998Z Preparing to unpack .../09-xfonts-encodings_1%3a1.0.5-0ubuntu2_all.deb ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.9324067Z Unpacking xfonts-encodings (1:1.0.5-0ubuntu2) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.9599497Z Selecting previously unselected package xfonts-utils.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.9727502Z Preparing to unpack .../10-xfonts-utils_1%3a7.7+6build3_amd64.deb ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:37.9732672Z Unpacking xfonts-utils (1:7.7+6build3) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.0030929Z Selecting previously unselected package xfonts-cyrillic.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.0162133Z Preparing to unpack .../11-xfonts-cyrillic_1%3a1.0.5+nmu1_all.deb ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.0167549Z Unpacking xfonts-cyrillic (1:1.0.5+nmu1) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.0497424Z Selecting previously unselected package xfonts-scalable.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.0625995Z Preparing to unpack .../12-xfonts-scalable_1%3a1.0.3-1.3_all.deb ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.0632410Z Unpacking xfonts-scalable (1:1.0.3-1.3) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.0986518Z Preparing to unpack .../13-xserver-common_2%3a21.1.12-1ubuntu1.8_all.deb ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.1001730Z Unpacking xserver-common (2:21.1.12-1ubuntu1.8) over (2:21.1.12-1ubuntu1.6) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.1345601Z Preparing to unpack .../14-xvfb_2%3a21.1.12-1ubuntu1.8_amd64.deb ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.1359613Z Unpacking xvfb (2:21.1.12-1ubuntu1.8) over (2:21.1.12-1ubuntu1.6) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.1879616Z Setting up fonts-wqy-zenhei (0.9.45-8) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.1991862Z Setting up fonts-freefont-ttf (20211204+svn4273-2) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.2004637Z Setting up libglib2.0-0t64:amd64 (2.80.0-6ubuntu3.9) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.2095157Z Setting up libglib2.0-data (2.80.0-6ubuntu3.9) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.2107528Z Setting up fonts-tlwg-loma-otf (1:0.7.3-1) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.2120131Z Setting up xfonts-encodings (1:1.0.5-0ubuntu2) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.2132856Z Setting up gir1.2-glib-2.0:amd64 (2.80.0-6ubuntu3.9) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.2145578Z Setting up fonts-ipafont-gothic (00303-21ubuntu1) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.2209902Z update-alternatives: using /usr/share/fonts/opentype/ipafont-gothic/ipag.ttf to provide /usr/share/fonts/truetype/fonts-japanese-gothic.ttf (fonts-japanese-gothic.ttf) in auto mode
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.2222804Z Setting up xserver-common (2:21.1.12-1ubuntu1.8) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.2236346Z Setting up fonts-unifont (1:15.1.01-1build1) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.2248888Z Setting up xvfb (2:21.1.12-1ubuntu1.8) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.2261864Z Setting up libglib2.0-bin (2.80.0-6ubuntu3.9) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.2274593Z Setting up xfonts-utils (1:7.7+6build3) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.2310626Z Setting up xfonts-cyrillic (1:1.0.5+nmu1) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.2603705Z Setting up xfonts-scalable (1:1.0.3-1.3) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.2887213Z Processing triggers for libc-bin (2.39-0ubuntu8.9) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.3149917Z Processing triggers for man-db (2.12.0-4build2) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.3167772Z Not building database; man-db/auto-update is not 'true'.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.3177821Z Processing triggers for fontconfig (2.15.0-1.1ubuntu2) ...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.9082667Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.9083423Z Running kernel seems to be up-to-date.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.9083813Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.9083966Z Restarting services...
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:38.9565295Z  systemctl restart packagekit.service php8.3-fpm.service polkit.service udisks2.service
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:39.1274318Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:39.1306322Z Service restarts being deferred:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:39.1324853Z  systemctl restart ModemManager.service
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:39.1325476Z  systemctl restart networkd-dispatcher.service
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:39.1326142Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:39.1326393Z No containers need to be restarted.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:39.1326684Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:39.1326968Z No user sessions are running outdated binaries.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:39.1327315Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:39.1327774Z No VM guests are running outdated hypervisor (qemu) binaries on this host.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:40.1417788Z Downloading Chrome for Testing 149.0.7827.55 (playwright chromium v1228) from https://cdn.playwright.dev/builds/cft/149.0.7827.55/linux64/chrome-linux64.zip
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:41.1711945Z |                                                                                |   0% of 177 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:41.3351889Z |■■■■■■■■                                                                        |  10% of 177 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:41.4225829Z |■■■■■■■■■■■■■■■■                                                                |  20% of 177 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:41.5108475Z |■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 177 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:41.5966351Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 177 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:41.6889900Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 177 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:41.7789284Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 177 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:41.8822861Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 177 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:41.9739972Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 177 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:42.0615121Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 177 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:42.1554867Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 177 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:44.6734984Z Chrome for Testing 149.0.7827.55 (playwright chromium v1228) downloaded to /home/runner/.cache/ms-playwright/chromium-1228
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:44.6738057Z Downloading FFmpeg (playwright ffmpeg v1011) from https://cdn.playwright.dev/dbazure/download/playwright/builds/ffmpeg/1011/ffmpeg-linux.zip
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:45.6688445Z |                                                                                |   0% of 2.3 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:45.6731703Z |■■■■■■■■                                                                        |  10% of 2.3 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:45.6761853Z |■■■■■■■■■■■■■■■■                                                                |  20% of 2.3 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:45.6799406Z |■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 2.3 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:45.6812376Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 2.3 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:45.6831195Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 2.3 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:45.6845847Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 2.3 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:45.6859273Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 2.3 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:45.6872745Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 2.3 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:45.6885932Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 2.3 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:45.6895163Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 2.3 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:45.7463054Z FFmpeg (playwright ffmpeg v1011) downloaded to /home/runner/.cache/ms-playwright/ffmpeg-1011
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:45.7466097Z Downloading Chrome Headless Shell 149.0.7827.55 (playwright chromium-headless-shell v1228) from https://cdn.playwright.dev/builds/cft/149.0.7827.55/linux64/chrome-headless-shell-linux64.zip
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:46.7680570Z |                                                                                |   0% of 114.2 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:46.8847054Z |■■■■■■■■                                                                        |  10% of 114.2 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:46.9562915Z |■■■■■■■■■■■■■■■■                                                                |  20% of 114.2 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:47.1414951Z |■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 114.2 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:47.2412541Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 114.2 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:47.3025339Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 114.2 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:47.4344406Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 114.2 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:47.4969604Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 114.2 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:47.5700653Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 114.2 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:47.6534917Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 114.2 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:47.7294055Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 114.2 MiB
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:49.5867504Z Chrome Headless Shell 149.0.7827.55 (playwright chromium-headless-shell v1228) downloaded to /home/runner/.cache/ms-playwright/chromium_headless_shell-1228
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:49.6183696Z ##[group]Run pnpm test:notes-recovery:browser
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:49.6184310Z ^[[36;1mpnpm test:notes-recovery:browser^[[0m
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:49.6257258Z shell: /usr/bin/bash -e {0}
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:49.6257538Z env:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:49.6257817Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:49.6258148Z ##[endgroup]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:50.0446199Z $ node experience/notes-recovery-context/run.mjs browser
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:52.1149871Z PASS back-forward-reload 1440
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:53.0257242Z PASS authorized-navigation 1440
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:54.0579654Z PASS back-forward-reload 390
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:55.0548360Z PASS authorized-navigation 390
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:56.2000156Z PASS project-account-isolation 1440
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:57.1090709Z PASS late-response-keeps-newer-edit 1440
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:58.0037409Z PASS lost-edit-response-reload 390
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:58.9817882Z PASS late-response-after-reverting-text 1440
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:22:59.6503883Z PASS storage-failure-back 390
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:00.3041736Z PASS flag-off-authorized-navigation 390
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:01.2312051Z PASS capture-pending-account-change 390
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:01.9439823Z PASS legacy-unbound-draft-is-copy-only 1440
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:02.6257404Z PASS legacy-unbound-draft-is-copy-only 390
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:03.4758949Z PASS prehydration-claim-account-project-fence 390
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:05.8830917Z PASS retry-preserves-other-project-queue 1440
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:07.4994757Z PASS retry-preserves-other-project-queue 390
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:08.0479489Z PASS actual-rail-true 1440
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:08.5760392Z PASS actual-rail-true 390
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:09.2953867Z PASS actual-rail-false 1440
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:10.0101990Z PASS actual-rail-false 390
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:11.1072347Z PASS storage-quota-cold-consumers-false 1440
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:12.1543121Z PASS storage-quota-cold-consumers-false 390
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:13.2574869Z PASS storage-quota-cold-consumers-true 1440
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:14.3041776Z PASS storage-quota-cold-consumers-true 390
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:14.9874040Z PASS publisher-unmount-clears-live-context 390
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:16.2168577Z PASS closed-note-late-save-keeps-other-editor 1440
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:17.3650667Z PASS unmounted-project-frame-cannot-clear-new-recovery 1440
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:17.4855655Z Notes recovery browser evidence: /home/runner/work/app/app/experience/output/notes-recovery/browser-2026-09-25T14-22-50.083Z
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:17.5995410Z ##[group]Run pnpm experience:test
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:17.5995748Z ^[[36;1mpnpm experience:test^[[0m
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:17.6064035Z shell: /usr/bin/bash -e {0}
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:17.6064295Z env:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:17.6064563Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:17.6064889Z ##[endgroup]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:23:18.0285613Z $ playwright test --config experience/playwright.config.ts && node scripts/experience/attest-playwright.mjs --verify-receipts
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:24:25.7105539Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:24:25.7106085Z Running 132 tests using 1 worker
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:24:25.7127411Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:24:29.8359196Z   ✓    1 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app / front door lands on Home (3.4s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:24:33.4007688Z   ✓    2 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-tasks / canonical populated Tasks workspace (3.6s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:24:36.1286768Z   ✓    3 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-inbox / demo digest with empty direct alerts (2.7s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:24:38.6655436Z   ✓    4 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-import / empty CSV import start (2.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:24:41.1974562Z   ✓    5 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.invite-by-token / valid invite without mutation (2.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:24:43.6288337Z   ✓    6 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.invite-by-token / expired invite (2.4s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:24:46.1261539Z   ✓    7 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.p-by-slug / published demo workspace (2.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:24:48.3122288Z   ✓    8 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.redeem-by-code / successful wedding entitlement (2.2s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:24:50.4119647Z   ✓    9 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.redeem-by-code / expired code (2.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:24:52.4926735Z   ✓   10 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.redeem-by-code / unconfirmed redemption (2.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:24:56.1467464Z   ✓   11 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.root / customer-facing homepage (3.6s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:24:58.4583042Z   ✓   12 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.share-by-token / read-only shared board (2.3s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:25:00.5766355Z   ✓   13 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.share-target / captured page and link (2.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:25:02.6749846Z   ✓   14 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.share-target / empty share payload (2.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:25:05.1292247Z   ✓   15 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.sign-in-by-sign-in / review-mode sign in (2.4s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:25:07.5958165Z   ✓   16 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.sign-up-by-sign-up / review-mode sign up (2.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:25:09.7242659Z   ✓   17 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.state.root-not-found / unknown route (2.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:25:11.8395438Z   ✓   18 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.state.share-by-token-not-found / unknown share token (2.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:25:14.5768413Z   ✓   19 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-signal / legacy link lands on the briefing (2.7s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:25:17.0254606Z   ✓   20 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-signal-onboarding / legacy link lands on briefing onboarding (2.4s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:25:19.4766082Z   ✓   21 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-signal-settings-notifications / legacy link lands on briefing cadence (2.4s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:25:22.7508107Z   ✓   22 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-notes / canonical populated private notebook (3.3s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:25:34.3902754Z   ✘   23 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-timeline / project-first owner artifact (11.2s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:25:40.3953034Z   ✓   24 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-timeline-audience-by-publication-id / owner artifact and live phone preview (5.3s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:25:45.4452048Z   ✓   25 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.s-by-token / link-only wedding artifact (5.0s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:25:47.4725049Z   ✓   26 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.s-by-token / invalid bearer link (2.0s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:25:58.7091660Z   ✘   27 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-home / home front door (10.8s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:26:02.2940267Z   ✓   28 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-home-briefing / overview (2.9s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:26:04.7895548Z   ✓   29 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-home-briefing-onboarding / briefing onboarding (2.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:26:07.2225394Z   ✓   30 [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-home-briefing-settings-notifications / briefing cadence (2.4s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:26:09.8557335Z   ✓   31 [mobile] › experience/tests/critical-experiences.spec.ts:446:5 › tasks.surface.command-palette / keyboard search (2.6s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:26:13.5108061Z   ✓   32 [mobile] › experience/tests/critical-experiences.spec.ts:490:5 › tasks.surface.quick-create / long natural-language task (3.6s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:26:17.0060583Z   ✓   33 [mobile] › experience/tests/critical-experiences.spec.ts:523:5 › tasks.surface.task-detail-panel / populated task (3.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:26:21.2542303Z   ✓   34 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app / front door lands on Home (3.6s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:26:25.0747031Z   ✓   35 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-tasks / canonical populated Tasks workspace (3.8s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:26:27.8354702Z   ✓   36 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-inbox / demo digest with empty direct alerts (2.8s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:26:30.4018834Z   ✓   37 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-import / empty CSV import start (2.6s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:26:32.9607182Z   ✓   38 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.invite-by-token / valid invite without mutation (2.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:26:35.4668729Z   ✓   39 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.invite-by-token / expired invite (2.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:26:37.9834601Z   ✓   40 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.p-by-slug / published demo workspace (2.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:26:40.1489462Z   ✓   41 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.redeem-by-code / successful wedding entitlement (2.2s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:26:42.3013234Z   ✓   42 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.redeem-by-code / expired code (2.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:26:44.4327307Z   ✓   43 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.redeem-by-code / unconfirmed redemption (2.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:26:48.3560456Z   ✓   44 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.root / customer-facing homepage (3.9s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:26:50.7147738Z   ✓   45 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.share-by-token / read-only shared board (2.4s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:26:52.8464058Z   ✓   46 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.share-target / captured page and link (2.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:26:54.9775737Z   ✓   47 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.share-target / empty share payload (2.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:26:57.4685586Z   ✓   48 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.sign-in-by-sign-in / review-mode sign in (2.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:26:59.9342525Z   ✓   49 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.sign-up-by-sign-up / review-mode sign up (2.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:27:02.0461909Z   ✓   50 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.state.root-not-found / unknown route (2.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:27:04.1616065Z   ✓   51 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.state.share-by-token-not-found / unknown share token (2.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:27:07.0378256Z   ✓   52 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-signal / legacy link lands on the briefing (2.9s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:27:09.4955179Z   ✓   53 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-signal-onboarding / legacy link lands on briefing onboarding (2.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:27:12.0348879Z   ✓   54 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-signal-settings-notifications / legacy link lands on briefing cadence (2.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:27:15.3763174Z   ✓   55 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-notes / canonical populated private notebook (3.3s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:27:27.4391286Z   ✘   56 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-timeline / project-first owner artifact (11.6s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:27:33.6188494Z   ✓   57 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-timeline-audience-by-publication-id / owner artifact and live phone preview (5.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:27:38.6504071Z   ✓   58 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.s-by-token / link-only wedding artifact (5.0s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:27:40.7076404Z   ✓   59 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.s-by-token / invalid bearer link (2.0s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:27:52.0988381Z   ✘   60 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-home / home front door (11.0s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:27:55.7724109Z   ✓   61 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-home-briefing / overview (3.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:27:58.2600257Z   ✓   62 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-home-briefing-onboarding / briefing onboarding (2.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:28:00.7450667Z   ✓   63 [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-home-briefing-settings-notifications / briefing cadence (2.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:28:03.6442428Z   ✓   64 [tablet] › experience/tests/critical-experiences.spec.ts:446:5 › tasks.surface.command-palette / keyboard search (2.9s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:28:07.5222643Z   ✓   65 [tablet] › experience/tests/critical-experiences.spec.ts:490:5 › tasks.surface.quick-create / long natural-language task (3.9s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:28:11.1524295Z   ✓   66 [tablet] › experience/tests/critical-experiences.spec.ts:523:5 › tasks.surface.task-detail-panel / populated task (3.6s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:28:15.1345130Z   ✓   67 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app / front door lands on Home (3.3s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:28:18.8805923Z   ✓   68 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-tasks / canonical populated Tasks workspace (3.7s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:28:21.7944994Z   ✓   69 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-inbox / demo digest with empty direct alerts (2.9s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:28:24.4978194Z   ✓   70 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-import / empty CSV import start (2.7s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:28:27.0731948Z   ✓   71 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.invite-by-token / valid invite without mutation (2.6s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:28:29.5575687Z   ✓   72 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.invite-by-token / expired invite (2.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:28:32.1336307Z   ✓   73 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.p-by-slug / published demo workspace (2.6s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:28:34.3155904Z   ✓   74 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.redeem-by-code / successful wedding entitlement (2.2s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:28:36.4463707Z   ✓   75 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.redeem-by-code / expired code (2.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:28:38.5655655Z   ✓   76 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.redeem-by-code / unconfirmed redemption (2.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:28:42.4981893Z   ✓   77 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.root / customer-facing homepage (3.9s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:28:44.8854701Z   ✓   78 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.share-by-token / read-only shared board (2.4s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:28:47.0460873Z   ✓   79 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.share-target / captured page and link (2.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:28:49.1787432Z   ✓   80 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.share-target / empty share payload (2.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:28:51.7683820Z   ✓   81 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.sign-in-by-sign-in / review-mode sign in (2.6s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:28:54.3350358Z   ✓   82 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.sign-up-by-sign-up / review-mode sign up (2.6s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:28:56.5161063Z   ✓   83 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.state.root-not-found / unknown route (2.2s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:28:58.6610337Z   ✓   84 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.state.share-by-token-not-found / unknown share token (2.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:29:01.6461254Z   ✓   85 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-signal / legacy link lands on the briefing (3.0s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:29:04.2177791Z   ✓   86 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-signal-onboarding / legacy link lands on briefing onboarding (2.6s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:29:06.7376902Z   ✓   87 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-signal-settings-notifications / legacy link lands on briefing cadence (2.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:29:10.2445043Z   ✓   88 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-notes / canonical populated private notebook (3.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:29:22.2712845Z   ✘   89 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-timeline / project-first owner artifact (11.6s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:29:28.4132834Z   ✓   90 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-timeline-audience-by-publication-id / owner artifact and live phone preview (5.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:29:33.4412711Z   ✓   91 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.s-by-token / link-only wedding artifact (5.0s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:29:35.5431354Z   ✓   92 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.s-by-token / invalid bearer link (2.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:29:47.0219777Z   ✘   93 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-home / home front door (11.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:29:50.8283003Z   ✓   94 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-home-briefing / overview (3.2s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:29:53.4174884Z   ✓   95 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-home-briefing-onboarding / briefing onboarding (2.6s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:29:55.9516681Z   ✓   96 [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-home-briefing-settings-notifications / briefing cadence (2.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:29:58.8774711Z   ✓   97 [desktop] › experience/tests/critical-experiences.spec.ts:446:5 › tasks.surface.command-palette / keyboard search (2.9s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:30:02.8990401Z   ✓   98 [desktop] › experience/tests/critical-experiences.spec.ts:490:5 › tasks.surface.quick-create / long natural-language task (4.0s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:30:06.7313591Z   ✓   99 [desktop] › experience/tests/critical-experiences.spec.ts:523:5 › tasks.surface.task-detail-panel / populated task (3.8s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:30:10.6680682Z   ✓  100 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app / front door lands on Home (3.3s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:30:14.4510030Z   ✓  101 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-tasks / canonical populated Tasks workspace (3.8s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:30:17.3571614Z   ✓  102 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-inbox / demo digest with empty direct alerts (2.9s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:30:20.0450532Z   ✓  103 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-import / empty CSV import start (2.7s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:30:22.6623525Z   ✓  104 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.invite-by-token / valid invite without mutation (2.6s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:30:25.1547634Z   ✓  105 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.invite-by-token / expired invite (2.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:30:27.7504507Z   ✓  106 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.p-by-slug / published demo workspace (2.6s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:30:29.9166930Z   ✓  107 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.redeem-by-code / successful wedding entitlement (2.2s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:30:32.0663563Z   ✓  108 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.redeem-by-code / expired code (2.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:30:34.2157476Z   ✓  109 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.redeem-by-code / unconfirmed redemption (2.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:30:38.1737737Z   ✓  110 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.root / customer-facing homepage (3.9s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:30:40.5862326Z   ✓  111 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.share-by-token / read-only shared board (2.4s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:30:42.7466520Z   ✓  112 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.share-target / captured page and link (2.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:30:44.8950393Z   ✓  113 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.share-target / empty share payload (2.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:30:47.4198908Z   ✓  114 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.sign-in-by-sign-in / review-mode sign in (2.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:30:49.9324798Z   ✓  115 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.sign-up-by-sign-up / review-mode sign up (2.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:30:52.0832246Z   ✓  116 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.state.root-not-found / unknown route (2.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:30:54.2960866Z   ✓  117 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.state.share-by-token-not-found / unknown share token (2.2s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:30:57.2683938Z   ✓  118 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-signal / legacy link lands on the briefing (3.0s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:30:59.8005872Z   ✓  119 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-signal-onboarding / legacy link lands on briefing onboarding (2.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:31:02.3521777Z   ✓  120 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-signal-settings-notifications / legacy link lands on briefing cadence (2.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:31:05.8665627Z   ✓  121 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-notes / canonical populated private notebook (3.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:31:17.9551267Z   ✘  122 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-timeline / project-first owner artifact (11.6s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:31:24.0777117Z   ✓  123 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-timeline-audience-by-publication-id / owner artifact and live phone preview (5.5s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:31:29.1989905Z   ✓  124 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.s-by-token / link-only wedding artifact (5.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:31:31.2940621Z   ✓  125 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.s-by-token / invalid bearer link (2.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:31:42.7194946Z   ✘  126 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-home / home front door (11.0s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:31:46.4708007Z   ✓  127 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-home-briefing / overview (3.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:31:49.1041383Z   ✓  128 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-home-briefing-onboarding / briefing onboarding (2.6s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:31:51.7017813Z   ✓  129 [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-home-briefing-settings-notifications / briefing cadence (2.6s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:31:54.7565454Z   ✓  130 [wide] › experience/tests/critical-experiences.spec.ts:446:5 › tasks.surface.command-palette / keyboard search (3.0s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:31:58.8876453Z   ✓  131 [wide] › experience/tests/critical-experiences.spec.ts:490:5 › tasks.surface.quick-create / long natural-language task (4.1s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.7488735Z   ✓  132 [wide] › experience/tests/critical-experiences.spec.ts:523:5 › tasks.surface.task-detail-panel / populated task (3.9s)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.8379969Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9184043Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9215408Z   1) [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-timeline / project-first owner artifact › prove state: populated 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9216417Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9216703Z     Error: expect(locator).toHaveCount(expected) failed
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9217094Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9217449Z     Locator:  getByRole('link', { name: 'All projects', exact: true })
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9218009Z     Expected: 1
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9218305Z     Received: 0
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9218598Z     Timeout:  8000ms
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9218800Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9218919Z     Call log:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9219324Z       - Expect "toHaveCount" with timeout 8000ms
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9220071Z       - waiting for getByRole('link', { name: 'All projects', exact: true })
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9220839Z         20 × locator resolved to 0 elements
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9221303Z            - unexpected value "0"
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9221575Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9221583Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9221704Z       166 |       });
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9222134Z       167 |       const count = assertion.count ?? 1;
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9222728Z     > 168 |       await expect(locator).toHaveCount(count);
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9223250Z           |                             ^
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9223859Z       169 |       if (count === 0) return;
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9224399Z       170 |       await expect(locator.first()).toBeVisible();
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9224986Z       171 |       if (assertion.disabled !== undefined) {
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9225766Z         at /home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:168:29
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9226940Z         at expectStateAssertions (/home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:152:5)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9228280Z         at auditCurrentSurface (/home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:396:3)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9229352Z         at /home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:429:5
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9229891Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9230579Z     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9232501Z     experience/output/playwright-results/critical-experiences-tasks-e016d-roject-first-owner-artifact-mobile/test-failed-1.png
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9234128Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9234592Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9235539Z     Error Context: experience/output/playwright-results/critical-experiences-tasks-e016d-roject-first-owner-artifact-mobile/error-context.md
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9236484Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9237130Z     attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9238444Z     experience/output/playwright-results/critical-experiences-tasks-e016d-roject-first-owner-artifact-mobile/trace.zip
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9239417Z     Usage:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9239589Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9240644Z         pnpm exec playwright show-trace experience/output/playwright-results/critical-experiences-tasks-e016d-roject-first-owner-artifact-mobile/trace.zip
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9263642Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9294429Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9323555Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9354852Z   2) [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-home / home front door › prove state: default 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9383546Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9414043Z     Error: expect(locator).toHaveCount(expected) failed
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9423602Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9434768Z     Locator:  getByText('Open full briefing', { exact: true })
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9435296Z     Expected: 1
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9435608Z     Received: 0
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9435908Z     Timeout:  8000ms
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9436119Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9436237Z     Call log:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9436658Z       - Expect "toHaveCount" with timeout 8000ms
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9437331Z       - waiting for getByText('Open full briefing', { exact: true })
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9438160Z         20 × locator resolved to 0 elements
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9438660Z            - unexpected value "0"
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9438948Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9438956Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9439179Z       157 |       if (assertion.kind === "text") {
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9439819Z       158 |         const locator = page.getByText(assertion.text, { exact: true });
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9440286Z     > 159 |         await expect(locator).toHaveCount(1);
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9440615Z           |                               ^
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9440934Z       160 |         await expect(locator).toBeVisible();
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9441225Z       161 |         return;
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9441453Z       162 |       }
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9441864Z         at /home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:159:31
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9442584Z         at expectStateAssertions (/home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:152:5)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9443914Z         at auditCurrentSurface (/home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:396:3)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9444707Z         at /home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:429:5
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9445042Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9445511Z     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9446370Z     experience/output/playwright-results/critical-experiences-tasks-page-app-home-home-front-door-mobile/test-failed-1.png
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9447242Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9447531Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9448072Z     Error Context: experience/output/playwright-results/critical-experiences-tasks-page-app-home-home-front-door-mobile/error-context.md
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9448629Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9449019Z     attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9449827Z     experience/output/playwright-results/critical-experiences-tasks-page-app-home-home-front-door-mobile/trace.zip
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9450651Z     Usage:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9450769Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9451348Z         pnpm exec playwright show-trace experience/output/playwright-results/critical-experiences-tasks-page-app-home-home-front-door-mobile/trace.zip
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9451924Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9452292Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9452574Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9453238Z   3) [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-timeline / project-first owner artifact › prove state: populated 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9453986Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9454208Z     Error: expect(locator).toHaveCount(expected) failed
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9454569Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9454905Z     Locator:  getByRole('link', { name: 'All projects', exact: true })
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9455475Z     Expected: 1
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9455784Z     Received: 0
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9456088Z     Timeout:  8000ms
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9456312Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9456438Z     Call log:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9457736Z       - Expect "toHaveCount" with timeout 8000ms
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9458448Z       - waiting for getByRole('link', { name: 'All projects', exact: true })
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9459247Z         20 × locator resolved to 0 elements
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9459703Z            - unexpected value "0"
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9459944Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9459952Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9460070Z       166 |       });
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9460448Z       167 |       const count = assertion.count ?? 1;
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9461051Z     > 168 |       await expect(locator).toHaveCount(count);
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9461520Z           |                             ^
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9461930Z       169 |       if (count === 0) return;
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9462432Z       170 |       await expect(locator.first()).toBeVisible();
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9462980Z       171 |       if (assertion.disabled !== undefined) {
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9463901Z         at /home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:168:29
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9464644Z         at expectStateAssertions (/home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:152:5)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9465432Z         at auditCurrentSurface (/home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:396:3)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9466112Z         at /home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:429:5
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9466435Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9466909Z     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9467756Z     experience/output/playwright-results/critical-experiences-tasks-e016d-roject-first-owner-artifact-tablet/test-failed-1.png
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9468899Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9469195Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9469768Z     Error Context: experience/output/playwright-results/critical-experiences-tasks-e016d-roject-first-owner-artifact-tablet/error-context.md
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9470370Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9470773Z     attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9471736Z     experience/output/playwright-results/critical-experiences-tasks-e016d-roject-first-owner-artifact-tablet/trace.zip
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9473870Z     Usage:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9473994Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9474608Z         pnpm exec playwright show-trace experience/output/playwright-results/critical-experiences-tasks-e016d-roject-first-owner-artifact-tablet/trace.zip
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9475210Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9475590Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9475866Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9476455Z   4) [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-home / home front door › prove state: default 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9477875Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9478159Z     Error: expect(locator).toHaveCount(expected) failed
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9478519Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9478731Z     Locator:  getByText('Open full briefing', { exact: true })
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9479070Z     Expected: 1
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9479278Z     Received: 0
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9479485Z     Timeout:  8000ms
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9479621Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9479703Z     Call log:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9479975Z       - Expect "toHaveCount" with timeout 8000ms
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9480391Z       - waiting for getByText('Open full briefing', { exact: true })
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9480847Z         20 × locator resolved to 0 elements
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9481155Z            - unexpected value "0"
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9481329Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9481335Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9481478Z       157 |       if (assertion.kind === "text") {
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9481944Z       158 |         const locator = page.getByText(assertion.text, { exact: true });
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9482396Z     > 159 |         await expect(locator).toHaveCount(1);
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9482716Z           |                               ^
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9483034Z       160 |         await expect(locator).toBeVisible();
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9483513Z       161 |         return;
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9483748Z       162 |       }
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9484169Z         at /home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:159:31
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9484892Z         at expectStateAssertions (/home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:152:5)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9485670Z         at auditCurrentSurface (/home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:396:3)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9486337Z         at /home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:429:5
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9486678Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9487260Z     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9488103Z     experience/output/playwright-results/critical-experiences-tasks-page-app-home-home-front-door-tablet/test-failed-1.png
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9488956Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9489227Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9489752Z     Error Context: experience/output/playwright-results/critical-experiences-tasks-page-app-home-home-front-door-tablet/error-context.md
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9490297Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9490677Z     attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9491424Z     experience/output/playwright-results/critical-experiences-tasks-page-app-home-home-front-door-tablet/trace.zip
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9491969Z     Usage:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9492084Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9492666Z         pnpm exec playwright show-trace experience/output/playwright-results/critical-experiences-tasks-page-app-home-home-front-door-tablet/trace.zip
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9493584Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9493937Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9494206Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9494869Z   5) [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-timeline / project-first owner artifact › prove state: populated 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9495406Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9495579Z     Error: expect(locator).toHaveCount(expected) failed
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9495804Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9496025Z     Locator:  getByRole('link', { name: 'All projects', exact: true })
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9496370Z     Expected: 1
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9496678Z     Received: 0
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9496880Z     Timeout:  8000ms
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9497014Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9497101Z     Call log:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9497381Z       - Expect "toHaveCount" with timeout 8000ms
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9499257Z       - waiting for getByRole('link', { name: 'All projects', exact: true })
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9499996Z         20 × locator resolved to 0 elements
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9500320Z            - unexpected value "0"
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9500490Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9500496Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9500587Z       166 |       });
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9500866Z       167 |       const count = assertion.count ?? 1;
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9501253Z     > 168 |       await expect(locator).toHaveCount(count);
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9501588Z           |                             ^
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9501882Z       169 |       if (count === 0) return;
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9502227Z       170 |       await expect(locator.first()).toBeVisible();
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9502616Z       171 |       if (assertion.disabled !== undefined) {
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9503111Z         at /home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:168:29
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9504312Z         at expectStateAssertions (/home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:152:5)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9505131Z         at auditCurrentSurface (/home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:396:3)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9505809Z         at /home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:429:5
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9506156Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9506577Z     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9507424Z     experience/output/playwright-results/critical-experiences-tasks-e016d-roject-first-owner-artifact-desktop/test-failed-1.png
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9508303Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9508571Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9509551Z     Error Context: experience/output/playwright-results/critical-experiences-tasks-e016d-roject-first-owner-artifact-desktop/error-context.md
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9510146Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9510556Z     attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9534573Z     experience/output/playwright-results/critical-experiences-tasks-e016d-roject-first-owner-artifact-desktop/trace.zip
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9535648Z     Usage:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9535824Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9536925Z         pnpm exec playwright show-trace experience/output/playwright-results/critical-experiences-tasks-e016d-roject-first-owner-artifact-desktop/trace.zip
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9538031Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9538700Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9539201Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9540213Z   6) [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-home / home front door › prove state: default 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9541054Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9541352Z     Error: expect(locator).toHaveCount(expected) failed
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9541781Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9542112Z     Locator:  getByText('Open full briefing', { exact: true })
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9542690Z     Expected: 1
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9543006Z     Received: 0
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9543470Z     Timeout:  8000ms
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9543685Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9543815Z     Call log:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9544229Z       - Expect "toHaveCount" with timeout 8000ms
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9544912Z       - waiting for getByText('Open full briefing', { exact: true })
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9545645Z         20 × locator resolved to 0 elements
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9546166Z            - unexpected value "0"
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9546443Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9546452Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9546693Z       157 |       if (assertion.kind === "text") {
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9547491Z       158 |         const locator = page.getByText(assertion.text, { exact: true });
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9548236Z     > 159 |         await expect(locator).toHaveCount(1);
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9548795Z           |                               ^
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9549337Z       160 |         await expect(locator).toBeVisible();
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9549826Z       161 |         return;
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9550187Z       162 |       }
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9550898Z         at /home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:159:31
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9552191Z         at expectStateAssertions (/home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:152:5)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9559722Z         at auditCurrentSurface (/home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:396:3)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9560633Z         at /home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:429:5
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9560976Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9561411Z     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9562562Z     experience/output/playwright-results/critical-experiences-tasks-page-app-home-home-front-door-desktop/test-failed-1.png
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9564253Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9564705Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9565250Z     Error Context: experience/output/playwright-results/critical-experiences-tasks-page-app-home-home-front-door-desktop/error-context.md
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9565805Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9566211Z     attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9566997Z     experience/output/playwright-results/critical-experiences-tasks-page-app-home-home-front-door-desktop/trace.zip
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9567559Z     Usage:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9567672Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9568254Z         pnpm exec playwright show-trace experience/output/playwright-results/critical-experiences-tasks-page-app-home-home-front-door-desktop/trace.zip
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9568838Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9569207Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9569492Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9570467Z   7) [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-timeline / project-first owner artifact › prove state: populated 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9571575Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9571765Z     Error: expect(locator).toHaveCount(expected) failed
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9571995Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9572213Z     Locator:  getByRole('link', { name: 'All projects', exact: true })
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9572565Z     Expected: 1
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9572778Z     Received: 0
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9572979Z     Timeout:  8000ms
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9573111Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9573197Z     Call log:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9573659Z       - Expect "toHaveCount" with timeout 8000ms
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9574094Z       - waiting for getByRole('link', { name: 'All projects', exact: true })
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9574569Z         20 × locator resolved to 0 elements
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9574883Z            - unexpected value "0"
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9575061Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9575067Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9575161Z       166 |       });
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9575446Z       167 |       const count = assertion.count ?? 1;
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9575812Z     > 168 |       await expect(locator).toHaveCount(count);
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9576141Z           |                             ^
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9576433Z       169 |       if (count === 0) return;
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9576948Z       170 |       await expect(locator.first()).toBeVisible();
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9577573Z       171 |       if (assertion.disabled !== undefined) {
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9578390Z         at /home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:168:29
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9579173Z         at expectStateAssertions (/home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:152:5)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9579956Z         at auditCurrentSurface (/home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:396:3)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9580782Z         at /home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:429:5
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9581116Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9581520Z     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9582350Z     experience/output/playwright-results/critical-experiences-tasks-e016d-roject-first-owner-artifact-wide/test-failed-1.png
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9583224Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9583814Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9584751Z     Error Context: experience/output/playwright-results/critical-experiences-tasks-e016d-roject-first-owner-artifact-wide/error-context.md
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9585498Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9585898Z     attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9586686Z     experience/output/playwright-results/critical-experiences-tasks-e016d-roject-first-owner-artifact-wide/trace.zip
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9587254Z     Usage:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9587366Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9588134Z         pnpm exec playwright show-trace experience/output/playwright-results/critical-experiences-tasks-e016d-roject-first-owner-artifact-wide/trace.zip
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9588728Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9589072Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9589342Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9589986Z   8) [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-home / home front door › prove state: default 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9590762Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9591046Z     Error: expect(locator).toHaveCount(expected) failed
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9591409Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9591717Z     Locator:  getByText('Open full briefing', { exact: true })
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9592058Z     Expected: 1
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9592266Z     Received: 0
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9592466Z     Timeout:  8000ms
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9592610Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9592699Z     Call log:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9592962Z       - Expect "toHaveCount" with timeout 8000ms
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9593561Z       - waiting for getByText('Open full briefing', { exact: true })
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9594088Z         20 × locator resolved to 0 elements
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9594400Z            - unexpected value "0"
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9594565Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9594570Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9594716Z       157 |       if (assertion.kind === "text") {
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9595155Z       158 |         const locator = page.getByText(assertion.text, { exact: true });
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9595597Z     > 159 |         await expect(locator).toHaveCount(1);
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9595919Z           |                               ^
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9596233Z       160 |         await expect(locator).toBeVisible();
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9596519Z       161 |         return;
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9596743Z       162 |       }
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9597487Z         at /home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:159:31
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9598224Z         at expectStateAssertions (/home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:152:5)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9599024Z         at auditCurrentSurface (/home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:396:3)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9599703Z         at /home/runner/work/app/app/experience/tests/critical-experiences.spec.ts:429:5
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9600029Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9600439Z     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9601238Z     experience/output/playwright-results/critical-experiences-tasks-page-app-home-home-front-door-wide/test-failed-1.png
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9602085Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9602353Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9602878Z     Error Context: experience/output/playwright-results/critical-experiences-tasks-page-app-home-home-front-door-wide/error-context.md
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9603646Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9604044Z     attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9604814Z     experience/output/playwright-results/critical-experiences-tasks-page-app-home-home-front-door-wide/trace.zip
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9605357Z     Usage:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9605470Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9606029Z         pnpm exec playwright show-trace experience/output/playwright-results/critical-experiences-tasks-page-app-home-home-front-door-wide/trace.zip
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9606597Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9606944Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9607222Z 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9607306Z   8 failed
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9607959Z     [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-timeline / project-first owner artifact 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9608887Z     [mobile] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-home / home front door 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9609954Z     [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-timeline / project-first owner artifact 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9610817Z     [tablet] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-home / home front door 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9611705Z     [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-timeline / project-first owner artifact 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9612574Z     [desktop] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-home / home front door 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9613567Z     [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-timeline / project-first owner artifact 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9614432Z     [wide] › experience/tests/critical-experiences.spec.ts:412:7 › tasks.page.app-home / home front door 
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:02.9614921Z   124 passed (8.7m)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:03.1777322Z [ELIFECYCLE] Command failed with exit code 1.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:03.2017875Z ##[error]Process completed with exit code 1.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:03.2114100Z ##[group]Run actions/upload-artifact@v4
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:03.2114407Z with:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:03.2114652Z   name: tasks-critical-experience-evidence
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:03.2117086Z   path: experience/output/critical-evidence.json
+registry-and-drift	UNKNOWN STEP	experience/output/evidence-attestation.json
+registry-and-drift	UNKNOWN STEP	experience/output/quality-council-input.json
+registry-and-drift	UNKNOWN STEP	experience/output/playwright-report
+registry-and-drift	UNKNOWN STEP	experience/output/playwright-results
+registry-and-drift	UNKNOWN STEP	experience/output/timeline-project-switcher-results
+registry-and-drift	UNKNOWN STEP	experience/output/notes-recovery
+registry-and-drift	UNKNOWN STEP	experience/output/recipient-project-work/routes
+registry-and-drift	UNKNOWN STEP	experience/output/recipient-project-work/realtime-react
+registry-and-drift	UNKNOWN STEP	experience/output/recipient-project-work/floor-theme
+registry-and-drift	UNKNOWN STEP	experience/output/recipient-project-work/floor-calendar
+registry-and-drift	UNKNOWN STEP	experience/output/recipient-project-work/wedding-date-readback
+registry-and-drift	UNKNOWN STEP	experience/output/event-account-export
+registry-and-drift	UNKNOWN STEP	experience/output/project-recovery
+registry-and-drift	UNKNOWN STEP	
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:03.2119456Z   if-no-files-found: ignore
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:03.2119696Z   retention-days: 14
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:03.2119932Z   compression-level: 6
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:03.2120193Z   overwrite: false
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:03.2120416Z   include-hidden-files: false
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:03.2120651Z env:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:03.2120900Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:03.2121205Z ##[endgroup]
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:03.3850037Z (node:7963) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:03.3851408Z (Use `node --trace-deprecation ...` to show where the warning was created)
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:03.4905995Z Multiple search paths detected. Calculating the least common ancestor of all paths
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:03.4910618Z The least common ancestor is /home/runner/work/app/app/experience/output. This will be the root directory of the artifact
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:03.4911773Z With the provided path, there will be 213 files uploaded
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:03.4916986Z Artifact name is valid!
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:03.4917686Z Root directory input is valid!
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:03.7744751Z Beginning upload of artifact content to blob storage
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:04.1845097Z (node:7963) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:04.5447644Z Uploaded bytes 8388608
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:04.9675035Z Uploaded bytes 16777216
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:05.0264227Z Uploaded bytes 25165824
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:05.2781290Z Uploaded bytes 33554432
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:05.5273595Z Uploaded bytes 41943040
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:05.8934563Z Uploaded bytes 50331648
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:06.2945216Z Uploaded bytes 58720256
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:06.4724602Z Uploaded bytes 67108864
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:06.6736299Z Uploaded bytes 73634456
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:06.7032778Z Finished uploading artifact content to blob storage!
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:06.7035985Z SHA256 digest of uploaded artifact zip is c054e84a53279f1f7245b859b78ac65c8a76f113c578ac756a5fbc5db6d985c8
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:06.7037933Z Finalizing artifact upload
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:06.9309069Z Artifact tasks-critical-experience-evidence.zip successfully finalized. Artifact ID 10869688051
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:06.9310785Z Artifact tasks-critical-experience-evidence has been successfully uploaded! Final size is 73634456 bytes. Artifact ID is 10869688051
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:06.9317391Z Artifact download URL: https://github.com/ethanmcn2013-droid/app/actions/runs/36146974394/artifacts/10869688051
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:06.9523069Z Post job cleanup.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:07.0978395Z Pruning is unnecessary.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:07.1167896Z Post job cleanup.
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:07.2111811Z [command]/usr/bin/git version
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:07.2159852Z git version 2.55.0
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:07.2195290Z Temporarily overriding HOME='/home/runner/work/_temp/58299728-7048-4740-9603-22350a049b6b' before making global git config changes
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:07.2196883Z Adding repository directory to the temporary git global config as a safe directory
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:07.2200869Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/app/app
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:07.2240901Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:07.2278414Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:07.2549699Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:07.2596247Z http.https://github.com/.extraheader
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:07.2631398Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:07.2669499Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:07.2941253Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:07.2988613Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:07.3418961Z Cleaning up orphan processes
+registry-and-drift	UNKNOWN STEP	2026-09-25T14:32:07.3809066Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4, actions/upload-artifact@v4, pnpm/action-setup@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

@@ -5,7 +5,11 @@ const { createRequire } = require('node:module'), path = require('node:path');
 const dep = createRequire(path.join(__dirname, '../../package.json'));
 const { renderToStaticMarkup } = dep('react-dom/server');
 
-test('My work greets only its current member by a known profile name and keeps missing names neutral', async () => {
+// v3 (Sep 2026): My tasks no longer greets. Home owns the greeting and the
+// date; this page leads with the list. The member-name contract that the
+// greeting used to prove still matters in its negative form: a personal list
+// names nobody, and above all never borrows another member's name.
+test('My tasks leads with the list, carries no greeting, and never names a member', async () => {
   const f = await recipientFixture();
   try {
     await f.client.executeMultiple(`
@@ -15,31 +19,30 @@ test('My work greets only its current member by a known profile name and keeps m
     `);
     const MyWork = f.load('src/components/app/my-week/my-week-app').MyWeekApp;
     const render = () => renderToStaticMarkup(f.React.createElement(MyWork));
-    for (const [storedName, expected, knownName] of [
-      ['  Alex Recipient  ', 'Good afternoon, Alex.', 'Alex Recipient'],
-      ['Someone', 'Good afternoon, Someone.', 'Someone'],
-      [null, 'Good afternoon.', null],
-      ['   ', 'Good afternoon.', null],
+    for (const [storedName, knownName] of [
+      ['  Alex Recipient  ', 'Alex Recipient'],
+      ['Someone', 'Someone'],
+      [null, null],
+      ['   ', null],
     ]) {
       await f.client.execute({ sql: 'UPDATE users SET name=? WHERE id=?', args: [storedName, 'recipient'] });
       await f.reload();
       assert.equal(f.state.members.find(member => member.id === 'recipient').knownName, knownName);
       const html = render();
-      assert.ok(html.includes(expected), expected);
-      assert.doesNotMatch(html, /Good afternoon, Blair|Good afternoon, recipient/);
-      if (!knownName) assert.doesNotMatch(html, /Good afternoon, Someone/);
+      assert.ok(html.includes('A useful assigned action'), 'the assigned task is the lead');
+      assert.doesNotMatch(html, /Good (morning|afternoon|evening)|Still up/, 'Home owns the greeting');
+      assert.doesNotMatch(html, /Blair|Alex|Someone/, 'a personal list names no member');
     }
     f.state.members = f.state.members.filter(member => member.id !== 'recipient');
-    assert.ok(render().includes('Good afternoon.'), 'a missing current row cannot borrow the owner name');
+    assert.doesNotMatch(render(), /Blair/, 'a missing current row cannot borrow the owner name');
   } finally { f.close(); }
 });
 
-test('My work preserves the canonical demo name through the same member data without a database read', async () => {
+test('My tasks renders demo member data without a database read', async () => {
   const f = await recipientFixture();
   try {
     f.state.demo = true;
     const { DEMO_USER_ID } = f.load('src/server/demo/tasks-demo');
-    const { REVIEW_SUITE_FIXTURE } = f.load('src/lib/review-suite-fixture');
     const members = f.load('src/server/db/members');
     f.db.select = () => { throw Error('Demo member metadata must not query the database'); };
     f.state.actor = DEMO_USER_ID;
@@ -47,7 +50,8 @@ test('My work preserves the canonical demo name through the same member data wit
     f.state.tasks = [{ id: 'demo-greeting', title: 'Sample assigned action', lane: 'todo', priority: 'p2', assignees: [DEMO_USER_ID] }];
     const MyWork = f.load('src/components/app/my-week/my-week-app').MyWeekApp;
     const html = renderToStaticMarkup(f.React.createElement(MyWork));
-    assert.ok(html.includes(`Good afternoon, ${REVIEW_SUITE_FIXTURE.user.name.split(' ')[0]}.`));
+    assert.ok(html.includes('Sample assigned action'));
+    assert.match(html, /data-group="undated"/);
     assert.equal(f.state.authCalls, 0);
   } finally { f.close(); }
 });
@@ -103,7 +107,7 @@ test('actual Tasks and My work routes consume authorized B, reject foreign/remov
       const shell = await element.type(element.props);
       assert.equal(shell.props.requestedProjectId, 'project-b');
       assert.equal((await guard.resolveTasksArrival('project-b')).project.project.role, 'member');
-      if (surface === 'my-tasks') assert.equal(element.props.children[1].props.canSetUpProject, false);
+      if (surface === 'my-tasks') assert.equal([element.props.children].flat().find(child => child?.props && 'canSetUpProject' in child.props).props.canSetUpProject, false);
       for (const requested of ['project-c', 'missing', ' bad ', ['project-b', 'project-a']]) {
         const refused = await page({ searchParams: Promise.resolve({ workspaceId: requested }) });
         const html = renderToStaticMarkup(refused);
@@ -178,7 +182,12 @@ test('real persisted assignments survive reload and render all open dates; perso
       ('unassigned','project-b','Shared unassigned task','todo','p2','[]',NULL);`);
     await f.reload();
     let html = render(false);
-    for (const title of ['Undated assignment', 'Later assignment', 'Due soon assignment', 'Without a date', 'Later', 'This week']) assert.ok(html.includes(title), title);
+    // v3 groups: dated work after today is one Upcoming group (the due
+    // column carries the when); undated work is No date. Group markers, not
+    // bare words, because the header filter also says "Upcoming".
+    for (const title of ['Undated assignment', 'Later assignment', 'Due soon assignment', '>No date<', '>Upcoming<', 'data-group="undated"', 'data-group="upcoming"']) assert.ok(html.includes(title), title);
+    const upcoming = html.slice(html.indexOf('data-group="upcoming"'), html.indexOf('data-group="undated"'));
+    assert.ok(upcoming.indexOf('Due soon assignment') >= 0 && upcoming.indexOf('Due soon assignment') < upcoming.indexOf('Later assignment'), 'Upcoming keeps date order');
     assert.doesNotMatch(html, /Shared unassigned task|starter pack|Add your first task/);
     await f.reload(); assert.equal(render(false), html);
     f.state.actor = 'creator';

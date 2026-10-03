@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { ConversationAttentionSection } from "../../components/app/inbox/inbox-app";
+import { ConversationAttentionSection } from "../../components/app/inbox/conversation-attention";
 import type { DirectedAttention } from "./attention";
 
 test("Inbox renders source-scoped unread links without message bodies or another reader's state", () => {

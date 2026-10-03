@@ -161,7 +161,7 @@ function CentsForm({
   return (
     <div className="flex flex-col gap-2 px-1.5 py-1.5">
       <label className="flex flex-col gap-1">
-        <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
+        <span className="text-[12px] font-medium text-[color:var(--v3-text-2)] leading-[var(--x-lead-tight)]">
           Amount
         </span>
         <div className="relative">

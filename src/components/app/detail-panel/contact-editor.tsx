@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Task } from "@/lib/data";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
 import { Popover } from "./popover";
+import sx from "./sheet-sections.module.css";
 
 /**
  * Inline editor for the optional external contact attached to a task.
@@ -59,20 +60,12 @@ export function ContactEditor({ task }: { task: Task }) {
           type="button"
           onClick={onClick}
           aria-expanded={expanded}
-          className={
-            hasContact
-              ? "group inline-flex w-fit max-w-full cursor-pointer items-baseline gap-2 rounded-md border border-line-soft px-1.5 py-1 text-left transition-colors hover:border-ink-ghost"
-              : "inline-flex items-center gap-1.5 rounded-md border border-dashed border-line px-2 py-1 text-[12px] font-medium text-ink-quiet transition-colors hover:border-ink-soft/50 hover:text-ink-soft"
-          }
+          // A plain property value like Status or Priority: no border,
+          // a soft fill on hover, "Add contact" while it is empty.
+          className={sx.contact}
+          data-empty={hasContact ? undefined : ""}
         >
-          {hasContact ? (
-            <ContactSummary name={name} email={email} />
-          ) : (
-            <>
-              <PlusGlyph />
-              <span>Add contact</span>
-            </>
-          )}
+          {hasContact ? <ContactSummary name={name} email={email} /> : <span>Add contact</span>}
         </button>
       )}
     >
@@ -97,43 +90,11 @@ export function ContactEditor({ task }: { task: Task }) {
 }
 
 function ContactSummary({ name, email }: { name: string; email: string }) {
-  if (name && email) {
-    return (
-      <span className="inline-flex min-w-0 items-baseline gap-2">
-        <span className="truncate text-[13px] font-medium text-ink">
-          {name}
-        </span>
-        <span className="truncate text-[12px] text-ink-quiet">·</span>
-        <span className="truncate text-[12px] text-ink-quiet">{email}</span>
-      </span>
-    );
-  }
-  if (name) {
-    return (
-      <span className="truncate text-[13px] font-medium text-ink">
-        {name}
-      </span>
-    );
-  }
   return (
-    <span className="truncate text-[13px] text-ink-soft">{email}</span>
-  );
-}
-
-function PlusGlyph() {
-  return (
-    <svg
-      width="11"
-      height="11"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.4"
-      aria-hidden
-    >
-      <line x1="12" y1="5" x2="12" y2="19" />
-      <line x1="5" y1="12" x2="19" y2="12" />
-    </svg>
+    <>
+      {name ? <span className={sx.contactName}>{name}</span> : null}
+      {email ? <span className={name ? sx.contactEmail : sx.contactName}>{email}</span> : null}
+    </>
   );
 }
 
@@ -174,7 +135,7 @@ function ContactForm({
   return (
     <div className="flex flex-col gap-2 px-1.5 py-1.5">
       <label className="flex flex-col gap-1">
-        <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
+        <span className="text-[12px] font-medium text-[color:var(--v3-text-2)] leading-[var(--x-lead-tight)]">
           Name
         </span>
         <input
@@ -184,11 +145,11 @@ function ContactForm({
           onChange={(e) => setName(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Sarah at Floral House"
-          className="rounded-md border border-line-soft bg-white px-2 py-1.5 text-[13px] text-ink placeholder:text-ink-faint focus:border-brand focus:outline-none"
+          className="min-h-[36px] rounded-md border border-[color:var(--v3-control-border)] bg-[color:var(--v3-surface)] px-2 py-1.5 text-[13px] text-[color:var(--v3-text)] placeholder:text-[color:var(--v3-text-3)] focus:border-[color:var(--v3-accent)] focus:outline-none"
         />
       </label>
       <label className="flex flex-col gap-1">
-        <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
+        <span className="text-[12px] font-medium text-[color:var(--v3-text-2)] leading-[var(--x-lead-tight)]">
           Email
         </span>
         <input
@@ -197,7 +158,7 @@ function ContactForm({
           onChange={(e) => setEmail(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="sarah@floralhouse.com"
-          className="rounded-md border border-line-soft bg-white px-2 py-1.5 text-[13px] text-ink placeholder:text-ink-faint focus:border-brand focus:outline-none"
+          className="min-h-[36px] rounded-md border border-[color:var(--v3-control-border)] bg-[color:var(--v3-surface)] px-2 py-1.5 text-[13px] text-[color:var(--v3-text)] placeholder:text-[color:var(--v3-text-3)] focus:border-[color:var(--v3-accent)] focus:outline-none"
         />
       </label>
       <div className="mt-1 flex items-center justify-between gap-2">
@@ -205,7 +166,7 @@ function ContactForm({
           <button
             type="button"
             onClick={onClear}
-            className="rounded-md px-2 py-1 text-[12px] text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
+            className="min-h-[28px] rounded-md px-2 text-[12.5px] text-[color:var(--v3-text-2)] transition-colors hover:bg-[color:var(--v3-hover)] hover:text-[color:var(--v3-text)]"
           >
             Remove
           </button>
@@ -216,14 +177,14 @@ function ContactForm({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-md px-2 py-1 text-[12px] text-ink-soft transition-colors hover:bg-bg-sunken"
+            className="min-h-[28px] rounded-md px-2 text-[12.5px] text-[color:var(--v3-text-2)] transition-colors hover:bg-[color:var(--v3-hover)] hover:text-[color:var(--v3-text)]"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={() => onSave({ name, email })}
-            className="rounded-md bg-ink px-2.5 py-1 text-[12px] font-medium text-white transition-colors hover:bg-ink/90"
+            className="min-h-[28px] rounded-md bg-[color:var(--v3-accent)] px-2.5 text-[12.5px] font-medium text-[color:var(--v3-on-accent)] transition-colors hover:bg-[color:var(--v3-accent-hover)]"
           >
             Save
           </button>

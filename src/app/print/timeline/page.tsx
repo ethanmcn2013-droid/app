@@ -1,36 +1,16 @@
-import { getTasks, getWorkspaceName } from "@/server/db/queries";
-import { PrintTimeline } from "@/components/app/print/print-timeline";
-import {
-  gatePrintProject,
-  PrintRefusal,
-  type PrintSearchParams,
-} from "../print-project";
+import { redirect } from "next/navigation";
+import type { PrintSearchParams } from "../print-project";
 
-export default async function PrintTimelinePage({
+/**
+ * The Schedule print view is retired with the Schedule view. Existing print
+ * links open the board print, keeping the project.
+ */
+export default async function PrintTimelineRedirect({
   searchParams,
 }: {
   searchParams: PrintSearchParams;
 }) {
-  const gate = await gatePrintProject("/print/timeline", searchParams);
-  if (gate.kind === "refused") return <PrintRefusal />;
-  const ws = gate.workspaceId;
-
-  const [tasks, workspaceName] = await Promise.all([
-    getTasks(ws),
-    getWorkspaceName(ws),
-  ]);
-
-  const generatedAt = new Date().toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-
-  return (
-    <PrintTimeline
-      tasks={tasks}
-      workspaceName={workspaceName}
-      generatedAt={generatedAt}
-    />
-  );
+  const sp = await searchParams;
+  const workspaceId = Array.isArray(sp.workspaceId) ? sp.workspaceId[0] : sp.workspaceId;
+  redirect(workspaceId ? `/print/board?${new URLSearchParams({ workspaceId })}` : "/print/board");
 }

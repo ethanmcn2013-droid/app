@@ -31,21 +31,21 @@ export function DriveHandoverView({ read, busy, onSubmit }: {
     }
   }, [confirmation]);
   const target = read.state === "in_progress" ? read.continuation : read.state === "ready" ? read.choices.find(choice => choice.userId === selected) : null;
-  return <section aria-label="Change storage owner" className="rounded-xl border border-line-soft bg-bg-elevated p-5">
-    <h3 className="text-[16px] font-semibold text-ink">Change storage owner</h3>
+  return <section aria-label="Change storage owner" className="rounded-[var(--v3-radius-lg)] border border-[color:var(--v3-border)] bg-[var(--v3-surface)] p-5 shadow-[var(--v3-shadow-1)]">
+    <h3 className="text-[14px] font-semibold text-[color:var(--v3-text)]">Change storage owner</h3>
     <p className="mt-2">{stateCopy[read.state]}</p>
     <p className="mt-2">The new owner’s Drive will hold future files. Existing files stay with their original owner; their ownership and location do not change.</p>
     {read.state === "ready" ? read.choices.length ? <div className="mt-3">
-      <label htmlFor={selectId} className="block font-medium text-ink">New storage owner</label>
-      <select id={selectId} className={`${driveButton} mt-2 w-full min-w-0 max-w-full bg-bg-elevated`} disabled={busy || confirmation} value={selected} onChange={event => setSelected(event.target.value)}>
+      <label htmlFor={selectId} className="block font-medium text-[color:var(--v3-text)]">New storage owner</label>
+      <select id={selectId} className={`${driveButton} mt-2 w-full min-w-0 max-w-full`} disabled={busy || confirmation} value={selected} onChange={event => setSelected(event.target.value)}>
         <option value="">Choose an owner</option>
         {read.choices.map(choice => <option key={choice.userId} value={choice.userId}>{choice.name}</option>)}
       </select>
-    </div> : <p className="mt-3 text-ink">Another board owner needs to connect their Google Drive first. Then check again to choose them.</p> : null}
-    {read.state === "in_progress" && target ? <p className="mt-3 break-words font-medium text-ink">Saved change: {target.name}</p> : null}
+    </div> : <p className="mt-3 text-[color:var(--v3-text)]">Another board owner needs to connect their Google Drive first. Then check again to choose them.</p> : null}
+    {read.state === "in_progress" && target ? <p className="mt-3 break-words font-medium text-[color:var(--v3-text)]">Saved change: {target.name}</p> : null}
     {target && !confirmation ? <button ref={reviewButton} className={`${driveButton} mt-3`} disabled={busy} onClick={() => setConfirmation(true)}>{read.state === "in_progress" ? "Continue saved change" : "Review owner change"}</button> : null}
-    {target && confirmation ? <div className="mt-4 rounded-lg border border-line p-4" role="group" aria-label="Confirm storage owner change">
-      <p className="break-words font-medium text-ink">Use {target.name}’s Drive for future files?</p>
+    {target && confirmation ? <div className="mt-4 rounded-[var(--v3-radius)] border border-[color:var(--v3-border)] bg-[var(--v3-sunken)] p-4" role="group" aria-label="Confirm storage owner change">
+      <p className="break-words font-medium text-[color:var(--v3-text)]">Use {target.name}’s Drive for future files?</p>
       <p className="mt-2">They will own and can see those files, which use their Drive space. Existing files stay where they are. Access for future uploads must finish being set up.</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <button autoFocus className={driveButton} disabled={busy} onClick={() => { restoreFocus.current = true; setConfirmation(false); }}>Go back</button>

@@ -89,10 +89,10 @@ export default function manifest(): MetadataRoute.Manifest {
         description: "Flat list of everything.",
       },
       {
-        name: "Timeline",
-        short_name: "Timeline",
-        url: "/app/tasks/timeline",
-        description: "Dates on a line.",
+        name: "Calendar",
+        short_name: "Calendar",
+        url: "/app/tasks/calendar",
+        description: "Dated work on a month.",
       },
     ],
     share_target: {

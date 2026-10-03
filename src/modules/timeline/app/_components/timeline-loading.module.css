@@ -1,0 +1,259 @@
+/* Timeline skeletons (v3, round 2): the shape of what is coming, on the real
+   geometry, so nothing moves when it arrives. A 1.2s opacity shimmer; static
+   under reduced motion. */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--v3-canvas);
+  --tl-left-w: 280px;
+}
+
+.column {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px 32px 0;
+}
+
+.bone {
+  display: block;
+  border-radius: var(--v3-radius-sm);
+  background: var(--v3-fill);
+  animation: shimmer 1.2s var(--v3-ease) infinite;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--v3-border);
+}
+
+.toolbarGap {
+  flex: 1;
+}
+
+/* All projects grid */
+
+.gridFrame {
+  margin: 4px 32px 0;
+  margin-left: max(32px, calc((100% - 1180px) / 2 + 32px));
+  overflow: hidden;
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-surface);
+}
+
+.gridHead {
+  display: flex;
+  height: 44px;
+  border-bottom: 1px solid var(--v3-border);
+}
+
+.axis {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(6, 1fr);
+  align-items: center;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--v3-text-3);
+}
+
+.axis > span {
+  padding-left: 8px;
+  border-left: 1px solid var(--v3-border);
+  line-height: 44px;
+}
+
+.gridBody {
+  position: relative;
+}
+
+.todayLine {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--v3-border-strong);
+}
+
+.gridRow {
+  display: flex;
+  align-items: center;
+  height: 52px;
+  border-bottom: 1px solid var(--v3-border);
+}
+
+.gridLeft {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  flex-shrink: 0;
+  width: var(--tl-left-w);
+  height: 100%;
+  padding: 0 16px;
+  border-right: 1px solid var(--v3-border);
+}
+
+.gridCanvas {
+  position: relative;
+  flex: 1;
+  height: 100%;
+}
+
+.bar {
+  position: absolute;
+  top: 17px;
+  height: 18px;
+  border-radius: 5px;
+}
+
+/* One plan */
+
+.runway {
+  margin-top: 22px;
+  overflow: hidden;
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-surface);
+}
+
+.runwayAxis {
+  height: 34px;
+  border-bottom: 1px solid var(--v3-border);
+}
+
+.runwayLine {
+  position: relative;
+  height: 98px;
+}
+
+.runwayLine::before {
+  content: "";
+  position: absolute;
+  top: 48px;
+  left: 6%;
+  right: 6%;
+  height: 2px;
+  background: var(--v3-border);
+}
+
+.ghostDiamond {
+  position: absolute;
+  top: 48px;
+  width: 12px;
+  height: 12px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  border-radius: 2px;
+  background: var(--v3-fill);
+  animation: shimmer 1.2s var(--v3-ease) infinite;
+}
+
+.runwayFoot {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-top: 1px solid var(--v3-border);
+}
+
+.card {
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-surface);
+}
+
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 32px;
+  margin-top: 24px;
+}
+
+.listRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 48px;
+  padding: 0 18px;
+  border-top: 1px solid var(--v3-border);
+}
+
+@keyframes shimmer {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bone,
+  .ghostDiamond {
+    animation: none;
+  }
+}
+
+@media (max-width: 1179px) {
+  .page {
+    --tl-left-w: 220px;
+  }
+
+  .column {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .gridFrame {
+    margin-left: 24px;
+    margin-right: 24px;
+  }
+
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .page {
+    --tl-left-w: 132px;
+  }
+
+  .column {
+    padding: 20px 16px 0;
+  }
+
+  .gridFrame {
+    margin-left: 16px;
+    margin-right: 16px;
+  }
+
+  .toolbar {
+    display: none;
+  }
+}

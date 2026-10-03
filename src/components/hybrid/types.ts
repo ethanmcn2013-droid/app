@@ -1,5 +1,5 @@
 export const LAB_OPTIONS = ["a", "b", "c", "hybrid"] as const;
-export const LAB_VIEWS = ["board", "list", "timeline", "calendar"] as const;
+export const LAB_VIEWS = ["board", "list", "calendar"] as const;
 export const LAB_DATASETS = ["sparse", "normal", "dense", "edge"] as const;
 export const LAB_DENSITIES = ["compact", "comfortable"] as const;
 export const LAB_MODES = ["default", "empty", "loading", "error", "readonly"] as const;
@@ -104,7 +104,7 @@ export type LabDragOperation =
   | {
       kind: "schedule";
       taskId: string;
-      source: "timeline-tray" | "timeline" | "calendar";
+      source: "tray" | "calendar";
       targetDate: CalendarDate | null;
     }
   | null;
@@ -119,7 +119,6 @@ export const PRIORITY_LABELS: Record<TaskPriority, string> = {
 export const VIEW_LABELS: Record<LabView, string> = {
   board: "Board",
   list: "List",
-  timeline: "Schedule",
   calendar: "Calendar",
 };
 

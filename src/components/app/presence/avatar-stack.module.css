@@ -1,0 +1,93 @@
+/* AvatarStack. Tokens only from src/ds/v3.css; tones are color-mixes of v3
+   tokens so initials keep AA contrast in light and dark. */
+
+.stack {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  vertical-align: middle;
+}
+
+.button {
+  height: 32px;
+  padding: 0 10px 0 4px;
+  border-radius: var(--v3-radius);
+  color: var(--v3-text-2);
+  transition: background-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
+}
+
+.button:hover { background: var(--v3-hover); color: var(--v3-text); }
+.button[aria-pressed="true"] { background: var(--v3-accent-soft); color: var(--v3-text); }
+.button:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: 2px; }
+
+.faces { display: inline-flex; align-items: center; }
+
+.face,
+.more {
+  --size: 26px;
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  font-size: calc(var(--size) * 0.36);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  user-select: none;
+  /* The ring separates overlapping faces on any ground. */
+  box-shadow: 0 0 0 2px var(--v3-canvas);
+}
+
+.face[data-size="sm"], .more[data-size="sm"] { --size: 22px; }
+
+.face {
+  --tone: var(--v3-accent);
+  background: color-mix(in srgb, var(--tone) 15%, var(--v3-surface));
+  color: color-mix(in srgb, var(--tone) 55%, var(--v3-text));
+}
+
+.face[data-tone="1"] { --tone: var(--v3-success); }
+.face[data-tone="2"] { --tone: var(--v3-warning); }
+.face[data-tone="3"] { --tone: var(--v3-danger); }
+.face[data-tone="4"] { --tone: color-mix(in srgb, var(--v3-accent) 45%, var(--v3-success)); }
+.face[data-tone="5"] { --tone: color-mix(in srgb, var(--v3-danger) 50%, var(--v3-accent)); }
+
+.faces > * + * { margin-left: -5px; }
+.stack[data-size="sm"] .faces > * + * { margin-left: -4px; }
+
+.photo {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.online {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--v3-success);
+  box-shadow: 0 0 0 2px var(--v3-canvas);
+}
+
+.face[data-size="sm"] .online { width: 7px; height: 7px; }
+
+.more {
+  background: var(--v3-sunken);
+  color: var(--v3-text-2);
+  font-size: calc(var(--size) * 0.38);
+  box-shadow: 0 0 0 2px var(--v3-canvas), inset 0 0 0 1px var(--v3-border);
+}
+
+.count {
+  font-size: 12.5px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}

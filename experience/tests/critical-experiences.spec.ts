@@ -453,7 +453,7 @@ test("tasks.surface.command-palette / keyboard search", async ({ page }, testInf
   await test.step("load the hydrated demo workspace", async () => {
     await page.goto("/app/tasks", { waitUntil: "domcontentloaded" });
     await expect(
-      page.getByRole("heading", { name: "The Orchard, events" }),
+      page.getByRole("heading", { name: "Tasks", level: 1 }),
     ).toBeVisible();
     await enterDeterministicMotionMode(page);
   });
@@ -495,12 +495,12 @@ test("tasks.surface.quick-create / long natural-language task", async ({ page },
   );
   expect(fixture?.assertions).toBeDefined();
   await page.goto("/app/tasks", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "The Orchard, events" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tasks", level: 1 })).toBeVisible();
   await enterDeterministicMotionMode(page);
   await page.keyboard.press("c");
-  const dialog = page.getByRole("dialog");
+  const dialog = page.getByRole("dialog", { name: "New task" });
   await expect(dialog).toBeVisible();
-  const taskName = dialog.getByPlaceholder(/Name a task/);
+  const taskName = dialog.getByRole("textbox", { name: "Task name" });
   const taskTitle =
     "Confirm the final supplier arrival plan with every Saturday contact next Thursday #maria-james";
   await expect(taskName).toBeFocused();
@@ -528,9 +528,11 @@ test("tasks.surface.task-detail-panel / populated task", async ({ page }, testIn
   );
   expect(fixture?.assertions).toBeDefined();
   await page.goto("/app/tasks", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "The Orchard, events" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tasks", level: 1 })).toBeVisible();
   await enterDeterministicMotionMode(page);
   await page.keyboard.press("Enter");
+  // An opened task is a modal dialog at every width: the two-column task
+  // view from 1024px, the sheet below. Both carry the task's name.
   const panel = page.getByRole("dialog", {
     name: "Confirm marquee sides with the hire company",
   });

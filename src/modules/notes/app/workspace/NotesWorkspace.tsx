@@ -2,31 +2,28 @@
 
 import {
   useCallback,
+  useDeferredValue,
   useEffect,
   useId,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   useSyncExternalStore,
-  memo,
-  useDeferredValue,
 } from "react";
 
+import { CaptureEmailRow, type CaptureState } from "@/modules/notes/app/CaptureEmailRow";
 import {
-  CAPTURE_EMAIL_PLAN,
-  type CaptureState,
-} from "@/modules/notes/app/CaptureEmailRow";
-import { notesCopyForDomain } from "@/modules/notes/lib/notes-copy";
+  NOTES_LEGEND,
+  NOTES_VIEW_LABELS,
+  notesCopyForDomain,
+  waitingLabel,
+} from "@/modules/notes/lib/notes-copy";
 import {
-  MAX_APPROVED_EXTRACT_CHARS,
-} from "@/modules/notes/lib/notes-hybrid";
-import {
-  countLabel,
   countViews,
-  defaultSelection,
   derivePresentation,
+  FILTER_LABELS,
   friendlyDate,
+  groupByDay,
   isArchived,
   isSent,
   matchesFilter,
@@ -34,9 +31,9 @@ import {
   needsReview,
   noteSource,
   notesHref,
-  searchSnippet,
   SOURCE_LABELS,
   sortNotes,
+  sourceCounts,
   viewFromParam,
   type NotebookFilter,
   type NotebookSort,
@@ -48,44 +45,61 @@ import type {
   NoteRead,
   PendingApprovedTasksSendRead,
 } from "@/modules/notes/server/actions/notes";
-import { PRICING_URL, taskFocusPath } from "@/lib/product-urls";
+import { taskFocusPath } from "@/lib/product-urls";
 import { useUnsavedWork } from "@/components/app/unsaved-work-context";
 import { parseProjectId } from "@/lib/projects/project-ref";
 import { notebookRecoveryKey } from "@/modules/notes/lib/notes-recovery";
-import {
-  CONTEXT_TERMINOLOGY,
-  PLANNING_PERIOD_CONTEXTS,
-  type PlanningPeriodContext,
-} from "@/lib/planning/context";
 import type { TasksWorkspaceDestination } from "@/modules/notes/server/tasks-personalization";
-import { Composer } from "@/modules/notes/app/workspace/Composer";
+import { Composer, type ComposerActions } from "@/modules/notes/app/workspace/Composer";
 import { useNotebook } from "@/modules/notes/app/workspace/use-notebook";
-import { BEAT_HOLD_MS, useNoteMotion } from "@/modules/notes/app/workspace/use-note-motion";
+import { useNoteMotion } from "@/modules/notes/app/workspace/use-note-motion";
 import {
-  AlertIcon,
   BackIcon,
   CheckIcon,
+  ChevronRightIcon,
   CloseIcon,
+  HelpIcon,
+  KeyboardIcon,
   LockIcon,
-  MoreIcon,
+  PencilIcon,
   RestoreIcon,
   SearchIcon,
+  SortIcon,
   SourceIcon,
   TaskIcon,
 } from "@/modules/notes/app/workspace/icons";
+import { CaptureBar } from "./CaptureBar";
+import {
+  ActionMenu,
+  notesOverlayOpen,
+  ShortcutsSheet,
+  TurnIntoTaskDialog,
+  type MenuItem,
+} from "./NotesDialogs";
+import { NotesFilterMenu } from "./NotesFilterMenu";
+import { NotesList, type ListSection } from "./NotesList";
+import { NoteReader } from "./NoteReader";
+import { NoteRow, type RowVariant } from "./NoteRow";
+import { ReviewSession, type ReviewTally } from "./ReviewSession";
 
 import styles from "./notes-workspace.module.css";
 
 /**
- * Notes.
+ * Notes, rebuilt as a tool (v3, docs/design/v3/launcher.md §3.6–3.8, §4.4).
  *
- * Three views, one job each. Notebook is where writing happens and where a
- * note is read. Review is the short daily decision: keep it, act on it, or
- * let it go. Sent is the record of what became work.
+ * Two panes, one question each. The list on the left is the notebook: a
+ * capture bar, search, three views (All, To review, In Tasks), one Filter
+ * menu, and the notes grouped by day. The right pane is whatever you are
+ * doing: writing (the canvas, the resting state), reading and deciding (the
+ * reader), or reviewing the queue one card at a time. Below 900px it is one
+ * pane at a time, and capture is the bar at the foot of the screen that
+ * opens into a sheet.
  *
  * The view and the open note live in the URL, written with the browser's own
  * History API so Back means what a person expects on a phone without paying
- * for a server render every time a row is clicked.
+ * for a server render every time a row is clicked. Everything the notebook
+ * guarantees (idempotent capture, compare-and-swap edits, the delete grace
+ * period, locked sends) lives in use-notebook.ts and is unchanged.
  */
 
 const NARROW_QUERY = "(max-width: 899px)";
@@ -100,7 +114,7 @@ const NARROW_QUERY = "(max-width: 899px)";
  */
 const REVIEW_WORKSPACE: TasksWorkspaceDestination = {
   id: "review_workspace",
-  name: "Review workspace",
+  name: "Review project",
   role: "owner",
   planningPeriodId: null,
   planningPeriodName: null,
@@ -109,6 +123,7 @@ const REVIEW_WORKSPACE: TasksWorkspaceDestination = {
   primaryDateLabel: null,
 };
 const subscribeNever = () => () => {};
+const NO_TALLY: ReviewTally = { kept: 0, turned: 0, deleted: 0 };
 
 function useSaveChord(): string {
   return useSyncExternalStore(
@@ -118,289 +133,20 @@ function useSaveChord(): string {
   );
 }
 
+function subscribeNarrow(onChange: () => void) {
+  const media = window.matchMedia(NARROW_QUERY);
+  media.addEventListener("change", onChange);
+  return () => media.removeEventListener("change", onChange);
+}
+
+/** Null on the server and the first paint; the layout itself is pure CSS. */
 function useNarrow(): boolean | null {
-  const [narrow, setNarrow] = useState<boolean | null>(null);
-  useEffect(() => {
-    const media = window.matchMedia(NARROW_QUERY);
-    const update = () => setNarrow(media.matches);
-    update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
-  return narrow;
-}
-
-/**
- * What this account calls the thing a task belongs to.
- *
- * A teacher's is a Class, a couple's is a Wedding, everyone else's is a
- * Project. D-011 makes that map the only place the noun is written, so Notes
- * reads it rather than hard-coding a word that would be wrong for two of the
- * three audiences this product is for.
- */
-function workspaceNoun(contextType: string | null | undefined): string {
-  const context = PLANNING_PERIOD_CONTEXTS.includes(
-    contextType as PlanningPeriodContext,
-  )
-    ? (contextType as PlanningPeriodContext)
-    : "general";
-  return CONTEXT_TERMINOLOGY[context].workspace;
-}
-
-/** Highlights the matched run without splitting a word mid-character. */
-function Highlighted({ text, query }: { text: string; query: string }) {
-  const needle = query.trim().toLocaleLowerCase("en-IE");
-  if (!needle) return <>{text}</>;
-  const haystack = text.toLocaleLowerCase("en-IE");
-  const parts: React.ReactNode[] = [];
-  let cursor = 0;
-  let index = haystack.indexOf(needle);
-  while (index >= 0) {
-    if (index > cursor) parts.push(text.slice(cursor, index));
-    parts.push(
-      <mark className={styles.highlight} key={`${index}-${cursor}`}>
-        {text.slice(index, index + needle.length)}
-      </mark>,
-    );
-    cursor = index + needle.length;
-    index = haystack.indexOf(needle, cursor);
-  }
-  if (!parts.length) return <>{text}</>;
-  if (cursor < text.length) parts.push(text.slice(cursor));
-  return <>{parts}</>;
-}
-
-/**
- * One row in the notebook list.
- *
- * Memoised, and that is the whole point. The list lived inside the workspace
- * component, so every keystroke in the composer re-derived the title, the
- * preview, the date and two highlight passes for every note on screen — 8.8
- * seconds of blocked main thread to type one sentence into a 500-note
- * notebook. Nothing here depends on the composer, so nothing here needs to
- * re-render with it.
- */
-const NoteRow = memo(function NoteRow({
-  note,
-  index,
-  now,
-  query,
-  selected,
-  state,
-  canSendToTasks,
-  arriving,
-  departing,
-  promoted,
-  onSelect,
-  onRetry,
-  onKeep,
-  onTurnIntoTask,
-  onDelete,
-}: {
-  note: PresentableNote;
-  index: number;
-  now: number;
-  query: string;
-  selected: boolean;
-  state: string | undefined;
-  canSendToTasks: boolean;
-  /** This note appeared after the page did: one placement receipt, once. */
-  arriving: boolean;
-  /** The note has left the notebook; the row is closing the gap behind it. */
-  departing: boolean;
-  /** The promotion resolved in this session, so the chip fades up in place. */
-  promoted: boolean;
-  onSelect: (id: string) => void;
-  onRetry: (id: string) => void;
-  onKeep: (note: NoteRead) => void | Promise<void>;
-  onTurnIntoTask: (note: NoteRead) => void;
-  onDelete: (note: NoteRead) => void;
-}) {
-  const presentation = derivePresentation(note.body);
-  const source = noteSource(note.source);
-  const snippet = query.trim()
-    ? searchSnippet(note.body, query)
-    : presentation.preview;
-  // The decision belongs on the note it is about. A note that has not reached
-  // the server yet cannot be decided about, so the strip waits for the save.
-  const awaitingDecision = needsReview(note) && !state;
-
-  /**
-   * The decision strip, and how it leaves.
-   *
-   * Keep leaves the note in the notebook and Delete takes it away, so the two
-   * cannot animate the same object — but they can animate the same way, and
-   * they do: this strip closes over exactly the movement a deleted row uses.
-   * Held open one beat past the decision so there is something to close.
-   * Mounted already open, so nothing here fires on page load.
-   */
-  const [decision, setDecision] = useState<"open" | "leaving" | "closed">(
-    awaitingDecision ? "open" : "closed",
+  return useSyncExternalStore(
+    subscribeNarrow,
+    () => window.matchMedia(NARROW_QUERY).matches,
+    () => null,
   );
-  if (awaitingDecision && decision !== "open") setDecision("open");
-  if (!awaitingDecision && decision === "open") setDecision("leaving");
-  useEffect(() => {
-    if (decision !== "leaving") return;
-    const handle = window.setTimeout(() => setDecision("closed"), BEAT_HOLD_MS);
-    return () => window.clearTimeout(handle);
-  }, [decision]);
-
-  const shellRef = useRef<HTMLLIElement | null>(null);
-
-  /**
-   * Hand focus on before the row is taken away.
-   *
-   * The departure sets `inert` on the strip, and `inert` blurs whatever is
-   * inside it synchronously — which is the Keep or Delete button the person
-   * just pressed. Focus then restarted at the top of the document, putting
-   * the toast's Undo thirty-six tab stops away. So the decision moves focus
-   * itself, to the next row waiting to be decided, in the same gesture: press
-   * Keep and the queue advances under your hands. Only the next and previous
-   * rows are candidates; when this was the last one, the list itself takes
-   * focus so the reader stays where the work was.
-   */
-  const handOffFocus = () => {
-    const shell = shellRef.current;
-    if (!shell || typeof document === "undefined") return;
-    if (!shell.contains(document.activeElement)) return;
-    const control = (sibling: Element | null) =>
-      sibling?.querySelector<HTMLElement>("[data-decision-control]") ?? null;
-    const next = control(shell.nextElementSibling) ?? control(shell.previousElementSibling);
-    if (next) {
-      next.focus();
-      return;
-    }
-    const list = shell.parentElement;
-    if (!list) return;
-    if (!list.hasAttribute("tabindex")) list.setAttribute("tabindex", "-1");
-    list.focus();
-  };
-
-  return (
-    <li
-      ref={shellRef}
-      className={styles.rowShell}
-      data-arriving={arriving ? "" : undefined}
-      data-departing={departing ? "" : undefined}
-      inert={departing || undefined}
-    >
-      <div className={styles.rowShellInner}>
-        {index > 0 ? <div className={styles.rowSeparator} aria-hidden="true" /> : null}
-        <button
-          type="button"
-          className={styles.row}
-          // A row on its way out is not a row anyone can walk to with J/K, and
-          // it is not one the count should include either.
-          data-note-row={departing ? undefined : ""}
-          data-note-id={departing ? undefined : note.id}
-          aria-current={selected ? "true" : undefined}
-          onClick={() => onSelect(note.id)}
-        >
-          <span className={styles.rowIcon}>
-            <SourceIcon source={source} />
-            <span className={styles.srOnly}>{SOURCE_LABELS[source]}</span>
-          </span>
-          <span className={styles.rowBody}>
-            <span className={styles.rowTitle}>
-              <Highlighted text={presentation.title} query={query} />
-            </span>
-            {snippet ? (
-              <span className={styles.rowPreview}>
-                <Highlighted text={snippet} query={query} />
-              </span>
-            ) : null}
-            <span className={styles.rowMeta}>
-              <span>{friendlyDate(note.createdAt, now)}</span>
-              {isSent(note) ? (
-                <span
-                  className={styles.rowFlag}
-                  data-tone="sent"
-                  data-resolved={promoted ? "" : undefined}
-                >
-                  In Tasks
-                </span>
-              ) : null}
-              {needsReview(note) ? (
-                <span className={styles.rowFlag} data-tone="review">
-                  To review
-                </span>
-              ) : null}
-              {state === "pending" ? <span className={styles.rowFlag}>Saving</span> : null}
-              {state === "offline" ? (
-                <span className={styles.rowFlag}>Waiting to save</span>
-              ) : null}
-              {state === "failed" ? (
-                <span className={styles.rowFlag} data-tone="attention">
-                  <AlertIcon />
-                  Not saved
-                </span>
-              ) : null}
-            </span>
-          </span>
-        </button>
-        {state === "failed" ? (
-          <div className={styles.rowRetry}>
-            <button
-              type="button"
-              className={styles.quietButton}
-              onClick={() => void onRetry(note.id)}
-            >
-              Try saving again
-            </button>
-          </div>
-        ) : null}
-        {decision !== "closed" ? (
-          <div
-            className={styles.rowDecision}
-            data-departing={decision === "leaving" ? "" : undefined}
-            inert={decision === "leaving" || undefined}
-          >
-            <div className={styles.rowDecisionInner}>
-              <div className={styles.rowActions}>
-                <button
-                  type="button"
-                  className={styles.quietButton}
-                  aria-label={`Keep: ${presentation.title}`}
-                  data-decision-control
-                  onClick={() => {
-                    handOffFocus();
-                    void onKeep(note);
-                  }}
-                >
-                  <CheckIcon />
-                  Keep
-                </button>
-                <button
-                  type="button"
-                  className={styles.quietButton}
-                  aria-label={`Turn into task: ${presentation.title}`}
-                  disabled={!canSendToTasks}
-                  onClick={() => {
-                    handOffFocus();
-                    onTurnIntoTask(note);
-                  }}
-                >
-                  Turn into task
-                </button>
-                <button
-                  type="button"
-                  className={styles.dangerButton}
-                  aria-label={`Delete: ${presentation.title}`}
-                  onClick={() => {
-                    handOffFocus();
-                    onDelete(note);
-                  }}
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : null}
-      </div>
-    </li>
-  );
-});
+}
 
 export interface NotesWorkspaceProps {
   initialNotes: NoteRead[];
@@ -424,6 +170,13 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
   return <NotesWorkspaceFrame key={notebookRecoveryKey(props.recoveryScope, props.initialWorkspaceId)} {...props} />;
 }
 
+const FILTER_EMPTY: Record<Exclude<NotebookFilter, "all" | "review">, string> = {
+  typed: "No written notes yet.",
+  voice: "No spoken notes yet.",
+  photo: "No notes from a photo yet.",
+  email: "No notes by email yet.",
+};
+
 function NotesWorkspaceFrame(props: NotesWorkspaceProps) {
   const copy = notesCopyForDomain(props.activeDomain);
   const saveChord = useSaveChord();
@@ -437,14 +190,22 @@ function NotesWorkspaceFrame(props: NotesWorkspaceProps) {
         : [REVIEW_WORKSPACE],
     [props.demoMode, props.tasksWorkspaces],
   );
+  const canSendToTasks = props.captureAllowed !== false && workspaces.length > 0;
+  const sendBlockedReason =
+    props.captureAllowed === false
+      ? "This project is unavailable for new work, so notes cannot become tasks here."
+      : workspaces.length === 0
+        ? "Make a project in Tasks first, then any note can become a task in it."
+        : null;
 
   const [view, setView] = useState<NotesView>(props.initialView ?? "notebook");
   const [selectedId, setSelectedId] = useState<string | null>(props.initialNoteId ?? null);
   const [sort, setSort] = useState<NotebookSort>("newest");
   const [filter, setFilter] = useState<NotebookFilter>("all");
   const [privacyOpen, setPrivacyOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [taskDialogNote, setTaskDialogNote] = useState<NoteRead | null>(null);
+  const [freshId, setFreshId] = useState<string | null>(null);
 
   const notebook = useNotebook({
     initialNotes: props.initialNotes,
@@ -458,15 +219,18 @@ function NotesWorkspaceFrame(props: NotesWorkspaceProps) {
   });
 
   const captureRef = useRef<HTMLTextAreaElement>(null);
+  const composerActions = useRef<ComposerActions | null>(null);
+  const openFilterRef = useRef<(() => void) | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const detailRef = useRef<HTMLTextAreaElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
-  const headerRef = useRef<HTMLElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const footerRef = useRef<HTMLDivElement>(null);
   const liveRegionId = useId();
 
   // The list is allowed to lag the field by a frame. Typing must never wait
   // on 500 rows re-deriving themselves.
   const deferredQuery = useDeferredValue(notebook.query);
+  const searching = Boolean(deferredQuery.trim());
   const allNotes = notebook.notes as PresentableNote[];
   // Which notes are mid-beat: arriving in their slot, leaving it, or resolving
   // into "In Tasks". Reads the whole notebook, not the filtered list, so a
@@ -485,6 +249,7 @@ function NotesWorkspaceFrame(props: NotesWorkspaceProps) {
       ]),
     [allNotes, notebook.archivedNotes, notebook.mutationStates],
   );
+  const bySource = useMemo(() => sourceCounts(allNotes), [allNotes]);
 
   // ── URL state ───────────────────────────────────────────────────────
 
@@ -506,16 +271,28 @@ function NotesWorkspaceFrame(props: NotesWorkspaceProps) {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
+  // ── Review session ──────────────────────────────────────────────────
+
+  // The queue shrinks as decisions are made, so the index only moves when
+  // someone skips. Deciding always leaves the next note at the same position.
+  const [reviewIndex, setReviewIndex] = useState(0);
+  const [reviewedThisSession, setReviewedThisSession] = useState(0);
+  const [tally, setTally] = useState<ReviewTally>(NO_TALLY);
+
   const goToView = useCallback(
     (nextView: NotesView) => {
+      if (nextView === "review" && view !== "review") {
+        // A new session counts from zero.
+        setReviewIndex(0);
+        setReviewedThisSession(0);
+        setTally(NO_TALLY);
+      }
       setView(nextView);
-      // Each view starts with nothing open. Notebook and Sent then choose a
-      // sensible first row for themselves, but only on a screen wide enough
-      // to show a list and a note at the same time.
+      // Each view starts with nothing open, so the canvas is in front.
       setSelectedId(null);
       writeUrl(nextView, null);
     },
-    [writeUrl],
+    [view, writeUrl],
   );
 
   const selectNote = useCallback(
@@ -526,17 +303,16 @@ function NotesWorkspaceFrame(props: NotesWorkspaceProps) {
     [view, writeUrl],
   );
 
-  // ── Notebook list ───────────────────────────────────────────────────
+  // ── Lists ───────────────────────────────────────────────────────────
 
   /**
    * What the list draws, and what the notebook actually holds.
    *
    * They differ for one beat. A note that has just been deleted keeps its row
    * for --motion-base so the row can close the gap behind itself, so it is
-   * filtered and sorted with everything else and lands back in its own slot
-   * rather than being pinned somewhere convenient. Counts, the default
-   * selection and the keyboard walk read the second list, which never carries
-   * a row that is on its way out.
+   * filtered and sorted with everything else and lands back in its own slot.
+   * Counts, the selection and the keyboard walk read the second list, which
+   * never carries a row that is on its way out.
    */
   const notebookRows = useMemo(() => {
     const source = deferredQuery.trim()
@@ -567,35 +343,41 @@ function NotesWorkspaceFrame(props: NotesWorkspaceProps) {
   const sentNotes = useMemo(
     () =>
       sortNotes(
-        [...allNotes, ...(notebook.archivedNotes as PresentableNote[])].filter((note) =>
-          isSent(note),
-        ),
+        [...allNotes, ...(notebook.archivedNotes as PresentableNote[])].filter((note) => isSent(note)),
         "newest",
       ),
     [allNotes, notebook.archivedNotes],
   );
 
+  const groups = useMemo(
+    () => (searching ? null : groupByDay(notebookRows, now)),
+    [notebookRows, now, searching],
+  );
+
   /**
    * Which note is open, derived rather than stored.
    *
-   * An explicit choice lives in the URL. Absent one, a wide screen falls back
-   * to the newest note so the workspace is never a blank half-page, and a
-   * narrow screen falls back to nothing so the list stays a list until
-   * someone picks a row. Deriving it means no history entry is spent on a
-   * default, and Back never lands on a selection nobody made.
+   * Only an explicit choice opens a note: a wide screen does not fall back to
+   * the newest one, so the capture canvas stays in front until someone picks
+   * a row. A choice that has left the notebook simply closes.
    */
-  const effectiveSelectedId =
-    narrow === null
-      ? selectedId
-      : defaultSelection(
-          view === "sent" ? sentNotes : notebookNotes,
-          selectedId,
-          narrow,
-        );
+  const effectiveSelectedId = useMemo(() => {
+    if (!selectedId || view === "review") return null;
+    const pool: readonly PresentableNote[] =
+      view === "sent" ? sentNotes : allNotes.filter((note) => !isArchived(note));
+    return pool.some((note) => note.id === selectedId) ? selectedId : null;
+  }, [allNotes, selectedId, sentNotes, view]);
 
   const selectedNote = useMemo(
-    () => notebook.notes.find((note) => note.id === effectiveSelectedId) ?? null,
-    [notebook.notes, effectiveSelectedId],
+    () =>
+      view === "notebook"
+        ? (notebook.notes.find((note) => note.id === effectiveSelectedId) ?? null)
+        : null,
+    [notebook.notes, effectiveSelectedId, view],
+  );
+  const selectedSent = useMemo(
+    () => (view === "sent" ? (sentNotes.find((note) => note.id === effectiveSelectedId) ?? null) : null),
+    [effectiveSelectedId, sentNotes, view],
   );
 
   /**
@@ -605,14 +387,10 @@ function NotesWorkspaceFrame(props: NotesWorkspaceProps) {
    * note's words in the field for one paint, and a keystroke landing in that
    * frame would be saved against the wrong note.
    */
-  // The notebook editor owns its own draft state and starts empty. Even when
-  // the route arrives with a selected note, that note has not been copied into
-  // the editor yet, so the loaded marker must also start empty. Treating the
-  // URL id as already loaded produced a blank reading surface on direct links.
   const [loadedNoteId, setLoadedNoteId] = useState<string | null>(null);
-  // Counts swaps, not opens. The reading pane settles into a note it has been
-  // handed in place of another one; it does not animate the note the page
-  // arrived with, because that would be a page-load animation.
+  // Counts swaps, not opens. The reader settles into a note it has been handed
+  // in place of another one; it does not animate the note the page arrived
+  // with, because that would be a page-load animation.
   const [paneSwaps, setPaneSwaps] = useState(0);
   if (loadedNoteId !== (selectedNote?.id ?? null)) {
     if (loadedNoteId !== null && selectedNote) setPaneSwaps((count) => count + 1);
@@ -620,33 +398,208 @@ function NotesWorkspaceFrame(props: NotesWorkspaceProps) {
     notebook.applyOpenNote(selectedNote);
   }
 
-  // Grow the reading field to its content so a note is one continuous page
-  // rather than a box with its own scrollbar inside a scrolling pane.
-  useLayoutEffect(() => {
-    const field = detailRef.current;
-    if (!field) return;
-    field.style.height = "auto";
-    field.style.height = `${Math.max(96, field.scrollHeight)}px`;
-  }, [notebook.detailBody, selectedId]);
-
-  // ── Review queue ────────────────────────────────────────────────────
-
   const reviewQueue = useMemo(
     () => sortNotes(allNotes.filter((note) => needsReview(note)), "oldest"),
     [allNotes],
   );
-  // The queue shrinks as decisions are made, so the index only moves when
-  // someone skips. Deciding always leaves the next note at the same position.
-  const [reviewIndex, setReviewIndex] = useState(0);
-  const reviewNote = reviewQueue[Math.min(reviewIndex, Math.max(0, reviewQueue.length - 1))] ?? null;
-  const [reviewedThisSession, setReviewedThisSession] = useState(0);
+  const reviewPosition = Math.min(reviewIndex, Math.max(0, reviewQueue.length - 1));
+  const reviewNote = reviewQueue[reviewPosition] ?? null;
+  const nextReviewNote =
+    reviewQueue.length > 1 ? (reviewQueue[(reviewPosition + 1) % reviewQueue.length] ?? null) : null;
+
+  const main: "capture" | "reader" | "review" | "sent" =
+    view === "review" ? "review" : selectedNote ? "reader" : selectedSent ? "sent" : "capture";
+
+  // ── Actions ─────────────────────────────────────────────────────────
+
+  /**
+   * Back to the canvas: nothing open, the composer in front with its draft
+   * kept. `mode` opens voice (its consent step first) or the photo picker,
+   * inside the same click, so the browser still counts it as the person's.
+   */
+  const newNote = useCallback(
+    (mode?: "voice" | "photo") => {
+      if (view === "review") {
+        setView("notebook");
+        writeUrl("notebook", null);
+      } else {
+        writeUrl(view, null);
+      }
+      setSelectedId(null);
+      if (mode === "voice") composerActions.current?.openVoice();
+      else if (mode === "photo") composerActions.current?.openPhoto();
+      else window.setTimeout(() => captureRef.current?.focus({ preventScroll: true }), 0);
+    },
+    [view, writeUrl],
+  );
+
+  const saveExtractedNotes = useCallback(
+    async (
+      bodies: string[],
+      source: NoteCaptureSource,
+    ): Promise<{ ok: boolean; remaining: string[] }> => {
+      const failed: string[] = [];
+      let firstId: string | null = null;
+      for (const body of bodies) {
+        const result = await notebook.captureNote(body, source);
+        if (!result?.ok) failed.push(body);
+        else if (!firstId) firstId = result.id;
+      }
+      const saved = bodies.length - failed.length;
+      if (!failed.length) {
+        notebook.showToast({
+          tone: "info",
+          message: bodies.length === 1 ? "Note saved." : `${bodies.length} notes saved.`,
+        });
+        if (firstId) setFreshId(firstId);
+        return { ok: true, remaining: [] };
+      }
+      // Hand back only what did not land. Retrying the whole set used to
+      // create a second copy of everything that had already succeeded.
+      notebook.showToast({
+        tone: "error",
+        message:
+          saved > 0
+            ? `${saved} saved, ${failed.length} still here. Try those again.`
+            : "None of those saved. Your words are still here.",
+      });
+      return { ok: false, remaining: failed };
+    },
+    [notebook],
+  );
+
+  /**
+   * Save from the canvas. The canvas stays in front and clears; the note
+   * arrives at the top of Today and is marked, so the next thought can go
+   * straight down. On a phone the sheet closes behind it.
+   */
+  const saveDraft = useCallback(async () => {
+    const id = await notebook.saveDraft();
+    if (id) {
+      setFreshId(id);
+      if (narrow) (document.activeElement as HTMLElement | null)?.blur();
+    }
+    return id;
+  }, [narrow, notebook]);
+
+  // Depends on beginSend, not on the whole notebook object. The notebook is a
+  // fresh object on every render, so taking it as a dependency made this
+  // callback new on every keystroke, and every memoised row re-rendered with
+  // it, the exact cost NoteRow's memo exists to avoid.
+  const beginSend = notebook.beginSend;
+  const openTaskDialog = useCallback(
+    (note: NoteRead) => {
+      const known = workspaces.some((item) => item.id === props.initialWorkspaceId);
+      const workspaceId =
+        (known ? props.initialWorkspaceId : null) ?? workspaces[0]?.id ?? "";
+      beginSend(note, workspaceId);
+      setTaskDialogNote(note);
+    },
+    [beginSend, props.initialWorkspaceId, workspaces],
+  );
+
+  /**
+   * Delete from a row, and hand focus on first. The departing row goes
+   * inert, which would drop focus to the top of the document; the next row
+   * (or the one before) takes it instead, so the list stays under the hands.
+   */
+  const deleteNote = notebook.deleteNote;
+  // Read through a ref so the rows' delete handler keeps one identity and the
+  // memoised rows do not all re-render every time the selection moves.
+  const selectedIdRef = useRef(selectedId);
+  useEffect(() => {
+    selectedIdRef.current = selectedId;
+  }, [selectedId]);
+  const deleteFromRow = useCallback(
+    (note: NoteRead, rowId: string) => {
+      const rows = Array.from(listRef.current?.querySelectorAll<HTMLElement>("[data-note-row]") ?? []);
+      const index = rows.findIndex((row) => row.getAttribute("data-note-id") === rowId);
+      const neighbour = rows[index + 1] ?? rows[index - 1] ?? null;
+      deleteNote(note);
+      if (selectedIdRef.current === note.id) selectNote(null, { replace: true });
+      window.setTimeout(() => {
+        if (neighbour?.isConnected) neighbour.focus({ preventScroll: true });
+        else searchRef.current?.focus({ preventScroll: true });
+      }, 0);
+    },
+    [deleteNote, selectNote],
+  );
+
+  const advanceReview = useCallback((decision: keyof ReviewTally) => {
+    setReviewedThisSession((current) => current + 1);
+    setTally((current) => ({ ...current, [decision]: current[decision] + 1 }));
+    setReviewIndex(0);
+  }, []);
+
+  /**
+   * Move past a note without deciding. It stays in the queue, and the queue
+   * wraps: pressed at the end it returned to a clamped index and did nothing
+   * at all while still looking pressable.
+   */
+  const skipReview = useCallback(() => {
+    setReviewIndex((current) => (current + 1) % Math.max(1, reviewQueue.length));
+  }, [reviewQueue.length]);
+
+  const reviewKeep = useCallback(
+    async (note: NoteRead) => {
+      await notebook.keepInNotes(note);
+      advanceReview("kept");
+    },
+    [advanceReview, notebook],
+  );
+
+  const reviewDelete = useCallback(
+    (note: NoteRead) => {
+      notebook.deleteNote(note);
+      advanceReview("deleted");
+    },
+    [advanceReview, notebook],
+  );
+
+  const totalToReview = reviewQueue.length + reviewedThisSession;
+  const reviewDone = Math.min(reviewedThisSession, totalToReview);
+
+  const selectRow = useCallback(
+    (id: string) => {
+      if (view === "review") {
+        const index = reviewQueue.findIndex((note) => note.id === id);
+        if (index >= 0) setReviewIndex(index);
+        return;
+      }
+      selectNote(id);
+    },
+    [reviewQueue, selectNote, view],
+  );
+
+  const cancelSend = notebook.cancelSend;
+  const closeTaskDialog = useCallback(() => {
+    cancelSend();
+    setTaskDialogNote(null);
+  }, [cancelSend]);
+
+  /** From In Tasks back to the same note in the notebook. */
+  const openInNotebook = useCallback(
+    (noteId: string) => {
+      setView("notebook");
+      setSelectedId(noteId);
+      writeUrl("notebook", noteId);
+    },
+    [writeUrl],
+  );
 
   // ── Keyboard ────────────────────────────────────────────────────────
 
   useEffect(() => {
+    const focusReader = () =>
+      window.setTimeout(
+        () => document.querySelector<HTMLElement>("[data-note-display], #note-body")?.focus({ preventScroll: true }),
+        0,
+      );
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       if (event.isComposing || event.keyCode === 229) return;
+      // Dialogs, sheets and menus own the keyboard while they are open.
+      if (notesOverlayOpen()) return;
       const typing =
         target?.tagName === "INPUT" ||
         target?.tagName === "TEXTAREA" ||
@@ -654,10 +607,9 @@ function NotesWorkspaceFrame(props: NotesWorkspaceProps) {
         target?.isContentEditable;
 
       if (event.key === "Escape") {
-        if (privacyOpen || menuOpen) {
+        if (privacyOpen) {
           event.preventDefault();
           setPrivacyOpen(false);
-          setMenuOpen(false);
           return;
         }
         if (notebook.query && target === searchRef.current) {
@@ -665,35 +617,123 @@ function NotesWorkspaceFrame(props: NotesWorkspaceProps) {
           notebook.setQuery("");
           return;
         }
-        if (narrow && effectiveSelectedId && !typing) {
+        // On a phone the capture sheet closes; the words stay.
+        if (narrow && target === captureRef.current) {
           event.preventDefault();
-          selectNote(null);
+          captureRef.current?.blur();
+          return;
+        }
+        if (effectiveSelectedId && !typing) {
+          event.preventDefault();
+          if (narrow) {
+            selectNote(null);
+            return;
+          }
+          (target as HTMLElement | null)?.blur?.();
+          listRef.current
+            ?.querySelector<HTMLElement>(`[data-note-id="${effectiveSelectedId}"]`)
+            ?.focus({ preventScroll: false });
+        }
+        return;
+      }
+
+      // Down from search walks into the results.
+      if (event.key === "ArrowDown" && target === searchRef.current) {
+        const first = listRef.current?.querySelector<HTMLElement>("[data-note-row]");
+        if (first) {
+          event.preventDefault();
+          first.focus();
         }
         return;
       }
 
       if (typing || event.metaKey || event.ctrlKey || event.altKey) return;
 
-      if (event.key === "/" && view === "notebook") {
+      if (event.key === "/") {
         event.preventDefault();
         searchRef.current?.focus();
         searchRef.current?.select();
         return;
       }
-      if (!["j", "k", "ArrowDown", "ArrowUp"].includes(event.key)) return;
+      if (event.key === "?") {
+        event.preventDefault();
+        setShortcutsOpen(true);
+        return;
+      }
+      const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+      if (key === "n") {
+        event.preventDefault();
+        newNote();
+        return;
+      }
+      // Review owns T, E, L and Delete while it is on screen.
+      if (view === "review") return;
+
+      if (key === "r" && counts.review > 0) {
+        event.preventDefault();
+        goToView("review");
+        return;
+      }
+      if (key === "f" && view === "notebook") {
+        event.preventDefault();
+        openFilterRef.current?.();
+        return;
+      }
+
+      // The row under focus, for the single-key decisions.
+      const rowElement = target?.closest<HTMLElement>("[data-note-row]") ?? null;
+      const rowId = rowElement?.getAttribute("data-note-id") ?? null;
+      const rowNote = rowId ? (notebook.notes.find((note) => note.id === rowId) ?? null) : null;
+      const settled = rowNote ? !notebook.mutationStates[rowNote.id] : false;
+
+      if ((key === "Enter" || key === "o") && rowElement && rowId) {
+        event.preventDefault();
+        selectRow(rowId);
+        if (view === "notebook" || view === "sent") focusReader();
+        return;
+      }
+      // The open note answers the same keys as a focused row (T, E, Delete),
+      // so the decision bar's key hints are true wherever focus sits.
+      const readerNote =
+        !rowElement && main === "reader" && selectedNote && !notebook.mutationStates[selectedNote.id]
+          ? selectedNote
+          : null;
+      if (key === "e" && view === "notebook" && ((rowNote && settled) || readerNote)) {
+        const candidate = rowNote && settled ? rowNote : readerNote!;
+        event.preventDefault();
+        if (!notebook.readOnly && needsReview(candidate as PresentableNote)) void notebook.keepInNotes(candidate);
+        return;
+      }
+      if (key === "t" && canSendToTasks && !notebook.readOnly) {
+        // T only ever opens the sheet; nothing is sent without it.
+        const candidate = rowNote && settled ? rowNote : !rowElement && main === "reader" ? selectedNote : null;
+        if (candidate && !isSent(candidate as PresentableNote) && view === "notebook") {
+          event.preventDefault();
+          openTaskDialog(candidate);
+        }
+        return;
+      }
+      if ((key === "Delete" || key === "Backspace") && rowNote && settled && view === "notebook") {
+        event.preventDefault();
+        deleteFromRow(rowNote, rowNote.id);
+        return;
+      }
+      if ((key === "Delete" || key === "Backspace") && readerNote && view === "notebook" && !notebook.readOnly) {
+        event.preventDefault();
+        notebook.deleteNote(readerNote);
+        selectNote(null);
+        return;
+      }
+
+      if (!["j", "k", "ArrowDown", "ArrowUp"].includes(key)) return;
       const rows = Array.from(
         listRef.current?.querySelectorAll<HTMLButtonElement>("[data-note-row]") ?? [],
       );
       if (!rows.length) return;
-      if (
-        (event.key === "ArrowDown" || event.key === "ArrowUp") &&
-        !target?.closest("[data-note-row]")
-      ) {
-        return;
-      }
+      if ((key === "ArrowDown" || key === "ArrowUp") && !rowElement) return;
       event.preventDefault();
       const current = rows.indexOf(document.activeElement as HTMLButtonElement);
-      const forward = event.key === "j" || event.key === "ArrowDown";
+      const forward = key === "j" || key === "ArrowDown";
       const next =
         current < 0
           ? forward
@@ -702,27 +742,35 @@ function NotesWorkspaceFrame(props: NotesWorkspaceProps) {
           : Math.max(0, Math.min(rows.length - 1, current + (forward ? 1 : -1)));
       const row = rows[next];
       row?.focus();
-      // Open what is focused. Walking the list while the reading pane stayed
-      // on the first note made the shortcut look broken.
+      // Open what is focused on a wide screen. Walking the list while the
+      // reader stayed on another note made the shortcut look broken.
       const id = row?.getAttribute("data-note-id");
       if (id && !narrow) selectNote(id, { replace: true });
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [
+    canSendToTasks,
+    counts.review,
+    deleteFromRow,
     effectiveSelectedId,
-    menuOpen,
+    goToView,
+    main,
     narrow,
+    newNote,
     notebook,
+    openTaskDialog,
     privacyOpen,
     selectNote,
+    selectRow,
+    selectedNote,
     view,
   ]);
 
   /**
    * Keep focus somewhere on a phone.
    *
-   * Below 900px the list and the detail swap by `display: none`, which
+   * Below 900px the list and the reader swap by `display: none`, which
    * removes whichever one held focus and drops the caret to <body>. A
    * screen reader loses its place on every open and every close.
    */
@@ -768,13 +816,13 @@ function NotesWorkspaceFrame(props: NotesWorkspaceProps) {
 
   // The suite's unsaved-work signal (WP6): the same three dirty truths the
   // beforeunload guard above reads, published so a guarded Project switch is
-  // held while any of them stands. beforeunload cannot cover that case — it
+  // held while any of them stands. beforeunload cannot cover that case: it
   // fires on tab close, never on a client-side navigation. The predicates
   // here and in that guard must stay in agreement. The claims carry copy
   // only; saving, retrying and discarding stay in this workspace, and a
   // refusal rendered elsewhere sends the founder back here to resolve it.
   // Flag off there is no provider, `unsavedWork` is null, and both effects
-  // do nothing — today's behaviour, unchanged.
+  // do nothing.
   const unsavedWork = useUnsavedWork();
   const draftDirty = Boolean(notebook.draft.trim());
   const captureDirty = notebook.hasUnsavedWork;
@@ -822,469 +870,545 @@ function NotesWorkspaceFrame(props: NotesWorkspaceProps) {
   }, [unsavedWork]);
 
   useEffect(() => {
-    if (!privacyOpen && !menuOpen) return;
+    if (!privacyOpen) return;
     const onPointerDown = (event: PointerEvent) => {
-      if (!headerRef.current?.contains(event.target as Node)) {
-        setPrivacyOpen(false);
-        setMenuOpen(false);
-      }
+      if (!footerRef.current?.contains(event.target as Node)) setPrivacyOpen(false);
     };
     document.addEventListener("pointerdown", onPointerDown);
     return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [menuOpen, privacyOpen]);
+  }, [privacyOpen]);
 
-  // ── Actions ─────────────────────────────────────────────────────────
+  // ── Rendering ───────────────────────────────────────────────────────
 
-  const saveExtractedNotes = useCallback(
-    async (
-      bodies: string[],
-      source: NoteCaptureSource,
-    ): Promise<{ ok: boolean; remaining: string[] }> => {
-      const failed: string[] = [];
-      let firstId: string | null = null;
-      for (const body of bodies) {
-        const result = await notebook.captureNote(body, source);
-        if (!result?.ok) failed.push(body);
-        else if (!firstId) firstId = result.id;
-      }
-      const saved = bodies.length - failed.length;
-      if (!failed.length) {
-        notebook.showToast({
-          tone: "info",
-          message: bodies.length === 1 ? "Note saved." : `${bodies.length} notes saved.`,
-        });
-        if (firstId && !narrow) selectNote(firstId);
-        return { ok: true, remaining: [] };
-      }
-      // Hand back only what did not land. Retrying the whole set used to
-      // create a second copy of everything that had already succeeded.
-      notebook.showToast({
-        tone: "error",
-        message:
-          saved > 0
-            ? `${saved} saved, ${failed.length} still here. Try those again.`
-            : "None of those saved. Your words are still here.",
-      });
-      return { ok: false, remaining: failed };
+  const viewHref = (candidate: NotesView) =>
+    notesHref(candidate, null, parseProjectId(props.initialWorkspaceId));
+
+  const renderRow = (variant: RowVariant) => {
+    const row = (note: PresentableNote) => (
+      <NoteRow
+        key={note.id}
+        note={note}
+        variant={variant}
+        selected={variant === "review" ? note.id === reviewNote?.id : note.id === effectiveSelectedId}
+        state={notebook.mutationStates[note.id]}
+        arriving={motion.isArriving(note.id)}
+        departing={motion.isDeparting(note.id)}
+        promoted={motion.isPromoted(note.id)}
+        fresh={note.id === freshId}
+        now={now}
+        query={deferredQuery}
+        canSendToTasks={canSendToTasks}
+        readOnly={notebook.readOnly}
+        demoMode={props.demoMode}
+        onSelect={selectRow}
+        onRetry={notebook.retryCapture}
+        onKeep={notebook.keepInNotes}
+        onTurnIntoTask={openTaskDialog}
+        onDelete={deleteFromRow}
+        onRestore={notebook.restoreNote}
+      />
+    );
+    return row;
+  };
+
+  const activeSourceFilter = filter !== "all" && filter !== "review" ? filter : null;
+  const hasNotes = counts.notebook > 0 || allNotes.length > 0;
+  const firstUse = !hasNotes && view === "notebook";
+
+  let listBody: React.ReactNode;
+  if (view === "review") {
+    listBody = reviewQueue.length ? (
+      <NotesList
+        sections={[{ key: "review", label: NOTES_LEGEND.waiting, notes: reviewQueue }]}
+        renderRow={renderRow("review")}
+      />
+    ) : (
+      <div className={styles.listEmpty}>
+        <p>{copy.notebook.reviewEmpty}</p>
+        <button type="button" className={styles.linkButton} onClick={() => newNote()}>
+          Write a note
+        </button>
+      </div>
+    );
+  } else if (view === "sent") {
+    listBody = sentNotes.length ? (
+      <NotesList sections={[{ key: "sent", label: null, notes: sentNotes }]} renderRow={renderRow("sent")} />
+    ) : (
+      <p className={styles.listEmpty}>{copy.notebook.sentEmpty}</p>
+    );
+  } else if (notebookRows.length) {
+    const sections: ListSection[] = groups
+      ? groups.map((group) => ({ key: group.key, label: group.label, notes: group.notes }))
+      : [{ key: "results", label: null, notes: notebookRows }];
+    listBody = <NotesList sections={sections} renderRow={renderRow("notebook")} />;
+  } else if (searching) {
+    listBody = (
+      <div className={styles.listEmpty}>
+        <p>No notes match “{deferredQuery.trim()}”.</p>
+        <button type="button" className={styles.linkButton} onClick={() => notebook.setQuery("")}>
+          Clear search
+        </button>
+      </div>
+    );
+  } else if (activeSourceFilter) {
+    listBody = (
+      <div className={styles.listEmpty}>
+        <p>{FILTER_EMPTY[activeSourceFilter]}</p>
+        <button type="button" className={styles.linkButton} onClick={() => setFilter("all")}>
+          Show all
+        </button>
+      </div>
+    );
+  } else {
+    listBody = (
+      <div className={styles.listEmpty} data-first-use="">
+        <span className={styles.listEmptyMark} aria-hidden="true">
+          <PencilIcon />
+        </span>
+        <p>{copy.notebook.empty}</p>
+      </div>
+    );
+  }
+
+  const reviewPromptVisible = view === "notebook" && counts.review > 0 && !searching;
+
+  const headerMenu: MenuItem[] = [
+    {
+      label: "Newest first",
+      icon: sort === "newest" ? <CheckIcon /> : <SortIcon />,
+      onSelect: () => setSort("newest"),
     },
-    [narrow, notebook, selectNote],
-  );
-
-  const saveDraftAndSelect = useCallback(async () => {
-    const id = await notebook.saveDraft();
-    if (id && !narrow) selectNote(id);
-    return id;
-  }, [narrow, notebook, selectNote]);
-
-  // Depends on beginSend, not on the whole notebook object. The notebook is a
-  // fresh object on every render, so taking it as a dependency made this
-  // callback new on every keystroke, and every memoised row re-rendered with
-  // it — the exact cost NoteRow's memo exists to avoid.
-  const beginSend = notebook.beginSend;
-  const openTaskDialog = useCallback(
-    (note: NoteRead) => {
-      const known = workspaces.some((item) => item.id === props.initialWorkspaceId);
-      const workspaceId =
-        (known ? props.initialWorkspaceId : null) ?? workspaces[0]?.id ?? "";
-      beginSend(note, workspaceId);
-      setTaskDialogNote(note);
+    {
+      label: "Oldest first",
+      icon: sort === "oldest" ? <CheckIcon /> : <SortIcon />,
+      onSelect: () => setSort("oldest"),
     },
-    [beginSend, props.initialWorkspaceId, workspaces],
-  );
-
-  const advanceReview = useCallback(() => {
-    setReviewedThisSession((current) => current + 1);
-    setReviewIndex(0);
-  }, []);
-
-  /**
-   * Move past a note without deciding. It stays in the queue, and the queue
-   * wraps: pressed at the end it returned to a clamped index and did nothing
-   * at all while still looking pressable.
-   */
-  const skipReview = useCallback(() => {
-    setReviewIndex((current) => (current + 1) % Math.max(1, reviewQueue.length));
-  }, [reviewQueue.length]);
-
-  const reviewKeep = useCallback(
-    async (note: NoteRead) => {
-      await notebook.keepInNotes(note);
-      advanceReview();
+    {
+      label: "Keyboard shortcuts",
+      icon: <KeyboardIcon />,
+      onSelect: () => setShortcutsOpen(true),
     },
-    [advanceReview, notebook],
-  );
+  ];
 
-  const reviewDelete = useCallback(
-    (note: NoteRead) => {
-      notebook.deleteNote(note);
-      advanceReview();
-    },
-    [advanceReview, notebook],
-  );
-
-  const totalToReview = reviewQueue.length + reviewedThisSession;
-  const reviewDone = Math.min(reviewedThisSession, totalToReview);
+  const recent = sentNotes.filter((note) => !isArchived(note)).slice(0, 3);
+  const captureDisabled = notebook.readOnly || props.captureAllowed === false;
 
   return (
-    <div className={styles.root} data-notes-workspace="" data-view={view} data-recovery-scope={props.recoveryScope} data-recovery-project={props.initialWorkspaceId ?? ""}>
-      <h1 className={styles.srOnly}>
-        {view === "notebook" ? "Notes notebook" : view === "review" ? "Review notes" : "Notes sent to Tasks"}
-      </h1>
-      <header className={styles.header} ref={headerRef}>
-        <nav className={styles.views} aria-label="Notes views">
-          {(["notebook", "review", "sent"] as const).map((candidate) => {
-            const count = counts[candidate];
-            return (
-              <a
-                key={candidate}
-                className={styles.viewTab}
-                href={notesHref(candidate, null, parseProjectId(props.initialWorkspaceId))}
-                aria-current={view === candidate ? "page" : undefined}
-                onClick={(event) => {
-                  if (event.metaKey || event.ctrlKey || event.shiftKey) return;
-                  event.preventDefault();
-                  goToView(candidate);
-                }}
-              >
-                {/* Wave 6: this tab said "Sent" until 2026-08-11. Under a
-                    "Private to you" badge, "Sent" invites exactly the wrong
-                    reading — that something left for someone else. The row
-                    chip already says "In Tasks", so the tab joins the
-                    vocabulary the rows established. The view key and the
-                    ?view=sent URL are unchanged. */}
-                {candidate === "notebook" ? "Notebook" : candidate === "review" ? "Review" : "In Tasks"}
-                {count > 0 ? <span className={styles.viewCount}>{count}</span> : null}
-              </a>
-            );
-          })}
-        </nav>
-
-        <div className={styles.headerRight}>
-          <button
-            type="button"
-            className={styles.privacy}
-            aria-expanded={privacyOpen}
-            onClick={() => {
-              setPrivacyOpen((current) => !current);
-              setMenuOpen(false);
-            }}
-          >
-            <LockIcon />
-            <span className={styles.privacyText}>Private to you</span>
-          </button>
-          <button
-            type="button"
-            className={styles.iconButton}
-            aria-label="Notes options"
-            aria-expanded={menuOpen}
-            onClick={() => {
-              setMenuOpen((current) => !current);
-              setPrivacyOpen(false);
-            }}
-          >
-            <MoreIcon />
-          </button>
-        </div>
-
-        {privacyOpen ? (
-          <div className={styles.popover} role="dialog" aria-labelledby="notes-privacy-title">
-            <h2 className={styles.popoverTitle} id="notes-privacy-title">
-              Only you can read your notes. Speaking and photographing send
-              words out to be read.
-            </h2>
-            <dl className={styles.popoverList}>
-              <div>
-                <dt>Who can read them</dt>
-                <dd>
-                  Only you. Notes belong to your account, not to a shared project, so
-                  nobody you work with can open them.
-                </dd>
-              </div>
-              <div>
-                <dt>What you type</dt>
-                <dd>
-                  Stays on your device until you save it, then is stored on your account.
-                  Nothing you type is sent anywhere else.
-                </dd>
-              </div>
-              <div>
-                <dt>What you speak, and photos you take</dt>
-                <dd>
-                  These two do leave your device. Your browser turns speech into text
-                  with its own speech service, and the text, or the photo, is sent to
-                  Anthropic, which Signal Studio uses to turn it into notes. No recording
-                  is kept, because none is made, and the photo is read and then discarded.
-                  If you would rather nothing left the device, type the note instead.
-                </dd>
-              </div>
-              <div>
-                <dt>When a note becomes a task</dt>
-                <dd>
-                  Only the task wording you approve crosses over. Everyone in that project
-                  can see the task. The note stays here, private, unchanged.
-                </dd>
-              </div>
-            </dl>
-          </div>
-        ) : null}
-
-        {menuOpen ? (
-          <div className={styles.menu} role="menu" aria-label="Notes options">
-            {props.captureEmailState?.tier === "entitled" ? (
-              <>
-                <p className={styles.menuNote}>Send anything to this address and it lands here.</p>
-                <code className={styles.menuAddress}>{props.captureEmailState.address}</code>
+    <div
+      className={styles.root}
+      data-notes-workspace=""
+      data-view={view}
+      data-main={main}
+      data-first-use={firstUse ? "" : undefined}
+      data-recovery-scope={props.recoveryScope}
+      data-recovery-project={props.initialWorkspaceId ?? ""}
+    >
+      <div className={styles.frame}>
+        {/* ── The notebook list ─────────────────────────────────── */}
+        <section className={styles.listPane} aria-labelledby="notes-heading">
+          <header className={styles.listHead}>
+            <div className={styles.titleRow}>
+              <h1 className={styles.title} id="notes-heading">
+                Notes
+              </h1>
+              <div className={styles.titleActions}>
                 <button
                   type="button"
-                  role="menuitem"
-                  className={styles.menuItem}
-                  onClick={() => {
-                    void navigator.clipboard
-                      ?.writeText(props.captureEmailState?.tier === "entitled" ? props.captureEmailState.address : "")
-                      .then(() =>
-                        notebook.showToast({ tone: "info", message: "Capture address copied." }),
-                      )
-                      .catch(() =>
-                        notebook.showToast({
-                          tone: "error",
-                          message: "Copying is blocked here. Select the address instead.",
-                        }),
-                      );
-                    setMenuOpen(false);
-                  }}
+                  className={styles.newButton}
+                  onClick={() => newNote()}
+                  aria-keyshortcuts="N"
+                  aria-label="New note"
                 >
-                  Copy capture address
+                  <PencilIcon />
                 </button>
-              </>
-            ) : (
-              <a role="menuitem" className={styles.menuItem} href={PRICING_URL}>
-                Capture by email
-                <span className={styles.menuHint}>{CAPTURE_EMAIL_PLAN}</span>
-              </a>
-            )}
-            <div className={styles.menuItem} role="presentation">
-              Search this notebook
-              <span className={styles.menuHint}>/</span>
+                <ActionMenu label="Notes options" items={headerMenu} className={styles.headMore} />
+              </div>
             </div>
-            <div className={styles.menuItem} role="presentation">
-              Save the note you are writing
-              <span className={styles.menuHint}>{saveChord} + Enter</span>
-            </div>
-            <div className={styles.menuItem} role="presentation">
-              Move through the list
-              <span className={styles.menuHint}>J · K</span>
-            </div>
-          </div>
-        ) : null}
-      </header>
 
-      <div className={styles.body}>
-        {view === "notebook" ? (
+            <CaptureBar
+              placeholder={copy.notebook.captureBar}
+              draft={notebook.draft}
+              disabled={captureDisabled}
+              disabledReason={captureDisabled ? "New notes are off here." : null}
+              voiceAvailable={!captureDisabled}
+              photoAvailable={props.photoAvailable}
+              onWrite={() => newNote()}
+              onVoice={() => newNote("voice")}
+              onPhoto={() => newNote("photo")}
+            />
+
+            {firstUse ? null : (
+              <>
+                <div className={styles.search}>
+                  <SearchIcon />
+                  <label className={styles.srOnly} htmlFor="notes-search">
+                    Search notes
+                  </label>
+                  <input
+                    id="notes-search"
+                    ref={searchRef}
+                    className={styles.searchInput}
+                    type="search"
+                    value={notebook.query}
+                    placeholder="Search notes"
+                    aria-keyshortcuts="/"
+                    aria-controls="notes-list"
+                    autoComplete="off"
+                    onChange={(event) => notebook.setQuery(event.target.value)}
+                  />
+                  {!notebook.query ? (
+                    <span className={styles.searchKey} aria-hidden="true">
+                      /
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      className={styles.searchClear}
+                      aria-label="Clear search"
+                      onClick={() => {
+                        notebook.setQuery("");
+                        searchRef.current?.focus();
+                      }}
+                    >
+                      <CloseIcon />
+                    </button>
+                  )}
+                </div>
+
+                <div className={styles.viewRow}>
+                  <nav className={styles.views} aria-label="Notes views">
+                    {(["notebook", "review", "sent"] as const).map((candidate) => {
+                      const count = candidate === "notebook" ? counts.notebook : counts[candidate];
+                      return (
+                        <a
+                          key={candidate}
+                          className={styles.viewTab}
+                          data-view={candidate}
+                          href={viewHref(candidate)}
+                          aria-current={view === candidate ? "page" : undefined}
+                          onClick={(event) => {
+                            if (event.metaKey || event.ctrlKey || event.shiftKey) return;
+                            event.preventDefault();
+                            goToView(candidate);
+                          }}
+                        >
+                          {/* The view key and the ?view=sent URL are unchanged. */}
+                          <span className={styles.viewName}>{NOTES_VIEW_LABELS[candidate]}</span>
+                          <span className={styles.viewCount}>{count}</span>
+                        </a>
+                      );
+                    })}
+                  </nav>
+                  {view === "notebook" ? (
+                    <NotesFilterMenu
+                      filter={filter}
+                      counts={bySource}
+                      onChange={setFilter}
+                      openRef={openFilterRef}
+                    />
+                  ) : null}
+                </div>
+                {activeSourceFilter && view === "notebook" ? (
+                  <div className={styles.filterChips}>
+                    <button
+                      type="button"
+                      className={styles.filterChip}
+                      onClick={() => setFilter("all")}
+                      aria-label={`Remove filter: ${FILTER_LABELS[activeSourceFilter]}`}
+                    >
+                      <SourceIcon source={activeSourceFilter} />
+                      {FILTER_LABELS[activeSourceFilter]}
+                      <CloseIcon />
+                    </button>
+                  </div>
+                ) : null}
+              </>
+            )}
+          </header>
+
           <div
-            className={styles.notebook}
-            data-detail-open={Boolean(selectedNote) || undefined}
+            className={styles.listScroll}
+            id="notes-list"
+            ref={listRef}
+            aria-label={view === "review" ? "Notes to review" : view === "sent" ? "Notes in Tasks" : "Your notes"}
+            role="region"
           >
+            {reviewPromptVisible ? (
+              <div className={styles.reviewPrompt}>
+                <div className={styles.reviewPromptText}>
+                  <p className={styles.reviewPromptTitle}>
+                    <span className={styles.waitingDot} aria-hidden="true" />
+                    {waitingLabel(copy, counts.review)}
+                  </p>
+                  <p className={styles.reviewPromptBody}>
+                    {canSendToTasks ? copy.notebook.reviewPrompt : copy.notebook.reviewPromptNoTasks}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className={styles.reviewPromptButton}
+                  onClick={() => goToView("review")}
+                  aria-keyshortcuts="R"
+                >
+                  Start review
+                </button>
+              </div>
+            ) : null}
+            {searching && view === "notebook" ? (
+              <p className={styles.matchCount} role="status">
+                {notebookNotes.length === 1 ? "1 match" : `${notebookNotes.length} matches`}
+                {notebook.searchState === "fallback" ? " · Showing what is loaded" : ""}
+              </p>
+            ) : null}
+            {listBody}
+          </div>
+
+          {hasNotes ? (
+            <footer className={styles.listFoot} ref={footerRef}>
+              <span className={styles.legendItem} title={NOTES_LEGEND.waiting}>
+                <span className={styles.waitingDot} aria-hidden="true" />
+                <span aria-hidden="true">{NOTES_LEGEND.waitingShort}</span>
+                <span className={styles.srOnly}>{NOTES_LEGEND.waiting}</span>
+              </span>
+              <span className={styles.legendItem}>
+                <span className={styles.legendCheck} aria-hidden="true">
+                  <CheckIcon />
+                </span>
+                {NOTES_LEGEND.inTasks}
+              </span>
+              <button
+                type="button"
+                className={styles.legendButton}
+                aria-expanded={privacyOpen}
+                aria-controls="notes-privacy"
+                onClick={() => setPrivacyOpen((current) => !current)}
+              >
+                <LockIcon />
+                {NOTES_LEGEND.private}
+              </button>
+              <button
+                type="button"
+                className={styles.legendHelp}
+                aria-keyshortcuts="?"
+                aria-label="Keyboard shortcuts"
+                onClick={() => setShortcutsOpen(true)}
+              >
+                <HelpIcon />
+              </button>
+              {privacyOpen ? (
+                <div className={styles.popover} id="notes-privacy" role="dialog" aria-labelledby="notes-privacy-title">
+                  <h2 className={styles.popoverTitle} id="notes-privacy-title">
+                    Only you can read your notes. Speaking and photographing send words out to be read.
+                  </h2>
+                  <dl className={styles.popoverList}>
+                    <div>
+                      <dt>Who can read them</dt>
+                      <dd>
+                        Only you. Notes belong to your account, not to a shared project, so nobody you
+                        work with can open them.
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>What you type</dt>
+                      <dd>
+                        Stays on your device until you save it, then is stored on your account. Nothing
+                        you type is sent anywhere else.
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>What you speak, and photos you take</dt>
+                      <dd>
+                        These two do leave your device. Your browser turns speech into text with its own
+                        speech service, and the text, or the photo, is sent to Anthropic, which Signal
+                        Studio uses to turn it into notes. No recording is kept, because none is made, and
+                        the photo is read and then discarded. If you would rather nothing left the device,
+                        type the note instead.
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>When a note becomes a task</dt>
+                      <dd>
+                        Only the task wording you approve crosses over. Everyone in that project can see
+                        the task. The note stays here, private, unchanged.
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+              ) : null}
+            </footer>
+          ) : null}
+        </section>
+
+        {/* ── Capture: the resting state of the right pane ──────── */}
+        <section className={styles.canvas} aria-labelledby="notes-canvas-title" data-notes-canvas="">
+          <div className={styles.canvasInner}>
+            <div className={styles.canvasHead}>
+              <h2 className={styles.canvasTitle} id="notes-canvas-title">
+                {copy.notebook.canvasTitle}
+              </h2>
+              <button
+                type="button"
+                className={styles.sheetClose}
+                onClick={() => (document.activeElement as HTMLElement | null)?.blur()}
+              >
+                Done
+              </button>
+            </div>
+            {props.captureAllowed === false ? (
+              <p className={styles.restricted} role="note">
+                This project is unavailable for new work. Your private notes are still here.
+              </p>
+            ) : null}
             <Composer
               earlierDeviceCopy={notebook.earlierDeviceCopy}
               copy={copy}
               draft={notebook.draft}
               setDraft={notebook.setDraft}
-              onSaveDraft={saveDraftAndSelect}
+              onSaveDraft={saveDraft}
               onSaveNotes={saveExtractedNotes}
               captureStatus={notebook.captureStatus}
               captureError={notebook.captureError}
               clearCaptureError={() => notebook.setCaptureError(null)}
-              readOnly={notebook.readOnly || props.captureAllowed === false}
+              readOnly={captureDisabled}
               saveChord={saveChord}
               photoAvailable={props.photoAvailable}
               speechSeparates={props.speechSeparates}
               demoMode={props.demoMode}
               fieldRef={captureRef}
+              actionsRef={composerActions}
             />
+            <p className={styles.canvasAssurance}>
+              <LockIcon />
+              {copy.notebook.canvasAssurance}
+            </p>
 
-            <div className={styles.toolbar}>
-              <div className={styles.search}>
-                <SearchIcon />
-                <label className={styles.srOnly} htmlFor="notes-search">
-                  Search notebook
-                </label>
-                <input
-                  id="notes-search"
-                  ref={searchRef}
-                  className={styles.searchInput}
-                  type="search"
-                  value={notebook.query}
-                  placeholder="Search notebook"
-                  aria-keyshortcuts="/"
-                  aria-controls="notes-list"
-                  onChange={(event) => notebook.setQuery(event.target.value)}
-                />
-                {!notebook.query ? (
-                  <span className={styles.searchKey} aria-hidden="true">
-                    /
+            {!hasNotes ? (
+              <ul className={styles.canvasTips} aria-label="Ways to capture">
+                <li>
+                  <span className={styles.tipMark} aria-hidden="true">
+                    <SourceIcon source="typed" />
                   </span>
-                ) : null}
-              </div>
-              <div className={styles.toolbarRight}>
-                <label className={styles.srOnly} htmlFor="notes-filter">
-                  Show
-                </label>
-                <select
-                  id="notes-filter"
-                  className={styles.select}
-                  value={filter}
-                  onChange={(event) => setFilter(event.target.value as NotebookFilter)}
-                >
-                  <option value="all">All notes</option>
-                  <option value="review">To review</option>
-                  <option value="typed">Written</option>
-                  <option value="voice">Spoken</option>
-                  <option value="photo">From a photo</option>
-                </select>
-                <label className={styles.srOnly} htmlFor="notes-sort">
-                  Order
-                </label>
-                <select
-                  id="notes-sort"
-                  className={styles.sortSelect}
-                  value={sort}
-                  onChange={(event) => setSort(event.target.value as NotebookSort)}
-                >
-                  <option value="newest">Newest first</option>
-                  <option value="oldest">Oldest first</option>
-                </select>
-              </div>
-            </div>
-
-            <div className={styles.split} data-detail-open={Boolean(selectedNote) || undefined}>
-              <section
-                className={styles.listPane}
-                id="notes-list"
-                aria-labelledby="notes-list-heading"
-              >
-                <div className={styles.listMeta}>
-                  <h2 className={styles.srOnly} id="notes-list-heading">
-                    Notebook
-                  </h2>
                   <span>
-                    {notebook.query.trim()
-                      ? `${notebookNotes.length} ${notebookNotes.length === 1 ? "match" : "matches"}`
-                      : countLabel("notebook", notebookNotes.length)}
+                    <strong>Type it</strong> and press {saveChord} Enter
                   </span>
-                  {notebook.searchState === "fallback" ? (
-                    <span>Showing what is loaded</span>
-                  ) : null}
-                </div>
-                {notebookRows.length ? (
-                  <ul className={styles.list} ref={listRef}>
-                    {notebookRows.map((note, index) => (
-                      <NoteRow
-                        key={note.id}
-                        note={note}
-                        index={index}
-                        now={now}
-                        query={deferredQuery}
-                        selected={note.id === effectiveSelectedId}
-                        state={notebook.mutationStates[note.id]}
-                        canSendToTasks={props.captureAllowed !== false && workspaces.length > 0}
-                        arriving={motion.isArriving(note.id)}
-                        departing={motion.isDeparting(note.id)}
-                        promoted={motion.isPromoted(note.id)}
-                        onSelect={selectNote}
-                        onRetry={notebook.retryCapture}
-                        onKeep={notebook.keepInNotes}
-                        onTurnIntoTask={openTaskDialog}
-                        onDelete={notebook.deleteNote}
-                      />
-                    ))}
-                  </ul>
-                ) : (
-                  <div className={styles.empty}>
-                    <p className={styles.emptyTitle}>
-                      {notebook.query.trim()
-                        ? "Nothing matches that"
-                        : filter !== "all"
-                          ? "Nothing here yet"
-                          : copy.capture.emptyTitle}
-                    </p>
-                    <p className={styles.emptyBody}>
-                      {notebook.query.trim()
-                        ? "Try a different word. Searching never changes your notes."
-                        : filter !== "all"
-                          ? "Change what you are showing to see the rest of your notebook."
-                          : copy.capture.emptyBody}
-                    </p>
-                  </div>
-                )}
-              </section>
+                </li>
+                <li>
+                  <span className={styles.tipMark} aria-hidden="true">
+                    <SourceIcon source="voice" />
+                  </span>
+                  <span>
+                    <strong>Say it out loud</strong> and Notes writes it down
+                  </span>
+                </li>
+                <li>
+                  <span className={styles.tipMark} aria-hidden="true">
+                    <SourceIcon source="photo" />
+                  </span>
+                  <span>
+                    <strong>Photograph a page</strong> and keep the words
+                  </span>
+                </li>
+              </ul>
+            ) : counts.notebook < 5 ? (
+              <p className={styles.canvasTip}>You can also say a note out loud, or photograph a page.</p>
+            ) : null}
 
-              <section className={styles.detailPane} aria-label="Selected note">
-                {selectedNote ? (
-                  <NoteDetail
-                    note={selectedNote}
-                    notebook={notebook}
-                    now={now}
-                    detailRef={detailRef}
-                    onBack={() => selectNote(null)}
-                    onTurnIntoTask={() => openTaskDialog(selectedNote)}
-                    onDelete={() => {
-                      notebook.deleteNote(selectedNote);
-                      selectNote(null);
-                    }}
-                    canSendToTasks={props.captureAllowed !== false && workspaces.length > 0}
-                    settle={paneSwaps > 0}
-                  />
-                ) : (
-                  <div className={styles.emptyCentred}>
-                    <p className={styles.emptyTitle}>
-                      {notebookNotes.length ? "Nothing open" : "Nothing here yet"}
-                    </p>
-                    <p className={styles.emptyBody}>
-                      {notebookNotes.length
-                        ? "Choose a note to read it, or write a new one above."
-                        : "Write your first note in the field above."}
-                    </p>
-                  </div>
-                )}
+            {props.captureEmailState ? (
+              <details className={styles.moreWays}>
+                <summary className={styles.moreWaysSummary}>
+                  <ChevronRightIcon />
+                  {copy.notebook.moreWays}
+                </summary>
+                <CaptureEmailRow
+                  state={props.captureEmailState}
+                  onFeedback={(feedback) =>
+                    notebook.showToast({
+                      tone: feedback.state === "saved" ? "info" : "error",
+                      message: feedback.message,
+                    })
+                  }
+                />
+              </details>
+            ) : null}
+
+            {recent.length ? (
+              <section className={styles.recent} aria-labelledby="notes-recent-title">
+                <h3 className={styles.recentTitle} id="notes-recent-title">
+                  {copy.notebook.recentTitle}
+                </h3>
+                <ul className={styles.recentList}>
+                  {recent.map((note) => (
+                    <li key={note.id} className={styles.recentItem}>
+                      <span className={styles.legendCheck} aria-hidden="true">
+                        <CheckIcon />
+                      </span>
+                      <span className={styles.recentText}>
+                        {note.extractBody || derivePresentation(note.body).title}
+                      </span>
+                      <a className={styles.recentLink} href={taskFocusPath(note.promotedTaskId ?? "")}>
+                        Open task
+                        <ChevronRightIcon />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
               </section>
-            </div>
+            ) : null}
           </div>
-        ) : null}
+        </section>
 
-        {view === "review" ? (
-          <ReviewView
-            note={reviewNote}
-            queueLength={reviewQueue.length}
-            done={reviewDone}
-            total={Math.max(totalToReview, 1)}
-            now={now}
-            onKeep={reviewKeep}
-            onDelete={reviewDelete}
-            onTurnIntoTask={openTaskDialog}
-            onSkip={skipReview}
-            canSkip={reviewQueue.length > 1}
-            onOpenNotebook={() => goToView("notebook")}
-            canSendToTasks={props.captureAllowed !== false && workspaces.length > 0}
-            settle={reviewedThisSession > 0 || reviewIndex > 0}
-          />
-        ) : null}
+        {/* ── Reading, reviewing, or what became a task ─────────── */}
+        <section className={styles.stage} aria-label={main === "review" ? "Review" : "Open note"}>
+          {main === "reader" && selectedNote ? (
+            <NoteReader
+              note={selectedNote}
+              notebook={notebook}
+              now={now}
+              detailRef={detailRef}
+              onBack={() => selectNote(null)}
+              onTurnIntoTask={() => openTaskDialog(selectedNote)}
+              onDelete={() => {
+                notebook.deleteNote(selectedNote);
+                selectNote(null);
+              }}
+              canSendToTasks={canSendToTasks}
+              sendBlockedReason={sendBlockedReason}
+              settle={paneSwaps > 0}
+            />
+          ) : null}
 
-        {view === "sent" ? (
-          <SentView
-            notes={sentNotes}
-            now={now}
-            selectedId={effectiveSelectedId}
-            onSelect={(id) => selectNote(id)}
-            restoringId={notebook.restoringId}
-            onRestore={notebook.restoreNote}
-            onOpenInNotebook={(note) => {
-              setView("notebook");
-              setSelectedId(note.id);
-              writeUrl("notebook", note.id);
-            }}
-            demoMode={props.demoMode}
-          />
-        ) : null}
+          {main === "review" ? (
+            <ReviewSession
+              note={reviewNote}
+              nextNote={nextReviewNote}
+              done={reviewDone}
+              total={totalToReview}
+              tally={tally}
+              now={now}
+              copy={copy}
+              canSendToTasks={canSendToTasks}
+              canSkip={reviewQueue.length > 1}
+              settle={reviewedThisSession > 0 || reviewIndex > 0}
+              onKeep={reviewKeep}
+              onDelete={reviewDelete}
+              onTurnIntoTask={openTaskDialog}
+              onSkip={skipReview}
+              onDone={() => goToView("notebook")}
+            />
+          ) : null}
+
+          {main === "sent" && selectedSent ? (
+            <SentDetail
+              note={selectedSent}
+              now={now}
+              restoring={notebook.restoringId === selectedSent.id}
+              demoMode={props.demoMode}
+              onBack={() => selectNote(null)}
+              onRestore={() => void notebook.restoreNote(selectedSent as NoteRead)}
+              onOpenInNotebook={() => openInNotebook(selectedSent.id)}
+            />
+          ) : null}
+        </section>
       </div>
 
       {taskDialogNote ? (
@@ -1293,13 +1417,18 @@ function NotesWorkspaceFrame(props: NotesWorkspaceProps) {
           notebook={notebook}
           workspaces={workspaces}
           copy={copy}
-          onClose={() => {
-            notebook.cancelSend();
-            setTaskDialogNote(null);
-          }}
+          onClose={closeTaskDialog}
           onCreated={() => {
-            if (view === "review") advanceReview();
+            if (view === "review") advanceReview("turned");
           }}
+        />
+      ) : null}
+
+      {shortcutsOpen ? (
+        <ShortcutsSheet
+          onClose={() => setShortcutsOpen(false)}
+          saveChord={saveChord}
+          canSendToTasks={canSendToTasks}
         />
       ) : null}
 
@@ -1330,795 +1459,97 @@ function NotesWorkspaceFrame(props: NotesWorkspaceProps) {
   );
 }
 
-/* ── Selected note ─────────────────────────────────────────────────────── */
+/* ── In Tasks: the note and the task it became ────────────────────────── */
 
-function NoteDetail({
+/**
+ * The same notes, seen through what became of them. The task wording leads,
+ * because that is what a person is looking for here; the note that produced
+ * it follows, unchanged.
+ */
+function SentDetail({
   note,
-  notebook,
   now,
-  detailRef,
+  restoring,
+  demoMode,
   onBack,
-  onTurnIntoTask,
-  onDelete,
-  canSendToTasks,
-  settle,
+  onRestore,
+  onOpenInNotebook,
 }: {
-  note: NoteRead;
-  notebook: ReturnType<typeof useNotebook>;
+  note: PresentableNote;
   now: number;
-  detailRef: React.RefObject<HTMLTextAreaElement | null>;
+  restoring: boolean;
+  demoMode: boolean;
   onBack: () => void;
-  onTurnIntoTask: () => void;
-  onDelete: () => void;
-  canSendToTasks: boolean;
-  /** This pane has held a different note already, so this one is a swap. */
-  settle: boolean;
+  onRestore: () => void;
+  onOpenInNotebook: () => void;
 }) {
-  const swap = settle ? ` ${styles.swapSettle}` : "";
-  // Keyed by note id so opening a different note closes the confirmation
-  // without an effect that fires a frame late.
-  const [confirmFor, setConfirmFor] = useState<string | null>(null);
-  const confirmDelete = confirmFor === note.id;
   const source = noteSource(note.source);
-  const dirty = notebook.detailBody !== note.body;
-  const edited = note.updatedAt > note.createdAt;
-
-  const statusText = notebook.detailError
-    ? notebook.detailError
-    : dirty && !notebook.recoveryAvailable
-      ? "Only in this tab. Save before leaving."
-    : notebook.detailStatus === "saving"
-      ? "Saving…"
-      : notebook.detailStatus === "saved"
-        ? "Saved"
-        : dirty
-          ? "Not saved yet"
-          : null;
-
   return (
-    <>
-      {/* Keyed on the note, so choosing a different one is a swap this pane
-          settles into rather than a substitution nobody sees happen. Not keyed
-          on the body: typing must never re-run it. */}
-      <div className={styles.detailHeader}>
-        <div className={`${styles.detailHeaderInner}${swap}`} key={note.id}>
-        <div className={styles.detailMeta}>
-          <button
-            type="button"
-            data-notes-back=""
-            className={`${styles.quietButton} ${styles.backButton}`}
-            onClick={onBack}
-          >
-            <BackIcon />
-            Notebook
-          </button>
+    <article className={styles.reader} aria-label="Note and its task">
+      <div className={styles.readerBar}>
+        <button type="button" data-notes-back="" className={styles.backButton} onClick={onBack}>
+          <BackIcon />
+          {NOTES_VIEW_LABELS.sent}
+        </button>
+        <p className={styles.readerMeta}>
           <SourceIcon source={source} />
           <span>{SOURCE_LABELS[source]}</span>
           <span aria-hidden="true">·</span>
-          <span>{friendlyDate(note.createdAt, now)}</span>
-        </div>
-        <div className={styles.detailActions}>
-          {statusText ? (
-            <span className={styles.detailMeta} role="status">
-              {statusText}
-            </span>
-          ) : null}
-          {dirty ? (
-            <button
-              type="button"
-              className={styles.quietButton}
-              onClick={() => void notebook.saveDetail(note)}
-              disabled={notebook.detailStatus === "saving"}
-            >
-              Save changes
-            </button>
-          ) : null}
-          {/* One place for the note-to-task relationship. The header carries
-              the verb while it is still available; once the note has become a
-              task the record, the wording that crossed and the way into Tasks
-              all live together in the note's own footer. Open task used to sit
-              here in the top-right while the task link sat in the bottom-left,
-              opposite corners of one pane saying one thing twice. */}
-          {isSent(note as PresentableNote) ? null : (
-            <button
-              type="button"
-              className={styles.primaryButton}
-              onClick={onTurnIntoTask}
-              disabled={!canSendToTasks || notebook.readOnly}
-              title={
-                canSendToTasks
-                  ? undefined
-                  : `You have no ${workspaceNoun(null).toLowerCase()} yet. Your note stays private here.`
-              }
-            >
-              Turn into task
-            </button>
-          )}
-          <button
-            type="button"
-            className={styles.iconButton}
-            aria-label="More actions for this note"
-            aria-expanded={confirmDelete}
-            onClick={() => setConfirmFor(confirmDelete ? null : note.id)}
-          >
-            <MoreIcon />
-          </button>
-        </div>
-        </div>
-      </div>
-
-      <div className={styles.detailScroll}>
-        <div className={`${styles.detailInner}${swap}`} key={note.id}>
-          {confirmDelete ? (
-            <div className={styles.panel} role="group" aria-label="Delete this note">
-              <p className={styles.panelTitle}>Delete this note?</p>
-              <p className={styles.panelBody}>
-                You will have six seconds to undo.
-                {note.promotedTaskId
-                  ? " The task it created stays in Tasks."
-                  : ""}
-              </p>
-              <div className={styles.panelActions}>
-                <button type="button" className={styles.dangerButton} onClick={onDelete}>
-                  Delete note
-                </button>
-                <button
-                  type="button"
-                  className={styles.quietButton}
-                  onClick={() => setConfirmFor(null)}
-                >
-                  Keep it
-                </button>
-              </div>
-            </div>
-          ) : null}
-
-          {notebook.conflict?.noteId === note.id ? (
-            <div className={styles.panel} role="group" aria-label="This note changed somewhere else">
-              <p className={styles.panelTitle}>This note changed somewhere else</p>
-              <p className={styles.panelBody}>
-                Nothing was overwritten. Read both, then choose.
-              </p>
-              <div className={styles.conflictVersions}>
-                <div className={styles.conflictVersion}>
-                  <span className={styles.conflictLabel}>Yours</span>
-                  {notebook.conflict.localBody}
-                </div>
-                <div className={styles.conflictVersion}>
-                  <span className={styles.conflictLabel}>Saved version</span>
-                  {notebook.conflict.remote.body}
-                </div>
-              </div>
-              <div className={styles.panelActions}>
-                <button
-                  type="button"
-                  className={styles.quietButton}
-                  onClick={() => void notebook.resolveConflict("mine", note)}
-                >
-                  Keep mine
-                </button>
-                <button
-                  type="button"
-                  className={styles.quietButton}
-                  onClick={() => void notebook.resolveConflict("theirs", note)}
-                >
-                  Use the saved one
-                </button>
-                <button
-                  type="button"
-                  className={styles.quietButton}
-                  onClick={() => void notebook.resolveConflict("both", note)}
-                >
-                  Keep both
-                </button>
-              </div>
-            </div>
-          ) : null}
-
-          <label className={styles.srOnly} htmlFor="note-body">
-            Note
-          </label>
-          <textarea
-            id="note-body"
-            ref={detailRef}
-            className={styles.detailField}
-            value={notebook.detailBody}
-            readOnly={notebook.readOnly}
-            onChange={(event) => notebook.editDetail(note, event.target.value)}
-            onBlur={() => {
-              if (dirty && !notebook.conflict) void notebook.saveDetail(note);
-            }}
-            onKeyDown={(event) => {
-              if ((event.metaKey || event.ctrlKey) && event.key === "s") {
-                event.preventDefault();
-                void notebook.saveDetail(note);
-              }
-            }}
-          />
-
-          <dl className={styles.detailFooter}>
-            <div className={styles.detailPair}>
-              <dt>Captured</dt>
-              <dd>{friendlyDate(note.createdAt, now)}</dd>
-            </div>
-            {edited ? (
-              <div className={styles.detailPair}>
-                <dt>Edited</dt>
-                <dd>{friendlyDate(note.updatedAt, now)}</dd>
-              </div>
-            ) : null}
-            {note.promotedTaskId ? (
-              <div className={`${styles.detailPair} ${styles.taskReceipt}`}>
-                <dt>In Tasks</dt>
-                <dd>
-                  <a className={styles.linkedTask} href={taskFocusPath(note.promotedTaskId ?? "")}>
-                    {note.extractBody || "Open the task"}
-                  </a>
-                </dd>
-              </div>
-            ) : null}
-            {note.reviewedAt ? (
-              <div className={styles.detailPair}>
-                <dt>Reviewed</dt>
-                <dd>{friendlyDate(note.reviewedAt, now)}</dd>
-              </div>
-            ) : null}
-          </dl>
-        </div>
-      </div>
-    </>
-  );
-}
-
-/* ── Review ────────────────────────────────────────────────────────────── */
-
-function ReviewView({
-  note,
-  queueLength,
-  done,
-  total,
-  now,
-  onKeep,
-  onDelete,
-  onTurnIntoTask,
-  onSkip,
-  canSkip,
-  onOpenNotebook,
-  canSendToTasks,
-  settle,
-}: {
-  note: NoteRead | null;
-  queueLength: number;
-  done: number;
-  total: number;
-  now: number;
-  /** The queue has already moved once, so this card is a swap, not a load. */
-  settle: boolean;
-  onKeep: (note: NoteRead) => void | Promise<void>;
-  onDelete: (note: NoteRead) => void;
-  onTurnIntoTask: (note: NoteRead) => void;
-  onSkip: () => void;
-  canSkip: boolean;
-  onOpenNotebook: () => void;
-  canSendToTasks: boolean;
-}) {
-  const [drag, setDrag] = useState<{ x: number; active: boolean }>({ x: 0, active: false });
-  const startX = useRef(0);
-  const startY = useRef(0);
-  const axis = useRef<"none" | "x" | "y">("none");
-
-  const swipeIntent =
-    drag.x > 72 ? "task" : drag.x < -72 ? "delete" : null;
-
-  const reset = () => {
-    setDrag({ x: 0, active: false });
-    axis.current = "none";
-  };
-
-  if (!note) {
-    return (
-      <div className={styles.review}>
-        <div className={styles.reviewProgress}>
-          <span>{queueLength === 0 && done > 0 ? "All reviewed" : "Nothing to review"}</span>
-        </div>
-        <div className={styles.reviewStage}>
-          <div className={styles.emptyCentred}>
-            <p className={styles.emptyTitle}>
-              {done > 0 ? "That is everything" : "No notes to review"}
-            </p>
-            <p className={styles.emptyBody}>
-              {done > 0
-                ? "Your notebook is clear. New notes will appear here as you capture them."
-                : "Notes you capture arrive here so you can decide what to do with them."}
-            </p>
-            <button type="button" className={styles.quietButton} onClick={onOpenNotebook}>
-              Open the notebook
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const source = noteSource(note.source);
-  const percent = Math.round((done / total) * 100);
-
-  return (
-    <div className={styles.review}>
-      <div className={styles.reviewProgress}>
-        <span>{queueLength === 1 ? "One note left" : `${queueLength} notes to review`}</span>
-        {/* The rail appears once there is progress to show. Empty, a
-            full-width track reads as a horizontal rule, and a short one
-            reads as a stub. */}
-        {done > 0 ? (
-          <>
-            <span className={styles.progressTrack} aria-hidden="true">
-              <span className={styles.progressFill} style={{ inlineSize: `${percent}%` }} />
-            </span>
-            <span>{done} decided just now</span>
-          </>
-        ) : null}
-      </div>
-      <div className={styles.reviewStage}>
-        {/* Keyed on the note: Keep, Delete and Turn into task all resolve the
-            same way here — this note's card gives way to the next one's, and
-            the queue count above it is what says which decision was made. */}
-        <article
-          key={note.id}
-          className={`${styles.reviewCard}${settle ? ` ${styles.swapSettle}` : ""}`}
-          data-review-card=""
-          data-swipe={swipeIntent ?? undefined}
-          style={
-            drag.active
-              ? { transform: `translateX(${drag.x}px)`, transition: "none" }
-              : undefined
-          }
-          onPointerDown={(event) => {
-            if (event.pointerType === "mouse") return;
-            startX.current = event.clientX;
-            startY.current = event.clientY;
-            axis.current = "none";
-            setDrag({ x: 0, active: true });
-          }}
-          onPointerMove={(event) => {
-            if (!drag.active) return;
-            const dx = event.clientX - startX.current;
-            const dy = event.clientY - startY.current;
-            if (axis.current === "none") {
-              // Let a vertical scroll stay a scroll. Only claim the gesture
-              // once the movement is clearly sideways.
-              if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) {
-                axis.current = "y";
-                reset();
-                return;
-              }
-              if (Math.abs(dx) > 12) axis.current = "x";
-              else return;
-            }
-            if (axis.current !== "x") return;
-            setDrag({ x: dx, active: true });
-          }}
-          onPointerUp={() => {
-            if (axis.current === "x" && swipeIntent === "task" && canSendToTasks) {
-              onTurnIntoTask(note);
-            } else if (axis.current === "x" && swipeIntent === "delete") {
-              onDelete(note);
-            }
-            reset();
-          }}
-          onPointerCancel={reset}
-        >
-          <div className={styles.reviewMeta}>
-            <SourceIcon source={source} />
-            <span>{SOURCE_LABELS[source]}</span>
-            <span aria-hidden="true">·</span>
-            <span>{friendlyDate(note.createdAt, now)}</span>
-            {swipeIntent ? (
-              <span className={styles.rowFlag} data-tone={swipeIntent === "task" ? "sent" : "attention"}>
-                {swipeIntent === "task" ? "Release to turn into a task" : "Release to delete"}
-              </span>
-            ) : null}
-          </div>
-          <p className={styles.reviewBody}>{note.body}</p>
-          <div className={styles.reviewActions}>
-            <button type="button" className={styles.quietButton} onClick={() => void onKeep(note)}>
-              <CheckIcon />
-              Keep in Notes
-            </button>
-            <button
-              type="button"
-              className={styles.primaryButton}
-              onClick={() => onTurnIntoTask(note)}
-              disabled={!canSendToTasks}
-            >
-              Turn into task
-            </button>
-            <span className={styles.reviewSpacer} />
-            {canSkip ? (
-              <button type="button" className={styles.quietButton} onClick={onSkip}>
-                Decide later
-              </button>
-            ) : null}
-            <button type="button" className={styles.dangerButton} onClick={() => onDelete(note)}>
-              Delete
-            </button>
-          </div>
-        </article>
-      </div>
-    </div>
-  );
-}
-
-/* ── In Tasks ──────────────────────────────────────────────────────────── */
-
-/**
- * "In Tasks" (the tab said "Sent" until wave 6) is the same list-and-detail
- * shape as the notebook, on purpose: it is the same notes, seen through what
- * became of them. The list carries the task wording, because that is what a
- * person is looking for here; the detail carries the note that produced it,
- * unchanged. The component, the view key and the URL still say `sent`.
- */
-function SentView({
-  notes,
-  now,
-  selectedId,
-  onSelect,
-  restoringId,
-  onRestore,
-  onOpenInNotebook,
-  demoMode,
-}: {
-  notes: PresentableNote[];
-  now: number;
-  selectedId: string | null;
-  onSelect: (id: string | null) => void;
-  restoringId: string | null;
-  onRestore: (note: NoteRead) => void | Promise<void>;
-  onOpenInNotebook: (note: PresentableNote) => void;
-  demoMode: boolean;
-}) {
-  const selected = notes.find((note) => note.id === selectedId) ?? null;
-
-  if (!notes.length) {
-    return (
-      <div className={styles.emptyCentred}>
-        <p className={styles.emptyTitle}>No notes in Tasks yet</p>
-        <p className={styles.emptyBody}>
-          Notes you turn into tasks will stay available here, with the task they created.
+          {/* updated_at is the last edit, not the send. Until the send time
+              is read from the outbox, say what the number is. */}
+          <span>
+            {note.archivedAt
+              ? `Turned into a task ${friendlyDate(note.archivedAt, now).toLowerCase()}`
+              : `Last edited ${friendlyDate(note.updatedAt, now).toLowerCase()}`}
+          </span>
         </p>
+        <span className={styles.savePillSlot} />
+        <a className={styles.primaryButton} href={taskFocusPath(note.promotedTaskId ?? "")}>
+          <TaskIcon />
+          Open task
+        </a>
       </div>
-    );
-  }
-
-  return (
-    <div className={styles.split} data-detail-open={Boolean(selected) || undefined}>
-      <section className={styles.listPane} aria-labelledby="sent-list-heading">
-        <div className={styles.listMeta}>
-          <h2 className={styles.srOnly} id="sent-list-heading">
-            Notes you turned into tasks
-          </h2>
-          <span>{countLabel("sent", notes.length)}</span>
-        </div>
-        <ul className={styles.list}>
-          {notes.map((note, index) => {
-            const archived = isArchived(note);
-            return (
-              <li key={note.id}>
-                {index > 0 ? <div className={styles.rowSeparator} aria-hidden="true" /> : null}
-                <button
-                  type="button"
-                  className={styles.row}
-                  data-sent-row=""
-                  data-note-id={note.id}
-                  aria-current={note.id === selectedId ? "true" : undefined}
-                  onClick={() => onSelect(note.id)}
-                >
-                  <span className={styles.rowIcon}>
-                    <SourceIcon source={noteSource(note.source)} />
-                    <span className={styles.srOnly}>
-                      {SOURCE_LABELS[noteSource(note.source)]}, turned into a task
-                    </span>
-                  </span>
-                  <span className={styles.rowBody}>
-                    <span className={styles.rowTitle}>
-                      {note.extractBody || derivePresentation(note.body).title}
-                    </span>
-                    <span className={styles.rowPreview}>
-                      {derivePresentation(note.body).title}
-                    </span>
-                    <span className={styles.rowMeta}>
-                      <span>{friendlyDate(note.archivedAt ?? note.updatedAt, now)}</span>
-                      {archived ? (
-                        <span className={styles.rowFlag}>Not in your notebook</span>
-                      ) : null}
-                    </span>
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
-
-      <section className={styles.detailPane} aria-label="Note and its task">
-        {selected ? (
-          <>
-            {/* The same header object as the notebook's, wrapper and all.
-                Without the inner column this row had no spacer, so Open task
-                sat flush against the last word of the timestamp instead of on
-                the note's right edge. */}
-            <div className={styles.detailHeader}>
-              <div className={styles.detailHeaderInner}>
-                <div className={styles.detailMeta}>
-                  <button
-                    type="button"
-                    data-notes-back=""
-                    className={`${styles.quietButton} ${styles.backButton}`}
-                    onClick={() => onSelect(null)}
-                  >
-                    <BackIcon />
-                    In Tasks
-                  </button>
-                  <SourceIcon source={noteSource(selected.source)} />
-                  <span>{SOURCE_LABELS[noteSource(selected.source)]}</span>
-                  <span aria-hidden="true">·</span>
-                  {/* updated_at is the last edit, not the send. Until the send
-                      time is read from the outbox, say what the number is. */}
-                  <span>
-                    {selected.archivedAt
-                      ? `Sent ${friendlyDate(selected.archivedAt, now)}`
-                      : `Last edited ${friendlyDate(selected.updatedAt, now)}`}
-                  </span>
-                </div>
-                <div className={styles.detailActions}>
-                  <a className={styles.primaryButton} href={taskFocusPath(selected.promotedTaskId ?? "")}>
-                    <TaskIcon />
-                    Open task
-                  </a>
-                </div>
-              </div>
-            </div>
-            <div className={styles.detailScroll}>
-              <div className={styles.detailInner}>
-                <div>
-                  <p className={styles.conflictLabel}>What the task says</p>
-                  <p className={styles.sentWording}>
-                    {selected.extractBody || derivePresentation(selected.body).title}
-                  </p>
-                </div>
-                <div>
-                  <p className={styles.conflictLabel}>The note it came from</p>
-                  <p className={styles.reviewBody}>{selected.body}</p>
-                </div>
-                {isArchived(selected) ? (
-                  <div className={styles.panel}>
-                    <p className={styles.panelTitle}>This note is not in your notebook</p>
-                    <p className={styles.panelBody}>
-                      Restoring brings this exact note back to the notebook. The task it
-                      created stays in Tasks either way.
-                    </p>
-                    <div className={styles.panelActions}>
-                      <button
-                        type="button"
-                        className={styles.quietButton}
-                        onClick={() => void onRestore(selected as NoteRead)}
-                        disabled={restoringId === selected.id || demoMode}
-                      >
-                        <RestoreIcon />
-                        {restoringId === selected.id ? "Restoring…" : "Restore to Notebook"}
-                      </button>
-                    </div>
-                    {demoMode ? (
-                      <p className={styles.fieldHint}>
-                        Review mode keeps every change on this device, so restoring is off here.
-                      </p>
-                    ) : null}
-                  </div>
-                ) : (
-                  <div className={styles.panelActions}>
-                    <button
-                      type="button"
-                      className={styles.quietButton}
-                      onClick={() => onOpenInNotebook(selected)}
-                    >
-                      Open in Notebook
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className={styles.emptyCentred}>
-            <p className={styles.emptyTitle}>Nothing open</p>
-            <p className={styles.emptyBody}>
-              Choose one to see the note it came from.
+      <div className={styles.readerScroll}>
+        <div className={styles.readerColumn}>
+          <div className={styles.receipt}>
+            <span className={styles.receiptMark} aria-hidden="true">
+              <CheckIcon />
+            </span>
+            <p className={styles.receiptText}>
+              <span className={styles.receiptLabel}>What the task says</span>
+              <span className={styles.sentWording}>{note.extractBody || derivePresentation(note.body).title}</span>
             </p>
           </div>
-        )}
-      </section>
-    </div>
-  );
-}
-
-/* ── Turn into task ────────────────────────────────────────────────────── */
-
-function TurnIntoTaskDialog({
-  note,
-  notebook,
-  workspaces,
-  copy,
-  onClose,
-  onCreated,
-}: {
-  note: NoteRead;
-  notebook: ReturnType<typeof useNotebook>;
-  workspaces: TasksWorkspaceDestination[];
-  copy: ReturnType<typeof notesCopyForDomain>;
-  onClose: () => void;
-  onCreated: () => void;
-}) {
-  const send = notebook.send;
-  const titleId = useId();
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const firstFieldRef = useRef<HTMLInputElement>(null);
-  const openerRef = useRef<Element | null>(null);
-
-  useEffect(() => {
-    openerRef.current = document.activeElement;
-    window.setTimeout(() => firstFieldRef.current?.focus({ preventScroll: true }), 0);
-    return () => {
-      (openerRef.current as HTMLElement | null)?.focus?.({ preventScroll: true });
-    };
-  }, []);
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && send?.status !== "sending") {
-        event.preventDefault();
-        onClose();
-        return;
-      }
-      if (event.key !== "Tab") return;
-      const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-      );
-      if (!focusable?.length) return;
-      const first = focusable[0] as HTMLElement;
-      const last = focusable[focusable.length - 1] as HTMLElement;
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [onClose, send?.locked, send?.status]);
-
-  if (!send) return null;
-
-  const sent = send.status === "sent";
-  const sending = send.status === "sending";
-  const noun = workspaceNoun(
-    workspaces.find((item) => item.id === send.workspaceId)?.contextType ??
-      workspaces[0]?.contextType,
-  );
-  const overLimit = send.taskTitle.length > MAX_APPROVED_EXTRACT_CHARS;
-
-  return (
-    <div className={styles.scrim} onPointerDown={(event) => {
-      if (event.target === event.currentTarget && !sending) onClose();
-    }}>
-      <div className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby={titleId} ref={dialogRef}>
-        {sent ? (
-          <>
-            <h2 className={styles.dialogTitle} id={titleId}>
-              Task created
-            </h2>
-            <p className={styles.dialogLede}>{copy.handoff.stayedPut}</p>
-            <p className={styles.sentWording}>{send.taskTitle}</p>
-            <div className={styles.dialogActions}>
-              <button type="button" className={styles.quietButton} onClick={onClose}>
-                Close
-              </button>
-              <a className={styles.primaryButton} href={taskFocusPath(send.receipt?.taskId ?? "")}>
-                <TaskIcon />
-                Open task
-              </a>
-            </div>
-          </>
-        ) : (
-          <>
-            <h2 className={styles.dialogTitle} id={titleId}>
-              Turn this into a task
-            </h2>
-            <p className={styles.dialogLede}>{copy.handoff.boundary}</p>
-
-            <div className={styles.field}>
-              <label className={styles.fieldLabel} htmlFor={`${titleId}-title`}>
-                What the task says
-              </label>
-              <input
-                id={`${titleId}-title`}
-                ref={firstFieldRef}
-                className={styles.fieldControl}
-                value={send.taskTitle}
-                maxLength={MAX_APPROVED_EXTRACT_CHARS + 40}
-                disabled={sending}
-                onChange={(event) => notebook.updateSend({ taskTitle: event.target.value })}
-              />
-              <span className={styles.fieldHint}>
-                {overLimit
-                  ? copy.errors.tooLong
-                  : "This is the only wording that leaves Notes."}
-              </span>
-            </div>
-
-            <div className={styles.field}>
-              <label className={styles.fieldLabel} htmlFor={`${titleId}-project`}>
-                {noun}
-              </label>
-              <select
-                id={`${titleId}-project`}
-                className={styles.fieldControl}
-                value={send.workspaceId}
-                disabled={sending || Boolean(send.locked)}
-                onChange={(event) => notebook.updateSend({ workspaceId: event.target.value })}
-              >
-                {workspaces.map((workspace) => (
-                  <option key={workspace.id} value={workspace.id}>
-                    {workspace.name}
-                  </option>
-                ))}
-              </select>
-              {send.locked ? (
-                <span className={styles.fieldHint}>{copy.handoff.lockedDestination}</span>
+          <p className={styles.eyebrow}>The note it came from</p>
+          <p className={styles.sentBody}>{note.body}</p>
+          {isArchived(note) ? (
+            <div className={styles.panel}>
+              <p className={styles.panelTitle}>This note is not in your notebook</p>
+              <p className={styles.panelBody}>
+                Restoring brings this exact note back to the notebook. The task it created stays in
+                Tasks either way.
+              </p>
+              <div className={styles.panelActions}>
+                <button type="button" className={styles.quietButton} onClick={onRestore} disabled={restoring || demoMode}>
+                  <RestoreIcon />
+                  {restoring ? "Restoring…" : "Restore to notebook"}
+                </button>
+              </div>
+              {demoMode ? (
+                <p className={styles.fieldHint}>
+                  Review mode keeps every change on this device, so restoring is off here.
+                </p>
               ) : null}
             </div>
-
-            {send.error ? (
-              <p className={styles.errorText} role="alert">
-                {send.error}
-              </p>
-            ) : null}
-
-            <div className={styles.dialogActions}>
-              {/* Always enabled. Locking the request must never lock the
-                  window: with Tasks down there was no way out of this dialog
-                  except reloading the page. */}
-              <button
-                type="button"
-                className={styles.quietButton}
-                onClick={onClose}
-                disabled={sending}
-              >
-                {send.locked ? "Close" : "Never mind"}
-              </button>
-              <button
-                type="button"
-                className={styles.primaryButton}
-                disabled={sending || overLimit || !send.taskTitle.trim()}
-                onClick={() => {
-                  void notebook.submitSend(note).then((ok) => {
-                    if (ok) onCreated();
-                  });
-                }}
-              >
-                {sending
-                  ? "Creating…"
-                  : send.status === "failed"
-                    ? "Try again"
-                    : "Create task"}
+          ) : (
+            <div className={styles.panelActions}>
+              <button type="button" className={styles.quietButton} onClick={onOpenInNotebook}>
+                Open in notebook
               </button>
             </div>
-          </>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+    </article>
   );
 }
-
-export { CloseIcon };

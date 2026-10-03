@@ -32,7 +32,7 @@ export function ConnectionsReview() {
     },
   };
   return <div>
-    <div className="mb-5 rounded-lg border border-line p-3 text-[12px] text-ink-soft">
+    <div className="mb-6 rounded-[var(--v3-radius)] border border-dashed border-[color:var(--v3-border-strong)] bg-[var(--v3-sunken)] p-3 text-[12px] text-[color:var(--v3-text-2)]">
       <p>Fictional review data. These controls never contact Google or save changes.</p>
       <label className="mt-2 flex flex-wrap items-center gap-2">Review state<select className={driveButton} value={state} onChange={(event) => { setState(event.target.value); setMessage(null); }}>
         <option value="connected">Connected</option><option value="not-connected">Not connected</option><option value="disconnect-pending">Disconnect pending</option><option value="setting-up">Setting up</option><option value="attention">Access needs attention</option><option value="restore-ready">Restore available</option><option value="restore-unavailable">Restore unavailable</option><option value="unavailable">Google unavailable</option><option value="loading">Loading</option><option value="error">Load failed</option><option value="no-owner-choice">No other connected owner</option><option value="handover-pending">Owner change in progress</option><option value="handover-attention">Owner change needs attention</option><option value="pending-upload">Upload blocks owner change</option>

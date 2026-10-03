@@ -121,10 +121,10 @@ export function AudienceManager({
       {!suiteWorkspaceId ? (
         <section className="rounded-xl border border-line-soft bg-bg-elevated p-5" aria-labelledby="connect-heading">
           <h2 id="connect-heading" className="text-lg font-semibold tracking-tight text-ink">
-            Connect the canonical workspace
+            Connect this timeline to a project
           </h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-ink-soft">
-            Use the immutable Signal Tasks project ID. Labels and slugs are never used as a suite join key.
+            Paste the project’s ID from Tasks. Names can change, so only the ID links the two.
           </p>
           <form action={connectAction} className="mt-4 flex max-w-xl flex-col gap-3 sm:flex-row">
             <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
@@ -161,7 +161,7 @@ export function AudienceManager({
       ) : suiteWorkspaceId ? (
         <section aria-labelledby="new-audience-heading">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-hover">Private preview</p>
+            <p className="text-[13px] font-medium text-[color:var(--v3-accent-text)]">Private preview</p>
             <h2 id="new-audience-heading" className="mt-2 text-2xl font-semibold tracking-tight text-ink">
               {projectName ? `Review the page for ${projectName}` : "Review a shared timeline"}
             </h2>
@@ -397,7 +397,7 @@ export function AudienceManager({
                       <span className="font-normal text-ink-quiet">{selectionSummary} · changes stay private until you review them</span>
                     </summary>
                     <div className="border-t border-line-soft px-4 pb-3 pt-3">
-                  <div aria-hidden className="hidden border-b border-line-soft pb-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-ink-quiet sm:grid sm:grid-cols-[1fr_10rem_8rem_8.5rem] sm:gap-3">
+                  <div aria-hidden className="hidden border-b border-line-soft pb-1.5 text-[12px] font-medium text-[color:var(--v3-text-3)] sm:grid sm:grid-cols-[1fr_10rem_8rem_8.5rem] sm:gap-3">
                     <span>Shared title</span>
                     <span>Date</span>
                     <span>State</span>

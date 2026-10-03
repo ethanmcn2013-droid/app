@@ -64,35 +64,32 @@ import {
   DEMO_WORKSPACE_ID,
   DEMO_WORKSPACE_NAME,
   DEMO_WORKSPACE_SLUG,
+  demoTasks,
 } from "@/server/demo/tasks-demo";
 import {
   REVIEW_MENU_MILESTONE,
   REVIEW_PRIMARY_PROJECT,
   REVIEW_SUITE_FIXTURE,
 } from "@/lib/review-suite-fixture";
+import {
+  parseProjectStatus,
+  projectPurposeMetaKey,
+  projectStatusMetaKey,
+  projectTargetDateMetaKey,
+  type ProjectStatus as SharedProjectStatus,
+} from "@/lib/projects/project-hub";
 
 // ── Status type ───────────────────────────────────────────────────────
 
-export type ProjectStatus =
-  | "on-track"
-  | "at-risk"
-  | "paused"
-  | "complete"
-  | null;
+// One definition shared with the Projects hub cards, so a card and this
+// overview can never disagree about what a status or a key is.
+export type ProjectStatus = SharedProjectStatus;
 
 // ── Key helpers ───────────────────────────────────────────────────────
 
-function statusKey(workspaceId: string): string {
-  return `project-status:${workspaceId}`;
-}
-
-function targetDateKey(workspaceId: string): string {
-  return `project-target-date:${workspaceId}`;
-}
-
-function purposeKey(workspaceId: string): string {
-  return `room:${workspaceId}:purpose`;
-}
+const statusKey = projectStatusMetaKey;
+const targetDateKey = projectTargetDateMetaKey;
+const purposeKey = projectPurposeMetaKey;
 
 // ── Member shape ──────────────────────────────────────────────────────
 
@@ -156,6 +153,13 @@ export type ProjectOverviewData = {
   targetDate: string | null;
   sponsoredWeddingDate?: SponsoredWeddingDate | null;
   program: ProjectProgram | null;
+  /**
+   * The day the page treats as today, `YYYY-MM-DD`. Set only in review mode,
+   * where the fixture runs on one pinned clock (`REVIEW_SUITE_FIXTURE`) so the
+   * overview agrees with Home and Tasks about what is overdue. Absent means
+   * the viewer's real clock.
+   */
+  todayIso?: string;
 };
 
 // ── Relative-time helper (no extra deps) ─────────────────────────────
@@ -190,15 +194,32 @@ function formatEventSentence(kind: string, payload: unknown): string {
     const p = typeof payload === "string" ? JSON.parse(payload) : payload;
     if (kind === "inviteSent") {
       const role = (p as { role?: string }).role ?? "member";
-      return `A workspace invite was sent (${role} role).`;
+      return `A project invite was sent (${role} role).`;
     }
     if (kind === "inviteAccepted") {
-      return "A workspace invite was accepted.";
+      return "A project invite was accepted.";
     }
   } catch {
     // malformed payload
   }
-  return "A workspace event occurred.";
+  return "Something changed in this project.";
+}
+
+// ── Review fixture stats ──────────────────────────────────────────────
+
+function demoTaskStats(): ProjectTaskStats {
+  const reviewNowMs = Date.parse(`${REVIEW_SUITE_FIXTURE.reviewToday}T00:00:00.000Z`);
+  const all = demoTasks();
+  const open = all.filter((t) => !isTaskDone(t, null));
+  const total = all.length;
+  const complete = total - open.length;
+  return {
+    total,
+    complete,
+    overdue: open.filter((t) => t.dueAt && t.dueAt.getTime() < reviewNowMs).length,
+    undated: open.filter((t) => !t.dueAt).length,
+    progressPct: total === 0 ? 0 : Math.round((complete / total) * 100),
+  };
 }
 
 // ── Main read ─────────────────────────────────────────────────────────
@@ -214,7 +235,7 @@ export async function getProjectOverviewData(projectId?: string): Promise<Projec
       slug: DEMO_WORKSPACE_SLUG,
       displayName: DEMO_WORKSPACE_NAME,
       purpose:
-        `Run ${REVIEW_PRIMARY_PROJECT.name}'s wedding from one clear venue workspace, with every supplier, date, and decision accounted for.`,
+        `Run ${REVIEW_PRIMARY_PROJECT.name}'s wedding from one place, with every supplier, date and decision accounted for.`,
       createdAt: "2026-01-01T00:00:00.000Z",
       ownerUserId: DEMO_USER_ID,
       isOwner: true,
@@ -227,13 +248,10 @@ export async function getProjectOverviewData(projectId?: string): Promise<Projec
           initials: "OR",
         },
       ],
-      taskStats: {
-        total: 10,
-        complete: 4,
-        overdue: 1,
-        undated: 2,
-        progressPct: 40,
-      },
+      // Counted from the same fixture the board and the chooser read, on the
+      // review clock, so "x of y tasks" here cannot drift from the open count
+      // beside the Project in the sidebar.
+      taskStats: demoTaskStats(),
       milestones: [
         {
           id: "demo-milestone-1",
@@ -249,7 +267,7 @@ export async function getProjectOverviewData(projectId?: string): Promise<Projec
       recentEvents: [
         {
           id: "demo-evt-1",
-          sentence: "A workspace invite was accepted.",
+          sentence: "A project invite was accepted.",
           createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
           relative: "2d ago",
         },
@@ -260,6 +278,7 @@ export async function getProjectOverviewData(projectId?: string): Promise<Projec
         name: "Wedding season",
         dateRange: "3 Oct 2026",
       },
+      todayIso: REVIEW_SUITE_FIXTURE.reviewToday,
     };
   }
 
@@ -424,18 +443,7 @@ export async function getProjectOverviewData(projectId?: string): Promise<Projec
 
 // ── Status helpers ────────────────────────────────────────────────────
 
-function parseStatus(raw: string | null): ProjectStatus {
-  if (!raw) return null;
-  if (
-    raw === "on-track" ||
-    raw === "at-risk" ||
-    raw === "paused" ||
-    raw === "complete"
-  ) {
-    return raw;
-  }
-  return null;
-}
+const parseStatus = parseProjectStatus;
 
 // ── Permission guard (mirrors board.ts setBoardNameAction pattern) ───
 
