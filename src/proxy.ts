@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { withProxyTiming } from "@/server/diagnostics/proxy-timing";
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import type { NextFetchEvent, NextRequest } from "next/server";
 import { isDemoMode, isProductionMode } from "@/lib/access-mode";
@@ -282,7 +283,7 @@ export default function proxy(req: NextRequest, event: NextFetchEvent) {
     }
     return bareChromeContinue(req) ?? NextResponse.next();
   }
-  return productionProxy(req, event);
+  return withProxyTiming(req, () => productionProxy(req, event));
 }
 
 export const config = {
