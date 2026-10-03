@@ -42,6 +42,72 @@ export async function ensureUserProvisioned(
   );
 }
 
+
+/** Resolve a verified Clerk profile without opening a writer transaction for a complete account.
+ * This proof is fresh on every request; it is not authorization and is never cached.
+ * Mutations still prove membership and deletion fences inside their writer transaction.
+ */
+export async function resolveProvisionedUserId(
+  clerkUserId: string, email?: string | null, firstName?: string | null, lastName?: string | null,
+): Promise<string | null> {
+  return resolveProvisionedUserIdWith(db, clerkUserId, email, firstName, lastName);
+}
+
+/** Injectable fresh-read seam; incomplete accounts retain the original serialized writer. */
+export async function resolveProvisionedUserIdWith(
+  database: ProvisioningDb, clerkUserId: string, email?: string | null,
+  firstName?: string | null, lastName?: string | null,
+): Promise<string | null> {
+  if (!clerkUserId || !clerkUserId.startsWith("user_")) return null;
+  const tail = clerkUserId.replace(/^user_/, "").slice(0, 12).toLowerCase();
+  const workspaceId = `ws-${tail}`;
+  const planningPeriodId = `planning-${workspaceId}`;
+  const f = firstName?.trim();
+  const l = lastName?.trim();
+  const name = f && l ? `${f} ${l}` : f ?? l ?? null;
+  const [complete] = await database.select({
+    deletionStarted: sql<number>`EXISTS (
+      SELECT 1 FROM ${schema.meta}
+      WHERE ${schema.meta.key} = ${accountDeletionTombstoneKey(clerkUserId)}
+    )`,
+    userId: schema.users.id,
+    name: schema.users.name,
+    email: schema.users.email,
+    periodOwnerId: schema.planningPeriods.ownerUserId,
+    workspaceOwnerId: schema.workspaces.ownerUserId,
+    workspacePlanningPeriodId: schema.workspaces.planningPeriodId,
+    workspaceContextType: schema.workspaces.contextType,
+    workspaceUpdatedAt: schema.workspaces.updatedAt,
+    memberUserId: schema.workspaceMembers.userId,
+    memberRole: schema.workspaceMembers.role,
+  }).from(sql`(SELECT 1) AS provision_anchor`)
+    .leftJoin(schema.users, eq(schema.users.clerkId, clerkUserId))
+    .leftJoin(schema.planningPeriods, eq(schema.planningPeriods.id, planningPeriodId))
+    .leftJoin(schema.workspaces, eq(schema.workspaces.id, workspaceId))
+    .leftJoin(schema.workspaceMembers, and(
+      eq(schema.workspaceMembers.workspaceId, workspaceId),
+      eq(schema.workspaceMembers.userId, schema.users.id),
+    ))
+    .limit(1);
+  if (!complete) throw new Error("Provisioning pre-write read returned no anchor row.");
+  // Match the existing auth resolution on a tombstone: never provision, retain
+  // any mapped ID for downstream transactional deletion guards to refuse.
+  if (complete.deletionStarted === 1) return complete.userId;
+  if (complete.userId !== null &&
+      (!name || complete.name !== null) && (!email || complete.email !== null) &&
+      complete.periodOwnerId === complete.userId &&
+      complete.workspaceOwnerId === complete.userId &&
+      complete.workspacePlanningPeriodId !== null &&
+      complete.workspaceContextType === "project" &&
+      complete.workspaceUpdatedAt !== null &&
+      complete.memberUserId === complete.userId && complete.memberRole === "owner") return complete.userId;
+
+  await ensureUserProvisionedWith(database, clerkUserId, email, firstName, lastName);
+  const [persisted] = await database.select({ id: schema.users.id }).from(schema.users)
+    .where(eq(schema.users.clerkId, clerkUserId));
+  return persisted?.id ?? null;
+}
+
 /** Injectable form used to prove deletion/provisioning race safety. */
 export async function ensureUserProvisionedWith(
   database: ProvisioningDb,
