@@ -18,6 +18,7 @@
     "src/server/diagnostics/identity-timing.test.mjs",
     "src/server/diagnostics/identity-outbound.test.mjs",
     "src/server/diagnostics/task-timing.test.mjs",
+    "src/server/diagnostics/proxy-timing.test.mjs",
     "scripts/test-provision-fast.test.mjs",
     "scripts/test-board-fidelity.test.mjs",
     "src/server/actions/private-task-db-write.test.cjs",

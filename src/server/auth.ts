@@ -3,10 +3,10 @@ import { cookies } from "next/headers";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/server/db";
-import { users, workspaceMembers } from "@/server/db/schema";
+import { workspaceMembers } from "@/server/db/schema";
 import type { UserId } from "@/lib/data";
 import { LEGACY_WORKSPACE_ID } from "@/server/db/seed";
-import { ensureUserProvisioned } from "@/server/db/ensure-user";
+import { resolveProvisionedUserId } from "@/server/db/ensure-user";
 import { isDemoMode } from "@/lib/access-mode";
 import { firstMembershipByCatalogOrder } from "@/server/projects/catalog";
 import { DEMO_USER_ID, DEMO_WORKSPACE_ID } from "@/server/demo/tasks-demo";
@@ -82,15 +82,15 @@ export async function getCurrentUser(): Promise<UserId> {
       }
 
       // P0-1 hardening (DECISIONS.md D1 / ARCH_SPEC.md §1):
-      // Idempotently provision the users row on every authed board entry.
+      // Resolve the persisted account freshly on every authenticated entry.
       // This closes the webhook-race hole from the Tasks side: a user who
       // arrives via the shared Clerk session (cross-product hop) before the
       // `user.created` webhook fires will have a users row so Analytics
-      // `listForUser` can resolve via clerk_id. ensureUserProvisioned uses
-      // INSERT OR IGNORE, safe to call on every request; DB round-trip is
-      // cheap relative to the auth() call already above.
+      // `listForUser` can resolve via clerk_id. Complete accounts use one
+      // anchored tombstone/completeness read; incomplete accounts retain
+      // the serialized provisioning transaction and its deletion fence.
       //
-      // B6 (Phase 3.6): pass email so ensureUserProvisioned can backfill
+      // B6 (Phase 3.6): pass email so the provisioning fallback can backfill
       // the email column for rows provisioned before the column existed
       // (pre-migration NULL-email recurrence risk, pm's finding). currentUser()
       // is a Clerk server helper that fetches the full user object; it is
@@ -101,24 +101,16 @@ export async function getCurrentUser(): Promise<UserId> {
         clerkUserObj?.emailAddresses?.find(
           (e) => e.id === clerkUserObj.primaryEmailAddressId,
         )?.emailAddress ?? null;
-      // C2: pass first/last name so ensureUserProvisioned can backfill the
+      // C2: pass first/last name so the provisioning fallback can backfill the
       // name column if the row was provisioned before the webhook fired.
-      await timing.measure("provision", () => ensureUserProvisioned(
+      const persistedId = await timing.measure("provision", () => resolveProvisionedUserId(
         clerkId,
         clerkEmail,
         clerkUserObj?.firstName ?? null,
         clerkUserObj?.lastName ?? null,
       ));
 
-      // Clerk id IS the internal user id post-Phase-A. The webhook
-      // provisions the row; this query is the safety net in case a
-      // protected page renders before the webhook lands (rare, but
-      // possible on the very first signup before Clerk fires the event).
-      const [row] = await timing.measure("persistedId", () => db
-        .select({ id: users.id })
-        .from(users)
-        .where(eq(users.clerkId, clerkId)));
-      if (row) return row.id;
+      if (persistedId !== null) return persistedId;
 
       // Webhook hasn't fired yet, return the Clerk id directly so
       // anything queryable by user id still works. Subsequent requests

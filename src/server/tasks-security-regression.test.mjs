@@ -265,11 +265,20 @@ test("task writers read only the target Project before stored-Project authorizat
   const end = actions.indexOf("function nowSeconds", start);
   const body = actions.slice(start, end);
   const scopeOnly = body.indexOf("select({ workspaceId: tasks.workspaceId }).from(tasks).where(eq(tasks.id, id))");
-  const proof = body.indexOf("authorizeStoredProject");
-  const fences = body.indexOf("taskWriterState(executor, ws, me)");
-  const privateRead = body.indexOf("executor.select().from(tasks)", fences);
-  assert.ok(scopeOnly >= 0 && proof > scopeOnly && fences > proof && privateRead > fences,
+  const proof = body.indexOf("taskWriterProjectProof(executor, target.workspaceId, me)");
+  const refusal = body.indexOf("if (!grant) return null", proof);
+  const privateRead = body.indexOf("executor.select().from(tasks)", refusal);
+  assert.ok(scopeOnly >= 0 && proof > scopeOnly && refusal > proof && privateRead > refusal,
     "the whole task row must only be decoded after Project authorization and deletion fences");
+  const helperStart = actions.indexOf("async function taskWriterProjectProof");
+  const helper = actions.slice(helperStart, actions.indexOf("async function taskWriteTarget", helperStart));
+  const permission = helper.indexOf('evaluateProjectCapability(me, ws, "createOrEditTasks", archivePolicy, row)');
+  const permissionRefusal = helper.indexOf("if (!grant.ok) return null", permission);
+  const fences = helper.indexOf("checkTaskWriterState(executor, row, me)", permissionRefusal);
+  assert.ok(permission >= 0 && permissionRefusal > permission && fences > permissionRefusal,
+    "the combined writer proof must evaluate permission before deletion and account fences");
+  assert.match(helper, /eq\(workspaceMembers\.userId, me\)/, "the fresh membership proof must bind the resolved actor");
+  assert.match(helper, /eq\(workspaceMembers\.workspaceId, ws\)/, "the fresh membership proof must bind the stored Project");
 });
 
 test("addTaskAction validates parent ownership and top-level shape", () => {
@@ -297,7 +306,8 @@ test("routed task and subtask creation writes to the displayed Project, not an a
 
   const body = exportedActionBody(actions, "addTaskAction");
   assert.match(body, /const ws = parseProjectId\(input\.projectId\s*\?\?\s*ambient\)/);
-  assert.match(body, /authorizeStoredProject\(\{[\s\S]*?storedProjectId: ws[\s\S]*?archivePolicy: "enforce", executor: tx/);
+  assert.match(body, /taskWriterProjectProof\(tx, ws, me, "enforce"\)/, "creation must prove the displayed Project and actor with archive enforcement on its immediate writer");
+  assert.match(body, /behavior: "immediate"/, "the combined creation proof must retain immediate transaction serialization");
   assert.match(body, /workspaceId:\s*ws/);
   // A refused explicit B write must reject the optimistic B card. Returning
   // A neutral ambient-list fallback would hydrate A's tasks into the B provider.

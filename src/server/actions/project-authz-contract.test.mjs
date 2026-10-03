@@ -178,7 +178,9 @@ test("the capability proof is a decision, not a filter on someone else's query",
   const body = authzSrc.slice(
     authzSrc.indexOf("export async function proveProjectCapability"),
   );
-  const proof = body.slice(0, body.indexOf("\nexport "));
+  const queryProof = body.slice(0, body.indexOf("\nexport "));
+  assert.match(queryProof, /return evaluateProjectCapability\(actorUserId, projectId, capability, archivePolicy, row\)/);
+  const proof = queryProof + body.slice(body.indexOf("export function evaluateProjectCapability"), body.indexOf("export async function authorizeProjectCandidate"));
 
   // Membership is the join root: a Project that does not exist and a Project
   // the caller is not in are the same server-side answer, deliberately.
