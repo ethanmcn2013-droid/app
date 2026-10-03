@@ -12,9 +12,14 @@ import {
   TOOL_ENTRIES,
   currentAppId,
   driveRowState,
+  entryKey,
   entryLabel,
+  FEATURED_APP_IDS,
+  featuredApps,
   feedbackHref,
+  MORE_APPS_LABEL,
   rankLauncher,
+  setupApps,
   toolBySlug,
   toolIdeasHref,
   toolRequestHref,
@@ -80,6 +85,33 @@ test("apps follow the founder's order, most used first", () => {
     TOOL_ENTRIES.map((tool) => tool.slug),
     ["wedding-planner", "student-hub", "teacher-toolkit", "process-map", "whiteboard", "docs", "forms"],
   );
+});
+
+test("Your apps is the approved navigation; every other entry stays under Initial setup", () => {
+  // Founder instruction (2 Oct 2026): nothing leaves the launcher.
+  assert.deepEqual([...FEATURED_APP_IDS], ["projects", "tasks", "timeline", "files", "analytics"]);
+  assert.deepEqual(featuredApps().map((app) => app.label), ["Projects", "Tasks", "Timeline", "Files", "Analytics"]);
+  assert.deepEqual(setupApps().map((app) => app.id), ["notes", "messages"]);
+  // The two lists split the catalogue exactly: no entry twice, none missing.
+  const shown = [...featuredApps(), ...setupApps()].map(entryKey).sort();
+  assert.deepEqual(shown, APP_ENTRIES.map(entryKey).sort());
+  assert.equal(new Set(shown).size, shown.length);
+  assert.notEqual(MORE_APPS_LABEL, "Your apps");
+
+  const panel = readFileSync(
+    path.join(process.cwd(), "src", "components", "shell", "launcher", "launcher-panel.tsx"),
+    "utf8",
+  );
+  const group = panel.slice(panel.indexOf("const setupSections"), panel.indexOf("const body ="));
+  for (const literal of ["MORE_APPS_LABEL", '"Works with"', "COMING_SOON_LABEL", "TOOL_ENTRIES.map(renderToolCard)", "TOOL_ENTRIES.map(renderToolRow)", "connected.map(renderConnected)", "<ToolRequestCard />"]) {
+    assert.ok(group.includes(literal), `${literal} must render inside the Initial setup group`);
+  }
+  // One disclosure for the popover, the sheet and the page, above none of "Your apps".
+  assert.match(panel, /aria-expanded=\{setupOpen\}/);
+  assert.match(panel, /aria-controls=\{setupOpen \? setupId : undefined\}/);
+  assert.ok(panel.indexOf('section("apps", "Your apps", featuredTiles') < panel.indexOf("{setupSections}"));
+  // Search still reaches every entry, folded or not.
+  assert.match(panel, /const searchable: LauncherEntry\[\] = \[\.\.\.apps, \.\.\.CONNECTED_ENTRIES, \.\.\.TOOL_ENTRIES\]/);
 });
 
 test("ids and slugs are unique and every tool is reachable by slug", () => {

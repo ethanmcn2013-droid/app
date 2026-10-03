@@ -135,6 +135,14 @@ export const ShellIcon = {
   apps: (p: IconProps) => (
     <Svg {...p}><rect fill="currentColor" fillOpacity={0.14} data-fill="" x="2.75" y="2.75" width="4.25" height="4.25" rx="1.4" /><rect fill="currentColor" fillOpacity={0.14} data-fill="" x="9" y="2.75" width="4.25" height="4.25" rx="1.4" /><rect fill="currentColor" fillOpacity={0.14} data-fill="" x="2.75" y="9" width="4.25" height="4.25" rx="1.4" /><path data-part="plus" d="M11.1 9.1v4M9.1 11.1h4" /></Svg>
   ),
+  /** Whiteboard: a board on two legs; the line draws itself on hover. */
+  whiteboard: (p: IconProps) => (
+    <Svg {...p}><rect fill="currentColor" fillOpacity={0.14} data-fill="" x="2.25" y="2.75" width="11.5" height="8.5" rx="2" /><path d="M5.75 13.75 6.6 11.25M10.25 13.75l-.85-2.5" /><path data-part="draw" pathLength={1} d="M4.9 8.4c1.1-2.6 2.2-2.6 3.1-.9s2 1.5 3.1-.9" /></Svg>
+  ),
+  /** Initial setup: a stack of trays, the earlier navigation kept together. */
+  setup: (p: IconProps) => (
+    <Svg {...p}><rect fill="currentColor" fillOpacity={0.14} data-fill="" x="2.5" y="8.25" width="11" height="5.25" rx="1.75" /><path d="M4 5.75h8M5.5 3.25h5" /></Svg>
+  ),
   arrowRight: (p: IconProps) => (
     <Svg {...p}><path d="M3.5 8h9M9 4.5 12.5 8 9 11.5" /></Svg>
   ),

@@ -10,6 +10,12 @@
  * by geometry, then down through the rows. Typing collapses the sections into
  * one ranked list. The page is a page: cards are ordinary links in tab order,
  * and only a typed query turns the field into a combobox.
+ *
+ * Layout (founder instruction, 2 Oct 2026): "Your apps" lists the approved
+ * navigation's apps. Everything the launcher had before (the other apps,
+ * "Works with" and the tools on the way) stays, inside one "Initial setup" group
+ * that folds, so it can be reviewed without anything being removed. Search
+ * still finds every entry whether the group is open or not.
  */
 
 import {
@@ -25,13 +31,17 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ShellIcon } from "../shell-icons";
+import { INITIAL_SETUP } from "../shell-nav";
 import {
   APP_ENTRIES,
   COMING_SOON_LABEL,
   CONNECTED_ENTRIES,
   LAUNCHER_NAME,
+  MORE_APPS_LABEL,
   TOOL_ENTRIES,
   currentAppId,
+  featuredApps,
+  setupApps,
   driveRowState,
   entryDescription,
   entryKey,
@@ -95,6 +105,9 @@ function hueStyle(entry: LauncherEntry, index?: number): CSSProperties | undefin
   return Object.keys(style).length ? (style as CSSProperties) : undefined;
 }
 
+/** The person's choice for the "Initial setup" group, kept for the page load. */
+let setupChoice: boolean | null = null;
+
 /** One stable DOM id per entry, so aria-activedescendant survives a re-sort. */
 function optionDomId(base: string, entry: LauncherEntry): string {
   return `${base}-${entryKey(entry).replace(/[^a-z0-9-]/gi, "-")}`;
@@ -122,12 +135,21 @@ export function LauncherPanel({
   const isPage = variant === "page";
 
   const current = currentAppId(currentPath);
+  // Folded until asked for, unless the app you are in lives inside it.
+  const [setupOpen, setSetupOpen] = useState(
+    () => setupChoice ?? setupApps().some((app) => app.id === current),
+  );
+  const toggleSetup = () => {
+    setupChoice = !setupOpen;
+    setSetupOpen(!setupOpen);
+  };
   const apps = APP_ENTRIES.filter((app) => !app.requiresMessages || messagesEnabled === true);
   const messagesPending = messagesEnabled === null;
   const searchable: LauncherEntry[] = [...apps, ...CONNECTED_ENTRIES, ...TOOL_ENTRIES];
   const trimmed = query.trim();
   const ranked = trimmed ? rankLauncher(query, searchable).map((entry) => resolve(entry, driveFlag)) : null;
   const resultsId = `${baseId}-list`;
+  const setupId = `${baseId}-setup`;
 
   // The highlighted entry. A query always has one (the first result, until the
   // arrows move it); without a query nothing is active until the arrows ask.
@@ -335,7 +357,7 @@ export function LauncherPanel({
         role={comboboxActive ? "combobox" : undefined}
         aria-autocomplete={comboboxActive ? "list" : undefined}
         aria-expanded={comboboxActive ? true : undefined}
-        aria-controls={comboboxActive ? resultsId : undefined}
+        aria-controls={comboboxActive ? (!ranked && setupOpen ? `${resultsId} ${setupId}` : resultsId) : undefined}
         aria-activedescendant={comboboxActive ? activeDomId : undefined}
         aria-keyshortcuts={isPage ? "/" : undefined}
         autoComplete="off"
@@ -465,14 +487,16 @@ export function LauncherPanel({
     </li>
   );
 
-  const appTiles: ReactNode[] = [];
-  APP_ENTRIES.forEach((app) => {
+  // "Your apps" above; the apps kept for review inside the group.
+  const featuredTiles = featuredApps().map((app, index) => renderAppTile(app, index));
+  const setupTiles: ReactNode[] = [];
+  setupApps().forEach((app) => {
     if (app.requiresMessages) {
-      if (messagesPending) appTiles.push(messagesSkeleton);
-      else if (messagesEnabled) appTiles.push(renderAppTile(app, appTiles.length));
+      if (messagesPending) setupTiles.push(messagesSkeleton);
+      else if (messagesEnabled) setupTiles.push(renderAppTile(app, featuredTiles.length + setupTiles.length));
       return;
     }
-    appTiles.push(renderAppTile(app, appTiles.length));
+    setupTiles.push(renderAppTile(app, featuredTiles.length + setupTiles.length));
   });
 
   const renderConnected = (item: Resolved) => (
@@ -548,26 +572,75 @@ export function LauncherPanel({
    * option sits directly under its group. On the page there is no listbox,
    * so the group is a plain landmark section with a real heading and list.
    */
-  const section = (id: string, title: string, list: ReactNode, listClass: string) =>
-    comboboxActive ? (
-      <div className={styles.section} role="group" aria-labelledby={`${baseId}-${id}`}>
-        <div className={styles.sectionTitle} id={`${baseId}-${id}`}>
-          {title}
+  const section = (id: string, title: string, list: ReactNode, listClass: string, nested = false) => {
+    if (comboboxActive) {
+      return (
+        <div className={styles.section} role="group" aria-labelledby={`${baseId}-${id}`}>
+          <div className={styles.sectionTitle} id={`${baseId}-${id}`}>
+            {title}
+          </div>
+          <ul className={listClass} role="none">
+            {list}
+          </ul>
         </div>
-        <ul className={listClass} role="none">
-          {list}
-        </ul>
-      </div>
-    ) : (
+      );
+    }
+    // Sections inside the group sit one heading level below its name.
+    const Heading = nested ? "h3" : "h2";
+    return (
       <section className={styles.section} aria-labelledby={`${baseId}-${id}`}>
-        <h2 className={styles.sectionTitle} id={`${baseId}-${id}`}>
+        <Heading className={styles.sectionTitle} id={`${baseId}-${id}`}>
           {title}
-        </h2>
+        </Heading>
         <ul className={listClass}>{list}</ul>
       </section>
     );
+  };
 
   const connected = CONNECTED_ENTRIES.map((entry) => resolve(entry, driveFlag));
+
+  /** The group's name is its own switch: a real button, never an option. */
+  const setupToggle = (
+    <button
+      type="button"
+      className={styles.setupToggle}
+      aria-expanded={setupOpen}
+      aria-controls={setupOpen ? setupId : undefined}
+      onClick={toggleSetup}
+    >
+      <ShellIcon.chevronRight size={14} className={styles.setupChevron} />
+      <span>{INITIAL_SETUP.label}</span>
+    </button>
+  );
+
+  const setupSections = (
+    <>
+      {section("more-apps", MORE_APPS_LABEL, setupTiles, isPage ? styles.appGrid : styles.tileGrid, true)}
+      {section(
+        "connected",
+        "Works with",
+        connected.map(renderConnected),
+        isPage ? styles.connectedGrid : styles.rows,
+        true,
+      )}
+      {section(
+        "soon",
+        COMING_SOON_LABEL,
+        isPage ? (
+          <>
+            {TOOL_ENTRIES.map(renderToolCard)}
+            <li>
+              <ToolRequestCard />
+            </li>
+          </>
+        ) : (
+          TOOL_ENTRIES.map(renderToolRow)
+        ),
+        isPage ? styles.toolGrid : styles.toolRows,
+        true,
+      )}
+    </>
+  );
 
   const body = ranked ? (
     <div className={styles.results} key="ranked">
@@ -593,30 +666,30 @@ export function LauncherPanel({
       )}
     </div>
   ) : (
-    <div
-      className={styles.sections}
-      key="sections"
-      id={comboboxActive ? resultsId : undefined}
-      role={comboboxActive ? "listbox" : undefined}
-      aria-label={comboboxActive ? LAUNCHER_NAME : undefined}
-    >
-      {section("apps", "Your apps", appTiles, isPage ? styles.appGrid : styles.tileGrid)}
-      {section("connected", "Works with", connected.map(renderConnected), isPage ? styles.connectedGrid : styles.rows)}
-      {section(
-        "soon",
-        COMING_SOON_LABEL,
-        isPage ? (
-          <>
-            {TOOL_ENTRIES.map(renderToolCard)}
-            <li>
-              <ToolRequestCard />
-            </li>
-          </>
-        ) : (
-          TOOL_ENTRIES.map(renderToolRow)
-        ),
-        isPage ? styles.toolGrid : styles.toolRows,
-      )}
+    // Two lists with the group's switch between them: a listbox may only own
+    // groups and options, so the button sits outside both. The arrow keys
+    // still walk every option in view, across the two.
+    <div className={styles.sections} key="sections">
+      <div
+        id={comboboxActive ? resultsId : undefined}
+        role={comboboxActive ? "listbox" : undefined}
+        aria-label={comboboxActive ? LAUNCHER_NAME : undefined}
+      >
+        {section("apps", "Your apps", featuredTiles, isPage ? styles.appGrid : `${styles.tileGrid} ${styles.tileGridFeatured}`)}
+      </div>
+      <div className={styles.setup} data-open={setupOpen ? "" : undefined}>
+        {isPage ? <h2 className={styles.setupHeading}>{setupToggle}</h2> : setupToggle}
+        {setupOpen ? (
+          <div
+            id={setupId}
+            className={styles.setupBody}
+            role={comboboxActive ? "listbox" : undefined}
+            aria-label={comboboxActive ? INITIAL_SETUP.label : undefined}
+          >
+            {setupSections}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 

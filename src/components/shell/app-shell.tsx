@@ -13,6 +13,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -29,7 +30,7 @@ import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
 import { suiteSurfaceFromAppPath } from "@/lib/product-urls";
 import { updateUserPreferencesAction } from "@/server/actions/preferences";
 import { ShellIcon } from "./shell-icons";
-import { crumbsForPath } from "./shell-nav";
+import { crumbsForPath, INITIAL_SETUP } from "./shell-nav";
 import { AppsLauncher } from "./launcher/apps-launcher";
 import styles from "./shell.module.css";
 
@@ -68,6 +69,26 @@ function subscribeCollapsed(onChange: () => void) {
     window.removeEventListener(COLLAPSE_EVENT, onChange);
     window.removeEventListener("storage", onChange);
   };
+}
+
+/** ⌘K on a Mac, Ctrl K everywhere else. The server and first paint say ⌘K. */
+const noSubscribe = () => () => {};
+export function useShortcutLabel(): string {
+  return useSyncExternalStore(
+    noSubscribe,
+    () => (/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘K" : "Ctrl K"),
+    () => "⌘K",
+  );
+}
+
+/**
+ * Whether this viewer can use Chat. The sidebar is told by the server and
+ * marks itself; anything else in the shell reads that mark when it opens, so
+ * a Chat link is offered on exactly the condition the Chat row is.
+ */
+export const CHAT_ENABLED_ATTRIBUTE = "data-chat-enabled";
+export function chatEnabled(): boolean {
+  return document.querySelector(`[data-shell="v3"] [${CHAT_ENABLED_ATTRIBUTE}]`) !== null;
 }
 
 export function openPalette(query = "") {
@@ -164,6 +185,7 @@ function Topbar() {
   const { setMobileOpen } = useShell();
   const crumbs = crumbsForPath(pathname);
   const surface = suiteSurfaceFromAppPath(pathname) ?? "home";
+  const shortcut = useShortcutLabel();
 
   return (
     <header className={styles.topbar}>
@@ -196,7 +218,7 @@ function Topbar() {
         <button type="button" className={styles.topSearch} onClick={() => openPalette()} aria-label="Search or jump to">
           <ShellIcon.search />
           <span>Search or jump to…</span>
-          <kbd className={styles.kbd}>⌘K</kbd>
+          <kbd className={styles.kbd}>{shortcut}</kbd>
         </button>
         <Link href="/app/inbox" className={styles.iconButton} aria-label="Inbox">
           <ShellIcon.bell />
@@ -216,9 +238,13 @@ function createHandlerReady(): boolean {
 
 function NewMenu() {
   const [open, setOpen] = useState(false);
+  // Read when the menu opens, so Message is offered only where Chat is.
+  const [chat, setChat] = useState(false);
   const router = useRouter();
   const close = useCallback(() => setOpen(false), []);
   const ref = useDismiss(open, close);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const groupId = useId();
 
   const newTask = () => {
     setOpen(false);
@@ -230,14 +256,25 @@ function NewMenu() {
   };
 
   return (
-    <div ref={ref} style={{ position: "relative" }}>
+    <div
+      ref={ref}
+      style={{ position: "relative" }}
+      onKeyDown={(event) => {
+        // Escape hands focus back to the button the menu belongs to.
+        if (event.key === "Escape" && open) buttonRef.current?.focus();
+      }}
+    >
       <button
+        ref={buttonRef}
         type="button"
         className={styles.newButton}
         aria-label="New"
         aria-haspopup="menu"
         aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => {
+          setChat(chatEnabled());
+          setOpen((value) => !value);
+        }}
       >
         <ShellIcon.plus />
         <span>New</span>
@@ -247,15 +284,24 @@ function NewMenu() {
           <button type="button" role="menuitem" onClick={newTask}>
             <ShellIcon.tasks /> Task <span className={styles.menuHint}>C</span>
           </button>
-          <Link href="/app/notes" role="menuitem" onClick={close}>
-            <ShellIcon.notes /> Note
-          </Link>
           <Link href="/app/project" role="menuitem" onClick={close}>
             <ShellIcon.projects /> Project
           </Link>
-          <Link href="/app/messages" role="menuitem" onClick={close}>
-            <ShellIcon.messages /> Message
-          </Link>
+          {/* Founder instruction (2 Oct 2026): the earlier entries stay,
+              grouped under one name to review. */}
+          <div className={styles.menuGroup} role="group" aria-labelledby={groupId}>
+            <div className={styles.menuLabel} id={groupId}>
+              {INITIAL_SETUP.label}
+            </div>
+            <Link href="/app/notes" role="menuitem" onClick={close}>
+              <ShellIcon.notes /> Note
+            </Link>
+            {chat ? (
+              <Link href="/app/messages" role="menuitem" onClick={close}>
+                <ShellIcon.messages /> Message
+              </Link>
+            ) : null}
+          </div>
         </div>
       ) : null}
     </div>

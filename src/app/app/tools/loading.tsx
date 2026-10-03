@@ -15,24 +15,14 @@ export default function ToolsLoading() {
           </div>
           <div className={`${styles.skeleton} ${styles.skeletonSearch}`} />
         </div>
+        {/* "Your apps", then the folded "Initial setup" group's name. */}
         <div className={`${styles.skeleton} ${styles.skeletonHeading}`} />
         <div className={styles.appGrid}>
-          {Array.from({ length: 7 }, (_, index) => (
+          {Array.from({ length: 5 }, (_, index) => (
             <div key={index} className={`${styles.skeleton} ${styles.skeletonApp}`} />
           ))}
         </div>
         <div className={`${styles.skeleton} ${styles.skeletonHeading}`} />
-        <div className={styles.connectedGrid}>
-          {Array.from({ length: 2 }, (_, index) => (
-            <div key={index} className={`${styles.skeleton} ${styles.skeletonApp}`} />
-          ))}
-        </div>
-        <div className={`${styles.skeleton} ${styles.skeletonHeading}`} />
-        <div className={styles.toolGrid}>
-          {Array.from({ length: 8 }, (_, index) => (
-            <div key={index} className={`${styles.skeleton} ${styles.skeletonTool}`} />
-          ))}
-        </div>
       </div>
     </div>
   );

@@ -3,11 +3,15 @@
 /**
  * v3 sidebar: the one persistent navigation for the whole suite.
  *
- * Order, top to bottom: the brand, search, your day (Home, Inbox, My tasks),
- * the work itself (Tasks, Projects, Timeline, Chat, Files), then the wider
- * view (Overview, Analytics, Apps and tools). Below that, three sections you
- * can fold: Projects, Channels and Direct messages. One row at a time is the
- * page you are on; the open Project is marked with a dot, not a second
+ * Order, top to bottom: the brand, search, then the eight places of the
+ * approved navigation (Home, Overview, Projects, Tasks, Timeline, Files,
+ * Analytics, Whiteboard). Below that, one group that folds, "Initial setup":
+ * everything the sidebar had before (Inbox, My tasks, Chat, Apps and tools,
+ * the Projects list, Channels and Direct messages), kept whole so it can be
+ * reviewed (founder instruction, 2 Oct 2026). It starts folded, remembers
+ * the choice, opens by itself when the page you are on is inside it, and
+ * shows what is waiting on its header while folded. One row at a time is
+ * the page you are on; the open Project is marked with a dot, not a second
  * highlight. The footer is one row: Settings, help and the theme.
  */
 
@@ -23,12 +27,16 @@ import type { ChooserRow } from "@/lib/projects/project-chooser";
 import { ShellIcon } from "./shell-icons";
 import { useFaviconBadge } from "./favicon-badge";
 import { SIGNAL_INDIGO, suiteMarkMetrics } from "@/lib/brand/suite-mark";
-import { openPalette, ThemeCycleButton, useShell } from "./app-shell";
+import { CHAT_ENABLED_ATTRIBUTE, openPalette, ThemeCycleButton, useShell, useShortcutLabel } from "./app-shell";
 import {
   activeDestinationId,
   FOOTER_DESTINATIONS,
-  PRIMARY_DESTINATIONS,
-  WORKSPACE_DESTINATIONS,
+  INITIAL_SETUP,
+  INITIAL_SETUP_DESTINATIONS,
+  isInsideInitialSetup,
+  sectionIsOpen,
+  sectionStoreKey,
+  TOP_LEVEL_DESTINATIONS,
   type ShellDestination,
 } from "./shell-nav";
 import styles from "./shell.module.css";
@@ -47,8 +55,7 @@ export function projectColor(id: string): string {
 
 const PROJECT_LIMIT = 8;
 const BRAND_MARK = suiteMarkMetrics(24);
-/** Where the wider view starts: a quiet gap separates it from the work. */
-const WIDER_VIEW_STARTS_AT = "overview";
+const SETUP_BODY_ID = "shell-initial-setup";
 
 function initialsOf(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -72,10 +79,13 @@ function readFolded(): ReadonlySet<string> {
   return folded;
 }
 
-function toggleFolded(id: string) {
+/** Writes a section's state: the list holds only what differs from the design. */
+function setSectionOpen(id: string, open: boolean) {
   const next = new Set(readFolded());
-  if (next.has(id)) next.delete(id);
-  else next.add(id);
+  const key = sectionStoreKey(id);
+  // "open:<id>" is listed when open; a plain id is listed when folded.
+  if (key === id ? !open : open) next.add(key);
+  else next.delete(key);
   folded = next;
   try {
     window.localStorage.setItem(SECTIONS_KEY, JSON.stringify([...next]));
@@ -94,16 +104,6 @@ function subscribeFolded(listener: () => void) {
 }
 function useFolded(): ReadonlySet<string> {
   return useSyncExternalStore(subscribeFolded, readFolded, () => EMPTY_FOLDED);
-}
-
-/** ⌘K on a Mac, Ctrl K everywhere else. */
-const noSubscribe = () => () => {};
-function useShortcutLabel(): string {
-  return useSyncExternalStore(
-    noSubscribe,
-    () => (/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘K" : "Ctrl K"),
-    () => "⌘K",
-  );
 }
 
 function useProjectRows(enabled: boolean) {
@@ -160,6 +160,17 @@ export function AppSidebar({
         : null;
   // An open Chat row is the page you are on; the Chat destination row stays
   // quiet then, so only one row reads as "here".
+  // Initial setup: the remembered choice, or open because you are inside it.
+  // Folding it while inside holds for that page, and is remembered as well.
+  const insideSetup = isInsideInitialSetup(pathname);
+  const [setupChoice, setSetupChoice] = useState<{ path: string; open: boolean } | null>(null);
+  const setupOpen =
+    setupChoice?.path === pathname ? setupChoice.open : sectionIsOpen(foldedSections, INITIAL_SETUP.id) || insideSetup;
+  const chooseSetupOpen = (open: boolean) => {
+    setSetupChoice({ path: pathname, open });
+    setSectionOpen(INITIAL_SETUP.id, open);
+  };
+  const setupWaiting = inboxCount + (messagesEnabled ? messagesCount : 0);
   const chatRowOpen = Boolean(directory && (here === directory.newMessageHref || [...directory.channels, ...directory.direct].some((entry) => entry.href === here)));
 
   const openProject = useCallback(
@@ -196,17 +207,22 @@ export function AppSidebar({
       >
         <Icon />
         <span className={styles.itemLabel}>{destination.label}</span>
+        {destination.soon ? (
+          <span className={styles.soonTag}>
+            <span className="sr-only">Coming </span>Soon
+          </span>
+        ) : null}
         {extra}
       </Link>
     );
   };
 
   const section = (id: string, label: string, children: React.ReactNode, actions?: React.ReactNode) => {
-    const open = !foldedSections.has(id);
+    const open = sectionIsOpen(foldedSections, id);
     return (
       <nav className={styles.section} aria-label={label} data-folded={open ? undefined : ""}>
         <div className={styles.label}>
-          <button type="button" className={styles.labelToggle} aria-expanded={open} onClick={() => toggleFolded(id)}>
+          <button type="button" className={styles.labelToggle} aria-expanded={open} onClick={() => setSectionOpen(id, !open)}>
             <span>{label}</span>
             <ShellIcon.chevronDown size={12} className={styles.labelChevron} />
           </button>
@@ -249,11 +265,10 @@ export function AppSidebar({
     );
   };
 
-  const work = WORKSPACE_DESTINATIONS.filter((destination) => !destination.requiresMessages || messagesEnabled);
-  const widerAt = work.findIndex((destination) => destination.id === WIDER_VIEW_STARTS_AT);
+  const setupRows = INITIAL_SETUP_DESTINATIONS.filter((destination) => !destination.requiresMessages || messagesEnabled);
 
   return (
-    <aside className={styles.sidebar} aria-label="Signal Studio">
+    <aside className={styles.sidebar} aria-label="Signal Studio" {...{ [CHAT_ENABLED_ATTRIBUTE]: messagesEnabled ? "" : undefined }}>
       <div className={styles.brandRow}>
         <Link href="/app/home" className={styles.brand} aria-label="Signal Studio home">
           <span className={styles.brandMark} aria-hidden="true">
@@ -286,104 +301,146 @@ export function AppSidebar({
 
       <div className={styles.scroll}>
         <nav className={styles.section} aria-label="Primary">
-          {PRIMARY_DESTINATIONS.map((destination) =>
-            link(destination, destination.id === "inbox" ? count(inboxCount, "waiting") : null),
-          )}
+          {TOP_LEVEL_DESTINATIONS.map((destination) => link(destination))}
         </nav>
 
-        <nav className={styles.section} aria-label="Studio">
-          {work.map((destination, index) => (
-            <div key={destination.id} className={styles.navSlot} data-gap={index === widerAt ? "" : undefined}>
-              {link(destination, destination.id === "messages" ? count(messagesCount, "waiting") : null)}
-            </div>
-          ))}
-        </nav>
+        {collapsed ? (
+          // Icons only: one button that widens the sidebar and opens the group.
+          <div className={styles.setup}>
+            <button
+              type="button"
+              className={styles.item}
+              data-active={insideSetup ? "" : undefined}
+              aria-label={`${INITIAL_SETUP.label}${setupWaiting > 0 ? `, ${setupWaiting > 99 ? "99+" : setupWaiting} waiting inside` : ""}: expand the sidebar and show it`}
+              title={INITIAL_SETUP.label}
+              onClick={() => {
+                chooseSetupOpen(true);
+                toggleCollapsed();
+              }}
+            >
+              <ShellIcon.setup />
+              {count(setupWaiting, "waiting inside")}
+            </button>
+          </div>
+        ) : (
+          <div className={styles.setup} data-open={setupOpen ? "" : undefined}>
+            <button
+              type="button"
+              className={styles.setupToggle}
+              aria-expanded={setupOpen}
+              aria-controls={setupOpen ? SETUP_BODY_ID : undefined}
+              onClick={() => chooseSetupOpen(!setupOpen)}
+            >
+              <ShellIcon.setup />
+              <span className={styles.itemLabel}>{INITIAL_SETUP.label}</span>
+              {/* Folded, the group still says what is waiting inside it. */}
+              {setupOpen ? null : count(setupWaiting, "waiting inside")}
+              <ShellIcon.chevronDown size={12} className={styles.setupChevron} />
+            </button>
+            {setupOpen ? (
+              <div id={SETUP_BODY_ID} className={styles.setupBody}>
+                <nav className={styles.section} aria-label={INITIAL_SETUP.label}>
+                  {setupRows.map((destination) =>
+                    link(
+                      destination,
+                      destination.id === "inbox"
+                        ? count(inboxCount, "waiting")
+                        : destination.id === "messages"
+                          ? count(messagesCount, "waiting")
+                          : null,
+                    ),
+                  )}
+                </nav>
 
-        {activeProject
-          ? section(
-              "projects",
-              "Projects",
-              <>
-                {rows === null && !failed ? <div className={styles.projectsEmpty}>Loading projects…</div> : null}
-                {failed ? <div className={styles.projectsEmpty}>Projects are unavailable right now.</div> : null}
-                {rows?.length === 0 ? <div className={styles.projectsEmpty}>No projects yet.</div> : null}
-                {rows?.slice(0, PROJECT_LIMIT).map((row) => {
-                  const current = row.id === currentProjectId;
-                  return (
-                    <button
-                      key={row.id}
-                      type="button"
-                      className={styles.item}
-                      data-current-project={current ? "" : undefined}
-                      onClick={() => openProject(row)}
-                      disabled={!row.selectable}
-                      title={row.blockedReason ?? (collapsed ? row.name : row.subtitle)}
-                      aria-label={row.accessibleName}
-                    >
-                      <span className={styles.projectSquare} style={{ backgroundColor: projectColor(row.id) }} aria-hidden="true">
-                        {row.monogram.slice(0, 1)}
-                      </span>
-                      <span className={styles.itemLabel}>{row.name}</span>
-                      {current ? <span className={styles.currentDot} title="Open project" aria-hidden="true" /> : null}
-                      {row.activeRootTaskCount > 0 ? (
-                        <span className={styles.count} title={`${row.activeRootTaskCount} open tasks`}>{row.activeRootTaskCount}</span>
-                      ) : null}
-                    </button>
-                  );
-                })}
-                {rows && rows.length > PROJECT_LIMIT ? (
-                  <Link href="/app/project" className={styles.item} onClick={() => setMobileOpen(false)}>
-                    <ShellIcon.chevronRight />
-                    <span className={styles.itemLabel}>All {rows.length} projects</span>
-                  </Link>
-                ) : null}
-              </>,
-              <>
-                <Link href="/app/archived" aria-label="Archived projects" title="Archived projects" onClick={() => setMobileOpen(false)}>
-                  <ShellIcon.archive size={13} />
-                </Link>
-                <Link href="/app/project" aria-label="All projects" title="All projects" onClick={() => setMobileOpen(false)}>
-                  <ShellIcon.plus size={13} />
-                </Link>
-              </>,
-            )
-          : null}
+                {activeProject
+                  ? section(
+                      "projects",
+                      "Projects",
+                      <>
+                        {rows === null && !failed ? <div className={styles.projectsEmpty}>Loading projects…</div> : null}
+                        {failed ? <div className={styles.projectsEmpty}>Projects are unavailable right now.</div> : null}
+                        {rows?.length === 0 ? <div className={styles.projectsEmpty}>No projects yet.</div> : null}
+                        {rows?.slice(0, PROJECT_LIMIT).map((row) => {
+                          const current = row.id === currentProjectId;
+                          return (
+                            <button
+                              key={row.id}
+                              type="button"
+                              className={styles.item}
+                              data-current-project={current ? "" : undefined}
+                              onClick={() => openProject(row)}
+                              disabled={!row.selectable}
+                              title={row.blockedReason ?? (collapsed ? row.name : row.subtitle)}
+                              aria-label={row.accessibleName}
+                            >
+                              <span className={styles.projectSquare} style={{ backgroundColor: projectColor(row.id) }} aria-hidden="true">
+                                {row.monogram.slice(0, 1)}
+                              </span>
+                              <span className={styles.itemLabel}>{row.name}</span>
+                              {current ? <span className={styles.currentDot} title="Open project" aria-hidden="true" /> : null}
+                              {row.activeRootTaskCount > 0 ? (
+                                <span className={styles.count} title={`${row.activeRootTaskCount} open tasks`}>{row.activeRootTaskCount}</span>
+                              ) : null}
+                            </button>
+                          );
+                        })}
+                        {rows && rows.length > PROJECT_LIMIT ? (
+                          <Link href="/app/project" className={styles.item} onClick={() => setMobileOpen(false)}>
+                            <ShellIcon.chevronRight />
+                            <span className={styles.itemLabel}>All {rows.length} projects</span>
+                          </Link>
+                        ) : null}
+                      </>,
+                      <>
+                        <Link href="/app/archived" aria-label="Archived projects" title="Archived projects" onClick={() => setMobileOpen(false)}>
+                          <ShellIcon.archive size={13} />
+                        </Link>
+                        <Link href="/app/project" aria-label="All projects" title="All projects" onClick={() => setMobileOpen(false)}>
+                          <ShellIcon.plus size={13} />
+                        </Link>
+                      </>,
+                    )
+                  : null}
 
-        {directory ? (
-          <>
-            {section(
-              "channels",
-              "Channels",
-              <>
-                {directory.channels.length === 0 ? <div className={styles.projectsEmpty}>No channels yet.</div> : null}
-                {directory.channels.map((entry) => chatLink(entry))}
-              </>,
-            )}
-            {section(
-              "direct",
-              "Direct messages",
-              <>
-                {directory.direct.map((entry) => chatLink(entry))}
-                {directory.newMessageHref ? (
-                  <Link
-                    href={directory.newMessageHref}
-                    className={`${styles.item} ${styles.chatAdd}`}
-                    aria-current={here === directory.newMessageHref ? "page" : undefined}
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    <ShellIcon.plus />
-                    <span className={styles.itemLabel}>New message</span>
-                  </Link>
+                {directory ? (
+                  <>
+                    {section(
+                      "channels",
+                      "Channels",
+                      <>
+                        {directory.channels.length === 0 ? <div className={styles.projectsEmpty}>No channels yet.</div> : null}
+                        {directory.channels.map((entry) => chatLink(entry))}
+                      </>,
+                    )}
+                    {section(
+                      "direct",
+                      "Direct messages",
+                      <>
+                        {directory.direct.map((entry) => chatLink(entry))}
+                        {directory.newMessageHref ? (
+                          <Link
+                            href={directory.newMessageHref}
+                            className={`${styles.item} ${styles.chatAdd}`}
+                            aria-current={here === directory.newMessageHref ? "page" : undefined}
+                            onClick={() => setMobileOpen(false)}
+                          >
+                            <ShellIcon.plus />
+                            <span className={styles.itemLabel}>New message</span>
+                          </Link>
+                        ) : null}
+                      </>,
+                      directory.newMessageHref ? (
+                        <Link href={directory.newMessageHref} aria-label="New message" title="New message" onClick={() => setMobileOpen(false)}>
+                          <ShellIcon.plus size={13} />
+                        </Link>
+                      ) : null,
+                    )}
+                  </>
                 ) : null}
-              </>,
-              directory.newMessageHref ? (
-                <Link href={directory.newMessageHref} aria-label="New message" title="New message" onClick={() => setMobileOpen(false)}>
-                  <ShellIcon.plus size={13} />
-                </Link>
-              ) : null,
-            )}
-          </>
-        ) : null}
+              </div>
+            ) : null}
+          </div>
+        )}
       </div>
 
       <div className={styles.footer}>

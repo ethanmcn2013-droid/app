@@ -283,10 +283,13 @@ test("Notes lives in Apps and tools, and the launcher opens the same catalogue",
   // Founder brief (24 Sep 2026): a Google-apps style launcher for apps and
   // the tools on the way. Notes leaves the sidebar but stays one step away.
   // Revision 2 (25 Sep 2026): one name, "Apps and tools", everywhere.
+  // Revision 3 (2 Oct 2026, founder instruction): the sidebar's rows are the
+  // approved top level plus one "Initial setup" group; Notes is in neither.
   const studioSection = v3Nav.slice(
-    v3Nav.indexOf("WORKSPACE_DESTINATIONS"),
-    v3Nav.indexOf("TOOL_DESTINATIONS"),
+    v3Nav.indexOf("TOP_LEVEL_DESTINATIONS"),
+    v3Nav.indexOf("export const TOOL_DESTINATIONS"),
   );
+  assert.match(studioSection, /INITIAL_SETUP_DESTINATIONS/);
   assert.doesNotMatch(studioSection, /\{ id: "notes"/);
   assert.match(v3Nav, /\{ id: "tools", label: "Apps and tools", href: "\/app\/tools"/);
   assert.doesNotMatch(v3Nav, /More tools/);
@@ -666,7 +669,9 @@ test("a tool reached through Apps and tools lights up its parent row, and the cr
   assert.equal(active["/app/notes"], "tools");
   assert.equal(active["/app/notes/anything"], "tools");
   assert.equal(active["/app/tools"], "tools");
-  assert.equal(active["/app/tools/whiteboard"], "tools");
+  // 2 Oct 2026: Whiteboard is a top-level row of the approved navigation,
+  // so its own row lights up; every other tool still lights Apps and tools.
+  assert.equal(active["/app/tools/whiteboard"], "whiteboard");
   assert.equal(active["/app/tasks"], "tasks");
   assert.deepEqual(crumbs["/app/notes"], ["Signal Studio", "Apps and tools", "Notes"]);
   assert.equal(crumbs["/app/tools/whiteboard"].at(-1), "Whiteboard");

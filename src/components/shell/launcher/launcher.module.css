@@ -1535,3 +1535,114 @@ a.connectedCard:hover {
     display: none;
   }
 }
+
+/* ── Initial setup (2 Oct 2026) ──────────────────────────────────────
+   Everything the launcher had before "Your apps" was cut to the approved
+   navigation: kept whole, behind one name that folds. The name is a real
+   button; the body swaps in and out with no height animation. */
+
+.setup {
+  border-top: 1px solid var(--v3-border);
+  padding: 6px 0 2px;
+}
+
+/* "Your apps" is five tiles: one row, not four and an orphan. */
+.tileGridFeatured {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.setupHeading {
+  margin: 0;
+  font: inherit;
+}
+
+.setupToggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 32px;
+  padding: 0 8px 0 4px;
+  border: 0;
+  border-radius: var(--v3-radius);
+  background: transparent;
+  color: var(--v3-text-3);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
+}
+
+.setupToggle:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.setupToggle:active {
+  background: var(--v3-selected);
+}
+
+.setupToggle:focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: -2px;
+}
+
+.setup[data-open] .setupToggle {
+  color: var(--v3-text-2);
+}
+
+.setupChevron {
+  flex: none;
+  transition: transform 160ms var(--v3-ease);
+}
+
+.setup[data-open] .setupChevron {
+  transform: rotate(90deg);
+}
+
+.setupBody .section:first-child {
+  padding-top: 2px;
+}
+
+.panel[data-variant="sheet"] .setupToggle {
+  min-height: 44px;
+  font-size: 14px;
+}
+
+.pageBody .setup {
+  margin-top: 28px;
+  padding: 14px 0 0;
+}
+
+.pageBody .setupToggle {
+  width: auto;
+  min-height: 36px;
+  margin-left: -6px;
+  padding: 0 12px 0 6px;
+  font-size: 14px;
+  color: var(--v3-text);
+}
+
+.pageBody .setupBody .section:first-child {
+  padding-top: 14px;
+}
+
+.pageBody .setupBody .sectionTitle {
+  font-size: 13px;
+  color: var(--v3-text-2);
+}
+
+@media (pointer: coarse) {
+  .setupToggle {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .setupToggle,
+  .setupChevron {
+    transition: none;
+  }
+}

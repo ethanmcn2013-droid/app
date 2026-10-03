@@ -370,7 +370,10 @@
 .menu a svg, .menu button svg { color: var(--v3-text-3); }
 .menu a:hover, .menu button:hover, .menu a:focus-visible, .menu button:focus-visible { background: var(--v3-hover); outline: none; }
 .menuHint { margin-left: auto; font-size: 11.5px; color: var(--v3-text-3); }
+.menu a:active, .menu button:active { background: var(--v3-selected); }
 .menuLabel { padding: 8px 10px 4px; font-size: 12px; font-weight: 600; color: var(--v3-text-3); }
+/* A named group inside a menu: a hairline, the name, then its entries. */
+.menuGroup { display: flex; flex-direction: column; margin-top: 4px; padding-top: 2px; border-top: 1px solid var(--v3-border); }
 .segmented {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -556,8 +559,6 @@
 
 .section { gap: 1px; }
 .section + .section { margin-top: 18px; }
-.navSlot { display: flex; flex-direction: column; }
-.navSlot[data-gap] { margin-top: 10px; }
 
 .item {
   height: 30px;
@@ -614,7 +615,8 @@
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: color-mix(in srgb, var(--v3-text) 48%, transparent);
+  /* 56%: AA (5.4:1) on the sidebar's ink at this small size. */
+  color: color-mix(in srgb, var(--v3-text) 56%, transparent);
   font: inherit;
   font-size: 11.5px;
   font-weight: 600;
@@ -657,7 +659,6 @@
 .shell[data-collapsed] .currentDot,
 .shell[data-collapsed] .chatTag { display: none; }
 .shell[data-collapsed] .section + .section { margin-top: 10px; padding-top: 10px; border-top: 1px solid color-mix(in srgb, var(--v3-text) 8%, transparent); }
-.shell[data-collapsed] .navSlot[data-gap] { margin-top: 6px; }
 .shell[data-collapsed] .footer { flex-direction: column; }
 .shell[data-collapsed] .footer > .item { flex: none; width: 100%; }
 .shell[data-collapsed] .footerTools { flex-direction: column; }
@@ -780,3 +781,82 @@
 .item svg [data-bar] { fill-opacity: 0.62; transition: fill 160ms var(--v3-ease), fill-opacity 160ms var(--v3-ease); }
 .item:hover svg [data-bar] { fill-opacity: 0.9; }
 .item[aria-current="page"] svg [data-bar] { fill: var(--v3-accent); fill-opacity: 1; }
+
+/* ── Initial setup (2 Oct 2026) ──────────────────────────────────────
+   The earlier navigation, kept whole under one group to review. The header
+   is a row like any other so it reads as part of the list; a hairline sets
+   it apart from the eight places above. Folding swaps the body in and out
+   with no height animation, as the Projects and Chat sections do, so
+   nothing shifts except the rows below it. */
+
+.item:active { background: color-mix(in srgb, var(--v3-text) 12%, transparent); }
+
+.setup {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--v3-text) 8%, transparent);
+}
+.setupToggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 30px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: color-mix(in srgb, var(--v3-text) 62%, transparent);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: -0.003em;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
+}
+.setupToggle svg { flex: none; color: color-mix(in srgb, var(--v3-text) 48%, transparent); transition: color 120ms var(--v3-ease); }
+.setupToggle:hover { background: var(--v3-hover); color: var(--v3-text); }
+.setupToggle:hover svg { color: color-mix(in srgb, var(--v3-text) 80%, transparent); }
+.setupToggle:active { background: color-mix(in srgb, var(--v3-text) 12%, transparent); }
+.setupToggle:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: -2px; }
+.setup[data-open] .setupToggle { color: var(--v3-text); }
+.setupToggle .setupChevron { transform: rotate(-90deg); transition: transform 160ms var(--v3-ease), color 120ms var(--v3-ease); }
+.setup[data-open] .setupChevron { transform: none; }
+
+/* Nested rows sit one step in, on a guide that drops from the group's icon. */
+.setupBody {
+  display: flex;
+  flex-direction: column;
+  margin: 3px 0 0 15px;
+  padding-left: 7px;
+  border-left: 1px solid color-mix(in srgb, var(--v3-text) 10%, transparent);
+}
+.setupBody .section + .section { margin-top: 12px; }
+
+/* Whiteboard is on its way: a quiet tag, never a second highlight. */
+.soonTag {
+  flex: none;
+  height: 16px;
+  padding: 0 6px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--v3-text) 14%, transparent);
+  color: color-mix(in srgb, var(--v3-text) 55%, transparent);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.shell[data-collapsed] .soonTag { display: none; }
+.shell[data-collapsed] .setup { margin-top: 10px; padding-top: 10px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .setupToggle, .setupToggle svg, .setupToggle .setupChevron { transition: none; }
+}
