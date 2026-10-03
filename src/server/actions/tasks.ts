@@ -14,6 +14,8 @@ import {
   comments,
   meta,
   notifications,
+  planningPeriods,
+  workspaceMembers,
   resources,
   tasks,
   users,
@@ -28,6 +30,7 @@ import { measureTaskStage, withTaskActionTiming } from "@/server/diagnostics/tas
 import { privateTaskDbWrite } from "@/server/actions/private-task-db-write";
 import {
   authorizeStoredProject,
+  evaluateProjectCapability,
   readableProjectOrNull,
   scopeForTask,
 } from "@/server/actions/project-authz";
@@ -128,6 +131,14 @@ async function taskWriterState(executor: Pick<typeof db, "select">, ws: string, 
     .leftJoin(users, eq(users.id, me))
     .leftJoin(taskOwnerUser, eq(taskOwnerUser.id, workspaces.ownerUserId))
     .where(eq(workspaces.id, ws)).limit(1);
+  return checkTaskWriterState(executor, state, me);
+}
+
+async function checkTaskWriterState(
+  executor: Pick<typeof db, "select">,
+  state: {projectDeleting: unknown; actorClerkId: string | null; actorId: string | null; ownerId: string | null; ownerClerkId: string | null} | undefined,
+  me: UserId,
+) {
   if (state?.projectDeleting) throw new ProjectDeletionInProgressError();
   if (state?.actorId === null || state?.actorId === undefined) return null;
 
@@ -151,16 +162,37 @@ async function taskWriterState(executor: Pick<typeof db, "select">, ws: string, 
   return tombstones.length === 0 ? state : null;
 }
 
+/** Membership and writer state share one fresh relational projection on the writer snapshot. */
+async function taskWriterProjectProof(executor: Pick<typeof db, "select">, candidate: string, me: UserId, archivePolicy: "defer" | "enforce" = "defer") {
+  const ws = parseProjectId(candidate);
+  if (!ws) return null;
+  const [row] = await executor.select({
+    membershipRole: workspaceMembers.role,
+    workspaceOwnerUserId: workspaces.ownerUserId,
+    planningPeriodOwnerUserId: planningPeriods.ownerUserId,
+    archivedAt: sql<number | null>`${workspaces.archivedAt}`,
+    projectDeleting: projectDeletionInProgress(ws),
+    actorClerkId: users.clerkId, actorId: users.id,
+    ownerId: taskOwnerUser.id, ownerClerkId: taskOwnerUser.clerkId,
+  }).from(workspaceMembers)
+    .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
+    .leftJoin(planningPeriods, eq(planningPeriods.id, workspaces.planningPeriodId))
+    .leftJoin(users, eq(users.id, me))
+    .leftJoin(taskOwnerUser, eq(taskOwnerUser.id, workspaces.ownerUserId))
+    .where(and(eq(workspaceMembers.userId, me), eq(workspaceMembers.workspaceId, ws))).limit(1);
+  // Refusal precedence stays permission, then project/actor/owner deletion fences.
+  const grant = evaluateProjectCapability(me, ws, "createOrEditTasks", archivePolicy, row);
+  if (!grant.ok) return null;
+  return await checkTaskWriterState(executor, row, me) ? grant : null;
+}
+
 /** Prove the stored Project and deletion fences on the immediate writer snapshot. */
 async function taskWriteTarget(executor: Pick<typeof db, "select">, id: string, me: UserId) {
   const [target] = await executor.select({ workspaceId: tasks.workspaceId }).from(tasks).where(eq(tasks.id, id));
   if (!target?.workspaceId) return null;
-  const grant = await authorizeStoredProject({
-    storedProjectId: target.workspaceId, capability: "createOrEditTasks", actorUserId: me, executor,
-  });
-  if (!grant.ok) return null;
+  const grant = await taskWriterProjectProof(executor, target.workspaceId, me);
+  if (!grant) return null;
   const ws = grant.projectId;
-  if (!await taskWriterState(executor, ws, me)) return null;
   // Drizzle's JSON columns can throw while mapping the result. Keep that
   // fallible read after deletion and account fences, as in the prior writer.
   const [row] = await executor.select().from(tasks).where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
@@ -563,12 +595,8 @@ export async function addTaskAction(input: {
     input.id ??
     `t-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).slice(0, 8)}`;
   const created = await measureTaskStage("writeAndActivity", () => db.transaction(async (tx) => {
-    const current = await measureTaskStage("projectProof", () => authorizeStoredProject({
-      storedProjectId: ws, actorUserId: me, capability: "createOrEditTasks",
-      archivePolicy: "enforce", executor: tx,
-    }));
-    if (!current.ok) return false;
-    if (!await taskWriterState(tx, ws, me)) return false;
+    const current = await measureTaskStage("projectProof", () => taskWriterProjectProof(tx, ws, me, "enforce"));
+    if (!current) return false;
     if (input.parentTaskId) {
       // A subtask inherits its parent's tenant. Require a top-level parent in
       // the active workspace; this rejects both foreign-parent injection and

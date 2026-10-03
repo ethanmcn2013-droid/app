@@ -195,7 +195,7 @@ test('writer query trace retains one fresh proof and the reduced guard reads', a
       else if (actionName === 'edit') await actions.updateTaskAction('trace-task', { title: 'After' });
       else await actions.toggleCompleteAction('trace-task');
       // Create also needs lane position; edit/complete decode the scoped row after the fences.
-      assert.equal(counts[0], actionName === 'create' ? 4 : 5,
+      assert.equal(counts[0], actionName === 'create' ? 3 : 4,
         `${actionName} should retain its reduced guard read count`);
     } finally { f.close(); }
   }
@@ -548,5 +548,23 @@ test('a multi-field edit commits both tracked activities on the same writer', as
     assert.equal((await task(f, 'multi-edit')).title, 'After');
     const rows = (await f.client.execute("SELECT payload FROM activities WHERE task_id='multi-edit' AND kind='update'")).rows;
     assert.deepEqual(rows.map(row => JSON.parse(row.payload).field).sort(), ['priority', 'title']);
+  } finally { f.close(); }
+});
+
+test('membership refusal precedes Project deletion and malformed task decoding in combined proof', async () => {
+  const f = await usageFixture({seedClaim:false});
+  try {
+    await f.action({id:'proof-order',title:'Before',projectId:'a'});
+    const beforeActivities = await count(f,'activities');
+    await f.client.execute("UPDATE tasks SET assignees='invalid-json' WHERE id='proof-order'");
+    await f.client.execute({sql:'INSERT INTO project_drive_operations(id,workspace_id,operation_kind,status,dedupe_key) VALUES (?,?,?,?,?)',args:['proof-order-delete','a','project_delete','pending','f'.repeat(64)]});
+    f.state.actor='member';
+    await f.client.execute("DELETE FROM workspace_members WHERE workspace_id='a' AND user_id='member'");
+    const actions=f.load('src/server/actions/tasks.ts');
+    const refused=f.load('src/server/tasks/mutation-refusal.ts').isTaskMutationRefused;
+    await assert.rejects(actions.updateTaskAction('proof-order',{title:'Denied'},'a'),refused);
+    await assert.rejects(actions.toggleCompleteAction('proof-order','a'),refused);
+    assert.equal((await task(f,'proof-order')).title,'Before');
+    assert.equal(await count(f,'activities'),beforeActivities);
   } finally { f.close(); }
 });
