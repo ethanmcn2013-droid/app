@@ -144,7 +144,7 @@ test("mixed calendar-day deadlines sort before Home's cap in each reader zone", 
 });
 
 test("tasks sharing a saved date retain their own identities and priority ordering", async () => {
-  const items = [3, 1, 2].map((priority): TaskSignal => ({
+  const items = ([3, 1, 2] as const).map((priority): TaskSignal => ({
     ...signals(1)[0], id: `priority-${priority}`, title: `Work ${priority}`, priority,
     deadline: { kind: "date-only", date: "2026-09-05" },
   }));
