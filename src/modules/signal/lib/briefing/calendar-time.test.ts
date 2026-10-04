@@ -25,11 +25,11 @@ function instrumentCalendar() {
   const compiled = ts.transpileModule(source, { compilerOptions: {
     target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS,
   } }).outputText;
-  const module = { exports: {} };
+  const calendarModule = { exports: {} };
   new Function("Intl", "module", "exports", compiled)(
-    { DateTimeFormat }, module, module.exports,
+    { DateTimeFormat }, calendarModule, calendarModule.exports,
   );
-  return { calendar: module.exports as typeof import("./calendar-time"), constructions: () => constructions };
+  return { calendar: calendarModule.exports as typeof import("./calendar-time"), constructions: () => constructions };
 }
 
 test("bulk calendar work reuses formatting rules without retaining dates or crossing timezones", () => {
