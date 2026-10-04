@@ -25,6 +25,8 @@ export type CanonicalTaskCreate = Readonly<{
 }>;
 
 export type TaskCreateOperations = Readonly<{
+  /** Optional atomic allocation/Task/activity write on the caller's existing transaction. */
+  insertTaskAndActivity?(input: CanonicalTaskCreate): Promise<{ seq: number; position: number }>;
   nextPosition(input: CanonicalTaskCreate): Promise<number>;
   insertTask(input: CanonicalTaskCreate & { position: number }): Promise<{ seq: number }>;
   insertActivity(input: CanonicalTaskCreate): Promise<void>;
@@ -97,6 +99,9 @@ export async function createTaskInTransaction(
   operations: TaskCreateOperations,
   task: CanonicalTaskCreate,
 ): Promise<{ taskId: string; seq: number; position: number }> {
+  if (operations.insertTaskAndActivity) {
+    return { taskId: task.id, ...await operations.insertTaskAndActivity(task) };
+  }
   const position = await operations.nextPosition(task);
   const { seq } = await operations.insertTask({ ...task, position });
   await operations.insertActivity(task);
