@@ -198,8 +198,31 @@ export async function loadHomeData(opts: {
 
   const surfacedIds = new Set(signalRows.map((row) => row.id));
 
-  const daysOutOf = (signal: TaskSignal) => deadlineDayDifference(signalDeadline(signal), now, timezone);
-  const overdue = (signal: TaskSignal) => deadlineIsOverdue(signalDeadline(signal), now, timezone);
+  // These deadlines, clock and timezone stay fixed throughout this projection.
+  // Reuse date facts across its lists without retaining them across requests.
+  const deadlineKey = (deadline: ReturnType<typeof signalDeadline>): string =>
+    deadline === null ? "null" : deadline.kind === "unknown" ? "unknown" :
+      deadline.kind === "date-only" ? `date-only:${deadline.date}` : `instant:${deadline.at}`;
+  const daysOutByDeadline = new Map<string, number | null>();
+  const overdueByDeadline = new Map<string, boolean>();
+  const daysOutOf = (signal: TaskSignal) => {
+    const deadline = signalDeadline(signal);
+    const key = deadlineKey(deadline);
+    const cached = daysOutByDeadline.get(key);
+    if (cached !== undefined) return cached;
+    const days = deadlineDayDifference(deadline, now, timezone);
+    daysOutByDeadline.set(key, days);
+    return days;
+  };
+  const overdue = (signal: TaskSignal) => {
+    const deadline = signalDeadline(signal);
+    const key = deadlineKey(deadline);
+    const cached = overdueByDeadline.get(key);
+    if (cached !== undefined) return cached;
+    const expired = deadlineIsOverdue(deadline, now, timezone);
+    overdueByDeadline.set(key, expired);
+    return expired;
+  };
   const sortDue = (a: TaskSignal, b: TaskSignal) => compareDeadlines(signalDeadline(a), signalDeadline(b), timezone, now);
   const comingUp: HomeComingRow[] = signals
     .filter(

@@ -143,6 +143,24 @@ test("mixed calendar-day deadlines sort before Home's cap in each reader zone", 
   assert.ok(east.data.myTasks.every(row => row.id !== "timed"), "local Sep 6 instant follows eight Sep 5 dates");
 });
 
+test("tasks sharing a saved date retain their own identities and priority ordering", async () => {
+  const items = [3, 1, 2].map((priority): TaskSignal => ({
+    ...signals(1)[0], id: `priority-${priority}`, title: `Work ${priority}`, priority,
+    deadline: { kind: "date-only", date: "2026-09-05" },
+  }));
+  const { data } = await fixture(items);
+  assert.deepEqual(data.myTasks.map(row => [row.id, row.title, row.priority, row.due, row.overdue]), [
+    ["priority-1", "Work 1", 1, "Tomorrow", false],
+    ["priority-2", "Work 2", 2, "Tomorrow", false],
+    ["priority-3", "Work 3", 3, "Tomorrow", false],
+  ]);
+  assert.equal(data.stats.open, 3);
+  assert.equal(data.stats.dueToday, 0);
+  assert.equal(data.stats.overdue, 0);
+  assert.equal(data.deadlines[0]?.label, "Tomorrow");
+  assert.deepEqual(data.deadlines[0]?.rows.map(row => row.id), items.map(item => item.id));
+});
+
 test("an expired same-day instant survives eight date-only-today rows before Home's cap", async () => {
   const date = Array.from({ length: 8 }, (_, index): TaskSignal => ({
     ...signals(1)[0], id: `date-today-${index}`, deadline: { kind: "date-only", date: "2026-09-04" },

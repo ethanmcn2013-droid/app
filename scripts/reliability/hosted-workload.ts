@@ -17,7 +17,7 @@ type Observation = { logicalOperationId: string; attemptId: string; attemptNumbe
   serverTiming?: ReturnType<typeof parseHostedServerTiming>;
   response: { statusCode: number; valid: boolean; success: boolean; errorEnvelope: boolean }; acknowledged: boolean;
   scopeAuthorized: boolean; actualProjectIds: string[]; unauthorizedContent: boolean; effectIds: string[]; bytes: number; finishedAtMs: number; errorCode?: string;
-  httpResponseObserved?: boolean; failureStage?: HostedAttemptStage; causeCategory?: HostedAttemptCauseCategory };
+  httpResponseObserved?: boolean; failureStage?: HostedAttemptStage; causeCategory?: HostedAttemptCauseCategory; causeCode?: HostedLibsqlCauseCode };
 type Expected = { id: string; journey: string; expectedOutcome: "write" | "read"; projectId: string };
 type Envelope = { ok: boolean; value?: Record<string, unknown>; code?: string };
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -121,7 +121,7 @@ export function dryRunHostedWorkload(manifest: HostedManifest, fixture: HostedFi
   const manifestActorHashes = new Set((manifest.testActors ?? []).map((actor: { actorHash: string }) => actor.actorHash));
   if (!fixture.actors.every((actor) => manifestActorHashes.has(actor.actorHash))) throw new Error("hosted_fixture_actor_unattested");
   return { schedule, executionMode: `${manifest.environment.kind}-arrival-schedule`, noNetworkRequests: true,
-    limitations: ["API task.mutate is message-to-task outcome creation; ordinary task update/complete requires separate browser proof", "HTML route latency includes server render, excludes browser paint/hydration", "chat.poll uses fixed initial-history afterChangeSeq=0, not incremental client polling; existing client poller closed-loop behavior requires separate probe"] };
+    limitations: ["API task.mutate is message-to-task outcome creation; ordinary task update/complete requires separate browser proof", "HTML route latency includes server render, excludes browser paint/hydration", "chat.poll uses verified incremental cursors with bounded nominal-request overlap; existing client poller closed-loop behavior requires separate probe"] };
 }
 
 export async function boundedResponseText(response: Response, maximumBytes = 4_000_000) {
@@ -164,7 +164,7 @@ export function validateHostedEnvelope(action: string, raw: unknown): raw is Env
 type MessageScope = { projectId: string; conversationId: string };
 type MessageScopeRow = { id: unknown; workspace_id: unknown; conversation_id: unknown; client_request_id: unknown; author_id: unknown };
 class HostedHistoryLookupUnverified extends Error {
-  constructor(readonly safeCauseCategory: HostedAttemptCauseCategory) {
+  constructor(readonly safeCauseCategory: HostedAttemptCauseCategory, readonly safeCauseCode?: HostedLibsqlCauseCode) {
     super("hosted_history_scope_unverified");
   }
 }
@@ -245,7 +245,8 @@ export class HostedMessageVisibility {
       let rows: MessageScopeRow[];
       try { rows = await lookup(unknown); }
       catch (error) {
-        throw new HostedHistoryLookupUnverified(hostedAttemptDiagnostic(error, "history_lookup_sql").causeCategory);
+        const diagnostic = hostedAttemptDiagnostic(error, "history_lookup_sql");
+        throw new HostedHistoryLookupUnverified(diagnostic.causeCategory, diagnostic.causeCode);
       }
       if (!Array.isArray(rows)) throw new Error("hosted_history_scope_unverified");
       for (const row of rows) {
@@ -290,6 +291,20 @@ export class HostedMessageVisibility {
     }
     return { actualProjectIds, scopeAuthorized, unauthorizedContent: !scopeAuthorized };
   }
+}
+
+/** Every page is verified even when a later request has already published a newer cursor. */
+export async function observeHostedPollHistory(input: {
+  visibility: HostedMessageVisibility; ids: string[]; actorHash: string; receivedAt: number; scope: MessageScope;
+  lookup: (ids: string[]) => Promise<MessageScopeRow[]>; cursors: Map<string, number>; sessionId: string;
+  requestedCursor: number; throughChangeSeq: number;
+}) {
+  if (!Number.isSafeInteger(input.throughChangeSeq) || input.throughChangeSeq < input.requestedCursor)
+    throw new Error("hosted_history_scope_unverified");
+  const history = await input.visibility.observeHistory(input.ids, input.actorHash, input.receivedAt, input.scope, input.lookup);
+  if (history.scopeAuthorized)
+    input.cursors.set(input.sessionId, Math.max(input.cursors.get(input.sessionId) ?? 0, input.throughChangeSeq));
+  return history;
 }
 
 export function committedEffectMatchesScope(action: string, rows: ReadonlyArray<Record<string, unknown>>, scope: MessageScope) {
@@ -342,6 +357,9 @@ type HostedCauseCategory = "transport" | "timeout" | "filesystem" | "contract" |
 type HostedAttemptStage = "app_request" | "response_body" | "response_validation" |
   "history_lookup_sql" | "history_scope_validation" | "write_effect_sql";
 type HostedAttemptCauseCategory = "transport" | "timeout" | "verification" | "response" | "unclassified";
+const LIBSQL_CAUSE_CODES = ["HRANA_PROTO_ERROR", "HRANA_CLOSED_ERROR", "HRANA_WEBSOCKET_ERROR", "SERVER_ERROR",
+  "PROTOCOL_VERSION_ERROR", "INTERNAL_ERROR", "TRANSACTION_CLOSED", "SQLITE_BUSY", "DATABASE_BUSY", "UNKNOWN"] as const;
+type HostedLibsqlCauseCode = typeof LIBSQL_CAUSE_CODES[number];
 type HostedFlushDiagnostic = { phase: HostedFlushPhase; causeCategory: HostedCauseCategory };
 class HostedFlushFailure extends Error {
   constructor(readonly diagnostic: HostedFlushDiagnostic) { super("hosted_flush_failed"); }
@@ -362,18 +380,27 @@ export function hostedFlushDiagnostic(error: unknown, phase: HostedFlushPhase = 
 
 /** Fixed metadata only; never persist raw provider/SQL errors, URLs or response bodies. */
 export function hostedAttemptDiagnostic(error: unknown, stage: HostedAttemptStage):
-  { failureStage: HostedAttemptStage; causeCategory: HostedAttemptCauseCategory } {
+  { failureStage: HostedAttemptStage; causeCategory: HostedAttemptCauseCategory; causeCode?: HostedLibsqlCauseCode } {
   if (error instanceof HostedHistoryLookupUnverified)
-    return { failureStage: stage, causeCategory: error.safeCauseCategory };
-  const code = object(error) && typeof error.code === "string" ? error.code : "";
-  const name = object(error) && typeof error.name === "string" ? error.name : "";
+    return { failureStage: stage, causeCategory: error.safeCauseCategory, ...(error.safeCauseCode ? { causeCode: error.safeCauseCode } : {}) };
   let causeCategory: HostedAttemptCauseCategory = "unclassified";
-  if (["ETIMEDOUT", "ESOCKETTIMEDOUT", "UND_ERR_CONNECT_TIMEOUT", "TIMEOUT", "APPLICATION_REQUEST_TIMEOUT"].includes(code) || name === "TimeoutError") causeCategory = "timeout";
-  else if (["ECONNRESET", "ECONNREFUSED", "ENETUNREACH", "EHOSTUNREACH", "EPIPE", "UND_ERR_SOCKET", "APPLICATION_REQUEST_FAILED"].includes(code)) causeCategory = "transport";
-  else if (code === "APPLICATION_RESPONSE_BODY_FAILED") causeCategory = "response";
-  else if (["history_lookup_sql", "history_scope_validation", "write_effect_sql"].includes(stage)) causeCategory = "verification";
-  else if (["response_body", "response_validation"].includes(stage)) causeCategory = "response";
-  return { failureStage: stage, causeCategory };
+  let causeCode: HostedLibsqlCauseCode | undefined;
+  const seen = new Set<unknown>();
+  let current = error;
+  // Inspect only the wrapper plus two causes; never serialize provider strings, SQL, URLs or stacks.
+  for (let depth = 0; depth < 3 && object(current) && !seen.has(current); depth++) {
+    seen.add(current);
+    const code = typeof current.code === "string" ? current.code : "";
+    const name = typeof current.name === "string" ? current.name : "";
+    causeCode ??= LIBSQL_CAUSE_CODES.find(allowed => allowed === code);
+    if (["ETIMEDOUT", "ESOCKETTIMEDOUT", "UND_ERR_CONNECT_TIMEOUT", "TIMEOUT", "APPLICATION_REQUEST_TIMEOUT"].includes(code) || name === "TimeoutError") causeCategory = "timeout";
+    else if (causeCategory === "unclassified" && ["ECONNRESET", "ECONNREFUSED", "ENETUNREACH", "EHOSTUNREACH", "EPIPE", "UND_ERR_SOCKET", "APPLICATION_REQUEST_FAILED"].includes(code)) causeCategory = "transport";
+    else if (causeCategory === "unclassified" && code === "APPLICATION_RESPONSE_BODY_FAILED") causeCategory = "response";
+    current = current.cause;
+  }
+  if (causeCategory === "unclassified" && ["history_lookup_sql", "history_scope_validation", "write_effect_sql"].includes(stage)) causeCategory = "verification";
+  else if (causeCategory === "unclassified" && ["response_body", "response_validation"].includes(stage)) causeCategory = "response";
+  return { failureStage: stage, causeCategory, ...(causeCode ? { causeCode } : {}) };
 }
 
 export function hostedFailureResponse(observedStatus: number | undefined, observedValid: boolean,
@@ -423,7 +450,6 @@ export async function runHostedArrivalSchedule(input: {
   if (input.events.length === 0) throw new Error("hosted_schedule_empty");
   const durationMs = WORKLOAD.warmupMs + WORKLOAD.measuredMs;
   const inFlight = new Set<Promise<void>>();
-  const polling = new Set<string>();
   const windows: HostedWindowTiming[] = [];
   const elapsed = () => input.now() - input.startedAt;
   const waitUntil = async (target: number) => {
@@ -481,9 +507,8 @@ export async function runHostedArrivalSchedule(input: {
     const localAtMs = slot.atMs - (slot.repetition - 1) * durationMs;
     await waitUntil(anchor + localAtMs);
     if (input.isFatal()) break;
-    if ((slot.journey === "chat.poll" && polling.has(slot.sessionId)) || inFlight.size >= 16) { droppedIterations++; continue; }
-    if (slot.journey === "chat.poll") polling.add(slot.sessionId);
-    const work = input.perform(slot).finally(() => { if (slot.journey === "chat.poll") polling.delete(slot.sessionId); inFlight.delete(work); });
+    if (inFlight.size >= 16) { droppedIterations++; continue; }
+    const work = input.perform(slot).finally(() => { inFlight.delete(work); });
     inFlight.add(work);
   }
   if (!boundaryFailure && !windowClosed) {
@@ -584,10 +609,12 @@ export async function runHostedWorkload(input: HostedInput) {
       async function perform(slot: Slot) {
         const room = input.fixture.rooms[0];
         const request = requestForSlot(slot, room, input.fixture, origin);
+        let requestedCursor = 0;
         if (request.action === "promote-task" && request.body && "messageId" in request.body) request.body.messageId = room.unusedSourceMessageIds[mutationSourceIndex++];
         if (request.action === "history") {
           const pollUrl = new URL(request.url);
-          pollUrl.searchParams.set("afterChangeSeq", String(cursors.get(slot.sessionId) ?? 0));
+          requestedCursor = cursors.get(slot.sessionId) ?? 0;
+          pollUrl.searchParams.set("afterChangeSeq", String(requestedCursor));
           request.url = pollUrl.href;
         }
         const actor = input.fixture.actors[Number(slot.sessionId.split("-")[1]) % 2];
@@ -629,15 +656,16 @@ export async function runHostedWorkload(input: HostedInput) {
           if (success && request.action === "history") {
             failureStage = "history_scope_validation";
             const ids = (value.messages as Array<{ id: string }>).map((message) => message.id);
-            const history = await visibility.observeHistory(ids, actor.actorHash, bodyReceivedAt,
-              { projectId: room.projectId, conversationId: room.conversationId }, async (unknown) => {
+            const history = await observeHostedPollHistory({ visibility, ids, actorHash: actor.actorHash, receivedAt: bodyReceivedAt,
+              scope: { projectId: room.projectId, conversationId: room.conversationId }, cursors, sessionId: slot.sessionId,
+              requestedCursor, throughChangeSeq: Number(value.throughChangeSeq), lookup: async (unknown) => {
                 failureStage = "history_lookup_sql";
                 verificationQueries++;
                 const rows = await client.execute({ sql: `SELECT id,workspace_id,conversation_id,client_request_id,author_id FROM conversation_messages WHERE id IN (${unknown.map(() => "?").join(",")})`, args: unknown });
                 failureStage = "history_scope_validation";
                 return rows.rows.map((row) => ({ id: row.id, workspace_id: row.workspace_id,
                   conversation_id: row.conversation_id, client_request_id: row.client_request_id, author_id: row.author_id }));
-              });
+              } });
             ({ actualProjectIds, scopeAuthorized, unauthorizedContent } = history);
           } else if (success && request.action === "html") {
             // HTML includes the explicitly requested synthetic Project marker; source row proof is provided by writer/reader checks.
@@ -653,9 +681,6 @@ export async function runHostedWorkload(input: HostedInput) {
             if (!scopeAuthorized && !unauthorizedContent) throw new Error("hosted_write_effect_unverified");
             if (scopeAuthorized && request.action === "send") visibility.confirmSend(request.clientRequestId, String(value.messageId), bodyReceivedAt,
               { projectId: room.projectId, conversationId: room.conversationId });
-          }
-          if (success && request.action === "history") {
-            cursors.set(slot.sessionId, Number(value.throughChangeSeq));
           }
           observation = { logicalOperationId: slot.logicalOperationId, attemptId: `${slot.logicalOperationId}:attempt:1`, attemptNumber: 1,
             serverTiming: parseHostedServerTiming(response.headers.get("server-timing")),
