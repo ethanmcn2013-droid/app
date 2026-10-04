@@ -84,18 +84,32 @@ async function sourceAndDestination(
   input: PromoteMessageToTaskInput,
   directMessagesEnabled: boolean,
 ): Promise<"ok" | "unavailable" | "archived" | "audience_changed" | "revision_conflict"> {
+  // Both proofs belong to this open write transaction. A missing destination
+  // stays a nullable result so source errors retain their existing precedence.
   const source = await executor.execute({
-    sql: `SELECT c.audience_epoch, c.lifecycle, c.kind, sw.archived_at, m.revision, m.deleted_at
+    sql: `SELECT c.audience_epoch, c.lifecycle, c.kind, sw.archived_at, m.revision, m.deleted_at,
+        destination.destination_project_id, destination.destination_archived_at, destination.destination_owner_user_id
       FROM conversations c
       JOIN workspaces sw ON sw.id = c.workspace_id
       JOIN workspace_members sm ON sm.workspace_id = c.workspace_id AND sm.user_id = ?
       JOIN users actor ON actor.id = sm.user_id
       LEFT JOIN conversation_participants participant ON participant.conversation_id=c.id AND participant.user_id=actor.id
       JOIN conversation_messages m ON m.id = ? AND m.conversation_id = c.id AND m.workspace_id = c.workspace_id
+      LEFT JOIN (
+        SELECT dw.id AS destination_project_id, dw.archived_at AS destination_archived_at,
+          owner_user.id AS destination_owner_user_id
+        FROM workspaces dw
+        JOIN workspace_members actor_member ON actor_member.workspace_id = dw.id AND actor_member.user_id = ?
+        JOIN users destination_actor ON destination_actor.id = actor_member.user_id
+        LEFT JOIN workspace_members owner ON owner.workspace_id = dw.id AND owner.user_id = ?
+        LEFT JOIN users owner_user ON owner_user.id = owner.user_id
+        WHERE dw.id = ?
+      ) destination ON 1 = 1
       WHERE c.id = ? AND c.workspace_id = ? AND (c.kind='project' OR
         (?=1 AND c.kind='dm' AND actor.id IN(c.dm_low_user_id,c.dm_high_user_id) AND participant.retains_history=1
           AND participant.status='active' AND c.pair_state NOT IN('pending','declined')))`,
-    args: [actorId, input.messageId, input.conversationId, input.sourceProjectId, directMessagesEnabled ? 1 : 0],
+    args: [actorId, input.messageId, actorId, input.ownerUserId, input.destinationProjectId,
+      input.conversationId, input.sourceProjectId, directMessagesEnabled ? 1 : 0],
   });
   const row = source.rows[0];
   if (!row) return "unavailable";
@@ -103,19 +117,8 @@ async function sourceAndDestination(
   if (asNumber(row.audience_epoch) !== input.expectedAudienceEpoch) return "audience_changed";
   if (asNumber(row.revision) !== input.expectedRevision || row.deleted_at != null) return "revision_conflict";
 
-  const destination = await executor.execute({
-    sql: `SELECT dw.archived_at, owner_user.id AS owner_user_id
-      FROM workspaces dw
-      JOIN workspace_members actor_member ON actor_member.workspace_id = dw.id AND actor_member.user_id = ?
-      JOIN users actor ON actor.id = actor_member.user_id
-      LEFT JOIN workspace_members owner ON owner.workspace_id = dw.id AND owner.user_id = ?
-      LEFT JOIN users owner_user ON owner_user.id = owner.user_id
-      WHERE dw.id = ?`,
-    args: [actorId, input.ownerUserId, input.destinationProjectId],
-  });
-  const destinationRow = destination.rows[0];
-  if (!destinationRow || !destinationRow.owner_user_id) return "unavailable";
-  return destinationRow.archived_at == null ? "ok" : "archived";
+  if (!row.destination_project_id || !row.destination_owner_user_id) return "unavailable";
+  return row.destination_archived_at == null ? "ok" : "archived";
 }
 
 function rawTaskOperations(
