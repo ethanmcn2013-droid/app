@@ -598,8 +598,13 @@ export function analyticsSummary(a: ProjectAnalytics): ReadonlyArray<Readonly<{ 
 
 /** The same line across every project: the wall's own summary, then the week. */
 export function portfolioSummary(wall: WallModel, a: ProjectAnalytics): ReadonlyArray<Readonly<{ text: string; tone?: "late" | "risk" }>> {
+  // The cards' own finished days when every card has them (the same tasks,
+  // read by the Projects page's query); the calculation's otherwise.
+  const done = wall.cards.length > 0 && wall.cards.every((card) => card.week !== null)
+    ? wall.cards.reduce((sum, card) => sum + card.week!.done, 0)
+    : a.recent.finishedThisWeek;
   return [
     ...wall.summary.map((item, index) => (index === 0 ? { ...item, text: `${item.text} ${wall.cards.length === 1 ? "project" : "projects"}` } : item)),
-    { text: `${a.recent.finishedThisWeek} done in the last 7 days` },
+    { text: `${done} done in the last 7 days` },
   ];
 }

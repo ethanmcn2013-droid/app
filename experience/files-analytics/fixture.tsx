@@ -76,7 +76,10 @@ function Page() {
   const ask = parseQuestion(params.get("ask"));
   const sort = parseWallSort(params.get("sort"));
   const portfolio = portfolioFixture();
-  const many = portfolio.projects.map((project) => ({ id: project.id, name: project.name }));
+  const many = (state === "twelve" ? consoleFixture().projects.filter((project) => project.stats?.status !== "complete") : portfolio.projects).map((project) => ({
+    id: project.id,
+    name: project.name,
+  }));
 
   // The founder's own account: one project, nine tasks, nobody assigned.
   if (state === "sparse" || state === "empty") {

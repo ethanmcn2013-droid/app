@@ -1042,6 +1042,24 @@
     padding-bottom: 4px;
   }
 
+  /* One line, cut at the end, so a separator never starts a line. */
+  .rowMeta {
+    flex-wrap: nowrap;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .rowMeta > span {
+    flex: none;
+  }
+
+  .rowMeta > span:last-of-type {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .rowTask {
     grid-column: 1;
     grid-row: 2;
