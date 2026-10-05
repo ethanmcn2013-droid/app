@@ -46,6 +46,25 @@ test("one dependency keeps its identity when urgent and long-wait presentations 
   assert.equal(new Set(urgent.needsAttention.map(item => item.observationId)).size, 2);
 });
 
+test("reversed dependency directions with the same scope and full sources are one observation", async () => {
+  const lighting = task({ id: "lighting", title: "Certify lighting", workspaceId: "gallery", idleDays: 8,
+    blockedBy: ["wiring"], dependencyCoverage: "complete" });
+  const wiring = task({ id: "wiring", title: "Inspect wiring", workspaceId: "gallery", idleDays: 6,
+    blockedBy: ["lighting"], dependencyCoverage: "complete" });
+  const first = await buildBriefing(source([lighting, wiring]), CTX, NOW);
+  assert.equal(first.quietRisks.length, 1, "opposite directions do not duplicate the same represented source set");
+  assert.equal(first.quietRisks[0]!.id, lighting.id, "original strongest pressure still chooses the navigation anchor");
+  assert.deepEqual(first.quietRisks[0]!.evidenceTaskIds, [lighting.id, wiring.id]);
+  assert.match(first.quietRisks[0]!.detail, /Inspect wiring/);
+  const reversed = await buildBriefing(source([{ ...wiring, idleDays: 9 }, lighting]), CTX, NOW);
+  assert.equal(reversed.quietRisks.length, 1);
+  assert.equal(reversed.quietRisks[0]!.id, wiring.id);
+  assert.match(reversed.quietRisks[0]!.detail, /Certify lighting/);
+  assert.equal(reversed.quietRisks[0]!.observationId, first.quietRisks[0]!.observationId,
+    "kind, authorized scope and the complete represented sources define identity");
+  assert.equal(first.triggeredCount, 2, "the one observation still represents both inspected tasks");
+});
+
 test("only an inspected same-scope relationship separates from the task's primary deadline", async () => {
   const dependent = task({ id: "prepare-gallery", dueAt: NOW - DAY, idleDays: 9, blockedBy: ["approve-lighting"] });
   const prerequisite = task({ id: "approve-lighting", idleDays: 0 });

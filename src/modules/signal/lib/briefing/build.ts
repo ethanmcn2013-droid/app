@@ -130,8 +130,7 @@ export async function buildBriefing(
     const separate = relation || candidate.trigger === "prerequisites-complete" || candidate.trigger === "prerequisites-unverified" ||
       candidate.trigger === "overload" || candidate.trigger === "crowded-week";
     const key = JSON.stringify([scope, relation ? "dependency" : separate ? candidate.trigger : "task",
-      candidate.representedTaskIds,
-      relation ? candidate.relatedTaskId ?? candidate.task.id : ""]);
+      candidate.representedTaskIds]);
     const current = bestByObservation.get(key);
     if (!current || compareCandidates(candidate, current) < 0) {
       bestByObservation.set(key, candidate);
@@ -301,12 +300,12 @@ function toFocus(t: Triggered, rotation: number, now: number, timezone: string):
 
 function observationId(t: Triggered): string {
   // Hash private evidence identities: no resolved historical prerequisite id
-  // is exposed in a public row key. Anchor changes do not rename a relationship.
+  // is exposed in a public row key. Identity is kind, scope and full sources;
+  // the selected direction and navigation anchor do not rename a relationship.
   return `observation:${createHash("sha256").update(JSON.stringify([
     t.trigger === "blocking-due-work" || t.trigger === "blocked-too-long" ? "dependency" : t.trigger,
     t.task.workspaceId ?? "", t.task.planningPeriodId ?? "",
     t.representedTaskIds ?? [t.task.id],
-    t.trigger === "blocking-due-work" ? t.relatedTaskId ?? "" : t.trigger === "blocked-too-long" ? t.task.id : "",
   ])).digest("hex")}`;
 }
 
