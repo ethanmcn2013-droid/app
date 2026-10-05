@@ -51,6 +51,8 @@ A figure whose read failed is dropped, not guessed: no finished-work read means 
 
 Application code as of the commit that adds this folder. Plain PNGs.
 
+The screenshots are not kept in this repository: the guarded release operator reads the whole branch diff into a fixed buffer, and binary captures crowd it. They live in the design lab repository (`remote-redesign`, branch `design/landing-v3-directions`) under `work/2026-10-01-landing-v3-2026-10/shots/app-reviews/2026-10-03-projects-console/`, with the file names given below.
+
 `review-mode/`: the real page on the review dev server, port 3217, from this worktree (`NEXT_PUBLIC_SIGNAL_ACCESS_MODE=review`, `SIGNAL_ACTIVE_PROJECT_V3_ENABLED=true`, one sample project, no sign-in), at 1440x900 (`desk`), 1920x1080 (`wide`) and 390x844 (`phone`), dark and light, reduced motion on. Console, each tab, the row menu (no Nudge, as review never sends), the view menu, the Cards view and the New project form. On every size and theme: no console or page errors, no sideways scroll, nothing fixed over the list inside the page, and axe reports nothing on the Projects index.
 
 `busy-account/`: the twelve-project fixture, from the repo's own check:
@@ -119,4 +121,4 @@ The critical run was fully green, so the refresh is complete with schema receipt
 | `tasks.page.app-messages` | Refreshed on 3 October without a receipt | same hash, receipt added |
 | `tasks.state.app-tools-loading` | Refreshed on 3 October without a receipt | same hash, receipt added |
 
-No mapped critical fixture changed, so `experience:fixtures:write` was not needed. The linked Playwright case in each receipt is suite regression context; no critical case opens `/app/project` itself, which is why the rendered evidence for this page is the two folders above.
+No mapped critical fixture changed, so `experience:fixtures:write` was not needed. The linked Playwright case in each receipt is suite regression context; no critical case opens `/app/project` itself, which is why the rendered evidence for this page is the two capture sets above.

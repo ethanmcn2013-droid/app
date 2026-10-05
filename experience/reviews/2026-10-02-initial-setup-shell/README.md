@@ -4,6 +4,8 @@ Branch `design/suite-redesign-v3` (PR #201), tranche 1 of the founder instructio
 
 ## Capture record
 
+The screenshots are not kept in this repository: the guarded release operator reads the whole branch diff into a fixed buffer, and binary captures crowd it. They live in the design lab repository (`remote-redesign`, branch `design/landing-v3-directions`) under `work/2026-10-01-landing-v3-2026-10/shots/app-reviews/2026-10-02-initial-setup-shell/`, with the file names given below. They were removed from this branch on 5 October 2026; the capture command below still writes them wherever it is pointed.
+
 Source: this branch's final application code, served by the review dev server on port 3217 from the same worktree (`NEXT_PUBLIC_SIGNAL_ACCESS_MODE=review`, `SIGNAL_ACTIVE_PROJECT_V3_ENABLED=true`, seeded data, no sign-in). The worktree also holds uncommitted design-concept files (`src/components/concepts/`, `src/app/demo/`, `src/app/app/concepts/`, `public/concepts/`, Timeline artifact files); none of them render on the pages captured here.
 
 Command:
@@ -48,7 +50,7 @@ A schema receipt (`pnpm experience:review`, `signal-materiality-review/2`) needs
 
 A first run also failed on Inbox and Notes at desktop and wide. Opening the group by itself there showed the Channels and Direct messages section names at 4.41:1. They now use 56% instead of 48% (5.4:1), and the second run passed those cases.
 
-The three unmapped hashes were therefore refreshed for exactly those IDs, keeping each entry's other fields, with `lastReviewedAt` set to 2026-10-03. This is the same hash function `scripts/experience/validate.mjs` uses. It is a reviewed refresh without a schema receipt; this file is its record. A schema receipt can follow from the first fully green critical run.
+The three unmapped hashes were therefore refreshed for exactly those IDs, keeping each entry's other fields, with `lastReviewedAt` set to 2026-10-03. This is the same hash function `scripts/experience/validate.mjs` uses. It is a reviewed refresh without a schema receipt; this file is its record. A schema receipt can follow from the first fully green critical run. It did, on 5 October 2026: see `experience/reviews/2026-10-03-projects-console/README.md` for the receipts and for the two failures above, both since resolved or explained.
 
 ## Local status of the `registry-and-drift` steps
 
