@@ -97,6 +97,7 @@ svg {
 }
 
 .fixture-shell[data-first-run] {
+  min-height: 100vh;
   padding: 0;
   background: var(--v3-canvas);
 }
