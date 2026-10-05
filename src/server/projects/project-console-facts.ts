@@ -88,7 +88,7 @@ export async function readConsoleFactsWith(database: Database, input: ConsoleFac
       .from(meta)
       .where(inArray(meta.key, ids.map((id) => projectColumnsMetaKey(id)))),
     database
-      .select({ id: workspaces.id, name: users.name, handle: users.handle, email: users.email })
+      .select({ id: workspaces.id, name: users.name, handle: users.handle, email: users.email, initials: users.initials })
       .from(workspaces)
       .leftJoin(users, eq(users.id, workspaces.ownerUserId))
       .where(inArray(workspaces.id, ids)),
@@ -154,7 +154,9 @@ export async function readConsoleFactsWith(database: Database, input: ConsoleFac
   const leads = new Map<string, ConsoleFacts["lead"]>();
   for (const row of ownerRows) {
     const name = display(row);
-    leads.set(row.id, name ? { name, initials: initialsOf(name) } : null);
+    // The person's own stored initials, as the overview's team list shows
+    // them, so one page never gives the same person two different marks.
+    leads.set(row.id, name ? { name, initials: row.initials?.trim() || initialsOf(name) } : null);
   }
   const memberNames = new Map<string, string>();
   for (const row of memberRows) {
@@ -223,11 +225,13 @@ export function demoConsoleFacts(projectId: string): ConsoleHubFacts {
   const late = open.find((task) => task.dueAt!.getTime() < reviewNow);
   const bigDate = open.find((task) => task.isMilestone);
   const name: string = REVIEW_SUITE_FIXTURE.user.name;
+  // The same mark the review overview gives this person in its team list.
+  const initials = name.slice(0, 2).toUpperCase() || initialsOf(name);
   return {
     today,
     byProject: {
       [projectId]: {
-        lead: { name, initials: initialsOf(name) },
+        lead: { name, initials },
         nextDate: bigDate ? { title: bigDate.title, date: ordinalToIsoDate(dayOf(bigDate.dueAt!.getTime())) } : null,
         oldestLate: late ? { id: late.id, title: late.title, dueDate: ordinalToIsoDate(dayOf(late.dueAt!.getTime())) } : null,
         // Review never sends anything.

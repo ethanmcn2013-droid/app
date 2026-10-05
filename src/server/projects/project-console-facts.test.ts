@@ -18,10 +18,11 @@ type TaskSeed = Partial<typeof tasks.$inferInsert> & { id: string; workspaceId: 
 
 async function seeded() {
   const local = await freshMemoryDb();
-  const person = (id: string, name: string | null, email: string) =>
-    local.db.insert(users).values({ id, clerkId: id, handle: id, name, email, initials: "FX", color: "fixture" });
-  await person("orla", "Orla Byrne", "orla@example.test");
-  await person("aoife", "Aoife Brennan", "aoife@example.test");
+  const person = (id: string, name: string | null, email: string, initials = "FX") =>
+    local.db.insert(users).values({ id, clerkId: id, handle: id, name, email, initials, color: "fixture" });
+  await person("orla", "Orla Byrne", "orla@example.test", "OB");
+  // Stored initials win over ones worked out from the name.
+  await person("aoife", "Aoife Brennan", "aoife@example.test", "AO");
   await person("tom", null, "tom.reilly@example.test"); // no name: shown by handle
   await person("former", "Former Member", "former@example.test");
 
@@ -83,7 +84,7 @@ test("each asked-about project gets its lead, next big date, oldest late task an
   assert.deepEqual(Object.keys(facts.byProject).sort(), ["p-a", "p-b", "p-empty"]);
 
   const a = facts.byProject["p-a"]!;
-  assert.deepEqual(a.lead, { name: "Aoife Brennan", initials: "AB" });
+  assert.deepEqual(a.lead, { name: "Aoife Brennan", initials: "AO" });
   // The earliest unfinished big date; finished and undated ones are skipped.
   assert.deepEqual(a.nextDate, { title: "Menu tasting", date: "2026-10-09" });
   // The oldest open, top-level, unarchived task past its date.

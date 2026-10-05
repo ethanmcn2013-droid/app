@@ -94,6 +94,24 @@ function OpenRowMenu({ state, onClose }: { state: RowMenuState; onClose: () => v
     menu.style.left = `${Math.round(Math.max(8, Math.min(vw - width - 8, left)))}px`;
     menu.style.top = `${Math.round(Math.max(8, Math.min(vh - height - 8, top)))}px`;
     menu.style.visibility = "visible";
+    // A hidden element cannot take focus, and for the first frames after it
+    // is shown the menu's items still compute as hidden, so the focus effect
+    // below can miss. Give the open item focus here and, if it did not take,
+    // try again on the next few frames, so a menu opened from the keyboard
+    // always owns the keys.
+    let frame = 0;
+    let tries = 0;
+    const focusOpenItem = () => {
+      const item = menu.querySelector<HTMLElement>('[role="menuitem"][tabindex="0"]');
+      if (!item || menu.contains(document.activeElement)) return;
+      item.focus({ preventScroll: true });
+      if (document.activeElement !== item && tries < 12) {
+        tries += 1;
+        frame = requestAnimationFrame(focusOpenItem);
+      }
+    };
+    focusOpenItem();
+    return () => cancelAnimationFrame(frame);
   }, [state.anchor]);
 
   useEffect(() => {
