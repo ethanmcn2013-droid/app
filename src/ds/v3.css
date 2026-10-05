@@ -260,3 +260,13 @@ html [data-shell="v3"][data-cards] [data-board] {
   outline: 2px solid var(--v3-accent);
   outline-offset: 2px;
 }
+
+/* Older surfaces pair the brand fill with white text (`bg-brand text-white`:
+   Import, the date picker's chosen day, Share, the reorder grip). In dark the
+   brand fill is the light indigo, where white is 3.0:1; the ink the v3
+   buttons use on that fill is 6.9:1. One rule, so the pairing is right
+   wherever it appears. Light keeps white (5.9:1 on #4f46e5). */
+html[data-theme="dark"] .bg-brand.text-white,
+html[data-theme="dark"] .bg-brand .text-white {
+  color: var(--v3-on-accent);
+}
