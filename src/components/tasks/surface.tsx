@@ -26,7 +26,10 @@ import { useBoardColumns } from "@/components/hybrid/columns-context";
 import type { BoardColumn } from "@/lib/board-columns";
 import type { LabTask, TaskSchedule } from "@/components/hybrid/types";
 import type { TasksViewId } from "@/lib/product-urls";
+import { useTasksState } from "@/lib/tasks/tasks-context";
+import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import { useTasksUndo, type TasksAct } from "./use-tasks-undo";
+import { tasksPulse, type TasksPulse } from "./tasks-pulse";
 
 export type PickerKind = "status" | "assignee" | "due" | "priority" | "labels";
 export type AnchorLike = HTMLElement | { x: number; y: number } | null;
@@ -53,6 +56,13 @@ export type SurfaceApi = {
   filtering: boolean;
   columnOf: (key: string) => BoardColumn | undefined;
   isDone: (task: LabTask) => boolean;
+  /** The header's figures, counted from the whole project. */
+  pulse: TasksPulse;
+  /** Days unchanged for each stuck task; absent when a task is not stuck. */
+  stuckDays: ReadonlyMap<string, number>;
+  /** Show only stuck work. A view filter for this visit, never saved. */
+  stuckOnly: boolean;
+  setStuckOnly: (on: boolean) => void;
 
   complete: (id: string) => void;
   move: (id: string, columnKey: string, index?: number) => void;
@@ -81,6 +91,19 @@ export type SurfaceApi = {
 
 const SurfaceContext = createContext<SurfaceApi | null>(null);
 
+/**
+ * The columns as Tasks names them. The product's own words for a column
+ * always win; the one shipped name that reads as jargon, "Review", is shown
+ * as "To check" until someone renames it.
+ */
+export function useSurfaceColumns(): BoardColumn[] {
+  const columns = useBoardColumns();
+  return useMemo(
+    () => columns.map((column) => (column.key === "review" && column.isSystem && column.name === "Review" ? { ...column, name: "To check" } : column)),
+    [columns],
+  );
+}
+
 export function useSurface(): SurfaceApi {
   const value = useContext(SurfaceContext);
   if (!value) throw new Error("useSurface must be used inside TasksSurfaceProvider");
@@ -92,8 +115,8 @@ export function TasksSurfaceProvider({
   readOnly,
   canManage,
   all,
-  visible,
-  filtering,
+  visible: admitted,
+  filtering: toolsFiltering,
   children,
 }: {
   view: TasksViewId;
@@ -105,7 +128,9 @@ export function TasksSurfaceProvider({
   children: ReactNode;
 }) {
   const store = useLabStore();
-  const columns = useBoardColumns();
+  const columns = useSurfaceColumns();
+  const calendar = useCalendarFrame();
+  const { tasks: records } = useTasksState();
   const motion = useRef<BoardMotion | null>(null);
   const [picker, setPicker] = useState<PickerState>(null);
   const [menu, setMenu] = useState<MenuState>(null);
@@ -113,9 +138,38 @@ export function TasksSurfaceProvider({
   const [renaming, setRenaming] = useState<string | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [stuckWanted, setStuckOnly] = useState(false);
 
   const columnOf = useCallback((key: string) => columns.find((c) => c.key === key), [columns]);
   const isDone = useCallback((task: LabTask) => task.completed || columnOf(task.status)?.isDone === true, [columnOf]);
+
+  const pulse = useMemo(() => {
+    const changed = new Map(records.map((record) => [record.id, record]));
+    return tasksPulse(
+      all.map((task) => {
+        const s = task.schedule;
+        const record = changed.get(task.id);
+        return {
+          id: task.id,
+          title: task.title,
+          status: task.status,
+          done: isDone(task),
+          completedAt: task.completedAt,
+          dueOn: s.kind === "unscheduled" ? null : s.kind === "milestone" ? s.on : s.dueOn,
+          updatedAt: record?.updatedAt,
+          idleDays: record?.idleDays,
+        };
+      }),
+      columns[0]?.key,
+      calendar,
+    );
+  }, [all, calendar, columns, isDone, records]);
+  const stuckDays = useMemo(() => new Map(pulse.stuck.map((fact) => [fact.id, fact.days])), [pulse.stuck]);
+  // Once the last stuck task moves on, the filter lets go by itself, so the
+  // page never sits empty behind a control that has gone.
+  const stuckOnly = stuckWanted && stuckDays.size > 0;
+  const visible = useMemo(() => (stuckOnly ? admitted.filter((task) => stuckDays.has(task.id)) : admitted), [admitted, stuckDays, stuckOnly]);
+  const filtering = toolsFiltering || stuckOnly;
 
   /* Reversing an act runs through the same paths that made it, so an undone
      completion travels back exactly as it travelled out. */
@@ -205,6 +259,10 @@ export function TasksSurfaceProvider({
       filtering,
       columnOf,
       isDone,
+      pulse,
+      stuckDays,
+      stuckOnly,
+      setStuckOnly,
       complete,
       move,
       addInline,
@@ -240,7 +298,7 @@ export function TasksSurfaceProvider({
       shortcutsOpen,
       setShortcutsOpen,
     }),
-    [view, readOnly, canManage, columns, all, visible, filtering, columnOf, isDone, complete, move, addInline, undo, picker, menu, deleting, renaming, focusedId, shortcutsOpen],
+    [view, readOnly, canManage, columns, all, visible, filtering, columnOf, isDone, pulse, stuckDays, stuckOnly, setStuckOnly, complete, move, addInline, undo, picker, menu, deleting, renaming, focusedId, shortcutsOpen],
   );
 
   return <SurfaceContext.Provider value={value}>{children}</SurfaceContext.Provider>;

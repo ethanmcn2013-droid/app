@@ -44,6 +44,15 @@ export function Highlight({ text }: { text: string }) {
   );
 }
 
+/* A steady colour for each person: identity, never status. Amber, orange,
+   red and pink are left out so a face never reads as a warning. */
+const PERSON_HUES = [1, 2, 3, 4, 9];
+export function personColour(id: string): string {
+  let hash = 0;
+  for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) >>> 0;
+  return `var(--v3-project-${PERSON_HUES[hash % PERSON_HUES.length]})`;
+}
+
 /** Member lookup that turns assignee ids into faces. */
 export function usePeople() {
   const members = useWorkspaceMembers();
@@ -52,7 +61,7 @@ export function usePeople() {
     return (ids: string[]): PresenceMember[] =>
       ids.map((id) => {
         const member = byId.get(id);
-        return { id, name: member?.name ?? "Someone", initials: member?.initials };
+        return { id, name: member?.name ?? "Someone", initials: member?.initials, colour: personColour(id) };
       });
   }, [members]);
 }

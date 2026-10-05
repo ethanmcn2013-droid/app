@@ -1,12 +1,13 @@
-/* List. Tokens only from src/ds/v3.css. One card holding a grid of rows,
-   matching Files and My tasks. */
+/* List. Tokens only from src/ds/v3.css. One sheet: a header row with a
+   mark for each column, hairlines between the columns, group rows and a
+   foot that counts what is shown. */
 
 .wrap {
   container: tasklist / inline-size;
   max-width: var(--column-max, var(--v3-page-w));
   width: 100%;
   margin: 0 auto;
-  padding: 0 var(--gutter, 32px) 96px;
+  padding: 16px var(--gutter, 32px) 96px;
 }
 
 .grid {
@@ -21,9 +22,26 @@
 
 .headRow,
 .row {
+  --rule: color-mix(in srgb, var(--v3-border) 75%, transparent);
   display: grid;
   grid-template-columns: var(--cols);
+  align-items: stretch;
+}
+
+/* Hairlines between the columns, so the sheet reads as a sheet. */
+.headRow > [role="columnheader"],
+.row > [role="gridcell"] {
+  display: flex;
   align-items: center;
+  min-width: 0;
+}
+
+.headRow > [data-col],
+.headRow > .plainHead,
+.row > .cell,
+.row > .plainCell {
+  padding-left: 14px;
+  border-left: 1px solid var(--rule);
 }
 
 .headRow {
@@ -39,14 +57,26 @@
 .headButton {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 7px;
   height: 28px;
   margin-left: -6px;
   padding: 0 6px;
   border-radius: var(--v3-radius-sm);
   color: var(--v3-text-2);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 500;
+  white-space: nowrap;
+}
+
+.headButton > svg:first-child,
+.plainHead > svg {
+  flex: none;
+  color: var(--v3-text-3);
+}
+
+.headLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .headButton:hover {
@@ -63,9 +93,17 @@
 }
 
 .plainHead {
+  gap: 7px;
   color: var(--v3-text-2);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 500;
+  white-space: nowrap;
+}
+
+.headRow > .numberHead,
+.row > .numberCell {
+  justify-content: flex-end;
+  padding-right: 14px;
 }
 
 .checkHead,
@@ -109,7 +147,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 40px;
+  height: 44px;
   padding: 0 12px 0 8px;
 }
 
@@ -143,7 +181,7 @@
 }
 
 .groupTitle {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
 }
 
@@ -151,11 +189,6 @@
   color: var(--v3-text-3);
   font-size: 12.5px;
   font-variant-numeric: tabular-nums;
-}
-
-.groupDone {
-  color: var(--v3-text-3);
-  font-size: 12px;
 }
 
 .groupAdd {
@@ -187,7 +220,7 @@
 .row {
   position: relative;
   min-height: 44px;
-  border-bottom: 1px solid color-mix(in srgb, var(--v3-border) 70%, transparent);
+  border-bottom: 1px solid var(--rule);
   cursor: pointer;
   outline: none;
   transition: background-color 100ms var(--v3-ease);
@@ -285,17 +318,71 @@
 }
 
 .cell {
-  display: flex;
-  align-items: center;
-  min-width: 0;
   padding-right: 12px;
 }
 
 .plainCell {
   padding-right: 12px;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--v3-text-2);
   font-variant-numeric: tabular-nums;
+}
+
+/* How long started work has sat still. Amber: it needs a look. */
+.aged {
+  flex: none;
+  margin-left: auto;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--v3-warning-soft);
+  color: var(--v3-warning-text);
+  font-size: 11.5px;
+  line-height: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.agedPhone {
+  color: var(--v3-warning-text);
+  font-weight: 600;
+}
+
+/* ── Foot ─────────────────────────────────────────────────────────── */
+.foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  min-height: 44px;
+  padding: 0 4px;
+  color: var(--v3-text-2);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.foot strong {
+  color: var(--v3-text);
+  font-weight: 600;
+}
+
+.footLate {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--v3-danger-text);
+  font-weight: 500;
+}
+
+.footDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--v3-danger);
+}
+
+.footSum {
+  margin-left: auto;
 }
 
 .cellButton {
@@ -306,8 +393,8 @@
   margin-left: -6px;
   padding: 0 6px;
   border-radius: var(--v3-radius-sm);
-  color: var(--v3-text-2);
-  font-size: 12.5px;
+  color: var(--v3-text);
+  font-size: 13px;
   cursor: pointer;
 }
 
@@ -325,7 +412,7 @@
   align-items: center;
   gap: 7px;
   min-width: 0;
-  color: var(--v3-text-2);
+  color: var(--v3-text);
   white-space: nowrap;
 }
 
@@ -345,7 +432,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--v3-text-2);
+  color: var(--v3-text);
 }
 
 .none {
@@ -496,15 +583,20 @@
     display: inline-flex;
   }
   /* The column is only as wide as a face, so its heading goes quiet. */
-  .assigneeHead .headButton,
-  .priorityHead .headButton {
-    width: 32px;
+  .assigneeHead .headLabel,
+  .priorityHead .headLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
     overflow: hidden;
-    color: transparent;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
   }
-  .assigneeHead .headButton svg,
-  .priorityHead .headButton svg {
-    color: var(--v3-text-2);
+  .headRow > [data-col],
+  .headRow > .plainHead,
+  .row > .cell,
+  .row > .plainCell {
+    padding-left: 10px;
   }
   .cell[data-col="priority"] [data-priority] > span:last-child {
     position: absolute;
@@ -535,12 +627,13 @@
     min-height: 56px;
     padding: 6px 16px 6px 8px;
   }
-  .cell,
-  .plainCell,
-  .desc {
+  .row > .cell,
+  .row > .plainCell,
+  .desc,
+  .aged {
     display: none;
   }
-  .checkCell {
+  .row > .checkCell {
     width: 28px;
     flex: none;
   }
@@ -592,12 +685,16 @@
     min-height: 60px;
     padding: 6px 16px;
   }
-  .checkCell,
-  .cell,
-  .plainCell,
-  .menuCell,
-  .desc {
+  .row > .checkCell,
+  .row > .cell,
+  .row > .plainCell,
+  .row > .menuCell,
+  .desc,
+  .aged {
     display: none;
+  }
+  .foot {
+    padding: 0 16px;
   }
   .titleCell {
     flex: 1;

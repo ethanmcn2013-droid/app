@@ -35,6 +35,7 @@ import { useBoardDrag, type DropTarget } from "./use-board-drag";
 import { useCollapsedLanes, useDoneMode, useTaskNumbers } from "./display-prefs";
 import { AddColumnButton, ColumnMenu } from "./column-menu";
 import { boardOrder } from "./view-order";
+import { STUCK_AFTER_DAYS, dayWords } from "./tasks-pulse";
 import { setVisibleTaskOrder } from "./sheet-bridge";
 import { TIcon } from "./icons";
 import styles from "./board.module.css";
@@ -43,7 +44,7 @@ import styles from "./board.module.css";
 export const LANE_NOTE: Record<string, string> = {
   todo: "Agreed and ready to start",
   doing: "In motion right now",
-  review: "Being checked before it's finished",
+  review: "Ready for someone to check",
   waiting: "Held by a reply or a delivery",
   done: "Finished work",
 };
@@ -51,7 +52,7 @@ export const LANE_NOTE: Record<string, string> = {
 const EMPTY_NOTE: Record<string, string> = {
   todo: "Nothing agreed yet. Add the next thing that needs doing.",
   doing: "Nothing in motion. Drag a card here when work starts.",
-  review: "Nothing waiting for a check.",
+  review: "Nothing to check.",
   waiting: "Nothing waiting on anyone. Drop a task here when it is held by a reply or a delivery.",
   done: "Finished work collects here.",
 };
@@ -85,7 +86,7 @@ export function BoardView({ onCompose }: { onCompose: (columnKey: string, anchor
   const { taskId: openId } = useTaskPanel();
   const [fit] = useFitColumns();
   const [showNotes] = useShowStatusDescriptions();
-  const [doneMode] = useDoneMode();
+  const [doneMode, setDoneMode] = useDoneMode();
   const [collapsed, toggleCollapsed] = useCollapsedLanes();
   const [numbersPref] = useTaskNumbers();
   const numberOf = useTaskNumberOf();
@@ -407,13 +408,19 @@ export function BoardView({ onCompose }: { onCompose: (columnKey: string, anchor
                 <button
                   type="button"
                   className={styles.unfold}
-                  onClick={() => (column.isDone && doneMode === "collapsed" && !collapsed[column.key] ? null : toggleCollapsed(column.key))}
-                  aria-label={`Unfold ${column.name}`}
-                  title={column.isDone && doneMode === "collapsed" ? "Change this in Display" : `Unfold ${column.name}`}
+                  onClick={() => {
+                    // A column folded by hand unfolds by hand; Done folded by
+                    // its Display setting opens as the short list.
+                    if (collapsed[column.key]) toggleCollapsed(column.key);
+                    if (column.isDone && doneMode === "collapsed") setDoneMode("compact");
+                  }}
+                  aria-label={`Unfold ${column.name}, ${rows.length} ${rows.length === 1 ? "task" : "tasks"}`}
+                  title={`Unfold ${column.name}`}
                 >
-                  <StatusGlyph column={column} size={14} />
-                  <span className={styles.foldName}>{column.name}</span>
-                  <span className={styles.foldCount}>{rows.length}</span>
+                  <StatusGlyph column={column} size={16} />
+                  <span className={styles.foldText}>
+                    <span className={styles.foldCount}>{rows.length}</span> {column.name}
+                  </span>
                 </button>
                 <div data-tray-body="" className={styles.foldBody} />
               </section>
@@ -581,10 +588,12 @@ function TaskCard({
   const done = task.completed || column.isDone;
   const labels = labelsOf(task);
   const renaming = surface.renaming === task.id;
+  const stuck = done ? null : surface.stuckDays.get(task.id) ?? null;
+  const stuckSaid = stuck === null ? "" : `. No change in ${dayWords(stuck)}`;
   const subtaskDone = task.subtasks.filter((s) => s.completed).length;
   const showPriority = !done && (task.priority === "high" || task.priority === "urgent");
   const hasMeta = time.kind !== "none" || showPriority || labels.length || task.subtasks.length || task.comments.length || task.blockedByIds.length || task.attachments.length;
-  const description = `${selected ? "Selected. " : ""}${describeTask(task, column.name, time, people)}`;
+  const description = `${selected ? "Selected. " : ""}${describeTask(task, column.name, time, people)}${stuckSaid}`;
 
   return (
     <article
@@ -596,6 +605,7 @@ function TaskCard({
       data-placed={placed ? "" : undefined}
       data-lifted={lifted ? "" : undefined}
       data-done={done ? "" : undefined}
+      data-stuck={stuck === null ? undefined : ""}
       tabIndex={stop ? 0 : -1}
       aria-label={task.title}
       aria-describedby={`card-d-${task.id}`}
@@ -646,6 +656,11 @@ function TaskCard({
             <Highlight text={task.title} />
           </p>
         )}
+        {stuck !== null && !renaming ? (
+          <span className={styles.aged} title={`No change in ${dayWords(stuck)}. Started work counts as stuck after ${STUCK_AFTER_DAYS} days.`} aria-hidden="true">
+            {dayWords(stuck)}
+          </span>
+        ) : null}
       </div>
       {density === "comfortable" && task.description ? (
         <p className={styles.cardNote}>

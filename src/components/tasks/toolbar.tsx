@@ -103,7 +103,7 @@ function ViewSwitch() {
         if (blocked) {
           return (
             <span key={view.id} className={styles.viewItem} aria-disabled="true" data-current={current ? "" : undefined}>
-              <Icon size={15} />
+              <Icon size={14} />
               <span className={styles.viewLabel}>{view.label}</span>
             </span>
           );
@@ -121,7 +121,7 @@ function ViewSwitch() {
               router.push(href(view.id));
             }}
           >
-            <Icon size={15} />
+            <Icon size={14} />
             <span className={styles.viewLabel}>{view.label}</span>
           </Link>
         );
@@ -169,7 +169,7 @@ function SearchField({ inputRef }: { inputRef: React.RefObject<HTMLInputElement 
 
 const DUE_OPTIONS: [RoomDueFilter, string][] = [
   ["all", "Any date"],
-  ["overdue", "Overdue"],
+  ["overdue", "Late"],
   ["today", "Due today"],
   ["week", "Due in the next 7 days"],
   ["unscheduled", "No date"],
@@ -458,7 +458,7 @@ export const GROUP_LABEL: Record<ListGroup, string> = {
 /* ── Active filter chips ──────────────────────────────────────────── */
 
 const DUE_CHIP: Record<Exclude<RoomDueFilter, "all">, string> = {
-  overdue: "Overdue",
+  overdue: "Late",
   today: "Due today",
   week: "Due in the next 7 days",
   unscheduled: "No date",
@@ -488,9 +488,15 @@ export function FilterChips({ shown, total }: { shown: number; total: number }) 
     member: (id) => members.find((m) => m.id === id)?.name ?? "someone",
     column: (key) => surface.columnOf(key)?.name ?? key,
   });
-  if (chips.length === 0 && !tools.query) return null;
+  if (chips.length === 0 && !tools.query && !surface.stuckOnly) return null;
   return (
     <div className={styles.chips} role="group" aria-label="Active filters">
+      {surface.stuckOnly ? (
+        <button type="button" className={styles.chip} onClick={() => surface.setStuckOnly(false)} aria-label="Remove filter Stuck">
+          Stuck
+          <TIcon.close size={12} />
+        </button>
+      ) : null}
       {chips.map((chip) => (
         <button key={chip.key} type="button" className={styles.chip} onClick={chip.clear} aria-label={`Remove filter ${chip.label}`}>
           {chip.label}

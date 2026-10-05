@@ -1,16 +1,21 @@
 "use client";
 
 /**
- * The Tasks header: where you are, who is here, how far along the work is,
- * and the three facts a person opens the board to answer (overdue, due
- * today, needs a date). Each fact is a filter you can press.
+ * The Tasks header, the same on the board, the list and the calendar: the
+ * title and the project, one summary line counted from the whole project,
+ * one sentence about stuck work that ends in the thing to do, then the
+ * team, Stuck, Share and the overflow pinned top right.
+ *
+ * There is no create button here. A screen has one, the top bar's New, and
+ * the C key opens the same composer (add-task-context.tsx). The actions
+ * group carries data-new-task-anchor so the composer still opens from the
+ * top right of the page.
  */
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useActiveWorkspace, useColumnConfig, useDomain, useWorkspaceMembers } from "@/lib/domain-context";
 import { useTasksState } from "@/lib/tasks/tasks-context";
-import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import { useRoomTools, type RoomDueFilter } from "@/components/app/room/room-tools-context";
 import { AvatarStack, type PresenceMember } from "@/components/app/presence/avatar-stack";
 import { ShareButton } from "@/components/app/share/share-button";
@@ -21,19 +26,14 @@ import { PROJECT_APP_PATH } from "@/lib/product-urls";
 import { parseProjectId } from "@/lib/projects/project-ref";
 import { withActiveProject } from "@/lib/projects/project-url";
 import { floorProjectName } from "@/lib/projects/floor-project-name";
+import { projectColor } from "@/components/shell/app-sidebar";
+import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { useSurface } from "./surface";
-import { timeOf } from "./time";
+import { STUCK_AFTER_DAYS, dayWords, donePercent } from "./tasks-pulse";
 import { TIcon } from "./icons";
 import { Kbd } from "./atoms";
 import { Button, MenuContent, MenuItem, MenuRoot, MenuSeparator, MenuTrigger, Popover } from "./ui";
 import styles from "./workspace.module.css";
-
-/** A stable identity tile tone from the project id. */
-function projectTone(id: string): number {
-  let hash = 0;
-  for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) >>> 0;
-  return (hash % 8) + 1;
-}
 
 export function useProjectIdentity() {
   const domain = useDomain();
@@ -48,54 +48,39 @@ export function useProjectIdentity() {
     id: workspace?.id ?? "project",
     projectId,
     name,
-    initial: (name.trim()[0] ?? "P").toUpperCase(),
-    tone: projectTone(workspace?.id ?? name),
+    /** The same colour the sidebar gives this project: identity, never status. */
+    colour: projectColor(workspace?.id ?? name),
     href: projectId ? withActiveProject(PROJECT_APP_PATH, projectId) : PROJECT_APP_PATH,
   };
 }
 
-export function TasksHeader({ onNewTask }: { onNewTask: (anchor: HTMLElement | null) => void }) {
+export function TasksHeader() {
   const surface = useSurface();
   const project = useProjectIdentity();
   return (
     <header className={styles.header} data-floor-head="">
-      <div className={styles.contextRow}>
-        <Link href={project.href} className={styles.project} title={project.name}>
-          <span className={styles.projectTile} style={{ background: `var(--v3-project-${project.tone})` }} aria-hidden="true">
-            {project.initial}
-          </span>
-          <span className={styles.projectName}>{project.name}</span>
-        </Link>
-        <div className={styles.headerActions}>
-          <TaskCollaborators />
-          <span className={styles.shareSlot}>
-            <ShareButton view={surface.view} variant="band" />
-          </span>
-          <OverflowMenu />
-          {surface.readOnly ? null : (
-            <Button
-              variant="primary"
-              className={styles.newTask}
-              icon={<TIcon.plus />}
-              data-new-task-anchor=""
-              aria-keyshortcuts="C"
-              onClick={(event) => onNewTask(event.currentTarget)}
-            >
-              New task
-              <Kbd>C</Kbd>
-            </Button>
-          )}
-        </div>
-      </div>
       <div className={styles.titleRow}>
         <h1 className={styles.title}>Tasks</h1>
+        <Link href={project.href} className={styles.projectPill} title={`Open ${project.name}`}>
+          <span className={styles.projectDot} style={{ background: project.colour }} aria-hidden="true" />
+          <span className={styles.projectName}>{project.name}</span>
+        </Link>
         {surface.readOnly ? (
           <span className={styles.viewOnly} title="You can see this project but not change it. Ask an owner for edit access.">
             View only
           </span>
         ) : null}
       </div>
-      <ProgressFacts />
+      <div className={styles.headerActions} data-new-task-anchor="">
+        <TaskCollaborators />
+        <StuckButton />
+        <span className={styles.shareSlot}>
+          <ShareButton view={surface.view} variant="band" />
+        </span>
+        <OverflowMenu />
+      </div>
+      <SummaryLine />
+      <StuckSentence />
     </header>
   );
 }
@@ -221,125 +206,145 @@ function OverflowMenu() {
   );
 }
 
-/* ── Progress and facts ───────────────────────────────────────────── */
+/* ── Summary line ─────────────────────────────────────────────────── */
 
-function ProgressFacts() {
+/**
+ * "5 done this week · 8 open · 1 late": counted from the whole project, so
+ * the figures never shrink to a filtered subset. Late, due today and no date
+ * are filters you can press; press again to show everything.
+ */
+function SummaryLine() {
   const surface = useSurface();
-  const calendar = useCalendarFrame();
   const { due, setDue } = useRoomTools();
-  const facts = useMemo(() => {
-    let done = 0;
-    let overdue = 0;
-    let today = 0;
-    let undated = 0;
-    for (const task of surface.all) {
-      const finished = surface.isDone(task);
-      if (finished) done += 1;
-      const time = timeOf(task, finished, calendar);
-      if (time.kind === "overdue") overdue += 1;
-      if (time.kind === "today") today += 1;
-      if (!finished && task.schedule.kind === "unscheduled") undated += 1;
-    }
-    return { total: surface.all.length, done, overdue, today, undated };
-  }, [calendar, surface]);
-
-  if (facts.total === 0) return null;
-  const ratio = facts.total ? facts.done / facts.total : 0;
-  const allDone = facts.done === facts.total;
-
+  const pulse = surface.pulse;
+  if (pulse.total === 0) return null;
   const toggle = (value: RoomDueFilter) => setDue(due === value ? "all" : value);
-
+  const allDone = pulse.done === pulse.total;
   return (
-    <div className={styles.progressRow}>
-      <div className={styles.progress}>
-        {allDone ? (
-          <span className={styles.allDone}>
-            <TIcon.check size={14} /> All {facts.total} done
-          </span>
-        ) : (
-          <span className={styles.progressText}>
-            <b>{facts.done}</b> of {facts.total} done
-          </span>
-        )}
-        <span
-          className={styles.meter}
-          role="progressbar"
-          aria-label="Tasks done"
-          aria-valuemin={0}
-          aria-valuemax={facts.total}
-          aria-valuenow={facts.done}
-          aria-valuetext={`${facts.done} of ${facts.total} done`}
-        >
-          <span className={styles.meterFill} style={{ transform: `scaleX(${ratio})` }} />
+    <p className={styles.summary}>
+      <span
+        className={styles.ring}
+        style={{ "--p": `${donePercent(pulse)}%` } as React.CSSProperties}
+        role="img"
+        aria-label={`${pulse.done} of ${pulse.total} tasks done`}
+        title={`${pulse.done} of ${pulse.total} tasks done`}
+      />
+      {allDone ? (
+        <span>
+          All <strong className={styles.strong}>{pulse.total}</strong> done
         </span>
-      </div>
-      {allDone ? null : (
-        <div className={styles.facts} role="group" aria-label="Quick filters">
-          <FactToggle
-            tone="danger"
-            icon={<TIcon.alert size={14} />}
-            count={facts.overdue}
-            label="overdue"
-            pressed={due === "overdue"}
-            onPress={() => toggle("overdue")}
-            tip="Show only overdue tasks. Press again to show everything."
-          />
-          <FactToggle
-            tone="accent"
-            icon={<TIcon.sun size={14} />}
-            count={facts.today}
-            label="due today"
-            pressed={due === "today"}
-            onPress={() => toggle("today")}
-            tip="Show only tasks due today. Press again to show everything."
-          />
-          <FactToggle
-            tone="neutral"
-            icon={<TIcon.noDate size={14} />}
-            count={facts.undated}
-            label={facts.undated === 1 ? "needs a date" : "need a date"}
-            pressed={due === "unscheduled"}
-            onPress={() => toggle("unscheduled")}
-            tip="Show only open tasks without a date. Press again to show everything."
-          />
-        </div>
+      ) : (
+        <>
+          <span>
+            <strong className={styles.strong}>{pulse.doneThisWeek}</strong> done this week
+          </span>
+          <span className={styles.factGroup}>
+            <Sep />
+            <span>
+              <strong className={styles.strong}>{pulse.open}</strong> open
+            </span>
+          </span>
+          <Fact count={pulse.late} label="late" tone="danger" pressed={due === "overdue"} onPress={() => toggle("overdue")} tip="Show only late tasks" />
+          <Fact count={pulse.dueToday} label="due today" pressed={due === "today"} onPress={() => toggle("today")} tip="Show only tasks due today" />
+          <Fact count={pulse.undated} label="with no date" pressed={due === "unscheduled"} onPress={() => toggle("unscheduled")} tip="Show only open tasks with no date" />
+        </>
       )}
-    </div>
+    </p>
   );
 }
 
-function FactToggle({
-  tone,
-  icon,
+function Sep() {
+  return (
+    <span className={styles.sep} aria-hidden="true">
+      ·
+    </span>
+  );
+}
+
+function Fact({
   count,
   label,
+  tone,
   pressed,
   onPress,
   tip,
 }: {
-  tone: "danger" | "accent" | "neutral";
-  icon: React.ReactNode;
   count: number;
   label: string;
+  tone?: "danger";
   pressed: boolean;
   onPress: () => void;
   tip: string;
 }) {
+  if (count === 0 && !pressed) return null;
+  // The dot travels with its fact, so a wrapped line never ends on a dot.
+  return (
+    <span className={styles.factGroup}>
+      <Sep />
+      <button type="button" className={styles.fact} data-tone={tone} aria-pressed={pressed} title={pressed ? "Show everything" : tip} onClick={onPress}>
+        {count} {label}
+      </button>
+    </span>
+  );
+}
+
+/* ── Stuck ────────────────────────────────────────────────────────── */
+
+const hourglass = (
+  <svg width={14} height={14} viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4.5 2.5h7M4.5 13.5h7M5.25 2.5c0 3 5.5 3.25 5.5 5.5s-5.5 2.5-5.5 5.5M10.75 2.5c0 3-5.5 3.25-5.5 5.5s5.5 2.5 5.5 5.5" />
+  </svg>
+);
+
+function StuckButton() {
+  const surface = useSurface();
+  const count = surface.pulse.stuck.length;
+  if (count === 0) return null;
   return (
     <button
       type="button"
-      className={styles.fact}
-      data-tone={tone}
-      data-zero={count === 0 ? "" : undefined}
-      aria-pressed={pressed}
-      disabled={count === 0 && !pressed}
-      title={tip}
-      onClick={onPress}
+      className={styles.stuckChip}
+      aria-pressed={surface.stuckOnly}
+      title={surface.stuckOnly ? "Show everything" : `Show only started work that has not changed in ${STUCK_AFTER_DAYS} days or more`}
+      onClick={() => surface.setStuckOnly(!surface.stuckOnly)}
     >
-      {icon}
-      <span className={styles.factCount}>{count}</span>
-      <span>{label}</span>
-      {pressed ? <TIcon.close size={12} /> : null}
+      {hourglass}
+      Stuck
+      <span className={styles.stuckCount}>{count}</span>
     </button>
+  );
+}
+
+/**
+ * One sentence about the work that ends in the thing to do: the task that
+ * has sat longest, a way to open it, and how many more are stuck.
+ */
+function StuckSentence() {
+  const surface = useSurface();
+  const { openTask } = useTaskPanel();
+  const [first, ...rest] = surface.pulse.stuck;
+  if (!first) return null;
+  return (
+    <p className={styles.health}>
+      {hourglass}
+      <span>
+        <strong>{first.title}</strong> has not changed in {dayWords(first.days)}.{" "}
+        <span className={styles.inlineTail}>
+          <button type="button" className={styles.inlineAction} onClick={() => openTask(first.id)}>
+            Open it
+          </button>
+          {rest.length ? (
+            <>
+              <span className={styles.inlineSep} aria-hidden="true">
+                ·
+              </span>
+              <button type="button" className={styles.inlineQuiet} aria-pressed={surface.stuckOnly} onClick={() => surface.setStuckOnly(!surface.stuckOnly)}>
+                {surface.stuckOnly ? "Show everything" : `${rest.length} more stuck`}
+              </button>
+            </>
+          ) : null}
+        </span>
+      </span>
+    </p>
   );
 }

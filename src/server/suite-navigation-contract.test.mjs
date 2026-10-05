@@ -338,10 +338,14 @@ test("mobile Tasks has one persistent core spine and one keyboard-complete More 
   assert.match(tasksSidebar, /min-h-14/);
 });
 
-test("Tasks renders inside the v3 shell and keeps its own Add task", () => {
+test("Tasks renders inside the v3 shell and leaves the one create button to the top bar", () => {
   assert.match(bareArtifactPath, /return isBareArtifactPath\(pathname\) \|\| isTimelinePreviewPath\(pathname\);/);
   assert.match(hybridWorkspace, /<TasksWorkspace view=\{view\}/);
-  assert.match(tasksHeader, /New task/);
+  // One create button per screen (founder, 5 October 2026): the top bar's
+  // New. The Tasks header has no filled button of its own; it only marks
+  // where the composer opens from.
+  assert.doesNotMatch(tasksHeader, /variant="primary"/);
+  assert.doesNotMatch(tasksWorkspace, /aria-label="New task"/);
   assert.match(tasksHeader, /data-new-task-anchor/);
   assert.match(v3Shell, /router\.push\("\/app\/tasks\?create=task"\)/);
   assert.match(tasksWorkspace, /data-floor-runtime="true"/);

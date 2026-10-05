@@ -169,11 +169,22 @@ export function DueChip({ time, compact = false }: { time: TimeFact; compact?: b
 
 /* ── LabelChip ────────────────────────────────────────────────────── */
 
+/* A label with no colour of its own takes a steady identity hue from its
+   name, the way projects do. Amber, orange, red and pink are left out so a
+   label never reads as a warning beside a late date. */
+const LABEL_HUES = [1, 2, 3, 4, 9];
+function labelHue(id: string): string {
+  let hash = 0;
+  for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) >>> 0;
+  return `var(--v3-project-${LABEL_HUES[hash % LABEL_HUES.length]})`;
+}
+
 export function LabelChip({ label, highlight }: { label: LabLabel; highlight?: boolean }) {
+  const style = label.tone === "neutral" ? ({ "--dot": labelHue(label.id) } as CSSProperties) : undefined;
   return (
-    <span className={styles.label} data-tone={label.tone} data-highlight={highlight ? "" : undefined}>
+    <span className={styles.label} data-tone={label.tone} data-highlight={highlight ? "" : undefined} style={style}>
       <span className={styles.labelDot} aria-hidden="true" />
-      {label.name}
+      <span className={styles.labelName}>{label.name}</span>
     </span>
   );
 }
@@ -196,21 +207,16 @@ export function LabelChips({ labels, max = 2 }: { labels: LabLabel[]; max?: numb
 
 export function SubtaskReceipt({ done, total }: { done: number; total: number }) {
   if (total <= 0) return null;
-  const ratio = Math.max(0, Math.min(1, done / total));
-  const circumference = 2 * Math.PI * 5;
+  // Up to eight steps, one mark each; longer lists share the eight marks.
+  const marks = Math.min(total, 8);
+  const filled = done >= total ? marks : Math.min(marks - 1, Math.round((done / total) * marks));
   return (
     <span className={styles.meta} data-complete={done === total ? "" : undefined} title={`${done} of ${total} subtasks done`}>
-      <svg viewBox="0 0 14 14" width="12" height="12" aria-hidden="true" focusable="false">
-        <circle className={styles.ringTrack} cx="7" cy="7" r="5" />
-        <circle
-          className={styles.ringValue}
-          cx="7"
-          cy="7"
-          r="5"
-          strokeDasharray={`${circumference * ratio} ${circumference}`}
-          transform="rotate(-90 7 7)"
-        />
-      </svg>
+      <span className={styles.steps} aria-hidden="true">
+        {Array.from({ length: marks }, (_, index) => (
+          <i key={index} data-on={index < filled ? "" : undefined} />
+        ))}
+      </span>
       <span className={styles.srOnly}>Subtasks </span>
       {done}/{total}
     </span>
