@@ -49,7 +49,7 @@ import {
 /** Stats are read for at most this many cards; the rest show their open count. */
 const STATS_LIMIT = 200;
 
-async function readProjectCardStats(
+export async function readProjectCardStats(
   projectIds: readonly string[],
 ): Promise<Map<string, ProjectCardStats>> {
   if (projectIds.length === 0) return new Map();

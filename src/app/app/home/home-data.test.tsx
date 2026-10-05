@@ -13,6 +13,8 @@ import type { BriefingForUserResult } from "@/modules/signal/home";
 import { parseBriefingReadScopeHint } from "@/modules/signal/lib/planning-periods/read-scope-hint";
 import { AnalyticsApiError } from "@/modules/signal/server/analytics/api-error";
 import type { ParsedAnalyticsQuery } from "@/modules/signal/server/analytics/query";
+import { buildHomeBoard } from "@/lib/home/home-board";
+import { homeFixture } from "@/lib/home/home-board.fixture";
 
 function load<T>(relative: string, boundaries: Record<string, unknown>): T {
   const file = new URL(relative, import.meta.url);
@@ -120,16 +122,28 @@ test("aggregate destination passes its scope to the actual briefing route and re
 
 test("rendered Home links tasks and the scoped Overview, never a synthetic id", async () => {
   const { data } = await fixture([...signals(6), { ...signals(1, now - 86_400_000)[0], id: "due-task" }]);
+  // Home v3 (5 Oct 2026) draws from its own authorized read, `HomeBoard`;
+  // the Overview is its second tab, on the scoped briefing href. The board
+  // view is a client component, so this renders it through a stand-in that
+  // prints the links it was handed.
+  const board = buildHomeBoard(homeFixture("busy"));
   const link = ({ href, children, className }: { href: string; children: ReactNode; className?: string }) => createElement("a", { href, className }, children);
   const view = load<typeof import("@/components/app/home/home-view")>("../../../components/app/home/home-view.tsx", {
-    "next/link": { default: link }, "./home-analytics": { HomeItemLink: link, HomeViewedPing: () => null },
+    "next/link": { default: link },
+    "@/lib/access-mode": { isDemoMode: () => false },
+    "@/server/home/home-board-read": { loadHomeBoard: async () => board },
+    "@/components/shell/shell-icons": { ShellIcon: {} },
+    "./home-tabs": { HomeTabs: () => null },
+    "./home-board": {
+      HomeBoardView: (props: { board: typeof board; overviewHref: string }) =>
+        createElement("div", null, link({ href: props.overviewHref, children: "Overview" }), ...[...props.board.late, ...props.board.dueToday].map((row) => link({ href: row.href, children: row.title }))),
+    },
     "./home.module.css": { default: new Proxy({}, { get: (_target, key) => String(key) }) },
   });
-  const html = renderToStaticMarkup(createElement(view.HomeView, { data }));
-  // Today's Signal was removed from Home (founder, 24 Sep 2026); the full
-  // read lives in Overview, reached through the scoped briefing href.
+  const html = renderToStaticMarkup(await view.HomeView({ data }));
   assert.doesNotMatch(html, /Today(&#x27;|&rsquo;|’|')s Signal/);
-  assert.match(html, /href="\/app\/task\/due-task"/);
+  // A task link names its own Project, so it opens there whatever is active.
+  assert.match(html, /href="\/app\/tasks\?task=t-prices&amp;workspaceId=p-winter"/);
   assert.ok(html.includes(`href="${data.briefingHref.replaceAll("&", "&amp;")}"`), "Home links the scoped Overview");
   assert.doesNotMatch(html, /href="[^"]*synthetic/);
   assert.equal(data.briefingHref, "/app/home/briefing?contextVersion=2&workspaceId=project-b");

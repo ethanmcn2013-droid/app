@@ -93,6 +93,7 @@ const TOOL_IDS = new Set(TOOL_DESTINATIONS.map((destination) => destination.id))
  */
 export function activeDestinationId(pathname: string): string | null {
   const id = resolveDestinationId(pathname);
+  if (id === "overview") return "home"; // Overview is a tab of Home (5 Oct 2026), so Home's row lights for it.
   return id && TOOL_IDS.has(id) ? "tools" : id;
 }
 

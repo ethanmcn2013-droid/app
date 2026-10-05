@@ -1,0 +1,32 @@
+/*
+ * Home and Overview bring their own page column and scroll, as they do inside
+ * the app's shell, so the frame here only gives them a box to fill.
+ */
+
+.fixture-shell {
+  height: 100vh;
+  min-height: 0;
+}
+
+.fixture-page-flush {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding-top: 0;
+  overflow: hidden;
+}
+
+.thin-scroll {
+  scrollbar-width: thin;
+}
+
+kbd {
+  font-family: inherit;
+}
+
+p,
+h1,
+h2,
+h3 {
+  margin: 0;
+}
