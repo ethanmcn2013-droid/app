@@ -4,6 +4,16 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-10-05 · Redesign candidate · Files and Analytics on the approved designs
+
+Files is now a header, one search box, ways to narrow, the files and a preview of the chosen one. The search looks at file names, kinds, the task a file sits on and who added it. It does not look inside files and does not answer questions; the design's question box, sample questions, pinned searches and keys panel are left out on the founder's instruction. On a wide screen the preview sits beside the list; on a phone it opens as a sheet. Uploaded pictures show in the preview through the same checked download route as before, and every other file opens where it lives. The list and grid layouts both remain.
+
+Analytics opens on Ask: a box and eight plain questions in four groups, each answered by one sentence worked out from real tasks, with the chart under it. The box finds a question by the words you type and says so when it has none; it is not a language model, and nothing is forecast. The scope beside the title is every project you can open, or one. All projects shows a card per project from the same figures as the Projects page. Everything the earlier page showed is still here, under the question it answers.
+
+Three things from the design are not included because the product has no data for them: Replay, "Where does our time go?" and pinned answers. "What keeps slipping?" counts recorded changes to a due date, and is left out wherever that record cannot be read. The late question lists who holds each task and gives no reason, because none is recorded.
+
+Fixed on the way: the Files read is now bounded, leaves out files on archived tasks unless you ask for them, and names a person only while they belong to the project; and the All projects timeline takes "today" from your time zone, as Analytics and Projects do. Read-only queries only, no schema change and no new dependency. This is an unshipped candidate on `design/app-v3-files-analytics`; no deployment or production change is claimed.
+
 ## 2026-10-05 · Candidate fix · Dark by default, and a light theme with the same finish
 
 The signed-in app is now dark unless you choose light. It no longer follows your device. The theme button in the sidebar and Appearance in Settings both offer two choices, Dark and Light, and the choice is saved to your account as before. Nobody's saved preference is rewritten: someone who never chose now gets Dark, and someone who chose Light or Dark keeps it. There is no schema change. The phone browser bar follows the theme. Sign-in, shared links and the public pages are unchanged.

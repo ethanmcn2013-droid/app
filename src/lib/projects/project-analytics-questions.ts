@@ -99,11 +99,19 @@ const SPECS: readonly QuestionSpec[] = [
 
 export type Question = Readonly<{ id: QuestionId; group: QuestionGroup; label: string; hint: string }>;
 
-/** The library for a scope. A question without its data is left out, not shown empty. */
+/**
+ * The library for a scope. A question without its data is left out, not shown
+ * empty: with no record of date changes, "What keeps slipping?" goes, and the
+ * late question moves up beside how things stand so no group is left with one
+ * card.
+ */
 export function questionsFor(scope: "all" | "one", analytics: ProjectAnalytics | null): Question[] {
-  return SPECS.filter((spec) => spec.id !== "slip" || analytics === null || analytics.moved !== null).map((spec) => ({
+  const hasMoves = analytics === null || analytics.moved !== null;
+  const specs = hasMoves ? SPECS : SPECS.filter((spec) => spec.id !== "slip");
+  const ordered = hasMoves ? specs : [specs[0]!, specs.find((spec) => spec.id === "late")!, ...specs.slice(1).filter((spec) => spec.id !== "late")];
+  return ordered.map((spec) => ({
     id: spec.id,
-    group: spec.group,
+    group: !hasMoves && spec.id === "late" ? "Where we stand" : spec.group,
     label: scope === "one" ? spec.one ?? spec.all : spec.all,
     hint: spec.hint,
   }));

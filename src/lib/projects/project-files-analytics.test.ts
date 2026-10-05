@@ -140,7 +140,15 @@ test("questions: a fixed library in four groups, worded for the scope", () => {
   // No record of date changes, no question about them: never an empty promise.
   const unread = computeProjectAnalytics(analyticsInputFixture({ dueChanges: null }));
   assert.equal(questionsFor("all", unread).some((question) => question.id === "slip"), false);
-  assert.equal(questionsFor("all", unread).length, 7);
+  assert.deepEqual(questionsFor("all", unread).map((question) => [question.group, question.id]), [
+    ["Where we stand", "shape"],
+    ["Where we stand", "late"],
+    ["Where we stand", "week"],
+    ["People", "who"],
+    ["People", "next"],
+    ["Patterns", "where"],
+    ["Patterns", "long"],
+  ], "three groups, none left with a single card");
   assert.equal(parseQuestion("late"), "late");
   assert.equal(parseQuestion("which seating plan did Mara approve"), null);
   assert.equal(parseQuestion(undefined), null);
