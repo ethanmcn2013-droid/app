@@ -4,7 +4,8 @@
  *
  * This is not a language model and nothing here pretends to be one. Typing in
  * the ask box finds a question in the library by its words (keywords, light
- * stemming and a few synonyms, `matchQuestions`); when nothing matches, the
+ * stemming and a few synonyms: `matchQuestions` in `project-analytics-match.ts`,
+ * kept apart so the browser loads only the matcher); when nothing matches, the
  * page says so and shows the questions it has. An answer is arithmetic over
  * `ProjectAnalytics` (one pure calculation over tasks) and, for how projects
  * are doing, the status and target date their owners set. No forecast is
@@ -97,7 +98,8 @@ const SPECS: readonly QuestionSpec[] = [
   },
 ];
 
-export type Question = Readonly<{ id: QuestionId; group: QuestionGroup; label: string; hint: string }>;
+/** A question as the page lists it. `words` are the keyword stems the ask box matches on. */
+export type Question = Readonly<{ id: QuestionId; group: QuestionGroup; label: string; hint: string; words: Readonly<Record<string, number>> }>;
 
 /**
  * The library for a scope. A question without its data is left out, not shown
@@ -114,67 +116,13 @@ export function questionsFor(scope: "all" | "one", analytics: ProjectAnalytics |
     group: !hasMoves && spec.id === "late" ? "Where we stand" : spec.group,
     label: scope === "one" ? spec.one ?? spec.all : spec.all,
     hint: spec.hint,
+    words: spec.words,
   }));
 }
 
 /** The `?ask=` value. Null is the list of questions. */
 export function parseQuestion(raw: unknown): QuestionId | null {
   return SPECS.find((spec) => spec.id === raw)?.id ?? null;
-}
-
-// ── Finding a question by its words ────────────────────────────────────────
-
-const STOP = new Set(["the", "a", "an", "is", "are", "we", "us", "our", "do", "does", "did", "to", "of", "in", "on", "for", "and", "what", "which", "how", "it", "this", "that", "my", "me", "i", "be", "has", "have", "too", "s"]);
-
-function tokens(text: string): string[] {
-  return text.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
-}
-
-/** Light stemming: enough for "slipping" to find "slip" and "changes" "chang". */
-function stem(word: string): string {
-  return word.replace(/(ing|ed|es|s|e)$/, "").replace(/(.)\1$/, "$1");
-}
-
-function hits(token: string, key: string): boolean {
-  if (token === key) return true;
-  const a = stem(token);
-  const b = stem(key);
-  if (a.length < 3 || b.length < 3) return a === b;
-  return a.startsWith(b) || b.startsWith(a);
-}
-
-export type QuestionMatch = Readonly<{ id: QuestionId; score: number }>;
-
-/** At or above this a match is offered; below it the box says it has no ready answer. */
-export const MATCH_THRESHOLD = 4;
-
-/**
- * The library's questions that share words with what was typed, best first.
- * Empty when nothing clears the threshold: an answer to a different question
- * is worse than none.
- */
-export function matchQuestions(input: string, questions: readonly Question[]): QuestionMatch[] {
-  const typed = tokens(input);
-  if (typed.length === 0) return [];
-  const whole = input.trim().toLowerCase();
-  return questions
-    .map((question) => {
-      const spec = SPECS.find((entry) => entry.id === question.id)!;
-      const labelWords = tokens(question.label).filter((word) => !STOP.has(word));
-      let score = 0;
-      for (const token of typed) {
-        if (STOP.has(token)) continue;
-        let best = 0;
-        for (const [key, weight] of Object.entries(spec.words)) if (hits(token, key)) best = Math.max(best, weight);
-        // Words in the question itself count, so typing part of it finds it.
-        if (best === 0 && token.length >= 3 && labelWords.some((word) => hits(token, word))) best = 3;
-        score += best;
-      }
-      if (whole.length > 3 && question.label.toLowerCase().startsWith(whole)) score += 6;
-      return { id: question.id, score };
-    })
-    .filter((match) => match.score >= MATCH_THRESHOLD)
-    .sort((a, b) => b.score - a.score);
 }
 
 // ── Answers ────────────────────────────────────────────────────────────────

@@ -9,12 +9,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { computeProjectAnalytics, LATE_LIST_LIMIT } from "@/lib/projects/project-analytics";
+import { MATCH_THRESHOLD, matchQuestions } from "@/lib/projects/project-analytics-match";
 import {
-  MATCH_THRESHOLD,
   analyticsSummary,
   answerQuestion,
   answerText,
-  matchQuestions,
   parseQuestion,
   portfolioSummary,
   questionsFor,

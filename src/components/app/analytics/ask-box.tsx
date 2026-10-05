@@ -2,7 +2,8 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { matchQuestions, type Question } from "@/lib/projects/project-analytics-questions";
+import { matchQuestions } from "@/lib/projects/project-analytics-match";
+import type { Question } from "@/lib/projects/project-analytics-questions";
 import styles from "./analytics.module.css";
 
 /**

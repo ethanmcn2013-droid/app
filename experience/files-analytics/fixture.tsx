@@ -19,7 +19,8 @@
  */
 
 import { createRoot } from "react-dom/client";
-import { FilesSkeleton, FilesUnavailable, FilesView } from "../../src/components/app/files/files-view";
+import { FilesUnavailable, FilesView } from "../../src/components/app/files/files-view";
+import { FilesSkeleton } from "../../src/components/app/files/files-skeleton";
 import { AnalyticsUnavailable, AnalyticsView, parseAnalyticsPart } from "../../src/components/app/analytics/analytics-view";
 import AnalyticsLoading from "../../src/app/app/analytics/loading";
 import { computeProjectAnalytics, parseAnalyticsRange } from "../../src/lib/projects/project-analytics";

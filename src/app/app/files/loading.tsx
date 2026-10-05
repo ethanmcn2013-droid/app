@@ -4,7 +4,7 @@
  * and no invented names; static blocks satisfy reduced motion without a query.
  */
 import { ArrivalSettle } from "@/components/system/arrival-settle";
-import { FilesSkeleton } from "@/components/app/files/files-view";
+import { FilesSkeleton } from "@/components/app/files/files-skeleton";
 
 export default function FilesLoading() {
   return (
