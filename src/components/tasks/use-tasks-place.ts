@@ -247,6 +247,20 @@ export function measureEdges(root: HTMLElement) {
   root.querySelectorAll<HTMLElement>("[data-tray-body]").forEach((body) => {
     body.toggleAttribute("data-above", body.scrollTop > 1);
     body.toggleAttribute("data-more", body.scrollTop + body.clientHeight < body.scrollHeight - 1);
+    // A column long enough to scroll can be scrolled from the keyboard; one
+    // that fits stays out of the tab order.
+    if (body.scrollHeight > body.clientHeight + 1) {
+      if (!body.hasAttribute("tabindex")) {
+        const name = body.closest("[data-lane]")?.querySelector("h2")?.textContent;
+        body.setAttribute("tabindex", "0");
+        body.setAttribute("role", "group");
+        body.setAttribute("aria-label", name ? `${name}, more tasks below` : "More tasks below");
+      }
+    } else if (body.getAttribute("role") === "group") {
+      body.removeAttribute("tabindex");
+      body.removeAttribute("role");
+      body.removeAttribute("aria-label");
+    }
     const tray = body.closest<HTMLElement>("[data-lane]");
     if (!tray) return;
     tray.style.setProperty("--body-top", `${body.offsetTop - tray.offsetTop}px`);

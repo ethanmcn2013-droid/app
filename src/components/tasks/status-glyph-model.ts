@@ -2,7 +2,7 @@
  * The one status vocabulary, as data.
  *
  * My tasks and Home draw the lane at rest as a circle: empty for to do,
- * half for in progress, three quarters for review, a clock for waiting and a
+ * half for in progress, three quarters for to check, a clock for waiting and a
  * filled tick for done. Tasks uses the same shapes so a task reads the same
  * on every surface. Custom columns get a dashed ring in the column's own
  * colour, mapped to a v3 identity token (never raw hex text); any column
@@ -50,7 +50,9 @@ export function glyphFor(column: GlyphColumn | undefined): StatusGlyphSpec {
     case "todo":
       return { shape: "empty", tone: "var(--v3-control-border)" };
     case "doing":
-      return { shape: "half", tone: "var(--v3-warning-stroke)" };
+      // Ink, not amber: work under way is the normal state, and amber is
+      // kept for work that is at risk or stuck.
+      return { shape: "half", tone: "var(--v3-text)" };
     case "review":
       return { shape: "three-quarter", tone: "var(--v3-review)" };
     case "waiting":
@@ -68,7 +70,7 @@ export function glyphWords(shape: GlyphShape): string {
     case "half":
       return "In progress";
     case "three-quarter":
-      return "In review";
+      return "To check";
     case "waiting":
       return "Waiting";
     case "done":

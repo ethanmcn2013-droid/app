@@ -91,6 +91,8 @@
     "test:project-template-choice:browser": "node experience/project-template-choice-browser.mjs",
     "test:project-console:browser": "node experience/project-console/run.mjs",
     "test:files-analytics:browser": "node experience/files-analytics/run.mjs",
+    "test:tasks-views": "node --import tsx --test src/components/tasks/tasks-pulse.test.ts src/components/tasks/status-glyph-model.test.ts src/components/tasks/view-order.test.ts src/components/tasks/surface-keys.test.ts src/components/tasks/display-prefs.test.ts",
+    "test:tasks-views:browser": "node experience/tasks-views/run.mjs",
     "test:floor-calendar": "node --test experience/recipient-project-work/floor-calendar.test.cjs",
     "test:floor-context": "node --import tsx --test src/components/hybrid/selected-task-route.test.ts src/lib/projects/floor-view-href.test.ts",
     "test:reorder-pointer": "node experience/reorder-list-pointer-browser.mjs",

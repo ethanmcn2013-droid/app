@@ -1,12 +1,14 @@
 "use client";
 
 /**
- * List: every task as a row in one calm table.
+ * List: every task as a row in one sheet.
  *
  * Grouped by status by default (or assignee, priority, due date, none),
- * with sticky, foldable group headers. Each property cell opens its picker
- * without opening the task; the row itself opens the task. Selecting rows
- * brings up the bulk bar. On a phone each row becomes two lines.
+ * with sticky, foldable group rows that say how much of each group is done.
+ * Each property cell opens its editor without opening the task; the row
+ * itself opens the task. Selecting rows brings up the bulk bar. The foot of
+ * the sheet counts what is shown, and adds up Amount when that column is
+ * on. On a phone each row becomes two lines.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -26,6 +28,7 @@ import { Highlight, describeTask, labelsOf, usePeople, useTaskNumberOf } from ".
 import { useListColumns, useListGroup, useTaskNumbers, type ListGroup } from "./display-prefs";
 import { TIcon } from "./icons";
 import { setVisibleTaskOrder } from "./sheet-bridge";
+import { STUCK_AFTER_DAYS, dayWords } from "./tasks-pulse";
 import { MenuCheckboxItem, MenuContent, MenuLabel, MenuRoot, MenuTrigger } from "./ui";
 import styles from "./list.module.css";
 
@@ -126,7 +129,7 @@ export function ListView({ onCompose }: { onCompose: (extra: Partial<NewTaskDefa
       "36px",
       "minmax(200px, 1fr)",
       showStatus ? (wide ? "136px" : "120px") : null,
-      wide ? "144px" : "44px",
+      wide ? "160px" : "44px",
       wide ? "150px" : "128px",
       showPriority ? (wide ? "104px" : "44px") : null,
       showLabels ? (wide ? "150px" : "112px") : null,
@@ -140,7 +143,7 @@ export function ListView({ onCompose }: { onCompose: (extra: Partial<NewTaskDefa
   const templateMid = track(false);
 
   const sortOf = (key: SortKey) => (sort?.key === key ? (sort.dir === 1 ? "ascending" : "descending") : "none");
-  const header = (key: SortKey, label: string) => (
+  const header = (key: SortKey, label: string, icon: React.ReactNode) => (
     <button
       type="button"
       className={styles.headButton}
@@ -148,7 +151,8 @@ export function ListView({ onCompose }: { onCompose: (extra: Partial<NewTaskDefa
       aria-label={`${label}, sort ${sortOf(key) === "ascending" ? "descending" : "ascending"}`}
       onClick={() => toggleSort(key)}
     >
-      {label}
+      {icon}
+      <span className={styles.headLabel}>{label}</span>
       {sort?.key === key ? (sort.dir === 1 ? <TIcon.chevronUp size={12} /> : <TIcon.chevronDown size={12} />) : null}
     </button>
   );
@@ -177,19 +181,19 @@ export function ListView({ onCompose }: { onCompose: (extra: Partial<NewTaskDefa
           <span role="columnheader" className={styles.checkHead}>
             <span className={srOnly}>Select</span>
           </span>
-          <span role="columnheader" aria-sort={sortOf("title")} className={styles.titleHead}>{header("title", "Task")}</span>
-          {showStatus ? <span role="columnheader" data-col="status" aria-sort={sortOf("status")}>{header("status", "Status")}</span> : null}
-          <span role="columnheader" data-col="assignee" className={styles.assigneeHead} aria-sort={sortOf("assignee")}>{header("assignee", "Assignee")}</span>
-          <span role="columnheader" aria-sort={sortOf("due")}>{header("due", "Due date")}</span>
-          {showPriority ? <span role="columnheader" data-col="priority" className={styles.priorityHead} aria-sort={sortOf("priority")}>{header("priority", "Priority")}</span> : null}
-          {showLabels ? <span role="columnheader" className={styles.plainHead}>Labels</span> : null}
-          {showSubtasks ? <span role="columnheader" data-col="subtasks" className={`${styles.plainHead} ${styles.wideOnly}`}>Subtasks</span> : null}
-          {showAmount ? <span role="columnheader" data-col="amount" className={`${styles.plainHead} ${styles.wideOnly}`}>Amount</span> : null}
+          <span role="columnheader" aria-sort={sortOf("title")} className={styles.titleHead}>{header("title", "Task", <TIcon.list size={14} />)}</span>
+          {showStatus ? <span role="columnheader" data-col="status" aria-sort={sortOf("status")}>{header("status", "Status", <StatusGlyph column={surface.columns[1] ?? surface.columns[0]} size={13} />)}</span> : null}
+          <span role="columnheader" data-col="assignee" className={styles.assigneeHead} aria-sort={sortOf("assignee")}>{header("assignee", "Assignee", <TIcon.person size={14} />)}</span>
+          <span role="columnheader" data-col="due" aria-sort={sortOf("due")}>{header("due", "Due", <TIcon.calendar size={14} />)}</span>
+          {showPriority ? <span role="columnheader" data-col="priority" className={styles.priorityHead} aria-sort={sortOf("priority")}>{header("priority", "Priority", <TIcon.flag size={14} />)}</span> : null}
+          {showLabels ? <span role="columnheader" data-col="labels" className={styles.plainHead}><TIcon.tag size={14} />Labels</span> : null}
+          {showSubtasks ? <span role="columnheader" data-col="subtasks" className={`${styles.plainHead} ${styles.wideOnly}`}><TIcon.check size={14} />Subtasks</span> : null}
+          {showAmount ? <span role="columnheader" data-col="amount" className={`${styles.plainHead} ${styles.wideOnly} ${styles.numberHead}`}>Amount</span> : null}
           <span role="columnheader" className={styles.pickHead}>
             <MenuRoot>
               <MenuTrigger asChild>
                 <button type="button" className={styles.iconButton} aria-label="Choose columns">
-                  <TIcon.display size={14} />
+                  <TIcon.plus size={14} />
                 </button>
               </MenuTrigger>
               <MenuContent align="end" width={220} label="Choose columns">
@@ -225,8 +229,9 @@ export function ListView({ onCompose }: { onCompose: (extra: Partial<NewTaskDefa
                       <span className={styles.chevron} data-open={!isFolded ? "" : undefined} aria-hidden="true"><TIcon.chevronRight size={14} /></span>
                       {g.icon}
                       <span className={styles.groupTitle}>{g.title}</span>
-                      <span className={styles.groupCount}>{g.tasks.length}</span>
-                      {done > 0 && done < g.tasks.length ? <span className={styles.groupDone}>{done} of {g.tasks.length} done</span> : null}
+                      <span className={styles.groupCount}>
+                        {done > 0 && done < g.tasks.length ? `${done} of ${g.tasks.length} done` : g.tasks.length}
+                      </span>
                     </button>
                     {surface.readOnly ? null : (
                       <button
@@ -273,6 +278,7 @@ export function ListView({ onCompose }: { onCompose: (extra: Partial<NewTaskDefa
           );
         })}
       </div>
+      {sorted.length > 0 ? <ListFoot tasks={sorted} showAmount={showAmount} /> : null}
       {surface.filtering && surface.visible.length === 0 ? (
         <div className={styles.empty} role="status">
           <TIcon.filter size={16} />
@@ -280,6 +286,33 @@ export function ListView({ onCompose }: { onCompose: (extra: Partial<NewTaskDefa
           {tools.query ? <button type="button" onClick={() => tools.setQuery("")}>Clear search</button> : null}
           {tools.activeFilterCount ? <button type="button" onClick={tools.clearFilters}>Clear filters</button> : null}
         </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** The foot of the sheet: what is shown, what is late, and Amount added up. */
+function ListFoot({ tasks, showAmount }: { tasks: LabTask[]; showAmount: boolean }) {
+  const surface = useSurface();
+  const calendar = useCalendarFrame();
+  const late = tasks.filter((task) => !surface.isDone(task) && dueKey(task) < calendar.today).length;
+  const cents = tasks.reduce((sum, task) => sum + (typeof task.cents === "number" && task.cents > 0 ? task.cents : 0), 0);
+  return (
+    <div className={styles.foot} data-list-foot="">
+      <span>
+        <strong>{tasks.length}</strong> {tasks.length === 1 ? "task" : "tasks"}
+        {surface.filtering ? ` of ${surface.all.length}` : ""}
+      </span>
+      {late ? (
+        <span className={styles.footLate}>
+          <span className={styles.footDot} aria-hidden="true" />
+          {late} late
+        </span>
+      ) : null}
+      {showAmount && cents > 0 ? (
+        <span className={styles.footSum}>
+          Amount, added up <strong>{(cents / 100).toLocaleString("en-GB", { minimumFractionDigits: 2 })}</strong>
+        </span>
       ) : null}
     </div>
   );
@@ -328,7 +361,7 @@ function buildGroups(
   }
   // Due date
   const buckets: { key: string; title: string; icon: React.ReactNode; test: (t: LabTask) => boolean }[] = [
-    { key: "overdue", title: "Overdue", icon: <TIcon.alert size={15} />, test: (t) => !t.completed && dueKey(t) < today },
+    { key: "overdue", title: "Late", icon: <TIcon.alert size={15} />, test: (t) => !t.completed && dueKey(t) < today },
     { key: "today", title: "Today", icon: <TIcon.sun size={15} />, test: (t) => dueKey(t) === today },
     { key: "later", title: "Coming up", icon: <TIcon.calendar size={15} />, test: (t) => dueKey(t) > today && dueKey(t) !== "9999-12-31" },
     { key: "none", title: "No date", icon: <TIcon.noDate size={15} />, test: (t) => dueKey(t) === "9999-12-31" },
@@ -369,6 +402,8 @@ function ListRow({
   const labels = labelsOf(task);
   const subDone = task.subtasks.filter((s) => s.completed).length;
   const ro = surface.readOnly;
+  const stuck = done ? null : surface.stuckDays.get(task.id) ?? null;
+  const stuckSaid = stuck === null ? "" : `. No change in ${dayWords(stuck)}`;
   const cell = (kind: "status" | "assignee" | "due" | "priority" | "labels", children: React.ReactNode, label: string) => (
     <span role="gridcell" className={styles.cell} data-col={kind}>
       <button
@@ -439,12 +474,18 @@ function ListRow({
             </span>
           ) : null}
           <span className={styles.phoneMeta} aria-hidden="true">
+            {stuck === null ? null : <span className={styles.agedPhone}>{dayWords(stuck)}</span>}
             {time.kind !== "none" ? <DueChip time={time} compact /> : null}
             {task.priority === "high" || task.priority === "urgent" ? <PriorityMark priority={task.priority} /> : null}
             {labels[0] ? <span>{labels[0].name}</span> : null}
             {people.length ? <AvatarStack members={people} size="sm" max={2} label="" /> : null}
           </span>
         </span>
+        {stuck !== null ? (
+          <span className={styles.aged} title={`No change in ${dayWords(stuck)}. Started work counts as stuck after ${STUCK_AFTER_DAYS} days.`} aria-hidden="true">
+            {dayWords(stuck)}
+          </span>
+        ) : null}
       </span>
       {extras.status
         ? cell(
@@ -479,7 +520,7 @@ function ListRow({
             "labels",
             labels.length ? (
               <>
-                <span className={`${styles.labels} ${styles.labelsWide}`}><LabelChips labels={labels} /></span>
+                <span className={`${styles.labels} ${styles.labelsWide}`}><LabelChips labels={labels} max={1} /></span>
                 <span className={`${styles.labels} ${styles.labelsMid}`}><LabelChips labels={labels} max={1} /></span>
               </>
             ) : (
@@ -492,7 +533,7 @@ function ListRow({
         <span role="gridcell" className={`${styles.plainCell} ${styles.wideOnly}`}>{task.subtasks.length ? `${subDone} of ${task.subtasks.length}` : <span className={styles.none}>None</span>}</span>
       ) : null}
       {extras.amount ? (
-        <span role="gridcell" className={`${styles.plainCell} ${styles.wideOnly}`}>{typeof task.cents === "number" && task.cents > 0 ? (task.cents / 100).toLocaleString("en-GB", { minimumFractionDigits: 2 }) : <span className={styles.none}>None</span>}</span>
+        <span role="gridcell" className={`${styles.plainCell} ${styles.wideOnly} ${styles.numberCell}`}>{typeof task.cents === "number" && task.cents > 0 ? (task.cents / 100).toLocaleString("en-GB", { minimumFractionDigits: 2 }) : <span className={styles.none}>None</span>}</span>
       ) : null}
       <span role="gridcell" className={styles.menuCell}>
         <button
@@ -511,7 +552,7 @@ function ListRow({
           <TIcon.more size={14} />
         </button>
       </span>
-      <span className={srOnly} id={`row-d-${task.id}`}>{describeTask(task, column?.name ?? "", time, people)}.</span>
+      <span className={srOnly} id={`row-d-${task.id}`}>{describeTask(task, column?.name ?? "", time, people)}{stuckSaid}.</span>
     </div>
   );
 }

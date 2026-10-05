@@ -1,19 +1,25 @@
 "use client";
 
 /**
- * Calendar: the dated work on a month, a week or an agenda, with the work
- * that still needs a date in a tray beside it.
+ * Calendar: the dated work on a week, a month or an agenda, with the work
+ * still to plan in a tray on the right.
  *
+ * - It opens on the week: one column a day, each task on the day it is due.
+ *   Tasks carry a date, not a time of day or an estimate, so there are no
+ *   hours and no capacity here: the line beside the week says how many are
+ *   due and how many are late, counted from the tasks themselves.
  * - Month shows only the weeks the month actually uses; each day shows up
  *   to three tasks, then "+2 more", which selects the day.
  * - Drag a task onto a day to give it that date; drag a dated task back to
  *   the tray to clear its date. Ranges and milestones move whole.
- * - The day pane holds the tray, the milestones and the selected day, with
- *   "Add on this day". "Needs a date" in the toolbar shows or hides it; by
- *   default it shows only when the calendar is at least TRAY_ROOM wide, so
- *   day cells keep room for readable titles. On a tablet it is a drawer; on
- *   a phone the calendar opens as an agenda (decided after mount, behind a
- *   skeleton CSS picks by width, so the month never flashes first).
+ * - The "To plan" tray sits to the right of the grid, never the left. Its
+ *   tabs are Due soon, Late and No date. Under it are the milestones and, in
+ *   the month, the selected day with "Add on this day". "To plan" in the
+ *   toolbar shows or hides it; by default it shows when the calendar is at
+ *   least TRAY_ROOM wide. On a tablet it is a sheet at the foot of the
+ *   screen; on a phone the calendar opens as an agenda with the tray folded
+ *   at the top (decided after mount, behind a skeleton CSS picks by width,
+ *   so the week never flashes first).
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
@@ -30,7 +36,7 @@ import { StatusGlyph } from "./atoms";
 import { Highlight } from "./task-bits";
 import { useCalendarDone, useCalendarTray, useCalendarWeekends, type CalendarMode } from "./display-prefs";
 import { AgendaSkeleton, CalendarSkeleton } from "./skeletons";
-import { shortDate } from "./time";
+import { shortDate, timeOf, weekdayDate } from "./time";
 import { TIcon } from "./icons";
 import { calendarOrder } from "./view-order";
 import { setVisibleTaskOrder } from "./sheet-bridge";
@@ -83,7 +89,16 @@ const PHONE = "(max-width: 767px)";
 /** Below this calendar width the tray starts hidden, so a month cell keeps
  *  room for a readable title. Inside the 1180px page column that means the
  *  tray starts hidden and "Needs a date" in the toolbar brings it in. */
-const TRAY_ROOM = 1200;
+const TRAY_ROOM = 1000;
+/** The most tray rows shown before the tray points at the list. */
+const TRAY_LIMIT = 12;
+
+type PlanTab = "soon" | "late" | "undated";
+const PLAN_TABS: { id: PlanTab; label: string }[] = [
+  { id: "soon", label: "Due soon" },
+  { id: "late", label: "Late" },
+  { id: "undated", label: "No date" },
+];
 const SHORT_MONTHS = MONTHS.map((m) => m.slice(0, 3));
 function subscribePhone(listener: () => void) {
   const media = window.matchMedia(PHONE);
@@ -99,7 +114,7 @@ export function CalendarView({ onCompose }: { onCompose: (extra: Partial<NewTask
   // null on the server: the phone decision is made after mount.
   const phone = useSyncExternalStore<boolean | null>(subscribePhone, () => window.matchMedia(PHONE).matches, () => null);
   const [chosen, setChosen] = useState<CalendarMode | null>(null);
-  const mode: CalendarMode | null = chosen ?? (phone === null ? null : phone ? "agenda" : "month");
+  const mode: CalendarMode | null = chosen ?? (phone === null ? null : phone ? "agenda" : "week");
   const [anchor, setAnchor] = useState<CalendarDate>(today);
   const [selected, setSelected] = useState<CalendarDate>(today);
   const [weekends] = useCalendarWeekends();
@@ -125,6 +140,22 @@ export function CalendarView({ onCompose }: { onCompose: (extra: Partial<NewTask
   );
   const dated = useMemo(() => tasks.filter((t) => t.schedule.kind !== "unscheduled"), [tasks]);
   const undated = useMemo(() => activeUnscheduledTasks(surface.visible), [surface.visible]);
+  /* What is still to plan, counted from the tasks the tools admit: open work
+     due in the next seven days, open work past its date, and open work with
+     no date at all. */
+  const plan = useMemo(() => {
+    const open = surface.visible.filter((task) => !surface.isDone(task) && taskEnd(task) !== null);
+    const byEnd = (a: LabTask, b: LabTask) => (taskEnd(a) ?? "").localeCompare(taskEnd(b) ?? "") || a.order - b.order;
+    const horizon = addDays(today, 6);
+    return {
+      soon: open.filter((task) => compareDates(taskEnd(task)!, today) >= 0 && compareDates(taskEnd(task)!, horizon) <= 0).sort(byEnd),
+      late: open.filter((task) => compareDates(taskEnd(task)!, today) < 0).sort(byEnd),
+      undated,
+    } satisfies Record<PlanTab, LabTask[]>;
+  }, [surface, today, undated]);
+  const toPlan = plan.late.length + plan.undated.length;
+  const [tabChosen, setTabChosen] = useState<PlanTab | null>(null);
+  const tab: PlanTab = tabChosen ?? (plan.soon.length ? "soon" : plan.late.length ? "late" : "undated");
   useEffect(() => setVisibleTaskOrder(calendarOrder(tasks)), [tasks]);
   const milestones = useMemo(
     () => surface.all.filter((t) => t.schedule.kind === "milestone" && !surface.isDone(t)).sort((a, b) => (taskEnd(a) ?? "").localeCompare(taskEnd(b) ?? "")),
@@ -206,18 +237,48 @@ export function CalendarView({ onCompose }: { onCompose: (extra: Partial<NewTask
   const weeks = mode === "month" ? monthWeeks(anchor) : [Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(anchor), i))];
   const visibleDays = (week: CalendarDate[]) => (weekends === "on" ? week : week.slice(0, 5));
   const monthCount = mode === "month" ? dated.filter((t) => (taskEnd(t) ?? "").slice(0, 7) === anchor.slice(0, 7)).length : null;
+  /* The plain line beside the period: what is due in it and what is late. */
+  const periodLine = (() => {
+    if (mode !== "week" && mode !== "month") return null;
+    const open = dated.filter((task) => !surface.isDone(task));
+    const inPeriod =
+      mode === "week"
+        ? open.filter((task) => compareDates(taskEnd(task)!, weeks[0][0]) >= 0 && compareDates(taskEnd(task)!, weeks[0][6]) <= 0)
+        : open.filter((task) => (taskEnd(task) ?? "").slice(0, 7) === anchor.slice(0, 7));
+    const late = inPeriod.filter((task) => compareDates(taskEnd(task)!, today) < 0).length;
+    const where = mode === "week" ? "this week" : `in ${MONTHS[parts(anchor).m - 1]}`;
+    const viewing = mode === "week" ? compareDates(today, weeks[0][0]) >= 0 && compareDates(today, weeks[0][6]) <= 0 : today.slice(0, 7) === anchor.slice(0, 7);
+    return { due: inPeriod.length, late, where: mode === "week" && !viewing ? "in this week" : where };
+  })();
 
   return (
     <div className={styles.wrap} ref={wrapRef} data-mode={mode ?? "pending"} data-weekends={weekends} data-tray={trayShown ? "shown" : "hidden"}>
       <div className={styles.toolbar}>
         <div className={styles.nav}>
           <Button variant="ghost" iconOnly size="sm" icon={<TIcon.chevronLeft />} aria-label={mode === "week" ? "Previous week" : mode === "agenda" ? "Earlier" : "Previous month"} onClick={() => period(-1)} />
-          <h2 className={styles.title} aria-live="polite">{title}</h2>
+          <h2 className={styles.title} aria-live="polite" suppressHydrationWarning>{title}</h2>
           <Button variant="ghost" iconOnly size="sm" icon={<TIcon.chevronRight />} aria-label={mode === "week" ? "Next week" : mode === "agenda" ? "Later" : "Next month"} onClick={() => period(1)} />
           <Button size="sm" onClick={goToday} aria-keyshortcuts="T">Today</Button>
         </div>
+        {periodLine ? (
+          <p className={styles.periodLine}>
+            {periodLine.due === 0 ? (
+              `Nothing due ${periodLine.where}`
+            ) : (
+              <>
+                <strong>{periodLine.due}</strong> due {periodLine.where}
+              </>
+            )}
+            {periodLine.late ? (
+              <>
+                <span className={styles.periodSep} aria-hidden="true">·</span>
+                <span className={styles.periodLate}>{periodLine.late} late</span>
+              </>
+            ) : null}
+          </p>
+        ) : null}
         <div className={styles.modes} role="radiogroup" aria-label="Calendar layout">
-          {(["month", "week", "agenda"] as const).map((value) => (
+          {(["week", "month", "agenda"] as const).map((value) => (
             <button
               key={value}
               type="button"
@@ -226,7 +287,7 @@ export function CalendarView({ onCompose }: { onCompose: (extra: Partial<NewTask
               className={styles.mode}
               // While the layout resolves, CSS marks the likely one by width:
               // Month on wider screens, Agenda on a phone.
-              data-likely={value === "month" ? "wide" : value === "agenda" ? "phone" : undefined}
+              data-likely={value === "week" ? "wide" : value === "agenda" ? "phone" : undefined}
               onClick={() => setChosen(value)}
             >
               {value === "month" ? "Month" : value === "week" ? "Week" : "Agenda"}
@@ -238,12 +299,12 @@ export function CalendarView({ onCompose }: { onCompose: (extra: Partial<NewTask
             type="button"
             className={styles.trayToggle}
             aria-pressed={trayShown}
-            title={trayShown ? "Hide the tasks that need a date" : "Show the tasks that need a date"}
+            title={trayShown ? "Hide the tasks still to plan" : "Show the tasks still to plan"}
             onClick={() => setTrayPref(trayShown ? "hidden" : "shown")}
           >
             <TIcon.noDate size={14} />
-            Needs a date
-            <span className={styles.trayCount}>{undated.length}</span>
+            To plan
+            <span className={styles.trayCount}>{toPlan}</span>
           </button>
         ) : null}
         <SubscribeButton />
@@ -260,10 +321,25 @@ export function CalendarView({ onCompose }: { onCompose: (extra: Partial<NewTask
             <Agenda tasks={dated} from={anchor} today={today} onOpen={(id) => store.openTask(id)} undated={undated} onCompose={onCompose} />
           ) : (
             <div className={styles.grid} ref={gridRef} role="grid" aria-label={title} onKeyDown={onGridKey} data-weeks={weeks.length}>
-              <div className={styles.weekdays} role="row">
-                {visibleDays(WEEKDAYS as unknown as CalendarDate[]).map((day) => (
-                  <span key={day} role="columnheader" className={styles.weekday}>{day}</span>
-                ))}
+              <div className={styles.weekdays} role="row" data-mode={mode}>
+                {mode === "week"
+                  ? visibleDays(weeks[0]).map((date) => {
+                      // Due that day: a task that runs across days is due on its last.
+                      const open = onDay(date).filter((task) => !surface.isDone(task) && taskEnd(task) === date).length;
+                      return (
+                        <span key={date} role="columnheader" className={styles.weekday} data-today={date === today ? "" : undefined} aria-label={longDay(date)}>
+                          <span className={styles.weekdayTop}>
+                            <span className={styles.weekdayName}>{WEEKDAYS[weekdayIndex(date)]}</span>
+                            <span className={styles.weekdayNumber}>{parts(date).d}</span>
+                            {date === today ? <span className={styles.todayTag}>Today</span> : null}
+                          </span>
+                          <span className={styles.weekdayCount}>{open === 0 ? "Nothing due" : `${open} due`}</span>
+                        </span>
+                      );
+                    })
+                  : visibleDays(WEEKDAYS as unknown as CalendarDate[]).map((day) => (
+                      <span key={day} role="columnheader" className={styles.weekday}>{day}</span>
+                    ))}
               </div>
               {weeks.map((week) => (
                 <div key={week[0]} role="row" className={styles.week} data-mode={mode}>
@@ -294,7 +370,7 @@ export function CalendarView({ onCompose }: { onCompose: (extra: Partial<NewTask
               {monthCount === 0 ? (
                 <div className={styles.monthEmpty} role="status">
                   <span>Nothing dated in {MONTHS[parts(anchor).m - 1]}.</span>
-                  {undated.length ? <span className={styles.monthEmptyHint}>{undated.length} {undated.length === 1 ? "task needs" : "tasks need"} a date. Drag one from the tray onto a day.</span> : null}
+                  {undated.length ? <span className={styles.monthEmptyHint}>{undated.length} {undated.length === 1 ? "task has" : "tasks have"} no date. Drag one from the tray onto a day.</span> : null}
                 </div>
               ) : null}
             </div>
@@ -305,7 +381,7 @@ export function CalendarView({ onCompose }: { onCompose: (extra: Partial<NewTask
           <aside className={styles.pane} data-open={drawerOpen ? "" : undefined} aria-label="Day details">
             <button type="button" className={styles.drawerHandle} aria-expanded={drawerOpen} onClick={() => setDrawerOpen((v) => !v)}>
               <span className={styles.handleBar} aria-hidden="true" />
-              Needs a date · {undated.length}
+              To plan · {toPlan}
             </button>
             <section
               className={styles.tray}
@@ -327,28 +403,31 @@ export function CalendarView({ onCompose }: { onCompose: (extra: Partial<NewTask
               }}
             >
               <div className={styles.paneHead}>
-                <h3 id="tray-title" className={styles.paneTitle}>
-                  <TIcon.noDate size={14} /> Needs a date <span className={styles.paneCount}>{undated.length}</span>
-                </h3>
-                <p className={styles.paneNote}>{trayOver ? "Drop here to clear its date." : "Drag onto a day to date it."}</p>
+                <h3 id="tray-title" className={styles.paneTitle}>To plan</h3>
+                <p className={styles.paneNote}>{trayOver ? "Drop here to clear its date." : surface.readOnly ? "Open work by date." : "Drag a task onto a day to set its date."}</p>
               </div>
-              {undated.length === 0 ? (
-                <p className={styles.paneEmpty}>Every open task has a date.</p>
-              ) : (
-                <ul className={styles.paneList}>
-                  {undated.slice(0, 8).map((task) => (
-                    <li key={task.id}>
-                      <Chip task={task} variant="row" />
-                    </li>
-                  ))}
-                  {undated.length > 8 ? <li className={styles.paneMore}>{undated.length - 8} more in List, filtered to No date</li> : null}
-                </ul>
-              )}
+              <PlanTabs tab={tab} counts={{ soon: plan.soon.length, late: plan.late.length, undated: plan.undated.length }} onPick={setTabChosen} />
+              <div role="tabpanel" id="plan-panel" aria-labelledby={`plan-tab-${tab}`}>
+                {plan[tab].length === 0 ? (
+                  <p className={styles.paneEmpty}>
+                    {tab === "soon" ? "Nothing due in the next 7 days." : tab === "late" ? "Nothing is late." : "Every open task has a date."}
+                  </p>
+                ) : (
+                  <ul className={styles.planList}>
+                    {plan[tab].slice(0, TRAY_LIMIT).map((task) => (
+                      <li key={task.id}>
+                        <Chip task={task} variant="plan" />
+                      </li>
+                    ))}
+                    {plan[tab].length > TRAY_LIMIT ? <li className={styles.paneMore}>{plan[tab].length - TRAY_LIMIT} more. The list shows them all.</li> : null}
+                  </ul>
+                )}
+              </div>
             </section>
             {milestones.length ? (
               <section className={styles.section} aria-labelledby="milestones-title">
                 <h3 id="milestones-title" className={styles.paneTitle}>
-                  <TIcon.diamond size={14} /> Milestones
+                  <TIcon.diamond size={14} /> Big dates
                 </h3>
                 <ul className={styles.paneList}>
                   {milestones.slice(0, 4).map((task) => (
@@ -363,7 +442,7 @@ export function CalendarView({ onCompose }: { onCompose: (extra: Partial<NewTask
                 </ul>
               </section>
             ) : null}
-            <section className={styles.section} aria-labelledby="day-title">
+            <section className={styles.section} data-day="" aria-labelledby="day-title">
               <h3 id="day-title" className={styles.dayTitle}>
                 {selected === today ? "Today, " : ""}
                 {longDay(selected)}
@@ -392,11 +471,49 @@ export function CalendarView({ onCompose }: { onCompose: (extra: Partial<NewTask
   );
 }
 
+/** Due soon, Late and No date: one tab stop, arrows move between them. */
+function PlanTabs({ tab, counts, onPick }: { tab: PlanTab; counts: Record<PlanTab, number>; onPick: (tab: PlanTab) => void }) {
+  return (
+    <div
+      className={styles.planTabs}
+      role="tablist"
+      aria-label="To plan"
+      onKeyDown={(event) => {
+        const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+        if (!step) return;
+        event.preventDefault();
+        const at = PLAN_TABS.findIndex((item) => item.id === tab);
+        const next = PLAN_TABS[(at + step + PLAN_TABS.length) % PLAN_TABS.length];
+        onPick(next.id);
+        window.requestAnimationFrame(() => document.getElementById(`plan-tab-${next.id}`)?.focus());
+      }}
+    >
+      {PLAN_TABS.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          role="tab"
+          id={`plan-tab-${item.id}`}
+          aria-selected={tab === item.id}
+          aria-controls="plan-panel"
+          tabIndex={tab === item.id ? 0 : -1}
+          className={styles.planTab}
+          data-tone={item.id === "late" && counts.late > 0 ? "danger" : undefined}
+          onClick={() => onPick(item.id)}
+        >
+          {item.label}
+          <span className={styles.planTabCount}>{counts[item.id]}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function weekTitle(start: CalendarDate): string {
   const end = addDays(start, 6);
   const a = parts(start);
   const b = parts(end);
-  return a.m === b.m ? `${a.d} to ${b.d} ${MONTHS[a.m - 1]} ${a.y}` : `${a.d} ${MONTHS[a.m - 1].slice(0, 3)} to ${b.d} ${MONTHS[b.m - 1].slice(0, 3)} ${b.y}`;
+  return a.m === b.m ? `${a.d} to ${b.d} ${SHORT_MONTHS[a.m - 1]} ${a.y}` : `${a.d} ${SHORT_MONTHS[a.m - 1]} to ${b.d} ${SHORT_MONTHS[b.m - 1]} ${b.y}`;
 }
 
 function DayCell({
@@ -481,10 +598,11 @@ function DayCell({
   );
 }
 
-function Chip({ task, date, variant = "chip" }: { task: LabTask; date?: CalendarDate; variant?: "chip" | "row" }) {
+function Chip({ task, date, variant = "chip" }: { task: LabTask; date?: CalendarDate; variant?: "chip" | "row" | "plan" }) {
   const surface = useSurface();
   const store = useLabStore();
-  const { today } = useCalendarFrame();
+  const frame = useCalendarFrame();
+  const { today } = frame;
   const column = surface.columnOf(task.status);
   const done = surface.isDone(task);
   const s = task.schedule;
@@ -496,13 +614,13 @@ function Chip({ task, date, variant = "chip" }: { task: LabTask; date?: Calendar
       type="button"
       data-chip=""
       data-id={task.id}
-      className={variant === "row" ? styles.rowChip : styles.chip}
+      className={variant === "plan" ? styles.planCard : variant === "row" ? styles.rowChip : styles.chip}
       data-milestone={s.kind === "milestone" ? "" : undefined}
       data-range={range}
       data-done={done ? "" : undefined}
       data-late={late ? "" : undefined}
       draggable={!surface.readOnly}
-      title={late ? `${task.title} (overdue)` : task.title}
+      title={late ? `${task.title} (late)` : task.title}
       onDragStart={(event) => {
         event.dataTransfer.setData(DRAG_TYPE, task.id);
         event.dataTransfer.setData("text/plain", task.title);
@@ -519,9 +637,21 @@ function Chip({ task, date, variant = "chip" }: { task: LabTask; date?: Calendar
       onFocus={() => surface.setFocusedId(task.id)}
     >
       {s.kind === "milestone" ? <TIcon.diamond size={12} /> : <StatusGlyph column={done ? { key: "done", isDone: true, isSystem: true, color: "emerald" } : column} size={12} />}
-      <span className={styles.chipTitle}>
-        <Highlight text={task.title} />
-      </span>
+      {variant === "plan" ? (
+        <span className={styles.planText}>
+          <span className={styles.planTitle}>
+            <Highlight text={task.title} />
+          </span>
+          <span className={styles.planMeta} data-late={late ? "" : undefined}>
+            {end === null ? "No date" : late ? `${timeOf(task, false, frame).label}` : `Due ${weekdayDate(end)}`}
+            {column ? <span className={styles.planStatus}> · {column.name}</span> : null}
+          </span>
+        </span>
+      ) : (
+        <span className={styles.chipTitle}>
+          <Highlight text={task.title} />
+        </span>
+      )}
       {variant === "row" && s.kind !== "unscheduled" ? <span className={styles.rowDate}>{shortDate(s.kind === "milestone" ? s.on : s.dueOn)}</span> : null}
     </button>
   );
@@ -554,7 +684,7 @@ function Agenda({
       <section className={styles.agendaTray}>
         <button type="button" className={styles.agendaTrayHead} aria-expanded={trayOpen} onClick={() => setTrayOpen((v) => !v)}>
           <TIcon.noDate size={14} />
-          <span>Needs a date</span>
+          <span>To plan, no date yet</span>
           <span className={styles.paneCount}>{undated.length}</span>
           <span className={styles.agendaChevron} data-open={trayOpen ? "" : undefined}><TIcon.chevronDown size={14} /></span>
         </button>
@@ -570,7 +700,7 @@ function Agenda({
       </section>
       {overdue.length && compareDates(from, today) <= 0 ? (
         <section className={styles.agendaDay}>
-          <h3 className={styles.agendaDate} data-tone="danger">Overdue</h3>
+          <h3 className={styles.agendaDate} data-tone="danger">Late</h3>
           {overdue.map((task) => (
             <AgendaRow key={task.id} task={task} onOpen={onOpen} />
           ))}
