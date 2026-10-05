@@ -435,7 +435,7 @@ export function SuiteCommandRoot() {
                     <span className="flex items-center gap-2 text-[14px] font-semibold tracking-[-0.015em] text-[var(--ink)]">
                       {destination.name}
                       {current ? (
-                        <span className="font-mono text-[9px] font-medium uppercase tracking-[0.08em] text-[var(--x-studio-accent)]">
+                        <span className="font-mono text-[9px] font-medium uppercase tracking-[0.08em] text-[color:var(--v3-accent-text)]">
                           Current
                         </span>
                       ) : null}
