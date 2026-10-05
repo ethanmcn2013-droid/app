@@ -46,6 +46,26 @@ test("one dependency keeps its identity when urgent and long-wait presentations 
   assert.equal(new Set(urgent.needsAttention.map(item => item.observationId)).size, 2);
 });
 
+test("only an inspected same-scope relationship separates from the task's primary deadline", async () => {
+  const dependent = task({ id: "prepare-gallery", dueAt: NOW - DAY, idleDays: 9, blockedBy: ["approve-lighting"] });
+  const prerequisite = task({ id: "approve-lighting", idleDays: 0 });
+  for (const inputs of [[dependent, prerequisite], [{ ...dependent, workspaceId: "gallery" }],
+    [{ ...dependent, workspaceId: "gallery" }, { ...prerequisite, workspaceId: "foreign" }]]) {
+    const briefing = await buildBriefing(source(inputs), CTX, NOW);
+    const rows = [...briefing.needsAttention, ...briefing.quietRisks];
+    assert.equal(rows.filter(item => item.id === dependent.id).length, 1,
+      "a reference without a verified same-scope second source competes as primary task pressure");
+    assert.deepEqual(rows[0]!.evidenceTaskIds, [dependent.id]);
+  }
+  const scoped = await buildBriefing(source([{ ...dependent, workspaceId: "gallery" },
+    { ...prerequisite, workspaceId: "gallery" }]), CTX, NOW);
+  const rows = [...scoped.needsAttention, ...scoped.quietRisks];
+  assert.equal(rows.length, 2, "the task deadline and verified directed relationship retain distinct meaning");
+  assert.deepEqual(rows.find(item => item.trigger === "due-soon")!.evidenceTaskIds, [dependent.id]);
+  assert.deepEqual(rows.find(item => item.trigger !== "due-soon")!.evidenceTaskIds,
+    [dependent.id, prerequisite.id].sort());
+});
+
 test("deadline and readiness keep full distinct evidence while inspected records count once", async () => {
   const release = task({ id: "dispatch-crate", title: "Dispatch the exhibit crate", workspaceId: "exhibit", dueAt: NOW + DAY,
     idleDays: null, dependencyCoverage: "complete", hasCompletedListedPrerequisite: true,

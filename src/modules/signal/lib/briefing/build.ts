@@ -123,7 +123,10 @@ export async function buildBriefing(
         : [candidate.task.id]);
     candidate.representedTaskIds = [...new Set(sources)].filter(id => inspected.has(id)).sort();
     const scope = [candidate.task.workspaceId ?? "", candidate.task.planningPeriodId ?? ""];
-    const relation = candidate.trigger === "blocking-due-work" || candidate.trigger === "blocked-too-long";
+    // A saved blocked predicate without another inspected same-scope source
+    // is primary task pressure, not an independently established relationship.
+    const relation = (candidate.trigger === "blocking-due-work" || candidate.trigger === "blocked-too-long") &&
+      Boolean(candidate.task.workspaceId) && candidate.representedTaskIds.length > 1;
     const separate = relation || candidate.trigger === "prerequisites-complete" || candidate.trigger === "prerequisites-unverified" ||
       candidate.trigger === "overload" || candidate.trigger === "crowded-week";
     const key = JSON.stringify([scope, relation ? "dependency" : separate ? candidate.trigger : "task",
