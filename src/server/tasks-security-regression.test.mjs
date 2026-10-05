@@ -916,3 +916,56 @@ test("createShareLinkAction clamps mode to view", () => {
     "createShareLinkAction must not pass input.mode directly to the insert",
   );
 });
+
+test("operator sample data: every action exits review mode first, then proves the operator, before any write", () => {
+  const sampleActions = readFileSync(join(serverDir, "actions", "sample-data.ts"), "utf8");
+  const exported = [...sampleActions.matchAll(/export async function (\w+)/g)].map((match) => match[1]);
+  assert.deepEqual(exported.sort(), [
+    "getSampleDataStatusAction",
+    "removeAllSampleDataAction",
+    "removeSampleSetAction",
+    "seedSampleSetAction",
+  ]);
+
+  // The three writers resolve the caller only through the one operator gate.
+  const gate = sampleActions.slice(
+    sampleActions.indexOf("async function operatorDependencies"),
+    sampleActions.indexOf("function requireSetId"),
+  );
+  assert.match(gate, /const me = await getCurrentUser\(\);\s*if \(!callerIsAdmin\(me\)\) throw new Error\(REFUSAL\);/);
+  assert.match(gate, /actorUserId: me,/);
+  for (const [name, write] of [
+    ["seedSampleSetAction", "seedSampleSet("],
+    ["removeSampleSetAction", "removeSampleSet("],
+    ["removeAllSampleDataAction", "removeAllSampleData("],
+  ]) {
+    for (const boundary of ["operatorDependencies()", write, "revalidatePath", "emitTasksChanged"]) {
+      assertDemoGuardBefore(sampleActions, name, boundary);
+    }
+    const body = exportedActionBody(sampleActions, name);
+    assert.ok(
+      body.indexOf("operatorDependencies()") < body.indexOf(write),
+      `${name} must prove the operator before it writes`,
+    );
+    // The actor is never an argument: nothing a client sends can name whose
+    // account is written to or removed from.
+    assert.doesNotMatch(body, /actorUserId|userId/);
+  }
+  for (const boundary of ["getCurrentUser", "callerIsAdmin", "listSampleData("]) {
+    assertDemoGuardBefore(sampleActions, "getSampleDataStatusAction", boundary);
+  }
+  const status = exportedActionBody(sampleActions, "getSampleDataStatusAction");
+  assert.ok(status.indexOf("callerIsAdmin(me)") < status.indexOf("listSampleData("));
+  assert.match(status, /if \(!callerIsAdmin\(me\)\) return null;/);
+
+  // The Settings shell shows the section only when the server handed it data,
+  // and never in the read-only review posture.
+  const settingsApp = readFileSync(
+    join(serverDir, "..", "components", "app", "settings", "settings-app.tsx"),
+    "utf8",
+  );
+  assert.match(settingsApp, /navGroups\(driveEnabled, sampleData !== null && !readOnly\)/);
+  assert.match(settingsApp, /tab === "sample" && sampleData !== null && !readOnly \?/);
+  const demoBranch = settingsPage.slice(settingsPage.indexOf("if (isDemoMode())"), settingsPage.indexOf("requireRouteProjectId()"));
+  assert.doesNotMatch(demoBranch, /sampleData|getSampleDataStatusAction/);
+});

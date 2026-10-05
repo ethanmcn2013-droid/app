@@ -18,6 +18,8 @@ import { projectDriveUiEnabled } from "@/lib/project-drive-ui";
 import { isDemoMode } from "@/lib/access-mode";
 import { PrivacySection } from "./sections/privacy";
 import { DangerSection } from "./sections/danger";
+import { SampleDataSection } from "./sections/sample-data";
+import type { SampleSetStatus } from "@/lib/sample-data/model";
 import type { SecurityData } from "@/server/actions/security";
 
 export type SettingsMember = {
@@ -58,7 +60,8 @@ type Tab =
   | "storage"
   | "billing"
   | "privacy"
-  | "danger";
+  | "danger"
+  | "sample";
 
 type NavItem = { id: Tab; label: string; icon: ReactNode };
 
@@ -147,6 +150,12 @@ const ICONS = {
       <path d="M8 7.5v4M6.25 9.75 8 11.5l1.75-1.75" />
     </Glyph>
   ),
+  sample: (
+    <Glyph>
+      <path d="M6.25 1.75h3.5M6.75 1.75v4.1L3.2 12.1a1.1 1.1 0 0 0 .96 1.65h7.68a1.1 1.1 0 0 0 .96-1.65L9.25 5.85v-4.1" />
+      <path d="M4.9 9.75h6.2" />
+    </Glyph>
+  ),
 } as const;
 
 /**
@@ -155,7 +164,10 @@ const ICONS = {
  * (the same in every Project). The group label is the user-facing noun from
  * the one translation point, never a literal.
  */
-function navGroups(driveEnabled: boolean): Array<{ label: string; items: NavItem[] }> {
+function navGroups(
+  driveEnabled: boolean,
+  operator: boolean,
+): Array<{ label: string; items: NavItem[] }> {
   return [
     {
       label: CONTEXT_TERMINOLOGY.general.workspace,
@@ -178,6 +190,16 @@ function navGroups(driveEnabled: boolean): Array<{ label: string; items: NavItem
         { id: "privacy", label: "Privacy and data", icon: ICONS.privacy },
       ],
     },
+    // Operators only. The server decides (`sampleData` is null for everyone
+    // else and in review), so the group does not exist for anyone else.
+    ...(operator
+      ? [
+          {
+            label: "Operator",
+            items: [{ id: "sample" as const, label: "Sample data", icon: ICONS.sample }],
+          },
+        ]
+      : []),
   ];
 }
 
@@ -212,6 +234,7 @@ export function SettingsApp({
   initialThemeMode,
   storageUsageBytes,
   initialPersonalityPrefs,
+  sampleData = null,
   readOnly = false,
 }: {
   currentUserId: string;
@@ -247,6 +270,12 @@ export function SettingsApp({
   storageUsageBytes: number;
   initialPersonalityPrefs: PersonalityPrefs;
   /**
+   * Operator sample data. Null for everyone who is not an operator and in
+   * review/demo mode: no nav item, no section. Hiding is a courtesy; every
+   * action behind the section re-checks the operator gate on the server.
+   */
+  sampleData?: SampleSetStatus[] | null;
+  /**
    * Review/demo mode: the sections are for looking at, not for writing to.
    * The inert boundary lives HERE, around the section content only, because
    * when the page put it around the whole app the nine-item navigation died
@@ -260,7 +289,7 @@ export function SettingsApp({
   const [tab, setTab] = useState<Tab>(driveEnabled && isDemoMode() ? "storage" : "workspace");
   const interactiveDriveReview = readOnly && isDemoMode() && tab === "storage" && driveEnabled;
   const sectionReadOnly = readOnly && !interactiveDriveReview;
-  const groups = navGroups(driveEnabled);
+  const groups = navGroups(driveEnabled, sampleData !== null && !readOnly);
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -382,6 +411,9 @@ export function SettingsApp({
           ) : null}
           {tab === "privacy" ? (
             <PrivacySection userEmail={currentUserEmail} />
+          ) : null}
+          {tab === "sample" && sampleData !== null && !readOnly ? (
+            <SampleDataSection initialStatus={sampleData} activeProjectId={workspace?.id ?? null} />
           ) : null}
           {tab === "danger" ? (
             <DangerSection

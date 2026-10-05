@@ -80,7 +80,7 @@ import "server-only";
  */
 
 import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
 import { nextTaskSeq } from "@/server/db/task-seq";
@@ -109,6 +109,10 @@ import { readWorkspaceColumnConfig } from "@/server/db/board-config-read";
 import { executeProjectDriveFolderOperation } from "@/server/connections/project-drive-folder-operation-executor";
 import { prepareAccountFencedProjectDriveOperationInTransaction } from "@/server/connections/project-drive-operation-orchestrator";
 import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
+import {
+  insertOwnedProjectInTransaction,
+  nextOwnedProjectPositionInTransaction,
+} from "@/server/projects/create-project-core";
 
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -236,44 +240,23 @@ export async function createProject(input: {
 
   await db.transaction(async (tx) => {
     // Order the new Project after the actor's existing siblings in the same
-    // group (a specific period, or the periodless bucket).
-    const [last] = await tx
-      .select({ position: workspaces.position })
-      .from(workspaceMembers)
-      .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
-      .where(
-        and(
-          eq(workspaceMembers.userId, input.actorUserId),
-          targetPeriodId
-            ? eq(workspaces.planningPeriodId, targetPeriodId)
-            : sql`${workspaces.planningPeriodId} IS NULL`,
-        ),
-      )
-      .orderBy(desc(workspaces.position))
-      .limit(1);
-    const position = (last?.position ?? 0) + 1000;
-
-    const created = await tx
-      .insert(workspaces)
-      .values({
-        id,
-        slug,
-        name: cleanName,
-        ownerUserId: input.actorUserId,
-        planningPeriodId: targetPeriodId,
-        contextType,
-        position,
-        activeDomain: PROJECT_ACTIVE_DOMAIN[periodContext],
-        primaryUseCase: PROJECT_PRIMARY_USE_CASE[periodContext],
-        onboardingCompletedAt: now,
-        updatedAt: now,
-      })
-      .returning({ id: workspaces.id });
-    if (!created[0]) throw new Error(RECEIPT_MISSING);
-    await tx.insert(workspaceMembers).values({
-      workspaceId: id,
-      userId: input.actorUserId,
-      role: "owner",
+    // group (a specific period, or the periodless bucket). The row and its
+    // owner membership are written by the shared creation core.
+    const position = await nextOwnedProjectPositionInTransaction(tx, {
+      actorUserId: input.actorUserId,
+      planningPeriodId: targetPeriodId,
+    });
+    await insertOwnedProjectInTransaction(tx, {
+      id,
+      slug,
+      name: cleanName,
+      ownerUserId: input.actorUserId,
+      planningPeriodId: targetPeriodId,
+      contextType,
+      position,
+      activeDomain: PROJECT_ACTIVE_DOMAIN[periodContext],
+      primaryUseCase: PROJECT_PRIMARY_USE_CASE[periodContext],
+      now,
     });
   });
 
