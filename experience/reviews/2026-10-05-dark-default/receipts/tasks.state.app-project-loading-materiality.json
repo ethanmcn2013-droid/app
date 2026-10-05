@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-project-loading",
+  "source": "tasks/src/app/app/project/loading.tsx",
+  "materialityHash": "0682055fb87b5a68",
+  "reviewedAt": "2026-10-05",
+  "reviewer": "Implementation review under delegated execution (Claude, single writer on fix/app-v3-dark-default). Founder review of the rendered result is pending",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-80b2f4d0f1c10e2ab2461d63-ea3946f98929a628.json",
+    "attestationSha256": "73f2e48a329b2ed980acda67dfeed0f39a4e6de2933210f75ced43d050404ce6",
+    "runId": "tasks-playwright-80b2f4d0f1c10e2ab2461d63",
+    "canonicalEvidenceSha256": "80b2f4d0f1c10e2ab2461d63985ddabe5140ee9fd820224e1440b2a81fbeae0a",
+    "rawArtifactSha256": "ea3946f98929a6288662385ddad3371924dfc037f83d4678e002e1ec59962b40",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-tasks",
+    "caseName": "canonical populated Tasks workspace",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "The Projects loading skeleton takes the shared page column (max-w-[var(--v3-page-w)], 1320px) in both of its branches, where the branch without the Projects index used 1180px. It is the column the loaded page now uses, so the skeleton and the page share an edge at every width. No other change. The linked case is suite regression context from a full green run, 132 of 132, on a clean demo build of 6052d8c7; it does not hold the loading state on screen.",
+  "decision": "Accept the new hash. Other registry fields are unchanged."
+}
