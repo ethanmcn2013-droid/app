@@ -41,7 +41,7 @@ const stubs = new Map([
   ["@/components/studio-bar/monthly-template-choice", `export const MonthlyTemplateChoice=()=>null;`],
   ["@/components/primitives/toast", `export const useToast=()=>({toast:(title)=>window.consoleProbe.toasts.push(title)});`],
   ["@/server/actions/planning", `export const createProjectAction=async()=>({ok:true,id:"p-new"});`],
-  ["@/server/actions/nudge", `export const sendNudgeAction=async id=>{window.consoleProbe.nudged.push(id);return {ok:true,nudgedCount:1,lastNudgedAt:null}};`],
+  ["@/server/actions/nudge", `export const sendNudgeAction=async id=>{window.consoleProbe.nudged.push(id);return {ok:true,nudgedCount:1,lastNudgedAt:null,nudged:[{id:"u-tom",name:"Tom Reilly"}],alreadyNudged:[]}};`],
   ["./project-overview", `export const ProjectOverview=()=>null;`],
 ]);
 const plugin = {
