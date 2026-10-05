@@ -233,8 +233,25 @@ export function ProjectsIndex({
         setNudgeState((state) => ({ ...state, [row.id]: "limited" }));
         toast(`${who} was already nudged today`, { body: "One reminder a day at most, so nothing was sent." });
       } else {
-        setNudgeState((state) => ({ ...state, [row.id]: "sent" }));
-        toast(`Nudged ${who}`, { body: `A reminder about “${row.nudge.title}” is on its way.` });
+        // Name the people the reminder reached, which is not always the one
+        // the button named: a task can have several assignees, and each has
+        // their own one-a-day limit.
+        const title = row.nudge.title;
+        const reached = result.nudged.map((person) => person.name);
+        const named = reached.includes(who);
+        const first = named ? who : reached[0]!;
+        const others = reached.length - 1;
+        const everyone = others === 0 ? first : `${first} and ${others} ${others === 1 ? "other" : "others"}`;
+        if (named) {
+          setNudgeState((state) => ({ ...state, [row.id]: "sent" }));
+          toast(`Nudged ${everyone}`, { body: `A reminder about “${title}” is on its way.` });
+        } else if (result.alreadyNudged.some((person) => person.name === who)) {
+          setNudgeState((state) => ({ ...state, [row.id]: "limited" }));
+          toast(`${who} was already nudged today`, { body: `The reminder about “${title}” went to ${everyone}.` });
+        } else {
+          clear();
+          toast(`Nudged ${everyone}`, { body: `A reminder about “${title}” is on its way.` });
+        }
       }
     } catch {
       clear();

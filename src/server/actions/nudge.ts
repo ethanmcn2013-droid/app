@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, gte, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import {
   activities,
@@ -8,6 +8,7 @@ import {
   notificationPrefs,
   tasks,
   users,
+  workspaceMembers,
 } from "@/server/db/schema";
 import { getCurrentUser } from "@/server/auth";
 import { scopeForTask } from "@/server/actions/project-authz";
@@ -15,6 +16,10 @@ import { isDemoMode } from "@/lib/access-mode";
 import { recordActivity } from "@/server/db/activity";
 import { emailConfigured, sendEmail } from "@/server/email";
 import { APP_ORIGIN } from "@/lib/product-urls";
+import { userDisplayName } from "@/lib/user-display-name";
+
+/** A person named in a nudge result: always a current member of the task's Project. */
+type NudgePerson = { id: string; name: string };
 
 function newNotificationId(): string {
   const raw =
@@ -75,6 +80,10 @@ function nudgeEmailHtml(input: {
  *   - Self-guard: cannot nudge yourself (rejected at the action layer).
  *   - Assignee guard: task must have at least one assignee that is not
  *     the current user.
+ *   - Membership guard: only assignees who are current members of the
+ *     task's Project are reached. `tasks.assignees` outlives a removal, so
+ *     a former member still listed there is skipped without a trace: no
+ *     activity row, no notification, no email, and no mention in the result.
  *   - Rate limit: max one nudge per (sender, assignee, task) per 24 h,
  *     enforced via the activities table (kind='nudgeSent').
  *   - Mute: if the recipient's notification_prefs.nudges = 0, the
@@ -82,13 +91,21 @@ function nudgeEmailHtml(input: {
  *     row and the email are skipped.
  *
  * Returns:
- *   { ok: true, nudgedCount: number, lastNudgedAt: string | null }
+ *   { ok: true, nudgedCount, lastNudgedAt, nudged, alreadyNudged }
  *   where lastNudgedAt is an ISO string if the FIRST eligible recipient
- *   was rate-limited (all were), null otherwise.
+ *   was rate-limited (all were), null otherwise; `nudged` lists exactly the
+ *   members this call reached (nudgedCount === nudged.length) and
+ *   `alreadyNudged` the members skipped by the rate limit.
  *   { ok: false, reason: string } on hard rejection (self, no assignee, etc.)
  */
 export async function sendNudgeAction(taskId: string): Promise<
-  | { ok: true; nudgedCount: number; lastNudgedAt: string | null }
+  | {
+      ok: true;
+      nudgedCount: number;
+      lastNudgedAt: string | null;
+      nudged: NudgePerson[];
+      alreadyNudged: NudgePerson[];
+    }
   | { ok: false; reason: string }
 > {
   if (isDemoMode()) {
@@ -121,10 +138,38 @@ export async function sendNudgeAction(taskId: string): Promise<
     return { ok: false, reason: "Task not found in active workspace." };
   }
 
-  // Resolve eligible recipients: assignees that are not the current user.
+  // Resolve eligible recipients: assignees that are not the current user and
+  // are still members of this task's Project. The assignee list is not
+  // trimmed when someone is removed, so membership is read here, every time.
   const assignees: string[] = Array.isArray(task.assignees) ? task.assignees : [];
-  const targets = assignees.filter((a) => a !== me);
+  const candidates = [...new Set(assignees.filter((a) => a !== me))];
+  const memberRows =
+    candidates.length === 0
+      ? []
+      : await db
+          .select({
+            id: users.id,
+            name: users.name,
+            handle: users.handle,
+            email: users.email,
+          })
+          .from(workspaceMembers)
+          .innerJoin(users, eq(users.id, workspaceMembers.userId))
+          .where(
+            and(
+              eq(workspaceMembers.workspaceId, ws),
+              inArray(workspaceMembers.userId, candidates),
+            ),
+          );
+  const members = new Map(memberRows.map((row) => [row.id, row]));
+  const targets = candidates.filter((id) => members.has(id));
+  const person = (id: string): NudgePerson => ({
+    id,
+    name: userDisplayName(members.get(id)!) ?? "A teammate",
+  });
 
+  // The same answer whether nobody else is assigned or the only others have
+  // left the Project: the caller is never told who was skipped.
   if (targets.length === 0) {
     return {
       ok: false,
@@ -145,7 +190,8 @@ export async function sendNudgeAction(taskId: string): Promise<
   const WINDOW_MS = 24 * 60 * 60 * 1000;
   const windowStart = new Date(Date.now() - WINDOW_MS);
 
-  let nudgedCount = 0;
+  const nudged: NudgePerson[] = [];
+  const alreadyNudged: NudgePerson[] = [];
   let firstRateLimitedAt: Date | null = null;
 
   for (const toUserId of targets) {
@@ -170,6 +216,7 @@ export async function sendNudgeAction(taskId: string): Promise<
     if (recent) {
       // Already nudged this recipient within the window.
       if (!firstRateLimitedAt) firstRateLimitedAt = recent.createdAt;
+      alreadyNudged.push(person(toUserId));
       continue;
     }
 
@@ -204,10 +251,7 @@ export async function sendNudgeAction(taskId: string): Promise<
       // Optional email — only when Resend is configured and recipient
       // has not muted nudges.
       if (emailConfigured) {
-        const [recipientRow] = await db
-          .select({ name: users.name, email: users.email })
-          .from(users)
-          .where(eq(users.id, toUserId));
+        const recipientRow = members.get(toUserId);
 
         if (recipientRow?.email) {
           const taskUrl = `${APP_ORIGIN}/app/tasks?task=${encodeURIComponent(taskId)}`;
@@ -230,17 +274,20 @@ export async function sendNudgeAction(taskId: string): Promise<
       }
     }
 
-    nudgedCount++;
+    nudged.push(person(toUserId));
   }
 
+  const nudgedCount = nudged.length;
   if (nudgedCount === 0 && firstRateLimitedAt) {
     // All eligible targets were rate-limited.
     return {
       ok: true,
       nudgedCount: 0,
       lastNudgedAt: firstRateLimitedAt.toISOString(),
+      nudged,
+      alreadyNudged,
     };
   }
 
-  return { ok: true, nudgedCount, lastNudgedAt: null };
+  return { ok: true, nudgedCount, lastNudgedAt: null, nudged, alreadyNudged };
 }
