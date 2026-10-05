@@ -73,6 +73,23 @@ test("progress is counted from the signals the engine read, lane by lane", async
   assert.equal(model.lanes.undated, read.filter((s) => s.lane !== "shipped" && s.dueAt == null).length);
 });
 
+test("custom open stages remain in scope without invented progress or leaked prerequisite metadata", async () => {
+  const task = (id: string, phase: NonNullable<TaskSignal["stage"]>["phase"], lane: TaskSignal["lane"]): TaskSignal => ({
+    id, title: id, lane, priority: 2, dueAt: null, idleDays: 0, commentCount: 0,
+    blockedBy: [], sourceLabel: "Tasks · The Orchard, events", workspaceId: "ws-orchard",
+    movedToShippedAt: phase === "shipped" ? NOW - DAY : null,
+    stage: { key: phase === "unknown" ? "inspection" : phase, label: "Saved stage", phase, complete: phase === "shipped" },
+  });
+  const custom = { ...task("open-inspection", "unknown", "in-flight"),
+    prerequisiteEvidence: [{ id: "internal-inspected-record", workspaceId: "ws-orchard", lane: "done", boardColumnKey: "filed", complete: true }],
+    verifiedPrerequisiteIds: ["internal-inspected-record"] };
+  const { model } = await build([custom, task("known-started", "in-flight", "in-flight"),
+    task("known-review", "review", "review"), task("known-next", "next", "next"), task("known-complete", "shipped", "shipped")]);
+  assert.deepEqual(model.lanes, { todo: 1, inProgress: 1, review: 1, done: 1, total: 5, doneThisWeek: 1, undated: 4 });
+  const serialized = JSON.stringify(model);
+  assert.doesNotMatch(serialized, /internal-inspected-record|prerequisiteEvidence|verifiedPrerequisiteIds|readTaskIds|triggeredTaskIds|evidenceTaskIds/);
+});
+
 test("signal rows keep the ledger's order and opaque ids, and carry severity from the trigger", async () => {
   const { model, ledger, read } = await build();
   assert.deepEqual(

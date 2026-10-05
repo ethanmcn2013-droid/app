@@ -339,6 +339,7 @@ export async function buildBriefingForUser(opts: {
             return "next";
           })(),
           priority: t.priority ?? null,
+          stage: t.stage,
           deadline: t.deadline === undefined ? storedDeadline(t.dueDate, null) : t.deadline,
           dueAt: t.deadline?.kind === "instant" ? t.deadline.at : null,
           idleDays: work.coverage?.activity === "partial" ? null : (() => {
@@ -354,6 +355,8 @@ export async function buildBriefingForUser(opts: {
           blockedBy: t.blockedBy,
           dependencyCoverage: t.dependencyCoverage,
           hasCompletedListedPrerequisite: t.hasCompletedListedPrerequisite,
+          verifiedPrerequisiteIds: t.verifiedPrerequisiteIds,
+          prerequisiteEvidence: t.prerequisiteEvidence,
           sourceLabel: `Tasks · ${workspaceNames.get(work.workspaceId) ?? "Workspace"}`,
           movedToShippedAt:
             t.status === "shipped" && t.completedAt && Number.isFinite(Date.parse(t.completedAt)) && Date.parse(t.completedAt) >= 0 && Date.parse(t.completedAt) <= now

@@ -11,7 +11,7 @@
  */
 
 import { and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
-import { effectiveColumnKey, isTaskDone, WAITING_COLUMN_KEY } from "@/lib/board-columns";
+import { effectiveColumnKey, isTaskDone, resolveBoardColumns, WAITING_COLUMN_KEY } from "@/lib/board-columns";
 import type { ColumnConfig } from "@/lib/board-config";
 import { readWorkspaceColumnConfigs } from "../../server/analytics/providers/column-config";
 import { storedDeadline } from "./deadline";
@@ -126,6 +126,17 @@ function canonicalLane(row: typeof tasksTable.$inferSelect, config: ColumnConfig
   return key === "todo" ? "next" : key === "review" ? "review" : "in-flight";
 }
 
+function taskStage(row: typeof tasksTable.$inferSelect, config: ColumnConfig | null, labels: ReadonlyMap<string, string>): NonNullable<TaskRead["stage"]> {
+  const key = effectiveColumnKey(row);
+  const complete = isTaskDone(row, config);
+  // A custom column's storage lane and display order do not establish start
+  // or review. Even a system done column can be configured as nonterminal.
+  const phase = complete ? "shipped" : key === "todo" ? "next"
+    : key === "doing" ? "in-flight" : key === "review" ? "review" : "unknown";
+  const label = labels.get(key)?.trim() || null;
+  return { key, label, phase, complete };
+}
+
 function knownPriority(value: unknown): KnownPriority | null {
   switch (value) {
     case "p0": return 0;
@@ -202,7 +213,7 @@ async function readCompletionHistory(db: TasksDb, targets: readonly (typeof task
 }
 
 type DependencyState = Pick<typeof tasksTable.$inferSelect, "id" | "workspaceId" | "lane" | "boardColumnKey">;
-type DependencyRead = { open: Map<string, string[]>; unknown: Set<string>; hasCompleted: Set<string> };
+type DependencyRead = { open: Map<string, string[]>; verified: Map<string, NonNullable<TaskRead["prerequisiteEvidence"]>>; unknown: Set<string>; hasCompleted: Set<string> };
 
 type ActivityRead = { comments: Map<string, string>; titleEdits: Set<string> };
 
@@ -288,6 +299,7 @@ async function readOpenDependencies(
     for (const dependency of dependencies) byWorkspace.get(dependency.workspaceId!)!.set(dependency.id, dependency);
   }
   const edges = new Map<string, string[]>();
+  const verified: DependencyRead["verified"] = new Map();
   const unknown = new Set<string>();
   const hasCompleted = new Set<string>();
   for (const row of rows) {
@@ -295,6 +307,7 @@ async function readOpenDependencies(
     if (row.blockedBy !== null && !Array.isArray(row.blockedBy)) unknown.add(row.id);
     const blockedBy = Array.isArray(row.blockedBy) ? row.blockedBy : [];
     const seen = new Set<string>();
+    const resolved: NonNullable<TaskRead["prerequisiteEvidence"]> = [];
     edges.set(row.id, blockedBy.filter(id => {
       if (seen.has(id)) return false;
       seen.add(id);
@@ -302,11 +315,15 @@ async function readOpenDependencies(
       // A missing, malformed or foreign reference is neither cleared nor a
       // confirmed blocker; retain the task and mark this predicate unknown.
       if (!dependency) { unknown.add(row.id); return false; }
-      if (isTaskDone(dependency, config)) { hasCompleted.add(row.id); return false; }
+      const complete = isTaskDone(dependency, config);
+      resolved.push({ id: dependency.id, workspaceId: dependency.workspaceId!, lane: dependency.lane,
+        boardColumnKey: dependency.boardColumnKey, complete });
+      if (complete) { hasCompleted.add(row.id); return false; }
       return true;
     }));
+    verified.set(row.id, resolved.sort((a, b) => a.id.localeCompare(b.id)));
   }
-  return { open: edges, unknown, hasCompleted };
+  return { open: edges, verified, unknown, hasCompleted };
 }
 
 /**
@@ -380,9 +397,10 @@ function buildWorkRead(
   rows: Array<typeof tasksTable.$inferSelect>,
   config: ColumnConfig | null = null,
   completions: ReadonlyMap<string, string | null> = new Map(),
-  dependencies: DependencyRead = { open: new Map(), unknown: new Set(), hasCompleted: new Set() },
+  dependencies: DependencyRead = { open: new Map(), verified: new Map(), unknown: new Set(), hasCompleted: new Set() },
   activity: ActivityRead = { comments: new Map(), titleEdits: new Set() },
 ): WorkRead {
+    const stageLabels = new Map(resolveBoardColumns(config).map(column => [column.key, column.name]));
     const taskReads: TaskRead[] = rows.map((t) => {
       const tags = Array.isArray(t.tags) ? t.tags : [];
       const assignees = Array.isArray(t.assignees) ? t.assignees : [];
@@ -398,6 +416,7 @@ function buildWorkRead(
         assignee: assignees[0] ? { id: assignees[0] } : null,
         status: deriveStatus(t, blockedBy, config),
         canonicalLane: canonicalLane(t, config),
+        stage: taskStage(t, config, stageLabels),
         priority: knownPriority(t.priority),
         completedAt: completions.get(t.id) ?? null,
         deadline,
@@ -405,6 +424,8 @@ function buildWorkRead(
         blockedBy,
         dependencyCoverage: dependencies.unknown.has(t.id) ? "partial" : "complete",
         hasCompletedListedPrerequisite: dependencies.hasCompleted.has(t.id),
+        verifiedPrerequisiteIds: (dependencies.verified.get(t.id) ?? []).map(record => record.id),
+        prerequisiteEvidence: dependencies.verified.get(t.id) ?? [],
         // No separate status-change timestamp in Tasks's schema;
         // updatedAt is the closest proxy. Cycle 6.4 may revisit if
         // any trigger needs strict status-change semantics.

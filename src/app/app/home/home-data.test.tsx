@@ -40,6 +40,30 @@ const signals = (count: number, dueAt: number | null = null): TaskSignal[] => Ar
   id: `task-${index}`, title: `Work ${index}`, lane: "in-flight", priority: 2, dueAt,
   idleDays: 0, commentCount: 0, blockedBy: [], sourceLabel: "Tasks · project-b", movedToShippedAt: null, workspaceId: "project-b",
 }));
+
+test("Home renders a saved custom stage neutrally without changing the task destination", async () => {
+  const custom = { ...signals(1, now + 86_400_000)[0]!, id: "exhibit-check",
+    stage: { key: "evidence-check", label: "Evidence check", phase: "unknown" as const, complete: false } };
+  const { data } = await fixture([custom]);
+  assert.equal(data.myTasks[0]?.lane, "open");
+  assert.equal(data.myTasks[0]?.href, "/app/task/exhibit-check");
+  const link = ({ href, children, className }: { href: string; children: ReactNode; className?: string }) => createElement("a", { href, className }, children);
+  const view = load<typeof import("@/components/app/home/home-view")>("../../../components/app/home/home-view.tsx", {
+    "next/link": { default: link }, "./home-analytics": { HomeViewedPing: () => null },
+    "./home.module.css": { default: new Proxy({}, { get: (_target, key) => String(key) }) },
+  });
+  const html = renderToStaticMarkup(createElement(view.HomeView, { data }));
+  assert.match(html, />Evidence check<\/span>/);
+  assert.doesNotMatch(html, />In progress<\/span>|>In review<\/span>/);
+  assert.match(html, /href="\/app\/task\/exhibit-check"/);
+  const unnamed = await fixture([{ ...custom, stage: { ...custom.stage, label: null } }]);
+  assert.equal(unnamed.data.myTasks[0]?.stageLabel, "Open");
+  const knownDoing = { ...signals(1)[0]!, id: "verified-started",
+    stage: { key: "doing", label: "In progress", phase: "in-flight" as const, complete: false } };
+  const mixed = await fixture([custom, knownDoing]);
+  assert.deepEqual(mixed.data.myTasks.map(row => row.id), ["verified-started", "exhibit-check"],
+    "an unknown custom stage does not acquire the known in-motion sort rank");
+});
 async function fixture(items: TaskSignal[], scope: SignalScope = { kind: "workspace", workspaceId: "project-b" }, coverageStatus?: "partial", timezoneOverride?: string) {
   const authorizedScope = scopeApi.authorizeSignalScope(catalog, scope);
   assert.ok(authorizedScope);

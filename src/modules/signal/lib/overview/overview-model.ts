@@ -250,11 +250,12 @@ export function laneCounts(signals: readonly TaskSignal[], now: number): Overvie
     undated: 0,
   };
   for (const signal of signals) {
-    if (signal.lane !== "shipped" && !signalDeadline(signal)) counts.undated += 1;
-    if (signal.lane === "next") counts.todo += 1;
-    else if (signal.lane === "in-flight") counts.inProgress += 1;
-    else if (signal.lane === "review") counts.review += 1;
-    else {
+    const phase = signal.stage?.phase ?? signal.lane;
+    if (phase !== "shipped" && !signalDeadline(signal)) counts.undated += 1;
+    if (phase === "next") counts.todo += 1;
+    else if (phase === "in-flight") counts.inProgress += 1;
+    else if (phase === "review") counts.review += 1;
+    else if (phase === "shipped") {
       counts.done += 1;
       if (signal.movedToShippedAt != null && now - signal.movedToShippedAt <= 7 * DAY_MS) {
         counts.doneThisWeek += 1;

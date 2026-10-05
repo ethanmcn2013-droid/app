@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { phraseFor } from "./prose";
 import type { BriefingContext, BriefingSource } from "./source";
 import {
@@ -57,6 +58,11 @@ export async function buildBriefing(
   readState: ReadState = {},
 ): Promise<Briefing> {
   const signals = await source.getSignalsForUser(ctx);
+  const readTaskIds = [...new Set(signals.flatMap(task =>
+    [task.id, ...(task.prerequisiteEvidence ?? [])
+      .filter(record => task.workspaceId && record.workspaceId === task.workspaceId)
+      .map(record => record.id)]))].sort();
+  const inspected = new Set(readTaskIds);
   const userId = ctx.userId;
 
   const suppressed = readState.suppressed ?? new Set<string>();
@@ -72,14 +78,8 @@ export async function buildBriefing(
   const crowded = detectCrowdedWeek(signals, now, timezone).filter(notDismissed);
   const blocked = detectBlockedTooLong(signals).filter(notDismissed);
   const blockingDueWork = detectBlockingDueWork(signals, now, timezone).filter(notDismissed);
-  // An open prerequisite can have its own deadline. Keep the winning row's
-  // trigger/rank/history identity, but retain the separately eligible and
-  // unsuppressed relationship in that row's explanation.
-  const dependencyByTask = new Map(blockingDueWork.map((item) => [item.task.id, item]));
   const prerequisitesComplete = detectPrerequisitesComplete(signals, now, timezone).filter(notDismissed);
   const prerequisitesUnverified = detectPrerequisitesUnverified(signals, now, timezone).filter(notDismissed);
-  const prerequisiteByTask = new Map([...prerequisitesComplete, ...prerequisitesUnverified]
-    .map(item => [item.task.id, item]));
 
   // Build a {taskId → title} map once so blocked-too-long prose can
   // name the upstream blocker ("blocked by Music supplier") instead
@@ -92,7 +92,7 @@ export async function buildBriefing(
       const prerequisite = visibleById.get(id);
       return prerequisite && prerequisite.id !== signal.id && signal.workspaceId &&
         prerequisite.workspaceId === signal.workspaceId && prerequisite.lane !== "shipped"
-        ? [prerequisite.title] : [];
+        ? [prerequisite.id] : [];
     }),
   ]));
 
@@ -101,7 +101,7 @@ export async function buildBriefing(
   // ─ Needs attention: due-soon (incl. overdue) + overload + crowded-week,
   // ordered by severity. The week-cluster signal lands here because it's
   // load-this-week, not background.
-  const bestByTask = new Map<string, Triggered>();
+  const bestByObservation = new Map<string, Triggered>();
   for (const candidate of [
     ...dueSoon,
     ...blockingDueWork,
@@ -113,14 +113,32 @@ export async function buildBriefing(
     ...prerequisitesUnverified,
     ...shipped,
   ]) {
-    const current = bestByTask.get(candidate.task.id);
+    // Primary task pressure still has one winning rule. Relationships and
+    // readiness are different observations, even when they navigate to the
+    // same task. Never join their source sets into a deadline-only row.
+    const sources = candidate.representedTaskIds ?? (candidate.trigger === "prerequisites-complete"
+      ? [candidate.task.id, ...(candidate.task.verifiedPrerequisiteIds ?? [])]
+      : candidate.trigger === "blocked-too-long"
+        ? [candidate.task.id, ...(openPrerequisitesByTask.get(candidate.task.id) ?? [])]
+        : [candidate.task.id]);
+    candidate.representedTaskIds = [...new Set(sources)].filter(id => inspected.has(id)).sort();
+    const scope = [candidate.task.workspaceId ?? "", candidate.task.planningPeriodId ?? ""];
+    const relation = candidate.trigger === "blocking-due-work" || candidate.trigger === "blocked-too-long";
+    const separate = relation || candidate.trigger === "prerequisites-complete" || candidate.trigger === "prerequisites-unverified" ||
+      candidate.trigger === "overload" || candidate.trigger === "crowded-week";
+    const key = JSON.stringify([scope, relation ? "dependency" : separate ? candidate.trigger : "task",
+      candidate.representedTaskIds,
+      relation ? candidate.relatedTaskId ?? candidate.task.id : ""]);
+    const current = bestByObservation.get(key);
     if (!current || compareCandidates(candidate, current) < 0) {
-      bestByTask.set(candidate.task.id, candidate);
+      bestByObservation.set(key, candidate);
     }
   }
-  const selected = Array.from(bestByTask.values())
+  const selected = Array.from(bestByObservation.values())
     .sort(compareCandidates)
     .slice(0, BUCKET_CAP);
+  const triggeredTaskIds = [...new Set([...bestByObservation.values()]
+    .flatMap(item => item.representedTaskIds ?? []))].sort();
   const attentionKinds = new Set<TriggerKind>([
     "due-soon",
     "blocking-due-work",
@@ -182,13 +200,13 @@ export async function buildBriefing(
     ageOf(t) >= 2 ? { ...item, ageDays: ageOf(t) } : item;
 
   const needsAttention: BriefItem[] = freshFirst(attention).map((t) =>
-    withAge(t, toItem(t, rotationIndex, now, titlesById, timezone, dependencyByTask.get(t.task.id), prerequisiteByTask.get(t.task.id), openPrerequisitesByTask.get(t.task.id))),
+    withAge(t, toItem(t, rotationIndex, now, titlesById, timezone)),
   );
   const movingWell: BriefItem[] = moving.map((t) =>
     toItem(t, rotationIndex, now, titlesById, timezone),
   );
   const quietRisks: BriefItem[] = freshFirst(risks).map((t) =>
-    withAge(t, toItem(t, rotationIndex, now, titlesById, timezone, dependencyByTask.get(t.task.id), prerequisiteByTask.get(t.task.id), openPrerequisitesByTask.get(t.task.id))),
+    withAge(t, toItem(t, rotationIndex, now, titlesById, timezone)),
   );
   const suggestedFocus: FocusItem[] = focusSource.map((t) =>
     toFocus(t, rotationIndex, now, timezone),
@@ -213,23 +231,18 @@ export async function buildBriefing(
         ? "A recorded title edit does not establish meaningful work progress. Activity history is incomplete."
         : "Activity history is incomplete. Task update timestamps do not establish meaningful progress or inactivity.",
     } : {}),
-    // The whole pile the engine looked at, not just what survived the
-    // triggers and the cap. The ledger needs the denominator to be able
-    // to say "read 41, surfaced 3" instead of asserting three.
-    readCount: signals.length,
+    // Records actually inspected, not dangling references or repeated reads.
+    // Completed prerequisite evidence may be outside the visible task list.
+    readCount: readTaskIds.length,
+    readTaskIds,
+    triggeredTaskIds,
     // Counted before `selected` applies BUCKET_CAP, so the ledger can keep
     // "cleared" honest: work that crossed a rule but lost its slot to the
     // cap is held back, not clear, and must never be counted as clear.
     //
-    // Synthetic rows are excluded. "Six items open at once" and "Three
-    // items due this week" are readings OF items already in this count,
-    // not items in their own right, so counting them let one task be
-    // counted three times: once as itself, once inside overload, once
-    // inside the crowded week. The page then looked balanced against a
-    // read count it had inflated.
-    triggeredCount: [...bestByTask.keys()].filter(
-      (id) => !id.startsWith("synthetic:"),
-    ).length,
+    // Synthetic observation IDs never add task records. Their actual members
+    // contribute once, even when another observation uses the same sources.
+    triggeredCount: triggeredTaskIds.length,
   };
 }
 
@@ -239,9 +252,6 @@ function toItem(
   now: number,
   titlesById: Map<string, string>,
   timezone: string,
-  dependency?: Triggered,
-  prerequisite?: Triggered,
-  openPrerequisiteTitles?: string[],
 ): BriefItem {
   const deadline = signalDeadline(t.task);
   const daysOut = deadlineDayDifference(deadline, now, timezone) ?? undefined;
@@ -259,34 +269,18 @@ function toItem(
     instantRemainingMs: t.trigger === "due-soon" && deadline?.kind === "instant" && deadline.at > now
       ? deadline.at - now : undefined,
     blockedByTitles,
-    openPrerequisiteTitles,
     relatedTaskTitle: t.relatedTaskTitle,
     savedDateLabel: t.trigger === "prerequisites-complete" ? deadlineShortDate(signalDeadline(t.task), timezone) ?? undefined : undefined,
   });
-  const related = t.trigger === "due-soon" && dependency?.trigger === "blocking-due-work" &&
-    dependency.task.workspaceId === t.task.workspaceId
-    ? dependency : undefined;
-  const dependencyDetail = related
-    ? `${primaryDetail} ${phraseFor("blocking-due-work", related.task, rotation, {
-        relatedTaskTitle: related.relatedTaskTitle,
-      })}`
-    : primaryDetail;
-  // A stronger observation owns the rank, trigger and carry-over identity.
-  // It must not erase separately eligible, unsuppressed prerequisite meaning.
-  const prerequisiteContext = prerequisite && prerequisite.trigger !== t.trigger &&
-    prerequisite.task.workspaceId === t.task.workspaceId ? prerequisite : undefined;
-  const detail = prerequisiteContext
-    ? `${dependencyDetail} ${phraseFor(prerequisiteContext.trigger, t.task, rotation, {
-        savedDateLabel: deadlineShortDate(deadline, timezone) ?? undefined,
-      })}`
-    : dependencyDetail;
   return {
     id: t.task.id,
+    observationId: observationId(t),
+    evidenceTaskIds: t.representedTaskIds,
     text: headline(t),
-    detail,
+    detail: primaryDetail,
     sourceLabel: t.task.sourceLabel,
     trigger: t.trigger,
-    reasons: [...t.reasons, ...(related?.reasons ?? []), ...(prerequisiteContext?.reasons ?? [])],
+    reasons: t.reasons,
     workspaceId: t.task.workspaceId,
     planningPeriodId: t.task.planningPeriodId,
   };
@@ -295,10 +289,22 @@ function toItem(
 function toFocus(t: Triggered, rotation: number, now: number, timezone: string): FocusItem {
   return {
     id: t.task.id,
+    observationId: observationId(t),
     text: headline(t),
     due: focusDue(t, now, timezone),
     trigger: t.trigger,
   };
+}
+
+function observationId(t: Triggered): string {
+  // Hash private evidence identities: no resolved historical prerequisite id
+  // is exposed in a public row key. Anchor changes do not rename a relationship.
+  return `observation:${createHash("sha256").update(JSON.stringify([
+    t.trigger === "blocking-due-work" || t.trigger === "blocked-too-long" ? "dependency" : t.trigger,
+    t.task.workspaceId ?? "", t.task.planningPeriodId ?? "",
+    t.representedTaskIds ?? [t.task.id],
+    t.trigger === "blocking-due-work" ? t.relatedTaskId ?? "" : t.trigger === "blocked-too-long" ? t.task.id : "",
+  ])).digest("hex")}`;
 }
 
 /**

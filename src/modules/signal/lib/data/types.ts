@@ -18,6 +18,21 @@ import type { Deadline } from "./deadline";
 export type Status = "next" | "in-flight" | "review" | "blocked" | "shipped" | "refused";
 export type KnownPriority = 0 | 1 | 2 | 3;
 export type EvidenceCoverage = "complete" | "partial";
+/** Saved board position and completion are independent of inferred progress. */
+export type TaskStage = {
+  key: string;
+  label: string | null;
+  phase: "next" | "in-flight" | "review" | "shipped" | "unknown";
+  complete: boolean;
+};
+/** A dependency record actually fetched and inspected in the same authorized workspace. */
+export type PrerequisiteEvidence = {
+  id: string;
+  workspaceId: string;
+  lane: string;
+  boardColumnKey: string | null;
+  complete: boolean;
+};
 
 /** A user (assignee) in the workspace. Opaque id only, no PII. */
 export interface UserRef {
@@ -63,6 +78,7 @@ export interface TaskRead {
   status: Status;
   /** Canonical board position before any dependency-derived blocked state. */
   canonicalLane?: "next" | "in-flight" | "review" | "shipped";
+  stage?: TaskStage;
   /** Unknown/corrupt canonical priority stays null, not fabricated P2. */
   priority?: KnownPriority | null;
   /** Valid completion evidence for currently terminal work; unknown is null. */
@@ -76,6 +92,9 @@ export interface TaskRead {
   dependencyCoverage?: EvidenceCoverage;
   /** At least one listed same-workspace prerequisite is currently terminal. Internal proof only. */
   hasCompletedListedPrerequisite?: boolean;
+  /** Verified same-workspace references only; never unresolved/foreign ids. */
+  verifiedPrerequisiteIds?: string[];
+  prerequisiteEvidence?: PrerequisiteEvidence[];
   /** Legacy update-time proxy, ISO; does not prove a status transition. */
   lastStatusChangeAt: string;
   /** Update-time proxy advanced by valid recorded comments, ISO; history is not complete. */

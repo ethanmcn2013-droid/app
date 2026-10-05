@@ -47,15 +47,21 @@ export function ledgerFromLegacyBriefing(
   options: LegacyLedgerOptions,
 ): SignalLedgerDTO {
   const groups = groupLegacyBriefItems(briefing);
+  const authoritative = briefing.readTaskIds !== undefined && briefing.triggeredTaskIds !== undefined &&
+    groups.every(group => group.items.every(item => item.evidenceTaskIds !== undefined));
   const candidates = groups.map((group): SignalLedgerCandidate => {
     const first = group.items[0]!;
     const maxAge = Math.max(
       0,
       ...group.items.map((item) => item.ageDays ?? 0),
     );
+    const taskEvidenceIds = authoritative
+      ? [...new Set(group.items.flatMap(item => item.evidenceTaskIds!))].sort() : undefined;
+    const evidenceCount = taskEvidenceIds?.length ?? group.items.length;
 
     return {
       idSeed: `legacy:${group.key}`,
+      taskEvidenceIds,
       section: group.section,
       state: group.section === "attention" ? "needs_attention" : "watch",
       // The engine's title/observation split carries straight through:
@@ -66,10 +72,10 @@ export function ledgerFromLegacyBriefing(
       reasons: unique(group.items.flatMap((item) => item.reasons)),
       receipt: {
         sourceLabel: first.sourceLabel,
-        evidenceCount: group.items.length,
+        evidenceCount,
         sourceCounts: {
           notes: 0,
-          tasks: group.items.length,
+          tasks: evidenceCount,
           milestones: 0,
         },
         ageLabel: maxAge >= 2 ? ageNote(first.trigger, maxAge) : null,
@@ -95,6 +101,7 @@ export function ledgerFromLegacyBriefing(
     candidates,
     readCount: briefing.coverageStatus === "partial" ? null : briefing.readCount,
     triggeredCount: briefing.coverageStatus === "partial" ? null : briefing.triggeredCount,
+    ...(authoritative ? { taskUniverse: { readIds: briefing.readTaskIds!, triggeredIds: briefing.triggeredTaskIds! } } : {}),
     healthyEmptyState: {
       headline:
         briefing.emptyStateHeadline ??
@@ -221,6 +228,7 @@ export function groupLegacyBriefItems(briefing: Briefing): LegacyGroup[] {
 
   for (const row of rows) {
     const key = [
+      row.item.observationId ?? "",
       row.section,
       row.item.trigger,
       normalized(row.item.text),

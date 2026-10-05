@@ -65,6 +65,31 @@ function completion(item: TaskRead, expected: number | null) {
 }
 const acceptedConfig = JSON.stringify({ custom: [{ key: "accepted", name: "Accepted" }], doneKeys: ["accepted"] });
 
+test("canonical saved custom stages carry completion without inventing start or review", async () => {
+  await workspace("stage-evidence", JSON.stringify({ custom: [{ key: "quality-gate", name: "Quality check" },
+    { key: "filed", name: "Filed" }], doneKeys: ["filed"] }));
+  await task("stage-evidence", "custom-position", { lane: "review", column: "quality-gate" });
+  await task("stage-evidence", "system-position", { lane: "doing" });
+  await task("stage-evidence", "custom-terminal", { lane: "todo", column: "filed", completed: NOW - DAY });
+  assert.deepEqual((await readTask("stage-evidence", "custom-position")).stage,
+    { key: "quality-gate", label: "Quality check", phase: "unknown", complete: false });
+  assert.equal((await readTask("stage-evidence", "system-position")).stage?.phase, "in-flight");
+  assert.deepEqual((await readTask("stage-evidence", "custom-terminal")).stage,
+    { key: "filed", label: "Filed", phase: "shipped", complete: true });
+});
+
+test("dependency inspection provenance contains only actual same-scope records, including private terminal evidence", async () => {
+  await workspace("inspected-scope"); await workspace("other-inspected-scope");
+  await task("inspected-scope", "archived-proof", { archived: NOW - DAY });
+  await task("other-inspected-scope", "foreign-proof");
+  await task("inspected-scope", "crate", { lane: "doing", blocked: ["archived-proof", "archived-proof", "foreign-proof", "missing-proof"] });
+  const row = await readTask("inspected-scope", "crate");
+  assert.deepEqual(row.verifiedPrerequisiteIds, ["archived-proof"]);
+  assert.deepEqual(row.prerequisiteEvidence, [{ id: "archived-proof", workspaceId: "inspected-scope", lane: "done", boardColumnKey: null, complete: true }]);
+  assert.equal(row.dependencyCoverage, "partial");
+  assert.ok(!(await source.tasksDbSource.read("inspected-scope")).tasks.some(task => task.id === "archived-proof"));
+});
+
 function deferred<T>() {
   let resolve!: (value: T) => void, reject!: (reason: unknown) => void;
   const promise = new Promise<T>((yes, no) => { resolve = yes; reject = no; });

@@ -84,6 +84,47 @@ async function home() {
 async function config(value: string) {
   await fixture.client.execute({ sql: "INSERT INTO meta(key,value,updated_at) VALUES (?,?,?)", args: [`board:${WORKSPACE}:columns`, value, NOW / 1000] });
 }
+
+test("actual custom stage stays open in Home and ledger without start or review inference", async () => {
+  await config(JSON.stringify({ custom: [{ key: "evidence-check", name: "Evidence check" }], doneKeys: ["done"] }));
+  await task("inspect-materials", { lane: "review", column: "evidence-check" });
+  await task("known-doing", { lane: "doing" });
+  const result = await build();
+  const custom = result.signals.find(task => task.id === "inspect-materials")!;
+  assert.deepEqual(custom.stage, { key: "evidence-check", label: "Evidence check", phase: "unknown", complete: false });
+  const view = await home();
+  const row = view.myTasks.find(task => task.id === "inspect-materials")!;
+  assert.equal(row.lane, "open"); assert.equal(row.stageLabel, "Evidence check");
+  assert.equal(view.stats.inReview, 0);
+  assert.equal(view.deadlines.flatMap(group => group.rows).find(task => task.id === row.id)?.lane, "open");
+  const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Test read", allowedAppOrigin: "https://app.signalstudio.ie" });
+  const unknown = ledger.entries.find(entry => entry.text.toLowerCase() === custom.title.toLowerCase())!;
+  assert.ok(unknown.reasons.some(reason => /Still open in “Evidence check”/.test(reason)));
+  assert.ok(unknown.reasons.every(reason => !/^Started|^Not started|^Sitting in review/.test(reason)));
+  assert.ok(ledger.entries.find(entry => entry.text === "Known-doing")?.reasons.some(reason => /^Started/.test(reason)));
+});
+
+test("actual inspected terminal prerequisite counts once while separate deadline/readiness rows keep private ids internal", async () => {
+  await task("archived-safety-proof", { lane: "done", archived: NOW - DAY });
+  await task("send-crate", { lane: "doing", blocked: ["archived-safety-proof", "archived-safety-proof"] });
+  await fixture.client.execute({ sql: "UPDATE tasks SET due_at=? WHERE id='send-crate'", args: [(NOW + DAY) / 1000] });
+  const result = await build();
+  assert.deepEqual(result.signals.map(task => task.id), ["send-crate"]);
+  assert.deepEqual(result.signals[0]!.prerequisiteEvidence,
+    [{ id: "archived-safety-proof", workspaceId: WORKSPACE, lane: "done", boardColumnKey: null, complete: true }]);
+  assert.deepEqual(result.briefing.readTaskIds, ["archived-safety-proof", "send-crate"]);
+  assert.equal(result.briefing.needsAttention.length, 2);
+  const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Test read", allowedAppOrigin: "https://app.signalstudio.ie" });
+  assert.equal(ledger.entries.length, 2);
+  assert.deepEqual(ledger.entries.map(entry => entry.receipt.evidenceCount), [1, 2]);
+  assert.equal(result.briefing.readCount, 2); assert.equal(result.briefing.triggeredCount, 2);
+  assert.equal(ledger.readCounts, null, "existing partial activity coverage still withholds public totals");
+  const view = await home();
+  assert.equal(view.stats.open, 1);
+  assert.deepEqual(view.signalRows.map(row => row.href), ["/app/task/send-crate", "/app/task/send-crate"]);
+  assert.equal(new Set(view.signalRows.map(row => row.observationId)).size, 2);
+  assert.doesNotMatch(JSON.stringify({ ledger, view }), /archived-safety-proof|prerequisiteEvidence|evidenceTaskIds|readTaskIds/);
+});
 async function hashes() {
   const out: Record<string, string> = {};
   for (const [name, store] of Object.entries({ tasks: fixture.client, signal: signalStore })) {
@@ -166,16 +207,18 @@ test("persisted visible blocker of near-due work has its own Home and ledger obs
   assert.deepEqual(await hashes(), before);
 });
 
-test("persisted dependent deadline row retains its own prerequisite meaning in Home and Briefing", async () => {
+test("persisted deadline and prerequisite observations keep separate full meanings in Home and Briefing", async () => {
   await task("safety-check", { lane: "doing" });
   await task("publish-map", { lane: "todo", blocked: ["safety-check"] });
   await fixture.client.execute({ sql: "UPDATE tasks SET due_at=?,priority=CASE id WHEN 'publish-map' THEN 'p1' ELSE 'p2' END", args: [NOW / 1000 + 3_600] });
   const before = await hashes(), result = await build(), view = await home();
-  assert.deepEqual(view.signalRows.map(row => row.id), ["publish-map", "safety-check"]);
+  assert.deepEqual(view.signalRows.map(row => row.id), ["publish-map", "safety-check", "safety-check"]);
   const row = view.signalRows[0]!;
   assert.equal(row.trigger, "due-soon");
   assert.match(row.why, /today|hour/i);
-  assert.match(row.why, /open prerequisite: safety-check/);
+  assert.doesNotMatch(row.why, /safety-check|prerequisite/);
+  assert.match(view.signalRows.find(row => row.trigger === "blocking-due-work")!.why, /publish-map/);
+  assert.equal(new Set(view.signalRows.map(row => row.observationId)).size, 3);
   const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
   assert.equal(ledger.entries[0]?.detail, row.why);
   assert.deepEqual(await hashes(), before);
@@ -252,10 +295,13 @@ test("all listed completed prerequisites preserve readiness meaning through date
   const before = await hashes(), result = await build(), view = await home();
   const row = view.signalRows.find(item => item.id === "publish-guide");
   assert.equal(row?.trigger, "due-soon");
-  assert.match(row?.why ?? "", /listed prerequisites are complete/i);
-  assert.match(row?.why ?? "", /move ahead|no longer held up/i);
+  assert.doesNotMatch(row?.why ?? "", /prerequisites/);
+  const readiness = view.signalRows.find(item => item.trigger === "prerequisites-complete")!;
+  assert.match(readiness.why, /listed prerequisites are complete/i);
+  assert.match(readiness.why, /move ahead|no longer held up/i);
   const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
   assert.equal(ledger.entries[0]?.detail, row?.why);
+  assert.equal(ledger.entries[1]?.detail, readiness.why);
   assert.doesNotMatch(JSON.stringify(ledger), /hidden-first|hidden-second/);
   assert.deepEqual(await hashes(), before);
   await fixture.client.execute("UPDATE tasks SET lane='doing' WHERE id='hidden-second'");
@@ -272,11 +318,14 @@ test("missing and foreign prerequisite records produce task-specific uncertainty
     const before = await hashes(), result = await build(), view = await home();
     const row = view.signalRows.find(item => item.id === "publish-guide");
     assert.equal(row?.trigger, "due-soon");
-    assert.match(row?.why ?? "", /prerequisites could not be fully verified/i);
-    assert.match(row?.why ?? "", /not confirmed clear to move ahead/i);
+    assert.doesNotMatch(row?.why ?? "", /prerequisites/);
+    const uncertainty = view.signalRows.find(item => item.trigger === "prerequisites-unverified")!;
+    assert.match(uncertainty.why, /prerequisites could not be fully verified/i);
+    assert.match(uncertainty.why, /not confirmed clear to move ahead/i);
     assert.equal(view.allClear, null);
     const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
     assert.equal(ledger.entries[0]?.detail, row?.why);
+    assert.equal(ledger.entries[1]?.detail, uncertainty.why);
     assert.equal(ledger.readCounts, null);
     assert.doesNotMatch(JSON.stringify(ledger), /missing-secret|foreign-secret|Private foreign title|hidden-complete|prerequisites are complete/);
     assert.deepEqual(await hashes(), before);

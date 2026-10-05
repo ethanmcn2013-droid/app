@@ -91,6 +91,8 @@ export interface SignalLedgerDTO {
 }
 
 export interface SignalLedgerCandidate {
+  /** Internal authorized inspected sources; never serialized into the DTO. */
+  taskEvidenceIds?: readonly string[];
   /** Seed may contain domain ids; only its hash is emitted. */
   idSeed: string;
   section: SignalLedgerSection;
@@ -105,6 +107,11 @@ export interface SignalLedgerCandidate {
 }
 
 export interface BuildSignalLedgerInput {
+  /** Optional authoritative task accounting. Older/mixed providers retain the numeric contract. */
+  taskUniverse?: {
+    readIds: readonly string[];
+    triggeredIds: readonly string[];
+  };
   heading: string;
   generatedAt: string;
   generatedAtLabel: string;
@@ -191,8 +198,8 @@ export function buildSignalLedger(
   input: BuildSignalLedgerInput,
 ): SignalLedgerDTO {
   const origin = normalizedOrigin(input.allowedAppOrigin);
-  const entries = input.candidates
-    .slice(0, SIGNAL_LEDGER_MAX_ENTRIES)
+  const selectedCandidates = input.candidates.slice(0, SIGNAL_LEDGER_MAX_ENTRIES);
+  const entries = selectedCandidates
     .map((candidate) => {
       const primaryAction =
         safeAction(candidate.primaryAction, origin) ??
@@ -277,7 +284,7 @@ export function buildSignalLedger(
   // Counted in items, not rows: merged rows still stand for every item that
   // fed them, so the header can never say "1 shown" over a row reading
   // "2 items".
-  const shown = entries.reduce(
+  let shown = entries.reduce(
     (total, entry) => total + nonNegativeInteger(entry.receipt.evidenceCount),
     0,
   );
@@ -288,16 +295,48 @@ export function buildSignalLedger(
   // the published `shown <= flagged` went false and the strip drew a partition
   // that could not exist. Anything on screen demonstrably crossed a rule, so
   // `shown` is the floor for `flagged`, and `cleared` follows from it.
-  const flagged = Math.max(reportedFlagged, shown);
+  let flagged = Math.max(reportedFlagged, shown);
+  let read = Math.max(nonNegativeInteger(input.readCount ?? 0), flagged);
+  if (input.taskUniverse) {
+    const uniqueIds = (ids: readonly string[]): Set<string> => {
+      if (!Array.isArray(ids) || ids.some(id => typeof id !== "string" || id.trim().length === 0)) {
+        throw new Error("Invalid inspected task inventory");
+      }
+      return new Set(ids);
+    };
+    const readIds = uniqueIds(input.taskUniverse.readIds);
+    const triggeredIds = uniqueIds(input.taskUniverse.triggeredIds);
+    if ([...triggeredIds].some(id => !readIds.has(id))) throw new Error("Uninspected triggered task");
+    const shownIds = new Set<string>();
+    for (const candidate of input.candidates) {
+      if (!candidate.taskEvidenceIds) throw new Error("Missing authoritative task evidence");
+      const evidence = uniqueIds(candidate.taskEvidenceIds);
+      if ([...evidence].some(id => !readIds.has(id) || !triggeredIds.has(id))) {
+        throw new Error("Uninspected or unflagged shown task");
+      }
+      if (evidence.size !== candidate.receipt.evidenceCount || evidence.size !== candidate.receipt.sourceCounts.tasks ||
+          candidate.receipt.sourceCounts.notes !== 0 || candidate.receipt.sourceCounts.milestones !== 0) {
+        throw new Error("Task evidence receipt does not match inspected sources");
+      }
+    }
+    for (const candidate of selectedCandidates) {
+      for (const id of candidate.taskEvidenceIds!) shownIds.add(id);
+    }
+    // Per-row receipts state all evidence for that observation. The header
+    // partitions distinct tasks, so overlapping observations do not inflate it.
+    shown = shownIds.size;
+    flagged = triggeredIds.size;
+    read = readIds.size;
+  }
   const readCounts =
     typeof input.readCount === "number" && Number.isFinite(input.readCount)
       ? {
-          read: Math.max(nonNegativeInteger(input.readCount), flagged),
+          read,
           flagged,
           shown,
           cleared: Math.max(
             0,
-            Math.max(nonNegativeInteger(input.readCount), flagged) - flagged,
+            read - flagged,
           ),
         }
       : null;

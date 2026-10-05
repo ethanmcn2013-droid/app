@@ -34,6 +34,7 @@ import {
 
 export type HomeSignalRow = {
   id: string;
+  observationId?: string;
   destination: "task" | "briefing";
   /** The reader's own task title, sentence-cased by the engine. */
   title: string;
@@ -75,7 +76,8 @@ export type HomeTaskRow = {
   id: string;
   title: string;
   source: string;
-  lane: TaskSignal["lane"];
+  lane: TaskSignal["lane"] | "open";
+  stageLabel?: string;
   priority: TaskSignal["priority"];
   /** Short timing label ("Today", "Tomorrow", "Fri", "3 Oct") or null. */
   due: string | null;
@@ -154,11 +156,12 @@ export async function loadHomeData(opts: {
   if (result.kind === "no-workspace") return { kind: "new-user" };
 
   const { briefing, authorizedScope, signals } = result;
+  const phaseOf = (signal: TaskSignal) => signal.stage?.phase ?? signal.lane;
   const timezone = authorizedScope.timezone;
   const now = briefing.generatedAt;
 
   const dueById = new Map(
-    briefing.suggestedFocus.map((item) => [item.id, item.due]),
+    briefing.suggestedFocus.map((item) => [item.observationId ?? item.id, item.due]),
   );
   const signalById = new Map(signals.map(signal => [signal.id, signal]));
   // An aggregate describes the authorized reading scope, not one task or the
@@ -179,11 +182,12 @@ export async function loadHomeData(opts: {
       (!ownDeadline || ownDeadline.kind === "unknown");
     return {
       id: item.id,
+      observationId: item.observationId,
       destination: aggregate ? "briefing" : "task",
       title: item.text,
       why: item.detail,
       source: aggregate ? `Tasks · ${authorizedScope.label}` : item.sourceLabel,
-      due: blockerWithoutDate ? null : dueById.get(item.id) ?? null,
+      due: blockerWithoutDate ? null : dueById.get(item.observationId ?? item.id) ?? null,
       trigger: item.trigger,
       href: aggregate ? aggregateHref : taskHref(item.id),
     };
@@ -248,7 +252,7 @@ export async function loadHomeData(opts: {
 
   const needsReview: HomeReviewRow[] = signals
     .filter(
-      (signal) => signal.lane === "review" && !surfacedIds.has(signal.id),
+      (signal) => phaseOf(signal) === "review" && !surfacedIds.has(signal.id),
     )
     .sort((a, b) => (b.idleDays ?? -1) - (a.idleDays ?? -1))
     .slice(0, REVIEW_CAP)
@@ -298,22 +302,26 @@ export async function loadHomeData(opts: {
     if (days > 1 && days < 7) return deadlineWeekday(signalDeadline(signal), timezone)?.slice(0, 3) ?? null;
     return deadlineShortDate(signalDeadline(signal), timezone);
   };
-  const toTaskRow = (signal: TaskSignal): HomeTaskRow => ({
-    id: signal.id,
-    title: signal.title,
-    source: signal.sourceLabel,
-    lane: signal.lane,
-    priority: signal.priority,
-    due: shortDue(signal),
-    overdue: overdue(signal),
-    href: taskHref(signal.id),
-  });
+  const toTaskRow = (signal: TaskSignal): HomeTaskRow => {
+    const phase = phaseOf(signal);
+    return {
+      id: signal.id,
+      title: signal.title,
+      source: signal.sourceLabel,
+      lane: phase === "unknown" ? "open" : phase,
+      ...(signal.stage?.phase === "unknown" ? { stageLabel: signal.stage.label ?? "Open" } : {}),
+      priority: signal.priority,
+      due: shortDue(signal),
+      overdue: overdue(signal),
+      href: taskHref(signal.id),
+    };
+  };
 
   const stats: HomeStats = {
     open: openSignals.length,
     dueToday: openSignals.filter((signal) => daysOutOf(signal) === 0).length,
     overdue: openSignals.filter(overdue).length,
-    inReview: openSignals.filter((signal) => signal.lane === "review").length,
+    inReview: openSignals.filter((signal) => phaseOf(signal) === "review").length,
     doneThisWeek: signals.filter(
       (signal) => signal.lane === "shipped" && signal.movedToShippedAt != null && now - signal.movedToShippedAt <= 7 * DAY_MS,
     ).length,
@@ -324,7 +332,7 @@ export async function loadHomeData(opts: {
   const laneRank: Record<string, number> = { "in-flight": 0, review: 1, next: 2 };
   const myTasks = [...openSignals]
     .sort((a, b) => {
-      const lane = (laneRank[a.lane] ?? 3) - (laneRank[b.lane] ?? 3);
+      const lane = (laneRank[phaseOf(a)] ?? 3) - (laneRank[phaseOf(b)] ?? 3);
       if (lane !== 0) return lane;
       const due = sortDue(a, b);
       if (due !== 0) return due;

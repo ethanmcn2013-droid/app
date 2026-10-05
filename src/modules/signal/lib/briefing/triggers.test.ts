@@ -15,6 +15,18 @@ import type { TaskSignal } from "./types";
 const DAY = 86_400_000;
 const NOW = 1_700_000_000_000;
 
+test("unknown custom phases do not count as started or review in overload", () => {
+  const unknown = Array.from({ length: 6 }, (_, index) => makeTask({ id: `quality-${index}`, lane: "in-flight",
+    stage: { key: "quality-gate", label: "Quality check", phase: "unknown", complete: false } }));
+  assert.deepEqual(detectOverload(unknown), []);
+  const doing = unknown.map(task => ({ ...task, stage: { key: "doing", label: "Doing", phase: "in-flight" as const, complete: false } }));
+  assert.equal(detectOverload(doing).length, 1);
+  assert.deepEqual(detectOverload(doing)[0]?.representedTaskIds, doing.map(task => task.id).sort());
+  const dueUnknown = detectDueSoon([{ ...unknown[0]!, dueAt: NOW + DAY }], NOW)[0]!;
+  assert.ok(dueUnknown.reasons.some(reason => /Still open in “Quality check”/.test(reason)));
+  assert.ok(dueUnknown.reasons.every(reason => !/^Started|^Not started|^Sitting in review/.test(reason)));
+});
+
 describe("current dependency relevance", () => {
   test("one visible same-workspace blocker is selected for the nearest due dependent without age evidence", () => {
     const blocker = makeTask({ id: "open-blocker", title: "Inspect the venue", workspaceId: "owned", idleDays: null });
