@@ -39,7 +39,7 @@ test("how a project is doing is the owner's status plus a passed target date", (
   // Marked on track by its owner, but its target date has gone.
   assert.equal(row("p-winter").mark, "past_date");
   assert.equal(row("p-winter").standing, "attention");
-  assert.equal(row("p-winter").sub, "On track · target was 28 Sep");
+  assert.equal(row("p-winter").sub, "On track · past 28 Sep");
   assert.equal(row("p-keane").mark, "on_track");
   assert.equal(row("p-keane").sub, "On track · target 12 Oct");
   assert.equal(row("p-kitchen").standing, "paused");
@@ -119,7 +119,7 @@ test("late shows the count and names the oldest", () => {
 test("lead is the owner, or you", () => {
   assert.deepEqual(row("p-keane").lead, { initials: "OB", name: "You", caption: "You own this" });
   assert.equal(row("p-keane").ledByYou, true);
-  assert.deepEqual(row("p-barn").lead, { initials: "TR", name: "Tom Reilly", caption: "You’re a co-owner" });
+  assert.deepEqual(row("p-barn").lead, { initials: "TR", name: "Tom Reilly", caption: "You co-own this" });
   assert.deepEqual(row("p-mara").lead, { initials: "AB", name: "Aoife Brennan", caption: "You’re a member" });
   assert.equal(row("p-mara").ledByYou, false);
 });

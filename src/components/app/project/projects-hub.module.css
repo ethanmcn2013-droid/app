@@ -65,11 +65,11 @@
   white-space: nowrap;
 }
 
-.summaryPart[data-tone="risk"] {
+.summaryPart [data-tone="risk"] {
   color: var(--v3-warning-text);
 }
 
-.summaryPart[data-tone="late"] {
+.summaryPart [data-tone="late"] {
   color: var(--v3-danger-text);
 }
 

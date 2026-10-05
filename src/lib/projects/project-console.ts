@@ -277,7 +277,7 @@ const NEAR_WINDOW_DAYS = 30;
 
 function roleCaption(role: ProjectRole): string {
   if (role === "primary-owner") return "You own this";
-  return role === "owner" ? "You’re a co-owner" : "You’re a member";
+  return role === "owner" ? "You co-own this" : "You’re a member";
 }
 
 function buildRow(input: ConsoleProjectInput, today: string): ConsoleRow {
@@ -314,9 +314,9 @@ function buildRow(input: ConsoleProjectInput, today: string): ConsoleRow {
   const dateWord = !targetDate
     ? null
     : wrapped
-      ? `target was ${formatConsoleDate(targetDate, today)}`
+      ? `target ${formatConsoleDate(targetDate, today)}`
       : pastDate
-        ? `target was ${formatConsoleDate(targetDate, today)}`
+        ? `past ${formatConsoleDate(targetDate, today)}`
         : `target ${formatConsoleDate(targetDate, today)}`;
   const sub = !input.selectable && input.blockedReason ? input.blockedReason : [statusWord, dateWord].filter(Boolean).join(" · ");
 

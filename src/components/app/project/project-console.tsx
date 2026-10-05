@@ -164,7 +164,7 @@ function FilterTabs({
     event.preventDefault();
     const next = CONSOLE_FILTERS[(to + CONSOLE_FILTERS.length) % CONSOLE_FILTERS.length]!;
     onPick(next);
-    requestAnimationFrame(() => ref.current?.querySelector<HTMLElement>(`[data-filter="${next}"]`)?.focus());
+    ref.current?.querySelector<HTMLElement>(`[data-filter="${next}"]`)?.focus();
   };
   // Keep the chosen tab in view when the row of tabs scrolls (phone).
   useEffect(() => {

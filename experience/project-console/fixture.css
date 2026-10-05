@@ -1,0 +1,142 @@
+/*
+ * What the app gives every page, in the few rules the Console relies on: the
+ * Geist faces, the base reset Tailwind applies, and the shell's frame (a
+ * sidebar's width on a desk, a top bar's height, the page column). The
+ * Console's own styles and the v3 tokens are the real files.
+ */
+
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/Geist-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/fonts/GeistMono-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: block;
+}
+
+*,
+::before,
+::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0 solid;
+}
+
+html:root {
+  --font-geist-mono: "Geist Mono";
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--v3-chrome);
+  color: var(--v3-text);
+  font-family: "Geist", system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  background-color: transparent;
+  border-radius: 0;
+}
+
+button {
+  cursor: pointer;
+}
+
+ul {
+  list-style: none;
+}
+
+svg {
+  display: block;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.fixture-shell {
+  display: flex;
+  min-height: 100%;
+  padding: 8px 8px 8px calc(var(--v3-sidebar-w) + 8px);
+}
+
+.fixture-shell[data-first-run] {
+  padding: 0;
+  background: var(--v3-canvas);
+}
+
+.fixture-page {
+  flex: 1;
+  min-width: 0;
+  padding-top: var(--v3-topbar-h);
+  border: 1px solid var(--v3-border);
+  border-radius: 12px;
+  background: var(--v3-canvas);
+}
+
+.fixture-inner {
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 28px 32px 64px;
+}
+
+.fixture-overview {
+  margin-top: 36px;
+  padding: 28px 0 0;
+  border-top: 1px solid var(--v3-border);
+  font-size: 13px;
+  color: var(--v3-text-3);
+  scroll-margin-top: 16px;
+}
+
+@media (max-width: 767px) {
+  .fixture-shell {
+    padding: 0;
+  }
+
+  .fixture-page {
+    border: 0;
+    border-radius: 0;
+  }
+
+  .fixture-inner {
+    padding: 20px 16px 48px;
+  }
+}

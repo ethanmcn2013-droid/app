@@ -116,6 +116,11 @@
   background: var(--v3-hover);
 }
 
+.item:hover .itemHint,
+.item:focus .itemHint {
+  color: var(--v3-text-2);
+}
+
 .item:focus-visible {
   box-shadow: inset 0 0 0 2px var(--v3-accent);
 }

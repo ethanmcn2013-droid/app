@@ -130,7 +130,7 @@ function writeViewToAddress(view: ConsoleView) {
   window.history.replaceState(window.history.state, "", url);
 }
 
-function ProjectsIndex({
+export function ProjectsIndex({
   hub,
   data,
   declared,
@@ -254,9 +254,9 @@ function ProjectsIndex({
           {ready ? (
             <p className={styles.summary}>
               {model.summary.map((part, index) => (
-                <span key={part.text} className={styles.summaryPart} data-tone={part.tone}>
-                  {index > 0 ? <span className={styles.summaryDot} aria-hidden="true">·</span> : null}
-                  {part.text}
+                <span key={part.text} className={styles.summaryPart}>
+                  <span data-tone={part.tone}>{part.text}</span>
+                  {index < model.summary.length - 1 ? <span className={styles.summaryDot} aria-hidden="true">·</span> : null}
                 </span>
               ))}
             </p>

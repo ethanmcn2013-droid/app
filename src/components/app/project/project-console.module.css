@@ -164,6 +164,13 @@ a.card:hover {
   background: var(--v3-hover);
 }
 
+a.card:hover .unit,
+a.card:hover .cardCaption,
+a.card:focus-visible .unit,
+a.card:focus-visible .cardCaption {
+  color: var(--v3-text-2);
+}
+
 a.card:active {
   background: color-mix(in srgb, var(--v3-hover) 100%, var(--v3-text) 4%);
 }
@@ -439,7 +446,9 @@ a.card:focus-visible .cardMeta {
 .row {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(200px, 1.2fr) repeat(3, minmax(0, 1fr)) minmax(132px, 0.78fr) auto;
+  /* The last column has a fixed width, so the columns of every row line up
+     whatever its actions say. */
+  grid-template-columns: minmax(200px, 1.2fr) repeat(3, minmax(0, 1fr)) minmax(132px, 0.78fr) 112px;
   align-items: center;
   column-gap: 28px;
   min-height: 76px;
@@ -470,6 +479,19 @@ a.card:focus-visible .cardMeta {
 .row:focus-within::before,
 .row:focus-within + .row::before {
   opacity: 0;
+}
+
+/* On the hover ground the quietest ink would fall under AA, so the small
+   print steps up one level with the row. */
+.row:not([data-skeleton]):hover .sub:not([data-tone]),
+.row:not([data-skeleton]):hover .cellCaption,
+.row:not([data-skeleton]):hover .leadCaption,
+.row:not([data-skeleton]):hover .cellValue[data-quiet],
+.row:focus-within .sub:not([data-tone]),
+.row:focus-within .cellCaption,
+.row:focus-within .leadCaption,
+.row:focus-within .cellValue[data-quiet] {
+  color: var(--v3-text-2);
 }
 
 .row:has(.rowLink:active) {
@@ -832,6 +854,11 @@ a.card:focus-visible .cardMeta {
 .menuItem:focus-visible,
 .menuItem:focus {
   background: var(--v3-hover);
+}
+
+.menuItem:hover .menuHint,
+.menuItem:focus .menuHint {
+  color: var(--v3-text-2);
 }
 
 .menuItem:focus-visible {
