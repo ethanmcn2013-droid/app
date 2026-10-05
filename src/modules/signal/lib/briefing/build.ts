@@ -86,6 +86,15 @@ export async function buildBriefing(
   // of saying "blocked for 9 days" without context.
   const titlesById = new Map<string, string>();
   for (const s of signals) titlesById.set(s.id, s.title);
+  const visibleById = new Map(signals.map(signal => [signal.id, signal]));
+  const openPrerequisitesByTask = new Map(signals.map(signal => [signal.id,
+    [...new Set(signal.blockedBy)].flatMap(id => {
+      const prerequisite = visibleById.get(id);
+      return prerequisite && prerequisite.id !== signal.id && signal.workspaceId &&
+        prerequisite.workspaceId === signal.workspaceId && prerequisite.lane !== "shipped"
+        ? [prerequisite.title] : [];
+    }),
+  ]));
 
   const rotationIndex = dayRotation(userId, now);
 
@@ -173,13 +182,13 @@ export async function buildBriefing(
     ageOf(t) >= 2 ? { ...item, ageDays: ageOf(t) } : item;
 
   const needsAttention: BriefItem[] = freshFirst(attention).map((t) =>
-    withAge(t, toItem(t, rotationIndex, now, titlesById, timezone, dependencyByTask.get(t.task.id), prerequisiteByTask.get(t.task.id))),
+    withAge(t, toItem(t, rotationIndex, now, titlesById, timezone, dependencyByTask.get(t.task.id), prerequisiteByTask.get(t.task.id), openPrerequisitesByTask.get(t.task.id))),
   );
   const movingWell: BriefItem[] = moving.map((t) =>
     toItem(t, rotationIndex, now, titlesById, timezone),
   );
   const quietRisks: BriefItem[] = freshFirst(risks).map((t) =>
-    withAge(t, toItem(t, rotationIndex, now, titlesById, timezone, dependencyByTask.get(t.task.id), prerequisiteByTask.get(t.task.id))),
+    withAge(t, toItem(t, rotationIndex, now, titlesById, timezone, dependencyByTask.get(t.task.id), prerequisiteByTask.get(t.task.id), openPrerequisitesByTask.get(t.task.id))),
   );
   const suggestedFocus: FocusItem[] = focusSource.map((t) =>
     toFocus(t, rotationIndex, now, timezone),
@@ -199,6 +208,11 @@ export async function buildBriefing(
     quietRisks,
     suggestedFocus,
     isEmpty,
+    ...(signals.some(signal => signal.activityCoverage === "partial") ? {
+      activityCoverageNote: signals.some(signal => signal.activityCoverage === "partial" && signal.hasRecordedTitleEdit === true)
+        ? "A recorded title edit does not establish meaningful work progress. Activity history is incomplete."
+        : "Activity history is incomplete. Task update timestamps do not establish meaningful progress or inactivity.",
+    } : {}),
     // The whole pile the engine looked at, not just what survived the
     // triggers and the cap. The ledger needs the denominator to be able
     // to say "read 41, surfaced 3" instead of asserting three.
@@ -227,6 +241,7 @@ function toItem(
   timezone: string,
   dependency?: Triggered,
   prerequisite?: Triggered,
+  openPrerequisiteTitles?: string[],
 ): BriefItem {
   const deadline = signalDeadline(t.task);
   const daysOut = deadlineDayDifference(deadline, now, timezone) ?? undefined;
@@ -244,6 +259,7 @@ function toItem(
     instantRemainingMs: t.trigger === "due-soon" && deadline?.kind === "instant" && deadline.at > now
       ? deadline.at - now : undefined,
     blockedByTitles,
+    openPrerequisiteTitles,
     relatedTaskTitle: t.relatedTaskTitle,
     savedDateLabel: t.trigger === "prerequisites-complete" ? deadlineShortDate(signalDeadline(t.task), timezone) ?? undefined : undefined,
   });

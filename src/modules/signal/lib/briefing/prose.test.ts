@@ -89,6 +89,20 @@ describe("phraseFor, the observation never carries the title", () => {
 });
 
 describe("phraseFor, context propagation", () => {
+  test("confirmed prerequisite context preserves every deadline phrasing and exact-instant pressure", () => {
+    for (let rotation = 0; rotation < 3; rotation++) {
+      for (const context of [{ daysOut: 0 }, { daysOut: 1 }, { daysOut: 0, pastToday: true },
+        { daysOut: 0, instantRemainingMs: 7_200_000 }]) {
+        const original = phraseFor("due-soon", task(), rotation, context);
+        const withDependency = phraseFor("due-soon", task(), rotation, {
+          ...context, openPrerequisiteTitles: ["Check the safety plan"],
+        });
+        assert.ok(withDependency.startsWith(original));
+        assert.match(withDependency, /Waiting on an open prerequisite: Check the safety plan\.$/);
+        assert.doesNotMatch(withDependency, /days without|just cleared|ready to start/i);
+      }
+    }
+  });
   test("new dependency observations name only visible context and saved date, never invented transition age", () => {
     for (let rotation = 0; rotation < 3; rotation++) {
       const blocker = phraseFor("blocking-due-work", task(), rotation, { relatedTaskTitle: "Finish the plan" });

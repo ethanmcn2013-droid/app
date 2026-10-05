@@ -65,6 +65,60 @@ test("near-due dependent and its real blocker can each surface with distinct rea
   assert.equal(aged.needsAttention.find(item => item.id === "inspection")?.ageDays, 3);
 });
 
+test("the dependent's own deadline observation retains its confirmed prerequisite and priority position", async () => {
+  for (const days of [0, 1]) {
+    const deadline = { kind: "date-only" as const, date: new Date(NOW + days * DAY).toISOString().slice(0, 10) };
+    const prerequisite = task({ id: "check", title: "Check the safety plan", workspaceId: "owned",
+      deadline, priority: 2, idleDays: null });
+    const dependent = task({ id: "publish", title: "Publish the visitor guide", workspaceId: "owned",
+      deadline, priority: 1, blockedBy: ["check"], dependencyCoverage: "complete", idleDays: null });
+    for (const rows of [[prerequisite, dependent], [dependent, prerequisite]]) {
+      const brief = await buildBriefing(source(rows), CTX, NOW);
+      assert.deepEqual(brief.needsAttention.map(item => [item.id, item.trigger]), [["publish", "due-soon"], ["check", "due-soon"]]);
+      assert.match(brief.needsAttention[0]!.detail, /today|tomorrow/i);
+      assert.match(brief.needsAttention[0]!.detail, /open prerequisite: Check the safety plan/);
+      assert.equal(brief.triggeredCount, 2);
+    }
+  }
+});
+
+test("dependent context excludes terminal, foreign, missing and self prerequisites without hiding its date", async () => {
+  const dependent = task({ id: "publish", workspaceId: "owned",
+    deadline: { kind: "date-only", date: new Date(NOW + DAY).toISOString().slice(0, 10) },
+    blockedBy: ["check", "missing", "publish"], dependencyCoverage: "partial", idleDays: null });
+  for (const prerequisite of [
+    task({ id: "check", title: "Private title", workspaceId: "foreign" }),
+    task({ id: "check", title: "Completed title", workspaceId: "owned", lane: "shipped" }),
+  ]) {
+    const brief = await buildBriefing(source([dependent, prerequisite]), CTX, NOW);
+    const row = brief.needsAttention.find(item => item.id === "publish")!;
+    assert.equal(row.trigger, "due-soon");
+    assert.match(row.detail, /tomorrow/i);
+    assert.doesNotMatch(row.detail, /Private title|Completed title|open prerequisite:/);
+    assert.match(row.detail, /could not be fully verified/);
+  }
+  const confirmed = task({ id: "check", title: "Verified check", workspaceId: "owned", idleDays: null });
+  const partial = await buildBriefing(source([dependent, confirmed]), CTX, NOW);
+  assert.match(partial.needsAttention.find(item => item.id === "publish")!.detail, /open prerequisite: Verified check/);
+  assert.match(partial.needsAttention.find(item => item.id === "publish")!.detail, /could not be fully verified/);
+});
+
+test("partial activity describes metadata evidence without inventing an event or actionable work", async () => {
+  const unknown = task({ idleDays: null, activityCoverage: "partial" });
+  const noEvent = await buildBriefing(source([unknown]), CTX, NOW);
+  assert.equal(noEvent.isEmpty, true);
+  assert.equal(noEvent.triggeredCount, 0);
+  assert.match(noEvent.activityCoverageNote ?? "", /history is incomplete/);
+  assert.doesNotMatch(noEvent.activityCoverageNote ?? "", /recorded title edit/i);
+  const recorded = await buildBriefing(source([{ ...unknown, hasRecordedTitleEdit: true }]), CTX, NOW);
+  assert.equal(recorded.isEmpty, true);
+  assert.match(recorded.activityCoverageNote ?? "", /recorded title edit/);
+  assert.match(recorded.activityCoverageNote ?? "", /does not establish meaningful work progress/);
+  assert.match(recorded.activityCoverageNote ?? "", /history is incomplete/);
+  const complete = await buildBriefing(source([{ ...unknown, activityCoverage: "complete", hasRecordedTitleEdit: true }]), CTX, NOW);
+  assert.equal(complete.activityCoverageNote, undefined);
+});
+
 test("a blocker with its own deadline retains an eligible dependency in the winning row", async () => {
   const blocker = task({ id: "inspection", title: "Inspect the venue", workspaceId: "owned",
     dueAt: NOW + DAY, idleDays: null });

@@ -82,6 +82,8 @@ export interface TaskRead {
   lastActivityAt: string;
   /** ISO timestamp when the task was created. */
   createdAt: string;
+  /** A validated saved title-edit record; absence does not imply exhaustive history. */
+  hasRecordedTitleEdit?: boolean;
 }
 
 /** An activity event. Timestamps + types only, no comment text. */

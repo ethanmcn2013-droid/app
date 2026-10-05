@@ -81,7 +81,7 @@ export function ledgerFromLegacyBriefing(
     };
   });
 
-  return buildSignalLedger({
+  const ledger = buildSignalLedger({
     heading:
       briefing.coverageStatus === "partial" && briefing.needsAttention.length === 0 && briefing.quietRisks.length > 0
         ? `${briefing.quietRisks.length} ${briefing.quietRisks.length === 1 ? "risk" : "risks"} worth watching.`
@@ -113,6 +113,10 @@ export function ledgerFromLegacyBriefing(
     closingLine: graceNote(briefing),
     allowedAppOrigin: options.allowedAppOrigin,
   });
+  if (briefing.coverageStatus === "partial" && briefing.activityCoverageNote) {
+    ledger.coverageNote = `${ledger.coverageNote ?? "Some work could not be checked in this read."} ${briefing.activityCoverageNote}`;
+  }
+  return ledger;
 }
 
 /**

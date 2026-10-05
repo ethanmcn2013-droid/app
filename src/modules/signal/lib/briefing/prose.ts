@@ -221,6 +221,8 @@ export function phraseFor(
     instantRemainingMs?: number;
     /** Resolved titles of upstream blocker tasks (in order). */
     blockedByTitles?: string[];
+    /** Confirmed open prerequisites visible in this task's exact workspace. */
+    openPrerequisiteTitles?: string[];
     relatedTaskTitle?: string;
     savedDateLabel?: string;
   },
@@ -232,16 +234,19 @@ export function phraseFor(
   if (trigger === "stuck-work")
     return phrasing(task, context?.idleDays ?? task.idleDays ?? 0);
   if (trigger === "due-soon") {
-    if (context?.pastToday) return "Past its time today.";
+    const prerequisite = blockerSubject(context?.openPrerequisiteTitles ?? []);
+    const withPrerequisite = (date: string) => prerequisite
+      ? `${date} Waiting on an open prerequisite: ${prerequisite}.` : date;
+    if (context?.pastToday) return withPrerequisite("Past its time today.");
     const remaining = context?.instantRemainingMs;
     if (remaining !== undefined && remaining > 0 && remaining <= 86_400_000) {
       const duration = remainingDuration(remaining);
       const variant = rotationIndex % options.length;
-      return variant === 0 ? `Due in ${duration}.`
+      return withPrerequisite(variant === 0 ? `Due in ${duration}.`
         : variant === 1 ? `The deadline is in ${duration}.`
-          : `It comes due in ${duration}.`;
+          : `It comes due in ${duration}.`);
     }
-    return phrasing(task, context?.daysOut ?? 0);
+    return withPrerequisite(phrasing(task, context?.daysOut ?? 0));
   }
   if (trigger === "blocked-too-long") {
     return phrasing(

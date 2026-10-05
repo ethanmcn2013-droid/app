@@ -348,6 +348,8 @@ export async function buildBriefingForUser(opts: {
               calendarDayDifference(now, last, authorizedScope!.timezone),
             );
           })(),
+          activityCoverage: work.coverage?.activity,
+          hasRecordedTitleEdit: t.hasRecordedTitleEdit,
           commentCount: 0,
           blockedBy: t.blockedBy,
           dependencyCoverage: t.dependencyCoverage,

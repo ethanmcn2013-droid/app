@@ -25,6 +25,9 @@ export type TaskSignal = {
   dueAt: number | null; // legacy instant; date-only values use deadline
   deadline?: Deadline;
   idleDays: number | null; // null when activity history is incomplete
+  activityCoverage?: "complete" | "partial";
+  /** Positive saved title-edit evidence; false/absent never proves no activity. */
+  hasRecordedTitleEdit?: boolean;
   commentCount: number;
   blockedBy: string[]; // task ids
   dependencyCoverage?: "complete" | "partial";
@@ -98,6 +101,8 @@ export type Briefing = {
   isEmpty: boolean;
   /** A partial read may surface known facts but cannot assert all-clear. */
   coverageStatus?: "complete" | "partial";
+  /** Specific non-actionable limitation from the same authorized source read. */
+  activityCoverageNote?: string;
   /** Total signals the engine examined in scope on this run, surfaced
    *  or not. The product's claim is that it filters, so a count of what
    *  it showed without a count of what it read is an assertion rather

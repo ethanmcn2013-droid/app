@@ -204,11 +204,14 @@ async function readCompletionHistory(db: TasksDb, targets: readonly (typeof task
 type DependencyState = Pick<typeof tasksTable.$inferSelect, "id" | "workspaceId" | "lane" | "boardColumnKey">;
 type DependencyRead = { open: Map<string, string[]>; unknown: Set<string>; hasCompleted: Set<string> };
 
-/** Positive comment creation evidence can advance the existing activity proxy.
- * Absence never proves inactivity: the general activity recorder is best effort.
+type ActivityRead = { comments: Map<string, string>; titleEdits: Set<string> };
+
+/** Positive comment evidence can advance the existing activity proxy. A saved
+ * title edit is metadata evidence only. Neither establishes exhaustive history.
+ * Both are read in the existing bounded per-task aggregate, without another query.
  */
-async function readCommentActivity(db: TasksDb, rows: readonly (typeof tasksTable.$inferSelect)[], now: number): Promise<Map<string, string>> {
-  const activity = new Map<string, string>();
+async function readCommentActivity(db: TasksDb, rows: readonly (typeof tasksTable.$inferSelect)[], now: number): Promise<ActivityRead> {
+  const activity: ActivityRead = { comments: new Map(), titleEdits: new Set() };
   const targets = rows.filter(row => validCompletion(row.updatedAt, now) !== null && validCompletion(row.createdAt, now) !== null);
   for (let offset = 0; offset < targets.length; offset += 500) {
     const chunk = targets.slice(offset, offset + 500), grouped = new Map<string, string[]>();
@@ -218,14 +221,20 @@ async function readCommentActivity(db: TasksDb, rows: readonly (typeof tasksTabl
     const predicate = or(...Array.from(grouped, ([id, taskIds]) => and(eq(activitiesTable.workspaceId, id), inArray(activitiesTable.taskId, taskIds))));
     // Validate before MAX so an invalid newest row cannot hide earlier evidence.
     // Grouping bounds returned rows; it does not bound the matching history scan.
-    const evidence = await db.all<{ workspaceId: string; taskId: string; createdAt: number }>(sql`
-      SELECT a.workspace_id AS workspaceId, a.task_id AS taskId, MAX(a.created_at) AS createdAt
+    const evidence = await db.all<{ workspaceId: string; taskId: string; createdAt: number | null; titleEditRecorded: number }>(sql`
+      SELECT a.workspace_id AS workspaceId, a.task_id AS taskId,
+        MAX(a.created_at) FILTER (WHERE a.kind = 'commentAdd') AS createdAt,
+        MAX(CASE WHEN a.kind = 'update' THEN 1 ELSE 0 END) AS titleEditRecorded
       FROM activities AS a JOIN tasks AS t ON t.id = a.task_id AND t.workspace_id = a.workspace_id
       WHERE a.id IN (SELECT id FROM activities WHERE ${predicate})
-        AND a.kind = 'commentAdd'
+        AND a.kind IN ('commentAdd', 'update')
         AND CASE WHEN json_valid(a.payload) THEN
-          json_type(a.payload, '$.kind') = 'text' AND json_extract(a.payload, '$.kind') = 'commentAdd'
-          AND json_type(a.payload, '$.commentId') = 'text' AND length(trim(json_extract(a.payload, '$.commentId'))) > 0
+          (a.kind = 'commentAdd'
+            AND json_type(a.payload, '$.kind') = 'text' AND json_extract(a.payload, '$.kind') = 'commentAdd'
+            AND json_type(a.payload, '$.commentId') = 'text' AND length(trim(json_extract(a.payload, '$.commentId'))) > 0)
+          OR (a.kind = 'update'
+            AND json_type(a.payload, '$.kind') = 'text' AND json_extract(a.payload, '$.kind') = 'update'
+            AND json_type(a.payload, '$.field') = 'text' AND json_extract(a.payload, '$.field') = 'title')
           ELSE 0 END
         AND typeof(a.created_at) IN ('integer', 'real')
         AND a.created_at >= 0 AND a.created_at <= ${now / 1000} AND a.created_at >= t.created_at
@@ -235,8 +244,10 @@ async function readCommentActivity(db: TasksDb, rows: readonly (typeof tasksTabl
     for (const row of chunk) {
       const event = byTask.get(row.id);
       if (!event || event.workspaceId !== row.workspaceId) continue;
+      if (event.titleEditRecorded === 1) activity.titleEdits.add(row.id);
+      if (event.createdAt === null) continue;
       const at = validCompletion(new Date(event.createdAt * 1000), now);
-      if (at && Date.parse(at) > row.updatedAt.getTime()) activity.set(row.id, at);
+      if (at && Date.parse(at) > row.updatedAt.getTime()) activity.comments.set(row.id, at);
     }
   }
   return activity;
@@ -370,7 +381,7 @@ function buildWorkRead(
   config: ColumnConfig | null = null,
   completions: ReadonlyMap<string, string | null> = new Map(),
   dependencies: DependencyRead = { open: new Map(), unknown: new Set(), hasCompleted: new Set() },
-  activity: ReadonlyMap<string, string> = new Map(),
+  activity: ActivityRead = { comments: new Map(), titleEdits: new Set() },
 ): WorkRead {
     const taskReads: TaskRead[] = rows.map((t) => {
       const tags = Array.isArray(t.tags) ? t.tags : [];
@@ -398,8 +409,9 @@ function buildWorkRead(
         // updatedAt is the closest proxy. Cycle 6.4 may revisit if
         // any trigger needs strict status-change semantics.
         lastStatusChangeAt: t.updatedAt.toISOString(),
-        lastActivityAt: activity.get(t.id) ?? t.updatedAt.toISOString(),
+        lastActivityAt: activity.comments.get(t.id) ?? t.updatedAt.toISOString(),
         createdAt: t.createdAt.toISOString(),
+        hasRecordedTitleEdit: activity.titleEdits.has(t.id),
       };
     });
 
