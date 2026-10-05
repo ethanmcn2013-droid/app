@@ -22,6 +22,41 @@
   padding: 28px 32px 56px;
 }
 
+/* The Home and Overview tabs sit here on both pages, so they never move. */
+.tabsRow {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  margin-bottom: 18px;
+}
+
+/* Under the week view: what the briefing read. */
+.read {
+  margin-top: 36px;
+}
+
+.readHead {
+  margin-bottom: 14px;
+}
+
+.readHeading {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--v3-text);
+}
+
+.readSub {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  color: var(--v3-text-2);
+}
+
 /* ── Entrance: the page rises once, as a whole. Transform only, so the
    frame after the skeleton is already content. No per-card stagger. ── */
 
@@ -1385,6 +1420,46 @@
   gap: 10px;
   padding: 16px;
   border-top: 1px solid var(--v3-border);
+}
+
+.skeletonLine {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* The week view's frame, with its lane names down the left. */
+.skeletonStage {
+  margin-top: 20px;
+  min-height: 300px;
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius-lg) var(--v3-radius-lg) 0 0;
+}
+
+.skeletonHeads {
+  width: 212px;
+  max-width: 45%;
+  min-height: 300px;
+  padding-top: 88px;
+  border-right: 1px solid var(--v3-border);
+}
+
+.skeletonHead {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  min-height: 70px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--v3-border);
+}
+
+.skeletonTray {
+  min-height: 132px;
+  padding: 16px 18px;
+  border: 1px solid var(--v3-border);
+  border-top: 0;
+  border-radius: 0 0 var(--v3-radius-lg) var(--v3-radius-lg);
+  background: var(--v3-sunken);
 }
 
 /* ── Responsive ───────────────────────────────────────────────────── */

@@ -4,6 +4,14 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-10-05 · Redesign candidate · Home opens on what needs you, with Overview as its second tab
+
+Home now opens on your own work across every project you can open: a line that counts what needs you today, what is late and what was done this week; your late and due-today tasks with a tick each; what is due this week, what is waiting to be checked and what you are waiting on; the next big day; and each project with how it is doing. Ticking a task uses the same action as the board and shows Undo. When a task has sat in Waiting for three days or more with no change, Home says so in one sentence and offers Nudge if someone else holds it. A task is yours when you are assigned to it, or when nobody current is assigned and you own the project. The greeting follows your own clock.
+
+Overview is now a tab of Home, at the same address as before (`/app/home/briefing`). It opens on a week view: every dated task on the day it is due, grouped by Area (a task's first label), by person or by board column; big dates as flags; how full each week is; finished work under its lane; and tasks with no date in a row of their own, where you pick one and click the day it is due. A picked task can be opened or marked done, both with Undo. What the briefing read (what needs attention, why, Evidence, Open in Tasks and Briefing delivery) sits below the week view. Home lights in the sidebar for both tabs.
+
+Neither page has its own New task button: the top bar's New is the one create button, and C still starts a task. Both pages add read-only queries over the projects the reader can already open, with no schema change. A task has one date in the product, so every task is one day wide; pace forecasts, looking back in time and spreading a crowded week are in the approved design but have no data behind them and are not shown. This is an unshipped candidate on `design/app-v3-home-overview`; no deployment, migration or production change is claimed by this entry.
+
 ## 2026-10-05 · Candidate fix · Dark by default, and a light theme with the same finish
 
 The signed-in app is now dark unless you choose light. It no longer follows your device. The theme button in the sidebar and Appearance in Settings both offer two choices, Dark and Light, and the choice is saved to your account as before. Nobody's saved preference is rewritten: someone who never chose now gets Dark, and someone who chose Light or Dark keeps it. There is no schema change. The phone browser bar follows the theme. Sign-in, shared links and the public pages are unchanged.

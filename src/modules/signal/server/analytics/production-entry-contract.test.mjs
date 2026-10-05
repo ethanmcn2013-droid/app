@@ -89,11 +89,14 @@ test("Signal onboarding only redirects when its linked workspace still exists", 
 test("both engines render one Overview, and the progressive path keeps its drawer without the analytics shell", () => {
   assert.match(
     briefingPage,
-    /<section id="signal-main-content"[\s\S]*<OverviewView model=\{model\} \/>[\s\S]*<\/section>/,
+    // The week view reads only the Project this request's own membership
+    // check proved, so that id is the one thing handed on beside the model.
+    /<section id="signal-main-content"[\s\S]*<OverviewView model=\{model\} projectIds=\{context\.authorization\.membership \? \[context\.authorization\.membership\.workspaceId\] : \[\]\} \/>[\s\S]*<\/section>/,
   );
   assert.match(briefingPage, /<EvidenceDrawer/);
   assert.doesNotMatch(briefingPage, /SignalAppShell/);
   assert.match(legacyBriefing, /<OverviewView/);
+  assert.match(legacyBriefing, /projectIds=\{result\.authorizedScope\.workspaces\.map\(\(workspace\) => workspace\.id\)\}/);
   // One build feeds the page: the ledger and the engine's own signals from
   // the same buildBriefingForUser result, never a second read.
   assert.equal(legacyBriefing.match(/buildBriefingForUser\(/g)?.length, 1);

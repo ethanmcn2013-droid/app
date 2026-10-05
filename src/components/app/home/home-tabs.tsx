@@ -15,12 +15,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, type KeyboardEvent } from "react";
+import { HOME_TABPANEL_ID, homeTabId, type HomeTab } from "./home-tab-ids";
 import styles from "./home-tabs.module.css";
 
-export type HomeTab = "home" | "overview";
-
-export const HOME_TABPANEL_ID = "home-view-panel";
-export const homeTabId = (tab: HomeTab) => `home-view-tab-${tab}`;
+export type { HomeTab };
 
 const TABS: ReadonlyArray<{ id: HomeTab; label: string }> = [
   { id: "home", label: "Home" },

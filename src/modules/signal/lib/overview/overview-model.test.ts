@@ -235,7 +235,7 @@ test("a planning-period read requested by URL renders as one read, with no progr
   assert.deepEqual(model.runway?.keyDate?.project, "Project B", "the nearest key date still names its project");
 
   const { OverviewView } = loadView();
-  const html = renderToStaticMarkup(createElement(OverviewView, { model }));
+  const html = renderToStaticMarkup(await OverviewView({ model }));
   assert.doesNotMatch(html, /Planning period|Across projects|program/i);
 });
 
@@ -308,10 +308,30 @@ function loadComponent<T>(relative: string, boundaries: Record<string, unknown>)
   return loaded.exports;
 }
 
-function loadView() {
+type WeekRead = Awaited<ReturnType<typeof import("@/server/home/overview-river-read").loadOverviewRiver>>;
+
+/**
+ * The page with its client parts and its week-view read stood in for: the
+ * tabs print their name, the week view prints the Project it was handed, and
+ * the read answers with `week` and records which Projects it was asked for.
+ */
+function loadView(week: WeekRead = null, asked: string[][] = []) {
   return loadComponent<typeof import("../../components/overview/overview-view")>(
     "../../components/overview/overview-view.tsx",
     {
+      "@/components/shell/shell-icons": { ShellIcon: new Proxy({}, { get: () => () => null }) },
+      "@/components/app/home/home-tabs": {
+        HomeTabs: ({ current }: { current: string }) => createElement("nav", { "data-tabs": current }),
+      },
+      "@/components/app/home/overview/overview-river": {
+        OverviewRiver: ({ river }: { river: { name: string } }) => createElement("div", { "data-week-view": river.name }),
+      },
+      "@/server/home/overview-river-read": {
+        loadOverviewRiver: async (ids: readonly string[]) => {
+          asked.push([...ids]);
+          return week;
+        },
+      },
       "next/link": {
         default: ({ href, children, className }: { href: string; children: unknown; className?: string }) =>
           createElement("a", { href, className }, children as never),
@@ -338,8 +358,12 @@ function loadSwitcher() {
 
 test("the rendered Overview speaks plainly and opens signals only by opaque id", async () => {
   const { model, read } = await build();
-  const { OverviewView } = loadView();
-  const html = renderToStaticMarkup(createElement(OverviewView, { model }));
+  // No Project to read a week view for: the page keeps its plain summary.
+  const asked: string[][] = [];
+  const { OverviewView } = loadView(null, asked);
+  const html = renderToStaticMarkup(await OverviewView({ model }));
+  assert.deepEqual(asked, [], "with no Project in scope the week view is not read at all");
+  assert.match(html, /data-tabs="overview"/, "Overview is a tab of Home");
 
   for (const heading of ["Overview", "Progress", "Needs attention", "At risk", "Dates ahead", "Finished this week", "How this was read"]) {
     assert.match(html, new RegExp(`<h[12][^>]*>${heading}</h[12]>`), `missing heading ${heading}`);
@@ -354,4 +378,32 @@ test("the rendered Overview speaks plainly and opens signals only by opaque id",
   assert.doesNotMatch(html, /Due today\.<\/p>/);
   assert.doesNotMatch(html, /\bworkspace\b/i);
   assert.doesNotMatch(html, /text-transform|uppercase|font-mono/);
+});
+
+test("with a week view the Overview leads with it and keeps what the briefing read below", async () => {
+  const { model, read } = await build();
+  const asked: string[][] = [];
+  const week = { river: { name: "Mara & Finn" }, scopes: [] } as unknown as WeekRead;
+  const { OverviewView } = loadView(week, asked);
+  const html = renderToStaticMarkup(await OverviewView({ model, projectIds: ["project-b"] }));
+
+  // The read is asked only for the Projects the route authorized.
+  assert.deepEqual(asked, [["project-b"]]);
+  assert.match(html, /data-tabs="overview"/);
+  assert.match(html, /data-week-view="Mara &amp; Finn"/);
+  assert.ok(html.indexOf("data-week-view") < html.indexOf("What needs attention"), "the week view comes first");
+  for (const heading of ["What needs attention", "Needs attention", "At risk", "How this was read"]) {
+    assert.match(html, new RegExp(`<h2[^>]*>${heading}</h2>`), `missing heading ${heading}`);
+  }
+  // The summary's own cards step aside for the week view, which shows the same work.
+  for (const heading of ["Progress", "Dates ahead", "Finished this week"]) {
+    assert.doesNotMatch(html, new RegExp(`<h2[^>]*>${heading}</h2>`));
+  }
+  // Signals still open only by opaque id, and delivery settings stay one link away.
+  const opened = [...html.matchAll(/data-entry="([^"]+)"/g)].map((match) => match[1]);
+  assert.equal(opened.length, 3);
+  assert.ok(opened.every((id) => /^signal-[a-z0-9]+$/.test(id)));
+  for (const signal of read.filter((s) => s.lane !== "shipped")) assert.ok(!opened.includes(signal.id));
+  assert.match(html, /href="\/app\/home\/briefing\/settings\/notifications"/);
+  assert.match(html, /Read at \d{2}:\d{2}\./);
 });

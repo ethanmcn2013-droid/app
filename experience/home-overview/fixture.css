@@ -30,3 +30,30 @@ h2,
 h3 {
   margin: 0;
 }
+
+/* The Overview's own page column and tab row, as overview.module.css gives them. */
+.fixture-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: var(--v3-canvas);
+}
+
+.fixture-column {
+  max-width: var(--v3-page-w);
+  margin: 0 auto;
+  padding: 28px 32px 56px;
+}
+
+.fixture-tabs {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 720px) {
+  .fixture-column {
+    padding: 20px 16px 40px;
+  }
+}

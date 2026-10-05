@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import styles from "../components/overview/overview.module.css";
+import { HomeTabs } from "@/components/app/home/home-tabs";
 
 /**
  * Error boundary for the Overview. buildBriefingForUser() reads the Tasks
@@ -22,8 +23,11 @@ export default function SignalBriefError({
   return (
     <div className={`${styles.page} thin-scroll`}>
       <div className={styles.inner}>
+        <div className={styles.tabsRow}>
+          <HomeTabs current="overview" />
+        </div>
         <div className={styles.failure}>
-          <h1 className={styles.failureTitle}>The Overview didn&rsquo;t load.</h1>
+          <h1 className={styles.failureTitle}>The Overview did not load</h1>
           <p className={styles.failureBody}>
             Signal could not finish reading your work just now. Nothing was
             marked healthy in the meantime. Try again, or come back in a

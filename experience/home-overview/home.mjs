@@ -67,7 +67,8 @@ try {
 
         const side = page.getByRole("complementary", { name: "Coming up" });
         assert.match(text(await side.innerText()), /Next big day Menu tasting Mara & Finn’s wedding Today, Monday 5 October At risk 21 open 2 late See the timeline Open its tasks/);
-        assert.equal(text(await section(page, "Projects").locator("h2").innerText()), "Projects See all 10");
+        assert.equal(text(await section(page, "Projects").locator("h2").innerText()), "Projects");
+        assert.equal(await section(page, "Projects").getByRole("link", { name: "See all 10" }).getAttribute("href"), "/app/project");
         assert.deepEqual((await section(page, "Projects").locator("li").allInnerTexts()).map(text).slice(0, 3), [
           "Winter season launch Past its date · 4 late · 28 Sep",
           "Mara & Finn’s wedding At risk · 2 late · 5 Oct",
@@ -187,7 +188,7 @@ try {
         assert.equal(await page.getByRole("region", { name: "You are waiting on" }).count(), 0, "an empty optional group is not drawn");
         assert.equal(await page.getByRole("link", { name: "5 of your open tasks have no date yet" }).getAttribute("href"), "/app/tasks?workspaceId=p-test");
         assert.match(text(await page.getByRole("complementary").innerText()), /Next big day No big day is set\./);
-        assert.equal(text(await section(page, "Projects").locator("h2").innerText()), "Projects Open Projects");
+        assert.equal(await section(page, "Projects").getByRole("link", { name: "Open Projects" }).count(), 1);
         assert.doesNotMatch(await page.locator("#root").innerText(), BANNED, `${label}: banned word`);
         await run.noSidewaysScroll(page, label);
         await run.axe(page, label);

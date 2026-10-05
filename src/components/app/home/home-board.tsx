@@ -27,7 +27,8 @@ import type { ConsoleMark } from "@/lib/projects/project-console";
 import { sendNudgeAction } from "@/server/actions/nudge";
 import { toggleCompleteAction } from "@/server/actions/tasks";
 import { HomeViewedPing } from "./home-analytics";
-import { HOME_TABPANEL_ID, HomeTabs, homeTabId } from "./home-tabs";
+import { HOME_TABPANEL_ID, homeTabId } from "./home-tab-ids";
+import { HomeTabs } from "./home-tabs";
 import styles from "./home.module.css";
 
 // ── The reader's own clock ─────────────────────────────────────────────────
@@ -584,12 +585,12 @@ export function HomeBoardView({
               )}
 
               <section className={styles.section} aria-label="Projects">
-                <h2 className={styles.h2}>
-                  Projects
+                <div className={styles.h2Row}>
+                  <h2 className={styles.h2}>Projects</h2>
                   <Link href={board.projectsHref} className={styles.h2Link} prefetch={false}>
                     {board.projectCount === 1 ? "Open Projects" : `See all ${board.projectCount}`}
                   </Link>
-                </h2>
+                </div>
                 <ul className={styles.list}>
                   {board.projects.map((project) => (
                     <ProjectLine key={project.id} project={project} />

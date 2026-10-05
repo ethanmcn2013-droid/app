@@ -8,8 +8,9 @@ import "server-only";
  *
  * Membership is not decided here. The Project list is exactly what
  * `loadProjectCatalogAction` returns for the re-authenticated caller, the
- * same list the chooser and the Projects page read, and every select below is
- * filtered to those ids. It takes no ids from a request and is not a Server
+ * same list the chooser and the Projects page read (or, with that list
+ * switched off, the one Project `resolveProjectForRoute` proves), and every
+ * select below is filtered to those ids. It takes no ids from a request and is not a Server
  * Function. People are named only when they are current members of the same
  * Project as the task.
  *
@@ -22,6 +23,7 @@ import "server-only";
  */
 
 import { and, asc, eq, gte, inArray, isNull, or } from "drizzle-orm";
+import { unstable_rethrow } from "next/navigation";
 import { db } from "@/server/db";
 import { meta, tasks, users, workspaceMembers } from "@/server/db/schema";
 import { getCurrentUser } from "@/server/auth";
@@ -36,7 +38,8 @@ import { getProjectOverviewData } from "@/server/actions/project-overview";
 import { demoTasks } from "@/server/demo/tasks-demo";
 import { demoConsoleFacts, readConsoleFactsWith, validTimeZone } from "@/server/projects/project-console-facts";
 import { readProjectCardStats } from "@/server/projects/project-hub";
-import type { ChooserRow } from "@/lib/projects/project-chooser";
+import { resolveProjectForRoute } from "@/server/projects/route-authz";
+import type { ProjectRole } from "@/lib/projects/project-ref";
 import type { ConsoleHubFacts } from "@/lib/projects/project-console";
 import { projectColumnsMetaKey, type ProjectCardStats } from "@/lib/projects/project-hub";
 import {
@@ -170,8 +173,47 @@ export async function readHomeTasksWith(
   return { columns, members, viewerName, tasks: facts, truncated: taskRows.length > HOME_TASK_LIMIT };
 }
 
+/** One Project the reader may open, as their own list (or the route's proof) names it. */
+type HomeProjectRef = Readonly<{
+  id: string;
+  name: string;
+  role: ProjectRole;
+  selectable: boolean;
+  blockedReason: string | null;
+  activeRootTaskCount: number;
+}>;
+
+/**
+ * The Projects Home may read. With the Project list switched on, it is that
+ * list. With it switched off there is no list to read, so Home falls back to
+ * the one Project the route's own resolver proves for this caller (the saved
+ * one, else their first). Null when neither can be read.
+ */
+async function authorizedProjects(): Promise<HomeProjectRef[] | null> {
+  const result = await loadProjectCatalogAction();
+  if (result.ok) {
+    return result.catalog.rows
+      .filter((row) => !row.archived)
+      .slice(0, PROJECT_LIMIT)
+      .map((row) => ({
+        id: row.id,
+        name: row.name,
+        role: row.role,
+        selectable: row.selectable,
+        blockedReason: row.blockedReason,
+        activeRootTaskCount: row.activeRootTaskCount,
+      }));
+  }
+  if (result.reason !== "disabled") return null;
+  const decision = await resolveProjectForRoute();
+  if (decision.kind === "empty") return [];
+  if (decision.kind !== "ready") return null;
+  const { project } = decision;
+  return [{ id: project.id, name: project.name, role: project.role, selectable: true, blockedReason: null, activeRootTaskCount: 0 }];
+}
+
 function projectFact(
-  row: ChooserRow,
+  row: HomeProjectRef,
   stats: ProjectCardStats | null,
   facts: ConsoleHubFacts | null,
   read: Pick<HomeTaskRead, "columns" | "members">,
@@ -194,7 +236,7 @@ function projectFact(
  * Review and demo mode have no database. The one Project reads the same
  * sources its other pages read, on the pinned review clock.
  */
-async function demoHomeBoard(rows: readonly ChooserRow[]): Promise<HomeBoard> {
+async function demoHomeBoard(rows: readonly HomeProjectRef[]): Promise<HomeBoard> {
   const now = Date.parse(`${REVIEW_SUITE_FIXTURE.reviewToday}T09:00:00.000Z`);
   const row = rows[0];
   const overview = await getProjectOverviewData();
@@ -251,21 +293,21 @@ async function demoHomeBoard(rows: readonly ChooserRow[]): Promise<HomeBoard> {
  * a figure whose read failed is dropped by the model, not guessed.
  */
 export async function loadHomeBoard(): Promise<HomeBoard | null> {
-  const result = await loadProjectCatalogAction();
-  if (!result.ok) return null;
-  const rows = result.catalog.rows.filter((row) => !row.archived).slice(0, PROJECT_LIMIT);
+  const rows = await authorizedProjects();
+  if (!rows) return null;
 
   if (isDemoMode()) {
     try {
       return await demoHomeBoard(rows);
-    } catch {
+    } catch (error) {
+      unstable_rethrow(error);
       return null;
     }
   }
 
   const viewerId = await getCurrentUser();
   const now = Date.now();
-  const ids = rows.map((row) => row.id as string);
+  const ids = rows.map((row) => row.id);
   const timeZone = getUserPreferences(viewerId).then(
     (preferences) => validTimeZone(preferences.timeZone),
     () => "UTC",

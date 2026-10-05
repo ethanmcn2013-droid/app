@@ -1,6 +1,10 @@
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import { ShellIcon } from "@/components/shell/shell-icons";
+import { HOME_TABPANEL_ID, homeTabId } from "@/components/app/home/home-tab-ids";
+import { HomeTabs } from "@/components/app/home/home-tabs";
+import { OverviewRiver } from "@/components/app/home/overview/overview-river";
+import { loadOverviewRiver } from "@/server/home/overview-river-read";
 import type {
   OverviewFinishedRow,
   OverviewLaneCounts,
@@ -12,13 +16,18 @@ import { OpenInTasks, WhyThis } from "./overview-actions";
 import styles from "./overview.module.css";
 
 /**
- * Overview v3: the full read across one scope.
+ * Overview v3: the week view, and the read behind it.
  *
- * Home is the glance (numbers, my tasks, deadlines). This page is the read
- * behind it, one Project at a time: how far the work has come, what needs
- * attention and why, what is at risk, the dates between now and the
- * Project's key date, what finished this week, and how Signal arrived at all
- * of it.
+ * Overview is the second tab of Home (founder, 5 October 2026). It opens on
+ * the week view (`OverviewRiver`): every dated task of the Project on its
+ * day, big dates, how full each week is, and what has no date yet. Below it
+ * sits what the briefing read: what needs attention and why, what is at
+ * risk, and how Signal arrived at it, with Evidence, "Why this" and Open in
+ * Tasks exactly as before.
+ *
+ * When the week view cannot be read (no Project in scope the reader may
+ * open, or the read failed) the page falls back to the plain summary it had:
+ * progress, the dates ahead and what finished this week.
  *
  * Server component. The only client code is the open-in-Tasks form and the
  * "Why this" disclosure. Motion is one concert, not a swarm: the page rises
@@ -30,20 +39,84 @@ import styles from "./overview.module.css";
 
 const OVERVIEW_PATH_SETTINGS = "/app/home/briefing/settings/notifications";
 
-export function OverviewView({
+export async function OverviewView({
   model,
   scopeControl = null,
+  projectIds = [],
 }: {
   model: OverviewModel;
   /** The project switcher, when there is another Project to choose. */
   scopeControl?: ReactNode;
+  /**
+   * The Projects the route authorized for this read. The week view reads
+   * only those of them the caller's own Project list also holds.
+   */
+  projectIds?: readonly string[];
 }) {
-  const hasSide = model.runway !== null || model.finished !== null;
   const noSignals = model.attention.length === 0 && model.risks.length === 0;
+  const week = projectIds.length > 0 ? await loadOverviewRiver(projectIds) : null;
+  const tabs = (
+    <div className={styles.tabsRow}>
+      <HomeTabs current="overview" />
+    </div>
+  );
 
+  if (week) {
+    return (
+      <div className={`${styles.page} thin-scroll`}>
+        <div className={`${styles.inner} ${styles.rise}`}>
+          {tabs}
+          <div id={HOME_TABPANEL_ID} role="tabpanel" aria-labelledby={homeTabId("overview")}>
+            {model.coverage ? (
+              <div role="status" aria-live="polite" className={styles.notice} data-tone={model.coverage.tone}>
+                <ShellIcon.alert size={16} className={styles.noticeIcon} />
+                <p>{model.coverage.note}</p>
+              </div>
+            ) : null}
+            <OverviewRiver river={week.river} scopes={week.scopes} scopeControl={scopeControl} />
+
+            <section className={styles.read} aria-labelledby="overview-read-title">
+              <div className={styles.readHead}>
+                <h2 id="overview-read-title" className={styles.readHeading}>
+                  What needs attention
+                </h2>
+                <p className={styles.readSub}>
+                  <span className={styles.statusDot} data-tone={model.verdict.tone} aria-hidden="true" />
+                  <span>{model.verdict.sentence}</span>
+                  <span>Read at {model.timeLabel}.</span>
+                </p>
+              </div>
+              <div className={styles.grid} data-single={model.attention.length > 0 && model.risks.length > 0 ? undefined : ""}>
+                {model.attention.length > 0 ? (
+                  <div className={styles.column}>
+                    <SignalCard id="overview-attention" title="Needs attention" signals={model.attention} />
+                  </div>
+                ) : null}
+                {model.risks.length > 0 ? (
+                  <div className={styles.column}>
+                    <SignalCard id="overview-risks" title="At risk" signals={model.risks} />
+                  </div>
+                ) : null}
+                {noSignals && model.emptyState ? (
+                  <div className={styles.column}>
+                    <ClearCard emptyState={model.emptyState} />
+                  </div>
+                ) : null}
+              </div>
+              {model.readNote ? <ReadNote note={model.readNote} /> : null}
+            </section>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const hasSide = model.runway !== null || model.finished !== null;
   return (
     <div className={`${styles.page} thin-scroll`}>
       <div className={`${styles.inner} ${styles.rise}`}>
+        {tabs}
+        <div id={HOME_TABPANEL_ID} role="tabpanel" aria-labelledby={homeTabId("overview")}>
         <header className={styles.header}>
           <div className={styles.headText}>
             <p className={styles.eyebrow}>
@@ -97,29 +170,7 @@ export function OverviewView({
                 signals={model.risks}
               />
             ) : null}
-            {noSignals && model.emptyState ? (
-              <section className={styles.card} aria-labelledby="overview-clear">
-                <div className={styles.clear}>
-                  <span
-                    className={styles.clearGlyph}
-                    data-tone={model.emptyState.kind === "coverage" ? "warning" : "success"}
-                    aria-hidden="true"
-                  >
-                    {model.emptyState.kind === "coverage" ? (
-                      <ShellIcon.alert size={18} />
-                    ) : (
-                      <ShellIcon.checkCircle size={18} />
-                    )}
-                  </span>
-                  <div>
-                    <h2 id="overview-clear" className={styles.clearTitle}>
-                      {model.emptyState.headline}
-                    </h2>
-                    <p className={styles.clearBody}>{model.emptyState.body}</p>
-                  </div>
-                </div>
-              </section>
-            ) : null}
+            {noSignals && model.emptyState ? <ClearCard emptyState={model.emptyState} /> : null}
           </div>
 
           {hasSide ? (
@@ -130,26 +181,49 @@ export function OverviewView({
           ) : null}
         </div>
 
-        {model.readNote ? (
-          <section className={styles.readNote} aria-labelledby="overview-read">
-            <span className={styles.readIcon} aria-hidden="true">
-              <InfoIcon />
-            </span>
-            <div>
-              <h2 id="overview-read" className={styles.readTitle}>
-                How this was read
-              </h2>
-              <p className={styles.readBody}>{model.readNote}</p>
-              <p className={styles.readLinks}>
-                <Link href={OVERVIEW_PATH_SETTINGS} className={styles.readLink}>
-                  Briefing delivery <span aria-hidden="true">→</span>
-                </Link>
-              </p>
-            </div>
-          </section>
-        ) : null}
+        {model.readNote ? <ReadNote note={model.readNote} /> : null}
+        </div>
       </div>
     </div>
+  );
+}
+
+function ClearCard({ emptyState }: { emptyState: NonNullable<OverviewModel["emptyState"]> }) {
+  return (
+    <section className={styles.card} aria-labelledby="overview-clear">
+      <div className={styles.clear}>
+        <span className={styles.clearGlyph} data-tone={emptyState.kind === "coverage" ? "warning" : "success"} aria-hidden="true">
+          {emptyState.kind === "coverage" ? <ShellIcon.alert size={18} /> : <ShellIcon.checkCircle size={18} />}
+        </span>
+        <div>
+          <h2 id="overview-clear" className={styles.clearTitle}>
+            {emptyState.headline}
+          </h2>
+          <p className={styles.clearBody}>{emptyState.body}</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ReadNote({ note }: { note: string }) {
+  return (
+    <section className={styles.readNote} aria-labelledby="overview-read">
+      <span className={styles.readIcon} aria-hidden="true">
+        <InfoIcon />
+      </span>
+      <div>
+        <h2 id="overview-read" className={styles.readTitle}>
+          How this was read
+        </h2>
+        <p className={styles.readBody}>{note}</p>
+        <p className={styles.readLinks}>
+          <Link href={OVERVIEW_PATH_SETTINGS} className={styles.readLink}>
+            Briefing delivery <span aria-hidden="true">→</span>
+          </Link>
+        </p>
+      </div>
+    </section>
   );
 }
 

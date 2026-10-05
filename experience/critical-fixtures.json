@@ -41,7 +41,7 @@
             {
               "kind": "role",
               "role": "heading",
-              "name": "Good morning.",
+              "name": "Good morning, Orla",
               "proves": [
                 "populated"
               ]
@@ -850,8 +850,9 @@
               ]
             },
             {
-              "kind": "text",
-              "text": "Thursday 16 July · Read at 09:00",
+              "kind": "role",
+              "role": "heading",
+              "name": "What needs attention",
               "proves": [
                 "default"
               ]
@@ -1302,15 +1303,14 @@
             {
               "kind": "role",
               "role": "heading",
-              "name": "Good morning.",
+              "name": "Good morning, Orla",
               "proves": [
                 "default"
               ]
             },
             {
-              "kind": "role",
-              "role": "heading",
-              "name": "Upcoming deadlines",
+              "kind": "text",
+              "text": "Next big day",
               "proves": [
                 "populated"
               ]
@@ -1356,8 +1356,9 @@
               ]
             },
             {
-              "kind": "text",
-              "text": "Thursday 16 July · Read at 09:00",
+              "kind": "role",
+              "role": "heading",
+              "name": "What needs attention",
               "proves": [
                 "default"
               ]
