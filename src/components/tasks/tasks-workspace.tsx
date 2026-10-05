@@ -4,8 +4,9 @@
  * TasksWorkspace: the whole Tasks page inside the v3 shell.
  *
  * One calm page that answers what is next, what is stuck and what is done:
- * the header states progress and three pressable facts, the toolbar switches
- * between Board, List and Calendar, and the view canvas fills the rest. At
+ * the shared header states the week, what is open and what is late, the
+ * toolbar switches between Board, List and Calendar, and the view canvas
+ * fills the rest. New work starts from the top bar's New or the C key. At
  * 1280px and wider an open task docks beside the canvas so the board stays
  * usable next to it.
  *
@@ -37,7 +38,6 @@ import { PropertyPicker } from "./property-picker";
 import { DeleteConfirm } from "./delete-confirm";
 import { ShortcutsSheet } from "./shortcuts-sheet";
 import { TasksColumnsProvider } from "./column-config";
-import { TIcon } from "./icons";
 import { BoardSkeleton, CalendarSkeleton, ListSkeleton } from "./skeletons";
 import styles from "./workspace.module.css";
 
@@ -294,7 +294,7 @@ function Workspace() {
       <div className={styles.main} ref={mainRef}>
         <div className={styles.headZone}>
           <div className={styles.column}>
-            <TasksHeader onNewTask={(anchor) => openComposer(anchor)} />
+            <TasksHeader />
           </div>
         </div>
         {/* The tools stay in reach while a long list or month scrolls. */}
@@ -322,11 +322,6 @@ function Workspace() {
         aria-label="Task details"
         hidden={!docked}
       />
-      {surface.readOnly ? null : (
-        <button type="button" className={styles.fab} aria-label="New task" onClick={(event) => openComposer(event.currentTarget)}>
-          <TIcon.plus size={22} />
-        </button>
-      )}
       <BulkBar />
       <UndoToast onOpen={(id) => openTask(id)} />
       <TaskMenu />

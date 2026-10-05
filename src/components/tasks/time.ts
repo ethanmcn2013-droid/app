@@ -3,7 +3,7 @@
  *
  * Moved unchanged in spirit from the retired Floor board: every surface
  * (card, row, calendar chip, header facts) reads the same answer, so the
- * header's "1 overdue" and the red chip on the card can never disagree.
+ * header's "1 late" and the red chip on the card can never disagree.
  * The calendar frame is the only clock: SSR and hydration agree on today.
  */
 
@@ -71,13 +71,13 @@ export function timeOf(
   if (task.schedule.kind === "milestone") {
     const on = task.schedule.on;
     const delta = Math.round((toUTC(on) - toUTC(today)) / 86_400_000);
-    return { kind: "milestone", label: dayLabel(on, today), said: `Milestone, ${dayLabel(on, today)}`, delta };
+    return { kind: "milestone", label: dayLabel(on, today), said: `Big date, ${dayLabel(on, today)}`, delta };
   }
   const due = task.schedule.kind === "due" || task.schedule.kind === "range" ? task.schedule.dueOn : null;
   if (!due) return NONE;
   const delta = Math.round((toUTC(due) - toUTC(today)) / 86_400_000);
   if (delta < 0) {
-    return { kind: "overdue", label: `${shortDate(due)}, ${lateBy(delta)}`, said: `Overdue, was due ${shortDate(due)}, ${lateBy(delta)}`, delta };
+    return { kind: "overdue", label: `${shortDate(due)}, ${lateBy(delta)}`, said: `Was due ${shortDate(due)}, ${lateBy(delta)}`, delta };
   }
   if (delta === 0) return { kind: "today", label: "Today", said: "Due today", delta };
   if (delta === 1) return { kind: "tomorrow", label: "Tomorrow", said: "Due tomorrow", delta };

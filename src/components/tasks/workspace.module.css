@@ -42,6 +42,7 @@
 .toolZone {
   flex: none;
   z-index: 6;
+  border-bottom: 1px solid var(--v3-border);
   background: var(--v3-canvas);
 }
 
@@ -68,7 +69,7 @@
 .column {
   max-width: var(--column-max);
   margin: 0 auto;
-  padding: 24px var(--gutter) 0;
+  padding: 20px var(--gutter) 0;
 }
 
 .toolZone .column {
@@ -111,47 +112,60 @@
 }
 
 /* ── Header ───────────────────────────────────────────────────────── */
+/* One header for the board, the list and the calendar: title and project on
+   the first row with the actions pinned top right, then the summary line and
+   the stuck sentence across the full width. */
 .header {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: 16px;
 }
 
-.contextRow {
+.titleRow {
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-height: 32px;
-}
-
-.project {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px 12px;
   min-width: 0;
-  max-width: min(420px, 50%);
   min-height: 32px;
-  padding-right: 4px;
-  border-radius: var(--v3-radius);
-  color: var(--v3-text-2);
-  font-size: 13px;
-  font-weight: 500;
-  transition: color 120ms var(--v3-ease);
 }
 
-.project:hover {
+.title {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
   color: var(--v3-text);
 }
 
-.projectTile {
-  display: inline-grid;
-  place-items: center;
+.projectPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  max-width: min(420px, 100%);
+  height: 28px;
+  padding: 0 11px 0 10px;
+  border: 1px solid var(--v3-border);
+  border-radius: 999px;
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 150ms var(--v3-ease), border-color 150ms var(--v3-ease);
+}
+
+.projectPill:hover {
+  border-color: var(--v3-border-strong);
+  background: var(--v3-hover);
+}
+
+.projectDot {
   flex: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 6px;
-  color: var(--v3-project-ink);
-  font-size: 11px;
-  font-weight: 600;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
 }
 
 .projectName {
@@ -162,10 +176,11 @@
 }
 
 .headerActions {
+  grid-column: 2;
+  grid-row: 1;
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-left: auto;
+  gap: 8px;
 }
 
 .collaborators {
@@ -175,29 +190,6 @@
 
 .shareSlot {
   display: inline-flex;
-}
-
-.newTask {
-  padding-right: 8px;
-}
-
-.newTask kbd {
-  margin-left: 2px;
-}
-
-.titleRow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 6px;
-}
-
-.title {
-  font-size: 26px;
-  line-height: 1.2;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--v3-text);
 }
 
 .viewOnly {
@@ -214,155 +206,234 @@
   cursor: help;
 }
 
-/* ── Progress and facts ───────────────────────────────────────────── */
-.progressRow {
+/* ── Summary line ─────────────────────────────────────────────────── */
+.summary {
+  grid-column: 1 / -1;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px 20px;
-  margin-top: 10px;
-}
-
-.progress {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 30px;
-  font-size: 13px;
+  gap: 2px 6px;
+  margin-top: 6px;
   color: var(--v3-text-2);
-}
-
-.progressText b {
-  color: var(--v3-text);
-  font-weight: 600;
+  font-size: 13px;
+  line-height: 22px;
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 
-.allDone {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--v3-success-text);
-  font-weight: 500;
+.strong {
+  color: var(--v3-text);
+  font-weight: 600;
 }
 
-.meter {
-  position: relative;
-  display: block;
-  width: 120px;
-  height: 6px;
-  border-radius: 999px;
-  background: var(--v3-fill);
-  box-shadow: inset 0 0 0 1px var(--v3-border);
-  overflow: hidden;
-}
-
-.meterFill {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: var(--v3-success);
-  transform-origin: left center;
-  transition: transform 400ms var(--v3-ease);
-}
-
-.period {
-  padding-left: 10px;
-  border-left: 1px solid var(--v3-border-strong);
+.sep {
   color: var(--v3-text-3);
 }
 
-.facts {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.fact {
+.factGroup {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 30px;
-  padding: 0 11px 0 9px;
-  border-radius: 999px;
-  font-size: 12.5px;
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background-color 120ms var(--v3-ease), box-shadow 120ms var(--v3-ease), color 120ms var(--v3-ease);
 }
 
-.factCount {
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
+/* How much of the project is finished, as a ring. Neutral ink: finished is
+   calm, and only trouble takes colour. */
+.ring {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-right: 2px;
+  border-radius: 50%;
+  background: conic-gradient(var(--v3-text-2) var(--p), var(--v3-border-strong) 0);
+  -webkit-mask: radial-gradient(circle, transparent 4px, var(--v3-solid) 4.5px);
+  mask: radial-gradient(circle, transparent 4px, var(--v3-solid) 4.5px);
+}
+
+.fact {
+  margin: 0 -5px;
+  padding: 0 7px;
+  border-radius: 999px;
+  color: var(--v3-text-2);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
+}
+
+.fact:hover,
+.fact[aria-pressed="true"] {
+  background: var(--v3-fill);
+  color: var(--v3-text);
 }
 
 .fact[data-tone="danger"] {
+  color: var(--v3-danger-text);
+}
+
+.fact[data-tone="danger"]:hover,
+.fact[data-tone="danger"][aria-pressed="true"] {
   background: var(--v3-danger-soft);
   color: var(--v3-danger-text);
 }
 
-.fact[data-tone="accent"] {
-  background: var(--v3-warning-soft);
-  color: var(--v3-warning-text);
-}
-
-.fact[data-tone="neutral"] {
-  background: var(--v3-fill);
-  color: var(--v3-text-2);
-}
-
-.fact:hover {
+.fact[aria-pressed="true"] {
   box-shadow: inset 0 0 0 1px currentColor;
 }
 
-.fact[aria-pressed="true"] {
-  box-shadow: inset 0 0 0 1.5px currentColor;
+/* ── Stuck: the sentence and the control ──────────────────────────── */
+.health {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 6px;
+  color: var(--v3-text-2);
+  font-size: 13px;
+  line-height: 20px;
+  text-wrap: pretty;
 }
 
-.fact[data-zero] {
-  background: transparent;
+.health > svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--v3-warning-stroke);
+}
+
+.health strong {
+  color: var(--v3-text);
+  font-weight: 600;
+}
+
+.inlineTail {
+  white-space: nowrap;
+}
+
+.inlineAction,
+.inlineQuiet {
+  display: inline;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  text-underline-offset: 3px;
+}
+
+.inlineAction {
+  color: var(--v3-accent-text);
+  font-weight: 600;
+}
+
+.inlineQuiet {
+  color: var(--v3-text-2);
+  font-weight: 500;
+}
+
+.inlineAction:hover,
+.inlineQuiet:hover {
+  text-decoration: underline;
+}
+
+.inlineSep {
+  margin: 0 6px;
   color: var(--v3-text-3);
-  box-shadow: inset 0 0 0 1px var(--v3-border);
-  cursor: default;
+}
+
+.stuckChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 6px 0 10px;
+  border: 1px solid var(--v3-control-border);
+  border-radius: 999px;
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  font-size: 13px;
+  font-weight: 550;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 150ms var(--v3-ease), box-shadow 150ms var(--v3-ease);
+}
+
+.stuckChip:hover {
+  background: var(--v3-hover);
+}
+
+.stuckChip > svg {
+  color: var(--v3-warning-stroke);
+}
+
+/* Pressed reads in both themes: a solid ink ground with a clear ring. */
+.stuckChip[aria-pressed="true"] {
+  border-color: var(--v3-solid);
+  background: var(--v3-solid);
+  color: var(--v3-on-solid);
+  box-shadow: 0 0 0 1px var(--v3-solid), 0 0 0 3px color-mix(in srgb, var(--v3-solid) 22%, transparent);
+}
+
+.stuckChip[aria-pressed="true"] > svg {
+  color: currentColor;
+}
+
+.stuckCount {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--v3-fill);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stuckChip[aria-pressed="true"] .stuckCount {
+  background: color-mix(in srgb, var(--v3-on-solid) 18%, transparent);
+}
+
+.header :focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: 2px;
 }
 
 /* ── Toolbar ──────────────────────────────────────────────────────── */
+/* One row under the header, the same on every view: the view switch at the
+   left, then Find a task, Filter and Display. */
 .toolbar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px 0 14px;
+  gap: 8px;
+  min-height: 44px;
+  padding: 12px 0 10px;
 }
 
 .toolbarRight {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   margin-left: auto;
 }
 
 .viewSwitch {
   display: inline-flex;
-  gap: 2px;
+  flex: none;
   padding: 2px;
   border-radius: var(--v3-radius);
-  background: var(--v3-sunken);
-  box-shadow: inset 0 0 0 1px var(--v3-border);
+  background: var(--v3-fill);
 }
 
 .viewItem {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  height: 28px;
-  padding: 0 11px 0 9px;
-  border-radius: calc(var(--v3-radius) - 2px);
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 6px;
   color: var(--v3-text-2);
   font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
-  transition: background-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
+  transition: background-color 150ms var(--v3-ease), color 150ms var(--v3-ease);
 }
 
 .viewItem:hover {
@@ -376,9 +447,9 @@
   box-shadow: var(--v3-shadow-1), 0 0 0 1px var(--v3-border);
 }
 
-.viewItem[aria-current="page"] svg,
-.viewItem[data-current] svg {
-  color: var(--v3-accent-text);
+.viewItem:focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: 1px;
 }
 
 /* While the project is still being confirmed the other views wait; the
@@ -391,10 +462,10 @@
 .search {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  width: 240px;
-  height: 32px;
-  padding: 0 6px 0 10px;
+  gap: 6px;
+  width: 220px;
+  height: 30px;
+  padding: 0 6px 0 9px;
   border: 1px solid var(--v3-border);
   border-radius: var(--v3-radius);
   background: var(--v3-surface);
@@ -405,7 +476,7 @@
 .search:focus-within {
   border-color: var(--v3-accent);
   box-shadow: 0 0 0 3px var(--v3-accent-soft);
-  width: 280px;
+  width: 260px;
 }
 
 .search[data-filled] {
@@ -540,7 +611,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 6px;
-  margin: -4px 0 12px;
+  margin: 0 0 10px;
 }
 
 .chip {
@@ -586,8 +657,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: -2px 0 12px;
-  padding: 8px 8px 8px 12px;
+  margin: 0 0 10px;
+  padding: 6px 6px 6px 12px;
   border-radius: var(--v3-radius);
   background: var(--v3-sunken);
   box-shadow: inset 0 0 0 1px var(--v3-border);
@@ -881,10 +952,6 @@
   white-space: nowrap;
 }
 
-.fab {
-  display: none;
-}
-
 /* The floating layers share the foot of the screen with the shell's
    "In development" pill (.signal-devbanner, fixed at bottom 18px, about
    32px tall, centred). While it shows, the bulk bar sits above it, and the
@@ -1072,58 +1139,49 @@
   .column {
     padding-top: 12px;
   }
-  .contextRow {
-    gap: 8px;
+  .header {
+    column-gap: 8px;
   }
+  /* The title keeps the first row with the team, Stuck and the overflow;
+     the project takes the full width of the row under it. Share is offered
+     from 768px up, as before. */
   .titleRow {
-    margin-top: 2px;
+    display: contents;
   }
-  .project {
-    max-width: none;
-    flex: 1;
+  .title {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
   }
-  .shareSlot,
-  .newTask {
+  .projectPill,
+  .viewOnly {
+    grid-column: 1 / -1;
+    justify-self: start;
+    margin-top: 8px;
+  }
+  .projectPill {
+    max-width: 100%;
+  }
+  .shareSlot {
     display: none;
   }
   .title {
     font-size: 24px;
+    line-height: 30px;
   }
-  /* Progress and the three facts share one row that scrolls sideways,
-     fading at the edge so the cut reads as "more this way". */
-  .progressRow {
-    flex-wrap: nowrap;
-    gap: 8px;
-    margin: 8px calc(var(--gutter) * -1) 0;
-    padding: 0 var(--gutter);
-    overflow-x: auto;
-    scrollbar-width: none;
-    -webkit-mask-image: linear-gradient(to right, var(--v3-canvas) calc(100% - 28px), transparent);
-    mask-image: linear-gradient(to right, var(--v3-canvas) calc(100% - 28px), transparent);
-  }
-  .progressRow::-webkit-scrollbar {
-    display: none;
-  }
-  .progress {
-    flex: none;
-    gap: 8px;
-  }
-  .meter {
-    width: 56px;
-  }
-  .facts {
-    flex: none;
-    padding-right: 28px;
+  .summary {
+    margin-top: 8px;
+    line-height: 26px;
   }
   .fact {
-    height: 36px;
+    min-height: 28px;
   }
   /* One tools row: the current view keeps its name, the other two are
      icons (named for screen readers and on hover). Search fills the rest
      and takes the whole row while someone types. */
   .toolbar {
     gap: 8px;
-    padding: 12px 0 10px;
+    padding: 10px 0 8px;
   }
   .viewSwitch {
     flex: none;
@@ -1193,16 +1251,12 @@
   .searchKey {
     display: none;
   }
-  .period {
-    display: none;
-  }
   .canvas {
     min-height: auto;
     flex: none;
   }
-  /* Above the New task button on a phone. */
   .workspace {
-    --bulk-bottom: 88px;
+    --bulk-bottom: 24px;
   }
   /* On a phone the pill sits at bottom 76px (about 36px tall). */
   :global(body:has(.signal-devbanner)) .workspace {
@@ -1244,24 +1298,6 @@
     right: 16px;
     max-width: none;
   }
-  .fab {
-    position: fixed;
-    right: 16px;
-    bottom: calc(16px + env(safe-area-inset-bottom));
-    z-index: 55;
-    display: grid;
-    place-items: center;
-    width: 56px;
-    height: 56px;
-    border-radius: 999px;
-    background: var(--v3-accent);
-    color: var(--v3-on-accent);
-    box-shadow: 0 8px 24px color-mix(in srgb, var(--v3-accent) 40%, transparent), var(--v3-shadow-1);
-    transition: transform 120ms var(--v3-ease);
-  }
-  .fab:active {
-    transform: scale(0.94);
-  }
   .shortcutsGrid {
     grid-template-columns: 1fr;
   }
@@ -1284,8 +1320,11 @@
   .confirmScrim {
     animation: fade 100ms linear;
   }
-  .meterFill,
-  .search {
+  .search,
+  .viewItem,
+  .projectPill,
+  .stuckChip,
+  .fact {
     transition: none;
   }
 }

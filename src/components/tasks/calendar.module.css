@@ -3,54 +3,84 @@
 .wrap {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   max-width: var(--column-max, var(--v3-page-w));
   width: 100%;
   margin: 0 auto;
-  padding: 0 var(--gutter, 32px) 48px;
+  padding: 14px var(--gutter, 32px) 48px;
 }
 
+/* The calendar's own row: the period and what is due in it at the left, the
+   layout, the tray and the subscription at the right. */
 .toolbar {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px 12px;
   flex-wrap: wrap;
+  min-height: 32px;
 }
 
 .nav {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .title {
-  min-width: 132px;
-  padding: 0 4px;
+  min-width: 0;
+  padding: 0 6px;
   text-align: center;
-  font-size: 16px;
+  font-size: 18px;
+  line-height: 28px;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
   color: var(--v3-text);
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
+}
+
+.nav > button:last-child {
+  margin-left: 6px;
+}
+
+.periodLine {
+  color: var(--v3-text-2);
+  font-size: 13px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.periodLine strong {
+  color: var(--v3-text);
+  font-weight: 600;
+}
+
+.periodSep {
+  margin: 0 6px;
+  color: var(--v3-text-3);
+}
+
+.periodLate {
+  color: var(--v3-danger-text);
+  font-weight: 500;
 }
 
 .modes {
   display: inline-flex;
-  gap: 2px;
   margin-left: auto;
   padding: 2px;
   border-radius: var(--v3-radius);
-  background: var(--v3-sunken);
-  box-shadow: inset 0 0 0 1px var(--v3-border);
+  background: var(--v3-fill);
 }
 
 .mode {
-  height: 28px;
-  padding: 0 12px;
-  border-radius: calc(var(--v3-radius) - 2px);
+  height: 26px;
+  padding: 0 11px;
+  border-radius: 6px;
   color: var(--v3-text-2);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 500;
+  transition: background-color 150ms var(--v3-ease), color 150ms var(--v3-ease);
 }
 
 .mode:hover {
@@ -63,35 +93,39 @@
   box-shadow: var(--v3-shadow-1), 0 0 0 1px var(--v3-border);
 }
 
+.mode:focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: 1px;
+}
+
 .subscribe {
   flex: none;
 }
 
-/* Shows or hides the "Needs a date" pane beside the month. */
+/* Shows or hides the "To plan" tray to the right of the grid. */
 .trayToggle {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   flex: none;
-  height: 32px;
-  padding: 0 10px;
-  border-radius: var(--v3-radius);
-  box-shadow: inset 0 0 0 1px var(--v3-control-border);
-  color: var(--v3-text-2);
-  font-size: 12.5px;
+  height: 30px;
+  padding: 0 6px 0 10px;
+  border: 1px solid var(--v3-border);
+  border-radius: 999px;
+  color: var(--v3-text);
+  font-size: 13px;
   font-weight: 500;
-  transition: background-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
+  transition: background-color 120ms var(--v3-ease), border-color 120ms var(--v3-ease);
 }
 
 .trayToggle:hover {
+  border-color: var(--v3-border-strong);
   background: var(--v3-hover);
-  color: var(--v3-text);
 }
 
 .trayToggle[aria-pressed="true"] {
-  background: var(--v3-selected);
-  color: var(--v3-text);
-  box-shadow: inset 0 0 0 1px var(--v3-border-strong);
+  border-color: var(--v3-control-border);
+  background: var(--v3-surface);
 }
 
 .trayToggle svg {
@@ -99,7 +133,15 @@
 }
 
 .trayCount {
-  color: var(--v3-text-3);
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--v3-fill);
+  color: var(--v3-text);
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -165,10 +207,82 @@
 }
 
 .weekday {
+  min-width: 0;
   padding: 8px 10px;
   color: var(--v3-text-2);
   font-size: 12px;
   font-weight: 500;
+}
+
+.weekdays[data-mode="week"] {
+  background: transparent;
+}
+
+.weekdays[data-mode="week"] .weekday {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 12px 10px;
+}
+
+.weekdays[data-mode="week"] .weekday + .weekday {
+  border-left: 1px solid var(--v3-border);
+}
+
+.weekdayTop {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.weekdayName {
+  color: var(--v3-text-2);
+  font-size: 13px;
+}
+
+.weekdayNumber {
+  color: var(--v3-text-2);
+  font-size: 20px;
+  line-height: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.weekday[data-today] .weekdayName,
+.weekday[data-today] .weekdayNumber {
+  color: var(--v3-accent-text);
+}
+
+.todayTag {
+  align-self: center;
+  margin-left: auto;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--v3-accent-soft);
+  color: var(--v3-accent-text);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+/* What is due that day, under a hairline that turns accent for today. */
+.weekdayCount {
+  padding-top: 7px;
+  border-top: 3px solid var(--v3-fill);
+  color: var(--v3-text-3);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+.weekday[data-today] .weekdayCount {
+  border-top-color: var(--v3-accent);
+  color: var(--v3-text-2);
 }
 
 .week + .week {
@@ -189,7 +303,28 @@
 }
 
 .week[data-mode="week"] .day {
-  min-height: 360px;
+  min-height: max(360px, calc(100vh - 420px));
+  padding: 8px 6px 10px;
+  gap: 6px;
+}
+
+/* The header above already names the day, so the cell keeps only its add
+   button, at the foot of the day's cards. */
+.week[data-mode="week"] .dayNumber {
+  display: none;
+}
+
+.week[data-mode="week"] .dayHead {
+  order: 2;
+  justify-content: flex-start;
+}
+
+.week[data-mode="week"] .dayItems {
+  gap: 6px;
+}
+
+.week[data-mode="week"] .day[data-today] {
+  background: color-mix(in srgb, var(--v3-accent) 3%, transparent);
 }
 
 /* A week has the room to show whole titles, so chips wrap instead of
@@ -197,9 +332,34 @@
 .week[data-mode="week"] .chip {
   align-items: flex-start;
   height: auto;
-  min-height: 24px;
-  padding: 4px 6px;
-  line-height: 16px;
+  min-height: 34px;
+  padding: 8px 8px;
+  border-radius: 8px;
+  background: var(--v3-surface);
+  box-shadow: 0 0 0 1px var(--v3-border), var(--v3-shadow-1);
+  font-size: 12.5px;
+  line-height: 17px;
+}
+
+.week[data-mode="week"] .chip:hover {
+  box-shadow: 0 0 0 1px var(--v3-border-strong), var(--v3-shadow-1);
+}
+
+.week[data-mode="week"] .chip[data-late] {
+  background: color-mix(in srgb, var(--v3-danger) 8%, var(--v3-surface));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--v3-danger) 35%, transparent);
+  color: var(--v3-text);
+}
+
+.week[data-mode="week"] .chip[data-milestone] {
+  background: color-mix(in srgb, var(--v3-accent) 10%, var(--v3-surface));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--v3-accent) 35%, transparent);
+  color: var(--v3-text);
+}
+
+.week[data-mode="week"] .chip[data-done] {
+  background: transparent;
+  box-shadow: 0 0 0 1px var(--v3-border);
 }
 
 .week[data-mode="week"] .chip svg {
@@ -449,14 +609,149 @@
 
 .tray {
   padding: 14px 12px 12px;
-  background: var(--v3-sunken);
   border-bottom: 1px solid var(--v3-border);
   transition: background-color 120ms var(--v3-ease), box-shadow 120ms var(--v3-ease);
+}
+
+.tray:last-child {
+  border-bottom: 0;
 }
 
 .tray[data-over] {
   background: var(--v3-accent-soft);
   box-shadow: inset 0 0 0 1.5px var(--v3-accent);
+}
+
+.planTabs {
+  display: flex;
+  padding: 2px;
+  margin: 10px 0 8px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-fill);
+}
+
+.planTab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: 6px;
+  color: var(--v3-text-2);
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color 150ms var(--v3-ease), color 150ms var(--v3-ease);
+}
+
+.planTab:hover {
+  color: var(--v3-text);
+}
+
+.planTab[aria-selected="true"] {
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  box-shadow: var(--v3-shadow-1), 0 0 0 1px var(--v3-border);
+}
+
+.planTab:focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: 1px;
+}
+
+.planTabCount {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--v3-text) 8%, transparent);
+  color: var(--v3-text-2);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.planTab[data-tone="danger"] .planTabCount {
+  background: var(--v3-danger-soft);
+  color: var(--v3-danger-text);
+}
+
+.planList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.planCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: var(--v3-surface);
+  box-shadow: 0 0 0 1px var(--v3-border), var(--v3-shadow-1);
+  color: var(--v3-text);
+  text-align: left;
+  cursor: grab;
+  transition: box-shadow 140ms var(--v3-ease);
+}
+
+.planCard:hover {
+  box-shadow: 0 0 0 1px var(--v3-border-strong), var(--v3-shadow-1);
+}
+
+.planCard:focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: 1px;
+}
+
+.planCard > svg {
+  flex: none;
+  margin-top: 3px;
+}
+
+.planText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.planTitle {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+}
+
+.planMeta {
+  color: var(--v3-text-3);
+  font-size: 12px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.planMeta[data-late] {
+  color: var(--v3-danger-text);
+}
+
+.planStatus {
+  color: var(--v3-text-3);
+}
+
+/* In the week every day is already open in its column. */
+.wrap[data-mode="week"] .section[data-day] {
+  display: none;
 }
 
 .section {
@@ -468,18 +763,22 @@
 }
 
 .paneHead {
-  margin-bottom: 8px;
-  padding: 0 4px;
+  padding: 0 2px;
 }
 
 .paneTitle {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 4px;
-  font-size: 13px;
+  padding: 0 2px;
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--v3-text);
+}
+
+.tray .paneTitle {
+  font-size: 15px;
+  letter-spacing: -0.01em;
 }
 
 .paneTitle svg {
@@ -494,7 +793,7 @@
 
 .paneNote {
   margin-top: 2px;
-  padding-left: 22px;
+  padding-left: 2px;
   color: var(--v3-text-3);
   font-size: 12px;
 }
@@ -759,6 +1058,20 @@
   .trayToggle {
     display: none;
   }
+  /* Narrow day columns: the accent already marks today. */
+  .todayTag {
+    display: none;
+  }
+  .weekdays[data-mode="week"] .weekday {
+    padding: 10px 8px 8px;
+  }
+  .weekdayTop {
+    gap: 5px;
+  }
+  .week[data-mode="week"] .chip {
+    padding: 7px 6px;
+    gap: 5px;
+  }
 }
 
 @media (max-width: 767px) {
@@ -783,6 +1096,12 @@
   }
   .toolbar {
     gap: 8px;
+  }
+  .wrap {
+    padding-top: 12px;
+  }
+  .periodLine {
+    display: none;
   }
   .modes {
     order: 3;
@@ -816,7 +1135,11 @@
   .chip,
   .day,
   .tray,
-  .dayAdd {
+  .dayAdd,
+  .mode,
+  .planTab,
+  .planCard,
+  .trayToggle {
     transition: none;
   }
 }

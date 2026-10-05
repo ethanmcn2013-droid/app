@@ -14,6 +14,7 @@ import { labelById } from "@/components/hybrid/fixtures";
 import { PRIORITY_LABELS, type LabLabel, type LabTask } from "@/components/hybrid/types";
 import type { PresenceMember } from "@/components/app/presence/avatar-stack";
 import type { TimeFact } from "./time";
+import { identityHue } from "./identity-hue";
 import styles from "./atoms.module.css";
 
 /** Wraps matches of the current search in <mark>. */
@@ -52,7 +53,7 @@ export function usePeople() {
     return (ids: string[]): PresenceMember[] =>
       ids.map((id) => {
         const member = byId.get(id);
-        return { id, name: member?.name ?? "Someone", initials: member?.initials };
+        return { id, name: member?.name ?? "Someone", initials: member?.initials, colour: identityHue(id) };
       });
   }, [members]);
 }
