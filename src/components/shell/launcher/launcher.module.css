@@ -812,7 +812,7 @@ a.toolRow:hover {
 }
 
 .pageInner {
-  max-width: 1180px;
+  max-width: var(--v3-page-w);
   margin: 0 auto;
   padding: 28px 32px 56px;
 }

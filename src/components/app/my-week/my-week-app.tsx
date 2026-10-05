@@ -82,7 +82,7 @@ type GroupSpec = {
 const SETTLE_MS = 520;
 const DONE_PREVIEW = 5;
 /** The page column AppPageHeader and Inbox use, class for class. */
-const PAGE_COLUMN = "mx-auto w-full max-w-[1180px] px-4 md:px-8";
+const PAGE_COLUMN = "mx-auto w-full max-w-[var(--v3-page-w)] px-4 md:px-8";
 
 export function MyWeekApp({ canSetUpProject = false }: { canSetUpProject?: boolean }) {
   const personalization = usePersonalization();

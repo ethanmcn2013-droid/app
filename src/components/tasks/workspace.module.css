@@ -13,7 +13,7 @@
 /* ── Frame ────────────────────────────────────────────────────────── */
 .workspace {
   --gutter: 32px;
-  --column-max: 1180px;
+  --column-max: var(--v3-page-w);
   /* The left edge the header, the board's first column and the list share. */
   --edge: max(var(--gutter), calc((100% - var(--column-max)) / 2 + var(--gutter)));
   position: relative;

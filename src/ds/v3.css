@@ -68,7 +68,7 @@ html:root {
   --v3-kind-sheet: #1f9d55;
   --v3-kind-slides: #e2711d;
   --v3-kind-design: #7c5cf5;
-  --v3-kind-link: #0f9ba8;
+  --v3-kind-link: #0c8c98;
   --v3-kind-neutral: #5f5e5b;
   /* Project identity tiles: white initials pass AA on every hue. */
   --v3-project-1: #4f46e5;
@@ -92,6 +92,10 @@ html:root {
   --v3-radius-lg: 12px;
   --v3-radius-xl: 16px;
   --v3-sidebar-w: 248px;
+  /* The page column every /app page centres its content in. One number, so
+     Home, Tasks, Files and the Projects console share an edge at any width
+     (was 1180px on most pages and 1320px on Projects). */
+  --v3-page-w: 1320px;
   --v3-topbar-h: 48px;
   --v3-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 
@@ -147,12 +151,12 @@ html:root[data-theme="dark"] {
   --v3-success: #4cc38a;
   --v3-review: #9b95fa;
   --v3-danger-soft: color-mix(in srgb, var(--v3-danger) 20%, transparent);
-  --v3-danger-text: #f07d82;
+  --v3-danger-text: #f48f93; /* 5.4:1 on its own tint over a card */
   --v3-warning-soft: color-mix(in srgb, var(--v3-warning) 20%, transparent);
   --v3-success-soft: color-mix(in srgb, var(--v3-success) 20%, transparent);
   --v3-success-text: #8cd4b2;
   --v3-review-soft: color-mix(in srgb, var(--v3-review) 20%, transparent);
-  --v3-accent-text: #9f9bf6;
+  --v3-accent-text: #aaa7f8; /* 5.5:1 on the accent and review tints */
   --v3-fill: rgba(255, 255, 255, 0.07);
   --v3-control-border: #707070;
   --v3-warning-stroke: var(--v3-warning);
@@ -185,6 +189,43 @@ html:root[data-theme="dark"] {
   --accent-tint: rgba(139, 135, 248, 0.14);
   --accent-soft: var(--v3-accent-soft);
   --accent-glow: rgba(139, 135, 248, 0.3);
+}
+
+/* ── v3 semantic: light, inside the signed-in app ─────────────────────
+   data-theme is written only on /app documents (src/app/app/theme-runtime.tsx),
+   so this block never reaches marketing, the auth stage or a shared link:
+   those keep the html:root values above, byte for byte.
+
+   Light used to paint the page and every card the same white, held apart by
+   a 1.25:1 hairline, so a dashboard read as loose text on a blank sheet
+   (founder review, 5 Oct 2026). It now has the same three steps the dark
+   theme has: a tinted page, white raised surfaces a step above it, and a
+   border that reads as an edge on both.
+
+     page  #f6f5f2   card  #ffffff (1.09:1 on the page; dark is 1.08:1)
+     border #dcd9d3  (1.30:1 on the page, 1.42:1 on a card; dark is 1.22:1) */
+html:root[data-theme="light"] {
+  --v3-shell: #eceae6;
+  --v3-canvas: #f6f5f2;
+  --v3-surface: #ffffff;
+  --v3-sunken: #eeece8;
+  --v3-hover: rgba(24, 20, 14, 0.055);
+  --v3-selected: #ffffff;
+  --v3-border: #dcd9d3;
+  --v3-border-strong: #c6c2ba;
+  --v3-text-3: #63615c; /* 5.6:1 on the page, 5.2:1 on the sunken step */
+  --v3-fill: #eceae6;
+  --v3-shadow-1: 0 1px 2px rgba(20, 18, 14, 0.07), 0 1px 1px rgba(20, 18, 14, 0.04);
+  --v3-shadow-pop: 0 10px 32px rgba(20, 18, 14, 0.16), 0 0 0 1px var(--v3-border-strong);
+
+  /* The older surfaces follow: their page is the tinted page, their raised
+     step is white, as in the dark theme (page = canvas, raised = surface). */
+  --paper: var(--v3-canvas);
+  --paper-soft: var(--v3-surface);
+  --paper-deep: var(--v3-shell);
+  --ink-ghost: var(--v3-border-strong);
+  --hairline: rgba(24, 20, 14, 0.14);
+  --hairline-soft: rgba(24, 20, 14, 0.08);
 }
 
 /* ── Tasks Floor inside the v3 shell ──────────────────────────────

@@ -10,7 +10,7 @@ import { BoardSkeleton, HeaderSkeleton } from "@/components/tasks/skeletons";
 export default function TasksLoading() {
   return (
     <div className="flex h-full min-h-0 flex-col bg-[color:var(--v3-canvas)]" aria-busy="true" aria-label="Loading tasks">
-      <div className="mx-auto w-full max-w-[1180px]">
+      <div className="mx-auto w-full max-w-[var(--v3-page-w)]">
         <HeaderSkeleton />
       </div>
       <BoardSkeleton />

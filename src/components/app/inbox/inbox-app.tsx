@@ -138,7 +138,7 @@ export function InboxApp({
         }
       />
       <div className={`${styles.scroll} thin-scroll`}>
-        <div className={`${styles.inner} mx-auto w-full max-w-[1180px] px-4 md:px-8`}>
+        <div className={`${styles.inner} mx-auto w-full max-w-[var(--v3-page-w)] px-4 md:px-8`}>
           <div className={styles.grid}>
             <div className={styles.column}>
               {notifications.length > 0 ? alerts : null}

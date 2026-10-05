@@ -3,7 +3,7 @@
 
 .wrap {
   container: tasklist / inline-size;
-  max-width: var(--column-max, 1180px);
+  max-width: var(--column-max, var(--v3-page-w));
   width: 100%;
   margin: 0 auto;
   padding: 0 var(--gutter, 32px) 96px;

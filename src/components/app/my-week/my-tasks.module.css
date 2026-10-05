@@ -345,7 +345,7 @@
   width: 16px;
   height: 16px;
   border-radius: 999px;
-  border: 1.5px solid var(--v3-border-strong);
+  border: 1.5px solid var(--v3-control-border);
   color: transparent;
   transition:
     background 160ms var(--v3-ease),

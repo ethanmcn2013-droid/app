@@ -293,13 +293,13 @@ export function Badge({
       className={cx(
         "inline-flex h-[20px] shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 text-[11.5px] font-medium leading-none tabular-nums",
         tone === "accent"
-          ? "bg-[var(--v3-accent-soft)] text-[color:var(--v3-accent)]"
+          ? "bg-[var(--v3-accent-soft)] text-[color:var(--v3-accent-text)]"
           : tone === "success"
-            ? "bg-[color-mix(in_srgb,var(--v3-success)_14%,transparent)] text-[color:var(--v3-success)]"
+            ? "bg-[color-mix(in_srgb,var(--v3-success)_14%,transparent)] text-[color:var(--v3-success-text)]"
             : tone === "warning"
-              ? "bg-[color-mix(in_srgb,var(--v3-warning)_16%,transparent)] text-[color:color-mix(in_srgb,var(--v3-warning)_62%,var(--v3-text))]"
+              ? "bg-[color-mix(in_srgb,var(--v3-warning)_16%,transparent)] text-[color:var(--v3-warning-text)]"
               : tone === "danger"
-                ? "bg-[color-mix(in_srgb,var(--v3-danger)_12%,transparent)] text-[color:var(--v3-danger)]"
+                ? "bg-[color-mix(in_srgb,var(--v3-danger)_12%,transparent)] text-[color:var(--v3-danger-text)]"
                 : "bg-[var(--v3-sunken)] text-[color:var(--v3-text-2)] ring-1 ring-inset ring-[color:var(--v3-border)]",
       )}
     >
@@ -497,8 +497,8 @@ export function DialogBody({
           className={cx(
             "mb-3 flex h-[32px] w-[32px] items-center justify-center rounded-full",
             tone === "danger"
-              ? "bg-[color-mix(in_srgb,var(--v3-danger)_12%,transparent)] text-[color:var(--v3-danger)]"
-              : "bg-[color-mix(in_srgb,var(--v3-warning)_16%,transparent)] text-[color:color-mix(in_srgb,var(--v3-warning)_62%,var(--v3-text))]",
+              ? "bg-[color-mix(in_srgb,var(--v3-danger)_12%,transparent)] text-[color:var(--v3-danger-text)]"
+              : "bg-[color-mix(in_srgb,var(--v3-warning)_16%,transparent)] text-[color:var(--v3-warning-text)]",
           )}
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">

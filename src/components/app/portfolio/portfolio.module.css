@@ -14,7 +14,7 @@
 
 .column {
   width: 100%;
-  max-width: 1180px;
+  max-width: var(--v3-page-w);
   margin: 0 auto;
   padding: 0 32px;
 }
@@ -429,8 +429,8 @@
   flex: 0 1 auto;
   min-height: 320px;
   margin: 4px 32px 0;
-  /* Past 1180 the canvas keeps its left edge on the column and grows right. */
-  margin-left: max(32px, calc((100% - 1180px) / 2 + 32px));
+  /* Past the page column the canvas keeps its left edge on the column and grows right. */
+  margin-left: max(32px, calc((100% - var(--v3-page-w)) / 2 + 32px));
   border: 1px solid var(--v3-border);
   border-radius: var(--v3-radius-lg);
   background: var(--v3-surface);
