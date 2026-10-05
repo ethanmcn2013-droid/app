@@ -69,7 +69,9 @@ export type CalendarMode = "month" | "week" | "agenda";
 /** "auto" shows the tray only when the calendar has the room (see calendar-view). */
 export type TrayPref = "auto" | "shown" | "hidden";
 
-const doneMode = createPref<DoneMode>("signal-tasks.v3.done-mode", ["compact", "full", "collapsed"], "compact");
+// Done starts folded to a slim rail that counts the finished work, so the
+// columns still in play share the width. Pressing the rail opens it.
+const doneMode = createPref<DoneMode>("signal-tasks.v3.done-mode", ["compact", "full", "collapsed"], "collapsed");
 const taskNumbers = createPref<OnOff>("signal-tasks.v3.task-numbers", ["on", "off"], "off");
 const listGroup = createPref<ListGroup>("signal-tasks.v3.list-group", ["status", "assignee", "priority", "due", "none"], "status");
 const weekends = createPref<OnOff>("signal-tasks.v3.calendar-weekends", ["on", "off"], "on");
