@@ -2119,10 +2119,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-25",
+      "lastReviewedAt": "2026-10-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "fbe0256daf396aba"
+      "materialityHash": "795236cc4236a32a",
+      "materialityReview": {
+        "materialityHash": "795236cc4236a32a",
+        "reviewedAt": "2026-10-05",
+        "evidence": "experience/reviews/2026-10-03-projects-console/receipts/tasks.page.app-project-materiality.json"
+      }
     },
     {
       "id": "tasks.state.app-project-loading",
@@ -2162,10 +2167,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-25",
+      "lastReviewedAt": "2026-10-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "988c7d2922e7f332"
+      "materialityHash": "991a54006054ce55",
+      "materialityReview": {
+        "materialityHash": "991a54006054ce55",
+        "reviewedAt": "2026-10-05",
+        "evidence": "experience/reviews/2026-10-03-projects-console/receipts/tasks.state.app-project-loading-materiality.json"
+      }
     },
     {
       "id": "tasks.page.app-signal",
@@ -3653,10 +3663,15 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-10-03",
+      "lastReviewedAt": "2026-10-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "1b45164993945cf9"
+      "materialityHash": "1b45164993945cf9",
+      "materialityReview": {
+        "materialityHash": "1b45164993945cf9",
+        "reviewedAt": "2026-10-05",
+        "evidence": "experience/reviews/2026-10-03-projects-console/receipts/tasks.resources.drive-upload-materiality.json"
+      }
     },
     {
       "id": "tasks.resources.drive-upload-status",
@@ -3911,10 +3926,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-10-03",
+      "lastReviewedAt": "2026-10-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "e7fbf84c50efd4b0"
+      "materialityHash": "e7fbf84c50efd4b0",
+      "materialityReview": {
+        "materialityHash": "e7fbf84c50efd4b0",
+        "reviewedAt": "2026-10-05",
+        "evidence": "experience/reviews/2026-10-03-projects-console/receipts/tasks.page.app-messages-materiality.json"
+      }
     },
     {
       "id": "tasks.page.lab-project-conversation",
@@ -4309,10 +4329,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-10-03",
+      "lastReviewedAt": "2026-10-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "45e0fc19aaf3ca48"
+      "materialityHash": "45e0fc19aaf3ca48",
+      "materialityReview": {
+        "materialityHash": "45e0fc19aaf3ca48",
+        "reviewedAt": "2026-10-05",
+        "evidence": "experience/reviews/2026-10-03-projects-console/receipts/tasks.state.app-tools-loading-materiality.json"
+      }
     },
     {
       "id": "tasks.page.app-concepts",

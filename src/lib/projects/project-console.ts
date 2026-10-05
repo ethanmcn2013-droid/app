@@ -301,7 +301,10 @@ function buildRow(input: ConsoleProjectInput, today: string): ConsoleRow {
   const standing: ConsoleStanding =
     mark === "past_date" || mark === "at_risk" ? "attention" : mark === "wrapped" ? "wrapped" : mark;
 
-  // Under the name: the owner's word for it, then the date they set.
+  // Under the name: the owner's word for it, then the date they set. Once the
+  // date has passed the line leads with that, so it never reads "On track"
+  // beside a red mark; the owner's word stays only where it adds something
+  // (at risk, paused).
   const statusWord = wrapped
     ? "Wrapped"
     : status === "at-risk"
@@ -311,14 +314,13 @@ function buildRow(input: ConsoleProjectInput, today: string): ConsoleRow {
         : status === "paused"
           ? "Paused"
           : "No status yet";
-  const dateWord = !targetDate
-    ? null
-    : wrapped
-      ? `target ${formatConsoleDate(targetDate, today)}`
-      : pastDate
-        ? `past ${formatConsoleDate(targetDate, today)}`
-        : `target ${formatConsoleDate(targetDate, today)}`;
-  const sub = !input.selectable && input.blockedReason ? input.blockedReason : [statusWord, dateWord].filter(Boolean).join(" · ");
+  const dateLabel = targetDate ? formatConsoleDate(targetDate, today) : null;
+  const ownLine = pastDate
+    ? status === "at-risk" || status === "paused"
+      ? `${statusWord} · past its date, was due ${dateLabel}`
+      : `Past its date · was due ${dateLabel}`
+    : [statusWord, dateLabel ? `target ${dateLabel}` : null].filter(Boolean).join(" · ");
+  const sub = !input.selectable && input.blockedReason ? input.blockedReason : ownLine;
 
   // Done.
   const total = stats?.total ?? 0;

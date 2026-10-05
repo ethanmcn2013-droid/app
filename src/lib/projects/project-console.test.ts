@@ -39,7 +39,9 @@ test("how a project is doing is the owner's status plus a passed target date", (
   // Marked on track by its owner, but its target date has gone.
   assert.equal(row("p-winter").mark, "past_date");
   assert.equal(row("p-winter").standing, "attention");
-  assert.equal(row("p-winter").sub, "On track · past 28 Sep");
+  // The line under the name leads with the passed date, never "On track".
+  assert.equal(row("p-winter").sub, "Past its date · was due 28 Sep");
+  assert.equal(row("p-winter").markLabel, "Past its target date");
   assert.equal(row("p-keane").mark, "on_track");
   assert.equal(row("p-keane").sub, "On track · target 12 Oct");
   assert.equal(row("p-kitchen").standing, "paused");
@@ -49,6 +51,32 @@ test("how a project is doing is the owner's status plus a passed target date", (
   // A finished project whose date has passed is simply finished.
   assert.equal(row("p-oconnor").standing, "wrapped");
   assert.equal(row("p-oconnor").mark, "wrapped");
+});
+
+test("a passed target date leads the line under the name, and the group and counts agree", () => {
+  const base = projects.find((p) => p.id === "p-winter")!;
+  const withStatus = (status: "on-track" | "at-risk" | "paused" | "complete" | null) =>
+    buildConsole([{ ...base, stats: { ...base.stats!, status } }], today);
+  for (const [status, sub] of [
+    ["on-track", "Past its date · was due 28 Sep"],
+    [null, "Past its date · was due 28 Sep"],
+    ["at-risk", "At risk · past its date, was due 28 Sep"],
+    ["paused", "Paused · past its date, was due 28 Sep"],
+  ] as const) {
+    const one = withStatus(status);
+    assert.equal(one.rows[0]!.sub, sub);
+    assert.equal(one.rows[0]!.mark, "past_date");
+    assert.deepEqual(consoleGroups(one, "all").map((group) => [group.label, group.rows.length]), [["Needs a look", 1]]);
+    assert.equal(one.counts.attention, 1);
+    assert.deepEqual(one.summary[1], { text: "1 needs a look", tone: "risk" });
+    assert.doesNotMatch(one.rows[0]!.sub, /On track/);
+  }
+  // Complete is simply finished, whatever its date.
+  const done = withStatus("complete");
+  assert.equal(done.rows[0]!.sub, "Wrapped · target 28 Sep");
+  assert.equal(done.counts.attention, 0);
+  // Not yet passed: the owner's word, then the date.
+  assert.equal(row("p-mara").sub, "At risk · target 17 Oct");
 });
 
 test("tabs count what they show", () => {
