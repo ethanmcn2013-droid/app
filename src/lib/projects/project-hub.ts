@@ -78,6 +78,19 @@ export function projectColumnsMetaKey(projectId: string): string {
   return `board:${projectId}:columns`;
 }
 
+/**
+ * The exact-key meta rows one Project owns outside the `board:{id}:*` family.
+ * Project deletion and account erasure remove these with the Project, so a
+ * deleted Project leaves no status, target date or purpose behind.
+ */
+export function projectOwnedMetaKeys(projectId: string): readonly string[] {
+  return [
+    projectStatusMetaKey(projectId),
+    projectTargetDateMetaKey(projectId),
+    projectPurposeMetaKey(projectId),
+  ];
+}
+
 // ── Card stats ──────────────────────────────────────────────────────────────
 
 export type ProjectCardStats = Readonly<{

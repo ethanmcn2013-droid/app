@@ -27,6 +27,7 @@ import * as schema from "@/server/db/schema";
 import { deleteNativeAttachmentRowsInTransaction } from "@/server/attachments/native-upload-custody";
 import { eraseEntitlementsInTransaction } from "@/server/venue-issuance/erasure";
 import { eraseProjectConversationRows } from "@/server/conversations/account-lifecycle";
+import { projectOwnedMetaKeys } from "@/lib/projects/project-hub";
 
 type ProjectRowsExecutor = Pick<
   LibSQLDatabase<typeof schema>,
@@ -114,6 +115,10 @@ export async function deleteProjectRowsInTransaction(
     .delete(suiteOutbox)
     .where(eq(suiteOutbox.workspaceId, workspaceId));
   await transaction.delete(meta).where(like(meta.key, `board:${workspaceId}:%`));
+  // Status, target date and purpose are exact-key rows named by the Project id.
+  await transaction
+    .delete(meta)
+    .where(inArray(meta.key, [...projectOwnedMetaKeys(workspaceId)]));
 
   // RESTRICT-backed storage metadata is consumed only after all resources.
   // Provider connections are intentionally not Project rows and survive.
