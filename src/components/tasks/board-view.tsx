@@ -59,8 +59,10 @@ const EMPTY_NOTE: Record<string, string> = {
 
 const DONE_PREVIEW = 3;
 
-/** The narrowest a fitted lane may get before the board scrolls instead. */
-const FIT_MIN = 248;
+/** The narrowest a fitted lane may get before the board scrolls instead.
+ *  At 224 the four open columns and the Done rail sit side by side on a
+ *  1440px screen with the sidebar open. */
+const FIT_MIN = 224;
 
 /** The shipped default descriptions (board-columns.ts). A column still on
  *  its default reads the shorter note; an owner's own words always win. */

@@ -29,12 +29,12 @@
 }
 
 /* Fit columns: lanes share the spare width, but only when each fitted lane
-   would still be at least 248px wide (the board measures this and sets
+   would still be at least 224px wide (the board measures this and sets
    data-fit-room). Narrower than that, the lanes keep a readable 272px and
    the track scrolls with a gentle snap, the way Linear and Height do. */
 .boardHost[data-fit][data-fit-room] .lane {
   flex: 1 1 0;
-  min-width: 248px;
+  min-width: 224px;
   max-width: 360px;
 }
 

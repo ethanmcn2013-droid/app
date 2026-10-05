@@ -4,6 +4,14 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-10-05 · Redesign candidate · Tasks board, list and calendar
+
+The three Tasks views now share one header and the approved design. The header names the project, then says in one line how much was finished this week, how much is open and what is late; late, due today and no date are filters you can press. When started work has gone four days without a change, a sentence names the task that has sat longest with a way to open it, and a Stuck control shows only that work. The page has no create button of its own: New in the top bar is the one place to start a task, and the C key still opens the same composer.
+
+The board keeps its columns, drag, keyboard moves and task panel. Columns stand the full height of the page, cards show how long stuck work has sat, and Done starts as a slim rail that counts the finished work and opens when pressed. The list reads as a sheet, with a mark on each column, group rows that say how much is done and a foot that counts what is shown. The calendar opens on the week, one column a day, with a "To plan" tray on the right holding what is due soon, what is late and what has no date; drag a task onto a day to set its date. Month and agenda are still there.
+
+Review is shown as "To check" until a project renames it, and a task past its date is "late" everywhere. Hours, capacity and "make the day fit" from the design are left out, because a task stores a date and not a time or an estimate anyone can enter. Nothing is read that was not read before, and there is no schema change. This is an unshipped candidate on `design/app-v3-tasks-views`; no deployment, migration or production change is claimed by this entry.
+
 ## 2026-10-05 · Candidate fix · Dark by default, and a light theme with the same finish
 
 The signed-in app is now dark unless you choose light. It no longer follows your device. The theme button in the sidebar and Appearance in Settings both offer two choices, Dark and Light, and the choice is saved to your account as before. Nobody's saved preference is rewritten: someone who never chose now gets Dark, and someone who chose Light or Dark keeps it. There is no schema change. The phone browser bar follows the theme. Sign-in, shared links and the public pages are unchanged.

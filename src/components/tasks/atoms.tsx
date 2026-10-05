@@ -13,6 +13,7 @@ import { PRIORITY_LABELS } from "@/components/hybrid/types";
 import { glyphFor, glyphWords, type GlyphColumn, type StatusGlyphSpec } from "./status-glyph-model";
 import type { TimeFact } from "./time";
 import { TIcon } from "./icons";
+import { identityHue } from "./identity-hue";
 import styles from "./atoms.module.css";
 
 /* ── StatusGlyph ──────────────────────────────────────────────────── */
@@ -170,17 +171,9 @@ export function DueChip({ time, compact = false }: { time: TimeFact; compact?: b
 /* ── LabelChip ────────────────────────────────────────────────────── */
 
 /* A label with no colour of its own takes a steady identity hue from its
-   name, the way projects do. Amber, orange, red and pink are left out so a
-   label never reads as a warning beside a late date. */
-const LABEL_HUES = [1, 2, 3, 4, 9];
-function labelHue(id: string): string {
-  let hash = 0;
-  for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) >>> 0;
-  return `var(--v3-project-${LABEL_HUES[hash % LABEL_HUES.length]})`;
-}
-
+   name, the way projects do. */
 export function LabelChip({ label, highlight }: { label: LabLabel; highlight?: boolean }) {
-  const style = label.tone === "neutral" ? ({ "--dot": labelHue(label.id) } as CSSProperties) : undefined;
+  const style = label.tone === "neutral" ? ({ "--dot": identityHue(label.id) } as CSSProperties) : undefined;
   return (
     <span className={styles.label} data-tone={label.tone} data-highlight={highlight ? "" : undefined} style={style}>
       <span className={styles.labelDot} aria-hidden="true" />

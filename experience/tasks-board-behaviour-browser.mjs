@@ -160,10 +160,13 @@ try {
   /* Calendar: a tray task takes a date by drag and loses it back in the tray. */
   {
     const { page, context } = await open("/app/tasks/calendar");
-    // The tray starts hidden inside the page column; "Needs a date" shows it.
-    const toggle = page.getByRole("button", { name: /^Needs a date/ });
+    // The calendar opens on the week; the month holds the 22nd. "To plan"
+    // shows the tray when it starts hidden, and No date lists undated work.
+    await page.getByRole("radio", { name: "Month" }).click();
+    const toggle = page.getByRole("button", { name: /^To plan/ }).first();
     if ((await toggle.getAttribute("aria-pressed")) !== "true") await toggle.click();
     const tray = page.locator("section[aria-labelledby='tray-title']");
+    await tray.getByRole("tab", { name: /^No date/ }).click();
     const chip = tray.locator("[data-chip]").first();
     const id = await chip.getAttribute("data-id");
     const day = page.locator('[role="gridcell"][data-date="2026-07-22"]');

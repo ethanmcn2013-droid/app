@@ -57,7 +57,6 @@ export const useWorkspaceMembers=()=>members;export const useTagDefs=()=>tags;ex
   ["@/components/app/share/share-button", `import {createElement} from "react";export const ShareButton=()=>createElement("button",{type:"button","data-band-action":"",style:{height:28,padding:"0 8px",fontSize:12,fontWeight:500,color:"var(--v3-text-2)"}},"Share");`],
   ["@/components/primitives/toast", `export const useToast=()=>({toast:(title)=>window.tasksProbe.toasts.push(title)});`],
   ["@/components/app/active-project-provider", `export const useActiveProject=()=>null;`],
-  ["@/components/shell/app-sidebar", `export const projectColor=()=>"var(--v3-project-1)";`],
   ["@/components/app/done-dopamine/first-completion-moment", `export const maybeFireFirstCompletion=()=>{};`],
   ["@/server/actions/board", `const done=async()=>({ok:true});export const addColumnAction=done,deleteColumnAction=done,renameColumnAction=done,reorderColumnsAction=done,setColumnColorAction=done,setColumnDescriptionAction=done,setColumnDoneAction=done,setColumnLimitAction=done;`],
 ]);

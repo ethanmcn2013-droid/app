@@ -26,10 +26,10 @@ import { PROJECT_APP_PATH } from "@/lib/product-urls";
 import { parseProjectId } from "@/lib/projects/project-ref";
 import { withActiveProject } from "@/lib/projects/project-url";
 import { floorProjectName } from "@/lib/projects/floor-project-name";
-import { projectColor } from "@/components/shell/app-sidebar";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { useSurface } from "./surface";
 import { STUCK_AFTER_DAYS, dayWords, donePercent } from "./tasks-pulse";
+import { identityHue } from "./identity-hue";
 import { TIcon } from "./icons";
 import { Kbd } from "./atoms";
 import { Button, MenuContent, MenuItem, MenuRoot, MenuSeparator, MenuTrigger, Popover } from "./ui";
@@ -49,7 +49,7 @@ export function useProjectIdentity() {
     projectId,
     name,
     /** The same colour the sidebar gives this project: identity, never status. */
-    colour: projectColor(workspace?.id ?? name),
+    colour: identityHue(workspace?.id ?? name),
     href: projectId ? withActiveProject(PROJECT_APP_PATH, projectId) : PROJECT_APP_PATH,
   };
 }
