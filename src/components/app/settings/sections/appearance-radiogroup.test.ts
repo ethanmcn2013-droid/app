@@ -36,7 +36,8 @@ const SOURCE = readFileSync(
   "utf8",
 );
 
-// The real group: system, light, dark.
+// Three items, so wrapping at both ends is distinguishable from stepping.
+// The real group has two (Dark, Light) and uses the same pure helpers.
 const COUNT = 3;
 
 describe("theme radiogroup: arrow keys move focus and selection", () => {
@@ -226,11 +227,12 @@ describe("theme radiogroup: wiring the pure helpers cannot see", () => {
   it("leaves the section's copy and the personality toggles alone", () => {
     for (const copy of [
       /aria-label="Colour scheme"/,
-      /Follows your device setting\. Switches automatically\./,
-      /Always light, regardless of your device setting\./,
-      /Always dark, regardless of your device setting\./,
+      // Dark is the default and Light is the choice (5 Oct 2026): two
+      // options, and no line that mentions following the device.
+      /The standard look\. Easy on the eyes in long sessions\./,
+      /A bright page with dark text\. Good in a well-lit room\./,
       /Pages you share by link stay light for whoever opens them\./,
-      /Choose a colour scheme\. It applies everywhere you are signed in\./,
+      /Dark is the standard look\. Switch to light here; it applies everywhere you are signed in\./,
     ]) {
       has(copy, "keep its copy verbatim");
     }

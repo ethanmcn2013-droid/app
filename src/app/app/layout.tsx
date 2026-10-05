@@ -16,7 +16,7 @@ import { ActiveProjectProvider } from "@/components/app/active-project-provider"
 import { ConversationSessionRuntime } from "@/components/app/conversation-session-runtime";
 import { isActiveProjectV3Enabled } from "@/lib/projects/flags";
 import { readActiveProjectCookies } from "@/server/projects/active-project-cookie";
-import { PAPER_LIGHT, PAPER_DARK } from "@/lib/document-paper";
+import { APP_BAR_DARK } from "@/lib/document-paper";
 import type { Viewport } from "next";
 
 export const dynamic = "force-dynamic";
@@ -25,26 +25,19 @@ export const dynamic = "force-dynamic";
  * The browser's own chrome, on the one segment that has two themes.
  *
  * Everything else the resolver reaches lives inside the document; the
- * phone's address bar does not, so it stayed white above a dark app. Next
- * merges viewport exports shallowly, so this replaces the root's single
- * theme-color for /app routes only and leaves width, initialScale and
- * viewportFit exactly as the root set them.
+ * phone's address bar does not. Next merges viewport exports shallowly, so
+ * this replaces the root's single theme-color for /app routes only and
+ * leaves width, initialScale and viewportFit exactly as the root set them.
  *
- * KNOWN GAP, stated rather than hidden: a media query can only ask the
- * operating system, and this app's theme is a user CHOICE that defaults to
- * following the system. A user who has explicitly picked light on a dark
- * phone (or the reverse) gets a browser bar that disagrees with their
- * document. Closing that would mean reading the preference per request in
- * generateViewport — a database round-trip in front of every /app document,
- * which is the exact cost theme-runtime.tsx is built to avoid. Right for
- * everyone on "system", which is the default and the majority, and never
- * worse than the white bar it replaces.
+ * Dark, because the app is dark unless a person chose light (5 Oct 2026),
+ * and that choice is not the operating system's, so a prefers-color-scheme
+ * pair here would be wrong for everyone on a light phone. The person who
+ * chose light is handled where the choice is known: the pre-paint resolver
+ * in theme-runtime.tsx puts its own theme-color meta ahead of this one and
+ * keeps it in step with the theme.
  */
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: PAPER_LIGHT },
-    { media: "(prefers-color-scheme: dark)", color: PAPER_DARK },
-  ],
+  themeColor: APP_BAR_DARK,
 };
 
 async function SharedAppGate({ children }: { children: React.ReactNode }) {

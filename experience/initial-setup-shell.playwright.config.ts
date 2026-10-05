@@ -10,6 +10,16 @@ const contract = JSON.parse(readFileSync("experience/browser-contract.json", "ut
 // Deliberately independent of the critical attestation. Start an owned,
 // credential-free review server first (NEXT_PUBLIC_SIGNAL_ACCESS_MODE=review,
 // SIGNAL_ACTIVE_PROJECT_V3_ENABLED=true) and point INITIAL_SETUP_SHELL_URL at it.
+const baseURL = process.env.INITIAL_SETUP_SHELL_URL ?? "http://127.0.0.1:3132";
+
+// The app is dark unless a person chose light and does not follow the device
+// (5 Oct 2026). Each project states its choice as this browser's copy, which
+// the pre-paint resolver reads (src/lib/theme-mode.ts).
+const chosenTheme = (theme: "light" | "dark") => ({
+  cookies: [],
+  origins: [{ origin: new URL(baseURL).origin, localStorage: [{ name: "signal:theme-mode", value: theme }] }],
+});
+
 export default defineConfig({
   testDir: "./feature-tests",
   testMatch: "initial-setup-shell.spec.ts",
@@ -19,7 +29,7 @@ export default defineConfig({
   timeout: 120_000,
   expect: { timeout: 20_000 },
   use: {
-    baseURL: process.env.INITIAL_SETUP_SHELL_URL ?? "http://127.0.0.1:3132",
+    baseURL,
     browserName: "chromium",
     channel: process.env.CI ? undefined : "chrome",
     launchOptions: { args: ["--disable-extensions"] },
@@ -37,7 +47,7 @@ export default defineConfig({
   ).flatMap(({ name, viewport }) =>
     (["light", "dark"] as const).map((colorScheme) => ({
       name: `${name}-${colorScheme}`,
-      use: { viewport, colorScheme },
+      use: { viewport, colorScheme, storageState: chosenTheme(colorScheme) },
     })),
   ),
 });
