@@ -42,7 +42,7 @@ before(async () => {
     await signalStore.executeMultiple(readFileSync(new URL(name, migrations), "utf8"));
   }
   await fixture.client.executeMultiple(`
-    INSERT INTO users(id,clerk_id,email,color,initials) VALUES ('synthetic-owner','${ACTOR}','owner@example.invalid','blue','SO'),('synthetic-foreign','synthetic-foreign-clerk','owner@example.invalid','blue','SF');
+    INSERT INTO users(id,clerk_id,email,color,initials) VALUES ('synthetic-owner','${ACTOR}','owner@example.invalid','blue','SO'),('synthetic-second-owner','synthetic-second-clerk','second@example.invalid','green','SS'),('synthetic-foreign','synthetic-foreign-clerk','owner@example.invalid','blue','SF');
     INSERT INTO workspaces(id,slug,name,owner_user_id) VALUES ('${WORKSPACE}','${WORKSPACE}','Synthetic lifecycle','synthetic-owner'),('synthetic-foreign-project','synthetic-foreign-project','Foreign project','synthetic-foreign');
   `);
   const today = Math.floor(NOW / DAY);
@@ -65,10 +65,10 @@ after(() => {
     if (saved[key] === undefined) delete process.env[key]; else process.env[key] = saved[key];
   }
 });
-async function task(id: string, options: { lane?: string; column?: string; completed?: number; archived?: number; parent?: string; blocked?: string[]; updated?: number } = {}) {
+async function task(id: string, options: { lane?: string; column?: string; completed?: number; archived?: number; parent?: string; blocked?: string[]; updated?: number; assignees?: string[] } = {}) {
   await fixture.client.execute({
-    sql: "INSERT INTO tasks(id,workspace_id,seq,title,lane,board_column_key,priority,assignees,tags,blocked_by,due_at,created_at,updated_at,completed_at,archived_at,parent_task_id) VALUES (?,?,?,?,?,?,'p2','[]','[]',?,?,?,?,?,?,?)",
-    args: [id, WORKSPACE, (await fixture.client.execute("SELECT COUNT(*) AS count FROM tasks")).rows[0].count as number + 1, id, options.lane ?? "done", options.column ?? null, JSON.stringify(options.blocked ?? []), (NOW - DAY) / 1000, (NOW - 40 * DAY) / 1000, (options.updated ?? NOW - 3_600_000) / 1000, options.completed == null ? null : options.completed / 1000, options.archived == null ? null : options.archived / 1000, options.parent ?? null],
+    sql: "INSERT INTO tasks(id,workspace_id,seq,title,lane,board_column_key,priority,assignees,tags,blocked_by,due_at,created_at,updated_at,completed_at,archived_at,parent_task_id) VALUES (?,?,?,?,?,?,'p2',?,'[]',?,?,?,?,?,?,?)",
+    args: [id, WORKSPACE, (await fixture.client.execute("SELECT COUNT(*) AS count FROM tasks")).rows[0].count as number + 1, id, options.lane ?? "done", options.column ?? null, JSON.stringify(options.assignees ?? []), JSON.stringify(options.blocked ?? []), (NOW - DAY) / 1000, (NOW - 40 * DAY) / 1000, (options.updated ?? NOW - 3_600_000) / 1000, options.completed == null ? null : options.completed / 1000, options.archived == null ? null : options.archived / 1000, options.parent ?? null],
   });
 }
 async function build() {
@@ -225,11 +225,15 @@ test("persisted deadline and prerequisite observations keep separate full meanin
 });
 
 test("saved title edit reaches non-actionable coverage without claiming progress or complete history", async () => {
-  await task("catalogue", { lane: "doing" });
+  await task("catalogue", { lane: "doing", assignees: ["synthetic-owner", "synthetic-second-owner"] });
   await fixture.client.execute("UPDATE tasks SET due_at=NULL WHERE id='catalogue'");
   await fixture.client.execute({ sql: "INSERT INTO activities(id,workspace_id,task_id,user_id,kind,payload,created_at) VALUES ('recorded-title-edit',?,'catalogue','synthetic-owner','update',?,?)", args: [WORKSPACE, JSON.stringify({ kind: "update", field: "title" }), (NOW - 1_000) / 1000] });
   const before = await hashes(), result = await build(), view = await home();
   assert.equal(result.signals[0]?.hasRecordedTitleEdit, true);
+  assert.deepEqual(result.signals[0]?.assignees, [{ id: "synthetic-owner" }, { id: "synthetic-second-owner" }]);
+  assert.deepEqual(result.signals[0]?.latestValidatedTitleEdit, {
+    at: new Date(NOW - 1_000).toISOString(), kind: "update", field: "title",
+  });
   assert.equal(result.signals[0]?.idleDays, null);
   assert.equal(view.signalRows.length, 0);
   const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
@@ -238,7 +242,7 @@ test("saved title edit reaches non-actionable coverage without claiming progress
   assert.match(ledger.coverageNote ?? "", /history is incomplete/i);
   const overview = buildOverviewModel({ ledger, timezone: "UTC", legacy: { briefing: result.briefing, signals: result.signals, authorizedScope: result.authorizedScope } });
   assert.equal(overview.coverage?.note, ledger.coverageNote);
-  assert.doesNotMatch(JSON.stringify(ledger), /recorded-title-edit|catalogue|only event|no activity/i);
+  assert.doesNotMatch(JSON.stringify(ledger), /recorded-title-edit|catalogue|synthetic-owner|synthetic-second-owner|latestValidatedTitleEdit|only event|no activity/i);
   assert.deepEqual(await hashes(), before);
 });
 
@@ -254,6 +258,7 @@ test("absent, future, pre-creation and foreign title-edit records cannot manufac
   }
   const before = await hashes(), result = await build();
   assert.equal(result.signals[0]?.hasRecordedTitleEdit, false);
+  assert.equal(result.signals[0]?.latestValidatedTitleEdit, undefined);
   const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
   assert.doesNotMatch(ledger.coverageNote ?? "", /recorded title edit/i);
   assert.match(ledger.coverageNote ?? "", /history is incomplete/);
@@ -278,6 +283,7 @@ for (const [label, kind, payload] of [
     await fixture.client.execute({ sql: "INSERT INTO activities(id,workspace_id,task_id,user_id,kind,payload,created_at) VALUES ('invalid-title-edit',?,'catalogue','synthetic-owner',?,?,?)", args: [WORKSPACE, kind, payload, (NOW - 1_000) / 1000] });
     const before = await hashes(), result = await build();
     assert.equal(result.signals[0]?.hasRecordedTitleEdit, false);
+    assert.equal(result.signals[0]?.latestValidatedTitleEdit, undefined);
     assert.equal(result.signals[0]?.idleDays, null);
     const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
     assert.doesNotMatch(ledger.coverageNote ?? "", /recorded title edit/i);

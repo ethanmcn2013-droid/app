@@ -39,6 +39,13 @@ export interface UserRef {
   id: string;
 }
 
+/** Positive physical title-update evidence; absence does not imply exhaustive history. */
+export interface ValidatedTitleEdit {
+  at: string;
+  kind: "update";
+  field: "title";
+}
+
 /**
  * A project in the workspace.
  *
@@ -74,7 +81,10 @@ export interface TaskRead {
   id: string;
   projectSlugs: string[];
   title: string;
+  /** First assignee retained for older consumers. */
   assignee: UserRef | null;
+  /** Complete canonical assignee list when supplied by the Tasks reader. Omission is unknown, not unassigned. */
+  assignees?: UserRef[];
   status: Status;
   /** Canonical board position before any dependency-derived blocked state. */
   canonicalLane?: "next" | "in-flight" | "review" | "shipped";
@@ -103,6 +113,8 @@ export interface TaskRead {
   createdAt: string;
   /** A validated saved title-edit record; absence does not imply exhaustive history. */
   hasRecordedTitleEdit?: boolean;
+  /** Most recent validated title update found by this read; absence does not imply exhaustive history. */
+  latestValidatedTitleEdit?: ValidatedTitleEdit;
 }
 
 /** An activity event. Timestamps + types only, no comment text. */

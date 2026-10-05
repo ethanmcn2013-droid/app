@@ -8,7 +8,7 @@
  */
 
 import type { Deadline } from "../data/deadline";
-import type { KnownPriority, PrerequisiteEvidence, TaskStage } from "../data/types";
+import type { KnownPriority, PrerequisiteEvidence, TaskStage, UserRef, ValidatedTitleEdit } from "../data/types";
 
 export type Lane = "next" | "in-flight" | "review" | "shipped";
 
@@ -29,6 +29,10 @@ export type TaskSignal = {
   activityCoverage?: "complete" | "partial";
   /** Positive saved title-edit evidence; false/absent never proves no activity. */
   hasRecordedTitleEdit?: boolean;
+  /** Complete canonical assignee identities when provided; omission is unknown, not unassigned. Internal only. */
+  assignees?: UserRef[];
+  /** Most recent validated title update found by the reader; no exhaustive-history claim. Internal only. */
+  latestValidatedTitleEdit?: ValidatedTitleEdit;
   commentCount: number;
   blockedBy: string[]; // task ids
   dependencyCoverage?: "complete" | "partial";

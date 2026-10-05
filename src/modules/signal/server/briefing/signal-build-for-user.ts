@@ -351,6 +351,8 @@ export async function buildBriefingForUser(opts: {
           })(),
           activityCoverage: work.coverage?.activity,
           hasRecordedTitleEdit: t.hasRecordedTitleEdit,
+          assignees: t.assignees?.map(({ id }) => ({ id })),
+          latestValidatedTitleEdit: t.latestValidatedTitleEdit,
           commentCount: 0,
           blockedBy: t.blockedBy,
           dependencyCoverage: t.dependencyCoverage,

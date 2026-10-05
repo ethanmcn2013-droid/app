@@ -215,14 +215,14 @@ async function readCompletionHistory(db: TasksDb, targets: readonly (typeof task
 type DependencyState = Pick<typeof tasksTable.$inferSelect, "id" | "workspaceId" | "lane" | "boardColumnKey">;
 type DependencyRead = { open: Map<string, string[]>; verified: Map<string, NonNullable<TaskRead["prerequisiteEvidence"]>>; unknown: Set<string>; hasCompleted: Set<string> };
 
-type ActivityRead = { comments: Map<string, string>; titleEdits: Set<string> };
+type ActivityRead = { comments: Map<string, string>; titleEdits: Map<string, string> };
 
 /** Positive comment evidence can advance the existing activity proxy. A saved
  * title edit is metadata evidence only. Neither establishes exhaustive history.
  * Both are read in the existing bounded per-task aggregate, without another query.
  */
 async function readCommentActivity(db: TasksDb, rows: readonly (typeof tasksTable.$inferSelect)[], now: number): Promise<ActivityRead> {
-  const activity: ActivityRead = { comments: new Map(), titleEdits: new Set() };
+  const activity: ActivityRead = { comments: new Map(), titleEdits: new Map() };
   const targets = rows.filter(row => validCompletion(row.updatedAt, now) !== null && validCompletion(row.createdAt, now) !== null);
   for (let offset = 0; offset < targets.length; offset += 500) {
     const chunk = targets.slice(offset, offset + 500), grouped = new Map<string, string[]>();
@@ -232,10 +232,10 @@ async function readCommentActivity(db: TasksDb, rows: readonly (typeof tasksTabl
     const predicate = or(...Array.from(grouped, ([id, taskIds]) => and(eq(activitiesTable.workspaceId, id), inArray(activitiesTable.taskId, taskIds))));
     // Validate before MAX so an invalid newest row cannot hide earlier evidence.
     // Grouping bounds returned rows; it does not bound the matching history scan.
-    const evidence = await db.all<{ workspaceId: string; taskId: string; createdAt: number | null; titleEditRecorded: number }>(sql`
+    const evidence = await db.all<{ workspaceId: string; taskId: string; createdAt: number | null; latestTitleEditAt: number | null }>(sql`
       SELECT a.workspace_id AS workspaceId, a.task_id AS taskId,
         MAX(a.created_at) FILTER (WHERE a.kind = 'commentAdd') AS createdAt,
-        MAX(CASE WHEN a.kind = 'update' THEN 1 ELSE 0 END) AS titleEditRecorded
+        MAX(a.created_at) FILTER (WHERE a.kind = 'update') AS latestTitleEditAt
       FROM activities AS a JOIN tasks AS t ON t.id = a.task_id AND t.workspace_id = a.workspace_id
       WHERE a.id IN (SELECT id FROM activities WHERE ${predicate})
         AND a.kind IN ('commentAdd', 'update')
@@ -255,7 +255,10 @@ async function readCommentActivity(db: TasksDb, rows: readonly (typeof tasksTabl
     for (const row of chunk) {
       const event = byTask.get(row.id);
       if (!event || event.workspaceId !== row.workspaceId) continue;
-      if (event.titleEditRecorded === 1) activity.titleEdits.add(row.id);
+      const latestTitleEditAt = event.latestTitleEditAt === null
+        ? null
+        : validCompletion(new Date(event.latestTitleEditAt * 1000), now);
+      if (latestTitleEditAt) activity.titleEdits.set(row.id, latestTitleEditAt);
       if (event.createdAt === null) continue;
       const at = validCompletion(new Date(event.createdAt * 1000), now);
       if (at && Date.parse(at) > row.updatedAt.getTime()) activity.comments.set(row.id, at);
@@ -398,12 +401,13 @@ function buildWorkRead(
   config: ColumnConfig | null = null,
   completions: ReadonlyMap<string, string | null> = new Map(),
   dependencies: DependencyRead = { open: new Map(), verified: new Map(), unknown: new Set(), hasCompleted: new Set() },
-  activity: ActivityRead = { comments: new Map(), titleEdits: new Set() },
+  activity: ActivityRead = { comments: new Map(), titleEdits: new Map() },
 ): WorkRead {
     const stageLabels = new Map(resolveBoardColumns(config).map(column => [column.key, column.name]));
     const taskReads: TaskRead[] = rows.map((t) => {
       const tags = Array.isArray(t.tags) ? t.tags : [];
-      const assignees = Array.isArray(t.assignees) ? t.assignees : [];
+      const assigneeIds = Array.isArray(t.assignees) ? t.assignees : undefined;
+      const assignees = assigneeIds ?? [];
       const blockedBy = dependencies.open.get(t.id) ?? [];
       const deadline = storedDeadline(t.due, t.dueAt);
       const dueDate = deadline?.kind === "date-only" ? deadline.date
@@ -414,6 +418,7 @@ function buildWorkRead(
         projectSlugs: tags,
         title: t.title,
         assignee: assignees[0] ? { id: assignees[0] } : null,
+        assignees: assigneeIds?.map(id => ({ id })),
         status: deriveStatus(t, blockedBy, config),
         canonicalLane: canonicalLane(t, config),
         stage: taskStage(t, config, stageLabels),
@@ -433,6 +438,9 @@ function buildWorkRead(
         lastActivityAt: activity.comments.get(t.id) ?? t.updatedAt.toISOString(),
         createdAt: t.createdAt.toISOString(),
         hasRecordedTitleEdit: activity.titleEdits.has(t.id),
+        latestValidatedTitleEdit: activity.titleEdits.has(t.id)
+          ? { at: activity.titleEdits.get(t.id)!, kind: "update", field: "title" }
+          : undefined,
       };
     });
 

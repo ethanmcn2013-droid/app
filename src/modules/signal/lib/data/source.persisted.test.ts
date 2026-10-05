@@ -44,11 +44,11 @@ async function workspace(id: string, config?: string) {
 }
 async function task(workspaceId: string, id: string, options: {
   lane?: string; column?: string; completed?: number | null; updated?: number;
-  blocked?: string[]; archived?: number; parent?: string;
+  blocked?: string[]; archived?: number; parent?: string; assignees?: string[];
 } = {}) {
   await fixture.client.execute({
-    sql: "INSERT INTO tasks(id,workspace_id,seq,title,lane,board_column_key,priority,assignees,tags,blocked_by,created_at,updated_at,completed_at,archived_at,parent_task_id) VALUES (?,?,?,?,?,?,'p2','[]','[]',?,?,?,?,?,?)",
-    args: [id, workspaceId, ++sequence, id, options.lane ?? "done", options.column ?? null, JSON.stringify(options.blocked ?? []), (NOW - 40 * DAY) / 1000, (options.updated ?? NOW - 3_600_000) / 1000, options.completed == null ? null : options.completed / 1000, options.archived == null ? null : options.archived / 1000, options.parent ?? null],
+    sql: "INSERT INTO tasks(id,workspace_id,seq,title,lane,board_column_key,priority,assignees,tags,blocked_by,created_at,updated_at,completed_at,archived_at,parent_task_id) VALUES (?,?,?,?,?,?,'p2',?,'[]',?,?,?,?,?,?)",
+    args: [id, workspaceId, ++sequence, id, options.lane ?? "done", options.column ?? null, JSON.stringify(options.assignees ?? []), JSON.stringify(options.blocked ?? []), (NOW - 40 * DAY) / 1000, (options.updated ?? NOW - 3_600_000) / 1000, options.completed == null ? null : options.completed / 1000, options.archived == null ? null : options.archived / 1000, options.parent ?? null],
   });
 }
 async function event(workspaceId: string, taskId: string, id: string, at: number, kind: string, payload: Record<string, unknown>) {
@@ -222,6 +222,27 @@ test("later validated comment creation advances only activity proxy", async () =
   assert.equal(row.lastActivityAt, new Date(NOW - DAY).toISOString());
   assert.equal(row.lastStatusChangeAt, new Date(NOW - 10 * DAY).toISOString());
   assert.deepEqual(row.blockedBy, []); assert.equal(row.status, "in-flight");
+});
+
+test("TaskRead retains every canonical assignee and the latest validated title edit", async () => {
+  await workspace("title-edit-retention");
+  const completed = NOW - 4 * 3_600_000;
+  await task("title-edit-retention", "completed-task", {
+    lane: "done", completed, updated: NOW - 3_600_000,
+    assignees: ["canonical-first", "canonical-second"],
+  });
+  await event("title-edit-retention", "completed-task", "title-edit-earlier", NOW - 3 * 3_600_000, "update", { kind: "update", field: "title" });
+  const latestAt = NOW - 2 * 3_600_000;
+  await event("title-edit-retention", "completed-task", "title-edit-latest", latestAt, "update", { kind: "update", field: "title" });
+
+  const row = await readTask("title-edit-retention", "completed-task");
+  assert.deepEqual(row.assignees, [{ id: "canonical-first" }, { id: "canonical-second" }]);
+  assert.equal(row.assignee?.id, "canonical-first", "singular compatibility keeps the first canonical assignee");
+  assert.deepEqual(row.latestValidatedTitleEdit, {
+    at: new Date(latestAt).toISOString(), kind: "update", field: "title",
+  });
+  assert.equal(row.hasRecordedTitleEdit, true);
+  assert.ok(Date.parse(row.latestValidatedTitleEdit.at) > Date.parse(row.completedAt!));
 });
 
 for (const fault of ["older", "equal", "foreign", "mismatched-column", "mismatched-payload", "deleted", "missing-id", "numeric-id", "malformed", "future", "precreation", "invalid-time"] as const) {
