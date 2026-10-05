@@ -4,6 +4,14 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-10-05 · Candidate fix · Dark by default, and a light theme with the same finish
+
+The signed-in app is now dark unless you choose light. It no longer follows your device. The theme button in the sidebar and Appearance in Settings both offer two choices, Dark and Light, and the choice is saved to your account as before. Nobody's saved preference is rewritten: someone who never chose now gets Dark, and someone who chose Light or Dark keeps it. There is no schema change. The phone browser bar follows the theme. Sign-in, shared links and the public pages are unchanged.
+
+Light now has the same three steps as dark: a tinted page, white cards a step above it and a border that reads as an edge. Before, cards were the same white as the page behind a faint line. The collapsed sidebar's icons are brighter (10.6:1 on the rail, from 5.8:1) with clear hover, pressed, current and keyboard-focus states, and its brand row sits on the rail's centre line. The top-bar search label can no longer wrap. Every page shares one column width, the Projects console's, so pages line up at 1440, 1920 and 2560. Status chips and badges that fell under AA on their own tints in either theme now pass.
+
+Found during the review and not fixed by this entry: the stylesheet served by today's production deployment does not contain the v3 token layer (`src/ds/v3.css`), although the deployed source does. That, not the light theme, is what made production look unstyled. The sidebar now keeps its ink ground without that layer, but the build that drops it needs its own fix before this change can be judged in production. This is an unshipped candidate; no deployment or production change is claimed.
+
 ## 2026-10-05 · Redesign candidate · One app shell and the Projects console
 
 Every signed-in page now sits in one shell: a sidebar with Home, Overview, Projects, Tasks, Timeline, Files, Analytics and Whiteboard, a top bar with search, the inbox, the apps launcher and New, and a drawer on a phone. Everything the old navigation held is kept under one folding group named Initial setup, so nothing is removed. Home is a single page of what is open, due and done.
