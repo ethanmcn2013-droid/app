@@ -3,11 +3,12 @@
 /**
  * Projects hub (v3 redesign, 24 Sep 2026): `/app/project`.
  *
- * Top: every Project the viewer can open, as cards with the same facts each
- * Project's overview shows (status, progress, target date, open work).
- * Choosing a card runs the guarded Active Project switch with the Project
- * overview as its destination, so the page reloads on that Project with the
- * URL, chrome and content moving together (ADR 0001, D-022).
+ * Top: every Project the viewer can open. The Console (3 Oct 2026) is the
+ * default view: one measured row per Project under the figures that matter
+ * this week. The Cards view behind the switcher is the earlier grid, with the
+ * same facts each Project's overview shows. Opening a Project from either
+ * runs the guarded Active Project switch, so the page reloads on that Project
+ * with the URL, chrome and content moving together (ADR 0001, D-022).
  *
  * Below: the open Project's overview.
  *
@@ -15,7 +16,7 @@
  * or no hub read, the index is not rendered and the overview is the page.
  */
 
-import { useEffect, useId, useRef, useState, useTransition, type CSSProperties } from "react";
+import { useEffect, useId, useMemo, useRef, useState, useTransition, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActiveProject, type ActiveProjectContextValue } from "@/components/app/active-project-provider";
@@ -23,10 +24,13 @@ import { projectColor } from "@/components/shell/app-sidebar";
 import { ShellIcon } from "@/components/shell/shell-icons";
 import { MonthlyTemplateChoice } from "@/components/studio-bar/monthly-template-choice";
 import { isDemoMode } from "@/lib/access-mode";
+import { useToast } from "@/components/primitives/toast";
+import { sendNudgeAction } from "@/server/actions/nudge";
 import { createProjectAction } from "@/server/actions/planning";
 import type { ProjectOverviewData } from "@/server/actions/project-overview";
 import { monogramOf, type ChooserRow } from "@/lib/projects/project-chooser";
-import { parseProjectId } from "@/lib/projects/project-ref";
+import { parseProjectId, type ProjectId } from "@/lib/projects/project-ref";
+import { buildConsole, type ConsoleFilter, type ConsoleRow, type ConsoleView } from "@/lib/projects/project-console";
 import { buildProjectUrl, withActiveProject } from "@/lib/projects/project-url";
 import {
   formatProjectDate,
@@ -40,6 +44,8 @@ import {
   type ProjectHub,
   type ProjectHubCard,
 } from "@/lib/projects/project-hub";
+import { ProjectConsole, type ConsoleNudgeState, type ConsoleSurface } from "./project-console";
+import { ProjectViewSwitch } from "./project-view-switch";
 import { ProjectOverview, type ProjectDeclaredState, type ProjectOverviewLinks } from "./project-overview";
 import { StatusPill } from "./project-status-pill";
 import styles from "./projects-hub.module.css";
@@ -59,7 +65,19 @@ function overviewLinks(workspaceId: string): ProjectOverviewLinks {
   };
 }
 
-export function ProjectsHub({ hub, data }: { hub: ProjectHub | null; data: ProjectOverviewData }) {
+export function ProjectsHub({
+  hub,
+  data,
+  initialView = "console",
+  initialFilter = "all",
+}: {
+  hub: ProjectHub | null;
+  data: ProjectOverviewData;
+  /** From the address (`?view=`), so the server paints the chosen view. */
+  initialView?: ConsoleView;
+  /** From the address (`?show=`), so a link can open on one tab. */
+  initialFilter?: ConsoleFilter;
+}) {
   const activeProject = useActiveProject();
   const [declared, setDeclared] = useState<ProjectDeclaredState>({
     status: data.declaredStatus,
@@ -74,10 +92,17 @@ export function ProjectsHub({ hub, data }: { hub: ProjectHub | null; data: Proje
 
   return (
     <div className={`${styles.page} thin-scroll`}>
-      <div className={`${styles.inner} mx-auto w-full max-w-[1180px] px-4 md:px-8`}>
+      <div className={`${styles.inner} mx-auto w-full ${showIndex ? "max-w-[1320px]" : "max-w-[1180px]"} px-4 md:px-8`}>
         {showIndex ? (
           <>
-            <ProjectsIndex hub={hub} data={data} declared={declared} activeProject={activeProject} />
+            <ProjectsIndex
+              hub={hub}
+              data={data}
+              declared={declared}
+              activeProject={activeProject}
+              initialView={initialView}
+              initialFilter={initialFilter}
+            />
             <div className={styles.divider} role="presentation" />
           </>
         ) : null}
@@ -98,58 +123,171 @@ export function ProjectsHub({ hub, data }: { hub: ProjectHub | null; data: Proje
 
 // ── Index ────────────────────────────────────────────────────────────
 
+function writeViewToAddress(view: ConsoleView) {
+  const url = new URL(window.location.href);
+  if (view === "cards") url.searchParams.set("view", "cards");
+  else url.searchParams.delete("view");
+  window.history.replaceState(window.history.state, "", url);
+}
+
 function ProjectsIndex({
   hub,
   data,
   declared,
   activeProject,
+  initialView,
+  initialFilter,
 }: {
   hub: ProjectHub;
   data: ProjectOverviewData;
   declared: ProjectDeclaredState;
   activeProject: ActiveProjectContextValue;
+  initialView: ConsoleView;
+  initialFilter: ConsoleFilter;
 }) {
   const router = useRouter();
+  const { toast } = useToast();
+  const [view, setViewNow] = useState(initialView);
+  const [query, setQuery] = useState("");
   const [creating, setCreating] = useState(false);
   // Bumped on every "New project" press so an open form takes focus again.
   const [createRequest, setCreateRequest] = useState(0);
+  const [nudgeState, setNudgeState] = useState<Record<string, ConsoleNudgeState>>({});
   const newButtonRef = useRef<HTMLButtonElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  // Mount-stable "today" for when the server could not say; the React
+  // Compiler forbids impure calls in render.
+  const [clientToday] = useState(() => new Date().toISOString().slice(0, 10));
   const startCreating = () => {
     setCreating(true);
     setCreateRequest((n) => n + 1);
   };
-  const cards = hub.kind === "ready" ? hub.cards : [];
-  const count = cards.length;
+  const closeCreating = (restoreFocus: boolean) => {
+    setCreating(false);
+    // Escape or Cancel hands focus back to the entry point that is always on
+    // screen, never to the top of the document.
+    if (restoreFocus) newButtonRef.current?.focus({ preventScroll: true });
+  };
+  const setView = (next: ConsoleView) => {
+    setViewNow(next);
+    writeViewToAddress(next);
+  };
 
-  const subtitle =
-    hub.kind !== "ready"
-      ? "Your projects, with how each one is going."
-      : count === 0
-        ? "No active projects yet. Start one below."
-        : count === 1
-          ? "1 active project. Its overview is below."
-          : `${count} active projects. Choose one to see its overview below.`;
+  const ready = hub.kind === "ready";
+  const cards = ready ? hub.cards : EMPTY_CARDS;
+  const facts = ready ? hub.console : null;
+  const today = facts?.today ?? data.todayIso ?? clientToday;
 
-  function openCard(row: ChooserRow) {
-    if (row.id === data.workspaceId) {
-      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      document.getElementById(OVERVIEW_ANCHOR)?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  const model = useMemo(
+    () =>
+      buildConsole(
+        cards.map((card) => ({
+          id: card.row.id,
+          name: card.row.name,
+          role: card.row.role,
+          selectable: card.row.selectable,
+          blockedReason: card.row.blockedReason,
+          openCount: card.row.activeRootTaskCount,
+          stats: card.row.id === data.workspaceId ? overviewStats(data, declared) : card.stats,
+          facts: facts?.byProject[card.row.id] ?? null,
+        })),
+        today,
+      ),
+    [cards, facts, data, declared, today],
+  );
+
+  const needle = query.trim().toLowerCase();
+  const shownCards = needle ? cards.filter((card) => card.row.name.toLowerCase().includes(needle)) : cards;
+
+  function go(projectId: string, surface: ConsoleSurface) {
+    if (projectId === data.workspaceId) {
+      if (surface === "project") {
+        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        document.getElementById(OVERVIEW_ANCHOR)?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+      } else {
+        router.push(buildProjectUrl({ surface }, projectId as ProjectId));
+      }
       return;
     }
-    if (!row.selectable) return;
-    activeProject.selectProject(row.project, { surface: "project" });
+    const row = cards.find((card) => card.row.id === projectId)?.row;
+    if (!row || !row.selectable) return;
+    activeProject.selectProject(row.project, { surface });
   }
+
+  async function nudge(row: ConsoleRow) {
+    if (!row.nudge || nudgeState[row.id]) return;
+    const who = row.nudge.who;
+    setNudgeState((state) => ({ ...state, [row.id]: "sending" }));
+    const clear = () =>
+      setNudgeState((state) => {
+        const next = { ...state };
+        delete next[row.id];
+        return next;
+      });
+    try {
+      const result = await sendNudgeAction(row.nudge.taskId);
+      if (!result.ok) {
+        clear();
+        toast("The reminder was not sent", { body: "Nothing changed. Open the task to see who it is with.", tone: "warn" });
+      } else if (result.nudgedCount === 0) {
+        setNudgeState((state) => ({ ...state, [row.id]: "limited" }));
+        toast(`${who} was already nudged today`, { body: "One reminder a day at most, so nothing was sent." });
+      } else {
+        setNudgeState((state) => ({ ...state, [row.id]: "sent" }));
+        toast(`Nudged ${who}`, { body: `A reminder about “${row.nudge.title}” is on its way.` });
+      }
+    } catch {
+      clear();
+      toast("The reminder was not sent", { body: "Something went wrong. Try again in a moment.", tone: "warn" });
+    }
+  }
+
+  // One page shows the same week only when there is one Project to show.
+  const weekHref =
+    cards.length === 1 && cards[0]!.row.id === data.workspaceId ? withActiveProject("/app/analytics", cards[0]!.row.id) : null;
 
   return (
     <section aria-labelledby="projects-index-title">
       <header className={styles.header}>
-        <div>
+        <div className={styles.heading}>
           <h1 id="projects-index-title" className={styles.title}>Projects</h1>
-          <p className={styles.subtitle}>{subtitle}</p>
+          {ready ? (
+            <p className={styles.summary}>
+              {model.summary.map((part, index) => (
+                <span key={part.text} className={styles.summaryPart} data-tone={part.tone}>
+                  {index > 0 ? <span className={styles.summaryDot} aria-hidden="true">·</span> : null}
+                  {part.text}
+                </span>
+              ))}
+            </p>
+          ) : (
+            <p className={styles.subtitle}>Your projects, with how each one is going.</p>
+          )}
         </div>
-        {hub.kind === "ready" ? (
+        {ready ? (
           <div className={styles.actions}>
-            <button ref={newButtonRef} type="button" className={styles.buttonPrimary} onClick={startCreating}>
+            <ProjectViewSwitch view={view} onPick={setView} />
+            <label className={styles.search}>
+              <span className="sr-only">Find a project</span>
+              <SearchGlyph />
+              <input
+                ref={searchRef}
+                type="search"
+                className={styles.searchInput}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape" && query) {
+                    event.preventDefault();
+                    setQuery("");
+                  }
+                }}
+                placeholder="Find a project"
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </label>
+            <button ref={newButtonRef} type="button" className={`${styles.buttonPrimary} ${styles.newButton}`} onClick={startCreating}>
               <ShellIcon.plus size={14} />
               New project
             </button>
@@ -177,37 +315,66 @@ function ProjectsIndex({
         </div>
       ) : (
         <div className={styles.index}>
-          <h2 className="sr-only">All projects</h2>
-          <ul className={styles.grid}>
-            {cards.map((card) => {
-              const isOpen = card.row.id === data.workspaceId;
-              return (
-                <li key={card.row.id}>
-                  <ProjectCard
-                    card={card}
-                    stats={isOpen ? overviewStats(data, declared) : card.stats}
-                    isOpen={isOpen}
-                    pending={activeProject.pending?.projectId === card.row.id}
-                    todayIso={data.todayIso}
-                    onOpen={() => openCard(card.row)}
+          {view === "console" ? (
+            <>
+              {creating ? (
+                <div className={styles.newPanel}>
+                  <NewProjectForm focusRequest={createRequest} onClose={closeCreating} activeProject={activeProject} />
+                </div>
+              ) : null}
+              <ProjectConsole
+                model={model}
+                initialFilter={initialFilter}
+                query={query}
+                onClearQuery={() => {
+                  setQuery("");
+                  searchRef.current?.focus();
+                }}
+                openProjectId={data.workspaceId}
+                pendingProjectId={activeProject.pending?.projectId ?? null}
+                hrefFor={(projectId, surface) => buildProjectUrl({ surface }, projectId as ProjectId)}
+                taskHref={(projectId, taskId) => withActiveProject(`/app/tasks?task=${encodeURIComponent(taskId)}`, projectId as ProjectId)}
+                weekHref={weekHref}
+                onGo={go}
+                onNudge={isDemoMode() ? undefined : nudge}
+                nudgeState={nudgeState}
+              />
+            </>
+          ) : (
+            <>
+              <h2 className="sr-only">All projects</h2>
+              <ul className={styles.grid}>
+                {shownCards.map((card) => {
+                  const isOpen = card.row.id === data.workspaceId;
+                  return (
+                    <li key={card.row.id}>
+                      <ProjectCard
+                        card={card}
+                        stats={isOpen ? overviewStats(data, declared) : card.stats}
+                        isOpen={isOpen}
+                        pending={activeProject.pending?.projectId === card.row.id}
+                        todayIso={today}
+                        onOpen={() => go(card.row.id, "project")}
+                      />
+                    </li>
+                  );
+                })}
+                {needle ? null : (
+                  <NewProjectCell
+                    count={cards.length}
+                    creating={creating}
+                    createRequest={createRequest}
+                    onOpen={startCreating}
+                    onClose={closeCreating}
+                    activeProject={activeProject}
                   />
-                </li>
-              );
-            })}
-            <NewProjectCell
-              count={count}
-              creating={creating}
-              createRequest={createRequest}
-              onOpen={startCreating}
-              onClose={(restoreFocus) => {
-                setCreating(false);
-                // Escape or Cancel hands focus back to the entry point that
-                // is always on screen, never to the top of the document.
-                if (restoreFocus) newButtonRef.current?.focus({ preventScroll: true });
-              }}
-              activeProject={activeProject}
-            />
-          </ul>
+                )}
+              </ul>
+              {needle && shownCards.length === 0 ? (
+                <p className={styles.footnote}>No project called “{query.trim()}” here.</p>
+              ) : null}
+            </>
+          )}
           {hub.statsUnavailable ? (
             <p className={styles.footnote}>Progress for the other projects couldn’t load. Open one to see it.</p>
           ) : null}
@@ -218,6 +385,17 @@ function ProjectsIndex({
         </div>
       )}
     </section>
+  );
+}
+
+const EMPTY_CARDS: readonly ProjectHubCard[] = [];
+
+function SearchGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true" focusable="false">
+      <circle cx="7" cy="7" r="4.25" />
+      <path d="m10.25 10.25 3.25 3.25" />
+    </svg>
   );
 }
 

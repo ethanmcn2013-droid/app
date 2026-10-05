@@ -20,6 +20,7 @@
 import { isDoneColumnKey } from "@/lib/board-columns";
 import { parseColumnConfig, type ColumnConfig } from "@/lib/board-config";
 import type { ChooserRow } from "@/lib/projects/project-chooser";
+import type { ConsoleHubFacts } from "@/lib/projects/project-console";
 
 // ── Declared status ─────────────────────────────────────────────────────────
 
@@ -111,6 +112,12 @@ export type ProjectHub =
       truncated: boolean;
       /** Stats could not be read; cards fall back to their open counts. */
       statsUnavailable: boolean;
+      /**
+       * What the Console view shows beyond the card stats: each Project's
+       * lead, next big date, oldest late task and finished work per day.
+       * Null when that read failed; the Console then shows what it has.
+       */
+      console: ConsoleHubFacts | null;
     }>
   | Readonly<{ kind: "unavailable" }>;
 

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getProjectOverviewData } from "@/server/actions/project-overview";
 import { ProjectsHub } from "@/components/app/project/projects-hub";
+import { ProjectsFirstRun } from "@/components/app/project/projects-first-run";
+import { parseConsoleFilter, parseConsoleView } from "@/lib/projects/project-console";
 import { loadProjectHub } from "@/server/projects/project-hub";
 import { TasksRuntimePageMount } from "@/components/app/tasks-runtime-mount";
 import { resolveProjectForRoute } from "@/server/projects/route-authz";
@@ -66,22 +68,12 @@ function Unavailable() {
   );
 }
 
-function EmptyProjects() {
-  return (
-    <main id="app-main-content" tabIndex={-1} className="flex min-w-0 flex-1 flex-col items-center justify-center gap-3 bg-[var(--paper)] px-8 text-center">
-      <h1 className="text-[18px] font-semibold text-ink">Your projects start here</h1>
-      <p className="max-w-[42ch] text-[13px] text-ink-soft">Set up your first project to keep its tasks and timeline together.</p>
-      <Link href="/welcome" className="mt-2 rounded-lg bg-brand px-4 py-2.5 text-[13px] font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Set up a project</Link>
-    </main>
-  );
-}
-
 export default async function ProjectPage({
   searchParams,
 }: {
-  searchParams: Promise<{ workspaceId?: string | string[] }>;
+  searchParams: Promise<{ workspaceId?: string | string[]; view?: string | string[]; show?: string | string[] }>;
 }) {
-  const { workspaceId } = await searchParams;
+  const { workspaceId, view, show } = await searchParams;
   const project = await resolveProjectForRoute(workspaceId);
 
   // Missing, forbidden, deleted and malformed — one neutral answer. A caller
@@ -90,7 +82,7 @@ export default async function ProjectPage({
   if (project.kind === "unavailable") return <Unavailable />;
 
   // Belongs to no Project at all. Never LEGACY_WORKSPACE_ID (D-005).
-  if (project.kind === "empty") return <EmptyProjects />;
+  if (project.kind === "empty") return <ProjectsFirstRun />;
 
   // Archived Projects open read-only through an explicit link (ADR 0001 §5);
   // the overview is a read, so it renders.
@@ -120,7 +112,13 @@ export default async function ProjectPage({
   // consumes it (D-022).
   return (
     <TasksRuntimePageMount searchParams={searchParams}>
-      <ProjectsHub key={authorized} hub={hub} data={data} />
+      <ProjectsHub
+        key={authorized}
+        hub={hub}
+        data={data}
+        initialView={parseConsoleView(view)}
+        initialFilter={parseConsoleFilter(show)}
+      />
     </TasksRuntimePageMount>
   );
 }

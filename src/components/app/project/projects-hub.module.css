@@ -22,7 +22,7 @@
 
 .header {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
@@ -43,9 +43,103 @@
   color: var(--v3-text-2);
 }
 
+.heading {
+  min-width: 0;
+}
+
+/* The line under the title: the whole list in four figures. */
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 7px;
+  padding-left: 10px;
+  border-left: 2px solid var(--v3-border-strong);
+  font-family: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+  color: var(--v3-text-2);
+}
+
+.summaryPart {
+  white-space: nowrap;
+}
+
+.summaryPart[data-tone="risk"] {
+  color: var(--v3-warning-text);
+}
+
+.summaryPart[data-tone="late"] {
+  color: var(--v3-danger-text);
+}
+
+.summaryDot {
+  margin: 0 0.7em;
+  color: var(--v3-text-3);
+}
+
 .actions {
   display: flex;
+  align-items: center;
   gap: 8px;
+}
+
+.actions .buttonPrimary {
+  height: 32px;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 220px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius);
+  background: var(--v3-surface);
+  color: var(--v3-text-3);
+  transition: border-color 120ms var(--v3-ease);
+}
+
+.search:hover {
+  border-color: var(--v3-border-strong);
+}
+
+.search:focus-within {
+  border-color: var(--v3-accent);
+  outline: 2px solid var(--v3-accent);
+  outline-offset: -1px;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: none;
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: var(--v3-text-3);
+}
+
+.searchInput::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+/* The name form, opened from New project while the Console is showing. */
+.newPanel {
+  display: flex;
+  margin-bottom: 18px;
+}
+
+.newPanel .newForm {
+  min-height: 0;
 }
 
 .button,
@@ -834,10 +928,43 @@
     font-size: 22px;
   }
 
+  /* Title and New project on one line, then the view and the search. No
+     button floats over the list. */
   .header {
-    flex-wrap: nowrap;
-    align-items: flex-start;
-    margin-bottom: 16px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 14px 8px;
+    margin-bottom: 12px;
+  }
+
+  .heading {
+    grid-column: 1 / 3;
+    grid-row: 1;
+  }
+
+  .actions {
+    display: contents;
+  }
+
+  .newButton {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .search {
+    grid-column: 2 / 4;
+    grid-row: 2;
+    width: auto;
+    height: 36px;
+  }
+
+  .searchInput {
+    font-size: 16px;
+  }
+
+  .actions .buttonPrimary {
+    height: 36px;
   }
 
   .buttonPrimary {
