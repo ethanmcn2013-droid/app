@@ -273,7 +273,25 @@ export function detectPrerequisitesComplete(signals: TaskSignal[], now: number =
     return [{
       task,
       trigger: "prerequisites-complete" as const,
-      reasons: ["At least one listed prerequisite is complete and none remain open.", "The task has a saved deadline within seven days."],
+      reasons: ["All listed prerequisites were verified complete; none remain open or unverified.", "The task has a saved deadline within seven days."],
+      severity: 0,
+    }];
+  });
+}
+
+/** A saved near-term date makes incomplete prerequisite evidence relevant.
+ * Unknown does not establish a blocker or readiness, and carries no identity.
+ * Undated and distant work remain quiet unless another attention rule fires. */
+export function detectPrerequisitesUnverified(signals: TaskSignal[], now: number = Date.now(), timezone = "UTC"): Triggered[] {
+  return signals.flatMap(task => {
+    if (task.lane === "shipped" || task.dependencyCoverage !== "partial") return [];
+    const days = deadlineDayDifference(signalDeadline(task), now, timezone);
+    if (days === null || days > 7) return [];
+    return [{
+      task,
+      trigger: "prerequisites-unverified" as const,
+      reasons: ["The task's prerequisite records could not be fully verified.",
+        "Unverified prerequisites do not establish that the task is blocked or ready."],
       severity: 0,
     }];
   });

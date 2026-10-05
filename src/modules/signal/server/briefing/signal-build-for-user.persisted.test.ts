@@ -165,6 +165,46 @@ test("persisted visible blocker of near-due work has its own Home and ledger obs
   assert.deepEqual(await hashes(), before);
 });
 
+test("all listed completed prerequisites preserve readiness meaning through dated Home and public Briefing, then reopen removes it", async () => {
+  await task("hidden-first", { completed: NOW - DAY, archived: NOW - DAY });
+  await task("hidden-second", { completed: NOW - DAY, archived: NOW - DAY });
+  await task("publish-guide", { lane: "todo", blocked: ["hidden-first", "hidden-second"] });
+  await fixture.client.execute({ sql: "UPDATE tasks SET due_at=? WHERE id='publish-guide'", args: [(NOW + DAY) / 1000] });
+  const before = await hashes(), result = await build(), view = await home();
+  const row = view.signalRows.find(item => item.id === "publish-guide");
+  assert.equal(row?.trigger, "due-soon");
+  assert.match(row?.why ?? "", /listed prerequisites are complete/i);
+  assert.match(row?.why ?? "", /move ahead|no longer held up/i);
+  const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
+  assert.equal(ledger.entries[0]?.detail, row?.why);
+  assert.doesNotMatch(JSON.stringify(ledger), /hidden-first|hidden-second/);
+  assert.deepEqual(await hashes(), before);
+  await fixture.client.execute("UPDATE tasks SET lane='doing' WHERE id='hidden-second'");
+  const reopened = await home();
+  assert.doesNotMatch(reopened.signalRows.find(item => item.id === "publish-guide")?.why ?? "", /prerequisites are complete|move ahead|no longer held up/);
+});
+
+test("missing and foreign prerequisite records produce task-specific uncertainty in Home and opaque Briefing", async () => {
+  await task("hidden-complete", { completed: NOW - DAY, archived: NOW - DAY });
+  await fixture.client.execute("INSERT INTO tasks(id,workspace_id,seq,title,lane,priority,assignees,tags,blocked_by) VALUES ('foreign-secret','synthetic-foreign-project',1,'Private foreign title','done','p2','[]','[]','[]')");
+  for (const unknown of ["missing-secret", "foreign-secret"]) {
+    await task("publish-guide", { lane: "todo", blocked: ["hidden-complete", unknown] });
+    await fixture.client.execute({ sql: "UPDATE tasks SET due_at=? WHERE id='publish-guide'", args: [(NOW + DAY) / 1000] });
+    const before = await hashes(), result = await build(), view = await home();
+    const row = view.signalRows.find(item => item.id === "publish-guide");
+    assert.equal(row?.trigger, "due-soon");
+    assert.match(row?.why ?? "", /prerequisites could not be fully verified/i);
+    assert.match(row?.why ?? "", /not confirmed clear to move ahead/i);
+    assert.equal(view.allClear, null);
+    const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
+    assert.equal(ledger.entries[0]?.detail, row?.why);
+    assert.equal(ledger.readCounts, null);
+    assert.doesNotMatch(JSON.stringify(ledger), /missing-secret|foreign-secret|Private foreign title|hidden-complete|prerequisites are complete/);
+    assert.deepEqual(await hashes(), before);
+    await fixture.client.execute("DELETE FROM tasks WHERE id='publish-guide'");
+  }
+});
+
 test("proven recent comment reaches actual Home and ledger without altering dependency lifecycle or stores", async () => {
   await task("upstream", { lane: "doing", updated: NOW - 10 * DAY });
   await task("commented-dependent", { lane: "doing", blocked: ["upstream"], updated: NOW - 10 * DAY });

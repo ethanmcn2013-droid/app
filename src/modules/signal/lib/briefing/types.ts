@@ -74,7 +74,8 @@ export type TriggerKind =
   | "crowded-week"
   | "blocked-too-long"
   | "blocking-due-work"
-  | "prerequisites-complete";
+  | "prerequisites-complete"
+  | "prerequisites-unverified";
 
 export type FocusItem = {
   id: string;

@@ -8,6 +8,7 @@ import {
   detectJustShipped,
   detectOverload,
   detectPrerequisitesComplete,
+  detectPrerequisitesUnverified,
   detectStuckWork,
   type Triggered,
 } from "./triggers";
@@ -76,6 +77,9 @@ export async function buildBriefing(
   // unsuppressed relationship in that row's explanation.
   const dependencyByTask = new Map(blockingDueWork.map((item) => [item.task.id, item]));
   const prerequisitesComplete = detectPrerequisitesComplete(signals, now, timezone).filter(notDismissed);
+  const prerequisitesUnverified = detectPrerequisitesUnverified(signals, now, timezone).filter(notDismissed);
+  const prerequisiteByTask = new Map([...prerequisitesComplete, ...prerequisitesUnverified]
+    .map(item => [item.task.id, item]));
 
   // Build a {taskId → title} map once so blocked-too-long prose can
   // name the upstream blocker ("blocked by Music supplier") instead
@@ -97,6 +101,7 @@ export async function buildBriefing(
     ...stuck,
     ...blocked,
     ...prerequisitesComplete,
+    ...prerequisitesUnverified,
     ...shipped,
   ]) {
     const current = bestByTask.get(candidate.task.id);
@@ -143,7 +148,7 @@ export async function buildBriefing(
   // excluding anything already in attention or moving. blocked-too-long
   // lives here because it's about a long-tail issue, not today's load.
   const risks = selected.filter(
-    (item) => item.trigger === "stuck-work" || item.trigger === "blocked-too-long",
+    (item) => item.trigger === "stuck-work" || item.trigger === "blocked-too-long" || item.trigger === "prerequisites-unverified",
   );
 
   // ─ Suggested focus: top 3 across attention + risks. due-soon
@@ -168,13 +173,13 @@ export async function buildBriefing(
     ageOf(t) >= 2 ? { ...item, ageDays: ageOf(t) } : item;
 
   const needsAttention: BriefItem[] = freshFirst(attention).map((t) =>
-    withAge(t, toItem(t, rotationIndex, now, titlesById, timezone, dependencyByTask.get(t.task.id))),
+    withAge(t, toItem(t, rotationIndex, now, titlesById, timezone, dependencyByTask.get(t.task.id), prerequisiteByTask.get(t.task.id))),
   );
   const movingWell: BriefItem[] = moving.map((t) =>
     toItem(t, rotationIndex, now, titlesById, timezone),
   );
   const quietRisks: BriefItem[] = freshFirst(risks).map((t) =>
-    withAge(t, toItem(t, rotationIndex, now, titlesById, timezone)),
+    withAge(t, toItem(t, rotationIndex, now, titlesById, timezone, dependencyByTask.get(t.task.id), prerequisiteByTask.get(t.task.id))),
   );
   const suggestedFocus: FocusItem[] = focusSource.map((t) =>
     toFocus(t, rotationIndex, now, timezone),
@@ -221,6 +226,7 @@ function toItem(
   titlesById: Map<string, string>,
   timezone: string,
   dependency?: Triggered,
+  prerequisite?: Triggered,
 ): BriefItem {
   const deadline = signalDeadline(t.task);
   const daysOut = deadlineDayDifference(deadline, now, timezone) ?? undefined;
@@ -244,18 +250,27 @@ function toItem(
   const related = t.trigger === "due-soon" && dependency?.trigger === "blocking-due-work" &&
     dependency.task.workspaceId === t.task.workspaceId
     ? dependency : undefined;
-  const detail = related
+  const dependencyDetail = related
     ? `${primaryDetail} ${phraseFor("blocking-due-work", related.task, rotation, {
         relatedTaskTitle: related.relatedTaskTitle,
       })}`
     : primaryDetail;
+  // A stronger observation owns the rank, trigger and carry-over identity.
+  // It must not erase separately eligible, unsuppressed prerequisite meaning.
+  const prerequisiteContext = prerequisite && prerequisite.trigger !== t.trigger &&
+    prerequisite.task.workspaceId === t.task.workspaceId ? prerequisite : undefined;
+  const detail = prerequisiteContext
+    ? `${dependencyDetail} ${phraseFor(prerequisiteContext.trigger, t.task, rotation, {
+        savedDateLabel: deadlineShortDate(deadline, timezone) ?? undefined,
+      })}`
+    : dependencyDetail;
   return {
     id: t.task.id,
     text: headline(t),
     detail,
     sourceLabel: t.task.sourceLabel,
     trigger: t.trigger,
-    reasons: related ? [...t.reasons, ...related.reasons] : t.reasons,
+    reasons: [...t.reasons, ...(related?.reasons ?? []), ...(prerequisiteContext?.reasons ?? [])],
     workspaceId: t.task.workspaceId,
     planningPeriodId: t.task.planningPeriodId,
   };
@@ -290,7 +305,7 @@ function headline(t: Triggered): string {
 }
 
 function focusDue(t: Triggered, now: number, timezone: string): string {
-  if (t.trigger === "blocking-due-work" || t.trigger === "prerequisites-complete") {
+  if (t.trigger === "blocking-due-work" || t.trigger === "prerequisites-complete" || t.trigger === "prerequisites-unverified") {
     // Never borrow a dependent's deadline for its blocker. The completed-
     // prerequisite window can cross a calendar week, so name its own date.
     return deadlineShortDate(signalDeadline(t.task), timezone) ?? "No confirmed date";
@@ -326,6 +341,7 @@ function focusWeight(t: Triggered): number {
     "stuck-work": 700,
     "blocked-too-long": 600,
     "prerequisites-complete": 600,
+    "prerequisites-unverified": 600,
     overload: 500,
     "just-shipped": 100,
   };

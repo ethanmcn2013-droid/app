@@ -28,6 +28,7 @@ const ALL_TRIGGERS: TriggerKind[] = [
   "blocked-too-long",
   "blocking-due-work",
   "prerequisites-complete",
+  "prerequisites-unverified",
 ];
 
 describe("phraseFor, every trigger × every rotation produces non-empty prose", () => {
@@ -95,6 +96,7 @@ describe("phraseFor, context propagation", () => {
       assert.match(blocker, /Finish the plan/);
       assert.match(completed, /2 Nov/);
       assert.match(completed, /listed prerequisites are complete/i);
+      assert.match(completed, /move ahead|no longer held up/i);
       assert.doesNotMatch(`${blocker} ${completed}`, /just cleared|newly unblocked|ready to start|days without/i);
     }
   });

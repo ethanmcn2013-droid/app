@@ -184,9 +184,13 @@ const BLOCKING_DUE_WORK: Phrasing[] = [
 ];
 
 const PREREQUISITES_COMPLETE: Phrasing[] = [
-  (_task, _days, _titles, _title, date) => `Its listed prerequisites are complete. Saved deadline: ${date ?? "within seven days"}.`,
-  (_task, _days, _titles, _title, date) => `The listed prerequisites are complete, and its saved deadline is ${date ?? "within seven days"}.`,
-  (_task, _days, _titles, _title, date) => `Its listed prerequisites are complete. The saved deadline is ${date ?? "within seven days"}.`,
+  (_task, _days, _titles, _title, date) => `Its listed prerequisites are complete, so it can move ahead without waiting on that work. Saved deadline: ${date ?? "within seven days"}.`,
+  (_task, _days, _titles, _title, date) => `The listed prerequisites are complete, clearing that work for it to move ahead. Its saved deadline is ${date ?? "within seven days"}.`,
+  (_task, _days, _titles, _title, date) => `Its listed prerequisites are complete. It is no longer held up by that work. The saved deadline is ${date ?? "within seven days"}.`,
+];
+
+const PREREQUISITES_UNVERIFIED: Phrasing[] = [
+  () => "Its prerequisites could not be fully verified. It is not confirmed clear to move ahead on that work.",
 ];
 
 const LIBRARY: Record<TriggerKind, Phrasing[]> = {
@@ -198,6 +202,7 @@ const LIBRARY: Record<TriggerKind, Phrasing[]> = {
   "blocked-too-long": BLOCKED_TOO_LONG,
   "blocking-due-work": BLOCKING_DUE_WORK,
   "prerequisites-complete": PREREQUISITES_COMPLETE,
+  "prerequisites-unverified": PREREQUISITES_UNVERIFIED,
 };
 
 /**

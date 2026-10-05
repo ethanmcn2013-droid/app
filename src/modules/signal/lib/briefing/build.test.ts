@@ -128,9 +128,60 @@ test("completed listed prerequisite enters attention, but a stronger due-soon ob
   assert.doesNotMatch(briefing.needsAttention[0]!.detail, /just|newly|started/i);
   const urgent = await buildBriefing(source([{ ...ready, dueAt: NOW + DAY }]), CTX, NOW);
   assert.deepEqual(urgent.needsAttention.map(item => item.trigger), ["due-soon"]);
+  assert.match(urgent.needsAttention[0]!.detail, /listed prerequisites are complete/i);
+  assert.match(urgent.needsAttention[0]!.detail, /move ahead|no longer held up/i);
   const nextWeek = await buildBriefing(source([{ ...ready, dueAt: NOW + 6 * DAY }]), CTX, NOW);
   assert.match(nextWeek.needsAttention[0]!.detail, /saved deadline/i);
   assert.notEqual(nextWeek.suggestedFocus[0]?.due, "this week", "a future date must not inherit a calendar-week claim");
+});
+
+test("prerequisite meaning follows the winning row but respects suppression, uncertainty and lifecycle", async () => {
+  const ready = task({ id: "launch", title: "Publish the guide", workspaceId: "owned", dueAt: NOW + DAY,
+    dependencyCoverage: "complete", hasCompletedListedPrerequisite: true, idleDays: null });
+  for (const days of [0, 1, 2, 3, 6]) {
+    const brief = await buildBriefing(source([{ ...ready, dueAt: NOW + days * DAY + 3_600_000 }]), CTX, NOW);
+    const item = brief.needsAttention[0]!;
+    assert.match(item.detail, /listed prerequisites are complete/i);
+    assert.match(item.detail, /move ahead|no longer held up/i);
+    assert.equal(brief.triggeredCount, 1);
+  }
+  const suppressed = await buildBriefing(source([ready]), CTX, NOW, {
+    suppressed: new Set(["prerequisites-complete:launch"]), ages: new Map([["due-soon:launch", 3]]),
+  });
+  assert.equal(suppressed.needsAttention[0]?.trigger, "due-soon");
+  assert.equal(suppressed.needsAttention[0]?.ageDays, 3);
+  assert.doesNotMatch(suppressed.needsAttention[0]!.detail, /listed prerequisites are complete|move ahead/);
+  for (const changed of [{ blockedBy: ["still-open"] }, { hasCompletedListedPrerequisite: false },
+    { dependencyCoverage: "partial" as const }, { lane: "shipped" as const }]) {
+    const brief = await buildBriefing(source([{ ...ready, ...changed }]), CTX, NOW);
+    assert.doesNotMatch(JSON.stringify(brief), /listed prerequisites are complete|no longer held up/);
+  }
+});
+
+test("unknown prerequisites are specific to near-term work, retain deadline rank, and never invent a blocker", async () => {
+  const uncertain = task({ id: "launch", title: "Publish the guide", workspaceId: "owned", dueAt: NOW + DAY,
+    dependencyCoverage: "partial", hasCompletedListedPrerequisite: true, idleDays: null });
+  for (const days of [-1, 0, 1, 3, 7]) {
+    const brief = await buildBriefing(source([{ ...uncertain, dueAt: NOW + days * DAY }]), CTX, NOW);
+    const rows = [...brief.needsAttention, ...brief.quietRisks];
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0]?.trigger, days <= 2 ? "due-soon" : "prerequisites-unverified");
+    assert.match(rows[0]!.detail, /prerequisites could not be fully verified/i);
+    assert.match(rows[0]!.detail, /not confirmed clear to move ahead/i);
+    assert.doesNotMatch(rows[0]!.detail, /listed prerequisites are complete|waiting on something upstream|is blocked/);
+  }
+  for (const changed of [{ dueAt: null }, { dueAt: NOW + 8 * DAY }, { lane: "shipped" as const },
+    { dependencyCoverage: "complete" as const, hasCompletedListedPrerequisite: false }]) {
+    const brief = await buildBriefing(source([{ ...uncertain, ...changed }]), CTX, NOW);
+    assert.doesNotMatch(JSON.stringify(brief), /could not be fully verified/);
+  }
+  const dismissed = await buildBriefing(source([uncertain]), CTX, NOW, {
+    suppressed: new Set(["prerequisites-unverified:launch"]),
+  });
+  assert.equal(dismissed.needsAttention[0]?.trigger, "due-soon");
+  assert.doesNotMatch(dismissed.needsAttention[0]!.detail, /could not be fully verified/);
+  const wildcard = await buildBriefing(source([uncertain]), CTX, NOW, { suppressed: new Set(["*:launch"]) });
+  assert.equal(wildcard.isEmpty, true);
 });
 
 test("equal rule and severity honor P0..P3 then unknown before adverse IDs and the cap", async () => {

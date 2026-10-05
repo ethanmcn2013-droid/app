@@ -213,6 +213,7 @@ function triggerChip(
     "blocked-too-long": { label: "Waiting on other work", tone: "warning" },
     "blocking-due-work": { label: "Holding up due work", tone: "warning" },
     "prerequisites-complete": { label: "Earlier work done", tone: "neutral" },
+    "prerequisites-unverified": { label: "Prerequisites unconfirmed", tone: "warning" },
     overload: { label: "Workload", tone: "warning" },
     "crowded-week": { label: "Busy week", tone: "warning" },
     "just-shipped": { label: "Finished", tone: "success" },
