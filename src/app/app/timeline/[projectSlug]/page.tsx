@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function TimelineProjectRoute(props: {
   params: Promise<{ projectSlug: string }>;
-  searchParams: Promise<{ workspaceId?: string; planningPeriodId?: string }>;
+  searchParams: Promise<{ workspaceId?: string; planningPeriodId?: string; mode?: string }>;
 }) {
   await requireAppAccessTasks();
   return <TimelineProjectPage {...props} />;

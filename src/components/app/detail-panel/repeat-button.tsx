@@ -172,7 +172,7 @@ function RepeatForm({
   return (
     <div className="flex flex-col gap-2.5 px-1.5 py-1.5">
       <div className="flex flex-col gap-0.5">
-        <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
+        <span className="text-[12px] font-medium text-[color:var(--v3-text-2)] leading-[var(--x-lead-tight)]">
           Make copies
         </span>
         <p className="text-[12px] leading-[var(--x-lead-read)] text-ink-soft">
@@ -182,7 +182,7 @@ function RepeatForm({
       </div>
       <div className="flex items-end gap-2">
         <label className="flex flex-1 flex-col gap-1">
-          <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
+          <span className="text-[12px] font-medium text-[color:var(--v3-text-2)] leading-[var(--x-lead-tight)]">
             Count
           </span>
           <input
@@ -202,7 +202,7 @@ function RepeatForm({
           />
         </label>
         <label className="flex flex-1 flex-col gap-1">
-          <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
+          <span className="text-[12px] font-medium text-[color:var(--v3-text-2)] leading-[var(--x-lead-tight)]">
             Days apart
           </span>
           <input

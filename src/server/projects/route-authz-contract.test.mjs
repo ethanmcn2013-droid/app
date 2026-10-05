@@ -37,10 +37,19 @@ const printGate = read("src/app/print/print-project.tsx");
 const printLayout = read("src/app/print/layout.tsx");
 const shell = read("src/components/app/tasks-runtime-shell.tsx");
 
-const PRINT_PAGES = ["board", "list", "timeline", "calendar"].map((view) => [
+const PRINT_PAGES = ["board", "list", "calendar"].map((view) => [
   view,
   read(`src/app/print/${view}/page.tsx`),
 ]);
+// The Schedule view is retired; its print address only forwards to the
+// board print, which runs the gate. It reads nothing itself.
+const retiredTimelinePrint = read("src/app/print/timeline/page.tsx");
+
+test("the retired timeline print reads no tasks and forwards to the gated board print", () => {
+  assert.doesNotMatch(retiredTimelinePrint, /getTasks\(|getWorkspaceName\(|getActiveWorkspace\s*\(/);
+  assert.match(retiredTimelinePrint, /redirect\(/);
+  assert.match(retiredTimelinePrint, /\/print\/board/);
+});
 
 /* ── The ambient accessor is gone from the owned surface ─────────────────── */
 
@@ -327,7 +336,7 @@ const RUNTIME_SEGMENTS = [
 /**
  * Passing `searchParams` moves the whole runtime — chrome, palette, board
  * data — to the URL's Project, so only pages whose own content moves with it
- * may pass it: the four Tasks views and My Tasks render from the runtime's
+ * may pass it: the three Tasks views and My Tasks render from the runtime's
  * providers, Your Work is user-scoped, and the project overview verifies its
  * data against the explicit Project itself.
  */
@@ -338,8 +347,6 @@ const PAGES_PASSING_THE_URL = [
   "src/app/app/tasks/calendar/page.tsx",
   "src/app/app/tasks/list/page.tsx",
   "src/app/app/tasks/page.tsx",
-  "src/app/app/tasks/timeline/page.tsx",
-  "src/app/app/your-work/page.tsx",
 ];
 
 /**

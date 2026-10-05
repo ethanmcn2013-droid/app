@@ -145,7 +145,18 @@ export function StudioChromeBridge() {
     const onCreate = () => openDialog();
     window.addEventListener(STUDIO_PALETTE_EVENT, onPalette);
     window.addEventListener(STUDIO_CREATE_EVENT, onCreate);
+    // v3 shell: "+ New → Task" dispatches directly when this bridge is
+    // mounted, and otherwise navigates here with ?create=task.
+    const root = document.documentElement;
+    root.setAttribute("data-create-ready", "");
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("create") === "task") {
+      url.searchParams.delete("create");
+      window.history.replaceState(window.history.state, "", url.toString());
+      window.setTimeout(() => openDialog(), 0);
+    }
     return () => {
+      root.removeAttribute("data-create-ready");
       window.removeEventListener(STUDIO_PALETTE_EVENT, onPalette);
       window.removeEventListener(STUDIO_CREATE_EVENT, onCreate);
     };

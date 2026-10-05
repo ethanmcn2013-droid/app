@@ -4,6 +4,14 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-10-05 · Redesign candidate · One app shell and the Projects console
+
+Every signed-in page now sits in one shell: a sidebar with Home, Overview, Projects, Tasks, Timeline, Files, Analytics and Whiteboard, a top bar with search, the inbox, the apps launcher and New, and a drawer on a phone. Everything the old navigation held is kept under one folding group named Initial setup, so nothing is removed. Home is a single page of what is open, due and done.
+
+Projects opens on the Console: one row per project with what is done, its next big date, what is late and who leads it, under four figures for the week and tabs for All, Needs a look, Led by you and Wrapped. A project is flagged when its owner marks it at risk or its target date has passed. The earlier cards stay behind a view switcher, and the open project's overview stays below both. The row menu opens the project, its tasks or its timeline, and can send one reminder a day about its oldest late task.
+
+The Console reads only what exists: it adds read-only queries and no schema change, and a figure that cannot be read is left out. This is an unshipped candidate on `design/suite-redesign-v3`; no deployment, migration or production change is claimed by this entry. The client bundle ceiling was raised from 1030 to 1042 KB gzip to carry the Console, pending the founder's confirmation.
+
 ## 2026-09-23 · Production candidate · Inbox timing and contributor names
 
 Inbox and the daily digest now describe assigned Tasks due in the next 24 hours as a rolling window, so a Task due tomorrow no longer appears under a “Due today” heading tonight. The query and stored due dates are unchanged. Inbox uses the saved profile name, handle or email local part when available; otherwise its greeting stays neutral. Resources shows that same permitted contributor name after the Task access check instead of displaying “Someone” for a known account. Production receiving remains open.

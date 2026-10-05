@@ -1,9 +1,10 @@
-import { AppPageHeader } from "@/components/app/page-header";
 import { MyWeekApp } from "@/components/app/my-week/my-week-app";
 import { TasksRuntimePageMount } from "@/components/app/tasks-runtime-mount";
 import { resolveTasksArrival, TasksArrivalRefusal } from "@/components/app/tasks-project-arrival";
 
 export const dynamic = "force-dynamic";
+
+export const metadata = { title: "My tasks · Signal Studio" };
 
 export default async function MyTasksPage({
   searchParams,
@@ -17,9 +18,10 @@ export default async function MyTasksPage({
   }
   // MyWeekApp reads the runtime's own task state, so chrome and content move
   // together when the flag-on page mount consumes the URL's Project (D-022).
+  // It renders the page header itself: the description and the filter in the
+  // header's action slot come from that same task state.
   return (
     <TasksRuntimePageMount searchParams={searchParams}>
-      <AppPageHeader />
       <MyWeekApp canSetUpProject={arrival.project.project.capabilities.manageProject && arrival.project.project.capabilities.createOrEditTasks} />
     </TasksRuntimePageMount>
   );

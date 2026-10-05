@@ -23,11 +23,11 @@ import styles from "./share-controls.module.css";
  */
 
 export const fieldClass =
-  `${styles.focusable} min-h-10 w-full rounded-lg border border-line-soft bg-bg-elevated px-3 text-sm text-ink focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2`;
+  `${styles.focusable} ${styles.field} min-h-[40px] w-full`;
 export const quietButton =
-  `${styles.focusable} min-h-10 rounded-lg border border-line-soft bg-bg-elevated px-3 text-sm font-medium text-ink-soft hover:border-ink-ghost focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60`;
+  `${styles.focusable} ${styles.quiet} min-h-[40px] disabled:cursor-wait disabled:opacity-60`;
 export const primaryButton =
-  `${styles.focusable} inline-flex min-h-[44px] items-center justify-center rounded-lg bg-ink px-4 text-sm font-medium text-white hover:bg-ink-soft focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60`;
+  `${styles.focusable} ${styles.primary} inline-flex min-h-[44px] items-center justify-center disabled:cursor-wait disabled:opacity-60`;
 
 /**
  * Two presses for actions that kill live links. The first press arms the
@@ -52,7 +52,7 @@ export function ArmedSubmitButton({
       disabled={disabled}
       aria-live="polite"
       className={quietButton}
-      style={armed ? { borderColor: "var(--x-timeline-alarm)", color: "var(--x-timeline-alarm)" } : undefined}
+      style={armed ? { borderColor: "var(--v3-danger)", color: "var(--v3-danger-text)" } : undefined}
       onClick={(event) => {
         if (armed) return;
         event.preventDefault();
@@ -86,7 +86,7 @@ export function ActionNotice({ state }: { state: AudienceActionState }) {
     <p
       role="status"
       className="mt-3 text-sm leading-6"
-      style={{ color: state.status === "error" ? "var(--x-timeline-alarm)" : "var(--ink-soft)" }}
+      style={{ color: state.status === "error" ? "var(--v3-danger-text)" : "var(--v3-text-2)" }}
     >
       {state.message}
     </p>
@@ -121,15 +121,14 @@ export function ShareReceipt({ state }: { state: AudienceActionState }) {
 
   return (
     <div
-      className="tl-rise-in mt-3 rounded-lg border border-line-soft bg-bg-elevated p-3"
-      style={{ boxShadow: "inset 2px 0 0 var(--accent)" }}
+      className={`tl-rise-in ${styles.receipt}`}
     >
       {/* Sans, sentence case: this is a label, not a string to be copied.
           The field below it keeps mono, which is the module's one remaining
           use for it — a URL is read character by character. */}
       <p
         className="text-[12px] font-medium"
-        style={{ color: "var(--accent-hover)" }}
+        style={{ color: "var(--v3-accent-text)" }}
       >
         Your link
       </p>
@@ -156,7 +155,7 @@ export function ShareReceipt({ state }: { state: AudienceActionState }) {
         className={
           copyStatus === "idle"
             ? "sr-only"
-            : "mt-2 text-xs text-ink-soft"
+            : "mt-2 text-xs text-[color:var(--v3-text-2)]"
         }
       >
         {copyStatus === "copied"
@@ -174,7 +173,7 @@ export function ShareReceipt({ state }: { state: AudienceActionState }) {
           Select link again
         </button>
       ) : null}
-      <p className="mt-2 text-xs text-ink-quiet">
+      <p className="mt-2 text-xs text-[color:var(--v3-text-2)]">
         Copy it now. The link is not kept here, so this is the only time it can
         be shown. If you lose it, make a new one. That stops this one working.
       </p>

@@ -7,6 +7,7 @@ import { Dialog } from "@/components/primitives/dialog";
 import { clearAllTasksAction, seedDomainAction } from "@/server/actions/seed";
 import { deleteWorkspaceAction } from "@/server/actions/settings";
 import { SectionHeader } from "../settings-app";
+import { DialogBody, SettingsGroup, SettingsRow, cx, ui } from "../settings-ui";
 import { projectRecoveryPath } from "@/lib/projects/recovery";
 
 export function DangerSection({
@@ -41,7 +42,7 @@ export function DangerSection({
         await seedDomainAction("wedding", projectId ?? undefined);
         toast("Wedding demo loaded", {
           tone: "success",
-          body: "This workspace now holds the wedding sample tasks.",
+          body: "This project now holds the wedding sample tasks.",
         });
         router.refresh();
       } catch (e) {
@@ -60,7 +61,7 @@ export function DangerSection({
         await clearAllTasksAction(projectId ?? undefined);
         toast("Tasks cleared", {
           tone: "success",
-          body: "Workspace is back to empty. Members and billing untouched.",
+          body: "The project is back to empty. Members and billing untouched.",
         });
       } catch (e) {
         toast("Couldn’t clear", {
@@ -78,7 +79,7 @@ export function DangerSection({
     startTransition(async () => {
       try {
         await deleteWorkspaceAction(projectId ?? undefined);
-        toast("Workspace deleted", { tone: "success" });
+        toast("Project deleted", { tone: "success" });
         // Bounce to /app, the layout will re-resolve the active
         // workspace (or punt to /welcome for fresh users).
         router.push("/app/tasks");
@@ -95,57 +96,84 @@ export function DangerSection({
   return (
     <div>
       <SectionHeader
-        eyebrow="Danger zone"
-        title="Things you can’t undo"
-        description="The button-colored-red kind. We make you confirm because we’re not in the business of regret."
+        title="Danger zone"
+        description="These change or remove work for everyone in this project. Each one asks you to confirm first."
       />
 
-      {projectId ? <p className="mb-4 text-[13px] text-ink-quiet">
-        <a className="underline underline-offset-4" href={projectRecoveryPath(projectId)}>Project recovery</a> keeps export, file downloads and permitted public-access controls available outside the workspace.
-      </p> : null}
+      {projectId ? (
+        <p className="mb-6 -mt-2 text-[12.5px] leading-[1.55] text-[color:var(--v3-text-2)]">
+          <a className={ui.link} href={projectRecoveryPath(projectId)}>Project recovery</a> keeps export, file downloads and permitted public-access controls available on a page of its own.
+        </p>
+      ) : null}
 
-      <div className="space-y-4">
+      <SettingsGroup tone="danger">
         {/* Load the wedding demo */}
-        <DangerCard
-          title="Load the wedding demo"
-          description="Replaces this workspace’s tasks with the wedding sample set (venue, vendors, run-of-show). Handy for demos and screenshots. Clears the current tasks first, so treat it like a reset."
-          buttonLabel="Load wedding demo"
-          disabled={pending || !isOwner}
-          tone="emerald"
-          onClick={() => setWeddingOpen(true)}
-          gateNote={!isOwner ? "Only the owner can do this." : null}
-        />
+        <SettingsRow
+          label="Load the wedding demo"
+          description={
+            <>
+              Replaces this project’s tasks with the wedding sample set (venue,
+              vendors, run-of-show). Handy for demos. It clears the current
+              tasks first, so treat it like a reset.
+              {!isOwner ? <GateNote /> : null}
+            </>
+          }
+        >
+          <button
+            type="button"
+            onClick={() => setWeddingOpen(true)}
+            disabled={pending || !isOwner}
+            className={ui.button}
+          >
+            Load wedding demo
+          </button>
+        </SettingsRow>
 
         {/* Clear tasks */}
-        <DangerCard
-          title="Clear all tasks"
-          description="Wipes every task, comment, and activity in this workspace. Members, billing, and the workspace itself stick around. The starter pack stays cleared until you re-seed."
-          buttonLabel="Clear tasks"
-          disabled={pending || !isOwner}
-          tone="amber"
-          onClick={() => setClearOpen(true)}
-          gateNote={!isOwner ? "Only the owner can do this." : null}
-        />
+        <SettingsRow
+          label="Clear all tasks"
+          description={
+            <>
+              Deletes every task, comment and activity in this project.
+              Members, billing and the project itself stay. The starter pack
+              stays cleared until you re-seed.
+              {!isOwner ? <GateNote /> : null}
+            </>
+          }
+        >
+          <button
+            type="button"
+            onClick={() => setClearOpen(true)}
+            disabled={pending || !isOwner}
+            className={ui.danger}
+          >
+            Clear tasks
+          </button>
+        </SettingsRow>
 
-        {/* Delete workspace */}
+        {/* Delete project */}
         {isOwner ? (
-          <DangerCard
-            title="Delete this project"
-            description={
-              "Erases the workspace and everything in it, tasks, comments, members, share links, the whole shape. There is no undo."
-            }
-            buttonLabel="Delete workspace"
-            disabled={pending}
-            tone="rose"
-            onClick={() => setDeleteOpen(true)}
-          />
+          <SettingsRow
+            label="Delete this project"
+            labelTone="danger"
+            description="Erases the project and everything in it: tasks, comments, members and share links. There is no undo."
+          >
+            <button
+              type="button"
+              onClick={() => setDeleteOpen(true)}
+              disabled={pending}
+              className={ui.danger}
+            >
+              Delete project
+            </button>
+          </SettingsRow>
         ) : (
-          <div className="rounded-xl border border-line-soft bg-bg-sunken/40 p-5 text-[12.5px] text-ink-quiet">
-            Only the owner sees the delete-workspace control. That&apos;s
-            on purpose.
-          </div>
+          <SettingsRow
+            label="Delete this project"
+            description="Only the owner sees the delete control. That’s on purpose."
+          />
         )}
-      </div>
+      </SettingsGroup>
 
       {/* Load-wedding-demo confirmation */}
       <Dialog
@@ -154,38 +182,33 @@ export function DangerSection({
         labelledBy="wedding-demo-title"
         width={440}
       >
-        <div className="px-5 py-5">
-          <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
-            Confirm
-          </div>
-          <h3
-            id="wedding-demo-title"
-            className="mt-1 text-[17px] font-semibold tracking-tight"
-          >
-            Load the wedding demo into {workspaceName}?
-          </h3>
-          <p className="mt-2 text-[13px] leading-[1.55] text-ink-soft">
-            This clears the current tasks and seeds the wedding sample set
-            (venue, vendors, run-of-show). Members and billing are untouched.
-          </p>
-          <div className="mt-5 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setWeddingOpen(false)}
-              className="rounded-full border border-line bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink-soft hover:border-ink-soft/30 hover:text-ink"
-            >
-              Never mind
-            </button>
-            <button
-              type="button"
-              onClick={loadWeddingDemo}
-              disabled={pending}
-              className="rounded-full bg-emerald-600 px-3 py-1.5 text-[12.5px] font-medium text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60"
-            >
-              {pending ? "Loading…" : "Load wedding demo"}
-            </button>
-          </div>
-        </div>
+        <DialogBody
+          titleId="wedding-demo-title"
+          tone="warning"
+          title={<>Load the wedding demo into {workspaceName}?</>}
+          actions={
+            <>
+              <button
+                type="button"
+                onClick={() => setWeddingOpen(false)}
+                className={ui.button}
+              >
+                Never mind
+              </button>
+              <button
+                type="button"
+                onClick={loadWeddingDemo}
+                disabled={pending}
+                className={ui.primary}
+              >
+                {pending ? "Loading…" : "Load wedding demo"}
+              </button>
+            </>
+          }
+        >
+          This clears the current tasks and adds the wedding sample set
+          (venue, vendors, run-of-show). Members and billing are not affected.
+        </DialogBody>
       </Dialog>
 
       {/* Clear-tasks confirmation */}
@@ -195,42 +218,37 @@ export function DangerSection({
         labelledBy="clear-tasks-title"
         width={440}
       >
-        <div className="px-5 py-5">
-          <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-amber-700">
-            Confirm
-          </div>
-          <h3
-            id="clear-tasks-title"
-            className="mt-1 text-[17px] font-semibold tracking-tight"
-          >
-            Clear every task in {workspaceName}?
-          </h3>
-          <p className="mt-2 text-[13px] leading-[1.55] text-ink-soft">
-            All tasks, comments, and activity in this workspace get
-            deleted. Members and billing are untouched. The starter
-            pack resets so you can pick a fresh one.
-          </p>
-          <div className="mt-5 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setClearOpen(false)}
-              className="rounded-full border border-line bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink-soft hover:border-ink-soft/30 hover:text-ink"
-            >
-              Never mind
-            </button>
-            <button
-              type="button"
-              onClick={clearAllTasks}
-              disabled={pending}
-              className="rounded-full bg-amber-600 px-3 py-1.5 text-[12.5px] font-medium text-white shadow-sm hover:bg-amber-700 disabled:opacity-60"
-            >
-              {pending ? "Clearing…" : "Clear all tasks"}
-            </button>
-          </div>
-        </div>
+        <DialogBody
+          titleId="clear-tasks-title"
+          tone="warning"
+          title={<>Clear every task in {workspaceName}?</>}
+          actions={
+            <>
+              <button
+                type="button"
+                onClick={() => setClearOpen(false)}
+                className={ui.button}
+              >
+                Never mind
+              </button>
+              <button
+                type="button"
+                onClick={clearAllTasks}
+                disabled={pending}
+                className={ui.dangerSolid}
+              >
+                {pending ? "Clearing…" : "Clear all tasks"}
+              </button>
+            </>
+          }
+        >
+          All tasks, comments and activity in this project are deleted.
+          Members and billing are not affected. The starter pack resets so you
+          can pick a fresh one.
+        </DialogBody>
       </Dialog>
 
-      {/* Delete-workspace confirmation, type-to-confirm */}
+      {/* Delete-project confirmation, type-to-confirm */}
       <Dialog
         open={deleteOpen}
         onClose={() => {
@@ -240,22 +258,36 @@ export function DangerSection({
         labelledBy="delete-ws-title"
         width={460}
       >
-        <div className="px-5 py-5">
-          <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-rose-700">
-            Final answer required
-          </div>
-          <h3
-            id="delete-ws-title"
-            className="mt-1 text-[17px] font-semibold tracking-tight"
-          >
-            Delete {workspaceName}?
-          </h3>
-          <p className="mt-2 text-[13px] leading-[1.55] text-ink-soft">
-            This wipes the workspace and everything inside it.
-            Type{" "}
-            <span className="rounded bg-bg-sunken px-1 py-0.5 font-mono text-[12px] text-ink">
-              {workspaceName}
-            </span>{" "}
+        <DialogBody
+          titleId="delete-ws-title"
+          tone="danger"
+          title={<>Delete {workspaceName}?</>}
+          actions={
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteOpen(false);
+                  setConfirmText("");
+                }}
+                className={ui.button}
+              >
+                Keep it
+              </button>
+              <button
+                type="button"
+                onClick={deleteWorkspace}
+                disabled={pending || confirmText !== workspaceName}
+                className={ui.dangerSolid}
+              >
+                {pending ? "Deleting…" : "Delete forever"}
+              </button>
+            </>
+          }
+        >
+          <p>
+            This deletes the project and everything inside it. Type{" "}
+            <span className={ui.code}>{workspaceName}</span>{" "}
             to confirm.
           </p>
           <input
@@ -263,90 +295,20 @@ export function DangerSection({
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
             placeholder={workspaceName}
-            className="mt-3 w-full rounded-md border border-line bg-white px-3 py-1.5 text-[13px] text-ink shadow-sm focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-200"
+            aria-label="Project name to confirm"
+            autoComplete="off"
+            className={cx(ui.input, "mt-3")}
           />
-          <div className="mt-5 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setDeleteOpen(false);
-                setConfirmText("");
-              }}
-              className="rounded-full border border-line bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink-soft hover:border-ink-soft/30 hover:text-ink"
-            >
-              Keep it
-            </button>
-            <button
-              type="button"
-              onClick={deleteWorkspace}
-              disabled={pending || confirmText !== workspaceName}
-              className="rounded-full bg-rose-600 px-3 py-1.5 text-[12.5px] font-medium text-white shadow-sm hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {pending ? "Deleting…" : "Delete forever"}
-            </button>
-          </div>
-        </div>
+        </DialogBody>
       </Dialog>
     </div>
   );
 }
 
-function DangerCard({
-  title,
-  description,
-  buttonLabel,
-  onClick,
-  disabled,
-  tone,
-  gateNote,
-}: {
-  title: string;
-  description: string;
-  buttonLabel: string;
-  onClick: () => void;
-  disabled?: boolean;
-  tone: "amber" | "rose" | "emerald";
-  gateNote?: string | null;
-}) {
-  const ring =
-    tone === "rose"
-      ? "border-rose-200 bg-rose-50/40"
-      : tone === "emerald"
-        ? "border-emerald-200 bg-emerald-50/40"
-        : "border-amber-200 bg-amber-50/40";
-  const button =
-    tone === "rose"
-      ? "border-rose-300 bg-white text-rose-700 hover:border-rose-400 hover:bg-rose-50"
-      : tone === "emerald"
-        ? "border-emerald-300 bg-white text-emerald-800 hover:border-emerald-400 hover:bg-emerald-50"
-        : "border-amber-300 bg-white text-amber-800 hover:border-amber-400 hover:bg-amber-50";
+function GateNote() {
   return (
-    <div
-      className={
-        "flex flex-col gap-3 rounded-xl border p-5 sm:flex-row sm:items-start sm:justify-between " +
-        ring
-      }
-    >
-      <div className="min-w-0 flex-1">
-        <div className="text-[14px] font-semibold text-ink">{title}</div>
-        <p className="mt-1 max-w-[560px] text-[12.5px] leading-[1.55] text-ink-soft">
-          {description}
-        </p>
-        {gateNote ? (
-          <p className="mt-1.5 text-[11.5px] text-ink-quiet">{gateNote}</p>
-        ) : null}
-      </div>
-      <button
-        type="button"
-        onClick={onClick}
-        disabled={disabled}
-        className={
-          "flex-shrink-0 rounded-full border px-3.5 py-1.5 text-[12.5px] font-medium transition-colors disabled:opacity-50 " +
-          button
-        }
-      >
-        {buttonLabel}
-      </button>
-    </div>
+    <span className="mt-1 block text-[12px] text-[color:var(--v3-text-3)]">
+      Only the owner can do this.
+    </span>
   );
 }

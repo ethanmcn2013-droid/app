@@ -626,6 +626,9 @@ test("billing renders available offers and preserves the current Event holder wi
       "@/components/primitives/toast": { useToast: () => ({ toast: () => { throw new Error("Unexpected toast during render"); } }) },
       "@/server/actions/billing": {}, "@/server/actions/plan": {}, "@/server/actions/comp": {},
       "../settings-app": { SectionHeader: () => null },
+      // The v3 settings primitives (groups, rows, badges, control classes)
+      // render for real, so the assertions below read the actual markup.
+      "../settings-ui": await import("../components/app/settings/settings-ui"),
     },
   );
   const free = renderToStaticMarkup(React.createElement(BillingSection, { tier: "free" }));

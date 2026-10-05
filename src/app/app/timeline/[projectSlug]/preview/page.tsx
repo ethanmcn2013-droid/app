@@ -8,7 +8,7 @@ export { metadata };
 
 export default async function TimelineProjectPreviewRoute(props: {
   params: Promise<{ projectSlug: string }>;
-  searchParams: Promise<{ workspaceId?: string; planningPeriodId?: string }>;
+  searchParams: Promise<{ workspaceId?: string; planningPeriodId?: string; device?: string }>;
 }) {
   await requireAppAccessTasks();
   return <TimelineProjectPreviewPage {...props} />;

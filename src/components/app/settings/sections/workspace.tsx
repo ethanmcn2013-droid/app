@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect, useSyncExternalStore, useTransition } from "react";
+import { useId, useRef, useState, useEffect, useSyncExternalStore, useTransition } from "react";
 import { useToast } from "@/components/primitives/toast";
 import { Dialog } from "@/components/primitives/dialog";
 import {
@@ -26,6 +26,17 @@ import {
   setProjectCurrencyAction,
 } from "@/server/actions/settings";
 import type { SettingsWorkspace } from "../settings-app";
+import {
+  Badge,
+  Callout,
+  DialogBody,
+  Hint,
+  Select,
+  SettingsGroup,
+  SettingsRow,
+  cx,
+  ui,
+} from "../settings-ui";
 
 const DOMAIN_IDS = new Set<DomainId>(DOMAIN_ORDER);
 
@@ -91,6 +102,10 @@ export function WorkspaceSection({
     workspace?.budgetCents != null ? String(Math.round(workspace.budgetCents / 100)) : "",
   );
   const [moneyPending, startMoneyTransition] = useTransition();
+  const ids = useId();
+  const nameId = `${ids}-name`;
+  const currencyId = `${ids}-currency`;
+  const budgetId = `${ids}-budget`;
 
   function commitCurrency(raw: string) {
     const next = raw === "" ? null : raw;
@@ -144,7 +159,7 @@ export function WorkspaceSection({
     startTransition(async () => {
       try {
         await updateWorkspaceAction({ name: trimmed, projectId: workspace?.id });
-        toast("Workspace renamed", { tone: "success" });
+        toast("Project renamed", { tone: "success" });
       } catch (e) {
         toast("Couldn’t save", { tone: "error", body: (e as Error).message });
         setName(workspace.name);
@@ -201,27 +216,46 @@ export function WorkspaceSection({
 
   if (!workspace) {
     return (
-      <div className="rounded-lg border border-line bg-bg-elevated p-6 text-[13px] text-ink-soft">
-        No workspace loaded. Try refreshing.
+      <div>
+        <SectionHeader
+          title="General"
+          description="Name, money and starter content for this project."
+        />
+        <Callout>This project could not be loaded. Refresh the page to try again.</Callout>
       </div>
     );
   }
 
+  const segmentLocked = failedSegment?.workspaceId === workspace.id;
+  const nameStatus = pending
+    ? "Saving…"
+    : canEdit
+      ? "Saves when you press Enter or click away."
+      : "Only the owner can rename it.";
+  const budgetStatus = moneyPending
+    ? "Saving…"
+    : budgetValue != null
+      ? `Budget ${formatCents(budgetValue, currencyValue)}`
+      : canEdit
+        ? "Blank means no budget line."
+        : "Only the owner can change this.";
+
   return (
     <div>
       <SectionHeader
-        eyebrow="Workspace"
-        title="The shape of your project"
-        description="Rename it, swap the starter pack, or review your workspace details. Changes save instantly, no save button to forget."
+        title="General"
+        description="Name, money and starter content for this project."
       />
 
-      <div className="space-y-4">
-        {/* Name */}
-        <div className="rounded-xl border border-line-soft bg-bg-elevated p-5">
-          <Label>Name</Label>
-          <Caption>What this project gets called everywhere, the header, share links, the daily digest.</Caption>
-          <div className="mt-3 flex items-center gap-2">
+      <SettingsGroup>
+        <SettingsRow
+          label="Name"
+          htmlFor={nameId}
+          description="Shown in the sidebar, on share links and in the daily digest."
+        >
+          <div className="flex w-full flex-col gap-1.5 sm:w-[300px]">
             <input
+              id={nameId}
               ref={inputRef}
               type="text"
               value={name}
@@ -234,44 +268,56 @@ export function WorkspaceSection({
               }}
               onBlur={commitName}
               disabled={!canEdit || pending}
-              className="flex-1 rounded-md border border-line bg-white px-3 py-1.5 text-[13.5px] text-ink shadow-sm focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/15 disabled:opacity-60"
+              aria-describedby={`${nameId}-status`}
+              className={ui.input}
             />
-            <span className="text-[11.5px] text-ink-quiet">
-              {pending ? "Saving…" : canEdit ? "Tab or click out to save" : "Owner-only"}
-            </span>
+            <Hint id={`${nameId}-status`}>{nameStatus}</Hint>
           </div>
-        </div>
+        </SettingsRow>
+      </SettingsGroup>
 
-        {/* Money, narrowly (T·124): one currency label and one operator
-            budget. Restated and summed against in the brief; never
-            computed from; never on share, print, embed or the public
-            page. */}
-        <div className="rounded-xl border border-line-soft bg-bg-elevated p-5">
-          <Label>Money</Label>
-          <Caption>
-            One currency for this project, and the budget you are working
-            to. The brief restates what you enter and how much of the
-            board it covers, nothing more.
-          </Caption>
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <label className="flex items-center gap-2 text-[12.5px] text-ink-soft">
-              Currency
-              <select
-                className="rounded-md border border-line bg-white px-2 py-1.5 text-[13px] text-ink shadow-sm focus:border-brand/60 focus:outline-none disabled:opacity-60"
-                disabled={!canEdit || moneyPending}
-                onChange={(event) => commitCurrency(event.target.value)}
-                value={currencyValue ?? ""}
+      {/* Money, narrowly (T·124): one currency label and one operator
+          budget. Restated and summed against in the brief; never
+          computed from; never on share, print, embed or the public
+          page. */}
+      <SettingsGroup
+        title="Money"
+        description="The brief restates what you enter and how much of the board it covers, nothing more."
+      >
+        <SettingsRow
+          label="Currency"
+          htmlFor={currencyId}
+          description="One currency for this project."
+        >
+          <Select
+            id={currencyId}
+            wrapperClassName="w-full sm:w-[300px]"
+            disabled={!canEdit || moneyPending}
+            onChange={(event) => commitCurrency(event.target.value)}
+            value={currencyValue ?? ""}
+          >
+            <option value="">USD (default)</option>
+            {PROJECT_CURRENCIES.map((code) => (
+              <option key={code} value={code}>{code}</option>
+            ))}
+          </Select>
+        </SettingsRow>
+        <SettingsRow
+          label="Budget"
+          htmlFor={budgetId}
+          description="The amount you are working to, in whole units."
+        >
+          <div className="flex w-full flex-col gap-1.5 sm:w-[300px]">
+            <div className="relative">
+              <span
+                aria-hidden
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-mono text-[11.5px] text-[color:var(--v3-text-3)]"
               >
-                <option value="">USD (default)</option>
-                {PROJECT_CURRENCIES.map((code) => (
-                  <option key={code} value={code}>{code}</option>
-                ))}
-              </select>
-            </label>
-            <label className="flex items-center gap-2 text-[12.5px] text-ink-soft">
-              Budget
+                {currencyValue ?? "USD"}
+              </span>
               <input
-                className="w-36 rounded-md border border-line bg-white px-3 py-1.5 text-[13px] text-ink shadow-sm focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/15 disabled:opacity-60"
+                id={budgetId}
+                className={cx(ui.input, "pl-[46px] tabular-nums")}
                 disabled={!canEdit || moneyPending}
                 inputMode="numeric"
                 onBlur={commitBudget}
@@ -282,160 +328,102 @@ export function WorkspaceSection({
                     (event.target as HTMLInputElement).blur();
                   }
                 }}
-                placeholder="Whole amount, blank for none"
+                placeholder="No budget"
+                aria-describedby={`${budgetId}-status`}
                 value={budgetDraft}
               />
-            </label>
-            <span className="text-[11.5px] text-ink-quiet">
-              {moneyPending
-                ? "Saving…"
-                : budgetValue != null
-                  ? `Budget ${formatCents(budgetValue, currencyValue)}`
-                  : canEdit
-                    ? "Blank means no budget line"
-                    : "Owner-only"}
-            </span>
+            </div>
+            <Hint id={`${budgetId}-status`}>{budgetStatus}</Hint>
           </div>
-        </div>
+        </SettingsRow>
+      </SettingsGroup>
 
-        {failedSegment?.workspaceId === workspace.id && (
-          <div role="alert" className="rounded-xl border border-line-soft bg-bg-elevated p-5 text-sm text-ink">
-            <p className="font-medium">We couldn’t confirm this change.</p>
+      {segmentLocked && failedSegment ? (
+        <div className="mt-[32px]">
+          <Callout tone="warning" role="alert">
+            <p className="font-medium text-[color:var(--v3-text)]">We couldn’t confirm this change.</p>
             {failedSegment.reseed && !SEGMENTS[failedSegment.primaryUseCase].templateId ? (
               <>
-                <p className="mt-2 text-ink-soft">Check your project before starting this pack again. Retrying a reset could replace your work.</p>
-                <details className="mt-3 text-xs text-ink-soft"><summary>Setup details for recovery</summary><pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-all">{JSON.stringify({ version: 1, ...failedSegment }, null, 2)}</pre></details>
+                <p className="mt-1.5">Check your project before starting this pack again. Retrying a reset could replace your work.</p>
+                <details className="mt-3 text-[12px] text-[color:var(--v3-text-2)]"><summary className="cursor-pointer">Setup details for recovery</summary><pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-all font-mono text-[11.5px]">{JSON.stringify({ version: 1, ...failedSegment }, null, 2)}</pre></details>
               </>
             ) : (
               <>
-                <p className="mt-2 text-ink-soft">Try the same change again. Any starter tasks already added will be kept.</p>
-                <button type="button" disabled={pending} onClick={() => submitSegment(failedSegment)} className="mt-4 rounded-full bg-ink px-5 py-2.5 font-medium text-white disabled:opacity-60">{pending ? "Checking change…" : "Try again"}</button>
+                <p className="mt-1.5">Try the same change again. Any starter tasks already added will be kept.</p>
+                <button type="button" disabled={pending} onClick={() => submitSegment(failedSegment)} className={cx(ui.primary, "mt-3")}>{pending ? "Checking change…" : "Try again"}</button>
               </>
             )}
-          </div>
-        )}
-        {/* Coordination type */}
-        <div className="rounded-xl border border-line-soft bg-bg-elevated p-5">
-          <Label>What you&apos;re coordinating</Label>
-          <Caption>
-            Changes copy and recommended examples. Choose &ldquo;update only&rdquo; to keep your tasks, or re-seed for fresh starters.
-          </Caption>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            {SEGMENT_ORDER.map((id) => {
-              const seg = SEGMENTS[id];
-              const isActive = currentSegment === id;
-              const isReseeding = reseedingSegment === id;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  disabled={!canEdit || pending || isActive || failedSegment?.workspaceId === workspace.id}
-                  onClick={() => setSegmentConfirm(id)}
-                  className={
-                    "group rounded-lg border px-4 py-3 text-left transition-colors disabled:cursor-not-allowed " +
-                    (isReseeding
-                      ? "border-brand/60 bg-brand-soft/40"
-                      : isActive
-                        ? "border-brand/40 bg-brand-soft/60"
-                        : canEdit
-                          ? "border-line bg-white hover:border-ink-soft/30"
-                          : "border-line-soft bg-bg-sunken/30 opacity-70")
-                  }
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[13px] font-semibold text-ink">
-                      {seg.label}
-                    </span>
-                    {isReseeding ? (
-                      <span className="inline-flex items-center gap-1.5 text-[10.5px] font-medium text-brand">
-                        <span className="block h-1.5 w-1.5 animate-pulse rounded-full bg-brand" />
-                        Updating…
-                      </span>
-                    ) : isActive ? (
-                      <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.1em] text-brand">
-                        Active
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="mt-1 text-[11.5px] leading-[1.5] text-ink-quiet">
-                    {seg.description}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+          </Callout>
         </div>
+      ) : null}
 
-        {/* Domain pack */}
-        <div className="rounded-xl border border-line-soft bg-bg-elevated p-5">
-          <Label>Starter pack</Label>
-          <Caption>
-            Switching the pack wipes the workspace&apos;s tasks and re-seeds with the new flavor. Don&apos;t do this if you&apos;ve been working in here.
-          </Caption>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            {DOMAIN_ORDER.map((id) => {
-              const pack = DOMAINS[id];
-              const isActive =
-                isDomainId(currentDomain) && currentDomain === id;
-              const isReseeding = reseedingDomain === id;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  disabled={!canEdit || pending || isActive || failedSegment?.workspaceId === workspace.id}
-                  onClick={() => setDomainConfirm(id)}
-                  className={
-                    "group rounded-lg border px-4 py-3 text-left transition-colors disabled:cursor-not-allowed " +
-                    (isReseeding
-                      ? "border-brand/60 bg-brand-soft/40"
-                      : isActive
-                        ? "border-brand/40 bg-brand-soft/60"
-                        : canEdit
-                          ? "border-line bg-white hover:border-ink-soft/30"
-                          : "border-line-soft bg-bg-sunken/30 opacity-70")
-                  }
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[13px] font-semibold text-ink">
-                      {pack.label}
-                    </span>
-                    {isReseeding ? (
-                      <span className="inline-flex items-center gap-1.5 text-[10.5px] font-medium text-brand">
-                        <span className="block h-1.5 w-1.5 animate-pulse rounded-full bg-brand" />
-                        Reseeding…
-                      </span>
-                    ) : isActive ? (
-                      <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.1em] text-brand">
-                        Active
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="mt-1 text-[11.5px] leading-[1.5] text-ink-quiet">
-                    {pack.description}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+      {/* Coordination type */}
+      <SettingsGroup
+        bare
+        title="What you’re coordinating"
+        description="Changes the copy and suggested examples. You choose whether your tasks stay when you switch."
+      >
+        <div className="grid gap-2 sm:grid-cols-2">
+          {SEGMENT_ORDER.map((id) => {
+            const seg = SEGMENTS[id];
+            return (
+              <OptionCard
+                key={id}
+                label={seg.label}
+                description={seg.description}
+                active={currentSegment === id}
+                working={reseedingSegment === id ? "Updating…" : null}
+                canEdit={canEdit}
+                disabled={!canEdit || pending || currentSegment === id || segmentLocked}
+                onClick={() => setSegmentConfirm(id)}
+              />
+            );
+          })}
         </div>
+      </SettingsGroup>
 
-        {/* Publish */}
-        <PublishBlock
-          workspace={workspace}
-          canEdit={canEdit}
-        />
-
-        {/* Metadata */}
-        <div className="rounded-xl border border-line-soft bg-bg-elevated p-5">
-          <Label>Identity</Label>
-          <Caption>For the record. None of this is editable.</Caption>
-          <dl className="mt-3 grid gap-2 sm:grid-cols-3">
-            <Meta label="Workspace ID" value={workspace.id} mono />
-            <Meta label="URL slug" value={workspace.slug} mono />
-            <Meta label="Created" value={createdDate} />
-          </dl>
+      {/* Domain pack */}
+      <SettingsGroup
+        bare
+        title="Starter pack"
+        description="Switching packs deletes every task in this project and adds the new starter set. Only do this before real work starts."
+      >
+        <div className="grid gap-2 sm:grid-cols-2">
+          {DOMAIN_ORDER.map((id) => {
+            const pack = DOMAINS[id];
+            return (
+              <OptionCard
+                key={id}
+                label={pack.label}
+                description={pack.description}
+                active={isDomainId(currentDomain) && currentDomain === id}
+                working={reseedingDomain === id ? "Reseeding…" : null}
+                canEdit={canEdit}
+                disabled={!canEdit || pending || (isDomainId(currentDomain) && currentDomain === id) || segmentLocked}
+                onClick={() => setDomainConfirm(id)}
+              />
+            );
+          })}
         </div>
-      </div>
+      </SettingsGroup>
+
+      {/* Publish */}
+      <PublishBlock
+        workspace={workspace}
+        canEdit={canEdit}
+      />
+
+      {/* Metadata */}
+      <SettingsGroup
+        title="Details"
+        description="For the record. None of this can be edited."
+      >
+        <dl className="divide-y divide-[color:var(--v3-border)]">
+          <Meta label="Project ID" value={workspace.id} mono />
+          <Meta label="URL slug" value={workspace.slug} mono />
+          <Meta label="Created" value={createdDate} />
+        </dl>
+      </SettingsGroup>
 
       <Dialog
         open={segmentConfirm !== null}
@@ -443,51 +431,45 @@ export function WorkspaceSection({
         labelledBy="segment-confirm-title"
         width={440}
       >
-        <div className="px-5 py-5">
-          <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-brand">
-            Coordination type
-          </div>
-          <h3
-            id="segment-confirm-title"
-            className="mt-1 text-[17px] font-semibold tracking-tight"
-          >
-            Switch to {segmentConfirm ? SEGMENTS[segmentConfirm].label : ""}?
-          </h3>
-          <p className="mt-2 text-[13px] leading-[1.55] text-ink-soft">
-            Update only changes copy and examples. {segmentConfirm && SEGMENTS[segmentConfirm].templateId
-              ? "Re-seed adds another set of starter tasks and keeps your existing tasks."
-              : "Re-seed replaces tasks with new starters for this coordination type."}
-          </p>
-          <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setSegmentConfirm(null)}
-              className="rounded-full border border-line bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink-soft hover:border-ink-soft/30 hover:text-ink"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() =>
-                segmentConfirm && applySegment(segmentConfirm, false)
-              }
-              className="rounded-full border border-line bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink hover:border-ink-soft/30"
-            >
-              Update only
-            </button>
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() =>
-                segmentConfirm && applySegment(segmentConfirm, true)
-              }
-              className="rounded-full bg-ink px-3 py-1.5 text-[12.5px] font-medium text-white hover:bg-ink-soft"
-            >
-              Re-seed workspace
-            </button>
-          </div>
-        </div>
+        <DialogBody
+          titleId="segment-confirm-title"
+          title={<>Switch to {segmentConfirm ? SEGMENTS[segmentConfirm].label : ""}?</>}
+          actions={
+            <>
+              <button
+                type="button"
+                onClick={() => setSegmentConfirm(null)}
+                className={ui.ghost}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() =>
+                  segmentConfirm && applySegment(segmentConfirm, false)
+                }
+                className={ui.button}
+              >
+                Update only
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() =>
+                  segmentConfirm && applySegment(segmentConfirm, true)
+                }
+                className={ui.primary}
+              >
+                Re-seed project
+              </button>
+            </>
+          }
+        >
+          Update only changes copy and examples. {segmentConfirm && SEGMENTS[segmentConfirm].templateId
+            ? "Re-seed adds another set of starter tasks and keeps your existing tasks."
+            : "Re-seed replaces tasks with new starters for this coordination type."}
+        </DialogBody>
       </Dialog>
 
       <Dialog
@@ -496,41 +478,92 @@ export function WorkspaceSection({
         labelledBy="domain-confirm-title"
         width={440}
       >
-        <div className="px-5 py-5">
-          <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-amber-700">
-            Heads up
-          </div>
-          <h3
-            id="domain-confirm-title"
-            className="mt-1 text-[17px] font-semibold tracking-tight"
-          >
-            Re-seed with the {domainConfirm ? DOMAINS[domainConfirm].label : ""} pack?
-          </h3>
-          <p className="mt-2 text-[13px] leading-[1.55] text-ink-soft">
-            This wipes every task, comment, and activity in this workspace
-            and re-seeds it with the new starter pack. Members and billing
-            are untouched.
-          </p>
-          <div className="mt-5 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setDomainConfirm(null)}
-              className="rounded-full border border-line bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink-soft hover:border-ink-soft/30 hover:text-ink"
-            >
-              Keep what I have
-            </button>
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => domainConfirm && applyDomain(domainConfirm)}
-              className="rounded-full bg-ink px-3 py-1.5 text-[12.5px] font-medium text-white shadow-sm hover:bg-ink-soft disabled:opacity-60"
-            >
-              {reseedingDomain ? "Reseeding…" : "Re-seed it"}
-            </button>
-          </div>
-        </div>
+        <DialogBody
+          titleId="domain-confirm-title"
+          tone="warning"
+          title={<>Re-seed with the {domainConfirm ? DOMAINS[domainConfirm].label : ""} pack?</>}
+          actions={
+            <>
+              <button
+                type="button"
+                onClick={() => setDomainConfirm(null)}
+                className={ui.button}
+              >
+                Keep what I have
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => domainConfirm && applyDomain(domainConfirm)}
+                className={ui.dangerSolid}
+              >
+                {reseedingDomain ? "Reseeding…" : "Re-seed it"}
+              </button>
+            </>
+          }
+        >
+          This deletes every task, comment and activity in this project and
+          adds the new starter pack. Members and billing are not affected.
+        </DialogBody>
       </Dialog>
     </div>
+  );
+}
+
+function OptionCard({
+  label,
+  description,
+  active,
+  working,
+  canEdit,
+  disabled,
+  onClick,
+}: {
+  label: string;
+  description: string;
+  active: boolean;
+  working: string | null;
+  canEdit: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      aria-current={active ? "true" : undefined}
+      onClick={onClick}
+      className={cx(
+        "group flex min-h-[72px] w-full flex-col items-start rounded-[var(--v3-radius-lg)] border px-4 py-3.5 text-left transition-[background-color,border-color,box-shadow] duration-150 disabled:cursor-not-allowed focus-visible:rounded-[var(--v3-radius-lg)]!",
+        working
+          ? "border-[color:color-mix(in_srgb,var(--v3-accent)_55%,transparent)] bg-[var(--v3-accent-soft)]"
+          : active
+            ? "border-[color:var(--v3-accent)] bg-[color-mix(in_srgb,var(--v3-accent)_6%,var(--v3-surface))] shadow-[0_0_0_1px_var(--v3-accent)]"
+            : canEdit
+              ? "border-[color:var(--v3-border)] bg-[var(--v3-surface)] shadow-[var(--v3-shadow-1)] hover:border-[color:var(--v3-border-strong)]"
+              : "border-[color:var(--v3-border)] bg-[var(--v3-sunken)] opacity-70",
+      )}
+    >
+      <span className="flex w-full items-center justify-between gap-2">
+        <span className="text-[13px] font-semibold text-[color:var(--v3-text)]">{label}</span>
+        {working ? (
+          <span className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-[color:var(--v3-accent)]">
+            <span className="block h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--v3-accent)]" />
+            {working}
+          </span>
+        ) : active ? (
+          <Badge tone="accent">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m3.5 8.5 3 3 6-7" />
+            </svg>
+            Active
+          </Badge>
+        ) : null}
+      </span>
+      <span className="mt-1 text-[12px] leading-[1.45] text-[color:var(--v3-text-2)]">
+        {description}
+      </span>
+    </button>
   );
 }
 
@@ -550,7 +583,7 @@ function PublishBlock({
     startTransition(async () => {
       try {
         await publishWorkspaceAction(workspace.id);
-        toast("Workspace published", {
+        toast("Project published", {
           tone: "success",
           body: "Anyone with the link can read it. Search engines are asked not to list it.",
         });
@@ -567,7 +600,7 @@ function PublishBlock({
     startTransition(async () => {
       try {
         await unpublishWorkspaceAction(workspace.id);
-        toast("Workspace unpublished", {
+        toast("Project unpublished", {
           tone: "info",
           body: "The public link returns 404 again.",
         });
@@ -592,112 +625,101 @@ function PublishBlock({
   }
 
   return (
-    <div className="rounded-xl border border-line-soft bg-bg-elevated p-5">
-      <Label>Publish to the web</Label>
-      <Caption>
-        Publishing makes a read-only version of this workspace visible
-        at <code className="rounded bg-bg-sunken/80 px-1 py-0.5 text-[11.5px]">{TASKS_PUBLIC_DOMAIN}/p/{workspace.slug}</code>.
-        Anyone with the link can see your tasks and lanes, no signup,
-        no account. Looks like a real website, not the app.
-      </Caption>
-
+    <SettingsGroup
+      title="Publish to the web"
+      description={
+        <>
+          A read-only copy of this project at{" "}
+          <code className={ui.code}>{TASKS_PUBLIC_DOMAIN}/p/{workspace.slug}</code>.
+          Anyone with the link can see your tasks and lanes, with no sign-in.
+          It looks like a website, not the app.
+        </>
+      }
+    >
       {isPublished ? (
-        <div className="mt-4 space-y-3">
-          <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50/60 px-3 py-2">
-            <span
-              className="inline-block h-2 w-2 flex-shrink-0 rounded-full bg-emerald-500"
-              aria-hidden
-            />
-            <span className="text-[12px] font-medium text-emerald-800">
-              Published {fmtDate(workspace.publishedAt)}
-            </span>
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <code className="flex-1 truncate rounded-md border border-line bg-white px-3 py-1.5 font-mono text-[12px] text-ink">
-              /p/{workspace.slug}
-            </code>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={copyLink}
-                disabled={pending}
-                className="rounded-full border border-line bg-white px-3 py-1.5 text-[12px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink disabled:opacity-50"
-              >
-                {copied ? "Copied" : "Copy link"}
-              </button>
-              <a
-                href={`/p/${workspace.slug}`}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-full border border-line bg-white px-3 py-1.5 text-[12px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink"
-              >
-                Open
-              </a>
-              <button
-                type="button"
-                onClick={unpublish}
-                disabled={!canEdit || pending}
-                className="rounded-full bg-rose-50 px-3 py-1.5 text-[12px] font-medium text-rose-700 transition-colors hover:bg-rose-100 disabled:opacity-50"
-              >
-                {pending ? "…" : "Unpublish"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <>
+          <SettingsRow
+            label="Published"
+            meta={<Badge tone="success">Live</Badge>}
+            description={`Public since ${fmtDate(workspace.publishedAt)}.`}
+          >
+            <button
+              type="button"
+              onClick={unpublish}
+              disabled={!canEdit || pending}
+              className={ui.danger}
+            >
+              {pending ? "Unpublishing…" : "Unpublish"}
+            </button>
+          </SettingsRow>
+          <SettingsRow
+            label="Public link"
+            description={<code className={cx(ui.code, "break-all")}>/p/{workspace.slug}</code>}
+          >
+            <button
+              type="button"
+              onClick={copyLink}
+              disabled={pending}
+              className={ui.button}
+            >
+              {copied ? "Copied" : "Copy link"}
+            </button>
+            <a
+              href={`/p/${workspace.slug}`}
+              target="_blank"
+              rel="noreferrer"
+              className={ui.button}
+            >
+              Open
+            </a>
+          </SettingsRow>
+        </>
       ) : (
-        <div className="mt-4 space-y-3">
+        <>
           {/* D-033 (R-031 option B) requires the publish confirmation to state
               plainly what publishing does. Until 2026-08-03 this was one button
               whose caption never mentioned search engines or what ends up on
               the page. Every line below is a fact about the shipped behaviour;
               none of it sells the feature. */}
-          <div className="rounded-lg border border-line-soft bg-bg-sunken/50 px-3.5 py-3">
-            <p className="text-[12px] font-medium text-ink">Before you publish</p>
-            <ul className="mt-2 space-y-1.5 text-[12px] leading-relaxed text-ink-soft">
-              <li>Anyone who has the link can open the page. There is no sign-in and no account.</li>
-              <li>Your task titles and tags are on the page. Any names you wrote into them are on the page too.</li>
-              <li>Search engines are asked not to list this page. That is a request they usually honour, not a lock.</li>
-              <li>You can unpublish whenever you want. The link then returns a not-found page. Copies other people already saved stay with them.</li>
+          <div className="px-4 py-4 md:px-5">
+            <p className="text-[13px] font-medium text-[color:var(--v3-text)]">Before you publish</p>
+            <ul className="mt-2 space-y-1.5 text-[12.5px] leading-[1.5] text-[color:var(--v3-text-2)]">
+              {[
+                "Anyone who has the link can open the page. There is no sign-in and no account.",
+                "Your task titles and tags are on the page. Any names you wrote into them are on the page too.",
+                "Search engines are asked not to list this page. That is a request they usually honour, not a lock.",
+                "You can unpublish whenever you want. The link then returns a not-found page. Copies other people already saved stay with them.",
+              ].map((line) => (
+                <li key={line} className="flex gap-2.5">
+                  <span aria-hidden className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-[var(--v3-text-3)]" />
+                  <span>{line}</span>
+                </li>
+              ))}
             </ul>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-[12px] text-ink-quiet">
-              This workspace is private. Only members can see it.
-            </span>
+          <SettingsRow
+            label="Private"
+            meta={<Badge>Members only</Badge>}
+            description="This project is private. Only members can see it."
+          >
             <button
               type="button"
               onClick={publish}
               disabled={!canEdit || pending}
-              className="rounded-full bg-ink px-4 py-1.5 text-[12.5px] font-medium text-white shadow-sm hover:bg-ink-soft disabled:opacity-50"
+              className={ui.button}
             >
-              {pending ? "Publishing…" : "Publish workspace"}
+              {pending ? "Publishing…" : "Publish project"}
             </button>
-          </div>
-        </div>
+          </SettingsRow>
+        </>
       )}
 
       {!canEdit ? (
-        <p className="mt-3 text-[11.5px] text-ink-quiet">
-          Only the owner can publish or unpublish.
-        </p>
+        <div className="px-4 py-3 md:px-5">
+          <Hint>Only the owner can publish or unpublish.</Hint>
+        </div>
       ) : null}
-    </div>
-  );
-}
-
-function Label({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-quiet">
-      {children}
-    </div>
-  );
-}
-
-function Caption({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="mt-1 max-w-[520px] text-[12.5px] leading-[1.55] text-ink-soft">
-      {children}
-    </p>
+    </SettingsGroup>
   );
 }
 
@@ -711,14 +733,14 @@ function Meta({
   mono?: boolean;
 }) {
   return (
-    <div className="flex flex-col gap-0.5">
-      <dt className="text-[10.5px] font-medium uppercase tracking-[0.12em] text-ink-quiet">
+    <div className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6 md:px-5">
+      <dt className="text-[13px] text-[color:var(--v3-text-2)]">
         {label}
       </dt>
       <dd
         className={
-          "text-[12.5px] text-ink " +
-          (mono ? "break-all font-mono" : "tabular-nums")
+          "min-w-0 text-[13px] text-[color:var(--v3-text)] sm:text-right " +
+          (mono ? "break-all font-mono text-[12.5px]" : "tabular-nums")
         }
       >
         {value}

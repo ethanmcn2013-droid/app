@@ -177,6 +177,85 @@ export function AlertIcon(props: IconProps) {
   );
 }
 
+export function PencilIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M10.75 2.75 13.25 5.25 6 12.5l-3.25.75.75-3.25Z" />
+      <path d="m9.25 4.25 2.5 2.5" />
+    </Icon>
+  );
+}
+
+export function ArrowRightIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M3 8h10M9 4l4 4-4 4" />
+    </Icon>
+  );
+}
+
+export function ChevronRightIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="m6.25 3.75 4.25 4.25-4.25 4.25" />
+    </Icon>
+  );
+}
+
+export function TrashIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M2.75 4.25h10.5M6.25 4.25V2.75h3.5v1.5M4 4.25l.6 8.6a1 1 0 0 0 1 .9h4.8a1 1 0 0 0 1-.9l.6-8.6" />
+    </Icon>
+  );
+}
+
+export function ClockIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="8" cy="8" r="5.75" />
+      <path d="M8 5v3.25l2 1.25" />
+    </Icon>
+  );
+}
+
+export function SortIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M5 3v10M2.75 10.75 5 13l2.25-2.25M11 13V3M8.75 5.25 11 3l2.25 2.25" />
+    </Icon>
+  );
+}
+
+export function KeyboardIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="1.75" y="4" width="12.5" height="8" rx="1.5" />
+      <path d="M4.5 6.75h.01M7 6.75h.01M9.5 6.75h.01M12 6.75h.01M5.5 9.5h5" />
+    </Icon>
+  );
+}
+
+
+/** A funnel: narrow the list. */
+export function FilterIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M2.5 3.75h11M4.5 8h7M6.75 12.25h2.5" />
+    </Icon>
+  );
+}
+
+/** Help: a circle with a question mark. */
+export function HelpIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="8" cy="8" r="6" />
+      <path d="M6.4 6.3a1.7 1.7 0 0 1 3.3.5c0 1.15-1.7 1.45-1.7 2.45M8 11.2v.01" />
+    </Icon>
+  );
+}
+
 const SOURCE_ICONS = {
   typed: TypedIcon,
   voice: VoiceIcon,

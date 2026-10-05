@@ -134,11 +134,12 @@ async function runGoldenStory() {
 
     f.cookies('project-a'); // Another tab changes the preference after acceptance.
     const page=await myWork({searchParams:Promise.resolve({workspaceId:'project-b'})});
-    const myWorkElement=page.props.children[1];
+    // v3: the page renders MyWeekApp alone (it owns its header), so find it by prop.
+    const myWorkElement=[].concat(page.props.children).find(child=>child?.props&&'canSetUpProject' in child.props);
     assert.equal(myWorkElement.props.canSetUpProject,false);
     await f.reload('project-b');
     const arrivalHtml=renderToStaticMarkup(myWorkElement);
-    assert.ok(arrivalHtml.includes(approved));assert.match(arrivalHtml,/Without a date/);
+    assert.ok(arrivalHtml.includes(approved));assert.match(arrivalHtml,/No date/);
     assert.doesNotMatch(arrivalHtml,/Private vendor budget discussion|starter pack|Add your first task/);
     fs.writeFileSync(path.join(output,'recipient-first-view.html'),arrivalHtml);
     const activityCount=(await sql("SELECT count(*) n FROM activities WHERE task_id=? AND workspace_id='project-b' AND kind='toggleComplete'",[taskId]))[0].n;
@@ -150,7 +151,7 @@ async function runGoldenStory() {
     assert.equal(completionActivity.at(-1).user_id,'recipient');
     assert.deepEqual(JSON.parse(completionActivity.at(-1).payload),{kind:'toggleComplete',to:'done'});
     const reloadedPage=await myWork({searchParams:Promise.resolve({workspaceId:'project-b'})});
-    const doneHtml=renderToStaticMarkup(reloadedPage.props.children[1]);
+    const doneHtml=renderToStaticMarkup([].concat(reloadedPage.props.children).find(child=>child?.props&&'canSetUpProject' in child.props));
     assert.match(doneHtml,/Done this week/);assert.ok(doneHtml.includes(approved));
     check('recipient actual My work shows undated assignment → real completion/action activity → fresh SQL and page reload retains done',{taskId,lane:after.lane});
 

@@ -152,6 +152,8 @@ async function runCase(name,width,fn){
  }catch(error){receipt.cases.push({name,width,passed:false,error:String(error),errors});console.error('FAIL',name,width,String(error));await page.screenshot({path:path.join(out,'failure-'+name+'-'+width+'.png'),fullPage:true})}
  finally{await context.close()}
 }
+// v3 Notes opens a note to read; one press on the text enters editing.
+async function editor(page){if(!(await page.locator('#note-body').count()))await page.locator('[data-note-display]').click();return page.locator('#note-body')}
 async function openB(page){await page.locator('[data-note-id="'+noteIds[1]+'"]').click();await page.waitForTimeout(100)}
 try{
  for(const width of [1440,390])await runCase('retry-preserves-other-project-queue',width,async page=>{
@@ -233,21 +235,22 @@ try{
  });
  await runCase('closed-note-late-save-keeps-other-editor',1440,async page=>{
   await openB(page);await page.evaluate(()=>window.mode='pending');
-  await page.locator('#note-body').fill('B request');await page.locator('#note-body').press('Control+s');
-  await page.goBack();await page.waitForTimeout(100);await page.locator('#note-body').fill('A newer private edit');
+  await (await editor(page)).fill('B request');await (await editor(page)).press('Control+s');
+  // v3 opens nothing by default: going back closes B, then the other editor is A's.
+  await page.goBack();await page.waitForTimeout(100);await page.locator('[data-note-id="'+noteIds[0]+'"]').click();await page.waitForTimeout(100);await (await editor(page)).fill('A newer private edit');
   await page.evaluate(()=>window.release());await page.waitForTimeout(160);
-  assert.equal(await page.locator('#note-body').inputValue(),'A newer private edit');
-  await page.reload();await page.waitForTimeout(180);assert.equal(await page.locator('#note-body').inputValue(),'A newer private edit');
+  assert.equal(await (await editor(page)).inputValue(),'A newer private edit');
+  await page.reload();await page.waitForTimeout(180);assert.equal(await (await editor(page)).inputValue(),'A newer private edit');
   return {otherEditorPreserved:true,calls:await page.evaluate(()=>window.actionCalls)};
  });
  await runCase('unmounted-project-frame-cannot-clear-new-recovery',1440,async page=>{
   await openB(page);await page.evaluate(()=>window.mode='pending');
-  await page.locator('#note-body').fill('B pending version');await page.locator('#note-body').press('Control+s');
-  await page.locator('#note-body').fill('B later exact text');
+  await (await editor(page)).fill('B pending version');await (await editor(page)).press('Control+s');
+  await (await editor(page)).fill('B later exact text');
   await page.evaluate(()=>window.changeFrame('a','project-a'));await page.waitForTimeout(150);
   await page.evaluate(()=>window.release());await page.waitForTimeout(150);
   await page.evaluate(()=>window.changeFrame('a','project-b'));await page.waitForTimeout(180);
-  await openB(page);assert.equal(await page.locator('#note-body').inputValue(),'B later exact text');
+  await openB(page);assert.equal(await (await editor(page)).inputValue(),'B later exact text');
   return {originalBoundEditRetained:true};
  });
 }finally{

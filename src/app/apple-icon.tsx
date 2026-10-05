@@ -1,10 +1,10 @@
 import { ImageResponse } from "next/og";
-import { SuiteMark } from "@/lib/brand/suite-mark";
+import { SIGNAL_INK, SuiteMark } from "@/lib/brand/suite-mark";
 
 export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
 
-/** Apple touch icon, a single indigo dot on ink. */
+/** Apple touch icon: the ring and dot on the ink tile. */
 export default function AppleIcon() {
-  return new ImageResponse(<SuiteMark canvas={180} borderRadius={36} />, size);
+  return new ImageResponse(<SuiteMark canvas={180} borderRadius={36} background={SIGNAL_INK} />, size);
 }

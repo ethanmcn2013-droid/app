@@ -6,7 +6,6 @@ import { compileDailyDigest } from "@/server/db/daily-digest";
 import { getCurrentUser } from "@/server/auth";
 import { requireRouteProjectId } from "@/server/projects/route-authz";
 import { InboxApp } from "@/components/app/inbox/inbox-app";
-import { AppPageHeader } from "@/components/app/page-header";
 import { TasksRuntimePageMount } from "@/components/app/tasks-runtime-mount";
 import { generateNudges } from "@/lib/nudges/generate-nudges";
 import { readWorkspaceColumnConfig } from "@/server/db/board-config-read";
@@ -46,7 +45,6 @@ export default async function InboxPage() {
 
     return (
       <TasksRuntimePageMount>
-        <AppPageHeader />
         <InboxApp
           notifications={[]}
           digest={{
@@ -136,7 +134,6 @@ export default async function InboxPage() {
   });
   return (
     <TasksRuntimePageMount>
-      <AppPageHeader />
       <InboxApp
         notifications={notifications}
         attention={attention}

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-project-loading",
+  "source": "tasks/src/app/app/project/loading.tsx",
+  "materialityHash": "991a54006054ce55",
+  "reviewedAt": "2026-10-05",
+  "reviewer": "Implementation review under delegated execution (Claude, single writer on design/suite-redesign-v3). Founder review of the rendered result is pending",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-80b2f4d0f1c10e2ab2461d63-099714516340c7a5.json",
+    "attestationSha256": "93b3baae45b047ad0e9d18e744d1caeda30c5b71bdd8fcf0d89a63f7bd5e1d35",
+    "runId": "tasks-playwright-80b2f4d0f1c10e2ab2461d63",
+    "canonicalEvidenceSha256": "80b2f4d0f1c10e2ab2461d63985ddabe5140ee9fd820224e1440b2a81fbeae0a",
+    "rawArtifactSha256": "099714516340c7a56043760cd271992a3b5abd436bc57b9451ec6e1c01f2e116",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app",
+    "caseName": "front door lands on Home",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "The loading skeleton now mirrors the Console: the title and its summary line, the view and search controls, then tabs, four figures and rows, above the open Project's skeleton, so nothing jumps when the page arrives. Rendered and checked for sideways scroll at desk and phone in the twelve-project browser check (loading-*.png). No data or behaviour change. The linked attestation is the full critical suite, 132 of 132, on a clean demo build of 464b0db9, as suite regression context.",
+  "decision": "Accept the skeleton change and refresh the materiality hash. Other registry fields are unchanged."
+}

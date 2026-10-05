@@ -2,12 +2,14 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
+  activeSources,
   countLabel,
   countViews,
   defaultSelection,
   derivePresentation,
   deriveTaskTitle,
   friendlyDate,
+  groupByDay,
   inNotebook,
   isArchived,
   isSent,
@@ -17,9 +19,16 @@ import {
   needsReview,
   noteSource,
   notesHref,
+  readerRest,
+  readerTitle,
+  splitLead,
+  reviewProgress,
   searchSnippet,
   sortNotes,
+  sourceCounts,
   viewFromParam,
+  wordCount,
+  wordLabel,
   type PresentableNote,
 } from "./notes-view-model";
 
@@ -88,10 +97,10 @@ test("derivePresentation: a body of only whitespace is Untitled note", () => {
   assert.deepEqual(derivePresentation("   \n\t \n  "), { title: "Untitled note", preview: "" });
 });
 
-test("derivePresentation: a title beyond 96 characters is truncated to a single ellipsis and never exceeds 96 characters", () => {
+test("derivePresentation: a first line with no natural break beyond 120 characters is clamped to a single ellipsis", () => {
   const { title } = derivePresentation("x".repeat(150));
-  assert.equal(title, `${"x".repeat(95)}…`);
-  assert.equal(title.length, 96);
+  assert.equal(title, `${"x".repeat(119)}…`);
+  assert.equal(title.length, 120);
 });
 
 test("derivePresentation: leading blank lines are skipped", () => {
@@ -325,4 +334,160 @@ test("deriveTaskTitle returns an empty string for an untitled note", () => {
 test("deriveTaskTitle never exceeds MAX_TASK_TITLE_CHARS", () => {
   const title = deriveTaskTitle("x".repeat(400));
   assert.ok(title.length <= MAX_TASK_TITLE_CHARS);
+});
+
+// ── v3 list and review helpers ─────────────────────────────────────────
+
+// 16 July 2026, 14:00 in Dublin (13:00 UTC), a Thursday.
+const V3_NOW = Date.UTC(2026, 6, 16, 13, 0, 0);
+const V3_HOURS = 60 * 60 * 1000;
+
+test("groupByDay: Today, Yesterday, Earlier this week, then months", () => {
+  const notes = [
+    note({ id: "a", createdAt: V3_NOW - 1 * V3_HOURS }),
+    note({ id: "b", createdAt: V3_NOW - 3 * V3_HOURS }),
+    note({ id: "c", createdAt: V3_NOW - 24 * V3_HOURS }),
+    note({ id: "d", createdAt: V3_NOW - 4 * 24 * V3_HOURS }),
+    note({ id: "e", createdAt: Date.UTC(2026, 5, 2, 9) }),
+    note({ id: "f", createdAt: Date.UTC(2025, 11, 20, 9) }),
+  ];
+  const groups = groupByDay(notes, V3_NOW);
+  assert.deepEqual(
+    groups.map((group) => [group.label, group.notes.map((item) => item.id)]),
+    [
+      ["Today", ["a", "b"]],
+      ["Yesterday", ["c"]],
+      ["Earlier this week", ["d"]],
+      ["June 2026", ["e"]],
+      ["December 2025", ["f"]],
+    ],
+  );
+  assert.equal(new Set(groups.map((group) => group.key)).size, groups.length);
+});
+
+test("groupByDay: calendar days, not elapsed hours, and order is kept", () => {
+  // 23:50 the night before is Yesterday even though it is under a day old.
+  const lateLastNight = Date.UTC(2026, 6, 15, 22, 50);
+  assert.equal(groupByDay([note({ createdAt: lateLastNight })], V3_NOW)[0]?.label, "Yesterday");
+  // Oldest first reverses the groups rather than regrouping.
+  const oldestFirst = groupByDay(
+    [note({ id: "old", createdAt: V3_NOW - 3 * 24 * V3_HOURS }), note({ id: "new", createdAt: V3_NOW })],
+    V3_NOW,
+  );
+  assert.deepEqual(oldestFirst.map((group) => group.label), ["Earlier this week", "Today"]);
+  // A clock that runs ahead never produces a future group.
+  assert.equal(groupByDay([note({ createdAt: V3_NOW + V3_HOURS })], V3_NOW)[0]?.label, "Today");
+  assert.deepEqual(groupByDay([], V3_NOW), []);
+});
+
+test("reviewProgress names the note in front of you", () => {
+  assert.deepEqual(reviewProgress(2, 8), { label: "3 of 8", ratio: 0.25 });
+  assert.deepEqual(reviewProgress(0, 1), { label: "1 of 1", ratio: 0 });
+  assert.deepEqual(reviewProgress(8, 8), { label: "8 of 8", ratio: 1 });
+  assert.deepEqual(reviewProgress(12, 8), { label: "8 of 8", ratio: 1 });
+  assert.deepEqual(reviewProgress(0, 0), { label: "0 of 0", ratio: 0 });
+  assert.deepEqual(reviewProgress(-3, 4), { label: "1 of 4", ratio: 0 });
+});
+
+test("sourceCounts counts notebook notes by how they arrived", () => {
+  const counts = sourceCounts([
+    note({ id: "1" }),
+    note({ id: "2", source: "voice" }),
+    note({ id: "3", source: "voice" }),
+    note({ id: "4", source: "photo" }),
+    note({ id: "5", source: "voice", archivedAt: 9 }),
+    note({ id: "6", source: "mystery" }),
+  ]);
+  assert.deepEqual(counts, { typed: 2, voice: 2, photo: 1, email: 0, calendar: 0 });
+});
+
+test("readerTitle is the first meaningful line, whole, and never empty", () => {
+  assert.equal(readerTitle("\n\n  Ask the venue about 140 guests.  \nMore here"), "Ask the venue about 140 guests.");
+  // A long first line is split after its first sentence.
+  const opening = `${"Plan the evening ".repeat(5).trim()}.`;
+  const long = `${opening} ${"Then the band loads in and sound checks ".repeat(4).trim()}.`;
+  assert.equal(readerTitle(long), opening);
+  assert.match(readerRest(long)[0] ?? "", /^Then the band loads in/);
+  assert.equal(readerTitle(""), "Untitled note");
+  assert.equal(readerTitle("   \n \n"), "Untitled note");
+});
+
+test("splitLead: a line of 72 characters or fewer is the whole title", () => {
+  const line = "Ask the venue whether the terrace can take a string quartet on the day";
+  assert.ok(line.length <= 72);
+  assert.deepEqual(splitLead(line), { title: line, lead: "" });
+});
+
+test("splitLead: a long line with no punctuation is never cut at a word", () => {
+  const line =
+    "Teacher onboarding three things they kept asking for one place to see the term a way to hand a job to someone without chasing it";
+  assert.ok(line.length > 100);
+  assert.deepEqual(splitLead(line), { title: line, lead: "" });
+  // The reader heading is the whole line, and the body does not start mid-clause.
+  assert.equal(readerTitle(line), line);
+  assert.deepEqual(readerRest(line), []);
+});
+
+test("splitLead: a colon-led line splits after the colon", () => {
+  const line =
+    "Teacher onboarding, three things they kept asking for: one place to see the term, a way to hand a job to someone without chasing it.";
+  const { title, lead } = splitLead(line);
+  assert.equal(title, "Teacher onboarding, three things they kept asking for:");
+  assert.equal(lead, "one place to see the term, a way to hand a job to someone without chasing it.");
+  assert.equal(readerTitle(line), title);
+  assert.equal(readerRest(line)[0], lead);
+});
+
+test("splitLead: a single 140-character sentence stays whole", () => {
+  const line = `${"Walk the room with the florist and agree where every arrangement sits ".repeat(2).trim()} today.`;
+  assert.ok(line.length >= 140 && line.length < 150, String(line.length));
+  assert.deepEqual(splitLead(line), { title: line, lead: "" });
+});
+
+test("the list row and the reader give a note the same title", () => {
+  const bodies = [
+    "Saturday wedding, Mara & Finn. Ceremony at two, the band loads in at five and the caterer wants the final count by Wednesday.",
+    "Teacher onboarding, three things they kept asking for: one place to see the term, a way to hand a job to someone.",
+    "Buy milk",
+    "Meeting notes\nBring the cake stand",
+    "A long thought with no punctuation at all that simply keeps going until it runs out of room somewhere",
+  ];
+  for (const body of bodies) {
+    assert.equal(derivePresentation(body).title, readerTitle(body), body);
+  }
+  // The row preview and the reader body both open with the lead.
+  const first = bodies[0]!;
+  assert.equal(derivePresentation(first).preview, readerRest(first)[0]);
+});
+
+test("readerRest splits what follows into paragraphs", () => {
+  assert.deepEqual(readerRest("Title\nline one\nline two\n\n\nSecond paragraph\n"), [
+    "line one\nline two",
+    "Second paragraph",
+  ]);
+  assert.deepEqual(readerRest("Only a title"), []);
+  assert.deepEqual(readerRest(""), []);
+});
+
+test("wordCount counts words a person would count", () => {
+  assert.equal(wordCount(""), 0);
+  assert.equal(wordCount("   "), 0);
+  assert.equal(wordCount("Mara & Finn’s menu tasting, 1 August."), 6);
+  assert.equal(wordCount("café\nre-check the list"), 4);
+  assert.equal(wordLabel(1), "1 word");
+  assert.equal(wordLabel(38), "38 words");
+});
+
+test("activeSources lists only sources with notes, in a fixed order", () => {
+  assert.deepEqual(activeSources({ typed: 3, voice: 0, photo: 2, email: 1, calendar: 4 }), [
+    { source: "typed", count: 3 },
+    { source: "photo", count: 2 },
+    { source: "email", count: 1 },
+  ]);
+  assert.deepEqual(activeSources({ typed: 0, voice: 0, photo: 0, email: 0, calendar: 0 }), []);
+});
+
+test("the email filter matches notes that arrived by email", () => {
+  assert.equal(matchesFilter(note({ source: "email" }), "email"), true);
+  assert.equal(matchesFilter(note({ source: "voice" }), "email"), false);
 });

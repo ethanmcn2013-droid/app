@@ -11,10 +11,13 @@ import {
   audienceTimelineEnabled,
   getOwnerAudiencePublications,
 } from "@/modules/timeline/server/audience-timeline";
+import { ProjectTile, TimelineTabs } from "@/components/app/portfolio/timeline-tabs";
+import { monogramOf } from "@/lib/projects/project-chooser";
 import { AudienceManager } from "./audience-manager";
+import styles from "./audience-page.module.css";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Shared timelines · Timeline", robots: { index: false, follow: false } };
+export const metadata = { title: "Shared pages · Timeline", robots: { index: false, follow: false } };
 
 export default async function AudienceTimelineManagerPage({
   searchParams,
@@ -71,41 +74,92 @@ export default async function AudienceTimelineManagerPage({
       )
     : publications;
 
+  // Where the owner is in the one lifecycle: nothing chosen yet, a page being
+  // reviewed, or a page that is live.
+  const step = projectPublications.some((publication) => publication.state === "published")
+    ? "publish"
+    : projectPublications.length > 0
+      ? "review"
+      : "choose";
+  const contextParams = new URLSearchParams(contextQuery.replace(/^\?/, ""));
+  const planHref = (slug: string) => {
+    const value = contextParams.toString();
+    return `/app/timeline/${encodeURIComponent(slug)}${value ? `?${value}` : ""}`;
+  };
+  const suiteProjectId = context?.workspaceId ?? workspace.suiteWorkspaceId ?? workspace.slug;
+  const overviewHref =
+    context?.workspaceId ?? workspace.suiteWorkspaceId
+      ? `/app/project?${new URLSearchParams({ workspaceId: suiteProjectId })}`
+      : null;
+  const projectLine = (
+    <>
+      <ProjectTile id={suiteProjectId} monogram={monogramOf(workspace.name)} className={styles.projectTile} />
+      <span>{workspace.name}</span>
+      {project ? (
+        <>
+          <span className={styles.crumbSep} aria-hidden="true">
+            ›
+          </span>
+          <span>{project.name}</span>
+        </>
+      ) : null}
+    </>
+  );
+
   return (
-    <div data-timeline-module className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6">
-      <nav className="mb-6 text-sm text-ink-quiet" aria-label="Breadcrumb">
-        <Link href={`/app/timeline${contextQuery}`} className="hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
-          {workspace.name}
-        </Link>
+    <div data-timeline-module className={styles.page}>
+      <div className={styles.column}>
+      <div className={styles.tabsRow}>
+        <TimelineTabs
+          current="project"
+          allHref={`/app/timeline${contextQuery}`}
+          project={{
+            id: suiteProjectId,
+            name: workspace.name,
+            monogram: monogramOf(workspace.name),
+            href: planHref(project?.slug ?? projects[0]?.slug ?? ""),
+          }}
+          sections={[
+            {
+              title: `Timelines in ${workspace.name}`,
+              options: projects.map((plan) => ({ key: `plan:${plan.slug}`, name: plan.name, href: planHref(plan.slug) })),
+            },
+          ]}
+        />
+      </div>
+      <header className={styles.header}>
         {project ? (
-          <>
-            <span aria-hidden className="mx-2">/</span>
-            <Link
-              href={`/app/timeline/${encodeURIComponent(project.slug)}${contextQuery}`}
-              className="hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              {project.name}
-            </Link>
-          </>
-        ) : null}
-        <span aria-hidden className="mx-2">/</span>
-        <span className="text-ink">Shared timelines</span>
-      </nav>
-      <header className="mb-10 max-w-3xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-hover">Link-only sharing</p>
-        <h1 className="mt-2 text-[clamp(2rem,1.4rem+2vw,3.25rem)] font-semibold leading-none tracking-[-0.04em] text-ink">
-          {project ? `Share ${project.name}, not the workspace.` : "Share the journey, not the workspace."}
-        </h1>
-        <p className="mt-4 text-base leading-7 text-ink-soft">
+          <Link href={planHref(project.slug)} className={styles.projectLine}>
+            {projectLine}
+          </Link>
+        ) : overviewHref ? (
+          <Link href={overviewHref} className={styles.projectLine}>
+            {projectLine}
+          </Link>
+        ) : (
+          <span className={styles.projectLine}>{projectLine}</span>
+        )}
+        <h1 className={styles.title}>Shared pages</h1>
+        <p className={styles.lede}>
+          {project ? `Share ${project.name}, and nothing else. ` : "Share the journey, and nothing else. "}
           Anyone with a published link can open and forward the frozen copy.
-          It is absent from directories and search, never grants workspace
-          access, and source changes wait for your review before they appear.
+          It is absent from directories and search, never gives access to the
+          Project, and source changes wait for your review before they appear.
         </p>
-        <div className="mt-5 grid gap-3 text-sm sm:grid-cols-3" role="list" aria-label="Sharing boundary">
-          <p className="rounded-lg border border-line-soft bg-bg-elevated p-3 text-ink-soft" role="listitem"><strong className="block text-ink">1. Choose</strong>Only the milestones you select are copied.</p>
-          <p className="rounded-lg border border-line-soft bg-bg-elevated p-3 text-ink-soft" role="listitem"><strong className="block text-ink">2. Review</strong>The shared copy stays separate from your plan.</p>
-          <p className="rounded-lg border border-line-soft bg-bg-elevated p-3 text-ink-soft" role="listitem"><strong className="block text-ink">3. Publish</strong>Anyone with the link can view or forward it.</p>
-        </div>
+        <ol className={styles.steps} aria-label="How sharing works">
+          <li className={styles.step} aria-current={step === "choose" ? "step" : undefined}>
+            <strong>Choose</strong>
+            <span>Only the milestones you select are copied.</span>
+          </li>
+          <li className={styles.step} aria-current={step === "review" ? "step" : undefined}>
+            <strong>Review</strong>
+            <span>The shared copy stays separate from your plan.</span>
+          </li>
+          <li className={styles.step} aria-current={step === "publish" ? "step" : undefined}>
+            <strong>Publish</strong>
+            <span>Anyone with the link can view or forward it.</span>
+          </li>
+        </ol>
       </header>
       <AudienceManager
         workspaceSlug={workspace.slug}
@@ -128,6 +182,7 @@ export default async function AudienceTimelineManagerPage({
         projectSlug={project?.slug}
         contextQuery={contextQuery}
       />
+      </div>
     </div>
   );
 }

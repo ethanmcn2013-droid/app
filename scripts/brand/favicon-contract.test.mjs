@@ -11,14 +11,14 @@ import { buildFavicon, FAVICON_SIZES } from "./favicon-artifacts.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const require = createRequire(import.meta.url);
-const { SuiteMark } = require("../../src/lib/brand/suite-mark.tsx");
+const { SuiteMark, SIGNAL_INK } = require("../../src/lib/brand/suite-mark.tsx");
 const read = (path) => readFileSync(join(root, path));
 const PNG_SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
-// The ink field + single indigo dot shipped in T·153 (app#172).
+// The indigo ring and dot, transparent in the tab (founder, 26 Sep 2026).
 // An intentional mark change must review and update this seal in both repos.
 const CANONICAL_MARK_SHA256 =
-  "df5bb369eda59b197558033ac98fbe8ea1ac7efe975f0a8a805df9188a613b37";
+  "10a106e7f815abf7f4143c93b787c62a9cf0877a0b744670bfcf4f083f497ecb";
 
 test("the shared renderer preserves the committed Signal artwork", () => {
   const source = read("src/lib/brand/suite-mark.tsx").toString().replace(/\r\n?/g, "\n");
@@ -50,16 +50,16 @@ test("the ICO fallback contains the actual shared mark at every tab size", async
 });
 
 test("browser, Apple and install routes render the same suite artwork", async () => {
-  for (const [file, canvas, borderRadius] of [
-    ["icon.tsx", 32, 0],
-    ["apple-icon.tsx", 180, 36],
-    ["icon1.tsx", 512, 0],
+  for (const [file, canvas, borderRadius, background] of [
+    ["icon.tsx", 32, 0, undefined],
+    ["apple-icon.tsx", 180, 36, SIGNAL_INK],
+    ["icon1.tsx", 512, 0, SIGNAL_INK],
   ]) {
     const route = require(`../../src/app/${file}`);
     assert.deepEqual(route.size, { width: canvas, height: canvas });
     assert.equal(route.contentType, "image/png");
     const actual = Buffer.from(await route.default().arrayBuffer());
-    const expected = new ImageResponse(createElement(SuiteMark, { canvas, borderRadius }), route.size);
+    const expected = new ImageResponse(createElement(SuiteMark, { canvas, borderRadius, ...(background ? { background } : {}) }), route.size);
     assert.ok(actual.equals(Buffer.from(await expected.arrayBuffer())), `${file} drifted from SuiteMark`);
   }
 });

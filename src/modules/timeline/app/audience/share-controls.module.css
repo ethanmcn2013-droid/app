@@ -12,3 +12,65 @@
     box-shadow: none !important;
   }
 }
+
+/* v3 register (24 Sep 2026): the sharing controls read as the rest of the
+   suite. Classes, not utilities, because this repo remaps Tailwind's spacing
+   scale. */
+.field {
+  padding: 0 12px;
+  border: 1px solid var(--v3-control-border);
+  border-radius: var(--v3-radius);
+  background: var(--v3-surface);
+  font-size: 14px;
+  color: var(--v3-text);
+}
+
+/* Native selects stay native (screen readers, phones), drawn with the v3
+   control ring and a chevron made of two gradients in the text token. */
+select.field {
+  appearance: none;
+  padding-right: 36px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--v3-text-2) 50%),
+    linear-gradient(135deg, var(--v3-text-2) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.quiet {
+  padding: 0 14px;
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-1);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--v3-text);
+  transition: background-color 120ms var(--v3-ease);
+}
+
+.quiet:hover {
+  background: var(--v3-hover);
+}
+
+.primary {
+  padding: 0 16px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-accent);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--v3-on-accent);
+}
+
+.primary:hover {
+  background: var(--v3-accent-hover);
+}
+
+.receipt {
+  margin-top: 4px;
+  padding: 14px;
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-surface);
+  box-shadow: inset 2px 0 0 var(--v3-accent);
+}

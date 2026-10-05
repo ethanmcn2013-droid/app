@@ -10,6 +10,7 @@ import styles from "./CaptureEmailRow.module.css";
  * Exported so every surface that names it reads the same string. This file
  * is the allowlisted owner of that name (see the vocabulary contract), which
  * is exactly why the name lives here and not in the surfaces that show it.
+ * Renaming it is a pricing decision (docs/design/v3/launcher.md §12).
  */
 export const CAPTURE_EMAIL_PLAN = "Workspace plan";
 
@@ -25,14 +26,12 @@ type CaptureEmailFeedback = {
 const PRICING_URL = "https://signalstudio.ie/pricing";
 
 /**
- * Quiet companion to the primary capture field. Reveals the user's
- * capture-by-email address (workspace+ tier) or the upgrade path
- * (free tier) without turning an alternate input method into a CTA.
+ * Capture by email, as one quiet row inside the canvas's "More ways to
+ * capture". An entitled account sees its address and a Copy button; a free
+ * account sees the route, marked unavailable, and the plan that opens it.
  *
- * Click-to-copy mirrors the PRODUCT.md §5 budget: power users
- * already in muscle memory shouldn't need a modal.
- * Fallback: when navigator.clipboard is unavailable a selectable
- * readonly input is revealed so the address is never inaccessible.
+ * When the clipboard is blocked, a selectable read-only field takes the
+ * button's place so the address is never out of reach.
  */
 export function CaptureEmailRow({
   state,
@@ -47,78 +46,93 @@ export function CaptureEmailRow({
 
   if (state.tier === "free") {
     return (
-      <aside
-        aria-label="Email capture availability"
-        className={styles.root}
-        data-tier="free"
-      >
-        <span className={styles.label}>Capture by email</span>
-        <span className={styles.detail}>Available on the <a href={PRICING_URL} target="_blank" rel="noopener noreferrer">Workspace plan</a></span>
-      </aside>
+      <div className={styles.root} data-tier="free" aria-label="Email capture availability" role="group">
+        <span className={styles.mark} aria-hidden="true">
+          <MailGlyph />
+        </span>
+        <span className={styles.text}>
+          <span className={styles.label}>Capture by email</span>
+          <span className={styles.detail}>
+            Not on this account.{" "}
+            <a href={PRICING_URL} target="_blank" rel="noopener noreferrer" className={styles.link}>
+              Available on the Workspace plan
+            </a>
+          </span>
+        </span>
+      </div>
     );
   }
 
   const address = state.address;
+  function fallBack() {
+    setShowFallback(true);
+    onFeedback?.({
+      state: "error",
+      message: "Copying is blocked here. The address is selected so you can copy it yourself.",
+    });
+    window.setTimeout(() => fallbackRef.current?.select(), 0);
+  }
   function onCopy() {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(address).then(() => {
-        setCopied(true);
-        onFeedback?.({
-          state: "saved",
-          message: "Capture email address copied.",
-        });
-        setTimeout(() => setCopied(false), 1400);
-      }).catch(() => {
-        setShowFallback(true);
-        onFeedback?.({
-          state: "error",
-          message: "Clipboard access was unavailable. The address is selected for manual copy.",
-        });
-        window.setTimeout(() => {
-          fallbackRef.current?.select();
-        }, 0);
-      });
-    } else {
-      // Clipboard API unavailable, reveal a selectable readonly input.
-      setShowFallback(true);
-      onFeedback?.({
-        state: "error",
-        message: "Clipboard access was unavailable. The address is selected for manual copy.",
-      });
-      window.setTimeout(() => {
-        fallbackRef.current?.select();
-      }, 0);
+    if (!navigator.clipboard) {
+      fallBack();
+      return;
     }
+    navigator.clipboard
+      .writeText(address)
+      .then(() => {
+        setCopied(true);
+        onFeedback?.({ state: "saved", message: "Capture address copied." });
+        window.setTimeout(() => setCopied(false), 1400);
+      })
+      .catch(fallBack);
   }
 
   return (
-    <aside
-      aria-label="Email capture address"
-      className={styles.root}
-      data-tier="entitled"
-    >
-      <span className={styles.label}>Capture by email</span>
-      {showFallback ? (
-        <input
-          ref={fallbackRef}
-          type="text"
-          readOnly
-          value={address}
-          aria-label="Capture email address, select to copy"
-          className={styles.fallbackInput}
-          onBlur={() => setShowFallback(false)}
-        />
-      ) : (
-        <button
-          type="button"
-          onClick={onCopy}
-          aria-label="Copy capture email address"
-          className={styles.address}
-        >
-          <code>{address}</code>
-          <span className={styles.hint}>{copied ? "Copied" : "Copy"}</span>
+    <div className={styles.root} data-tier="entitled" aria-label="Email capture address" role="group">
+      <span className={styles.mark} aria-hidden="true">
+        <MailGlyph />
+      </span>
+      <span className={styles.text}>
+        <span className={styles.label}>Capture by email</span>
+        <span className={styles.detail}>Send anything to this address and it arrives here as a private note.</span>
+        {showFallback ? (
+          <input
+            ref={fallbackRef}
+            type="text"
+            readOnly
+            value={address}
+            aria-label="Capture email address, select to copy"
+            className={styles.fallbackInput}
+            onBlur={() => setShowFallback(false)}
+          />
+        ) : (
+          <code className={styles.address}>{address}</code>
+        )}
+      </span>
+      {showFallback ? null : (
+        <button type="button" onClick={onCopy} aria-label="Copy capture email address" className={styles.copy}>
+          {copied ? "Copied" : "Copy"}
         </button>
       )}
-    </aside>
+    </div>
+  );
+}
+
+function MailGlyph() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      focusable="false"
+    >
+      <rect x="1.75" y="3.25" width="12.5" height="9.5" rx="1.75" />
+      <path d="m2.5 4.5 5.5 4 5.5-4" />
+    </svg>
   );
 }
