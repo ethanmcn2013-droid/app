@@ -57,8 +57,13 @@ export type SampleProject = Readonly<{
   name: string;
   /** One plain line about the project. The set name is added in front. */
   about: string;
-  /** The project's main date, as a day offset, with its label. */
+  /**
+   * The project's main date, as a day offset, with its label. Also stored as
+   * the project's target date, which the Timeline and Projects pages read.
+   */
   mainDate?: Readonly<{ due: number; label: string }>;
+  /** The declared project status. Absent leaves it as "No status". */
+  status?: "on-track" | "at-risk" | "paused" | "complete";
   /** Budget in whole euro. Sets the project currency to EUR. */
   budgetEuros?: number;
   labels: readonly Readonly<{ name: string; color: ColumnColorKey }>[];

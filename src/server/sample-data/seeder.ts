@@ -73,6 +73,7 @@ import {
 } from "@/server/tasks/create-task-core";
 import { isDoneColumnKey, WAITING_COLUMN_KEY } from "@/lib/board-columns";
 import type { LaneId } from "@/lib/data";
+import { projectStatusMetaKey, projectTargetDateMetaKey } from "@/lib/projects/project-hub";
 import type { TagDef } from "@/lib/tags";
 import { resolveTemplateDueAt } from "@/lib/template-anchor";
 import {
@@ -123,6 +124,17 @@ export function sampleProjectId(actorUserId: string, setId: SampleSetId, project
 
 function markKey(projectId: string): string {
   return `board:${projectId}:sample-set`;
+}
+
+/**
+ * A Project's declared status and target date are meta rows of their own, the
+ * keys the Project overview writes (`setProjectStatusAction`,
+ * `setProjectTargetDateAction`). They sit outside the `board:` namespace, so
+ * Project deletion does not remove them; removal here deletes exactly these
+ * keys for a sample Project it has just deleted.
+ */
+function overviewKeys(projectId: string): string[] {
+  return [projectStatusMetaKey(projectId), projectTargetDateMetaKey(projectId)];
 }
 
 function leaseKey(projectId: string): string {
@@ -350,6 +362,21 @@ async function seedProjectInTransaction(
     .insert(meta)
     .values({ key: `board:${projectId}:tags`, value: tagValue, updatedAt: now })
     .onConflictDoUpdate({ target: meta.key, set: { value: tagValue, updatedAt: now } });
+
+  // Declared status and target date: the two meta rows the Project overview
+  // writes, in the shapes its actions validate (an allow-listed status, a
+  // plain calendar date).
+  const overview: Array<{ key: string; value: string }> = [];
+  if (project.status) overview.push({ key: projectStatusMetaKey(projectId), value: project.status });
+  if (project.mainDate) {
+    overview.push({ key: projectTargetDateMetaKey(projectId), value: sampleCalendarDate(runDay, project.mainDate.due) });
+  }
+  for (const row of overview) {
+    await tx
+      .insert(meta)
+      .values({ key: row.key, value: row.value, updatedAt: now })
+      .onConflictDoUpdate({ target: meta.key, set: { value: row.value, updatedAt: now } });
+  }
 
   const columnConfig = await readWorkspaceColumnConfig(projectId, tx);
   const positions = new Map<LaneId, number>();
@@ -579,6 +606,7 @@ export async function removeSampleSet(deps: SampleDataDependencies, setId: Sampl
   const set = SAMPLE_SETS[setId];
   const now = (deps.now ?? (() => new Date()))();
   const targets = await markedProjects(deps, set);
+  await sweepOverviewKeys(deps, set);
   if (targets.length === 0) return { ok: true, set: set.id, removed: [] };
 
   const anchorId = sampleProjectId(deps.actorUserId, set.id, set.projects[0].key);
@@ -596,6 +624,7 @@ export async function removeSampleSet(deps: SampleDataDependencies, setId: Sampl
       const [still] = (await markedProjects(deps, set)).filter((project) => project.id === target.id);
       if (!still) continue;
       await deps.deleteProject({ actorUserId: deps.actorUserId, projectId: target.id });
+      await deps.database.delete(meta).where(inArray(meta.key, overviewKeys(target.id)));
       removed.push(target.name);
     } catch {
       if (anchorPresent) await releaseLease(deps.database, anchorId).catch(() => undefined);
@@ -606,6 +635,24 @@ export async function removeSampleSet(deps: SampleDataDependencies, setId: Sampl
   // let the lease go now rather than at its expiry.
   if (anchorPresent) await releaseLease(deps.database, anchorId).catch(() => undefined);
   return { ok: true, set: set.id, removed };
+}
+
+/**
+ * Finish an interrupted removal: a sample Project that is gone but whose
+ * status or target date row is still there. Exact keys for this operator's
+ * deterministic ids only, and only where no Project holds that id any more.
+ */
+async function sweepOverviewKeys(
+  deps: Pick<SampleDataDependencies, "database" | "actorUserId">,
+  set: SampleSet,
+): Promise<void> {
+  const ids = set.projects.map((project) => sampleProjectId(deps.actorUserId, set.id, project.key));
+  // isolation-ok: existence check on this operator's deterministic ids; a row
+  // of any owner at one of them keeps its keys.
+  const live = await deps.database.select({ id: workspaces.id }).from(workspaces).where(inArray(workspaces.id, ids));
+  const liveIds = new Set(live.map((row) => row.id));
+  const orphaned = ids.filter((id) => !liveIds.has(id)).flatMap(overviewKeys);
+  if (orphaned.length > 0) await deps.database.delete(meta).where(inArray(meta.key, orphaned));
 }
 
 export async function removeAllSampleData(deps: SampleDataDependencies): Promise<RemoveSampleResult[]> {

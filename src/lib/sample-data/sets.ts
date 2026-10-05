@@ -38,6 +38,7 @@ const TEACHER: SampleSet = {
   projects: [
     {
       key: "history-project",
+      status: "on-track",
       name: "Third year history project",
       about: "A research project for two third year class groups, from the brief to the results.",
       mainDate: { due: 24, label: "Projects due" },
@@ -77,6 +78,7 @@ const TEACHER: SampleSet = {
     },
     {
       key: "musical",
+      status: "at-risk",
       name: "Transition year musical",
       about: "The school show, from auditions to the last night.",
       mainDate: { due: 40, label: "Opening night" },
@@ -119,6 +121,7 @@ const TEACHER: SampleSet = {
     },
     {
       key: "sports-day",
+      status: "on-track",
       name: "Sports day",
       about: "The whole school sports day, with a wet weather plan.",
       mainDate: { due: 17, label: "Sports day" },
@@ -154,6 +157,7 @@ const TEACHER: SampleSet = {
     },
     {
       key: "parent-teacher",
+      status: "on-track",
       name: "Parent-teacher meetings",
       about: "Two evenings of meetings, with bookings, comments and follow-up calls.",
       mainDate: { due: 12, label: "Third year meetings" },
@@ -235,6 +239,7 @@ function moduleProject(input: {
   key: string;
   name: string;
   about: string;
+  status?: SampleProject["status"];
   assignments: readonly [Dated, Dated];
   exams: readonly [Dated, Dated];
   tasks: readonly SampleTask[];
@@ -247,6 +252,7 @@ function moduleProject(input: {
     key: input.key,
     name: input.name,
     about: input.about,
+    status: input.status,
     mainDate: { due: input.exams[1].due, label: "Final exam" },
     labels: STUDENT_LABELS,
     tasks: [
@@ -266,6 +272,7 @@ const STUDENT: SampleSet = {
   projects: [
     moduleProject({
       key: "statistics",
+      status: "on-track",
       name: "Statistics",
       about: "Probability, sampling and a data analysis report.",
       assignments: [
@@ -296,6 +303,7 @@ const STUDENT: SampleSet = {
     }),
     moduleProject({
       key: "microeconomics",
+      status: "on-track",
       name: "Microeconomics",
       about: "Supply and demand, elasticity and market structures.",
       assignments: [
@@ -323,6 +331,7 @@ const STUDENT: SampleSet = {
     }),
     moduleProject({
       key: "marketing",
+      status: "on-track",
       name: "Marketing principles",
       about: "A brand audit and a group campaign plan.",
       assignments: [
@@ -353,6 +362,7 @@ const STUDENT: SampleSet = {
     }),
     moduleProject({
       key: "financial-accounting",
+      status: "at-risk",
       name: "Financial accounting",
       about: "Double entry, trial balances and reading company accounts.",
       assignments: [
@@ -381,6 +391,7 @@ const STUDENT: SampleSet = {
     }),
     moduleProject({
       key: "business-law",
+      status: "at-risk",
       name: "Business law",
       about: "Contract law, a case note and a problem question.",
       assignments: [
@@ -448,6 +459,7 @@ const WEDDING: SampleSet = {
   projects: [
     {
       key: "the-wedding",
+      status: "on-track",
       name: "The wedding",
       about: "Venue, guests, suppliers, fittings and payments, up to the day.",
       mainDate: { due: 75, label: "The day" },
@@ -507,6 +519,7 @@ const WEDDING: SampleSet = {
     },
     {
       key: "hen-and-stag",
+      status: "on-track",
       name: "Hen and stag",
       about: "Two weekends away, with bookings and a kitty for each.",
       mainDate: { due: 33, label: "Hen weekend" },
@@ -532,6 +545,7 @@ const WEDDING: SampleSet = {
     },
     {
       key: "honeymoon",
+      status: "at-risk",
       name: "Honeymoon",
       about: "Flights, two stops, paperwork and the packing list.",
       mainDate: { due: 78, label: "Flights out" },
@@ -563,6 +577,7 @@ const WEDDING: SampleSet = {
     },
     {
       key: "moving-in",
+      status: "on-track",
       name: "Moving in",
       about: "The lease, the move and setting up the new place.",
       mainDate: { due: 20, label: "Keys" },

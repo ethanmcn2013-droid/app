@@ -96,9 +96,24 @@ const SENDER_TABLES = {
   workspaceSponsorships,
 } as const;
 
+/**
+ * One database file for the whole run, emptied before each test. Opening and
+ * closing a libSQL file per test can take the process down on Windows as it
+ * exits, so there is a single client and a single close.
+ */
+let shared: Awaited<ReturnType<typeof freshFileDb>> | null = null;
 async function fixture() {
-  const local = await freshFileDb();
-  await local.client.execute("PRAGMA journal_mode = WAL");
+  if (!shared) {
+    shared = await freshFileDb();
+    disposals.push(shared.cleanup);
+  }
+  const local = shared;
+  await local.client.execute("DROP TRIGGER IF EXISTS fail_sample");
+  const tables = await local.client.execute("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'");
+  // One script on one connection: the wipe is not a cascade, it empties every table.
+  await local.client.executeMultiple(
+    ["PRAGMA foreign_keys = OFF", ...tables.rows.map((row) => `DELETE FROM "${String(row.name)}"`)].join("; ") + ";",
+  );
   for (const id of ["operator", "second-operator", "member", "stranger"]) {
     await local.db.insert(users).values({ id, clerkId: id, handle: id, name: id, email: `${id}@example.test`, initials: "FX", color: "fixture" });
   }
@@ -136,10 +151,6 @@ async function fixture() {
     }
     return out;
   };
-  // Closing a libSQL file client mid-run can take the process down on Windows
-  // when the run ends, so every fixture is closed and removed together, once,
-  // after the last test.
-  disposals.push(local.cleanup);
   return { ...local, cleanup: () => undefined, deps, deleted, counts, senderRows };
 }
 
@@ -178,7 +189,7 @@ test("the three sets are bounded, plainly written and cover every status and eve
         ...project.tasks.flatMap((task) => [task.title, task.notes ?? "", task.link?.title ?? "", ...(task.steps ?? []).map((step) => step.title)]),
       ].filter(Boolean);
       for (const text of words) {
-        assert.ok(!/[!—–]/.test(text), `"${text}" uses an exclamation mark or a dash`);
+        assert.ok(!/[!\u{2014}\u{2013}]/u.test(text),`"${text}" uses an exclamation mark or a dash`);
         assert.ok(!/@|https?:/i.test(text), `"${text}" carries an address`);
         assert.match(text, /^[A-Z0-9]/, `"${text}" does not start with a capital`);
         // Sentence case: after the first word, only names and initialisms are capitalised.
@@ -294,7 +305,15 @@ for (const setId of SAMPLE_SET_IDS) {
       }
       // No lease is left behind, and no meta row lives outside a sample project.
       const metaRows = await f.db.select().from(meta);
-      assert.ok(metaRows.every((row) => ids.some((id) => row.key.startsWith(`board:${id}:`))));
+      assert.ok(metaRows.every((row) => ids.some((id) =>
+        row.key.startsWith(`board:${id}:`) || row.key === `project-status:${id}` || row.key === `project-target-date:${id}`)));
+      // Every project has a target date the Timeline can read, on its main date.
+      for (const project of projects) {
+        const [target] = await f.db.select().from(meta).where(eq(meta.key, `project-target-date:${project.id}`));
+        assert.equal(target.value, project.primaryDate);
+      }
+      const statuses = (await f.db.select().from(meta).where(like(meta.key, "project-status:%"))).map((row) => row.value);
+      assert.ok(statuses.length >= 3 && statuses.every((value) => ["on-track", "at-risk", "paused", "complete"].includes(value)));
       assert.ok(!metaRows.some((row) => row.key.endsWith(":sample-run")));
 
       assert.deepEqual(await f.senderRows(), NOTHING_SENT);
@@ -316,6 +335,8 @@ test("the wedding set carries amounts in cents, a euro budget and a main date co
     assert.equal(wedding.primaryDate, "2026-12-19");
     assert.equal(wedding.primaryDateLabel, "The day");
     assert.equal(wedding.activeDomain, "wedding");
+    const [status] = await f.db.select().from(meta).where(eq(meta.key, `project-status:${wedding.id}`));
+    assert.equal(status.value, "on-track");
     const rows = await f.db.select().from(tasks).where(eq(tasks.workspaceId, wedding.id));
     const venue = rows.find((row) => row.title === "Final payment to the venue")!;
     assert.equal(venue.cents, 950_000);
@@ -400,6 +421,8 @@ test("removal deletes exactly the marked sample rows and leaves every real proje
     await f.db.insert(activities).values({ id: "a-real", workspaceId: "ws-real", taskId: "t-real-1", userId: "operator", kind: "taskAdd", payload: { kind: "taskAdd", lane: "todo" } });
     await f.db.insert(resources).values({ id: "res-real", workspaceId: "ws-real", taskId: "t-real-1", kind: "link", provider: "url", title: "Brief", url: "https://example.com/brief", addedAt: 1 });
     await f.db.insert(meta).values([
+      { key: "project-status:ws-real", value: "at-risk" },
+      { key: "project-target-date:ws-real", value: "2026-11-30" },
       { key: "board:ws-real:tags", value: "[]" },
       { key: "board:ws-real:columns", value: "{}" },
       { key: "board:ws-lookalike:name", value: "Mine" },
@@ -437,13 +460,34 @@ test("removal deletes exactly the marked sample rows and leaves every real proje
     assert.deepEqual(await f.db.select().from(activities).where(eq(activities.workspaceId, "ws-real")), realBefore.activities);
     assert.deepEqual(await f.db.select().from(resources).where(eq(resources.workspaceId, "ws-real")), realBefore.resources);
     assert.deepEqual(await f.db.select().from(meta).where(like(meta.key, "board:ws-%")), realBefore.meta);
-    assert.equal((await f.db.select().from(meta).where(like(meta.key, "board:ws-sample-%"))).length, 0);
+    assert.equal((await f.db.select().from(meta).where(like(meta.key, "%ws-sample-%"))).length, 0);
+    assert.deepEqual(
+      (await f.db.select({ key: meta.key, value: meta.value }).from(meta).where(like(meta.key, "project-%:ws-real"))).sort((a, b) => a.key.localeCompare(b.key)),
+      [{ key: "project-status:ws-real", value: "at-risk" }, { key: "project-target-date:ws-real", value: "2026-11-30" }],
+    );
     assert.equal(emailCalls.length, 0);
     assert.deepEqual(await f.senderRows(), NOTHING_SENT);
 
     // And the sets can be added again afterwards.
     const again = await seeder.seedSampleSet(f.deps(), "teacher");
     assert.equal(again.ok && again.created.length, 5);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("a removal interrupted after the project was deleted is finished by the next one", async () => {
+  const f = await fixture();
+  try {
+    await seeder.seedSampleSet(f.deps(), "wedding");
+    const [first] = expectedIds("operator", "wedding");
+    // The deletion path ran but the process stopped before the status and
+    // target date rows, which it does not own, were removed.
+    await f.deps().deleteProject({ actorUserId: "operator", projectId: first });
+    assert.equal((await f.db.select().from(meta).where(like(meta.key, `project-%:${first}`))).length, 2);
+    const removed = await seeder.removeSampleSet(f.deps(), "wedding");
+    assert.equal(removed.ok && removed.removed.length, 3);
+    assert.deepEqual(await f.counts(), { workspaces: 0, members: 0, tasks: 0, activities: 0, resources: 0, meta: 0 });
   } finally {
     f.cleanup();
   }
@@ -457,7 +501,10 @@ test("a project sitting on a sample id without the mark is never added to and ne
     await f.db.insert(workspaceMembers).values({ workspaceId: squatId, userId: "operator", role: "owner" });
     await f.db.insert(tasks).values({ id: "t-squat", workspaceId: squatId, seq: 1, title: "Keep me", lane: "todo", priority: "p2", assignees: [] });
     // A mark for a different operator, set or key does not count either.
-    await f.db.insert(meta).values({ key: `board:${squatId}:sample-set`, value: JSON.stringify({ v: 1, set: "wedding", project: "the-wedding", by: "second-operator" }) });
+    await f.db.insert(meta).values([
+      { key: `board:${squatId}:sample-set`, value: JSON.stringify({ v: 1, set: "wedding", project: "the-wedding", by: "second-operator" }) },
+      { key: `project-status:${squatId}`, value: "paused" },
+    ]);
 
     const seeded = await seeder.seedSampleSet(f.deps(), "wedding");
     assert.deepEqual(seeded, { ok: false, set: "wedding", reason: "failed", created: [], alreadyPresent: [], failedAt: "The wedding · sample" });
@@ -469,6 +516,7 @@ test("a project sitting on a sample id without the mark is never added to and ne
     assert.deepEqual(removed, { ok: true, set: "wedding", removed: [] });
     assert.deepEqual(f.deleted, []);
     assert.equal((await f.db.select().from(workspaces)).length, 1);
+    assert.equal((await f.db.select().from(meta).where(eq(meta.key, `project-status:${squatId}`))).length, 1);
     assert.equal(others.length, 3);
   } finally {
     f.cleanup();
@@ -668,7 +716,7 @@ test("each confirmation says exactly what will be created or removed", async () 
     assert.ok(remove.lead.includes("these 5 sample projects") && remove.detail.includes("Nothing else in your account is touched"));
     assert.deepEqual(removeAllConfirmation(full).names, teacher.summary.projectNames);
     for (const copy of [add, remove, removeAllConfirmation(full)]) {
-      assert.ok(!/[!—]/.test([copy.title, copy.lead, copy.detail, copy.confirm].join(" ")));
+      assert.ok(!/[!\u{2014}]/u.test([copy.title, copy.lead, copy.detail, copy.confirm].join(" ")));
     }
   } finally {
     f.cleanup();
