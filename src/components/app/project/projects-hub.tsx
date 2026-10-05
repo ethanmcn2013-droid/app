@@ -92,7 +92,7 @@ export function ProjectsHub({
 
   return (
     <div className={`${styles.page} thin-scroll`}>
-      <div className={`${styles.inner} mx-auto w-full ${showIndex ? "max-w-[1320px]" : "max-w-[1180px]"} px-4 md:px-8`}>
+      <div className={`${styles.inner} mx-auto w-full max-w-[var(--v3-page-w)] px-4 md:px-8`}>
         {showIndex ? (
           <>
             <ProjectsIndex

@@ -210,7 +210,7 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
           <div className="flex min-w-0 items-start gap-3.5">
             <span
               aria-hidden
-              className="flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-[var(--v3-radius)] bg-[var(--v3-accent-soft)] text-[color:var(--v3-accent)]"
+              className="flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-[var(--v3-radius)] bg-[var(--v3-accent-soft)] text-[color:var(--v3-accent-text)]"
             >
               <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M8 2.25 13.75 5.5v5L8 13.75 2.25 10.5v-5Z" />

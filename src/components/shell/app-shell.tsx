@@ -28,6 +28,12 @@ import {
 } from "@/components/studio-bar/studio-chrome-context";
 import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
 import { suiteSurfaceFromAppPath } from "@/lib/product-urls";
+import {
+  applyThemeChoice,
+  readThemeChoice,
+  subscribeThemeChoice,
+  type ThemeChoice,
+} from "@/lib/theme-mode";
 import { updateUserPreferencesAction } from "@/server/actions/preferences";
 import { ShellIcon } from "./shell-icons";
 import { crumbsForPath, INITIAL_SETUP } from "./shell-nav";
@@ -71,6 +77,20 @@ function subscribeCollapsed(onChange: () => void) {
   };
 }
 
+/**
+ * Below 900px the sidebar is a drawer, and a drawer is always the full
+ * sidebar: a rail saved on a wide window must not hide the drawer's labels.
+ */
+const DRAWER_QUERY = "(max-width: 899px)";
+function readDrawer(): boolean {
+  return window.matchMedia(DRAWER_QUERY).matches;
+}
+function subscribeDrawer(onChange: () => void) {
+  const query = window.matchMedia(DRAWER_QUERY);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
 /** ⌘K on a Mac, Ctrl K everywhere else. The server and first paint say ⌘K. */
 const noSubscribe = () => () => {};
 export function useShortcutLabel(): string {
@@ -105,7 +125,9 @@ export function AppShell({
   const pathname = usePathname() ?? "";
   const bare = isBareChromePath(pathname);
   // Saved per browser; the server and first paint render expanded.
-  const collapsed = useSyncExternalStore(subscribeCollapsed, readCollapsed, () => false);
+  const savedCollapsed = useSyncExternalStore(subscribeCollapsed, readCollapsed, () => false);
+  const drawer = useSyncExternalStore(subscribeDrawer, readDrawer, () => false);
+  const collapsed = savedCollapsed && !drawer;
   const [mobileOpen, setMobileOpen] = useState(false);
   // Navigating closes the mobile drawer (adjusted during render, not in an effect).
   const [drawerPath, setDrawerPath] = useState(pathname);
@@ -308,59 +330,38 @@ function NewMenu() {
   );
 }
 
-type ThemeMode = "light" | "dark" | "system";
-
-function readThemeMode(): ThemeMode {
-  const value = document.documentElement.getAttribute("data-theme-mode");
-  return value === "light" || value === "dark" ? value : "system";
-}
-
-function subscribeThemeMode(onChange: () => void) {
-  const observer = new MutationObserver(onChange);
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme-mode"] });
-  return () => observer.disconnect();
-}
-
-function chooseThemeMode(next: ThemeMode) {
-  document.documentElement.setAttribute("data-theme-mode", next);
-  window.dispatchEvent(new Event("signal:theme"));
+/** Applies the choice to the page at once, then saves it to the account. */
+function chooseTheme(next: ThemeChoice) {
+  applyThemeChoice(next);
   void updateUserPreferencesAction({ themeMode: next }).catch(() => {});
 }
 
-const THEME_ORDER: readonly ThemeMode[] = ["system", "light", "dark"];
-const THEME_NAMES: Record<ThemeMode, string> = { system: "Match system", light: "Light", dark: "Dark" };
+const THEME_NAMES: Record<ThemeChoice, string> = { dark: "Dark", light: "Light" };
 
 /**
- * The theme as one small button: each press moves to the next of Match
- * system, Light and Dark, and the icon shows the one in use. A set-once
- * preference, so it takes an icon's room, not a row.
+ * The theme as one small button. The app is Dark unless you choose Light;
+ * each press switches to the other, and the icon shows the one in use. A
+ * set-once preference, so it takes an icon's room, not a row.
  */
 export function ThemeCycleButton({ className }: { className?: string }) {
-  const mode = useSyncExternalStore(subscribeThemeMode, readThemeMode, () => "system" as ThemeMode);
-  const next = THEME_ORDER[(THEME_ORDER.indexOf(mode) + 1) % THEME_ORDER.length]!;
-  const Icon = mode === "light" ? ShellIcon.sun : mode === "dark" ? ShellIcon.moon : ShellIcon.monitor;
-  const label = `Theme: ${THEME_NAMES[mode]}. Switch to ${THEME_NAMES[next]}`;
+  const theme = useSyncExternalStore(subscribeThemeChoice, readThemeChoice, () => "dark" as ThemeChoice);
+  const next: ThemeChoice = theme === "dark" ? "light" : "dark";
+  const Icon = theme === "light" ? ShellIcon.sun : ShellIcon.moon;
+  const label = `Theme: ${THEME_NAMES[theme]}. Switch to ${THEME_NAMES[next]}`;
   return (
-    <button type="button" className={className} onClick={() => chooseThemeMode(next)} aria-label={label} title={label}>
+    <button type="button" className={className} onClick={() => chooseTheme(next)} aria-label={label} title={label}>
       <Icon />
     </button>
   );
 }
 
-/** Light / Dark / System, applied instantly and saved to preferences. */
+/** Dark or Light, applied instantly and saved to preferences. */
 export function ThemeSwitch() {
-  const mode = useSyncExternalStore(subscribeThemeMode, readThemeMode, () => "system" as ThemeMode);
+  const theme = useSyncExternalStore(subscribeThemeChoice, readThemeChoice, () => "dark" as ThemeChoice);
 
-  const choose = (next: ThemeMode) => {
-    document.documentElement.setAttribute("data-theme-mode", next);
-    window.dispatchEvent(new Event("signal:theme"));
-    void updateUserPreferencesAction({ themeMode: next }).catch(() => {});
-  };
-
-  const options: { value: ThemeMode; label: string; icon: React.ReactNode }[] = [
-    { value: "light", label: "Light", icon: <ShellIcon.sun size={14} /> },
+  const options: { value: ThemeChoice; label: string; icon: React.ReactNode }[] = [
     { value: "dark", label: "Dark", icon: <ShellIcon.moon size={14} /> },
-    { value: "system", label: "System", icon: <ShellIcon.monitor size={14} /> },
+    { value: "light", label: "Light", icon: <ShellIcon.sun size={14} /> },
   ];
 
   return (
@@ -369,8 +370,8 @@ export function ThemeSwitch() {
         <button
           key={option.value}
           type="button"
-          aria-pressed={mode === option.value}
-          onClick={() => choose(option.value)}
+          aria-pressed={theme === option.value}
+          onClick={() => chooseTheme(option.value)}
         >
           {option.icon}
           {option.label}

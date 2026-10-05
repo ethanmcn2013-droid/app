@@ -79,7 +79,7 @@ function Initials({ name, initials, owner }: { name: string | null; initials: st
       className={
         "flex size-[32px] shrink-0 items-center justify-center rounded-full text-[11px] font-semibold tracking-[0.02em] " +
         (owner
-          ? "bg-[var(--v3-accent-soft)] text-[color:var(--v3-accent)]"
+          ? "bg-[var(--v3-accent-soft)] text-[color:var(--v3-accent-text)]"
           : "bg-[var(--v3-sunken)] text-[color:var(--v3-text-2)] ring-1 ring-inset ring-[color:var(--v3-border)]")
       }
       aria-hidden="true"
@@ -519,7 +519,7 @@ export function ProjectOverview({
                   return (
                     <li key={m.id}>
                       <Link href={links.task(m.id)} className={ROW_LINK}>
-                        <span className="grid size-[28px] shrink-0 place-items-center rounded-[var(--v3-radius-sm)] bg-[var(--v3-accent-soft)] text-[color:var(--v3-accent)]">
+                        <span className="grid size-[28px] shrink-0 place-items-center rounded-[var(--v3-radius-sm)] bg-[var(--v3-accent-soft)] text-[color:var(--v3-accent-text)]">
                           <MilestoneGlyph />
                         </span>
                         <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium">{m.title}</span>

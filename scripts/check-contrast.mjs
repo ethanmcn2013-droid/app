@@ -42,12 +42,14 @@
  *
  *     /app/tasks · /app/notes · /app/timeline   ×   light · dark
  *
- * Theme is driven purely by `colorScheme` emulation, which is enough because
- * the resolver in src/app/app/theme-runtime.tsx reads
- * `matchMedia("(prefers-color-scheme:dark)")` and writes data-theme before
- * first paint; in demo mode no stored preference ever overrides it. Each
- * combination gets its own page so no style, cache or media state leaks
- * between runs.
+ * Theme is a CHOICE, not the device's scheme: the app is dark unless a person
+ * chose light (5 Oct 2026), and the resolver in src/app/app/theme-runtime.tsx
+ * no longer reads prefers-color-scheme. So each run states its choice the way
+ * the app remembers one, as this browser's copy (localStorage
+ * "signal:theme-mode"), written before the document's first script runs. The
+ * colour scheme is still emulated to match, so nothing else on the page
+ * disagrees. Each combination gets its own page so no style, cache or media
+ * state leaks between runs.
  *
  * Usage: node scripts/check-contrast.mjs [url|path ...] [--base=<origin>] [--theme=light|dark]
  *   With no positional argument the three default surfaces are swept.
@@ -385,6 +387,13 @@ async function auditSurface(browser, url, colorScheme) {
   const page = await browser.newPage({ viewport: VIEWPORT, colorScheme });
   try {
     await page.emulateMedia({ colorScheme });
+    await page.addInitScript((theme) => {
+      try {
+        window.localStorage.setItem("signal:theme-mode", theme);
+      } catch {
+        // Storage blocked: the app stays on its dark default.
+      }
+    }, colorScheme);
     // Next's dev server keeps an HMR websocket (and dev-only polling) open
     // indefinitely, so `networkidle` never resolves against `next dev` —
     // wait for `load` and then a generous hydration/paint settle instead.

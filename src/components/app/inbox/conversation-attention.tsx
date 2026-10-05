@@ -60,7 +60,7 @@ export function ConversationAttentionSection({ initial, available }: { initial: 
               className={
                 "inline-grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[11.5px] font-semibold tabular-nums " +
                 (unread > 0
-                  ? "bg-[color:var(--v3-accent-soft)] text-[color:var(--v3-accent)]"
+                  ? "bg-[color:var(--v3-accent-soft)] text-[color:var(--v3-accent-text)]"
                   : "bg-[color:var(--v3-sunken)] text-[color:var(--v3-text-2)]")
               }
             >
@@ -98,7 +98,7 @@ export function ConversationAttentionSection({ initial, available }: { initial: 
                       className={
                         "grid h-7 w-7 flex-shrink-0 place-items-center rounded-[8px] " +
                         (item.seenAt === null
-                          ? "bg-[color:var(--v3-accent-soft)] text-[color:var(--v3-accent)]"
+                          ? "bg-[color:var(--v3-accent-soft)] text-[color:var(--v3-accent-text)]"
                           : "bg-[color:var(--v3-sunken)] text-[color:var(--v3-text-2)]")
                       }
                     >
@@ -111,7 +111,7 @@ export function ConversationAttentionSection({ initial, available }: { initial: 
                       </span>
                     </span>
                     {item.seenAt === null ? (
-                      <span className="inline-flex h-[22px] flex-shrink-0 items-center rounded-full bg-[color:var(--v3-accent-soft)] px-2 text-[11.5px] font-medium text-[color:var(--v3-accent)]">New</span>
+                      <span className="inline-flex h-[22px] flex-shrink-0 items-center rounded-full bg-[color:var(--v3-accent-soft)] px-2 text-[11.5px] font-medium text-[color:var(--v3-accent-text)]">New</span>
                     ) : null}
                   </a>
                 </li>

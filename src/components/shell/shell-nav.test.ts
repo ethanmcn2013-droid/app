@@ -133,7 +133,7 @@ test("the sidebar keeps the foldable lists and their actions inside the group", 
 });
 
 test("the New menu keeps Task and Project on top and offers Message only with Chat", () => {
-  const menu = shellSource.slice(shellSource.indexOf('role="menu"'), shellSource.indexOf("type ThemeMode"));
+  const menu = shellSource.slice(shellSource.indexOf('role="menu"'), shellSource.indexOf("function chooseTheme"));
   const group = menu.indexOf('role="group"');
   assert.ok(group > 0);
   assert.ok(menu.indexOf("Task <span") < group);

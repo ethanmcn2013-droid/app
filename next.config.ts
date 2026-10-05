@@ -318,6 +318,21 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_SIGNAL_DEPLOYMENT_ENV: process.env.VERCEL_ENV ?? "",
   },
   experimental: {
+    // Production builds start cold (5 Oct 2026). Next 16.3 turned on
+    // Turbopack's on-disk cache for `next build` by default, and Vercel
+    // restores `.next/cache` from the previous deployment. The first
+    // production build of the v3 shell (source 6cd2d1d9) emitted a global
+    // stylesheet compiled from fresh component sources but WITHOUT the one
+    // line that commit added to globals.css (`@import "../ds/v3.css"`), so
+    // every v3 token was undefined in production. Cold builds of the same
+    // commit on Windows and on Linux CI are correct, which leaves the
+    // restored cache as the only difference found. That is the leading
+    // explanation, not a proven one (the Vercel build log was not readable),
+    // so two things guard it: this, which stops the build reading a restored
+    // cache at all, and `pnpm build`, which fails if the emitted CSS lacks
+    // the tokens whatever the cause (scripts/check-v3-tokens.mjs). Remove
+    // this line only with a build that is shown correct with the cache on.
+    turbopackFileSystemCacheForBuild: false,
     // Tree-shake heavy barrel imports — Clerk is used in 17 files across
     // the app + marketing; the full barrel ships ~6× what we actually call.
     // Roadmap's next.config carries the same shape (Phase 6.2).

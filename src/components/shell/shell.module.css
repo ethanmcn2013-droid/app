@@ -5,7 +5,10 @@
   display: flex;
   height: 100dvh;
   width: 100%;
-  background: var(--v3-chrome);
+  /* The frame is ink in both themes. The literal is the same value as the
+     token: the frame must never fall through to a white page if the token
+     layer is late or missing. */
+  background: var(--v3-chrome, #141414);
   color: var(--v3-text);
   font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
 }
@@ -19,10 +22,13 @@
   flex-direction: column;
   min-height: 0;
   padding: 10px 10px 8px;
-  background: var(--v3-chrome);
   /* The sidebar is ink in both themes (founder): its tokens are the dark
-     set, scoped here, so every control inside keeps AA contrast. */
+     set, scoped here, so every control inside keeps AA contrast. Its ground
+     is scoped with them: light icons on a ground that came from somewhere
+     else is how the rail once rendered pale grey on white. */
   color-scheme: dark;
+  --v3-chrome: #141414;
+  background: var(--v3-chrome);
   --v3-canvas: #1c1c1c;
   --v3-surface: #242424;
   --v3-sunken: #0f0f0f;
@@ -316,7 +322,12 @@
   font-size: 13px;
   cursor: pointer;
 }
-.topSearch span { flex: 1; text-align: left; }
+/* The label never wraps: it is cut with an ellipsis first, and below 1100px
+   the trigger is the icon alone (see the media queries). */
+.topSearch { flex: none; white-space: nowrap; }
+.topSearch span { flex: 1; min-width: 0; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.topSearch svg { flex: none; }
+.topSearch:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: 2px; }
 .topSearch:hover { border-color: var(--v3-border-strong); color: var(--v3-text-2); }
 
 .newButton {
@@ -376,7 +387,8 @@
 .menuGroup { display: flex; flex-direction: column; margin-top: 4px; padding-top: 2px; border-top: 1px solid var(--v3-border); }
 .segmented {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   gap: 2px;
   margin: 6px 0 2px;
   padding: 2px;
@@ -859,4 +871,51 @@
 
 @media (prefers-reduced-motion: reduce) {
   .setupToggle, .setupToggle svg, .setupToggle .setupChevron { transition: none; }
+}
+
+/* ── Review fixes (5 Oct 2026) ───────────────────────────────────────
+   Founder review of the first production day. */
+
+/* Icon buttons show keyboard focus (the sidebar toggle, help, theme, the
+   bell): they had a hover state and no focus state of their own. */
+.iconButton:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: 1px; color: var(--v3-text); }
+.iconButton:active { background: var(--v3-selected); }
+.newButton:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: 2px; }
+
+/* Collapsed rail. The icon is the whole row here, so it carries more weight
+   than beside a label: 82% of the rail's text colour is 10.6:1 on the ink
+   (was 58%, 5.8:1). Rows are 36px squares on one centre line, with the same
+   hover, pressed, current and focus states as the open sidebar. */
+.shell[data-collapsed] .sidebar { width: 60px; padding-left: 10px; padding-right: 10px; }
+.shell[data-collapsed] .item,
+.shell[data-collapsed] .searchTrigger { width: 40px; height: 36px; margin-left: auto; margin-right: auto; }
+.shell[data-collapsed] .item svg,
+.shell[data-collapsed] .searchTrigger svg,
+.shell[data-collapsed] .footerTools .iconButton,
+.shell[data-collapsed] .collapseButton { color: color-mix(in srgb, var(--v3-text) 82%, transparent); }
+.shell[data-collapsed] .item:hover svg,
+.shell[data-collapsed] .searchTrigger:hover svg,
+.shell[data-collapsed] .footerTools .iconButton:hover,
+.shell[data-collapsed] .collapseButton:hover { color: var(--v3-text); }
+.shell[data-collapsed] .item:hover,
+.shell[data-collapsed] .footerTools .iconButton:hover,
+.shell[data-collapsed] .collapseButton:hover { background: color-mix(in srgb, var(--v3-text) 10%, transparent); }
+.shell[data-collapsed] .item[aria-current="page"],
+.shell[data-collapsed] .item[data-active] { background: color-mix(in srgb, var(--v3-text) 13%, transparent); }
+.shell[data-collapsed] .footerTools .iconButton { width: 40px; height: 36px; }
+.searchTrigger:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: 1px; }
+
+/* Collapsed brand row: the mark, then the control that opens the sidebar,
+   on the rail's centre line with the rows below (the mark sat 2px right of
+   it, and the two read as a stray stack). */
+.shell[data-collapsed] .brandRow { align-items: center; gap: 8px; padding: 0; margin-bottom: 12px; }
+.shell[data-collapsed] .brand { flex: none; width: 40px; height: 32px; justify-content: center; gap: 0; }
+.shell[data-collapsed] .collapseButton { width: 40px; height: 32px; }
+
+/* Between the drawer breakpoint and 1100px the top bar is short of room, so
+   the search trigger is the icon alone, as it is on a phone. Its accessible
+   name stays "Search or jump to". */
+@media (min-width: 900px) and (max-width: 1099px) {
+  .topSearch { width: 36px; padding: 0; justify-content: center; }
+  .topSearch span, .topSearch .kbd { display: none; }
 }

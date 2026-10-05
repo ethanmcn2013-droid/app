@@ -513,7 +513,7 @@ export function MembersSection({
                           className={
                             "inline-flex h-[26px] items-center gap-1 rounded-full py-0 pl-2.5 pr-2 text-[12px] font-medium transition-[background-color,box-shadow] focus-visible:rounded-full! pointer-coarse:h-[44px] " +
                             (isOwner
-                              ? "bg-[var(--v3-accent-soft)] text-[color:var(--v3-accent)] hover:shadow-[0_0_0_1px_color-mix(in_srgb,var(--v3-accent)_45%,transparent)]"
+                              ? "bg-[var(--v3-accent-soft)] text-[color:var(--v3-accent-text)] hover:shadow-[0_0_0_1px_color-mix(in_srgb,var(--v3-accent)_45%,transparent)]"
                               : "bg-[var(--v3-sunken)] text-[color:var(--v3-text-2)] shadow-[0_0_0_1px_var(--v3-border)] hover:text-[color:var(--v3-text)] hover:shadow-[0_0_0_1px_var(--v3-border-strong)]")
                           }
                         >

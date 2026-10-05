@@ -2170,11 +2170,11 @@
       "lastReviewedAt": "2026-10-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "991a54006054ce55",
+      "materialityHash": "0682055fb87b5a68",
       "materialityReview": {
-        "materialityHash": "991a54006054ce55",
+        "materialityHash": "0682055fb87b5a68",
         "reviewedAt": "2026-10-05",
-        "evidence": "experience/reviews/2026-10-03-projects-console/receipts/tasks.state.app-project-loading-materiality.json"
+        "evidence": "experience/reviews/2026-10-05-dark-default/receipts/tasks.state.app-project-loading-materiality.json"
       }
     },
     {
@@ -3476,10 +3476,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-25",
+      "lastReviewedAt": "2026-10-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "e8175fe649621c62"
+      "materialityHash": "fa1c4e6a0ec76613",
+      "materialityReview": {
+        "materialityHash": "fa1c4e6a0ec76613",
+        "reviewedAt": "2026-10-05",
+        "evidence": "experience/reviews/2026-10-05-dark-default/receipts/tasks.state.app-tasks-loading-materiality.json"
+      }
     },
     {
       "id": "tasks.state.app-tasks-error",

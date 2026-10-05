@@ -1,12 +1,19 @@
 "use client";
 
-import { useRef, useState, useTransition, type KeyboardEvent, type ReactNode } from "react";
+import { useRef, useState, useSyncExternalStore, useTransition, type KeyboardEvent, type ReactNode } from "react";
 import { useToast } from "@/components/primitives/toast";
 import { updateUserPreferencesAction } from "@/server/actions/preferences";
 import {
   setPersonalityPrefsAction,
 } from "@/server/actions/personality";
 import type { PersonalityPrefs } from "@/lib/personality-prefs";
+import {
+  applyThemeChoice,
+  readThemeChoice,
+  resolveThemeChoice,
+  subscribeThemeChoice,
+  type ThemeChoice,
+} from "@/lib/theme-mode";
 import type { ThemeMode } from "@/server/db/preferences";
 import { SectionHeader } from "../settings-app";
 import {
@@ -18,49 +25,26 @@ import {
   ui,
 } from "../settings-ui";
 
-// Light, Dark, System: the same order as the theme switch in the sidebar
-// footer, so the two controls read as one choice made in two places.
-const OPTIONS: Array<{ value: ThemeMode; label: string; description: string; icon: ReactNode }> = [
+// Dark, then Light: the app is dark unless you choose otherwise, so the
+// default comes first. The same two choices as the theme button in the
+// sidebar footer, so the two controls read as one choice made in two places.
+// There is no third option: the app does not follow the device setting.
+const OPTIONS: Array<{ value: ThemeChoice; label: string; description: string; icon: ReactNode }> = [
+  {
+    value: "dark",
+    label: "Dark",
+    description: "The standard look. Easy on the eyes in long sessions.",
+    icon: <path d="M13 9.6A5.25 5.25 0 1 1 6.4 3a4.25 4.25 0 0 0 6.6 6.6Z" />,
+  },
   {
     value: "light",
     label: "Light",
-    description: "Always light, regardless of your device setting.",
+    description: "A bright page with dark text. Good in a well-lit room.",
     icon: (
       <path d="M8 5.25a2.75 2.75 0 1 0 0 5.5 2.75 2.75 0 0 0 0-5.5ZM8 1.5v1.25M8 13.25v1.25M1.5 8h1.25M13.25 8h1.25M3.4 3.4l.9.9M11.7 11.7l.9.9M3.4 12.6l.9-.9M11.7 4.3l.9-.9" />
     ),
   },
-  {
-    value: "dark",
-    label: "Dark",
-    description: "Always dark, regardless of your device setting.",
-    icon: <path d="M13 9.6A5.25 5.25 0 1 1 6.4 3a4.25 4.25 0 0 0 6.6 6.6Z" />,
-  },
-  {
-    value: "system",
-    label: "System",
-    description: "Follows your device setting. Switches automatically.",
-    icon: (
-      <>
-        <rect x="2" y="3" width="12" height="8" rx="1.25" />
-        <path d="M6 13.5h4M8 11v2.5" />
-      </>
-    ),
-  },
 ];
-
-/**
- * Apply the choice to the live document, then let the server catch up.
- *
- * The app layout's resolver (src/app/app/theme-runtime.tsx) owns the two
- * attributes and the prefers-color-scheme listener; this only tells it the
- * choice changed. Writing data-theme directly here would work until the
- * user picked System, which has no fixed value — so the control sets the
- * mode and the resolver decides what that means right now.
- */
-function applyThemeMode(mode: ThemeMode) {
-  document.documentElement.setAttribute("data-theme-mode", mode);
-  window.dispatchEvent(new Event("signal:theme"));
-}
 
 /**
  * The radio-group keyboard contract, as a pure function.
@@ -142,7 +126,12 @@ export function AppearanceSection({
   initialPersonalityPrefs: PersonalityPrefs;
 }) {
   const { toast } = useToast();
-  const [themeMode, setThemeMode] = useState<ThemeMode>(initialThemeMode);
+  // What the page is showing is the truth: the sidebar's theme button can
+  // change it while this screen is open, and both must agree. The server
+  // renders from the saved preference, where "never chose" is Dark.
+  const themeMode = useSyncExternalStore(subscribeThemeChoice, readThemeChoice, () =>
+    resolveThemeChoice(initialThemeMode),
+  );
   const [pending, startTransition] = useTransition();
   const [personalityPrefs, setPersonalityPrefs] = useState<PersonalityPrefs>(
     initialPersonalityPrefs,
@@ -151,24 +140,23 @@ export function AppearanceSection({
   const radioRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const checkedIndex = OPTIONS.findIndex((o) => o.value === themeMode);
 
-  function handleChange(next: ThemeMode) {
+  function handleChange(next: ThemeChoice) {
     // Re-entry guard. The radios are never `disabled` while the write is in
     // flight — disabling the focused control drops focus to the body and a
     // keyboard user loses their place mid-interaction — so this, not the
     // DOM, is what stops a second write landing on top of the first.
     if (pending) return;
+    if (next === themeMode) return;
     const previous = themeMode;
-    setThemeMode(next);
     // The theme changes under the click, not after the round-trip: this is a
     // preference about how the app looks, so the app looking that way IS the
     // confirmation. If the write fails, the paint goes back with the state.
-    applyThemeMode(next);
+    applyThemeChoice(next);
     startTransition(async () => {
       try {
         await updateUserPreferencesAction({ themeMode: next });
       } catch (e) {
-        setThemeMode(previous);
-        applyThemeMode(previous);
+        applyThemeChoice(previous);
         toast("Could not save preference", {
           tone: "error",
           body: (e as Error).message,
@@ -218,14 +206,14 @@ export function AppearanceSection({
     <div>
       <SectionHeader
         title="Appearance"
-        description="Choose a colour scheme. It applies everywhere you are signed in."
+        description="Dark is the standard look. Switch to light here; it applies everywhere you are signed in."
       />
 
       <section aria-labelledby="appearance-theme">
         <h3 id="appearance-theme" className="mb-2.5 px-0.5 text-[13.5px] font-semibold leading-5 text-[color:var(--v3-text)]">Theme</h3>
         <div>
-          {/* One choice among three, so it announces itself as one: a radio
-              group, not three unrelated buttons. Each card carries the
+          {/* One choice between two, so it announces itself as one: a radio
+              group, not two unrelated buttons. Each card carries the
               plain-English line its option needs, which a segmented strip
               has no room for.
 
@@ -233,7 +221,7 @@ export function AppearanceSection({
               with it: one tab stop for the group (the checked card), arrows to
               move focus and selection, Home/End to the ends, Space to select.
               The logic is in radioGroupKeyTarget and rovingTabIndex above. */}
-          <div role="radiogroup" aria-label="Colour scheme" className="grid gap-2 sm:grid-cols-3">
+          <div role="radiogroup" aria-label="Colour scheme" className="grid gap-2 sm:grid-cols-2 sm:max-w-[520px]">
             {OPTIONS.map((opt, index) => {
               const isActive = themeMode === opt.value;
               return (
@@ -420,7 +408,7 @@ function PreviewScene({ mode }: { mode: "light" | "dark" }) {
   );
 }
 
-function ThemePreview({ mode }: { mode: ThemeMode }) {
+function ThemePreview({ mode }: { mode: ThemeChoice }) {
   return (
     <span
       aria-hidden
@@ -429,19 +417,7 @@ function ThemePreview({ mode }: { mode: ThemeMode }) {
         PREVIEW_GROUND,
       )}
     >
-      {mode === "system" ? (
-        <>
-          <PreviewScene mode="light" />
-          <span
-            className="absolute inset-0 block"
-            style={{ clipPath: "polygon(58% 0, 100% 0, 100% 100%, 42% 100%)" }}
-          >
-            <PreviewScene mode="dark" />
-          </span>
-        </>
-      ) : (
-        <PreviewScene mode={mode} />
-      )}
+      <PreviewScene mode={mode} />
     </span>
   );
 }

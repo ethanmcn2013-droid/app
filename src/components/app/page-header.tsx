@@ -39,7 +39,7 @@ export function AppPageHeader({
   const subtitle = description ?? (title === "Settings" ? <>Project · {projectName}</> : null);
 
   return (
-    <header className="mx-auto w-full max-w-[1180px] px-4 pb-2 pt-6 md:px-8 md:pt-7">
+    <header className="mx-auto w-full max-w-[var(--v3-page-w)] px-4 pb-2 pt-6 md:px-8 md:pt-7">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.02em] text-[color:var(--v3-text)] md:text-[26px]">

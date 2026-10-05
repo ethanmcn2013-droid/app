@@ -21,7 +21,7 @@ export default function ProjectOverviewLoading() {
       aria-busy="true"
       aria-label="Loading projects"
     >
-      <div className={`mx-auto w-full ${withIndex ? "max-w-[1320px]" : "max-w-[1180px]"} px-4 pb-16 pt-5 md:px-8 md:pt-[28px]`}>
+      <div className={`mx-auto w-full max-w-[var(--v3-page-w)] px-4 pb-16 pt-5 md:px-8 md:pt-[28px]`}>
         {withIndex ? (
           <>
             <div className="mb-3 flex items-start justify-between gap-4 md:mb-5 md:items-end">

@@ -8,6 +8,17 @@ const contract = JSON.parse(readFileSync("experience/browser-contract.json", "ut
 
 // Deliberately independent of the critical attestation and Settings specs.
 // Start an owned, credential-free review build before running this config.
+const baseURL = process.env.UTILITY_NAVIGATION_URL ?? "http://127.0.0.1:3132";
+
+// The app is dark unless a person chose light, and it no longer follows the
+// device (5 Oct 2026), so emulating a colour scheme no longer selects the
+// theme. Each project states its choice the way the app remembers one: this
+// browser's copy, which the pre-paint resolver reads (src/lib/theme-mode.ts).
+const chosenTheme = (theme: "light" | "dark") => ({
+  cookies: [],
+  origins: [{ origin: new URL(baseURL).origin, localStorage: [{ name: "signal:theme-mode", value: theme }] }],
+});
+
 export default defineConfig({
   testDir: "./feature-tests",
   testMatch: "utility-navigation.spec.ts",
@@ -16,7 +27,7 @@ export default defineConfig({
   workers: 1,
   timeout: 45_000,
   use: {
-    baseURL: process.env.UTILITY_NAVIGATION_URL ?? "http://127.0.0.1:3132",
+    baseURL,
     browserName: "chromium",
     channel: process.env.CI ? undefined : "chrome",
     launchOptions: { args: ["--disable-extensions"] },
@@ -30,6 +41,6 @@ export default defineConfig({
     .filter(({ name }) => name === "mobile" || name === "desktop")
     .flatMap(({ name, viewport }) => (["light", "dark"] as const).map((colorScheme) => ({
       name: `${name}-${colorScheme}`,
-      use: { viewport, colorScheme },
+      use: { viewport, colorScheme, storageState: chosenTheme(colorScheme) },
     }))),
 });

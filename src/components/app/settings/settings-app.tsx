@@ -280,7 +280,7 @@ export function SettingsApp({
 
   return (
     <div ref={scrollRef} className="thin-scroll flex-1 overflow-auto">
-      <div className="mx-auto w-full max-w-[1180px] px-4 md:px-8 lg:flex lg:items-start lg:gap-[56px]">
+      <div className="mx-auto w-full max-w-[var(--v3-page-w)] px-4 md:px-8 lg:flex lg:items-start lg:gap-[56px]">
         {/* Rail, from lg */}
         <nav
           aria-label="Settings sections"
@@ -417,17 +417,17 @@ function RailItem({
         "flex h-[32px] w-full items-center gap-2.5 rounded-[var(--v3-radius)] border px-2.5 text-left text-[13.5px] font-medium transition-[background-color,color,border-color] duration-150 focus-visible:rounded-[var(--v3-radius)]! " +
         (active
           ? "border-[color:var(--v3-border)] bg-[var(--v3-selected)] shadow-[var(--v3-shadow-1)] " +
-            (danger ? "text-[color:var(--v3-danger)]" : "text-[color:var(--v3-text)]")
+            (danger ? "text-[color:var(--v3-danger-text)]" : "text-[color:var(--v3-text)]")
           : "border-transparent hover:bg-[var(--v3-hover)] " +
             (danger
-              ? "text-[color:var(--v3-danger)]"
+              ? "text-[color:var(--v3-danger-text)]"
               : "text-[color:var(--v3-text-2)] hover:text-[color:var(--v3-text)]"))
       }
     >
       <span
         className={
           danger
-            ? "text-[color:var(--v3-danger)]"
+            ? "text-[color:var(--v3-danger-text)]"
             : active
               ? "text-[color:var(--v3-text)]"
               : "text-[color:var(--v3-text-3)]"
@@ -459,9 +459,9 @@ function TabItem({
         "inline-flex h-[32px] shrink-0 items-center whitespace-nowrap rounded-[var(--v3-radius)] border px-3 text-[13px] font-medium transition-[background-color,color,border-color] duration-150 focus-visible:rounded-[var(--v3-radius)]! pointer-coarse:h-[40px] " +
         (active
           ? "border-[color:var(--v3-border)] bg-[var(--v3-selected)] shadow-[var(--v3-shadow-1)] " +
-            (danger ? "text-[color:var(--v3-danger)]" : "text-[color:var(--v3-text)]")
+            (danger ? "text-[color:var(--v3-danger-text)]" : "text-[color:var(--v3-text)]")
           : "border-transparent hover:bg-[var(--v3-hover)] " +
-            (danger ? "text-[color:var(--v3-danger)]" : "text-[color:var(--v3-text-2)]"))
+            (danger ? "text-[color:var(--v3-danger-text)]" : "text-[color:var(--v3-text-2)]"))
       }
     >
       {item.label}

@@ -11,11 +11,11 @@ import type { ProjectStatusTone } from "@/lib/projects/project-hub";
 
 export const STATUS_TONE_CLASS: Record<ProjectStatusTone, string> = {
   success:
-    "bg-[color-mix(in_srgb,var(--v3-success)_13%,transparent)] text-[color:color-mix(in_srgb,var(--v3-success)_82%,var(--v3-text))]",
+    "bg-[color-mix(in_srgb,var(--v3-success)_13%,transparent)] text-[color:var(--v3-success-text)]",
   warning:
     "bg-[color-mix(in_srgb,var(--v3-warning)_17%,transparent)] text-[color:var(--v3-warning-text)]",
   neutral: "bg-[var(--v3-sunken)] text-[color:var(--v3-text-2)] ring-1 ring-inset ring-[color:var(--v3-border)]",
-  accent: "bg-[var(--v3-accent-soft)] text-[color:var(--v3-accent)]",
+  accent: "bg-[var(--v3-accent-soft)] text-[color:var(--v3-accent-text)]",
   none: "bg-transparent text-[color:var(--v3-text-3)] ring-1 ring-inset ring-[color:var(--v3-border-strong)]",
 };
 
