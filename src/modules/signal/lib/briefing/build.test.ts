@@ -351,6 +351,60 @@ test("stronger deadline severity and trigger tier still precede declared priorit
   assert.deepEqual(brief.needsAttention.map(item => item.id), ["late-p3", "later-p0"]);
 });
 
+test("comparable exact deadlines rank by time before priority on the same or different local days", async () => {
+  const hour = 3_600_000;
+  for (const now of [Date.parse("2026-10-11T12:00:00Z"), Date.parse("2026-10-11T19:30:00Z")]) {
+    const early = task({ id: "z-access", priority: 3, dueAt: now + 22 * hour });
+    const late = task({ id: "a-guide", priority: 0, dueAt: now + 28 * hour });
+    for (const inputs of [[late, early], [early, late]]) {
+      const briefing = await buildBriefing(source(inputs), CTX, now, { timezone: "Europe/Dublin" });
+      assert.deepEqual(briefing.needsAttention.map(item => item.id), [early.id, late.id]);
+    }
+    const swapped = await buildBriefing(source([
+      { ...early, dueAt: late.dueAt }, { ...late, dueAt: early.dueAt },
+    ]), CTX, now, { timezone: "Europe/Dublin" });
+    assert.deepEqual(swapped.needsAttention.map(item => item.id), [late.id, early.id]);
+  }
+});
+
+test("mixed deadline ordering preserves calendar positions and is permutation invariant and idempotent", async () => {
+  const now = Date.parse("2026-10-11T12:00:00Z");
+  const rows = [
+    task({ id: "z-exact-first", priority: 3, dueAt: Date.parse("2026-10-12T09:00:00Z") }),
+    task({ id: "a-calendar", priority: 2, deadline: { kind: "date-only", date: "2026-10-12" } }),
+    task({ id: "m-exact-second", priority: 1, dueAt: Date.parse("2026-10-12T15:00:00Z") }),
+  ];
+  const permutations = (items: TaskSignal[]): TaskSignal[][] => items.length === 0 ? [[]]
+    : items.flatMap((item, index) => permutations(items.filter((_, other) => other !== index))
+      .map(rest => [item, ...rest]));
+  const order = async (items: TaskSignal[]) => (await buildBriefing(source(items), CTX, now,
+    { timezone: "Europe/Dublin" })).needsAttention.map(item => item.id);
+  // Original priority ordering places the calendar-only task in the middle.
+  // Only the two exact-time slots exchange; no time is invented for the date.
+  const expected = rows.map(row => row.id);
+  for (const permutation of permutations(rows)) {
+    const ordered = await order(permutation);
+    assert.deepEqual(ordered, expected);
+    assert.deepEqual(await order(ordered.map(id => rows.find(row => row.id === id)!)), expected);
+    assert.equal(ordered[1], "a-calendar");
+  }
+  const calendarRows = rows.filter(row => row.deadline?.kind === "date-only");
+  calendarRows.push(task({ id: "calendar-low", priority: 3, deadline: { kind: "date-only", date: "2026-10-12" } }));
+  assert.deepEqual(await order(calendarRows.reverse()), ["a-calendar", "calendar-low"]);
+});
+
+test("deadline precision tie-break cannot displace overdue severity or a stronger trigger tier", async () => {
+  const now = Date.parse("2026-10-11T12:00:00Z");
+  const expiredDate = task({ id: "past-calendar", priority: 3,
+    deadline: { kind: "date-only", date: "2026-10-10" } });
+  const exact = task({ id: "near-exact", priority: 0, dueAt: now + DAY });
+  const stuck = task({ id: "quiet-priority", priority: 0, idleDays: 20 });
+  const briefing = await buildBriefing(source([stuck, exact, expiredDate]), CTX, now, { timezone: "Europe/Dublin" });
+  assert.deepEqual(briefing.needsAttention.map(item => item.id), [expiredDate.id, exact.id]);
+  assert.deepEqual(briefing.quietRisks.map(item => item.id), [stuck.id]);
+  assert.equal(briefing.needsAttention.length + briefing.quietRisks.length, 3);
+});
+
 // ─────────────────────────────────────────────────────────────
 // Engine output
 // ─────────────────────────────────────────────────────────────

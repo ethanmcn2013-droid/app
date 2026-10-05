@@ -136,8 +136,7 @@ export async function buildBriefing(
       bestByObservation.set(key, candidate);
     }
   }
-  const selected = Array.from(bestByObservation.values())
-    .sort(compareCandidates)
+  const selected = orderCandidates(Array.from(bestByObservation.values()))
     .slice(0, BUCKET_CAP);
   const triggeredTaskIds = [...new Set([...bestByObservation.values()]
     .flatMap(item => item.representedTaskIds ?? []))].sort();
@@ -390,6 +389,31 @@ function compareCandidates(a: Triggered, b: Triggered): number {
   const byPriority = priorityRank(a) - priorityRank(b);
   if (byPriority !== 0) return byPriority;
   return a.task.id.localeCompare(b.task.id);
+}
+
+/** Calendar-only deadlines have no time to compare with a saved instant.
+ * Keep their original slots and all urgency tiers, then order only the exact
+ * deadline slots within each due-soon tier. The base comparator remains a
+ * total order; a mixed-kind pairwise time comparison could create cycles when
+ * it falls through to priority for calendar dates. */
+function orderCandidates(candidates: Triggered[]): Triggered[] {
+  const ordered = candidates.sort(compareCandidates);
+  const exactTiers = new Map<number, { position: number; item: Triggered; at: number }[]>();
+  ordered.forEach((item, position) => {
+    if (item.trigger !== "due-soon") return;
+    const deadline = signalDeadline(item.task);
+    if (deadline?.kind !== "instant") return;
+    // Due-soon has a fixed trigger weight, so equal severity also means equal
+    // weight and trigger: the same complete tier of the original comparator.
+    const tier = exactTiers.get(item.severity) ?? [];
+    tier.push({ position, item, at: deadline.at });
+    exactTiers.set(item.severity, tier);
+  });
+  for (const tier of exactTiers.values()) {
+    const byTime = [...tier].sort((a, b) => a.at - b.at || compareCandidates(a.item, b.item));
+    tier.forEach(({ position }, index) => { ordered[position] = byTime[index]!.item; });
+  }
+  return ordered;
 }
 
 /** Stable per-day rotation index so the same user gets a different
