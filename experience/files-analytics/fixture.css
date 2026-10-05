@@ -1,0 +1,42 @@
+/*
+ * The shell's frame around a page that scrolls itself: a sidebar's width on a
+ * desk, a top bar's height, and a column the page fills. The pages' own
+ * styles and the v3 tokens are the real files.
+ */
+
+.fixture-shell {
+  height: 100vh;
+  min-height: 0;
+}
+
+.fixture-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  margin-top: var(--v3-topbar-h);
+  border: 1px solid var(--v3-border);
+  border-radius: 12px;
+  background: var(--v3-canvas);
+  overflow: hidden;
+}
+
+.thin-scroll {
+  scrollbar-width: thin;
+}
+
+mark {
+  background: none;
+}
+
+@media (max-width: 899px) {
+  .fixture-shell {
+    padding: 0;
+  }
+
+  .fixture-main {
+    border: 0;
+    border-radius: 0;
+  }
+}
