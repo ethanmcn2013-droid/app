@@ -4,6 +4,14 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-10-06 · Redesign candidate · Projects as a list
+
+The Projects page has a third view, List, beside Console and Cards. It keeps the console's groups (Needs a look, On track, Paused, No status yet, Wrapped), each with a count. Every project gets one line: its colour tile and name, a status pill in its colour, who leads it, a thin bar for how many of its tasks are done, its target date, its next big date, and its open and late tasks. A line at the foot counts the projects, open tasks and late tasks shown. Clicking a project's name shows its quick look, as it does in the console. On a narrower window the lead, and then the dates, step aside; on a phone each project is two lines. The address remembers the view (`?view=list`).
+
+The view menu also stays on screen on a phone now. It used to open off the right edge.
+
+No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-projects-list`; no deployment or production change is claimed.
+
 ## 2026-10-06 · Redesign candidate · A quick look at a project before you open it
 
 On the Projects page, clicking a project's name now shows it as a record in a side panel, without switching the app to it. Opening a project switches everything to it, so this is the way to look first. At the top are previous and next with where you are in the list ("3 of 10") and Open. Then comes the project's colour tile and name, with how it is doing underneath. Each field has its own row: status, who leads it, its target date, its next big date, open tasks, late tasks, and a bar for how many of its tasks are done. Below that are what it is for and what got finished in the last two weeks, one small bar a day. At the foot are ways into its tasks, its timeline and its files. Up and down (or j and k) step through the list, and Escape closes and puts you back on the row.

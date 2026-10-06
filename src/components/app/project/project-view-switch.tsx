@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * The view switcher for Projects, top right: Console or Cards. A menu button
+ * The view switcher for Projects, top right: Console, List or Cards. A menu button
  * with radio items, so arrow keys, Home, End and Escape work and the current
  * view is announced as checked.
  */
@@ -19,6 +19,16 @@ const VIEWS: ReadonlyArray<{ id: ConsoleView; label: string; hint: string; icon:
       <>
         <path d="M2 3.5h4M2 8h4M2 12.5h4" />
         <path d="M8.5 3.5h5.5M8.5 8h3.5M8.5 12.5h5" />
+      </>
+    ),
+  },
+  {
+    id: "list",
+    label: "List",
+    hint: "One dense line per project",
+    icon: (
+      <>
+        <path d="M2 3.5h12M2 6.5h12M2 9.5h12M2 12.5h12" />
       </>
     ),
   },
