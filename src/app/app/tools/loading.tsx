@@ -15,7 +15,7 @@ export default function ToolsLoading() {
           </div>
           <div className={`${styles.skeleton} ${styles.skeletonSearch}`} />
         </div>
-        {/* "Your apps", then the folded "Initial setup" group's name. */}
+        {/* "Your apps" first; the sections below it fill in on load. */}
         <div className={`${styles.skeleton} ${styles.skeletonHeading}`} />
         <div className={styles.appGrid}>
           {Array.from({ length: 5 }, (_, index) => (

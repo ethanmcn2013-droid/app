@@ -19,7 +19,7 @@ import {
   feedbackHref,
   MORE_APPS_LABEL,
   rankLauncher,
-  setupApps,
+  moreApps,
   toolBySlug,
   toolIdeasHref,
   toolRequestHref,
@@ -87,13 +87,13 @@ test("apps follow the founder's order, most used first", () => {
   );
 });
 
-test("Your apps is the approved navigation; every other entry stays under Initial setup", () => {
+test("Your apps is the approved navigation; every other entry stays, in view", () => {
   // Founder instruction (2 Oct 2026): nothing leaves the launcher.
   assert.deepEqual([...FEATURED_APP_IDS], ["projects", "tasks", "timeline", "files", "analytics"]);
   assert.deepEqual(featuredApps().map((app) => app.label), ["Projects", "Tasks", "Timeline", "Files", "Analytics"]);
-  assert.deepEqual(setupApps().map((app) => app.id), ["notes", "messages"]);
+  assert.deepEqual(moreApps().map((app) => app.id), ["notes", "messages"]);
   // The two lists split the catalogue exactly: no entry twice, none missing.
-  const shown = [...featuredApps(), ...setupApps()].map(entryKey).sort();
+  const shown = [...featuredApps(), ...moreApps()].map(entryKey).sort();
   assert.deepEqual(shown, APP_ENTRIES.map(entryKey).sort());
   assert.equal(new Set(shown).size, shown.length);
   assert.notEqual(MORE_APPS_LABEL, "Your apps");
@@ -102,15 +102,16 @@ test("Your apps is the approved navigation; every other entry stays under Initia
     path.join(process.cwd(), "src", "components", "shell", "launcher", "launcher-panel.tsx"),
     "utf8",
   );
-  const group = panel.slice(panel.indexOf("const setupSections"), panel.indexOf("const body ="));
+  const more = panel.slice(panel.indexOf("const moreSections"), panel.indexOf("const body ="));
   for (const literal of ["MORE_APPS_LABEL", '"Works with"', "COMING_SOON_LABEL", "TOOL_ENTRIES.map(renderToolCard)", "TOOL_ENTRIES.map(renderToolRow)", "connected.map(renderConnected)", "<ToolRequestCard />"]) {
-    assert.ok(group.includes(literal), `${literal} must render inside the Initial setup group`);
+    assert.ok(more.includes(literal), `${literal} must render below Your apps`);
   }
-  // One disclosure for the popover, the sheet and the page, above none of "Your apps".
-  assert.match(panel, /aria-expanded=\{setupOpen\}/);
-  assert.match(panel, /aria-controls=\{setupOpen \? setupId : undefined\}/);
-  assert.ok(panel.indexOf('section("apps", "Your apps", featuredTiles') < panel.indexOf("{setupSections}"));
-  // Search still reaches every entry, folded or not.
+  // The sidebar's "Initial setup" group went on 6 Oct 2026, and the launcher's
+  // with it: no fold, no disclosure, every section in the one listbox.
+  assert.doesNotMatch(panel, /Initial setup|INITIAL_SETUP|aria-expanded=\{setupOpen\}|styles\.setup/);
+  const sections = panel.slice(panel.indexOf("// One listbox of groups and options"), panel.indexOf("const liveCount"));
+  assert.ok(sections.indexOf('section("apps", "Your apps", featuredTiles') < sections.indexOf("{moreSections}"));
+  // Search still reaches every entry.
   assert.match(panel, /const searchable: LauncherEntry\[\] = \[\.\.\.apps, \.\.\.CONNECTED_ENTRIES, \.\.\.TOOL_ENTRIES\]/);
 });
 
