@@ -165,3 +165,16 @@ export const TIMELINE_URL = TIMELINE_PUBLIC_ORIGIN;
 export const SIGNAL_URL = PRODUCT_MARKETING_URLS.signal;
 /** @deprecated Use PRODUCT_MARKETING_URLS or PRODUCT_APP_URLS. */
 export const NOTES_URL = PRODUCT_MARKETING_URLS.notes;
+
+/**
+ * Automations: a preview surface inside the signed-in app, not a product.
+ * Drafts are kept in the browser and nothing runs yet, so there is no public
+ * or marketing address. The sidebar and any link use these, never a literal.
+ */
+export const AUTOMATIONS_APP_PATH = "/app/automations";
+export const AUTOMATIONS_LABEL = "Automations";
+
+/** One automation, open on the canvas. */
+export function automationPath(automationId: string): string {
+  return `${AUTOMATIONS_APP_PATH}/${encodeURIComponent(automationId)}`;
+}

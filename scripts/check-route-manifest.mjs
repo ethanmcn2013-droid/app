@@ -37,6 +37,8 @@ const MANIFEST = [
   // ── Product /app routes ──────────────────────────────────────────────────
   "app",
   "app/archived",
+  "app/automations",
+  "app/automations/[id]",
   "app/import",
   "app/inbox",
   "app/my-tasks",
