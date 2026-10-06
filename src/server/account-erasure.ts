@@ -53,6 +53,7 @@ import {
   NativeUploadInProgressError,
 } from "./attachments/native-upload-custody";
 import { eraseConversationUserFootprint, eraseProjectConversationRows } from "./conversations/account-lifecycle";
+import { projectOwnedMetaKeys } from "@/lib/projects/project-hub";
 
 /**
  * Database handle accepted by {@link eraseAccountData}. Typed against the
@@ -914,6 +915,10 @@ export async function eraseAccountData(
     // Workspace-scoped key/value meta, board name + custom columns.
     // Keys are `board:{wsId}:name` / `board:{wsId}:columns` (see board.ts).
     await database.delete(meta).where(like(meta.key, `board:${wsId}:%`));
+    // Status, target date and purpose are exact-key rows named by the Project id.
+    await database
+      .delete(meta)
+      .where(inArray(meta.key, [...projectOwnedMetaKeys(wsId)]));
 
     await database
       .delete(workspaceMembers)
