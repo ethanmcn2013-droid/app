@@ -49,7 +49,8 @@ try {
   fixture = await createPingProofFixture();
   await seedProofTask(fixture.client, 'target', { assignees: ['bob'], startDay: 2, durationDays: 3 });
   await seedProofTask(fixture.client, 'other', { assignees: ['bob'] });
-  let executeCalls = 0;
+  let executeCalls = 0, transportSendCalls = 0, receiptLookupCalls = 0, firstCommittedReceipt = null;
+  const executedOriginals=[],lookedUpOriginals=[]; // Private correlation; identifiers are never exported.
   const control = { paused: false, transports: 0 };
   const voice = { operation: {kind:'edit_selected',effects:{selfAssignment:'add',statusColumnKey:'doing'}},
     transcript:'Assign me and move these tasks to Doing.', append:[], commits:0, modelCalls:[], holdInterpret:false, releaseInterpret:null };
@@ -58,6 +59,7 @@ try {
       control.transports++;
       let receive=()=>{},closed=false;
       return {queuedBytes:()=>0,close(){closed=true;},subscribe(listener){receive=listener;return()=>{receive=()=>{};};},send(raw){
+        transportSendCalls++;
         const message=JSON.parse(raw);
         if(message.type==='input_audio_buffer.append') voice.append.push(Buffer.from(message.audio,'base64'));
         else if(message.type==='input_audio_buffer.commit') {
@@ -74,7 +76,11 @@ try {
     }
   };
   const base = createPingCommandService(fixture.adapter, { now: Date.now });
-  const session = createPingTypedSession(fixture.adapter, { now: Date.now, isNewWorkAllowed: () => !control.paused, voice:providers, service: { ...base, execute: original => { executeCalls++; return base.execute(original); } } });
+  const session = createPingTypedSession(fixture.adapter, { now: Date.now, isNewWorkAllowed: () => !control.paused, voice:providers, service: { ...base,
+    execute: async original => { executeCalls++;executedOriginals.push(original.command.commandId);const result=await base.execute(original);
+      if(result.ok&&!firstCommittedReceipt)firstCommittedReceipt=result.receipt;return result; },
+    getReceiptForCommand: original => {receiptLookupCalls++;lookedUpOriginals.push(original.command.commandId);return base.getReceiptForCommand(original);} } });
+  const observedCalls=()=>({transportSendCalls,providerCommitCalls:voice.commits,interpretationCalls:voice.modelCalls.length,executorCalls:executeCalls,receiptLookupCalls});
   const state = { actor: { actorId: 'alice', sessionId: 'synthetic-browser-session' }, failRefresh: false, dropFinish: false, holdAction: null, release: null, requests: [], uploaded:[], responses:[] };
   receipt.httpResponses=state.responses;
   receipt.focusObservations=[];
@@ -184,10 +190,28 @@ try {
   const selection=page.getByRole('checkbox',{name:'Select Synthetic target',exact:true});
   // Existing Hybrid selection setup is outside this Ping-control keyboard packet.
   await selection.check();
+  const firstBefore=observedCalls(),firstExecuteIndex=executedOriginals.length,firstLookupIndex=lookedUpOriginals.length;
+  await page.evaluate(()=>{
+    window.pingFirstLocalTiming={finishEventMs:null,confirmedMountedReadbackMs:null};
+    const record=event=>{
+      if(!event.isTrusted||!event.target.closest?.('[data-testid="ping-voice-finish"]'))return;
+      window.pingFirstLocalTiming.finishEventMs=Math.floor(performance.now());document.removeEventListener('click',record,true);
+    };
+    document.addEventListener('click',record,true);
+  });
   await tabTo(page.getByTestId('ping-voice-start'),'voice Start');await page.keyboard.press('Enter');
   await page.getByTestId('ping-voice-phase').filter({hasText:'listening'}).waitFor();await page.waitForTimeout(333);
   assert.ok(state.uploaded.length>0);assert.equal(executeCalls,0);assert.equal(await countReceipts(),0);assert.equal(voice.modelCalls.length,0);
   await tabTo(page.getByTestId('ping-voice-finish'),'voice Finish');await page.waitForTimeout(73);await page.keyboard.press('Space');await waitSaved();
+  const firstTimingHandle=await page.waitForFunction(()=>{
+    const task=window.pingObserved.find(row=>row.id==='target'),timing=window.pingFirstLocalTiming;
+    if(!task||task.lane!=='doing'||JSON.stringify(task.assignees)!=='["bob","alice"]'||
+      document.querySelector('[data-testid=ping-voice-status]')?.textContent!=='The saved result is confirmed in the current Tasks view.'||
+      document.querySelector('[data-testid=ping-voice-start]')?.disabled!==false||document.querySelector('[data-testid=ping-voice-refresh-current]'))return false;
+    if(timing.confirmedMountedReadbackMs===null)timing.confirmedMountedReadbackMs=Math.floor(performance.now());
+    return timing;
+  });
+  const firstTiming=await firstTimingHandle.jsonValue();await firstTimingHandle.dispose();
   await focusObservation('after voice Finish confirmation');
   assert.equal(executeCalls,1);assert.equal(await countReceipts(),1);assert.equal(voice.commits,1);assert.equal(voice.modelCalls.length,1);
   assert.deepEqual(JSON.parse((await targetRow()).assignees),['bob','alice']);
@@ -199,6 +223,27 @@ try {
   assert.equal(native.frames.reduce((sum,frame)=>sum+frame.samples,0),native.cuts[0].totalSamples);
   assert.equal(Buffer.concat(state.uploaded).length,native.cuts[0].totalSamples*2,'Independent actual native cut matches server upload coverage');
   assert.deepEqual(voice.modelCalls[0].keys,['referenceInstant','selectedTaskCount','systemColumnKeys','timeZone','transcript','version']);
+  const firstAfter=observedCalls(),callDeltas=Object.fromEntries(Object.keys(firstBefore).map(name=>[name,firstAfter[name]-firstBefore[name]]));
+  assert.equal(callDeltas.interpretationCalls,1);assert.equal(callDeltas.executorCalls,1);assert.equal(callDeltas.receiptLookupCalls,1);assert.equal(callDeltas.providerCommitCalls,1);
+  assert.equal(callDeltas.transportSendCalls,voice.append.length+1);
+  const originalIds=executedOriginals.slice(firstExecuteIndex),lookupIds=lookedUpOriginals.slice(firstLookupIndex);
+  assert.equal(originalIds.length,1);assert.deepEqual(lookupIds,originalIds);
+  assert.equal(firstCommittedReceipt.commandId,originalIds[0]);assert.equal(firstCommittedReceipt.affectedCount,1);assert.equal(firstCommittedReceipt.changedCount,1);
+  assert.equal(Number((await targetRow()).start_day),2);assert.equal(Number((await targetRow()).duration_days),3);
+  assert.ok(Number.isSafeInteger(firstTiming.finishEventMs)&&Number.isSafeInteger(firstTiming.confirmedMountedReadbackMs));
+  assert.ok(firstTiming.confirmedMountedReadbackMs>=firstTiming.finishEventMs);
+  receipt.firstOriginalObservation={version:'ping.local-observation.v1',attemptLabel:'first_compound_original',sampleCount:1,
+    provider:'scripted_transcription_and_interpretation',knowledge:'committed',callDeltas,
+    counterProvenance:'Actual injected send/interpret/execute/getReceiptForCommand entry attempts; not HTTP summaries or database effect counts.',
+    oneExecutedOriginalAndMatchingLookups:true,effects:{affectedCount:firstCommittedReceipt.affectedCount,changedCount:firstCommittedReceipt.changedCount,literalSqlAndCanonicalOraclesPassed:true},
+    timing:{clock:'browser.performance.now',precisionMs:1,finishEventMs:firstTiming.finishEventMs,
+      finishEventProvenance:'Trusted keyboard-generated Finish click capture listener before React handler',
+      confirmedMountedReadbackMs:firstTiming.confirmedMountedReadbackMs,
+      readbackProvenance:'First satisfied browser polling predicate: canonical rows plus confirmed status, enabled Start and removed Refresh; not paint time',
+      finishToConfirmedMountedReadbackMs:firstTiming.confirmedMountedReadbackMs-firstTiming.finishEventMs,
+      speechEndMs:null,speechEndToConfirmedMountedReadbackMs:null},
+    billing:{amount:null,currency:null,realProviderUsage:null},evaluation:{outcome:'unavailable',reason:'Evaluator capture and receipt-read-window authority not supplied'},
+    limits:['One local diagnostic includes polling/automation/instrumentation overhead; no p50/p95, model quality, provider price or live speech latency claim.']};
   receipt.cases.push({name:'keyboard native Start/Finish exact bytes and partial tail reach one trusted final, one execution and canonical render',passed:true,bytes:Buffer.concat(voice.append).length});
   await page.screenshot({path:path.join(out,'voice-tasks-desktop.png'),fullPage:true});
 
