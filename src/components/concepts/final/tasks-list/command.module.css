@@ -1,0 +1,382 @@
+/* The command line at the foot of the sheet. It belongs to the sheet, so it
+   sits flush under the totals rather than floating over the data; only the
+   parsed sentence rises above it, and only while there is something to read. */
+
+.bar {
+  position: relative;
+  z-index: 20;
+  flex: none;
+  border-top: 1px solid var(--v3-border-strong);
+  background: var(--v3-surface);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 12px 0 18px;
+}
+
+.bar:focus-within .row {
+  box-shadow: inset 0 2px 0 var(--v3-accent);
+}
+
+.prompt {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--v3-fill);
+  color: var(--v3-text-2);
+  transition: background-color 140ms var(--v3-ease), color 140ms var(--v3-ease);
+}
+
+.bar:focus-within .prompt {
+  background: var(--v3-accent-soft);
+  color: var(--v3-accent-text);
+}
+
+.scope {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  height: 26px;
+  padding: 0 9px 0 4px;
+  border-radius: 999px;
+  background: var(--v3-accent-soft);
+  color: var(--v3-accent-text);
+  font-size: 12.5px;
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.scopeNum {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--v3-accent);
+  color: var(--v3-on-accent);
+  font-size: 11.5px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 14px;
+}
+
+.input::placeholder {
+  color: var(--v3-text-3);
+}
+
+.hints {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  color: var(--v3-text-3);
+  font-size: 12px;
+}
+
+.apply,
+.ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 120ms var(--v3-ease), transform 120ms var(--v3-ease);
+}
+
+.apply {
+  border: 0;
+  background: var(--v3-accent);
+  color: var(--v3-on-accent);
+}
+
+.apply:hover {
+  background: var(--v3-accent-hover);
+}
+
+.apply:active,
+.ghost:active {
+  transform: scale(0.98);
+}
+
+.apply:disabled {
+  background: var(--v3-fill);
+  color: var(--v3-text-3);
+  cursor: default;
+  transform: none;
+}
+
+/* Deleting is the one command that earns red, and only on its own button. */
+.apply[data-danger]:not(:disabled) {
+  background: var(--v3-danger);
+  color: var(--v3-on-accent);
+}
+
+.ghost {
+  border: 1px solid var(--v3-border-strong);
+  background: var(--v3-surface);
+  color: var(--v3-text);
+}
+
+.ghost:hover {
+  background: var(--v3-hover);
+}
+
+/* ── The parsed sentence ───────────────────────────────────────────── */
+
+.panel {
+  position: absolute;
+  left: 12px;
+  bottom: calc(100% + 8px);
+  width: min(720px, calc(100% - 24px));
+  border: 1px solid var(--v3-border);
+  border-radius: 12px;
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-pop);
+  animation: tl-rise 160ms var(--v3-ease);
+}
+
+.parsed {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 48px;
+  padding: 10px 14px;
+}
+
+.lead {
+  margin-right: 4px;
+  color: var(--v3-text-2);
+  font-size: 13px;
+}
+
+.muted {
+  color: var(--v3-text-3);
+  font-size: 12.5px;
+}
+
+.chip,
+.titleChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px 0 6px;
+  border-radius: 7px;
+  background: var(--v3-fill);
+  box-shadow: inset 0 0 0 1px var(--v3-border);
+  color: var(--v3-text);
+  font-size: 13px;
+  white-space: nowrap;
+  animation: tl-token 220ms var(--v3-ease) both;
+}
+
+.titleChip {
+  max-width: 320px;
+  padding: 0 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+}
+
+.chipIcon {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  color: var(--v3-text-2);
+}
+
+.chipLabel {
+  color: var(--v3-text-2);
+}
+
+.chipValue {
+  font-weight: 600;
+}
+
+.chip[data-danger] {
+  background: var(--v3-danger-soft);
+  box-shadow: none;
+  color: var(--v3-danger-text);
+}
+
+.chip[data-danger] .chipLabel,
+.chip[data-danger] .chipIcon {
+  color: var(--v3-danger-text);
+}
+
+.tile {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.tile[data-empty] {
+  box-shadow: inset 0 0 0 1.5px var(--v3-border-strong);
+}
+
+.unknown {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0 14px 10px;
+  color: var(--v3-text);
+  font-size: 13px;
+}
+
+.unknownMark {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--v3-fill);
+  box-shadow: inset 0 0 0 1px var(--v3-border-strong);
+  color: var(--v3-text-2);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.unknownKey {
+  margin-left: 6px;
+  color: var(--v3-text-3);
+  font-size: 12px;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 38px;
+  padding: 0 8px 0 14px;
+  border-top: 1px solid var(--v3-border);
+  font-size: 12.5px;
+}
+
+.count {
+  color: var(--v3-text);
+  font-weight: 550;
+  font-variant-numeric: tabular-nums;
+}
+
+.count[data-tone="danger"] {
+  color: var(--v3-danger-text);
+}
+
+.foot .textBtn {
+  margin-left: auto;
+}
+
+.textBtn {
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--v3-accent-text);
+  font: inherit;
+  font-weight: 550;
+  cursor: pointer;
+}
+
+.textBtn:hover {
+  background: var(--v3-accent-soft);
+}
+
+@keyframes tl-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes tl-token {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.96);
+  }
+}
+
+/* ── Phone ─────────────────────────────────────────────────────────── */
+
+.bar[data-phone] .row {
+  height: 56px;
+  padding: 0 8px 0 12px;
+  gap: 8px;
+}
+
+.bar[data-phone] .input {
+  font-size: 16px; /* 16px keeps iOS from zooming in on focus */
+}
+
+.bar[data-phone] .scopeText {
+  display: none;
+}
+
+.bar[data-phone] .scope {
+  padding: 0 3px;
+}
+
+.bar[data-phone] .apply,
+.bar[data-phone] .ghost {
+  height: 40px;
+}
+
+.bar[data-phone] .panel {
+  left: 8px;
+  right: 8px;
+  width: auto;
+}
+
+.bar[data-phone] .parsed {
+  padding: 10px 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .chip,
+  .titleChip {
+    animation: none;
+  }
+}
+
+@media (max-width: 720px) and (max-height: 560px) {
+  .bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 6;
+  }
+}
+
+.hintSep {
+  color: var(--v3-text-3);
+  opacity: 0.7;
+}

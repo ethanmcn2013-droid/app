@@ -1,0 +1,911 @@
+/* Health line, replay and stuck work, carried over from "Flow and friction"
+   (board concept 4) and fitted to Studio columns. */
+
+.flowBand,
+.phonePin {
+  --pad: 24px;
+  --col-bg: var(--v3-sunken);
+}
+
+@media (max-width: 720px) {
+  .flowBand,
+  .phonePin {
+    --pad: 16px;
+  }
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.stuckChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 6px 0 10px;
+  border: 1px solid var(--v3-control-border);
+  border-radius: 999px;
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: background 0.15s var(--v3-ease);
+}
+
+.stuckChip:hover:not(:disabled) {
+  background: var(--v3-hover);
+}
+
+.stuckChip:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.stuckChip svg {
+  color: var(--v3-warning-stroke);
+}
+
+.stuckChip[aria-pressed="true"] {
+  background: var(--v3-solid);
+  border-color: var(--v3-solid);
+  color: var(--v3-on-solid);
+}
+
+.stuckChip[aria-pressed="true"] svg {
+  color: currentColor;
+}
+
+.chipCount {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--v3-fill);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stuckChip[aria-pressed="true"] .chipCount {
+  background: color-mix(in srgb, var(--v3-on-solid) 18%, transparent);
+}
+
+.ghostButton,
+.linkButton {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ghostButton {
+  height: 32px;
+  padding: 0 10px;
+  border-radius: var(--v3-radius);
+  color: var(--v3-text-2);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.ghostButton:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.linkButton {
+  padding: 4px 2px;
+  color: var(--v3-accent-text);
+  font-size: 13px;
+  font-weight: 550;
+  text-underline-offset: 3px;
+}
+
+.linkButton:hover {
+  text-decoration: underline;
+}
+
+.phonePin {
+  display: none;
+}
+
+.flowBand {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  padding: 14px var(--pad) 12px;
+  background: color-mix(in srgb, var(--v3-canvas) 92%, transparent);
+  backdrop-filter: saturate(1.4) blur(10px);
+  border-bottom: 1px solid var(--v3-border);
+}
+
+.health {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--v3-text-2);
+}
+
+.health svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+.health strong {
+  color: var(--v3-text);
+  font-weight: 600;
+}
+
+.health[data-kind="pooled"] svg {
+  color: var(--v3-warning-stroke);
+}
+
+.health[data-kind="healthy"] svg {
+  color: var(--v3-text-3);
+}
+
+.health[data-kind="new"] svg {
+  color: var(--v3-accent);
+}
+
+.machine {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.playButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  height: 30px;
+  padding: 0 12px 0 10px;
+  border: 1px solid var(--v3-border-strong);
+  border-radius: 999px;
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.playButton:hover:not(:disabled) {
+  background: var(--v3-hover);
+}
+
+.playButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.track {
+  --thumb: 16px;
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.range {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 18px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.range:disabled {
+  cursor: default;
+}
+
+.range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--v3-accent) var(--pct), var(--v3-border-strong) var(--pct));
+}
+
+.range::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--v3-border-strong);
+}
+
+.range::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--v3-accent);
+}
+
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: var(--thumb);
+  height: var(--thumb);
+  margin-top: -6px;
+  border-radius: 50%;
+  background: var(--v3-surface);
+  border: 2px solid var(--v3-accent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  transition: transform 0.15s var(--v3-ease);
+}
+
+.range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--v3-surface);
+  border: 2px solid var(--v3-accent);
+}
+
+.range:active::-webkit-slider-thumb {
+  transform: scale(1.18);
+}
+
+.range:disabled::-webkit-slider-runnable-track {
+  background: var(--v3-border);
+}
+
+.range:disabled::-webkit-slider-thumb {
+  border-color: var(--v3-control-border);
+}
+
+.ticks {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 calc(var(--thumb) / 2 - 12px);
+}
+
+.tick {
+  width: 24px;
+  flex: 0 1 24px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--v3-text-3);
+  font: inherit;
+  font-size: 10.5px;
+  line-height: 1.25;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+
+.tick:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.tickDay {
+  white-space: nowrap;
+}
+
+.tickDate {
+  font-weight: 500;
+}
+
+.tick[data-weekend] {
+  opacity: 0.75;
+}
+
+.tick[data-current] {
+  color: var(--v3-accent-text);
+  opacity: 1;
+  font-weight: 650;
+}
+
+.tick[data-current] .tickDate {
+  font-weight: 650;
+}
+
+.machineStatus {
+  flex: none;
+  width: 236px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  font-size: 12.5px;
+}
+
+.machineHint {
+  color: var(--v3-text-3);
+}
+
+.machineWhen {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--v3-accent-soft);
+  color: var(--v3-accent-text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.colMeta {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 8px;
+  row-gap: 2px;
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: var(--v3-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.colWarn {
+  flex-basis: 100%;
+  color: var(--v3-warning-text);
+  font-weight: 550;
+}
+
+.colSoft {
+  color: var(--v3-text-3);
+}
+
+/* "13 came in · 12 moved on · 2 stuck": one dot between parts. */
+.colMeta > span + span::before {
+  content: "·";
+  margin-right: 8px;
+  color: var(--v3-text-3);
+  font-weight: 400;
+}
+
+/* Stuck is amber, the one coloured part of the line. */
+.colStuck {
+  color: var(--v3-warning-text);
+  font-weight: 550;
+}
+
+.colSoft::before {
+  content: "·";
+  margin-right: 8px;
+  color: var(--v3-text-3);
+  font-weight: 400;
+}
+
+.spark {
+  flex: none;
+  overflow: visible;
+}
+
+.sparkLine {
+  fill: none;
+  stroke: var(--v3-text-3);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.sparkArea {
+  fill: color-mix(in srgb, var(--v3-text-3) 12%, transparent);
+}
+
+.sparkDot {
+  fill: var(--v3-accent);
+  stroke: var(--col-bg);
+  stroke-width: 1.5;
+}
+
+.health[data-kind="none"] svg {
+  color: var(--v3-text-3);
+}
+
+.ring {
+  flex: none;
+  display: block;
+}
+
+.ringTrack {
+  fill: none;
+  stroke: var(--v3-border-strong);
+}
+
+.ringFill {
+  fill: none;
+  stroke: var(--v3-text-2);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s var(--v3-ease), stroke 0.3s var(--v3-ease);
+}
+
+.ring[data-level="due"] .ringFill {
+  stroke: var(--v3-warning-stroke);
+}
+
+.ring[data-level="over"] .ringFill {
+  stroke: var(--v3-danger);
+}
+
+.ringCore {
+  fill: var(--v3-danger);
+}
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--v3-scrim);
+}
+
+.iconButton {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border: 0;
+  border-radius: var(--v3-radius);
+  background: transparent;
+  color: var(--v3-text-2);
+  cursor: pointer;
+}
+
+.iconButton:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.triage {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  bottom: 8px;
+  z-index: 61;
+  width: min(460px, calc(100vw - 16px));
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--v3-radius-xl);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-pop);
+  overflow: hidden;
+}
+
+.grabber {
+  display: none;
+}
+
+.triageHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 14px 12px 20px;
+  border-bottom: 1px solid var(--v3-border);
+}
+
+.triageTitle {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.triageSub {
+  margin: 3px 0 0;
+  font-size: 13px;
+  color: var(--v3-text-2);
+}
+
+.triageList {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  margin: 0;
+  padding: 6px 12px 16px;
+  list-style: none;
+}
+
+.triageItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--v3-border);
+}
+
+.triageMain {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--v3-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.triageText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.triageName {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.triageMeta {
+  font-size: 12.5px;
+  color: var(--v3-text-3);
+}
+
+.triageActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-left: 38px;
+}
+
+.chipButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--v3-border-strong);
+  border-radius: 999px;
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 550;
+  cursor: pointer;
+}
+
+.chipButton:hover:not(:disabled) {
+  background: var(--v3-hover);
+}
+
+.chipButton:disabled {
+  color: var(--v3-text-3);
+  cursor: default;
+}
+
+@media (max-width: 1180px) {
+  .machineStatus {
+    width: auto;
+  }
+
+}
+
+@media (max-width: 720px) {
+  .stuckChip,
+  .ghostButton {
+    display: none;
+  }
+
+  .phonePin {
+    position: sticky;
+    top: 0;
+    z-index: 14;
+    display: flex;
+    padding: 8px var(--pad) 0;
+    pointer-events: none;
+  }
+
+  .stuckPill {
+    pointer-events: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 36px;
+    padding: 0 14px 0 12px;
+    border: 1.5px solid var(--v3-warning-stroke);
+    border-radius: 999px;
+    background: var(--v3-surface);
+    color: var(--v3-text);
+    font: inherit;
+    font-size: 13.5px;
+    font-weight: 650;
+    box-shadow: var(--v3-shadow-pop);
+    cursor: pointer;
+  }
+
+  .stuckPill svg {
+    color: var(--v3-warning-stroke);
+  }
+
+  .pillHint {
+    font-weight: 500;
+    color: var(--v3-text-3);
+  }
+
+  .flowBand {
+    position: static;
+    padding: 10px var(--pad) 10px;
+    backdrop-filter: none;
+    background: var(--v3-canvas);
+  }
+
+  .health {
+    font-size: 12.5px;
+  }
+
+  .machine {
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    margin-top: 10px;
+  }
+
+  .track {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .tick:not([data-current]) .tickDay {
+    visibility: hidden;
+  }
+
+  .tick {
+    font-size: 10px;
+    width: 18px;
+  }
+
+  .ticks {
+    padding: 0 calc(var(--thumb) / 2 - 9px);
+  }
+
+  .machineStatus {
+    width: auto;
+    flex: 1;
+    justify-content: flex-end;
+  }
+
+  .playButton {
+    height: 32px;
+  }
+
+  .triage {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-height: 88dvh;
+    border-radius: var(--v3-radius-xl) var(--v3-radius-xl) 0 0;
+  }
+
+  .grabber {
+    display: block;
+    width: 36px;
+    height: 4px;
+    margin: 8px auto 0;
+    border-radius: 999px;
+    background: var(--v3-border-strong);
+  }
+
+  .triageHead {
+    padding-top: 10px;
+  }
+
+  .triageActions {
+    padding-left: 0;
+  }
+
+  .chipButton {
+    height: 36px;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ringFill {
+    transition: none;
+  }
+
+}
+
+/* â”€â”€ Fitted to Studio columns â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+.flowBand {
+  flex: none;
+  position: relative;
+  top: auto;
+  z-index: 3;
+  padding: 10px var(--pad) 12px;
+  background: color-mix(in srgb, var(--v3-accent) 4%, var(--v3-canvas));
+  backdrop-filter: none;
+  border-top: 1px solid var(--v3-border);
+  border-bottom: 1px solid color-mix(in srgb, var(--v3-accent) 22%, var(--v3-border));
+}
+
+.machine {
+  margin-top: 0;
+}
+
+.health {
+  align-items: center;
+  margin: 8px 0 0;
+  line-height: 1.5;
+}
+
+.health svg {
+  margin-top: 0;
+}
+
+.health[data-kind="stuck"] svg,
+.health[data-kind="pooled"] svg {
+  color: var(--v3-warning-stroke);
+}
+
+.inlineAction,
+.inlineQuiet {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  text-underline-offset: 3px;
+}
+
+.inlineAction {
+  margin-left: 2px;
+  color: var(--v3-accent-text);
+  font-weight: 600;
+}
+
+.inlineQuiet {
+  color: var(--v3-text-2);
+  font-weight: 500;
+}
+
+.inlineAction:hover,
+.inlineQuiet:hover {
+  text-decoration: underline;
+}
+
+.inlineSep {
+  margin: 0 6px;
+  color: var(--v3-text-3);
+}
+
+.inlineDone {
+  margin-left: 2px;
+  color: var(--v3-text-2);
+  font-weight: 600;
+}
+
+.tick {
+  color: var(--v3-text-2);
+  font-size: 11.5px;
+}
+
+.tick[data-weekend] {
+  opacity: 0.7;
+}
+
+.machineStatus {
+  width: 340px;
+  gap: 12px;
+}
+
+.machineCaption {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  margin: 0;
+}
+
+.machineText {
+  max-width: 100%;
+  color: var(--v3-text-2);
+  font-size: 12.5px;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Keyboard focus sits on the handle, not around the whole track. */
+.range:focus-visible {
+  outline: none;
+}
+
+.range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px var(--v3-accent-soft);
+}
+
+.range:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 4px var(--v3-accent-soft);
+}
+
+.flowBand :focus-visible:not(.range) {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1180px) {
+  .machineStatus {
+    width: 240px;
+  }
+
+  /* Three weeks of ticks in a narrower track: weekday letters only on Mondays and today. */
+  .tick:not([data-anchor]):not([data-current]) .tickDay {
+    visibility: hidden;
+  }
+}
+
+@media (max-width: 720px) {
+  .machine {
+    flex-wrap: wrap;
+  }
+
+  /* On a phone, only Mondays, today and the chosen day keep a label; the rest are dots on the track. */
+  .tick:not([data-anchor]):not([data-current]) .tickDate {
+    visibility: hidden;
+  }
+
+  .machineStatus {
+    order: 3;
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+.replayPill {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .phonePin {
+    gap: 8px;
+  }
+
+  .replayPill {
+    pointer-events: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    padding: 0 14px 0 12px;
+    border: 1px solid var(--v3-border-strong);
+    border-radius: 999px;
+    background: var(--v3-surface);
+    color: var(--v3-text);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .replayPill[aria-pressed="true"] {
+    background: var(--v3-solid);
+    border-color: var(--v3-solid);
+    color: var(--v3-on-solid);
+  }
+}
+
+.colMeta[hidden] {
+  display: none;
+}

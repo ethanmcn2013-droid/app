@@ -3,6 +3,7 @@ import type { ConceptMeta } from "../../types";
 export const meta: ConceptMeta = {
   view: "projects",
   n: 2,
-  title: "Concept 2",
-  thesis: "In progress.",
+  title: "Project ledger",
+  thesis:
+    "For people running many projects, the fastest way to compare and act is a keyboard-first ledger where every column is live, every row is editable in place, and any two projects can be set side by side.",
 };
