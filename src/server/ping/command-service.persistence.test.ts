@@ -119,8 +119,8 @@ test("every durable seam and sixth insert failure rolls back actual sponsored in
   }
 });
 
-test("stale readset, missing/foreign selection and config drift reject the entire batch before writes", async () => {
-  for (const mode of ["assignees","due","duration","lane","config","missing","foreign"] as const) {
+test("stale readset, archived/missing/foreign selection and config drift reject the entire batch before writes", async () => {
+  for (const mode of ["assignees","due","duration","lane","config","missing","foreign","archive"] as const) {
     const f = await createPingProofFixture();
     try {
       await seedProofTask(f.client,"task-a"); await seedProofTask(f.client,"task-b");
@@ -129,8 +129,14 @@ test("stale readset, missing/foreign selection and config drift reject the entir
       if (mode === "config") await f.client.execute({sql:"INSERT INTO meta(key,value) VALUES(?,?)",args:[`board:${PROOF_PROJECT}:columns`,'{"doneKeys":["review"]}']});
       else if (mode === "missing") await f.client.execute("DELETE FROM tasks WHERE id='task-b'");
       else if (mode === "foreign") await f.client.execute("UPDATE tasks SET workspace_id='synthetic-foreign-project' WHERE id='task-b'");
+      else if (mode === "archive") await f.client.execute("UPDATE tasks SET archived_at=1791277200 WHERE id='task-b'");
       else await f.client.execute(`UPDATE tasks SET ${mode === "assignees" ? "assignees='[]'" : mode === "due" ? "due='2026-12-01'" : mode === "duration" ? "duration_days=2" : "lane='doing'"} WHERE id='task-b'`);
+      // The external edit is permitted to stand; the captured command may not
+      // overwrite it or apply a prefix to the still-valid first selected task.
+      const afterExternalEdit=(await f.client.execute("SELECT * FROM tasks ORDER BY id")).rows;
+      if (mode === "archive") assert.equal(afterExternalEdit.find(row=>row.id==="task-b")?.archived_at,1791277200);
       assert.deepEqual(await createPingCommandService(f.adapter,options).execute({ command,context }),{ok:false,reason:"conflict"});
+      assert.deepEqual((await f.client.execute("SELECT * FROM tasks ORDER BY id")).rows,afterExternalEdit);
       const first=(await f.client.execute("SELECT assignees,lane,due FROM tasks WHERE id='task-a'")).rows[0];
       assert.deepEqual({...first},{assignees:'["bob"]',lane:"todo",due:null});
       assert.equal(await proofCount(f.client,"activities"),0); assert.equal(await proofCount(f.client,"ping_command_receipts"),0);
