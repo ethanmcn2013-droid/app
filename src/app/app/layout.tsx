@@ -127,7 +127,7 @@ export default function AppLayout({
               chrome-free routes, exactly as the old gate did. */}
           <AppShell
             sidebar={
-              <Suspense fallback={<AppSidebar messagesEnabled={false} />}>
+              <Suspense fallback={<AppSidebar messagesEnabled={false} chatPending />}>
                 <ConversationShellSidebar />
               </Suspense>
             }

@@ -22,6 +22,7 @@ import { useRouter } from "next/navigation";
 import { useActiveProject, type ActiveProjectContextValue } from "@/components/app/active-project-provider";
 import { projectColor } from "@/components/shell/app-sidebar";
 import { ShellIcon } from "@/components/shell/shell-icons";
+import { CREATE_PROJECT_READY_ATTRIBUTE, focusShellCreate, SHELL_CREATE_PROJECT_EVENT } from "@/lib/shell-create";
 import { MonthlyTemplateChoice } from "@/components/studio-bar/monthly-template-choice";
 import { isDemoMode } from "@/lib/access-mode";
 import { useToast } from "@/components/primitives/toast";
@@ -153,7 +154,6 @@ export function ProjectsIndex({
   // Bumped on every "New project" press so an open form takes focus again.
   const [createRequest, setCreateRequest] = useState(0);
   const [nudgeState, setNudgeState] = useState<Record<string, ConsoleNudgeState>>({});
-  const newButtonRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   // Mount-stable "today" for when the server could not say; the React
   // Compiler forbids impure calls in render.
@@ -165,9 +165,34 @@ export function ProjectsIndex({
   const closeCreating = (restoreFocus: boolean) => {
     setCreating(false);
     // Escape or Cancel hands focus back to the entry point that is always on
-    // screen, never to the top of the document.
-    if (restoreFocus) newButtonRef.current?.focus({ preventScroll: true });
+    // screen, the top bar's New project, never to the top of the document.
+    if (restoreFocus) focusShellCreate();
   };
+  // One create button per screen (founder, 6 Oct 2026): the top bar's New
+  // project opens this page's form, here or on arrival with ?create=project.
+  const canCreate = hub.kind === "ready";
+  useEffect(() => {
+    if (!canCreate) return;
+    const open = () => {
+      setCreating(true);
+      setCreateRequest((n) => n + 1);
+    };
+    window.addEventListener(SHELL_CREATE_PROJECT_EVENT, open);
+    const root = document.documentElement;
+    root.setAttribute(CREATE_PROJECT_READY_ATTRIBUTE, "");
+    const url = new URL(window.location.href);
+    let timer = 0;
+    if (url.searchParams.get("create") === "project") {
+      url.searchParams.delete("create");
+      window.history.replaceState(window.history.state, "", url.toString());
+      timer = window.setTimeout(open, 0);
+    }
+    return () => {
+      window.clearTimeout(timer);
+      root.removeAttribute(CREATE_PROJECT_READY_ATTRIBUTE);
+      window.removeEventListener(SHELL_CREATE_PROJECT_EVENT, open);
+    };
+  }, [canCreate]);
   const setView = (next: ConsoleView) => {
     setViewNow(next);
     writeViewToAddress(next);
@@ -304,10 +329,6 @@ export function ProjectsIndex({
                 spellCheck={false}
               />
             </label>
-            <button ref={newButtonRef} type="button" className={`${styles.buttonPrimary} ${styles.newButton}`} onClick={startCreating}>
-              <ShellIcon.plus size={14} />
-              New project
-            </button>
           </div>
         ) : null}
       </header>

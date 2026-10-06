@@ -13,7 +13,6 @@ import {
 } from "@/lib/automations/draft-store";
 import {
   STEP_W,
-  blankAutomation,
   boundsOf,
   copyAutomation,
   describeEdited,
@@ -33,7 +32,8 @@ import styles from "./automations.module.css";
 /**
  * /app/automations: the drafts kept in this browser, and four ready-made
  * ones to start from. A preview: nothing here runs, and the page says so
- * once. One create button, top right; a starter is opened by choosing it.
+ * once. One create button: the top bar's New automation. A starter is opened
+ * by choosing it.
  */
 
 // Laid out once. Positions are worked out from the starter, so the server
@@ -95,10 +95,6 @@ export function AutomationsList() {
               Draw what should happen by itself: when a task is late, when a date is near, when someone joins.
             </p>
           </div>
-          <button type="button" className={styles.primary} onClick={() => open(blankAutomation())}>
-            <AutoIcon name="plus" />
-            New automation
-          </button>
         </header>
 
         <p className={styles.notice} role="note">

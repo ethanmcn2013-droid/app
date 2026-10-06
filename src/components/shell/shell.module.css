@@ -676,8 +676,7 @@
 .shell[data-collapsed] .footerTools { flex-direction: column; }
 .shell[data-collapsed] .item[data-current-project] { box-shadow: inset 2px 0 0 var(--v3-accent); }
 
-.section[aria-label="Channels"] .item:not([data-unread]):not([aria-current="page"]),
-.section[aria-label="Direct messages"] .item:not([data-unread]):not([aria-current="page"]):not(.chatAdd) { color: color-mix(in srgb, var(--v3-text) 62%, transparent); }
+.item[data-chat-row]:not([data-unread]):not([aria-current="page"]) { color: color-mix(in srgb, var(--v3-text) 62%, transparent); }
 
 /* No keyboard, no shortcut hint. */
 @media (hover: none) and (pointer: coarse) { .searchTrigger .kbd { display: none; } }
@@ -794,62 +793,7 @@
 .item:hover svg [data-bar] { fill-opacity: 0.9; }
 .item[aria-current="page"] svg [data-bar] { fill: var(--v3-accent); fill-opacity: 1; }
 
-/* ── Initial setup (2 Oct 2026) ──────────────────────────────────────
-   The earlier navigation, kept whole under one group to review. The header
-   is a row like any other so it reads as part of the list; a hairline sets
-   it apart from the eight places above. Folding swaps the body in and out
-   with no height animation, as the Projects and Chat sections do, so
-   nothing shifts except the rows below it. */
-
 .item:active { background: color-mix(in srgb, var(--v3-text) 12%, transparent); }
-
-.setup {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid color-mix(in srgb, var(--v3-text) 8%, transparent);
-}
-.setupToggle {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  height: 30px;
-  padding: 0 8px;
-  border: 0;
-  border-radius: 7px;
-  background: transparent;
-  color: color-mix(in srgb, var(--v3-text) 62%, transparent);
-  font: inherit;
-  font-size: 13.5px;
-  font-weight: 500;
-  letter-spacing: -0.003em;
-  text-align: left;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
-}
-.setupToggle svg { flex: none; color: color-mix(in srgb, var(--v3-text) 48%, transparent); transition: color 120ms var(--v3-ease); }
-.setupToggle:hover { background: var(--v3-hover); color: var(--v3-text); }
-.setupToggle:hover svg { color: color-mix(in srgb, var(--v3-text) 80%, transparent); }
-.setupToggle:active { background: color-mix(in srgb, var(--v3-text) 12%, transparent); }
-.setupToggle:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: -2px; }
-.setup[data-open] .setupToggle { color: var(--v3-text); }
-.setupToggle .setupChevron { transform: rotate(-90deg); transition: transform 160ms var(--v3-ease), color 120ms var(--v3-ease); }
-.setup[data-open] .setupChevron { transform: none; }
-
-/* Nested rows sit one step in, on a guide that drops from the group's icon. */
-.setupBody {
-  display: flex;
-  flex-direction: column;
-  margin: 3px 0 0 15px;
-  padding-left: 7px;
-  border-left: 1px solid color-mix(in srgb, var(--v3-text) 10%, transparent);
-}
-.setupBody .section + .section { margin-top: 12px; }
-
 /* Whiteboard is on its way: a quiet tag, never a second highlight. */
 .soonTag {
   flex: none;
@@ -867,11 +811,7 @@
 }
 
 .shell[data-collapsed] .soonTag { display: none; }
-.shell[data-collapsed] .setup { margin-top: 10px; padding-top: 10px; }
 
-@media (prefers-reduced-motion: reduce) {
-  .setupToggle, .setupToggle svg, .setupToggle .setupChevron { transition: none; }
-}
 
 /* ── Review fixes (5 Oct 2026) ───────────────────────────────────────
    Founder review of the first production day. */
@@ -919,3 +859,123 @@
   .topSearch { width: 36px; padding: 0; justify-content: center; }
   .topSearch span, .topSearch .kbd { display: none; }
 }
+
+/* ── Groups (6 Oct 2026) ─────────────────────────────────────────────
+   Founder: the sidebar should breathe. Home stands alone, then four named
+   groups (Workspace, Projects, Build, Chat) with a clear gap and a small
+   quiet name above each. Projects and Chat fold from their names. On the
+   rail the names go and a hairline does their job. */
+.sidebar {
+  /* The status dots read on the ink in both themes. */
+  --v3-danger: #f0646a;
+  --v3-warning: #e8b64c;
+}
+.section + .section { margin-top: 20px; }
+.section[data-folded] + .section { margin-top: 12px; }
+.groupBody { display: flex; flex-direction: column; gap: 1px; }
+.labelText {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 6px 0 8px;
+  /* 56%: AA (5.4:1) on the sidebar's ink at this small size. */
+  color: color-mix(in srgb, var(--v3-text) 56%, transparent);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: default;
+}
+/* Project rows: a colour tile for the Project, its name, and a dot only
+   when the Project is late or at risk. */
+.statusDot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  margin-right: 3px;
+  border-radius: 999px;
+}
+.statusDot[data-tone="late"] { background: var(--v3-danger); box-shadow: 0 0 0 3px color-mix(in srgb, var(--v3-danger) 18%, transparent); }
+.statusDot[data-tone="risk"] { background: var(--v3-warning); box-shadow: 0 0 0 3px color-mix(in srgb, var(--v3-warning) 16%, transparent); }
+/* The open Project: full-strength name and a ring on its tile, so there is
+   never a second "you are here" fill. */
+.item[data-current-project] .projectSquare {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16), 0 0 0 2px var(--v3-chrome), 0 0 0 3.5px color-mix(in srgb, var(--v3-text) 62%, transparent);
+}
+.item[data-blocked] { opacity: 0.5; cursor: not-allowed; }
+.item[data-blocked]:hover { background: transparent; color: color-mix(in srgb, var(--v3-text) 78%, transparent); }
+.quietRow { color: color-mix(in srgb, var(--v3-text) 58%, transparent); }
+.groupEmpty {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 30px;
+  padding: 6px 8px;
+  font-size: 12.5px;
+  color: color-mix(in srgb, var(--v3-text) 56%, transparent);
+}
+.groupEmpty a {
+  color: var(--v3-accent-text);
+  font-weight: 550;
+  text-decoration: none;
+  border-radius: 5px;
+}
+.groupEmpty a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.groupEmpty a:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: 2px; }
+/* Chat for a reader who does not have it yet: one row that says so and
+   goes nowhere. */
+.comingRow,
+.comingRow:hover {
+  background: transparent;
+  color: color-mix(in srgb, var(--v3-text) 56%, transparent);
+  cursor: default;
+}
+.comingRow svg,
+.comingRow:hover svg { color: color-mix(in srgb, var(--v3-text) 42%, transparent); }
+/* Automations is a preview: the same quiet tag as "Soon", in the accent. */
+.soonTag[data-tone="preview"] {
+  border-color: color-mix(in srgb, var(--v3-accent) 36%, transparent);
+  background: color-mix(in srgb, var(--v3-accent) 12%, transparent);
+  color: var(--v3-accent-text);
+}
+/* Rail: the dot rides the tile's corner; words and empty notes go. */
+.shell[data-collapsed] .groupEmpty,
+.shell[data-collapsed] .comingRow { display: none; }
+.shell[data-collapsed] .section + .section,
+.shell[data-collapsed] .section[data-folded] + .section { margin-top: 10px; }
+.shell[data-collapsed] .statusDot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  margin: 0;
+  box-shadow: 0 0 0 2px var(--v3-chrome);
+}
+.shell[data-collapsed] .item[data-current-project] { box-shadow: none; }
+/* The drawer is the full sidebar with a little more room for a thumb. */
+@media (max-width: 899px) {
+  .item { height: 36px; }
+  .section + .section { margin-top: 18px; }
+}
+
+/* ── One create button (6 Oct 2026) ──────────────────────────────────
+   Two halves of one control: the main half starts what this page is about,
+   the small half lists everything that can be started. */
+.newSplit { position: relative; display: inline-flex; align-items: stretch; flex: none; }
+.newSplit .newButton { border-radius: var(--v3-radius) 0 0 var(--v3-radius); padding-right: 10px; white-space: nowrap; }
+.newMore {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 30px;
+  border: 0;
+  border-left: 1px solid color-mix(in srgb, var(--v3-on-accent) 22%, transparent);
+  border-radius: 0 var(--v3-radius) var(--v3-radius) 0;
+  background: var(--v3-accent);
+  color: var(--v3-on-accent);
+  cursor: pointer;
+  transition: background-color 120ms var(--v3-ease);
+}
+.newMore:hover, .newMore[aria-expanded="true"] { background: var(--v3-accent-hover); }
+.newMore:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: 2px; }
+.newSplit .newButton:focus-visible { position: relative; z-index: 1; }
+@media (prefers-reduced-motion: reduce) { .newMore { transition: none; } }
