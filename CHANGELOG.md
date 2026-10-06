@@ -12,6 +12,14 @@ Until now a laptop or larger screen opened every task as the two-column page ove
 
 No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-record-panel`; no deployment or production change is claimed.
 
+## 2026-10-06 · Redesign candidate · A quick look at a project before you open it
+
+On the Projects page, clicking a project's name now shows it as a record in a side panel, without switching the app to it. Opening a project switches everything to it, so this is the way to look first. At the top are previous and next with where you are in the list ("3 of 10") and Open. Then comes the project's colour tile and name, with how it is doing underneath. Each field has its own row: status, who leads it, its target date, its next big date, open tasks, late tasks, and a bar for how many of its tasks are done. Below that are what it is for and what got finished in the last two weeks, one small bar a day. At the foot are ways into its tasks, its timeline and its files. Up and down (or j and k) step through the list, and Escape closes and puts you back on the row.
+
+The row's own Open button, Ctrl or Cmd and click, and the row menu still open the project straight away. The project that is already open still scrolls to its overview below. Who is in a project, its recent activity and its files are read only for the open project, so the panel does not show them for the others.
+
+No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-project-peek`; no deployment or production change is claimed.
+
 ## 2026-10-06 · Redesign candidate · The shared Timeline becomes a countdown
 
 The page a couple or a class shares with their guests now reads like the founder's pick of 28 September. It opens on how many days are left until the big day, with the date, how many moments are complete and Add to my calendar beside it. Below that, on wide screens, a strip shows every moment to scale with today marked. Then comes every moment in order, each with its own count of days, and the day itself to finish. It replaces the earlier rail.
