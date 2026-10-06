@@ -325,7 +325,10 @@ function Editor({ initial, kept, onLeave }: { initial: Automation; kept: boolean
       const point = { x: event.clientX - box.left, y: event.clientY - box.top };
       const unit = event.deltaMode === 1 ? 16 : 1;
       if (event.ctrlKey || event.metaKey) {
-        const factor = Math.exp(Math.max(-0.5, Math.min(0.5, -event.deltaY * unit * 0.01)));
+        // A pinch on a trackpad arrives as many small steps; a mouse wheel as
+        // a few large ones. Each is scaled so one notch is about a fifth.
+        const travel = event.deltaY * unit;
+        const factor = Math.exp(Math.max(-0.3, Math.min(0.3, -travel * (Math.abs(travel) < 40 ? 0.01 : 0.002))));
         setView((current) => zoomAt(current, point, current.k * factor));
       } else {
         setView((current) => ({ ...current, x: current.x - event.deltaX * unit, y: current.y - event.deltaY * unit }));

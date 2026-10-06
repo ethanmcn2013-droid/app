@@ -13,7 +13,11 @@
  */
 import { mkdirSync } from "node:fs";
 import path from "node:path";
+import { createRequire } from "node:module";
 import { chromium } from "@playwright/test";
+
+const require = createRequire(import.meta.url);
+const { AxeBuilder } = require("@axe-core/playwright");
 
 const args = process.argv.slice(2);
 const flag = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : null);
@@ -68,6 +72,11 @@ try {
       const shot = async (name, full = false) => {
         if (capture) await page.screenshot({ path: path.join(capture, `${name}-${tag}.png`), fullPage: full });
       };
+      // Only this surface is judged: the shell around it has its own checks.
+      const axe = async (label) => {
+        const result = await new AxeBuilder({ page }).include("#app-main-content").analyze();
+        check(result.violations.length === 0, `${tag}: axe, ${label} (${result.violations.map((v) => `${v.id}: ${v.nodes[0]?.target}`).join("; ")})`);
+      };
       const dismissNotice = async () => {
         const notice = page.getByRole("button", { name: /dismiss|got it|close notice/i }).first();
         if (await notice.isVisible().catch(() => false)) await notice.click().catch(() => {});
@@ -85,6 +94,7 @@ try {
       const sideways = () => page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
       check(!(await sideways()), `${tag}: list has no sideways scroll`);
       await shot("list-empty", true);
+      await axe("empty list");
 
       // ── Open a starter ─────────────────────────────────────────────
       await page.getByRole("button", { name: /Chase late tasks/ }).click();
@@ -104,6 +114,7 @@ try {
       });
       check(inView, `${tag}: fit shows every step`);
       await shot("canvas");
+      await axe("canvas");
 
       // Coming soon controls: present, not usable, explained on focus.
       for (const name of ["Live", "Share", "Publish"]) {
@@ -112,7 +123,7 @@ try {
         await control.focus();
         const tip = page.locator(`#${(await control.getAttribute("aria-describedby")).replace(/:/g, "\\:")}`);
         const shown = await tip.waitFor({ state: "visible", timeout: 2000 }).then(() => true, () => false);
-        check(shown && /Coming soon/.test(await tip.innerText()), `${tag}: ${name} says coming soon`);
+        check(shown && /Coming soon/.test(await tip.textContent()), `${tag}: ${name} says coming soon`);
       }
       await shot("coming-soon");
       await page.keyboard.press("Escape");
@@ -145,6 +156,7 @@ try {
       check((await run.getAttribute("aria-disabled")) === "true", `${tag}: run from here is not usable`);
       check((await page.getByRole("button", { name: /Add a step after/ }).count()) === 1, `${tag}: add-after handle`);
       await shot("selected");
+      await axe("selected step");
 
       await page.getByRole("button", { name: "Edit this step" }).click();
       const panel = page.getByRole("complementary", { name: /Edit this step|steps selected/ });
@@ -157,6 +169,7 @@ try {
       await panel.getByLabel("Name").fill("A task slips past its date");
       check(await first.getByText("A task slips past its date").isVisible(), `${tag}: renaming shows on the canvas`);
       await shot("panel");
+      await axe("edit panel");
       await page.keyboard.press("Escape");
       check(!(await panel.isVisible().catch(() => false)), `${tag}: Escape closes the panel`);
 
@@ -185,6 +198,7 @@ try {
         await page.keyboard.up("Control");
         check((await zoomButton.innerText()) !== label, `${tag}: Ctrl and wheel zooms`);
         await page.getByRole("button", { name: "Fit everything on screen" }).click();
+        await page.waitForTimeout(200);
 
         // A circle is refused, and says so.
         const last = steps.nth(2);
@@ -224,6 +238,7 @@ try {
       await picker.getByRole("combobox").fill("tag");
       check((await picker.getByRole("option").count()) === 1, `${tag}: picker search narrows`);
       await shot("picker");
+      await axe("picker");
       await page.keyboard.press("Enter");
       check((await steps.count()) === 7, `${tag}: picker adds a step`);
       check(/Added Add a tag/.test(await page.locator("[role='status']").last().innerText()), `${tag}: live region announces`);
@@ -250,6 +265,7 @@ try {
       check(await page.getByText("6 steps").first().isVisible(), `${tag}: the draft counts its steps`);
       check(!BANNED.test(await page.locator("main").innerText()), `${tag}: no banned words on the list`);
       await shot("list", true);
+      await axe("list with a draft");
 
       check(errors.length === 0, `${tag}: no console errors (${errors[0] ?? ""})`);
       await context.close();

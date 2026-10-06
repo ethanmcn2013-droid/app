@@ -1655,6 +1655,11 @@
   white-space: nowrap;
 }
 
+/* One ink step up on the lit row, so the small line stays AA there. */
+.pickerItem[aria-selected="true"] .pickerText span:last-child {
+  color: var(--v3-text-2);
+}
+
 .pickerEmpty {
   padding: 18px 12px 20px;
   font-size: 13px;
