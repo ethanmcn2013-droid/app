@@ -4,6 +4,14 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-10-06 · Redesign candidate · A denser Tasks list, and a header that stays put
+
+The Tasks list now fits more on a screen. With a mouse each row is 40 pixels, not 44; touch screens keep the larger rows. Every row shows its tick box, quietly, so it reads as a list you can pick from; hovering or ticking brings the box to full strength. Each group's count sits in a small pill beside its name. Labels are soft pills in their own colour. If you turn on the Subtasks column, it shows a thin bar with how many are done.
+
+The list and the calendar now use the full width of the window, as the board already does. Before, the page title and the Board, List and Calendar switch moved sideways when you changed view on a wide screen; now they stay in one place.
+
+No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-dense-list`; no deployment or production change is claimed.
+
 ## 2026-10-06 · Redesign candidate · A task opens as one record, beside your work
 
 Opening a task now shows a side panel at every width, with the list or board still in place behind it. The panel reads as one record. At the top are previous and next with where you are ("3 of 13"), then Edit, which puts you in the name, and Open, which lays the same task out as the two-column page. Then comes the task's name under its project's colour tile, with the project, the task number and when it last changed underneath. Each field has its own row, with its icon and name on the left. If the task has subtasks, a progress bar shows how many are done. Below that are Notes, Subtasks, Files and links, and Activity, each with a "See all" that opens the full page. On a phone the count stays in view and Mark done sits under the name.

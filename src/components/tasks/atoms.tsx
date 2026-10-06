@@ -172,23 +172,24 @@ export function DueChip({ time, compact = false }: { time: TimeFact; compact?: b
 
 /* A label with no colour of its own takes a steady identity hue from its
    name, the way projects do. */
-export function LabelChip({ label, highlight }: { label: LabLabel; highlight?: boolean }) {
+export function LabelChip({ label, highlight, tinted }: { label: LabLabel; highlight?: boolean; tinted?: boolean }) {
   const style = label.tone === "neutral" ? ({ "--dot": identityHue(label.id) } as CSSProperties) : undefined;
   return (
-    <span className={styles.label} data-tone={label.tone} data-highlight={highlight ? "" : undefined} style={style}>
+    <span className={styles.label} data-tone={label.tone} data-highlight={highlight ? "" : undefined} data-tinted={tinted ? "" : undefined} style={style}>
       <span className={styles.labelDot} aria-hidden="true" />
       <span className={styles.labelName}>{label.name}</span>
     </span>
   );
 }
 
-export function LabelChips({ labels, max = 2 }: { labels: LabLabel[]; max?: number }) {
+/** `tinted`: a filled pill in the label's own colour, for the dense list. */
+export function LabelChips({ labels, max = 2, tinted }: { labels: LabLabel[]; max?: number; tinted?: boolean }) {
   if (!labels.length) return null;
   const shown = labels.slice(0, max);
   const rest = labels.length - shown.length;
   return (
     <>
-      {shown.map((label) => <LabelChip key={label.id} label={label} />)}
+      {shown.map((label) => <LabelChip key={label.id} label={label} tinted={tinted} />)}
       {rest > 0 ? (
         <span className={styles.more} title={labels.slice(max).map((label) => label.name).join(", ")}>+{rest}</span>
       ) : null}
