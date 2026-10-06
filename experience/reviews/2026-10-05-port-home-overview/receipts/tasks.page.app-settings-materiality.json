@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-settings",
+  "source": "tasks/src/app/app/settings/page.tsx",
+  "materialityHash": "3fcba4d3b2bb4dcf",
+  "reviewedAt": "2026-10-06",
+  "reviewer": "Implementation review under delegated execution (Claude, single writer on design/app-v3-home-overview). Founder review of the rendered result is pending",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-0e2bc8442ee479567ad9023e-d649d63ef90be5f1.json",
+    "attestationSha256": "3c9c31601da492b73cc74f014ad85794d4074696342369066391024f48bcb0a6",
+    "runId": "tasks-playwright-0e2bc8442ee479567ad9023e",
+    "canonicalEvidenceSha256": "0e2bc8442ee479567ad9023ec64e7efc9be8515bbdc333b5bc86c23c11dffefe",
+    "rawArtifactSha256": "d649d63ef90be5f1061042d03e43dfe136dfded7e1bd13eb49b199e9825238cb",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-tasks",
+    "caseName": "canonical populated Tasks workspace",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "The Settings page reads the operator sample data view on the server only when the caller is an operator (callerIsAdmin, with the identity the page already holds) and passes it to the Settings shell, which loads and shows a Sample data section only when it is not null. The review-mode branch of the page is unchanged. The linked case is suite regression context from a full green run, 132 of 132, on a clean demo build of 475ee500; it does not open Settings. The section itself was checked separately: absent, with its chunk never requested, on a review-mode production build. Re-attached on 6 October 2026 to a full green run of the Home and Overview port merged with main, including the operator sample data (132 of 132): that port changes the critical fixture manifest (the Home and Overview assertions), and a receipt is bound to the manifest it was reviewed under. This source and its hash (3fcba4d3b2bb4dcf) are unchanged by the port; the earlier receipt stays in its own review folder as the record of the original review.",
+  "decision": "Keep the reviewed hash and attach this receipt to the current evidence contract. Other registry fields are unchanged."
+}
