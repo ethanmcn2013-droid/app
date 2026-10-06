@@ -1,6 +1,6 @@
 import { requireAppAccessTasks } from "@/server/app-access";
 import { resolveProjectForRoute } from "@/server/projects/route-authz";
-import { listProjectFiles } from "@/server/projects/project-files";
+import { loadProjectFiles } from "@/server/projects/project-files";
 import { ActiveProjectRouteSync } from "@/components/app/active-project-route-sync";
 import { FilesView, FilesUnavailable } from "@/components/app/files/files-view";
 import { isDemoMode } from "@/lib/access-mode";
@@ -12,6 +12,8 @@ export const metadata = { title: "Files · Signal Studio" };
  * /app/files: every file and link attached to a task in the active Project.
  * The Project comes from the same route boundary as Tasks, so a stale cookie
  * or a Project the reader cannot open is one quiet "unavailable" answer.
+ * `?archived=1` also lists files on archived tasks; they are left out
+ * otherwise, as on every board view.
  */
 export default async function FilesPage({ searchParams }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -26,9 +28,14 @@ export default async function FilesPage({ searchParams }: {
       <FilesUnavailable />
     </>;
   }
-  const files = await listProjectFiles(decision.workspaceId);
+  const read = await loadProjectFiles(decision.workspaceId, { includeArchived: params.archived === "1" });
   return <>
     <ActiveProjectRouteSync project={decision.project} requestedProjectId={requested} />
-    <FilesView projectName={decision.name} files={files} preview={isDemoMode()} />
+    <FilesView
+      projectName={decision.name}
+      read={read}
+      sample={isDemoMode()}
+      requestedProjectId={requested}
+    />
   </>;
 }

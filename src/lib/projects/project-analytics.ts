@@ -53,6 +53,8 @@ export type AnalyticsTask = Readonly<{
   createdAt: number | null;
   completedAt: number | null;
   dueAt: number | null;
+  /** The task's Project, by name, when the tasks span more than one. */
+  project?: string;
 }>;
 
 export type AnalyticsColumn = Readonly<{ key: string; name: string; isDone: boolean; tone: ColumnTone }>;
@@ -70,6 +72,11 @@ export type AnalyticsInput = Readonly<{
   truncated?: boolean;
   /** The column config could not be read, so the default Done applied. */
   columnsUnreadable?: boolean;
+  /**
+   * Recorded changes to a due date in the selected period, one entry per
+   * change, by task id. Null or absent when that record was not read.
+   */
+  dueChanges?: readonly string[] | null;
 }>;
 
 export type WeekBucket = Readonly<{ start: CalendarDate; end: CalendarDate; finished: number; added: number }>;
@@ -88,6 +95,15 @@ export type PersonLoad = Readonly<{
 export type DueDay = Readonly<{ date: CalendarDate; count: number; weekday: number; isToday: boolean }>;
 export type PriorityRow = Readonly<{ priority: Priority; label: string; open: number; overdue: number }>;
 export type DurationBucket = Readonly<{ key: string; label: string; shortLabel: string; count: number; holdsMedian: boolean }>;
+/** An open task past its date. `owners` names current members only. */
+export type LateTask = Readonly<{ id: string; title: string; due: CalendarDate; daysLate: number; owners: readonly string[]; project?: string }>;
+/** An open task due today or in the six days after. */
+export type NextTask = Readonly<{ id: string; title: string; due: CalendarDate; inDays: number; priority: Priority; owners: readonly string[]; project?: string }>;
+/** A task whose due date was changed more than once in the period. */
+export type MovedTask = Readonly<{ id: string; title: string; changes: number; done: boolean; project?: string }>;
+/** One of the last fourteen days, oldest first; the last seven are "this week". */
+export type RecentDay = Readonly<{ date: CalendarDate; finished: number; weekday: number; isToday: boolean; thisWeek: boolean }>;
+export type FinishedTask = Readonly<{ id: string; title: string; date: CalendarDate; project?: string }>;
 export type ChangeTone = "good" | "bad" | "neutral";
 export type ChangeLine = Readonly<{
   tone: ChangeTone;
@@ -117,6 +133,24 @@ export type ProjectAnalytics = Readonly<{
   priorities: readonly PriorityRow[];
   durations: readonly DurationBucket[];
   changes: readonly ChangeLine[];
+  /** The open tasks furthest past their date, oldest first, at most `LATE_LIST_LIMIT`. */
+  late: readonly LateTask[];
+  /** The last fourteen days, whatever range the charts show. */
+  recent: Readonly<{
+    days: readonly RecentDay[];
+    finishedThisWeek: number;
+    finishedWeekBefore: number;
+    addedThisWeek: number;
+    /** Finished in the last seven days, latest first, at most `FINISHED_LIST_LIMIT`. */
+    finished: readonly FinishedTask[];
+  }>;
+  /** Open tasks due in the next seven days: by date, then priority. At most `NEXT_LIST_LIMIT`. */
+  next: Readonly<{ count: number; tasks: readonly NextTask[] }>;
+  /**
+   * Due dates changed in the selected period, from the activity record. Null
+   * when that record was not read. `tasks` are those changed more than once.
+   */
+  moved: Readonly<{ changes: number; changedTasks: number; repeatCount: number; tasks: readonly MovedTask[] }> | null;
   coverage: Readonly<{ finishedWithoutDate: number; truncated: boolean; columnsUnreadable: boolean }>;
 }>;
 
@@ -191,6 +225,11 @@ const DURATION_BUCKETS: ReadonlyArray<Readonly<{ key: string; label: string; sho
   { key: "4w", label: "2 to 4 weeks", shortLabel: "2–4w", below: 28 },
   { key: "more", label: "Over 4 weeks", shortLabel: "4w+", below: Number.POSITIVE_INFINITY },
 ];
+
+export const LATE_LIST_LIMIT = 8;
+export const FINISHED_LIST_LIMIT = 8;
+export const NEXT_LIST_LIMIT = 8;
+export const MOVED_LIST_LIMIT = 8;
 
 const PRIORITY_ORDER: readonly Priority[] = ["p0", "p1", "p2", "p3"];
 
@@ -356,6 +395,96 @@ export function computeProjectAnalytics(input: AnalyticsInput): ProjectAnalytics
     overdue: open.filter((task) => task.priority === priority && isOverdue(task)).length,
   }));
 
+  // The late list: oldest first, each with who holds it.
+  const late: LateTask[] = overdueTasks.slice(0, LATE_LIST_LIMIT).map((task) => ({
+    id: task.id,
+    title: task.title,
+    due: ordinalToDate(dueDay(task)!),
+    daysLate: today - dueDay(task)!,
+    owners: task.assigneeIds.map((id) => names.get(id) ?? "Former member"),
+    ...(task.project ? { project: task.project } : {}),
+  }));
+
+  // Next: open work due today or in the six days after, soonest and most pressing first.
+  const dueNext = open
+    .map((task) => ({ task, due: dueDay(task) }))
+    .filter((entry): entry is { task: AnalyticsTask; due: number } => entry.due != null && entry.due >= today && entry.due - today < 7)
+    .sort(
+      (a, b) =>
+        a.due - b.due ||
+        PRIORITY_ORDER.indexOf(a.task.priority) - PRIORITY_ORDER.indexOf(b.task.priority) ||
+        a.task.title.localeCompare(b.task.title, "en") ||
+        a.task.id.localeCompare(b.task.id),
+    );
+  const next = {
+    count: dueNext.length,
+    tasks: dueNext.slice(0, NEXT_LIST_LIMIT).map(({ task, due }) => ({
+      id: task.id,
+      title: task.title,
+      due: ordinalToDate(due),
+      inDays: due - today,
+      priority: task.priority,
+      owners: task.assigneeIds.map((id) => names.get(id) ?? "Former member"),
+      ...(task.project ? { project: task.project } : {}),
+    })),
+  };
+
+  // Moved dates: only what the activity record holds, counted per task.
+  let moved: ProjectAnalytics["moved"] = null;
+  if (input.dueChanges) {
+    const byTask = new Map<string, number>();
+    for (const id of input.dueChanges) byTask.set(id, (byTask.get(id) ?? 0) + 1);
+    const known = new Map(input.tasks.map((task) => [task.id, task]));
+    const repeats = [...byTask.entries()]
+      .filter(([id, changes]) => changes > 1 && known.has(id))
+      .map(([id, changes]) => ({ task: known.get(id)!, changes }))
+      .sort((a, b) => b.changes - a.changes || a.task.title.localeCompare(b.task.title, "en") || a.task.id.localeCompare(b.task.id));
+    moved = {
+      changes: input.dueChanges.length,
+      changedTasks: byTask.size,
+      repeatCount: repeats.length,
+      tasks: repeats.slice(0, MOVED_LIST_LIMIT).map(({ task, changes }) => ({
+        id: task.id,
+        title: task.title,
+        changes,
+        done: task.done,
+        ...(task.project ? { project: task.project } : {}),
+      })),
+    };
+  }
+
+  // The last fourteen days, day by day, and what was finished in the last seven.
+  const recentCounts = new Array<number>(14).fill(0);
+  const finishedLately: Array<{ task: AnalyticsTask; day: number }> = [];
+  for (const task of input.tasks) {
+    if (!task.done || task.completedAt == null) continue;
+    const day = dayOf(task.completedAt);
+    const ago = today - day;
+    if (ago < 0 || ago >= 14) continue;
+    recentCounts[13 - ago] += 1;
+    if (ago < 7) finishedLately.push({ task, day });
+  }
+  finishedLately.sort((a, b) => b.task.completedAt! - a.task.completedAt! || a.task.id.localeCompare(b.task.id));
+  const recentDays: RecentDay[] = recentCounts.map((finished, index) => ({
+    date: ordinalToDate(today - 13 + index),
+    finished,
+    weekday: ordinalWeekday(today - 13 + index),
+    isToday: index === 13,
+    thisWeek: index >= 7,
+  }));
+  const recent = {
+    days: recentDays,
+    finishedThisWeek: recentCounts.slice(7).reduce((sum, n) => sum + n, 0),
+    finishedWeekBefore: recentCounts.slice(0, 7).reduce((sum, n) => sum + n, 0),
+    addedThisWeek: input.tasks.filter((task) => weeksAgo(task.createdAt) === 0).length,
+    finished: finishedLately.slice(0, FINISHED_LIST_LIMIT).map(({ task, day }) => ({
+      id: task.id,
+      title: task.title,
+      date: ordinalToDate(day),
+      ...(task.project ? { project: task.project } : {}),
+    })),
+  };
+
   const analytics: Omit<ProjectAnalytics, "changes"> = {
     timeZone: input.timeZone,
     today: ordinalToDate(today),
@@ -389,6 +518,10 @@ export function computeProjectAnalytics(input: AnalyticsInput): ProjectAnalytics
     },
     priorities,
     durations,
+    late,
+    recent,
+    next,
+    moved,
     coverage: {
       finishedWithoutDate: input.tasks.filter((task) => task.done && task.completedAt == null).length,
       truncated: input.truncated ?? false,
