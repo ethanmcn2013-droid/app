@@ -222,7 +222,7 @@ export function usePingVoiceCapture(options: PingVoiceCaptureOptions) {
       const resumePromise = audio.resume();
       const modulePromise = audio.audioWorklet.addModule(options.workletUrl ?? "/ping/pcm-worklet.js");
       const streamPromise = navigator.mediaDevices.getUserMedia({ audio: {
-        channelCount: { exact: 1 }, sampleRate: { exact: 24000 }, echoCancellation: false,
+        channelCount: { ideal: 1 }, sampleRate: { ideal: 24000 }, echoCancellation: false,
         noiseSuppression: false, autoGainControl: false,
       }, video: false });
       void streamPromise.then((stream) => {
@@ -238,8 +238,7 @@ export function usePingVoiceCapture(options: PingVoiceCaptureOptions) {
       const stream = capture.stream;
       if (!stream || audio.sampleRate !== 24000 || audio.state !== "running") throw new Error("unsupported_audio");
       const track = stream.getAudioTracks()[0];
-      const trackChannels = track?.getSettings().channelCount;
-      if (!track || (trackChannels !== undefined && trackChannels !== 1)) throw new Error("unsupported_audio");
+      if (!track) throw new Error("unsupported_audio");
 
       const node = new AudioWorkletNode(audio, "ping-pcm-capture", {
         numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1], channelCount: 1,

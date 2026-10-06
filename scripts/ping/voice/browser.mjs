@@ -32,9 +32,19 @@ try {
   });
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const origin='http://127.0.0.1:'+server.address().port;
-  browser=await chromium.launch({headless:true,args:['--use-fake-ui-for-media-stream','--use-fake-device-for-media-stream']});
+  // A labelled synthetic tone supplies reproducible nonzero device samples;
+  // no fixture callback fabricates a worklet frame or PCM transport message.
+  const sampleCount=24000*5,wav=Buffer.alloc(44+sampleCount*2);
+  wav.write('RIFF',0);wav.writeUInt32LE(wav.length-8,4);wav.write('WAVEfmt ',8);
+  wav.writeUInt32LE(16,16);wav.writeUInt16LE(1,20);wav.writeUInt16LE(1,22);
+  wav.writeUInt32LE(24000,24);wav.writeUInt32LE(48000,28);wav.writeUInt16LE(2,32);wav.writeUInt16LE(16,34);
+  wav.write('data',36);wav.writeUInt32LE(sampleCount*2,40);
+  for(let sample=0;sample<sampleCount;sample++)wav.writeInt16LE(Math.round(8192*Math.sin(2*Math.PI*440*sample/24000)),44+sample*2);
+  const syntheticAudio=path.join(out,'synthetic-440Hz-mono-24000.wav');await fs.writeFile(syntheticAudio,wav);
+  receipt.syntheticAudio={format:'PCM signed16LE mono24000',frequencyHz:440,sha256:createHash('sha256').update(wav).digest('hex')};
+  browser=await chromium.launch({headless:true,args:['--use-fake-ui-for-media-stream','--use-fake-device-for-media-stream','--use-file-for-fake-audio-capture='+syntheticAudio]});
   const context=await browser.newContext({viewport:{width:1000,height:760},permissions:['microphone']});
-  const newPage=async()=>{const page=await context.newPage();page.on('pageerror',error=>errors.push(error.message));await page.goto(origin);await page.waitForFunction(()=>Boolean(window.voiceFixture));return page;};
+  const newPage=async()=>{const page=await context.newPage();page.setDefaultTimeout(10000);page.on('pageerror',error=>errors.push(error.message));await page.goto(origin);await page.waitForFunction(()=>Boolean(window.voiceFixture));return page;};
   const report=page=>page.evaluate(()=>window.voiceFixture.report());
   const emit=(page,event)=>page.evaluate(value=>window.voiceFixture.emit(value),event);
   const final=(text='Assign me',item='synthetic-item')=>({type:'conversation.item.input_audio_transcription.completed',item_id:item,content_index:0,transcript:text});
@@ -57,7 +67,7 @@ try {
     return observed;
   };
   const ended=async page=>{await page.waitForFunction(()=>{const observed=window.voiceFixture.report();return observed.tracks.every(state=>state==='ended')&&observed.contexts.every(audio=>audio.state==='closed');});};
-  const checked=async(name,run)=>{const page=await newPage();try{const detail=await run(page);receipt.cases.push({name,passed:true,...detail});}finally{await page.close();}};
+  const checked=async(name,run)=>{const page=await newPage();try{const detail=await run(page);receipt.cases.push({name,passed:true,...detail});}catch(error){receipt.cases.push({name,passed:false,observation:await report(page),pageErrors:[...errors]});throw error;}finally{await page.close();}};
 
   await checked('actual PCM and partial tail precede sole commit; double Finish and final-before-ACK interpret once',async page=>{
     assert.equal((await report(page)).gumCalls,0);await start(page);const drained=await finish(page);
@@ -68,21 +78,26 @@ try {
     assert.deepEqual(completed.modelCalls[0].keys,['referenceInstant','selectedTaskCount','systemColumnKeys','timeZone','transcript','version']);
     assert.equal(completed.modelCalls[0].transcript,'Assign me');assert.equal(completed.proposal.outcome,'plan');
     await ended(page);await page.screenshot({path:path.join(out,'native-voice-ready.png')});
-    return {samples:drained.snapshot.totalSamples,bytes:drained.snapshot.encodedBytes,appendMessages:drained.messages.length-1,commitCalls:completed.snapshot.counters.commitCalls,interpretationCalls:completed.modelCalls.length};
+    return {samples:drained.snapshot.totalSamples,bytes:drained.snapshot.encodedBytes,appendMessages:drained.messages.length-1,partialTailBytes:drained.messages.filter(message=>message.type==='input_audio_buffer.append').at(-1).byteLength,sourceDeviceSettings:drained.trackSettings,graphContexts:drained.contexts,commitCalls:completed.snapshot.counters.commitCalls,interpretationCalls:completed.modelCalls.length};
   });
   await checked('conflicting complete items before ACK refuse without interpretation',async page=>{
     await start(page);await finish(page);await emit(page,final());await emit(page,final('Conflicting final','other-item'));
     await page.waitForFunction(()=>window.voiceFixture.report().snapshot?.phase==='closed');assert.equal((await report(page)).modelCalls.length,0);await ended(page);return {};
   });
+  await checked('missing ACK after native cut reaches the bounded deadline without interpretation',async page=>{
+    await start(page);await finish(page);
+    await page.waitForFunction(()=>window.voiceFixture.report().snapshot?.phase==='closed',null,{timeout:6500});
+    const observed=await report(page);assert.equal(observed.modelCalls.length,0);assert.equal(observed.snapshot.counters.commitCalls,1);assert.equal(observed.snapshot.reason,'ack_deadline');await ended(page);return {reason:observed.snapshot.reason};
+  });
   await checked('Cancel during capture closes every acquired resource with zero commit',async page=>{
     await start(page);await page.getByTestId('cancel').click();await ended(page);const observed=await report(page);assert.equal(observed.modelCalls.length,0);assert.equal(observed.messages.filter(message=>message.type==='input_audio_buffer.commit').length,0);return {};
   });
-  await checked('late real permission grant after Cancel stops the acquired tracks',async page=>{
+  await checked('synthetically delayed native stream delivery after Cancel stops acquired tracks',async page=>{
     await page.evaluate(()=>window.voiceFixture.permission('delayed'));await page.getByTestId('start').click();await page.waitForFunction(()=>window.voiceFixture.report().awaitingPermission);
     await page.getByTestId('cancel').click();await page.evaluate(()=>window.voiceFixture.releasePermission());await ended(page);
     const observed=await report(page);assert.equal(observed.gumCalls,1);assert.equal(observed.modelCalls.length,0);assert.equal(observed.messages.length,0);assert.ok(observed.tracks.length>0);return {};
   });
-  await checked('permission denial never commits or interprets',async page=>{
+  await checked('synthetic permission denial never commits or interprets',async page=>{
     await page.evaluate(()=>window.voiceFixture.permission('denied'));await page.getByTestId('start').click();await page.waitForFunction(()=>['closed','unavailable'].includes(document.querySelector('[data-testid=phase]').textContent));
     const observed=await report(page);assert.equal(observed.gumCalls,1);assert.equal(observed.messages.length,0);assert.equal(observed.modelCalls.length,0);return {};
   });

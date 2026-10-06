@@ -10,6 +10,9 @@ const sends: { type: string; bytes: Uint8Array }[] = [];
 const modelCalls: { keys: string[]; transcript: string }[] = [];
 let permission: "normal" | "delayed" | "denied" = "normal";
 let grant: (() => void) | null = null, gumCalls = 0;
+const permissionErrors: { name: string; constraint: string | null }[] = [];
+const captureErrors: { stage: string; name: string }[] = [];
+const trackSettings: { rate: number | null; channels: number | null }[] = [];
 let listener: ((raw: unknown) => void) | null = null;
 let session: PingVoiceSession | null = null;
 let snapshot: PingVoiceSnapshot | null = null;
@@ -18,14 +21,30 @@ const nativeGetUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.me
 navigator.mediaDevices.getUserMedia = async constraints => {
   gumCalls++;
   if (permission === "denied") throw new DOMException("Synthetic permission denial", "NotAllowedError");
-  const stream = await nativeGetUserMedia(constraints);
+  let stream: MediaStream;
+  try { stream = await nativeGetUserMedia(constraints); }
+  catch (error) { const nativeError = error as { name?: string; constraint?: string }; permissionErrors.push({ name: nativeError.name ?? "unknown", constraint: nativeError.constraint ?? null }); throw error; }
   streams.push(stream);
+  for (const track of stream.getAudioTracks()) { const settings = track.getSettings(); trackSettings.push({ rate: settings.sampleRate ?? null, channels: settings.channelCount ?? null }); }
   if (permission === "delayed") await new Promise<void>(resolve => { grant = resolve; });
   return stream;
 };
 const NativeAudioContext = window.AudioContext;
 window.AudioContext = class extends NativeAudioContext {
-  constructor(options?: AudioContextOptions) { super(options); contexts.push(this); }
+  constructor(options?: AudioContextOptions) {
+    super(options); contexts.push(this);
+    const nativeModule = this.audioWorklet.addModule.bind(this.audioWorklet);
+    this.audioWorklet.addModule = async (...args) => { try { await nativeModule(...args); } catch (error) { captureErrors.push({ stage: "module", name: error instanceof Error ? error.name : "unknown" }); throw error; } };
+  }
+  createMediaStreamSource(stream: MediaStream) { try { return super.createMediaStreamSource(stream); } catch (error) { captureErrors.push({ stage: "source", name: error instanceof Error ? error.name : "unknown" }); throw error; } }
+};
+const NativeWorkletNode = window.AudioWorkletNode;
+window.AudioWorkletNode = class extends NativeWorkletNode {
+  constructor(context: BaseAudioContext, name: string, options?: AudioWorkletNodeOptions) {
+    super(context, name, options);
+    this.addEventListener("processorerror", () => captureErrors.push({ stage: "processor", name: "processorerror" }));
+    this.port.addEventListener("message", event => { if (event.data.type === "failure") captureErrors.push({ stage: "worklet", name: event.data.reason }); });
+  }
 };
 
 function makeSession(onSnapshot: (next: PingVoiceSnapshot) => void): PingVoiceSession {
@@ -65,7 +84,7 @@ type FixtureApi = {
   changeContext: () => void;
   unmount: () => void;
   report: () => {
-    gumCalls: number; awaitingPermission: boolean; snapshot: PingVoiceSnapshot | null;
+    gumCalls: number; awaitingPermission: boolean; snapshot: PingVoiceSnapshot | null; permissionErrors: typeof permissionErrors; captureErrors: typeof captureErrors; trackSettings: typeof trackSettings;
     messages: { type: string; byteLength: number; nonzero: boolean }[];
     modelCalls: typeof modelCalls; tracks: string[]; contexts: { rate: number; state: string }[];
     proposal: unknown;
@@ -82,7 +101,7 @@ function Fixture() {
     emit: value => listener?.(JSON.stringify(value)),
     changeContext: () => { liveContext = crypto.randomUUID(); setContextKey(liveContext); },
     unmount: () => root.unmount(),
-    report: () => ({ gumCalls, awaitingPermission: grant !== null, snapshot,
+    report: () => ({ gumCalls, awaitingPermission: grant !== null, snapshot, permissionErrors, captureErrors, trackSettings,
       messages: sends.map(message => ({ type: message.type, byteLength: message.bytes.length, nonzero: message.bytes.some(value => value !== 0) })),
       modelCalls, tracks: streams.flatMap(stream => stream.getTracks().map(track => track.readyState)),
       contexts: contexts.map(context => ({ rate: context.sampleRate, state: context.state })), proposal: voice.proposal }),
