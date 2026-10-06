@@ -166,6 +166,8 @@ try {
     const observed=await page.evaluate(()=>{const el=document.activeElement,style=getComputedStyle(el);return {tag:el.tagName,
       control:el.getAttribute('data-testid')??null,connected:el.isConnected,disabled:el.disabled===true,
       focusVisible:el.matches(':focus-visible'),outlineStyle:style.outlineStyle,outlineWidth:style.outlineWidth,boxShadow:style.boxShadow,
+      voiceRefreshPresent:Boolean(document.querySelector('[data-testid=ping-voice-refresh-current]')),
+      voiceStartDisabled:document.querySelector('[data-testid=ping-voice-start]')?.disabled===true,
       useful:el!==document.body&&el!==document.documentElement&&el.isConnected&&!el.disabled};});
     receipt.focusObservations.push({label,...observed});return observed;
   };
@@ -222,8 +224,18 @@ try {
   await tabTo(page.getByTestId('ping-voice-check-original'),'voice Check original');await page.keyboard.press('Enter');await page.getByTestId('ping-voice-receipt').waitFor();await (await failedRefresh).finished();
   await focusObservation('after Check original with failed refresh');
   assert.deepEqual(JSON.parse((await targetRow()).assignees),['bob']);assert.equal(executeCalls,3);
-  state.failRefresh=false;await tabTo(page.getByTestId('ping-voice-refresh-current'),'voice Refresh current');await page.keyboard.press('Space');
-  await page.waitForFunction(()=>JSON.stringify(window.pingObserved.find(task=>task.id==='target')?.assignees)==='["bob"]');assert.equal(executeCalls,3);
+  // Reload already supplied these rows: row equality alone cannot witness this new refresh settling.
+  assert.equal(await page.evaluate(()=>JSON.stringify(window.pingObserved.find(task=>task.id==='target')?.assignees)),'["bob"]');
+  state.failRefresh=false;state.holdAction='refresh';
+  const repairedRefresh=page.waitForResponse(response=>response.url()===origin+'/api/ping'&&response.request().postDataJSON().action==='refresh');
+  await tabTo(page.getByTestId('ping-voice-refresh-current'),'voice Refresh current');await page.keyboard.press('Space');await waitForHeldResponse(state);
+  assert.equal(await page.getByTestId('ping-voice-refresh-current').isDisabled(),true);
+  await focusObservation('pending original Refresh response barrier');
+  state.holdAction=null;state.release();state.release=null;
+  const repair=await repairedRefresh;assert.equal((await repair.json()).action,'refresh');await repair.finished();
+  await page.waitForFunction(()=>JSON.stringify(window.pingObserved.find(task=>task.id==='target')?.assignees)==='["bob"]'&&
+    !document.querySelector('[data-testid=ping-voice-refresh-current]')&&document.querySelector('[data-testid=ping-voice-start]')?.disabled===false&&
+    document.querySelector('[data-testid=ping-voice-status]')?.textContent==='The saved result is confirmed in the current Tasks view.');assert.equal(executeCalls,3);
   await focusObservation('after original Refresh confirmation');
   receipt.cases.push({name:'paused lost committed Finish response and reload recover original receipt; refresh failure preserves history and repair reads canonical rows',passed:true});
   const beforeDenied={transports:control.transports,uploads:state.uploaded.length,appends:voice.append.length,models:voice.modelCalls.length};
