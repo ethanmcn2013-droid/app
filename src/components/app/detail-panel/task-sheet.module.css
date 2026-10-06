@@ -1137,11 +1137,12 @@
    itself no room: on a phone the full page showed Activity and nothing else.
    There the two stack, the task first, in one scroll. */
 @media (max-width: 899px) {
-  .split[data-activity] { grid-template-columns: minmax(0, 1fr); overflow-y: auto; }
+  .split[data-activity] { display: block; overflow-y: auto; }
   .split[data-activity] .splitMain { overflow: visible; }
   .split[data-activity] .activityColumn { overflow: visible; border-left: 0; border-top: 1px solid var(--v3-border); }
   .split[data-activity] .activityColumn .activity { min-height: 0; }
   .splitInner { padding: 16px 16px 32px; }
+  .props[data-grid] .row { grid-template-columns: 104px minmax(0, 1fr); }
 }
 /* The status in the page head gives way before it runs under the buttons. */
 @media (max-width: 767px) {

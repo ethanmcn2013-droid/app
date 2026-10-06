@@ -699,9 +699,13 @@ function Stage({
 
   const goToday = useCallback(
     (behavior: ScrollBehavior) => {
-      scroller.current?.scrollTo({ left: Math.max(0, nowX - viewW * NOW_AT), behavior });
+      // Land on the Monday at or before the usual spot. The week count chips sit
+      // mid-week, so at rest the lane column never cuts one (it read "…one").
+      const target = Math.max(0, nowX - viewW * NOW_AT);
+      const monday = riverMonday(today, river.r0 + Math.floor(target / ppd));
+      scroller.current?.scrollTo({ left: Math.max(0, xAt(monday)), behavior });
     },
-    [nowX, viewW],
+    [nowX, viewW, today, river.r0, ppd, xAt],
   );
   // Land on today when the river opens, and keep it there across a zoom or a new Project.
   useLayoutEffect(() => {
@@ -895,7 +899,7 @@ function Stage({
             </svg>
             {ribbon.points
               // A chip is centred on its week. One whose centre is within half a chip
-              // of either edge would be cut by the lane column ("…one"), so it is left out.
+              // of either end of the canvas would be cut there, so it is left out.
               .filter((point) => point.count > 0 && ppd * 7 >= 60 && point.x >= 30 && point.x <= canvasW - 30)
               .map((point) => (
                 <span key={point.week} className={cx(s.flowChip, point.past && s.flowChipPast)} style={{ left: point.x, top: axisH + 2 }}>
