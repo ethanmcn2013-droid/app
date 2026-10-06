@@ -291,6 +291,29 @@ function Editor({ initial, kept, onLeave }: { initial: Automation; kept: boolean
     target?.focus({ preventScroll: true });
   }, [focusAsk]);
 
+  // When the edit panel opens, bring the step it edits clear of it: beside
+  // the panel on a wide canvas, above the sheet on a phone.
+  const panelFor = state.panel && selection.length === 1 ? selection[0]! : null;
+  useEffect(() => {
+    if (!panelFor) return;
+    const timer = window.setTimeout(() => {
+      const { doc: current, size: box } = live.current;
+      const step = findStep(current, panelFor);
+      if (!step || box.w === 0) return;
+      const sheet = window.matchMedia("(max-width: 760px)").matches;
+      const overlay = !sheet && window.matchMedia("(max-width: 1100px)").matches;
+      setView((value) =>
+        revealRect(value, stepRect(step), box, {
+          top: 68,
+          left: 20,
+          right: overlay ? 348 : 20,
+          bottom: sheet ? Math.round(box.h * 0.58) + 20 : 92,
+        }),
+      );
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [panelFor, size.w, size.h]);
+
   // ── Wheel: scroll pans, Ctrl or ⌘ with the wheel (and pinch) zooms ───
   useEffect(() => {
     const element = canvasRef.current;
@@ -446,6 +469,9 @@ function Editor({ initial, kept, onLeave }: { initial: Automation; kept: boolean
     const target = event.target as Element;
     if (event.button === 2 || target.closest("button, a, input, select, textarea")) return;
     const point = local(event);
+    // A first finger or the mouse starts afresh: a press whose release never
+    // arrived must not turn the next press into a two-finger pinch.
+    if (event.isPrimary) pointers.current.clear();
     pointers.current.set(event.pointerId, point);
     surfaceRef.current?.setPointerCapture(event.pointerId);
     const { doc: current, view: at, selection: ids, tool: mode, space: held } = live.current;
@@ -894,6 +920,7 @@ function Editor({ initial, kept, onLeave }: { initial: Automation; kept: boolean
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerUp}
+            onLostPointerCapture={onPointerUp}
           >
             <div className={styles.world} style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.k})` }}>
               <svg
@@ -1034,7 +1061,7 @@ function Editor({ initial, kept, onLeave }: { initial: Automation; kept: boolean
             </button>
           </div>
 
-          <div className={styles.dock} role="toolbar" aria-label="Steps and history">
+          <div className={styles.dock} role="toolbar" aria-label="Steps and history" data-signal-bottom-nav="automations">
             <button type="button" className={styles.dockAdd} aria-haspopup="dialog" aria-expanded={picker?.at === null} onClick={openPickerFree}>
               <AutoIcon name="plus" />
               Step

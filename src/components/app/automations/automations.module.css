@@ -470,7 +470,7 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(272px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(252px, 1fr));
   gap: 14px;
 }
 
@@ -1281,7 +1281,7 @@
 .minimap,
 .picker,
 .hint {
-  border: 1px solid var(--v3-border-strong);
+  /* --v3-shadow-pop draws its own hairline ring, so no border here. */
   background: var(--v3-surface);
   box-shadow: var(--v3-shadow-pop);
 }
@@ -1427,8 +1427,8 @@
 }
 
 .minimap {
-  width: 170px;
-  height: 106px;
+  width: 168px;
+  height: 104px;
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
@@ -1586,6 +1586,15 @@
   color: var(--v3-text);
   font-size: 13.5px;
   outline: none;
+}
+
+.editor .pickerSearch input:focus-visible {
+  outline: none;
+}
+
+.editor .nameInput:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--v3-accent-soft);
 }
 
 .pickerSearch input::placeholder {
