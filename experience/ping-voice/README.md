@@ -146,3 +146,55 @@ model accuracy/account eligibility.
 `pnpm test:ping-voice` now exercises both candidate clients and the paired
 construction alongside the existing PCM/session/client suite with the existing
 server-only preload. Script TypeScript checks include `comparison/*.ts`.
+
+# Disconnected streaming session candidate
+
+`createPingOpenAiStreamingTranscription` in
+`src/server/ping/openai-streaming-transcription.ts` requires an explicit model,
+key and header-capable socket connection function. It has no environment lookup,
+default socket, retry or product-runtime import. Its fixed candidate URL is
+`wss://eu.api.openai.com/v1/realtime?intent=transcription`, derived from the
+official SDK connection convention and regional hostname; this is source intent,
+not observed endpoint/account eligibility or a route winner.
+
+Manual `open(signal)` resolves only after an actual fresh session-created
+identity, same-session effective update (24 kHz PCM, supplied model, manual turn,
+null noise reduction, no logprobs), and actual buffer-clear acknowledgment.
+Initial defaults are validated separately. The supported closed protocol subset
+permits empty/null user audio bookkeeping and inert optional preview metadata;
+prior items, ACKs or finals before an actual application commit refuse admission.
+The existing transport/collector receives original correlated ACK/final fields.
+Only actual append/commit schemas are sent, bounded to 9,600 bytes per block,
+1,440,000 bytes total and one commit. Event messages are bounded to 65,536 UTF8
+bytes, 512 events and eight internal item identities. Unknown/failure/correction
+or truncation events close the candidate rather than interpreting a prefix.
+
+`getUsage()` exports copied scalar transcription usage or null with fixed
+provenance; internal provider/session/item IDs and content are excluded. Missing
+completed-event usage is an explicit compatibility allowance because current
+guide examples omit it while the SDK schema requires it; it proves no complete
+billing. Present malformed/null usage refuses, and identical final duplicates
+are counted once. No interpretation usage, price or quality is inferred.
+
+Cancellation/deadline rejects readiness or closes the transport logically while
+single-flight admission stays reserved until connection and physical closure
+settle. The injected `closed` promise must fulfill only on real socket closure;
+abort/close request/disconnect alone cannot release it, and rejected closure
+retains admission. This trusts a supplied port contract rather than verifying
+network behavior. Handshake is at most five seconds; an additional bounded
+65-second lifetime does not replace the collector's capture/Finish deadlines.
+Temporary internal reference cleanup claims no caller/socket/provider erasure.
+
+Four public injected-socket owning groups inspect the handshake and projection,
+compose exact PCM with the existing collector and disconnected Responses client,
+and exercise usage/conflicts/ignored abort/held physical close/reentrant loss.
+They make one inert interpretation and expose no executor or receipt seams.
+`pnpm test:ping-voice` includes this suite. No microphone/provider/account or
+reserved-label evidence is obtained; product custody remains default unavailable.
+Live conformance, effective regional/retention controls, recognition/screening
+and whole PP019/G0/G2 remain open.
+
+Protocol references: [Realtime transcription](https://developers.openai.com/api/docs/guides/realtime-transcription),
+[client events](https://developers.openai.com/api/reference/resources/realtime/client-events),
+[server events](https://developers.openai.com/api/reference/resources/realtime/server-events),
+and [data controls](https://developers.openai.com/api/docs/guides/your-data?ssrid=ssr).

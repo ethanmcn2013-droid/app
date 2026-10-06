@@ -141,18 +141,28 @@ test("cancel/deadline publish immutable observations but hold callback latch thr
   assert.deepEqual(pre.routes.map(r => [r.status, r.transcribeCalls]), [["not_started", 0], ["not_started", 0]]);
 });
 
-test("one remaining budget covers both stages; reentrant cancel/fault/late interpretation cannot continue", async () => {
+test("one remaining budget covers both stages; reentrant cancel/fault/late interpretation cannot continue", async (t) => {
   const run = createPingPairedInertTrialRunner(); let second = 0;
   const skip = { ...route("skip"), transcribe: async () => { second++; throw Error("unused"); } };
-  const held = deferred<unknown>();
-  const pending = run({ ...options([{ ...route("budget"), transcribe: async () => {
-    await new Promise(resolve => setTimeout(resolve, 20)); return { text: "Complete", usage: null };
-  }, interpret: async () => held.promise }, skip]), deadlineMs: 35 });
-  const result = await pending; assert.equal(result.routes[0].status, "deadline");
-  assert.equal(result.routes[0].interpretationCalls, 1); assert.equal(result.routes[0].evaluation, null);
-  assert.deepEqual(result.routes[0].observation.stages.map(stage => stage.name), ["finals_ready", "interpretation_start"]);
-  await assert.rejects(run(options()), /ping_trial_busy/); held.resolve(syntheticPlan()); await settle();
-  assert.equal(second, 0); assert.equal(result.routes[0].evaluation, null);
+  const held = deferred<unknown>(), entered = deferred<void>();
+  let now = 0;
+  const clock = t.mock.method(performance, "now", () => now);
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  try {
+    const pending = run({ ...options([{ ...route("budget"), transcribe: async () => {
+      await new Promise(resolve => setTimeout(resolve, 20)); return { text: "Complete", usage: null };
+    }, interpret: async () => { entered.resolve(); return held.promise; } }, skip]), deadlineMs: 35 });
+    now = 20; t.mock.timers.tick(20); await entered.promise;
+    now = 35; t.mock.timers.tick(15);
+    const result = await pending; assert.equal(result.routes[0].status, "deadline");
+    assert.equal(result.routes[0].interpretationCalls, 1); assert.equal(result.routes[0].evaluation, null);
+    assert.deepEqual(result.routes[0].observation.stages, [{ name: "finals_ready", atMs: 20 }, { name: "interpretation_start", atMs: 20 }]);
+    await assert.rejects(run(options()), /ping_trial_busy/); held.resolve(syntheticPlan()); await settle();
+    assert.equal(second, 0); assert.equal(result.routes[0].evaluation, null);
+  } finally {
+    held.resolve(syntheticPlan()); await settle();
+    t.mock.timers.reset(); clock.mock.restore();
+  }
   const controller = new AbortController();
   const cancelled = await run({ ...options([{ ...route("cancel"), transcribe: async () => {
     controller.abort(); return { text: "Complete", usage: null };
