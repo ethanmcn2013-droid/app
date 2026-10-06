@@ -4,6 +4,14 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-10-06 · Redesign candidate · A denser Tasks list, and a header that stays put
+
+The Tasks list now fits more on a screen. With a mouse each row is 40 pixels, not 44; touch screens keep the larger rows. Every row shows its tick box, quietly, so it reads as a list you can pick from; hovering or ticking brings the box to full strength. Each group's count sits in a small pill beside its name. Labels are soft pills in their own colour. If you turn on the Subtasks column, it shows a thin bar with how many are done.
+
+The list and the calendar now use the full width of the window, as the board already does. Before, the page title and the Board, List and Calendar switch moved sideways when you changed view on a wide screen; now they stay in one place.
+
+No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-dense-list`; no deployment or production change is claimed.
+
 ## 2026-10-06 · Redesign candidate · Apps and tools shows everything, with no folded group
 
 Apps and tools, the grid button in the top bar and the page at `/app/tools`, no longer keeps half of what it holds behind a folded "Initial setup" heading. It now reads as four sections in view: Your apps (Projects, Tasks, Timeline, Files and Analytics), More apps (Notes, and Messages if you have Chat), Works with, and the tools that are coming soon. Nothing was removed, search still finds every entry, and the arrow keys walk all four sections. This finishes what the sidebar change started when its own "Initial setup" group went.

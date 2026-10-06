@@ -1330,6 +1330,7 @@
 }
 
 /* The board uses the room it is given (founder, 6 Oct 2026): no page-width
-   cap, so a wide screen shows more columns. The header and tools share its
-   left edge. The list and the calendar keep the reading width. */
-.workspace[data-view="board"] { --column-max: 100%; }
+   cap, so a wide screen shows more columns. The list (a dense table, as in
+   reference 25) and the calendar use the same room, so the header and tools
+   keep one left edge and never move when you switch views. */
+.workspace[data-view] { --column-max: 100%; }
