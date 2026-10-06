@@ -113,10 +113,14 @@ function safeErrorCopy(code: string): string {
 
 /** Internal-only opt-in. The route independently authenticates and authorizes every request. */
 export function PingTypedPanel(props: Props) {
+  if (!PING_TYPED_ENABLED || props.readOnly || isDemoMode() || !props.projectId) return null;
+  return <AuthenticatedPingTypedPanel {...props} />;
+}
+
+function AuthenticatedPingTypedPanel(props: Props) {
   const auth = useAuth();
   const actorId = useCurrentUser();
-  const enabled = PING_TYPED_ENABLED && !props.readOnly && !isDemoMode() && Boolean(props.projectId) &&
-    auth.isLoaded && Boolean(auth.userId) && Boolean(auth.sessionId) && Boolean(actorId);
+  const enabled = auth.isLoaded && Boolean(auth.userId) && Boolean(auth.sessionId) && Boolean(actorId);
   const mountKey = [actorId, props.projectId ?? "", auth.userId ?? "", auth.sessionId ?? ""].join("\u001f");
   if (!enabled || !props.projectId) return null;
   return <PingTypedPanelFlow key={mountKey} {...props} projectId={props.projectId} actorId={actorId} />;
