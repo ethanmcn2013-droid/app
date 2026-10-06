@@ -110,3 +110,39 @@ Owning synthetic command:
 ```sh
 node --import tsx --import ./src/test/register-server-only.mjs --test src/server/ping/openai-clip-transcription.test.ts
 ```
+
+# Paired inert trial construction
+
+`scripts/ping/comparison/paired-trial.ts` exports a manually invoked factory.
+Supply completed PCM, a frozen application capture, an independent label and
+exactly two explicit transcription-plus-interpretation callbacks. No default
+route, credential lookup, live runner, logs or automatic export exists. Routes
+receive isolated byte copies and the minimal whole-text interpretation input;
+they never receive the label, capture identities or readsets. Both stages share
+one remaining per-route deadline, at most 10 seconds. Logical cancellation
+publishes a frozen result, while overlap remains refused until the injected
+callback promise actually settles. Callbacks retain responsibility for their
+own transport reservations; this module cannot prove arbitrary callback work
+settled or had no unrelated side effects.
+
+The result is a **private evaluator report**: expected/actual outcomes and
+whole-plan matches are label-derived even without raw labels. Reserved-case
+reports belong solely to the authorized label custodian; source authors/root
+must not receive case-linked outcomes, scores or distributions. Public synthetic
+owning fixtures may inspect their own literal results. No reserved material is
+read by the committed tests.
+
+Local transcribe/interpret counters count actual callback entries. Executor and
+receipt counts are zero because this runner has no such seams. Observations
+contain only text-ready and interpretation stages on one local monotonic clock;
+microphone, speech-end, Finish, dispatch, receipt and mounted completion stages
+are absent. Completion intervals therefore remain null. Transcription usage is
+validated actual scalar metadata or null; interpretation usage is unavailable.
+No prices, total route usage, screen score, p95, winner or human-value result is
+inferred. Synthetic composition invokes the actual completed-clip and Responses
+clients with injected HTTP only, proving their interface mechanics, not ASR or
+model accuracy/account eligibility.
+
+`pnpm test:ping-voice` now exercises both candidate clients and the paired
+construction alongside the existing PCM/session/client suite with the existing
+server-only preload. Script TypeScript checks include `comparison/*.ts`.
