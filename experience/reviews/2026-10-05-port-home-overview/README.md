@@ -169,3 +169,45 @@ node experience/home-overview/overview.mjs --capture <dir>
 Expected: `PASS home: 604 checks ...` and `PASS overview: 576 checks ...`, each across 1920x1080, 1440x900, 768x1024 and 390x844, dark and light, with axe reporting nothing at any impact in every state.
 
 `production-build/`: the real pages from `next build` served by `next start` in review mode (see "Gates").
+
+It checks, at 1920x1080, 1440x900, 768x1024 and 390x844 in dark and light: the theme, the selected tab, that the tabs sit at the same place on both pages, that Home is the lit sidebar row on the Overview tab, no sideways scroll, axe on the page's own panel, a quiet console, and the tab switch by arrow keys in both directions. Expected: `PASS production build: 92 checks ...`. File names are `<page>-<size>-<theme>.png`; `-full` is the whole document.
+
+## Registry and critical capture
+
+Two registered sources changed, and their hashes were refreshed with receipts (`receipts/`, schema `signal-materiality-review/2`) written by `pnpm experience:review`:
+
+| Entry | Why | New hash |
+|---|---|---|
+| `tasks.state.app-home-loading` | The loading state traces the new Home | `9dcb7b09c5c2c254` |
+| `tasks.state.app-home-error` | The error state uses the v3 tokens and offers Tasks | `94e95fe898bce26d` |
+
+`src/app/app/home/page.tsx` and the three briefing route files did not change, so their entries did not move.
+
+The critical fixtures that pinned the old pages were updated (`experience/critical-fixtures.json`, and one explicit wait in `experience/tests/critical-experiences.spec.ts`):
+
+- "front door lands on Home" and "home front door": the heading is "Good morning, Orla" (it was "Good morning."), and the populated proof is the text "Next big day" (it was the heading "Upcoming deadlines").
+- "legacy link lands on the briefing" and "overview": the heading "What needs attention" replaces the text "Thursday 16 July · Read at 09:00"; the heading "Overview" and the text "2 things need attention and 1 is at risk." are unchanged.
+
+A receipt is bound to the fixture manifest it was reviewed under, so changing the manifest unbound the six receipts earlier reviews had written (`tasks.page.app-project`, `tasks.state.app-project-loading`, `tasks.state.app-tasks-loading`, `tasks.resources.drive-upload`, `tasks.page.app-messages`, `tasks.state.app-tools-loading`). Their sources and hashes are unchanged; each was re-attached to the new run with a receipt in this folder that carries the original review text. The earlier receipts stay where they were.
+
+All eight receipts cite `experience/evidence-runs/tasks-playwright-0e2bc8442ee479567ad9023e-a82659b5ab911b3e.json`: the critical capture, 132 of 132, on a demo build of this branch (`next build` with the environment `experience/playwright.config.ts` sets, served by `next start` on port 4393). The run before it was 131 of 132: the first case on the cold server ("front door lands on Home", mobile) recorded one aborted favicon request. The same case passed on a second freshly started server and in the full run that followed, so it is recorded here as a cold-start flake, not hidden.
+
+## Bundle ceiling
+
+`total_client_js` measures 1059.4 KB gzip on the demo build, against a ceiling of 1042 set for the Projects console (1040.2 measured). Home and the week view are client code where the pages they replace were server-rendered. Two reductions were made and measured first (the week view no longer imports the task panel's calendar for one label rule; the browser reads small kit modules, not the server-side models). The ceiling is raised to 1062 in `contracts/venue-surface-performance-budgets.v1.json`, with the basis written there. This is a delegated decision under the same sprint authority the Projects console used ("raise the budget explicitly if a better shell needs it") and is the founder's to confirm or reverse. The 936 target is unchanged.
+
+## Where this falls short of the approved design
+
+- **Tasks are one day wide.** The demo draws bars from a start date to a due date. The product stores only a due date, so the river is marks on days, with the label beside each. The "Weeks" zoom is the default so labels have room.
+- **No looking back or ahead.** Dragging the Today handle to replay earlier weeks or forecast later ones needs a history of statuses and dates and a pace forecast. Neither exists. The handle is a label.
+- **No pace sentences.** "At this week's pace the work is done Fri 2 Oct" on Home, and amber weeks on the Overview, are forecasts. Dropped.
+- **No "waiting on <name>".** The stuck sentence and the waiting rows say how long, not on whom.
+- **Approvals are tasks to check, not files.** There is no file approval in the product.
+- **The Overview scrolls as a page.** The demo fills the window with the river and pins the week tray to the foot. Here the river, the tray and what the briefing read sit one under another in the page column, so the briefing's cards stay reachable and the page shares its edge with the rest of the app.
+- **Finished work is dots, not labelled chips,** and there is no minimap, no "Spread" and no dragging a task to another day.
+- **Areas need labels.** A Project with no labels opens grouped by board column. The founder's own account will open that way until tasks carry labels.
+- **Switching tabs is a navigation,** not an instant swap: the two views are two routes with their own server reads. The tabs do not move while it happens.
+- **The sidebar still has an Overview row.** By instruction it is left for the writer who owns the shell; it no longer lights on its own page.
+- **Home still makes the briefing read** to decide the Project the chrome names and the Overview address, though it no longer draws from it. Removing that read is its own change, with its own tests.
+- Review mode has one Project, so the busy account is judged on the fixtures. The database reads are proved against the real schema in a disposable in-memory database, not against a live account.
+- On a phone the review build's own "In development" notice floats over the page until dismissed. It belongs to the shell.

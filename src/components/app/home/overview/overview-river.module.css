@@ -653,6 +653,8 @@
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
   pointer-events: none;
+  /* Above today's line and the target date, so neither rule cuts the figure. */
+  z-index: 4;
 }
 
 .flowChipPast {

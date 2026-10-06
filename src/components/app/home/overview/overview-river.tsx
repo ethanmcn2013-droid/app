@@ -42,7 +42,7 @@ import {
   type RiverLane,
   type RiverLensId,
   type RiverPlaced,
-} from "@/lib/home/overview-river";
+} from "@/lib/home/overview-river-kit";
 import { toggleCompleteAction, updateTaskAction } from "@/server/actions/tasks";
 import s from "./overview-river.module.css";
 

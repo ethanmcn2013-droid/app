@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-project",
+  "source": "tasks/src/app/app/project/page.tsx",
+  "materialityHash": "795236cc4236a32a",
+  "reviewedAt": "2026-10-06",
+  "reviewer": "Implementation review under delegated execution (Claude, single writer on design/app-v3-home-overview). Founder review of the rendered result is pending",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-0e2bc8442ee479567ad9023e-a82659b5ab911b3e.json",
+    "attestationSha256": "d1531ecea90deb6d4191f7a3aa8ee68c9b3adeb2f2cb6a7eda0d97e79da0f28f",
+    "runId": "tasks-playwright-0e2bc8442ee479567ad9023e",
+    "canonicalEvidenceSha256": "0e2bc8442ee479567ad9023ec64e7efc9be8515bbdc333b5bc86c23c11dffefe",
+    "rawArtifactSha256": "a82659b5ab911b3e14364785d12d99ee6fe4a4ea4ec1b777db97490b073591f0",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app",
+    "caseName": "front door lands on Home",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "The Project route now passes the chosen view (?view=) and tab (?show=) to the Projects index, and a caller who belongs to no Project gets the first-run state with a New project button instead of the old setup link. Authorization is unchanged: the route still resolves and authorizes the Project before any read, and refuses a mismatched payload. The index it renders is the new Console (experience/reviews/2026-10-03-projects-console/README.md), reviewed there at 1440x900, 1920x1080 and 390x844 in light and dark on the review server and on a twelve-project fixture, with axe clean. The linked Playwright attestation is the full critical suite, 132 of 132, on a clean demo build of 464b0db9; it is suite regression context and does not itself open /app/project. Re-attached on 6 October 2026 to the full green run of the Home and Overview port (132 of 132): that port changed the critical fixture manifest (the Home and Overview assertions), and a receipt is bound to the manifest it was reviewed under. This source and its hash (795236cc4236a32a) are unchanged by the port; the earlier receipt stays in its own review folder as the record of the original review.",
+  "decision": "Keep the reviewed hash and attach this receipt to the current evidence contract. Other registry fields are unchanged."
+}

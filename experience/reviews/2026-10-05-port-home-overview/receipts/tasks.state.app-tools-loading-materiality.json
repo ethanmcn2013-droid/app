@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-tools-loading",
+  "source": "tasks/src/app/app/tools/loading.tsx",
+  "materialityHash": "45e0fc19aaf3ca48",
+  "reviewedAt": "2026-10-06",
+  "reviewer": "Implementation review under delegated execution (Claude, single writer on design/app-v3-home-overview). Founder review of the rendered result is pending",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-0e2bc8442ee479567ad9023e-a82659b5ab911b3e.json",
+    "attestationSha256": "d1531ecea90deb6d4191f7a3aa8ee68c9b3adeb2f2cb6a7eda0d97e79da0f28f",
+    "runId": "tasks-playwright-0e2bc8442ee479567ad9023e",
+    "canonicalEvidenceSha256": "0e2bc8442ee479567ad9023ec64e7efc9be8515bbdc333b5bc86c23c11dffefe",
+    "rawArtifactSha256": "a82659b5ab911b3e14364785d12d99ee6fe4a4ea4ec1b777db97490b073591f0",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app",
+    "caseName": "front door lands on Home",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "The Apps and tools skeleton was changed in the 2 October shell tranche to match the page (five app cards, then the folded group's name). Its hash was refreshed on 3 October without a receipt because no fully green critical run existed. This receipt completes that refresh against a full green run, 132 of 132, on a clean demo build of 464b0db9. The linked case is suite regression context; it does not open /app/tools. Re-attached on 6 October 2026 to the full green run of the Home and Overview port (132 of 132): that port changed the critical fixture manifest (the Home and Overview assertions), and a receipt is bound to the manifest it was reviewed under. This source and its hash (45e0fc19aaf3ca48) are unchanged by the port; the earlier receipt stays in its own review folder as the record of the original review.",
+  "decision": "Keep the reviewed hash and attach this receipt to the current evidence contract. Other registry fields are unchanged."
+}

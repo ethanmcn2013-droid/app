@@ -36,6 +36,7 @@ import { REVIEW_SUITE_FIXTURE } from "@/lib/review-suite-fixture";
 import { loadProjectCatalogAction } from "@/server/actions/project-catalog";
 import { getProjectOverviewData } from "@/server/actions/project-overview";
 import { demoTasks } from "@/server/demo/tasks-demo";
+import { demoAnalyticsSource } from "@/server/projects/project-analytics-demo";
 import { validTimeZone } from "@/server/projects/project-console-facts";
 import { resolveProjectForRoute } from "@/server/projects/route-authz";
 import {
@@ -198,15 +199,38 @@ async function authorize(projectIds: readonly string[]): Promise<{ projects: Riv
   return { projects: proved, others: [] };
 }
 
-/** Review and demo mode have no database: the one Project, on the review clock. */
+/**
+ * Review and demo mode have no database: the one Project, on the review
+ * clock. Finished work and its dates come from the same sample source
+ * Analytics and the Projects page read, so "finished in the last 7 days"
+ * here is the week those pages show.
+ */
 async function demoRiver(projects: readonly RiverProjectRef[]): Promise<River | null> {
   const project = projects[0];
   if (!project) return null;
   const overview = await getProjectOverviewData();
   const viewerId: string = REVIEW_SUITE_FIXTURE.user.id;
+  const source = demoAnalyticsSource();
+  const finishedAt = new Map(source.tasks.map((task) => [task.id, task.completedAt]));
+  const board = demoTasks().filter((task) => !task.archivedAt && !task.parentTaskId);
+  const onBoard = new Set(board.map((task) => task.id));
+  const history: RiverTaskFact[] = source.tasks
+    .filter((task) => task.done && task.completedAt !== null && !task.archived && !onBoard.has(task.id))
+    .map((task) => ({
+      id: task.id,
+      projectId: project.id,
+      title: task.title,
+      columnKey: task.columnKey,
+      dueAt: task.dueAt,
+      completedAt: task.completedAt,
+      assignees: [...task.assigneeIds],
+      labels: [],
+      bigDate: false,
+      recurring: false,
+    }));
   return buildRiver({
-    now: Date.parse(`${REVIEW_SUITE_FIXTURE.reviewToday}T09:00:00.000Z`),
-    timeZone: "UTC",
+    now: source.now,
+    timeZone: source.timeZone,
     viewerId,
     projects: [
       {
@@ -217,20 +241,21 @@ async function demoRiver(projects: readonly RiverProjectRef[]): Promise<River | 
         members: { [viewerId]: REVIEW_SUITE_FIXTURE.user.name },
       },
     ],
-    tasks: demoTasks()
-      .filter((task) => !task.archivedAt && !task.parentTaskId)
-      .map((task) => ({
+    tasks: [
+      ...board.map((task) => ({
         id: task.id,
         projectId: project.id,
         title: task.title,
         columnKey: effectiveColumnKey(task),
         dueAt: task.dueAt ? task.dueAt.getTime() : null,
-        completedAt: null,
+        completedAt: finishedAt.get(task.id) ?? null,
         assignees: task.assignees,
         labels: task.tags ?? [],
         bigDate: task.isMilestone === true,
         recurring: task.recurrence != null,
       })),
+      ...history,
+    ],
     truncated: false,
     // Review never saves anything.
     canAct: false,

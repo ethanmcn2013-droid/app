@@ -22,7 +22,8 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CS
 import { projectColor } from "@/components/shell/app-sidebar";
 import { ShellIcon } from "@/components/shell/shell-icons";
 import { StatusGlyph } from "@/components/tasks/atoms";
-import { greetingForHour, type HomeBoard, type HomeProjectRow, type HomeRow } from "@/lib/home/home-board";
+import type { HomeBoard, HomeProjectRow, HomeRow } from "@/lib/home/home-board";
+import { greetingForHour } from "@/lib/home/home-words";
 import type { ConsoleMark } from "@/lib/projects/project-console";
 import { sendNudgeAction } from "@/server/actions/nudge";
 import { toggleCompleteAction } from "@/server/actions/tasks";

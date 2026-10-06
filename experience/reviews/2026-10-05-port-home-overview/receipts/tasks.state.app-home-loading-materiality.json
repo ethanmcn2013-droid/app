@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-home-loading",
+  "source": "tasks/src/app/app/home/loading.tsx",
+  "materialityHash": "9dcb7b09c5c2c254",
+  "reviewedAt": "2026-10-06",
+  "reviewer": "Implementation review under delegated execution (Claude, single writer on design/app-v3-home-overview). Founder review of the rendered result is pending",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-0e2bc8442ee479567ad9023e-a82659b5ab911b3e.json",
+    "attestationSha256": "d1531ecea90deb6d4191f7a3aa8ee68c9b3adeb2f2cb6a7eda0d97e79da0f28f",
+    "runId": "tasks-playwright-0e2bc8442ee479567ad9023e",
+    "canonicalEvidenceSha256": "0e2bc8442ee479567ad9023ec64e7efc9be8515bbdc333b5bc86c23c11dffefe",
+    "rawArtifactSha256": "a82659b5ab911b3e14364785d12d99ee6fe4a4ea4ec1b777db97490b073591f0",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-home",
+    "caseName": "home front door",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "The Home loading state now traces the new Home: the Home and Overview tabs, the greeting and its count line, the task groups on the left and the next big day and project list on the right, drawn from Home's own stylesheet so the two share their geometry. It reserves no fake rows beyond the groups the page always draws, and its soft pulse is switched off under reduced motion. Rendered in the fixture harness at four sizes in dark and light (home-loading-*.png in the design lab capture set); the linked critical case opens /app/home on the settled page, which this state hands off to.",
+  "decision": "Accept the new loading state and refresh the hash. Other registry fields are unchanged."
+}

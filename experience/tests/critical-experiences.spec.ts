@@ -421,7 +421,7 @@ for (const fixture of routeCases) {
       // wait keeps the redirect settled before the audit begins.
       await page.waitForURL("**/app/home");
       await expect(
-        page.getByRole("heading", { name: "Good morning." }),
+        page.getByRole("heading", { name: "Good morning, Orla" }),
       ).toBeVisible();
     }
     await enterDeterministicMotionMode(page);
