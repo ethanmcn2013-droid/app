@@ -194,7 +194,11 @@ All eight receipts cite `experience/evidence-runs/tasks-playwright-0e2bc8442ee47
 
 ## Bundle ceiling
 
-`total_client_js` measures 1059.4 KB gzip on the demo build, against a ceiling of 1042 set for the Projects console (1040.2 measured). Home and the week view are client code where the pages they replace were server-rendered. Two reductions were made and measured first (the week view no longer imports the task panel's calendar for one label rule; the browser reads small kit modules, not the server-side models). The ceiling is raised to 1062 in `contracts/venue-surface-performance-budgets.v1.json`, with the basis written there. This is a delegated decision under the same sprint authority the Projects console used ("raise the budget explicitly if a better shell needs it") and is the founder's to confirm or reverse. The 936 target is unchanged.
+Before `main` moved, a demo build of this branch measured `total_client_js` at 1059.4 KB gzip against the 1042 ceiling set for the Projects console: Home and the week view are client code where the pages they replace were server-rendered. Two reductions were made and measured first (the week view no longer imports the task panel's calendar for one label rule; the browser reads small kit modules, not the server-side models). `main` has since raised the ceiling to 1070 for the Tasks, Files and Analytics ports, and this branch takes main's file unchanged. The figure measured on the merged branch is in the PR description; if it is over 1070, the PR says by how much and the ceiling is the founder's to decide, not an edit made here. The 936 target is unchanged.
+
+## Merge with main (6 October)
+
+`main` (Tasks views #211, Files and Analytics #210) was merged into this branch. `CHANGELOG.md` and the `package.json` test lists keep both sides; the budget contract is main's. Six receipts main brought (`tasks.page.app-analytics`, `tasks.page.app-files` and their loading and error states) were bound to main's fixture manifest, which this branch changes, so they need re-attaching to a critical run of the merged branch, with their sources and hashes unchanged. The PR description says whether that run and those receipts are in, or still owed.
 
 ## Where this falls short of the approved design
 
