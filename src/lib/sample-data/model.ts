@@ -242,11 +242,18 @@ export type SeedSampleResult =
     }>;
 
 export type RemoveSampleResult =
-  | Readonly<{ ok: true; set: SampleSetId; removed: readonly string[] }>
+  | Readonly<{
+      ok: true;
+      set: SampleSetId;
+      removed: readonly string[];
+      /** Sample projects left alone because other people can reach them. */
+      skipped: readonly string[];
+    }>
   | Readonly<{
       ok: false;
       set: SampleSetId;
       reason: "busy" | "failed";
       removed: readonly string[];
+      skipped: readonly string[];
       failedAt?: string;
     }>;

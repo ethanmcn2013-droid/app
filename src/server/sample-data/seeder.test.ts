@@ -35,7 +35,7 @@ import {
   type SampleSetId,
 } from "../../lib/sample-data/model";
 import { SAMPLE_SETS } from "../../lib/sample-data/sets";
-import { addConfirmation, removeAllConfirmation, removeConfirmation, seedOutcome } from "../../lib/sample-data/copy";
+import { addConfirmation, removeAllConfirmation, removeConfirmation, removeOutcome, seedOutcome } from "../../lib/sample-data/copy";
 
 /**
  * Operator sample data against the real schema, in a disposable database.
@@ -443,7 +443,7 @@ test("removal deletes exactly the marked sample rows and leaves every real proje
 
     // One set first: only its projects go.
     const teacher = await seeder.removeSampleSet(f.deps(), "teacher");
-    assert.deepEqual(teacher, { ok: true, set: "teacher", removed: summariseSampleSet(SAMPLE_SETS.teacher).projectNames.slice(1).concat(summariseSampleSet(SAMPLE_SETS.teacher).projectNames[0]) });
+    assert.deepEqual(teacher, { ok: true, set: "teacher", removed: summariseSampleSet(SAMPLE_SETS.teacher).projectNames.slice(1).concat(summariseSampleSet(SAMPLE_SETS.teacher).projectNames[0]), skipped: [] });
     assert.deepEqual([...f.deleted].sort(), [...expectedIds("operator", "teacher")].sort());
     assert.equal((await f.counts()).workspaces, baseline.workspaces + 10);
 
@@ -476,18 +476,109 @@ test("removal deletes exactly the marked sample rows and leaves every real proje
   }
 });
 
-test("a removal interrupted after the project was deleted is finished by the next one", async () => {
+test("project deletion itself removes a sample project's status and target date, so removal needs no sweep", async () => {
   const f = await fixture();
   try {
     await seeder.seedSampleSet(f.deps(), "wedding");
     const [first] = expectedIds("operator", "wedding");
-    // The deletion path ran but the process stopped before the status and
-    // target date rows, which it does not own, were removed.
-    await f.deps().deleteProject({ actorUserId: "operator", projectId: first });
     assert.equal((await f.db.select().from(meta).where(like(meta.key, `project-%:${first}`))).length, 2);
+    await f.deps().deleteProject({ actorUserId: "operator", projectId: first });
+    assert.equal((await f.db.select().from(meta).where(like(meta.key, `%${first}%`))).length, 0);
     const removed = await seeder.removeSampleSet(f.deps(), "wedding");
     assert.equal(removed.ok && removed.removed.length, 3);
     assert.deepEqual(await f.counts(), { workspaces: 0, members: 0, tasks: 0, activities: 0, resources: 0, meta: 0 });
+    // The seeder holds no delete of its own outside the lease it wrote.
+    const source = readFileSync(resolve(root, "src/server/sample-data/seeder.ts"), "utf8");
+    assert.equal([...source.matchAll(/\.delete\(/g)].length, 1);
+    assert.match(source, /\.delete\(meta\)\.where\(and\(eq\(meta\.key, leaseKey\(anchorProjectId\)\), eq\(meta\.value, held\)\)\)/);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("removal leaves alone a sample project other people can reach, names it, and removes the rest", async () => {
+  const f = await fixture();
+  try {
+    await seeder.seedSampleSet(f.deps(), "wedding");
+    await seeder.seedSampleSet(f.deps(), "teacher");
+    const names = summariseSampleSet(SAMPLE_SETS.wedding).projectNames;
+    const [wedding, hen, honeymoon, moving] = expectedIds("operator", "wedding");
+    // One of each way a sample project stops being only the operator's own.
+    await f.db.insert(workspaceMembers).values({ workspaceId: wedding, userId: "member", role: "member" });
+    await f.db.insert(tasks).values({ id: "t-theirs", workspaceId: wedding, seq: 900, title: "Real work a guest added", lane: "todo", priority: "p2", assignees: ["member"] });
+    await f.db.insert(pendingInvites).values({ token: "invite-1", workspaceId: hen, email: "guest@example.test", invitedByUserId: "operator", expiresAt: new Date(NOW.getTime() + 86_400_000) });
+    await f.client.execute({ sql: "INSERT INTO share_links (token, workspace_id, view) VALUES (?, ?, 'board')", args: ["share-1", honeymoon] });
+    await f.db.update(workspaces).set({ publishedAt: NOW }).where(eq(workspaces.id, moving));
+    const before = await f.counts();
+
+    const result = await seeder.removeSampleSet(f.deps(), "wedding");
+    // The anchor is deleted last, so it is the last one skipped.
+    assert.deepEqual(result, { ok: true, set: "wedding", removed: [], skipped: [names[1], names[2], names[3], names[0]] });
+    assert.deepEqual(f.deleted, []);
+    assert.deepEqual(await f.counts(), before);
+    assert.equal((await f.db.select().from(tasks).where(eq(tasks.id, "t-theirs"))).length, 1);
+    // The lease this removal took is gone again.
+    assert.equal((await f.db.select().from(meta).where(like(meta.key, "%:sample-run"))).length, 0);
+
+    const said = removeOutcome([result]);
+    assert.equal(said.tone, "warning");
+    assert.equal(said.title, "4 sample projects were left alone");
+    assert.deepEqual(said.skipped, result.skipped);
+    assert.ok(said.body.includes("Someone else has joined this one, so it was left alone. Delete it yourself from Projects when you are ready."));
+
+    // Once nobody else can reach them, the same removal takes them; a mixed
+    // run removes what it may and names the rest.
+    await f.db.delete(pendingInvites).where(eq(pendingInvites.workspaceId, hen));
+    await f.client.execute({ sql: "DELETE FROM share_links WHERE workspace_id = ?", args: [honeymoon] });
+    await f.db.update(workspaces).set({ publishedAt: null }).where(eq(workspaces.id, moving));
+    const mixed = await seeder.removeAllSampleData(f.deps());
+    assert.deepEqual(mixed.map((entry) => [entry.set, entry.removed.length, entry.skipped]), [["teacher", 5, []], ["student", 0, []], ["wedding", 3, [names[0]]]]);
+    assert.equal(removeOutcome(mixed).body.startsWith("Deleted 8 sample projects. Someone else has joined"), true);
+    assert.equal((await f.db.select().from(workspaces)).length, 1);
+    assert.equal((await f.db.select().from(tasks).where(eq(tasks.id, "t-theirs"))).length, 1);
+
+    // The confirmation says plainly what removal does.
+    const status = await seeder.listSampleData({ database: f.db, actorUserId: "operator" });
+    const copy = removeConfirmation(status.find((set) => set.summary.id === "wedding")!);
+    assert.ok(copy.detail.includes("Removing a sample project removes everything in it, including anything added to it since."));
+    assert.ok(copy.detail.includes("Nothing else in your account is touched."));
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("a run only releases the lease it took, never one a later run holds", async () => {
+  const f = await fixture();
+  try {
+    await seeder.seedSampleSet(f.deps(), "wedding");
+    const [anchor, hen] = expectedIds("operator", "wedding");
+    const leaseKey = `board:${anchor}:sample-run`;
+    // Keep the anchor (and so its namespace) in place for the whole removal.
+    await f.db.insert(workspaceMembers).values({ workspaceId: anchor, userId: "member", role: "member" });
+    const theirs = JSON.stringify({ expiresAt: NOW.getTime() + 60_000, token: "a-later-run" });
+    let tokenSeen: string | null = null;
+    const deps = f.deps();
+    const result = await seeder.removeSampleSet({
+      ...deps,
+      deleteProject: async (input) => {
+        if (input.projectId === hen) {
+          // This run overran: its lease lapsed and a later run took the set.
+          const [mine] = await f.db.select().from(meta).where(eq(meta.key, leaseKey));
+          tokenSeen = (JSON.parse(mine.value) as { token?: string }).token ?? null;
+          await f.db.update(meta).set({ value: theirs }).where(eq(meta.key, leaseKey));
+        }
+        return deps.deleteProject(input);
+      },
+    }, "wedding");
+    assert.equal(result.ok && result.removed.length, 3);
+    assert.match(String(tokenSeen), /^[0-9a-f-]{36}$/);
+    const [still] = await f.db.select().from(meta).where(eq(meta.key, leaseKey));
+    assert.equal(still?.value, theirs, "the later run's lease is untouched");
+
+    // And the ordinary case still cleans up after itself.
+    await f.db.delete(meta).where(eq(meta.key, leaseKey));
+    await seeder.seedSampleSet(f.deps(), "student");
+    assert.equal((await f.db.select().from(meta).where(like(meta.key, "%:sample-run"))).length, 0);
   } finally {
     f.cleanup();
   }
@@ -513,7 +604,7 @@ test("a project sitting on a sample id without the mark is never added to and ne
     const status = await seeder.listSampleData({ database: f.db, actorUserId: "operator" });
     assert.deepEqual(status.find((set) => set.summary.id === "wedding")!.present, []);
     const removed = await seeder.removeSampleSet(f.deps(), "wedding");
-    assert.deepEqual(removed, { ok: true, set: "wedding", removed: [] });
+    assert.deepEqual(removed, { ok: true, set: "wedding", removed: [], skipped: [] });
     assert.deepEqual(f.deleted, []);
     assert.equal((await f.db.select().from(workspaces)).length, 1);
     assert.equal((await f.db.select().from(meta).where(eq(meta.key, `project-status:${squatId}`))).length, 1);
@@ -562,7 +653,7 @@ test("one run per set at a time: a held lease refuses a second run and a removal
     const second = await seeder.seedSampleSet(f.deps(), "student");
     assert.equal(second.ok === false && second.reason, "busy");
     const removal = await seeder.removeSampleSet(f.deps(), "student");
-    assert.deepEqual(removal, { ok: false, set: "student", reason: "busy", removed: [] });
+    assert.deepEqual(removal, { ok: false, set: "student", reason: "busy", removed: [], skipped: [] });
     assert.deepEqual(f.deleted, []);
     assert.deepEqual(await f.counts(), { ...before, meta: before.meta + 1 });
     // The other sets are not held up by it.
@@ -734,7 +825,7 @@ test("each confirmation says exactly what will be created or removed", async () 
     const full = await seeder.listSampleData({ database: f.db, actorUserId: "operator" });
     const remove = removeConfirmation(full.find((set) => set.summary.id === "teacher")!);
     assert.deepEqual(remove.names, teacher.summary.projectNames);
-    assert.ok(remove.lead.includes("these 5 sample projects") && remove.detail.includes("Nothing else in your account is touched"));
+    assert.ok(remove.lead.includes("these 5 sample projects") && remove.detail.includes("Nothing else in your account is touched") && remove.detail.includes("removes everything in it"));
     assert.deepEqual(removeAllConfirmation(full).names, teacher.summary.projectNames);
     for (const copy of [add, remove, removeAllConfirmation(full)]) {
       assert.ok(!/[!\u{2014}]/u.test([copy.title, copy.lead, copy.detail, copy.confirm].join(" ")));

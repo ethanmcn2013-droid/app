@@ -51,10 +51,20 @@ import "server-only";
  * the operator or nobody. Invented people exist only as text.
  */
 
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
 import type { db } from "@/server/db";
-import { activities, meta, resources, tasks, users, workspaces } from "@/server/db/schema";
+import {
+  activities,
+  meta,
+  pendingInvites,
+  resources,
+  shareLinks,
+  tasks,
+  users,
+  workspaceMembers,
+  workspaces,
+} from "@/server/db/schema";
 import { nextTaskSeq } from "@/server/db/task-seq";
 import { readWorkspaceColumnConfig } from "@/server/db/board-config-read";
 import { withTemplateWriteRetry } from "@/server/db/apply-template";
@@ -124,17 +134,6 @@ export function sampleProjectId(actorUserId: string, setId: SampleSetId, project
 
 function markKey(projectId: string): string {
   return `board:${projectId}:sample-set`;
-}
-
-/**
- * A Project's declared status and target date are meta rows of their own, the
- * keys the Project overview writes (`setProjectStatusAction`,
- * `setProjectTargetDateAction`). They sit outside the `board:` namespace, so
- * Project deletion does not remove them; removal here deletes exactly these
- * keys for a sample Project it has just deleted.
- */
-function overviewKeys(projectId: string): string[] {
-  return [projectStatusMetaKey(projectId), projectTargetDateMetaKey(projectId)];
 }
 
 function leaseKey(projectId: string): string {
@@ -243,28 +242,37 @@ function leaseActive(raw: string | undefined, nowMs: number): boolean {
   }
 }
 
-/** Take the set's lease, or report that a run already holds it. */
-async function acquireLease(database: SampleDatabase, anchorProjectId: string, now: Date): Promise<boolean> {
+/**
+ * Take the set's lease, or report that a run already holds it. The answer is
+ * this run's own lease value (it carries a random token), which is what
+ * `releaseLease` needs to prove the lease is still ours.
+ */
+async function acquireLease(database: SampleDatabase, anchorProjectId: string, now: Date): Promise<string | null> {
   const key = leaseKey(anchorProjectId);
   return withTemplateWriteRetry(() =>
     database.transaction(
       async (tx) => {
         const [row] = await tx.select({ value: meta.value }).from(meta).where(eq(meta.key, key));
-        if (leaseActive(row?.value, now.getTime())) return false;
-        const value = JSON.stringify({ expiresAt: now.getTime() + LEASE_MS });
+        if (leaseActive(row?.value, now.getTime())) return null;
+        const value = JSON.stringify({ expiresAt: now.getTime() + LEASE_MS, token: randomUUID() });
         await tx
           .insert(meta)
           .values({ key, value, updatedAt: now })
           .onConflictDoUpdate({ target: meta.key, set: { value, updatedAt: now } });
-        return true;
+        return value;
       },
       { behavior: "immediate" },
     ),
   );
 }
 
-async function releaseLease(database: SampleDatabase, anchorProjectId: string): Promise<void> {
-  await database.delete(meta).where(eq(meta.key, leaseKey(anchorProjectId)));
+/**
+ * Let go of a lease this run took. Only the exact value this run wrote is
+ * deleted: a run that overran its lease must not release the one a later run
+ * now holds.
+ */
+async function releaseLease(database: SampleDatabase, anchorProjectId: string, held: string): Promise<void> {
+  await database.delete(meta).where(and(eq(meta.key, leaseKey(anchorProjectId)), eq(meta.value, held)));
 }
 
 // ── Seed ─────────────────────────────────────────────────────────────
@@ -568,11 +576,11 @@ export async function seedSampleSet(deps: SampleDataDependencies, setId: SampleS
   const [anchor, ...rest] = set.projects;
   const anchorId = sampleProjectId(deps.actorUserId, set.id, anchor.key);
   let current = anchor;
-  let leased = false;
+  let leased: string | null = null;
   try {
     await seedOne(anchor);
     leased = await acquireLease(deps.database, anchorId, now());
-    if (!leased) return { ok: false, set: set.id, reason: "busy", created, alreadyPresent };
+    if (leased === null) return { ok: false, set: set.id, reason: "busy", created, alreadyPresent };
     for (const project of rest) {
       current = project;
       await seedOne(project);
@@ -589,7 +597,7 @@ export async function seedSampleSet(deps: SampleDataDependencies, setId: SampleS
       failedAt: sampleProjectName(current),
     };
   } finally {
-    if (leased) await releaseLease(deps.database, anchorId).catch(() => undefined);
+    if (leased !== null) await releaseLease(deps.database, anchorId, leased).catch(() => undefined);
   }
   return { ok: true, set: set.id, created, alreadyPresent, ...totals };
 }
@@ -597,62 +605,86 @@ export async function seedSampleSet(deps: SampleDataDependencies, setId: SampleS
 // ── Remove ───────────────────────────────────────────────────────────
 
 /**
+ * True when a sample Project is no longer only the operator's own: someone
+ * else is a member, an invite is waiting, a share link exists, or it is
+ * published. Deleting a Project deletes everything in it, so one that other
+ * people can reach is left for the operator to delete on purpose.
+ */
+async function reachesOtherPeople(database: SampleDatabase, projectId: string): Promise<boolean> {
+  // isolation-ok: called only for a Project that has just passed all three
+  // sample marks for this operator.
+  const [project] = await database
+    .select({ publishedAt: workspaces.publishedAt })
+    .from(workspaces)
+    .where(eq(workspaces.id, projectId));
+  if (!project || project.publishedAt !== null) return true;
+  const members = await database
+    .select({ userId: workspaceMembers.userId })
+    .from(workspaceMembers)
+    .where(eq(workspaceMembers.workspaceId, projectId))
+    .limit(2);
+  if (members.length !== 1) return true;
+  const [invite] = await database
+    .select({ token: pendingInvites.token })
+    .from(pendingInvites)
+    .where(eq(pendingInvites.workspaceId, projectId))
+    .limit(1);
+  if (invite) return true;
+  const [link] = await database
+    .select({ token: shareLinks.token })
+    .from(shareLinks)
+    .where(eq(shareLinks.workspaceId, projectId))
+    .limit(1);
+  return link !== undefined;
+}
+
+/**
  * Delete the marked sample Projects of one set, and nothing else, through the
- * product's Project deletion path. The anchor goes last so the lease it holds
- * guards the whole removal.
+ * product's Project deletion path, which also removes each Project's status
+ * and target date rows. The anchor goes last so the lease it holds guards the
+ * whole removal. A sample Project other people can reach is skipped and named.
  */
 export async function removeSampleSet(deps: SampleDataDependencies, setId: SampleSetId): Promise<RemoveSampleResult> {
   if (!isSampleSetId(setId)) throw new Error(UNAVAILABLE);
   const set = SAMPLE_SETS[setId];
   const now = (deps.now ?? (() => new Date()))();
   const targets = await markedProjects(deps, set);
-  await sweepOverviewKeys(deps, set);
-  if (targets.length === 0) return { ok: true, set: set.id, removed: [] };
+  if (targets.length === 0) return { ok: true, set: set.id, removed: [], skipped: [] };
 
   const anchorId = sampleProjectId(deps.actorUserId, set.id, set.projects[0].key);
   const anchorPresent = targets.some((target) => target.id === anchorId);
-  if (anchorPresent && !(await acquireLease(deps.database, anchorId, now))) {
-    return { ok: false, set: set.id, reason: "busy", removed: [] };
+  // Nothing below runs until the lease is held.
+  const leased = anchorPresent ? await acquireLease(deps.database, anchorId, now) : null;
+  if (anchorPresent && leased === null) {
+    return { ok: false, set: set.id, reason: "busy", removed: [], skipped: [] };
   }
+  const release = async () => {
+    // Deleting the anchor removes its lease with it; otherwise let ours go.
+    if (leased !== null) await releaseLease(deps.database, anchorId, leased).catch(() => undefined);
+  };
 
   const ordered = [...targets.filter((target) => target.id !== anchorId), ...targets.filter((target) => target.id === anchorId)];
   const removed: string[] = [];
+  const skipped: string[] = [];
   for (const target of ordered) {
     try {
       // Re-prove the three marks at the moment of deletion: the listing above
       // is a read, and a delete must never act on a stale answer.
       const [still] = (await markedProjects(deps, set)).filter((project) => project.id === target.id);
       if (!still) continue;
+      if (await reachesOtherPeople(deps.database, target.id)) {
+        skipped.push(target.name);
+        continue;
+      }
       await deps.deleteProject({ actorUserId: deps.actorUserId, projectId: target.id });
-      await deps.database.delete(meta).where(inArray(meta.key, overviewKeys(target.id)));
       removed.push(target.name);
     } catch {
-      if (anchorPresent) await releaseLease(deps.database, anchorId).catch(() => undefined);
-      return { ok: false, set: set.id, reason: "failed", removed, failedAt: target.name };
+      await release();
+      return { ok: false, set: set.id, reason: "failed", removed, skipped, failedAt: target.name };
     }
   }
-  // Deleting the anchor removes the lease with it. If the anchor was skipped,
-  // let the lease go now rather than at its expiry.
-  if (anchorPresent) await releaseLease(deps.database, anchorId).catch(() => undefined);
-  return { ok: true, set: set.id, removed };
-}
-
-/**
- * Finish an interrupted removal: a sample Project that is gone but whose
- * status or target date row is still there. Exact keys for this operator's
- * deterministic ids only, and only where no Project holds that id any more.
- */
-async function sweepOverviewKeys(
-  deps: Pick<SampleDataDependencies, "database" | "actorUserId">,
-  set: SampleSet,
-): Promise<void> {
-  const ids = set.projects.map((project) => sampleProjectId(deps.actorUserId, set.id, project.key));
-  // isolation-ok: existence check on this operator's deterministic ids; a row
-  // of any owner at one of them keeps its keys.
-  const live = await deps.database.select({ id: workspaces.id }).from(workspaces).where(inArray(workspaces.id, ids));
-  const liveIds = new Set(live.map((row) => row.id));
-  const orphaned = ids.filter((id) => !liveIds.has(id)).flatMap(overviewKeys);
-  if (orphaned.length > 0) await deps.database.delete(meta).where(inArray(meta.key, orphaned));
+  await release();
+  return { ok: true, set: set.id, removed, skipped };
 }
 
 export async function removeAllSampleData(deps: SampleDataDependencies): Promise<RemoveSampleResult[]> {

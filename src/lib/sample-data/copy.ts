@@ -59,13 +59,20 @@ export function addConfirmation(set: SampleSetStatus): SampleConfirmation {
   };
 }
 
+const REMOVE_DETAIL =
+  "Removing a sample project removes everything in it, including anything added to it since. A sample project someone else has joined, or that is shared or published, is left alone. Nothing else in your account is touched. There is no undo.";
+
+/** Why a sample project was skipped, said once for all of them. */
+export const SAMPLE_SKIPPED_REASON =
+  "Someone else has joined this one, so it was left alone. Delete it yourself from Projects when you are ready.";
+
 export function removeConfirmation(set: SampleSetStatus): SampleConfirmation {
   const names = set.present.map((project) => project.name);
   return {
     title: `Remove the ${set.summary.name} set?`,
-    lead: `This permanently deletes ${names.length === 1 ? "this sample project" : `these ${names.length} sample projects`} and everything in ${names.length === 1 ? "it" : "them"}, including anything you added since:`,
+    lead: `This permanently deletes ${names.length === 1 ? "this sample project" : `these ${names.length} sample projects`}:`,
     names,
-    detail: "Nothing else in your account is touched. There is no undo.",
+    detail: REMOVE_DETAIL,
     confirm: "Remove set",
   };
 }
@@ -74,14 +81,20 @@ export function removeAllConfirmation(sets: readonly SampleSetStatus[]): SampleC
   const names = sets.flatMap((set) => set.present.map((project) => project.name));
   return {
     title: "Remove all sample data?",
-    lead: `This permanently deletes ${names.length === 1 ? "this sample project" : `these ${names.length} sample projects`} and everything in ${names.length === 1 ? "it" : "them"}, including anything you added since:`,
+    lead: `This permanently deletes ${names.length === 1 ? "this sample project" : `these ${names.length} sample projects`}:`,
     names,
-    detail: "Nothing else in your account is touched. There is no undo.",
+    detail: REMOVE_DETAIL,
     confirm: "Remove all",
   };
 }
 
-export type SampleOutcome = Readonly<{ tone: "success" | "warning" | "danger"; title: string; body: string }>;
+export type SampleOutcome = Readonly<{
+  tone: "success" | "warning" | "danger";
+  title: string;
+  body: string;
+  /** Names of sample projects a removal left alone. */
+  skipped?: readonly string[];
+}>;
 
 const DEMO: SampleOutcome = {
   tone: "warning",
@@ -117,7 +130,16 @@ export function removeOutcome(
   if (results.some((result) => !result.ok && result.reason === "demo")) return DEMO;
   const real = results as readonly RemoveSampleResult[];
   const removed = real.reduce((total, result) => total + result.removed.length, 0);
+  const skipped = real.flatMap((result) => result.skipped);
   const failed = real.find((result) => !result.ok);
+  if (!failed && skipped.length > 0) {
+    return {
+      tone: "warning",
+      title: skipped.length === 1 ? "One sample project was left alone" : `${skipped.length} sample projects were left alone`,
+      body: `${removed === 0 ? "" : `Deleted ${count(removed, "sample project", "sample projects")}. `}${SAMPLE_SKIPPED_REASON}`,
+      skipped,
+    };
+  }
   if (!failed) {
     return removed === 0
       ? { tone: "success", title: "Nothing to remove", body: "There was no sample data in your account." }
