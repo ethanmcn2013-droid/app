@@ -529,7 +529,7 @@ export function HomeBoardView({
 
             <aside className={styles.side} aria-label="Coming up">
               {board.nextDay ? (
-                <section className={styles.next} style={{ "--hue": projectColor(board.nextDay.projectId) } as CSSProperties}>
+                <section data-home-card="next" className={styles.next} style={{ "--hue": projectColor(board.nextDay.projectId) } as CSSProperties}>
                   <p className={styles.nextKicker}>Next big day</p>
                   <h2 className={styles.nextTitle}>
                     <Link href={board.nextDay.projectHref} prefetch={false}>
@@ -572,7 +572,7 @@ export function HomeBoardView({
                   </div>
                 </section>
               ) : (
-                <section className={styles.nextNone}>
+                <section data-home-card="next" className={styles.nextNone}>
                   <p className={styles.nextKicker}>Next big day</p>
                   <p className={styles.nextNoneText}>
                     No big day is set. Give a project a target date, or mark a task as a big date, and the countdown shows here.
