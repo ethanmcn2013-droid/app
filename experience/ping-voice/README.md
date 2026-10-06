@@ -203,3 +203,9 @@ Protocol references: [Realtime transcription](https://developers.openai.com/api/
 [client events](https://developers.openai.com/api/reference/resources/realtime/client-events),
 [server events](https://developers.openai.com/api/reference/resources/realtime/server-events),
 and [data controls](https://developers.openai.com/api/docs/guides/your-data?ssrid=ssr).
+
+## Disconnected native-audio proposal candidate
+
+`createPingOpenAiNativeAudio` in `src/server/ping/openai-native-audio.ts` is manually called with completed PCM, a four-field bounded context, and an abort signal. It copies PCM through the existing ordinary-buffer WAV encoder and returns only a locally validated inert proposal plus actual scalar usage or `null` when usage is unavailable. The context contains selected count, canonical reference instant, Europe/Dublin, and the four system status keys; it contains no transcript, task/Project/actor/session identity, capture finality, preconditions or authority. The fixed EU Chat Completions endpoint, explicit `gpt-audio-1.5` model, key and fetch are supplied by the caller. Regional model/account eligibility is unconfirmed; there is no environment or global-fetch lookup, retry, runtime connection, executor or receipt path.
+
+The response must be one complete bounded Chat Completion with exactly one named function call. The unchanged local proposal validator checks the full proposal. Provider IDs and raw request/response content are not exported or logged. `pnpm test:ping-voice` includes five injected construction groups for request bytes/context, bounded proposals and usage, malformed envelopes, input ownership/reentrancy, and cancellation/deadline physical settlement. These synthetic fetch responses do not establish model fidelity, correction quality, live endpoint or account behavior, retention, microphone flow, product custody, or PP020/G0/G2 acceptance. Runtime defaults remain unchanged.

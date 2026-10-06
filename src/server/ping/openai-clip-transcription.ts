@@ -13,7 +13,7 @@ export type PingOpenAiClipOptions = Readonly<{ model: string; apiKey: string;
   fetch: (input: string, init: RequestInit) => Promise<Response>; deadlineMs?: number }>;
 
 /** Copy native completed PCM only. No caller iteration, instance methods or species-sensitive slice. */
-function wav(pcm: unknown): Uint8Array<ArrayBuffer> | null {
+export function encodePingCompletedPcmWav(pcm: unknown): Uint8Array<ArrayBuffer> | null {
   try {
     if (!pcm || Object.getPrototypeOf(pcm) !== Uint8Array.prototype) return null;
     const native = Object.getPrototypeOf(Uint8Array.prototype);
@@ -80,7 +80,7 @@ export function createPingOpenAiClipTranscriber(options: PingOpenAiClipOptions) 
   return async (pcm: unknown, signal: AbortSignal): Promise<PingClipTranscription> => {
     if (signal.aborted) throw new Error("ping_clip_cancelled");
     if (physicalBusy) throw new Error("ping_clip_busy");
-    const bytes = wav(pcm);
+    const bytes = encodePingCompletedPcmWav(pcm);
     if (!bytes) throw new Error("ping_clip_invalid_pcm");
     physicalBusy = true;
     const deadlineAt = performance.now() + deadlineMs, controller = new AbortController();

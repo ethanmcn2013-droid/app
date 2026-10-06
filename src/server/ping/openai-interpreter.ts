@@ -48,7 +48,7 @@ function projection(value: unknown): PingVoiceModelInput | null {
   return freeze({ version: value.version, transcript: value.transcript, selectedTaskCount: value.selectedTaskCount,
     referenceInstant: value.referenceInstant, timeZone: value.timeZone, systemColumnKeys: [...PING_SYSTEM_COLUMNS] as const });
 }
-function proposal(value: unknown, selected: number): PingProposal | null {
+export function parsePingVoiceInterpretation(value: unknown, selected: number): PingProposal | null {
   if (!dataRecord(value) || value.version !== PING_PROPOSAL_VERSION) return null;
   if (value.outcome === "refusal" || value.outcome === "clarification") {
     return exactKeys(value, ["version", "outcome", "reason"]) && ["unsupported", "ambiguous", "incomplete"].includes(value.reason as string)
@@ -82,7 +82,7 @@ function completed(value: unknown, selected: number): PingProposal | null {
     content.type !== "output_text" || typeof content.text !== "string" || content.text.length > BODY_BYTES ||
     !jsonArray(content.annotations, 0) || (content.logprobs !== undefined && !jsonArray(content.logprobs, 0))) return null;
   const wrapper: unknown = JSON.parse(content.text);
-  return dataRecord(wrapper) && exactKeys(wrapper, ["proposal"]) ? proposal(wrapper.proposal, selected) : null;
+  return dataRecord(wrapper) && exactKeys(wrapper, ["proposal"]) ? parsePingVoiceInterpretation(wrapper.proposal, selected) : null;
 }
 
 export type PingOpenAiInterpreterOptions = Readonly<{ model: string; apiKey: string;
