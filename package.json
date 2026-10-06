@@ -114,7 +114,7 @@
     "test:project-recovery": "node --import tsx --import ./src/test/register-server-only.mjs --test --test-concurrency=1 src/lib/projects/recovery-lock-retry.test.ts src/server/projects/recovery.test.ts src/modules/timeline/server/project-recovery.test.ts src/components/settings/recovery-creation-time.test.ts experience/project-recovery/route-action.test.mjs && node --test scripts/check-project-recovery-boundary.test.mjs",
     "test:project-recovery:browser": "node --import tsx --import ./src/test/register-server-only.mjs experience/project-recovery/browser.mjs",
     "test:conversations": "node scripts/conversations/check.mjs",
-    "test:ping-input": "node --import tsx --test src/lib/ping/input-protocol.test.ts src/lib/ping/proposal.test.ts src/lib/ping/evaluation.test.ts",
+    "test:ping-input": "node --import tsx --test src/lib/ping/input-protocol.test.ts src/lib/ping/input-independent.test.ts src/lib/ping/proposal.test.ts src/lib/ping/evaluation.test.ts",
     "test:ping": "tsc --project scripts/ping/tsconfig.json --noEmit --incremental false && node --import tsx --import ./src/test/register-server-only.mjs --test src/lib/ping/command.test.ts src/lib/ping/command-independent.test.ts src/server/ping/command-service.persistence.test.ts src/server/ping/command-independent.persistence.test.ts"
   },
   "dependencies": {
