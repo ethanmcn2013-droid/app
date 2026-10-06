@@ -335,9 +335,9 @@ try {
     await page.getByRole("button", { name: "Clear the search" }).click();
     assert.equal(await rows(page).count(), 10);
 
-    // The view switcher is a menu of two; Cards is the earlier grid.
+    // The view switcher is a menu of three: Console, the dense List, and Cards.
     await page.getByRole("button", { name: "View: Console" }).click();
-    assert.deepEqual(await page.getByRole("menuitemradio").allInnerTexts().then((list) => list.map((text) => text.split("\n")[0])), ["Console", "Cards"]);
+    assert.deepEqual(await page.getByRole("menuitemradio").allInnerTexts().then((list) => list.map((text) => text.split("\n")[0])), ["Console", "List", "Cards"]);
     await shot(page, "view-menu-desk-dark");
     await page.getByRole("menuitemradio", { name: /Cards/ }).click();
     assert.match(page.url(), /view=cards/);
@@ -357,6 +357,41 @@ try {
     assert.deepEqual(errors, [], `${label}: console or page errors`);
     checks += 30;
     await context.close();
+  }
+
+  // 2b. The dense List (reference 25, 6 Oct 2026): the console's groups with
+  // count pills, a line per project, a foot count, and the peek on a click.
+  for (const viewport of Object.keys(VIEWPORTS)) {
+    for (const theme of ["dark", "light"]) {
+      const { page, context, errors, label } = await open(browser, { viewport, theme });
+      await page.locator("[data-row]").first().waitFor();
+      await page.getByRole("button", { name: "View: Console" }).click();
+      // The menu stays on screen at every size.
+      const menuBox = await page.getByRole("menu").boundingBox();
+      assert.ok(menuBox.x >= 0 && menuBox.x + menuBox.width <= VIEWPORTS[viewport].width, `${label}: the view menu runs off the screen`);
+      await page.getByRole("menuitemradio", { name: /^List/ }).click();
+      const table = page.getByRole("table", { name: "Projects" });
+      await table.waitFor();
+      assert.equal(await table.locator("[data-list-row]").count(), 10, `${label}: a line per project`);
+      const groupLabels = await table.getByRole("rowgroup").evaluateAll((groups) => groups.map((group) => group.getAttribute("aria-label") ?? ""));
+      assert.equal(groupLabels[0], "Needs a look, 3", `${label}: the first group is what needs a look`);
+      assert.equal(groupLabels.reduce((sum, text) => sum + Number(text.split(", ").at(-1)), 0), 10, `${label}: the groups hold every project once`);
+      assert.match((await table.locator("p").last().innerText()).replace(/\s+/g, " "), /^10 projects · \d+ open tasks/);
+      assert.doesNotMatch(await table.innerText(), BANNED, `${label}: words`);
+      await axe(page, `${label} list`);
+      await shot(page, `list-busy-${viewport}-${theme}`);
+      if (viewport === "desk" && theme === "dark") {
+        await table.getByRole("link", { name: /^Barn roof and heating works/ }).click();
+        const peek = page.getByRole("dialog", { name: "Barn roof and heating works" });
+        await peek.waitFor();
+        await shot(page, "list-peek-desk-dark");
+        await page.keyboard.press("Escape");
+        await peek.waitFor({ state: "detached" });
+      }
+      assert.deepEqual(errors, [], `${label} list: console errors`);
+      checks += 5;
+      await context.close();
+    }
   }
 
   // 3. Motion: the entrance plays once, and not at all when motion is reduced.
