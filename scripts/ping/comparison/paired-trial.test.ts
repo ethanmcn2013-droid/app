@@ -2,11 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { syntheticCapture, syntheticPlan } from "@/lib/ping/input-test-fixture";
 import { createPingOpenAiClipTranscriber } from "@/server/ping/openai-clip-transcription";
-import { createPingOpenAiInterpreter } from "@/server/ping/openai-interpreter";
+import { createPingOpenAiInterpreter, type PingResponsesUsageObservation } from "@/server/ping/openai-interpreter";
 import { createPingOpenAiNativeAudio, type PingNativeAudioResult } from "@/server/ping/openai-native-audio";
 import { createPingOpenAiStreamingTranscription, type PingStreamingSocket } from "@/server/ping/openai-streaming-transcription";
 import { createPingStreamingPairedTranscriber } from "@/server/ping/streaming-paired-transcriber";
-import { createPingPairedInertTrialRunner, type PingPairedRoute, type PingPrivateRouteReport } from "./paired-trial";
+import { createPingPairedInertTrialRunner, type PingPairedRoute, type PingPrivateRouteReport,
+  type PingInterpretationUsageWitness } from "./paired-trial";
 
 // Public literal synthetic labels only. No reserved labels, transcripts or outcome feedback.
 const pcm = () => new Uint8Array([0, 0, 255, 127, 0, 128, 255, 255]);
@@ -21,6 +22,12 @@ const options = (routes: [PingPairedRoute, PingPairedRoute] = [route("first"), r
 const deferred = <T>() => { let resolve!: (value: T) => void;
   const promise = new Promise<T>(done => { resolve = done; }); return { promise, resolve }; };
 const settle = () => new Promise(resolve => setImmediate(resolve));
+const responsesUsage = () => ({ input_tokens: 10, output_tokens: 2, total_tokens: 12,
+  input_tokens_details: { cached_tokens: 3, cache_write_tokens: 1 }, output_tokens_details: { reasoning_tokens: 1 } });
+const responsesBody = (proposal: unknown = syntheticPlan(), usage: unknown = responsesUsage()) => new Response(JSON.stringify({
+  status: "completed", error: null, incomplete_details: null, usage,
+  output: [{ type: "message", role: "assistant", status: "completed", content: [{ type: "output_text", annotations: [], logprobs: [],
+    text: JSON.stringify({ proposal }) }] }] }), { headers: { "content-type": "application/json" } });
 function exactInert(report: PingPrivateRouteReport, calls = 1) {
   assert.equal(report.observation.executorCalls, 0); assert.equal(report.observation.receiptReadsLifetime, 0);
   assert.deepEqual(report.observation.receiptReadWindows, []); assert.equal(report.observation.observedCommittedEffects, 0);
@@ -397,4 +404,90 @@ test("public actual streaming transcription helper pairs with completed clip and
     assert.deepEqual(report.observation.stages.map(s => s.name), ["finals_ready", "interpretation_start", "interpretation_end"]); }
   assert.deepEqual(result.routes[0].transcriptionUsage, { type: "duration", seconds: 0 });
   assert.equal(result.routes[1].transcriptionUsage, null);
+});
+
+test("actual interpreter observer and original invocation reader attach numeric usage without changing default serialization", async t => {
+  const clock = t.mock.method(performance, "now", () => 0);
+  try {
+    let invocations = 0, fetches = 0, observers = 0, reads = 0;
+    let observation: PingInterpretationUsageWitness["observation"] = null;
+    const factory = createPingOpenAiInterpreter({ model: "synthetic-model", apiKey: "synthetic-key", fetch: async () => { fetches++; return responsesBody(); },
+      onUsage: value => { observers++; observation = { invocation: invocations, value }; } });
+    const first: PingPairedRoute = { ...route("first"), interpret: async (input, signal) => {
+      invocations++; observation = null; return factory(input, signal);
+    }, readInterpretationUsage: () => { reads++; return { invocations, observation }; } };
+    const result = await createPingPairedInertTrialRunner()(options([first, route("second")]));
+    assert.deepEqual([invocations, fetches, observers, reads], [1, 1, 1, 2]);
+    assert.deepEqual(result.routes[0].interpretationUsage, responsesUsage());
+    assert.ok(Object.isFrozen(result.routes[0].interpretationUsage?.input_tokens_details));
+    assert.equal(result.routes[0].transcriptionUsage, null); assert.equal(Object.hasOwn(result.routes[0], "nativeAudioUsage"), false);
+    assert.ok(result.routes[0].evaluation?.ok); assert.equal(result.routes[0].evaluation.wholePlanMatch, true);
+    assert.equal(result.routes[0].status, "completed");
+    const defaultReport = await createPingPairedInertTrialRunner()(options());
+    assert.equal(JSON.stringify({ routes: result.routes.map(r => ({ ...r, interpretationUsage: null })) }), JSON.stringify(defaultReport));
+    exactInert(result.routes[1]);
+    // The next invocation begins with a previous stamp, then clears it before calling the SAME factory.
+    const again = await createPingPairedInertTrialRunner()(options([first, route("second")]));
+    assert.deepEqual([invocations, fetches, observers, reads], [2, 2, 2, 4]);
+    assert.deepEqual(again.routes[0].interpretationUsage, responsesUsage());
+    let failedInvocation = 0; let failedObservation: PingInterpretationUsageWitness["observation"] = null;
+    const invalid = createPingOpenAiInterpreter({ model: "synthetic-model", apiKey: "synthetic-key", fetch: async () => responsesBody({ actorId: "not-authority" }),
+      onUsage: value => { failedObservation = { invocation: failedInvocation, value }; } });
+    const failed = await createPingPairedInertTrialRunner()(options([{ ...route("invalid"),
+      interpret: async (input, signal) => { failedInvocation++; failedObservation = null; return invalid(input, signal); },
+      readInterpretationUsage: () => ({ invocations: failedInvocation, observation: failedObservation }) }, route("skip")]));
+    assert.equal(failed.routes[0].status, "failed"); assert.equal(failed.routes[0].evaluation, null);
+    assert.deepEqual(failed.routes[0].interpretationUsage, responsesUsage()); assert.equal(failed.routes[1].transcribeCalls, 0);
+  } finally { clock.mock.restore(); }
+});
+
+test("stale stamps, counter drift and malformed diagnostics remain null without changing whole-plan status", async () => {
+  const value: PingResponsesUsageObservation = { version: "ping.responses-usage.v1", provenance: "interpretation", state: "observed", usage: responsesUsage() };
+  const cases: unknown[] = [
+    { invocations: 6, observation: { invocation: 5, value } },
+    { invocations: 7, observation: { invocation: 7, value } },
+    { invocations: 6, observation: { invocation: 6, value }, extra: 1 },
+    { invocations: 6, observation: { invocation: 6, value: { ...value, usage: { ...responsesUsage(), price: 0 } } } },
+    { invocations: 6, observation: { invocation: 6, value: { ...value, state: "absent", usage: responsesUsage() } } },
+    { invocations: 6, observation: null }, "throw", "invalid-baseline",
+  ];
+  for (const final of cases) {
+    let reads = 0;
+    const first: PingPairedRoute = { ...route("first"), readInterpretationUsage: () => {
+      reads++;
+      if (final === "throw") throw Error("synthetic diagnostic failure");
+      return (final === "invalid-baseline" ? { invocations: reads === 1 ? 5 : 6, observation: { invocation: 6, value } }
+        : reads === 1 ? { invocations: 5, observation: { invocation: 5, value } } : final) as PingInterpretationUsageWitness;
+    } };
+    const result = await createPingPairedInertTrialRunner()(options([first, route("second")]));
+    assert.equal(reads, 2); assert.equal(result.routes[0].status, "completed"); exactInert(result.routes[0]);
+    assert.ok(result.routes[0].evaluation?.ok); assert.equal(result.routes[0].evaluation.wholePlanMatch, true);
+  }
+  const controller = new AbortController(); let entries = 0;
+  const stopped = await createPingPairedInertTrialRunner()({ ...options([{ ...route("cancel-on-read"),
+    readInterpretationUsage: () => { controller.abort(); return { invocations: 0, observation: null }; },
+    interpret: async () => { entries++; return syntheticPlan(); } }, route("skip")]), signal: controller.signal });
+  assert.equal(stopped.routes[0].status, "cancelled"); assert.equal(entries, 0); assert.equal(stopped.routes[0].interpretationUsage, null);
+});
+
+test("outer cancellation retains immutable null usage while original callback and interpreter physical settlement remain held", async () => {
+  const entered = deferred<void>(), fetchHeld = deferred<Response>(), callbackSettled = deferred<void>(), controller = new AbortController();
+  let invocations = 0, reads = 0, fetches = 0;
+  let observation: PingInterpretationUsageWitness["observation"] = null;
+  const factory = createPingOpenAiInterpreter({ model: "synthetic-model", apiKey: "synthetic-key", fetch: async () => { fetches++; entered.resolve(); return fetchHeld.promise; },
+    onUsage: value => { observation = { invocation: invocations, value }; } });
+  const first: PingPairedRoute = { ...route("held"), interpret: async (input, signal) => {
+    invocations++; observation = null;
+    try { return await factory(input, signal); } finally { await callbackSettled.promise; }
+  }, readInterpretationUsage: () => { reads++; return { invocations, observation }; } };
+  const run = createPingPairedInertTrialRunner(), pending = run({ ...options([first, route("skip")]), signal: controller.signal });
+  await entered.promise; controller.abort(); const result = await pending;
+  assert.equal(result.routes[0].status, "cancelled"); assert.equal(result.routes[0].interpretationUsage, null);
+  assert.equal(reads, 1); assert.equal(fetches, 1);
+  await assert.rejects(run(options()), /ping_trial_busy/);
+  await assert.rejects(factory({ version: "ping.interpretation.v1", transcript: "Complete", selectedTaskCount: 1,
+    referenceInstant: "2026-10-06T09:00:00.000Z", timeZone: "Europe/Dublin", systemColumnKeys: ["todo", "doing", "review", "done"] }, new AbortController().signal), /busy$/);
+  fetchHeld.resolve(responsesBody()); await settle(); callbackSettled.resolve(); await settle();
+  assert.equal(result.routes[0].interpretationUsage, null); assert.equal(reads, 1);
+  assert.equal((await run(options())).routes[0].status, "completed");
 });
