@@ -17,7 +17,6 @@ import {
   activities,
   attachments,
   notifications,
-  shareLinks,
   shareLinkVisits,
   workspaces,
   workspaceMembers,
@@ -43,6 +42,7 @@ import { toPublicTask } from "@/lib/public-task";
 import { parseColumnConfig } from "@/lib/board-config";
 import { publicBoardColumns, type PublicColumn } from "@/lib/public-board-lanes";
 import { byWorkspace } from "./tenant";
+import { taskColumnsWithCount } from "./task-columns";
 import { withReadRetry } from "./retry";
 import { isDemoMode } from "@/lib/access-mode";
 import { getCurrentUserOrNull } from "@/server/auth";
@@ -55,25 +55,6 @@ import {
   DEMO_WORKSPACE_SLUG,
   demoTasks,
 } from "@/server/demo/tasks-demo";
-
-const taskColumnsWithCount = {
-  ...getTableColumns(tasks),
-  commentCount:
-    sql<number>`(SELECT COUNT(*) FROM ${comments} WHERE ${comments.taskId} = ${tasks.id})`.as(
-      "comment_count",
-    ),
-  // Subtask rollups (Phase 3B): total children and how many are done, so
-  // the board card can show a compact "done/total" subtask receipt and
-  // open straight into the checklist without a second fetch.
-  subtaskCount:
-    sql<number>`(SELECT COUNT(*) FROM tasks child WHERE child.parent_task_id = ${tasks.id} AND child.archived_at IS NULL)`.as(
-      "subtask_count",
-    ),
-  subtaskDoneCount:
-    sql<number>`(SELECT COUNT(*) FROM tasks child WHERE child.parent_task_id = ${tasks.id} AND child.archived_at IS NULL AND child.lane = 'done')`.as(
-      "subtask_done_count",
-    ),
-};
 
 // Lane ordering matches the client's LANE_ORDER. Encoded as a CASE
 // expression so SQL can sort the (string) lane column the same way
