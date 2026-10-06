@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { PingProposal } from "@/lib/ping/proposal";
 import {
   PING_TYPED_MAX_TEXT_POINTS,
@@ -166,7 +166,7 @@ function PingTypedPanelFlow({
     return () => { window.clearTimeout(timer); mounted.current = false; };
   }, [actorId, projectId]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const selectionChanged = previousSelectionKey.current !== selectionKey;
     previousSelectionKey.current = selectionKey;
     if (selectionChanged) selectionEpoch.current += 1;

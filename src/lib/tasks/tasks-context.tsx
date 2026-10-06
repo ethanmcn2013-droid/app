@@ -6,6 +6,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useReducer,
   useRef,
@@ -178,7 +179,7 @@ export function TasksProvider({
     return () => { mounted.current = false; };
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     liveScope.current = { projectId, actorId };
   }, [actorId, projectId]);
   const dispatch = useCallback(
