@@ -1536,7 +1536,8 @@ a.connectedCard:hover {
   }
 }
 
-/* "Your apps" is five tiles: one row, not four and an orphan. */
+/* "Your apps" is five tiles: one row, not four and an orphan. "More apps"
+   shares the five columns so its tiles sit under the ones above. */
 .tileGridFeatured {
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }

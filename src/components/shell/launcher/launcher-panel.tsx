@@ -586,7 +586,8 @@ export function LauncherPanel({
 
   const moreSections = (
     <>
-      {section("more-apps", MORE_APPS_LABEL, moreTiles, isPage ? styles.appGrid : styles.tileGrid)}
+      {/* Five across like "Your apps", so the tiles line up in one column. */}
+      {section("more-apps", MORE_APPS_LABEL, moreTiles, isPage ? styles.appGrid : `${styles.tileGrid} ${styles.tileGridFeatured}`)}
       {section(
         "connected",
         "Works with",
