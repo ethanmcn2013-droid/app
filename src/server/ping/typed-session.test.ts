@@ -509,3 +509,54 @@ test("invoked voice owner Cancel preserves one original and paused canonical ref
     assert.equal((await rows(f))[0].assignees, '["bob","alice"]');
   } finally { f.client.close(); }
 });
+
+test("pause marks every pending original before disposing a reentrant voice transport", async () => {
+  const f = await createPingProofFixture();
+  try {
+    await seedProofTask(f.client, "target", { startDay: 2, durationDays: 3 });
+    let allowed = true, armed = false, calls = 0, handle = "";
+    let nested: Promise<PingTypedResponse> | null = null;
+    const other = { ...actor, sessionId: "second-synthetic-session" };
+    const script = scriptedVoice(), base = createPingCommandService(f.adapter);
+    const session = createPingTypedSession(f.adapter, { isNewWorkAllowed: () => allowed,
+      voice: { ...script.providers, createTransport: () => {
+        const transport = script.providers.createTransport();
+        return { ...transport, close: () => {
+          if (armed) { armed = false; allowed = true; nested = session.handle(other, action(handle, "execute")); }
+        } };
+      } }, service: { ...base, execute: original => { calls++; return base.execute(original); } } });
+    const voice = voiceHandle(await session.handleVoice(actor, voiceBegin(), auth));
+    handle = token(await session.handle(other, request(2))); armed = true; allowed = false;
+    assert.deepEqual(await session.handle(other, action(handle, "execute")), { ok: false, code: "stale_capture" });
+    assert.deepEqual(await nested, { ok: false, code: "stale_capture" });
+    const stopped = await session.handleVoice(actor, voiceControl(voice, "status"), auth);
+    assert.ok(stopped.ok && "knowledge" in stopped && stopped.knowledge === "not_invoked");
+    assert.equal(calls, 0); assert.equal((await rows(f))[0].assignees, '["bob"]');
+    assert.equal(Number((await f.client.execute("SELECT COUNT(*) n FROM ping_command_receipts")).rows[0].n), 0);
+  } finally { f.client.close(); }
+});
+
+test("final admission callback cannot consume typed or voice deadline then invoke", async () => {
+  const f = await createPingProofFixture();
+  try {
+    await seedProofTask(f.client, "target", { startDay: 2, durationDays: 3 });
+    let at = PROOF_NOW, mono = 0, calls = 0, typedChecks = 0, expireTyped = false, expireVoice = false;
+    const base = createPingCommandService(f.adapter);
+    const session = createPingTypedSession(f.adapter, { now: () => at, monotonic: () => mono,
+      isNewWorkAllowed: () => {
+        if (expireTyped && ++typedChecks === 2) { at += 45_000; expireTyped = false; }
+        if (expireVoice) { mono += 10_000; expireVoice = false; }
+        return true;
+      }, voice: scriptedVoice().providers,
+      service: { ...base, execute: original => { calls++; return base.execute(original); } } });
+    const handle = token(await session.handle(actor, request())); expireTyped = true;
+    assert.deepEqual(await session.handle(actor, action(handle, "execute")), { ok: false, code: "stale_capture" });
+    const other = { ...actor, sessionId: "voice-deadline-session" }, otherAuth = async () => other;
+    const voice = voiceHandle(await session.handleVoice(other, voiceBegin(2), otherAuth));
+    await session.acceptVoiceAudio(other, voiceEnvelope(voice), async () => pcm(), otherAuth);
+    const done = await session.handleVoice(other, voiceControl(voice, "finish"), async () => { expireVoice = true; return other; });
+    assert.ok(done.ok && "knowledge" in done && done.knowledge === "not_invoked");
+    assert.equal(calls, 0); assert.equal((await rows(f))[0].assignees, '["bob"]');
+    assert.equal(Number((await f.client.execute("SELECT COUNT(*) n FROM ping_command_receipts")).rows[0].n), 0);
+  } finally { f.client.close(); }
+});
