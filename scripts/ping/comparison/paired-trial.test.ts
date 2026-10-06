@@ -187,3 +187,36 @@ test("public synthetic actual clip+interpreter composition inspects both WAVs/pr
     assert.ok(report.evaluation?.ok); assert.equal(report.evaluation.wholePlanMatch, true);
     assert.equal(report.transcriptionUsage, null); }
 });
+
+test("reentrant validation cannot reserve a second overlapping run", async () => {
+  const run = createPingPairedInertTrialRunner(), gate = deferred<unknown>();
+  const nested: { promise?: ReturnType<typeof run> } = {};
+  let outerCalls = 0, nestedCalls = 0;
+  const held = options([{ ...route("held"), transcribe: async () => {
+    nestedCalls++; await gate.promise; return { text: "Complete", usage: null };
+  } }, route("second")]);
+  const outer = options([{ ...route("outer"), transcribe: async () => {
+    outerCalls++; return { text: "Complete", usage: null };
+  } }, route("other")]);
+  const proxy = new Proxy(outer, { get(target, key, receiver) {
+    if (key === "pcm" && !nested.promise) nested.promise = run(held);
+    return Reflect.get(target, key, receiver);
+  } });
+  await assert.rejects(run(proxy), /ping_trial_busy/);
+  assert.equal(nestedCalls, 1); assert.equal(outerCalls, 0);
+  await assert.rejects(run(options()), /ping_trial_busy/);
+  gate.resolve(null); assert.ok(nested.promise);
+  const report = await nested.promise; assert.equal(report.routes[0].status, "completed");
+  assert.equal((await run(options())).routes[0].status, "completed");
+});
+
+test("deadline expiring across byte-copy boundary prevents the physical callback entry", async t => {
+  let clockReads = 0, calls = 0;
+  t.mock.method(performance, "now", () => ++clockReads <= 3 ? 0 : 20);
+  const input = options([{ ...route("expired"), transcribe: async () => {
+    calls++; return { text: "Complete", usage: null };
+  } }, route("skip")]);
+  const result = await createPingPairedInertTrialRunner()({ ...input, deadlineMs: 10 });
+  assert.equal(result.routes[0].status, "deadline"); assert.equal(calls, 0);
+  assert.equal(result.routes[0].transcribeCalls, 0); assert.equal(result.routes[1].transcribeCalls, 0);
+});

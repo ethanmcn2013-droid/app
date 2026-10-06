@@ -96,6 +96,8 @@ export function createPingPairedInertTrialRunner() {
     const snapshot = () => freeze({ routes: reports.map(report => ({ ...report,
       observation: { ...report.observation, stages: report.observation.stages.map(stage => ({ ...stage })) } })) });
     if (signal.aborted) return snapshot();
+    // Unknown JSON-shaped proxies can reenter while their fields are validated/copied.
+    if (busy) throw new Error("ping_trial_busy");
     busy = true;
     const started = performance.now();
     let current = 0, stopped = false, controller = new AbortController(), timer: ReturnType<typeof setTimeout> | undefined;
@@ -122,6 +124,7 @@ export function createPingPairedInertTrialRunner() {
           if (signal.aborted) abort();
           if (!guard()) return;
           const pcm = new Uint8Array(master.length); Uint8Array.prototype.set.call(pcm, master);
+          if (!guard()) return;
           reports[current].transcribeCalls++;
           const transcription: unknown = await routes[current].transcribe(pcm, controller.signal);
           if (!guard()) return;
