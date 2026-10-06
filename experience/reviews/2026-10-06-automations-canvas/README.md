@@ -83,7 +83,7 @@ The surface has no server data, so there is no fixture and no busy, sparse or em
 
 ## Bundle
 
-Measured with `pnpm perf:budgets` on the review-mode production build. Total client JS is 1081.1 KB gzip. The Automations code is three route-local chunks of about 25.3 KB gzip together (list, editor, and the model they share); none of it is in the shared runtime, which is unchanged at 244.8 KB. Main without it is about 1055.5 KB, so the 1070 ceiling was breached by this page alone. The ceiling is raised to 1084 in `contracts/venue-surface-performance-budgets.v1.json` with the basis written there. That is a delegated decision for the founder to confirm or reverse, and it leaves no room for the ports still open.
+Measured with `pnpm perf:budgets` on the review-mode production build. Total client JS is 1081.1 KB gzip. The Automations code is three route-local chunks of about 25.5 KB gzip together (list, editor, and the model they share); none of it is in the shared runtime, which is unchanged at 244.8 KB. Main without it is about 1055.5 KB, so the 1070 ceiling was breached by this page alone. The ceiling is raised to 1084 in `contracts/venue-surface-performance-budgets.v1.json` with the basis written there. That is a delegated decision for the founder to confirm or reverse, and it leaves no room for the ports still open.
 
 ## Registry
 
