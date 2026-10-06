@@ -341,7 +341,7 @@ async function auditTimelineContract(
 
   if (testInfo.project.name === "mobile") {
     const minimumTarget = await page.locator("[data-timeline-artifact] button").evaluateAll(
-      (buttons) => Math.min(...buttons.filter((button) => button.offsetParent).map((button) => button.getBoundingClientRect().height)),
+      (buttons) => Math.min(...buttons.filter((button) => button instanceof HTMLElement && button.offsetParent).map((button) => button.getBoundingClientRect().height)),
     );
     expect(minimumTarget).toBeGreaterThanOrEqual(44);
   }
