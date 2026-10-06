@@ -49,9 +49,16 @@ try {
   fixture = await createPingProofFixture();
   await seedProofTask(fixture.client, 'target', { assignees: ['bob'], startDay: 2, durationDays: 3 });
   await seedProofTask(fixture.client, 'other', { assignees: ['bob'] });
-  let executeCalls = 0;
+  const floorTargets = ['floor-one', ...Array.from({length:10},(_,index)=>'floor-ten-'+(index+1))];
+  for (const id of floorTargets) await seedProofTask(fixture.client,id,{assignees:['bob'],startDay:2,durationDays:3});
+  await seedProofTask(fixture.client,'floor-foreign',{projectId:'synthetic-foreign-project',assignees:['bob']});
+  let executeCalls = 0, receiptReadCalls = 0;
+  const executedOriginals=[], readOriginals=[];
   const base = createPingCommandService(fixture.adapter, { now: Date.now });
-  const session = createPingTypedSession(fixture.adapter, { now: Date.now, service: { ...base, execute: original => { executeCalls++; return base.execute(original); } } });
+  const session = createPingTypedSession(fixture.adapter, { now: Date.now, service: { ...base,
+    execute: original => { executeCalls++;executedOriginals.push(original.command.commandId);return base.execute(original); },
+    getReceiptForCommand: original => { receiptReadCalls++;readOriginals.push(original.command.commandId);return base.getReceiptForCommand(original); }
+  } });
   const state = { actor: { actorId: 'alice', sessionId: 'synthetic-browser-session' }, failRefresh: false, dropExecute: false, holdAction: null, release: null, requests: [] };
   const handler = createPingTypedHttp({ authenticate: async () => state.actor, session: async () => session });
   const bundle = await esbuild.build({ absWorkingDir: root, entryPoints: ['experience/ping-typed/fixture.tsx'], outdir: path.join(out, 'bundle'), bundle: true, write: false, metafile: true, platform: 'browser', format: 'iife', jsx: 'automatic', alias: { '@': path.join(root, 'src') }, loader: { '.module.css': 'local-css', '.css': 'css' }, external: ['/fonts/*'], define: { 'process.env.NODE_ENV': '"production"', 'process.env.NEXT_PUBLIC_PROJECT_PING_TYPED_ENABLED': '"1"', 'process.env': '{}' }, plugins: [{ name: 'explicit-fixture-boundaries', setup(build) { build.onResolve({ filter: /.*/ }, args => stubs.has(args.path) ? { path: args.path, namespace: 'fixture' } : undefined); build.onLoad({ filter: /.*/, namespace: 'fixture' }, args => ({ contents: stubs.get(args.path), loader: 'js', resolveDir: root })); } }] });
@@ -165,15 +172,107 @@ try {
   await page.getByRole('checkbox',{name:'Select Synthetic other',exact:true}).uncheck(); // A→B→A must still invalidate the pending capture.
   const releasedPrepare = page.waitForResponse(response => response.url() === origin+'/api/ping' && response.request().method()==='POST' && response.request().postDataJSON().action==='prepare');
   state.holdAction=null;state.release();state.release=null;
-  await (await releasedPrepare).finished();
+  const stalePreparedResponse=await releasedPrepare;
+  await stalePreparedResponse.finished();
   await page.waitForFunction(() => { const input=document.querySelector('[data-testid="ping-input"]');return input && !input.disabled; });
   await page.getByTestId('ping-status').filter({hasText:'selection changed'}).waitFor();
   assert.equal(await page.getByTestId('ping-apply').count(),0);
   assert.equal(executeCalls,3);assert.equal(await countReceipts(),3);
   receipt.cases.push({name:'selection A→B→A while preparation pending cannot restore stale capture',passed:true});
+  // The UI correctly ignores that stale response; the fixture privately knows its
+  // untouched original and must receive an actual Cancel acknowledgement before reuse.
+  const stalePrepared=await stalePreparedResponse.json();
+  assert.ok(stalePrepared.ok&&stalePrepared.action==='prepare');
+  const cleaned=await page.evaluate(async original=>{
+    const response=await fetch('/api/ping',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      version:'ping.typed.v1',action:'cancel',generationId:original.generationId,token:original.token})});
+    return response.json();
+  },stalePrepared);
+  assert.ok(cleaned.ok&&cleaned.action==='cancel'&&cleaned.knowledge==='not_invoked');
+  assert.equal(cleaned.commandId,stalePrepared.commandId);assert.equal(executeCalls,3);assert.equal(await countReceipts(),3);
   const preserved=(await fixture.client.execute("SELECT assignees,lane,start_day,duration_days FROM tasks WHERE id='other'")).rows[0];
   assert.deepEqual(JSON.parse(preserved.assignees),['bob']);assert.equal(preserved.lane,'todo');
   assert.equal(Number((await targetRow()).start_day),2);assert.equal(Number((await targetRow()).duration_days),3);
+  // Local typed floor only: canonical legacy control actions above deliberately throw.
+  // Private original identities correlate attempts and never enter the observations.
+  receipt.typedFloorObservations=[];
+  const literalColumns=['id','workspace_id','seq','title','lane','priority','assignees','due','due_at','start_day',
+    'duration_days','completed_at','board_column_key','parent_task_id','recurrence','archived_at','position'];
+  const literalRows = async () => (await fixture.client.execute(`SELECT ${literalColumns.join(',')} FROM tasks ORDER BY id`)).rows
+    .map(row=>Object.fromEntries(literalColumns.map(column=>[column,row[column]])));
+  for (const selected of [[floorTargets[0]],floorTargets.slice(1)]) {
+    await page.reload(); // Fresh mounted selection, no command invocation.
+    await page.getByTestId('ping-input').waitFor();
+    for (const id of selected) await page.getByRole('checkbox',{name:'Select Synthetic '+id,exact:true}).check();
+    assert.equal(await page.getByTestId('ping-selection-scope').textContent(),`${selected.length} selected task${selected.length===1?'':'s'} in this Project`);
+    await page.getByTestId('ping-input').fill('status doing');
+    const before={execute:executeCalls,read:receiptReadCalls,receipts:await countReceipts(),rows:await literalRows()};
+    assert.ok(before.rows.filter(row=>selected.includes(row.id)).every(row=>row.lane==='todo'));
+    await page.evaluate(()=>{
+      window.pingTypedFloorTiming={reviewEventMs:null,readyObservedMs:null,applyEventMs:null,confirmedObservedMs:null};
+      document.addEventListener('click',event=>{
+        if(!event.isTrusted)return;
+        const control=event.target.closest?.('[data-testid]')?.getAttribute('data-testid');
+        if(control==='ping-review'&&window.pingTypedFloorTiming.reviewEventMs===null)window.pingTypedFloorTiming.reviewEventMs=Math.floor(performance.now());
+        if(control==='ping-apply'&&window.pingTypedFloorTiming.applyEventMs===null)window.pingTypedFloorTiming.applyEventMs=Math.floor(performance.now());
+      },true);
+    });
+    const preparedResponse=page.waitForResponse(response=>response.url()===origin+'/api/ping'&&response.request().postDataJSON()?.action==='prepare');
+    await page.getByTestId('ping-review').click();
+    const prepareResponse=await preparedResponse;
+    const preparedBody=await prepareResponse.json();
+    assert.equal(prepareResponse.status(),200,`Measured Prepare refused: ${preparedBody.code??'unexpected_response'}`);
+    assert.ok(preparedBody.ok&&preparedBody.action==='prepare');
+    await page.waitForFunction(()=>{
+      const apply=document.querySelector('[data-testid=ping-apply]');
+      if(!apply||apply.disabled)return false;
+      if(window.pingTypedFloorTiming.readyObservedMs===null)window.pingTypedFloorTiming.readyObservedMs=Math.floor(performance.now());
+      return true;
+    });
+    const executeResponse=page.waitForResponse(response=>response.url()===origin+'/api/ping'&&response.request().postDataJSON()?.action==='execute');
+    const refreshResponse=page.waitForResponse(response=>response.url()===origin+'/api/ping'&&response.request().postDataJSON()?.action==='refresh');
+    await page.getByTestId('ping-apply').click();
+    const executed=await (await executeResponse).json();
+    assert.ok(executed.ok&&executed.knowledge==='committed');
+    const refreshed=await (await refreshResponse).json();
+    assert.ok(refreshed.ok&&refreshed.projection==='matches');
+    await page.waitForFunction(ids=>{
+      const input=document.querySelector('[data-testid=ping-input]');
+      const confirmed=document.querySelector('[data-testid=ping-status]')?.textContent?.includes('current Tasks view now reflects it');
+      if(!input||input.disabled||!confirmed||document.querySelector('[data-testid=ping-apply]')||
+        !ids.every(id=>window.pingObserved?.find(row=>row.id===id)?.lane==='doing'))return false;
+      if(window.pingTypedFloorTiming.confirmedObservedMs===null)window.pingTypedFloorTiming.confirmedObservedMs=Math.floor(performance.now());
+      return true;
+    },selected);
+    const after=await literalRows();
+    assert.equal(after.length,before.rows.length);
+    for (const pre of before.rows) assert.deepEqual(after.find(row=>row.id===pre.id),selected.includes(pre.id)?{...pre,lane:'doing'}:pre);
+    const originals=executedOriginals.slice(before.execute),lookups=readOriginals.slice(before.read);
+    assert.equal(executeCalls-before.execute,1);assert.equal(receiptReadCalls-before.read,1);
+    assert.equal(await countReceipts()-before.receipts,1);
+    assert.equal(originals[0],executed.commandId);assert.ok(lookups.every(id=>id===originals[0]));
+    assert.equal(executed.receipt.affectedCount,selected.length);assert.equal(executed.receipt.changedCount,selected.length);
+    assert.deepEqual(executed.receipt.effects.map(effect=>effect.taskId).sort(),[...selected].sort());
+    const persisted=(await fixture.client.execute({sql:'SELECT receipt_json FROM ping_command_receipts WHERE actor_id=? AND command_id=?',args:['alice',originals[0]]})).rows[0];
+    assert.deepEqual(JSON.parse(persisted.receipt_json),executed.receipt);
+    const timing=await page.evaluate(()=>window.pingTypedFloorTiming);
+    for(const timestamp of Object.values(timing))assert.ok(Number.isSafeInteger(timestamp)&&timestamp>=0);
+    assert.ok(timing.reviewEventMs<=timing.readyObservedMs&&timing.readyObservedMs<=timing.applyEventMs&&timing.applyEventMs<=timing.confirmedObservedMs);
+    receipt.typedFloorObservations.push({version:'ping.typed-local-floor.v1',targetCount:selected.length,sampleCount:1,
+      input:'restricted_literal_status',authentication:'synthetic_fixture',knowledge:'committed',
+      callDeltas:{executorCalls:executeCalls-before.execute,planBoundReceiptReadCalls:receiptReadCalls-before.read},
+      oneExecutedOriginalAndMatchingLookups:true,effects:{affectedCount:selected.length,changedCount:selected.length,literalAllRowsAndCanonicalOraclesPassed:true},
+      timing:{clock:'browser.performance.now',precisionMs:1,...timing,
+        reviewToReadyMs:timing.readyObservedMs-timing.reviewEventMs,
+        applyToConfirmedMs:timing.confirmedObservedMs-timing.applyEventMs,
+        reviewToConfirmedMs:timing.confirmedObservedMs-timing.reviewEventMs,
+        activationProvenance:'Trusted Playwright native mouse click capture listener before React handler',
+        observationProvenance:'First browser polling predicate after successful prepare/execute/refresh responses; ready Apply and confirmed canonical rows with settled controls, not paint time'},
+      billing:{amount:null,currency:null,realProviderUsage:null},speechEndMs:null,
+      currentControlComparator:{outcome:'unavailable',reason:'Canonical control actions are throwing fixture adapters'},
+      limits:['One local sample per count includes polling/automation/instrumentation; selection and text entry excluded; no human value, p50/p95, cost, natural-language fidelity or genuine admission claim.']});
+    receipt.cases.push({name:`actual typed ${selected.length}-target local floor commits one original and confirms every selected row while preserving all other rows`,passed:true});
+  }
   assert.deepEqual(errors,[]);
   const accessibility = await new AxeBuilder({page}).include('[data-testid=project-ping-typed-panel]').analyze();
   assert.deepEqual(accessibility.violations.map(({id,impact,nodes})=>({id,impact,count:nodes.length})),[]);
