@@ -65,3 +65,17 @@ Review mode has one project with no status and a reader who has Chat. A reader w
 ## Registry
 
 `pnpm experience:validate` is clean with no reviewed hash changed, so there are no receipts in this folder. `experience/feature-tests/initial-setup-shell.spec.ts` and its config are retired: the group they tested no longer exists, and `experience/sidebar/run.mjs` replaces them.
+
+## Gates, as run on 6 October
+
+- `pnpm typecheck`: clean. ESLint on the changed files: clean.
+- `pnpm test:suite-url-and-switcher` (shell nav, launcher, navigation and context contracts): 85 of 85. `sidebar-projects.test.ts` and `automations.test.ts`: 26 of 26. `pnpm test:conversations`: pass.
+- Module boundaries, route manifest (91), suite switcher contract, first-contact language, tap targets, v3 tokens (source and built), tenant scope rules: all pass.
+- `pnpm experience:validate` and the critical fixtures check: clean.
+- `pnpm build` in review mode: pass. `experience/sidebar/run.mjs`: 240 of 240 on the final build. `experience/automations-canvas/run.mjs`: 386 of 386 on the final build. `experience/project-console/run.mjs`: 225 of 225.
+- `pnpm test:settings-hydration`: 5 pass, 2 fail. Both failures are one assertion in `shell-surfaces.spec.ts`, "the card has a fill", on Home's next big day card (`[data-home-card="next"]`). The card's fill is a `background:` gradient, so its computed background colour is transparent. That is Home's own style, inherited from PR #209, whose `registry-and-drift` job was already failing; the sidebar assertions in the same test (ground, icon contrast in the Workspace group) pass before it. Owed, most likely in #209: give `.next` in `home.module.css` a `background-color: var(--v3-surface)` with the gradient as `background-image`, then rerun.
+- Not run: the whole of `pnpm test`, the critical capture, `pnpm test:recipient-context:browser` (its sidebar selector was updated by reading, not by running) and the Home and Overview browser checks.
+
+## Bundle
+
+Total client JS measures 1110.3 KB gzip on the final review-mode build (Home and Overview 1082.1, plus Automations about 25.5, plus about 2.7 for this pass). The ceiling in `contracts/venue-surface-performance-budgets.v1.json` is 1113. The 936 target is unchanged.
