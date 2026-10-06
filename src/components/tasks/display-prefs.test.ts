@@ -11,7 +11,7 @@ const localStorage = {
 };
 (globalThis as unknown as { window: unknown }).window = { localStorage, addEventListener() {}, removeEventListener() {} };
 
-test("the list shows the Labels column by default, and an empty choice hides every column", async () => {
+test("the list shows the Tags column by default, and an empty choice hides every column", async () => {
   const { readListColumns } = await import("./display-prefs");
   // No stored preference: the first client read matches the server default.
   assert.equal(readListColumns(), "labels");

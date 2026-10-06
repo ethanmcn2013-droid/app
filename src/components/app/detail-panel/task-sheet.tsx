@@ -407,7 +407,7 @@ const ROW_ICONS: Record<string, (props: { size?: number }) => ReactNode> = {
   Assignees: (props) => <TIcon.person {...props} />,
   "Due date": (props) => <TIcon.calendar {...props} />,
   Priority: (props) => <TIcon.flag {...props} />,
-  Labels: (props) => <TIcon.tag {...props} />,
+  Tags: (props) => <TIcon.tag {...props} />,
   Contact: (props) => <TIcon.person {...props} />,
   Amount: (props) => <TIcon.diamond {...props} />,
 };
@@ -526,7 +526,7 @@ function Properties({ task, grid = false }: { task: Task; grid?: boolean }) {
             {PRIORITY_LABELS[priority]}
           </button>
         </Row>
-        <Row label="Labels">
+        <Row label="Tags">
           <button type="button" className={styles.value} onClick={open("labels")} aria-haspopup="dialog" aria-expanded={picker === "labels"}>
             {labels.length ? (
               <span className={styles.labelList}>
@@ -633,11 +633,11 @@ function Properties({ task, grid = false }: { task: Task; grid?: boolean }) {
           }}
         />
       </Popover>
-      <Popover open={picker === "labels"} anchor={anchorEl} onClose={close} label="Labels" width={260}>
+      <Popover open={picker === "labels"} anchor={anchorEl} onClose={close} label="Tags" width={260}>
         <PickerList
           multi
-          placeholder="Find a label"
-          empty="No labels yet. Type #name in a new task's title to make one."
+          placeholder="Find a tag"
+          empty="No tags yet. Type #name in a new task's title to make one."
           options={tags.map((tag) => ({ id: tag.name, label: tagDisplayName(tag.name), selected: labels.includes(tag.name) }))}
           onPick={(name) => dispatchers.updateTask(task.id, { tags: labels.includes(name) ? labels.filter((x) => x !== name) : [...labels, name] })}
         />

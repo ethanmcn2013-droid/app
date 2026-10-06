@@ -28,7 +28,7 @@ const LABEL: Record<PickerKind, string> = {
   assignee: "Assignees",
   due: "Due date",
   priority: "Priority",
-  labels: "Labels",
+  labels: "Tags",
 };
 
 function isoFromLocal(date: Date): CalendarDate {
@@ -143,14 +143,14 @@ function PickerBody({ kind, ids }: { kind: PickerKind; ids: string[] }) {
         {header}
         <PickerList
           multi
-          placeholder="Find a label"
-          empty="No labels yet. Type #name in a new task's title to make one."
+          placeholder="Find a tag"
+          empty="No tags yet. Type #name in a new task's title to make one."
           options={tags.map((tag) => ({ id: tag, label: tagDisplayName(tag), selected: shared(tag) }))}
           onPick={(name) => {
             const adding = !shared(name);
             tasks.forEach((task) => {
               const next = adding ? [...new Set([...task.labelIds, name])] : task.labelIds.filter((x) => x !== name);
-              store.updateTask(task.id, { labelIds: next }, "Labels updated");
+              store.updateTask(task.id, { labelIds: next }, "Tags updated");
             });
           }}
         />

@@ -1816,7 +1816,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "927d09f9d8658b0e"
+      "materialityHash": "3a0b0de8c0d2af4c"
     },
     {
       "id": "tasks.surface.task-detail-panel",
