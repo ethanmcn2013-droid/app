@@ -17,7 +17,8 @@ A section in Settings, Sample data, that an operator uses while signed in to add
 
 Operators only: the caller's user id must be in `ADMIN_USER_IDS` (`callerIsAdmin` in `src/server/admin.ts`, the gate the comp-code minter uses).
 
-- The Settings page asks the server for the section's data. For anyone who is not an operator, and for everyone in review and demo mode, the answer is null and the shell renders no Operator group, no nav item and no section.
+- The Settings page asks the server for the section's data only when the caller is an operator. For anyone else, and for everyone in review and demo mode, the answer is null and the shell renders no Operator group, no nav item and no section.
+- The section is a separate chunk, loaded only when the server passed its data, and the shell takes the nav words from that data. On a review-mode production build a Settings visit that opens every section loaded 42 scripts; none mentions the section and its chunk was not requested.
 - Each of the three writing actions returns before reading anything in review and demo mode, then resolves the caller from the session and throws unless `callerIsAdmin` passes. The acting user is never an argument.
 - `src/server/tasks-security-regression.test.mjs` pins that order in the source. `src/server/sample-data/seeder.test.ts` runs it: four non-operators are refused by every action with nothing written.
 
@@ -50,6 +51,10 @@ Two things in those captures are local development tooling and not the product: 
 - **Notes and the Timeline database.** Separate stores with their own write paths. The Timeline page reads the tasks' big dates and the target date directly, so it has material.
 - **Planning periods.** Sample projects are ordinary projects with no period.
 
+## Removal leaves shared projects alone
+
+Removing a sample project deletes everything in it. A sample project that has another member, a pending invite, a share link or a published page is therefore skipped and named, and the operator deletes it from Projects when ready. The confirmation says plainly that removal removes everything in a sample project, including anything added since.
+
 ## Found on the way
 
-Deleting a project does not remove its declared status or target date. Those two meta rows (`project-status:{id}`, `project-target-date:{id}`) sit outside the `board:` namespace that project deletion and account erasure clear. Sample data removes exactly those keys for a sample project it has just deleted. The same gap for ordinary projects is unchanged by this work and is worth its own fix.
+Deleting a project did not remove its declared status or target date. That was fixed separately (#213): project deletion and account erasure now remove those rows. Sample data therefore has no delete of its own beyond releasing the lease it took.
