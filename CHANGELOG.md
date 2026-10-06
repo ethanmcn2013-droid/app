@@ -4,6 +4,16 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-10-06 · Preview candidate · Automations, a canvas to draw them on
+
+Automations is a new place in the signed-in app, at `/app/automations`. You draw what should happen by itself: a trigger (a task becomes late, a date is a week away, someone joins a project, a file is added), then what to do about it (nudge the owner, move it to a column, post in the project chat, add it to the daily briefing), with a branch where the path should split. Four ready-made ones open as your own draft, and New automation starts with an empty canvas.
+
+It is a preview, and it says so. Nothing runs yet: there is no service behind it. A draft is kept in the browser it was made in and nowhere else, and the page says when a browser will not keep it. Live, Publish, Share and "Run from here" are shown so the shape of the finished thing is visible; none can be used, and each says "Coming soon" when you point at it or reach it with the keyboard.
+
+The canvas is a working editor. Drag the background or hold Space to move around, scroll to pan, Ctrl or the pinch gesture to zoom between 25 and 200 percent. Drag steps, drag from a step's right edge to another step to connect them, and a line that would send the path round in a circle is refused with the reason. Tab reaches every step; the arrow keys move it, Enter opens its edit panel, Delete removes it, and undo and redo walk real history. On a phone the edit panel is a sheet from the bottom.
+
+No server action, API route, database read or write, schema change or dependency was added. The sidebar does not link to it yet; that row belongs to the sidebar change. This is an unshipped candidate on `design/app-v3-automations-canvas`; no deployment or production change is claimed.
+
 ## 2026-10-05 · Redesign candidate · Home opens on what needs you, with Overview as its second tab
 
 Home now opens on your own work across every project you can open: a line that counts what needs you today, what is late and what was done this week; your late and due-today tasks with a tick each; what is due this week, what is waiting to be checked and what you are waiting on; the next big day; and each project with how it is doing. Ticking a task uses the same action as the board and shows Undo. When a task has sat in Waiting for three days or more with no change, Home says so in one sentence and offers Nudge if someone else holds it. A task is yours when you are assigned to it, or when nobody current is assigned and you own the project. The greeting follows your own clock.
