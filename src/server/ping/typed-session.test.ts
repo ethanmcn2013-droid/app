@@ -3,6 +3,9 @@ import test from "node:test";
 import { PING_TYPED_VERSION, type PingTypedPrepare, type PingTypedResponse } from "@/lib/ping/typed-contract";
 import { createPingProofFixture, seedProofTask, PROOF_PROJECT, PROOF_NOW } from "./proof-fixture";
 import { createPingCommandService } from "./command-service";
+import type { PingExecutionContext } from "./command-service";
+import type { PingCommand } from "@/lib/ping/command";
+import { parsePingTypedCommand } from "@/lib/ping/typed-command";
 import { createPingTypedSession } from "./typed-session";
 import type { ConversationDatabaseAdapter } from "@/server/conversations/database";
 import { PING_VOICE_VERSION, type PingVoiceResponse } from "@/lib/ping/voice-contract";
@@ -10,13 +13,14 @@ import type { PingVoiceModelInput, PingVoiceTransport } from "@/lib/ping/voice-s
 
 const actor = { actorId: "alice", sessionId: "synthetic-session" };
 const voicePlan = { version: "ping.proposal.v1", outcome: "plan", operation: { kind: "edit_selected", effects: { selfAssignment: "add" } } };
-function scriptedVoice(interpret?: (input: PingVoiceModelInput, signal: AbortSignal) => Promise<unknown>, onCommit?: () => void, onQueued?: () => void) {
+function scriptedVoice(interpret?: (input: PingVoiceModelInput, signal: AbortSignal) => Promise<unknown>, onCommit?: () => void, onQueued?: () => void,
+  transcript = "assign me") {
   let listener: (raw: unknown) => void = () => {}; const sent: string[] = [], inputs: PingVoiceModelInput[] = [];
   const transport: PingVoiceTransport = { subscribe: fn => { listener = fn; return () => {}; }, queuedBytes: () => { onQueued?.(); return 0; }, close: () => {},
     send: text => { sent.push(text); if (JSON.parse(text).type === "input_audio_buffer.commit") {
       onCommit?.();
       listener(JSON.stringify({ type: "input_audio_buffer.committed", item_id: "server-item", previous_item_id: null }));
-      listener(JSON.stringify({ type: "conversation.item.input_audio_transcription.completed", item_id: "server-item", content_index: 0, transcript: "assign me" }));
+      listener(JSON.stringify({ type: "conversation.item.input_audio_transcription.completed", item_id: "server-item", content_index: 0, transcript }));
     } } };
   return { sent, inputs, providers: { createTransport: () => transport,
     interpret: (input: PingVoiceModelInput, signal: AbortSignal) => { inputs.push(input); return interpret ? interpret(input, signal) : Promise.resolve(voicePlan); } } };
@@ -278,6 +282,118 @@ test("Cancel during fresh Finish authentication cannot revive a bound original o
     assert.ok(cancelled.ok && "knowledge" in cancelled && cancelled.knowledge === "not_invoked");
     release.resolve(); assert.deepEqual(await finishing, cancelled && { ...cancelled, action: "finish" });
     assert.equal(calls, 0); assert.equal(script.inputs.length, 1); assert.equal((await rows(f))[0].assignees, '["bob"]');
+  } finally { f.client.close(); }
+});
+
+test("typed and deterministic structured final produce the same captured compound and executor result", async () => {
+  const text = "assign me and due 2026-10-08 and status doing";
+  const expectedTime = new Date(PROOF_NOW).toISOString();
+  const expectedState = { target: { assignees: ["bob"], due: null, dueAtSeconds: null, startDay: 2, durationDays: 3,
+    lane: "todo", boardColumnKey: null, completedAtSeconds: null } };
+  const expectedOriginal = {
+    command: { version: "ping.command.v1", projectId: PROOF_PROJECT, referenceInstant: expectedTime, timeZone: "Europe/Dublin",
+      expectedColumnConfig: null, operation: { kind: "edit_selected", taskIds: ["target"],
+        effects: { selfAssignment: "add", dueDate: "2026-10-08", statusColumnKey: "doing" }, expected: expectedState } },
+    context: { actorId: "alice", captured: { projectId: PROOF_PROJECT, selectedTaskIds: ["target"], referenceInstant: expectedTime,
+      timeZone: "Europe/Dublin", expectedColumnConfig: null, expected: expectedState }, input: { state: "complete" } },
+  };
+  type Original = { command: PingCommand; context: PingExecutionContext };
+  const semantic = (original: Original) => ({
+    command: { version: original.command.version, projectId: original.command.projectId,
+      referenceInstant: original.command.referenceInstant, timeZone: original.command.timeZone,
+      expectedColumnConfig: original.command.expectedColumnConfig, operation: original.command.operation },
+    context: { actorId: original.context.actorId,
+      captured: { projectId: original.context.captured.projectId, selectedTaskIds: original.context.captured.selectedTaskIds,
+        referenceInstant: original.context.captured.referenceInstant, timeZone: original.context.captured.timeZone,
+        expectedColumnConfig: original.context.captured.expectedColumnConfig, expected: original.context.captured.expected },
+      input: { state: original.context.input.state } },
+  });
+  async function assertCommittedFixture(f: Awaited<ReturnType<typeof createPingProofFixture>>, original: Original) {
+    assert.equal(original.command.commandId, original.context.captured.commandId, "the bound command remains correlated to its own capture");
+    const finalRows = (await rows(f)).map(row => ({ id: row.id, assignees: row.assignees, due: row.due,
+      dueAt: row.due_at == null ? null : Number(row.due_at), lane: row.lane, start: Number(row.start_day),
+      duration: Number(row.duration_days), completed: row.completed_at }));
+    assert.deepEqual(finalRows, [{ id: "target", assignees: '["bob","alice"]', due: "2026-10-08", dueAt: 1791450000,
+      lane: "doing", start: 2, duration: 3, completed: null }]);
+    assert.deepEqual((await f.client.execute("SELECT task_id,user_id,kind,payload FROM activities ORDER BY payload")).rows,
+      ["assignees", "due", "lane"].map(field => ({ task_id: "target", user_id: "alice", kind: "update",
+        payload: JSON.stringify({ kind: "update", field }) })));
+    const stored = (await f.client.execute("SELECT actor_id,command_id,project_id,receipt_json FROM ping_command_receipts ORDER BY command_id")).rows;
+    assert.equal(stored.length, 1);
+    assert.deepEqual({ actorId: stored[0].actor_id, commandId: stored[0].command_id, projectId: stored[0].project_id,
+      receipt: JSON.parse(String(stored[0].receipt_json)) }, { actorId: "alice", commandId: original.command.commandId,
+      projectId: PROOF_PROJECT, receipt: { version: "ping.receipt.v1", commandId: original.command.commandId,
+        projectId: PROOF_PROJECT, committedAtSeconds: Math.floor(PROOF_NOW / 1000), outcome: "completed", affectedCount: 1,
+        changedCount: 1, effects: [{ taskId: "target", changedFields: ["assignees", "due", "lane"] }] } });
+  }
+
+  let typedSemantic: ReturnType<typeof semantic> | null = null;
+  const typed = await createPingProofFixture();
+  try {
+    await seedProofTask(typed.client, "target", { assignees: ["bob"], startDay: 2, durationDays: 3 });
+    const base = createPingCommandService(typed.adapter, { now: () => PROOF_NOW });
+    const entries: unknown[] = [];
+    const session = createPingTypedSession(typed.adapter, { now: () => PROOF_NOW,
+      service: { ...base, execute: original => { entries.push(structuredClone(original)); return base.execute(original); } } });
+    const handle = token(await session.handle(actor, request(1, text)));
+    const done = await session.handle(actor, action(handle, "execute"));
+    assert.ok(done.ok && done.action === "execute" && done.knowledge === "committed");
+    assert.equal(entries.length, 1);
+    const original = entries[0] as Original;
+    assert.deepEqual(semantic(original), expectedOriginal);
+    typedSemantic = semantic(original);
+    await assertCommittedFixture(typed, original);
+  } finally { typed.client.close(); }
+
+  const structured = await createPingProofFixture();
+  try {
+    await seedProofTask(structured.client, "target", { assignees: ["bob"], startDay: 2, durationDays: 3 });
+    const script = scriptedVoice(async (input, signal) => {
+      if (signal.aborted) throw new Error("synthetic interpreter aborted");
+      return parsePingTypedCommand(input.transcript);
+    }, undefined, undefined, text);
+    const base = createPingCommandService(structured.adapter, { now: () => PROOF_NOW });
+    const entries: unknown[] = [];
+    const session = createPingTypedSession(structured.adapter, { now: () => PROOF_NOW, voice: script.providers,
+      service: { ...base, execute: original => { entries.push(structuredClone(original)); return base.execute(original); } } });
+    const handle = voiceHandle(await session.handleVoice(actor, voiceBegin(), auth));
+    assert.deepEqual(await session.acceptVoiceAudio(actor, voiceEnvelope(handle), async () => pcm(), auth),
+      { ok: true, action: "audio", generationId: handle.generationId, commandId: handle.commandId,
+        projectId: PROOF_PROJECT, acceptedThrough: 1, totalSamples: 2 });
+    const done = await session.handleVoice(actor, voiceControl(handle, "finish"), auth);
+    assert.ok(done.ok && "knowledge" in done && done.knowledge === "committed");
+    assert.deepEqual(script.inputs.map(input => input.transcript), [text], "parsing receives the correlated completed final text");
+    assert.equal(entries.length, 1);
+    const original = entries[0] as Original;
+    assert.deepEqual(semantic(original), expectedOriginal);
+    assert.deepEqual(semantic(original), typedSemantic);
+    await assertCommittedFixture(structured, original);
+  } finally { structured.client.close(); }
+});
+
+test("a structured final with an unsupported suffix refuses the whole input before executor entry", async () => {
+  const f = await createPingProofFixture();
+  try {
+    await seedProofTask(f.client, "target", { assignees: ["bob"], startDay: 2, durationDays: 3 });
+    const before = await rows(f);
+    const text = "assign me and due 2026-10-08 and make it urgent";
+    const script = scriptedVoice(async (input, signal) => {
+      if (signal.aborted) throw new Error("synthetic interpreter aborted");
+      return parsePingTypedCommand(input.transcript);
+    }, undefined, undefined, text);
+    const base = createPingCommandService(f.adapter, { now: () => PROOF_NOW });
+    const entries: Array<Parameters<typeof base.execute>[0]> = [];
+    const session = createPingTypedSession(f.adapter, { now: () => PROOF_NOW, voice: script.providers,
+      service: { ...base, execute: original => { entries.push(structuredClone(original)); return base.execute(original); } } });
+    const handle = voiceHandle(await session.handleVoice(actor, voiceBegin(), auth));
+    await session.acceptVoiceAudio(actor, voiceEnvelope(handle), async () => pcm(), auth);
+    const finished = await session.handleVoice(actor, voiceControl(handle, "finish"), auth);
+    assert.ok(finished.ok && "knowledge" in finished && finished.knowledge === "not_invoked");
+    assert.deepEqual(script.inputs.map(input => input.transcript), [text], "the parser sees the unsupported full suffix");
+    assert.equal(entries.length, 0);
+    assert.deepEqual(await rows(f), before);
+    assert.equal(Number((await f.client.execute("SELECT COUNT(*) AS n FROM activities")).rows[0].n), 0);
+    assert.equal(Number((await f.client.execute("SELECT COUNT(*) AS n FROM ping_command_receipts")).rows[0].n), 0);
   } finally { f.client.close(); }
 });
 
