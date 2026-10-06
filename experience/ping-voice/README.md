@@ -160,7 +160,9 @@ not observed endpoint/account eligibility or a route winner.
 Manual `open(signal)` resolves only after an actual fresh session-created
 identity, same-session effective update (24 kHz PCM, supplied model, manual turn,
 null noise reduction, no logprobs), and actual buffer-clear acknowledgment.
-Initial defaults are validated separately. The supported closed protocol subset
+Expected update/clear response phases latch only immediately before their actual
+send, after the injected queue check; premature acknowledgments during that
+check refuse readiness. Initial defaults are validated separately. The supported closed protocol subset
 permits empty/null user audio bookkeeping and inert optional preview metadata;
 prior items, ACKs or finals before an actual application commit refuse admission.
 The existing transport/collector receives original correlated ACK/final fields.
@@ -180,7 +182,10 @@ Cancellation/deadline rejects readiness or closes the transport logically while
 single-flight admission stays reserved until connection and physical closure
 settle. The injected `closed` promise must fulfill only on real socket closure;
 abort/close request/disconnect alone cannot release it, and rejected closure
-retains admission. This trusts a supplied port contract rather than verifying
+retains admission. An invoked connection attempt that rejects without returning
+a socket likewise supplies no closure witness and keeps admission reserved.
+Only cancellation before any connection invocation has zero physical work.
+This trusts a supplied port contract rather than verifying
 network behavior. Handshake is at most five seconds; an additional bounded
 65-second lifetime does not replace the collector's capture/Finish deadlines.
 Temporary internal reference cleanup claims no caller/socket/provider erasure.

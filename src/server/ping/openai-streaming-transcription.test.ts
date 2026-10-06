@@ -71,6 +71,30 @@ test("fresh real lifecycle verifies effective policy and actual clear before rea
     await rejection; await settle(); assert.equal(bad.s.closes, 1);
     assert.ok(bad.s.sends.every((s) => JSON.parse(s).type === "session.update"));
   }
+  for (const premature of ["update", "clear"] as const) {
+    const queued = factory(); let observations = 0, resolved = false;
+    const pending = queued.open(new AbortController().signal).then((value) => { resolved = true; return value; });
+    const rejection = assert.rejects(pending, /ping_stream_invalid/); await settle();
+    queued.s.onQueue(() => {
+      observations++;
+      if (premature === "update" && observations === 1) queued.s.emit({ type: "session.updated", event_id: "premature-update", session: config(true) });
+      if (premature === "clear" && observations === 2) queued.s.emit({ type: "input_audio_buffer.cleared", event_id: "premature-clear" });
+    });
+    queued.s.emit({ type: "session.created", event_id: "created", session: config() });
+    if (premature === "clear") queued.s.emit({ type: "session.updated", event_id: "updated", session: config(true) });
+    await rejection; await settle();
+    assert.equal(resolved, false); assert.equal(queued.s.closes, 1);
+    assert.deepEqual(queued.s.sends.map((text) => JSON.parse(text).type), premature === "update" ? [] : ["session.update"]);
+  }
+  // Acknowledgments synchronously emitted by the actual send are legitimate.
+  const synchronous = factory(); synchronous.s.onSend((text) => {
+    if (JSON.parse(text).type === "session.update") synchronous.s.emit({ type: "session.updated", event_id: "sync-update", session: config(true) });
+    if (JSON.parse(text).type === "input_audio_buffer.clear") synchronous.s.emit({ type: "input_audio_buffer.cleared", event_id: "sync-clear" });
+  });
+  const actual = synchronous.open(new AbortController().signal); await settle();
+  synchronous.s.emit({ type: "session.created", event_id: "created", session: config() });
+  const resolved = await actual; assert.deepEqual(synchronous.s.sends.map((text) => JSON.parse(text).type), ["session.update", "input_audio_buffer.clear"]);
+  resolved.transport.close(); await settle();
 });
 
 test("exact PCM and real final-before-ACK flow compose with the existing collector and disconnected interpreter once", async () => {
@@ -133,6 +157,14 @@ test("usage is actual-or-null/private scalar only, duplicates dedupe, and change
 });
 
 test("cancellation/deadline retain physical reservation, late events cannot revive, and reentrant queue loss prevents sends", async () => {
+  for (const synchronous of [false, true]) {
+    let attempts = 0;
+    const rejected = createPingOpenAiStreamingTranscription({ model: "gpt-live-transcribe", apiKey: "synthetic-key", connect: () => {
+      attempts++; if (synchronous) throw Error("sensitive connector failure"); return Promise.reject(Error("sensitive connector failure"));
+    } });
+    await assert.rejects(rejected(new AbortController().signal), (error: Error) => error.message === "ping_stream_disconnected");
+    await assert.rejects(rejected(new AbortController().signal), /ping_stream_busy/); assert.equal(attempts, 1);
+  }
   const subscribed = factory(socket(true)); subscribed.s.onSubscribe(() => subscribed.s.lost());
   await assert.rejects(subscribed.open(new AbortController().signal), /ping_stream_disconnected/);
   assert.equal(subscribed.s.detached, 1); assert.equal(subscribed.s.closes, 1); assert.equal(subscribed.s.sends.length, 0);

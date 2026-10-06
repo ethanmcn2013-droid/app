@@ -71,7 +71,7 @@ export function createPingOpenAiStreamingTranscription(options: PingStreamingOpt
     if (busy) return Promise.reject(new Error("ping_stream_busy"));
     busy = true;
     const controller = new AbortController(), started = performance.now();
-    let phase: "connecting" | "created" | "updated" | "cleared" | "ready" | "closed" = "connecting";
+    let phase: "connecting" | "created" | "sending_update" | "updated" | "sending_clear" | "cleared" | "ready" | "closed" = "connecting";
     let socket: PingStreamingSocket | null = null, detach: (() => void) | null = null, closeAsked = false;
     let connectSettled = false, physicallyClosed = false, published = false, subscribed = false;
     let sessionId: string | null = null, conversationSeen = false, events = 0, bytes = 0, committed = false;
@@ -102,13 +102,14 @@ export function createPingOpenAiStreamingTranscription(options: PingStreamingOpt
     };
     let timer = setTimeout(() => stop("deadline"), handshake);
     signal.addEventListener("abort", aborted, { once: true });
-    const physicalSend = (text: string, commit = false): boolean => {
+    const physicalSend = (text: string, commit = false, responsePhase?: "updated" | "cleared"): boolean => {
       if (!valid() || !socket) return false;
       try {
         const queued = socket.queuedBytes();
         if (!valid()) return false;
         if (!natural(queued) || queued > 65_536) { stop("invalid"); return false; }
         if (commit) committed = true;
+        if (responsePhase) phase = responsePhase;
         socket.send(text); return valid();
       } catch { stop("disconnected"); return false; }
     };
@@ -129,10 +130,10 @@ export function createPingOpenAiStreamingTranscription(options: PingStreamingOpt
           const id = session(v.session, model, !initial);
           if (!id || (!initial && id !== sessionId)) { stop("invalid"); return; }
           if (initial) {
-            sessionId = id; phase = "updated";
+            sessionId = id; phase = "sending_update";
             physicalSend(JSON.stringify({ type: "session.update", session: { type: "transcription", audio: { input: {
-              format: { type: "audio/pcm", rate: 24000 }, transcription: { model }, noise_reduction: null, turn_detection: null } }, include: [] } }));
-          } else { phase = "cleared"; physicalSend('{"type":"input_audio_buffer.clear"}'); }
+              format: { type: "audio/pcm", rate: 24000 }, transcription: { model }, noise_reduction: null, turn_detection: null } }, include: [] } }), false, "updated");
+          } else { phase = "sending_clear"; physicalSend('{"type":"input_audio_buffer.clear"}', false, "cleared"); }
           return;
         }
         if (v.type === "conversation.created") {
@@ -230,7 +231,11 @@ export function createPingOpenAiStreamingTranscription(options: PingStreamingOpt
         phase = "created";
         const d = s.subscribe(message, () => stop("disconnected"));
         if (!valid()) { try { d(); } catch { /* Keep physical ownership. */ } } else detach = d;
-      } catch { connectSettled = true; if (!socket) physicallyClosed = true; stop("disconnected"); release(); }
+      } catch {
+        connectSettled = true;
+        // A rejected invoked connect supplies no physical closure witness. Keep admission unknown/reserved.
+        stop("disconnected"); release();
+      }
     })();
     return result;
   };
