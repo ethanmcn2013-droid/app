@@ -39,7 +39,7 @@ type Group = { key: string; title: string; icon: React.ReactNode; tasks: LabTask
 
 /** Optional columns people can add; the core four are always shown. */
 export const OPTIONAL_LIST_COLUMNS: { id: string; label: string }[] = [
-  { id: "labels", label: "Labels" },
+  { id: "labels", label: "Tags" },
   { id: "subtasks", label: "Subtasks" },
   { id: "amount", label: "Amount" },
 ];
@@ -186,7 +186,7 @@ export function ListView({ onCompose }: { onCompose: (extra: Partial<NewTaskDefa
           <span role="columnheader" data-col="assignee" className={styles.assigneeHead} aria-sort={sortOf("assignee")}>{header("assignee", "Assignee", <TIcon.person size={14} />)}</span>
           <span role="columnheader" data-col="due" aria-sort={sortOf("due")}>{header("due", "Due", <TIcon.calendar size={14} />)}</span>
           {showPriority ? <span role="columnheader" data-col="priority" className={styles.priorityHead} aria-sort={sortOf("priority")}>{header("priority", "Priority", <TIcon.flag size={14} />)}</span> : null}
-          {showLabels ? <span role="columnheader" data-col="labels" className={styles.plainHead}><TIcon.tag size={14} />Labels</span> : null}
+          {showLabels ? <span role="columnheader" data-col="labels" className={styles.plainHead}><TIcon.tag size={14} />Tags</span> : null}
           {showSubtasks ? <span role="columnheader" data-col="subtasks" className={`${styles.plainHead} ${styles.wideOnly}`}><TIcon.check size={14} />Subtasks</span> : null}
           {showAmount ? <span role="columnheader" data-col="amount" className={`${styles.plainHead} ${styles.wideOnly} ${styles.numberHead}`}>Amount</span> : null}
           <span role="columnheader" className={styles.pickHead}>
@@ -526,7 +526,7 @@ function ListRow({
             ) : (
               <span className={styles.none}>None</span>
             ),
-            labels.length ? `Labels: ${labels.map((l) => l.name).join(", ")}. Change labels` : "No labels. Add labels",
+            labels.length ? `Tags: ${labels.map((l) => l.name).join(", ")}. Change tags` : "No tags. Add tags",
           )
         : null}
       {extras.subtasks ? (

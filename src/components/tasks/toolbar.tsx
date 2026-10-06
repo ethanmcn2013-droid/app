@@ -7,7 +7,7 @@
  * one model.
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PRIORITY_LABEL, type Priority } from "@/lib/data";
@@ -182,6 +182,12 @@ export function FilterMenu({ compact = false }: { compact?: boolean }) {
   const tools = useRoomTools();
   const members = useWorkspaceMembers();
   const tags = useLabelNames(surface.all);
+  // How many tasks carry each tag, so the filter says what it will leave.
+  const tagCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const task of surface.all) for (const id of task.labelIds) counts.set(id, (counts.get(id) ?? 0) + 1);
+    return counts;
+  }, [surface.all]);
   const [naming, setNaming] = useState(false);
   const [name, setName] = useState("");
   const count = tools.activeFilterCount;
@@ -281,13 +287,15 @@ export function FilterMenu({ compact = false }: { compact?: boolean }) {
         {tags.length > 0 ? (
           <MenuSub>
             <MenuSubTrigger icon={<TIcon.tag />} hint={tools.label === "all" ? null : tagDisplayName(tools.label)}>
-              Label
+              Tag
             </MenuSubTrigger>
             <MenuSubContent width={220}>
               <MenuRadioGroup value={tools.label} onValueChange={tools.setLabel}>
-                <MenuRadioItem value="all">Any label</MenuRadioItem>
+                <MenuRadioItem value="all">Any tag</MenuRadioItem>
                 {tags.map((tag) => (
-                  <MenuRadioItem key={tag} value={tag}>{tagDisplayName(tag)}</MenuRadioItem>
+                  <MenuRadioItem key={tag} value={tag} hint={tagCounts.get(tag) ?? 0}>
+                    {tagDisplayName(tag)}
+                  </MenuRadioItem>
                 ))}
               </MenuRadioGroup>
             </MenuSubContent>
@@ -476,7 +484,7 @@ export function describeFilters(
     chips.push({ key: "owner", label: `Assignee: ${who}`, clear: () => tools.setOwner("all") });
   }
   if (tools.priority !== "all") chips.push({ key: "priority", label: `Priority: ${PRIORITY_LABEL[tools.priority].label}`, clear: () => tools.setPriority("all") });
-  if (tools.label !== "all") chips.push({ key: "label", label: `Label: ${tagDisplayName(tools.label)}`, clear: () => tools.setLabel("all") });
+  if (tools.label !== "all") chips.push({ key: "label", label: `Tag: ${tagDisplayName(tools.label)}`, clear: () => tools.setLabel("all") });
   return chips;
 }
 

@@ -37,7 +37,7 @@ const GROUPS: { title: string; rows: Row[] }[] = [
       [["A"], "Assign"],
       [["D"], "Due date"],
       [["P"], "Priority"],
-      [["L"], "Labels"],
+      [["L"], "Tags"],
       [["X"], "Select"],
       [["."], "More actions"],
       [["⌘", "↵"], "Mark done or reopen"],

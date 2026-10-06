@@ -54,6 +54,12 @@ The choice is kept in the address as `?with=`, so a combined view can be linked 
 
 No server action, read, schema change or dependency was added: every date comes from the rows the page already reads. This is an unshipped candidate on `design/app-v3-combined-timeline`; no deployment or production change is claimed.
 
+## 2026-10-06 · Redesign candidate · Tags, one word everywhere
+
+What a task carries as #name is now called a tag everywhere you meet it in Tasks: the list column, the task panel, quick create, the right-click menu, the shortcuts sheet (L still opens it) and the Filter menu, which used to say "Label" in some places and "Tags" in others. The Filter menu's Tag list now shows how many tasks carry each tag, so you can see what a filter will leave before you choose it.
+
+Tag kinds, chosen colours and pinned tags wait for a database change and are not part of this. No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-tags`; no deployment or production change is claimed.
+
 ## 2026-10-06 · Redesign candidate · Apps and tools shows everything, with no folded group
 
 Apps and tools, the grid button in the top bar and the page at `/app/tools`, no longer keeps half of what it holds behind a folded "Initial setup" heading. It now reads as four sections in view: Your apps (Projects, Tasks, Timeline, Files and Analytics), More apps (Notes, and Messages if you have Chat), Works with, and the tools that are coming soon. Nothing was removed, search still finds every entry, and the arrow keys walk all four sections. This finishes what the sidebar change started when its own "Initial setup" group went.
