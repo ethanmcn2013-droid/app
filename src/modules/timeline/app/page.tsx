@@ -32,6 +32,8 @@ export type TimelineIndexSearchParams = {
   sort?: string;
   /** Status filter chips: `at-risk,on-track,…`. Parsed by `parseStatusFilter`. */
   status?: string;
+  /** Combined timeline: `<projectId>,<projectId>`. Parsed by `parseCombined`. */
+  with?: string;
 };
 
 /**
@@ -74,6 +76,7 @@ export default async function TimelineOwnerHome({
             group: requested.group,
             sort: requested.sort,
             status: parseStatusFilter(requested.status).size > 0 ? requested.status : undefined,
+            with: requested.with,
           }}
         />
       );

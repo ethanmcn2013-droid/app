@@ -10,11 +10,12 @@
 
 import { portfolioViewFromSearch, type ProjectPortfolio } from "@/lib/projects/project-portfolio";
 import { PortfolioEmpty, PortfolioUnavailable } from "./portfolio-empty";
+import { parseCombined } from "@/lib/projects/combined-timeline";
 import { PortfolioGantt } from "./portfolio-gantt";
 import { TimelineTabs, type SwitcherOption, type TimelineTabProject } from "./timeline-tabs";
 import styles from "./portfolio.module.css";
 
-export type PortfolioSearch = Readonly<{ zoom?: string; group?: string; sort?: string; status?: string }>;
+export type PortfolioSearch = Readonly<{ zoom?: string; group?: string; sort?: string; status?: string; with?: string }>;
 
 export function PortfolioView({
   portfolio,
@@ -60,7 +61,12 @@ export function PortfolioView({
       </div>
 
       {portfolio.kind === "ready" && rows.length > 0 ? (
-        <PortfolioGantt portfolio={portfolio} openProjectId={openNow} initialView={portfolioViewFromSearch(search)} />
+        <PortfolioGantt
+          portfolio={portfolio}
+          openProjectId={openNow}
+          initialView={portfolioViewFromSearch(search)}
+          initialCombined={parseCombined(search.with)}
+        />
       ) : null}
     </div>
   );

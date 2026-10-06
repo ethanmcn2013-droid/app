@@ -58,6 +58,8 @@ import {
 } from "@/lib/projects/project-portfolio-scale";
 import { PortfolioHoverCard, type CardAnchor } from "./portfolio-hover-card";
 import { LEGEND_SCRIPT, PortfolioLegend, useLegendOpen } from "./portfolio-legend";
+import { CombinedTimeline } from "./combined-timeline";
+import { COMBINED_LIMIT, COMBINED_PARAM, serializeCombined, toggleCombined } from "@/lib/projects/combined-timeline";
 import { PortfolioMobileList } from "./portfolio-mobile-list";
 import { PortfolioRow, type RowHandlers } from "./portfolio-row";
 import { PortfolioAnswer, SampleNote, StatusFilterChips } from "./portfolio-summary";
@@ -121,10 +123,13 @@ export function PortfolioGantt({
   portfolio,
   openProjectId,
   initialView,
+  initialCombined = [],
 }: {
   portfolio: Readied;
   openProjectId: string | null;
   initialView: PortfolioViewState;
+  /** From `?with=`: the Projects in the combined timeline. */
+  initialCombined?: readonly string[];
 }) {
   const router = useRouter();
   const hydrated = useHydrated();
@@ -147,6 +152,7 @@ export function PortfolioGantt({
   const [view, setView] = useState<{ left: number; right: number }>({ left: 0, right: 0 });
   const [legendOpen, setLegendOpen] = useLegendOpen();
   const { toasts, show, dismiss } = useTimelineToasts();
+  const [combined, setCombined] = useState<string[]>(() => [...initialCombined]);
 
   const canvasRef = useRef<TimelineCanvasHandle>(null);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -200,6 +206,17 @@ export function PortfolioGantt({
     if (status) url.searchParams.set("status", status);
     else url.searchParams.delete("status");
     window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+  }, []);
+  // The combined timeline's choice lives in the address too (`?with=`).
+  const changeCombined = useCallback((next: string[]) => {
+    setCombined(next);
+    const url = new URL(window.location.href);
+    const value = serializeCombined(next);
+    if (value) url.searchParams.set(COMBINED_PARAM, value);
+    else url.searchParams.delete(COMBINED_PARAM);
+    // Commas stay readable in a link someone copies.
+    const search = url.search.replace(/%2C/gi, ",");
+    window.history.replaceState(window.history.state, "", `${url.pathname}${search}${url.hash}`);
   }, []);
   const viewState = (patch: Partial<PortfolioViewState>): PortfolioViewState => ({
     zoom,
@@ -440,6 +457,17 @@ export function PortfolioGantt({
             );
           },
         },
+        {
+          id: "combine",
+          label: combined.includes(row.id) ? "Remove from combined timeline" : "Add to combined timeline",
+          onSelect: () => {
+            if (!combined.includes(row.id) && combined.length >= COMBINED_LIMIT) {
+              show(`The combined timeline holds ${COMBINED_LIMIT} projects. Take one out first.`);
+              return;
+            }
+            changeCombined(toggleCombined(combined, row.id));
+          },
+        },
         { id: "sep", separator: true },
         {
           id: "card",
@@ -453,7 +481,7 @@ export function PortfolioGantt({
       ];
       setMenu({ anchor, items, label: `Actions for ${row.name}`, returnTo });
     },
-    [activate, closeCard, openCard, router, show],
+    [activate, changeCombined, closeCard, combined, openCard, router, show],
   );
 
   // ── Milestone stepping (← →) ─────────────────────────────────────────────
@@ -862,6 +890,18 @@ export function PortfolioGantt({
         <div className={`${styles.legendWrap} ${styles.desktopOnly}`} data-open={legendOpen ? "" : undefined}>
           {legendOpen ? <PortfolioLegend id={legendId} milestonesUnavailable={portfolio.milestonesUnavailable} /> : null}
         </div>
+
+        <CombinedTimeline
+          rows={rows}
+          ids={combined}
+          todayIso={todayIso}
+          onRemove={(id) => changeCombined(combined.filter((x) => x !== id))}
+          onClear={() => changeCombined([])}
+          onShowWeek={(monday) => {
+            canvasRef.current?.scrollToDay(monday, { align: 0.15, smooth: true });
+            canvasRef.current?.element()?.scrollIntoView({ block: "nearest", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+          }}
+        />
       </div>
 
       {/* Desktop and tablet: the grid on the shared canvas. */}

@@ -4,6 +4,14 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-10-06 · Redesign candidate · A combined timeline for several projects at once
+
+On Timeline, All projects, each project's menu now has "Add to combined timeline". Choose two or more and a panel appears above the chart: the chosen projects as chips you can take out one at a time, one line with every big date still to come in each project's own colour, and the same dates listed in order underneath. When two or more of those dates fall in the same Monday-to-Sunday week, the busiest such week is named in a sentence ("Tightest week: Mon 5 Oct 2026 to 11 Oct, 2 big dates across Year 9 history and Kavanagh wedding") and shaded on the line; "Show that week" moves the chart to it. With one project chosen, the panel asks for a second. Up to six fit.
+
+The choice is kept in the address as `?with=`, so a combined view can be linked and survives a reload. Only projects you can already see appear; an id you cannot see is left out.
+
+No server action, read, schema change or dependency was added: every date comes from the rows the page already reads. This is an unshipped candidate on `design/app-v3-combined-timeline`; no deployment or production change is claimed.
+
 ## 2026-10-06 · Redesign candidate · A denser Tasks list, and a header that stays put
 
 The Tasks list now fits more on a screen. With a mouse each row is 40 pixels, not 44; touch screens keep the larger rows. Every row shows its tick box, quietly, so it reads as a list you can pick from; hovering or ticking brings the box to full strength. Each group's count sits in a small pill beside its name. Labels are soft pills in their own colour. If you turn on the Subtasks column, it shows a thin bar with how many are done.
