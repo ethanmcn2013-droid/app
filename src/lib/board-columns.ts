@@ -225,3 +225,14 @@ export function columnPersistence(
   }
   return { lane: "doing", boardColumnKey: column.key };
 }
+
+/**
+ * The columns as people read them. The product's own words for a column
+ * always win; the one shipped name that reads as jargon, "Review", is shown
+ * as "To check" until someone renames it. The board, the list and the task
+ * panel all read columns through this, so a task is never "To check" on the
+ * board and "Review" in its panel.
+ */
+export function withPlainColumnNames(columns: readonly BoardColumn[]): BoardColumn[] {
+  return columns.map((column) => (column.key === "review" && column.isSystem && column.name === "Review" ? { ...column, name: "To check" } : column));
+}

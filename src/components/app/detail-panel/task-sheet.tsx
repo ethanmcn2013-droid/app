@@ -18,7 +18,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import type { Task } from "@/lib/data";
 import { useTasksDispatch, useTasksState } from "@/lib/tasks/tasks-context";
 import { useColumnConfig, useDomain, useTagDefs, useWorkspaceAnchor, useWorkspaceMembers } from "@/lib/domain-context";
-import { effectiveColumnKey, isTaskDone, resolveBoardColumns } from "@/lib/board-columns";
+import { effectiveColumnKey, isTaskDone, resolveBoardColumns, withPlainColumnNames } from "@/lib/board-columns";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import { tagDisplayName } from "@/lib/tags";
 import { hasOpenLayer } from "@/components/primitives/open-layer";
@@ -269,7 +269,7 @@ function SheetHeader({
 }) {
   const { boardName, workspaceName } = useDomain();
   const columnConfig = useColumnConfig();
-  const columns = useMemo(() => resolveBoardColumns(columnConfig), [columnConfig]);
+  const columns = useMemo(() => withPlainColumnNames(resolveBoardColumns(columnConfig)), [columnConfig]);
   const column = columns.find((c) => c.key === effectiveColumnKey(task));
   const project = (workspaceName?.trim() || boardName || "Project").trim();
   const number = typeof task.seq === "number" ? `T-${task.seq}` : null;
@@ -425,7 +425,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 function Properties({ task, grid = false }: { task: Task; grid?: boolean }) {
   const dispatchers = useTasksDispatch();
   const columnConfig = useColumnConfig();
-  const columns = useMemo(() => resolveBoardColumns(columnConfig), [columnConfig]);
+  const columns = useMemo(() => withPlainColumnNames(resolveBoardColumns(columnConfig)), [columnConfig]);
   const members = useWorkspaceMembers();
   const tagDefs = useTagDefs();
   const { tasks: projectTasks } = useTasksState();
