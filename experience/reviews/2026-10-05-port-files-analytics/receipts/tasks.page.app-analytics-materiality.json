@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-analytics",
+  "source": "tasks/src/app/app/analytics/page.tsx",
+  "materialityHash": "b3dc20fe2d960e0f",
+  "reviewedAt": "2026-10-05",
+  "reviewer": "Implementation review under delegated execution (Claude, single writer on design/app-v3-files-analytics). Founder review of the rendered result is pending",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-80b2f4d0f1c10e2ab2461d63-2ad6b9cf2f029e0c.json",
+    "attestationSha256": "5cbaf61b1abb994603c686dab71949a62d9086cdd3b3600226947e80340984d8",
+    "runId": "tasks-playwright-80b2f4d0f1c10e2ab2461d63",
+    "canonicalEvidenceSha256": "80b2f4d0f1c10e2ab2461d63985ddabe5140ee9fd820224e1440b2a81fbeae0a",
+    "rawArtifactSha256": "2ad6b9cf2f029e0c7d84d4931a3b1b6cd3336a6f5e54eff763ef9b86f43ae98a",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-tasks",
+    "caseName": "canonical populated Tasks workspace",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "The Analytics page now resolves a scope (every project the reader can open, from the membership catalog, or one), a part (Ask or All projects), a question, a range and a sort from the address, and reads the wider scope only through catalog-scoped reads. It renders the founder's preferred Ask design: an ask box that finds a question in a fixed library by its words, eight questions in four groups, each answered by one sentence from real tasks. The open project is still proved by resolveProjectForRoute before anything is read. The linked case is suite regression context from a full green run, 132 of 132, on a demo build of ee2ccc1b; no critical case opens this route. The rendered evidence for it is the review-mode capture and the 1,782-check fixture run recorded in experience/reviews/2026-10-05-port-files-analytics/README.md.",
+  "decision": "Accept the new hash. The entry's primary job and primary action are reworded to match the page; other registry fields are unchanged."
+}

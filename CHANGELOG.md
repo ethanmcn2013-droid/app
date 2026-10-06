@@ -12,6 +12,15 @@ Only operators see the section, and every action checks that on the server. It i
 
 There is no schema change, migration, script or new dependency. This is an unshipped candidate on `feat/sample-data-seeder`; no deployment or production change is claimed by this entry, and nothing is written until an operator presses a button while signed in.
 
+## 2026-10-05 · Redesign candidate · Files and Analytics on the approved designs
+
+Files is now a header, one search box, ways to narrow, the files and a preview of the chosen one. The search looks at file names, kinds, the task a file sits on and who added it. It does not look inside files and does not answer questions; the design's question box, sample questions, pinned searches and keys panel are left out on the founder's instruction. On a wide screen the preview sits beside the list; on a phone it opens as a sheet. Uploaded pictures show in the preview through the same checked download route as before, and every other file opens where it lives. The list and grid layouts both remain.
+
+Analytics opens on Ask: a box and eight plain questions in four groups, each answered by one sentence worked out from real tasks, with the chart under it. The box finds a question by the words you type and says so when it has none; it is not a language model, and nothing is forecast. The scope beside the title is every project you can open, or one. All projects shows a card per project from the same figures as the Projects page. Everything the earlier page showed is still here, under the question it answers.
+
+Three things from the design are not included because the product has no data for them: Replay, "Where does our time go?" and pinned answers. "What keeps slipping?" counts recorded changes to a due date, and is left out wherever that record cannot be read. The late question lists who holds each task and gives no reason, because none is recorded.
+
+Fixed on the way: the Files read is now bounded, leaves out files on archived tasks unless you ask for them, and names a person only while they belong to the project; and the All projects timeline takes "today" from your time zone, as Analytics and Projects do. Read-only queries only, no schema change and no new dependency. This is an unshipped candidate on `design/app-v3-files-analytics`; no deployment or production change is claimed.
 ## 2026-10-05 · Redesign candidate · Tasks board, list and calendar
 
 The three Tasks views now share one header and the approved design. The header names the project, then says in one line how much was finished this week, how much is open and what is late; late, due today and no date are filters you can press. When started work has gone four days without a change, a sentence names the task that has sat longest with a way to open it, and a Stuck control shows only that work. The page has no create button of its own: New in the top bar is the one place to start a task, and the C key still opens the same composer.
