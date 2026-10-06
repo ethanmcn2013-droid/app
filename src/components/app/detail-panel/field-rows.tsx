@@ -12,7 +12,7 @@ import {
 } from "@/lib/data";
 import {
   effectiveColumnKey,
-  resolveBoardColumns,
+  resolveBoardColumns, withPlainColumnNames,
   type BoardColumn,
 } from "@/lib/board-columns";
 import { COLUMN_COLORS } from "@/lib/board-colors";
@@ -71,7 +71,7 @@ function columnVisual(column: BoardColumn): {
  *  claimed tasks and made Waiting/custom columns unreachable. */
 function usePanelColumns(): BoardColumn[] {
   const config = useColumnConfig();
-  return useMemo(() => resolveBoardColumns(config), [config]);
+  return useMemo(() => withPlainColumnNames(resolveBoardColumns(config)), [config]);
 }
 
 export function FieldRows({ task }: { task: Task }) {

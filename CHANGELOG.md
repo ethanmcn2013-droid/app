@@ -4,6 +4,35 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-10-06 · Redesign candidate · The sidebar in named groups, and one create button per screen
+
+The sidebar now reads top to bottom as Home, then four named groups with room between them. Workspace holds Projects, Tasks, Timeline, Files and Analytics. Projects lists every project you can open, each with its own colour tile; a dot appears beside a project only when it is past its target date or its owner has marked it at risk, the same rule the Projects page uses, and there is no dot when a project is fine. Build holds Automations, marked Preview, and Whiteboard, marked Soon. Chat lists your real conversations with what is unread; if you do not have Chat yet it shows one quiet row that says Coming soon. Projects and Chat fold from their names, and the choice is kept in the browser.
+
+Overview no longer has a row of its own: it is a tab of Home, and Home stays lit for both. The "Initial setup" group is gone from the sidebar. Everything it held is still one step away: Inbox is the bell in the top bar, My tasks is in Search or jump to, Chat is its own group, and Apps and tools is the grid button in the top bar. The collapsed rail and the phone and tablet drawer follow the same order.
+
+There is one create button per screen, the one in the top bar, and it follows the page: New automation on Automations, New project on Projects, New task everywhere else. The small arrow beside it lists everything you can start (Task, Project, Automation, Note, and Message if you have Chat). The Projects page and the Automations list no longer carry a second button of their own; an empty page may still invite you to begin.
+
+Two smaller things came with it. A task whose column is To check now says To check in its own panel as well, where it used to say Review. And the board is no longer held to the page width, so a wide screen shows more of it; the list and the calendar keep their reading width.
+
+One read was added: the status and target date of the projects in your own catalog, read only, to draw the dot. There is no schema change, migration or new dependency. This is an unshipped candidate on `design/app-v3-sidebar`; no deployment or production change is claimed by this entry.
+
+## 2026-10-06 · Preview candidate · Automations, a canvas to draw them on
+
+Automations is a new place in the signed-in app, at `/app/automations`. You draw what should happen by itself: a trigger (a task becomes late, a date is a week away, someone joins a project, a file is added), then what to do about it (nudge the owner, move it to a column, post in the project chat, add it to the daily briefing), with a branch where the path should split. Four ready-made ones open as your own draft, and New automation starts with an empty canvas.
+
+It is a preview, and it says so. Nothing runs yet: there is no service behind it. A draft is kept in the browser it was made in and nowhere else, and the page says when a browser will not keep it. Live, Publish, Share and "Run from here" are shown so the shape of the finished thing is visible; none can be used, and each says "Coming soon" when you point at it or reach it with the keyboard.
+
+The canvas is a working editor. Drag the background or hold Space to move around, scroll to pan, Ctrl or the pinch gesture to zoom between 25 and 200 percent. Drag steps, drag from a step's right edge to another step to connect them, and a line that would send the path round in a circle is refused with the reason. Tab reaches every step; the arrow keys move it, Enter opens its edit panel, Delete removes it, and undo and redo walk real history. On a phone the edit panel is a sheet from the bottom.
+
+No server action, API route, database read or write, schema change or dependency was added. The sidebar does not link to it yet; that row belongs to the sidebar change. This is an unshipped candidate on `design/app-v3-automations-canvas`; no deployment or production change is claimed.
+
+## 2026-10-05 · Redesign candidate · Home opens on what needs you, with Overview as its second tab
+
+Home now opens on your own work across every project you can open: a line that counts what needs you today, what is late and what was done this week; your late and due-today tasks with a tick each; what is due this week, what is waiting to be checked and what you are waiting on; the next big day; and each project with how it is doing. Ticking a task uses the same action as the board and shows Undo. When a task has sat in Waiting for three days or more with no change, Home says so in one sentence and offers Nudge if someone else holds it. A task is yours when you are assigned to it, or when nobody current is assigned and you own the project. The greeting follows your own clock.
+
+Overview is now a tab of Home, at the same address as before (`/app/home/briefing`). It opens on a week view: every dated task on the day it is due, grouped by Area (a task's first label), by person or by board column; big dates as flags; how full each week is; finished work under its lane; and tasks with no date in a row of their own, where you pick one and click the day it is due. A picked task can be opened or marked done, both with Undo. What the briefing read (what needs attention, why, Evidence, Open in Tasks and Briefing delivery) sits below the week view. Home lights in the sidebar for both tabs.
+
+Neither page has its own New task button: the top bar's New is the one create button, and C still starts a task. Both pages add read-only queries over the projects the reader can already open, with no schema change. A task has one date in the product, so every task is one day wide; pace forecasts, looking back in time and spreading a crowded week are in the approved design but have no data behind them and are not shown. This is an unshipped candidate on `design/app-v3-home-overview`; no deployment, migration or production change is claimed by this entry.
 ## 2026-10-05 · Candidate · Sample data for operators
 
 Operators have a new section in Settings, Sample data. It adds three invented sets of projects to the operator's own account, and removes them again: a secondary school teacher (5 projects), a third level student (6 modules, each with two assignments and two exams) and a couple planning a wedding (4 projects). Together they hold 238 tasks, 50 steps, 52 big dates and 9 links, across every column, with labels, priorities, amounts in euro, target dates and project statuses. Dates count from the day a set is added, so there is always work that is late, due today, due this week, later and done.

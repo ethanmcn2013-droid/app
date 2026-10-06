@@ -110,14 +110,14 @@ for (const theme of ["dark", "light"] as const) {
 
       // A sidebar icon reads on the rail (the glyph was pale grey on white
       // when the rail's ground came from the missing layer).
-      const icon = await paint(page, '[data-shell="v3"] > aside nav[aria-label="Primary"] a:not([aria-current]) svg');
+      const icon = await paint(page, '[data-shell="v3"] > aside nav[aria-label="Workspace"] a:not([aria-current]) svg');
       expect(contrast(icon.color, sidebar.background), "sidebar icon against the rail").toBeGreaterThanOrEqual(4.5);
 
-      // A stat card: a fill, a border, and a step away from the page.
-      const stat = await paint(page, 'a[class*="home-module"][class*="__stat"]');
-      expect(opaque(stat.background), "a stat card has a fill").toBe(true);
-      expect(stat.borderWidth, "a stat card has a border").toBeGreaterThan(0);
-      expect(opaque(stat.border), "the stat card border has a colour").toBe(true);
+      // The next big day card: a fill, a border, and a step away from the page.
+      const stat = await paint(page, '[data-home-card="next"]');
+      expect(opaque(stat.background), "the card has a fill").toBe(true);
+      expect(stat.borderWidth, "the card has a border").toBeGreaterThan(0);
+      expect(opaque(stat.border), "the card border has a colour").toBe(true);
       expect(same(stat.border, stat.background), "the border is not the card's own colour").toBe(false);
       expect(same(stat.background, sheet.background), "the card is a step away from the page").toBe(false);
 

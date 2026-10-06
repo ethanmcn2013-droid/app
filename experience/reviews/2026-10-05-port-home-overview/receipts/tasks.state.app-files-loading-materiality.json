@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-files-loading",
+  "source": "tasks/src/app/app/files/loading.tsx",
+  "materialityHash": "9beac142f8f04cb2",
+  "reviewedAt": "2026-10-06",
+  "reviewer": "Implementation review under delegated execution (Claude, single writer on design/app-v3-home-overview). Founder review of the rendered result is pending",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-0e2bc8442ee479567ad9023e-55dad79b9bd1c567.json",
+    "attestationSha256": "946fc696063df147afe5f5dbba9e2df5b115ee06391390ec8eccf1f4c2fb54f3",
+    "runId": "tasks-playwright-0e2bc8442ee479567ad9023e",
+    "canonicalEvidenceSha256": "0e2bc8442ee479567ad9023ec64e7efc9be8515bbdc333b5bc86c23c11dffefe",
+    "rawArtifactSha256": "55dad79b9bd1c5673d701a08774650e6f2b467c2702f0e5586d9fbf6c8247659",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-tasks",
+    "caseName": "canonical populated Tasks workspace",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "New: a loading boundary for Files that traces the settled page (header, search box, chips, rows and the docked preview). Static blocks, no shimmer. The linked case is suite regression context from a full green run, 132 of 132, on a demo build of ee2ccc1b; no critical case opens this route. The rendered evidence for it is the review-mode capture and the 1,782-check fixture run recorded in experience/reviews/2026-10-05-port-files-analytics/README.md. Re-attached on 6 October 2026 to a full green run of the Home and Overview port merged with main (132 of 132): that port changes the critical fixture manifest (the Home and Overview assertions), and a receipt is bound to the manifest it was reviewed under. This source and its hash (9beac142f8f04cb2) are unchanged by the port; the earlier receipt stays in its own review folder as the record of the original review.",
+  "decision": "Keep the reviewed hash and attach this receipt to the current evidence contract. Other registry fields are unchanged."
+}

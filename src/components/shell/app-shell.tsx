@@ -13,7 +13,6 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useId,
   useMemo,
   useRef,
   useState,
@@ -29,6 +28,17 @@ import {
 import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
 import { suiteSurfaceFromAppPath } from "@/lib/product-urls";
 import {
+  CREATE_AUTOMATION_HREF,
+  CREATE_AUTOMATION_READY_ATTRIBUTE,
+  CREATE_LABEL,
+  CREATE_PROJECT_HREF,
+  CREATE_PROJECT_READY_ATTRIBUTE,
+  createKindForPath,
+  SHELL_CREATE_ATTRIBUTE,
+  SHELL_CREATE_AUTOMATION_EVENT,
+  SHELL_CREATE_PROJECT_EVENT,
+} from "@/lib/shell-create";
+import {
   applyThemeChoice,
   readThemeChoice,
   subscribeThemeChoice,
@@ -36,7 +46,7 @@ import {
 } from "@/lib/theme-mode";
 import { updateUserPreferencesAction } from "@/server/actions/preferences";
 import { ShellIcon } from "./shell-icons";
-import { crumbsForPath, INITIAL_SETUP } from "./shell-nav";
+import { crumbsForPath } from "./shell-nav";
 import { AppsLauncher } from "./launcher/apps-launcher";
 import styles from "./shell.module.css";
 
@@ -258,15 +268,22 @@ function createHandlerReady(): boolean {
   return document.documentElement.hasAttribute("data-create-ready");
 }
 
+/**
+ * The one create button (founder, 6 Oct 2026). Its main half starts what the
+ * page you are on is about: an automation on Automations, a project on
+ * Projects, otherwise a task. The small half beside it lists everything that
+ * can be started, so no create path depends on where you are.
+ */
 function NewMenu() {
   const [open, setOpen] = useState(false);
   // Read when the menu opens, so Message is offered only where Chat is.
   const [chat, setChat] = useState(false);
   const router = useRouter();
+  const pathname = usePathname() ?? "";
+  const kind = createKindForPath(pathname);
   const close = useCallback(() => setOpen(false), []);
   const ref = useDismiss(open, close);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const groupId = useId();
 
   const newTask = () => {
     setOpen(false);
@@ -277,20 +294,47 @@ function NewMenu() {
     }
   };
 
+  const newProject = () => {
+    setOpen(false);
+    if (document.documentElement.hasAttribute(CREATE_PROJECT_READY_ATTRIBUTE)) {
+      window.dispatchEvent(new CustomEvent(SHELL_CREATE_PROJECT_EVENT));
+    } else {
+      router.push(CREATE_PROJECT_HREF);
+    }
+  };
+
+  // The Automations list makes the blank draft (kept in this browser like
+  // every other) and opens its canvas, here or on arrival.
+  const newAutomation = () => {
+    setOpen(false);
+    if (document.documentElement.hasAttribute(CREATE_AUTOMATION_READY_ATTRIBUTE)) {
+      window.dispatchEvent(new CustomEvent(SHELL_CREATE_AUTOMATION_EVENT));
+    } else {
+      router.push(CREATE_AUTOMATION_HREF);
+    }
+  };
+
+  const start = { task: newTask, project: newProject, automation: newAutomation }[kind];
+
   return (
     <div
       ref={ref}
-      style={{ position: "relative" }}
+      className={styles.newSplit}
       onKeyDown={(event) => {
         // Escape hands focus back to the button the menu belongs to.
         if (event.key === "Escape" && open) buttonRef.current?.focus();
       }}
     >
+      <button type="button" className={styles.newButton} aria-label={CREATE_LABEL[kind]} onClick={start} {...{ [SHELL_CREATE_ATTRIBUTE]: kind }}>
+        <ShellIcon.plus />
+        <span>{CREATE_LABEL[kind]}</span>
+      </button>
       <button
         ref={buttonRef}
         type="button"
-        className={styles.newButton}
+        className={styles.newMore}
         aria-label="New"
+        title="Everything you can start"
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => {
@@ -298,32 +342,27 @@ function NewMenu() {
           setOpen((value) => !value);
         }}
       >
-        <ShellIcon.plus />
-        <span>New</span>
+        <ShellIcon.chevronDown size={12} />
       </button>
       {open ? (
         <div className={styles.menu} role="menu">
           <button type="button" role="menuitem" onClick={newTask}>
             <ShellIcon.tasks /> Task <span className={styles.menuHint}>C</span>
           </button>
-          <Link href="/app/project" role="menuitem" onClick={close}>
+          <button type="button" role="menuitem" onClick={newProject}>
             <ShellIcon.projects /> Project
+          </button>
+          <button type="button" role="menuitem" onClick={newAutomation}>
+            <ShellIcon.automations /> Automation <span className={styles.menuHint}>Preview</span>
+          </button>
+          <Link href="/app/notes" role="menuitem" onClick={close}>
+            <ShellIcon.notes /> Note
           </Link>
-          {/* Founder instruction (2 Oct 2026): the earlier entries stay,
-              grouped under one name to review. */}
-          <div className={styles.menuGroup} role="group" aria-labelledby={groupId}>
-            <div className={styles.menuLabel} id={groupId}>
-              {INITIAL_SETUP.label}
-            </div>
-            <Link href="/app/notes" role="menuitem" onClick={close}>
-              <ShellIcon.notes /> Note
+          {chat ? (
+            <Link href="/app/messages" role="menuitem" onClick={close}>
+              <ShellIcon.messages /> Message
             </Link>
-            {chat ? (
-              <Link href="/app/messages" role="menuitem" onClick={close}>
-                <ShellIcon.messages /> Message
-              </Link>
-            ) : null}
-          </div>
+          ) : null}
         </div>
       ) : null}
     </div>

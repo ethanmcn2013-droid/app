@@ -285,11 +285,16 @@ test("Notes lives in Apps and tools, and the launcher opens the same catalogue",
   // Revision 2 (25 Sep 2026): one name, "Apps and tools", everywhere.
   // Revision 3 (2 Oct 2026, founder instruction): the sidebar's rows are the
   // approved top level plus one "Initial setup" group; Notes is in neither.
+  // Revision 4 (6 Oct 2026, founder instruction): Home, then Workspace,
+  // Projects, Build and Chat; the "Initial setup" group is gone and the
+  // places it held keep their paths. Notes is still in none of them.
   const studioSection = v3Nav.slice(
-    v3Nav.indexOf("TOP_LEVEL_DESTINATIONS"),
+    v3Nav.indexOf("export const HOME_DESTINATION"),
     v3Nav.indexOf("export const TOOL_DESTINATIONS"),
   );
-  assert.match(studioSection, /INITIAL_SETUP_DESTINATIONS/);
+  assert.match(studioSection, /WORKSPACE_DESTINATIONS/);
+  assert.match(studioSection, /BUILD_DESTINATIONS/);
+  assert.match(studioSection, /UTILITY_DESTINATIONS/);
   assert.doesNotMatch(studioSection, /\{ id: "notes"/);
   assert.match(v3Nav, /\{ id: "tools", label: "Apps and tools", href: "\/app\/tools"/);
   assert.doesNotMatch(v3Nav, /More tools/);

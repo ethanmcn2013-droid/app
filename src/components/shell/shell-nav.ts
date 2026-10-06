@@ -4,6 +4,7 @@
  */
 import type { ShellIconName } from "./shell-icons";
 import { LAUNCHER_NAME, toolBySlug } from "./launcher/launcher-catalog";
+import { AUTOMATIONS_APP_PATH, AUTOMATIONS_LABEL } from "@/lib/product-urls";
 
 export type ShellDestination = Readonly<{
   id: string;
@@ -16,38 +17,62 @@ export type ShellDestination = Readonly<{
   requiresMessages?: boolean;
   /** Not built yet: the row carries a quiet "Soon" tag. */
   soon?: boolean;
+  /** Built to try, not yet running for real: the row carries "Preview". */
+  preview?: boolean;
 }>;
 
 /**
- * The sidebar's top level, in the approved order (2 Oct 2026): the same
- * eight places the design demo and the marketing header name. Whiteboard
- * opens its existing "Coming soon" page.
+ * The sidebar, top to bottom (founder instruction, 6 Oct 2026): Home on its
+ * own, then four named groups with room between them. Overview is a tab of
+ * Home, so Home owns its paths and there is no Overview row.
  */
-export const TOP_LEVEL_DESTINATIONS: readonly ShellDestination[] = [
-  { id: "home", label: "Home", href: "/app/home", icon: "home", owns: ["/app/home"] },
-  { id: "overview", label: "Overview", href: "/app/home/briefing", icon: "pulse", owns: ["/app/home/briefing", "/app/signal"] },
+export const HOME_DESTINATION: ShellDestination = {
+  id: "home",
+  label: "Home",
+  href: "/app/home",
+  icon: "home",
+  owns: ["/app/home", "/app/signal"],
+};
+
+export const WORKSPACE_DESTINATIONS: readonly ShellDestination[] = [
   { id: "projects", label: "Projects", href: "/app/project", icon: "projects", owns: ["/app/project", "/app/archived"] },
   { id: "tasks", label: "Tasks", href: "/app/tasks", icon: "tasks", owns: ["/app/tasks", "/app/task"] },
   { id: "timeline", label: "Timeline", href: "/app/timeline", icon: "timeline", owns: ["/app/timeline"] },
   { id: "files", label: "Files", href: "/app/files", icon: "files", owns: ["/app/files"] },
   { id: "analytics", label: "Analytics", href: "/app/analytics", icon: "analytics", owns: ["/app/analytics"] },
+];
+
+/** Things you build with. Whiteboard opens its existing "Coming soon" page. */
+export const BUILD_DESTINATIONS: readonly ShellDestination[] = [
+  { id: "automations", label: AUTOMATIONS_LABEL, href: AUTOMATIONS_APP_PATH, icon: "automations", owns: [AUTOMATIONS_APP_PATH], preview: true },
   { id: "whiteboard", label: "Whiteboard", href: "/app/tools/whiteboard", icon: "whiteboard", owns: ["/app/tools/whiteboard"], soon: true },
 ];
 
+/** The named groups, in order. Projects and Chat fold; the others are fixed. */
+export const SIDEBAR_GROUPS = [
+  { id: "workspace", label: "Workspace", folds: false },
+  { id: "projects", label: "Projects", folds: true },
+  { id: "build", label: "Build", folds: false },
+  { id: "chat", label: "Chat", folds: true },
+] as const;
+
 /**
- * Founder instruction (2 Oct 2026): everything else the sidebar had stays,
- * nested under one group to review, so nothing is removed outright. These
- * are the group's own rows; the Projects list, Channels and Direct messages
- * sit inside the same group in the sidebar.
+ * The launcher's panel still files its older entries under this name. The
+ * sidebar's own "Initial setup" group was removed on 6 Oct 2026.
  */
 export const INITIAL_SETUP = { id: "initial-setup", label: "Initial setup" } as const;
 
-export const INITIAL_SETUP_DESTINATIONS: readonly ShellDestination[] = [
+/**
+ * Places with no sidebar row of their own. They still own their paths, so the
+ * breadcrumb resolves. Inbox is the top bar's bell; My tasks is in Search or
+ * jump to; Chat is the sidebar's Chat group; Apps and tools is the top bar's
+ * launcher.
+ */
+export const UTILITY_DESTINATIONS: readonly ShellDestination[] = [
   { id: "inbox", label: "Inbox", href: "/app/inbox", icon: "inbox", owns: ["/app/inbox"] },
   { id: "my-tasks", label: "My tasks", href: "/app/my-tasks", icon: "myTasks", owns: ["/app/my-tasks", "/app/your-work"] },
   { id: "messages", label: "Chat", href: "/app/messages", icon: "messages", owns: ["/app/messages"], requiresMessages: true },
-  // Everything else lives behind one row and the top bar's launcher. The
-  // label is a literal so the contract can read it; launcher-catalog.test.ts
+  // The label is a literal so the contract can read it; launcher-catalog.test.ts
   // holds it equal to LAUNCHER_NAME.
   { id: "tools", label: "Apps and tools", href: "/app/tools", icon: "apps", owns: ["/app/tools"] },
 ];
@@ -64,7 +89,7 @@ export const FOOTER_DESTINATIONS: readonly ShellDestination[] = [
   { id: "settings", label: "Settings", href: "/app/settings", icon: "settings", owns: ["/app/settings", "/app/import"] },
 ];
 
-const ALL = [...TOP_LEVEL_DESTINATIONS, ...INITIAL_SETUP_DESTINATIONS, ...TOOL_DESTINATIONS, ...FOOTER_DESTINATIONS];
+const ALL = [HOME_DESTINATION, ...WORKSPACE_DESTINATIONS, ...BUILD_DESTINATIONS, ...UTILITY_DESTINATIONS, ...TOOL_DESTINATIONS, ...FOOTER_DESTINATIONS];
 const APPS_AND_TOOLS: Crumb = { label: LAUNCHER_NAME, href: "/app/tools" };
 
 function ownsPath(pathname: string, prefix: string): boolean {
@@ -87,42 +112,34 @@ function resolveDestinationId(pathname: string): string | null {
 const TOOL_IDS = new Set(TOOL_DESTINATIONS.map((destination) => destination.id));
 
 /**
- * The sidebar row that lights up for a path. A tool reached through Apps and
- * tools (Notes today) has no row of its own, so its parent row carries the
- * active state, which is what the breadcrumb says too.
+ * The sidebar row that lights up for a path. Overview is a tab of Home, so
+ * Home lights for it. A tool reached through Apps and tools (Notes today)
+ * resolves to "tools", which has no row: the breadcrumb says where you are.
  */
 export function activeDestinationId(pathname: string): string | null {
   const id = resolveDestinationId(pathname);
   return id && TOOL_IDS.has(id) ? "tools" : id;
 }
 
-const INITIAL_SETUP_IDS = new Set(INITIAL_SETUP_DESTINATIONS.map((destination) => destination.id));
-
-/**
- * True when the page you are on is one of the group's rows (Chat's channels
- * and direct messages are Chat's paths), so the group opens by itself.
- */
-export function isInsideInitialSetup(pathname: string): boolean {
-  const id = activeDestinationId(pathname);
-  return id !== null && INITIAL_SETUP_IDS.has(id);
+/** Whether a path is one of Home's tabs' second page. */
+function isOverviewPath(pathname: string): boolean {
+  return ownsPath(pathname, "/app/home/briefing") || ownsPath(pathname, "/app/signal");
 }
 
 /* ── Fold memory ────────────────────────────────────────────────────
-   The sidebar keeps one list per browser. A section that starts open is
-   listed by its id once someone folds it. A section that starts folded
-   (Initial setup) is listed as "open:<id>" once someone opens it, so an
-   empty list means "as designed" for both kinds. */
+   The sidebar keeps one list per browser: a group is listed by its id once
+   someone folds it, so an empty list means "as designed" (everything open).
+   Ids that no longer name a group (the old "open:initial-setup") are
+   ignored. */
 
-const STARTS_FOLDED: ReadonlySet<string> = new Set([INITIAL_SETUP.id]);
-
-/** The entry a section writes to the list when it leaves its starting state. */
+/** The entry a group writes to the list when it is folded. */
 export function sectionStoreKey(id: string): string {
-  return STARTS_FOLDED.has(id) ? `open:${id}` : id;
+  return id;
 }
 
-/** Whether a section is open, given the stored list. */
+/** Whether a group is open, given the stored list. */
 export function sectionIsOpen(stored: ReadonlySet<string>, id: string): boolean {
-  return STARTS_FOLDED.has(id) ? stored.has(sectionStoreKey(id)) : !stored.has(id);
+  return !stored.has(id);
 }
 
 export type Crumb = Readonly<{ label: string; href?: string }>;
@@ -135,6 +152,8 @@ export function crumbsForPath(pathname: string): Crumb[] {
   // Tools sit one level under Apps and tools.
   if (TOOL_DESTINATIONS.includes(destination)) crumbs.push(APPS_AND_TOOLS);
   crumbs.push({ label: destination.label, href: destination.href });
+  if (destination.id === "home" && isOverviewPath(pathname)) crumbs.push({ label: "Overview" });
+  if (destination.id === "automations" && pathname !== AUTOMATIONS_APP_PATH) crumbs.push({ label: "Draft" });
   if (destination.id === "tools" && pathname.startsWith("/app/tools/")) {
     const tool = toolBySlug(pathname.slice("/app/tools/".length).split("/")[0] ?? "");
     if (tool) crumbs.push({ label: tool.name });

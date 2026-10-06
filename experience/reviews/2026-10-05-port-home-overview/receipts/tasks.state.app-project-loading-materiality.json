@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-project-loading",
+  "source": "tasks/src/app/app/project/loading.tsx",
+  "materialityHash": "0682055fb87b5a68",
+  "reviewedAt": "2026-10-06",
+  "reviewer": "Implementation review under delegated execution (Claude, single writer on design/app-v3-home-overview). Founder review of the rendered result is pending",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-0e2bc8442ee479567ad9023e-a82659b5ab911b3e.json",
+    "attestationSha256": "d1531ecea90deb6d4191f7a3aa8ee68c9b3adeb2f2cb6a7eda0d97e79da0f28f",
+    "runId": "tasks-playwright-0e2bc8442ee479567ad9023e",
+    "canonicalEvidenceSha256": "0e2bc8442ee479567ad9023ec64e7efc9be8515bbdc333b5bc86c23c11dffefe",
+    "rawArtifactSha256": "a82659b5ab911b3e14364785d12d99ee6fe4a4ea4ec1b777db97490b073591f0",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-tasks",
+    "caseName": "canonical populated Tasks workspace",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "The Projects loading skeleton takes the shared page column (max-w-[var(--v3-page-w)], 1320px) in both of its branches, where the branch without the Projects index used 1180px. It is the column the loaded page now uses, so the skeleton and the page share an edge at every width. No other change. The linked case is suite regression context from a full green run, 132 of 132, on a clean demo build of 6052d8c7; it does not hold the loading state on screen. Re-attached on 6 October 2026 to the full green run of the Home and Overview port (132 of 132): that port changed the critical fixture manifest (the Home and Overview assertions), and a receipt is bound to the manifest it was reviewed under. This source and its hash (0682055fb87b5a68) are unchanged by the port; the earlier receipt stays in its own review folder as the record of the original review.",
+  "decision": "Keep the reviewed hash and attach this receipt to the current evidence contract. Other registry fields are unchanged."
+}

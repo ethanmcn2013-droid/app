@@ -104,7 +104,7 @@ export async function SignalBriefPage({
   return (
     <div data-signal-module className="contents">
       <section id="signal-main-content" tabIndex={-1} className="contents">
-        <OverviewView model={model} />
+        <OverviewView model={model} projectIds={context.authorization.membership ? [context.authorization.membership.workspaceId] : []} />
       </section>
       {selectedEvidence ? (
         <EvidenceDrawer

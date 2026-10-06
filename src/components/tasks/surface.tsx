@@ -23,7 +23,7 @@ import {
 } from "react";
 import { useLabStore } from "@/components/hybrid/store";
 import { useBoardColumns } from "@/components/hybrid/columns-context";
-import type { BoardColumn } from "@/lib/board-columns";
+import { withPlainColumnNames, type BoardColumn } from "@/lib/board-columns";
 import type { LabTask, TaskSchedule } from "@/components/hybrid/types";
 import type { TasksViewId } from "@/lib/product-urls";
 import { useTasksState } from "@/lib/tasks/tasks-context";
@@ -99,7 +99,7 @@ const SurfaceContext = createContext<SurfaceApi | null>(null);
 export function useSurfaceColumns(): BoardColumn[] {
   const columns = useBoardColumns();
   return useMemo(
-    () => columns.map((column) => (column.key === "review" && column.isSystem && column.name === "Review" ? { ...column, name: "To check" } : column)),
+    () => withPlainColumnNames(columns),
     [columns],
   );
 }

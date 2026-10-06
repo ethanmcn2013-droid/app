@@ -139,6 +139,10 @@ export const ShellIcon = {
   whiteboard: (p: IconProps) => (
     <Svg {...p}><rect fill="currentColor" fillOpacity={0.14} data-fill="" x="2.25" y="2.75" width="11.5" height="8.5" rx="2" /><path d="M5.75 13.75 6.6 11.25M10.25 13.75l-.85-2.5" /><path data-part="draw" pathLength={1} d="M4.9 8.4c1.1-2.6 2.2-2.6 3.1-.9s2 1.5 3.1-.9" /></Svg>
   ),
+  /** Automations: a bolt, the thing that happens by itself. */
+  automations: (p: IconProps) => (
+    <Svg {...p}><path fill="currentColor" fillOpacity={0.14} data-fill="" d="M9.1 2.25 3.9 9.1h3.5l-.75 4.65 5.45-6.9H8.45Z" /></Svg>
+  ),
   /** Initial setup: a stack of trays, the earlier navigation kept together. */
   setup: (p: IconProps) => (
     <Svg {...p}><rect fill="currentColor" fillOpacity={0.14} data-fill="" x="2.5" y="8.25" width="11" height="5.25" rx="1.75" /><path d="M4 5.75h8M5.5 3.25h5" /></Svg>

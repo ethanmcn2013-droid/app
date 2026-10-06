@@ -3,16 +3,15 @@
 /**
  * v3 sidebar: the one persistent navigation for the whole suite.
  *
- * Order, top to bottom: the brand, search, then the eight places of the
- * approved navigation (Home, Overview, Projects, Tasks, Timeline, Files,
- * Analytics, Whiteboard). Below that, one group that folds, "Initial setup":
- * everything the sidebar had before (Inbox, My tasks, Chat, Apps and tools,
- * the Projects list, Channels and Direct messages), kept whole so it can be
- * reviewed (founder instruction, 2 Oct 2026). It starts folded, remembers
- * the choice, opens by itself when the page you are on is inside it, and
- * shows what is waiting on its header while folded. One row at a time is
- * the page you are on; the open Project is marked with a dot, not a second
- * highlight. The footer is one row: Settings, help and the theme.
+ * Top to bottom (founder instruction, 6 Oct 2026): the brand, search, Home,
+ * then four named groups with room between them. Workspace is the five
+ * places of the work. Projects lists every Project the reader can open,
+ * each with its own colour tile and a dot only when it is late or at risk.
+ * Build holds Automations (a preview) and Whiteboard (on its way). Chat
+ * lists the reader's real conversations, or one quiet "Coming soon" row for
+ * a reader who does not have Chat. Projects and Chat fold, and the choice is
+ * remembered per browser. One row at a time is the page you are on. The
+ * footer is one row: Settings, help and the theme.
  */
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -22,21 +21,23 @@ import { useActiveProject } from "@/components/app/active-project-provider";
 import { useSuiteContext } from "@/components/app/use-suite-context";
 import { useChatDirectory, useMessagesUnread, type ChatDirectory, type ChatDirectoryEntry } from "@/components/app/messages/messages-unread";
 import { withSuiteContext } from "@/lib/suite-context";
-import { loadProjectCatalogAction } from "@/server/actions/project-catalog";
+import { loadSidebarProjectsAction } from "@/server/actions/sidebar-projects";
 import type { ChooserRow } from "@/lib/projects/project-chooser";
+import { buildProjectUrl } from "@/lib/projects/project-url";
+import { SIDEBAR_MARK_LABEL, type SidebarProjectMark } from "@/lib/projects/sidebar-mark";
 import { ShellIcon } from "./shell-icons";
 import { useFaviconBadge } from "./favicon-badge";
 import { SIGNAL_INDIGO, suiteMarkMetrics } from "@/lib/brand/suite-mark";
 import { CHAT_ENABLED_ATTRIBUTE, openPalette, ThemeCycleButton, useShell, useShortcutLabel } from "./app-shell";
 import {
   activeDestinationId,
+  BUILD_DESTINATIONS,
   FOOTER_DESTINATIONS,
-  INITIAL_SETUP,
-  INITIAL_SETUP_DESTINATIONS,
-  isInsideInitialSetup,
+  HOME_DESTINATION,
   sectionIsOpen,
   sectionStoreKey,
-  TOP_LEVEL_DESTINATIONS,
+  SIDEBAR_GROUPS,
+  WORKSPACE_DESTINATIONS,
   type ShellDestination,
 } from "./shell-nav";
 import styles from "./shell.module.css";
@@ -53,16 +54,22 @@ export function projectColor(id: string): string {
   return PROJECT_HUES[hash % PROJECT_HUES.length]!;
 }
 
+/** Rows listed before "All projects" takes over; the rail shows fewer. */
 const PROJECT_LIMIT = 8;
+const PROJECT_RAIL_LIMIT = 5;
 const BRAND_MARK = suiteMarkMetrics(24);
-const SETUP_BODY_ID = "shell-initial-setup";
+
+type SidebarGroup = (typeof SIDEBAR_GROUPS)[number];
+function groupById(id: SidebarGroup["id"]): SidebarGroup {
+  return SIDEBAR_GROUPS.find((entry) => entry.id === id)!;
+}
 
 function initialsOf(name: string): string {
   const parts = name.trim().split(/\s+/);
   return ((parts[0]?.[0] ?? "") + (parts.length > 1 ? parts.at(-1)![0] : "")).toUpperCase();
 }
 
-/* ── Foldable sections, remembered per browser ───────────────────── */
+/* ── Foldable groups, remembered per browser ─────────────────────── */
 
 const SECTIONS_KEY = "signal:v3:sidebar-folded";
 let folded: ReadonlySet<string> | null = null;
@@ -79,13 +86,12 @@ function readFolded(): ReadonlySet<string> {
   return folded;
 }
 
-/** Writes a section's state: the list holds only what differs from the design. */
+/** Writes a group's state: the list holds only the groups someone folded. */
 function setSectionOpen(id: string, open: boolean) {
   const next = new Set(readFolded());
   const key = sectionStoreKey(id);
-  // "open:<id>" is listed when open; a plain id is listed when folded.
-  if (key === id ? !open : open) next.add(key);
-  else next.delete(key);
+  if (open) next.delete(key);
+  else next.add(key);
   folded = next;
   try {
     window.localStorage.setItem(SECTIONS_KEY, JSON.stringify([...next]));
@@ -108,6 +114,7 @@ function useFolded(): ReadonlySet<string> {
 
 function useProjectRows(enabled: boolean) {
   const [rows, setRows] = useState<readonly ChooserRow[] | null>(null);
+  const [marks, setMarks] = useState<Readonly<Record<string, SidebarProjectMark>>>({});
   const [failed, setFailed] = useState(false);
   const loaded = useRef(false);
   useEffect(() => {
@@ -115,28 +122,33 @@ function useProjectRows(enabled: boolean) {
     loaded.current = true;
     void (async () => {
       try {
-        const result = await loadProjectCatalogAction();
-        if (result.ok) setRows(result.catalog.rows.filter((row) => !row.archived));
-        else setFailed(true);
+        const result = await loadSidebarProjectsAction();
+        if (result.ok) {
+          setRows(result.rows);
+          setMarks(result.marks);
+        } else setFailed(true);
       } catch {
         setFailed(true);
       }
     })();
   }, [enabled]);
-  return { rows, failed };
+  return { rows, marks, failed };
 }
 
 export function AppSidebar({
   messagesEnabled,
+  chatPending = false,
   inboxCount = 0,
   messagesUnread = 0,
   chatDirectory = null,
 }: {
   messagesEnabled: boolean;
+  /** The shell is still finding out whether this reader has Chat. */
+  chatPending?: boolean;
   inboxCount?: number;
   /** Direct messages, mentions and requests waiting; Chat keeps it live. */
   messagesUnread?: number;
-  /** Channels and Direct messages; Chat keeps it live as you read. */
+  /** The reader's conversations; Chat keeps it live as you read. */
   chatDirectory?: ChatDirectory | null;
 }) {
   const messagesCount = useMessagesUnread(messagesUnread);
@@ -149,7 +161,7 @@ export function AppSidebar({
   const suiteContext = useSuiteContext();
   const activeProject = useActiveProject();
   const { collapsed, toggleCollapsed, setMobileOpen } = useShell();
-  const { rows, failed } = useProjectRows(Boolean(activeProject));
+  const { rows, marks, failed } = useProjectRows(Boolean(activeProject));
   const foldedSections = useFolded();
   const shortcut = useShortcutLabel();
   const currentProjectId =
@@ -158,26 +170,19 @@ export function AppSidebar({
       : activeProject?.chrome.kind === "pending"
         ? activeProject.chrome.showing.id
         : null;
-  // An open Chat row is the page you are on; the Chat destination row stays
+  const chatEntries = directory ? [...directory.channels, ...directory.direct] : [];
+  // An open conversation is the page you are on; "All conversations" stays
   // quiet then, so only one row reads as "here".
-  // Initial setup: the remembered choice, or open because you are inside it.
-  // Folding it while inside holds for that page, and is remembered as well.
-  const insideSetup = isInsideInitialSetup(pathname);
-  const [setupChoice, setSetupChoice] = useState<{ path: string; open: boolean } | null>(null);
-  const setupOpen =
-    setupChoice?.path === pathname ? setupChoice.open : sectionIsOpen(foldedSections, INITIAL_SETUP.id) || insideSetup;
-  const chooseSetupOpen = (open: boolean) => {
-    setSetupChoice({ path: pathname, open });
-    setSectionOpen(INITIAL_SETUP.id, open);
-  };
-  const setupWaiting = inboxCount + (messagesEnabled ? messagesCount : 0);
-  const chatRowOpen = Boolean(directory && (here === directory.newMessageHref || [...directory.channels, ...directory.direct].some((entry) => entry.href === here)));
+  const chatRowOpen = chatEntries.some((entry) => entry.href === here);
 
   const openProject = useCallback(
-    (row: ChooserRow) => {
-      if (!activeProject || !row.selectable) return;
-      activeProject.selectProject(row.project, { surface: "tasks" });
+    (event: React.MouseEvent, row: ChooserRow) => {
       setMobileOpen(false);
+      // A plain click goes through the guarded switch (it holds unsaved
+      // work); a new-tab click follows the link.
+      if (!activeProject || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+      event.preventDefault();
+      activeProject.selectProject(row.project, { surface: "project" });
     },
     [activeProject, setMobileOpen],
   );
@@ -190,12 +195,11 @@ export function AppSidebar({
       </span>
     ) : null;
 
-  const link = (destination: ShellDestination, extra?: React.ReactNode) => {
+  const link = (destination: ShellDestination, extra?: React.ReactNode, current = activeId === destination.id) => {
     const Icon = ShellIcon[destination.icon];
     const href = destination.id === "tasks" || destination.id === "notes" || destination.id === "timeline" || destination.id === "projects"
       ? withSuiteContext(destination.href, suiteContext)
       : destination.href;
-    const current = activeId === destination.id && !(destination.id === "messages" && chatRowOpen);
     return (
       <Link
         key={destination.id}
@@ -212,24 +216,80 @@ export function AppSidebar({
             <span className="sr-only">Coming </span>Soon
           </span>
         ) : null}
+        {destination.preview ? <span className={styles.soonTag} data-tone="preview">Preview</span> : null}
         {extra}
       </Link>
     );
   };
 
-  const section = (id: string, label: string, children: React.ReactNode, actions?: React.ReactNode) => {
-    const open = sectionIsOpen(foldedSections, id);
+  /** A named group. One that folds has a real disclosure for its name. */
+  const group = ({ id, label, folds }: SidebarGroup, children: React.ReactNode, actions?: React.ReactNode) => {
+    // The rail has no headers to fold with, so it shows every group.
+    const open = !folds || collapsed || sectionIsOpen(foldedSections, id);
+    const bodyId = `shell-group-${id}`;
     return (
-      <nav className={styles.section} aria-label={label} data-folded={open ? undefined : ""}>
+      <nav className={styles.section} aria-label={label} data-group={id} data-folded={open ? undefined : ""}>
         <div className={styles.label}>
-          <button type="button" className={styles.labelToggle} aria-expanded={open} onClick={() => setSectionOpen(id, !open)}>
-            <span>{label}</span>
-            <ShellIcon.chevronDown size={12} className={styles.labelChevron} />
-          </button>
+          {folds ? (
+            <button
+              type="button"
+              className={styles.labelToggle}
+              aria-expanded={open}
+              aria-controls={open ? bodyId : undefined}
+              onClick={() => setSectionOpen(id, !open)}
+            >
+              <span>{label}</span>
+              <ShellIcon.chevronDown size={12} className={styles.labelChevron} />
+            </button>
+          ) : (
+            <span className={styles.labelText} aria-hidden="true">{label}</span>
+          )}
           {actions ? <span className={styles.labelActions}>{actions}</span> : null}
         </div>
-        {open ? children : null}
+        {open ? (
+          <div id={bodyId} className={styles.groupBody}>
+            {children}
+          </div>
+        ) : null}
       </nav>
+    );
+  };
+
+  const projectRow = (row: ChooserRow) => {
+    const current = row.id === currentProjectId;
+    const mark = marks[row.id];
+    const tile = (
+      <span className={styles.projectSquare} style={{ backgroundColor: projectColor(row.id) }} aria-hidden="true">
+        {row.monogram.slice(0, 1)}
+      </span>
+    );
+    const dot = mark ? <span className={styles.statusDot} data-tone={mark} title={SIDEBAR_MARK_LABEL[mark]} aria-hidden="true" /> : null;
+    const name = `${row.accessibleName}${mark ? `, ${SIDEBAR_MARK_LABEL[mark].toLowerCase()}` : ""}${current ? ", open now" : ""}`;
+    if (!row.selectable) {
+      return (
+        <span key={row.id} className={styles.item} data-blocked="" role="link" aria-disabled="true" aria-label={name} title={row.blockedReason ?? row.name}>
+          {tile}
+          <span className={styles.itemLabel}>{row.name}</span>
+          {dot}
+        </span>
+      );
+    }
+    return (
+      <Link
+        key={row.id}
+        href={buildProjectUrl({ surface: "project" }, row.id)}
+        className={styles.item}
+        data-project-row=""
+        data-current-project={current ? "" : undefined}
+        data-mark={mark}
+        aria-label={name}
+        title={collapsed ? row.name : mark ? SIDEBAR_MARK_LABEL[mark] : row.subtitle}
+        onClick={(event) => openProject(event, row)}
+      >
+        {tile}
+        <span className={styles.itemLabel}>{row.name}</span>
+        {dot}
+      </Link>
     );
   };
 
@@ -243,9 +303,9 @@ export function AppSidebar({
         key={entry.id}
         href={entry.href}
         className={styles.item}
+        data-chat-row=""
         aria-current={current ? "page" : undefined}
         data-unread={entry.unread && !current ? "" : undefined}
-        title={collapsed ? entry.title : undefined}
         onClick={() => setMobileOpen(false)}
       >
         {entry.kind === "dm" ? (
@@ -259,13 +319,14 @@ export function AppSidebar({
         <span className={styles.itemLabel}>
           {entry.title}
           {entry.online ? <span className="sr-only">, online</span> : null}
+          {entry.unread && entry.count === 0 ? <span className="sr-only">, unread</span> : null}
         </span>
         {trailing}
       </Link>
     );
   };
 
-  const setupRows = INITIAL_SETUP_DESTINATIONS.filter((destination) => !destination.requiresMessages || messagesEnabled);
+  const projectLimit = collapsed ? PROJECT_RAIL_LIMIT : PROJECT_LIMIT;
 
   return (
     <aside className={styles.sidebar} aria-label="Signal Studio" {...{ [CHAT_ENABLED_ATTRIBUTE]: messagesEnabled ? "" : undefined }}>
@@ -300,147 +361,83 @@ export function AppSidebar({
       </button>
 
       <div className={styles.scroll}>
-        <nav className={styles.section} aria-label="Primary">
-          {TOP_LEVEL_DESTINATIONS.map((destination) => link(destination))}
+        <nav className={styles.section} aria-label="Home" data-group="home">
+          {link(HOME_DESTINATION)}
         </nav>
 
-        {collapsed ? (
-          // Icons only: one button that widens the sidebar and opens the group.
-          <div className={styles.setup}>
-            <button
-              type="button"
-              className={styles.item}
-              data-active={insideSetup ? "" : undefined}
-              aria-label={`${INITIAL_SETUP.label}${setupWaiting > 0 ? `, ${setupWaiting > 99 ? "99+" : setupWaiting} waiting inside` : ""}: expand the sidebar and show it`}
-              title={INITIAL_SETUP.label}
-              onClick={() => {
-                chooseSetupOpen(true);
-                toggleCollapsed();
-              }}
-            >
-              <ShellIcon.setup />
-              {count(setupWaiting, "waiting inside")}
-            </button>
-          </div>
-        ) : (
-          <div className={styles.setup} data-open={setupOpen ? "" : undefined}>
-            <button
-              type="button"
-              className={styles.setupToggle}
-              aria-expanded={setupOpen}
-              aria-controls={setupOpen ? SETUP_BODY_ID : undefined}
-              onClick={() => chooseSetupOpen(!setupOpen)}
-            >
-              <ShellIcon.setup />
-              <span className={styles.itemLabel}>{INITIAL_SETUP.label}</span>
-              {/* Folded, the group still says what is waiting inside it. */}
-              {setupOpen ? null : count(setupWaiting, "waiting inside")}
-              <ShellIcon.chevronDown size={12} className={styles.setupChevron} />
-            </button>
-            {setupOpen ? (
-              <div id={SETUP_BODY_ID} className={styles.setupBody}>
-                <nav className={styles.section} aria-label={INITIAL_SETUP.label}>
-                  {setupRows.map((destination) =>
-                    link(
-                      destination,
-                      destination.id === "inbox"
-                        ? count(inboxCount, "waiting")
-                        : destination.id === "messages"
-                          ? count(messagesCount, "waiting")
-                          : null,
-                    ),
-                  )}
-                </nav>
+        {group(groupById("workspace"), WORKSPACE_DESTINATIONS.map((destination) => link(destination)))}
 
-                {activeProject
-                  ? section(
-                      "projects",
-                      "Projects",
-                      <>
-                        {rows === null && !failed ? <div className={styles.projectsEmpty}>Loading projects…</div> : null}
-                        {failed ? <div className={styles.projectsEmpty}>Projects are unavailable right now.</div> : null}
-                        {rows?.length === 0 ? <div className={styles.projectsEmpty}>No projects yet.</div> : null}
-                        {rows?.slice(0, PROJECT_LIMIT).map((row) => {
-                          const current = row.id === currentProjectId;
-                          return (
-                            <button
-                              key={row.id}
-                              type="button"
-                              className={styles.item}
-                              data-current-project={current ? "" : undefined}
-                              onClick={() => openProject(row)}
-                              disabled={!row.selectable}
-                              title={row.blockedReason ?? (collapsed ? row.name : row.subtitle)}
-                              aria-label={row.accessibleName}
-                            >
-                              <span className={styles.projectSquare} style={{ backgroundColor: projectColor(row.id) }} aria-hidden="true">
-                                {row.monogram.slice(0, 1)}
-                              </span>
-                              <span className={styles.itemLabel}>{row.name}</span>
-                              {current ? <span className={styles.currentDot} title="Open project" aria-hidden="true" /> : null}
-                              {row.activeRootTaskCount > 0 ? (
-                                <span className={styles.count} title={`${row.activeRootTaskCount} open tasks`}>{row.activeRootTaskCount}</span>
-                              ) : null}
-                            </button>
-                          );
-                        })}
-                        {rows && rows.length > PROJECT_LIMIT ? (
-                          <Link href="/app/project" className={styles.item} onClick={() => setMobileOpen(false)}>
-                            <ShellIcon.chevronRight />
-                            <span className={styles.itemLabel}>All {rows.length} projects</span>
-                          </Link>
-                        ) : null}
-                      </>,
-                      <>
-                        <Link href="/app/archived" aria-label="Archived projects" title="Archived projects" onClick={() => setMobileOpen(false)}>
-                          <ShellIcon.archive size={13} />
-                        </Link>
-                        <Link href="/app/project" aria-label="All projects" title="All projects" onClick={() => setMobileOpen(false)}>
-                          <ShellIcon.plus size={13} />
-                        </Link>
-                      </>,
-                    )
-                  : null}
-
-                {directory ? (
-                  <>
-                    {section(
-                      "channels",
-                      "Channels",
-                      <>
-                        {directory.channels.length === 0 ? <div className={styles.projectsEmpty}>No channels yet.</div> : null}
-                        {directory.channels.map((entry) => chatLink(entry))}
-                      </>,
-                    )}
-                    {section(
-                      "direct",
-                      "Direct messages",
-                      <>
-                        {directory.direct.map((entry) => chatLink(entry))}
-                        {directory.newMessageHref ? (
-                          <Link
-                            href={directory.newMessageHref}
-                            className={`${styles.item} ${styles.chatAdd}`}
-                            aria-current={here === directory.newMessageHref ? "page" : undefined}
-                            onClick={() => setMobileOpen(false)}
-                          >
-                            <ShellIcon.plus />
-                            <span className={styles.itemLabel}>New message</span>
-                          </Link>
-                        ) : null}
-                      </>,
-                      directory.newMessageHref ? (
-                        <Link href={directory.newMessageHref} aria-label="New message" title="New message" onClick={() => setMobileOpen(false)}>
-                          <ShellIcon.plus size={13} />
-                        </Link>
-                      ) : null,
-                    )}
-                  </>
+        {activeProject
+          ? group(
+              groupById("projects"),
+              <>
+                {rows === null && !failed ? (
+                  <div className={styles.projectsEmpty} role="status">Loading projects…</div>
                 ) : null}
-              </div>
-            ) : null}
-          </div>
-        )}
+                {failed ? <div className={styles.projectsEmpty}>Projects are unavailable right now.</div> : null}
+                {rows?.length === 0 ? (
+                  <div className={styles.groupEmpty}>
+                    <span>No projects yet</span>
+                    <Link href="/app/project" onClick={() => setMobileOpen(false)}>Start one</Link>
+                  </div>
+                ) : null}
+                {rows?.slice(0, projectLimit).map((row) => projectRow(row))}
+                {rows && rows.length > projectLimit ? (
+                  <Link
+                    href="/app/project"
+                    className={`${styles.item} ${styles.quietRow}`}
+                    title={collapsed ? `All ${rows.length} projects` : undefined}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <ShellIcon.chevronRight />
+                    <span className={styles.itemLabel}>All {rows.length} projects</span>
+                  </Link>
+                ) : null}
+              </>,
+              <>
+                <Link href="/app/archived" aria-label="Archived projects" title="Archived projects" onClick={() => setMobileOpen(false)}>
+                  <ShellIcon.archive size={13} />
+                </Link>
+                <Link href="/app/project" aria-label="All projects" title="All projects" onClick={() => setMobileOpen(false)}>
+                  <ShellIcon.arrowRight size={13} />
+                </Link>
+              </>,
+            )
+          : null}
+
+        {group(groupById("build"), BUILD_DESTINATIONS.map((destination) => link(destination)))}
+
+        {messagesEnabled
+          ? group(
+              groupById("chat"),
+              <>
+                {link(
+                  { id: "messages", label: collapsed ? "Chat" : "All conversations", href: "/app/messages", icon: "messages", owns: [] },
+                  count(messagesCount, "waiting"),
+                  activeId === "messages" && !chatRowOpen,
+                )}
+                {collapsed ? null : chatEntries.map((entry) => chatLink(entry))}
+                {!collapsed && directory && chatEntries.length === 0 ? (
+                  <div className={styles.projectsEmpty}>No conversations yet</div>
+                ) : null}
+              </>,
+              directory?.newMessageHref ? (
+                <Link href={directory.newMessageHref} aria-label="New message" title="New message" onClick={() => setMobileOpen(false)}>
+                  <ShellIcon.plus size={13} />
+                </Link>
+              ) : null,
+            )
+          : collapsed || chatPending
+            ? null
+            : group(
+                groupById("chat"),
+                // Not a link and not in the tab order: there is nowhere to go yet.
+                <div className={`${styles.item} ${styles.comingRow}`}>
+                  <ShellIcon.messages />
+                  <span className={styles.itemLabel}>Conversations</span>
+                  <span className={styles.soonTag}>Coming soon</span>
+                </div>,
+              )}
       </div>
 
       <div className={styles.footer}>

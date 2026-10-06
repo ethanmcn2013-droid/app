@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
+import styles from "@/components/app/home/home.module.css";
 
 /**
- * /app/home error boundary. The briefing read failed; Home stays
- * recoverable inside the app shell, in the suite's quiet register.
- * The products remain one click away — a Home failure must never
- * strand the reader.
+ * /app/home error boundary. The read behind Home failed; Home stays
+ * recoverable inside the app shell, and the work itself is one click away.
+ * A Home failure must never strand the reader.
  */
 export default function HomeError({
   error,
@@ -20,67 +21,27 @@ export default function HomeError({
   }, [error]);
 
   return (
-    <div
-      style={{
-        minHeight: "50vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "3rem 1.5rem",
-        textAlign: "center",
-      }}
-    >
-      <div style={{ maxWidth: "24rem" }}>
-        <h1
-          style={{
-            fontSize: "1.05rem",
-            fontWeight: 600,
-            color: "var(--color-ink, var(--ink))",
-            marginBottom: "0.5rem",
-          }}
-        >
-          Home didn&rsquo;t load.
-        </h1>
-        <p
-          style={{
-            fontSize: "0.875rem",
-            lineHeight: 1.6,
-            color: "var(--color-ink-soft, var(--ink-soft))",
-            marginBottom: "1.25rem",
-          }}
-        >
-          The briefing couldn&rsquo;t be read just now. Your work is
-          untouched — try again, or go straight to Notes, Tasks or
-          Timeline from the rail.
-        </p>
-        {error.digest ? (
-          <p
-            style={{
-              fontFamily: "monospace",
-              fontSize: "0.7rem",
-              color: "var(--color-ink-faint, var(--ink-faint))",
-              marginBottom: "1rem",
-            }}
-          >
-            ref · {error.digest}
+    <div className={`${styles.page} thin-scroll`}>
+      <div className={styles.inner}>
+        <div className={styles.centered} role="alert">
+          <h1 className={styles.h1}>Home did not load</h1>
+          <p className={styles.centeredText}>
+            Your work could not be read just now. Nothing has changed. Try again, or go straight to your tasks.
           </p>
-        ) : null}
-        <button
-          type="button"
-          onClick={reset}
-          style={{
-            background: "var(--color-accent, var(--accent))",
-            color: "var(--paper)",
-            border: "none",
-            borderRadius: "8px",
-            padding: "0.6rem 1.1rem",
-            fontSize: "0.875rem",
-            fontWeight: 500,
-            cursor: "pointer",
-          }}
-        >
-          Try again
-        </button>
+          {error.digest ? (
+            <p className={styles.footnote} style={{ marginTop: 12 }}>
+              Reference {error.digest}
+            </p>
+          ) : null}
+          <div className={styles.centeredActions}>
+            <button type="button" className={styles.primary} onClick={reset}>
+              Try again
+            </button>
+            <Link href="/app/tasks" className={styles.secondary}>
+              Open Tasks
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );

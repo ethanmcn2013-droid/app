@@ -1328,3 +1328,8 @@
     transition: none;
   }
 }
+
+/* The board uses the room it is given (founder, 6 Oct 2026): no page-width
+   cap, so a wide screen shows more columns. The header and tools share its
+   left edge. The list and the calendar keep the reading width. */
+.workspace[data-view="board"] { --column-max: 100%; }

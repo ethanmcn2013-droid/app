@@ -1,0 +1,57 @@
+/* Home's view switch: Home or Overview. v3 tokens only. */
+
+.tabs {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--v3-radius);
+  background: var(--v3-fill);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 6px;
+  color: var(--v3-text-2);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 140ms var(--v3-ease), color 140ms var(--v3-ease), box-shadow 140ms var(--v3-ease);
+}
+
+.tab:hover {
+  color: var(--v3-text);
+}
+
+.tab[data-on] {
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  box-shadow: var(--v3-shadow-1), 0 0 0 1px var(--v3-border);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 599px) {
+  .tabs {
+    display: flex;
+  }
+
+  .tab {
+    flex: 1;
+    justify-content: center;
+    height: 36px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab {
+    transition: none;
+  }
+}

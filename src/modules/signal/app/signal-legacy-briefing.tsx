@@ -83,6 +83,7 @@ export async function SignalLegacyBriefing({
     <div data-signal-module className="contents">
       <OverviewView
         model={model}
+        projectIds={result.authorizedScope.workspaces.map((workspace) => workspace.id)}
         scopeControl={
           planningPeriodsEnabled() ? (
             <SignalScopeSwitcher

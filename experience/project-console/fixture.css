@@ -141,3 +141,7 @@ svg {
     padding: 20px 16px 48px;
   }
 }
+
+/* The stand-in for the top bar's create button. */
+.fixture-create { display: block; margin: 8px 12px 0 auto; height: 30px; padding: 0 10px; border: 0; border-radius: var(--v3-radius); background: var(--v3-accent); color: var(--v3-on-accent); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.fixture-create:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: 2px; }
