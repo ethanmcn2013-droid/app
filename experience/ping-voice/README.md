@@ -62,3 +62,51 @@ node --import tsx --import ./src/test/register-server-only.mjs --test src/server
 
 Normal-chain registration and independent receiving evidence are maintained by
 the integration coordinator separately from this source writer's checks.
+
+## Completed-clip candidate
+
+`createPingOpenAiClipTranscriber({model, apiKey, fetch, deadlineMs?})` in
+`src/server/ping/openai-clip-transcription.ts` accepts already-completed native
+Int16LE mono 24kHz PCM bytes and an AbortSignal. It copies at most 720,000
+samples (30 seconds) into an exact 44-byte-header WAV and sends one native
+multipart POST to `https://eu.api.openai.com/v1/audio/transcriptions`. The four
+fields are file/model/response_format/stream; filename is `ping.wav`, format
+JSON and stream false. Native multipart owns its boundary. Redirects fail,
+and there are no prompts, hints, context, identity, labels or optional features.
+The simple-JSON model allowlist is a documented technical subset, not a model
+winner or effective account eligibility. No global fetch or key lookup occurs.
+
+The response is bounded to 65,536 bytes/4,096 chunks and 4,000 transcript code
+points, with fatal UTF-8 and strict text/optional-usage/language validation.
+Returned token or duration usage preserves actual supplied fields and zeros;
+missing usage is null. It is not a price, account bill or PCM-derived billing
+estimate. A failed/aborted request may still have incurred unobserved usage.
+The logical maximum deadline is 10 seconds, with shorter injected overrides.
+Abort/deadline prevents late accepted text while the physical reservation stays
+held through actual fetch/reader cancellation settlement. No retry occurs.
+
+This source has no authentication or Finish authority and is not runtime-wired.
+The caller owns complete drained bytes, captured context and the original
+remaining Finish budget; two stages do not authorize a fresh 20-second budget.
+HTTP completion is not a fabricated Realtime ACK/final. Synthetic composition
+passes validated text through the Responses candidate and existing binder,
+with zero executor integration. Schema/composition cannot prove ASR or whole
+natural-language fidelity, real usage, latency, cost, live route comparison or
+programme gates. Effective endpoint/model/account/retention and spend controls
+must be verified before live input.
+
+Temporary internal buffers/state last for the attempt and actual physical
+settlement. Caller PCM, returned text, native/injected transport copies and
+provider content have separate retention owners; this candidate does not claim
+to erase those references. It writes no audio/transcripts to files or logs.
+
+The [transcription API reference](https://developers.openai.com/api/reference/resources/audio/subresources/transcriptions/methods/create)
+and [file-transcription guide](https://developers.openai.com/api/docs/guides/speech-to-text)
+define the multipart/simple JSON contract. European endpoint support remains
+subject to the separate eligibility in the data-controls guide linked above.
+
+Owning synthetic command:
+
+```sh
+node --import tsx --import ./src/test/register-server-only.mjs --test src/server/ping/openai-clip-transcription.test.ts
+```
