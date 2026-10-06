@@ -418,12 +418,12 @@ test("Calendar overflow and the task inspector keep accessible focus and names",
   assert.match(tasksCalendar, /aria-selected=\{selected\}/);
   assert.match(tasksCalendar, /aria-label=\{`\$\{longDay\(date\)\}, \$\{items\.length\}/);
   assert.match(tasksCalendar, /\+\{rest\} more/);
-  // The sheet is a modal dialog below 1280px and a labelled region beside
-  // the board above it; both are named by the task title.
+  // The task opens as a modal dialog at every width (the record panel, or the
+  // two-column page from Open), named by the task title (6 Oct 2026).
   assert.match(taskDetailPanel, /role="dialog"/);
   assert.match(taskDetailPanel, /aria-modal="true"/);
-  assert.match(taskDetailPanel, /role="complementary"/);
-  assert.equal((taskDetailPanel.match(/aria-labelledby="task-panel-title"/g) ?? []).length, 2);
+  assert.doesNotMatch(taskDetailPanel, /role="complementary"/);
+  assert.equal((taskDetailPanel.match(/aria-labelledby="task-panel-title"/g) ?? []).length, 1);
 });
 
 test("Tasks mobile CSS contains dense canvases and preserves 44px primary targets", () => {

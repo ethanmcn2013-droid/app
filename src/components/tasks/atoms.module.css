@@ -309,6 +309,30 @@
   background: var(--v3-danger);
 }
 
+/* The dense list's pill: the label's own colour as a soft fill, with the
+   text at full strength so it reads in light and dark. */
+.label[data-tone="accent"] {
+  --dot: var(--v3-accent);
+}
+
+.label[data-tone="success"] {
+  --dot: var(--v3-success);
+}
+
+.label[data-tone="warning"] {
+  --dot: var(--v3-warning-stroke);
+}
+
+.label[data-tone="danger"] {
+  --dot: var(--v3-danger);
+}
+
+.label[data-tinted] {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--dot, var(--v3-control-border)) 18%, transparent);
+  color: var(--v3-text);
+}
+
 .more {
   display: inline-flex;
   align-items: center;

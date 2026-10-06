@@ -9,15 +9,18 @@
  * - modal: below 1280px it slides over a scrim and traps focus;
  * - page: /app/task/[id] lays the same sections out in two columns.
  *
- * The header walks the current view's visible order (up, down, j, k), E
- * opens the full page, and Escape closes. Properties are rows you can press;
- * description, subtasks, files and links and activity follow.
+ * The panel reads as a record (founder reference 24, 6 Oct 2026): previous
+ * and next with "5 of 48", Edit and Open, then the task's name under its
+ * Project's tile, one row per field with its icon and label, a progress bar
+ * when there are subtasks, and Notes, Subtasks, Files and Activity, each with
+ * a "See all" that opens the full page. Up, down, j and k walk the current
+ * view's order, E opens the full page, and Escape closes.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Task } from "@/lib/data";
 import { useTasksDispatch, useTasksState } from "@/lib/tasks/tasks-context";
-import { useColumnConfig, useDomain, useTagDefs, useWorkspaceAnchor, useWorkspaceMembers } from "@/lib/domain-context";
+import { useActiveWorkspace, useColumnConfig, useDomain, useTagDefs, useWorkspaceAnchor, useWorkspaceMembers } from "@/lib/domain-context";
 import { effectiveColumnKey, isTaskDone, resolveBoardColumns, withPlainColumnNames } from "@/lib/board-columns";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import { tagDisplayName } from "@/lib/tags";
@@ -35,6 +38,7 @@ import { buildTaskDetailActions } from "@/components/app/task-detail/task-detail
 import { ExistingTaskHistory } from "@/components/app/task-detail/existing-task-history";
 import { calendarDateInTimeZone } from "@/lib/planning/dates";
 import { EditedStamp } from "./panel-header";
+import { projectColor } from "@/components/shell/app-sidebar";
 import sx from "./sheet-sections.module.css";
 import { DescriptionEditor } from "./description-editor";
 import { SubtasksSection } from "./subtasks-section";
@@ -133,9 +137,34 @@ export function TaskSheet({ task, mode, onClose, onNavigate, onExpand, position,
     />
   );
 
-  const title = (
+  // "See all" opens the full page, where every section has room.
+  const seeAll = mode !== "page" && onExpand ? (
+    <button type="button" className={styles.seeAll} onClick={onExpand}>
+      See all
+    </button>
+  ) : null;
+
+  const title = mode === "page" ? (
     <div className={styles.titleBlock}>
       <TitleEditor task={task} />
+      <button
+        type="button"
+        className={styles.doneButton}
+        data-done={done ? "" : undefined}
+        aria-keyshortcuts="Control+Enter Meta+Enter"
+        onClick={() => dispatchers.toggleComplete(task.id)}
+      >
+        {done ? <TIcon.undo size={14} /> : <TIcon.check size={14} />}
+        {done ? "Reopen" : "Mark done"}
+      </button>
+    </div>
+  ) : (
+    <div className={styles.identity}>
+      <ProjectTile />
+      <div className={styles.identityText}>
+        <TitleEditor task={task} />
+        <IdentityLine task={task} />
+      </div>
       <button
         type="button"
         className={styles.doneButton}
@@ -151,14 +180,24 @@ export function TaskSheet({ task, mode, onClose, onNavigate, onExpand, position,
 
   const main = (
     <>
-      <section className={styles.section} aria-label="Description">
-        <DescriptionEditor key={task.id} task={task} />
-      </section>
+      {mode === "page" ? (
+        <section className={styles.section} aria-label="Description">
+          <DescriptionEditor key={task.id} task={task} />
+        </section>
+      ) : (
+        <section className={`${styles.section} ${styles.notes}`} aria-labelledby={`notes-${task.id}`}>
+          <div className={styles.sectionHead}>
+            <h2 className={styles.sectionName} id={`notes-${task.id}`}>Notes</h2>
+            {seeAll}
+          </div>
+          <DescriptionEditor key={task.id} task={task} />
+        </section>
+      )}
       <div className={styles.legacySection}>
         <SubtasksSection key={`subtasks-${task.id}`} task={task} />
       </div>
       <div className={styles.legacySection}>
-        <ResourcesSection key={`resources-${task.id}`} task={task} />
+        <ResourcesSection key={`resources-${task.id}`} task={task} seeAll={seeAll ? <span className={styles.seeAllAfter}>{seeAll}</span> : null} />
       </div>
     </>
   );
@@ -167,6 +206,7 @@ export function TaskSheet({ task, mode, onClose, onNavigate, onExpand, position,
       <section className={`${sx.section} ${styles.activity}`} aria-labelledby={`activity-${task.id}`}>
         <div className={sx.head}>
           <h2 className={sx.title} id={`activity-${task.id}`}>Activity</h2>
+          {seeAll ? <span className={styles.seeAllEnd}>{seeAll}</span> : null}
         </div>
         {conversation.loading ? (
           <div className={styles.activitySkeleton} aria-hidden="true">
@@ -273,6 +313,45 @@ function SheetHeader({
   const column = columns.find((c) => c.key === effectiveColumnKey(task));
   const project = (workspaceName?.trim() || boardName || "Project").trim();
   const number = typeof task.seq === "number" ? `T-${task.seq}` : null;
+  if (mode !== "page") {
+    return (
+      <header className={`${styles.head} ${styles.recordHead}`}>
+        {onNavigate ? (
+          <div className={styles.stepper}>
+            <button type="button" className={styles.stepButton} aria-label="Previous task (K)" title="Previous task (K)" onClick={() => onNavigate("prev")}>
+              <TIcon.chevronUp size={16} />
+            </button>
+            <button type="button" className={styles.stepButton} aria-label="Next task (J)" title="Next task (J)" onClick={() => onNavigate("next")}>
+              <TIcon.chevronDown size={16} />
+            </button>
+            {position ? <span className={styles.position}>{position}</span> : null}
+          </div>
+        ) : null}
+        <div className={styles.headActions}>
+          <button
+            type="button"
+            className={styles.textButton}
+            onClick={() => {
+              const field = document.getElementById("task-panel-title") as HTMLTextAreaElement | null;
+              field?.focus();
+              field?.select();
+            }}
+          >
+            Edit
+          </button>
+          {onExpand ? (
+            <button type="button" className={styles.textButton} data-tone="strong" aria-keyshortcuts="E" title="Open the full page (E)" onClick={onExpand}>
+              Open
+            </button>
+          ) : null}
+          {menu}
+          <button type="button" className={styles.headButton} aria-label="Close" title="Close (Esc)" onClick={onClose}>
+            <TIcon.close size={16} />
+          </button>
+        </div>
+      </header>
+    );
+  }
   return (
     <header className={styles.head}>
       {mode === "page" && onNavigate ? (
@@ -325,8 +404,8 @@ function SheetHeader({
           <button
             type="button"
             className={styles.headButton}
-            aria-label={mode === "page" ? "Back to the board (E)" : "Open full page (E)"}
-            title={mode === "page" ? "Back to the board" : "Open full page (E)"}
+            aria-label={mode === "page" ? "Back to the panel (E)" : "Open full page (E)"}
+            title={mode === "page" ? "Back to the panel (E)" : "Open full page (E)"}
             onClick={onExpand}
           >
             {mode === "page" ? <TIcon.collapse size={16} /> : <TIcon.expand size={16} />}
@@ -352,6 +431,39 @@ function SheetHeader({
         )}
       </div>
     </header>
+  );
+}
+
+/* ── Identity ─────────────────────────────────────────────────────── */
+
+/** The Project's own colour tile, the same one the sidebar draws. */
+function ProjectTile() {
+  const { boardName, workspaceName } = useDomain();
+  const workspace = useActiveWorkspace();
+  const name = (workspaceName?.trim() || boardName || "Project").trim();
+  return (
+    <span className={styles.tile} style={{ backgroundColor: projectColor(workspace?.id ?? name) }} aria-hidden="true">
+      {name.slice(0, 1).toUpperCase()}
+    </span>
+  );
+}
+
+/** Where the task lives and its number, then when it last changed. */
+function IdentityLine({ task }: { task: Task }) {
+  const { boardName, workspaceName } = useDomain();
+  const project = (workspaceName?.trim() || boardName || "Project").trim();
+  const number = typeof task.seq === "number" ? `T-${task.seq}` : null;
+  return (
+    <p className={styles.identityLine}>
+      <span className={styles.identityProject} title={project}>{project}</span>
+      {number ? (
+        <>
+          <span aria-hidden="true">·</span>
+          <span className={styles.identityNumber}>{number}</span>
+        </>
+      ) : null}
+      <EditedStamp updatedAt={task.updatedAt} />
+    </p>
   );
 }
 
@@ -410,6 +522,11 @@ const ROW_ICONS: Record<string, (props: { size?: number }) => ReactNode> = {
   Tags: (props) => <TIcon.tag {...props} />,
   Contact: (props) => <TIcon.person {...props} />,
   Amount: (props) => <TIcon.diamond {...props} />,
+  Progress: ({ size = 14 }) => (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+      <path d="M2.75 13.25h10.5M4.5 13.25V9.5M8 13.25V6.5M11.5 13.25V3.5" />
+    </svg>
+  ),
 };
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
@@ -539,6 +656,11 @@ function Properties({ task, grid = false }: { task: Task; grid?: boolean }) {
             )}
           </button>
         </Row>
+        {!grid && (task.subtaskCount ?? 0) > 0 ? (
+          <Row label="Progress">
+            <Progress done={task.subtaskDone ?? 0} total={task.subtaskCount ?? 0} />
+          </Row>
+        ) : null}
         {task.blockedBy && task.blockedBy.length ? (
           <Row label="Held up by">
             <span className={styles.blocked}>
@@ -643,6 +765,26 @@ function Properties({ task, grid = false }: { task: Task; grid?: boolean }) {
         />
       </Popover>
     </>
+  );
+}
+
+/** Subtasks done out of all of them, as a bar and in words. */
+function Progress({ done, total }: { done: number; total: number }) {
+  const share = total > 0 ? Math.min(1, done / total) : 0;
+  return (
+    <span className={styles.progress}>
+      <span
+        className={styles.progressTrack}
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={total}
+        aria-valuenow={done}
+        aria-label={`${done} of ${total} subtasks done`}
+      >
+        <span className={styles.progressFill} style={{ width: `${share * 100}%` }} />
+      </span>
+      <span className={styles.progressCount}>{done} of {total}</span>
+    </span>
   );
 }
 

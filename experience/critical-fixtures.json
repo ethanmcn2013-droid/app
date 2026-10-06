@@ -1205,9 +1205,8 @@
               ]
             },
             {
-              "kind": "role",
-              "role": "button",
-              "name": "Menu tasting at The Orchard. Our next milestone. 1 August 2026. Milestone 3 of 9.",
+              "kind": "text",
+              "text": "Our next milestone",
               "proves": [
                 "populated"
               ]

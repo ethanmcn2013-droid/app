@@ -8,43 +8,40 @@ import {
   useRef,
   useState,
   type CSSProperties,
-  type KeyboardEvent,
-  type Ref,
 } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { AudienceTimelineDto } from "@/modules/timeline/lib/audience-timeline";
-import { useHydrated } from "@/lib/use-hydrated";
 import { PRODUCT_MARKETING_URLS } from "@/lib/product-urls";
 import {
-  MILESTONE_RAIL_LABELS,
   NO_TIMING_LABEL,
-  PLACE_IN_PLAN_LABEL,
-  milestonePlace,
+
   timelineNouns,
 } from "@/modules/timeline/lib/vocabulary";
 import {
   artifactTitleLength,
   buildTimelineArtifactModel,
   buildTimelineCountdown,
-  extraLabelIndices,
   formatTimelineDate,
-  labelClusters,
-  labelShifts,
-  markCollisionGap,
-  markLabelGap,
-  metricValueScale,
   timelineAxisDescription,
-  timelineAxisNote,
   timelinePointStatus,
-  timelinePresentation,
-  timelineRailCaps,
-  type MetricValueScale,
   type TimelineArtifactModel,
   type TimelineArtifactPoint,
 } from "./timeline-artifact-model";
 import styles from "./timeline-artifact.module.css";
 
-type MetricMode = "progress" | "countdown";
+/**
+ * The shared timeline, as a countdown.
+ *
+ * Direction picked by the founder on 28 September 2026 from four concepts
+ * (remote-redesign `work/2026-09-28-timeline-artifact`): B, The Countdown, as
+ * the core, with A's to-scale strip on wide screens and D's finale. It
+ * replaces the Option D rail.
+ *
+ * The page reads top to bottom the way a guest thinks about the day: how long
+ * until it, what is next, then every moment in order with its own number, and
+ * the day itself last. The layout is chosen by the width it has; the reader
+ * never picks one. Every fact comes from the published DTO and the model built
+ * from it, so nothing private can reach this page.
+ */
 
 /**
  * Outcome of the share affordance. "shared" means the platform share sheet
@@ -53,120 +50,6 @@ type MetricMode = "progress" | "countdown";
  * the artifact owes the viewer a visible receipt.
  */
 export type TimelineShareOutcome = "shared" | "copied" | "dismissed";
-
-type MetricFact = Readonly<{
-  label: string;
-  value: string;
-  unit: string;
-  receipt?: string;
-  spoken: string;
-  alternate: string;
-  /** Which sized treatment the value takes. See `metricValueScale`. */
-  scale: MetricValueScale;
-}>;
-
-type StageStyle = CSSProperties & {
-  "--timeline-point-count": number;
-  "--timeline-completion": string;
-};
-
-type PositionStyle = CSSProperties & {
-  "--timeline-position": string;
-  "--timeline-position-stack"?: string;
-  "--timeline-point-delay"?: string;
-  /** Rail-percent the LABEL is nudged by to clear its neighbour. The mark
-   *  never moves; see `labelShifts`. */
-  "--timeline-label-shift"?: string;
-};
-
-/** The two ends of a cluster's bracket, on each of the rail's two axes. */
-type ClusterStyle = CSSProperties & {
-  "--timeline-cluster-start": string;
-  "--timeline-cluster-end": string;
-  "--timeline-cluster-start-stack": string;
-  "--timeline-cluster-end-stack": string;
-};
-
-const METRIC_EASE = [0.23, 1, 0.32, 1] as const;
-
-/**
- * The entrance, once per session.
- *
- * The load choreography — the header rise, the 400ms rail draw, the point
- * cascade, the marker drop — is the best motion in the app, and it replayed
- * in full on every single arrival at the surface. The sixth visit got the
- * same 600ms performance as the first, including the visit that is just a
- * viewer pressing Back (wave-6 panel, Motion seat). A first impression that
- * happens six times is not a first impression; it is an interruption between
- * the viewer and a page they have already read.
- *
- * So the choreography is unchanged and simply learns when it has been seen.
- * One sessionStorage key, written the first time an artifact renders in the
- * tab: after that every arrival — forward, backward, reload, another
- * timeline, another window in the same tab — lands in the final state
- * instantly. A new tab is a new session and gets the performance again,
- * which is the honest reading of "first visit".
- *
- * WHY AN INLINE SCRIPT. The animations are CSS with `backwards` fill and no
- * opacity:0 in the HTML, which is what lets the public share render visible
- * without JavaScript at all. They therefore start the moment the stylesheet
- * lands — long before React hydrates. An effect could only ever arrive
- * mid-performance and cut it, which is worse than the replay. A script
- * beside the markup runs during parse, before the artifact's own subtree has
- * finished arriving, so the skip is a state the surface is BORN in rather
- * than a state it is snapped into. No-JS viewers lose nothing: the guard can
- * only ever remove motion, never add it, so its absence is the full
- * choreography.
- *
- * Reduced motion is untouched by any of this — the module's
- * prefers-reduced-motion block still suppresses the whole entrance outright,
- * seen or unseen.
- */
-const ENTRANCE_SESSION_KEY = "signal:timeline-entrance";
-const ENTRANCE_GUARD = `(function(){var s=document.currentScript,a=s&&s.parentElement;if(!a)return;a.setAttribute("data-entrance-guard","1");try{var k="${ENTRANCE_SESSION_KEY}";if(sessionStorage.getItem(k))a.setAttribute("data-entrance","seen");else sessionStorage.setItem(k,"1")}catch(e){}})();`;
-
-/**
- * The same decision, for the path the script cannot reach.
- *
- * An inline <script> inside a React component runs only when the HTML is
- * server-streamed; on a client render React never executes it and says so in
- * the console. The app's own rail reaches Timeline by client-side navigation,
- * which is to say the guard was absent on the single most common way in, and
- * the entrance replayed every time. Both paths now read and write one key,
- * and this one runs in a layout effect so the attribute is on the article
- * before the browser paints it.
- */
-function markEntranceSeen(article: HTMLElement | null): void {
-  if (!article) return;
-  // Exactly one path decides. On a server-streamed document the script has
-  // already run by the time this effect fires, and it leaves its mark; if both
-  // ran, the script would write the session key and this would then read it
-  // back and skip the entrance on the very first visit — the opposite of the
-  // rule. The mark is the handshake.
-  if (article.hasAttribute("data-entrance-guard")) return;
-  try {
-    if (sessionStorage.getItem(ENTRANCE_SESSION_KEY)) {
-      article.setAttribute("data-entrance", "seen");
-    } else {
-      sessionStorage.setItem(ENTRANCE_SESSION_KEY, "1");
-    }
-  } catch {
-    /* Private modes refuse storage; an entrance that replays is not a fault. */
-  }
-}
-
-/**
- * Motion's media-query hook can know the browser preference on the first
- * client render while the server cannot. Gate that value behind React's
- * hydration snapshot so SSR and the first hydration pass always choose the
- * same motion props and subtree. The real preference takes effect immediately
- * after hydration.
- */
-function useArtifactReducedMotion(): boolean {
-  const hydrated = useHydrated();
-  const prefersReducedMotion = useReducedMotion();
-  return hydrated && Boolean(prefersReducedMotion);
-}
 
 export type TimelineArtifactProps = Readonly<{
   timeline: AudienceTimelineDto;
@@ -185,252 +68,177 @@ export type TimelineArtifactProps = Readonly<{
   shareLabel?: string;
 }>;
 
+type PositionStyle = CSSProperties & { "--at": string };
+type RowStyle = CSSProperties & { "--row-delay": string };
+
 /**
- * Progress, stated once.
- *
- * The face used to say the same thing three ways — a giant percentage, a `%`
- * severed from its own number, and a receipt reading "N of N settled". None of
- * the three was the fact a viewer wants: a couple does not think in percent,
- * and `settled` was never a concept in this product (no column, no state, no
- * meaning outside a drag animation elsewhere in the codebase).
- *
- * So the count IS the value. "0 of 1 complete" is one expression, it needs no
- * unit glyph beside it, and it is the same sentence the rail's progressbar
- * speaks in `aria-valuetext`, so the screen and the screen reader agree.
+ * The entrance, once per session. The hero rises, the strip draws and the
+ * rows settle in the first time a tab opens a timeline; after that every
+ * arrival lands in its final state. The inline script runs during parse on a
+ * server-streamed page, so a returning viewer never sees a frame of motion;
+ * the layout effect covers client navigation, where React never runs it. The
+ * guard can only remove motion, so a viewer without JavaScript loses nothing.
  */
-function progressFact(model: TimelineArtifactModel): MetricFact {
-  const counted = `${model.completedCount} of ${model.totalCount} complete`;
-  return {
-    label: "Milestones",
-    value: counted,
-    unit: "",
-    spoken: `${model.completedCount} of ${model.totalCount} milestones complete`,
-    alternate: counted,
-    scale: "count",
-  };
-}
+const ENTRANCE_SESSION_KEY = "signal:timeline-entrance";
+const ENTRANCE_GUARD = `(function(){var s=document.currentScript,a=s&&s.parentElement;if(!a)return;a.setAttribute("data-entrance-guard","1");try{var k="${ENTRANCE_SESSION_KEY}";if(sessionStorage.getItem(k))a.setAttribute("data-entrance","seen");else sessionStorage.setItem(k,"1")}catch(e){}})();`;
 
-function countdownFact(
-  countdown: Exclude<ReturnType<typeof buildTimelineCountdown>, null | { kind: "past" }>,
-  eventLabel: string,
-  model: TimelineArtifactModel,
-): MetricFact {
-  // The countdown face carries the plan's other fact too, so whichever face
-  // the artifact opens on states both. Paper already prints both; the screen
-  // owed the same completeness — a couple leading with the countdown should
-  // not have to press to learn how much is done.
-  const receipt = `${model.completedCount} of ${model.totalCount} complete`;
-
-  if (countdown.kind === "today") {
-    return {
-      label: `Until ${eventLabel.toLowerCase()}`,
-      value: "Today",
-      unit: "",
-      receipt,
-      spoken: `${eventLabel} is today`,
-      alternate: `${eventLabel} today`,
-      scale: metricValueScale("Today"),
-    };
+function markEntranceSeen(article: HTMLElement | null): void {
+  if (!article) return;
+  // Exactly one path decides; the script's mark is the handshake.
+  if (article.hasAttribute("data-entrance-guard")) return;
+  try {
+    if (sessionStorage.getItem(ENTRANCE_SESSION_KEY)) {
+      article.setAttribute("data-entrance", "seen");
+    } else {
+      sessionStorage.setItem(ENTRANCE_SESSION_KEY, "1");
+    }
+  } catch {
+    /* Private modes refuse storage; an entrance that replays is not a fault. */
   }
-
-  const value = String(countdown.days);
-  return {
-    label: `Until ${eventLabel.toLowerCase()}`,
-    value,
-    unit: countdown.days === 1 ? "day" : "days",
-    receipt,
-    spoken: `${countdown.days} ${countdown.days === 1 ? "day" : "days"} remaining`,
-    alternate: `${countdown.days} ${countdown.days === 1 ? "day" : "days"} left`,
-    scale: metricValueScale(value),
-  };
 }
 
-function MetricFace({
-  fact,
-  receiptIsAffordance = false,
-}: {
-  fact: MetricFact;
-  /**
-   * True when the receipt is the only line the alternate would have printed,
-   * so the receipt carries the pressable underline the alternate used to wear
-   * and the fact is stated once instead of twice.
-   */
-  receiptIsAffordance?: boolean;
-}) {
+const WEEKDAY_DATE = new Intl.DateTimeFormat("en-GB", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+/** "Saturday 3 October 2026", for the day itself. */
+function weekdayDate(value: string): string {
+  const parsed = Date.parse(`${value}T00:00:00.000Z`);
+  if (!Number.isFinite(parsed)) return formatTimelineDate(value, "long");
+  return WEEKDAY_DATE.format(new Date(parsed)).replace(",", "");
+}
+
+const plural = (count: number, one: string, many: string) => (count === 1 ? one : many);
+
+/** Days from `from` to `to`, both calendar dates; null when either is missing. */
+function daysBetween(from: string | undefined, to: string | undefined): number | null {
+  if (!from || !to) return null;
+  const a = Date.parse(`${from}T00:00:00.000Z`);
+  const b = Date.parse(`${to}T00:00:00.000Z`);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+  return Math.round((b - a) / 86_400_000);
+}
+
+/* ── Add to my calendar ───────────────────────────────────────────────────── */
+
+const icsText = (value: string) => value.replace(/[\\;,]/g, (c) => `\\${c}`).replace(/\r?\n/g, "\\n");
+
+/**
+ * An all-day event for the day itself, built in the browser from facts the
+ * page already shows. Nothing is requested from a server, so the public page
+ * still cannot report who looked at it.
+ */
+function calendarFile(timeline: AudienceTimelineDto): string | null {
+  const day = timeline.primaryDate;
+  if (!day) return null;
+  const start = day.date.replaceAll("-", "");
+  const next = new Date(Date.parse(`${day.date}T00:00:00.000Z`) + 86_400_000).toISOString().slice(0, 10).replaceAll("-", "");
+  const stamp = new Date(Date.parse(timeline.lastUpdatedAt) || 0).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  return [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Signal Studio//Timeline//EN",
+    "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    `UID:${timeline.publicationId}-${start}@timeline.signalstudio.ie`,
+    `DTSTAMP:${stamp}`,
+    `DTSTART;VALUE=DATE:${start}`,
+    `DTEND;VALUE=DATE:${next}`,
+    `SUMMARY:${icsText(`${timeline.label}: ${day.label}`)}`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+    "",
+  ].join("\r\n");
+}
+
+function CalendarButton({ timeline, className }: { timeline: AudienceTimelineDto; className?: string }) {
+  const file = calendarFile(timeline);
+  if (!file) return null;
   return (
-    <span className={styles.metricFace} aria-hidden="true">
-      <span className={styles.metricLabel}>{fact.label}</span>
-      <span className={styles.metricPrimary}>
-        <strong data-timeline-metric-value>{fact.value}</strong>
-        {fact.unit ? <small>{fact.unit}</small> : null}
-      </span>
-      {fact.receipt ? (
-        <span
-          className={styles.metricReceipt}
-          data-metric-receipt-affordance={receiptIsAffordance ? "true" : undefined}
-        >
-          {fact.receipt}
-        </span>
-      ) : null}
-    </span>
+    <button
+      type="button"
+      className={[styles.pillButton, className].filter(Boolean).join(" ")}
+      onClick={() => {
+        const url = URL.createObjectURL(new Blob([file], { type: "text/calendar;charset=utf-8" }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${timeline.label.replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "").toLowerCase() || "timeline"}.ics`;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }}
+    >
+      <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+        <rect x="2.25" y="3.25" width="11.5" height="10.5" rx="1.75" />
+        <path d="M2.25 6.5h11.5M5.5 2v2.5M10.5 2v2.5" />
+      </svg>
+      Add to my calendar
+    </button>
   );
 }
 
-function TimeLens({
-  timeline,
-  model,
-}: {
-  timeline: AudienceTimelineDto;
-  model: TimelineArtifactModel;
-}) {
-  const reduceMotion = useArtifactReducedMotion();
-  const countdown = buildTimelineCountdown(timeline.primaryDate?.date, timeline.today);
-  const canCountDown = countdown?.kind === "future" || countdown?.kind === "today";
-  // A couple's artifact leads with its heart: days until the day. Progress
-  // percent is the working view, one press away. Other kinds keep progress
-  // first — for a class or a project the completion story is the headline.
-  const defaultMode: MetricMode = timeline.audienceKind === "couple" && canCountDown
-    ? "countdown"
-    : "progress";
-  const [requestedMode, setRequestedMode] = useState<MetricMode>(defaultMode);
-  const [announcement, setAnnouncement] = useState("");
-  const mode: MetricMode = canCountDown ? requestedMode : "progress";
-  const completion = progressFact(model);
-  const remaining = canCountDown && timeline.primaryDate
-    ? countdownFact(countdown, timeline.primaryDate.label, model)
-    : null;
-  const active = mode === "countdown" && remaining ? remaining : completion;
-  const otherFace = mode === "progress" ? remaining : completion;
-  // The countdown face carries the completion count as its receipt, and the
-  // alternate line offered to "Show" the identical sentence directly beneath
-  // it — "2 of 9 complete" printed twice, one line apart, in the artifact's
-  // quietest voice. The fact is stated once now; when the two strings match,
-  // the receipt becomes the pressable line and the alternate stands down.
-  const receiptIsAffordance = otherFace !== null && otherFace.alternate === active.receipt;
-  const alternate = receiptIsAffordance ? null : otherFace;
-  const direction = mode === "countdown" ? 1 : -1;
-  const dateSpoken = timeline.primaryDate
-    ? `${timeline.primaryDate.label}, ${formatTimelineDate(timeline.primaryDate.date, "long")}`
-    : null;
-  // Paper carries no toggle: both facts print as one static line instead of
-  // a click instruction ("Show 79 days left") that means nothing on a page.
-  const printFacts = [completion.alternate, remaining?.alternate]
-    .filter(Boolean)
-    .join(" · ");
+/* ── Product header ───────────────────────────────────────────────────────── */
 
-  const face = (
+function useShare(onShare: TimelineArtifactProps["onShare"]) {
+  const [state, setState] = useState<"idle" | "working" | "copied" | "error">("idle");
+  const revertTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (revertTimer.current) clearTimeout(revertTimer.current);
+  }, []);
+  const settle = (next: "idle" | "copied" | "error") => {
+    setState(next);
+    if (revertTimer.current) clearTimeout(revertTimer.current);
+    if (next === "copied" || next === "error") {
+      // Receipts rest: the label returns to its verb once the moment passes,
+      // failure lingering a little longer than success.
+      revertTimer.current = setTimeout(() => setState("idle"), next === "copied" ? 2000 : 5000);
+    }
+  };
+  const run = async () => {
+    if (!onShare) return;
+    setState("working");
+    try {
+      const outcome = await onShare();
+      settle(outcome === "copied" ? "copied" : "idle");
+    } catch {
+      settle("error");
+    }
+  };
+  return { state, run };
+}
+
+function ShareButton({
+  onShare,
+  shareLabel,
+  className,
+}: Pick<TimelineArtifactProps, "onShare" | "shareLabel"> & { className?: string }) {
+  const share = useShare(onShare);
+  if (!onShare) return null;
+  return (
     <>
-      <span className={styles.metricViewport}>
-        <AnimatePresence initial={false} mode="wait" custom={direction}>
-          <motion.span
-            className={styles.metricMotion}
-            key={mode}
-            custom={direction}
-            initial={reduceMotion ? false : { opacity: 0, x: direction * 14 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={reduceMotion ? undefined : { opacity: 0, x: direction * -10 }}
-            transition={{ duration: reduceMotion ? 0 : 0.14, ease: METRIC_EASE }}
-          >
-            <MetricFace fact={active} receiptIsAffordance={receiptIsAffordance} />
-          </motion.span>
-        </AnimatePresence>
-        <motion.span
-          className={styles.metricSweep}
-          data-direction={direction > 0 ? "forward" : "back"}
-          key={`sweep-${mode}`}
-          initial={reduceMotion ? false : { opacity: 0.32, scaleX: 0 }}
-          animate={
-            reduceMotion
-              ? { opacity: 0, scaleX: 1 }
-              : { opacity: [0.32, 0.18, 0], scaleX: [0, 1, 1] }
-          }
-          transition={{
-            duration: reduceMotion ? 0 : 0.22,
-            ease: METRIC_EASE,
-            times: reduceMotion ? undefined : [0, 0.72, 1],
-          }}
-          aria-hidden="true"
-        />
-      </span>
-      {/* The row is always here; only its line comes and goes. Withholding the
-          box as well would move the rail 29px up and down every time the
-          metric was pressed, which is the same class of fault the reserved
-          metric box exists to prevent. */}
-      {otherFace ? (
-        <span className={styles.metricAlternateViewport} aria-hidden="true">
-          {alternate ? (
-            <AnimatePresence initial={false} mode="wait">
-              <motion.span
-                className={styles.metricAlternate}
-                key={`alternate-${mode}`}
-                initial={reduceMotion ? false : { opacity: 0, x: direction * -6 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={reduceMotion ? undefined : { opacity: 0, x: direction * 6 }}
-                transition={{ duration: reduceMotion ? 0 : 0.14, ease: METRIC_EASE }}
-              >
-                Show {alternate.alternate}
-              </motion.span>
-            </AnimatePresence>
-          ) : null}
-        </span>
-      ) : null}
-      {timeline.primaryDate ? (
-        <span className={styles.metricDate} aria-hidden="true">
-          <span>{timeline.primaryDate.label}</span>
-          <time dateTime={timeline.primaryDate.date}>
-            {formatTimelineDate(timeline.primaryDate.date)}
-          </time>
-        </span>
-      ) : null}
-    </>
-  );
-
-  if (!remaining) {
-    return (
-      <div className={styles.timeLensShell}>
-        <div
-          className={`${styles.timeLens} ${styles.timeLensStatic}`}
-          data-timeline-metric
-          data-metric-mode="progress"
-          data-metric-scale={completion.scale}
-          role="group"
-          aria-label={`${completion.spoken}${dateSpoken ? `. ${dateSpoken}` : ""}`}
-        >
-          {face}
-        </div>
-        <span className={styles.printFacts} aria-hidden="true">{printFacts}</span>
-      </div>
-    );
-  }
-
-  const nextMode: MetricMode = mode === "progress" ? "countdown" : "progress";
-  const nextFact = nextMode === "countdown" ? remaining : completion;
-  const controlLabel = mode === "progress"
-    ? `Show days remaining. Currently showing ${completion.spoken}.${dateSpoken ? ` ${dateSpoken}.` : ""}`
-    : `Show milestone completion. Currently showing ${remaining.spoken}.${dateSpoken ? ` ${dateSpoken}.` : ""}`;
-
-  return (
-    <div className={styles.timeLensShell}>
       <button
-        className={styles.timeLens}
-        data-timeline-metric
-        data-timeline-metric-toggle
-        data-metric-mode={mode}
-        data-metric-scale={active.scale}
         type="button"
-        aria-label={controlLabel}
-        onClick={() => {
-          setRequestedMode(nextMode);
-          setAnnouncement(`Now showing ${nextFact.spoken}.`);
-        }}
+        className={className}
+        data-share-state={share.state}
+        disabled={share.state === "working"}
+        onClick={share.run}
       >
-        {face}
+        {share.state === "copied"
+          ? "Link copied"
+          : share.state === "error"
+            ? "Copy from the address bar"
+            : shareLabel ?? "Share this timeline"}
       </button>
-      <span className={styles.printFacts} aria-hidden="true">{printFacts}</span>
       <span className={styles.screenReaderOnly} aria-live="polite" aria-atomic="true">
-        {announcement}
+        {share.state === "copied" ? "Timeline link copied." : null}
+        {share.state === "error" ? "The link could not be shared. Copy it from the address bar." : null}
       </span>
-    </div>
+    </>
   );
 }
 
@@ -439,770 +247,424 @@ function ProductIdentity({
   onShare,
   shareLabel,
 }: Pick<TimelineArtifactProps, "timeline" | "onShare" | "shareLabel">) {
-  const [shareState, setShareState] = useState<"idle" | "working" | "copied" | "error">("idle");
-  const revertTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const sharedBy = timeline.ownerDisplayLabel ?? "Shared timeline";
-
-  useEffect(() => () => {
-    if (revertTimer.current) clearTimeout(revertTimer.current);
-  }, []);
-
-  const settle = (state: "idle" | "copied" | "error") => {
-    setShareState(state);
-    if (revertTimer.current) clearTimeout(revertTimer.current);
-    if (state === "copied" || state === "error") {
-      // Receipts rest: the label returns to its verb once the moment passes,
-      // failure lingering a little longer than success.
-      revertTimer.current = setTimeout(
-        () => setShareState("idle"),
-        state === "copied" ? 2000 : 5000,
-      );
-    }
-  };
-
+  // "Shared by Mara & Finn" above a page titled "Mara & Finn" says the same
+  // name twice. The byline shows only when it adds someone the title does not.
+  const byline = timeline.ownerDisplayLabel && !timeline.ownerDisplayLabel.includes(timeline.label) ? timeline.ownerDisplayLabel : null;
   return (
     <div className={styles.productHeader}>
       <span className={styles.productMark} aria-label="timeline" data-timeline-wordmark>
         timeline<span aria-hidden="true" />
       </span>
       <div className={styles.productMeta}>
-        <span>{sharedBy}</span>
-        {onShare ? (
-          <button
-            type="button"
-            data-share-state={shareState}
-            disabled={shareState === "working"}
-            onClick={async () => {
-              setShareState("working");
-              try {
-                const outcome = await onShare();
-                settle(outcome === "copied" ? "copied" : "idle");
-              } catch {
-                settle("error");
-              }
-            }}
-          >
-            {shareState === "copied"
-              ? "Link copied"
-              : shareState === "error"
-                ? "Copy from the address bar"
-                : shareLabel ?? "Share this timeline"}
-          </button>
-        ) : null}
-        <span className={styles.screenReaderOnly} aria-live="polite" aria-atomic="true">
-          {shareState === "copied" ? "Timeline link copied." : null}
-          {shareState === "error"
-            ? "The link could not be shared. Copy it from the address bar."
-            : null}
-        </span>
+        {byline ? <span>{byline}</span> : null}
+        <ShareButton onShare={onShare} shareLabel={shareLabel} className={styles.textButton} />
       </div>
     </div>
   );
 }
 
-function MilestoneLabel({ point }: { point: TimelineArtifactPoint }) {
+/* ── Hero: the count and the day ──────────────────────────────────────────── */
+
+function Hero({ timeline, model, nouns }: { timeline: AudienceTimelineDto; model: TimelineArtifactModel; nouns: ReturnType<typeof timelineNouns> }) {
+  const day = timeline.primaryDate;
+  const countdown = buildTimelineCountdown(day?.date, timeline.today);
+  const dayName = day?.label.toLowerCase() ?? "";
+  const completion = `${model.completedCount} of ${model.totalCount} complete`;
+  // A plan with no day still has an end: its last dated milestone.
+  // Only claimed when every milestone is dated; an undated one could land later.
+  const lastDate = model.points.every((point) => point.item.date)
+    ? model.points.reduce<string | null>((latest, point) => (point.item.date && (!latest || point.item.date > latest) ? point.item.date : latest), null)
+    : null;
+
+  // A plan with a day counts down to it. A plan without one leads with what is
+  // done, stated as one count rather than a percentage.
+  let value: string;
+  let unit: string;
+  let spoken: string;
+  if (day && countdown?.kind === "future") {
+    value = String(countdown.days);
+    unit = `${plural(countdown.days, "day", "days")} until the ${dayName}`;
+    spoken = `${countdown.days} ${plural(countdown.days, "day", "days")} until the ${dayName}`;
+  } else if (day && countdown?.kind === "today") {
+    value = "Today";
+    unit = `is the ${dayName}`;
+    spoken = `Today is the ${dayName}`;
+  } else if (day && countdown?.kind === "past") {
+    value = String(countdown.days);
+    unit = `${plural(countdown.days, "day", "days")} since the ${dayName}`;
+    spoken = `${countdown.days} ${plural(countdown.days, "day", "days")} since the ${dayName}`;
+  } else if (model.completedCount === 0) {
+    // Nothing done yet: a giant zero is a sad way to open a plan, so the page
+    // leads with what is ahead instead.
+    value = String(model.remainingCount);
+    unit = `${plural(model.remainingCount, "milestone", "milestones")} still to come`;
+    spoken = `${model.remainingCount} ${plural(model.remainingCount, "milestone", "milestones")} still to come`;
+  } else {
+    value = String(model.completedCount);
+    unit = `of ${model.totalCount} ${plural(model.totalCount, "milestone", "milestones")} complete`;
+    spoken = `${model.completedCount} of ${model.totalCount} milestones complete`;
+  }
+  const aside = day
+    ? completion
+    : model.completedCount === 0
+      ? "None complete yet"
+      : `${model.remainingCount} still to come`;
+
+  // What the next moment is lives in its row and on the strip, one scroll
+  // away; the hero says only what no other part of the page says.
   return (
-    <span className={styles.milestoneLabel} data-timeline-milestone-label aria-hidden="true">
-      <span>{timelinePointStatus(point)}</span>
-      <strong>{point.item.title}</strong>
-      <small>{point.item.date ? formatTimelineDate(point.item.date) : NO_TIMING_LABEL}</small>
+    <div className={styles.hero}>
+      <p className={styles.heroKicker}>{nouns.kicker}</p>
+      <h1>{timeline.label}</h1>
+      <div className={styles.heroBody}>
+        <div className={styles.count} data-timeline-metric data-count-kind={countdown?.kind ?? "progress"} role="group" aria-label={spoken}>
+          <strong className={styles.countValue} data-scale={value.length >= 4 ? "long" : undefined} aria-hidden="true" data-timeline-metric-value>
+            {value}
+          </strong>
+          <span className={styles.countUnit} aria-hidden="true">{unit}</span>
+        </div>
+        <div className={styles.heroAside}>
+          {day ? (
+            <p className={styles.heroDay}>
+              <time dateTime={day.date}>{weekdayDate(day.date)}</time>
+            </p>
+          ) : null}
+          {!day && lastDate ? (
+            <p className={styles.heroDay}>
+              Ends <time dateTime={lastDate}>{weekdayDate(lastDate)}</time>
+            </p>
+          ) : null}
+          <p className={styles.heroFacts}>{aside}</p>
+          {day && countdown?.kind !== "past" ? <CalendarButton timeline={timeline} /> : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── A · the strip: the run of time still to come, to scale ───────────────── */
+
+const DAY_MS = 86_400_000;
+const dayOf = (value: string) => Date.parse(`${value}T00:00:00.000Z`);
+/* The artifact's own three letters: en-GB would print "Sept" beside "Sep". */
+const STRIP_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+type StripGeometry = Readonly<{
+  /** Rail-percent for a calendar date, inside the drawn range. */
+  at: (value: string) => number;
+  /** Where the drawn range starts; left of it sits the stub for earlier work. */
+  base: number;
+  /** Milestones dated before the drawn range, summarised by the stub. */
+  earlier: readonly TimelineArtifactPoint[];
+  earliestDate: string | null;
+  months: readonly { label: string; position: number }[];
+  todayAt: number | null;
+  frontier: number;
+}>;
+
+/**
+ * The strip is for the time a guest cares about: from a little before today
+ * to the day. Work finished long ago would otherwise take most of the line,
+ * as it did when the strip began at the plan's first milestone, and squeeze
+ * everything still to come into its last third. Earlier work folds into a
+ * short stub at the left edge that says what it holds.
+ */
+function stripGeometry(timeline: AudienceTimelineDto, model: TimelineArtifactModel): StripGeometry | null {
+  const dated = model.points.filter((point) => point.item.date);
+  if (model.axis.mode !== "dated" || dated.length < 2) return null;
+  const times = dated.map((point) => dayOf(point.item.date as string));
+  const today = dayOf(timeline.today);
+  const first = Math.min(...times);
+  const end = Math.max(...times, timeline.primaryDate ? dayOf(timeline.primaryDate.date) : -Infinity);
+  if (!Number.isFinite(today) || end <= first) return null;
+  const lead = 12 * DAY_MS;
+  const start = today >= end ? first : today < first ? today : Math.max(first, today - lead);
+  const earlier = dated.filter((point) => dayOf(point.item.date as string) < start);
+  const base = earlier.length ? 9 : 1.5;
+  const span = Math.max(DAY_MS, end - start);
+  const toAt = (time: number) => base + ((time - start) / span) * (98.5 - base);
+  const months: { label: string; position: number }[] = [];
+  const cursor = new Date(start);
+  cursor.setUTCDate(1);
+  cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+  while (cursor.getTime() <= end) {
+    months.push({ label: STRIP_MONTHS[cursor.getUTCMonth()], position: toAt(cursor.getTime()) });
+    cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+  }
+  const doneInRange = dated.filter((point) => point.state === "complete" && dayOf(point.item.date as string) >= start);
+  const frontier = doneInRange.length
+    ? Math.max(...doneInRange.map((point) => toAt(dayOf(point.item.date as string))))
+    : earlier.some((point) => point.state === "complete")
+      ? base
+      : 0;
+  return {
+    at: (value) => toAt(dayOf(value)),
+    base,
+    earlier,
+    earliestDate: earlier.length ? (earlier[0].item.date as string) : null,
+    months,
+    todayAt: today >= start && today <= end ? toAt(today) : null,
+    frontier,
+  };
+}
+
+function Strip({ timeline, model, finaleId }: { timeline: AudienceTimelineDto; model: TimelineArtifactModel; finaleId: string }) {
+  const geometry = stripGeometry(timeline, model);
+  if (!geometry) return null;
+  const next = model.points.find((point) => point.isNext);
+  const last = model.points[model.points.length - 1];
+  const destination = timeline.primaryDate && last.item.date === timeline.primaryDate.date ? last : null;
+  const inRange = model.points.filter((point) => point.item.date && !geometry.earlier.includes(point));
+  const align = (position: number) => (position < 14 ? "start" : position > 86 ? "end" : "middle");
+  const at = (position: number): PositionStyle => ({ "--at": `${position}%` });
+  const earlierDone = geometry.earlier.filter((point) => point.state === "complete").length;
+
+  return (
+    <figure className={styles.strip} aria-label={timelineAxisDescription(model)}>
+      <div className={styles.stripTrack}>
+        <div
+          className={styles.stripLine}
+          role="progressbar"
+          aria-label="Milestone completion"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(geometry.frontier)}
+          aria-valuetext={`${model.completedCount} of ${model.totalCount} milestones complete`}
+        >
+          {/* The ink runs to the furthest completed dot, never to a count
+              percentage, so the line and the dots make one statement. */}
+          <span className={styles.stripInk} style={{ transform: `scaleX(${geometry.frontier / 100})` }} aria-hidden="true" />
+        </div>
+        {geometry.earlier.length ? (
+          <a className={styles.stripStub} href={`#m-${geometry.earlier[0].item.publicId}`} tabIndex={-1} style={at(geometry.base)} aria-hidden="true">
+            <span>
+              {earlierDone === geometry.earlier.length ? `${earlierDone} done` : `${geometry.earlier.length} earlier`}
+              {geometry.earliestDate ? <small>since {formatTimelineDate(geometry.earliestDate).replace(/ \d{4}$/, "")}</small> : null}
+            </span>
+          </a>
+        ) : null}
+        {geometry.months.map((tick) => (
+          <span className={styles.stripMonth} key={`${tick.label}-${tick.position}`} style={at(tick.position)} aria-hidden="true">
+            <span>{tick.label}</span>
+          </span>
+        ))}
+        {geometry.todayAt !== null ? (
+          <span className={styles.stripToday} data-today-marker style={at(geometry.todayAt)} role="img" aria-label={`Today, ${formatTimelineDate(timeline.today, "long")}`}>
+            <span aria-hidden="true">Today</span>
+          </span>
+        ) : null}
+        {/* The dots are a pointer's shortcut into the rows. The rows are the
+            keyboard's path, so the dots stay out of the tab order. */}
+        {inRange.map((point) => {
+          const isDestination = point === destination;
+          return (
+            <a
+              key={point.item.publicId}
+              className={styles.stripDot}
+              href={isDestination ? `#${finaleId}` : `#m-${point.item.publicId}`}
+              tabIndex={-1}
+              data-state={point.state}
+              data-next={point.isNext ? "true" : undefined}
+              data-destination={isDestination ? "true" : undefined}
+              style={at(geometry.at(point.item.date as string))}
+              aria-label={`${point.item.title}, ${formatTimelineDate(point.item.date as string, "long")}`}
+            />
+          );
+        })}
+        {next?.item.date && !geometry.earlier.includes(next) ? (
+          <span className={styles.stripLabel} data-align={align(geometry.at(next.item.date))} data-kind="next" style={at(geometry.at(next.item.date))} aria-hidden="true">
+            <small>Next</small>
+            {next.item.title}
+          </span>
+        ) : null}
+        {destination?.item.date && destination !== next ? (
+          <span className={styles.stripLabel} data-align="end" data-kind="destination" style={at(geometry.at(destination.item.date))} aria-hidden="true">
+            {destination.item.title}
+          </span>
+        ) : null}
+      </div>
+    </figure>
+  );
+}
+
+/* ── B · the rows: every moment with its own number ───────────────────────── */
+
+function RowFigure({ point, today }: { point: TimelineArtifactPoint; today: string }) {
+  const days = point.item.date ? daysBetween(today, point.item.date) : null;
+  if (days === null) {
+    return (
+      <span className={styles.rowFigure} data-kind="undated" aria-hidden="true">
+        <strong>–</strong>
+      </span>
+    );
+  }
+  if (days === 0) {
+    return (
+      <span className={styles.rowFigure} data-kind="today">
+        <strong>Today</strong>
+      </span>
+    );
+  }
+  if (days < 0) {
+    return (
+      <span className={styles.rowFigure} data-kind="late">
+        <strong>{-days}</strong> <small>{plural(-days, "day late", "days late")}</small>
+      </span>
+    );
+  }
+  return (
+    <span className={styles.rowFigure} data-kind="ahead">
+      <strong>{days}</strong> <small>{plural(days, "day", "days")}</small>
     </span>
   );
 }
 
-/**
- * The one line of prose under a milestone title. Rewritten 2026-08-03 (E06.04):
- * two of the three sentences used "journey" as a noun, which the brand voice
- * bans, and this is front-facing copy on a couple's wedding page rather than an
- * internal string. Kept short and plain, and kept deliberately rather than
- * removed, because it is the slot a real milestone story lands in once the
- * published DTO can carry one (E06.02 and E06.03).
- *
- * The next milestone gets no line at all. Its status sits three lines above in
- * the module's own words ("Our next milestone"), the mark it opened from is
- * `aria-current="step"`, and the rail draws it as the one indigo object on the
- * page — so "This one is next." was the fourth statement of the same fact
- * inside one panel. Saying nothing is more honest than saying it again.
- */
-function detailNote(point: TimelineArtifactPoint): string | null {
-  if (point.state === "complete") return "This one is already behind you.";
-  if (point.isNext) return null;
-  return "This one comes later.";
+/** "2 weeks later", said between two moments when the wait is worth noticing. */
+function gapWords(from: string | undefined, to: string | undefined): string | null {
+  const gap = daysBetween(from, to);
+  if (gap === null || gap < 10) return null;
+  const weeks = Math.round(gap / 7);
+  return `${weeks} ${plural(weeks, "week", "weeks")} later`;
 }
 
-function detailTiming(point: TimelineArtifactPoint, today: string): string | null {
-  if (!point.item.date || point.state === "complete") return null;
-  const countdown = buildTimelineCountdown(point.item.date, today);
-  if (!countdown) return null;
-  if (countdown.kind === "today") return "today";
-  if (countdown.kind === "future") {
-    return `in ${countdown.days} ${countdown.days === 1 ? "day" : "days"}`;
-  }
-  return `${countdown.days} ${countdown.days === 1 ? "day" : "days"} ago`;
-}
-
-function MilestoneDetail({
-  point,
-  ordinal,
-  total,
-  today,
-  detailId,
-  titleId,
-  sectionRef,
-}: {
-  point: TimelineArtifactPoint;
-  ordinal: number;
-  total: number;
-  today: string;
-  detailId: string;
-  titleId: string;
-  sectionRef?: Ref<HTMLElement>;
-}) {
-  const relative = detailTiming(point, today);
-  const note = detailNote(point);
-
-  return (
-    <section
-      className={styles.detail}
-      data-detail-state={point.state}
-      data-selected-milestone={point.item.publicId}
-      id={detailId}
-      aria-labelledby={titleId}
-      ref={sectionRef}
-    >
-      <div
-          className={styles.detailInner}
-          key={point.item.publicId}
-        >
-          <div className={styles.detailLead}>
-            <p className={styles.detailStatus}>{timelinePointStatus(point)}</p>
-            <h3 id={titleId}>{point.item.title}</h3>
-            {note ? <p>{note}</p> : null}
-          </div>
-          <dl className={styles.detailFacts}>
-            <div>
-              <dt>Timing</dt>
-              <dd>
-                {point.item.date ? (
-                  <>
-                    <time dateTime={point.item.date}>
-                      {formatTimelineDate(point.item.date, "long")}
-                    </time>
-                    {relative ? ` · ${relative}` : null}
-                  </>
-                ) : NO_TIMING_LABEL}
-              </dd>
-            </div>
-            <div>
-              <dt>{PLACE_IN_PLAN_LABEL}</dt>
-              <dd>{milestonePlace(ordinal, total)}</dd>
-            </div>
-          </dl>
-      </div>
-    </section>
-  );
-}
-
-/**
- * One milestone with no usable timing. A rail would have to place its single
- * dot somewhere, and every somewhere on a time axis is a claim about time —
- * dead centre most of all. So this plan is stated as what it actually is: a
- * place in a sequence, with the timing named honestly underneath.
- */
-function SequenceState({
-  heading,
-  model,
-  idPrefix,
-}: {
-  heading: string;
-  model: TimelineArtifactModel;
-  idPrefix: string;
-}) {
-  const point = model.points[0];
-  const sectionId = `${idPrefix}-timeline`;
-
-  return (
-    <section className={styles.journey} id={sectionId} aria-labelledby={`${sectionId}-title`}>
-      <h2 className={styles.screenReaderOnly} id={`${sectionId}-title`}>{heading}</h2>
-      <div className={styles.sequenceCard} data-state={point.state} data-sequence-card>
-        <p className={styles.sequenceStep}>
-          {milestonePlace(1, model.points.length)}
-        </p>
-        <p className={styles.sequenceStatus}>{timelinePointStatus(point)}</p>
-        <h3 className={styles.sequenceTitle}>{point.item.title}</h3>
-        <p className={styles.sequenceTiming}>
-          {point.item.date ? (
-            <time dateTime={point.item.date}>
-              {formatTimelineDate(point.item.date, "long")}
-            </time>
-          ) : NO_TIMING_LABEL}
-        </p>
-      </div>
-    </section>
-  );
-}
-
-function Journey({
+function Rows({
   heading,
   timeline,
   model,
-  idPrefix,
+  sectionId,
+  destinationId,
 }: {
   heading: string;
   timeline: AudienceTimelineDto;
   model: TimelineArtifactModel;
-  idPrefix: string;
+  sectionId: string;
+  destinationId: string | null;
 }) {
-  const reduceMotion = useArtifactReducedMotion();
-  const [selectedId, setSelectedId] = useState(model.defaultSelectedId);
-  const [focusIndex, setFocusIndex] = useState(() => Math.max(
-    0,
-    model.points.findIndex((point) => point.item.publicId === model.defaultSelectedId),
-  ));
-  const [detailOpen, setDetailOpen] = useState(Boolean(model.defaultSelectedId));
-  // Hidden scrollbars owe the viewer an affordance: edge fades appear only
-  // while content is actually cut off on that side.
-  const [overflowStart, setOverflowStart] = useState(false);
-  const [overflowEnd, setOverflowEnd] = useState(false);
-  const pointRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  const viewportRef = useRef<HTMLDivElement | null>(null);
-  const stageRef = useRef<HTMLDivElement | null>(null);
-  const detailRef = useRef<HTMLElement | null>(null);
-  // How much of the rail one label box actually occupies, in rail-percent.
-  // Null until the rail has been measured; see the geometry effect below for
-  // why this cannot be a constant.
-  const [labelSpan, setLabelSpan] = useState<number | null>(null);
-  const selectedPoint = model.points.find((point) => point.item.publicId === selectedId)
-    ?? model.points.find((point) => point.item.publicId === model.defaultSelectedId)
-    ?? null;
-  const boundedFocusIndex = Math.min(
-    Math.max(focusIndex, 0),
-    Math.max(0, model.points.length - 1),
-  );
-  const sectionId = `${idPrefix}-timeline`;
-  const instructionsId = `${idPrefix}-instructions`;
-  const detailId = `${idPrefix}-detail`;
-  const detailTitleId = `${idPrefix}-detail-title`;
+  const points = model.points.filter((point) => point.item.publicId !== destinationId);
+  const done = points.filter((point) => point.state === "complete");
+  const ahead = points.filter((point) => point.state !== "complete");
 
-  const scrollPointIntoView = (index: number, behavior: ScrollBehavior) => {
-    const viewport = viewportRef.current;
-    const point = model.points[index];
-    if (!viewport || !point) return;
-    if (viewport.scrollWidth <= viewport.clientWidth) return;
-    const target = (point.position / 100) * viewport.scrollWidth - viewport.clientWidth / 2;
-    viewport.scrollTo({ left: Math.max(0, target), behavior });
+  // Every row is plain, readable text in reading order, so a screen reader
+  // hears what a sighted guest sees: the count, the status where it matters,
+  // the title and the date. Only the decorative pin is hidden.
+  const row = (point: TimelineArtifactPoint, index: number, previous: TimelineArtifactPoint | null) => {
+    const complete = point.state === "complete";
+    const gap = previous && !complete ? gapWords(previous.item.date, point.item.date) : null;
+    const rowStyle: RowStyle = { "--row-delay": `${Math.min(80 + index * 40, 440)}ms` };
+    return (
+      <li
+        key={point.item.publicId}
+        id={`m-${point.item.publicId}`}
+        className={styles.row}
+        data-state={point.state}
+        data-next={point.isNext ? "true" : undefined}
+        data-gap={gap ? "true" : undefined}
+        style={rowStyle}
+        aria-current={point.isNext ? "step" : undefined}
+      >
+        {gap ? <span className={styles.gap}>{gap}</span> : null}
+        <span className={styles.pin} aria-hidden="true">
+          {complete ? (
+            <svg viewBox="0 0 16 16" width="16" height="16">
+              <circle cx="8" cy="8" r="7" fill="currentColor" />
+              <path d="M5 8.3 7.1 10.4 11 6" fill="none" stroke="var(--paper)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          ) : null}
+        </span>
+        {complete ? null : (
+          <span className={styles.rowFigureCell}>
+            <RowFigure point={point} today={timeline.today} />
+          </span>
+        )}
+        <span className={styles.rowText}>
+          {complete ? <span className={styles.screenReaderOnly}>{timelinePointStatus(point)}: </span> : null}
+          {point.isNext || point.state === "overdue" ? <span className={styles.rowStatus}>{timelinePointStatus(point)}</span> : null}
+          <span className={styles.rowTitle}>{point.item.title}</span>
+          <span className={styles.rowDate}>
+            {point.item.date ? <time dateTime={point.item.date}>{formatTimelineDate(point.item.date, "long")}</time> : NO_TIMING_LABEL}
+          </span>
+        </span>
+      </li>
+    );
   };
-
-  /**
-   * Selecting a milestone has to produce something the viewer can see, and on
-   * a phone the detail sits a full stacked rail below the mark that was
-   * tapped — far enough that the tap read as doing nothing at all. `nearest`
-   * means a detail already on screen is left exactly where it is, so this
-   * costs desktop nothing and rescues the phone.
-   */
-  const revealDetail = () => {
-    if (typeof window === "undefined") return;
-    requestAnimationFrame(() => {
-      detailRef.current?.scrollIntoView({
-        block: "nearest",
-        behavior: reduceMotion ? "auto" : "smooth",
-      });
-    });
-  };
-
-  useEffect(() => {
-    const index = model.points.findIndex((point) => point.item.publicId === model.defaultSelectedId);
-    if (index < 0) return;
-    const frame = requestAnimationFrame(() => scrollPointIntoView(index, "auto"));
-    return () => cancelAnimationFrame(frame);
-    // The initial centring belongs to the publication, not later focus movement.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [model.defaultSelectedId, model.points]);
-
-  useEffect(() => {
-    const viewport = viewportRef.current;
-    if (!viewport) return;
-    const update = () => {
-      const max = viewport.scrollWidth - viewport.clientWidth;
-      const scrollable = max > 1;
-      setOverflowStart(scrollable && viewport.scrollLeft > 8);
-      setOverflowEnd(scrollable && viewport.scrollLeft < max - 8);
-    };
-    update();
-    viewport.addEventListener("scroll", update, { passive: true });
-    const observer = new ResizeObserver(update);
-    observer.observe(viewport);
-    return () => {
-      viewport.removeEventListener("scroll", update);
-      observer.disconnect();
-    };
-  }, [model.points.length]);
-
-  /**
-   * Rail geometry, read off the rail rather than assumed.
-   *
-   * Two numbers were previously guessed, and both guesses were wrong in a way
-   * only a rendered page could show.
-   *
-   * The stage's height is a calculation from `--x-timeline-label-block`, which
-   * budgets a fixed 4.5rem for "a status line, a title and a date". A milestone
-   * whose title runs to three or four lines needs half as much again, and the
-   * stage's `overflow: clip` cut the difference off — a real milestone losing
-   * its date at every desktop width. The tallest label measured here feeds that
-   * budget back, so spacing follows content instead of the other way round.
-   *
-   * The label's width in rail-percent was the constant 16 in
-   * `extraLabelIndices`. The rail is a scroll canvas at least
-   * `count x --x-timeline-pitch` wide, so on a twenty-two-milestone plan it is
-   * ~1848px at every desktop width and one 136-200px label occupies 7-11
-   * percent of it, not 16. The constant refused labels that had ample room, and
-   * refused the same ones at 1920 as at 768 because it could not see either.
-   *
-   * Both readings are stable under their own effect: labels are absolutely
-   * positioned at a fixed width, so neither a taller stage nor a newly revealed
-   * label changes what is measured here.
-   */
-  useEffect(() => {
-    const viewport = viewportRef.current;
-    const stage = stageRef.current;
-    if (!viewport || !stage) return;
-    const measure = () => {
-      const labels = Array.from(
-        stage.querySelectorAll<HTMLElement>("[data-timeline-milestone-label]"),
-      );
-      if (!labels.length) return;
-      let tallest = 0;
-      let widest = 0;
-      for (const label of labels) {
-        const rect = label.getBoundingClientRect();
-        if (rect.height > tallest) tallest = rect.height;
-        if (rect.width > widest) widest = rect.width;
-      }
-      const previous = stage.style.getPropertyValue("--x-timeline-label-measured");
-      const next = `${Math.ceil(tallest)}px`;
-      if (previous !== next) stage.style.setProperty("--x-timeline-label-measured", next);
-
-      const railWidth = stage.getBoundingClientRect().width;
-      if (railWidth <= 0 || widest <= 0) return;
-      // The rail's own width, published to CSS so a label nudge expressed in
-      // rail-percent can be drawn in pixels. Nothing else can do this
-      // conversion: the label's containing block is its 3rem hit target, so a
-      // percentage there would resolve against the wrong box.
-      const railWidthPx = `${Math.round(railWidth)}px`;
-      if (stage.style.getPropertyValue("--x-timeline-rail-width") !== railWidthPx) {
-        stage.style.setProperty("--x-timeline-rail-width", railWidthPx);
-      }
-      const span = (widest / railWidth) * 100;
-      setLabelSpan((current) =>
-        current !== null && Math.abs(current - span) < 0.25 ? current : span,
-      );
-    };
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(stage);
-    observer.observe(viewport);
-    return () => observer.disconnect();
-  }, [model.points]);
-
-  const focusPoint = (nextIndex: number) => {
-    const bounded = Math.min(Math.max(nextIndex, 0), model.points.length - 1);
-    setFocusIndex(bounded);
-    pointRefs.current[bounded]?.focus();
-    scrollPointIntoView(bounded, reduceMotion ? "auto" : "smooth");
-  };
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
-    if (event.key === "ArrowRight") {
-      event.preventDefault();
-      focusPoint(index + 1);
-    } else if (event.key === "ArrowLeft") {
-      event.preventDefault();
-      focusPoint(index - 1);
-    } else if (event.key === "Home") {
-      event.preventDefault();
-      focusPoint(0);
-    } else if (event.key === "End") {
-      event.preventDefault();
-      focusPoint(model.points.length - 1);
-    } else if (event.key === "Escape") {
-      event.preventDefault();
-      setDetailOpen(false);
-    }
-  };
-
-  const stageStyle: StageStyle = {
-    "--timeline-point-count": Math.max(1, model.points.length),
-    "--timeline-completion": `${model.percent}%`,
-  };
-  // Collision-aware extra labels: beyond the mandatory titles (next, the
-  // completed point before it, the last point) any point whose same-side
-  // neighbours leave room earns its label on wide rails. Selection is
-  // excluded from the mandatory set here because it is transient — a
-  // selected label always shows and z-raises regardless.
-  const mandatoryLabels = useMemo(() => {
-    const firstUnfinished = model.points.findIndex((point) => point.state !== "complete");
-    return new Set<number>([
-      Math.max(0, firstUnfinished - 1),
-      model.points.length - 1,
-      ...model.points.flatMap((point, index) => (point.isNext ? [index] : [])),
-    ]);
-  }, [model.points]);
-  const extraLabels = useMemo(
-    () => extraLabelIndices(
-      model.points.map((point) => point.position),
-      mandatoryLabels,
-      labelSpan ?? undefined,
-    ),
-    [model.points, mandatoryLabels, labelSpan],
-  );
-  // The persistent label set the rail actually draws above 620px: the
-  // mandatory titles plus whatever the measured collision pass could fit.
-  // Selection and hover are deliberately excluded — they are transient, and
-  // the density rule below has to describe the resting page.
-  const persistentLabels = useMemo(
-    () => new Set<number>([...mandatoryLabels, ...extraLabels]),
-    [mandatoryLabels, extraLabels],
-  );
-  // A crowded span used to say nothing at all: five dots inside four weeks,
-  // every title withheld for want of room, so the cluster was anonymous to
-  // anyone who could not hover it one dot at a time. Runs of adjacent
-  // unlabelled marks now share one caption naming how many are in the run.
-  const clusters = useMemo(
-    () => labelClusters(model.points, persistentLabels),
-    [model.points, persistentLabels],
-  );
-  // Cartography yields to the marks it annotates. Both distances are physical
-  // — half a mark against the narrowest this rail can be — so a tick standing
-  // down is a measured collision, never a breakpoint's guess.
-  const markPositions = useMemo(
-    () => model.points.map((point) => point.position),
-    [model.points],
-  );
-  const tickMarkGap = markCollisionGap(model.points.length);
-  const tickNameGap = markLabelGap(model.points.length);
-  // Marks are where their dates are. When two visible labels would overlap it
-  // is the LABEL that gives way — never the mark, which is the whole of the
-  // proportionality repair. Held back until the rail has been measured, so the
-  // server and the first client render agree on an unshifted layout.
-  const labelNudges = useMemo(
-    () => (labelSpan === null
-      ? new Map<number, number>()
-      : labelShifts(markPositions, persistentLabels, labelSpan)),
-    [markPositions, persistentLabels, labelSpan],
-  );
-  // The Today chip negotiates for space like every label does: when an
-  // above-side labelled point sits within its band, the chip yields to the
-  // rail's underside; on the stacked axis it nudges clear instead.
-  const todayCollides = (
-    positionOf: (point: TimelineArtifactPoint, index: number) => number | null,
-    today: number | null,
-    threshold: number,
-  ) => {
-    if (today === null) return false;
-    return model.points.some((point, index) => {
-      const position = positionOf(point, index);
-      return position !== null && Math.abs(position - today) < threshold;
-    });
-  };
-  const todaySide = todayCollides(
-    (point, index) =>
-      index % 2 === 0 && (mandatoryLabels.has(index) || extraLabels.has(index))
-        ? point.position
-        : null,
-    model.todayPosition,
-    7,
-  )
-    ? "below"
-    : "above";
-  const todayNudged = todayCollides(
-    (point) => point.stackPosition,
-    model.todayStackPosition,
-    4,
-  );
-  const todayStyle: PositionStyle | undefined = model.todayPosition === null
-    ? undefined
-    : {
-        "--timeline-position": `${model.todayPosition}%`,
-        "--timeline-position-stack": `${model.todayStackPosition ?? model.todayPosition}%`,
-      };
-  const nextMilestone = model.points.find((point) => point.isNext) ?? null;
-  // The caps under the rail's ends come from the model, because what they may
-  // say depends on whether the rail is a calendar at all: real dates when it
-  // is, sequence words when it is not. "Start"/"Finish" on an ordered rail
-  // would re-assert the temporal reading the ordered mode exists to refuse.
-  const caps = timelineRailCaps(model);
-  const axisNote = timelineAxisNote(model);
-  // One name for this milestone, spoken the same way on the mark, in the Today
-  // marker and in the keyboard instructions. The instructions used to call it
-  // "the project's next milestone" on a page that had already introduced
-  // itself as a wedding.
-  const todayLabel = model.todayPosition === null
-    ? null
-    : `Today, ${formatTimelineDate(timeline.today, "long")}.${nextMilestone ? ` ${MILESTONE_RAIL_LABELS.current} is ${nextMilestone.item.title}.` : ""}`;
-  // The rail's span, stated in words. The month ticks and the Today dash are
-  // aria-hidden decoration, so without this sentence the axis was invisible to
-  // low vision and absent from assistive technology at once.
-  const axisDescription = timelineAxisDescription(model);
-  const instructions = model.axis.mode === "ordered"
-    ? `${axisDescription} Use Left and Right Arrow to move between milestones, Home and End to jump, Enter or Space to select, and Escape to close milestone detail.`
-    : `${axisDescription} The highlighted point is ${MILESTONE_RAIL_LABELS.current.toLowerCase()}. The Today dash shows the calendar position. Use Left and Right Arrow to move between milestones, Home and End to jump, Enter or Space to select, and Escape to close milestone detail.`;
 
   return (
-    <section className={styles.journey} id={sectionId} aria-labelledby={`${sectionId}-title`}>
+    <section className={styles.moments} id={sectionId} aria-labelledby={`${sectionId}-title`}>
       <h2 className={styles.screenReaderOnly} id={`${sectionId}-title`}>{heading}</h2>
-      <p className={styles.screenReaderOnly} id={instructionsId}>
-        {instructions}
+      {points.length === 0 && destinationId ? (
+        <p className={styles.empty} data-kind="only-the-day">
+          <span>Nothing else is planned before the day.</span>
+        </p>
+      ) : points.length === 0 ? (
+        <p className={styles.empty}>
+          <strong>No milestones shared yet.</strong>
+          <span>Milestones will appear here when they are ready.</span>
+        </p>
+      ) : (
+        <>
+          {done.length ? (
+            <ol className={styles.list} data-part="done" aria-label="Complete">
+              {done.map((point, index) => row(point, index, null))}
+            </ol>
+          ) : null}
+          {done.length && ahead.length ? (
+            <p className={styles.todayRule} data-today-marker>
+              <span className={styles.todayDot} aria-hidden="true" />
+              <span>Today</span>
+              <time dateTime={timeline.today}>{weekdayDate(timeline.today)}</time>
+            </p>
+          ) : null}
+          {ahead.length ? (
+            <ol className={styles.list} data-part="ahead" aria-label="Still to come">
+              {ahead.map((point, index) => row(point, done.length + index, index ? ahead[index - 1] : null))}
+            </ol>
+          ) : null}
+        </>
+      )}
+      {model.axis.mode === "ordered" && points.length > 1 ? (
+        <p className={styles.axisNote}>Shown in order. Some timings are not set yet.</p>
+      ) : null}
+    </section>
+  );
+}
+
+/* ── D · the finale: the day itself ───────────────────────────────────────── */
+
+/** "11 weeks and 2 days to go": the same wait as the hero's number, felt differently. */
+function waitWords(days: number): string {
+  if (days < 14) return `${days} ${plural(days, "day", "days")} to go.`;
+  const weeks = Math.floor(days / 7);
+  const rest = days % 7;
+  return `${weeks} weeks${rest ? ` and ${rest} ${plural(rest, "day", "days")}` : ""} to go.`;
+}
+
+function Finale({
+  timeline,
+  id,
+  onShare,
+  shareLabel,
+}: Pick<TimelineArtifactProps, "timeline" | "onShare" | "shareLabel"> & { id: string }) {
+  const day = timeline.primaryDate;
+  if (!day) return null;
+  const countdown = buildTimelineCountdown(day.date, timeline.today);
+  const line = countdown?.kind === "future"
+    ? waitWords(countdown.days)
+    : countdown?.kind === "today"
+      ? "It is today."
+      : countdown?.kind === "past"
+        ? `${countdown.days} ${plural(countdown.days, "day", "days")} ago.`
+        : null;
+  return (
+    <section className={styles.finale} id={id} aria-labelledby={`${id}-title`}>
+      <p className={styles.finaleDate}>
+        <time dateTime={day.date}>{weekdayDate(day.date)}</time>
       </p>
-      <div
-        className={styles.railFrame}
-        data-overflow-start={overflowStart ? "true" : undefined}
-        data-overflow-end={overflowEnd ? "true" : undefined}
-        role="group"
-        aria-roledescription="timeline axis"
-        aria-label={axisDescription}
-      >
-        <div className={styles.stageViewport} ref={viewportRef} data-timeline-scroll-viewport>
-          <div className={styles.stage} ref={stageRef} style={stageStyle}>
-            {/* One statement, one number.
-                The ink is drawn to the furthest completed dot, because the
-                rail is a date axis and a fill that stopped anywhere else
-                would end at a date that means nothing — two coordinate
-                systems sharing one line, which is exactly what the dots and
-                the fill exist not to be. That decision stands.
-                What did not stand was this element claiming a different
-                number from the one it paints: `aria-valuenow` carried the
-                count percentage (40 on a plan whose ink reaches 0.34 of the
-                rail), so the bar's machine value and its drawing disagreed.
-                The value now tracks the drawing. The sentence a screen
-                reader actually announces is `aria-valuetext`, and that is
-                unchanged and still the honest count — the same words the
-                metric prints, so screen and screen reader agree. */}
-            <div
-              className={styles.progressGeometry}
-              role="progressbar"
-              aria-label="Milestone completion"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={Math.round(model.completedFrontier ?? 0)}
-              aria-valuetext={`${model.completedCount} of ${model.totalCount} milestones complete`}
-            >
-              <span className={styles.baseRail} aria-hidden="true" />
-              {/* The ink is drawn to the furthest completed dot — the fill
-                  and the dots are one statement, never two coordinate
-                  systems sharing a line. The count percentage lives in the
-                  metric and in this progressbar's spoken value only. */}
-              <span
-                className={styles.completedRail}
-                style={{ transform: `scaleX(${(model.completedFrontier ?? 0) / 100})` }}
-                aria-hidden="true"
-              />
-              <span
-                className={styles.completedRailVertical}
-                style={{ transform: `scaleY(${(model.completedStackFrontier ?? 0) / 100})` }}
-                aria-hidden="true"
-              />
-            </div>
-
-            {/* The rail's cartography: month boundaries riding the same
-                distortion mapping as the points, so the calendar's rhythm —
-                why some gaps run long and others short — is visible truth.
-                Labels yield to the Today chip and the rail's edge caps;
-                decoration never outranks information. */}
-            {model.monthTicks.length ? (
-              <span className={styles.monthTicks} aria-hidden="true">
-                {(() => {
-                  // Greedy label thinning: a label that would sit within 4
-                  // rail-percent of the previous labelled tick is "tight" —
-                  // it keeps its label on wide rails and yields it below
-                  // 980px (and in print), where four percent stops being
-                  // enough paper for a month's name.
-                  let lastLabelled = Number.NEGATIVE_INFINITY;
-                  return model.monthTicks.map((tick) => {
-                    const nearToday = model.todayPosition !== null
-                      && Math.abs(tick.position - model.todayPosition) < 3;
-                    const nearEdge = tick.position < 4 || tick.position > 96;
-                    // A milestone dated the first of the month has its dot
-                    // painted straight through the tick that names the month.
-                    // The tick's name stands down early; its hairline stands
-                    // down only when the mark is actually on top of it.
-                    const nearMark = markPositions.some(
-                      (position) => Math.abs(tick.position - position) < tickNameGap,
-                    );
-                    const onMark = markPositions.some(
-                      (position) => Math.abs(tick.position - position) < tickMarkGap,
-                    );
-                    const quiet = nearToday || nearEdge || nearMark;
-                    const tight = !quiet && tick.position - lastLabelled < 4;
-                    if (!quiet && !tight) lastLabelled = tick.position;
-                    const tickStyle: PositionStyle = {
-                      "--timeline-position": `${tick.position}%`,
-                      "--timeline-position-stack": `${tick.stackPosition}%`,
-                    };
-                    return (
-                      <span
-                        className={styles.monthTick}
-                        data-quiet={quiet ? "true" : undefined}
-                        data-tight={tight ? "true" : undefined}
-                        data-collides={onMark ? "true" : undefined}
-                        key={`${tick.label}-${tick.position}`}
-                        style={tickStyle}
-                      >
-                        <span>{tick.label}</span>
-                      </span>
-                    );
-                  });
-                })()}
-              </span>
-            ) : null}
-
-            {/* The density rule's other half. Where no title could fit, the
-                run of marks says how many it holds rather than saying
-                nothing — one bracket, one count, drawn under the rail in the
-                labels' own quiet register. Real titles are rendered after
-                this and paint over it, which is the correct precedence: a
-                milestone's name always outranks a count of milestones.
-                Hidden on the stacked axis and on paper, where every label
-                shows and there is nothing left to cluster. */}
-            {clusters.length ? (
-              <span className={styles.clusters} aria-hidden="true">
-                {clusters.map((cluster) => {
-                  const clusterStyle: ClusterStyle = {
-                    "--timeline-cluster-start": `${cluster.start}%`,
-                    "--timeline-cluster-end": `${cluster.end}%`,
-                    "--timeline-cluster-start-stack": `${cluster.startStack}%`,
-                    "--timeline-cluster-end-stack": `${cluster.endStack}%`,
-                  };
-                  return (
-                    <span
-                      className={styles.cluster}
-                      key={`cluster-${cluster.indices[0]}-${cluster.indices.length}`}
-                      style={clusterStyle}
-                    >
-                      <span>{cluster.label}</span>
-                    </span>
-                  );
-                })}
-              </span>
-            ) : null}
-
-            {todayLabel && todayStyle ? (
-              <span
-                className={styles.todayMarker}
-                data-today-marker
-                data-today-side={todaySide}
-                data-today-nudged={todayNudged ? "true" : undefined}
-                style={todayStyle}
-                role="img"
-                aria-label={todayLabel}
-              >
-                <span aria-hidden="true">Today</span>
-              </span>
-            ) : null}
-
-            {model.points.length ? (
-              <ol className={styles.milestones} aria-describedby={instructionsId}>
-                {model.points.map((point, index) => {
-                  const selected = point.item.publicId === selectedPoint?.item.publicId;
-                  // One source for the mandatory set, shared with the density
-                  // rule above. It used to be recomputed here from the same
-                  // three conditions, so a change to either copy could leave
-                  // the cluster captions describing a different rail from the
-                  // one being drawn.
-                  const persistentLabel = selected || mandatoryLabels.has(index);
-                  const extraLabel = !persistentLabel && extraLabels.has(index);
-                  const nudge = labelNudges.get(index) ?? 0;
-                  const pointStyle: PositionStyle = {
-                    "--timeline-position": `${point.position}%`,
-                    "--timeline-position-stack": `${point.stackPosition}%`,
-                    "--timeline-point-delay": `${Math.min(0.08 + index * 0.012, 0.24)}s`,
-                    ...(nudge === 0 ? {} : { "--timeline-label-shift": String(nudge) }),
-                  };
-                  const timing = point.item.date ? formatTimelineDate(point.item.date, "long") : NO_TIMING_LABEL;
-
-                  return (
-                    <li
-                      className={styles.milestone}
-                      data-state={point.state}
-                      data-selected={selected ? "true" : undefined}
-                      data-labelled={persistentLabel ? "true" : extraLabel ? "extra" : "false"}
-                      data-label-shifted={nudge === 0 ? undefined : "true"}
-                      data-side={index % 2 === 0 ? "above" : "below"}
-                      data-edge={index === 0 ? "start" : index === model.points.length - 1 ? "end" : undefined}
-                      key={point.item.publicId}
-                      style={pointStyle}
-                    >
-                      <button
-                        className={styles.milestoneButton}
-                        type="button"
-                        tabIndex={index === boundedFocusIndex ? 0 : -1}
-                        aria-current={point.isNext ? "step" : undefined}
-                        aria-pressed={selected}
-                        aria-expanded={selected ? detailOpen : false}
-                        aria-controls={selected ? detailId : undefined}
-                        aria-label={`${point.item.title}. ${timelinePointStatus(point)}. ${timing}. ${milestonePlace(index + 1, model.points.length)}.`}
-                        ref={(node) => { pointRefs.current[index] = node; }}
-                        onFocus={() => setFocusIndex(index)}
-                        onKeyDown={(event) => handleKeyDown(event, index)}
-                        onClick={() => {
-                          setFocusIndex(index);
-                          setSelectedId(point.item.publicId);
-                          setDetailOpen(true);
-                          revealDetail();
-                        }}
-                      >
-                        <span className={styles.point} aria-hidden="true" />
-                        <MilestoneLabel point={point} />
-                      </button>
-                    </li>
-                  );
-                })}
-              </ol>
-            ) : (
-              <p className={styles.empty}>
-                <strong>No milestones shared yet.</strong>
-                <span>Milestones will appear here when they are ready.</span>
-              </p>
-            )}
-
-            {caps.start ? (
-              <span className={styles.startCap} aria-hidden="true">{caps.start}</span>
-            ) : null}
-            {caps.finish ? (
-              <span className={styles.finishCap} aria-hidden="true">{caps.finish}</span>
-            ) : null}
-          </div>
+      <h2 className={styles.finaleTitle} id={`${id}-title`}>The {day.label.toLowerCase()}</h2>
+      {line ? <p className={styles.finaleLine}>{line}</p> : null}
+      {onShare ? (
+        <div className={styles.finaleActions}>
+          <ShareButton onShare={onShare} shareLabel={shareLabel} className={styles.pillButton} />
         </div>
-      </div>
-
-      {/* An ordered rail looks exactly like a time axis and is not one, so it
-          says so where the viewer is looking. A dated rail already declares
-          itself with month names and the Today dash and stays quiet. */}
-      {axisNote ? <p className={styles.axisNote}>{axisNote}</p> : null}
-
-      {/* Paper has no hover, and it used to be handed a second copy of every
-          milestone as a ruled index under the rail — the same plan rendered
-          twice into one document. The list above is now the only one: print
-          stands it up as the stacked rail, where every label is visible and
-          nothing collides, so the keepsake keeps its content without the
-          artifact saying anything twice. */}
-
-      <p className={styles.screenReaderOnly} aria-live="polite" aria-atomic="true">
-        {detailOpen && selectedPoint
-          ? `${selectedPoint.item.title} selected. ${timelinePointStatus(selectedPoint)}.`
-          : "Milestone detail closed."}
-      </p>
-      {detailOpen && selectedPoint ? (
-        <MilestoneDetail
-          sectionRef={detailRef}
-          point={selectedPoint}
-          ordinal={model.points.findIndex(
-            (candidate) => candidate.item.publicId === selectedPoint.item.publicId,
-          ) + 1}
-          total={model.points.length}
-          today={timeline.today}
-          detailId={detailId}
-          titleId={detailTitleId}
-        />
       ) : null}
     </section>
   );
@@ -1239,18 +701,14 @@ export function TimelineArtifact({
 }: TimelineArtifactProps) {
   const reactId = useId().replaceAll(":", "");
   const model = useMemo(() => buildTimelineArtifactModel(timeline), [timeline]);
-  const presentation = timelinePresentation(model);
-  // The artifact's own nouns, read from the module's one vocabulary rather
-  // than decided here. The kicker, the section heading and the purpose line
-  // used to be two local functions and a hard-coded heading, and only the
-  // heading was not audience-aware — so a wedding page introduced itself as a
-  // wedding timeline and then announced "Project timeline" to a screen reader
-  // six lines later.
   const nouns = timelineNouns(timeline.audienceKind);
+  const sectionId = `${reactId}-timeline`;
+  const finaleId = `${reactId}-day`;
+  // The day itself closes the page as the finale, so when it is also published
+  // as a milestone it is not listed a second time among the rows.
+  const last = model.points[model.points.length - 1];
+  const destinationId = timeline.primaryDate && last?.item.date === timeline.primaryDate.date ? last.item.publicId : null;
 
-  // The client-navigation half of the entrance guard. Runs before paint, so a
-  // returning viewer never sees a frame of the choreography they already
-  // watched. See markEntranceSeen.
   const artifactRef = useRef<HTMLElement | null>(null);
   useLayoutEffect(() => markEntranceSeen(artifactRef.current), []);
 
@@ -1258,10 +716,8 @@ export function TimelineArtifact({
     <article
       ref={artifactRef}
       // ENTRANCE_GUARD writes data-entrance and data-entrance-guard onto this
-      // element before hydration, so React finds attributes it did not render
-      // and reports a mismatch. That is the sanctioned use of this escape
-      // hatch: the attributes are deliberately set by a pre-hydration script,
-      // and CSS reads them, so they cannot move to a property.
+      // element before hydration; CSS reads them, so they cannot move to a
+      // property, and React is told not to report the difference.
       suppressHydrationWarning
       className={[styles.artifact, className].filter(Boolean).join(" ")}
       data-timeline-artifact
@@ -1271,54 +727,31 @@ export function TimelineArtifact({
       data-axis={model.axis.mode}
       data-title-length={artifactTitleLength(timeline.label)}
     >
-      {/* Sets data-entrance="seen" on this article when the tab has already
-          watched the entrance once. See ENTRANCE_GUARD above. */}
       <script dangerouslySetInnerHTML={{ __html: ENTRANCE_GUARD }} />
-      <a className={styles.skipLink} href={`#${reactId}-timeline`}>Skip to timeline</a>
+      <a className={styles.skipLink} href={`#${sectionId}`}>Skip to timeline</a>
       <header className={styles.header}>
-        {showProductHeader ? (
-          <ProductIdentity
-            timeline={timeline}
-            onShare={onShare}
-            shareLabel={shareLabel}
-          />
-        ) : null}
-        <div className={styles.titleRow}>
-          <div className={styles.headerCopy}>
-            <p className={styles.heroKicker}>{nouns.kicker}</p>
-            <h1>{timeline.label}</h1>
-            <p className={styles.purpose}>{nouns.purpose}</p>
-          </div>
-          <TimeLens timeline={timeline} model={model} />
-        </div>
+        {showProductHeader ? <ProductIdentity timeline={timeline} onShare={onShare} shareLabel={shareLabel} /> : null}
+        <Hero timeline={timeline} model={model} nouns={nouns} />
       </header>
 
-      {presentation === "sequence-card" ? (
-        <SequenceState heading={nouns.heading} model={model} idPrefix={reactId} />
-      ) : (
-        <Journey
-          heading={nouns.heading}
-          timeline={timeline}
-          model={model}
-          idPrefix={reactId}
-        />
-      )}
+      <Strip timeline={timeline} model={model} finaleId={finaleId} />
+      <Rows heading={nouns.heading} timeline={timeline} model={model} sectionId={sectionId} destinationId={destinationId} />
+      {/* One Share per page: the header carries it when it shows; the finale
+          offers it only where there is no header (the embedded frames). */}
+      <Finale timeline={timeline} id={finaleId} onShare={showProductHeader ? undefined : onShare} shareLabel={shareLabel} />
       <PlanningDecisions timeline={timeline} model={model} />
 
       <footer className={styles.footer}>
         <span>Updated {formatTimelineDate(timeline.lastUpdatedAt.slice(0, 10))}</span>
-        {/* The loop's last step is a door, not a full stop: the artifact is
-            the product's own advertisement, and the attribution walks. The
-            /s tree already sends no-referrer, so the bearer URL stays put. */}
-        <a
-          className={styles.footerLink}
-          href={`${PRODUCT_MARKETING_URLS.timeline}?src=shared-timeline`}
-          target="_blank"
-          rel="noopener"
-        >
-          Made with Signal Timeline
+        {/* The artifact is the product's own advertisement, and the
+            attribution walks. The /s tree already sends no-referrer, so the
+            bearer URL stays put. */}
+        <a className={styles.footerLink} href={`${PRODUCT_MARKETING_URLS.timeline}?src=shared-timeline`} target="_blank" rel="noopener">
+          <span className={styles.footerMark} aria-hidden="true">timeline<span /></span>
+          Made with Signal Timeline · Make one for your day
         </a>
       </footer>
     </article>
   );
 }
+
