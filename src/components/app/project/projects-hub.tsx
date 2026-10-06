@@ -31,7 +31,7 @@ import { createProjectAction } from "@/server/actions/planning";
 import type { ProjectOverviewData } from "@/server/actions/project-overview";
 import { monogramOf, type ChooserRow } from "@/lib/projects/project-chooser";
 import { parseProjectId, type ProjectId } from "@/lib/projects/project-ref";
-import { buildConsole, type ConsoleFilter, type ConsoleRow, type ConsoleView } from "@/lib/projects/project-console";
+import { buildConsole, consoleGroups, type ConsoleFilter, type ConsoleRow, type ConsoleView } from "@/lib/projects/project-console";
 import { buildProjectUrl, withActiveProject } from "@/lib/projects/project-url";
 import {
   formatProjectDate,
@@ -46,6 +46,8 @@ import {
   type ProjectHubCard,
 } from "@/lib/projects/project-hub";
 import { ProjectConsole, type ConsoleNudgeState, type ConsoleSurface } from "./project-console";
+import { ProjectPeek } from "./project-peek";
+import { ProjectList } from "./project-list";
 import { ProjectViewSwitch } from "./project-view-switch";
 import { ProjectOverview, type ProjectDeclaredState, type ProjectOverviewLinks } from "./project-overview";
 import { StatusPill } from "./project-status-pill";
@@ -126,8 +128,8 @@ export function ProjectsHub({
 
 function writeViewToAddress(view: ConsoleView) {
   const url = new URL(window.location.href);
-  if (view === "cards") url.searchParams.set("view", "cards");
-  else url.searchParams.delete("view");
+  if (view === "console") url.searchParams.delete("view");
+  else url.searchParams.set("view", view);
   window.history.replaceState(window.history.state, "", url);
 }
 
@@ -154,6 +156,8 @@ export function ProjectsIndex({
   // Bumped on every "New project" press so an open form takes focus again.
   const [createRequest, setCreateRequest] = useState(0);
   const [nudgeState, setNudgeState] = useState<Record<string, ConsoleNudgeState>>({});
+  // The Project shown as a record, with the list's order for previous and next.
+  const [peek, setPeek] = useState<{ id: string; order: readonly string[] } | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   // Mount-stable "today" for when the server could not say; the React
   // Compiler forbids impure calls in render.
@@ -238,6 +242,35 @@ export function ProjectsIndex({
     if (!row || !row.selectable) return;
     activeProject.selectProject(row.project, { surface });
   }
+
+  const peekRow = peek ? model.rows.find((row) => row.id === peek.id) ?? null : null;
+  const peekCard = peek ? cards.find((card) => card.row.id === peek.id) ?? null : null;
+  const peekAt = peek ? peek.order.indexOf(peek.id) : -1;
+  const stepPeek = (direction: "prev" | "next") => {
+    if (!peek || peekAt === -1) return;
+    const next = peek.order[Math.max(0, Math.min(peek.order.length - 1, peekAt + (direction === "prev" ? -1 : 1)))];
+    if (next && next !== peek.id) setPeek({ id: next, order: peek.order });
+  };
+
+  const peekPanel =
+    peek && peekRow ? (
+      <ProjectPeek
+        row={peekRow}
+        stats={peekRow.id === data.workspaceId ? overviewStats(data, declared) : (peekCard?.stats ?? null)}
+        facts={facts?.byProject[peekRow.id] ?? null}
+        today={today}
+        position={peek.order.length > 1 && peekAt >= 0 ? `${peekAt + 1} of ${peek.order.length}` : null}
+        isOpenProject={peekRow.id === data.workspaceId}
+        hrefFor={(projectId, surface) => buildProjectUrl({ surface }, projectId as ProjectId)}
+        filesHref={withActiveProject("/app/files", peekRow.id as ProjectId)}
+        onStep={stepPeek}
+        onGo={(projectId, surface) => {
+          setPeek(null);
+          go(projectId, surface);
+        }}
+        onClose={() => setPeek(null)}
+      />
+    ) : null;
 
   async function nudge(row: ConsoleRow) {
     if (!row.nudge || nudgeState[row.id]) return;
@@ -374,9 +407,30 @@ export function ProjectsIndex({
                 taskHref={(projectId, taskId) => withActiveProject(`/app/tasks?task=${encodeURIComponent(taskId)}`, projectId as ProjectId)}
                 weekHref={weekHref}
                 onGo={go}
+                onPeek={(id, order) => setPeek({ id, order })}
                 onNudge={isDemoMode() ? undefined : nudge}
                 nudgeState={nudgeState}
               />
+              {peekPanel}
+            </>
+          ) : view === "list" ? (
+            <>
+              {creating ? (
+                <div className={styles.newPanel}>
+                  <NewProjectForm focusRequest={createRequest} onClose={closeCreating} activeProject={activeProject} />
+                </div>
+              ) : null}
+              <h2 className="sr-only">All projects</h2>
+              <ProjectList
+                groups={consoleGroups(model, "all", query)}
+                statsFor={(projectId) => (projectId === data.workspaceId ? overviewStats(data, declared) : (cards.find((card) => card.row.id === projectId)?.stats ?? null))}
+                today={today}
+                openProjectId={data.workspaceId}
+                hrefFor={(projectId, surface) => buildProjectUrl({ surface }, projectId as ProjectId)}
+                onGo={go}
+                onPeek={(id, order) => setPeek({ id, order })}
+              />
+              {peekPanel}
             </>
           ) : (
             <>

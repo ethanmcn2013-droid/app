@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.resources.drive-upload",
+  "source": "tasks/src/components/app/detail-panel/resources-section.tsx",
+  "materialityHash": "a9720b2f91abaa09",
+  "reviewedAt": "2026-10-06",
+  "reviewer": "Implementation review under delegated execution (Claude, single writer on design/app-v3-record-panel). Founder review of the rendered result is pending",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-726247c74b8b55b3dc04228c-f4f512fd8f3adbd4.json",
+    "attestationSha256": "c52f76746ff17fa9822dcc252114bccfb302dad16c234ba256896a6de827ac67",
+    "runId": "tasks-playwright-726247c74b8b55b3dc04228c",
+    "canonicalEvidenceSha256": "726247c74b8b55b3dc04228c6b32c0722b21e55d6c738f932f024e4019f2c4d9",
+    "rawArtifactSha256": "f4f512fd8f3adbd493385ab05ff9270263cb4dc14226483ae6fd4c41ccc4c10c",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.surface.task-detail-panel",
+    "caseName": "populated task",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Re-attached on 6 October 2026 to the full green critical run of the record panel merged with main after #231 (132 of 132, experience/evidence-runs/tasks-playwright-726247c74b8b55b3dc04228c-f4f512fd8f3adbd4.json); #231 changed the fixture manifest and spec this receipt is bound to. The source and its hash are unchanged. The previous text follows. Commit 8cd7b26 adds one optional seeAll slot to the Files and links section head, which the record panel fills with a See all button that opens the full page; the full page and every other caller pass nothing and render as before. The task detail critical case, which renders this section and its Files and links heading, passes at all four sizes in a full green run, 132 of 132, on a demo build of 6b8b7a5.",
+  "decision": "Refresh the reviewed hash to the new source and attach this receipt. Other registry fields are unchanged."
+}

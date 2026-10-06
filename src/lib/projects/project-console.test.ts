@@ -23,6 +23,7 @@ const row = (id: string) => model.rows.find((r) => r.id === id)!;
 
 test("the address names a view and a tab, and anything else is the default", () => {
   assert.equal(parseConsoleView("cards"), "cards");
+  assert.equal(parseConsoleView("list"), "list");
   assert.equal(parseConsoleView("console"), "console");
   assert.equal(parseConsoleView(undefined), "console");
   assert.equal(parseConsoleView(["cards"]), "console");
