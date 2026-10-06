@@ -17,6 +17,7 @@ import { conversationWriteFencesClear } from "@/server/conversations/write-fence
 import { projectCapabilities, resolveProjectRole } from "@/server/projects/capabilities";
 import { readCanonicalTasks } from "@/server/db/task-read";
 import * as schema from "@/server/db/schema";
+import { opLog } from "@/server/operational-log";
 import { createPingCommandService, type PingExecutionContext } from "./command-service";
 
 export type PingTypedActor = Readonly<{ actorId: string; sessionId: string }>;
@@ -95,19 +96,22 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
   now?: () => number; uuid?: () => string; token?: () => string;
   service?: ReturnType<typeof createPingCommandService>;
   voice?: PingVoiceProviders; monotonic?: () => number;
+  isNewWorkAllowed?: () => boolean;
 } = {}) {
   const now = options.now ?? Date.now, uuid = options.uuid ?? randomUUID;
   const monotonic = options.monotonic ?? (() => Math.floor(performance.now()));
   const service = options.service ?? createPingCommandService(adapter);
   const lanes = new Map<string, Lane>(); const preparing = new Set<string>();
   const retired = new Set<string>();
+  let observedPaused = false, pauseEpoch = {};
   const key = (actor: PingTypedActor) => stable(actor);
   function prepared(lane: Lane): PingTypedResponse {
     return { ok: true, action: "prepare", ...identity(lane), token: lane.token, expiresAt: lane.expiresAt, proposal: lane.proposal! };
   }
   async function reconcile(lane: Lane, action: "execute" | "receipt" | "cancel"): Promise<PingTypedResponse> {
     if (lane.executing || lane.reading) return { ok: true, action, ...identity(lane), knowledge: "unresolved", detail: "pending" };
-    if (lane.reads >= 24 || now() - lane.lastReadAt < 500) return fail("busy");
+    if (lane.reads >= 24) { operationWarning("receipt", "capacity"); return fail("busy"); }
+    if (now() - lane.lastReadAt < 500) return fail("busy");
     lane.reading = true; lane.reads++; lane.lastReadAt = now(); const started = now();
     try {
       const result = await service.getReceiptForCommand(lane.original!);
@@ -126,6 +130,23 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
     voice.runner.dispose(); voice.waiting?.(); voice.waiting = null;
   }
   function cancelLane(lane: Lane) { lane.cancelled = true; closeVoice(lane); }
+  function operationWarning(stage: "control" | "prepare" | "begin" | "audio" | "capture" | "send" | "interpret" | "execute" | "finish" | "receipt" | "refresh",
+    outcome: "paused" | "capacity" | "failed") {
+    // Closed labels only. The general logger cannot detect planning content in scalar strings.
+    try { opLog("warn", "ping", "Ping operational outcome", { version: "ping.operations.v1", stage, outcome }); }
+    catch { /* Diagnostics cannot authorize, replay or prevent original recovery. */ }
+  }
+  function newWorkAllowed(stage: Parameters<typeof operationWarning>[0]): boolean {
+    let allowed = options.isNewWorkAllowed === undefined;
+    try { if (options.isNewWorkAllowed !== undefined) allowed = options.isNewWorkAllowed() === true; } catch { allowed = false; }
+    if (!allowed) {
+      if (!observedPaused) pauseEpoch = {};
+      observedPaused = true;
+      for (const lane of lanes.values()) if (!lane.invoked) cancelLane(lane);
+      operationWarning(stage, "paused");
+    } else observedPaused = false;
+    return allowed;
+  }
   function live(lane: Lane) { return lanes.get(lane.token) === lane && !lane.cancelled; }
   function voiceDeadline(lane: Lane) {
     return lane.voice?.finishedAt == null ? now() < lane.expiresAt : monotonic() - lane.voice.finishedAt < 10_000;
@@ -141,13 +162,14 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
   async function finishVoice(lane: Lane, authenticate: () => Promise<PingTypedActor | null>): Promise<PingVoiceResponse> {
     const voice = lane.voice!;
     try {
+      if (!newWorkAllowed("finish") || !live(lane)) { cancelLane(lane); return voiceResult(lane, "finish"); }
       if (!voice.runner.requestFinish()) { cancelLane(lane); return voiceResult(lane, "finish"); }
       voice.runner.acceptCut({ type: "cut", generationId: lane.generationId, connectionEpoch: lane.capture.connectionEpoch,
         throughFrame: voice.frames.length, totalSamples: voice.totalSamples });
       while (live(lane) && voiceDeadline(lane) && !["ready", "closed", "unavailable"].includes(voice.runner.getSnapshot().phase)) {
         await new Promise<void>(resolve => { voice.waiting = resolve; }); voice.waiting = null;
       }
-      if (!live(lane) || !voiceDeadline(lane)) { cancelLane(lane); return voiceResult(lane, "finish"); }
+      if (!voiceDeadline(lane) || !newWorkAllowed("finish") || !live(lane)) { cancelLane(lane); return voiceResult(lane, "finish"); }
       const proposal = voice.runner.getProposal();
       if (!proposal || proposal.outcome !== "plan" || (proposal.operation.kind === "create_placeholders" && lane.capture.selectedTaskIds.length !== 0)) {
         cancelLane(lane); return voiceResult(lane, "finish");
@@ -170,14 +192,14 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
         deadline = setTimeout(() => { cancelLane(lane); resolve(false); }, Math.max(0, 10_000 - (monotonic() - voice.finishedAt!)));
       })]); } finally { if (deadline) clearTimeout(deadline); }
       // Final synchronous latch: cancellation during either authentication await cannot revive a lane.
-      if (!allowed || !live(lane) || lane.reading || !voiceDeadline(lane)) { cancelLane(lane); return voiceResult(lane, "finish"); }
+      if (!allowed || lane.reading || !voiceDeadline(lane) || !newWorkAllowed("finish") || !live(lane)) { cancelLane(lane); return voiceResult(lane, "finish"); }
       lane.invoked = true; lane.executing = true;
       try {
         const result = await service.execute(lane.original);
-        if (!result.ok) return { ok: true, action: "finish", ...identity(lane), knowledge: "unresolved", detail: "failed" };
+        if (!result.ok) { operationWarning("finish", "failed"); return { ok: true, action: "finish", ...identity(lane), knowledge: "unresolved", detail: "failed" }; }
         lane.receipt = result.receipt;
         return { ok: true, action: "finish", ...identity(lane), knowledge: "committed", receipt: result.receipt };
-      } catch { return { ok: true, action: "finish", ...identity(lane), knowledge: "unresolved", detail: "failed" }; }
+      } catch { operationWarning("finish", "failed"); return { ok: true, action: "finish", ...identity(lane), knowledge: "unresolved", detail: "failed" }; }
       finally { lane.executing = false; }
     } catch { cancelLane(lane); return voiceResult(lane, "finish"); }
   }
@@ -186,7 +208,10 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
     if (!validPingId(actor.actorId) || !validPingId(actor.sessionId) || !adapter.available ||
       adapter.boundary !== "local-serialized-connection" || !options.voice) return { ok: false, code: "unavailable" };
     if (!dataRecord(value) || value.version !== PING_VOICE_VERSION) return { ok: false, code: "invalid_input" };
+    const admission = newWorkAllowed("control");
     if (value.action === "begin") {
+      if (!admission) return { ok: false, code: "unavailable" };
+      const admittedEpoch = pauseEpoch;
       if (!exactKeys(value, ["version", "action", "requestId", "projectId", "selectedTaskIds", "snapshots"]) ||
         !normalizePingCommandId(value.requestId) || !validPingId(value.projectId) || !jsonArray(value.selectedTaskIds, 10) ||
         !value.selectedTaskIds.every(validPingId) || new Set(value.selectedTaskIds).size !== value.selectedTaskIds.length ||
@@ -202,7 +227,7 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
           if (lane.reading || lane.executing) return { ok: false, code: "busy" };
           lane.reading = true;
           try { const current = await authenticate();
-            if (!current || key(current) !== key(actor) || !await scope(lane) || !live(lane) || !voiceDeadline(lane))
+            if (!current || key(current) !== key(actor) || !await scope(lane) || !voiceDeadline(lane) || !newWorkAllowed("begin") || !live(lane))
               return { ok: false, code: "unavailable" }; }
           finally { lane.reading = false; }
           return { ok: true, action: "begin", ...identity(lane), token: lane.token,
@@ -240,6 +265,7 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
           return { ...tentative, snapshots };
         });
         if (!capture) return { ok: false, code: "stale_capture" };
+        if (!newWorkAllowed("begin") || admittedEpoch !== pauseEpoch) return { ok: false, code: "unavailable" };
         const current = await authenticate();
         if (!current || key(current) !== key(actor) || now() - Date.parse(capture.referenceInstant) >= 45_000 ||
           !await adapter.transaction("read", tx => authorized(tx, actor.actorId, capture.projectId, true)))
@@ -248,13 +274,20 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
         const token = options.token?.() ?? randomBytes(24).toString("base64url");
         if (lanes.has(token)) return { ok: false, code: "temporarily_unavailable" };
         let lane: Lane | null = null;
-        const runner = createPingVoiceSession({ capture, transport: options.voice.createTransport({
-          generationId: capture.generationId, connectionEpoch: capture.connectionEpoch }), now: monotonic,
-          isContextCurrent: () => lane === null ? now() - Date.parse(capture.referenceInstant) < 45_000 : live(lane), interpret: options.voice.interpret,
+        if (!newWorkAllowed("begin") || admittedEpoch !== pauseEpoch) return { ok: false, code: "unavailable" };
+        const transport = options.voice.createTransport({ generationId: capture.generationId, connectionEpoch: capture.connectionEpoch });
+        if (!newWorkAllowed("begin") || admittedEpoch !== pauseEpoch) { try { transport.close(); } catch { /* No content in diagnostics. */ } return { ok: false, code: "unavailable" }; }
+        const runner = createPingVoiceSession({ capture, transport: {
+          subscribe: (listener, disconnected) => transport.subscribe(listener, disconnected), queuedBytes: () => transport.queuedBytes(), close: () => transport.close(),
+          send: text => { if (!newWorkAllowed("send") || (lane !== null && !live(lane))) throw Error("paused"); transport.send(text); },
+        }, now: monotonic,
+          isContextCurrent: () => newWorkAllowed("capture") && (lane === null ? now() - Date.parse(capture.referenceInstant) < 45_000 : live(lane)),
+          interpret: (input, signal) => { if (!newWorkAllowed("interpret") || !lane || !live(lane)) return Promise.reject(Error("paused"));
+            return options.voice!.interpret(input, signal); },
           onSnapshot: state => { if (!lane || lane.voice?.disposed) return;
             if (["closed", "unavailable"].includes(state.phase)) cancelLane(lane);
             lane.voice?.waiting?.(); } });
-        if (runner.getSnapshot().phase !== "capturing") { runner.dispose(); return { ok: false, code: "unavailable" }; }
+        if (runner.getSnapshot().phase !== "capturing" || !newWorkAllowed("begin") || admittedEpoch !== pauseEpoch) { runner.dispose(); return { ok: false, code: "unavailable" }; }
         lane = { token, actor: { ...actor }, requestId: request.requestId, requestHash: hash, generationId: capture.generationId,
           capture, original: null, proposal: null, expiresAt: Date.parse(capture.referenceInstant) + 45_000, invoked: false, cancelled: false, executing: false,
           reading: false, receipt: null, reads: 0, refreshes: 0, lastReadAt: -Infinity,
@@ -274,7 +307,7 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
     if (!lane?.voice || key(lane.actor) !== key(actor)) return { ok: false, code: "unavailable" };
     if (lane.generationId !== value.generationId) return { ok: false, code: "stale_capture" };
     const action = value.action as "finish" | "status" | "cancel";
-    if (action === "cancel") { cancelLane(lane); return voiceResult(lane, action); }
+    if (action === "cancel") { if (!lane.invoked) cancelLane(lane); return voiceResult(lane, action); }
     if (action === "status") {
       if (lane.invoked || lane.cancelled) return voiceResult(lane, action);
       if (lane.reading) return { ok: false, code: "busy" };
@@ -293,7 +326,7 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
     }
     if (value.throughFrame !== lane.voice.frames.length || value.totalSamples !== lane.voice.totalSamples || !lane.voice.totalSamples)
       return { ok: false, code: "invalid_input" };
-    if (!live(lane) || !voiceDeadline(lane)) { cancelLane(lane); return voiceResult(lane, action); }
+    if (!voiceDeadline(lane) || !newWorkAllowed("finish") || !live(lane)) { cancelLane(lane); return voiceResult(lane, action); }
     if (lane.reading) return { ok: false, code: "busy" };
     lane.voice.finish = { throughFrame: value.throughFrame as number, totalSamples: value.totalSamples as number };
     lane.voice.finishedAt = monotonic();
@@ -309,6 +342,7 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
       (envelope.ordinal as number) > PING_VOICE_MAX_FRAMES) return { ok: false, code: "invalid_input" };
     const lane = lanes.get(envelope.token), ordinal = envelope.ordinal as number;
     if (!lane?.voice || key(lane.actor) !== key(actor)) return { ok: false, code: "unavailable" };
+    if (!newWorkAllowed("audio")) return { ok: false, code: "unavailable" };
     if (lane.generationId !== envelope.generationId || !live(lane) || lane.voice.finish || !voiceDeadline(lane)) return { ok: false, code: "stale_capture" };
     if (lane.reading) return { ok: false, code: "busy" };
     // Reservation covers body assembly AND reauthentication, not merely synchronous feeding.
@@ -317,8 +351,8 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
     try {
       const bytes = await readBytes(uploadAbort.signal);
       const current = await authenticate();
-      if (!current || key(current) !== key(actor) || !live(lane) || lane.voice.finish || !voiceDeadline(lane) || !await scope(lane) ||
-        !live(lane) || lane.voice.finish || !voiceDeadline(lane)) { cancelLane(lane); return { ok: false, code: "stale_capture" }; }
+      if (!newWorkAllowed("audio") || !current || key(current) !== key(actor) || !live(lane) || lane.voice.finish || !voiceDeadline(lane) || !await scope(lane) ||
+        lane.voice.finish || !voiceDeadline(lane) || !newWorkAllowed("audio") || !live(lane)) { cancelLane(lane); return { ok: false, code: "stale_capture" }; }
       const append = encodePingPcmAppend(bytes); if (!append.ok) return { ok: false, code: "invalid_input" };
       const copy = (bytes as Uint8Array).slice(), hash = createHash("sha256").update(copy).digest("hex");
       const prior = lane.voice.frames[ordinal - 1];
@@ -339,7 +373,10 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
     if (!validPingId(actor.actorId) || !validPingId(actor.sessionId) || !adapter.available ||
       adapter.boundary !== "local-serialized-connection") return fail("unavailable");
     if (!dataRecord(value) || value.version !== PING_TYPED_VERSION || !validPingId(value.generationId)) return fail("invalid_input");
+    const admission = newWorkAllowed("control");
     if (value.action === "prepare") {
+      if (!admission) return fail("unavailable");
+      const admittedEpoch = pauseEpoch;
       if (!exactKeys(value, ["version", "action", "generationId", "requestId", "projectId", "selectedTaskIds", "snapshots", "text"]) ||
         !normalizePingCommandId(value.requestId) || !validPingId(value.projectId) || !jsonArray(value.selectedTaskIds, 10) ||
         !value.selectedTaskIds.every(validPingId) || new Set(value.selectedTaskIds).size !== value.selectedTaskIds.length ||
@@ -397,6 +434,7 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
           return normalized ? { ...normalized, snapshots } : null;
         });
         if (!capture) return fail("stale_capture");
+        if (!newWorkAllowed("prepare") || admittedEpoch !== pauseEpoch) return fail("unavailable");
         const bound = bindPingProposal(proposal, capture, { generationId: capture.generationId, inputItemId: capture.inputItemId, state: "complete" });
         if (!bound.ok) return fail("invalid_input");
         const token = options.token?.() ?? randomBytes(24).toString("base64url");
@@ -405,6 +443,7 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
           capture, original: { command: bound.command, context: bound.context }, proposal: bound.proposal as Lane["proposal"],
           expiresAt: now() + 10_000, invoked: false, cancelled: false, executing: false, reading: false,
           receipt: null, reads: 0, refreshes: 0, lastReadAt: -Infinity };
+        if (!newWorkAllowed("prepare") || admittedEpoch !== pauseEpoch) return fail("unavailable");
         lanes.set(token, lane); return prepared(lane);
       } catch { return fail("temporarily_unavailable"); } finally { preparing.delete(key(actor)); }
     }
@@ -415,8 +454,7 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
     if (!lane || key(lane.actor) !== key(actor)) return fail("unavailable");
     if (lane.generationId !== request.generationId) return fail("stale_capture");
     if (request.action === "cancel") {
-      cancelLane(lane);
-      if (!lane.invoked) return { ok: true, action: "cancel", ...identity(lane), knowledge: "not_invoked" };
+      if (!lane.invoked) { cancelLane(lane); return { ok: true, action: "cancel", ...identity(lane), knowledge: "not_invoked" }; }
       return reconcile(lane, "cancel");
     }
     // Voice Finish alone binds/invokes a pending voice lane; typed Execute cannot bypass it.
@@ -424,19 +462,23 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
     const original = lane.original;
     if (request.action === "execute") {
       if (lane.invoked) return reconcile(lane, "execute");
-      if (lane.cancelled || now() >= lane.expiresAt) return fail("stale_capture");
+      const expired = now() >= lane.expiresAt;
+      if (!newWorkAllowed("execute")) return fail("unavailable");
+      if (lane.invoked) return reconcile(lane, "execute"); // The trusted control can reenter this same original.
+      if (expired || lane.cancelled) return fail("stale_capture");
       lane.invoked = true; lane.executing = true;
       try {
         const result = await service.execute(lane.original);
-        if (!result.ok) return { ok: true, action: "execute", ...identity(lane), knowledge: "unresolved", detail: "failed" };
+        if (!result.ok) { operationWarning("execute", "failed"); return { ok: true, action: "execute", ...identity(lane), knowledge: "unresolved", detail: "failed" }; }
         lane.receipt = result.receipt;
         return { ok: true, action: "execute", ...identity(lane), knowledge: "committed", receipt: result.receipt };
-      } catch { return { ok: true, action: "execute", ...identity(lane), knowledge: "unresolved", detail: "failed" }; }
+      } catch { operationWarning("execute", "failed"); return { ok: true, action: "execute", ...identity(lane), knowledge: "unresolved", detail: "failed" }; }
       finally { lane.executing = false; }
     }
     if (!lane.invoked) return fail("invalid_input");
     if (request.action === "receipt") return reconcile(lane, "receipt");
-    if (lane.cancelled || lane.executing || lane.reading || lane.refreshes >= 3) return fail("busy");
+    if (lane.refreshes >= 3) { operationWarning("refresh", "capacity"); return fail("busy"); }
+    if (lane.cancelled || lane.executing || lane.reading) return fail("busy");
     lane.reading = true; lane.refreshes++; const started = now();
     try {
       const known = await service.getReceiptForCommand(lane.original);
