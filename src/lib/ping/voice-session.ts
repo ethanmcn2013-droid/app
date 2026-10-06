@@ -9,6 +9,10 @@ export type PingVoiceFrame = Readonly<{
   ordinal: number; sampleRate: 24000; channels: 1;
   sampleCount: number; samples: ArrayBuffer;
 }>;
+export type PingVoicePcmFrame = Readonly<{
+  type: "pcm_frame"; generationId: string; connectionEpoch: string;
+  ordinal: number; format: "pcm_s16le_mono_24000"; bytes: Uint8Array;
+}>;
 export type PingVoiceCut = Readonly<{
   type: "cut"; generationId: string; connectionEpoch: string;
   throughFrame: number; totalSamples: number;
@@ -44,6 +48,8 @@ export type PingVoiceSession = Readonly<{
   getCaptureTag: () => Readonly<{ generationId: string; connectionEpoch: string }> | null;
   getProposal: () => PingProposal | null;
 }>;
+/** Additive server-byte seam; the existing native hook facade contract stays unchanged. */
+export type PingVoicePcmSession = PingVoiceSession & Readonly<{ acceptPcmFrame: (value: unknown) => void }>;
 export type PingVoiceOptions = Readonly<{
   capture: unknown;
   transport: PingVoiceTransport | null;
@@ -54,7 +60,7 @@ export type PingVoiceOptions = Readonly<{
 }>;
 
 /** Offline injected runner. Captures/seals here are not session authentication. No executor seam. */
-export function createPingVoiceSession(options: PingVoiceOptions): PingVoiceSession {
+export function createPingVoiceSession(options: PingVoiceOptions): PingVoicePcmSession {
   let input: PingInputState | null = null;
   let phase: PingVoiceSnapshot["phase"] = "unavailable";
   let reason: string | null = "unavailable";
@@ -189,7 +195,18 @@ export function createPingVoiceSession(options: PingVoiceOptions): PingVoiceSess
       }
     }
   } catch { stop("invalid_runtime", true); }
-  const session: PingVoiceSession = {
+  const feedPcm = (bytes: Uint8Array, ordinal: number) => {
+    const append = encodePingPcmAppend(bytes);
+    if (!append.ok || cut || ordinal !== frames + 1 || samples + append.decodedBytes / 2 > PING_PCM_MAX_SAMPLES) { stop("invalid_pcm"); return; }
+    frames++; samples += append.decodedBytes / 2;
+    step({ type: "accept_audio", frameOrdinal: frames, decodedBytes: append.decodedBytes, format: "pcm_s16le_mono_24000" });
+    if (stopped) return;
+    step({ type: "encoded_audio", throughFrame: frames, decodedBytes: append.decodedBytes });
+    if (stopped) return;
+    encodedBytes += append.decodedBytes;
+    send(append.text, "append", append.decodedBytes);
+  };
+  const session: PingVoicePcmSession = {
     acceptFrame: (value) => enqueue(() => {
       if (!dataRecord(value) || !exactKeys(value, ["type", "generationId", "connectionEpoch", "ordinal", "sampleRate", "channels", "sampleCount", "samples"]) ||
         value.type !== "frame" || value.generationId !== tag?.generationId || value.connectionEpoch !== tag?.connectionEpoch || cut ||
@@ -201,14 +218,13 @@ export function createPingVoiceSession(options: PingVoiceOptions): PingVoiceSess
       if (length !== (value.sampleCount as number) * 4) { stop("invalid_frame"); return; }
       const encoded = encodePingPcm(new Float32Array((value.samples as ArrayBuffer).slice(0)));
       if (!encoded.ok) { stop("invalid_samples"); return; }
-      frames++; samples += encoded.samples;
-      step({ type: "accept_audio", frameOrdinal: frames, decodedBytes: encoded.bytes.length, format: "pcm_s16le_mono_24000" });
-      if (stopped) return;
-      step({ type: "encoded_audio", throughFrame: frames, decodedBytes: encoded.bytes.length });
-      if (stopped) return;
-      encodedBytes += encoded.bytes.length;
-      const append = encodePingPcmAppend(encoded.bytes);
-      if (!append.ok) stop("invalid_pcm"); else send(append.text, "append", append.decodedBytes);
+      feedPcm(encoded.bytes, value.ordinal as number);
+    }),
+    acceptPcmFrame: (value) => enqueue(() => {
+      if (!dataRecord(value) || !exactKeys(value, ["type", "generationId", "connectionEpoch", "ordinal", "format", "bytes"]) ||
+        value.type !== "pcm_frame" || value.generationId !== tag?.generationId || value.connectionEpoch !== tag?.connectionEpoch ||
+        value.format !== "pcm_s16le_mono_24000" || value.ordinal !== frames + 1 || !encodePingPcmAppend(value.bytes).ok) { stop("invalid_pcm"); return; }
+      feedPcm((value.bytes as Uint8Array).slice(), value.ordinal as number);
     }),
     requestFinish: () => {
       if (!guard() || finishedAt !== null || phase !== "capturing") return false;
