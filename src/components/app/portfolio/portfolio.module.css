@@ -486,13 +486,19 @@
   outline-offset: -2px;
 }
 
+/* The cell is the whole name column, filled, above the today line: scrolled
+   forward, the line used to show through the group rows beside the label. */
 .groupCell {
   position: sticky;
   left: 0;
+  z-index: 4;
   display: flex;
   align-items: center;
-  width: max-content;
+  width: var(--tl-left-w);
   height: 100%;
+  background: var(--v3-sunken);
+  /* The row's own bottom border sits under the today line; this redraws it over the line. */
+  box-shadow: 0 1px 0 var(--v3-border), 0 1px 0 var(--v3-sunken);
 }
 
 .groupToggle {
@@ -568,6 +574,8 @@
   padding: 0 6px 0 16px;
   border-right: 1px solid var(--v3-border);
   background: var(--v3-surface);
+  /* As on the group cell: the row border, redrawn above the today line. */
+  box-shadow: 0 1px 0 var(--v3-border), 0 1px 0 var(--v3-surface);
 }
 
 .row[data-hovered] .nameCell,
@@ -576,7 +584,7 @@
 }
 
 .row[data-open-now] .nameCell {
-  box-shadow: inset 2px 0 0 var(--v3-accent);
+  box-shadow: inset 2px 0 0 var(--v3-accent), 0 1px 0 var(--v3-border), 0 1px 0 var(--v3-surface);
 }
 
 .tile {

@@ -115,7 +115,7 @@ function Composer({ defaults, onClose }: { defaults: NewTaskDefaults; onClose: (
   const [place, setPlace] = useState<{ left: number; top: number } | null>(null);
   const [phone, setPhone] = useState(false);
 
-  // "!high" and "@orla" first, then dates, repeats and #labels on the rest.
+  // "!high" and "@orla" first, then dates, repeats and #tags on the rest.
   const quick = useMemo(
     () => parseQuickTokens(title, members, { priority: ignored.priority, people: ignored.people }),
     [ignored.people, ignored.priority, members, title],
@@ -277,7 +277,7 @@ function Composer({ defaults, onClose }: { defaults: NewTaskDefaults; onClose: (
           {made > 0 ? (
             `${made} added. Keep going, or press Escape when you are done.`
           ) : (
-            <>Try “{pack.firstTaskExample}”. Type a day like Friday, @name for a person, !high for priority or #label, and they are picked up as you type.</>
+            <>Try “{pack.firstTaskExample}”. Type a day like Friday, @name for a person, !high for priority or #tag, and they are picked up as you type.</>
           )}
         </p>
 

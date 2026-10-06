@@ -250,7 +250,7 @@ export const SEGMENTS: Record<PrimaryUseCase, SegmentConfig> = {
   "internal-team": {
     id: "internal-team",
     label: "Internal team",
-    description: "Projects, handoffs, visibility, without sprint theatre",
+    description: "Projects, handoffs, visibility, without the ceremony",
     accent: "var(--aud-marketing)",
     domainId: "marketing",
     templateId: null,

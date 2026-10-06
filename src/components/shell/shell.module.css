@@ -951,6 +951,18 @@
   box-shadow: 0 0 0 2px var(--v3-chrome);
 }
 .shell[data-collapsed] .item[data-current-project] { box-shadow: none; }
+/* A full rail (five Projects, All projects, Build and Chat) is fifteen rows
+   and four dividers. At 36px that ran 29px past a 900px window, so the Chat
+   row sat half under the footer. On a window that short the rows are 34px
+   and the dividers a little closer, and the whole rail fits; a shorter
+   window still scrolls. */
+@media (min-width: 900px) and (max-height: 959px) {
+  .shell[data-collapsed] .item,
+  .shell[data-collapsed] .searchTrigger,
+  .shell[data-collapsed] .footerTools .iconButton { height: 34px; }
+  .shell[data-collapsed] .section + .section,
+  .shell[data-collapsed] .section[data-folded] + .section { margin-top: 8px; padding-top: 8px; }
+}
 /* The drawer is the full sidebar with a little more room for a thumb. */
 @media (max-width: 899px) {
   .item { height: 36px; }

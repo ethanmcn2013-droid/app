@@ -21,6 +21,17 @@ export type TagDef = {
 
 /** Normalised identity key for a tag name (case- and whitespace-insensitive). */
 /**
+ * A tag whose reading name is known and cannot be worked out from its slug.
+ * Review fixtures use the project slug as the stored tag identity. Its
+ * customer-facing name comes from the canonical project registry, where an
+ * ampersand is part of the name rather than punctuation to infer generally.
+ * Every surface that names a tag asks here first, so one tag has one spelling.
+ */
+export function knownTagName(name: string): string | null {
+  return name.trim().toLowerCase() === "mara-finn" ? "Mara & Finn" : null;
+}
+
+/**
  * The label a person reads for a tag.
  *
  * Tags are stored the way they were typed, which in practice is often a
@@ -30,10 +41,8 @@ export type TagDef = {
  * write keeps using the stored name. Pure presentation; never persisted.
  */
 export function tagDisplayName(name: string): string {
-  // Review fixtures use the project slug as the stored tag identity. Its
-  // customer-facing name comes from the canonical project registry, where an
-  // ampersand is part of the name rather than punctuation to infer generally.
-  if (name.trim().toLowerCase() === "mara-finn") return "Mara & Finn";
+  const known = knownTagName(name);
+  if (known) return known;
   const spaced = name.replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
   if (!spaced) return name;
   return spaced

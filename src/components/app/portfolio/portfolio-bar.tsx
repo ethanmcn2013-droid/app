@@ -77,6 +77,7 @@ export const PortfolioBar = memo(function PortfolioBar({
   clipRight,
   viewLeft,
   viewRight,
+  labelEdge = 0,
   steppedId,
   onEdge,
 }: {
@@ -92,6 +93,8 @@ export const PortfolioBar = memo(function PortfolioBar({
   clipRight: boolean;
   viewLeft: number;
   viewRight: number;
+  /** The visible left edge, sent only while this bar's end is near it (else 0). */
+  labelEdge?: number;
   /** The milestone ←/→ stepped to, ringed. */
   steppedId?: string | null;
   /** An edge chevron was pressed: scroll to that end of the bar. */
@@ -184,6 +187,9 @@ export const PortfolioBar = memo(function PortfolioBar({
   const labelText = `${label.text}${row.milestoneOverflow > 0 ? ` · +${row.milestoneOverflow} more` : ""}`;
   const labelWidth = labelText.length * 6.9 + 4;
   // Outside the bar's end when it fits in the canvas, otherwise inside it.
+  // An end label half under the name column read as stray letters ("et" of
+  // "9 days past target"): it goes while the edge cuts through it.
+  const labelCut = labelEdge > 0 && labelLeft < labelEdge && labelLeft + labelWidth > labelEdge;
   const inside = labelText !== "" && labelLeft + labelWidth > width - 8 && barWidth > labelWidth + 24;
 
   // Edge chevrons: where the bar runs off the visible window, or off the
@@ -299,7 +305,7 @@ export const PortfolioBar = memo(function PortfolioBar({
           >
             {labelText}
           </span>
-        ) : (
+        ) : labelCut ? null : (
           <span className={styles.barLabel} data-tone={label.tone === "default" ? undefined : label.tone} style={{ left: labelLeft }}>
             {labelText}
             {row.statsKnown && !row.target && !row.sample && row.role !== "member" && row.status !== "paused" && row.status !== "complete" && row.overviewHref ? (

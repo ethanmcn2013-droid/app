@@ -944,7 +944,11 @@
   padding: 0;
 }
 .props[data-grid] .row { grid-template-columns: 140px minmax(0, 1fr); min-height: 36px; }
-.props[data-grid] .valueGroup { flex-wrap: nowrap; white-space: nowrap; }
+/* The date and its repeat chip share a line where they fit. Where they do not
+   (the two-column page at laptop width), the chip drops below: unwrapped, the
+   date itself was cut short ("Today, 16 J"). */
+.props[data-grid] .valueGroup { flex-wrap: wrap; white-space: nowrap; }
+.props[data-grid] .valueGroup > .value { flex: none; }
 .props[data-grid] .rowLabel { padding-left: 2px; font-size: 14px; color: var(--v3-text-2); }
 .props[data-grid] .value { font-size: 14px; min-height: 30px; }
 .props[data-grid] .empty { color: var(--v3-text-3); }
@@ -1127,6 +1131,24 @@
 @media (max-width: 1180px) {
   .props[data-grid] { grid-template-columns: minmax(0, 1fr); }
   .splitInner { padding: 22px 32px 48px; }
+}
+
+/* Below a small laptop the activity column (340px at least) left the task
+   itself no room: on a phone the full page showed Activity and nothing else.
+   There the two stack, the task first, in one scroll. */
+@media (max-width: 899px) {
+  .split[data-activity] { display: block; overflow-y: auto; }
+  .split[data-activity] .splitMain { overflow: visible; }
+  .split[data-activity] .activityColumn { overflow: visible; border-left: 0; border-top: 1px solid var(--v3-border); }
+  .split[data-activity] .activityColumn .activity { min-height: 0; }
+  .splitInner { padding: 16px 16px 32px; }
+  .props[data-grid] .row { grid-template-columns: 104px minmax(0, 1fr); }
+}
+/* The status in the page head gives way before it runs under the buttons. */
+@media (max-width: 767px) {
+  .page .crumbs { overflow: hidden; }
+  .page .crumbStatus { display: block; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .page .crumbStatus svg { display: inline-block; vertical-align: -1px; margin-right: 5px; }
 }
 
 .splitInner [data-sheet-subtasks][data-empty] input::placeholder { color: var(--v3-text); opacity: 1; }
