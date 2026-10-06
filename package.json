@@ -116,7 +116,8 @@
     "test:conversations": "node scripts/conversations/check.mjs",
     "test:ping-input": "node --import tsx --test src/lib/ping/input-protocol.test.ts src/lib/ping/input-independent.test.ts src/lib/ping/proposal.test.ts src/lib/ping/evaluation.test.ts",
     "test:ping": "tsc --project scripts/ping/tsconfig.json --noEmit --incremental false && node --import tsx --import ./src/test/register-server-only.mjs --test src/lib/ping/command.test.ts src/lib/ping/command-independent.test.ts src/server/ping/command-service.persistence.test.ts src/server/ping/command-independent.persistence.test.ts",
-    "test:ping-bridge": "node --import tsx --import ./src/test/register-server-only.mjs --test src/server/ping/bridge.persistence.test.ts"
+    "test:ping-bridge": "node --import tsx --import ./src/test/register-server-only.mjs --test src/server/ping/bridge.persistence.test.ts && pnpm test:ping-bridge-independent",
+    "test:ping-bridge-independent": "node --import tsx --import ./src/test/register-server-only.mjs --test src/server/ping/bridge-independent.persistence.test.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.75",
