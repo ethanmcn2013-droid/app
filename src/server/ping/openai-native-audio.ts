@@ -28,9 +28,9 @@ export type PingNativeAudioUsage = Readonly<{
   prompt_tokens: number;
   completion_tokens: number;
   total_tokens: number;
-  prompt_tokens_details?: Readonly<{ audio_tokens?: number; cached_tokens?: number }>;
-  completion_tokens_details?: Readonly<{ audio_tokens?: number; reasoning_tokens?: number;
-    accepted_prediction_tokens?: number; rejected_prediction_tokens?: number }>;
+  prompt_tokens_details?: Readonly<{ audio_tokens?: number | null; cached_tokens?: number | null }> | null;
+  completion_tokens_details?: Readonly<{ audio_tokens?: number | null; reasoning_tokens?: number | null;
+    accepted_prediction_tokens?: number | null; rejected_prediction_tokens?: number | null }> | null;
 }>;
 export type PingNativeAudioResult = Readonly<{ proposal: PingProposal; usage: PingNativeAudioUsage | null }>;
 export type PingOpenAiNativeAudioOptions = Readonly<{ model: string; apiKey: string;
@@ -50,9 +50,10 @@ function context(value: unknown): PingNativeAudioContext | null {
 function nativeCount(value: unknown): value is number {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 }
-function optionalDetails<T extends Record<string, number>>(value: unknown, allowed: readonly string[]): T | undefined | null {
-  if (!dataRecord(value) || !exactKeys(value, [], allowed) || Object.keys(value).some((key) => !nativeCount(value[key]))) return null;
-  return Object.keys(value).length ? freeze({ ...value }) as T : freeze({}) as T;
+function optionalDetails<T extends Record<string, number | null>>(value: unknown, allowed: readonly string[]): T | null | false {
+  if (value === null) return null;
+  if (!dataRecord(value) || !exactKeys(value, [], allowed) || Object.keys(value).some((key) => value[key] !== null && !nativeCount(value[key]))) return false;
+  return freeze({ ...value }) as T;
 }
 function usage(value: unknown): PingNativeAudioUsage | null | false {
   if (value === undefined || value === null) return null;
@@ -63,13 +64,13 @@ function usage(value: unknown): PingNativeAudioUsage | null | false {
   let prompt: PingNativeAudioUsage["prompt_tokens_details"], completion: PingNativeAudioUsage["completion_tokens_details"];
   if (Object.hasOwn(value, "prompt_tokens_details")) {
     const parsed = optionalDetails(value.prompt_tokens_details, ["audio_tokens", "cached_tokens"]);
-    if (parsed === null) return false;
+    if (parsed === false) return false;
     prompt = parsed;
   }
   if (Object.hasOwn(value, "completion_tokens_details")) {
     const parsed = optionalDetails(value.completion_tokens_details,
       ["audio_tokens", "reasoning_tokens", "accepted_prediction_tokens", "rejected_prediction_tokens"]);
-    if (parsed === null) return false;
+    if (parsed === false) return false;
     completion = parsed;
   }
   return freeze({ prompt_tokens: value.prompt_tokens, completion_tokens: value.completion_tokens, total_tokens: value.total_tokens,
@@ -127,7 +128,7 @@ function requestBody(model: string, contextValue: PingNativeAudioContext, wav: U
       { type: "text", text: JSON.stringify(contextValue) },
       { type: "input_audio", input_audio: { data: base64, format: "wav" } },
     ] },
-  ], modalities: ["text"], stream: false, store: false, max_completion_tokens: 2048,
+  ], modalities: ["text"], stream: false, store: false, n: 1, max_completion_tokens: 2048,
   tools: [{ type: "function", function: { name: "submit_ping_proposal", description: "Submit one complete bounded task proposal.",
     parameters: PING_RESPONSES_SCHEMA, strict: false } }],
   tool_choice: { type: "function", function: { name: "submit_ping_proposal" } }, parallel_tool_calls: false });

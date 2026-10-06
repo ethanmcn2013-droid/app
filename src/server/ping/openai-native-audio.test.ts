@@ -38,7 +38,7 @@ test("one native request projects only owned WAV and four context fields into th
     assert.equal(init.method, "POST"); assert.equal(init.redirect, "error"); assert.equal(init.cache, "no-store");
     assert.equal(init.credentials, "omit"); assert.deepEqual(init.headers, { "Content-Type": "application/json", Authorization: `Bearer ${KEY}` });
     const request = JSON.parse(init.body as string);
-    assert.equal(request.model, MODEL); assert.equal(request.stream, false); assert.equal(request.store, false);
+    assert.equal(request.model, MODEL); assert.equal(request.stream, false); assert.equal(request.store, false); assert.equal(request.n, 1);
     assert.deepEqual(request.modalities, ["text"]); assert.equal(request.max_completion_tokens, 2048);
     assert.deepEqual(request.tool_choice, { type: "function", function: { name: "submit_ping_proposal" } });
     assert.equal(request.parallel_tool_calls, false); assert.equal(request.tools.length, 1);
@@ -72,6 +72,8 @@ test("complete local proposals remain inert and actual scalar usage preserves op
     { selected: 2, proposal: selectedPlan, usage: { prompt_tokens: 15, completion_tokens: 10, total_tokens: 25,
       prompt_tokens_details: { audio_tokens: 0, cached_tokens: 2 },
       completion_tokens_details: { audio_tokens: 7, reasoning_tokens: 0, accepted_prediction_tokens: 0, rejected_prediction_tokens: 0 } } },
+    { selected: 2, proposal: selectedPlan, usage: { prompt_tokens: 5, completion_tokens: 2, total_tokens: 7,
+      prompt_tokens_details: null, completion_tokens_details: { audio_tokens: null, reasoning_tokens: 0 } } },
     { selected: 0, proposal: createPlan },
     { selected: 2, proposal: { version: "ping.proposal.v1", outcome: "refusal", reason: "unsupported" }, usage: null },
     { selected: 2, proposal: { version: "ping.proposal.v1", outcome: "clarification", reason: "ambiguous" } },
@@ -157,12 +159,11 @@ test("pre-abort, deadline and late physical settlement keep the single-flight re
   await assert.rejects(immediate(pcm(), context(), alreadyAborted.signal), { message: "ping_native_audio_cancelled" }); assert.equal(calls, 0);
 
   const pending = deferred<Response>(); let cancelled = 0;
-  const deadline = createPingOpenAiNativeAudio(options(async () => { calls++; return pending.promise; }, 40));
+  const deadline = createPingOpenAiNativeAudio(options(async () => { calls++; return calls === 1 ? pending.promise : answer(selectedPlan); }, 40));
   await assert.rejects(deadline(pcm(), context(), signal()), { message: "ping_native_audio_deadline" });
   await assert.rejects(deadline(pcm(), context(), signal()), { message: "ping_native_audio_busy" }); assert.equal(calls, 1);
   pending.resolve(new Response(new ReadableStream({ cancel() { cancelled++; } }), { headers: { "content-type": "application/json" } }));
   for (let i = 0; i < 20 && cancelled === 0; i++) await settle();
   assert.equal(cancelled, 1);
-  const retry = createPingOpenAiNativeAudio(options(async () => { calls++; return answer(selectedPlan); }));
-  assert.deepEqual((await retry(pcm(), context(), signal())).proposal, selectedPlan); assert.equal(calls, 2);
+  assert.deepEqual((await deadline(pcm(), context(), signal())).proposal, selectedPlan); assert.equal(calls, 2);
 });
