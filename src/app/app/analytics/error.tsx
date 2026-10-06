@@ -26,11 +26,13 @@ export default function AnalyticsError({
   return (
     <div className={`${styles.page} thin-scroll`}>
       <div className={styles.inner}>
-        <header className={styles.header}>
-          <div>
+        <header className={styles.head}>
+          <div className={styles.titleRow}>
             <h1 className={styles.title}>Analytics</h1>
-            <p className={styles.subtitle}>How work is moving in this project.</p>
           </div>
+          <p className={styles.summary}>
+            <span>How work is moving in this project.</span>
+          </p>
         </header>
         <section className={styles.empty} role="alert">
           <span className={styles.emptyIcon} aria-hidden="true">

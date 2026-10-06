@@ -14,27 +14,23 @@ export function HeaderSkeleton() {
   return (
     <div className={styles.header} aria-hidden="true">
       <div className={styles.row}>
-        <span className={styles.tile} />
-        <Bar w={140} />
+        <Bar w={72} h={26} r={6} />
+        <Bar w={168} h={28} r={999} />
         <span className={styles.spacer} />
         <span className={styles.faces}><span /><span /><span /></span>
-        <Bar w={64} h={32} r={8} />
-        <Bar w={112} h={32} r={8} />
+        <Bar w={68} h={28} r={8} />
+        <Bar w={32} h={32} r={8} />
       </div>
-      <Bar w={120} h={28} r={6} />
-      <div className={styles.row}>
-        <Bar w={96} />
-        <Bar w={120} h={6} r={999} />
-        <Bar w={92} h={28} r={999} />
-        <Bar w={104} h={28} r={999} />
-        <Bar w={116} h={28} r={999} />
+      <div className={styles.summaryRow}>
+        <span className={styles.ringMark} />
+        <Bar w={272} />
       </div>
-      <div className={styles.row}>
-        <Bar w={236} h={32} r={8} />
+      <div className={styles.toolRow}>
+        <Bar w={236} h={30} r={8} />
         <span className={styles.spacer} />
-        <Bar w={220} h={32} r={8} />
-        <Bar w={76} h={32} r={8} />
-        <Bar w={84} h={32} r={8} />
+        <Bar w={220} h={30} r={8} />
+        <Bar w={76} h={30} r={8} />
+        <Bar w={84} h={30} r={8} />
       </div>
     </div>
   );
@@ -96,33 +92,38 @@ export function ListSkeleton() {
   );
 }
 
-/** `bare` is the month alone, for inside the calendar view while its
+/** `bare` is the week alone, for inside the calendar view while its
  *  layout resolves: the real toolbar is already drawn above it. */
 export function CalendarSkeleton({ bare = false }: { bare?: boolean }) {
   return (
     <div className={bare ? styles.calendarBare : styles.calendar} aria-hidden="true">
       {bare ? null : (
         <div className={styles.row}>
-          <Bar w={140} h={24} r={6} />
+          <Bar w={172} h={26} r={6} />
+          <Bar w={120} />
           <span className={styles.spacer} />
-          <Bar w={200} h={32} r={8} />
+          <Bar w={212} h={30} r={8} />
         </div>
       )}
       <div className={bare ? undefined : styles.calendarBody}>
-        <div className={styles.month}>
-          {Array.from({ length: 35 }, (_, index) => (
+        <div className={styles.week}>
+          {Array.from({ length: 7 }, (_, index) => (
             <span key={index} className={styles.day}>
-              <Bar w={16} h={10} />
-              {index % 5 === 2 ? <Bar w="80%" h={16} r={4} /> : null}
+              <Bar w={56} h={20} r={5} />
+              <Bar w="100%" h={3} r={2} />
+              <Bar w={48} h={10} />
+              {index % 3 === 1 ? <Bar w="100%" h={44} r={8} /> : null}
+              {index % 4 === 0 ? <Bar w="100%" h={34} r={8} /> : null}
             </span>
           ))}
         </div>
         {bare ? null : (
           <div className={styles.pane}>
-            <Bar w={120} h={14} />
-            <Bar w="90%" h={32} r={8} />
-            <Bar w="90%" h={32} r={8} />
-            <Bar w="70%" h={32} r={8} />
+            <Bar w={72} h={16} />
+            <Bar w="100%" h={30} r={8} />
+            <Bar w="100%" h={52} r={10} />
+            <Bar w="100%" h={52} r={10} />
+            <Bar w="100%" h={52} r={10} />
           </div>
         )}
       </div>

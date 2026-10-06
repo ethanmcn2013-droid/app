@@ -1,12 +1,20 @@
 import "server-only";
 
-import { and, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { db } from "@/server/db";
-import { attachments, resources, tasks, users } from "@/server/db/schema";
+import { attachments, resources, tasks, users, workspaceMembers } from "@/server/db/schema";
 import { userDisplayName } from "@/lib/user-display-name";
 import { isDemoMode } from "@/lib/access-mode";
 import { demoTasks } from "@/server/demo/tasks-demo";
 import type { ProjectId } from "@/lib/projects/project-ref";
+import {
+  FILES_READ_LIMIT,
+  type ProjectFile,
+  type ProjectFileKind,
+  type ProjectFilesRead,
+} from "@/lib/projects/project-files";
+
+export type { ProjectFile, ProjectFileKind, ProjectFilesRead } from "@/lib/projects/project-files";
 
 /**
  * Files: every upload and link attached to a task in one Project.
@@ -17,26 +25,17 @@ import type { ProjectId } from "@/lib/projects/project-ref";
  * stale or missing workspace id can never surface in another Project's list.
  * Opening a file reuses the task panel's routes: uploads stream through the
  * authenticated `/api/attachments/[id]`, which re-checks access per request.
+ *
+ * The read is bounded: each of the two sources is read newest first up to
+ * `FILES_READ_LIMIT` rows, and past that the page says older files are not
+ * listed. Files on archived tasks are left out unless the caller asks for
+ * them, matching every board view. A person is named only while they are a
+ * current member of this Project; anyone else who added a file reads as a
+ * former member, as on Analytics. Read-only: nothing here writes.
  */
 
-export type ProjectFileKind = "document" | "image" | "sheet" | "slides" | "design" | "code" | "link" | "file";
-
-export type ProjectFile = Readonly<{
-  id: string;
-  title: string;
-  kind: ProjectFileKind;
-  storage: "signal" | "google_drive" | "link";
-  /** Where opening the file goes; null while an upload is still pending. */
-  href: string | null;
-  external: boolean;
-  mimeType: string | null;
-  sizeBytes: number | null;
-  taskId: string;
-  taskTitle: string;
-  addedByName: string | null;
-  /** Unix seconds. */
-  addedAt: number;
-}>;
+/** The review clock the sample files are dated against, in Unix seconds. */
+const DEMO_FILES_NOW_SECONDS = Math.floor(Date.parse("2026-07-16T08:00:00.000Z") / 1000);
 
 const DRIVE_HOSTS = new Set(["drive.google.com", "docs.google.com"]);
 
@@ -75,55 +74,93 @@ export function fileKindFor(input: { provider: string; mimeType: string | null; 
   return input.isLink ? "link" : "file";
 }
 
-export async function listProjectFiles(workspaceId: ProjectId): Promise<ProjectFile[]> {
-  if (isDemoMode()) return demoProjectFiles();
+export type ProjectFilesOptions = Readonly<{
+  /** Also list files that sit on archived tasks. Off unless asked. */
+  includeArchived?: boolean;
+}>;
 
-  const resourceRows = await db
-    .select({
-      id: resources.id,
-      kind: resources.kind,
-      provider: resources.provider,
-      title: resources.title,
-      url: resources.url,
-      mimeType: resources.mimeType,
-      sizeBytes: resources.sizeBytes,
-      addedByUserId: resources.addedByUserId,
-      addedAt: resources.addedAt,
-      accessState: resources.accessState,
-      storage: resources.storage,
-      taskId: resources.taskId,
-      taskTitle: tasks.title,
-    })
-    .from(resources)
-    .innerJoin(tasks, eq(tasks.id, resources.taskId))
-    .where(and(eq(resources.workspaceId, workspaceId), eq(tasks.workspaceId, workspaceId)));
+type Database = typeof db;
 
+export async function loadProjectFiles(workspaceId: ProjectId, options: ProjectFilesOptions = {}): Promise<ProjectFilesRead> {
+  const includesArchived = options.includeArchived === true;
+  if (isDemoMode()) return { files: demoProjectFiles(), truncated: false, includesArchived, readAt: DEMO_FILES_NOW_SECONDS };
+  return readProjectFilesWith(db, workspaceId, { includeArchived: includesArchived });
+}
+
+/** The read itself, over any database handle, so a test can prove its scope. */
+export async function readProjectFilesWith(
+  database: Database,
+  workspaceId: string,
+  options: ProjectFilesOptions = {},
+  limit: number = FILES_READ_LIMIT,
+): Promise<ProjectFilesRead> {
+  const includesArchived = options.includeArchived === true;
+  const liveTask = includesArchived ? undefined : isNull(tasks.archivedAt);
+
+  const [resourceRead, attachmentRead, memberRows] = await Promise.all([
+    database
+      .select({
+        id: resources.id,
+        kind: resources.kind,
+        provider: resources.provider,
+        title: resources.title,
+        url: resources.url,
+        mimeType: resources.mimeType,
+        sizeBytes: resources.sizeBytes,
+        addedByUserId: resources.addedByUserId,
+        addedAt: resources.addedAt,
+        accessState: resources.accessState,
+        storage: resources.storage,
+        taskId: resources.taskId,
+        taskTitle: tasks.title,
+        taskArchivedAt: tasks.archivedAt,
+      })
+      .from(resources)
+      .innerJoin(tasks, eq(tasks.id, resources.taskId))
+      .where(and(eq(resources.workspaceId, workspaceId), eq(tasks.workspaceId, workspaceId), liveTask))
+      .orderBy(desc(resources.addedAt), desc(resources.id))
+      .limit(limit + 1),
+    database
+      .select({
+        id: attachments.id,
+        filename: attachments.filename,
+        mimeType: attachments.mimeType,
+        sizeBytes: attachments.sizeBytes,
+        uploaderUserId: attachments.uploaderUserId,
+        createdAt: attachments.createdAt,
+        taskId: attachments.taskId,
+        taskTitle: tasks.title,
+        taskArchivedAt: tasks.archivedAt,
+      })
+      .from(attachments)
+      .innerJoin(tasks, eq(tasks.id, attachments.taskId))
+      .where(and(eq(tasks.workspaceId, workspaceId), liveTask))
+      .orderBy(desc(attachments.createdAt), desc(attachments.id))
+      .limit(limit + 1),
+    // Names only for current members of this Project.
+    database
+      .select({ id: workspaceMembers.userId, name: users.name, handle: users.handle, email: users.email })
+      .from(workspaceMembers)
+      .leftJoin(users, eq(users.id, workspaceMembers.userId))
+      .where(eq(workspaceMembers.workspaceId, workspaceId)),
+  ]);
+
+  const truncated = resourceRead.length > limit || attachmentRead.length > limit;
+  const resourceRows = resourceRead.slice(0, limit);
   const mirrored = new Set(resourceRows.map((row) => row.id));
-  const attachmentRows = (await db
-    .select({
-      id: attachments.id,
-      filename: attachments.filename,
-      mimeType: attachments.mimeType,
-      sizeBytes: attachments.sizeBytes,
-      uploaderUserId: attachments.uploaderUserId,
-      createdAt: attachments.createdAt,
-      taskId: attachments.taskId,
-      taskTitle: tasks.title,
-    })
-    .from(attachments)
-    .innerJoin(tasks, eq(tasks.id, attachments.taskId))
-    .where(eq(tasks.workspaceId, workspaceId)))
-    .filter((row) => !mirrored.has(`res-${row.id}`));
+  const attachmentRows = attachmentRead.slice(0, limit);
+  const attachmentSeconds = (row: { createdAt: Date | null }) => Math.floor((row.createdAt?.getTime() ?? Date.now()) / 1000);
 
-  const contributorIds = [...new Set([
-    ...resourceRows.map((row) => row.addedByUserId),
-    ...attachmentRows.map((row) => row.uploaderUserId),
-  ].filter((id): id is string => Boolean(id)))];
-  const contributorRows = contributorIds.length > 0
-    ? await db.select({ id: users.id, name: users.name, handle: users.handle, email: users.email })
-      .from(users).where(inArray(users.id, contributorIds))
-    : [];
-  const names = new Map(contributorRows.map((row) => [row.id, userDisplayName(row)]));
+  const members = new Map(
+    memberRows.map((row) => [
+      row.id,
+      userDisplayName({ name: row.name ?? null, handle: row.handle ?? null, email: row.email ?? null }) ?? "Member",
+    ]),
+  );
+  const addedBy = (userId: string | null) => ({
+    addedByName: userId ? members.get(userId) ?? null : null,
+    addedByFormer: userId ? !members.has(userId) : false,
+  });
 
   const fromResources: ProjectFile[] = resourceRows.map((row) => {
     const isLink = row.kind === "link";
@@ -148,27 +185,42 @@ export async function listProjectFiles(workspaceId: ProjectId): Promise<ProjectF
       sizeBytes: row.sizeBytes,
       taskId: row.taskId,
       taskTitle: row.taskTitle,
-      addedByName: row.addedByUserId ? names.get(row.addedByUserId) ?? null : null,
+      taskArchived: row.taskArchivedAt != null,
+      ...addedBy(row.addedByUserId),
       addedAt: row.addedAt,
     };
   });
 
-  const fromAttachments: ProjectFile[] = attachmentRows.map((row) => ({
-    id: `res-${row.id}`,
-    title: row.filename,
-    kind: fileKindFor({ provider: "file", mimeType: row.mimeType, title: row.filename, isLink: false }),
-    storage: "signal",
-    href: `/api/attachments/${encodeURIComponent(row.id)}`,
-    external: false,
-    mimeType: row.mimeType,
-    sizeBytes: row.sizeBytes,
-    taskId: row.taskId,
-    taskTitle: row.taskTitle,
-    addedByName: row.uploaderUserId ? names.get(row.uploaderUserId) ?? null : null,
-    addedAt: Math.floor((row.createdAt?.getTime() ?? Date.now()) / 1000),
-  }));
+  const fromAttachments: ProjectFile[] = attachmentRows
+    .filter((row) => !mirrored.has(`res-${row.id}`))
+    .map((row) => ({
+      id: `res-${row.id}`,
+      title: row.filename,
+      kind: fileKindFor({ provider: "file", mimeType: row.mimeType, title: row.filename, isLink: false }),
+      storage: "signal",
+      href: `/api/attachments/${encodeURIComponent(row.id)}`,
+      external: false,
+      mimeType: row.mimeType,
+      sizeBytes: row.sizeBytes,
+      taskId: row.taskId,
+      taskTitle: row.taskTitle,
+      taskArchived: row.taskArchivedAt != null,
+      ...addedBy(row.uploaderUserId),
+      addedAt: attachmentSeconds(row),
+    }));
 
-  return [...fromResources, ...fromAttachments].sort((a, b) => b.addedAt - a.addedAt);
+  let files = [...fromResources, ...fromAttachments].sort((a, b) => b.addedAt - a.addedAt || a.id.localeCompare(b.id));
+  if (truncated) {
+    // A source that was cut short may be missing files older than its last
+    // row, so nothing older than that point is shown from the other source
+    // either: the list stays a true newest-first run with no gaps.
+    const floors: number[] = [];
+    if (resourceRead.length > limit) floors.push(resourceRows.at(-1)!.addedAt);
+    if (attachmentRead.length > limit) floors.push(attachmentSeconds(attachmentRows.at(-1)!));
+    const floor = Math.max(...floors);
+    files = files.filter((file) => file.addedAt >= floor);
+  }
+  return { files, truncated, includesArchived, readAt: Math.floor(Date.now() / 1000) };
 }
 
 /**
@@ -178,7 +230,7 @@ export async function listProjectFiles(workspaceId: ProjectId): Promise<ProjectF
  */
 function demoProjectFiles(): ProjectFile[] {
   const byId = new Map(demoTasks().map((task) => [task.id, task.title]));
-  const now = Math.floor(Date.parse("2026-07-16T08:00:00.000Z") / 1000);
+  const now = DEMO_FILES_NOW_SECONDS;
   const hour = 3600;
   const seed: Array<[string, string, ProjectFileKind, ProjectFile["storage"], string | null, number | null, string, number]> = [
     ["demo-f-1", "Run-sheet, Saturday v3.pdf", "document", "signal", "application/pdf", 412_000, "demo-t-05", 3],
@@ -203,7 +255,9 @@ function demoProjectFiles(): ProjectFile[] {
       sizeBytes,
       taskId,
       taskTitle: byId.get(taskId)!,
+      taskArchived: false,
       addedByName: "Orla",
+      addedByFormer: false,
       addedAt: now - hoursAgo * hour,
     }));
 }

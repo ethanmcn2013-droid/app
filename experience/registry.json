@@ -4091,8 +4091,8 @@
       "source": "tasks/src/app/app/analytics/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "dashboard-or-command-centre",
-      "primaryJob": "See how work is moving in the active Project: what finished, what is open, what is late and what is due next.",
-      "primaryAction": "Switch the time range, or open the late task it names.",
+      "primaryJob": "Get a plain answer about how work is going, across every project or one: what is late, what changed, who holds what and what comes next.",
+      "primaryAction": "Pick a question, or type to find one.",
       "roles": [
         "owner",
         "member"
@@ -4127,10 +4127,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": null,
+      "lastReviewedAt": "2026-10-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "033c3a876bfa1f81"
+      "materialityHash": "b3dc20fe2d960e0f",
+      "materialityReview": {
+        "materialityHash": "b3dc20fe2d960e0f",
+        "reviewedAt": "2026-10-05",
+        "evidence": "experience/reviews/2026-10-05-port-files-analytics/receipts/tasks.page.app-analytics-materiality.json"
+      }
     },
     {
       "id": "tasks.state.app-analytics-loading",
@@ -4169,10 +4174,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": null,
+      "lastReviewedAt": "2026-10-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "553988c9e932306f"
+      "materialityHash": "9a83f9e97a750b1b",
+      "materialityReview": {
+        "materialityHash": "9a83f9e97a750b1b",
+        "reviewedAt": "2026-10-05",
+        "evidence": "experience/reviews/2026-10-05-port-files-analytics/receipts/tasks.state.app-analytics-loading-materiality.json"
+      }
     },
     {
       "id": "tasks.state.app-analytics-error",
@@ -4211,10 +4221,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": null,
+      "lastReviewedAt": "2026-10-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "6c3f0081458fe695"
+      "materialityHash": "16a0888ed7b367ab",
+      "materialityReview": {
+        "materialityHash": "16a0888ed7b367ab",
+        "reviewedAt": "2026-10-05",
+        "evidence": "experience/reviews/2026-10-05-port-files-analytics/receipts/tasks.state.app-analytics-error-materiality.json"
+      }
     },
     {
       "id": "tasks.page.app-tools",
@@ -4464,8 +4479,8 @@
       "source": "tasks/src/app/app/files/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "dashboard-or-command-centre",
-      "primaryJob": "Understand and use app · files.",
-      "primaryAction": "Complete the primary action on app · files.",
+      "primaryJob": "Find a file or link attached to any task in the open project, and open it.",
+      "primaryAction": "Search by name, task or person, then open the file.",
       "roles": [
         "owner",
         "member"
@@ -4502,10 +4517,109 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-09-25",
+      "lastReviewedAt": "2026-10-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "1c58deb9bb9e2466"
+      "materialityHash": "7a85240486792b54",
+      "materialityReview": {
+        "materialityHash": "7a85240486792b54",
+        "reviewedAt": "2026-10-05",
+        "evidence": "experience/reviews/2026-10-05-port-files-analytics/receipts/tasks.page.app-files-materiality.json"
+      }
+    },
+    {
+      "id": "tasks.state.app-files-loading",
+      "product": "tasks",
+      "surfaceType": "loading",
+      "route": "/app/files",
+      "source": "tasks/src/app/app/files/loading.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Wait for Files without losing orientation.",
+      "primaryAction": "None, resolves on its own.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "reduced-motion"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-10-05",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "9beac142f8f04cb2",
+      "materialityReview": {
+        "materialityHash": "9beac142f8f04cb2",
+        "reviewedAt": "2026-10-05",
+        "evidence": "experience/reviews/2026-10-05-port-files-analytics/receipts/tasks.state.app-files-loading-materiality.json"
+      }
+    },
+    {
+      "id": "tasks.state.app-files-error",
+      "product": "tasks",
+      "surfaceType": "error",
+      "route": "/app/files",
+      "source": "tasks/src/app/app/files/error.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Recover from a Files read failure with Tasks one click away.",
+      "primaryAction": "Try again.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "reduced-motion"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-10-05",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "83d088f7615c6a6b",
+      "materialityReview": {
+        "materialityHash": "83d088f7615c6a6b",
+        "reviewedAt": "2026-10-05",
+        "evidence": "experience/reviews/2026-10-05-port-files-analytics/receipts/tasks.state.app-files-error-materiality.json"
+      }
     },
     {
       "id": "tasks.state.app-messages-loading",
