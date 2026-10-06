@@ -25,8 +25,7 @@ import {
   STUDIO_CREATE_EVENT,
   STUDIO_PALETTE_EVENT,
 } from "@/components/studio-bar/studio-chrome-context";
-import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
-import { suiteSurfaceFromAppPath } from "@/lib/product-urls";
+import { AccountMenu } from "./account-menu";
 import {
   CREATE_AUTOMATION_HREF,
   CREATE_AUTOMATION_READY_ATTRIBUTE,
@@ -216,7 +215,6 @@ function Topbar() {
   const pathname = usePathname() ?? "";
   const { setMobileOpen } = useShell();
   const crumbs = crumbsForPath(pathname);
-  const surface = suiteSurfaceFromAppPath(pathname) ?? "home";
   const shortcut = useShortcutLabel();
 
   return (
@@ -257,7 +255,7 @@ function Topbar() {
         </Link>
         <AppsLauncher />
         <NewMenu />
-        <UserButtonWithSuite current={surface} />
+        <AccountMenu />
       </div>
     </header>
   );
