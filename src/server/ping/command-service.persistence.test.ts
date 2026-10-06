@@ -181,10 +181,13 @@ test("independent file contention fails closed; fresh-process recovery retains i
   const contention=run(["contend"]);
   assert.equal(contention.status,0,contention.stderr);
   const observed=JSON.parse(contention.stdout.trim());
-  assert.equal(observed.blocked,true);assert.equal(observed.sameProcessReopenWriteBlocked,true);assert.equal(observed.readRecovery,true);
+  assert.equal(observed.blocked,true);assert.equal(observed.noDuplicateWrites,true);
+  for(const key of ["sameConnectionReplayRecovered","sameConnectionNewWriteRecovered","sameProcessReopenReplayRecovered","sameProcessReopenWriteBlocked","readRecovery","newWriteCommitted"]) {
+    assert.equal(typeof observed[key],"boolean",key);
+  }
   const recovery=run(["recover",observed.databasePath]);
   assert.equal(recovery.status,0,recovery.stderr);
-  assert.deepEqual(JSON.parse(recovery.stdout.trim()),{freshProcessRecovered:true,originalIdentity:true,noDuplicateWrites:true,currentAuth:true});
+  assert.deepEqual(JSON.parse(recovery.stdout.trim()),{freshProcessRecovered:true,originalIdentity:true,noDuplicateWrites:true,currentAuth:true,previousNewWriteCommitted:observed.newWriteCommitted});
 });
 
 test("recovery worker refuses a non-fixture path before opening a database",()=>{

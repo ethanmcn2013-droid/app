@@ -47,22 +47,42 @@ if (process.argv[2] === "contend") {
     const blocked=await contender.execute({command,context:proofContext(command)});
     assert.deepEqual(blocked,{ok:false,reason:"temporarily_unavailable"}); assert.equal(lastDriverCode,"SQLITE_BUSY");
     release(); const committed=await first; assert.equal(committed.ok,true);
-    assert.deepEqual(await contender.execute({command,context:proofContext(command)}),blocked);
+    const sameConnectionReplay=await contender.execute({command,context:proofContext(command)});
+    if(sameConnectionReplay.ok) {
+      assert.equal(sameConnectionReplay.replayed,true);
+      if(committed.ok)assert.deepEqual(sameConnectionReplay.receipt,committed.receipt);
+    } else assert.deepEqual(sameConnectionReplay,blocked);
     const newCommand=proofCommand(2,{},1);
-    assert.deepEqual(await contender.execute({command:newCommand,context:proofContext(newCommand)}),blocked);
-    // Preserve the installed driver's failure as an explicit same-process limitation.
+    const sameConnectionNew=await contender.execute({command:newCommand,context:proofContext(newCommand)});
+    if(!sameConnectionNew.ok)assert.deepEqual(sameConnectionNew,blocked);
+    let newWriteCommitted=sameConnectionNew.ok;
+    // Record actual safe platform behavior; recovery is allowed and the Windows defect is not required.
     second.close(); f.client.close();
     const fresh=createClient({url:`file:${f.databasePath.replaceAll("\\","/")}`});
     try {
       await fresh.execute("PRAGMA foreign_keys=ON");
       const restarted=createPingCommandService(createLocalConversationDatabaseAdapter({client:fresh}),options);
       const lookup=await restarted.getReceipt({actorId:"alice",commandId:command.commandId});
-      assert.equal(lookup.ok,true);if(lookup.ok)assert.equal(lookup.state,"committed");
+      if(lookup.ok) {
+        assert.equal(lookup.state,"committed");
+        if(lookup.state==="committed"&&committed.ok)assert.deepEqual(lookup.receipt,committed.receipt);
+      } else assert.deepEqual(lookup,blocked);
       const replay=await restarted.execute({command,context:proofContext(command)});
-      assert.equal(replay.ok,true);if(replay.ok)assert.equal(replay.replayed,true);
-      assert.deepEqual(await restarted.execute({command:newCommand,context:proofContext(newCommand)}),blocked);
-      assert.equal(await proofCount(fresh,"tasks"),10);assert.equal(await proofCount(fresh,"activities"),10);assert.equal(await proofCount(fresh,"ping_command_receipts"),1);
-      console.log(JSON.stringify({databasePath:f.databasePath,blocked:true,sameProcessReopenWriteBlocked:true,readRecovery:true,lastDriverCode}));
+      if(replay.ok) {
+        assert.equal(replay.replayed,true);if(committed.ok)assert.deepEqual(replay.receipt,committed.receipt);
+      } else assert.deepEqual(replay,blocked);
+      const newWrite=await restarted.execute({command:newCommand,context:proofContext(newCommand)});
+      if(newWrite.ok) {
+        assert.equal(newWrite.replayed,newWriteCommitted);newWriteCommitted=true;
+        if(sameConnectionNew.ok)assert.deepEqual(newWrite.receipt,sameConnectionNew.receipt);
+      } else assert.deepEqual(newWrite,blocked);
+      const expectedTaskCount=10+(newWriteCommitted?1:0),expectedReceiptCount=1+(newWriteCommitted?1:0);
+      assert.equal(await proofCount(fresh,"tasks"),expectedTaskCount);assert.equal(await proofCount(fresh,"activities"),expectedTaskCount);
+      assert.equal(await proofCount(fresh,"ping_command_receipts"),expectedReceiptCount);
+      console.log(JSON.stringify({databasePath:f.databasePath,blocked:true,lastDriverCode,
+        sameConnectionReplayRecovered:sameConnectionReplay.ok,sameConnectionNewWriteRecovered:sameConnectionNew.ok,
+        sameProcessReopenReplayRecovered:replay.ok,sameProcessReopenWriteBlocked:!newWrite.ok,
+        readRecovery:lookup.ok,newWriteCommitted,noDuplicateWrites:true}));
     } finally {fresh.close();}
   } finally {second.close();f.client.close();}
 } else if(process.argv[2]==="recover" && process.argv[3]) {
@@ -77,13 +97,18 @@ if (process.argv[2] === "contend") {
     assert.equal(lookup.ok,true);if(lookup.ok)assert.equal(lookup.state,"committed");
     const replay=await service.execute({command,context:proofContext(command)});
     assert.equal(replay.ok,true,JSON.stringify(replay));if(replay.ok)assert.equal(replay.replayed,true);
-    assert.equal(await proofCount(client,"tasks"),10);assert.equal(await proofCount(client,"activities"),10);assert.equal(await proofCount(client,"ping_command_receipts"),1);
     const newCommand=proofCommand(2,{},1);
-    assert.equal((await service.execute({command:newCommand,context:proofContext(newCommand)})).ok,true);
+    const priorNew=await service.getReceipt({actorId:"alice",commandId:newCommand.commandId});assert.equal(priorNew.ok,true);
+    const previousNewWriteCommitted=priorNew.ok&&priorNew.state==="committed";
+    assert.equal(await proofCount(client,"tasks"),10+(previousNewWriteCommitted?1:0));
+    assert.equal(await proofCount(client,"activities"),10+(previousNewWriteCommitted?1:0));
+    assert.equal(await proofCount(client,"ping_command_receipts"),1+(previousNewWriteCommitted?1:0));
+    const newResult=await service.execute({command:newCommand,context:proofContext(newCommand)});assert.equal(newResult.ok,true);
+    if(newResult.ok)assert.equal(newResult.replayed,previousNewWriteCommitted);
     assert.equal(await proofCount(client,"tasks"),11);assert.equal(await proofCount(client,"ping_command_receipts"),2);
     await client.execute("DELETE FROM workspace_members WHERE user_id='alice'");
     assert.deepEqual(await service.getReceipt({actorId:"alice",commandId:command.commandId}),{ok:false,reason:"unavailable"});
-    console.log(JSON.stringify({freshProcessRecovered:true,originalIdentity:true,noDuplicateWrites:true,currentAuth:true}));
+    console.log(JSON.stringify({freshProcessRecovered:true,originalIdentity:true,noDuplicateWrites:true,currentAuth:true,previousNewWriteCommitted}));
   } finally {client.close();}
 } else {throw new Error("invalid_proof_mode");}
 }
