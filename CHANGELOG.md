@@ -12,6 +12,14 @@ The row's own Open button, Ctrl or Cmd and click, and the row menu still open th
 
 No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-project-peek`; no deployment or production change is claimed.
 
+## 2026-10-06 · Redesign candidate · The shared Timeline becomes a countdown
+
+The page a couple or a class shares with their guests now reads like the founder's pick of 28 September. It opens on how many days are left until the big day, with the date, how many moments are complete and Add to my calendar beside it. Below that, on wide screens, a strip shows every moment to scale with today marked. Then comes every moment in order, each with its own count of days, and the day itself to finish. It replaces the earlier rail.
+
+The design source drew Share this timeline twice, once at the top and once at the end, so the page had two buttons with the same name. Now there is one, at the top. Where the page is shown without its top line, as in the phone preview, the one at the end takes its place.
+
+No server action, read, schema change or dependency was added, and the page shows only what the published timeline already holds. This is an unshipped candidate on `design/app-v3-timeline-countdown`; no deployment or production change is claimed.
+
 ## 2026-10-06 · Redesign candidate · Apps and tools shows everything, with no folded group
 
 Apps and tools, the grid button in the top bar and the page at `/app/tools`, no longer keeps half of what it holds behind a folded "Initial setup" heading. It now reads as four sections in view: Your apps (Projects, Tasks, Timeline, Files and Analytics), More apps (Notes, and Messages if you have Chat), Works with, and the tools that are coming soon. Nothing was removed, search still finds every entry, and the arrow keys walk all four sections. This finishes what the sidebar change started when its own "Initial setup" group went.
