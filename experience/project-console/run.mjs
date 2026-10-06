@@ -121,6 +121,16 @@ async function open(browser, { viewport, theme, state = "busy", reducedMotion = 
 async function shot(page, name, { fullPage = false } = {}) {
   if (!capture) return;
   mkdirSync(outDir, { recursive: true });
+  // Let entrance fades finish first: the peek was once captured mid-fade and
+  // read as a panel with no fill. Endless animations (skeletons) are skipped.
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((animation) => Number.isFinite(animation.effect?.getComputedTiming().endTime))
+        .map((animation) => animation.finished.catch(() => undefined)),
+    ),
+  );
   await page.screenshot({ path: path.join(outDir, `${name}.png`), fullPage });
   shots.push(`${name}.png`);
 }

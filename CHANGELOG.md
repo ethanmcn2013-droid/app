@@ -4,6 +4,12 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-10-06 · Redesign candidate · The four sprint branches together, with fixes from the visual check
+
+The denser Tasks list, the combined timeline, Tags and the account menu are merged onto one branch and were looked at on a review build. Four small fixes came out of that look. The collapsed sidebar with five projects no longer cuts its Chat row in half on a 900 pixel tall window. On the full task page at laptop width, the due date is no longer cut short by the repeat chip; the chip drops to its own line. Quick create now says "#tag" where it still said "#label". One project type in Settings no longer uses a word from the banned list.
+
+No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-sprint-integration`; no deployment or production change is claimed.
+
 ## 2026-10-06 · Redesign candidate · The account menu, in groups
 
 The avatar in the top bar opens one grouped menu instead of the sign-in provider's own. It starts with your name and email, then: Settings and Get help; Upgrade, which opens Your plan; Log out; and View profile. Your activity, Language, Give a guest pass and What's new are shown so the finished shape is visible, and each says Coming soon and does nothing yet. The arrow keys, Home and End walk the entries and Escape returns to the avatar.

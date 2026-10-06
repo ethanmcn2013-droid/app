@@ -194,8 +194,14 @@ try {
     assert.equal(await projectsNav(aside).locator('a[data-mark="late"] [data-tone]').count(), 1, "rail: the late dot stays");
     assert.equal(await projectsNav(aside).locator("a[data-current-project]").count(), 0, "rail: the sixth, open Project is past the cut");
     assert.equal(await projectsNav(aside).getByRole("link", { name: "All 12 projects" }).count(), 1, "rail: All projects");
+    // A full rail fits a 900px window: no row sits half under the footer.
+    const railOverflow = await aside.evaluate((node) => {
+      const scroller = [...node.querySelectorAll("*")].find((el) => getComputedStyle(el).overflowY === "auto");
+      return scroller ? scroller.scrollHeight - scroller.clientHeight : null;
+    });
+    assert.equal(railOverflow, 0, `rail: the full rail fits without scrolling (${railOverflow}px over)`);
     assert.deepEqual(errors, [], "rail: console");
-    run.checks += 6;
+    run.checks += 7;
     await run.shot(page, `sidebar-rail-desk-${theme}`);
     await context.close();
   }

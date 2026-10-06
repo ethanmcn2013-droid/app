@@ -944,7 +944,11 @@
   padding: 0;
 }
 .props[data-grid] .row { grid-template-columns: 140px minmax(0, 1fr); min-height: 36px; }
-.props[data-grid] .valueGroup { flex-wrap: nowrap; white-space: nowrap; }
+/* The date and its repeat chip share a line where they fit. Where they do not
+   (the two-column page at laptop width), the chip drops below: unwrapped, the
+   date itself was cut short ("Today, 16 J"). */
+.props[data-grid] .valueGroup { flex-wrap: wrap; white-space: nowrap; }
+.props[data-grid] .valueGroup > .value { flex: none; }
 .props[data-grid] .rowLabel { padding-left: 2px; font-size: 14px; color: var(--v3-text-2); }
 .props[data-grid] .value { font-size: 14px; min-height: 30px; }
 .props[data-grid] .empty { color: var(--v3-text-3); }
