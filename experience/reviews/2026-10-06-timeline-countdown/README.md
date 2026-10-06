@@ -26,7 +26,7 @@ Fixed while porting:
 
 ## Receipts
 
-A receipt is bound to the fixture manifest and the spec it was reviewed under, so both changes unbound the fifteen receipts the Home and Overview port had written. Each one is re-attached here with a receipt that carries the original review text. Their sources and hashes are unchanged, and the earlier receipts stay where they were. All fifteen cite `experience/evidence-runs/tasks-playwright-152b697e705e4e2deaa90833-fdf3d010f52663aa.json`: the critical capture, 132 of 132, on a demo build of `f947ad5`.
+A receipt is bound to the fixture manifest and the spec it was reviewed under, so both changes unbound the fifteen receipts the Home and Overview port had written. Each one is re-attached here with a receipt that carries the original review text. Their sources and hashes are unchanged, and the earlier receipts stay where they were. All fifteen cite `experience/evidence-runs/tasks-playwright-726247c74b8b55b3dc04228c-38fd6249022e72ad.json`: the critical capture, 132 of 132, on a demo build of `513a162`. That commit narrowed the spec's phone target check to HTML buttons so it typechecks, which changed the spec once more; the run of `f947ad5` (`tasks-playwright-152b697e705e4e2deaa90833-fdf3d010f52663aa.json`) stays as the earlier record.
 
 ## Evidence
 
