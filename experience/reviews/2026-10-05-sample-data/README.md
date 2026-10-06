@@ -28,7 +28,7 @@ Operators only: the caller's user id must be in `ADMIN_USER_IDS` (`callerIsAdmin
 
 ## Rendered checks
 
-Screenshots are kept outside the repository, under the redesign worktree at `work/2026-10-01-landing-v3-2026-10/shots/app-reviews/2026-10-05-sample-data/` (38 files).
+Screenshots are kept outside the repository, under the redesign worktree at `work/2026-10-01-landing-v3-2026-10/shots/app-reviews/2026-10-05-sample-data/` (40 files).
 
 **Hidden in review mode, on a production build.** `pnpm build` with `NEXT_PUBLIC_SIGNAL_ACCESS_MODE=review`, served by `next start`, `/app/settings` at 1440 and 390 wide. The settings navigation lists General, Members, Storage, Danger zone, Notifications, Appearance, Security, Billing, Privacy and data. No Operator group, no Sample data button, and the words do not appear in the page. No console errors. Files: `review-mode-hidden--settings--1440-dark.png`, `review-mode-hidden--settings--390-dark.png`.
 
