@@ -11,9 +11,9 @@
  * sizes, dark and light, this checks the groups and their order, the page
  * you are on, the rail or the drawer, the Chat fold being remembered, the
  * breadcrumb on Automations and that each page has exactly one create
- * button, then saves the pictures. A reader without Chat, with no Projects
- * or with many is covered by the unit tests, not here: review mode cannot
- * show them.
+ * button, then saves the pictures. A reader without Chat, with no Projects,
+ * with many or with a status dot cannot be shown by review mode: those are
+ * in `fixture-run.mjs`, which mounts the real sidebar over fixed readers.
  */
 
 import assert from "node:assert/strict";

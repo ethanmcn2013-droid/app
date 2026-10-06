@@ -1,0 +1,8 @@
+/*
+ * The shell brings its own frame (sidebar, top bar, content column); the
+ * page inside it is empty here, because the sidebar is what is under test.
+ */
+
+.fixture-page {
+  min-height: 100%;
+}
