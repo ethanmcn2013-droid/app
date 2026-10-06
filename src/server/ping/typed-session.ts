@@ -142,7 +142,10 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
     if (!allowed) {
       if (!observedPaused) pauseEpoch = {};
       observedPaused = true;
-      for (const lane of lanes.values()) if (!lane.invoked) cancelLane(lane);
+      // Mark the complete observed set before abort/dispose can reenter another lane.
+      const pending = [...lanes.values()].filter(lane => !lane.invoked);
+      for (const lane of pending) lane.cancelled = true;
+      for (const lane of pending) closeVoice(lane);
       operationWarning(stage, "paused");
     } else observedPaused = false;
     return allowed;
@@ -192,7 +195,7 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
         deadline = setTimeout(() => { cancelLane(lane); resolve(false); }, Math.max(0, 10_000 - (monotonic() - voice.finishedAt!)));
       })]); } finally { if (deadline) clearTimeout(deadline); }
       // Final synchronous latch: cancellation during either authentication await cannot revive a lane.
-      if (!allowed || lane.reading || !voiceDeadline(lane) || !newWorkAllowed("finish") || !live(lane)) { cancelLane(lane); return voiceResult(lane, "finish"); }
+      if (!allowed || lane.reading || !voiceDeadline(lane) || !newWorkAllowed("finish") || !live(lane) || !voiceDeadline(lane)) { cancelLane(lane); return voiceResult(lane, "finish"); }
       lane.invoked = true; lane.executing = true;
       try {
         const result = await service.execute(lane.original);
@@ -462,10 +465,9 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
     const original = lane.original;
     if (request.action === "execute") {
       if (lane.invoked) return reconcile(lane, "execute");
-      const expired = now() >= lane.expiresAt;
       if (!newWorkAllowed("execute")) return fail("unavailable");
       if (lane.invoked) return reconcile(lane, "execute"); // The trusted control can reenter this same original.
-      if (expired || lane.cancelled) return fail("stale_capture");
+      if (now() >= lane.expiresAt || lane.cancelled) return fail("stale_capture");
       lane.invoked = true; lane.executing = true;
       try {
         const result = await service.execute(lane.original);
