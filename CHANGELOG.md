@@ -4,6 +4,14 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-10-06 · Redesign candidate · A task opens as one record, beside your work
+
+Opening a task now shows a side panel at every width, with the list or board still in place behind it. The panel reads as one record. At the top are previous and next with where you are ("3 of 13"), then Edit, which puts you in the name, and Open, which lays the same task out as the two-column page. Then comes the task's name under its project's colour tile, with the project, the task number and when it last changed underneath. Each field has its own row, with its icon and name on the left. If the task has subtasks, a progress bar shows how many are done. Below that are Notes, Subtasks, Files and links, and Activity, each with a "See all" that opens the full page. On a phone the count stays in view and Mark done sits under the name.
+
+Until now a laptop or larger screen opened every task as the two-column page over the app. That page is unchanged and one press away (Open, or E), and its button back now says "Back to the panel". Mark done, every field, the pickers and the keys (up, down, j, k, E, Escape) work as before.
+
+No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-record-panel`; no deployment or production change is claimed.
+
 ## 2026-10-06 · Redesign candidate · Projects as a list
 
 The Projects page has a third view, List, beside Console and Cards. It keeps the console's groups (Needs a look, On track, Paused, No status yet, Wrapped), each with a count. Every project gets one line: its colour tile and name, a status pill in its colour, who leads it, a thin bar for how many of its tasks are done, its target date, its next big date, and its open and late tasks. A line at the foot counts the projects, open tasks and late tasks shown. Clicking a project's name shows its quick look, as it does in the console. On a narrower window the lead, and then the dates, step aside; on a phone each project is two lines. The address remembers the view (`?view=list`).
