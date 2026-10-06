@@ -6,11 +6,15 @@
  * On the Tasks surface at 1280px and wider it docks into the slot beside
  * the board (no backdrop; F6 moves between the board and the task; Escape
  * closes and hands focus back to the card). Everywhere else, and below
- * 1280px, it is a modal sheet over a scrim that traps focus. A task that
- * no longer exists says so and waits to be closed; nothing auto-closes.
+ * 1280px, it is a side panel over a scrim that traps focus. Open (E) lays
+ * the same task out as the two-column page over the app. A task that no
+ * longer exists says so and waits to be closed; nothing auto-closes.
+ *
+ * Since 6 Oct 2026 (founder reference 24) a task opens in the panel at every
+ * width, so you keep your place; the two-column page is one press away.
  */
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
@@ -20,28 +24,12 @@ import { getVisibleTaskOrder, useSheetDock, useWideSheet } from "@/components/ta
 import { StaleTask, TaskSheet } from "./task-sheet";
 import styles from "./task-sheet.module.css";
 
-/**
- * From a laptop up, an opened task is one large two-column view over the
- * app (ClickUp-style): the task on the left, Activity on the right. Smaller
- * screens keep the sheet, which has room for one column.
- */
-const ROOMY_QUERY = "(min-width: 1024px)";
-function subscribeRoomy(onChange: () => void) {
-  const query = window.matchMedia(ROOMY_QUERY);
-  query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
-}
-function useRoomy(): boolean {
-  return useSyncExternalStore(subscribeRoomy, () => window.matchMedia(ROOMY_QUERY).matches, () => false);
-}
-
 export function TaskDetailPanel() {
   const { taskId, closeTask, openTask } = useTaskPanel();
   const state = useTasksState();
   const dock = useSheetDock();
   const wide = useWideSheet();
   const hydrated = useHydrated();
-  const roomy = useRoomy();
   const task = taskId ? state.tasks.find((t) => t.id === taskId) ?? null : null;
   const docked = Boolean(dock && wide);
 
@@ -80,13 +68,6 @@ export function TaskDetailPanel() {
 
   // The sheet portals into the page, so it waits for the client.
   if (!taskId || !hydrated) return null;
-  if (roomy && task) {
-    return (
-      <ModalFrame onClose={closeTask} full>
-        <TaskSheet task={task} mode="page" overlay onClose={closeTask} onNavigate={navigate} position={position} />
-      </ModalFrame>
-    );
-  }
   if (expanded && task) {
     return (
       <ModalFrame onClose={closeTask} full>
