@@ -75,6 +75,7 @@ export function createPingOpenAiStreamingTranscription(options: PingStreamingOpt
     const controller = new AbortController(), started = performance.now();
     let phase: "connecting" | "created" | "sending_update" | "updated" | "sending_clear" | "cleared" | "ready" | "closed" = "connecting";
     let socket: PingStreamingSocket | null = null, detach: (() => void) | null = null, closeAsked = false;
+    let closedWitness: Promise<void> | null = null;
     let connectSettled = false, physicallyClosed = false, published = false, subscribed = false;
     let sessionId: string | null = null, conversationSeen = false, events = 0, bytes = 0, committed = false;
     let listener: ((raw: unknown) => void) | null = null, disconnected: (() => void) | null = null, appSending = false;
@@ -147,7 +148,7 @@ export function createPingOpenAiStreamingTranscription(options: PingStreamingOpt
           if (phase !== "cleared" || !exactKeys(v, ["type", "event_id"])) { stop("invalid"); return; }
           phase = "ready"; if (!valid()) return;
           clearTimeout(timer); timer = setTimeout(() => stop("deadline"), Math.max(1, started + handshake + 65_000 - performance.now()));
-          published = true; resolve(freeze({ transport, getUsage: () => freeze(observations.map((o) => ({ ...o }))), closed: socket!.closed })); return;
+          published = true; resolve(freeze({ transport, getUsage: () => freeze(observations.map((o) => ({ ...o }))), closed: closedWitness! })); return;
         }
         if (phase !== "ready" || !committed) { stop("invalid"); return; }
         if (v.type === "input_audio_buffer.committed") {
@@ -226,9 +227,9 @@ export function createPingOpenAiStreamingTranscription(options: PingStreamingOpt
       try {
         if (!valid()) { connectSettled = true; physicallyClosed = true; release(); return; }
         const s = await connect(PING_STREAMING_ENDPOINT, { headers: Object.freeze({ Authorization: `Bearer ${apiKey}` }), signal: controller.signal });
-        socket = s; connectSettled = true;
+        socket = s; closedWitness = s.closed; connectSettled = true;
         // Closure fulfillment is the sole physical release witness; a rejection intentionally retains admission.
-        void s.closed.then(() => { physicallyClosed = true; stop("disconnected"); release(); }, () => { stop("disconnected"); });
+        void closedWitness.then(() => { physicallyClosed = true; stop("disconnected"); release(); }, () => { stop("disconnected"); });
         if (!valid()) { cleanup(); return; }
         phase = "created";
         const d = s.subscribe(message, () => stop("disconnected"));

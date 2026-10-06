@@ -97,6 +97,18 @@ test("fresh real lifecycle verifies effective policy and actual clear before rea
   synchronous.s.emit({ type: "session.created", event_id: "created", session: config() });
   const resolved = await actual; assert.deepEqual(synchronous.s.sends.map((text) => JSON.parse(text).type), ["session.update", "input_audio_buffer.clear"]);
   resolved.transport.close(); await settle();
+  // A structurally readonly supplied port is still runtime mutable. Readiness and admission share its original witness.
+  const mutated = factory(socket(true)), originalClosed = mutated.s.port.closed;
+  const pending = mutated.open(new AbortController().signal); await settle();
+  mutated.s.emit({ type: "session.created", event_id: "created", session: config() });
+  Object.defineProperty(mutated.s.port, "closed", { value: Promise.resolve() });
+  mutated.s.emit({ type: "session.updated", event_id: "updated", session: config(true) });
+  mutated.s.emit({ type: "input_audio_buffer.cleared", event_id: "cleared" });
+  const captured = await pending; assert.equal(captured.closed, originalClosed); assert.notEqual(captured.closed, mutated.s.port.closed);
+  let witnessed = false; void captured.closed.then(() => { witnessed = true; });
+  captured.transport.close(); await settle(); assert.equal(witnessed, false);
+  await assert.rejects(mutated.open(new AbortController().signal), /ping_stream_busy/);
+  mutated.s.release(); await captured.closed; await settle(); assert.equal(witnessed, true);
 });
 
 test("exact PCM and real final-before-ACK flow compose with the existing collector and disconnected interpreter once", async () => {
