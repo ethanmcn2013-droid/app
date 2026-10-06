@@ -17,6 +17,7 @@ const root = path.resolve(import.meta.dirname, '../..');
 const require = createRequire(import.meta.url);
 const esbuild = createRequire(require.resolve('tsx/package.json'))('esbuild');
 const { chromium } = require('@playwright/test');
+const { AxeBuilder } = require('@axe-core/playwright');
 const out = path.resolve(process.env.PING_TYPED_BROWSER_OUTPUT ?? path.join(root, 'experience/output/ping-typed', new Date().toISOString().replaceAll(/[:.]/g, '-')));
 await fs.mkdir(out, { recursive: true });
 const receipt = { status: 'running', head: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), cases: [], sourceInputs: {}, limits: [
@@ -37,6 +38,7 @@ const stubs = new Map([
   ['@/components/app/active-project-provider', `export const useActiveProject=()=>null;`],
   ['@/components/app/done-dopamine/first-completion-moment', `export const maybeFireFirstCompletion=()=>{};`],
 ]);
+async function waitForHeldResponse(state) { const deadline=Date.now()+10000;while(!state.release){assert.ok(Date.now()<deadline,'Actual HTTP response did not reach barrier');await new Promise(resolve=>setTimeout(resolve,10));}}
 let browser, server, fixture;
 try {
   fixture = await createPingProofFixture();
@@ -53,7 +55,7 @@ try {
   const assets = new Map(bundle.outputFiles.map(file => [file.path.endsWith('.js') ? '/app.js' : '/app.css', file.contents]));
   assets.set('/app.css', utilities.css+'\n'+new TextDecoder().decode(assets.get('/app.css')));
   for (const font of ['Geist-Variable.woff2','GeistMono-Variable.woff2']) assets.set('/fonts/'+font, await fs.readFile(path.join(root, 'node_modules/geist/dist/fonts', font.startsWith('GeistMono') ? 'geist-mono' : 'geist-sans', font)));
-  for (const file of Object.keys(bundle.metafile.inputs).filter(file => file.startsWith('src/'))) receipt.sourceInputs[file] = createHash('sha256').update(await fs.readFile(path.join(root,file))).digest('hex');
+  for (const file of new Set([...Object.keys(bundle.metafile.inputs).filter(file => file.startsWith('src/')), 'experience/ping-typed/browser.mjs','experience/ping-typed/fixture.tsx','src/server/ping/http.ts','src/server/ping/typed-session.ts','src/server/ping/command-service.ts','src/server/db/task-read.ts','src/server/ping/proof-fixture.ts','src/app/globals.css'])) receipt.sourceInputs[file] = createHash('sha256').update(await fs.readFile(path.join(root,file))).digest('hex');
   let origin;
   const errors = [];
   server = createServer(async (req,res) => {
@@ -78,6 +80,8 @@ try {
   browser=await chromium.launch({headless:true});
   const page=await browser.newPage({viewport:{width:1440,height:960},locale:'en-GB',timezoneId:'Europe/Dublin'});
   page.on('pageerror',error=>errors.push(error.message));
+  const consoleErrors=[];page.on('console',message=>{if(message.type()==='error')consoleErrors.push(message.text());});
+  const failedRequests=[];page.on('requestfailed',request=>failedRequests.push({path:new URL(request.url()).pathname,error:request.failure()?.errorText}));
   await page.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
   await page.goto(origin);
   await page.getByRole('checkbox',{name:'Select Synthetic target',exact:true}).waitFor();
@@ -95,8 +99,9 @@ try {
   await prepare('assign me and status doing');
   state.holdAction = 'execute';
   await page.getByTestId('ping-apply').evaluate(button => {button.click();button.click();});
-  await page.waitForFunction(() => document.querySelector('[data-testid="ping-apply"]')?.disabled);
-  while (!state.release) await new Promise(resolve=>setTimeout(resolve,10));
+  await page.getByTestId('ping-check-original').waitFor();
+  assert.equal(await page.getByTestId('ping-check-original').isDisabled(),true);
+  await waitForHeldResponse(state);
   assert.equal(executeCalls,1); assert.equal(await countReceipts(),1);
   assert.deepEqual(JSON.parse((await targetRow()).assignees),['bob','alice']);
   state.holdAction=null;state.release();state.release=null;
@@ -138,26 +143,30 @@ try {
   state.holdAction='prepare';
   await page.getByTestId('ping-input').fill('assign me');
   await page.getByTestId('ping-review').click();
-  while (!state.release) await new Promise(resolve=>setTimeout(resolve,10));
+  await waitForHeldResponse(state);
   await page.getByRole('checkbox',{name:'Select Synthetic other',exact:true}).check();
+  await page.getByRole('checkbox',{name:'Select Synthetic other',exact:true}).uncheck(); // A→B→A must still invalidate the pending capture.
   state.holdAction=null;state.release();state.release=null;
   await page.getByTestId('ping-status').filter({hasText:'selection changed'}).waitFor();
   assert.equal(await page.getByTestId('ping-apply').count(),0);
   assert.equal(executeCalls,3);assert.equal(await countReceipts(),3);
-  receipt.cases.push({name:'selection change while preparation pending cannot apply stale targets',passed:true});
+  receipt.cases.push({name:'selection A→B→A while preparation pending cannot restore stale capture',passed:true});
   const preserved=(await fixture.client.execute("SELECT assignees,lane,start_day,duration_days FROM tasks WHERE id='other'")).rows[0];
   assert.deepEqual(JSON.parse(preserved.assignees),['bob']);assert.equal(preserved.lane,'todo');
   assert.equal(Number((await targetRow()).start_day),2);assert.equal(Number((await targetRow()).duration_days),3);
   assert.deepEqual(errors,[]);
+  const accessibility = await new AxeBuilder({page}).include('[data-testid=project-ping-typed-panel]').analyze();
+  assert.deepEqual(accessibility.violations.map(({id,impact,nodes})=>({id,impact,count:nodes.length})),[]);
+  receipt.accessibility={scope:'typed panel',violations:0};
   await page.screenshot({path:path.join(out,'typed-desktop.png'),fullPage:true});
   await page.setViewportSize({width:390,height:844});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
   await page.screenshot({path:path.join(out,'typed-phone.png'),fullPage:true});
+  assert.ok(consoleErrors.every(message=>/ERR_EMPTY_RESPONSE|ERR_CONNECTION_CLOSED|status of 503/.test(message)), 'Unexpected browser console error');
+  assert.ok(failedRequests.every(request=>request.path==='/api/ping' && /ERR_EMPTY_RESPONSE|ERR_CONNECTION_CLOSED/.test(request.error)), 'Unexpected failed browser request');
+  receipt.expectedTransportDiagnostics={consoleErrors,failedRequests};
   receipt.executeCalls=executeCalls;receipt.receiptCount=await countReceipts();receipt.httpActions=state.requests;
   receipt.status='passed';
 
 } catch(error) {receipt.status='failed';receipt.error=error.message;throw error;}
-finally {await fs.writeFile(path.join(out,'receipt.json'),JSON.stringify(receipt,null,2));await browser?.close();if(server)await new Promise(resolve=>server.close(resolve));fixture?.client.close();}
-
-
-
+finally {await fs.writeFile(path.join(out,'receipt.json'),JSON.stringify(receipt,null,2));await browser?.close();if(server){server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}fixture?.client.close();}
