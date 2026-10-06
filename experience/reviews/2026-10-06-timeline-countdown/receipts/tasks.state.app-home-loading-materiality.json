@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-home-loading",
+  "source": "tasks/src/app/app/home/loading.tsx",
+  "materialityHash": "9dcb7b09c5c2c254",
+  "reviewedAt": "2026-10-06",
+  "reviewer": "Implementation review under delegated execution (Claude, single writer on design/app-v3-home-overview). Founder review of the rendered result is pending",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-152b697e705e4e2deaa90833-fdf3d010f52663aa.json",
+    "attestationSha256": "c9b60ae5d4325cd88775350699ddc187bd661b6cbe063db4d6a57f60a24e21cc",
+    "runId": "tasks-playwright-152b697e705e4e2deaa90833",
+    "canonicalEvidenceSha256": "152b697e705e4e2deaa90833d78a508503e668d467571819fed4d6f69f95e6d7",
+    "rawArtifactSha256": "fdf3d010f52663aac2546267eea1f87a613f57ad7ef70f4d6f0a52b09f9ab969",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-home",
+    "caseName": "home front door",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Re-attached on 6 October 2026 to the full green critical run of the shared Timeline Countdown port (132 of 132, experience/evidence-runs/tasks-playwright-152b697e705e4e2deaa90833-fdf3d010f52663aa.json) on a demo build of f947ad5. That port changed the critical fixture manifest and the critical spec (the shared Timeline case), and a receipt is bound to both. This source and its hash (9dcb7b09c5c2c254) are unchanged; the earlier receipt stays at experience/reviews/2026-10-05-port-home-overview/receipts/tasks.state.app-home-loading-materiality.json as the record of the original review, whose reviewed change read: The Home loading state now traces the new Home: the Home and Overview tabs, the greeting and its count line, the task groups on the left and the next big day and project list on the right, drawn from Home's own stylesheet so the two share their geometry. It reserves no fake rows beyond the groups the page always draws, and its soft pulse is switched off under reduced motion. Rendered in the fixture harness at four sizes in dark and light (home-loading-*.png in the design lab capture set); the linked critical case opens /app/home on the settled page, which this state hands off to.",
+  "decision": "Keep the reviewed hash and attach this receipt to the current evidence contract. Other registry fields are unchanged."
+}
