@@ -19,7 +19,7 @@ import { isDemoMode } from "@/lib/access-mode";
 import { PrivacySection } from "./sections/privacy";
 import { DangerSection } from "./sections/danger";
 import { SampleDataSection } from "./sections/sample-data";
-import type { SampleSetStatus } from "@/lib/sample-data/model";
+import type { SampleDataView } from "@/lib/sample-data/copy";
 import type { SecurityData } from "@/server/actions/security";
 
 export type SettingsMember = {
@@ -274,7 +274,7 @@ export function SettingsApp({
    * review/demo mode: no nav item, no section. Hiding is a courtesy; every
    * action behind the section re-checks the operator gate on the server.
    */
-  sampleData?: SampleSetStatus[] | null;
+  sampleData?: SampleDataView | null;
   /**
    * Review/demo mode: the sections are for looking at, not for writing to.
    * The inert boundary lives HERE, around the section content only, because
@@ -413,7 +413,7 @@ export function SettingsApp({
             <PrivacySection userEmail={currentUserEmail} />
           ) : null}
           {tab === "sample" && sampleData !== null && !readOnly ? (
-            <SampleDataSection initialStatus={sampleData} activeProjectId={workspace?.id ?? null} />
+            <SampleDataSection initialView={sampleData} activeProjectId={workspace?.id ?? null} />
           ) : null}
           {tab === "danger" ? (
             <DangerSection

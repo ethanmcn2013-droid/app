@@ -922,10 +922,26 @@ test("operator sample data: every action exits review mode first, then proves th
   const exported = [...sampleActions.matchAll(/export async function (\w+)/g)].map((match) => match[1]);
   assert.deepEqual(exported.sort(), [
     "getSampleDataStatusAction",
+    "getSampleDataViewAction",
     "removeAllSampleDataAction",
     "removeSampleSetAction",
+    "runRemoveAllSampleDataAction",
+    "runRemoveSampleSetAction",
+    "runSeedSampleSetAction",
     "seedSampleSetAction",
   ]);
+  // The view and the three run wrappers hold no authority of their own: each
+  // only calls a gated action above and turns its answer into words.
+  for (const [name, gated] of [
+    ["getSampleDataViewAction", "getSampleDataStatusAction()"],
+    ["runSeedSampleSetAction", "seedSampleSetAction(setId)"],
+    ["runRemoveSampleSetAction", "removeSampleSetAction(setId)"],
+    ["runRemoveAllSampleDataAction", "removeAllSampleDataAction()"],
+  ]) {
+    const body = exportedActionBody(sampleActions, name);
+    assert.ok(body.includes(gated), `${name} must go through ${gated}`);
+    assert.doesNotMatch(body, /\bdb\b|getCurrentUser|operatorDependencies|listSampleData\(|seedSampleSet\(|removeSampleSet\(|removeAllSampleData\(|actorUserId/);
+  }
 
   // The three writers resolve the caller only through the one operator gate.
   const gate = sampleActions.slice(
@@ -967,5 +983,5 @@ test("operator sample data: every action exits review mode first, then proves th
   assert.match(settingsApp, /navGroups\(driveEnabled, sampleData !== null && !readOnly\)/);
   assert.match(settingsApp, /tab === "sample" && sampleData !== null && !readOnly \?/);
   const demoBranch = settingsPage.slice(settingsPage.indexOf("if (isDemoMode())"), settingsPage.indexOf("requireRouteProjectId()"));
-  assert.doesNotMatch(demoBranch, /sampleData|getSampleDataStatusAction/);
+  assert.doesNotMatch(demoBranch, /sampleData|getSampleData/);
 });

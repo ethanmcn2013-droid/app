@@ -132,3 +132,68 @@ export function removeOutcome(
     body: `Deleted ${count(removed, "sample project", "sample projects")}${!failed.ok && failed.failedAt ? `, then stopped at ${failed.failedAt}` : ""}. Run it again to remove the rest.`,
   };
 }
+
+// ── The whole section, as data ───────────────────────────────────────
+
+/**
+ * Everything the Settings section shows, built on the server. The client
+ * component renders this and holds no copy of its own, which keeps the
+ * operator-only wording out of every other person's bundle.
+ */
+export type SampleDataView = Readonly<{
+  description: string;
+  setsDescription: string;
+  footnote: string;
+  sets: ReadonlyArray<
+    Readonly<{
+      id: SampleSetSummary["id"];
+      label: string;
+      blurb: string;
+      counts: string;
+      badge: Readonly<{ tone: "success" | "warning"; text: string }> | null;
+      /** Present while there is something left to add. */
+      add: SampleConfirmation | null;
+      /** Present while there is something to remove. */
+      remove: SampleConfirmation | null;
+    }>
+  >;
+  removeAll: Readonly<{ description: string; confirm: SampleConfirmation | null }>;
+  /** Ids of the sample projects that exist now. */
+  presentIds: readonly string[];
+}>;
+
+export function sampleDataView(status: readonly SampleSetStatus[]): SampleDataView {
+  const anyPresent = status.some((set) => set.present.length > 0);
+  return {
+    description:
+      "Add invented projects to your own account to see the product with real-looking work in it. Only operators see this section.",
+    setsDescription:
+      "Each set is a handful of projects owned by you. Dates are set from the day you add it, so there is always work that is late, due today, due this week, later and done.",
+    footnote:
+      "Sample projects end in “· sample” and say which set they belong to in their description. Tasks marked done are finished at the moment you add the set, so charts show them as completed that day. Nobody is invited, nothing is emailed, shared or published.",
+    sets: status.map((set) => {
+      const state = sampleSetState(set);
+      return {
+        id: set.summary.id,
+        label: sampleSetLabel(set.summary),
+        blurb: set.summary.blurb,
+        counts: `${count(set.summary.projects, "project", "projects")}, ${count(set.summary.tasks, "task", "tasks")}, ${count(set.summary.bigDates, "big date", "big dates")}.`,
+        badge:
+          state.kind === "added"
+            ? { tone: "success", text: "Added" }
+            : state.kind === "partial"
+              ? { tone: "warning", text: `${state.present} of ${state.total} added` }
+              : null,
+        add: state.kind === "added" ? null : addConfirmation(set),
+        remove: state.kind === "none" ? null : removeConfirmation(set),
+      };
+    }),
+    removeAll: {
+      description: anyPresent
+        ? "Deletes every sample project you have added, and nothing else in your account."
+        : "There is no sample data in your account.",
+      confirm: anyPresent ? removeAllConfirmation(status) : null,
+    },
+    presentIds: status.flatMap((set) => set.present.map((project) => project.id)),
+  };
+}

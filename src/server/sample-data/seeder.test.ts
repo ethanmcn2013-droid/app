@@ -600,7 +600,7 @@ async function actionFixture(options: { actor: string; demo?: boolean }) {
     };
     // The real operator gate, reading ADMIN_USER_IDS.
     const injected: Record<string, string> = { "@/server/admin": "src/server/admin.ts" };
-    const actual = new Set(["@/lib/sample-data/model"]);
+    const actual = new Set(["@/lib/sample-data/model", "@/lib/sample-data/copy"]);
     const code = ts.transpileModule(readFileSync(resolve(root, file), "utf8"), {
       compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
     }).outputText;
@@ -630,11 +630,15 @@ test("a non-operator is refused by every action and nothing is written", async (
       await seeder.seedSampleSet(f.deps("operator"), "wedding");
       const before = await f.counts();
       assert.equal(await f.actions.getSampleDataStatusAction(), null);
+      assert.equal(await f.actions.getSampleDataViewAction(), null);
       for (const setId of SAMPLE_SET_IDS) {
         await assert.rejects(f.actions.seedSampleSetAction(setId), /operator-only/);
         await assert.rejects(f.actions.removeSampleSetAction(setId), /operator-only/);
+        await assert.rejects(f.actions.runSeedSampleSetAction(setId), /operator-only/);
+        await assert.rejects(f.actions.runRemoveSampleSetAction(setId), /operator-only/);
       }
       await assert.rejects(f.actions.removeAllSampleDataAction(), /operator-only/);
+      await assert.rejects(f.actions.runRemoveAllSampleDataAction(), /operator-only/);
       assert.deepEqual(await f.counts(), before);
       assert.deepEqual(f.deleted, []);
       assert.equal(f.state.events + f.state.revalidated, 0);
@@ -652,6 +656,12 @@ test("review and demo mode write nothing and never resolve the caller, even for 
     assert.deepEqual(plain(await f.actions.seedSampleSetAction("teacher")), { ok: false, reason: "demo" });
     assert.deepEqual(plain(await f.actions.removeSampleSetAction("teacher")), { ok: false, reason: "demo" });
     assert.deepEqual(plain(await f.actions.removeAllSampleDataAction()), { ok: false, reason: "demo" });
+    assert.equal(await f.actions.getSampleDataViewAction(), null);
+    for (const run of [() => f.actions.runSeedSampleSetAction("wedding"), () => f.actions.runRemoveSampleSetAction("wedding"), () => f.actions.runRemoveAllSampleDataAction()]) {
+      const done = plain(await run());
+      assert.equal(done.view, null);
+      assert.equal(done.outcome.title, "Not available in review");
+    }
     assert.deepEqual(await f.counts(), before);
     assert.equal(f.state.identityReads, 0);
     assert.equal(f.state.events + f.state.revalidated, 0);
@@ -672,6 +682,17 @@ test("an operator can add, read back and remove through the actions, and an unkn
     const status = plain(await f.actions.getSampleDataStatusAction())!;
     assert.deepEqual(status.map((set) => [set.summary.id, set.present.length]), [["teacher", 0], ["student", 6], ["wedding", 0]]);
     assert.ok((await f.db.select().from(workspaces)).every((project) => project.ownerUserId === "operator"));
+
+    // The section itself is driven by the run wrappers and the server-built view.
+    const view = plain(await f.actions.getSampleDataViewAction())!;
+    assert.deepEqual(view.sets.map((set) => [set.id, set.badge?.text ?? null, set.add === null, set.remove === null]), [["teacher", null, false, true], ["student", "Added", true, false], ["wedding", null, false, true]]);
+    assert.equal(view.presentIds.length, 6);
+    const ran = plain(await f.actions.runSeedSampleSetAction("wedding"));
+    assert.equal(ran.outcome.title, "Sample set added");
+    assert.equal(ran.view!.presentIds.length, 10);
+    const gone = plain(await f.actions.runRemoveSampleSetAction("wedding"));
+    assert.equal(gone.outcome.title, "Sample data removed");
+    assert.equal(gone.view!.removeAll.confirm!.names.length, 6);
 
     const removed = plain(await f.actions.removeAllSampleDataAction());
     assert.ok(Array.isArray(removed) && removed.every((result) => result.ok));

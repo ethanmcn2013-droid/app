@@ -24,6 +24,13 @@ import { deleteProject } from "@/server/projects/service";
 import { isDemoMode } from "@/lib/access-mode";
 import { isSampleSetId, type SampleSetId } from "@/lib/sample-data/model";
 import {
+  removeOutcome,
+  sampleDataView,
+  seedOutcome,
+  type SampleDataView,
+  type SampleOutcome,
+} from "@/lib/sample-data/copy";
+import {
   listSampleData,
   removeAllSampleData,
   removeSampleSet,
@@ -65,6 +72,33 @@ export async function getSampleDataStatusAction(): Promise<SampleSetStatus[] | n
 
 export type SeedSampleActionResult = SeedSampleResult | Readonly<{ ok: false; reason: "demo" }>;
 export type RemoveSampleActionResult = RemoveSampleResult | Readonly<{ ok: false; reason: "demo" }>;
+
+/**
+ * The Settings section, ready to render. Null means "there is no such section
+ * for this caller": review/demo mode and every non-operator.
+ */
+export async function getSampleDataViewAction(): Promise<SampleDataView | null> {
+  const status = await getSampleDataStatusAction();
+  return status === null ? null : sampleDataView(status);
+}
+
+/** What the section shows after an action: the outcome and the fresh view. */
+export type SampleDataRun = Readonly<{ outcome: SampleOutcome; view: SampleDataView | null }>;
+
+export async function runSeedSampleSetAction(setId: SampleSetId): Promise<SampleDataRun> {
+  const result = await seedSampleSetAction(setId);
+  return { outcome: seedOutcome(result), view: await getSampleDataViewAction() };
+}
+
+export async function runRemoveSampleSetAction(setId: SampleSetId): Promise<SampleDataRun> {
+  const result = await removeSampleSetAction(setId);
+  return { outcome: removeOutcome([result]), view: await getSampleDataViewAction() };
+}
+
+export async function runRemoveAllSampleDataAction(): Promise<SampleDataRun> {
+  const results = await removeAllSampleDataAction();
+  return { outcome: removeOutcome(Array.isArray(results) ? results : [results]), view: await getSampleDataViewAction() };
+}
 
 /** Add one sample set to the calling operator's account. Safe to run again. */
 export async function seedSampleSetAction(setId: SampleSetId): Promise<SeedSampleActionResult> {
