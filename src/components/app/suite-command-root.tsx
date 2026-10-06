@@ -32,7 +32,7 @@ type SuiteDestination = Readonly<{
 
 /**
  * Every place the sidebar names, in the sidebar's order: the approved
- * navigation first, then what sits under "Initial setup", then Settings.
+ * navigation first, then the places it reaches without a row, then Settings.
  * Search here and the sidebar agree on what exists.
  */
 const DESTINATIONS: readonly SuiteDestination[] = Object.freeze([

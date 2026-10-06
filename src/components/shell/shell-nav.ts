@@ -57,12 +57,6 @@ export const SIDEBAR_GROUPS = [
 ] as const;
 
 /**
- * The launcher's panel still files its older entries under this name. The
- * sidebar's own "Initial setup" group was removed on 6 Oct 2026.
- */
-export const INITIAL_SETUP = { id: "initial-setup", label: "Initial setup" } as const;
-
-/**
  * Places with no sidebar row of their own. They still own their paths, so the
  * breadcrumb resolves. Inbox is the top bar's bell; My tasks is in Search or
  * jump to; Chat is the sidebar's Chat group; Apps and tools is the top bar's

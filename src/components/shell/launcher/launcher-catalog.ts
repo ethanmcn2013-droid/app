@@ -315,7 +315,7 @@ export function appById(id: AppId): AppEntry {
 /**
  * The apps of the approved navigation (2 Oct 2026), in the sidebar's order.
  * The launcher lists these first, as "Your apps". Every other entry stays,
- * inside the launcher's "Initial setup" group, so nothing is removed.
+ * in the sections below it, so nothing is removed.
  */
 export const FEATURED_APP_IDS: readonly AppId[] = ["projects", "tasks", "timeline", "files", "analytics"];
 
@@ -324,12 +324,12 @@ export function featuredApps(): AppEntry[] {
   return FEATURED_APP_IDS.map(appById);
 }
 
-/** The apps kept inside "Initial setup", in catalogue order. */
-export function setupApps(): AppEntry[] {
+/** The apps under "More apps", in catalogue order. */
+export function moreApps(): AppEntry[] {
   return APP_ENTRIES.filter((app) => !FEATURED_APP_IDS.includes(app.id));
 }
 
-/** The app section's name inside "Initial setup"; "Your apps" sits above it. */
+/** The second app section's name; "Your apps" sits above it. */
 export const MORE_APPS_LABEL = "More apps";
 
 /** The apps a viewer can open, in catalogue order. */
