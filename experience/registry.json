@@ -409,10 +409,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-25",
+      "lastReviewedAt": "2026-10-06",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "1eb1bd22fb8f62c5"
+      "materialityHash": "3fcba4d3b2bb4dcf",
+      "materialityReview": {
+        "materialityHash": "3fcba4d3b2bb4dcf",
+        "reviewedAt": "2026-10-06",
+        "evidence": "experience/reviews/2026-10-05-sample-data/receipts/tasks.page.app-settings-materiality.json"
+      }
     },
     {
       "id": "tasks.page.app-tasks-timeline",
@@ -3631,6 +3636,55 @@
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "06252d7044d97c55"
+    },
+    {
+      "id": "tasks.settings.sample-data",
+      "product": "tasks",
+      "surfaceType": "nested-view",
+      "source": "tasks/src/components/app/settings/sections/sample-data.tsx",
+      "trigger": "Settings > Sample data, shown only to operators (ADMIN_USER_IDS) outside review and demo mode",
+      "parentJourney": "signed-in-work",
+      "archetype": "settings-and-administration",
+      "primaryJob": "Add invented projects to the operator's own account to see the product with realistic work in it, and remove them again.",
+      "primaryAction": "Add a sample set, or remove one.",
+      "roles": [
+        "owner"
+      ],
+      "requiredStates": [
+        "empty",
+        "populated",
+        "loading",
+        "partial-failure",
+        "error",
+        "success",
+        "restricted",
+        "disabled",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "partial",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-10-05",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "72d7996a9b12e0f5"
     },
     {
       "id": "tasks.resources.drive-upload",

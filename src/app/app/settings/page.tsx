@@ -12,6 +12,8 @@ import {
   listWorkspaceActivityAction,
 } from "@/server/actions/settings";
 import { getSecurityData } from "@/server/actions/security";
+import { getSampleDataViewAction } from "@/server/actions/sample-data";
+import { callerIsAdmin } from "@/server/admin";
 import { getUserPreferences } from "@/server/db/preferences";
 import { getWorkspaceStorageUsage } from "@/server/actions/attachments";
 import { SettingsApp } from "@/components/app/settings/settings-app";
@@ -159,6 +161,7 @@ export default async function SettingsPage() {
     userPreferences,
     storageUsageBytes,
     personalityPrefs,
+    sampleData,
   ] = await Promise.all([
     // The gate and the surface it gates now name the same Project. This used
     // to resolve one ambiently of its own accord, so the role shown could in
@@ -173,6 +176,9 @@ export default async function SettingsPage() {
     getUserPreferences(me),
     getWorkspaceStorageUsage(ws),
     readPersonalityPrefs(me),
+    // Null unless the caller is an operator (ADMIN_USER_IDS), decided on the
+    // server. Null means the section does not exist for this person.
+    callerIsAdmin(me) ? getSampleDataViewAction() : null,
   ]);
 
   // Resolve the current user's email from the member rows (already fetched).
@@ -226,6 +232,7 @@ export default async function SettingsPage() {
         initialThemeMode={userPreferences.themeMode}
         storageUsageBytes={storageUsageBytes}
         initialPersonalityPrefs={personalityPrefs}
+        sampleData={sampleData}
       />
     </TasksRuntimePageMount>
   );
