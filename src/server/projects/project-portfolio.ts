@@ -30,6 +30,13 @@ import "server-only";
  *
  * Review never touches a database: the review Project and five labelled
  * samples come from `project-portfolio-review.ts`.
+ *
+ * ── Days ───────────────────────────────────────────────────────────────────
+ *
+ * "Today", a Project's first day and each big date are calendar days in the
+ * reader's own time zone (their saved preference, UTC when there is none or
+ * it cannot be read): the same day Analytics and the Projects console use, so
+ * the three pages never disagree about whether a date has passed.
  */
 
 import { and, asc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
@@ -57,19 +64,32 @@ import {
   type StartFacts,
 } from "@/lib/projects/project-portfolio";
 import { reviewPortfolioRows } from "@/server/projects/project-portfolio-review";
+import { getCurrentUser } from "@/server/auth";
+import { getUserPreferences } from "@/server/db/preferences";
+import { dayOrdinalIn, ordinalToIsoDate } from "@/lib/projects/project-console";
+import { validTimeZone } from "@/server/projects/project-console-facts";
 
 /** At most this many dated milestones are read for the whole page. */
 const MILESTONE_READ_LIMIT = 4000;
 
-function todayIso(): string {
-  return isDemoMode() ? PINNED_REVIEW_CALENDAR_FRAME.today : new Date().toISOString().slice(0, 10);
+/** The reader's saved time zone; UTC when it is unset or unreadable. */
+async function readerTimeZone(): Promise<string> {
+  try {
+    const userId = await getCurrentUser();
+    return validTimeZone((await getUserPreferences(userId)).timeZone);
+  } catch {
+    return "UTC";
+  }
 }
 
-function isoDay(value: Date | number | string | null | undefined): string | null {
+type DayOf = (ms: number) => number;
+
+/** A stored instant as a calendar day in the reader's time zone. */
+function isoDay(value: Date | number | string | null | undefined, dayOf: DayOf): string | null {
   if (value === null || value === undefined) return null;
   const date =
     value instanceof Date ? value : typeof value === "number" ? new Date(value * 1000) : new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10);
+  return Number.isNaN(date.getTime()) ? null : ordinalToIsoDate(dayOf(date.getTime()));
 }
 
 type MetaRow = { key: string; value: string | null };
@@ -101,7 +121,7 @@ async function readStats(ids: readonly string[], metaRows: readonly MetaRow[]): 
   return summarizeProjectCards(ids, metaRows, groups);
 }
 
-async function readStarts(ids: readonly string[]): Promise<Map<string, StartFacts>> {
+async function readStarts(ids: readonly string[], dayOf: DayOf): Promise<Map<string, StartFacts>> {
   const [taskRows, projectRows] = await Promise.all([
     db
       .select({
@@ -121,7 +141,7 @@ async function readStarts(ids: readonly string[]): Promise<Map<string, StartFact
   for (const id of ids) out.set(id, { firstTaskCreated: null, firstTaskDue: null, projectCreated: null });
   for (const row of projectRows) {
     const entry = out.get(row.id);
-    if (entry) out.set(row.id, { ...entry, projectCreated: isoDay(row.createdAt) });
+    if (entry) out.set(row.id, { ...entry, projectCreated: isoDay(row.createdAt, dayOf) });
   }
   for (const row of taskRows) {
     if (!row.workspaceId) continue;
@@ -129,8 +149,8 @@ async function readStarts(ids: readonly string[]): Promise<Map<string, StartFact
     if (!entry) continue; // Never report a Project the caller did not ask about.
     out.set(row.workspaceId, {
       ...entry,
-      firstTaskCreated: isoDay(row.firstCreated === null ? null : Number(row.firstCreated)),
-      firstTaskDue: isoDay(row.firstDue === null ? null : Number(row.firstDue)),
+      firstTaskCreated: isoDay(row.firstCreated === null ? null : Number(row.firstCreated), dayOf),
+      firstTaskDue: isoDay(row.firstDue === null ? null : Number(row.firstDue), dayOf),
     });
   }
   return out;
@@ -139,6 +159,7 @@ async function readStarts(ids: readonly string[]): Promise<Map<string, StartFact
 async function readMilestones(
   ids: readonly string[],
   metaRows: readonly MetaRow[],
+  dayOf: DayOf,
 ): Promise<Map<string, PortfolioMilestone[]>> {
   const rows = await db
     .select({
@@ -176,7 +197,7 @@ async function readMilestones(
   const allowed = new Set(ids);
   for (const row of rows) {
     if (!row.workspaceId || !allowed.has(row.workspaceId)) continue;
-    const date = isoDay(row.dueAt);
+    const date = isoDay(row.dueAt, dayOf);
     if (!date) continue;
     const list = out.get(row.workspaceId) ?? [];
     list.push({
@@ -196,7 +217,9 @@ async function readMilestones(
  * the catalog could not be read, which the page states. Never throws.
  */
 export async function loadProjectPortfolio(): Promise<ProjectPortfolio | null> {
-  const today = todayIso();
+  // Review runs on its pinned clock and never reads a preference.
+  const dayOf = isDemoMode() ? null : dayOrdinalIn(await readerTimeZone());
+  const today = dayOf ? ordinalToIsoDate(dayOf(Date.now())) : PINNED_REVIEW_CALENDAR_FRAME.today;
   const result = await loadProjectCatalogAction();
   if (!result.ok) return result.reason === "disabled" ? null : { kind: "unavailable", todayIso: today };
 
@@ -251,8 +274,8 @@ export async function loadProjectPortfolio(): Promise<ProjectPortfolio | null> {
       statsUnavailable = true;
     }
     const [startResult, milestoneResult] = await Promise.allSettled([
-      readStarts(ids),
-      readMilestones(ids, metaRows),
+      readStarts(ids, dayOf!),
+      readMilestones(ids, metaRows, dayOf!),
     ]);
     if (startResult.status === "fulfilled") starts = startResult.value;
     if (milestoneResult.status === "fulfilled") milestones = milestoneResult.value;
