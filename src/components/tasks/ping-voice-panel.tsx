@@ -219,6 +219,9 @@ export function PingVoicePanel(props: Props) {
       if (sent.kind === "response" && sent.response.ok && sent.response.action === "begin" && sent.response.projectId === props.projectId) {
         void sendPingVoice({ version: PING_VOICE_VERSION, action: "cancel", generationId: sent.response.generationId, token: sent.response.token });
       }
+      if (mounted.current && requestOwner.current === owner && scope.scopeKey === scopeKey && !markerRef.current) {
+        setState("idle"); setStatusText("The selection changed before capture started. Start a new request for the current selection.");
+      }
       releaseRequest(owner); return;
     }
     if (sent.kind !== "response" || !sent.response.ok || sent.response.action !== "begin" || sent.response.projectId !== props.projectId) {
