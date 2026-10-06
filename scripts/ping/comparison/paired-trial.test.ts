@@ -4,6 +4,8 @@ import { syntheticCapture, syntheticPlan } from "@/lib/ping/input-test-fixture";
 import { createPingOpenAiClipTranscriber } from "@/server/ping/openai-clip-transcription";
 import { createPingOpenAiInterpreter } from "@/server/ping/openai-interpreter";
 import { createPingOpenAiNativeAudio, type PingNativeAudioResult } from "@/server/ping/openai-native-audio";
+import { createPingOpenAiStreamingTranscription, type PingStreamingSocket } from "@/server/ping/openai-streaming-transcription";
+import { createPingStreamingPairedTranscriber } from "@/server/ping/streaming-paired-transcriber";
 import { createPingPairedInertTrialRunner, type PingPairedRoute, type PingPrivateRouteReport } from "./paired-trial";
 
 // Public literal synthetic labels only. No reserved labels, transcripts or outcome feedback.
@@ -346,4 +348,53 @@ test("native original budget holds the actual callback through cancel/deadline, 
       assert.equal((await run(options())).routes[0].status, "completed");
     } finally { held.resolve(nativeResult()); await settle(); t.mock.timers.reset(); clock.mock.restore(); }
   }
+});
+
+test("public actual streaming transcription helper pairs with completed clip and one real Responses callback each", async () => {
+  const capture = syntheticCapture(), closed = deferred<void>();
+  let receive: (raw: unknown) => void = () => {}, socketCloses = 0, connects = 0, clips = 0, models = 0;
+  const sends: string[] = [], transcript = "Assign these to me, due 2026-10-07, move to doing.";
+  const emit = (value: unknown) => receive(JSON.stringify(value));
+  const socket: PingStreamingSocket = { closed: closed.promise, queuedBytes: () => 0,
+    subscribe: (fn) => { receive = fn; queueMicrotask(() => emit({ type: "session.created", event_id: "created",
+      session: { id: "session-public", object: "realtime.transcription_session", type: "transcription" } })); return () => {}; },
+    close: () => { socketCloses++; closed.resolve(); },
+    send: text => {
+      sends.push(text); const request = JSON.parse(text);
+      if (request.type === "session.update") emit({ type: "session.updated", event_id: "updated",
+        session: { id: "session-public", object: "realtime.transcription_session", ...request.session } });
+      if (request.type === "input_audio_buffer.clear") emit({ type: "input_audio_buffer.cleared", event_id: "cleared" });
+      if (request.type === "input_audio_buffer.commit") {
+        emit({ type: "conversation.item.input_audio_transcription.completed", event_id: "final", item_id: "item-public", content_index: 0,
+          transcript, usage: { type: "duration", seconds: 0 } });
+        emit({ type: "input_audio_buffer.committed", event_id: "ack", item_id: "item-public", previous_item_id: null });
+      }
+    } };
+  const open = createPingOpenAiStreamingTranscription({ model: "gpt-live-transcribe", apiKey: "synthetic-key", connect: async () => { connects++; return socket; } });
+  const interpret = () => createPingOpenAiInterpreter({ model: "synthetic-model", apiKey: "synthetic-key", fetch: async (_url, init) => {
+    models++; assert.equal(socketCloses, 1); // Streaming callback cannot return finals_ready before actual close.
+    const input = JSON.parse(JSON.parse(init.body as string).input[0].content[0].text);
+    assert.deepEqual(input, { version: "ping.interpretation.v1", transcript, selectedTaskCount: 1,
+      referenceInstant: "2026-10-06T09:00:00.000Z", timeZone: "Europe/Dublin", systemColumnKeys: ["todo", "doing", "review", "done"] });
+    return new Response(JSON.stringify({ status: "completed", error: null, incomplete_details: null,
+      output: [{ type: "message", role: "assistant", status: "completed", content: [{ type: "output_text", annotations: [], logprobs: [],
+        text: JSON.stringify({ proposal: syntheticPlan() }) }] }] }), { headers: { "content-type": "application/json" } });
+  } });
+  const stream: PingPairedRoute = { id: "stream", transcribe: createPingStreamingPairedTranscriber({ capture, open }), interpret: interpret() };
+  const clip: PingPairedRoute = { id: "clip", interpret: interpret(),
+    transcribe: createPingOpenAiClipTranscriber({ model: "gpt-4o-mini-transcribe", apiKey: "synthetic-key", fetch: async (_url, init) => {
+      clips++; const file = (init.body as FormData).get("file") as Blob;
+      assert.deepEqual([...new Uint8Array(await file.arrayBuffer()).subarray(44)], [...pcm()]);
+      return new Response(JSON.stringify({ text: transcript }), { headers: { "content-type": "application/json" } });
+    } }) };
+  // The same normalized original is deliberately supplied both to helper and trial; no authenticated equality seam is invented.
+  const result = await createPingPairedInertTrialRunner()({ ...options([stream, clip]), capture });
+  assert.deepEqual([connects, socketCloses, clips, models], [1, 1, 1, 2]);
+  assert.deepEqual(sends.map(s => JSON.parse(s).type), ["session.update", "input_audio_buffer.clear", "input_audio_buffer.append", "input_audio_buffer.commit"]);
+  assert.deepEqual([...Buffer.from(JSON.parse(sends[2]).audio, "base64")], [...pcm()]);
+  for (const report of result.routes) { assert.equal(report.status, "completed"); assert.equal(report.transcribeCalls, 1); exactInert(report);
+    assert.ok(report.evaluation?.ok); assert.equal(report.evaluation.wholePlanMatch, true);
+    assert.deepEqual(report.observation.stages.map(s => s.name), ["finals_ready", "interpretation_start", "interpretation_end"]); }
+  assert.deepEqual(result.routes[0].transcriptionUsage, { type: "duration", seconds: 0 });
+  assert.equal(result.routes[1].transcriptionUsage, null);
 });

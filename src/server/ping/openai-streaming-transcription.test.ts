@@ -4,6 +4,7 @@ import { createPingVoiceSession } from "@/lib/ping/voice-session";
 import { syntheticCapture, syntheticPlan } from "@/lib/ping/input-test-fixture";
 import { createPingOpenAiInterpreter } from "./openai-interpreter";
 import { createPingOpenAiStreamingTranscription, type PingStreamingSocket } from "./openai-streaming-transcription";
+import { createPingStreamingPairedTranscriber } from "./streaming-paired-transcriber";
 
 const deferred = <T>() => { let resolve!: (v: T) => void; const promise = new Promise<T>((r) => { resolve = r; }); return { promise, resolve }; };
 const settle = () => new Promise<void>((r) => setImmediate(r));
@@ -54,6 +55,7 @@ test("fresh real lifecycle verifies effective policy and actual clear before rea
   f.s.emit({ type: "session.updated", event_id: "updated", session: config(true) }); await settle();
   assert.equal(published, false); assert.equal(f.s.sends[1], '{"type":"input_audio_buffer.clear"}');
   f.s.emit({ type: "input_audio_buffer.cleared", event_id: "cleared" }); const r = await p;
+  assert.equal(r.closed, f.s.port.closed);
   assert.deepEqual(r.getUsage(), []); r.transport.close(); await settle(); assert.equal(f.s.closes, 1); assert.equal(f.s.detached, 1);
   for (const mode of ["identity", "model", "format", "vad", "noise", "include", "prior", "unknown"] as const) {
     const bad = factory(), pending = bad.open(new AbortController().signal); const rejection = assert.rejects(pending, /ping_stream_invalid/); await settle();
@@ -185,4 +187,109 @@ test("cancellation/deadline retain physical reservation, late events cannot revi
   f.s.release(); await settle();
   const again = f.open(new AbortController().signal); const rejection = assert.rejects(again, /ping_stream_disconnected/); await rejection;
   assert.equal(f.calls, 2); // fulfilled closure permits a new supplied attempt, never an automatic retry.
+});
+
+async function handshake(f: ReturnType<typeof factory>) {
+  await settle(); assert.equal(f.s.sends.length, 0);
+  f.s.emit({ type: "session.created", event_id: "created", session: config() });
+  f.s.emit({ type: "session.updated", event_id: "updated", session: config(true) });
+  f.s.emit({ type: "input_audio_buffer.cleared", event_id: "cleared" }); await settle();
+}
+test("streaming paired helper sends literal full/partial PCM and returns only real complete finals after actual closure", async () => {
+  for (const finalFirst of [true, false]) {
+    const f = factory(socket(true)), bytes = new Uint8Array(9604);
+    for (let i = 0; i < bytes.length; i++) bytes[i] = i % 256;
+    const before = [...bytes], transcribe = createPingStreamingPairedTranscriber({ capture: syntheticCapture(), open: f.open });
+    let published = false;
+    const pending = transcribe(bytes, new AbortController().signal).then(result => { published = true; return result; });
+    bytes.fill(99); await handshake(f);
+    const sends = f.s.sends.map(text => JSON.parse(text));
+    assert.deepEqual(sends.map(v => v.type), ["session.update", "input_audio_buffer.clear", "input_audio_buffer.append", "input_audio_buffer.append", "input_audio_buffer.commit"]);
+    assert.deepEqual(sends.slice(2, 4).map(v => Buffer.from(v.audio, "base64").length), [9600, 4]);
+    assert.deepEqual([...Buffer.concat(sends.slice(2, 4).map(v => Buffer.from(v.audio, "base64")))], before);
+    const usage = { type: "tokens", input_tokens: 0, output_tokens: 0, total_tokens: 0, input_token_details: { audio_tokens: 0 } };
+    f.s.emit(finalFirst ? final(usage) : ack()); await settle(); assert.equal(published, false); assert.equal(f.s.closes, 0);
+    f.s.emit(finalFirst ? ack() : final(usage)); await settle(); assert.equal(published, false); assert.equal(f.s.closes, 1);
+    await assert.rejects(transcribe(new Uint8Array([0, 0]), new AbortController().signal), /ping_stream_pair_busy/);
+    await assert.rejects(f.open(new AbortController().signal), /ping_stream_busy/);
+    f.s.release(); const result = await pending;
+    assert.deepEqual(result, { text: final().transcript, usage }); assert.ok(Object.isFrozen(result)); assert.ok(Object.isFrozen(result.usage));
+    assert.equal(f.s.closes, 1); assert.equal(f.calls, 1); assert.equal(f.s.detached, 1);
+  }
+});
+
+test("streaming paired helper preserves unknown usage and refuses ambiguous metadata without inventing aggregation", async () => {
+  const zero = { type: "duration", seconds: 0 };
+  for (const observations of [[], [{ provenance: "transcription", usage: null }], [{ provenance: "transcription", usage: zero }],
+    [{ provenance: "other", usage: null }], [{ provenance: "transcription", usage: null }, { provenance: "transcription", usage: zero }],
+    [{ provenance: "transcription", usage: { type: "duration", seconds: -1 } }]]) {
+    const f = factory(); const open = async (signal: AbortSignal) => ({ ...await f.open(signal), getUsage: () => observations as never });
+    const transcribe = createPingStreamingPairedTranscriber({ capture: syntheticCapture(), open });
+    const pending = transcribe(new Uint8Array([0, 0]), new AbortController().signal);
+    // Attach rejection handler before synchronous supplied wire callbacks can refuse.
+    const observed = pending.then(result => ({ result }), error => ({ error })); await handshake(f);
+    f.s.emit(ack()); f.s.emit(final());
+    const outcome = await observed;
+    if (observations.length <= 1 && (observations.length === 0 || observations[0].provenance === "transcription") &&
+      !(observations[0]?.usage && observations[0].usage.seconds < 0)) {
+      assert.ok("result" in outcome); assert.deepEqual(outcome.result, { text: final().transcript, usage: observations[0]?.usage ?? null });
+    } else { assert.ok("error" in outcome); assert.match(String(outcome.error), /ping_stream_pair_failed/); }
+    assert.equal(f.calls, 1); assert.equal(f.s.closes, 1);
+  }
+});
+
+test("streaming paired helper retains cancellation and unknown/rejected physical witnesses, including late readiness", async () => {
+  const held = factory(socket(true)), controller = new AbortController();
+  const transcribe = createPingStreamingPairedTranscriber({ capture: syntheticCapture(), open: held.open });
+  const pending = transcribe(new Uint8Array([0, 0]), controller.signal), refused = assert.rejects(pending, /ping_stream_pair_cancelled/);
+  await handshake(held); controller.abort(); await settle(); assert.equal(held.s.closes, 1);
+  await assert.rejects(transcribe(new Uint8Array([0, 0]), new AbortController().signal), /ping_stream_pair_busy/);
+  held.s.release(); await refused; assert.equal(held.calls, 1);
+
+  const f = factory(socket(true)), gate = deferred<void>(), lateController = new AbortController();
+  const late = createPingStreamingPairedTranscriber({ capture: syntheticCapture(), open: async signal => {
+    const port = await f.open(signal); await gate.promise; return port;
+  } });
+  const waiting = late(new Uint8Array([0, 0]), lateController.signal), rejection = assert.rejects(waiting, /ping_stream_pair_cancelled/);
+  await handshake(f); // The underlying socket is ready; helper has not received its port yet.
+  assert.equal(f.s.sends.length, 2); lateController.abort(); gate.resolve(); await settle();
+  assert.equal(f.s.sends.length, 2); assert.equal(f.s.closes, 1);
+  await assert.rejects(late(new Uint8Array([0, 0]), new AbortController().signal), /ping_stream_pair_busy/);
+  f.s.release(); await rejection;
+
+  const broken = socket(true); let rejectClosed!: (error: Error) => void;
+  const closed = new Promise<void>((_resolve, reject) => { rejectClosed = reject; });
+  const open = createPingOpenAiStreamingTranscription({ model: "gpt-live-transcribe", apiKey: "synthetic-key",
+    connect: async () => ({ ...broken.port, closed }) });
+  const bad = createPingStreamingPairedTranscriber({ capture: syntheticCapture(), open });
+  const failure = bad(new Uint8Array([0, 0]), new AbortController().signal), failureObserved = assert.rejects(failure, /ping_stream_pair_failed/);
+  await settle(); broken.emit({ type: "session.created", event_id: "created", session: config() });
+  broken.emit({ type: "session.updated", event_id: "updated", session: config(true) });
+  broken.emit({ type: "input_audio_buffer.cleared", event_id: "cleared" }); await settle(); broken.emit(ack()); broken.emit(final());
+  rejectClosed(Error("synthetic-closure-failure")); await failureObserved;
+  await assert.rejects(bad(new Uint8Array([0, 0]), new AbortController().signal), /ping_stream_pair_busy/);
+  await assert.rejects(open(new AbortController().signal), /ping_stream_busy/);
+  const unknown = createPingStreamingPairedTranscriber({ capture: syntheticCapture(), open: async () => { throw Error("no-witness"); } });
+  await assert.rejects(unknown(new Uint8Array([0, 0]), new AbortController().signal), /ping_stream_pair_failed/);
+  await assert.rejects(unknown(new Uint8Array([0, 0]), new AbortController().signal), /ping_stream_pair_busy/);
+});
+
+test("streaming paired missing ACK/final and reentrant loss respect original budgets without prefix or later sends", async t => {
+  for (const missing of ["ack", "final"] as const) {
+    let now = 0; const clock = t.mock.method(performance, "now", () => now); t.mock.timers.enable({ apis: ["setTimeout"] });
+    const f = factory(), transcribe = createPingStreamingPairedTranscriber({ capture: syntheticCapture(), open: f.open, deadlineMs: 9000 });
+    try {
+      const pending = transcribe(new Uint8Array([0, 0]), new AbortController().signal);
+      const rejection = assert.rejects(pending, missing === "ack" ? /ping_stream_pair_failed/ : /ping_stream_pair_deadline/);
+      await handshake(f); f.s.emit(missing === "ack" ? final() : ack());
+      now = missing === "ack" ? 5000 : 9000; t.mock.timers.tick(now); await rejection;
+      assert.equal(f.calls, 1); assert.equal(f.s.closes, 1); assert.equal(f.s.sends.filter(s => JSON.parse(s).type === "input_audio_buffer.commit").length, 1);
+    } finally { t.mock.timers.reset(); clock.mock.restore(); }
+  }
+  const f = factory(); const transcribe = createPingStreamingPairedTranscriber({ capture: syntheticCapture(), open: f.open });
+  const pending = transcribe(new Uint8Array([0, 0]), new AbortController().signal), rejection = assert.rejects(pending, /ping_stream_pair_failed/);
+  await settle(); f.s.emit({ type: "session.created", event_id: "created", session: config() });
+  f.s.emit({ type: "session.updated", event_id: "updated", session: config(true) });
+  f.s.onQueue(() => f.s.lost()); f.s.emit({ type: "input_audio_buffer.cleared", event_id: "cleared" });
+  await rejection; assert.equal(f.s.sends.length, 2); assert.equal(f.s.closes, 1);
 });

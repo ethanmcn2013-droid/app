@@ -13,7 +13,9 @@ export type PingStreamingSocket = Readonly<{
   closed: Promise<void>;
 }>;
 export type PingStreamingUsage = Readonly<{ provenance: "transcription"; usage: PingClipUsage | null }>;
-export type PingStreamingReady = Readonly<{ transport: PingVoiceTransport; getUsage: () => readonly PingStreamingUsage[] }>;
+export type PingStreamingReady = Readonly<{ transport: PingVoiceTransport; getUsage: () => readonly PingStreamingUsage[];
+  /** The exact supplied physical socket closure witness, never a logical close request. */
+  closed: Promise<void> }>;
 export type PingStreamingOptions = Readonly<{ model: string; apiKey: string;
   connect: (url: string, options: Readonly<{ headers: Readonly<{ Authorization: string }>; signal: AbortSignal }>) => Promise<PingStreamingSocket>;
   handshakeMs?: number }>;
@@ -145,7 +147,7 @@ export function createPingOpenAiStreamingTranscription(options: PingStreamingOpt
           if (phase !== "cleared" || !exactKeys(v, ["type", "event_id"])) { stop("invalid"); return; }
           phase = "ready"; if (!valid()) return;
           clearTimeout(timer); timer = setTimeout(() => stop("deadline"), Math.max(1, started + handshake + 65_000 - performance.now()));
-          published = true; resolve(freeze({ transport, getUsage: () => freeze(observations.map((o) => ({ ...o }))) })); return;
+          published = true; resolve(freeze({ transport, getUsage: () => freeze(observations.map((o) => ({ ...o }))), closed: socket!.closed })); return;
         }
         if (phase !== "ready" || !committed) { stop("invalid"); return; }
         if (v.type === "input_audio_buffer.committed") {

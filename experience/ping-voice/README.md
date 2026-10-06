@@ -249,3 +249,48 @@ constructors on literal WAV/context, inspect nullable usage and whole refusals,
 prove byte/context isolation and closed route boundaries, and hold native callback
 settlement across cancellation/deadline without inventing transcript stages.
 `pnpm test:ping-voice` already includes the existing paired test file.
+
+## Streaming paired transcription composition
+
+`createPingStreamingPairedTranscriber` is a server-only, explicitly constructed
+legacy transcription callback. Supply the same frozen original capture to its
+factory and the paired trial; the unchanged `(pcm, signal)` signature cannot
+independently authenticate that equality. The supplied accepted streaming opener
+establishes fresh created/update/clear readiness before any PCM append. The
+helper copies completed ordinary PCM, pumps actual full/partial blocks, records
+exact reducer coverage, seals the complete clip watermark and sends one commit.
+This replay boundary is not a microphone cut or paced live speech.
+
+The existing pure input reducer consumes real correlated ACK/complete finals in
+either order. Only its complete-final `interpret_once` descriptor yields text;
+the helper calls no model, creates no proposal and adds no executor/receipt. The
+paired runner subsequently invokes its real supplied interpreter once. Preview,
+bookkeeping, missing ACK/final, wrong identity or partial result cannot yield a
+prefix. Finite scheduled ticks and the existing event caps enforce the original
+budget across opening, pumping, finality and closure.
+
+`PingStreamingReady.closed` is the exact supplied physical socket promise. The
+callback returns `{text,usage}` only after that witness fulfills and the original
+deadline/abort still allows success. Detach/close requests are latched once;
+held closure retains work/admission, and rejected or unavailable witnesses never
+fabricate release. A late ready port after cancellation is closed without audio.
+The outer paired runner may publish its immutable logical deadline/cancellation
+while this callback remains held. These are supplied port obligations, not
+observed network/provider settlement. Temporary helper cleanup claims no erasure
+of caller buffers, returned transcript, socket content or provider records.
+
+Usage snapshots precede cleanup: zero observations gives unknown null, one closed
+transcription observation gives actual supported scalar usage/null, and multiple
+or unexpected observations fail rather than aggregate. Known zero remains zero;
+provider/item/session IDs, prices and complete billing are excluded. The paired
+route's `finals_ready` means its complete-final callback after physical closure,
+not speech end or visible Tasks completion. Label-derived outputs remain private
+to the authorized custodian; only public synthetic owning fixtures are inspected.
+No account eligibility, recognition quality, latency advantage, route winner,
+runtime connection, whole PP019/021/022 or programme gate is established.
+
+Four additional registered streaming groups inspect actual full/partial bytes,
+ACK/final ordering, metadata ambiguity, held/rejected/late closure, cancellation
+and deterministic missing-final budgets. One existing paired-file group composes
+the actual helper/Responses and clip/Responses constructors with injected socket
+and HTTP only; no provider call, credential lookup or reserved screening occurs.
