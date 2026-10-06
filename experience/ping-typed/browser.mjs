@@ -344,6 +344,7 @@ try {
     for(const response of responses){assert.equal(response.status(),200);await response.finished();}
     page.off('response',collect);
     const after=await literalRows(),calls=controlCalls.slice(before.calls);
+    assert.equal(after.length,before.rows.length);
     assert.equal(calls.length,selected.length);assert.ok(calls.every(call=>call.completed));assert.deepEqual(calls.map(call=>call.id).sort(),[...selected].sort());
     for(const pre of before.rows) {
       const actual=after.find(row=>row.id===pre.id);
@@ -355,6 +356,7 @@ try {
     }
     const activities=(await fixture.client.execute('SELECT workspace_id,task_id,user_id,kind,payload FROM activities ORDER BY id')).rows.filter(row=>selected.includes(row.task_id));
     assert.equal(activities.length,selected.length);
+    assert.deepEqual(activities.map(row=>row.task_id).sort(),[...selected].sort());
     for(const row of activities){assert.equal(row.workspace_id,PROOF_PROJECT);assert.equal(row.user_id,'alice');assert.equal(row.kind,'move');assert.deepEqual(JSON.parse(row.payload),{kind:'move',from:'todo',to:'doing'});}
     assert.equal(Number((await fixture.client.execute('SELECT COUNT(*) AS n FROM activities')).rows[0].n)-before.activities,selected.length);
     assert.equal(executeCalls,before.execute);assert.equal(receiptReadCalls,before.read);assert.equal(await countReceipts(),before.receipts);
