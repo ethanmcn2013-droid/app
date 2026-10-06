@@ -268,13 +268,39 @@ try {
     await page.keyboard.press("Enter");
     assert.deepEqual(await page.evaluate(() => window.consoleProbe.selected), [{ id: "p-winter", surface: "tasks" }]);
 
-    // Enter on a row opens that project through the guarded switch.
+    // Enter on a row shows the project as a record (the peek, 6 Oct 2026)
+    // without switching to it; Open in the peek is the guarded switch.
     await page.locator("[data-console-row='p-barn']").focus();
     await page.keyboard.press("Enter");
+    const peek = page.getByRole("dialog", { name: "Barn roof and heating works" });
+    await peek.waitFor();
+    assert.equal(await page.evaluate(() => window.consoleProbe.selected.length), 1, "the peek does not switch");
+    assert.equal(await peek.getByText("3 of 10", { exact: true }).count(), 1);
+    for (const label of ["Status", "Lead", "Target date", "Next big date", "Open tasks", "Late"]) {
+      assert.equal(await peek.locator("dt", { hasText: label }).count(), 1, `peek field ${label}`);
+    }
+    assert.ok(await peek.getByRole("heading", { name: "What it is for" }).count());
+    assert.ok(await peek.getByRole("heading", { name: "Done lately" }).count());
+    await shot(page, "peek-desk-dark");
+    // j and k step through the list's own order, and back.
+    await page.keyboard.press("j");
+    await page.getByRole("dialog", { name: "Keane Legal retreat" }).waitFor();
+    await page.keyboard.press("k");
+    await peek.waitFor();
+    // Escape closes and hands focus back to the row.
+    await page.keyboard.press("Escape");
+    await peek.waitFor({ state: "detached" });
+    assert.equal(await focused(), "p-barn");
+    await page.keyboard.press("Enter");
+    await peek.getByRole("link", { name: "Open", exact: true }).click();
+    await peek.waitFor({ state: "detached" });
     assert.deepEqual(await page.evaluate(() => window.consoleProbe.selected.at(-1)), { id: "p-barn", surface: "project" });
+    // The row's own Open button still switches straight away.
+    await page.getByRole("link", { name: "Open Mara & Finn’s wedding" }).click();
+    assert.deepEqual(await page.evaluate(() => window.consoleProbe.selected.at(-1)), { id: "p-mara", surface: "project" });
     // The open project is not switched to; its row points at the overview below.
     await page.getByRole("link", { name: "Keane Legal retreat: see its overview below" }).click();
-    assert.equal(await page.evaluate(() => window.consoleProbe.selected.length), 2);
+    assert.equal(await page.evaluate(() => window.consoleProbe.selected.length), 3);
     // A project whose name is shared cannot be opened from here.
     assert.equal(await page.locator("[data-row='p-shared'] a").count(), 0);
     assert.equal(await page.locator("[data-row='p-shared'] button").count(), 0);

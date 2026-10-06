@@ -4,6 +4,14 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-10-06 · Redesign candidate · A quick look at a project before you open it
+
+On the Projects page, clicking a project's name now shows it as a record in a side panel, without switching the app to it. Opening a project switches everything to it, so this is the way to look first. At the top are previous and next with where you are in the list ("3 of 10") and Open. Then comes the project's colour tile and name, with how it is doing underneath. Each field has its own row: status, who leads it, its target date, its next big date, open tasks, late tasks, and a bar for how many of its tasks are done. Below that are what it is for and what got finished in the last two weeks, one small bar a day. At the foot are ways into its tasks, its timeline and its files. Up and down (or j and k) step through the list, and Escape closes and puts you back on the row.
+
+The row's own Open button, Ctrl or Cmd and click, and the row menu still open the project straight away. The project that is already open still scrolls to its overview below. Who is in a project, its recent activity and its files are read only for the open project, so the panel does not show them for the others.
+
+No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-project-peek`; no deployment or production change is claimed.
+
 ## 2026-10-06 · Redesign candidate · Apps and tools shows everything, with no folded group
 
 Apps and tools, the grid button in the top bar and the page at `/app/tools`, no longer keeps half of what it holds behind a folded "Initial setup" heading. It now reads as four sections in view: Your apps (Projects, Tasks, Timeline, Files and Analytics), More apps (Notes, and Messages if you have Chat), Works with, and the tools that are coming soon. Nothing was removed, search still finds every entry, and the arrow keys walk all four sections. This finishes what the sidebar change started when its own "Initial setup" group went.
