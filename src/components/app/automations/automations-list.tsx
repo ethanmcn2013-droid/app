@@ -11,8 +11,10 @@ import {
   saveDraft,
   subscribeDrafts,
 } from "@/lib/automations/draft-store";
+import { CREATE_AUTOMATION_READY_ATTRIBUTE, SHELL_CREATE_AUTOMATION_EVENT } from "@/lib/shell-create";
 import {
   STEP_W,
+  blankAutomation,
   boundsOf,
   copyAutomation,
   describeEdited,
@@ -79,6 +81,31 @@ export function AutomationsList() {
     saveDraft(doc);
     router.push(automationPath(doc.id));
   };
+
+  // One create button per screen (founder, 6 Oct 2026): the top bar's New
+  // automation starts a blank draft here, or on arrival with ?create=automation.
+  useEffect(() => {
+    const start = () => {
+      const doc = blankAutomation();
+      saveDraft(doc);
+      router.push(automationPath(doc.id));
+    };
+    window.addEventListener(SHELL_CREATE_AUTOMATION_EVENT, start);
+    const root = document.documentElement;
+    root.setAttribute(CREATE_AUTOMATION_READY_ATTRIBUTE, "");
+    const url = new URL(window.location.href);
+    let timer = 0;
+    if (url.searchParams.get("create") === "automation") {
+      url.searchParams.delete("create");
+      window.history.replaceState(window.history.state, "", url.toString());
+      timer = window.setTimeout(start, 0);
+    }
+    return () => {
+      window.clearTimeout(timer);
+      root.removeAttribute(CREATE_AUTOMATION_READY_ATTRIBUTE);
+      window.removeEventListener(SHELL_CREATE_AUTOMATION_EVENT, start);
+    };
+  }, [router]);
 
   const list = drafts ? [...drafts.drafts].sort((a, b) => b.updatedAt - a.updatedAt) : null;
 

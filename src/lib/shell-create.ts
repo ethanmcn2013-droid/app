@@ -30,6 +30,10 @@ export const SHELL_CREATE_PROJECT_EVENT = "signal:create-project";
 export const CREATE_PROJECT_READY_ATTRIBUTE = "data-create-project-ready";
 /** Where to go when it is not: the page opens the form on arrival. */
 export const CREATE_PROJECT_HREF = "/app/project?create=project";
+/** The Automations list starts a blank draft when it hears this. */
+export const SHELL_CREATE_AUTOMATION_EVENT = "signal:create-automation";
+export const CREATE_AUTOMATION_READY_ATTRIBUTE = "data-create-automation-ready";
+export const CREATE_AUTOMATION_HREF = `${AUTOMATIONS_APP_PATH}?create=automation`;
 /** The top bar's create button, so a closed form can hand focus back to it. */
 export const SHELL_CREATE_ATTRIBUTE = "data-shell-create";
 

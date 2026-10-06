@@ -109,7 +109,7 @@ try {
       const chatToggle = aside.getByRole("button", { name: "Chat", exact: true });
       await chatToggle.click();
       same(await chatToggle.getAttribute("aria-expanded"), "false", `${tag}: Chat folds`);
-      same(await aside.locator('nav[aria-label="Chat"] a').count(), 0, `${tag}: folded Chat shows no rows`);
+      same(await aside.locator('#shell-group-chat').count(), 0, `${tag}: folded Chat shows no rows`);
       await shot("chat-folded");
       await page.reload({ waitUntil: "networkidle" });
       same(await aside.getByRole("button", { name: "Chat", exact: true }).getAttribute("aria-expanded"), "false", `${tag}: the fold is remembered`);
@@ -167,9 +167,9 @@ try {
         await aside.getByRole("button", { name: "Collapse sidebar" }).click();
         await page.locator('[data-shell="v3"][data-collapsed]').waitFor();
         ok((await aside.boundingBox()).width <= 64, `${tag}: the rail is narrow`);
-        same(await current(), ["Tasks"], `${tag}: Tasks is the page you are on, on the rail`);
+        same(await aside.locator('[aria-current="page"]').evaluateAll((list) => list.map((row) => row.getAttribute("title"))), ["Tasks"], `${tag}: Tasks is the page you are on, on the rail`);
         same(await aside.locator('nav[aria-label="Build"] a').count(), 2, `${tag}: Build on the rail`);
-        same(await aside.locator('nav[aria-label="Chat"] a').count(), 1, `${tag}: Chat is one icon on the rail`);
+        same(await aside.locator('#shell-group-chat a').count(), 1, `${tag}: Chat is one icon on the rail`);
         await shot("rail");
         await aside.getByRole("button", { name: "Expand sidebar" }).click();
         await shot("tasks");

@@ -24,7 +24,7 @@ import { withSuiteContext } from "@/lib/suite-context";
 import { loadSidebarProjectsAction } from "@/server/actions/sidebar-projects";
 import type { ChooserRow } from "@/lib/projects/project-chooser";
 import { buildProjectUrl } from "@/lib/projects/project-url";
-import { SIDEBAR_MARK_LABEL, type SidebarProjectMark } from "@/lib/projects/sidebar-projects";
+import { SIDEBAR_MARK_LABEL, type SidebarProjectMark } from "@/lib/projects/sidebar-mark";
 import { ShellIcon } from "./shell-icons";
 import { useFaviconBadge } from "./favicon-badge";
 import { SIGNAL_INDIGO, suiteMarkMetrics } from "@/lib/brand/suite-mark";

@@ -26,13 +26,16 @@ import {
   STUDIO_PALETTE_EVENT,
 } from "@/components/studio-bar/studio-chrome-context";
 import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
-import { AUTOMATIONS_APP_PATH, automationPath, suiteSurfaceFromAppPath } from "@/lib/product-urls";
+import { suiteSurfaceFromAppPath } from "@/lib/product-urls";
 import {
+  CREATE_AUTOMATION_HREF,
+  CREATE_AUTOMATION_READY_ATTRIBUTE,
   CREATE_LABEL,
   CREATE_PROJECT_HREF,
   CREATE_PROJECT_READY_ATTRIBUTE,
   createKindForPath,
   SHELL_CREATE_ATTRIBUTE,
+  SHELL_CREATE_AUTOMATION_EVENT,
   SHELL_CREATE_PROJECT_EVENT,
 } from "@/lib/shell-create";
 import {
@@ -300,18 +303,15 @@ function NewMenu() {
     }
   };
 
-  // A blank draft, kept in this browser like every other, then its canvas.
-  // The Automations code loads when asked for, not with the shell.
+  // The Automations list makes the blank draft (kept in this browser like
+  // every other) and opens its canvas, here or on arrival.
   const newAutomation = () => {
     setOpen(false);
-    void Promise.all([import("@/lib/automations/graph"), import("@/lib/automations/draft-store")]).then(
-      ([graph, store]) => {
-        const doc = graph.blankAutomation();
-        store.saveDraft(doc);
-        router.push(automationPath(doc.id));
-      },
-      () => router.push(AUTOMATIONS_APP_PATH),
-    );
+    if (document.documentElement.hasAttribute(CREATE_AUTOMATION_READY_ATTRIBUTE)) {
+      window.dispatchEvent(new CustomEvent(SHELL_CREATE_AUTOMATION_EVENT));
+    } else {
+      router.push(CREATE_AUTOMATION_HREF);
+    }
   };
 
   const start = { task: newTask, project: newProject, automation: newAutomation }[kind];

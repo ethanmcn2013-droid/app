@@ -194,7 +194,9 @@ test("the one create button follows the page: an automation, a project, otherwis
   assert.match(menu, /\{chat \? \(\s*<Link href="\/app\/messages" role="menuitem"/);
   // The pages no longer carry their own.
   const read = (file: string) => readFileSync(path.join(process.cwd(), file), "utf8");
-  assert.doesNotMatch(read("src/components/app/automations/automations-list.tsx"), /blankAutomation\(\)/);
+  const automations = read("src/components/app/automations/automations-list.tsx");
+  assert.doesNotMatch(automations, /className=\{styles\.primary\}/);
+  assert.match(automations, /window\.addEventListener\(SHELL_CREATE_AUTOMATION_EVENT, start\)/);
   const hub = read("src/components/app/project/projects-hub.tsx");
   assert.doesNotMatch(hub, /styles\.buttonPrimary\} \$\{styles\.newButton\}/);
   assert.match(hub, /window\.addEventListener\(SHELL_CREATE_PROJECT_EVENT, open\)/);

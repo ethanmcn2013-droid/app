@@ -11,12 +11,9 @@
  */
 import { summarizeProjectCards, targetDatePassed, type ProjectMetaRow } from "@/lib/projects/project-hub";
 
-export type SidebarProjectMark = "late" | "risk";
+import type { SidebarProjectMark } from "@/lib/projects/sidebar-mark";
 
-export const SIDEBAR_MARK_LABEL: Readonly<Record<SidebarProjectMark, string>> = {
-  late: "Past its target date",
-  risk: "At risk",
-};
+export type { SidebarProjectMark };
 
 export function sidebarProjectMarks(
   projectIds: readonly string[],
