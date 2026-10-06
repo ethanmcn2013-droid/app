@@ -13,6 +13,7 @@
  */
 
 import { createRoot } from "react-dom/client";
+import { SHELL_CREATE_PROJECT_EVENT } from "@/lib/shell-create";
 import { ProjectsIndex } from "../../src/components/app/project/projects-hub";
 import { ProjectsFirstRun } from "../../src/components/app/project/projects-first-run";
 import { ProjectConsoleSkeleton } from "../../src/components/app/project/project-console-skeleton";
@@ -121,6 +122,16 @@ function Frame() {
   }
   return (
     <div className="fixture-shell">
+      {/* Stands in for the top bar's one create button (6 Oct 2026): the page
+          has none of its own and opens its form when the shell asks. */}
+      <button
+        type="button"
+        className="fixture-create"
+        data-shell-create="project"
+        onClick={() => window.dispatchEvent(new CustomEvent(SHELL_CREATE_PROJECT_EVENT))}
+      >
+        New project
+      </button>
       <main className="fixture-page">
         <div className="fixture-inner">
           {state === "loading" ? (
