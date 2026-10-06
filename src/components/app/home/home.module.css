@@ -485,7 +485,8 @@
 }
 
 .next {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--hue) 10%, var(--v3-surface)), var(--v3-surface) 70%);
+  background-color: var(--v3-surface);
+  background-image: linear-gradient(180deg, color-mix(in srgb, var(--hue) 10%, var(--v3-surface)), var(--v3-surface) 70%);
 }
 
 .next::before {
