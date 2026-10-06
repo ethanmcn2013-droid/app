@@ -12,6 +12,12 @@ Until now a laptop or larger screen opened every task as the two-column page ove
 
 No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-record-panel`; no deployment or production change is claimed.
 
+## 2026-10-06 · Redesign candidate · Apps and tools shows everything, with no folded group
+
+Apps and tools, the grid button in the top bar and the page at `/app/tools`, no longer keeps half of what it holds behind a folded "Initial setup" heading. It now reads as four sections in view: Your apps (Projects, Tasks, Timeline, Files and Analytics), More apps (Notes, and Messages if you have Chat), Works with, and the tools that are coming soon. Nothing was removed, search still finds every entry, and the arrow keys walk all four sections. This finishes what the sidebar change started when its own "Initial setup" group went.
+
+No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-launcher-flat`; no deployment or production change is claimed.
+
 ## 2026-10-06 · Redesign candidate · The sidebar in named groups, and one create button per screen
 
 The sidebar now reads top to bottom as Home, then four named groups with room between them. Workspace holds Projects, Tasks, Timeline, Files and Analytics. Projects lists every project you can open, each with its own colour tile; a dot appears beside a project only when it is past its target date or its owner has marked it at risk, the same rule the Projects page uses, and there is no dot when a project is fine. Build holds Automations, marked Preview, and Whiteboard, marked Soon. Chat lists your real conversations with what is unread; if you do not have Chat yet it shows one quiet row that says Coming soon. Projects and Chat fold from their names, and the choice is kept in the browser.
