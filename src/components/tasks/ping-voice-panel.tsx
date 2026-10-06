@@ -56,6 +56,7 @@ export function PingVoicePanel(props: Props) {
   const [state, setState] = useState<VoiceState>("idle");
   const [statusText, setStatusText] = useState("");
   const [busy, setBusy] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [refreshReady, setRefreshReady] = useState(false);
   const [markerReady, setMarkerReady] = useState(false);
   const selectedIds = useMemo(() => [...new Set(props.selectedTaskIds)].sort(), [props.selectedTaskIds]);
@@ -69,8 +70,15 @@ export function PingVoicePanel(props: Props) {
   const beginRetry = useRef<{ request: PingVoiceBegin; revision: number } | null>(null);
   const facadeRef = useRef<ReturnType<typeof createPingVoiceFacade> | null>(null);
   const requestLatch = useRef(false);
+  const requestOwner = useRef(0);
+  const cancelLatch = useRef(false);
   const finishedResult = useRef<(result: PingVoiceSendResult) => void>(() => undefined);
   const contextKey = `${scopeKey}\u001f${selectionKey}`;
+  const claimRequest = () => { const owner = ++requestOwner.current; requestLatch.current = true; setBusy(true); return owner; };
+  const releaseRequest = (owner: number) => {
+    if (requestOwner.current !== owner) return;
+    requestLatch.current = false; setBusy(false);
+  };
 
   useLayoutEffect(() => {
     const changed = previousSelection.current !== selectionKey;
@@ -111,6 +119,8 @@ export function PingVoicePanel(props: Props) {
     const request: PingTypedTokenRequest = { version: PING_TYPED_VERSION, action: "refresh", generationId: intent.generationId, token: intent.token };
     const sent = await sendPingTyped(request);
     if (!mounted.current || current.current.scopeKey !== scopeKey) return false;
+    const active = markerRef.current;
+    if (!active || active.token !== intent.token || active.generationId !== intent.generationId || active.commandId !== intent.commandId) return false;
     if (current.current.revision !== expectedRevision) {
       setStatusText("The saved result is known, but the selection changed before refresh. The current view was left untouched.");
       setRefreshReady(false); return false;
@@ -133,10 +143,11 @@ export function PingVoicePanel(props: Props) {
   const processResult = useCallback(async (result: PingVoiceSendResult, intent: VoiceMarker, expectedRevision: number) => {
     if (!mounted.current || current.current.scopeKey !== scopeKey) return;
     const active = markerRef.current;
-    if (!active || active.generationId !== intent.generationId || active.commandId !== intent.commandId) return;
+    if (!active || active.token !== intent.token || active.generationId !== intent.generationId || active.commandId !== intent.commandId) return;
     if (result.kind === "response" && pingVoiceIdentityMatches(result.response, intent)) {
       const response = result.response;
       if (response.ok && "knowledge" in response && response.knowledge === "not_invoked") {
+        if (active.phase === "committed") return; // Later transport knowledge cannot erase a known historical commit.
         clearMarker(intent); markerRef.current = null; setMarker(null); setState("not_invoked");
         setStatusText("The server confirmed that no task change was started."); return;
       }
@@ -149,6 +160,7 @@ export function PingVoicePanel(props: Props) {
         await applyRefresh(saved, expectedRevision); return;
       }
     }
+    if (active.phase === "committed") return;
     const uncertain = { ...intent, phase: "unknown" as const };
     markerRef.current = uncertain; setMarker(uncertain); persistMarker(uncertain); setState("unknown");
     setStatusText("The original result is unresolved. Check it again; this capture will not be sent a second time.");
@@ -157,7 +169,8 @@ export function PingVoicePanel(props: Props) {
   const createSession = useCallback((onSnapshot: (snapshot: import("@/lib/ping/voice-session").PingVoiceSnapshot) => void) => {
     const active = markerRef.current;
     if (!active) throw new Error("voice capture requires a saved server handle");
-    const facade = createPingVoiceFacade({ identity: active, onSnapshot, onFinish: (result) => { void finishedResult.current(result); } });
+    const receiveFinished = finishedResult.current;
+    const facade = createPingVoiceFacade({ identity: active, onSnapshot, onFinish: receiveFinished });
     facadeRef.current = facade;
     return facade.session;
   }, []);
@@ -171,19 +184,20 @@ export function PingVoicePanel(props: Props) {
       }, 0);
       return () => window.clearTimeout(timer);
     }
-    if (state === "starting" && phase === "closed") {
+    if (state === "starting" && (phase === "closed" || phase === "unavailable")) {
       const active = markerRef.current;
+      if (!active) return; // An earlier native closure does not describe a new pending server Begin.
       const timer = window.setTimeout(() => {
-        if (!active) { setState("error"); return; }
+        if (markerRef.current?.token !== active.token || markerRef.current.phase === "committed") return;
         void sendPingVoice({ version: PING_VOICE_VERSION, action: "cancel", generationId: active.generationId, token: active.token })
           .then((result) => processResult(result, active, current.current.revision));
         setState("unknown"); setStatusText("Microphone capture did not start. Check the original result before continuing.");
       }, 0);
       return () => window.clearTimeout(timer);
     }
-    if (phase !== "closed" || state !== "listening" && state !== "finishing") return;
+    if (phase !== "closed" && phase !== "unavailable" || state !== "listening" && state !== "finishing") return;
     const active = markerRef.current;
-    if (!active) return;
+    if (!active || active.phase === "committed") return;
     const unresolved = { ...active, phase: "unknown" as const };
     markerRef.current = unresolved; setMarker(unresolved); persistMarker(unresolved);
     setState("unknown");
@@ -194,75 +208,77 @@ export function PingVoicePanel(props: Props) {
   const validSelection = selectedTasks.length === selectedIds.length && selectedTasks.every((task) => scopeTask(task, props.projectId));
   const start = async () => {
     if (!markerReady || busy || requestLatch.current || markerRef.current || !validSelection || !window.crypto?.randomUUID) return;
-    requestLatch.current = true; setBusy(true); setState("starting");
+    const owner = claimRequest(); setState("starting");
     const revision = current.current.revision;
     const request = beginRetry.current?.revision === revision ? beginRetry.current.request : makePingVoiceBegin(props.projectId, selectedIds,
       Object.fromEntries(selectedTasks.map((task) => [task.id, pingVoiceTaskSnapshot(task)])), window.crypto.randomUUID());
     beginRetry.current = { request, revision };
     const sent = await sendPingVoice(request);
     const scope = current.current;
-    if (!mounted.current || scope.scopeKey !== scopeKey || scope.selectionKey !== selectionKey || scope.revision !== revision) {
+    if (!mounted.current || requestOwner.current !== owner || scope.scopeKey !== scopeKey || scope.selectionKey !== selectionKey || scope.revision !== revision) {
       if (sent.kind === "response" && sent.response.ok && sent.response.action === "begin" && sent.response.projectId === props.projectId) {
         void sendPingVoice({ version: PING_VOICE_VERSION, action: "cancel", generationId: sent.response.generationId, token: sent.response.token });
       }
-      requestLatch.current = false; setBusy(false); setState("idle"); return;
+      releaseRequest(owner); return;
     }
     if (sent.kind !== "response" || !sent.response.ok || sent.response.action !== "begin" || sent.response.projectId !== props.projectId) {
       setState("error"); setStatusText(sent.kind === "unknown" ? "Start could not be confirmed. Retry the same Start before changing selection." : "Voice is unavailable for this Project right now.");
-      requestLatch.current = false; setBusy(false); return;
+      releaseRequest(owner); return;
     }
     const next: VoiceMarker = { version: MARKER_VERSION, actorId: props.actorId, projectId: props.projectId,
       generationId: sent.response.generationId, commandId: sent.response.commandId, token: sent.response.token,
       connectionEpoch: sent.response.connectionEpoch, phase: "capturing" };
     if (!persistMarker(next)) {
       await sendPingVoice({ version: PING_VOICE_VERSION, action: "cancel", generationId: next.generationId, token: next.token });
-      setState("error"); setStatusText("This browser could not save the private recovery handle, so microphone access was not started.");
-      requestLatch.current = false; setBusy(false); return;
+      if (requestOwner.current === owner) { setState("error"); setStatusText("This browser could not save the private recovery handle, so microphone access was not started."); }
+      releaseRequest(owner); return;
     }
-    markerRef.current = next; setMarker(next); beginRetry.current = null;
+    markerRef.current = next; setMarker(next); beginRetry.current = null; setReceipt(null); setRefreshReady(false);
     finishedResult.current = (result) => { void processResult(result, next, revision); };
-    void capture.start().finally(() => { requestLatch.current = false; setBusy(false); });
+    void capture.start().finally(() => { releaseRequest(owner); });
   };
 
   const finish = () => {
     const active = markerRef.current;
     if (!active || busy || requestLatch.current || state !== "listening") return;
-    requestLatch.current = true; setBusy(true);
+    const owner = claimRequest();
     const next = { ...active, phase: "finishing" as const };
-    if (!persistMarker(next)) { setStatusText("This browser could not update its recovery handle, so Finish was not sent."); return; }
+    if (!persistMarker(next)) { setStatusText("This browser could not update its recovery handle, so Finish was not sent."); releaseRequest(owner); return; }
     markerRef.current = next; setMarker(next); setState("finishing");
     setStatusText("Finishing the original capture. A lost response will be checked against this same result.");
     capture.finish();
-    requestLatch.current = false; setBusy(false);
+    releaseRequest(owner);
   };
 
   const checkOriginal = async () => {
     const active = markerRef.current;
     if (!active || busy || requestLatch.current) return;
-    requestLatch.current = true; setBusy(true);
+    const owner = claimRequest();
     const request = { version: PING_VOICE_VERSION, action: "status", generationId: active.generationId, token: active.token } as const;
     const revision = current.current.revision;
-    const result = await sendPingVoice(request);
-    await processResult(result, active, revision);
-    requestLatch.current = false; setBusy(false);
+    try { const result = await sendPingVoice(request); await processResult(result, active, revision); }
+    finally { releaseRequest(owner); }
   };
 
   const refreshCurrent = async () => {
     const active = markerRef.current;
     if (!active || !receipt || busy || requestLatch.current) return;
-    requestLatch.current = true; setBusy(true);
-    await applyRefresh(active, current.current.revision);
-    requestLatch.current = false; setBusy(false);
+    const owner = claimRequest();
+    try { await applyRefresh(active, current.current.revision); }
+    finally { releaseRequest(owner); }
   };
 
   const cancel = async () => {
     const active = markerRef.current;
-    if (!active || busy || requestLatch.current) return;
-    requestLatch.current = true; setBusy(true);
+    if (!active || cancelLatch.current) return;
+    cancelLatch.current = true; setCancelling(true);
+    const owner = claimRequest();
+    const revision = current.current.revision;
     capture.cancel();
-    const result = await sendPingVoice({ version: PING_VOICE_VERSION, action: "cancel", generationId: active.generationId, token: active.token });
-    await processResult(result, active, current.current.revision);
-    requestLatch.current = false; setBusy(false);
+    try {
+      const result = await sendPingVoice({ version: PING_VOICE_VERSION, action: "cancel", generationId: active.generationId, token: active.token });
+      await processResult(result, active, revision);
+    } finally { releaseRequest(owner); cancelLatch.current = false; setCancelling(false); }
   };
 
   const blockStart = !markerReady || Boolean(marker) || state === "starting" || busy || !validSelection;
@@ -281,7 +297,7 @@ export function PingVoicePanel(props: Props) {
             className="min-h-10 rounded-md px-3 text-sm font-medium text-[color:var(--v3-text)] underline underline-offset-4 disabled:opacity-60">Finish</button> : null}
           {marker && !receipt && state !== "listening" ? <button type="button" data-testid="ping-voice-check-original" onClick={() => void checkOriginal()} disabled={busy}
             className="min-h-10 rounded-md px-3 text-sm font-medium text-[color:var(--v3-accent-text)] underline underline-offset-4 disabled:opacity-60">{busy ? "Checking…" : "Check original result"}</button> : null}
-          {marker && (state === "listening" || state === "finishing") ? <button type="button" data-testid="ping-voice-cancel" onClick={() => void cancel()} disabled={busy}
+          {marker && (state === "starting" || state === "listening" || state === "finishing" || state === "unknown") ? <button type="button" data-testid="ping-voice-cancel" onClick={() => void cancel()} disabled={cancelling}
             className="min-h-10 rounded-md px-3 text-sm font-medium text-[color:var(--v3-text)] underline underline-offset-4 disabled:opacity-60">Cancel capture</button> : null}
           {receipt && !refreshReady ? <button type="button" data-testid="ping-voice-refresh-current" onClick={() => void refreshCurrent()} disabled={busy}
             className="min-h-10 rounded-md px-3 text-sm font-medium text-[color:var(--v3-accent-text)] underline underline-offset-4 disabled:opacity-60">Refresh current Tasks</button> : null}
