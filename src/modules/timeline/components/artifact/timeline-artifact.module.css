@@ -567,7 +567,8 @@
 }
 
 .row:target {
-  animation: timeline-target-ring 900ms var(--ease-out);
+  /* Feedback for a jump stays under 300ms (ui-wave3 contract). */
+  animation: timeline-target-ring 220ms var(--ease-out);
 }
 
 /* "2 weeks later": time passing, said once, on the line between the two
