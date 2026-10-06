@@ -916,3 +916,79 @@ test("createShareLinkAction clamps mode to view", () => {
     "createShareLinkAction must not pass input.mode directly to the insert",
   );
 });
+
+test("operator sample data: every action exits review mode first, then proves the operator, before any write", () => {
+  const sampleActions = readFileSync(join(serverDir, "actions", "sample-data.ts"), "utf8");
+  const exported = [...sampleActions.matchAll(/export async function (\w+)/g)].map((match) => match[1]);
+  assert.deepEqual(exported.sort(), [
+    "getSampleDataStatusAction",
+    "getSampleDataViewAction",
+    "removeAllSampleDataAction",
+    "removeSampleSetAction",
+    "runRemoveAllSampleDataAction",
+    "runRemoveSampleSetAction",
+    "runSeedSampleSetAction",
+    "seedSampleSetAction",
+  ]);
+  // The view and the three run wrappers hold no authority of their own: each
+  // only calls a gated action above and turns its answer into words.
+  for (const [name, gated] of [
+    ["getSampleDataViewAction", "getSampleDataStatusAction()"],
+    ["runSeedSampleSetAction", "seedSampleSetAction(setId)"],
+    ["runRemoveSampleSetAction", "removeSampleSetAction(setId)"],
+    ["runRemoveAllSampleDataAction", "removeAllSampleDataAction()"],
+  ]) {
+    const body = exportedActionBody(sampleActions, name);
+    assert.ok(body.includes(gated), `${name} must go through ${gated}`);
+    assert.doesNotMatch(body, /\bdb\b|getCurrentUser|operatorDependencies|listSampleData\(|seedSampleSet\(|removeSampleSet\(|removeAllSampleData\(|actorUserId/);
+  }
+
+  // The three writers resolve the caller only through the one operator gate.
+  const gate = sampleActions.slice(
+    sampleActions.indexOf("async function operatorDependencies"),
+    sampleActions.indexOf("function requireSetId"),
+  );
+  assert.match(gate, /const me = await getCurrentUser\(\);\s*if \(!callerIsAdmin\(me\)\) throw new Error\(REFUSAL\);/);
+  assert.match(gate, /actorUserId: me,/);
+  for (const [name, write] of [
+    ["seedSampleSetAction", "seedSampleSet("],
+    ["removeSampleSetAction", "removeSampleSet("],
+    ["removeAllSampleDataAction", "removeAllSampleData("],
+  ]) {
+    for (const boundary of ["operatorDependencies()", write, "revalidatePath", "emitTasksChanged"]) {
+      assertDemoGuardBefore(sampleActions, name, boundary);
+    }
+    const body = exportedActionBody(sampleActions, name);
+    assert.ok(
+      body.indexOf("operatorDependencies()") < body.indexOf(write),
+      `${name} must prove the operator before it writes`,
+    );
+    // The actor is never an argument: nothing a client sends can name whose
+    // account is written to or removed from.
+    assert.doesNotMatch(body, /actorUserId|userId/);
+  }
+  for (const boundary of ["getCurrentUser", "callerIsAdmin", "listSampleData("]) {
+    assertDemoGuardBefore(sampleActions, "getSampleDataStatusAction", boundary);
+  }
+  const status = exportedActionBody(sampleActions, "getSampleDataStatusAction");
+  assert.ok(status.indexOf("callerIsAdmin(me)") < status.indexOf("listSampleData("));
+  assert.match(status, /if \(!callerIsAdmin\(me\)\) return null;/);
+
+  // The Settings shell shows the section only when the server handed it data,
+  // and never in the read-only review posture.
+  const settingsApp = readFileSync(
+    join(serverDir, "..", "components", "app", "settings", "settings-app.tsx"),
+    "utf8",
+  );
+  assert.match(settingsApp, /navGroups\(driveEnabled, sampleData !== null && !readOnly \? sampleData : null\)/);
+  // The section is a separate chunk loaded only when rendered, and the shell
+  // holds none of its words.
+  assert.match(settingsApp, /dynamic\(\(\) =>\s*import\("\.\/sections\/sample-data"\)/);
+  assert.doesNotMatch(settingsApp, /from "\.\/sections\/sample-data"|Sample data"|"Operator"/);
+  // The page asks for the view only for an operator, with the identity it
+  // already resolved; the action keeps its own gate.
+  assert.match(settingsPage, /callerIsAdmin\(me\) \? getSampleDataViewAction\(\) : null/);
+  assert.match(settingsApp, /tab === "sample" && sampleData !== null && !readOnly \?/);
+  const demoBranch = settingsPage.slice(settingsPage.indexOf("if (isDemoMode())"), settingsPage.indexOf("requireRouteProjectId()"));
+  assert.doesNotMatch(demoBranch, /sampleData|getSampleData/);
+});

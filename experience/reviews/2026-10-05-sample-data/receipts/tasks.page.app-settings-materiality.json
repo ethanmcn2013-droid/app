@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-settings",
+  "source": "tasks/src/app/app/settings/page.tsx",
+  "materialityHash": "3fcba4d3b2bb4dcf",
+  "reviewedAt": "2026-10-06",
+  "reviewer": "Implementation review under delegated execution (Claude, single writer on feat/sample-data-seeder). Founder review of the rendered result is pending",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-80b2f4d0f1c10e2ab2461d63-a41faff107fa512e.json",
+    "attestationSha256": "d0fe1b2e4d56e29f368d520a72e682d124457008ad60a8a122fdcb6aafac3da1",
+    "runId": "tasks-playwright-80b2f4d0f1c10e2ab2461d63",
+    "canonicalEvidenceSha256": "80b2f4d0f1c10e2ab2461d63985ddabe5140ee9fd820224e1440b2a81fbeae0a",
+    "rawArtifactSha256": "a41faff107fa512e401c24bdbf3e0e7036148f3f604e39fd85e2a174ceb788cc",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-tasks",
+    "caseName": "canonical populated Tasks workspace",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "The Settings page reads the operator sample data view on the server only when the caller is an operator (callerIsAdmin, with the identity the page already holds) and passes it to the Settings shell, which loads and shows a Sample data section only when it is not null. The review-mode branch of the page is unchanged. The linked case is suite regression context from a full green run, 132 of 132, on a clean demo build of 475ee500; it does not open Settings. The section itself was checked separately: absent, with its chunk never requested, on a review-mode production build.",
+  "decision": "Accept the new hash. Other registry fields are unchanged."
+}

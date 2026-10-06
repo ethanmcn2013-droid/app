@@ -165,7 +165,7 @@ export async function remixTemplateIntoWorkspace(
 
 /** Retry only lock contention, with the same identity and a fresh transaction.
  * Network/commit-ack failures surface to the caller, who can replay its id. */
-async function withTemplateWriteRetry<T>(work: () => Promise<T>): Promise<T> {
+export async function withTemplateWriteRetry<T>(work: () => Promise<T>): Promise<T> {
   for (let attempt = 0; ; attempt++) {
     try { return await work(); }
     catch (error) {

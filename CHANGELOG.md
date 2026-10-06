@@ -4,6 +4,14 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-10-05 · Candidate · Sample data for operators
+
+Operators have a new section in Settings, Sample data. It adds three invented sets of projects to the operator's own account, and removes them again: a secondary school teacher (5 projects), a third level student (6 modules, each with two assignments and two exams) and a couple planning a wedding (4 projects). Together they hold 238 tasks, 50 steps, 52 big dates and 9 links, across every column, with labels, priorities, amounts in euro, target dates and project statuses. Dates count from the day a set is added, so there is always work that is late, due today, due this week, later and done.
+
+Only operators see the section, and every action checks that on the server. It is hidden and inert in review and demo mode. Everything a set creates is owned by the operator who added it, with nobody else as a member or an assignee. Nothing is invited, emailed, shared or published. Each sample project ends in "· sample", names its set in its description and carries a mark, so removal deletes exactly those projects through the normal project deletion path and touches nothing else. Removing a sample project removes everything in it, so one that someone else has joined, or that is shared or published, is left alone and named. Adding a set twice creates nothing new. Tasks marked done are finished at the moment the set is added; no history is backdated, so charts show them as completed that day.
+
+There is no schema change, migration, script or new dependency. This is an unshipped candidate on `feat/sample-data-seeder`; no deployment or production change is claimed by this entry, and nothing is written until an operator presses a button while signed in.
+
 ## 2026-10-05 · Redesign candidate · Files and Analytics on the approved designs
 
 Files is now a header, one search box, ways to narrow, the files and a preview of the chosen one. The search looks at file names, kinds, the task a file sits on and who added it. It does not look inside files and does not answer questions; the design's question box, sample questions, pinned searches and keys panel are left out on the founder's instruction. On a wide screen the preview sits beside the list; on a phone it opens as a sheet. Uploaded pictures show in the preview through the same checked download route as before, and every other file opens where it lives. The list and grid layouts both remain.
