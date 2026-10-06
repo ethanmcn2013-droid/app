@@ -409,13 +409,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-10-05",
+      "lastReviewedAt": "2026-10-06",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "a9a6b8320694d1cf",
+      "materialityHash": "379f288d49901a48",
       "materialityReview": {
-        "materialityHash": "a9a6b8320694d1cf",
-        "reviewedAt": "2026-10-05",
+        "materialityHash": "379f288d49901a48",
+        "reviewedAt": "2026-10-06",
         "evidence": "experience/reviews/2026-10-05-sample-data/receipts/tasks.page.app-settings-materiality.json"
       }
     },
@@ -3674,7 +3674,7 @@
       "lastReviewedAt": "2026-10-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "18b632493de3f1bf"
+      "materialityHash": "f0f2e2e9ca0cfcc9"
     },
     {
       "id": "tasks.resources.drive-upload",
