@@ -79,3 +79,17 @@ Review mode has one project with no status and a reader who has Chat. A reader w
 ## Bundle
 
 Total client JS measures 1110.3 KB gzip on the final review-mode build (Home and Overview 1082.1, plus Automations about 25.5, plus about 2.7 for this pass). The ceiling in `contracts/venue-surface-performance-budgets.v1.json` is 1113. The 936 target is unchanged.
+
+## Second pass, later on 6 October
+
+`design/app-v3-home-overview` was merged in again for its fix to Home's next big day card (9dbf8aef), and two small changes were added: the task panel now reads a column's name the way the board does, so "Review" shows as "To check" in both (`withPlainColumnNames` in `src/lib/board-columns.ts`); and the board is no longer held to the page width, so at 1920 it uses the room (`.workspace[data-view="board"]` in `src/components/tasks/workspace.module.css`). The list and the calendar keep the reading width.
+
+One build was made with the environment `experience/playwright.config.ts` sets (demo access mode, preview), because the critical capture requires it, and everything below ran on that build:
+
+- `pnpm test:settings-hydration`: 7 of 7. The two earlier failures are gone with the Home fix.
+- The critical capture (`playwright test --config experience/playwright.config.ts`): 132 of 132. Attested and receipts verified; the record is `experience/evidence-runs/tasks-playwright-0e2bc8442ee479567ad9023e-6ced0571fc8e8d54.json`.
+- `pnpm experience:validate` and the critical fixtures check: clean. No reviewed hash moved, so there are still no receipts in this folder.
+- `experience/sidebar/run.mjs`: 240 of 240, with the same build served with `SIGNAL_ACTIVE_PROJECT_V3_ENABLED=true` (the capture environment leaves it unset, and the Projects group needs it).
+- Looked at: the board at 1920 (columns fill the sheet, header on the same left edge) and an open task in "To check" (the panel's trail and Status both say "To check").
+- Bundle on this build: 1110.2 KB gzip against the 1113 ceiling.
+- Typecheck: clean. The editor's report of a missing `SIDEBAR_MARK_LABEL` export was stale: the sidebar imports it from `@/lib/projects/sidebar-mark`, where it is defined.

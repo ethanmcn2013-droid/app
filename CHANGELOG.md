@@ -12,6 +12,8 @@ Overview no longer has a row of its own: it is a tab of Home, and Home stays lit
 
 There is one create button per screen, the one in the top bar, and it follows the page: New automation on Automations, New project on Projects, New task everywhere else. The small arrow beside it lists everything you can start (Task, Project, Automation, Note, and Message if you have Chat). The Projects page and the Automations list no longer carry a second button of their own; an empty page may still invite you to begin.
 
+Two smaller things came with it. A task whose column is To check now says To check in its own panel as well, where it used to say Review. And the board is no longer held to the page width, so a wide screen shows more of it; the list and the calendar keep their reading width.
+
 One read was added: the status and target date of the projects in your own catalog, read only, to draw the dot. There is no schema change, migration or new dependency. This is an unshipped candidate on `design/app-v3-sidebar`; no deployment or production change is claimed by this entry.
 
 ## 2026-10-06 · Preview candidate · Automations, a canvas to draw them on
