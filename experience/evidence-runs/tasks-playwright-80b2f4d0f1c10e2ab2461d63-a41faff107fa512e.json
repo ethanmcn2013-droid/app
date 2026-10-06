@@ -2,7 +2,7 @@
   "schemaVersion": "signal-playwright-attestation/1",
   "runId": "tasks-playwright-80b2f4d0f1c10e2ab2461d63",
   "canonicalEvidenceSha256": "80b2f4d0f1c10e2ab2461d63985ddabe5140ee9fd820224e1440b2a81fbeae0a",
-  "rawArtifactSha256": "f9ac3f5a81c24bc8c4ce3964fd7293bd8e7625061af7fb9eb2c2854189993513",
+  "rawArtifactSha256": "a41faff107fa512e401c24bdbf3e0e7036148f3f604e39fd85e2a174ceb788cc",
   "artifactPath": "experience/output/critical-evidence.json",
   "browserContractSha256": "838e98594ed9b15cfa6386e15abea30ac0553727a42e77ade1badc31740870e1",
   "fixtureManifestSha256": "307084c9391a0c79a55a3027f9f7bd37f2efd51cf3f43621b887e2391e6abb5e",
@@ -29,5 +29,5 @@
   "testCount": 132,
   "passedCount": 132,
   "unexpectedCount": 0,
-  "startedAt": "2026-10-06T00:03:47.807Z"
+  "startedAt": "2026-10-06T03:21:31.289Z"
 }

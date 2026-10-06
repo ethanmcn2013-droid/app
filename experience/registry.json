@@ -412,9 +412,9 @@
       "lastReviewedAt": "2026-10-06",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "379f288d49901a48",
+      "materialityHash": "3fcba4d3b2bb4dcf",
       "materialityReview": {
-        "materialityHash": "379f288d49901a48",
+        "materialityHash": "3fcba4d3b2bb4dcf",
         "reviewedAt": "2026-10-06",
         "evidence": "experience/reviews/2026-10-05-sample-data/receipts/tasks.page.app-settings-materiality.json"
       }
@@ -3674,7 +3674,7 @@
       "lastReviewedAt": "2026-10-05",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "f0f2e2e9ca0cfcc9"
+      "materialityHash": "72d7996a9b12e0f5"
     },
     {
       "id": "tasks.resources.drive-upload",
