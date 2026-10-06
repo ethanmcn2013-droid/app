@@ -4,6 +4,12 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-10-06 · Redesign candidate · Tags, one word everywhere
+
+What a task carries as #name is now called a tag everywhere you meet it in Tasks: the list column, the task panel, quick create, the right-click menu, the shortcuts sheet (L still opens it) and the Filter menu, which used to say "Label" in some places and "Tags" in others. The Filter menu's Tag list now shows how many tasks carry each tag, so you can see what a filter will leave before you choose it.
+
+Tag kinds, chosen colours and pinned tags wait for a database change and are not part of this. No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-tags`; no deployment or production change is claimed.
+
 ## 2026-10-06 · Redesign candidate · A combined timeline for several projects at once
 
 On Timeline, All projects, each project's menu now has "Add to combined timeline". Choose two or more and a panel appears above the chart: the chosen projects as chips you can take out one at a time, one line with every big date still to come in each project's own colour, and the same dates listed in order underneath. When two or more of those dates fall in the same Monday-to-Sunday week, the busiest such week is named in a sentence ("Tightest week: Mon 5 Oct 2026 to 11 Oct, 2 big dates across Year 9 history and Kavanagh wedding") and shaded on the line; "Show that week" moves the chart to it. With one project chosen, the panel asks for a second. Up to six fit.
