@@ -4,6 +4,12 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-10-06 · Redesign candidate · The account menu, in groups
+
+The avatar in the top bar opens one grouped menu instead of the sign-in provider's own. It starts with your name and email, then: Settings and Get help; Upgrade, which opens Your plan; Log out; and View profile. Your activity, Language, Give a guest pass and What's new are shown so the finished shape is visible, and each says Coming soon and does nothing yet. The arrow keys, Home and End walk the entries and Escape returns to the avatar.
+
+The older bar and rail elsewhere keep their menu for now. No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-account-menu`; no deployment or production change is claimed.
+
 ## 2026-10-06 · Redesign candidate · Tags, one word everywhere
 
 What a task carries as #name is now called a tag everywhere you meet it in Tasks: the list column, the task panel, quick create, the right-click menu, the shortcuts sheet (L still opens it) and the Filter menu, which used to say "Label" in some places and "Tags" in others. The Filter menu's Tag list now shows how many tasks carry each tag, so you can see what a filter will leave before you choose it.
