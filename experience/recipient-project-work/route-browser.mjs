@@ -167,17 +167,11 @@ try {
           if(surface.id==='tasks.page.app-tasks')await page.getByText('B arrival board',{exact:true}).first().waitFor({timeout:5000});
           else if(f.state.v3){
             // The sidebar marks the open Project with data-current-project. Since
-            // the 2 October shell, the Projects list sits inside the "Initial
-            // setup" group, which is folded on pages outside it: unfold it, read
-            // the mark, then leave it as it was found. On a phone the sidebar is
-            // a closed drawer, so the group is toggled without a pointer and the
-            // mark is read from the drawer's content.
-            const current=page.locator('aside button[data-current-project]').filter({hasText:'Arrival project B'});
-            const folded=page.locator('aside button[aria-expanded="false"]').filter({hasText:'Initial setup'});
-            const unfolded=await current.count()===0&&await folded.count()===1;
-            if(unfolded)await folded.evaluate(button=>button.click());
+            // the 6 October sidebar the Projects group is a named group that
+            // starts open, and each row is a link. On a phone the sidebar is a
+            // closed drawer, so the mark is read from the drawer's content.
+            const current=page.locator('aside a[data-current-project]').filter({hasText:'Arrival project B'});
             await current.waitFor({state:page.viewportSize().width>=768?'visible':'attached',timeout:5000});
-            if(unfolded)await page.locator('aside button[aria-expanded="true"]').filter({hasText:'Initial setup'}).evaluate(button=>button.click());
           }
           assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
         }

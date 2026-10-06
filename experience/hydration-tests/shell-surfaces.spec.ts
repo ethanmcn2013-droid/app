@@ -110,7 +110,7 @@ for (const theme of ["dark", "light"] as const) {
 
       // A sidebar icon reads on the rail (the glyph was pale grey on white
       // when the rail's ground came from the missing layer).
-      const icon = await paint(page, '[data-shell="v3"] > aside nav[aria-label="Primary"] a:not([aria-current]) svg');
+      const icon = await paint(page, '[data-shell="v3"] > aside nav[aria-label="Workspace"] a:not([aria-current]) svg');
       expect(contrast(icon.color, sidebar.background), "sidebar icon against the rail").toBeGreaterThanOrEqual(4.5);
 
       // The next big day card: a fill, a border, and a step away from the page.

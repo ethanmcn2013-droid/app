@@ -4,6 +4,16 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-10-06 · Redesign candidate · The sidebar in named groups, and one create button per screen
+
+The sidebar now reads top to bottom as Home, then four named groups with room between them. Workspace holds Projects, Tasks, Timeline, Files and Analytics. Projects lists every project you can open, each with its own colour tile; a dot appears beside a project only when it is past its target date or its owner has marked it at risk, the same rule the Projects page uses, and there is no dot when a project is fine. Build holds Automations, marked Preview, and Whiteboard, marked Soon. Chat lists your real conversations with what is unread; if you do not have Chat yet it shows one quiet row that says Coming soon. Projects and Chat fold from their names, and the choice is kept in the browser.
+
+Overview no longer has a row of its own: it is a tab of Home, and Home stays lit for both. The "Initial setup" group is gone from the sidebar. Everything it held is still one step away: Inbox is the bell in the top bar, My tasks is in Search or jump to, Chat is its own group, and Apps and tools is the grid button in the top bar. The collapsed rail and the phone and tablet drawer follow the same order.
+
+There is one create button per screen, the one in the top bar, and it follows the page: New automation on Automations, New project on Projects, New task everywhere else. The small arrow beside it lists everything you can start (Task, Project, Automation, Note, and Message if you have Chat). The Projects page and the Automations list no longer carry a second button of their own; an empty page may still invite you to begin.
+
+One read was added: the status and target date of the projects in your own catalog, read only, to draw the dot. There is no schema change, migration or new dependency. This is an unshipped candidate on `design/app-v3-sidebar`; no deployment or production change is claimed by this entry.
+
 ## 2026-10-06 · Preview candidate · Automations, a canvas to draw them on
 
 Automations is a new place in the signed-in app, at `/app/automations`. You draw what should happen by itself: a trigger (a task becomes late, a date is a week away, someone joins a project, a file is added), then what to do about it (nudge the owner, move it to a column, post in the project chat, add it to the daily briefing), with a branch where the path should split. Four ready-made ones open as your own draft, and New automation starts with an empty canvas.
