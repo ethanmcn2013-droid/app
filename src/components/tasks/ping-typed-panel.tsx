@@ -526,7 +526,7 @@ function PingTypedPanelFlow({
             <p className="mt-1 text-sm text-[color:var(--v3-text-2)]">We kept only its private recovery handle, not the text. Checking it will never send the task change again.</p>
           </div>
           <button type="button" data-testid="ping-check-original" onClick={() => void checkOriginal()} disabled={busy}
-            className="min-h-10 rounded-md bg-[color:var(--v3-accent)] px-3 text-sm font-semibold text-[color:var(--v3-accent-contrast)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--v3-accent)]">
+            className="min-h-10 rounded-md bg-[color:var(--v3-accent)] px-3 text-sm font-semibold text-[color:var(--v3-on-accent)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--v3-accent)]">
             {busyAction === "receipt" ? "Checking…" : "Check original result"}
           </button>
           {marker?.phase === "prepared" ? (
@@ -569,7 +569,7 @@ function PingTypedPanelFlow({
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <button type="submit" data-testid="ping-review" disabled={!canPrepare}
-              className="min-h-10 rounded-md bg-[color:var(--v3-accent)] px-3.5 text-sm font-semibold text-[color:var(--v3-accent-contrast)] disabled:cursor-not-allowed disabled:opacity-55 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--v3-accent)]">
+              className="min-h-10 rounded-md bg-[color:var(--v3-accent)] px-3.5 text-sm font-semibold text-[color:var(--v3-on-accent)] disabled:cursor-not-allowed disabled:opacity-55 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--v3-accent)]">
               {sendState === "preparing" ? "Checking…" : sendState === "prepare_unknown" ? "Check the same request again" : "Review changes"}
             </button>
             {draft ? <button type="button" onClick={() => updateDraft("")} disabled={busy || hasRecovery}
@@ -588,7 +588,7 @@ function PingTypedPanelFlow({
           {error ? <p role="alert" className="mt-2 text-sm text-[color:var(--v3-danger-text)]">{error}</p> : null}
           <div className="mt-3 flex flex-wrap gap-2">
             <button type="button" data-testid="ping-apply" onClick={() => void executePrepared()} disabled={busy || !marker || marker.phase !== "prepared" || marker.commandId !== prepared.marker.commandId || prepared.selectionKey !== selectionKey}
-              className="min-h-10 rounded-md bg-[color:var(--v3-accent)] px-3.5 text-sm font-semibold text-[color:var(--v3-accent-contrast)] disabled:cursor-not-allowed disabled:opacity-55 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--v3-accent)]">
+              className="min-h-10 rounded-md bg-[color:var(--v3-accent)] px-3.5 text-sm font-semibold text-[color:var(--v3-on-accent)] disabled:cursor-not-allowed disabled:opacity-55 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--v3-accent)]">
               {busyAction === "execute" ? "Applying…" : "Finish and apply"}
             </button>
             <button type="button" data-testid="ping-cancel" onClick={() => void cancelPrepared()} disabled={busy}

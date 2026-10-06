@@ -16,5 +16,5 @@ export async function readCanonicalTasks(executor: Pick<LibSQLDatabase<typeof sc
   const rows = await executor.select(taskColumnsWithCount).from(schema.tasks).where(
     byWorkspace(schema.tasks.workspaceId, projectId, isNull(schema.tasks.parentTaskId), isNull(schema.tasks.archivedAt)),
   ).orderBy(laneOrder, positionOrder).limit(2000);
-  return rows.map(rowToTask);
+  return rows.map((row) => ({ ...rowToTask(row), workspaceId: row.workspaceId }));
 }

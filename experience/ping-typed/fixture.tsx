@@ -9,7 +9,7 @@ import { HybridWorkspace } from "@/components/hybrid/hybrid-workspace";
 import { createCalendarFrame } from "@/lib/calendar-frame";
 import type { Task } from "@/lib/data";
 import "@/ds/v3.css";
-import "../tasks-views/fixture.css";
+import "./fixture.css";
 
 // Explicit browser-fixture auth and initial read adapters. Ping refresh itself
 // must travel through the real panel, HTTP handler and provider hydration seam.
@@ -60,5 +60,3 @@ function Fixture() {
 window.pingFixtureUser = "clerk_alice";
 window.pingFixtureSession = "synthetic-browser-session";
 createRoot(document.getElementById("root")!).render(<Fixture />);
-
-

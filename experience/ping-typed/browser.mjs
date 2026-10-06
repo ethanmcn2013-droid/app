@@ -6,12 +6,17 @@ import { createRequire } from 'node:module';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { drizzle } from 'drizzle-orm/libsql';
-import * as schema from '../../src/server/db/schema.ts';
-import { readCanonicalTasks } from '../../src/server/db/task-read.ts';
-import { createPingProofFixture, seedProofTask, PROOF_PROJECT } from '../../src/server/ping/proof-fixture.ts';
-import { createPingCommandService } from '../../src/server/ping/command-service.ts';
-import { createPingTypedSession } from '../../src/server/ping/typed-session.ts';
-import { createPingTypedHttp } from '../../src/server/ping/http.ts';
+import schema from '../../src/server/db/schema.ts';
+import taskRead from '../../src/server/db/task-read.ts';
+const {readCanonicalTasks}=taskRead;
+import proof from '../../src/server/ping/proof-fixture.ts';
+const {createPingProofFixture,seedProofTask,PROOF_PROJECT}=proof;
+import commandService from '../../src/server/ping/command-service.ts';
+const {createPingCommandService}=commandService;
+import typedSession from '../../src/server/ping/typed-session.ts';
+const {createPingTypedSession}=typedSession;
+import typedHttp from '../../src/server/ping/http.ts';
+const {createPingTypedHttp}=typedHttp;
 
 const root = path.resolve(import.meta.dirname, '../..');
 const require = createRequire(import.meta.url);
@@ -20,7 +25,7 @@ const { chromium } = require('@playwright/test');
 const { AxeBuilder } = require('@axe-core/playwright');
 const out = path.resolve(process.env.PING_TYPED_BROWSER_OUTPUT ?? path.join(root, 'experience/output/ping-typed', new Date().toISOString().replaceAll(/[:.]/g, '-')));
 await fs.mkdir(out, { recursive: true });
-const receipt = { status: 'running', head: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), cases: [], sourceInputs: {}, limits: [
+const receipt = { sourceNormalization: 'LF', status: 'running', head: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), cases: [], sourceInputs: {}, limits: [
   'Actual React TasksProvider/HybridWorkspace/panel, actual isolated HTTP/session/executor/canonical reads in Chromium.',
   'Explicit synthetic fixture authentication, Next navigation/server-action and disabled EventSource adapters; not genuine Next/Clerk admission or voice/provider proof.'
 ] };
@@ -55,7 +60,7 @@ try {
   const assets = new Map(bundle.outputFiles.map(file => [file.path.endsWith('.js') ? '/app.js' : '/app.css', file.contents]));
   assets.set('/app.css', utilities.css+'\n'+new TextDecoder().decode(assets.get('/app.css')));
   for (const font of ['Geist-Variable.woff2','GeistMono-Variable.woff2']) assets.set('/fonts/'+font, await fs.readFile(path.join(root, 'node_modules/geist/dist/fonts', font.startsWith('GeistMono') ? 'geist-mono' : 'geist-sans', font)));
-  for (const file of new Set([...Object.keys(bundle.metafile.inputs).filter(file => file.startsWith('src/')), 'experience/ping-typed/browser.mjs','experience/ping-typed/fixture.tsx','src/server/ping/http.ts','src/server/ping/typed-session.ts','src/server/ping/command-service.ts','src/server/db/task-read.ts','src/server/ping/proof-fixture.ts','src/app/globals.css'])) receipt.sourceInputs[file] = createHash('sha256').update(await fs.readFile(path.join(root,file))).digest('hex');
+  for (const file of new Set([...Object.keys(bundle.metafile.inputs).filter(file => file.startsWith('src/')), 'experience/ping-typed/browser.mjs','experience/ping-typed/fixture.tsx','src/server/ping/http.ts','src/server/ping/typed-session.ts','src/server/ping/command-service.ts','src/server/db/task-read.ts','src/server/ping/proof-fixture.ts','src/app/globals.css'])) receipt.sourceInputs[file] = createHash('sha256').update((await fs.readFile(path.join(root,file),'utf8')).replaceAll('\r\n','\n')).digest('hex');
   let origin;
   const errors = [];
   server = createServer(async (req,res) => {
@@ -66,7 +71,7 @@ try {
         const action = JSON.parse(body).action; state.requests.push(action);
         const response = state.failRefresh && action === 'refresh' ? Response.json({ok:false,code:'temporarily_unavailable'},{status:503}) : await handler(new Request(url, {method:req.method,headers:req.headers,body}));
         if (state.holdAction === action) await new Promise(resolve => { state.release = resolve; });
-        if (state.dropExecute && action === 'execute') { state.dropExecute = false; res.destroy(); return; }
+
         res.writeHead(response.status,Object.fromEntries(response.headers)); res.end(await response.text());
       } else if (url.pathname === '/fixture/initial') {
         const tasks = await readCanonicalTasks(drizzle(fixture.client,{schema}), PROOF_PROJECT);
@@ -78,11 +83,23 @@ try {
   });
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve)); origin='http://127.0.0.1:'+server.address().port;
   browser=await chromium.launch({headless:true});
-  const page=await browser.newPage({viewport:{width:1440,height:960},locale:'en-GB',timezoneId:'Europe/Dublin'});
+  const context=await browser.newContext({viewport:{width:1440,height:960},locale:'en-GB',timezoneId:'Europe/Dublin'});
+  const page=await context.newPage();
   page.on('pageerror',error=>errors.push(error.message));
   const consoleErrors=[];page.on('console',message=>{if(message.type()==='error')consoleErrors.push(message.text());});
   const failedRequests=[];page.on('requestfailed',request=>failedRequests.push({path:new URL(request.url()).pathname,error:request.failure()?.errorText}));
-  await page.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
+  await page.route('**/*',async route=>{
+    const request=route.request(),url=new URL(request.url());
+    if(url.origin!==origin)return route.abort();
+    if(url.pathname==='/api/ping' && request.method()==='POST' && state.dropExecute && request.postDataJSON().action==='execute'){
+      state.dropExecute=false;
+      const response=await route.fetch(); // Actual handler commits, then its response is deliberately lost at the browser transport boundary.
+      assert.equal(response.status(),200);
+      await response.dispose();
+      return route.abort('failed');
+    }
+    return route.continue();
+  });
   await page.goto(origin);
   await page.getByRole('checkbox',{name:'Select Synthetic target',exact:true}).waitFor();
   const waitSavedView = async () => {
@@ -162,8 +179,8 @@ try {
   await page.setViewportSize({width:390,height:844});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
   await page.screenshot({path:path.join(out,'typed-phone.png'),fullPage:true});
-  assert.ok(consoleErrors.every(message=>/ERR_EMPTY_RESPONSE|ERR_CONNECTION_CLOSED|status of 503/.test(message)), 'Unexpected browser console error');
-  assert.ok(failedRequests.every(request=>request.path==='/api/ping' && /ERR_EMPTY_RESPONSE|ERR_CONNECTION_CLOSED/.test(request.error)), 'Unexpected failed browser request');
+  assert.ok(consoleErrors.every(message=>/ERR_EMPTY_RESPONSE|ERR_CONNECTION_CLOSED|ERR_FAILED|status of 503/.test(message)), 'Unexpected browser console error');
+  assert.ok(failedRequests.every(request=>request.path==='/api/ping' && /ERR_EMPTY_RESPONSE|ERR_CONNECTION_CLOSED|ERR_FAILED/.test(request.error)), 'Unexpected failed browser request');
   receipt.expectedTransportDiagnostics={consoleErrors,failedRequests};
   receipt.executeCalls=executeCalls;receipt.receiptCount=await countReceipts();receipt.httpActions=state.requests;
   receipt.status='passed';

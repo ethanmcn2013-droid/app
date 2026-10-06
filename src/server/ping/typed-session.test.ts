@@ -53,7 +53,7 @@ test("actual typed compound execution, idempotent token and canonical status-awa
     [{ id: "target", assignees: '["bob","alice"]', due: "2026-10-08", dueAt: 1791450000, lane: "doing", start: 2, duration: 3, completed: null }]);
     const read = await session.handle(actor, action(handle, "refresh"));
     assert.ok(read.ok && read.action === "refresh"); assert.equal(read.projection, "matches");
-    assert.equal(read.tasks[0].dueAt, "2026-10-08T09:00:00.000Z"); assert.equal(typeof read.tasks[0].updatedAt, "string");
+    assert.equal(read.tasks[0].workspaceId, PROOF_PROJECT); assert.equal(read.tasks[0].dueAt, "2026-10-08T09:00:00.000Z"); assert.equal(typeof read.tasks[0].updatedAt, "string");
     assert.ok(groups.some(group => group.some(sql => sql.includes("FROM workspace_members")) && group.some(sql => sql.includes('"comment_count"'))),
       "canonical task select and current scope authorization share the same read transaction");
     assert.equal(Number((await f.client.execute("SELECT COUNT(*) AS n FROM ping_command_receipts")).rows[0].n), 1);
