@@ -11,6 +11,10 @@ import { createPingTypedSession, type PingTypedActor } from "./typed-session";
 
 export const PING_TYPED_FIXTURE_KEY = "ping:synthetic-typed-runtime";
 export const PING_TYPED_FIXTURE_VALUE = "ping.typed.fixture.v1";
+/** Admission only: pausing never disables strict authentication or original receipt reads. */
+export function pingNewWorkAllowed(env: Record<string, string | undefined>): boolean {
+  try { return env.PING_NEW_WORK_PAUSED === undefined || env.PING_NEW_WORK_PAUSED === "0"; } catch { return false; }
+}
 type Runtime = { target: string; session: ReturnType<typeof createPingTypedSession>;
   resolveActor: (clerkId: string) => Promise<string | null> };
 const globalRuntime = globalThis as typeof globalThis & { pingTypedRuntime?: Promise<Runtime | null>; pingTypedTarget?: string };
@@ -34,7 +38,7 @@ async function construct(target: string): Promise<Runtime | null> {
     await client.execute("PRAGMA foreign_keys=ON");
     if (Number((await client.execute("PRAGMA foreign_keys")).rows[0]?.foreign_keys) !== 1) { client.close(); return null; }
     const adapter = createLocalConversationDatabaseAdapter({ client });
-    return { target, session: createPingTypedSession(adapter), resolveActor: (clerkId) => adapter.transaction("read", async (tx) => {
+    return { target, session: createPingTypedSession(adapter, { isNewWorkAllowed: () => pingNewWorkAllowed(process.env) }), resolveActor: (clerkId) => adapter.transaction("read", async (tx) => {
       const rows = (await tx.execute({ sql: "SELECT id FROM users WHERE clerk_id=? LIMIT 2", args: [clerkId] })).rows;
       return rows.length === 1 && typeof rows[0].id === "string" ? rows[0].id : null;
     }) };
