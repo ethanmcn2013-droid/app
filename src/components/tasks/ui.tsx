@@ -214,14 +214,20 @@ export function MenuSubTrigger({ children, icon, hint }: { children: ReactNode; 
 }
 
 export function MenuSubContent({ children, width }: { children: ReactNode; width?: number }) {
+  // On a phone a submenu fits on neither side of its parent, and Radix does
+  // not slide one sideways: it opened off the left edge with its names cut
+  // off. There it lies over the parent instead, a thumb in from its edge.
+  // (Only rendered once open, so reading the window here is safe.)
+  const narrow = typeof window !== "undefined" && window.innerWidth < 520;
+  const fitted = narrow ? Math.min(width ?? 220, 232) : width;
   return (
     <Dropdown.Portal>
       <Dropdown.SubContent
         className={styles.menu}
-        sideOffset={4}
+        sideOffset={narrow ? 40 - fitted! : 4}
         alignOffset={-5}
         collisionPadding={12}
-        style={width ? ({ width } as CSSProperties) : undefined}
+        style={fitted ? ({ width: fitted, minWidth: narrow ? 0 : undefined } as CSSProperties) : undefined}
         data-tasks-layer=""
       >
         {children}

@@ -894,7 +894,9 @@ function Stage({
               <path d={ribbon.d} className={s.ribbonPath} />
             </svg>
             {ribbon.points
-              .filter((point) => point.count > 0 && ppd * 7 >= 60)
+              // A chip is centred on its week. One whose centre is within half a chip
+              // of either edge would be cut by the lane column ("…one"), so it is left out.
+              .filter((point) => point.count > 0 && ppd * 7 >= 60 && point.x >= 30 && point.x <= canvasW - 30)
               .map((point) => (
                 <span key={point.week} className={cx(s.flowChip, point.past && s.flowChipPast)} style={{ left: point.x, top: axisH + 2 }}>
                   {point.count} {point.past ? "done" : "due"}
