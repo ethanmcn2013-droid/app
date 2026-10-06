@@ -46,6 +46,14 @@ The design source drew Share this timeline twice, once at the top and once at th
 
 No server action, read, schema change or dependency was added, and the page shows only what the published timeline already holds. This is an unshipped candidate on `design/app-v3-timeline-countdown`; no deployment or production change is claimed.
 
+## 2026-10-06 · Redesign candidate · A combined timeline for several projects at once
+
+On Timeline, All projects, each project's menu now has "Add to combined timeline". Choose two or more and a panel appears above the chart: the chosen projects as chips you can take out one at a time, one line with every big date still to come in each project's own colour, and the same dates listed in order underneath. When two or more of those dates fall in the same Monday-to-Sunday week, the busiest such week is named in a sentence ("Tightest week: Mon 5 Oct 2026 to 11 Oct, 2 big dates across Year 9 history and Kavanagh wedding") and shaded on the line; "Show that week" moves the chart to it. With one project chosen, the panel asks for a second. Up to six fit.
+
+The choice is kept in the address as `?with=`, so a combined view can be linked and survives a reload. Only projects you can already see appear; an id you cannot see is left out.
+
+No server action, read, schema change or dependency was added: every date comes from the rows the page already reads. This is an unshipped candidate on `design/app-v3-combined-timeline`; no deployment or production change is claimed.
+
 ## 2026-10-06 · Redesign candidate · Apps and tools shows everything, with no folded group
 
 Apps and tools, the grid button in the top bar and the page at `/app/tools`, no longer keeps half of what it holds behind a folded "Initial setup" heading. It now reads as four sections in view: Your apps (Projects, Tasks, Timeline, Files and Analytics), More apps (Notes, and Messages if you have Chat), Works with, and the tools that are coming soon. Nothing was removed, search still finds every entry, and the arrow keys walk all four sections. This finishes what the sidebar change started when its own "Initial setup" group went.
