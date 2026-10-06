@@ -48,7 +48,7 @@ function Fixture() {
   return <CurrentUserProvider user={props.actorId}>
     <DomainProvider domain="wedding" workspaceId={props.projectId} workspaceSlug={props.projectId} workspaceName="Synthetic Ping project"
       personalization={{ headline: "Plan the work", body: "An isolated synthetic project.", firstTaskExample: "A task", workspaceTitle: "Synthetic Ping project" }}
-      members={[{ id: "alice", name: "Alice", initials: "AL", role: "member", color: "#555" }, { id: "bob", name: "Bob", initials: "BO", role: "member", color: "#777" }]}>
+      members={[{ id: "alice", name: "Alice", knownName: "Alice", initials: "AL", role: "member", color: "#555" }, { id: "bob", name: "Bob", knownName: "Bob", initials: "BO", role: "member", color: "#777" }]}>
       <TasksProvider key={JSON.stringify([props.actorId, props.projectId])} actorId={props.actorId} projectId={props.projectId} initialTasks={props.tasks}>
         <RoomBriefProvider value={{ calendarFrame, periodName: null, dateWindow: null, ownerName: "Synthetic owner", purpose: "Isolated synthetic browser verification" }}>
           <RoomToolsProvider><main><HybridWorkspace view="list" canEdit canManage={false} /><Probe /></main></RoomToolsProvider>
