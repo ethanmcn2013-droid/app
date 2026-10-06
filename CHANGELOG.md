@@ -4,6 +4,26 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-10-06 · Redesign candidate · The account menu, in groups
+
+The avatar in the top bar opens one grouped menu instead of the sign-in provider's own. It starts with your name and email, then: Settings and Get help; Upgrade, which opens Your plan; Log out; and View profile. Your activity, Language, Give a guest pass and What's new are shown so the finished shape is visible, and each says Coming soon and does nothing yet. The arrow keys, Home and End walk the entries and Escape returns to the avatar.
+
+The older bar and rail elsewhere keep their menu for now. No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-account-menu`; no deployment or production change is claimed.
+
+## 2026-10-06 · Redesign candidate · Tags, one word everywhere
+
+What a task carries as #name is now called a tag everywhere you meet it in Tasks: the list column, the task panel, quick create, the right-click menu, the shortcuts sheet (L still opens it) and the Filter menu, which used to say "Label" in some places and "Tags" in others. The Filter menu's Tag list now shows how many tasks carry each tag, so you can see what a filter will leave before you choose it.
+
+Tag kinds, chosen colours and pinned tags wait for a database change and are not part of this. No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-tags`; no deployment or production change is claimed.
+
+## 2026-10-06 · Redesign candidate · A combined timeline for several projects at once
+
+On Timeline, All projects, each project's menu now has "Add to combined timeline". Choose two or more and a panel appears above the chart: the chosen projects as chips you can take out one at a time, one line with every big date still to come in each project's own colour, and the same dates listed in order underneath. When two or more of those dates fall in the same Monday-to-Sunday week, the busiest such week is named in a sentence ("Tightest week: Mon 5 Oct 2026 to 11 Oct, 2 big dates across Year 9 history and Kavanagh wedding") and shaded on the line; "Show that week" moves the chart to it. With one project chosen, the panel asks for a second. Up to six fit.
+
+The choice is kept in the address as `?with=`, so a combined view can be linked and survives a reload. Only projects you can already see appear; an id you cannot see is left out.
+
+No server action, read, schema change or dependency was added: every date comes from the rows the page already reads. This is an unshipped candidate on `design/app-v3-combined-timeline`; no deployment or production change is claimed.
+
 ## 2026-10-06 · Redesign candidate · A denser Tasks list, and a header that stays put
 
 The Tasks list now fits more on a screen. With a mouse each row is 40 pixels, not 44; touch screens keep the larger rows. Every row shows its tick box, quietly, so it reads as a list you can pick from; hovering or ticking brings the box to full strength. Each group's count sits in a small pill beside its name. Labels are soft pills in their own colour. If you turn on the Subtasks column, it shows a thin bar with how many are done.
@@ -36,6 +56,8 @@ The row's own Open button, Ctrl or Cmd and click, and the row menu still open th
 
 No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-project-peek`; no deployment or production change is claimed.
 
+
+
 ## 2026-10-06 · Redesign candidate · The shared Timeline becomes a countdown
 
 The page a couple or a class shares with their guests now reads like the founder's pick of 28 September. It opens on how many days are left until the big day, with the date, how many moments are complete and Add to my calendar beside it. Below that, on wide screens, a strip shows every moment to scale with today marked. Then comes every moment in order, each with its own count of days, and the day itself to finish. It replaces the earlier rail.
@@ -43,26 +65,6 @@ The page a couple or a class shares with their guests now reads like the founder
 The design source drew Share this timeline twice, once at the top and once at the end, so the page had two buttons with the same name. Now there is one, at the top. Where the page is shown without its top line, as in the phone preview, the one at the end takes its place.
 
 No server action, read, schema change or dependency was added, and the page shows only what the published timeline already holds. This is an unshipped candidate on `design/app-v3-timeline-countdown`; no deployment or production change is claimed.
-
-## 2026-10-06 · Redesign candidate · A combined timeline for several projects at once
-
-On Timeline, All projects, each project's menu now has "Add to combined timeline". Choose two or more and a panel appears above the chart: the chosen projects as chips you can take out one at a time, one line with every big date still to come in each project's own colour, and the same dates listed in order underneath. When two or more of those dates fall in the same Monday-to-Sunday week, the busiest such week is named in a sentence ("Tightest week: Mon 5 Oct 2026 to 11 Oct, 2 big dates across Year 9 history and Kavanagh wedding") and shaded on the line; "Show that week" moves the chart to it. With one project chosen, the panel asks for a second. Up to six fit.
-
-The choice is kept in the address as `?with=`, so a combined view can be linked and survives a reload. Only projects you can already see appear; an id you cannot see is left out.
-
-No server action, read, schema change or dependency was added: every date comes from the rows the page already reads. This is an unshipped candidate on `design/app-v3-combined-timeline`; no deployment or production change is claimed.
-
-## 2026-10-06 · Redesign candidate · Tags, one word everywhere
-
-What a task carries as #name is now called a tag everywhere you meet it in Tasks: the list column, the task panel, quick create, the right-click menu, the shortcuts sheet (L still opens it) and the Filter menu, which used to say "Label" in some places and "Tags" in others. The Filter menu's Tag list now shows how many tasks carry each tag, so you can see what a filter will leave before you choose it.
-
-Tag kinds, chosen colours and pinned tags wait for a database change and are not part of this. No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-tags`; no deployment or production change is claimed.
-
-## 2026-10-06 · Redesign candidate · The account menu, in groups
-
-The avatar in the top bar opens one grouped menu instead of the sign-in provider's own. It starts with your name and email, then: Settings and Get help; Upgrade, which opens Your plan; Log out; and View profile. Your activity, Language, Give a guest pass and What's new are shown so the finished shape is visible, and each says Coming soon and does nothing yet. The arrow keys, Home and End walk the entries and Escape returns to the avatar.
-
-The older bar and rail elsewhere keep their menu for now. No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-account-menu`; no deployment or production change is claimed.
 
 ## 2026-10-06 · Redesign candidate · Apps and tools shows everything, with no folded group
 
@@ -2367,6 +2369,7 @@ The whole design-lab component tree is ported in unchanged. It renders pixel-ide
 
 The frame stays production's own. The command palette, quick-create and the task detail panel remain the globally mounted production surfaces, so their behaviour and keyboard contracts are unchanged; the brief reads the real workspace name. The T·98 board rework, the Option B/C shells and the lab ribbon are dropped in line with the one-to-one decision. Typecheck, the production build, the design-system gate, the materiality gate with a refreshed four-view review, and forty-six of forty-six browser experience checks at both breakpoints all pass. Live at tasks.signalstudio.ie.
 
+
 ## 2026-07-19 · T·98 · ships · the board becomes a real working surface
 
 **The board becomes a real working surface: four named standard columns you can recolour and describe, custom columns you can create, reorder and safely remove, colour-coded tags and an overdue flag on the cards, a full quick-action menu behind the card ellipsis, and columns that finally scroll on their own — all on the Claude Design icon set.** The header sheds its clutter first: the upper-left reads as a static "Tasks" wordmark instead of a workspace dropdown, the date-window and "workspace owner" line under the purpose are gone with the gap they left, search moves to the right of the black bar, and a licence slot on the left binds to real entitlement data — School Edition or Venue Edition when the account carries one, nothing when it doesn't.
@@ -2563,6 +2566,8 @@ a deliberate multi-user design, which is a separate decision, not this
 fix. Verified live on `tasks.signalstudio.ie`: the impersonal call now
 returns `200` with an honest `skipped` marker and fires the heartbeat,
 so HQ stops reporting the job as never having run.
+
+
 
 **The 09:00 UTC digest ran every day with nobody watching — Signal HQ
 had no way to know it was alive.** It now pings the umbrella when it
@@ -2991,6 +2996,8 @@ bumped from 11px / 17px tall to 12px / 32px tall with proper
 Voice and product surface unchanged. The pass is mechanical mobile
 hygiene against the same disciplines the umbrella followed on S·26.
 Typecheck clean. Build clean.
+
+
 
 **The dark navy gradient that closed tasks.signalstudio.ie is gone — the homepage now reads in one register from top to bottom.**
 
@@ -4428,6 +4435,8 @@ read manifesto-correct already; left untouched.
 - Wordmark dot animation now matches spec: 2.6s cycle, sharp beat
   at 70%, single emit ring scaling out to 2.6×.
 
+
+
 ## Cycle 28 · 2026-05-06 · Design system v0.3 — tokens.css aligned
 
 Pulled the canonical design system from the design tool and reconciled
@@ -4515,6 +4524,8 @@ in-file comment explaining the trap so future cycles don't re-add it.
 Cycle 29 is Sprint 9 — Google bridges (export-side: Copy as Sheet
 CSV, Copy as Markdown, surface iCal subscribe URL more prominently,
 "Embed in Google Docs/Sites" how-to page).
+
+
 
 ## Cycle 26-27 · 2026-05-06 · Full review pass — website + code
 
@@ -4613,6 +4624,8 @@ proof. Everything in the dev tree compiles, type-checks, and
 behaves the way it claims to. Run `next build && next start` once
 before flipping the public DNS — that's the only validation gate
 the dev environment can't conclusively pass on its own.
+
+
 
 ## Cycle 25 · 2026-05-06 · Hardening — webhook idempotency, real invites, subtasks, recurring chip, timeline drag
 
@@ -4782,6 +4795,8 @@ on any of them.
 Per the user request: cycle 26 is a full website review (every
 public surface), cycle 27 is a full code review. Both are
 architect-only — no agents.
+
+
 
 ## Cycle 24 · 2026-05-06 · B-tier delight wave — eight features, sprint close
 
@@ -4988,6 +5003,8 @@ drafts saved (Villa, Moss Denver, Pocketbook Hudson), two more
 templated for the user to populate. The product can carry itself
 from here.
 
+
+
 ## Cycle 23 · 2026-05-06 · Distribution activation — .edu Pro, embed widget, Show HN, venue outreach
 
 Phase 6 of the category-defining sprint. Less code than the prior
@@ -5124,6 +5141,8 @@ reply rate."*
 - iCal subscribe URL per calendar view
 - "Closed this week" auto-card / Slack drop, opt-in per workspace
 - Eight features, parallel-agent dispatch.
+
+
 
 ## Cycle 22 · 2026-05-06 · A-tier wave — five features in one cycle, parallel-agent dispatch
 
@@ -5270,6 +5289,8 @@ broken builds.
 - CHANGELOG syndication — cross-post latest cycles to HN/IH on
   Friday cadence.
 
+
+
 ## Cycle 21 · 2026-05-06 · Studio tier — operator pricing for the multi-client leak
 
 Phase 4 of the category-defining sprint. The cycle 17 manifesto-pass
@@ -5391,6 +5412,8 @@ existing surfaces; nothing structural.
   publish flips visibility).
 - External contact field on tasks (vendor / invoice / etc.).
 - Five features in one cycle, parallel-agent dispatch.
+
+
 
 ## Cycle 20 · 2026-05-06 · Publishable workspaces — /p/{slug} ships with four domain themes
 
@@ -5559,6 +5582,8 @@ dispatched, 22 complete, 0 broken builds.**
 - Phase 7 — B-tier delight wave (drag momentum, focus mode, cents
   column, etc.).
 
+
+
 ## Cycle 19 · 2026-05-06 · Templates as distribution — wave 2 finishes the SEO surface
 
 Phase 2 wave 2. Cycle 18 shipped the route + four flagship essays;
@@ -5698,6 +5723,8 @@ parallel-agent throughput across the sprint so far: **18 dispatched,
 - Phase 4 (Studio tier) and Phase 5 (atomic A-tier wave) sit
   downstream of Phase 3.
 
+
+
 ## Cycle 18 · 2026-05-06 · Templates as distribution — /templates/[slug] × 12, four essays, /for/weddings
 
 Phase 2 wave 1 of the category-defining sprint. The premise: every
@@ -5835,6 +5862,8 @@ removed (was a placeholder #).
   which absorbs the wedding-planner pricing question this cycle
   flagged.
 
+
+
 ## Cycle 17 · 2026-05-06 · Manifesto made real — /principles, the 3-editor cap, pricing honesty
 
 The first cycle of a new sprint — call it the category-defining sprint
@@ -5940,6 +5969,8 @@ states:
   themes (sprint Phase 3).
 - Studio tier ($14.95/mo, unlimited self-owned workspaces) to plug the
   freelance-multi-client and wedding-planner pricing leaks (Phase 4).
+
+
 
 ## Cycle 16 · 2026-05-06 · Phase H wave 2 — keyboard nav, link analytics, templates
 
@@ -6050,6 +6081,8 @@ complete, 0 broken builds.
 - Mobile production Lighthouse run (Phase E backlog)
 - Postgres dialect (Phase D backlog)
 
+
+
 ## Cycle 15 · 2026-05-06 · Phase H wave 1 — CSV import, bulk-select, /changelog goes self-aware
 
 The polish loop kicks off. Three landings in this wave; three more
@@ -6148,6 +6181,8 @@ Deps added: `react-markdown` + `remark-gfm`.
     gated apply via Clerk redirect.
 
 These integrate next cycle.
+
+
 
 ## Cycle 14 · 2026-05-06 · Phase E + F + G — three agents, parallel, no collisions
 
@@ -6294,6 +6329,8 @@ Sidebar gained a Settings entry below Teams in the desktop rail.
 - AI weekly recap on Sunday cron only; backlog "regenerate
   recap" button for power users who want to refresh mid-week.
 
+
+
 ## Cycle 13 · 2026-05-06 · Phase B + C + D — payments, email, observability
 
 After Phase A turned the boundary from "single global workspace" to
@@ -6426,6 +6463,8 @@ surfaces:
 - Webhook idempotency keys — Stripe webhook can re-deliver the
   same event; we should dedupe by `event.id` in a small
   `processed_webhooks` table.
+
+
 
 ## Cycle 12 · 2026-05-06 · Phase A — auth got real, the workspace got walls
 
@@ -6915,6 +6954,8 @@ period. No "// removed" comment. They're just gone.
 - Magic-link revocation: minted tokens are durable forever right
   now. UI for "revoke this link" is one cycle away.
 
+
+
 ## Cycle 10 · 2026-05-05 · My tasks route + real comment counts
 
 Two app-accuracy gaps closed. (a) Sidebar's "My tasks" link
@@ -6967,6 +7008,8 @@ the panel.
   notion of "inbox" than just "all open tasks").
 - Server-side filter UI (lane / priority / assignee dropdowns).
 - Real auth replaces `CURRENT_USER` constant.
+
+
 
 ## Cycle 9 · 2026-05-05 · Activity log — turn updatedAt into a story
 
@@ -7040,6 +7083,8 @@ persisted activity row, and the panel renders them as a real feed.
 - Cross-task feed (e.g. "what changed today") — useful when more
   than one user exists.
 
+
+
 ## Cycle 8 · 2026-05-05 · Editable description + last-edited stamp
 
 The detail panel rendered an outdated "placeholder paragraph" in
@@ -7101,6 +7146,8 @@ edits).
   "Final cut review with director on Mon. Embed link.", tabbed
   away. DB row's `description` column reflects the typed value.
   0 console errors after the hydration fix.
+
+
 
 ## Cycle 7 · 2026-05-05 · Add-task flow + description column
 
@@ -7169,6 +7216,8 @@ surfaces and lays the description column groundwork for cycle 8.
 - Lane / priority pickers in the dialog beyond defaults.
 - Title auto-parser (`#tag`, `@user`, `p1`, `due:friday`).
 
+
+
 ## Cycle 6 · 2026-05-05 · Real comments — first full-stack feature
 
 The detail panel rendered a static deterministic-from-id seed thread
@@ -7225,6 +7274,8 @@ substrate. Sets the pattern every "thing that happens on a task"
   only on panel re-open. SSE / polling channel later cycle.
 - Toast UX for server-action failures (still console-warn).
 - Comment editing — explicit out-of-scope.
+
+
 
 ## Cycle 5 · 2026-05-05 · DB foundation — persistence appears
 
@@ -7290,6 +7341,8 @@ foundation that lets every subsequent feature actually persist.
 - Drizzle migrations workflow (currently `db:push` only).
 - Toast UI for server-action failures (currently console-warn).
 
+
+
 ## Cycle 4 · 2026-05-05 · Task detail panel
 
 Cards on every app view were read-only billboards. Click did nothing.
@@ -7334,6 +7387,8 @@ turns cards into hyperlinks.
   Subsequent cycles ship full-stack per the new directive.
 - Backlog: stale-id state currently shows briefly before auto-
   closing — UX is acceptable but could improve in cycle 6.
+
+
 
 ## Cycle 3 · 2026-05-05 · Shared task store — make the app real
 
@@ -7382,6 +7437,8 @@ across the sidebar.
   cycle 4 introduces persistence.
 - Memoize Card components when task count grows beyond ~50.
 
+
+
 ## Cycle 2 · 2026-05-05 · Restraint — pacing + cursor labels
 
 Two related defects in tone. Scene-to-scene transitions held for only
@@ -7407,6 +7464,8 @@ labels. The demo read chat-app-y when the brand demands concert-hall.
   full app build (real interaction, primitives, depth in app routes)
   rather than further demo polish. Demo work moves to "improvement
   opportunistic" rather than the top of the heuristic.
+
+
 
 ## Cycle 1 · 2026-05-05 · View morph actually FLIPs
 
