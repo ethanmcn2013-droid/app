@@ -26,6 +26,7 @@ import { useCurrentUser } from "@/lib/auth-context";
 import type { Task } from "@/lib/data";
 import { useTasksDispatch, useTasksState } from "@/lib/tasks/tasks-context";
 import { isDemoMode } from "@/lib/access-mode";
+import { PingVoicePanel } from "./ping-voice-panel";
 
 const PING_TYPED_ENABLED = process.env.NEXT_PUBLIC_PROJECT_PING_TYPED_ENABLED === "1";
 const STATUS_NAME: Record<string, string> = {
@@ -607,6 +608,10 @@ function PingTypedPanelFlow({
       {notice ? <p className="mt-2 text-sm text-[color:var(--v3-text-2)]" data-testid="ping-status" role="status">{notice}</p> : null}
       {error && !prepared ? <p className="mt-2 text-sm text-[color:var(--v3-danger-text)]" data-testid="ping-error" role="alert">{error}</p> : null}
       {!notice && !error && sendState !== "idle" ? <p className="sr-only" data-testid="ping-state" role="status" aria-live="polite">{statusLabel}</p> : null}
+      {process.env.NEXT_PUBLIC_PROJECT_PING_VOICE_ENABLED === "1" ? (
+        <PingVoicePanel projectId={projectId} projectName={projectName} selectedTaskIds={selectedTaskIds}
+          tasks={tasks} actorId={actorId} />
+      ) : null}
     </section>
   );
 }
