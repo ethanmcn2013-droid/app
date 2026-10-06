@@ -73,12 +73,27 @@ export function PingVoicePanel(props: Props) {
   const requestOwner = useRef(0);
   const cancelLatch = useRef(false);
   const finishedResult = useRef<(result: PingVoiceSendResult) => void>(() => undefined);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const focusOrigin = useRef<{ node: HTMLElement; scope: string; revision: number } | null>(null);
   const contextKey = `${scopeKey}\u001f${selectionKey}`;
   const claimRequest = () => { const owner = ++requestOwner.current; requestLatch.current = true; setBusy(true); return owner; };
   const releaseRequest = (owner: number) => {
     if (requestOwner.current !== owner) return;
     requestLatch.current = false; setBusy(false);
   };
+
+  useLayoutEffect(() => {
+    const origin = focusOrigin.current;
+    if (!origin) return;
+    const active = document.activeElement;
+    if (origin.scope !== scopeKey || current.current.selectionKey !== selectionKey || origin.revision !== current.current.revision ||
+      (active !== origin.node && active !== document.body && active?.isConnected)) { focusOrigin.current = null; return; }
+    if (active === origin.node && origin.node.isConnected && !origin.node.matches(':disabled')) return;
+    if (busy || state === "starting" || state === "finishing") return;
+    const next = panelRef.current?.querySelector<HTMLElement>(
+      'button:not(:disabled),[data-testid="ping-voice-status"]');
+    if (next) { next.focus(); focusOrigin.current = { ...origin, node: next }; }
+  });
 
   useLayoutEffect(() => {
     const changed = previousSelection.current !== selectionKey;
@@ -232,7 +247,10 @@ export function PingVoicePanel(props: Props) {
       generationId: sent.response.generationId, commandId: sent.response.commandId, token: sent.response.token,
       connectionEpoch: sent.response.connectionEpoch, phase: "capturing" };
     if (!persistMarker(next)) {
-      await sendPingVoice({ version: PING_VOICE_VERSION, action: "cancel", generationId: next.generationId, token: next.token });
+      const cancelled = await sendPingVoice({ version: PING_VOICE_VERSION, action: "cancel", generationId: next.generationId, token: next.token });
+      if (requestOwner.current === owner && current.current.scopeKey === scopeKey && current.current.revision === revision &&
+        cancelled.kind === "response" && pingVoiceIdentityMatches(cancelled.response, next) && cancelled.response.ok &&
+        "knowledge" in cancelled.response && cancelled.response.knowledge === "not_invoked") beginRetry.current = null;
       if (requestOwner.current === owner) { setState("error"); setStatusText("This browser could not save the private recovery handle, so microphone access was not started."); }
       releaseRequest(owner); return;
     }
@@ -287,7 +305,11 @@ export function PingVoicePanel(props: Props) {
   const blockStart = !markerReady || Boolean(marker) || state === "starting" || busy || !validSelection;
   const name = props.projectName?.trim() || "this Project";
   return (
-    <div className="mt-4 border-t border-[color:var(--v3-border)] pt-3" data-testid="ping-voice-panel">
+    <div ref={panelRef} className="mt-4 border-t border-[color:var(--v3-border)] pt-3" data-testid="ping-voice-panel"
+      onClickCapture={(event) => {
+        const node = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
+        if (node && node === document.activeElement) focusOrigin.current = { node, scope: current.current.scopeKey, revision: current.current.revision };
+      }}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-sm font-semibold text-[color:var(--v3-text)]">Voice capture</h3>
@@ -306,7 +328,7 @@ export function PingVoicePanel(props: Props) {
             className="min-h-10 rounded-md px-3 text-sm font-medium text-[color:var(--v3-accent-text)] underline underline-offset-4 disabled:opacity-60">Refresh current Tasks</button> : null}
         </div>
       </div>
-      <p className="mt-2 text-sm text-[color:var(--v3-text-2)]" data-testid="ping-voice-status" role="status" aria-live="polite">{statusText || statusCopy(state, phase)}</p>
+      <p tabIndex={-1} className="mt-2 text-sm text-[color:var(--v3-text-2)]" data-testid="ping-voice-status" role="status" aria-live="polite">{statusText || statusCopy(state, phase)}</p>
       <p className="sr-only" data-testid="ping-voice-phase">{phase}</p>
       {receipt ? <div data-testid="ping-voice-receipt" className="mt-2 text-sm text-[color:var(--v3-text-2)]">Saved result: {receipt.changedCount} changed of {receipt.affectedCount} affected tasks.</div> : null}
       {capture.snapshot?.reason ? <p className="mt-1 text-xs text-[color:var(--v3-text-2)]">Capture ended safely. Check the original result before starting again.</p> : null}
