@@ -196,10 +196,10 @@ try {
   // Local typed floor only: canonical legacy control actions above deliberately throw.
   // Private original identities correlate attempts and never enter the observations.
   receipt.typedFloorObservations=[];
-  const literalColumns=['id','workspace_id','seq','title','lane','priority','assignees','due','due_at','start_day',
-    'duration_days','completed_at','board_column_key','parent_task_id','recurrence','archived_at','position'];
-  const literalRows = async () => (await fixture.client.execute(`SELECT ${literalColumns.join(',')} FROM tasks ORDER BY id`)).rows
-    .map(row=>Object.fromEntries(literalColumns.map(column=>[column,row[column]])));
+  const literalRows = async () => {
+    const result=await fixture.client.execute('SELECT * FROM tasks ORDER BY id');
+    return result.rows.map(row=>Object.fromEntries(result.columns.map(column=>[column,row[column]])));
+  };
   for (const selected of [[floorTargets[0]],floorTargets.slice(1)]) {
     await page.reload(); // Fresh mounted selection, no command invocation.
     await page.getByTestId('ping-input').waitFor();
@@ -246,7 +246,9 @@ try {
     },selected);
     const after=await literalRows();
     assert.equal(after.length,before.rows.length);
-    for (const pre of before.rows) assert.deepEqual(after.find(row=>row.id===pre.id),selected.includes(pre.id)?{...pre,lane:'doing'}:pre);
+    assert.ok(Number.isSafeInteger(executed.receipt.committedAtSeconds));
+    for (const pre of before.rows) assert.deepEqual(after.find(row=>row.id===pre.id),selected.includes(pre.id)?
+      {...pre,lane:'doing',updated_at:executed.receipt.committedAtSeconds}:pre);
     const originals=executedOriginals.slice(before.execute),lookups=readOriginals.slice(before.read);
     assert.equal(executeCalls-before.execute,1);assert.equal(receiptReadCalls-before.read,1);
     assert.equal(await countReceipts()-before.receipts,1);
