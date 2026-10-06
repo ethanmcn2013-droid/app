@@ -176,11 +176,12 @@ function finalizeMessage(reason: string): string {
  * access_state='legacy' rows render normally; the bytes may still exist
  * on local disk for local-disk deployments.
  */
-export function ResourcesSection({ task }: { task: Task }) {
-  return <TaskResources key={task.id} task={task} />;
+/** `seeAll`: the task panel's link to the full page, after Attach file. */
+export function ResourcesSection({ task, seeAll = null }: { task: Task; seeAll?: React.ReactNode }) {
+  return <TaskResources key={task.id} task={task} seeAll={seeAll} />;
 }
 
-function TaskResources({ task }: { task: Task }) {
+function TaskResources({ task, seeAll }: { task: Task; seeAll: React.ReactNode }) {
   const reduceMotion = useReducedMotion();
   const me = useCurrentUser();
   const { toast } = useToast();
@@ -435,6 +436,7 @@ function TaskResources({ task }: { task: Task }) {
           <PaperclipGlyph />
           <span data-attach-label="">Attach file</span>
         </button>
+        {seeAll}
       </div>
 
       {/* The drop zone below is the empty state; only loading and a failed

@@ -74,17 +74,16 @@
   animation: menuIn 140ms var(--v3-ease) both;
 }
 
-/* On a phone the switcher sits at the left edge, so its menu opens rightward. */
+/* On a phone the switcher sits beside the title at the right, so its menu
+   keeps opening leftward and narrows to the screen (it used to open
+   rightward and run off a 390px screen). */
 @media (max-width: 720px) {
   .button {
     height: 36px;
   }
 
   .menu {
-    left: 0;
-    right: auto;
     width: min(280px, calc(100vw - 32px));
-    transform-origin: top left;
   }
 }
 

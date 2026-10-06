@@ -57,6 +57,12 @@ export type ProjectConsoleProps = Readonly<{
   weekHref: string | null;
   /** A plain click on a row, a card or a menu item. */
   onGo: (projectId: string, surface: ConsoleSurface) => void;
+  /**
+   * A plain click on a row's name: show the Project as a record without
+   * opening it, with `order` the rows as listed for previous and next. Absent,
+   * the row opens the Project as before. The row's Open button always opens.
+   */
+  onPeek?: (projectId: string, order: readonly string[]) => void;
   /** Absent where reminders cannot be sent; the menu then has no Nudge. */
   onNudge?: (row: ConsoleRow) => void;
   nudgeState?: Readonly<Record<string, ConsoleNudgeState>>;
@@ -86,6 +92,7 @@ export function ProjectConsole({
   taskHref,
   weekHref,
   onGo,
+  onPeek,
   onNudge,
   nudgeState,
 }: ProjectConsoleProps) {
@@ -130,6 +137,7 @@ export function ProjectConsole({
               pendingProjectId={pendingProjectId}
               hrefFor={hrefFor}
               onGo={onGo}
+              onPeek={onPeek}
               onNudge={onNudge}
               nudgeState={nudgeState}
             />
@@ -423,10 +431,19 @@ function Bar({ value, tone, label }: { value: number; tone?: "late" | "risk"; la
 
 /* ── Rows ────────────────────────────────────────────────────────── */
 
-type RowShared = Pick<ProjectConsoleProps, "openProjectId" | "pendingProjectId" | "hrefFor" | "onGo" | "onNudge" | "nudgeState">;
+type RowShared = Pick<ProjectConsoleProps, "openProjectId" | "pendingProjectId" | "hrefFor" | "onGo" | "onNudge" | "nudgeState"> & {
+  /** Set by the list with its own order, so the peek can step through it. */
+  onPeek?: (projectId: string) => void;
+};
 
-function RowList({ groups, idBase, ...shared }: { groups: readonly ConsoleGroup[]; idBase: string } & RowShared) {
+function RowList({
+  groups,
+  idBase,
+  onPeek,
+  ...shared
+}: { groups: readonly ConsoleGroup[]; idBase: string; onPeek?: ProjectConsoleProps["onPeek"] } & Omit<RowShared, "onPeek">) {
   const ids = groups.flatMap((group) => group.rows.map((row) => row.id));
+  const peek = onPeek ? (projectId: string) => onPeek(projectId, ids) : undefined;
   const [active, setActive] = useState<string | null>(null);
   const current = active && ids.includes(active) ? active : ids[0];
   const listRef = useRef<HTMLDivElement>(null);
@@ -463,7 +480,7 @@ function RowList({ groups, idBase, ...shared }: { groups: readonly ConsoleGroup[
             <span className={c.groupCount}>{group.rows.length}</span>
           </h2>
           {group.rows.map((row) => (
-            <Row key={row.id} row={row} index={index++} current={row.id === current} onFocusRow={() => setActive(row.id)} {...shared} />
+            <Row key={row.id} row={row} index={index++} current={row.id === current} onFocusRow={() => setActive(row.id)} onPeek={peek} {...shared} />
           ))}
         </div>
       ))}
@@ -480,6 +497,7 @@ function Row({
   pendingProjectId,
   hrefFor,
   onGo,
+  onPeek,
   onNudge,
   nudgeState,
 }: { row: ConsoleRow; index: number; current: boolean; onFocusRow: () => void } & RowShared) {
@@ -490,6 +508,14 @@ function Row({
     if (!plainClick(event)) return;
     event.preventDefault();
     onGo(row.id, "project");
+  };
+  // The name shows the peek; the open Project's own row still scrolls to its
+  // overview below, and a new-tab click still follows the link.
+  const peekOrOpen = (event: ReactMouseEvent) => {
+    if (!plainClick(event)) return;
+    event.preventDefault();
+    if (onPeek && !isOpen) onPeek(row.id);
+    else onGo(row.id, "project");
   };
 
   const items: MenuItem[] = [];
@@ -539,9 +565,10 @@ function Row({
           data-console-row={row.id}
           tabIndex={tabIndex}
           onFocus={onFocusRow}
-          onClick={open}
+          onClick={peekOrOpen}
           aria-current={isOpen ? "true" : undefined}
-          aria-label={`${row.name}. ${row.markLabel}. ${isOpen ? "Its overview is below" : "Open the project"}`}
+          aria-haspopup={onPeek && !isOpen ? "dialog" : undefined}
+          aria-label={`${row.name}. ${row.markLabel}. ${isOpen ? "Its overview is below" : onPeek ? "Show a summary" : "Open the project"}`}
         >
           {nameBlock}
         </a>

@@ -24,7 +24,7 @@
   bottom: 8px;
   z-index: 81;
   display: flex;
-  width: min(600px, calc(100vw - 48px));
+  width: min(560px, calc(100vw - 48px));
   border-radius: var(--v3-radius-xl);
   background: var(--v3-surface);
   box-shadow: var(--v3-shadow-pop), 0 24px 64px -24px rgba(10, 10, 12, 0.4);
@@ -191,6 +191,245 @@
   overflow-y: auto;
   padding-bottom: 48px;
   scrollbar-width: thin;
+}
+
+/* ── Record panel (reference 24, 6 Oct 2026) ──────────────────────
+   The side panel reads as one record: previous and next with the count,
+   Edit and Open, then who and where, the fields, and the sections. The
+   full page (.page) keeps its own header and grid. */
+
+.recordHead {
+  justify-content: space-between;
+  padding: 0 10px 0 14px;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.stepButton {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius);
+  background: var(--v3-surface);
+  color: var(--v3-text-2);
+  transition: background-color 120ms var(--v3-ease), color 120ms var(--v3-ease), border-color 120ms var(--v3-ease);
+}
+
+.stepButton:hover {
+  border-color: var(--v3-border-strong);
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.stepper .position {
+  padding: 0 6px;
+}
+
+.textButton {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  margin-right: 4px;
+  padding: 0 12px;
+  border: 1px solid var(--v3-border-strong);
+  border-radius: var(--v3-radius);
+  background: var(--v3-surface);
+  color: var(--v3-text);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color 120ms var(--v3-ease), border-color 120ms var(--v3-ease);
+}
+
+.textButton:hover {
+  background: var(--v3-hover);
+}
+
+.textButton[data-tone="strong"] {
+  border-color: transparent;
+  background: var(--v3-fill);
+}
+
+.textButton[data-tone="strong"]:hover {
+  background: var(--v3-selected);
+}
+
+.identity {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px 20px 10px 24px;
+}
+
+.tile {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  color: var(--v3-project-ink);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.identityText {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.identity .title {
+  font-size: 19px;
+  line-height: 26px;
+}
+
+.identity .doneButton {
+  margin-top: 4px;
+}
+
+.identityLine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  color: var(--v3-text-3);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.identityLine > span {
+  flex: none;
+}
+
+.identityLine > .identityProject {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--v3-text-2);
+}
+
+.identityNumber {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The panel's fields: a wider label column and a little more air than the
+   compact list, as in the reference. */
+.sheet .props {
+  padding-top: 6px;
+}
+
+.sheet .row {
+  grid-template-columns: 136px minmax(0, 1fr);
+  min-height: 40px;
+}
+
+.sheet .rowLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--v3-text-3);
+}
+
+.sheet .rowIcon {
+  display: inline-flex;
+  color: var(--v3-text-3);
+}
+
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  padding: 0 8px;
+}
+
+.progressTrack {
+  position: relative;
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--v3-fill);
+  overflow: hidden;
+}
+
+.progressFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: var(--v3-accent);
+}
+
+.progressCount {
+  flex: none;
+  color: var(--v3-text-2);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Section heads in the panel: a quiet name, then "See all" at the end. */
+.notes {
+  padding-top: 16px;
+  border-top: 1px solid var(--v3-border);
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  margin-bottom: 8px;
+}
+
+.sectionName {
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--v3-text);
+}
+
+.seeAll {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  margin-left: auto;
+  padding: 0 8px;
+  border-radius: var(--v3-radius-sm);
+  color: var(--v3-text-2);
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color 120ms var(--v3-ease), color 120ms var(--v3-ease);
+}
+
+.seeAll:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.seeAllEnd {
+  display: contents;
+}
+
+/* After a section's own action (Attach file), "See all" sits beside it. */
+.seeAllAfter {
+  display: inline-flex;
+}
+
+.seeAllAfter > .seeAll {
+  margin-left: 0;
 }
 
 /* ── Title ────────────────────────────────────────────────────────── */
@@ -400,6 +639,12 @@
   height: 1px;
   margin: 14px 24px 4px;
   background: var(--v3-border);
+}
+
+/* In the panel the Notes section draws its own line. */
+.sheet .divider {
+  height: 0;
+  margin: 10px 0 0;
 }
 
 /* ── Sections ─────────────────────────────────────────────────────── */
@@ -886,3 +1131,33 @@
 
 .splitInner [data-sheet-subtasks][data-empty] input::placeholder { color: var(--v3-text); opacity: 1; }
 .splitInner [data-sheet-subtasks][data-empty] [class*="composerGlyph"] { color: var(--v3-text-2); }
+
+/* The record panel on a phone: the count stays, the steps are thumb-sized,
+   Mark done drops under the name so the name keeps its width. */
+@media (max-width: 767px) {
+  .recordHead {
+    padding-left: 8px;
+  }
+  .stepper .position {
+    display: inline;
+  }
+  .stepButton {
+    width: 40px;
+    height: 40px;
+  }
+  .identity {
+    flex-wrap: wrap;
+    padding: 16px 16px 8px;
+  }
+  .identityText {
+    flex-basis: calc(100% - 52px);
+  }
+  .identity .doneButton {
+    margin: 4px 0 0 52px;
+  }
+  .sheet .row {
+    grid-template-columns: 112px minmax(0, 1fr);
+    min-height: 44px;
+  }
+}
+
