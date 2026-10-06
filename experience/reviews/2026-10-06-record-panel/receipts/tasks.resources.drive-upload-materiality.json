@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.resources.drive-upload",
+  "source": "tasks/src/components/app/detail-panel/resources-section.tsx",
+  "materialityHash": "a9720b2f91abaa09",
+  "reviewedAt": "2026-10-06",
+  "reviewer": "Implementation review under delegated execution (Claude, single writer on design/app-v3-record-panel). Founder review of the rendered result is pending",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-0e2bc8442ee479567ad9023e-ad1a3610908876a5.json",
+    "attestationSha256": "a3d54b94a229bcc554758377b385d754d22891870f36866a9643a28a600b9ee4",
+    "runId": "tasks-playwright-0e2bc8442ee479567ad9023e",
+    "canonicalEvidenceSha256": "0e2bc8442ee479567ad9023ec64e7efc9be8515bbdc333b5bc86c23c11dffefe",
+    "rawArtifactSha256": "ad1a3610908876a59bcfc49be99f0337a5784ec9dc24661b4eb77f3aee1ccabe",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.surface.task-detail-panel",
+    "caseName": "populated task",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Commit 8cd7b26 adds one optional seeAll slot to the Files and links section head, which the record panel fills with a See all button that opens the full page; the full page and every other caller pass nothing and render as before. The task detail critical case, which renders this section and its Files and links heading, passes at all four sizes in a full green run, 132 of 132, on a demo build of 6b8b7a5.",
+  "decision": "Refresh the reviewed hash to the new source and attach this receipt. Other registry fields are unchanged."
+}
