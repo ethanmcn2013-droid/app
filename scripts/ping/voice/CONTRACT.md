@@ -1,6 +1,6 @@
 # Offline microphone and finality contract
 
-`ping.voice.offline.v1` is a delegated disposable construction. It is disconnected by default: no provider credentials, live API, HTTP capture authority, executor or product voice mount. Initial contract commit exports types/constants only; the factory and codecs follow in the same writer lane. The existing command/input semantics remain unchanged.
+`ping.voice.offline.v1` is a delegated disposable construction. It is disconnected by default: no provider credentials, live API, HTTP capture authority, executor or product voice mount. Source exports the codecs and `createPingVoiceSession`; the initial types-only checkpoint preceded implementation. The existing command/input semantics remain unchanged.
 
 Sol owns `pcm.ts`, `realtime-transcription.ts`, `voice-session.ts` and owning tests. A separate writer owns the worklet/hook; coordinator owns browser fixture/package integration and receiving. One writer per worktree. Synthetic capture is validated application test context, not authentication.
 
@@ -26,4 +26,12 @@ Codec facts checked against the [transcription guide](https://developers.openai.
 
 One small bounded serialized queue handles synchronous callback reentrancy. Interpretation latch is set before invoking the injected function with only the existing `modelInput` plus AbortSignal; never whole descriptor/capture/IDs/readsets. Unknown returned data goes through existing binder/normalizer. Late/conflicting input can invalidate a result but cannot retroactively erase a legitimate call. Cancel/dispose aborts, unsubscribes/closes once, wipes retained input/PCM/proposal and blocks stale completion. Ready exposes only normalized operation proposal; no executor method or dispatch event.
 
+The hook owns deadline timers and must continue `session.tick()` after closing native resources at the cut, through pending ACK/finals and interpretation. Clear guards only on ready/closed/unavailable/dispose. The session also checks clock/context/deadlines on calls and callbacks, but does not create an autonomous timer. Timer cadence must not exhaust the reducer event cap (a one-second guard suffices for this construction). A 32-entry reentrancy queue bounds retained callbacks; saturation closes the whole generation.
+
 Fixture callbacks/transcripts are scripted and explicitly labelled. Actual native fake-device bytes, tail/cleanup and injected calls are separate observations from ASR/model accuracy. No real speech-end/visible result latency exists here. Typed post-text prepare cannot act as Start custody; future strict server-owned voice capture and real execution/readback remain separate gates.
+
+## Owning checks and receiving boundary
+
+Run `node --import tsx --test src/lib/ping/pcm.test.ts src/lib/ping/realtime-transcription.test.ts src/lib/ping/voice-session.test.ts`. The 14 owning groups assert literal byte vectors/wire payloads, 150 real encoded blocks representing 30 decoded seconds, exact partial-tail coverage, ACK/final correlation, synchronous callback reentrancy, before-call disconnect, caps/deadlines, cancellation/late interpretation and unknown proposal rejection. They invoke no microphone, live provider, database or executor. Codec negatives include internal typed-array brand swaps and both ordinary/prototype-spoofed SharedArrayBuffer storage.
+
+Coordinator owns normal blocking registration, actual worklet/hook browser evidence, independent receiving at exact combined revisions and Delivery closure. A passing owning suite alone does not close the packet or wider voice gates. Production scope, account access, real provider/recognition accuracy and authenticated voice custody remain open.
