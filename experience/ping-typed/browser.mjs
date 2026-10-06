@@ -163,7 +163,10 @@ try {
   await waitForHeldResponse(state);
   await page.getByRole('checkbox',{name:'Select Synthetic other',exact:true}).check();
   await page.getByRole('checkbox',{name:'Select Synthetic other',exact:true}).uncheck(); // A→B→A must still invalidate the pending capture.
+  const releasedPrepare = page.waitForResponse(response => response.url() === origin+'/api/ping' && response.request().method()==='POST' && response.request().postDataJSON().action==='prepare');
   state.holdAction=null;state.release();state.release=null;
+  await (await releasedPrepare).finished();
+  await page.waitForFunction(() => { const input=document.querySelector('[data-testid="ping-input"]');return input && !input.disabled; });
   await page.getByTestId('ping-status').filter({hasText:'selection changed'}).waitFor();
   assert.equal(await page.getByTestId('ping-apply').count(),0);
   assert.equal(executeCalls,3);assert.equal(await countReceipts(),3);
