@@ -316,50 +316,32 @@ async function auditTimelineContract(
   }
 
   await expect(page.locator("[data-timeline-wordmark]")).toHaveText("timeline");
-  // A couple's artifact leads with its heart (T·126): the countdown is the
-  // opening face — one review clock, 16 July to 3 October is 79 days — and
-  // the working count stays one press away. The progressbar's aria-valuenow
-  // tracks the frontier it paints (the furthest completed dot's position on
-  // the date-scaled rail), which is not the same fraction as completed-of-
-  // total when milestones are unevenly spaced — two of nine complete reads
-  // 40 here because the second of them, 18 April, falls 106 days into a 274
-  // day span and the rail is inset 4 points at each end. The spoken
-  // aria-valuetext keeps the honest count regardless.
-  //
-  // This read 33 until the dated rail became proportional again: marks used
-  // to be shoved apart until their labels stopped colliding, which put the
-  // frontier dot at a position no calendar supported. Distance on this rail
-  // is now calendar distance and nothing may move a mark off its day, so the
-  // frontier moved with it. Verified against the rendered DOM of a built app
-  // rather than recomputed: the fill beside this attribute paints
-  // scaleX(0.39591…), and 40 is that number rounded — the value and the ink
-  // are one statement, which is the invariant the artifact contract test
-  // enforces.
-  const toggle = page.locator("[data-timeline-metric-toggle]");
-  await expect(toggle).toHaveAttribute("data-metric-mode", "countdown");
+  // The Countdown (founder pick, 28 Sep 2026; ported 6 Oct): the page opens
+  // on how long is left. One review clock: 16 July to 3 October is 79 days.
+  // The next milestone is named in the list at every size; from 1280 a
+  // to-scale strip carries the progress bar and a link per milestone that
+  // jumps to its row. The countdown/progress toggle and the rail's arrow
+  // keys belonged to the earlier rail and are gone with it.
   await expect(page.locator("[data-timeline-metric-value]")).toHaveText("79");
-  await expect(page.getByRole("progressbar", { name: "Milestone completion" }))
-    .toHaveAttribute("aria-valuenow", "40");
-  await expect(page.locator("[data-today-marker]")).toHaveAttribute(
-    "aria-label",
-    /Our next milestone is Menu tasting at The Orchard/,
-  );
+  await expect(page.getByRole("group", { name: "79 days until the wedding day" })).toBeVisible();
+  await expect(page.locator("span[data-today-marker]")).toHaveAttribute("aria-label", "Today, 16 July 2026");
   await expect(page.locator("[data-studio-rail], nav[aria-label='Products']")).toHaveCount(0);
 
-  await toggle.click();
-  await expect(toggle).toHaveAttribute("data-metric-mode", "progress");
-  await expect(page.locator("[data-timeline-metric-value]")).toHaveText(
-    "2 of 9 complete",
-  );
-
-  const current = page.getByRole("button", { name: /Menu tasting at The Orchard/ });
-  await current.focus();
-  await current.press("ArrowRight");
-  await expect(page.getByRole("button", { name: /Send the invitations/ })).toBeFocused();
+  const wide = (page.viewportSize()?.width ?? 0) >= 1280;
+  const strip = page.getByRole("progressbar", { name: "Milestone completion" });
+  if (wide) {
+    await expect(strip).toHaveAttribute("aria-valuetext", "2 of 9 milestones complete");
+    const next = page.getByRole("link", { name: "Menu tasting at The Orchard, 1 August 2026" });
+    await next.focus();
+    await next.press("Enter");
+    await expect(page).toHaveURL(/#m-demo-audience-item-menu$/);
+  } else {
+    await expect(strip).toHaveCount(0);
+  }
 
   if (testInfo.project.name === "mobile") {
-    const minimumTarget = await page.locator("[data-timeline-scroll-viewport] button").evaluateAll(
-      (buttons) => Math.min(...buttons.map((button) => button.getBoundingClientRect().height)),
+    const minimumTarget = await page.locator("[data-timeline-artifact] button").evaluateAll(
+      (buttons) => Math.min(...buttons.filter((button) => button.offsetParent).map((button) => button.getBoundingClientRect().height)),
     );
     expect(minimumTarget).toBeGreaterThanOrEqual(44);
   }
