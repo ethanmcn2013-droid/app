@@ -64,13 +64,20 @@ export function SampleDataSection({
 
   return (
     <div>
-      <SectionHeader title="Sample data" description={view.description} />
+      <SectionHeader title={view.navLabel} description={view.description} />
 
       {outcome ? (
         <div className="mb-6">
           <Callout tone={outcome.tone} role={outcome.tone === "danger" ? "alert" : "status"}>
             <p className="font-medium text-[color:var(--v3-text)]">{outcome.title}</p>
             <p className="mt-0.5">{outcome.body}</p>
+            {outcome.skipped?.length ? (
+              <ul className="mt-2 list-disc space-y-0.5 pl-5 text-[color:var(--v3-text)]">
+                {outcome.skipped.map((name) => (
+                  <li key={name}>{name}</li>
+                ))}
+              </ul>
+            ) : null}
           </Callout>
         </div>
       ) : null}

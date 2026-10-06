@@ -980,7 +980,14 @@ test("operator sample data: every action exits review mode first, then proves th
     join(serverDir, "..", "components", "app", "settings", "settings-app.tsx"),
     "utf8",
   );
-  assert.match(settingsApp, /navGroups\(driveEnabled, sampleData !== null && !readOnly\)/);
+  assert.match(settingsApp, /navGroups\(driveEnabled, sampleData !== null && !readOnly \? sampleData : null\)/);
+  // The section is a separate chunk loaded only when rendered, and the shell
+  // holds none of its words.
+  assert.match(settingsApp, /dynamic\(\(\) =>\s*import\("\.\/sections\/sample-data"\)/);
+  assert.doesNotMatch(settingsApp, /from "\.\/sections\/sample-data"|Sample data"|"Operator"/);
+  // The page asks for the view only for an operator, with the identity it
+  // already resolved; the action keeps its own gate.
+  assert.match(settingsPage, /callerIsAdmin\(me\) \? getSampleDataViewAction\(\) : null/);
   assert.match(settingsApp, /tab === "sample" && sampleData !== null && !readOnly \?/);
   const demoBranch = settingsPage.slice(settingsPage.indexOf("if (isDemoMode())"), settingsPage.indexOf("requireRouteProjectId()"));
   assert.doesNotMatch(demoBranch, /sampleData|getSampleData/);

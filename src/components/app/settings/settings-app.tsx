@@ -18,7 +18,7 @@ import { projectDriveUiEnabled } from "@/lib/project-drive-ui";
 import { isDemoMode } from "@/lib/access-mode";
 import { PrivacySection } from "./sections/privacy";
 import { DangerSection } from "./sections/danger";
-import { SampleDataSection } from "./sections/sample-data";
+import dynamic from "next/dynamic";
 import type { SampleDataView } from "@/lib/sample-data/copy";
 import type { SecurityData } from "@/server/actions/security";
 
@@ -64,6 +64,15 @@ type Tab =
   | "sample";
 
 type NavItem = { id: Tab; label: string; icon: ReactNode };
+
+/**
+ * Operator only, and loaded only for an operator: the section is a separate
+ * chunk that is requested when the server handed this page its data, so its
+ * code and wording reach nobody else's browser.
+ */
+const OperatorSection = dynamic(() =>
+  import("./sections/sample-data").then((module) => module.SampleDataSection),
+);
 
 // ── Nav icons: 16px, 1.5 stroke, the shell's line family ─────────────
 
@@ -166,7 +175,7 @@ const ICONS = {
  */
 function navGroups(
   driveEnabled: boolean,
-  operator: boolean,
+  operator: Pick<SampleDataView, "navGroup" | "navLabel"> | null,
 ): Array<{ label: string; items: NavItem[] }> {
   return [
     {
@@ -191,12 +200,13 @@ function navGroups(
       ],
     },
     // Operators only. The server decides (`sampleData` is null for everyone
-    // else and in review), so the group does not exist for anyone else.
+    // else and in review), so the group does not exist for anyone else, and
+    // its words arrive with that data rather than living in this file.
     ...(operator
       ? [
           {
-            label: "Operator",
-            items: [{ id: "sample" as const, label: "Sample data", icon: ICONS.sample }],
+            label: operator.navGroup,
+            items: [{ id: "sample" as const, label: operator.navLabel, icon: ICONS.sample }],
           },
         ]
       : []),
@@ -289,7 +299,7 @@ export function SettingsApp({
   const [tab, setTab] = useState<Tab>(driveEnabled && isDemoMode() ? "storage" : "workspace");
   const interactiveDriveReview = readOnly && isDemoMode() && tab === "storage" && driveEnabled;
   const sectionReadOnly = readOnly && !interactiveDriveReview;
-  const groups = navGroups(driveEnabled, sampleData !== null && !readOnly);
+  const groups = navGroups(driveEnabled, sampleData !== null && !readOnly ? sampleData : null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -413,7 +423,7 @@ export function SettingsApp({
             <PrivacySection userEmail={currentUserEmail} />
           ) : null}
           {tab === "sample" && sampleData !== null && !readOnly ? (
-            <SampleDataSection initialView={sampleData} activeProjectId={workspace?.id ?? null} />
+            <OperatorSection initialView={sampleData} activeProjectId={workspace?.id ?? null} />
           ) : null}
           {tab === "danger" ? (
             <DangerSection

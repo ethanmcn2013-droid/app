@@ -163,6 +163,9 @@ export function removeOutcome(
  * operator-only wording out of every other person's bundle.
  */
 export type SampleDataView = Readonly<{
+  /** The Settings nav group and item, so the shell ships neither word. */
+  navGroup: string;
+  navLabel: string;
   description: string;
   setsDescription: string;
   footnote: string;
@@ -187,6 +190,8 @@ export type SampleDataView = Readonly<{
 export function sampleDataView(status: readonly SampleSetStatus[]): SampleDataView {
   const anyPresent = status.some((set) => set.present.length > 0);
   return {
+    navGroup: "Operator",
+    navLabel: "Sample data",
     description:
       "Add invented projects to your own account to see the product with real-looking work in it. Only operators see this section.",
     setsDescription:
