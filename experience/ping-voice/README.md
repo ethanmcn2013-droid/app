@@ -212,3 +212,40 @@ The response must be one complete bounded Chat Completion with exactly one named
 
 
 The candidate requests `n: 1`. Its usage decoder accepts a deliberately closed subset of known scalar/detail fields and preserves recognized nullable detail objects or members as `null` (unknown), never zero. This is not a claim of complete SDK usage-wire compatibility; unknown detail keys are rejected.
+
+## Direct native paired construction
+
+The existing manually invoked `createPingPairedInertTrialRunner` accepts exactly
+two supplied routes. Its existing `{id, transcribe, interpret}` clip route and
+report serialization are preserved. A closed `{id, kind: "native_audio",
+interpretAudio}` route receives its own copy of the same completed PCM and only
+the four-field native context above. It invokes the supplied audio-to-proposal
+callback once, with zero transcription calls/usage and no transcript or
+`finals_ready` observation. Native callback entry and completion are labelled
+`interpretation_start`/`interpretation_end`; these are synthetic callback timings,
+not real model, speech-end, microphone or confirmed task-completion latency.
+
+Only native reports contain `nativeAudioUsage`, copied by the candidate's
+unchanged exported `parsePingNativeAudioUsage` decoder. Missing/undefined result
+usage is rejected; explicit null stays unknown, recognized zero stays zero, and
+nullable details remain null. Prompt/completion tokens are not relabelled as a
+transcription/interpretation split, price or complete billing. The same whole-plan
+evaluator uses the independent supplied label and original capture. Native
+results must be one closed locally valid proposal/usage envelope; no operation
+authority, executor or receipt path is added.
+
+The existing per-route original budget and callback-settlement busy latch remain.
+Logical callback rejection does not witness physical provider settlement: each
+injected candidate owns its own transport reservation. Executor/read/effect zero
+fields describe absent runner seams, not arbitrary callback side effects. Visible
+completion intervals remain null. Private reports include label-derived expected
+and actual outcomes/matches and belong solely to the authorized label custodian;
+authors/root may inspect only their own public synthetic fixture results. No
+automatic logging/export, reserved screening, winner, model fidelity, effective
+account/region/retention or full PP021/022/023 acceptance is established here.
+
+Four additional public injected groups compare actual clip+Responses/native
+constructors on literal WAV/context, inspect nullable usage and whole refusals,
+prove byte/context isolation and closed route boundaries, and hold native callback
+settlement across cancellation/deadline without inventing transcript stages.
+`pnpm test:ping-voice` already includes the existing paired test file.

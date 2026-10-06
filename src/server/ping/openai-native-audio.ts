@@ -55,7 +55,7 @@ function optionalDetails<T extends Record<string, number | null>>(value: unknown
   if (!dataRecord(value) || !exactKeys(value, [], allowed) || Object.keys(value).some((key) => value[key] !== null && !nativeCount(value[key]))) return false;
   return freeze({ ...value }) as T;
 }
-function usage(value: unknown): PingNativeAudioUsage | null | false {
+export function parsePingNativeAudioUsage(value: unknown): PingNativeAudioUsage | null | false {
   if (value === undefined || value === null) return null;
   if (!dataRecord(value) || !exactKeys(value, ["prompt_tokens", "completion_tokens", "total_tokens"],
     ["prompt_tokens_details", "completion_tokens_details"]) || !nativeCount(value.prompt_tokens) ||
@@ -115,7 +115,7 @@ function decoded(value: unknown, model: string, selectedTaskCount: number): Ping
   if (!dataRecord(wrapper) || !exactKeys(wrapper, ["proposal"])) return null;
   const proposal = parsePingVoiceInterpretation(wrapper.proposal, selectedTaskCount);
   if (!proposal) return null;
-  const actualUsage = usage(value.usage);
+  const actualUsage = parsePingNativeAudioUsage(value.usage);
   if (actualUsage === false) return null;
   return freeze({ proposal, usage: actualUsage });
 }

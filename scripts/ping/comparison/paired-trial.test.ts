@@ -3,12 +3,15 @@ import test from "node:test";
 import { syntheticCapture, syntheticPlan } from "@/lib/ping/input-test-fixture";
 import { createPingOpenAiClipTranscriber } from "@/server/ping/openai-clip-transcription";
 import { createPingOpenAiInterpreter } from "@/server/ping/openai-interpreter";
+import { createPingOpenAiNativeAudio, type PingNativeAudioResult } from "@/server/ping/openai-native-audio";
 import { createPingPairedInertTrialRunner, type PingPairedRoute, type PingPrivateRouteReport } from "./paired-trial";
 
 // Public literal synthetic labels only. No reserved labels, transcripts or outcome feedback.
 const pcm = () => new Uint8Array([0, 0, 255, 127, 0, 128, 255, 255]);
+const nativeResult = (): PingNativeAudioResult => ({ proposal: { version: "ping.proposal.v1", outcome: "plan",
+  operation: { kind: "edit_selected", effects: { selfAssignment: "add", dueDate: "2026-10-07", statusColumnKey: "doing" } } }, usage: null });
 const label = (expected: unknown = syntheticPlan()) => ({ id: "public-compound", source: "independent_fixture", expected });
-const route = (id: string, actual: unknown = syntheticPlan()): PingPairedRoute => ({ id,
+const route = (id: string, actual: unknown = syntheticPlan()): Extract<PingPairedRoute, { transcribe: unknown }> => ({ id,
   transcribe: async () => ({ text: "Assign these to me, due 2026-10-07, move to doing.", usage: null }),
   interpret: async () => actual });
 const options = (routes: [PingPairedRoute, PingPairedRoute] = [route("first"), route("second")]) =>
@@ -229,4 +232,118 @@ test("deadline expiring across byte-copy boundary prevents the physical callback
   const result = await createPingPairedInertTrialRunner()({ ...input, deadlineMs: 10 });
   assert.equal(result.routes[0].status, "deadline"); assert.equal(calls, 0);
   assert.equal(result.routes[0].transcribeCalls, 0); assert.equal(result.routes[1].transcribeCalls, 0);
+});
+
+test("public clip+Responses versus actual native constructor uses the same WAV/context without a native text stage", async () => {
+  let clips = 0, textCalls = 0, audioCalls = 0;
+  const expectedBytes = [0, 0, 255, 127, 0, 128, 255, 255];
+  const clip: PingPairedRoute = { id: "clip",
+    transcribe: createPingOpenAiClipTranscriber({ model: "gpt-4o-mini-transcribe", apiKey: "synthetic-key", fetch: async (_url, init) => {
+      clips++; const file = (init.body as FormData).get("file") as Blob;
+      assert.deepEqual([...new Uint8Array(await file.arrayBuffer()).subarray(44)], expectedBytes);
+      return new Response(JSON.stringify({ text: "Assign these to me, due 2026-10-07, move to doing." }),
+        { headers: { "content-type": "application/json" } });
+    } }),
+    interpret: createPingOpenAiInterpreter({ model: "synthetic-model", apiKey: "synthetic-key", fetch: async (_url, init) => {
+      textCalls++; const input = JSON.parse(JSON.parse(init.body as string).input[0].content[0].text);
+      assert.equal(input.selectedTaskCount, 1); assert.equal(input.transcript, "Assign these to me, due 2026-10-07, move to doing.");
+      return new Response(JSON.stringify({ status: "completed", error: null, incomplete_details: null,
+        output: [{ type: "message", role: "assistant", status: "completed", content: [{ type: "output_text", annotations: [], logprobs: [],
+          text: JSON.stringify({ proposal: syntheticPlan() }) }] }] }), { headers: { "content-type": "application/json" } });
+    } }) };
+  const native: PingPairedRoute = { id: "native", kind: "native_audio",
+    interpretAudio: createPingOpenAiNativeAudio({ model: "gpt-audio-1.5", apiKey: "synthetic-key", fetch: async (_url, init) => {
+      audioCalls++; const request = JSON.parse(init.body as string);
+      const parts = request.messages[1].content;
+      assert.deepEqual(JSON.parse(parts[0].text), { selectedTaskCount: 1, referenceInstant: "2026-10-06T09:00:00.000Z",
+        timeZone: "Europe/Dublin", systemColumnKeys: ["todo", "doing", "review", "done"] });
+      const wav = Buffer.from(parts[1].input_audio.data, "base64");
+      assert.deepEqual([...wav.subarray(44)], expectedBytes); assert.equal(wav.readUInt32LE(24), 24000);
+      return new Response(JSON.stringify({ id: "synthetic", object: "chat.completion", created: 1, model: "gpt-audio-1.5",
+        choices: [{ index: 0, message: { role: "assistant", tool_calls: [{ id: "synthetic_call", type: "function",
+          function: { name: "submit_ping_proposal", arguments: JSON.stringify({ proposal: syntheticPlan() }) } }] }, finish_reason: "tool_calls" }],
+        usage: { prompt_tokens: 3, completion_tokens: 2, total_tokens: 5, prompt_tokens_details: null,
+          completion_tokens_details: { audio_tokens: null, reasoning_tokens: 0 } } }), { headers: { "content-type": "application/json" } });
+    } }) };
+  const report = await createPingPairedInertTrialRunner()(options([clip, native]));
+  assert.deepEqual([clips, textCalls, audioCalls], [1, 1, 1]);
+  for (const result of report.routes) { assert.equal(result.status, "completed"); exactInert(result);
+    assert.ok(result.evaluation?.ok); assert.equal(result.evaluation.wholePlanMatch, true); }
+  assert.equal("nativeAudioUsage" in report.routes[0], false);
+  assert.deepEqual(report.routes[0].observation.stages.map(s => s.name), ["finals_ready", "interpretation_start", "interpretation_end"]);
+  assert.equal(report.routes[1].transcribeCalls, 0); assert.equal(report.routes[1].transcriptionUsage, null);
+  assert.deepEqual(report.routes[1].observation.stages.map(s => s.name), ["interpretation_start", "interpretation_end"]);
+  assert.deepEqual(report.routes[1].nativeAudioUsage, { prompt_tokens: 3, completion_tokens: 2, total_tokens: 5,
+    prompt_tokens_details: null, completion_tokens_details: { audio_tokens: null, reasoning_tokens: 0 } });
+});
+
+test("native refusal/clarification and copied nullable usage remain whole; malformed or missing results fail closed", async () => {
+  const run = createPingPairedInertTrialRunner();
+  const make = (value: unknown): PingPairedRoute => ({ id: "native", kind: "native_audio", interpretAudio: async () => value as PingNativeAudioResult });
+  const usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0, prompt_tokens_details: { audio_tokens: null as number | null },
+    completion_tokens_details: null };
+  for (const outcome of ["refusal", "clarification"] as const) {
+    const proposal = { version: "ping.proposal.v1", outcome, reason: "unsupported" };
+    const report = await run({ ...options([make({ proposal, usage }), route("clip", proposal)]), label: label(proposal) });
+    assert.equal(report.routes[0].status, "completed"); assert.equal(report.routes[0].transcribeCalls, 0); exactInert(report.routes[0]);
+    assert.ok(report.routes[0].evaluation?.ok); assert.equal(report.routes[0].evaluation.wholePlanMatch, true);
+    assert.deepEqual(report.routes[0].nativeAudioUsage, usage); assert.ok(Object.isFrozen(report.routes[0].nativeAudioUsage?.prompt_tokens_details));
+  }
+  const report = await run(options([make({ proposal: syntheticPlan(), usage }), route("clip")]));
+  usage.prompt_tokens_details.audio_tokens = 1;
+  assert.deepEqual(report.routes[0].nativeAudioUsage?.prompt_tokens_details, { audio_tokens: null });
+  const unknown = await run(options([make({ proposal: syntheticPlan(), usage: null }), route("clip")]));
+  assert.equal(unknown.routes[0].status, "completed"); assert.equal(unknown.routes[0].nativeAudioUsage, null);
+  for (const value of [{ proposal: syntheticPlan() }, { proposal: syntheticPlan(), usage: undefined },
+    { proposal: syntheticPlan(), usage: null, extra: true }, { proposal: { ...syntheticPlan(), actorId: "authority" }, usage: null },
+    { proposal: syntheticPlan(), usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 3 } },
+    { proposal: syntheticPlan(), usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0, price: 0 } }]) {
+    const invalid = await run(options([make(value), route("skip")]));
+    assert.equal(invalid.routes[0].status, "failed"); exactInert(invalid.routes[0]);
+    assert.equal(invalid.routes[0].evaluation, null); assert.equal(invalid.routes[1].status, "not_started");
+  }
+});
+
+test("native route owns separate bytes/frozen minimal context and closed route fields", async () => {
+  let second = 0; const original = pcm();
+  const first: PingPairedRoute = { id: "native", kind: "native_audio", interpretAudio: async (bytes, context) => {
+    assert.deepEqual([...bytes], [...original]); bytes.fill(90);
+    assert.deepEqual(Object.keys(context).sort(), ["referenceInstant", "selectedTaskCount", "systemColumnKeys", "timeZone"]);
+    assert.ok(Object.isFrozen(context)); assert.ok(Object.isFrozen(context.systemColumnKeys));
+    return nativeResult();
+  } };
+  const next: PingPairedRoute = { id: "other", kind: "native_audio", interpretAudio: async bytes => {
+    second++; assert.deepEqual([...bytes], [...original]); return nativeResult();
+  } };
+  const run = createPingPairedInertTrialRunner(), input = { ...options([first, next]), pcm: original };
+  const report = await run(input); assert.equal(second, 1); assert.deepEqual([...original], [0, 0, 255, 127, 0, 128, 255, 255]);
+  for (const result of report.routes) { assert.equal(result.status, "completed"); assert.equal(result.transcribeCalls, 0); exactInert(result); }
+  for (const bad of [{ ...first, interpret: async () => syntheticPlan() }, { ...first, kind: "unknown" },
+    { ...first, capture: syntheticCapture() }, { id: "bad", kind: "native_audio" }]) {
+    await assert.rejects(run({ ...options(), routes: [bad, next] } as never), /ping_trial_invalid_input/);
+  }
+  assert.equal(second, 1);
+});
+
+test("native original budget holds the actual callback through cancel/deadline, with immutable late results", async t => {
+  for (const reason of ["cancelled", "deadline"] as const) {
+    const held = deferred<PingNativeAudioResult>(), entered = deferred<void>(), controller = new AbortController();
+    let now = 0, calls = 0, nextCalls = 0;
+    const clock = t.mock.method(performance, "now", () => now); t.mock.timers.enable({ apis: ["setTimeout"] });
+    const first: PingPairedRoute = { id: "held", kind: "native_audio", interpretAudio: async () => { calls++; entered.resolve(); return held.promise; } };
+    const next: PingPairedRoute = { id: "skip", kind: "native_audio", interpretAudio: async () => {
+      nextCalls++; return nativeResult();
+    } };
+    const run = createPingPairedInertTrialRunner();
+    try {
+      const pending = run({ ...options([first, next]), signal: controller.signal, deadlineMs: 35 }); await entered.promise;
+      if (reason === "cancelled") controller.abort(); else { now = 35; t.mock.timers.tick(35); }
+      const report = await pending; assert.equal(report.routes[0].status, reason); assert.equal(calls, 1); exactInert(report.routes[0]);
+      assert.deepEqual(report.routes[0].observation.stages, [{ name: "interpretation_start", atMs: 0 }]);
+      assert.equal(report.routes[0].nativeAudioUsage, null); assert.equal(report.routes[0].evaluation, null);
+      await assert.rejects(run(options()), /ping_trial_busy/); held.resolve(nativeResult()); await settle();
+      assert.equal(nextCalls, 0); assert.equal(report.routes[0].evaluation, null); assert.equal(report.routes[0].observation.stages.length, 1);
+      assert.equal((await run(options())).routes[0].status, "completed");
+    } finally { held.resolve(nativeResult()); await settle(); t.mock.timers.reset(); clock.mock.restore(); }
+  }
 });
