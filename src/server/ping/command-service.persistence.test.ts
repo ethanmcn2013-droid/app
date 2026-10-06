@@ -176,7 +176,7 @@ test("lost response recovery, same-key conflict and same-adapter concurrent retr
 });
 
 test("independent file contention fails closed; fresh-process recovery retains identity and current auth", () => {
-  const worker=resolve("src/server/ping/proof-contention-worker.ts");
+  const worker=resolve("scripts/ping/proof-contention-worker.ts");
   const run=(args:string[])=>spawnSync(process.execPath,["--import","tsx","--import","./src/test/register-server-only.mjs",worker,...args],{encoding:"utf8",timeout:30000});
   const contention=run(["contend"]);
   assert.equal(contention.status,0,contention.stderr);
@@ -191,7 +191,7 @@ test("independent file contention fails closed; fresh-process recovery retains i
 });
 
 test("recovery worker refuses a non-fixture path before opening a database",()=>{
-  const worker=resolve("src/server/ping/proof-contention-worker.ts");
+  const worker=resolve("scripts/ping/proof-contention-worker.ts");
   const result=spawnSync(process.execPath,["--import","tsx","--import","./src/test/register-server-only.mjs",worker,"recover",resolve("AGENTS.md")],{encoding:"utf8",timeout:15000});
   assert.equal(result.status,1);assert.equal(result.stderr.trim(),"invalid_ping_proof_fixture_path");
   assert.equal(result.stdout,"");

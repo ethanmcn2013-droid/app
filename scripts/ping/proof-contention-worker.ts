@@ -5,9 +5,9 @@ import { realpath } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { createLocalConversationDatabaseAdapter, type ConversationSqlExecutor } from "@/server/conversations/database";
-import { createPingCommandService } from "./command-service";
+import { createPingCommandService } from "@/server/ping/command-service";
 import { createPingProofFixture, PROOF_NOW, PROOF_FIXTURE_MARKER_KEY, PROOF_FIXTURE_MARKER_VALUE,
-  proofCommand, proofContext, proofCount } from "./proof-fixture";
+  proofCommand, proofContext, proofCount } from "@/server/ping/proof-fixture";
 
 // Disposable process lifecycle proof, invoked only by the owning test. No ambient DB or providers.
 const command = proofCommand(1, {}, 10), options = { now: () => PROOF_NOW };
