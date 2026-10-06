@@ -7,6 +7,7 @@
  */
 
 import type { ConsoleMark } from "@/lib/projects/project-console";
+import { knownTagName } from "@/lib/tags";
 
 /** "1 day", "3 days". */
 function formatDayCount(days: number): string {
@@ -163,8 +164,11 @@ export function riverPlural(count: number, one: string, many = `${one}s`): strin
   return `${count} ${count === 1 ? one : many}`;
 }
 
-/** A label as an Area's name, in sentence case: "food-and-drink" reads "Food and drink". */
+/** A tag as an Area's name, in sentence case: "food-and-drink" reads "Food and drink". */
 export function areaName(label: string): string {
+  // A tag with a known name keeps it: "mara-finn" is "Mara & Finn" here as on Tasks.
+  const known = knownTagName(label);
+  if (known) return known;
   const words = label.replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
   return words ? words[0]!.toUpperCase() + words.slice(1) : label;
 }

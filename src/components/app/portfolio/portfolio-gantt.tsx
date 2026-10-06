@@ -993,6 +993,7 @@ export function PortfolioGantt({
                               clipRight={clipRight}
                               viewLeft={clipLeft || clipRight ? view.left : 0}
                               viewRight={clipLeft || clipRight ? view.right : 0}
+                              labelEdge={extent && view.left > 0 && Math.abs(extent.right - view.left) < 260 ? view.left : 0}
                               steppedId={stepped?.rowId === row.id ? stepped.id : null}
                               handlers={handlers}
                             />

@@ -46,6 +46,7 @@ test("Areas are labels in sentence case; People are current members; Status is t
   for (const lens of river.lenses) for (const lane of lens.lanes) assert.doesNotMatch(lane.hue, /project-[567]\)/);
   assert.equal(areaName("food-and-drink"), "Food and drink");
   assert.equal(areaName("VIP_guests"), "VIP guests");
+  assert.equal(areaName("mara-finn"), "Mara & Finn");
 });
 
 test("a task is late, due, undated or done by its own date and column; a big date is a task marked as one", () => {

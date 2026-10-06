@@ -48,6 +48,7 @@ export const PortfolioRow = memo(function PortfolioRow({
   clipRight,
   viewLeft,
   viewRight,
+  labelEdge,
   steppedId,
   handlers,
 }: {
@@ -68,6 +69,7 @@ export const PortfolioRow = memo(function PortfolioRow({
   clipRight: boolean;
   viewLeft: number;
   viewRight: number;
+  labelEdge?: number;
   steppedId: string | null;
   handlers: RowHandlers;
 }) {
@@ -167,6 +169,7 @@ export const PortfolioRow = memo(function PortfolioRow({
           clipRight={clipRight}
           viewLeft={viewLeft}
           viewRight={viewRight}
+          labelEdge={labelEdge}
           steppedId={steppedId}
           onEdge={handlers.onEdge}
         />
