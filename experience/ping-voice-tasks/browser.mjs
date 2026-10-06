@@ -127,7 +127,9 @@ try {
   const context=await browser.newContext({viewport:{width:1440,height:960},locale:'en-GB',timezoneId:'Europe/Dublin',permissions:['microphone']});
   const page=await context.newPage();
   await page.addInitScript(()=>{
-    window.voiceNativeLedger={frames:[],cuts:[]};
+    window.voiceNativeLedger={frames:[],cuts:[],microphoneCalls:0};
+    const nativeGetUserMedia=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+    navigator.mediaDevices.getUserMedia=(constraints)=>{window.voiceNativeLedger.microphoneCalls++;return nativeGetUserMedia(constraints);};
     const NativeNode=window.AudioWorkletNode;
     window.AudioWorkletNode=class ObservedNode extends NativeNode {
       constructor(...args){super(...args);this.port.addEventListener('message',event=>{
@@ -200,11 +202,13 @@ try {
   await page.waitForFunction(()=>JSON.stringify(window.pingObserved.find(task=>task.id==='target')?.assignees)==='["bob"]');assert.equal(executeCalls,3);
   receipt.cases.push({name:'paused lost committed Finish response and reload recover original receipt; refresh failure preserves history and repair reads canonical rows',passed:true});
   const beforeDenied={transports:control.transports,uploads:state.uploaded.length,appends:voice.append.length,models:voice.modelCalls.length};
+  const nativeBeforeDenied=await page.evaluate(()=>({calls:window.voiceNativeLedger.microphoneCalls,frames:window.voiceNativeLedger.frames.length}));
   const deniedBegin=page.waitForResponse(response=>response.url()===origin+'/api/ping'&&response.request().postDataJSON().action==='begin');
   await page.getByTestId('ping-voice-start').click();
   const beginDenial=await (await deniedBegin).json();assert.equal(beginDenial.ok,false);assert.equal(beginDenial.code,'unavailable');
   await page.waitForFunction(()=>document.querySelector('[data-testid=ping-voice-start]')?.disabled===false);
   assert.deepEqual({transports:control.transports,uploads:state.uploaded.length,appends:voice.append.length,models:voice.modelCalls.length},beforeDenied);
+  assert.deepEqual(await page.evaluate(()=>({calls:window.voiceNativeLedger.microphoneCalls,frames:window.voiceNativeLedger.frames.length})),nativeBeforeDenied);
   assert.equal(executeCalls,3);assert.equal(await countReceipts(),3);
   receipt.cases.push({name:'paused fresh voice Start is refused before native capture or provider/model/executor work',passed:true});
   control.paused=false;
