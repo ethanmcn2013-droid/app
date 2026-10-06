@@ -105,7 +105,9 @@ try {
   else {
     // Only actions exercised by this matrix: selection POST and detail reads.
     // Imported write/provider actions remain visible UI but fail if invoked.
-    const allowedActions=new Set(['openTasksProjectAction','getSubtasksAction','loadTaskConversationAction','listTaskResourcesAction','getPersonalityPrefs','loadProjectCatalogAction']);
+    // The sidebar's Projects read wraps the catalog read and adds one read-only
+    // meta select; it runs for real against the same disposable database.
+    const allowedActions=new Set(['openTasksProjectAction','getSubtasksAction','loadTaskConversationAction','listTaskResourcesAction','getPersonalityPrefs','loadProjectCatalogAction','loadSidebarProjectsAction']);
     const requestErrors=[];
     const json=(res,value,status=200)=>{res.statusCode=status;res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');res.end(JSON.stringify(value));};
     function reviveArgs(value){if(!value||typeof value!=='object')return value;if(value.$form){const form=new FormData();for(const [key,entry] of value.$form)form.append(key,entry);return form;}return Array.isArray(value)?value.map(reviveArgs):Object.fromEntries(Object.entries(value).map(([key,entry])=>[key,reviveArgs(entry)]));}
