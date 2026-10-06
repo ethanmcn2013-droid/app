@@ -4127,14 +4127,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-10-05",
+      "lastReviewedAt": "2026-10-06",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "b3dc20fe2d960e0f",
       "materialityReview": {
         "materialityHash": "b3dc20fe2d960e0f",
-        "reviewedAt": "2026-10-05",
-        "evidence": "experience/reviews/2026-10-05-port-files-analytics/receipts/tasks.page.app-analytics-materiality.json"
+        "reviewedAt": "2026-10-06",
+        "evidence": "experience/reviews/2026-10-05-port-home-overview/receipts/tasks.page.app-analytics-materiality.json"
       }
     },
     {
@@ -4174,14 +4174,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-10-05",
+      "lastReviewedAt": "2026-10-06",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "9a83f9e97a750b1b",
       "materialityReview": {
         "materialityHash": "9a83f9e97a750b1b",
-        "reviewedAt": "2026-10-05",
-        "evidence": "experience/reviews/2026-10-05-port-files-analytics/receipts/tasks.state.app-analytics-loading-materiality.json"
+        "reviewedAt": "2026-10-06",
+        "evidence": "experience/reviews/2026-10-05-port-home-overview/receipts/tasks.state.app-analytics-loading-materiality.json"
       }
     },
     {
@@ -4221,14 +4221,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-10-05",
+      "lastReviewedAt": "2026-10-06",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "16a0888ed7b367ab",
       "materialityReview": {
         "materialityHash": "16a0888ed7b367ab",
-        "reviewedAt": "2026-10-05",
-        "evidence": "experience/reviews/2026-10-05-port-files-analytics/receipts/tasks.state.app-analytics-error-materiality.json"
+        "reviewedAt": "2026-10-06",
+        "evidence": "experience/reviews/2026-10-05-port-home-overview/receipts/tasks.state.app-analytics-error-materiality.json"
       }
     },
     {
@@ -4517,14 +4517,14 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-10-05",
+      "lastReviewedAt": "2026-10-06",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "7a85240486792b54",
       "materialityReview": {
         "materialityHash": "7a85240486792b54",
-        "reviewedAt": "2026-10-05",
-        "evidence": "experience/reviews/2026-10-05-port-files-analytics/receipts/tasks.page.app-files-materiality.json"
+        "reviewedAt": "2026-10-06",
+        "evidence": "experience/reviews/2026-10-05-port-home-overview/receipts/tasks.page.app-files-materiality.json"
       }
     },
     {
@@ -4564,14 +4564,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-10-05",
+      "lastReviewedAt": "2026-10-06",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "9beac142f8f04cb2",
       "materialityReview": {
         "materialityHash": "9beac142f8f04cb2",
-        "reviewedAt": "2026-10-05",
-        "evidence": "experience/reviews/2026-10-05-port-files-analytics/receipts/tasks.state.app-files-loading-materiality.json"
+        "reviewedAt": "2026-10-06",
+        "evidence": "experience/reviews/2026-10-05-port-home-overview/receipts/tasks.state.app-files-loading-materiality.json"
       }
     },
     {
@@ -4611,14 +4611,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-10-05",
+      "lastReviewedAt": "2026-10-06",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "83d088f7615c6a6b",
       "materialityReview": {
         "materialityHash": "83d088f7615c6a6b",
-        "reviewedAt": "2026-10-05",
-        "evidence": "experience/reviews/2026-10-05-port-files-analytics/receipts/tasks.state.app-files-error-materiality.json"
+        "reviewedAt": "2026-10-06",
+        "evidence": "experience/reviews/2026-10-05-port-home-overview/receipts/tasks.state.app-files-error-materiality.json"
       }
     },
     {
