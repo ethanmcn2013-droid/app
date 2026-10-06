@@ -3,15 +3,11 @@
 /**
  * The task sheet host, mounted once for the whole app and opened by ?task=.
  *
- * On the Tasks surface at 1280px and wider it docks into the slot beside
- * the board (no backdrop; F6 moves between the board and the task; Escape
- * closes and hands focus back to the card). Everywhere else, and below
- * 1280px, it is a side panel over a scrim that traps focus. Open (E) lays
- * the same task out as the two-column page over the app. A task that no
- * longer exists says so and waits to be closed; nothing auto-closes.
- *
- * Since 6 Oct 2026 (founder reference 24) a task opens in the panel at every
- * width, so you keep your place; the two-column page is one press away.
+ * Since 6 Oct 2026 (founder reference 24) a task opens as one record in a
+ * side panel at every width, over a scrim that traps focus, so the list or
+ * board stays where you left it behind it. Open (E) lays the same task out
+ * as the two-column page over the app. A task that no longer exists says so
+ * and waits to be closed; nothing auto-closes.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -20,18 +16,15 @@ import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { hasOpenLayer } from "@/components/primitives/open-layer";
 import { useHydrated } from "@/lib/use-hydrated";
-import { getVisibleTaskOrder, useSheetDock, useWideSheet } from "@/components/tasks/sheet-bridge";
+import { getVisibleTaskOrder } from "@/components/tasks/sheet-bridge";
 import { StaleTask, TaskSheet } from "./task-sheet";
 import styles from "./task-sheet.module.css";
 
 export function TaskDetailPanel() {
   const { taskId, closeTask, openTask } = useTaskPanel();
   const state = useTasksState();
-  const dock = useSheetDock();
-  const wide = useWideSheet();
   const hydrated = useHydrated();
   const task = taskId ? state.tasks.find((t) => t.id === taskId) ?? null : null;
-  const docked = Boolean(dock && wide);
 
   // Up and down follow the order the current view shows, falling back to
   // the store's order when the sheet is open over another page.
@@ -78,7 +71,7 @@ export function TaskDetailPanel() {
   const body = task ? (
     <TaskSheet
       task={task}
-      mode={docked ? "docked" : "modal"}
+      mode="modal"
       onClose={closeTask}
       onNavigate={navigate}
       onExpand={expand}
@@ -88,52 +81,7 @@ export function TaskDetailPanel() {
     <StaleTask onClose={closeTask} />
   );
 
-  if (docked && dock) return createPortal(<DockedFrame onClose={closeTask}>{body}</DockedFrame>, dock);
   return <ModalFrame onClose={closeTask}>{body}</ModalFrame>;
-}
-
-/** Beside the board: a labelled region, not a trap. */
-function DockedFrame({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
-  const ref = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => ref.current?.focus({ preventScroll: true }));
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "F6") {
-        event.preventDefault();
-        const inside = ref.current?.contains(document.activeElement);
-        if (inside) {
-          const card = document.querySelector<HTMLElement>('[data-board] [data-id][tabindex="0"], [role="grid"] [data-id][tabindex="0"]');
-          card?.focus();
-        } else {
-          ref.current?.focus();
-        }
-        return;
-      }
-      if (event.key !== "Escape" || hasOpenLayer()) return;
-      const target = event.target as HTMLElement;
-      // Escape inside the board belongs to the board first (carry, search).
-      if (!ref.current?.contains(target) && target !== document.body && target.closest("[data-board], [role='grid'], input, textarea")) return;
-      event.preventDefault();
-      onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => {
-      cancelAnimationFrame(frame);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [onClose]);
-  return (
-    <div
-      ref={ref}
-      className={styles.dockFrame}
-      role="complementary"
-      aria-labelledby="task-panel-title"
-      tabIndex={-1}
-      data-task-detail-panel=""
-    >
-      {children}
-    </div>
-  );
 }
 
 /** Over the page: a modal sheet with a scrim and a focus trap. */

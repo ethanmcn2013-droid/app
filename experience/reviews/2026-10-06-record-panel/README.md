@@ -37,11 +37,14 @@ Port brief item 30 asks for the same idea: "Task panel that keeps your place, wi
 
 ## Behaviour change
 
-Until now, from 1024px up an opened task skipped the panel and covered the app with the two-column page. Now a task opens in the panel at every width:
+Until now, from 1024px up an opened task skipped the panel and covered the app with the two-column page. Now a task opens in the side panel at every width, over a scrim that traps focus, with the list or board still in place behind it. Open, or E, shows the two-column page, and its button back is named "Back to the panel".
 
-- on the Tasks board from 1280px it docks beside the board (the dock the board already had, which the 1024px rule had been pre-empting);
-- elsewhere, and below 1280px, it is a side panel over a scrim that traps focus;
-- Open, or E, shows the two-column page. Its button back is now named "Back to the panel".
+The Tasks board also had a dock that placed the sheet beside the board from 1280px, with no scrim. The 1024px rule had kept it unreachable, so it had never shipped. It is removed rather than revived:
+
+- it would be a second behaviour, with its own focus rules (F6), that nobody has reviewed;
+- the critical spec's promise, "a modal dialog at every width", stays true.
+
+The board's empty dock slot is left alone.
 
 ## Registry and tests
 
@@ -50,13 +53,13 @@ Two registered sources changed:
 - `tasks.surface.task-detail-panel` (`task-detail-panel.tsx`): the panel at every width;
 - `tasks.resources.drive-upload` (`resources-section.tsx`): one optional `seeAll` slot in the section head.
 
-Both hashes are refreshed with receipts in `receipts/`, written by `pnpm experience:review` against the critical capture named there.
+`tasks.surface.task-detail-panel` is a mapped critical fixture, so its hash is refreshed by `pnpm experience:fixtures:write`. Its own critical case re-renders it. `tasks.resources.drive-upload` is refreshed with a receipt in `receipts/`, written by `pnpm experience:review` against the full critical run named there. That run is the task detail case, which renders the Files and links heading. The fixture manifest, the spec and the config are unchanged, so no other receipt is unbound.
 
-One test changed deliberately. In `experience/tests/critical-experiences.spec.ts`, "tasks.surface.task-detail-panel / populated task" expected a dialog at every width. At the desktop (1280) and wide (1440) projects the panel now docks beside the board as a labelled region (`complementary`) named by the task, so the test asks for that role there and for the dialog below.
+No test changed. The critical case "tasks.surface.task-detail-panel / populated task" still asks for a dialog named by the task at every width, and passes.
 
 ## Evidence
 
-Review-mode production build, `next start`, Chromium. Lab: `shots/app-reviews/2026-10-06-record-panel/` (`panel-<size>-<theme>.png`, plus `before-sheet-*.png` and `panel-laptop-dark-opened.png`). Sizes: wide 1920 on the board (docked), desk 1440 on the board (docked), laptop 1180 on the list (side panel), tablet 768, phone 390, each in dark and light. No console errors.
+Review-mode production build, `next start`, Chromium. Lab: `shots/app-reviews/2026-10-06-record-panel/` (`panel-<size>-<theme>.png`, plus `before-sheet-*.png` and `panel-laptop-dark-opened.png`). Sizes: wide 1920 and desk 1440 on the board, laptop 1180 on the list, tablet 768 and phone 390, each in dark and light. No console errors.
 
 ## Where this falls short
 
