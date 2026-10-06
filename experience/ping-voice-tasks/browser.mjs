@@ -50,10 +50,12 @@ try {
   await seedProofTask(fixture.client, 'target', { assignees: ['bob'], startDay: 2, durationDays: 3 });
   await seedProofTask(fixture.client, 'other', { assignees: ['bob'] });
   let executeCalls = 0;
+  const control = { paused: false, transports: 0 };
   const voice = { operation: {kind:'edit_selected',effects:{selfAssignment:'add',statusColumnKey:'doing'}},
     transcript:'Assign me and move these tasks to Doing.', append:[], commits:0, modelCalls:[], holdInterpret:false, releaseInterpret:null };
   const providers = {
     createTransport() {
+      control.transports++;
       let receive=()=>{},closed=false;
       return {queuedBytes:()=>0,close(){closed=true;},subscribe(listener){receive=listener;return()=>{receive=()=>{};};},send(raw){
         const message=JSON.parse(raw);
@@ -72,7 +74,7 @@ try {
     }
   };
   const base = createPingCommandService(fixture.adapter, { now: Date.now });
-  const session = createPingTypedSession(fixture.adapter, { now: Date.now, voice:providers, service: { ...base, execute: original => { executeCalls++; return base.execute(original); } } });
+  const session = createPingTypedSession(fixture.adapter, { now: Date.now, isNewWorkAllowed: () => !control.paused, voice:providers, service: { ...base, execute: original => { executeCalls++; return base.execute(original); } } });
   const state = { actor: { actorId: 'alice', sessionId: 'synthetic-browser-session' }, failRefresh: false, dropFinish: false, holdAction: null, release: null, requests: [], uploaded:[], responses:[] };
   receipt.httpResponses=state.responses;
   const handler = createPingTypedHttp({ authenticate: async () => state.actor, session: async () => session });
@@ -187,13 +189,25 @@ try {
   await startVoice();state.dropFinish=true;
   const lostFinish=page.waitForEvent('requestfailed',{predicate:request=>new URL(request.url()).pathname==='/api/ping'&&request.method()==='POST'&&request.postDataJSON().action==='finish'});
   await finishVoice();await lostFinish;
+  control.paused=true;
   await page.getByTestId('ping-voice-check-original').waitFor();assert.equal(executeCalls,3);assert.equal(await countReceipts(),3);
   await page.reload();await page.getByTestId('ping-voice-check-original').waitFor();assert.equal(executeCalls,3);
-  state.failRefresh=true;await page.getByTestId('ping-voice-check-original').click();await page.getByTestId('ping-voice-receipt').waitFor();
+  state.failRefresh=true;
+  const failedRefresh=page.waitForResponse(response=>response.url()===origin+'/api/ping'&&response.request().postDataJSON().action==='refresh'&&response.status()===503);
+  await page.getByTestId('ping-voice-check-original').click();await page.getByTestId('ping-voice-receipt').waitFor();await (await failedRefresh).finished();
   assert.deepEqual(JSON.parse((await targetRow()).assignees),['bob']);assert.equal(executeCalls,3);
   state.failRefresh=false;await page.getByTestId('ping-voice-refresh-current').click();
   await page.waitForFunction(()=>JSON.stringify(window.pingObserved.find(task=>task.id==='target')?.assignees)==='["bob"]');assert.equal(executeCalls,3);
-  receipt.cases.push({name:'lost committed Finish response and reload recover original receipt; refresh failure preserves history and repair reads canonical rows',passed:true});
+  receipt.cases.push({name:'paused lost committed Finish response and reload recover original receipt; refresh failure preserves history and repair reads canonical rows',passed:true});
+  const beforeDenied={transports:control.transports,uploads:state.uploaded.length,appends:voice.append.length,models:voice.modelCalls.length};
+  const deniedBegin=page.waitForResponse(response=>response.url()===origin+'/api/ping'&&response.request().postDataJSON().action==='begin');
+  await page.getByTestId('ping-voice-start').click();
+  const beginDenial=await (await deniedBegin).json();assert.equal(beginDenial.ok,false);assert.equal(beginDenial.code,'unavailable');
+  await page.waitForFunction(()=>document.querySelector('[data-testid=ping-voice-start]')?.disabled===false);
+  assert.deepEqual({transports:control.transports,uploads:state.uploaded.length,appends:voice.append.length,models:voice.modelCalls.length},beforeDenied);
+  assert.equal(executeCalls,3);assert.equal(await countReceipts(),3);
+  receipt.cases.push({name:'paused fresh voice Start is refused before native capture or provider/model/executor work',passed:true});
+  control.paused=false;
 
   await page.reload();await page.getByRole('checkbox',{name:'Select Synthetic target',exact:true}).check();
   state.holdAction='begin';await page.getByTestId('ping-voice-start').click();await waitForHeldResponse(state);
@@ -214,12 +228,23 @@ try {
   voice.holdInterpret=false;voice.releaseInterpret?.();voice.releaseInterpret=null;
   await page.waitForTimeout(150);assert.equal(executeCalls,3);assert.equal(await countReceipts(),3);assert.equal((await targetRow()).lane,'doing');
   receipt.cases.push({name:'Cancel while trusted server interpretation waits prevents later execution',passed:true});
+  await page.reload();await page.getByRole('checkbox',{name:'Select Synthetic target',exact:true}).check();
+  await page.getByTestId('ping-input').fill('status review');await page.getByTestId('ping-review').click();await page.getByTestId('ping-apply').waitFor();
+  control.paused=true;
+  const deniedExecute=page.waitForResponse(response=>response.url()===origin+'/api/ping'&&response.request().postDataJSON().action==='execute');
+  await page.getByTestId('ping-apply').click();const executeDenial=await (await deniedExecute).json();assert.equal(executeDenial.ok,false);assert.ok(['unavailable','stale_capture'].includes(executeDenial.code));
+  await page.getByTestId('ping-cancel-prepared').filter({hasText:'Cancel or check original'}).waitFor();
+  const untouchedCancel=page.waitForResponse(response=>response.url()===origin+'/api/ping'&&response.request().postDataJSON().action==='cancel');
+  await page.getByTestId('ping-cancel-prepared').click();assert.equal((await (await untouchedCancel).json()).knowledge,'not_invoked');
+  await page.waitForFunction(()=>document.querySelector('[data-testid=ping-input]')?.disabled===false);
+  assert.equal(executeCalls,3);assert.equal(await countReceipts(),3);assert.equal((await targetRow()).lane,'doing');
+  receipt.cases.push({name:'paused typed Apply invokes nothing and acknowledged original Cancel clears only the untouched handle',passed:true});
   const preserved=(await fixture.client.execute("SELECT assignees,lane FROM tasks WHERE id='other'")).rows[0];assert.deepEqual(JSON.parse(preserved.assignees),['bob']);assert.equal(preserved.lane,'todo');
   assert.equal(Number((await targetRow()).start_day),2);assert.equal(Number((await targetRow()).duration_days),3);assert.deepEqual(errors,[]);
-  const accessibility=await new AxeBuilder({page}).include('[data-testid=ping-voice-panel]').analyze();assert.deepEqual(accessibility.violations.map(({id,impact,nodes})=>({id,impact,count:nodes.length})),[]);
-  receipt.accessibility={scope:'voice panel',violations:0};await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
+  const accessibility=await new AxeBuilder({page}).include('[data-testid=project-ping-typed-panel]').analyze();assert.deepEqual(accessibility.violations.map(({id,impact,nodes})=>({id,impact,count:nodes.length})),[]);
+  receipt.accessibility={scope:'typed and voice panels',violations:0};await page.screenshot({path:path.join(out,'operating-controls-desktop.png'),fullPage:true});await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
   await page.screenshot({path:path.join(out,'voice-tasks-phone.png'),fullPage:true});
-  assert.ok(consoleErrors.every(message=>/ERR_EMPTY_RESPONSE|ERR_CONNECTION_CLOSED|ERR_FAILED|status of 503/.test(message)),'Unexpected browser console error');
+  assert.ok(consoleErrors.every(message=>/ERR_EMPTY_RESPONSE|ERR_CONNECTION_CLOSED|ERR_FAILED|status of (404|409|503)/.test(message)),'Unexpected browser console error');
   assert.ok(failedRequests.every(request=>request.path==='/api/ping'&&/ERR_EMPTY_RESPONSE|ERR_CONNECTION_CLOSED|ERR_FAILED/.test(request.error)),'Unexpected failed browser request');
   receipt.expectedTransportDiagnostics={consoleErrors,failedRequests};receipt.executeCalls=executeCalls;receipt.receiptCount=await countReceipts();receipt.httpActions=state.requests;
   receipt.status='passed';

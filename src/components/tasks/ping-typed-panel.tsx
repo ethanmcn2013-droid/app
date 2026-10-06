@@ -276,6 +276,8 @@ function PingTypedPanelFlow({
       prepareRequestRef.current = null;
       const wroteMarker = writePingIntentMarker(window.sessionStorage, actorId, nextMarker);
       setMarker(wroteMarker ? nextMarker : null);
+      setReceipt(null);
+      setRefreshState("not_requested");
       setPrepared({ marker: nextMarker, proposal: response.proposal, selectionKey, selectionEpoch: requestedSelectionEpoch, selectedCount: chosenIds.length, expiresAt: response.expiresAt });
       setSendState("prepared");
       if (!wroteMarker) setError("This browser could not keep a private recovery note. You may review or cancel, but changes will not be sent.");
@@ -432,7 +434,8 @@ function PingTypedPanelFlow({
 
   const cancelPrepared = async () => {
     const original = marker ?? prepared?.marker;
-    if (submitLatch.current || !original || original.phase !== "prepared") return;
+    if (submitLatch.current || !original ||
+      (receipt?.commandId === original.commandId && receipt.projectId === original.projectId)) return;
     submitLatch.current = true;
     setBusyAction("cancel");
     setError(null);
@@ -444,8 +447,8 @@ function PingTypedPanelFlow({
       if (!mounted.current || currentScope.current.scopeKey !== scopeKey) return;
       if (sent.kind === "unknown" || !pingTypedResponseMatches(sent.response, request, original.projectId) ||
         !sent.response.ok || sent.response.commandId !== original.commandId || sent.response.action !== "cancel") {
-        setSendState("prepare_unknown");
-        setError("The prepared request could not be cancelled or checked. Check its original result before continuing.");
+        setSendState(original.phase === "invoking" ? "unknown" : "prepare_unknown");
+        setError("The original request could not be cancelled or checked. Check its original result before continuing.");
         return;
       }
       if (sent.response.knowledge === "not_invoked") {
@@ -534,10 +537,10 @@ function PingTypedPanelFlow({
             className="min-h-10 rounded-md bg-[color:var(--v3-accent)] px-3 text-sm font-semibold text-[color:var(--v3-on-accent)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--v3-accent)]">
             {busyAction === "receipt" ? "Checking…" : "Check original result"}
           </button>
-          {marker?.phase === "prepared" ? (
+          {marker && !(receipt?.commandId === marker.commandId && receipt.projectId === marker.projectId) ? (
             <button type="button" data-testid="ping-cancel-prepared" onClick={() => void cancelPrepared()} disabled={busy}
               className="min-h-10 rounded-md px-3 text-sm font-medium text-[color:var(--v3-text)] underline decoration-[color:var(--v3-border-strong)] underline-offset-4 hover:decoration-current disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--v3-accent)]">
-              Cancel prepared request
+              {marker.phase === "prepared" ? "Cancel prepared request" : "Cancel or check original"}
             </button>
           ) : null}
           {receipt ? <ReceiptSummary receipt={receipt} /> : null}
