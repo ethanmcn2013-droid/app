@@ -39,7 +39,7 @@ type Group = { key: string; title: string; icon: React.ReactNode; tasks: LabTask
 
 /** Optional columns people can add; the core four are always shown. */
 export const OPTIONAL_LIST_COLUMNS: { id: string; label: string }[] = [
-  { id: "labels", label: "Labels" },
+  { id: "labels", label: "Tags" },
   { id: "subtasks", label: "Subtasks" },
   { id: "amount", label: "Amount" },
 ];
@@ -126,14 +126,14 @@ export function ListView({ onCompose }: { onCompose: (extra: Partial<NewTaskDefa
   // still (~700px) the rows stack, as on a phone. list.module.css picks.
   const track = (wide: boolean) =>
     [
-      "36px",
+      "44px",
       "minmax(200px, 1fr)",
       showStatus ? (wide ? "136px" : "120px") : null,
       wide ? "160px" : "44px",
       wide ? "150px" : "128px",
       showPriority ? (wide ? "104px" : "44px") : null,
       showLabels ? (wide ? "150px" : "112px") : null,
-      wide && showSubtasks ? "84px" : null,
+      wide && showSubtasks ? "128px" : null,
       wide && showAmount ? "88px" : null,
       "36px",
     ]
@@ -186,7 +186,7 @@ export function ListView({ onCompose }: { onCompose: (extra: Partial<NewTaskDefa
           <span role="columnheader" data-col="assignee" className={styles.assigneeHead} aria-sort={sortOf("assignee")}>{header("assignee", "Assignee", <TIcon.person size={14} />)}</span>
           <span role="columnheader" data-col="due" aria-sort={sortOf("due")}>{header("due", "Due", <TIcon.calendar size={14} />)}</span>
           {showPriority ? <span role="columnheader" data-col="priority" className={styles.priorityHead} aria-sort={sortOf("priority")}>{header("priority", "Priority", <TIcon.flag size={14} />)}</span> : null}
-          {showLabels ? <span role="columnheader" data-col="labels" className={styles.plainHead}><TIcon.tag size={14} />Labels</span> : null}
+          {showLabels ? <span role="columnheader" data-col="labels" className={styles.plainHead}><TIcon.tag size={14} />Tags</span> : null}
           {showSubtasks ? <span role="columnheader" data-col="subtasks" className={`${styles.plainHead} ${styles.wideOnly}`}><TIcon.check size={14} />Subtasks</span> : null}
           {showAmount ? <span role="columnheader" data-col="amount" className={`${styles.plainHead} ${styles.wideOnly} ${styles.numberHead}`}>Amount</span> : null}
           <span role="columnheader" className={styles.pickHead}>
@@ -520,17 +520,28 @@ function ListRow({
             "labels",
             labels.length ? (
               <>
-                <span className={`${styles.labels} ${styles.labelsWide}`}><LabelChips labels={labels} max={1} /></span>
-                <span className={`${styles.labels} ${styles.labelsMid}`}><LabelChips labels={labels} max={1} /></span>
+                <span className={`${styles.labels} ${styles.labelsWide}`}><LabelChips labels={labels} max={1} tinted /></span>
+                <span className={`${styles.labels} ${styles.labelsMid}`}><LabelChips labels={labels} max={1} tinted /></span>
               </>
             ) : (
               <span className={styles.none}>None</span>
             ),
-            labels.length ? `Labels: ${labels.map((l) => l.name).join(", ")}. Change labels` : "No labels. Add labels",
+            labels.length ? `Tags: ${labels.map((l) => l.name).join(", ")}. Change tags` : "No tags. Add tags",
           )
         : null}
       {extras.subtasks ? (
-        <span role="gridcell" className={`${styles.plainCell} ${styles.wideOnly}`}>{task.subtasks.length ? `${subDone} of ${task.subtasks.length}` : <span className={styles.none}>None</span>}</span>
+        <span role="gridcell" className={`${styles.plainCell} ${styles.wideOnly}`}>
+          {task.subtasks.length ? (
+            <span className={styles.progress}>
+              <span className={styles.progressTrack} aria-hidden="true">
+                <span className={styles.progressFill} style={{ width: `${(subDone / task.subtasks.length) * 100}%` }} />
+              </span>
+              <span>{subDone} of {task.subtasks.length}</span>
+            </span>
+          ) : (
+            <span className={styles.none}>None</span>
+          )}
+        </span>
       ) : null}
       {extras.amount ? (
         <span role="gridcell" className={`${styles.plainCell} ${styles.wideOnly} ${styles.numberCell}`}>{typeof task.cents === "number" && task.cents > 0 ? (task.cents / 100).toLocaleString("en-GB", { minimumFractionDigits: 2 }) : <span className={styles.none}>None</span>}</span>

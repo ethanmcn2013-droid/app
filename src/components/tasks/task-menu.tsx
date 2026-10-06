@@ -84,7 +84,7 @@ function TaskMenuItems({ id }: { id: string }) {
           <MenuItem icon={<TIcon.person />} hint={<Kbd>A</Kbd>} onSelect={() => surface.openPicker("assignee", [id], anchor())}>Assign</MenuItem>
           <MenuItem icon={<TIcon.calendar />} hint={<Kbd>D</Kbd>} onSelect={() => surface.openPicker("due", [id], anchor())}>Due date</MenuItem>
           <MenuItem icon={<TIcon.flag />} hint={<Kbd>P</Kbd>} onSelect={() => surface.openPicker("priority", [id], anchor())}>Priority</MenuItem>
-          <MenuItem icon={<TIcon.tag />} hint={<Kbd>L</Kbd>} onSelect={() => surface.openPicker("labels", [id], anchor())}>Labels</MenuItem>
+          <MenuItem icon={<TIcon.tag />} hint={<Kbd>L</Kbd>} onSelect={() => surface.openPicker("labels", [id], anchor())}>Tags</MenuItem>
           <MenuSeparator />
           <MenuItem icon={<TIcon.duplicate />} hint={<Kbd>{modKey()}D</Kbd>} onSelect={() => store.duplicateTask(id)}>Duplicate</MenuItem>
         </>

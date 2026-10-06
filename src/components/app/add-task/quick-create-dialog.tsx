@@ -318,7 +318,7 @@ function Composer({ defaults, onClose }: { defaults: NewTaskDefaults; onClose: (
             parsedPriority ? `${PRIORITY_LABELS[parsedPriority.value]} priority.` : "",
             parsedDate ? `Due ${sentenceDay(parsedDate.dueLabel!)}.` : "",
             parsedRecurrence ? `Repeats ${formatRecurrenceLabel(parsedRecurrence)}.` : "",
-            parsedTags.length ? `Labels: ${parsedTags.join(", ")}.` : "",
+            parsedTags.length ? `Tags: ${parsedTags.join(", ")}.` : "",
           ].join(" ")}
         </span>
 
@@ -359,7 +359,7 @@ function Composer({ defaults, onClose }: { defaults: NewTaskDefaults; onClose: (
           </button>
           <button type="button" className={styles.pill} data-set={labels.length ? "" : undefined} aria-haspopup="dialog" aria-expanded={pill === "labels"} onClick={(event) => openPill("labels", event.currentTarget)}>
             <TIcon.tag size={14} />
-            {labels.length === 1 ? tagDisplayName(labels[0]) : labels.length > 1 ? `${labels.length} labels` : "Labels"}
+            {labels.length === 1 ? tagDisplayName(labels[0]) : labels.length > 1 ? `${labels.length} tags` : "Tags"}
           </button>
           {!showDetails ? (
             <button type="button" className={styles.pill} data-quiet="" onClick={() => setShowDetails(true)}>
@@ -438,11 +438,11 @@ function Composer({ defaults, onClose }: { defaults: NewTaskDefaults; onClose: (
           }}
         />
       </Popover>
-      <Popover open={pill === "labels"} anchor={pillAnchor} onClose={() => setPill(null)} label="Labels" width={260}>
+      <Popover open={pill === "labels"} anchor={pillAnchor} onClose={() => setPill(null)} label="Tags" width={260}>
         <PickerList
           multi
-          placeholder="Find a label"
-          empty="No labels yet. Type #name in the title to make one."
+          placeholder="Find a tag"
+          empty="No tags yet. Type #name in the title to make one."
           options={tags.map((tag) => ({ id: tag.name, label: tagDisplayName(tag.name), selected: labels.includes(tag.name) }))}
           onPick={(id) => setLabels((current) => (current.includes(id) ? current.filter((x) => x !== id) : [...current, id]))}
         />

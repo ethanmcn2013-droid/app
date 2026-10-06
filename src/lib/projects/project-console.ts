@@ -28,10 +28,10 @@ import { targetDatePassed, type ProjectCardStats } from "@/lib/projects/project-
 
 // ── Views and tabs (in the address, so a link can name one) ────────────────
 
-export type ConsoleView = "console" | "cards";
+export type ConsoleView = "console" | "list" | "cards";
 
 export function parseConsoleView(raw: unknown): ConsoleView {
-  return raw === "cards" ? "cards" : "console";
+  return raw === "cards" ? "cards" : raw === "list" ? "list" : "console";
 }
 
 export type ConsoleFilter = "all" | "attention" | "mine" | "wrapped";

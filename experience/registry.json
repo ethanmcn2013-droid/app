@@ -416,7 +416,7 @@
       "materialityReview": {
         "materialityHash": "3fcba4d3b2bb4dcf",
         "reviewedAt": "2026-10-06",
-        "evidence": "experience/reviews/2026-10-05-port-home-overview/receipts/tasks.page.app-settings-materiality.json"
+        "evidence": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.page.app-settings-materiality.json"
       }
     },
     {
@@ -1816,7 +1816,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "927d09f9d8658b0e"
+      "materialityHash": "3a0b0de8c0d2af4c"
     },
     {
       "id": "tasks.surface.task-detail-panel",
@@ -1860,7 +1860,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "310af916c10025fb"
+      "materialityHash": "d327af847dbbf718"
     },
     {
       "id": "tasks.page.app-task-by-id",
@@ -2131,7 +2131,7 @@
       "materialityReview": {
         "materialityHash": "795236cc4236a32a",
         "reviewedAt": "2026-10-06",
-        "evidence": "experience/reviews/2026-10-05-port-home-overview/receipts/tasks.page.app-project-materiality.json"
+        "evidence": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.page.app-project-materiality.json"
       }
     },
     {
@@ -2179,7 +2179,7 @@
       "materialityReview": {
         "materialityHash": "0682055fb87b5a68",
         "reviewedAt": "2026-10-06",
-        "evidence": "experience/reviews/2026-10-05-port-home-overview/receipts/tasks.state.app-project-loading-materiality.json"
+        "evidence": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.state.app-project-loading-materiality.json"
       }
     },
     {
@@ -3187,7 +3187,7 @@
       "materialityReview": {
         "materialityHash": "9dcb7b09c5c2c254",
         "reviewedAt": "2026-10-06",
-        "evidence": "experience/reviews/2026-10-05-port-home-overview/receipts/tasks.state.app-home-loading-materiality.json"
+        "evidence": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.state.app-home-loading-materiality.json"
       }
     },
     {
@@ -3234,7 +3234,7 @@
       "materialityReview": {
         "materialityHash": "94e95fe898bce26d",
         "reviewedAt": "2026-10-06",
-        "evidence": "experience/reviews/2026-10-05-port-home-overview/receipts/tasks.state.app-home-error-materiality.json"
+        "evidence": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.state.app-home-error-materiality.json"
       }
     },
     {
@@ -3498,7 +3498,7 @@
       "materialityReview": {
         "materialityHash": "fa1c4e6a0ec76613",
         "reviewedAt": "2026-10-06",
-        "evidence": "experience/reviews/2026-10-05-port-home-overview/receipts/tasks.state.app-tasks-loading-materiality.json"
+        "evidence": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.state.app-tasks-loading-materiality.json"
       }
     },
     {
@@ -3735,11 +3735,11 @@
       "lastReviewedAt": "2026-10-06",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "1b45164993945cf9",
+      "materialityHash": "a9720b2f91abaa09",
       "materialityReview": {
-        "materialityHash": "1b45164993945cf9",
+        "materialityHash": "a9720b2f91abaa09",
         "reviewedAt": "2026-10-06",
-        "evidence": "experience/reviews/2026-10-05-port-home-overview/receipts/tasks.resources.drive-upload-materiality.json"
+        "evidence": "experience/reviews/2026-10-06-record-panel/receipts/tasks.resources.drive-upload-materiality.json"
       }
     },
     {
@@ -4002,7 +4002,7 @@
       "materialityReview": {
         "materialityHash": "e7fbf84c50efd4b0",
         "reviewedAt": "2026-10-06",
-        "evidence": "experience/reviews/2026-10-05-port-home-overview/receipts/tasks.page.app-messages-materiality.json"
+        "evidence": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.page.app-messages-materiality.json"
       }
     },
     {
@@ -4188,7 +4188,7 @@
       "materialityReview": {
         "materialityHash": "b3dc20fe2d960e0f",
         "reviewedAt": "2026-10-06",
-        "evidence": "experience/reviews/2026-10-05-port-home-overview/receipts/tasks.page.app-analytics-materiality.json"
+        "evidence": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.page.app-analytics-materiality.json"
       }
     },
     {
@@ -4235,7 +4235,7 @@
       "materialityReview": {
         "materialityHash": "9a83f9e97a750b1b",
         "reviewedAt": "2026-10-06",
-        "evidence": "experience/reviews/2026-10-05-port-home-overview/receipts/tasks.state.app-analytics-loading-materiality.json"
+        "evidence": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.state.app-analytics-loading-materiality.json"
       }
     },
     {
@@ -4282,7 +4282,7 @@
       "materialityReview": {
         "materialityHash": "16a0888ed7b367ab",
         "reviewedAt": "2026-10-06",
-        "evidence": "experience/reviews/2026-10-05-port-home-overview/receipts/tasks.state.app-analytics-error-materiality.json"
+        "evidence": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.state.app-analytics-error-materiality.json"
       }
     },
     {
@@ -4555,7 +4555,7 @@
       "materialityReview": {
         "materialityHash": "45e0fc19aaf3ca48",
         "reviewedAt": "2026-10-06",
-        "evidence": "experience/reviews/2026-10-05-port-home-overview/receipts/tasks.state.app-tools-loading-materiality.json"
+        "evidence": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.state.app-tools-loading-materiality.json"
       }
     },
     {
@@ -4713,7 +4713,7 @@
       "materialityReview": {
         "materialityHash": "7a85240486792b54",
         "reviewedAt": "2026-10-06",
-        "evidence": "experience/reviews/2026-10-05-port-home-overview/receipts/tasks.page.app-files-materiality.json"
+        "evidence": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.page.app-files-materiality.json"
       }
     },
     {
@@ -4760,7 +4760,7 @@
       "materialityReview": {
         "materialityHash": "9beac142f8f04cb2",
         "reviewedAt": "2026-10-06",
-        "evidence": "experience/reviews/2026-10-05-port-home-overview/receipts/tasks.state.app-files-loading-materiality.json"
+        "evidence": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.state.app-files-loading-materiality.json"
       }
     },
     {
@@ -4807,7 +4807,7 @@
       "materialityReview": {
         "materialityHash": "83d088f7615c6a6b",
         "reviewedAt": "2026-10-06",
-        "evidence": "experience/reviews/2026-10-05-port-home-overview/receipts/tasks.state.app-files-error-materiality.json"
+        "evidence": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.state.app-files-error-materiality.json"
       }
     },
     {

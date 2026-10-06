@@ -10,6 +10,62 @@ The avatar in the top bar opens one grouped menu instead of the sign-in provider
 
 The older bar and rail elsewhere keep their menu for now. No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-account-menu`; no deployment or production change is claimed.
 
+## 2026-10-06 · Redesign candidate · Tags, one word everywhere
+
+What a task carries as #name is now called a tag everywhere you meet it in Tasks: the list column, the task panel, quick create, the right-click menu, the shortcuts sheet (L still opens it) and the Filter menu, which used to say "Label" in some places and "Tags" in others. The Filter menu's Tag list now shows how many tasks carry each tag, so you can see what a filter will leave before you choose it.
+
+Tag kinds, chosen colours and pinned tags wait for a database change and are not part of this. No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-tags`; no deployment or production change is claimed.
+
+## 2026-10-06 · Redesign candidate · A combined timeline for several projects at once
+
+On Timeline, All projects, each project's menu now has "Add to combined timeline". Choose two or more and a panel appears above the chart: the chosen projects as chips you can take out one at a time, one line with every big date still to come in each project's own colour, and the same dates listed in order underneath. When two or more of those dates fall in the same Monday-to-Sunday week, the busiest such week is named in a sentence ("Tightest week: Mon 5 Oct 2026 to 11 Oct, 2 big dates across Year 9 history and Kavanagh wedding") and shaded on the line; "Show that week" moves the chart to it. With one project chosen, the panel asks for a second. Up to six fit.
+
+The choice is kept in the address as `?with=`, so a combined view can be linked and survives a reload. Only projects you can already see appear; an id you cannot see is left out.
+
+No server action, read, schema change or dependency was added: every date comes from the rows the page already reads. This is an unshipped candidate on `design/app-v3-combined-timeline`; no deployment or production change is claimed.
+
+## 2026-10-06 · Redesign candidate · A denser Tasks list, and a header that stays put
+
+The Tasks list now fits more on a screen. With a mouse each row is 40 pixels, not 44; touch screens keep the larger rows. Every row shows its tick box, quietly, so it reads as a list you can pick from; hovering or ticking brings the box to full strength. Each group's count sits in a small pill beside its name. Labels are soft pills in their own colour. If you turn on the Subtasks column, it shows a thin bar with how many are done.
+
+The list and the calendar now use the full width of the window, as the board already does. Before, the page title and the Board, List and Calendar switch moved sideways when you changed view on a wide screen; now they stay in one place.
+
+No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-dense-list`; no deployment or production change is claimed.
+
+## 2026-10-06 · Redesign candidate · A task opens as one record, beside your work
+
+Opening a task now shows a side panel at every width, with the list or board still in place behind it. The panel reads as one record. At the top are previous and next with where you are ("3 of 13"), then Edit, which puts you in the name, and Open, which lays the same task out as the two-column page. Then comes the task's name under its project's colour tile, with the project, the task number and when it last changed underneath. Each field has its own row, with its icon and name on the left. If the task has subtasks, a progress bar shows how many are done. Below that are Notes, Subtasks, Files and links, and Activity, each with a "See all" that opens the full page. On a phone the count stays in view and Mark done sits under the name.
+
+Until now a laptop or larger screen opened every task as the two-column page over the app. That page is unchanged and one press away (Open, or E), and its button back now says "Back to the panel". Mark done, every field, the pickers and the keys (up, down, j, k, E, Escape) work as before.
+
+No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-record-panel`; no deployment or production change is claimed.
+
+## 2026-10-06 · Redesign candidate · Projects as a list
+
+The Projects page has a third view, List, beside Console and Cards. It keeps the console's groups (Needs a look, On track, Paused, No status yet, Wrapped), each with a count. Every project gets one line: its colour tile and name, a status pill in its colour, who leads it, a thin bar for how many of its tasks are done, its target date, its next big date, and its open and late tasks. A line at the foot counts the projects, open tasks and late tasks shown. Clicking a project's name shows its quick look, as it does in the console. On a narrower window the lead, and then the dates, step aside; on a phone each project is two lines. The address remembers the view (`?view=list`).
+
+The view menu also stays on screen on a phone now. It used to open off the right edge.
+
+No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-projects-list`; no deployment or production change is claimed.
+
+## 2026-10-06 · Redesign candidate · A quick look at a project before you open it
+
+On the Projects page, clicking a project's name now shows it as a record in a side panel, without switching the app to it. Opening a project switches everything to it, so this is the way to look first. At the top are previous and next with where you are in the list ("3 of 10") and Open. Then comes the project's colour tile and name, with how it is doing underneath. Each field has its own row: status, who leads it, its target date, its next big date, open tasks, late tasks, and a bar for how many of its tasks are done. Below that are what it is for and what got finished in the last two weeks, one small bar a day. At the foot are ways into its tasks, its timeline and its files. Up and down (or j and k) step through the list, and Escape closes and puts you back on the row.
+
+The row's own Open button, Ctrl or Cmd and click, and the row menu still open the project straight away. The project that is already open still scrolls to its overview below. Who is in a project, its recent activity and its files are read only for the open project, so the panel does not show them for the others.
+
+No server action, read, schema change or dependency was added. This is an unshipped candidate on `design/app-v3-project-peek`; no deployment or production change is claimed.
+
+
+
+## 2026-10-06 · Redesign candidate · The shared Timeline becomes a countdown
+
+The page a couple or a class shares with their guests now reads like the founder's pick of 28 September. It opens on how many days are left until the big day, with the date, how many moments are complete and Add to my calendar beside it. Below that, on wide screens, a strip shows every moment to scale with today marked. Then comes every moment in order, each with its own count of days, and the day itself to finish. It replaces the earlier rail.
+
+The design source drew Share this timeline twice, once at the top and once at the end, so the page had two buttons with the same name. Now there is one, at the top. Where the page is shown without its top line, as in the phone preview, the one at the end takes its place.
+
+No server action, read, schema change or dependency was added, and the page shows only what the published timeline already holds. This is an unshipped candidate on `design/app-v3-timeline-countdown`; no deployment or production change is claimed.
+
 ## 2026-10-06 · Redesign candidate · Apps and tools shows everything, with no folded group
 
 Apps and tools, the grid button in the top bar and the page at `/app/tools`, no longer keeps half of what it holds behind a folded "Initial setup" heading. It now reads as four sections in view: Your apps (Projects, Tasks, Timeline, Files and Analytics), More apps (Notes, and Messages if you have Chat), Works with, and the tools that are coming soon. Nothing was removed, search still finds every entry, and the arrow keys walk all four sections. This finishes what the sidebar change started when its own "Initial setup" group went.
