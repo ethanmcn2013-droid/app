@@ -361,7 +361,7 @@ test("actual Home page carries its explicit scope and never invents a new-user v
   const beforeResolved = resolved.length;
   await assert.rejects(page.default({ searchParams: Promise.resolve({ workspaceId: "project-b" }) }), /not-found/);
   assert.equal(resolved.length, beforeResolved, "a refused explicit scope never consults the ambient Tasks fallback");
-  const newUser = await page.default();
+  const newUser = await page.default({});
   assert.deepEqual(calls.at(-1), { clerkId: "synthetic" }, "a bare new-user visit remains supported");
   assert.equal(newUser.props.children[0].props.project, null, "a truly empty Home publishes no Project");
 });
@@ -384,7 +384,7 @@ test("bare Home reads a fresh Tasks creator's authorized Project without a Signa
     "@/components/app/active-project-route-sync": { ActiveProjectRouteSync: () => null },
     "@/components/app/home/home-view": { HomeView: () => null, HomeNewUser: () => null, HomeProjectUnavailable: () => null },
   });
-  const result = await page.default();
+  const result = await page.default({});
   assert.deepEqual(calls, [
     { clerkId: "clerk-creator" },
     { clerkId: "clerk-creator", scope: { kind: "workspace", workspaceId: "project-b" } },
@@ -405,7 +405,7 @@ test("bare Home with a Tasks Project never tells the creator to set up another w
     "@/components/app/active-project-route-sync": { ActiveProjectRouteSync: () => null },
     "@/components/app/home/home-view": { HomeView: () => null, HomeNewUser: () => "wrong-setup", HomeProjectUnavailable: () => "temporarily-unavailable" },
   });
-  const result = await page.default();
+  const result = await page.default({});
   assert.equal(result.props.children[1].type(), "temporarily-unavailable");
 });
 
