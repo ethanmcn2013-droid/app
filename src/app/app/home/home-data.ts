@@ -187,7 +187,7 @@ export async function loadHomeData(opts: {
       title: item.text,
       why: item.detail,
       source: aggregate ? `Tasks · ${authorizedScope.label}` : item.sourceLabel,
-      due: blockerWithoutDate ? null : dueById.get(item.observationId ?? item.id) ?? null,
+      due: blockerWithoutDate || item.trigger === "recorded-activity" || item.trigger === "just-shipped" ? null : dueById.get(item.observationId ?? item.id) ?? null,
       trigger: item.trigger,
       href: aggregate ? aggregateHref : taskHref(item.id),
     };
@@ -198,6 +198,7 @@ export async function loadHomeData(opts: {
   const signalRows = [
     ...briefing.needsAttention.map(toSignalRow),
     ...briefing.quietRisks.map(toSignalRow),
+    ...briefing.movingWell.map(toSignalRow),
   ];
 
   const surfacedIds = new Set(signalRows.map((row) => row.id));
@@ -348,8 +349,10 @@ export async function loadHomeData(opts: {
     .sort((a, b) => sortDue(a.signal, b.signal))
     .slice(0, DEADLINE_CAP);
   const groupOrder = ["Overdue", "Today", "Tomorrow", "This week", "Later"] as const;
+  const weekday = new Intl.DateTimeFormat("en-US", { timeZone: timezone, weekday: "long" }).format(now);
+  const daysUntilSunday = 6 - ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].indexOf(weekday);
   const groupFor = (signal: TaskSignal, days: number) =>
-    overdue(signal) ? "Overdue" : days === 0 ? "Today" : days === 1 ? "Tomorrow" : days < 7 ? "This week" : "Later";
+    overdue(signal) ? "Overdue" : days === 0 ? "Today" : days === 1 ? "Tomorrow" : days <= daysUntilSunday ? "This week" : "Later";
   const deadlines: HomeDeadlineGroup[] = groupOrder
     .map((label) => ({
       label,

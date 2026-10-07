@@ -33,6 +33,11 @@ export type TaskSignal = {
   assignees?: UserRef[];
   /** Most recent validated title update found by the reader; no exhaustive-history claim. Internal only. */
   latestValidatedTitleEdit?: ValidatedTitleEdit;
+  latestValidatedComment?: { at: string; kind: "commentAdd" };
+  latestValidatedMetadataEdit?: { at: string; field: "tags" };
+  activityHistoryStartAt?: string;
+  /** Complete authorized current task-list evidence, separate from history. */
+  taskCoverage?: "complete" | "partial";
   commentCount: number;
   blockedBy: string[]; // task ids
   dependencyCoverage?: "complete" | "partial";
@@ -90,7 +95,8 @@ export type TriggerKind =
   | "blocked-too-long"
   | "blocking-due-work"
   | "prerequisites-complete"
-  | "prerequisites-unverified";
+  | "prerequisites-unverified"
+  | "recorded-activity";
 
 export type FocusItem = {
   id: string;

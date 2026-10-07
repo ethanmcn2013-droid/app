@@ -1055,3 +1055,55 @@ describe("buildBriefing, carry-over aging (ReadState.ages)", () => {
     assert.equal(ids[ids.length - 1], "a", "but reads last in the block");
   });
 });
+
+test("round8 full prerequisite relation preserves a separate consequential date under cap3", async () => {
+  const checks = ["copy", "safety", "access"].map(id => task({ id, title: id, workspaceId: "delivery", idleDays: null }));
+  const delivery = task({ id: "deliver", workspaceId: "delivery", dueAt: NOW + DAY, idleDays: null, blockedBy: checks.map(row => row.id), dependencyCoverage: "complete" });
+  const separate = task({ id: "separate-date", workspaceId: "delivery", dueAt: NOW + 2 * DAY, idleDays: null });
+  const b = await buildBriefing(source([delivery, ...checks, separate]), CTX, NOW);
+  const relationships = b.needsAttention.filter(row => row.trigger === "blocking-due-work");
+  assert.equal(relationships.length, 1);
+  assert.deepEqual(relationships[0]!.evidenceTaskIds, ["access", "copy", "deliver", "safety"]);
+  for (const name of ["copy", "safety", "access"]) assert.ok(relationships[0]!.detail.includes(name));
+  assert.ok(b.needsAttention.some(row => row.id === separate.id && row.trigger === "due-soon"));
+  assert.equal(b.needsAttention.length + b.quietRisks.length + b.movingWell.length, 3);
+});
+test("round8 mixed prerequisite states retain completed evidence and anonymous uncertainty", async () => {
+  const open = task({ id: "review-copy", title: "Review copy", workspaceId: "packet", idleDays: null });
+  const done = task({ id: "legal-proof", title: "Legal proof", workspaceId: "packet", lane: "shipped", idleDays: null });
+  const dependent = task({ id: "packet", title: "Send packet", workspaceId: "packet", dueAt: NOW + DAY, idleDays: null,
+    blockedBy: [open.id], dependencyCoverage: "partial", prerequisiteEvidence: [
+      { id: open.id, workspaceId: "packet", lane: "doing", boardColumnKey: null, complete: false },
+      { id: done.id, workspaceId: "packet", lane: "done", boardColumnKey: null, complete: true },
+    ] });
+  const b = await buildBriefing(source([dependent, open, done]), CTX, NOW);
+  const row = b.needsAttention.find(item => item.trigger === "blocking-due-work")!;
+  assert.deepEqual(row.evidenceTaskIds, ["legal-proof", "packet", "review-copy"]);
+  assert.match(row.detail, /Legal proof/); assert.match(row.detail, /complete/i);
+  assert.match(row.detail, /unverified|unknown|not fully/i);
+});
+test("round8 complete prerequisite observation names visible set and hides terminal evidence identities", async () => {
+  const done = task({ id: "safety-cert", title: "Safety certificate", workspaceId: "show", lane: "shipped", idleDays: null });
+  const dependent = task({ id: "open-show", workspaceId: "show", dueAt: NOW + 5 * DAY, idleDays: null,
+    dependencyCoverage: "complete", hasCompletedListedPrerequisite: true, prerequisiteEvidence: [
+      { id: done.id, workspaceId: "show", lane: "done", boardColumnKey: null, complete: true },
+      { id: "hidden-terminal", workspaceId: "show", lane: "done", boardColumnKey: null, complete: true },
+    ] });
+  const b = await buildBriefing(source([dependent, done]), CTX, NOW);
+  const row = b.needsAttention.find(item => item.trigger === "prerequisites-complete")!;
+  assert.match(row.detail, /Safety certificate/);
+  assert.doesNotMatch(row.detail, /hidden-terminal/);
+  assert.deepEqual(row.evidenceTaskIds, ["hidden-terminal", "open-show", "safety-cert"]);
+});
+test("round8 precise uncertainty preserves missing date and known metadata without history invention", async () => {
+  const input = task({ id: "undated-plan", title: "Map the sources", workspaceId: "archive", idleDays: null,
+    deadline: null, activityCoverage: "partial",
+    latestValidatedMetadataEdit: { at: new Date(NOW - DAY).toISOString(), field: "tags" },
+    activityHistoryStartAt: new Date(NOW - 3 * DAY).toISOString(),
+  } as Partial<TaskSignal>);
+  const b = await buildBriefing(source([input]), CTX, NOW);
+  const notes = b.activityCoverageNote ?? "";
+  assert.match(notes, /Map the sources/); assert.match(notes, /no .*date|date .*not recorded/i);
+  assert.match(notes, /tag/i); assert.match(notes, /earlier|before/i);
+  assert.doesNotMatch(notes, /no activity|no progress/i);
+});

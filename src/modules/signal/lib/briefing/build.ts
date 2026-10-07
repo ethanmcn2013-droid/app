@@ -1,3 +1,5 @@
+import { enrichRelationshipCandidates } from "./relationship-observations";
+import { contextObservations } from "./context-observations";
 import { createHash } from "node:crypto";
 import { phraseFor } from "./prose";
 import type { BriefingContext, BriefingSource } from "./source";
@@ -96,6 +98,9 @@ export async function buildBriefing(
     }),
   ]));
 
+  const relationCandidates = enrichRelationshipCandidates([...blockingDueWork, ...blocked, ...prerequisitesComplete, ...prerequisitesUnverified], signals, now, timezone);
+  const context = contextObservations(signals, now, timezone);
+  const contextCandidates = context.candidates.filter(notDismissed);
   const rotationIndex = dayRotation(userId, now);
 
   // ─ Needs attention: due-soon (incl. overdue) + overload + crowded-week,
@@ -104,14 +109,12 @@ export async function buildBriefing(
   const bestByObservation = new Map<string, Triggered>();
   for (const candidate of [
     ...dueSoon,
-    ...blockingDueWork,
     ...overload,
     ...crowded,
     ...stuck,
-    ...blocked,
-    ...prerequisitesComplete,
-    ...prerequisitesUnverified,
+    ...relationCandidates,
     ...shipped,
+    ...contextCandidates,
   ]) {
     // Primary task pressure still has one winning rule. Relationships and
     // readiness are different observations, even when they navigate to the
@@ -128,7 +131,7 @@ export async function buildBriefing(
     const relation = (candidate.trigger === "blocking-due-work" || candidate.trigger === "blocked-too-long") &&
       Boolean(candidate.task.workspaceId) && candidate.representedTaskIds.length > 1;
     const separate = relation || candidate.trigger === "prerequisites-complete" || candidate.trigger === "prerequisites-unverified" ||
-      candidate.trigger === "overload" || candidate.trigger === "crowded-week";
+      candidate.trigger === "overload" || candidate.trigger === "crowded-week" || candidate.trigger === "recorded-activity";
     const key = JSON.stringify([scope, relation ? "dependency" : separate ? candidate.trigger : "task",
       candidate.representedTaskIds]);
     const current = bestByObservation.get(key);
@@ -149,25 +152,10 @@ export async function buildBriefing(
   ]);
   const attention = selected.filter((item) => attentionKinds.has(item.trigger));
 
-  // ─ Moving well: just-shipped, ordered by recency.
-  //
-  // Standing call on just-shipped (kept deliberately, not by omission):
-  // `movingWell` and `suggestedFocus` render in no component today, so a
-  // just-shipped item is invisible to the reader. It is NOT dropped from
-  // the engine, because it is real and the surface for it is a design
-  // decision, not an engine one. Two guards keep it from lying in the
-  // meantime:
-  //   1. It can never take a slot from work that is asking for the
-  //      reader. Its focus weight (100) is an order below every other
-  //      trigger, so it only enters `selected` when fewer than three
-  //      other candidates exist and it displaces nothing.
-  //   2. It stays inside `triggeredCount`, because it genuinely crossed
-  //      a rule and removing it would make the ledger's
-  //      read = flagged + cleared arithmetic false. Instead the all-clear
-  //      copy names it: voice.ts readCountSentence takes the triggered
-  //      count and refuses to say "nothing crossed" over a day where a
-  //      shipped item did.
-  const moving = selected.filter((item) => item.trigger === "just-shipped");
+  // Saved activity and completed work share the finite selection cap and stay below
+  // consequential work in the existing comparator. Home and ledger
+  // now expose these positive observations with their saved date.
+  const moving = selected.filter((item) => item.trigger === "just-shipped" || item.trigger === "recorded-activity");
 
   // ─ Quiet risks: stuck-work, ordered by severity, EXCLUDING items
   // already in attention (so a stuck-work item that's also overdue
@@ -227,11 +215,7 @@ export async function buildBriefing(
     quietRisks,
     suggestedFocus,
     isEmpty,
-    ...(signals.some(signal => signal.activityCoverage === "partial") ? {
-      activityCoverageNote: signals.some(signal => signal.activityCoverage === "partial" && signal.hasRecordedTitleEdit === true)
-        ? "A recorded title edit does not establish meaningful work progress. Activity history is incomplete."
-        : "Activity history is incomplete. Task update timestamps do not establish meaningful progress or inactivity.",
-    } : {}),
+    ...(context.coverageNotes.length ? { activityCoverageNote: context.coverageNotes.join(" ") } : {}),
     // Records actually inspected, not dangling references or repeated reads.
     // Completed prerequisite evidence may be outside the visible task list.
     readCount: readTaskIds.length,
@@ -278,7 +262,7 @@ function toItem(
     observationId: observationId(t),
     evidenceTaskIds: t.representedTaskIds,
     text: headline(t),
-    detail: primaryDetail,
+    detail: t.detailOverride ?? primaryDetail,
     sourceLabel: t.task.sourceLabel,
     trigger: t.trigger,
     reasons: t.reasons,
@@ -367,6 +351,7 @@ function focusWeight(t: Triggered): number {
     "prerequisites-unverified": 600,
     overload: 500,
     "just-shipped": 100,
+    "recorded-activity": 100,
   };
   return base[t.trigger] + t.severity;
 }

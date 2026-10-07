@@ -115,6 +115,10 @@ export interface TaskRead {
   hasRecordedTitleEdit?: boolean;
   /** Most recent validated title update found by this read; absence does not imply exhaustive history. */
   latestValidatedTitleEdit?: ValidatedTitleEdit;
+  latestValidatedComment?: { at: string; kind: "commentAdd" };
+  latestValidatedMetadataEdit?: { at: string; field: "tags" };
+  /** Earliest valid inspected record, not a retention-policy proof. */
+  activityHistoryStartAt?: string;
 }
 
 /** An activity event. Timestamps + types only, no comment text. */
@@ -138,6 +142,7 @@ export interface WorkRead {
   tasks: TaskRead[];
   /** Missing event history is never evidence that nothing happened. */
   coverage?: Readonly<{
+    tasks?: EvidenceCoverage;
     activity: EvidenceCoverage;
     dependencies: EvidenceCoverage;
     dates: EvidenceCoverage;

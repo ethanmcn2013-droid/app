@@ -445,7 +445,7 @@ describe("progressive Signal ledger adapter", () => {
     assert.doesNotMatch(ledger.heading, /\d/);
     assert.equal(
       ledger.closingLine,
-      "That’s the read. Dates came first, then the quiet ones.",
+      "That’s the read.",
     );
   });
 
@@ -660,3 +660,11 @@ function progressiveBriefing(): BriefingResponse {
     },
   };
 }
+
+it("round8 selected completion reaches ledger with its actual evidence receipt", () => {
+  const item = { ...legacyItem("completed-task"), trigger: "just-shipped" as const, text: "Finished the records",
+    detail: "Completed within the last twenty-four hours.", evidenceTaskIds: ["completed-task"] };
+  const b = legacyBriefing([], { movingWell: [item], isEmpty: false, readTaskIds: ["completed-task"], triggeredTaskIds: ["completed-task"], readCount: 1, triggeredCount: 1 });
+  const ledger = ledgerFromLegacyBriefing(b, { generatedAtLabel: "Test read", allowedAppOrigin: APP_ORIGIN });
+  assert.equal(ledger.entries.length, 1); assert.equal(ledger.entries[0]!.receipt.evidenceCount, 1);
+});

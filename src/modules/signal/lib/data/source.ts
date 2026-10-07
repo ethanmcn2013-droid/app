@@ -215,14 +215,14 @@ async function readCompletionHistory(db: TasksDb, targets: readonly (typeof task
 type DependencyState = Pick<typeof tasksTable.$inferSelect, "id" | "workspaceId" | "lane" | "boardColumnKey">;
 type DependencyRead = { open: Map<string, string[]>; verified: Map<string, NonNullable<TaskRead["prerequisiteEvidence"]>>; unknown: Set<string>; hasCompleted: Set<string> };
 
-type ActivityRead = { comments: Map<string, string>; titleEdits: Map<string, string> };
+type ActivityRead = { comments: Map<string, string>; titleEdits: Map<string, string>; commentEvents: Map<string, string>; metadataEdits: Map<string, string>; earliestRecords: Map<string, string> };
 
 /** Positive comment evidence can advance the existing activity proxy. A saved
  * title edit is metadata evidence only. Neither establishes exhaustive history.
  * Both are read in the existing bounded per-task aggregate, without another query.
  */
 async function readCommentActivity(db: TasksDb, rows: readonly (typeof tasksTable.$inferSelect)[], now: number): Promise<ActivityRead> {
-  const activity: ActivityRead = { comments: new Map(), titleEdits: new Map() };
+  const activity: ActivityRead = { comments: new Map(), titleEdits: new Map(), commentEvents: new Map(), metadataEdits: new Map(), earliestRecords: new Map() };
   const targets = rows.filter(row => validCompletion(row.updatedAt, now) !== null && validCompletion(row.createdAt, now) !== null);
   for (let offset = 0; offset < targets.length; offset += 500) {
     const chunk = targets.slice(offset, offset + 500), grouped = new Map<string, string[]>();
@@ -232,21 +232,21 @@ async function readCommentActivity(db: TasksDb, rows: readonly (typeof tasksTabl
     const predicate = or(...Array.from(grouped, ([id, taskIds]) => and(eq(activitiesTable.workspaceId, id), inArray(activitiesTable.taskId, taskIds))));
     // Validate before MAX so an invalid newest row cannot hide earlier evidence.
     // Grouping bounds returned rows; it does not bound the matching history scan.
-    const evidence = await db.all<{ workspaceId: string; taskId: string; createdAt: number | null; latestTitleEditAt: number | null }>(sql`
+    const evidence = await db.all<{ workspaceId: string; taskId: string; createdAt: number | null; latestTitleEditAt: number | null; latestMetadataEditAt: number | null; earliestRecordAt: number | null }>(sql`
       SELECT a.workspace_id AS workspaceId, a.task_id AS taskId,
-        MAX(a.created_at) FILTER (WHERE a.kind = 'commentAdd') AS createdAt,
-        MAX(a.created_at) FILTER (WHERE a.kind = 'update') AS latestTitleEditAt
+        MAX(a.created_at) FILTER (WHERE CASE WHEN json_valid(a.payload) THEN
+          a.kind = 'commentAdd' AND json_extract(a.payload, '$.kind') = 'commentAdd'
+          AND json_type(a.payload, '$.commentId') = 'text' AND length(trim(json_extract(a.payload, '$.commentId'))) > 0
+          ELSE 0 END) AS createdAt,
+        MAX(a.created_at) FILTER (WHERE CASE WHEN json_valid(a.payload) THEN
+          a.kind = 'update' AND json_extract(a.payload, '$.kind') = 'update'
+          AND json_extract(a.payload, '$.field') = 'title' ELSE 0 END) AS latestTitleEditAt,
+        MAX(a.created_at) FILTER (WHERE CASE WHEN json_valid(a.payload) THEN
+          a.kind = 'update' AND json_extract(a.payload, '$.kind') = 'update'
+          AND json_extract(a.payload, '$.field') = 'tags' ELSE 0 END) AS latestMetadataEditAt,
+        MIN(a.created_at) FILTER (WHERE json_valid(a.payload)) AS earliestRecordAt
       FROM activities AS a JOIN tasks AS t ON t.id = a.task_id AND t.workspace_id = a.workspace_id
       WHERE a.id IN (SELECT id FROM activities WHERE ${predicate})
-        AND a.kind IN ('commentAdd', 'update')
-        AND CASE WHEN json_valid(a.payload) THEN
-          (a.kind = 'commentAdd'
-            AND json_type(a.payload, '$.kind') = 'text' AND json_extract(a.payload, '$.kind') = 'commentAdd'
-            AND json_type(a.payload, '$.commentId') = 'text' AND length(trim(json_extract(a.payload, '$.commentId'))) > 0)
-          OR (a.kind = 'update'
-            AND json_type(a.payload, '$.kind') = 'text' AND json_extract(a.payload, '$.kind') = 'update'
-            AND json_type(a.payload, '$.field') = 'text' AND json_extract(a.payload, '$.field') = 'title')
-          ELSE 0 END
         AND typeof(a.created_at) IN ('integer', 'real')
         AND a.created_at >= 0 AND a.created_at <= ${now / 1000} AND a.created_at >= t.created_at
       GROUP BY a.workspace_id, a.task_id
@@ -259,8 +259,13 @@ async function readCommentActivity(db: TasksDb, rows: readonly (typeof tasksTabl
         ? null
         : validCompletion(new Date(event.latestTitleEditAt * 1000), now);
       if (latestTitleEditAt) activity.titleEdits.set(row.id, latestTitleEditAt);
+      for (const [value, target] of [[event.latestMetadataEditAt, activity.metadataEdits], [event.earliestRecordAt, activity.earliestRecords]] as const) {
+        const at = value === null ? null : validCompletion(new Date(value * 1000), now);
+        if (at) target.set(row.id, at);
+      }
       if (event.createdAt === null) continue;
       const at = validCompletion(new Date(event.createdAt * 1000), now);
+      if (at) activity.commentEvents.set(row.id, at);
       if (at && Date.parse(at) > row.updatedAt.getTime()) activity.comments.set(row.id, at);
     }
   }
@@ -401,7 +406,7 @@ function buildWorkRead(
   config: ColumnConfig | null = null,
   completions: ReadonlyMap<string, string | null> = new Map(),
   dependencies: DependencyRead = { open: new Map(), verified: new Map(), unknown: new Set(), hasCompleted: new Set() },
-  activity: ActivityRead = { comments: new Map(), titleEdits: new Map() },
+  activity: ActivityRead = { comments: new Map(), titleEdits: new Map(), commentEvents: new Map(), metadataEdits: new Map(), earliestRecords: new Map() },
 ): WorkRead {
     const stageLabels = new Map(resolveBoardColumns(config).map(column => [column.key, column.name]));
     const taskReads: TaskRead[] = rows.map((t) => {
@@ -438,6 +443,9 @@ function buildWorkRead(
         lastActivityAt: activity.comments.get(t.id) ?? t.updatedAt.toISOString(),
         createdAt: t.createdAt.toISOString(),
         hasRecordedTitleEdit: activity.titleEdits.has(t.id),
+        latestValidatedComment: activity.commentEvents.has(t.id) ? { at: activity.commentEvents.get(t.id)!, kind: "commentAdd" } : undefined,
+        latestValidatedMetadataEdit: activity.metadataEdits.has(t.id) ? { at: activity.metadataEdits.get(t.id)!, field: "tags" } : undefined,
+        activityHistoryStartAt: activity.earliestRecords.get(t.id),
         latestValidatedTitleEdit: activity.titleEdits.has(t.id)
           ? { at: activity.titleEdits.get(t.id)!, kind: "update", field: "title" }
           : undefined,
@@ -483,6 +491,7 @@ function buildWorkRead(
       projects,
       tasks: taskReads,
       coverage: {
+        tasks: "complete",
         activity: "partial",
         dependencies: taskReads.some(task => task.dependencyCoverage === "partial") ? "partial" : "complete",
         dates: taskReads.some(task => task.deadline?.kind === "unknown") ? "partial" : "complete",

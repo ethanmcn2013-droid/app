@@ -506,3 +506,9 @@ test("engine selection retains legacy/period behavior after shared hint validati
   }
   assert.equal(observed.length, 0);
 });
+
+test("round8 This week uses local calendar membership rather than rolling seven days", async () => {
+  const monday = { ...signals(1)[0]!, id: "next-monday", deadline: { kind: "date-only" as const, date: "2026-09-07" } };
+  const { data } = await fixture([monday]);
+  assert.equal(data.deadlines.find(group => group.rows.some(row => row.id === monday.id))?.label, "Later");
+});

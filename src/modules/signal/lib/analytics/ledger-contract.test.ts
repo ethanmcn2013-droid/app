@@ -179,6 +179,7 @@ describe("Signal ledger presentation contract", () => {
     assert.deepEqual(Object.keys(ledger).sort(), [
       "closingLine",
       "coverageNote",
+      "coverageStatus",
       "emptyState",
       "entries",
       "freshness",
@@ -237,6 +238,7 @@ describe("Signal ledger presentation contract", () => {
         }),
       );
 
+      assert.equal(ledger.coverageStatus, state);
       assert.equal(ledger.emptyState?.kind, "coverage");
       assert.ok(ledger.coverageNote);
       assert.doesNotMatch(
@@ -279,6 +281,7 @@ describe("Signal ledger presentation contract", () => {
 
   it("preserves the healthy empty state only with complete coverage", () => {
     const ledger = buildSignalLedger(input({ candidates: [] }));
+    assert.equal(ledger.coverageStatus, "complete");
 
     assert.equal(ledger.emptyState?.kind, "healthy");
     assert.equal(

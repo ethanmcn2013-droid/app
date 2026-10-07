@@ -39,7 +39,7 @@ export function OverviewView({
   scopeControl?: ReactNode;
 }) {
   const hasSide = model.runway !== null || model.finished !== null;
-  const noSignals = model.attention.length === 0 && model.risks.length === 0;
+  const noSignals = model.attention.length === 0 && model.risks.length === 0 && model.activity.length === 0;
 
   return (
     <div className={`${styles.page} thin-scroll`}>
@@ -67,7 +67,7 @@ export function OverviewView({
           </div>
         </header>
 
-        {model.coverage ? (
+        {model.coverage && model.coverage.tone !== "neutral" ? (
           <div
             role="status"
             aria-live="polite"
@@ -95,6 +95,13 @@ export function OverviewView({
                 id="overview-risks"
                 title="At risk"
                 signals={model.risks}
+              />
+            ) : null}
+            {model.activity.length > 0 ? (
+              <SignalCard
+                id="overview-activity"
+                title="Recorded work"
+                signals={model.activity}
               />
             ) : null}
             {noSignals && model.emptyState ? (
@@ -130,7 +137,7 @@ export function OverviewView({
           ) : null}
         </div>
 
-        {model.readNote ? (
+        {model.readNote || model.coverage?.tone === "neutral" ? (
           <section className={styles.readNote} aria-labelledby="overview-read">
             <span className={styles.readIcon} aria-hidden="true">
               <InfoIcon />
@@ -139,7 +146,8 @@ export function OverviewView({
               <h2 id="overview-read" className={styles.readTitle}>
                 How this was read
               </h2>
-              <p className={styles.readBody}>{model.readNote}</p>
+              {model.readNote ? <p className={styles.readBody}>{model.readNote}</p> : null}
+              {model.coverage?.tone === "neutral" ? <p className={styles.readBody}>{model.coverage.note}</p> : null}
               <p className={styles.readLinks}>
                 <Link href={OVERVIEW_PATH_SETTINGS} className={styles.readLink}>
                   Briefing delivery <span aria-hidden="true">→</span>

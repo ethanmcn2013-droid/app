@@ -63,7 +63,7 @@ export function ledgerFromLegacyBriefing(
       idSeed: `legacy:${group.key}`,
       taskEvidenceIds,
       section: group.section,
-      state: group.section === "attention" ? "needs_attention" : "watch",
+      state: group.section === "activity" ? "recorded" : group.section === "attention" ? "needs_attention" : "watch",
       // The engine's title/observation split carries straight through:
       // `text` is the reader's own title, `detail` is what Signal
       // noticed about it.
@@ -91,7 +91,8 @@ export function ledgerFromLegacyBriefing(
     heading:
       briefing.coverageStatus === "partial" && briefing.needsAttention.length === 0 && briefing.quietRisks.length > 0
         ? `${briefing.quietRisks.length} ${briefing.quietRisks.length === 1 ? "risk" : "risks"} worth watching.`
-        : summaryLine(briefing) || "A short read of what deserves attention.",
+        : summaryLine(briefing) || (candidates.length > 0 && candidates.every(candidate => candidate.state === "recorded" && candidate.section === "activity")
+          ? "A short read of your work." : "A short read of what deserves attention."),
     generatedAt: new Date(briefing.generatedAt).toISOString(),
     generatedAtLabel: options.generatedAtLabel,
     scopeLabel: options.scopeLabel,
@@ -108,10 +109,8 @@ export function ledgerFromLegacyBriefing(
         "Nothing needs your attention right now.",
       // A clear day reads as a receipt when it can name what was read,
       // and only falls back to the segment phrasing when it cannot. The
-      // triggered count travels with the read count: the entries here are
-      // attention and risks only, so a just-shipped item leaves the page
-      // empty while having crossed a rule, and the sentence must not call
-      // that "nothing crossed".
+      // Triggered count includes saved activity and completed work too;
+      // the accounting must not call those observations "nothing crossed".
       body:
         readCountSentence(briefing.readCount, briefing.triggeredCount) ??
         briefing.emptyStateBody ??
@@ -120,8 +119,10 @@ export function ledgerFromLegacyBriefing(
     closingLine: graceNote(briefing),
     allowedAppOrigin: options.allowedAppOrigin,
   });
-  if (briefing.coverageStatus === "partial" && briefing.activityCoverageNote) {
-    ledger.coverageNote = `${ledger.coverageNote ?? "Some work could not be checked in this read."} ${briefing.activityCoverageNote}`;
+  if (briefing.activityCoverageNote) {
+    const coveragePrefix = ledger.coverageNote ?? (briefing.coverageStatus === "partial"
+      ? "Some work could not be checked in this read." : "");
+    ledger.coverageNote = [coveragePrefix, briefing.activityCoverageNote].filter(Boolean).join(" ");
   }
   return ledger;
 }
@@ -223,6 +224,7 @@ export function groupLegacyBriefItems(briefing: Briefing): LegacyGroup[] {
       section: "risks" as const,
       item,
     })),
+    ...briefing.movingWell.map((item) => ({ section: "activity" as const, item })),
   ];
   const groups = new Map<string, LegacyGroup>();
 

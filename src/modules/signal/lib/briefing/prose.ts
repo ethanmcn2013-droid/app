@@ -203,6 +203,7 @@ const LIBRARY: Record<TriggerKind, Phrasing[]> = {
   "blocking-due-work": BLOCKING_DUE_WORK,
   "prerequisites-complete": PREREQUISITES_COMPLETE,
   "prerequisites-unverified": PREREQUISITES_UNVERIFIED,
+  "recorded-activity": [() => "A saved activity event was recorded."],
 };
 
 /**

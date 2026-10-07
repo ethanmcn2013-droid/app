@@ -27,6 +27,8 @@ export type Triggered = {
   relatedTaskId?: string;
   /** Full verified source set stays internal; public identity is opaque. */
   representedTaskIds?: string[];
+  /** Safe evidence-derived observation, independent of rotating prose. */
+  detailOverride?: string;
 };
 
 /**

@@ -7,8 +7,9 @@ export type SignalLedgerFreshness =
   | "partial"
   | "unavailable";
 
-export type SignalLedgerSection = "attention" | "risks";
-export type SignalLedgerState = "needs_attention" | "watch";
+export type SignalLedgerCoverageStatus = "complete" | "partial" | "stale" | "unavailable";
+export type SignalLedgerSection = "attention" | "risks" | "activity";
+export type SignalLedgerState = "needs_attention" | "watch" | "recorded";
 
 export interface SignalLedgerAction {
   label: string;
@@ -82,6 +83,8 @@ export interface SignalLedgerDTO {
   scopeLabel: string | null;
   scopeKind: "workspace" | "planningPeriod" | "project" | null;
   freshness: SignalLedgerFreshness;
+  /** Actual coverage metadata; older DTOs may omit it, which leaves coverage unknown. */
+  coverageStatus?: SignalLedgerCoverageStatus;
   coverageNote: string | null;
   entries: SignalLedgerEntry[];
   emptyState: SignalLedgerEmptyState | null;
@@ -118,7 +121,7 @@ export interface BuildSignalLedgerInput {
   scopeLabel?: string | null;
   scopeKind?: SignalLedgerDTO["scopeKind"];
   freshness: SignalLedgerFreshness;
-  coverageStatus: "complete" | "partial" | "stale" | "unavailable";
+  coverageStatus: SignalLedgerCoverageStatus;
   candidates: SignalLedgerCandidate[];
   healthyEmptyState?: Omit<SignalLedgerEmptyState, "kind"> | null;
   closingLine?: string | null;
@@ -355,6 +358,7 @@ export function buildSignalLedger(
       : null,
     scopeKind: input.scopeKind ?? null,
     freshness: input.freshness,
+    coverageStatus: input.coverageStatus,
     coverageNote: coverage?.note ?? null,
     entries,
     emptyState,

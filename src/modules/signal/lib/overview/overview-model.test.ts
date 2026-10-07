@@ -171,7 +171,7 @@ test("the read note closes its arithmetic in front of the reader", async () => {
   assert.equal(counts.read, counts.flagged + counts.cleared);
   assert.equal(
     model.readNote,
-    `Signal read ${counts.read} tasks in The Orchard, events at 09:00. ${counts.flagged} crossed a rule, and the ${counts.shown} that ask something of you are shown above. The other ${counts.cleared} were clear.`,
+    `Signal read ${counts.read} tasks in The Orchard, events at 09:00. ${counts.flagged} crossed a rule, and ${counts.shown} are shown above. The other ${counts.cleared} were clear.`,
   );
   assert.equal(readNoteFor({ ...ledger, readCounts: null }, "task", "09:00"), null, "no denominator, no sentence");
 
@@ -198,12 +198,12 @@ test("the verdict reads the engine's buckets and never calls a thin read clear",
 
   const { ledger, briefing, read } = await build();
   const coverage = buildOverviewModel({
-    ledger: { ...ledger, coverageNote: "Some work could not be checked in this read.", readCounts: null, entries: [], emptyState: { kind: "coverage", headline: "Signal has only part of the picture.", body: "…" } },
+    ledger: { ...ledger, coverageStatus: "partial", coverageNote: "Some work could not be checked in this read.", readCounts: null, entries: [], emptyState: { kind: "coverage", headline: "Signal has only part of the picture.", body: "…" } },
     timezone: "Europe/Dublin",
   });
   assert.deepEqual(coverage.verdict, { tone: "warning", sentence: "Signal has only part of the picture." });
 
-  const partial = { ...ledger, coverageNote: "Some work could not be checked in this read.", readCounts: null, emptyState: null };
+  const partial = { ...ledger, coverageStatus: "partial" as const, coverageNote: "Some work could not be checked in this read.", readCounts: null, emptyState: null };
   const riskOnly = buildOverviewModel({ ledger: { ...partial, entries: ledger.entries.filter(entry => entry.section === "risks") }, timezone: "Europe/Dublin" });
   assert.match(riskOnly.verdict.sentence, /^1 thing is at risk\. Some work could not be checked\.$/);
   assert.doesNotMatch(riskOnly.verdict.sentence, /Nothing is urgent/);
@@ -432,4 +432,54 @@ test("the rendered Overview speaks plainly and opens signals only by opaque id",
   assert.doesNotMatch(html, /Due today\.<\/p>/);
   assert.doesNotMatch(html, /\bworkspace\b/i);
   assert.doesNotMatch(html, /text-transform|uppercase|font-mono/);
+});
+
+
+test("round8receiving recorded work stays neutral and visible after real attention and risks", async () => {
+  const base: TaskSignal = { id: "saved", title: "Saved catalogue", lane: "next", priority: 2, dueAt: null, idleDays: null,
+    commentCount: 0, blockedBy: [], sourceLabel: "Tasks · The Orchard, events", movedToShippedAt: null, workspaceId: "ws-orchard" };
+  const title = { ...base, latestValidatedTitleEdit: { at: new Date(NOW - 1_000).toISOString(), kind: "update" as const, field: "title" as const } };
+  const completed: TaskSignal = { ...base, id: "completed", title: "Completed records", lane: "shipped", movedToShippedAt: NOW - 3_600_000 };
+  const positive = await build([title, completed]);
+  assert.deepEqual(positive.ledger.entries.map(entry => [entry.section, entry.state]), [["activity", "recorded"], ["activity", "recorded"]]);
+  assert.equal(positive.model.attention.length + positive.model.risks.length, 0);
+  assert.equal(positive.model.activity.length, 2);
+  assert.equal(positive.model.verdict.tone, "neutral");
+  assert.doesNotMatch(positive.model.verdict.sentence, /needs attention|at risk|part of the picture/i);
+  const { OverviewView } = loadView();
+  const positiveHtml = renderToStaticMarkup(createElement(OverviewView, { model: positive.model }));
+  assert.match(positiveHtml, /<h2[^>]*>Recorded work<\/h2>/);
+  assert.doesNotMatch(positiveHtml, /<h2[^>]*>(?:Needs attention|At risk)<\/h2>/);
+  const mixed = await build([title, completed, { ...base, id: "urgent", title: "Due record", dueAt: NOW + 3_600_000 },
+    { ...base, id: "stalled", title: "Stalled record", lane: "in-flight", idleDays: 10 }]);
+  assert.deepEqual(mixed.ledger.entries.map(entry => entry.section), ["attention", "risks", "activity"]);
+  assert.equal(mixed.model.activity.length, 1);
+  assert.equal(mixed.model.attention.length, 1); assert.equal(mixed.model.risks.length, 1);
+  assert.match(mixed.model.verdict.sentence, /^1 thing needs attention and 1 is at risk\.$/);
+  assert.doesNotMatch(mixed.model.readNote ?? "", /asks? something of you/i);
+  const mixedHtml = renderToStaticMarkup(createElement(OverviewView, { model: mixed.model }));
+  assert.ok(mixedHtml.indexOf(">Needs attention</h2>") < mixedHtml.indexOf(">At risk</h2>"));
+  assert.ok(mixedHtml.indexOf(">At risk</h2>") < mixedHtml.indexOf(">Recorded work</h2>"));
+});
+
+test("round8receiving context notes never establish incomplete coverage without metadata", async () => {
+  const base: TaskSignal = { id: "ordinary", title: "Ordinary open record", lane: "next", priority: 2, dueAt: null, idleDays: null,
+    commentCount: 0, blockedBy: [], sourceLabel: "Tasks · The Orchard, events", movedToShippedAt: null, workspaceId: "ws-orchard", taskCoverage: "complete" };
+  for (const signals of [[base], [{ ...base, lane: "in-flight" as const, idleDays: 10 }]]) {
+    const { ledger, model } = await build(signals);
+    assert.equal(ledger.coverageStatus, "complete");
+    assert.match(ledger.coverageNote ?? "", /1 task is currently open/);
+    assert.equal(model.coverage?.tone, "neutral");
+    const { OverviewView } = loadView();
+    const contextHtml = renderToStaticMarkup(createElement(OverviewView, { model }));
+    assert.match(contextHtml, /1 task is currently open/);
+    assert.doesNotMatch(contextHtml, /class="notice"/, "complete context does not render as an alert notice");
+    assert.doesNotMatch(model.verdict.sentence, /could not be checked|part of the picture/i);
+    const partial = buildOverviewModel({ ledger: { ...ledger, coverageStatus: "partial", readCounts: null }, timezone: "Europe/Dublin" });
+    assert.equal(partial.coverage?.tone, "warning");
+    assert.match(partial.verdict.sentence, /could not be checked|part of the picture/i);
+    const unknown = buildOverviewModel({ ledger: { ...ledger, coverageStatus: undefined, coverageNote: null }, timezone: "Europe/Dublin" });
+    assert.doesNotMatch(unknown.verdict.sentence, /On track|Nothing is urgent/i);
+    assert.match(unknown.verdict.sentence, /coverage.*(?:unknown|not.*established)/i);
+  }
 });
