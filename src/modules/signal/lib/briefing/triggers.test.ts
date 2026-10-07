@@ -608,14 +608,14 @@ describe("reasons carry evidence, not restatement", () => {
     ]);
   });
 
-  test("overload names the threshold and how far the work has got", () => {
+  test("overload names the threshold and saved stage counts", () => {
     const flight = Array.from({ length: 7 }, (_, i) =>
       makeTask({ id: `t${i}`, lane: i < 2 ? "review" : "in-flight" }),
     );
     const [fired] = detectOverload(flight);
     assert.deepEqual(fired.reasons, [
-      "Signal flags anything over five open at once.",
-      "Two of them are already in review.",
+      "Signal flags more than five tasks saved in-flight or in review.",
+      "Five are saved in-flight; two are saved in review.",
     ]);
   });
 

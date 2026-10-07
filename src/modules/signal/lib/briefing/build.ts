@@ -305,7 +305,7 @@ function headline(t: Triggered): string {
   return title.length ? title[0].toUpperCase() + title.slice(1) : title;
 }
 
-function focusDue(t: Triggered, now: number, timezone: string): string {
+function focusDue(t: Triggered, now: number, timezone: string): string | null {
   if (t.trigger === "blocking-due-work" || t.trigger === "prerequisites-complete" || t.trigger === "prerequisites-unverified") {
     // Never borrow a dependent's deadline for its blocker. The completed-
     // prerequisite window can cross a calendar week, so name its own date.
@@ -321,7 +321,9 @@ function focusDue(t: Triggered, now: number, timezone: string): string {
     if (daysOut < 5) return `by ${deadlineWeekday(deadline, timezone)}`;
     return "this week";
   }
-  if (t.trigger === "overload") return "today";
+  // Workload has no own saved deadline; generating the observation today
+  // cannot supply one, even when its contributing tasks have dates.
+  if (t.trigger === "overload") return null;
   if (t.trigger === "crowded-week") return "this week";
   if (t.trigger === "blocked-too-long") return "this week";
   return "this week";

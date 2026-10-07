@@ -78,8 +78,11 @@ test("saved title and comment occurrences select newest deterministically; metad
   assert.equal(result.candidates.length, 1);
   assert.equal(result.candidates[0]?.detailOverride, "Comment added on 2 January 2020 at 12:00:00 (Europe/Dublin).");
   assert.deepEqual(read([metadata, edited]), result);
+  assert.ok(result.coverageNotes.some(note => note === "Title edited for “Inspect the venue” on 1 January 2020 at 12:00:00 (Europe/Dublin); this does not establish meaningful work progress."));
   assert.ok(result.coverageNotes.some(note => note.includes("Tags edited") && note.includes("13:00:00 (Europe/Dublin)") && note.includes("does not establish progress")));
-  assert.equal(read([{ ...edited, latestValidatedComment: undefined }]).candidates[0]?.detailOverride, "Title edited on 1 January 2020 at 12:00:00 (Europe/Dublin).");
+  const titleOnly = read([{ ...edited, latestValidatedComment: undefined }]);
+  assert.deepEqual(titleOnly.candidates, []);
+  assert.ok(titleOnly.coverageNotes.some(note => note.includes("Title edited for “Inspect the venue” on 1 January 2020 at 12:00:00 (Europe/Dublin)")));
 });
 
 test("future, pre-epoch and malformed saved occurrences cannot surface", () => {

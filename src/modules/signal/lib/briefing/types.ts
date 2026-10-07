@@ -102,7 +102,7 @@ export type FocusItem = {
   id: string;
   observationId?: string;
   text: string;
-  due: string; // own saved-date phrase or an explicit no-confirmed-date state
+  due: string | null; // null for workload without an own deadline; otherwise a saved-date phrase or explicit no-confirmed-date state
   trigger: TriggerKind;
 };
 

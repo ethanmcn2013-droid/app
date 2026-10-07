@@ -45,17 +45,17 @@ export function contextObservations(signals: TaskSignal[], now: number, timezone
       if (!group) { group = []; groups.set(task.workspaceId, group); }
       group.push(task);
     } else digest([task], task.sourceLabel);
-    const events = [
-      task.latestValidatedTitleEdit?.kind === "update" && task.latestValidatedTitleEdit.field === "title"
-        ? { at: validTime(task.latestValidatedTitleEdit.at), label: "Title edited" } : null,
-      task.latestValidatedComment?.kind === "commentAdd"
-        ? { at: validTime(task.latestValidatedComment.at), label: "Comment added" } : null,
-    ].filter((event): event is { at: number; label: string } => event !== null && event.at !== null)
-      .sort((a, b) => b.at - a.at || a.label.localeCompare(b.label));
-    if (events[0]) {
-      const detail = `${events[0].label} on ${occurrence(events[0].at)}.`;
+    const titleEdit = task.latestValidatedTitleEdit?.kind === "update" && task.latestValidatedTitleEdit.field === "title"
+      ? validTime(task.latestValidatedTitleEdit.at) : null;
+    if (titleEdit !== null && !dismissed(task, "recorded-activity")) {
+      notes.add(`Title edited for “${task.title}” on ${occurrence(titleEdit)}; this does not establish meaningful work progress.`);
+    }
+    const commentAt = task.latestValidatedComment?.kind === "commentAdd"
+      ? validTime(task.latestValidatedComment.at) : null;
+    if (commentAt !== null) {
       candidates.push({ task, trigger: "recorded-activity", severity: 0, representedTaskIds: [task.id],
-        detailOverride: detail, reasons: ["A saved activity record establishes this occurrence; it does not establish progress."] });
+        detailOverride: `Comment added on ${occurrence(commentAt)}.`,
+        reasons: ["A saved activity record establishes this occurrence; it does not establish progress."] });
     }
     const isOpen = task.stage ? !task.stage.complete : task.lane !== "shipped";
     if (task.deadline === null && isOpen) notes.add(`“${task.title}” has no saved date.`);

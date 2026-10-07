@@ -69,14 +69,12 @@ const JUST_SHIPPED: Phrasing[] = [
   () => "Moved to shipped since this time yesterday.",
 ];
 
-// The headline already carries the count, so the detail interprets
-// rather than repeats. The old rotations said "in flight" twice in one
-// line, borrowed clinical register ("cognitive load is high"), and
-// lower-cased a synthetic title for no gain.
+// Saved stages establish the current workload, not observed start,
+// progress, narrowing, or what will happen next.
 const OVERLOAD: Phrasing[] = [
-  () => "That is a lot to hold open at the same time.",
-  () => "Everything is started and nothing is narrowed.",
-  () => "Enough at once that some of it will sit.",
+  () => "These tasks are saved in-flight or in review.",
+  () => "The saved stages are in-flight or review.",
+  () => "This read shows tasks saved in-flight or in review.",
 ];
 
 const CROWDED_WEEK: Phrasing[] = [

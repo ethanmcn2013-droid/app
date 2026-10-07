@@ -326,7 +326,7 @@ export function detectPrerequisitesUnverified(signals: TaskSignal[], now: number
   });
 }
 
-/** Overload: > 5 in-flight tasks for the user. The triggered
+/** Overload: > 5 tasks saved in-flight or in review in this read. The triggered
  *  signal isn't a task, it's the situation itself. We return a
  *  pseudo-task representing the overload state. */
 export function detectOverload(signals: TaskSignal[]): Triggered[] {
@@ -355,11 +355,10 @@ export function detectOverload(signals: TaskSignal[]): Triggered[] {
       task: synthetic,
       trigger: "overload",
       representedTaskIds: inFlight.map(task => task.id).sort(),
+      detailOverride: `${capitalise(numberWord(inFlight.length))} tasks in this read have saved in-flight or review status.`,
       reasons: [
-        "Signal flags anything over five open at once.",
-        inReview > 0
-          ? `${capitalise(numberWord(inReview))} of them ${inReview === 1 ? "is" : "are"} already in review.`
-          : "None of them have reached review yet.",
+        "Signal flags more than five tasks saved in-flight or in review.",
+        `${capitalise(numberWord(inFlight.length - inReview))} are saved in-flight; ${numberWord(inReview)} are saved in review.`,
       ],
       severity: 50 + (inFlight.length - 5) * 4,
     },

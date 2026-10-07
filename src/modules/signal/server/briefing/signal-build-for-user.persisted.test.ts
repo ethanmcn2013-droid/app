@@ -224,23 +224,27 @@ test("persisted deadline and prerequisite observations keep separate full meanin
   assert.deepEqual(await hashes(), before);
 });
 
-test("saved title edit reaches a dated observation without claiming progress or complete history", async () => {
-  await task("catalogue", { lane: "doing", assignees: ["synthetic-owner", "synthetic-second-owner"] });
-  await fixture.client.execute("UPDATE tasks SET due_at=NULL WHERE id='catalogue'");
+test("saved title edit on completed work stays dated context without consuming Home attention", async () => {
+  await task("catalogue", { lane: "done", completed: NOW - 2 * 3_600_000, assignees: ["synthetic-owner", "synthetic-second-owner"] });
+  await task("deadline-task", { lane: "doing", updated: NOW - 1_000 });
+  await fixture.client.execute("UPDATE tasks SET title='Catalogue books',due_at=NULL WHERE id='catalogue'");
+  await fixture.client.execute({ sql: "UPDATE tasks SET due_at=? WHERE id='deadline-task'", args: [(NOW + 3_600_000) / 1000] });
   await fixture.client.execute({ sql: "INSERT INTO activities(id,workspace_id,task_id,user_id,kind,payload,created_at) VALUES ('recorded-title-edit',?,'catalogue','synthetic-owner','update',?,?)", args: [WORKSPACE, JSON.stringify({ kind: "update", field: "title" }), (NOW - 1_000) / 1000] });
   const before = await hashes(), result = await build(), view = await home();
-  assert.equal(result.signals[0]?.hasRecordedTitleEdit, true);
-  assert.deepEqual(result.signals[0]?.assignees, [{ id: "synthetic-owner" }, { id: "synthetic-second-owner" }]);
-  assert.deepEqual(result.signals[0]?.latestValidatedTitleEdit, {
+  const catalogue = result.signals.find(signal => signal.id === "catalogue");
+  assert.equal(catalogue?.hasRecordedTitleEdit, true);
+  assert.deepEqual(catalogue?.assignees, [{ id: "synthetic-owner" }, { id: "synthetic-second-owner" }]);
+  assert.deepEqual(catalogue?.latestValidatedTitleEdit, {
     at: new Date(NOW - 1_000).toISOString(), kind: "update", field: "title",
   });
-  assert.equal(result.signals[0]?.idleDays, null);
+  assert.equal(catalogue?.idleDays, null);
   assert.equal(view.signalRows.length, 1);
-  assert.equal(view.signalRows[0]?.trigger, "recorded-activity");
-  assert.match(view.signalRows[0]?.why ?? "", /title edit/i);
+  assert.equal(view.signalRows[0]?.id, "deadline-task");
+  assert.equal(view.signalRows[0]?.trigger, "due-soon");
   const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
   assert.equal(ledger.entries.length, 1);
-  assert.equal(ledger.entries[0]?.state, "recorded");
+  assert.equal(ledger.entries[0]?.text, "Deadline-task");
+  assert.ok(ledger.coverageNote?.includes("Title edited for “Catalogue books” on 27 September 2026 at 11:59:59 (UTC)"));
   assert.match(ledger.coverageNote ?? "", /recorded title edit does not establish meaningful work progress/i);
   assert.match(ledger.coverageNote ?? "", /history is incomplete/i);
   const overview = buildOverviewModel({ ledger, timezone: "UTC", legacy: { briefing: result.briefing, signals: result.signals, authorizedScope: result.authorizedScope } });
@@ -594,7 +598,7 @@ test("durable completion reaches dated full-read context and reopening removes r
   assert.match(reopenedLedger.coverageNote ?? "", /history is incomplete/i);
   assert.deepEqual(await hashes(), reopenedBefore);
 });
-test("round8 validated title and note occurrences survive partial source history", async () => {
+test("validated title stays dated context while comment occurrence remains actionable", async () => {
   await task("saved-title", { lane: "todo" });
   await task("saved-note", { lane: "todo" });
   await fixture.client.execute("UPDATE tasks SET due_at=NULL");
@@ -605,9 +609,12 @@ test("round8 validated title and note occurrences survive partial source history
     await fixture.client.execute({ sql: "INSERT INTO activities(id,workspace_id,task_id,user_id,kind,payload,created_at) VALUES (?,?,?,'synthetic-owner',?,?,?)",
       args: [id+"-event", WORKSPACE, id, kind, JSON.stringify(payload), (NOW - 1_800_000) / 1000] });
   }
-  const view = await home();
-  assert.ok(view.signalRows.some(row => row.id === "saved-title" && /title/i.test(row.why)));
+  const result = await build(), view = await home();
+  assert.ok(view.signalRows.every(row => row.id !== "saved-title"));
   assert.ok(view.signalRows.some(row => row.id === "saved-note" && /note|comment/i.test(row.why)));
+  const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Test read", allowedAppOrigin: "https://app.signalstudio.ie" });
+  assert.ok(ledger.coverageNote?.includes("Title edited for “saved-title” on 27 September 2026 at 11:30:00 (UTC)"));
+  assert.match(ledger.coverageNote ?? "", /history is incomplete/i);
 });
 test("round8 complete project open-work summary counts unknown stages without personal overload", async () => {
   await config(JSON.stringify({ custom: [{ key: "quality-gate", name: "Quality gate" }], doneKeys: ["done"] }));
