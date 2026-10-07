@@ -94,7 +94,7 @@ test("explicit complete empty inventory makes partial activity capability inappl
   assert.equal(raw.coverage?.activity, "partial");
   const result = await build();
   assert.equal(result.briefing.coverageStatus, "complete");
-  assert.equal(ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Test read" }).emptyState?.kind, "healthy");
+  assert.equal(ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Test read", allowedAppOrigin: "https://app.signalstudio.ie" }).emptyState?.kind, "healthy");
   assert.deepEqual(await hashes(), before);
 });
 
