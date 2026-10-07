@@ -1072,8 +1072,8 @@ test("round8 full prerequisite relation preserves a separate consequential date 
   const b = await buildBriefing(source([delivery, ...checks, separate]), CTX, NOW);
   const relationships = b.needsAttention.filter(row => row.trigger === "blocking-due-work");
   assert.equal(relationships.length, 1);
-  assert.deepEqual(relationships[0]!.evidenceTaskIds, ["access", "deliver"]);
-  assert.ok(relationships[0]!.detail.includes("access"));
+  assert.deepEqual(relationships[0]!.evidenceTaskIds, ["access", "copy", "deliver", "safety"]);
+  for (const name of ["copy", "safety", "access"]) assert.ok(relationships[0]!.detail.includes(name));
   for (const name of ["copy", "safety", "access"]) assert.ok(b.activityCoverageNote!.includes(name));
   assert.ok(b.needsAttention.some(row => row.id === separate.id && row.trigger === "due-soon"));
   assert.equal(b.needsAttention.length + b.quietRisks.length + b.movingWell.length, 3);
@@ -1088,11 +1088,73 @@ test("round8 mixed prerequisite states retain completed evidence and anonymous u
     ] });
   const b = await buildBriefing(source([dependent, open, done]), CTX, NOW);
   const row = b.needsAttention.find(item => item.trigger === "blocking-due-work")!;
-  assert.deepEqual(row.evidenceTaskIds, ["packet", "review-copy"]);
+  assert.deepEqual(row.evidenceTaskIds, ["legal-proof", "packet", "review-copy"]);
   assert.match(row.detail, /Review copy/);
-  assert.doesNotMatch(row.detail, /Legal proof|unverified/);
+  assert.match(row.detail, /verified complete: “Legal proof”/);
+  assert.match(row.detail, /unknown|unverified/);
+  assert.doesNotMatch(row.detail, /are complete|no longer held up/);
   assert.match(b.activityCoverageNote!, /Legal proof.*complete/);
   assert.match(b.activityCoverageNote!, /unverified|unknown|not fully/i);
+});
+test("mixed completed and open dependency remains one full relation separate from its deadline", async () => {
+  const open = task({ id: "inspect-access", title: "Inspect access", workspaceId: "display", idleDays: null });
+  const done = task({ id: "check-layout", title: "Check layout", workspaceId: "display", lane: "shipped", idleDays: null });
+  const dependent = task({ id: "open-display", title: "Open the display", workspaceId: "display", dueAt: NOW + DAY,
+    idleDays: 8, blockedBy: [open.id, open.id], dependencyCoverage: "complete", prerequisiteEvidence: [
+      { id: open.id, workspaceId: "display", lane: "doing", boardColumnKey: null, complete: false },
+      { id: done.id, workspaceId: "display", lane: "done", boardColumnKey: null, complete: true },
+    ] });
+  const brief = await buildBriefing(source([dependent, open, done]), CTX, NOW);
+  const allRows = [...brief.needsAttention, ...brief.quietRisks, ...brief.movingWell];
+  const relations = allRows.filter(row => ["blocking-due-work", "blocked-too-long"].includes(row.trigger));
+  assert.equal(relations.length, 1, "urgent and long-wait presentations share the complete dependency source set");
+  const relation = relations[0]!;
+  assert.equal(relation.id, open.id);
+  assert.equal(relation.trigger, "blocking-due-work");
+  assert.deepEqual(relation.evidenceTaskIds, [done.id, open.id, dependent.id].sort());
+  assert.match(relation.detail, /Open the display.*due tomorrow/);
+  assert.match(relation.detail, /still open: “Inspect access”/);
+  assert.match(relation.detail, /verified complete: “Check layout”/);
+  assert.doesNotMatch(relation.detail, /are complete|no longer held up|ready|started/);
+  const deadline = allRows.find(row => row.id === dependent.id && row.trigger === "due-soon")!;
+  assert.ok(deadline);
+  assert.deepEqual(deadline.evidenceTaskIds, [dependent.id]);
+  assert.notEqual(deadline.observationId, relation.observationId);
+  assert.doesNotMatch(deadline.detail, /Inspect access|Check layout|prerequisite/);
+  assert.equal(allRows.length, 2);
+  const dismissed = await buildBriefing(source([dependent, open, done]), CTX, NOW,
+    { suppressed: new Set([`blocking-due-work:${open.id}`, `blocked-too-long:${dependent.id}`]) });
+  assert.deepEqual(dismissed.needsAttention.map(row => [row.id, row.trigger]), [[dependent.id, "due-soon"]]);
+});
+test("dismissed full dependency cannot resurface under another open prerequisite anchor", async () => {
+  const first = task({ id: "a-access", workspaceId: "room", idleDays: null });
+  const second = task({ id: "b-access", workspaceId: "room", idleDays: null });
+  const dependent = task({ id: "open-room", workspaceId: "room", dueAt: NOW + DAY, idleDays: null,
+    blockedBy: [second.id, first.id], dependencyCoverage: "complete" });
+  const signals = [dependent, second, first];
+  const original = await buildBriefing(source(signals), CTX, NOW);
+  const relation = original.needsAttention.find(row => row.trigger === "blocking-due-work")!;
+  assert.equal(relation.id, first.id, "existing priority/id ordering chooses the representative");
+  assert.deepEqual(relation.evidenceTaskIds, [first.id, second.id, dependent.id].sort());
+  assert.equal(original.needsAttention.length, 2, "one deadline and one complete dependency");
+  const reordered = await buildBriefing(source([...signals].reverse()), CTX, NOW);
+  assert.equal(reordered.needsAttention.find(row => row.trigger === "blocking-due-work")!.id, relation.id);
+  for (const key of [`blocking-due-work:${relation.id}`, `*:${relation.id}`]) {
+    const dismissed = await buildBriefing(source(signals), CTX, NOW, { suppressed: new Set([key]) });
+    const rows = [...dismissed.needsAttention, ...dismissed.quietRisks, ...dismissed.movingWell];
+    assert.ok(rows.every(row => row.observationId !== relation.observationId), "same full relation stays dismissed across every blocker anchor");
+    assert.deepEqual(rows.map(row => [row.id, row.trigger]), [[dependent.id, "due-soon"]]);
+  }
+  const otherBlocker = task({ id: "other-check", workspaceId: "room", idleDays: null });
+  const otherDependent = task({ id: "other-deadline", workspaceId: "room", dueAt: NOW + DAY, idleDays: null,
+    blockedBy: [otherBlocker.id], dependencyCoverage: "complete" });
+  const withOther = await buildBriefing(source([...signals, otherDependent, otherBlocker]), CTX, NOW,
+    { suppressed: new Set([`blocking-due-work:${relation.id}`]) });
+  assert.ok(withOther.needsAttention.some(row => row.id === dependent.id && row.trigger === "due-soon"));
+  assert.ok(withOther.needsAttention.some(row => row.id === otherDependent.id && row.trigger === "due-soon"));
+  assert.ok(withOther.needsAttention.some(row => row.id === otherBlocker.id && row.trigger === "blocking-due-work"));
+  assert.ok(withOther.needsAttention.every(row => row.observationId !== relation.observationId));
+  assert.equal(withOther.needsAttention.length, 3);
 });
 test("round8 complete prerequisite observation names visible set and hides terminal evidence identities", async () => {
   const done = task({ id: "safety-cert", title: "Safety certificate", workspaceId: "show", lane: "shipped", idleDays: null });

@@ -76,7 +76,7 @@ export async function buildBriefing(
   const overload = detectOverload(signals).filter(notDismissed);
   const crowded = detectCrowdedWeek(signals, now, timezone).filter(notDismissed);
   const blocked = detectBlockedTooLong(signals).filter(notDismissed);
-  const blockingDueWork = detectBlockingDueWork(signals, now, timezone).filter(notDismissed);
+  const blockingDueWork = detectBlockingDueWork(signals, now, timezone);
   const prerequisitesComplete = detectPrerequisitesComplete(signals, now, timezone).filter(notDismissed);
 
   // Build a {taskId → title} map once so blocked-too-long prose can
@@ -94,7 +94,18 @@ export async function buildBriefing(
     }),
   ]));
 
-  const relationCandidates = enrichRelationshipCandidates([...blockingDueWork, ...blocked, ...prerequisitesComplete], signals, now, timezone);
+  const enrichedRelations = enrichRelationshipCandidates([...blockingDueWork, ...blocked, ...prerequisitesComplete], signals, now, timezone);
+  // Several open anchors can describe the same complete dependency. Choose
+  // its existing ranked representative before applying the legacy anchor key,
+  // so dismissing that row cannot reveal it again under another open anchor.
+  const blockingByObservation = new Map<string, Triggered>();
+  for (const candidate of enrichedRelations) {
+    if (candidate.trigger !== "blocking-due-work") continue;
+    const key = observationId(candidate), current = blockingByObservation.get(key);
+    if (!current || compareCandidates(candidate, current) < 0) blockingByObservation.set(key, candidate);
+  }
+  const relationCandidates = enrichedRelations.filter(candidate => candidate.trigger !== "blocking-due-work" ||
+    blockingByObservation.get(observationId(candidate)) === candidate && notDismissed(candidate));
   const context = contextObservations(signals, now, timezone, { canonicalUserId: ctx.canonicalUserId, suppressed });
   const contextCandidates = context.candidates.filter(notDismissed);
   const rotationIndex = dayRotation(userId, now);

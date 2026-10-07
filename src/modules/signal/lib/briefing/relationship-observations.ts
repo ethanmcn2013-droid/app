@@ -76,22 +76,28 @@ export function enrichRelationshipCandidates(candidates: Triggered[], signals: T
       ? dependentsByWorkspace.get(candidate.task.workspaceId ?? "")?.get(candidate.relatedTaskId ?? "")
       : candidate.task;
     if (!dependent?.workspaceId) return candidate;
+    const facts = factsFor(dependent);
+    const enriched = { ...candidate, representedTaskIds: facts.representedTaskIds };
+    let fullDetail = facts.detail;
+    let summary = facts.summary;
     if (candidate.trigger === "blocking-due-work") {
-      // This row claims one inspected directed edge, not every listed state.
-      // Completed siblings and unknown references remain in whole-list context.
+      // Keep the chosen open prerequisite as the navigation anchor, while the
+      // explanation represents every inspected state in its dependent's list.
       const days = deadlineDayDifference(signalDeadline(dependent), now, timezone);
       const due = days !== null && deadlineIsOverdue(signalDeadline(dependent), now, timezone) ? "past its saved deadline"
         : days === 0 ? "due today" : days === 1 ? "due tomorrow" : days === 2 ? "due in two days" : "open";
-      const detail = `“${dependent.title}” is ${due}. Listed prerequisite still open: “${candidate.task.title}”.`;
-      return { ...candidate, representedTaskIds: [dependent.id, candidate.task.id].sort(),
-        detailOverride: detail.length <= 520 ? detail : `The dependent task is ${due}. This inspected listed prerequisite remains open.`,
-        reasons: detail.length <= 520 ? candidate.reasons : [...candidate.reasons,
-          ...[`Dependent: “${dependent.title}”.`, `Open prerequisite: “${candidate.task.title}”.`].filter(reason => reason.length <= 280)].slice(0, 6) };
+      const date = `“${dependent.title}” is ${due}.`;
+      if (fullDetail === undefined) {
+        const detail = `${date} Listed prerequisite still open: “${candidate.task.title}”.`;
+        return { ...enriched,
+          detailOverride: detail.length <= 520 ? detail : `The dependent task is ${due}. This inspected listed prerequisite remains open.`,
+          reasons: detail.length <= 520 ? candidate.reasons : [...candidate.reasons,
+            ...[`Dependent: “${dependent.title}”.`, `Open prerequisite: “${candidate.task.title}”.`].filter(reason => reason.length <= 280)].slice(0, 6) };
+      }
+      fullDetail = `${date} ${fullDetail}`;
+      summary = `The dependent task is ${due}. ${summary}`;
     }
-    const facts = factsFor(dependent);
-    const enriched = { ...candidate, representedTaskIds: facts.representedTaskIds };
-    if (facts.detail === undefined) return enriched;
-    const fullDetail = facts.detail;
+    if (fullDetail === undefined) return enriched;
     if (fullDetail.length <= 520) return { ...enriched, detailOverride: fullDetail };
     // Keep certainty ahead of names at the receiving boundary. Evidence names
     // enter only as complete facts, never as a clipped title or partial word.
@@ -105,6 +111,6 @@ export function enrichRelationshipCandidates(candidates: Triggered[], signals: T
     }
     const remaining = (facts.totalFacts ?? 0) - named;
     if (remaining > 0) reasons.push(`${remaining} remaining prerequisite facts are represented in the state counts; their names or states are not individually shown here.`);
-    return { ...enriched, reasons, detailOverride: facts.summary };
+    return { ...enriched, reasons, detailOverride: summary };
   });
 }

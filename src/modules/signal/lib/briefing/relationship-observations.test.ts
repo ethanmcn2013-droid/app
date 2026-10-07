@@ -11,15 +11,71 @@ const evidence = (id: string, complete = false, workspaceId = "w") => ({ id, wor
 const candidate = (dependent: TaskSignal, trigger: Triggered["trigger"] = "blocked-too-long"): Triggered => ({ task: dependent, trigger, severity: 72, reasons: ["Existing reason"] });
 const enrich = (row: Triggered, signals: TaskSignal[]) => enrichRelationshipCandidates([row], signals, now, "UTC")[0]!;
 
-test("prospective open-edge claim and identity remain the chosen pair", () => {
+test("open-edge explanation includes completed siblings and anonymous uncertainty", () => {
   const open = task("open");
   const done = task("done", { lane: "shipped" });
   const dependent = task("dependent", { blockedBy: [open.id, done.id, "unavailable"], dependencyCoverage: "partial",
     prerequisiteEvidence: [evidence(open.id), evidence(done.id, true)] });
   const result = enrich({ ...candidate(open, "blocking-due-work"), relatedTaskId: dependent.id }, [dependent, open, done]);
-  assert.deepEqual(result.representedTaskIds, [dependent.id, open.id].sort());
+  assert.deepEqual(result.representedTaskIds, [dependent.id, open.id, done.id].sort());
   assert.match(result.detailOverride!, /Title dependent.*Title open/);
-  assert.doesNotMatch(result.detailOverride!, /Title done|unavailable|are complete|all prerequisites/);
+  assert.match(result.detailOverride!, /verified complete: “Title done”/);
+  assert.match(result.detailOverride!, /state is unknown/);
+  assert.doesNotMatch(result.detailOverride!, /unavailable|are complete|all prerequisites/);
+});
+
+test("near-due mixed relation carries complete authorized membership without a readiness claim", () => {
+  const open = task("open");
+  const done = task("done", { lane: "shipped" });
+  const dependent = task("dependent", { blockedBy: [open.id], dependencyCoverage: "complete",
+    prerequisiteEvidence: [evidence(done.id, true), evidence(open.id)] });
+  const row = { ...candidate(open, "blocking-due-work"), relatedTaskId: dependent.id };
+  const result = enrich(row, [dependent, done, open]);
+  assert.equal(result.task, open);
+  assert.equal(result.relatedTaskId, dependent.id);
+  assert.equal(result.severity, row.severity);
+  assert.deepEqual(result.representedTaskIds, ["dependent", "done", "open"]);
+  assert.equal(result.detailOverride, "“Title dependent” is due tomorrow. Listed prerequisites still open: “Title open”. Listed prerequisites verified complete: “Title done”.");
+  assert.doesNotMatch(result.detailOverride!, /no longer held up|are complete|ready|started/);
+});
+
+test("near-due relation deduplicates inspected evidence and keeps foreign, missing and hidden names private", () => {
+  const open = task("open");
+  const dependent = task("dependent", { dependencyCoverage: "partial",
+    blockedBy: [open.id, open.id, "hidden-complete", "foreign-secret", "missing-secret", "dependent"],
+    prerequisiteEvidence: [evidence(open.id), evidence(open.id), evidence("hidden-complete", true), evidence("foreign-secret", true, "other")] });
+  const result = enrich({ ...candidate(open, "blocking-due-work"), relatedTaskId: dependent.id },
+    [dependent, open, task("foreign-secret", { title: "Private foreign title", workspaceId: "other" })]);
+  assert.deepEqual(result.representedTaskIds, ["dependent", "hidden-complete", "open"]);
+  assert.match(result.detailOverride!, /still open: “Title open”/);
+  assert.match(result.detailOverride!, /verified complete: 1 prerequisite outside this visible task list/);
+  assert.match(result.detailOverride!, /not confirmed clear.*state is unknown/);
+  assert.doesNotMatch(result.detailOverride!, /hidden-complete|foreign-secret|missing-secret|Private foreign title|are complete/);
+});
+
+test("long near-due relation retains full states and source set through ledger receiving limits", () => {
+  const open = Array.from({ length: 8 }, (_, index) => task(`open-${index}`, { title: `Open prerequisite ${index}: ${"lengthy visible task evidence ".repeat(8)}` }));
+  const done = task("done", { title: "Completed check", lane: "shipped" });
+  const dependent = task("dependent", { title: "Long dependent title ".repeat(30), dependencyCoverage: "partial",
+    blockedBy: [...open.map(item => item.id), "foreign-secret", "missing-secret"],
+    prerequisiteEvidence: [...open.map(item => evidence(item.id)), evidence(done.id, true), evidence("hidden-complete", true), evidence("foreign-secret", true, "other")] });
+  const row = enrich({ ...candidate(open[0]!, "blocking-due-work"), relatedTaskId: dependent.id }, [dependent, ...open, done]);
+  const ids = [dependent.id, ...open.map(item => item.id), done.id, "hidden-complete"].sort();
+  assert.deepEqual(row.representedTaskIds, ids);
+  const ledger = ledgerFromLegacyBriefing({ userId: "test", generatedAt: now, greetingHour: 12,
+    needsAttention: [{ id: open[0]!.id, text: open[0]!.title, detail: row.detailOverride!, trigger: row.trigger,
+      reasons: row.reasons, sourceLabel: "Tasks", workspaceId: "w", evidenceTaskIds: row.representedTaskIds }],
+    movingWell: [], quietRisks: [], suggestedFocus: [], isEmpty: false,
+    readCount: ids.length, triggeredCount: ids.length, readTaskIds: ids, triggeredTaskIds: ids },
+  { generatedAtLabel: "Today", allowedAppOrigin: "https://app.signalstudio.ie" });
+  const received = ledger.entries[0]!;
+  assert.match(received.detail!, /dependent task is due tomorrow.*8 prerequisites open.*2 prerequisites complete.*2 prerequisites unverified/);
+  assert.match(received.detail!, /not confirmed clear to move ahead/);
+  assert.ok(received.detail!.length <= 520);
+  assert.ok(received.reasons.length <= 6 && received.reasons.every(reason => reason.length <= 280));
+  assert.match(received.reasons.join(" "), /Complete prerequisite: “Completed check”/);
+  assert.equal(received.receipt.evidenceCount, ids.length);
+  assert.doesNotMatch(JSON.stringify(received), /foreign-secret|missing-secret|hidden-complete|no longer held up|are complete/);
 });
 
 test("round8receiving long mixed prerequisites retain complete and unknown certainty at the ledger boundary", () => {
@@ -89,7 +145,12 @@ test("blocking observation preserves its chosen anchor and singleton prose compa
   assert.equal(result.severity, row.severity);
   assert.equal(result.relatedTaskId, "d");
   assert.match(result.detailOverride!, /“Title d” is due tomorrow/);
+  assert.match(result.detailOverride!, /Title a.*Title b/);
+  assert.deepEqual(result.representedTaskIds, ["a", "b", "d"]);
   const single = task("s", { blockedBy: ["a"] });
+  const singleRelation = enrich({ ...candidate(blocker, "blocking-due-work"), relatedTaskId: single.id }, [single, blocker]);
+  assert.equal(singleRelation.detailOverride, "“Title s” is due tomorrow. Listed prerequisite still open: “Title a”.");
+  assert.deepEqual(singleRelation.representedTaskIds, ["a", "s"]);
   assert.equal(enrich(candidate(single), [single, blocker]).detailOverride, undefined);
   const unrelated = candidate(blocker, "due-soon");
   assert.equal(enrich(unrelated, [blocker]), unrelated);
