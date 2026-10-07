@@ -85,6 +85,62 @@ async function config(value: string) {
   await fixture.client.execute({ sql: "INSERT INTO meta(key,value,updated_at) VALUES (?,?,?)", args: [`board:${WORKSPACE}:columns`, value, NOW / 1000] });
 }
 
+test("explicit complete empty inventory makes partial activity capability inapplicable without changing the raw read", async () => {
+  const { dataSource } = await import("../../lib/data/source");
+  const before = await hashes();
+  const raw = await dataSource.read(WORKSPACE);
+  assert.deepEqual(raw.tasks, []);
+  assert.equal(raw.coverage?.tasks, "complete");
+  assert.equal(raw.coverage?.activity, "partial");
+  const result = await build();
+  assert.equal(result.briefing.coverageStatus, "complete");
+  assert.equal(ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Test read" }).emptyState?.kind, "healthy");
+  assert.deepEqual(await hashes(), before);
+});
+
+test("empty inventory exemption retains other partial dimensions and requires explicit task completeness", async () => {
+  const { dataSource } = await import("../../lib/data/source");
+  const original = dataSource.readMany;
+  assert.ok(original);
+  try {
+    for (const dimension of ["tasks", "dependencies", "dates", "priorities"] as const) {
+      dataSource.readMany = async function (ids) {
+        return (await original.call(this, ids)).map(work => ({ ...work, coverage: { ...work.coverage!, [dimension]: "partial" } }));
+      };
+      assert.equal((await build()).briefing.coverageStatus, "partial", dimension);
+    }
+    dataSource.readMany = async function (ids) {
+      return (await original.call(this, ids)).map(work => ({ ...work, coverage: { ...work.coverage!, tasks: undefined } }));
+    };
+    assert.equal((await build()).briefing.coverageStatus, "partial", "missing task coverage is not an explicit complete read");
+    dataSource.readMany = original;
+    await task("nonempty-history", { lane: "doing" });
+    assert.equal((await build()).briefing.coverageStatus, "partial", "nonempty inventory still needs activity history");
+  } finally { dataSource.readMany = original; }
+});
+
+test("mixed authorized scope does not let an empty workspace hide another workspace's partial history", async () => {
+  const period = "synthetic-empty-applicability-period", empty = "synthetic-empty-applicability-workspace";
+  const previous = process.env.SIGNAL_PERIOD_SIGNAL_ENABLED;
+  await fixture.client.execute({ sql: "INSERT INTO planning_periods(id,owner_user_id,name) VALUES (?,'synthetic-owner','Synthetic applicability')", args: [period] });
+  await fixture.client.execute({ sql: "INSERT INTO workspaces(id,slug,name,owner_user_id,planning_period_id) VALUES (?,?,?,'synthetic-owner',?)", args: [empty, empty, "Synthetic empty", period] });
+  await fixture.client.execute({ sql: "UPDATE workspaces SET planning_period_id=? WHERE id=?", args: [period, WORKSPACE] });
+  process.env.SIGNAL_PERIOD_SIGNAL_ENABLED = "true";
+  try {
+    await task("nonempty-in-period", { lane: "doing" });
+    const result = await orchestrator.buildBriefingForUser({ clerkId: ACTOR, cadence: "daily", recordReadState: false, scope: { kind: "planningPeriod", planningPeriodId: period } });
+    assert.equal(result.kind, "ok");
+    if (result.kind !== "ok") throw new Error("authorized period unexpectedly refused");
+    assert.equal(result.briefing.coverageStatus, "partial");
+    assert.deepEqual(result.signals.map(signal => signal.id), ["nonempty-in-period"]);
+  } finally {
+    await fixture.client.execute({ sql: "UPDATE workspaces SET planning_period_id=NULL WHERE id=?", args: [WORKSPACE] });
+    await fixture.client.execute({ sql: "DELETE FROM workspaces WHERE id=?", args: [empty] });
+    await fixture.client.execute({ sql: "DELETE FROM planning_periods WHERE id=?", args: [period] });
+    if (previous === undefined) delete process.env.SIGNAL_PERIOD_SIGNAL_ENABLED; else process.env.SIGNAL_PERIOD_SIGNAL_ENABLED = previous;
+  }
+});
+
 test("actual custom stage stays open in Home and ledger without start or review inference", async () => {
   await config(JSON.stringify({ custom: [{ key: "evidence-check", name: "Evidence check" }], doneKeys: ["done"] }));
   await task("inspect-materials", { lane: "review", column: "evidence-check" });
@@ -101,7 +157,8 @@ test("actual custom stage stays open in Home and ledger without start or review 
   const unknown = ledger.entries.find(entry => entry.text.toLowerCase() === custom.title.toLowerCase())!;
   assert.ok(unknown.reasons.some(reason => /Still open in “Evidence check”/.test(reason)));
   assert.ok(unknown.reasons.every(reason => !/^Started|^Not started|^Sitting in review/.test(reason)));
-  assert.ok(ledger.entries.find(entry => entry.text === "Known-doing")?.reasons.some(reason => /^Started/.test(reason)));
+  assert.ok(ledger.entries.find(entry => entry.text === "Known-doing")?.reasons.some(reason => reason === `Saved stage: “${result.signals.find(signal => signal.id === "known-doing")!.stage!.label}”.`));
+  assert.ok(ledger.entries.find(entry => entry.text === "Known-doing")?.reasons.every(reason => !/^Started|^Not started|^Sitting in review/.test(reason)), "a saved stage does not establish prior start history");
 });
 
 test("actual inspected terminal prerequisite counts once while separate deadline/readiness rows keep private ids internal", async () => {

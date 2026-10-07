@@ -55,6 +55,46 @@ test("prospective prerequisite uncertainty is task-bound and co-locates incomple
   assert.doesNotMatch(note, /restricted|is blocked|are complete/);
 });
 
+test("readiness limitation uses only the open dependent's own partial dependency read", () => {
+  const dependent = task({ id: "dependent", title: "Prepare the room", dependencyCoverage: "partial", blockedBy: ["unavailable"] });
+  const result = read([dependent]);
+  assert.ok(result.coverageNotes.includes("Readiness for “Prepare the room” could not be fully verified from its listed prerequisites."));
+  assert.ok(result.coverageNotes.some(note => note.startsWith("Inspected listed prerequisite state for “Prepare the room”")), "the original complete relation note remains");
+  assert.deepEqual(result.candidates, []);
+  for (const dependencyCoverage of ["complete", undefined] as const) {
+    assert.ok(!read([{ ...dependent, dependencyCoverage }]).coverageNotes.some(note => note.startsWith("Readiness for")));
+  }
+  for (const dependencyCoverage of ["unknown", "unavailable", null]) {
+    assert.ok(!read([{ ...dependent, dependencyCoverage: dependencyCoverage as TaskSignal["dependencyCoverage"] }]).coverageNotes.some(note => note.startsWith("Readiness for")), "only the explicitly captured partial value is sufficient");
+  }
+  const sibling = task({ id: "sibling", title: "Other work", dependencyCoverage: "partial" });
+  const notes = read([{ ...dependent, dependencyCoverage: "complete" }, sibling]).coverageNotes;
+  assert.ok(!notes.some(note => note.startsWith("Readiness for “Prepare the room”")));
+  assert.ok(notes.some(note => note.startsWith("Readiness for “Other work”")));
+  assert.ok(!read([{ ...dependent, stage: { key: "done", label: "Done", phase: "shipped", complete: true } }]).coverageNotes.some(note => note.startsWith("Readiness for")));
+});
+
+test("readiness limitation retains reason/wildcard dismissal and never names foreign endpoints", () => {
+  const dependent = task({ dependencyCoverage: "partial", blockedBy: ["private-endpoint"] });
+  const foreign = task({ id: "private-endpoint", title: "Private work", workspaceId: "foreign", lane: "shipped" });
+  const result = read([dependent, foreign]);
+  const ownNote = result.coverageNotes.find(note => note.startsWith("Readiness for"))!;
+  assert.equal(ownNote, "Readiness for “Inspect the venue” could not be fully verified from its listed prerequisites.");
+  assert.doesNotMatch(ownNote, /private-endpoint|Private work|foreign|complete|all|unknown/);
+  for (const key of ["prerequisites-unverified:visible", "*:visible"]) {
+    assert.ok(!contextObservations([dependent], NOW, "UTC", { suppressed: new Set([key]) }).coverageNotes.some(note => note.startsWith("Readiness for")));
+  }
+  assert.ok(contextObservations([dependent], NOW, "UTC", { suppressed: new Set(["idle:visible"]) }).coverageNotes.some(note => note.startsWith("Readiness for")));
+});
+
+test("identical readiness text remains deduplicated without an invented public identity", () => {
+  const first = task({ id: "first", dependencyCoverage: "partial" });
+  const second = task({ id: "second", dependencyCoverage: "partial" });
+  const result = read([second, first, first]);
+  assert.equal(result.coverageNotes.filter(note => note.startsWith("Readiness for")).length, 1);
+  assert.deepEqual(result, read([first, second]));
+});
+
 test("prospective neutral inventory names complete members and canonical assignee count", () => {
   const signals = [task({ taskCoverage: "complete", assignees: [{ id: "canonical-reader" }] }),
     task({ id: "second", title: "Other work", taskCoverage: "complete", assignees: [] })];

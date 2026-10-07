@@ -93,6 +93,9 @@ export function contextObservations(signals: TaskSignal[], now: number, timezone
       const unknown = listed.filter(id => !records.has(id)).length;
       const partial = task.dependencyCoverage === "partial" || unknown > 0;
       if (partial && dismissed(task, "prerequisites-unverified")) continue;
+      if (task.dependencyCoverage === "partial") {
+        notes.add(`Readiness for “${task.title}” could not be fully verified from its listed prerequisites.`);
+      }
       const open = [...records].filter(([, complete]) => !complete);
       const complete = [...records].filter(([, complete]) => complete);
       const named = [...records].flatMap(([id, done]) => {
