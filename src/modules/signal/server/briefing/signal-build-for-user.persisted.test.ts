@@ -318,7 +318,7 @@ test("all listed completed prerequisites preserve readiness meaning through date
   assert.doesNotMatch(reopened.signalRows.find(item => item.id === "publish-guide")?.why ?? "", /prerequisites are complete|move ahead|no longer held up/);
 });
 
-test("missing and foreign prerequisite records produce task-specific uncertainty in Home and opaque Briefing", async () => {
+test("missing and foreign prerequisites preserve Home deadline pressure and task-specific opaque Briefing context", async () => {
   await task("hidden-complete", { completed: NOW - DAY, archived: NOW - DAY });
   await fixture.client.execute("INSERT INTO tasks(id,workspace_id,seq,title,lane,priority,assignees,tags,blocked_by) VALUES ('foreign-secret','synthetic-foreign-project',1,'Private foreign title','done','p2','[]','[]','[]')");
   for (const unknown of ["missing-secret", "foreign-secret"]) {
@@ -328,13 +328,20 @@ test("missing and foreign prerequisite records produce task-specific uncertainty
     const row = view.signalRows.find(item => item.id === "publish-guide");
     assert.equal(row?.trigger, "due-soon");
     assert.doesNotMatch(row?.why ?? "", /prerequisites/);
-    const uncertainty = view.signalRows.find(item => item.trigger === "prerequisites-unverified")!;
-    assert.match(uncertainty.why, /prerequisites could not be fully verified/i);
-    assert.match(uncertainty.why, /not confirmed clear to move ahead/i);
+    assert.ok(view.signalRows.every(item => item.trigger !== "prerequisites-unverified"), "unknown state is context, not a confirmed risk");
     assert.equal(view.allClear, null);
     const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
     assert.equal(ledger.entries[0]?.detail, row?.why);
-    assert.equal(ledger.entries[1]?.detail, uncertainty.why);
+    assert.equal(ledger.entries.length, 1, "the genuine saved deadline remains selected");
+    assert.match(ledger.entries[0]!.id, /^signal-/);
+    const context = ledger.coverageNote ?? "";
+    assert.match(context, /“publish-guide”[^]*prerequisites could not be fully verified/i);
+    assert.match(context, /state is unknown[^]*not confirmed clear to move ahead/i);
+    assert.match(context, /Activity history for this task is incomplete; earlier meaningful activity is not established/);
+    const overview = buildOverviewModel({ ledger, timezone: result.authorizedScope.timezone,
+      legacy: { briefing: result.briefing, signals: result.signals, authorizedScope: result.authorizedScope } });
+    assert.equal(overview.coverage?.note, context, "the actual full-read receiving model retains the complete context");
+    assert.equal(overview.attention.length, 1); assert.equal(overview.risks.length, 0);
     assert.equal(ledger.readCounts, null);
     assert.doesNotMatch(JSON.stringify(ledger), /missing-secret|foreign-secret|Private foreign title|hidden-complete|prerequisites are complete/);
     assert.deepEqual(await hashes(), before);
@@ -557,15 +564,35 @@ for (const fault of ["missing", "duplicate", "foreign"] as const) {
   });
 }
 
-test("round8 durable completion is an actual visible observation and reopening removes it", async () => {
+test("durable completion reaches dated full-read context and reopening removes recognition despite its saved timestamp", async () => {
   await task("finished-record", { completed: NOW - 20 * 3_600_000 });
+  const before = await hashes();
   const result = await build();
   const view = await home();
-  assert.ok(view.signalRows.some(row => row.id === "finished-record" && row.trigger === "just-shipped"));
+  assert.equal(result.signals[0]!.stage?.complete, true);
+  assert.equal(result.signals[0]!.movedToShippedAt, NOW - 20 * 3_600_000);
+  assert.deepEqual(view.signalRows, [], "recognition does not occupy attention selection");
+  assert.ok(!view.myTasks.some(row => row.id === "finished-record"));
   const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Test read", allowedAppOrigin: "https://app.signalstudio.ie" });
-  assert.ok(ledger.entries.some(row => row.text === "Finished-record"));
-  await fixture.client.execute("UPDATE tasks SET lane='todo',completed_at=NULL,due_at=NULL WHERE id='finished-record'");
-  assert.ok(!(await home()).signalRows.some(row => row.trigger === "just-shipped"));
+  assert.deepEqual(ledger.entries, []);
+  assert.match(ledger.coverageNote ?? "", /1 task has a saved completion in the past 24 hours[^]*“finished-record”[^]*26 September 2026 at 16:00:00 \(UTC\)[^]*2026-09-26T16:00:00.000Z/);
+  assert.match(ledger.coverageNote ?? "", /included in this read/);
+  assert.equal(ledger.readCounts, null, "partial source history still withholds public totals");
+  const overview = buildOverviewModel({ ledger, timezone: result.authorizedScope.timezone,
+    legacy: { briefing: result.briefing, signals: result.signals, authorizedScope: result.authorizedScope } });
+  assert.equal(overview.coverage?.note, ledger.coverageNote);
+  assert.equal(overview.attention.length + overview.risks.length + overview.activity.length, 0);
+  assert.deepEqual(await hashes(), before);
+  await fixture.client.execute("UPDATE tasks SET lane='todo',due_at=NULL WHERE id='finished-record'");
+  const reopenedBefore = await hashes(), reopened = await build(), reopenedHome = await home();
+  assert.equal(reopened.signals[0]!.stage?.complete, false);
+  assert.equal(reopened.signals[0]!.movedToShippedAt, null);
+  assert.ok(reopenedHome.myTasks.some(row => row.id === "finished-record"));
+  assert.ok(reopenedHome.signalRows.every(row => row.trigger !== "just-shipped"));
+  const reopenedLedger = ledgerFromLegacyBriefing(reopened.briefing, { generatedAtLabel: "Test read", allowedAppOrigin: "https://app.signalstudio.ie" });
+  assert.doesNotMatch(reopenedLedger.coverageNote ?? "", /saved completion in the past 24 hours|2026-09-26T16:00:00.000Z/);
+  assert.match(reopenedLedger.coverageNote ?? "", /history is incomplete/i);
+  assert.deepEqual(await hashes(), reopenedBefore);
 });
 test("round8 validated title and note occurrences survive partial source history", async () => {
   await task("saved-title", { lane: "todo" });
