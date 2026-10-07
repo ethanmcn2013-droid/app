@@ -11,6 +11,17 @@ const evidence = (id: string, complete = false, workspaceId = "w") => ({ id, wor
 const candidate = (dependent: TaskSignal, trigger: Triggered["trigger"] = "blocked-too-long"): Triggered => ({ task: dependent, trigger, severity: 72, reasons: ["Existing reason"] });
 const enrich = (row: Triggered, signals: TaskSignal[]) => enrichRelationshipCandidates([row], signals, now, "UTC")[0]!;
 
+test("prospective open-edge claim and identity remain the chosen pair", () => {
+  const open = task("open");
+  const done = task("done", { lane: "shipped" });
+  const dependent = task("dependent", { blockedBy: [open.id, done.id, "unavailable"], dependencyCoverage: "partial",
+    prerequisiteEvidence: [evidence(open.id), evidence(done.id, true)] });
+  const result = enrich({ ...candidate(open, "blocking-due-work"), relatedTaskId: dependent.id }, [dependent, open, done]);
+  assert.deepEqual(result.representedTaskIds, [dependent.id, open.id].sort());
+  assert.match(result.detailOverride!, /Title dependent.*Title open/);
+  assert.doesNotMatch(result.detailOverride!, /Title done|unavailable|are complete|all prerequisites/);
+});
+
 test("round8receiving long mixed prerequisites retain complete and unknown certainty at the ledger boundary", () => {
   const open = Array.from({ length: 8 }, (_, index) => task(`open-${index}`, { title: `Open prerequisite ${index}: ${"lengthy visible task evidence ".repeat(8)}` }));
   const completed = task("completed", { title: "Completed prerequisite", lane: "shipped" });

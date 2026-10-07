@@ -171,7 +171,7 @@ test("the read note closes its arithmetic in front of the reader", async () => {
   assert.equal(counts.read, counts.flagged + counts.cleared);
   assert.equal(
     model.readNote,
-    `Signal read ${counts.read} tasks in The Orchard, events at 09:00. ${counts.flagged} crossed a rule, and ${counts.shown} are shown above. The other ${counts.cleared} were clear.`,
+    `Signal read ${counts.read} tasks in The Orchard, events at 09:00. ${counts.flagged} crossed a rule and all of them are shown above. The other ${counts.cleared} were clear.`,
   );
   assert.equal(readNoteFor({ ...ledger, readCounts: null }, "task", "09:00"), null, "no denominator, no sentence");
 
@@ -441,14 +441,18 @@ test("round8receiving recorded work stays neutral and visible after real attenti
   const title = { ...base, latestValidatedTitleEdit: { at: new Date(NOW - 1_000).toISOString(), kind: "update" as const, field: "title" as const } };
   const completed: TaskSignal = { ...base, id: "completed", title: "Completed records", lane: "shipped", movedToShippedAt: NOW - 3_600_000 };
   const positive = await build([title, completed]);
-  assert.deepEqual(positive.ledger.entries.map(entry => [entry.section, entry.state]), [["activity", "recorded"], ["activity", "recorded"]]);
+  assert.deepEqual(positive.ledger.entries.map(entry => [entry.section, entry.state]), [["activity", "recorded"]]);
   assert.equal(positive.model.attention.length + positive.model.risks.length, 0);
-  assert.equal(positive.model.activity.length, 2);
+  assert.equal(positive.model.activity.length, 1);
+  assert.match(positive.ledger.coverageNote!, /1 task has a saved completion in the past 24 hours.*Completed records.*16 July 2026.*08:00:00 \(Europe\/Dublin\).*2026-07-16T07:00:00.000Z/);
   assert.equal(positive.model.verdict.tone, "neutral");
   assert.doesNotMatch(positive.model.verdict.sentence, /needs attention|at risk|part of the picture/i);
   const { OverviewView } = loadView();
   const positiveHtml = renderToStaticMarkup(createElement(OverviewView, { model: positive.model }));
   assert.match(positiveHtml, /<h2[^>]*>Recorded work<\/h2>/);
+  assert.match(positiveHtml, /Completed records/);
+  assert.match(positiveHtml, /past 24 hours/);
+  assert.match(positiveHtml, /2026-07-16T07:00:00.000Z/);
   assert.doesNotMatch(positiveHtml, /<h2[^>]*>(?:Needs attention|At risk)<\/h2>/);
   const mixed = await build([title, completed, { ...base, id: "urgent", title: "Due record", dueAt: NOW + 3_600_000 },
     { ...base, id: "stalled", title: "Stalled record", lane: "in-flight", idleDays: 10 }]);
@@ -460,6 +464,7 @@ test("round8receiving recorded work stays neutral and visible after real attenti
   const mixedHtml = renderToStaticMarkup(createElement(OverviewView, { model: mixed.model }));
   assert.ok(mixedHtml.indexOf(">Needs attention</h2>") < mixedHtml.indexOf(">At risk</h2>"));
   assert.ok(mixedHtml.indexOf(">At risk</h2>") < mixedHtml.indexOf(">Recorded work</h2>"));
+  assert.match(mixedHtml, /Completed records.*2026-07-16T07:00:00.000Z/);
 });
 
 test("round8receiving context notes never establish incomplete coverage without metadata", async () => {

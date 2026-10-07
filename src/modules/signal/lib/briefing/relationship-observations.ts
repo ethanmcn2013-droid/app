@@ -21,7 +21,7 @@ export function enrichRelationshipCandidates(candidates: Triggered[], signals: T
     visible.set(task.id, task);
     if (!dependents.has(task.id)) dependents.set(task.id, task);
   }
-  type Facts = { representedTaskIds: string[]; detail?: string; due?: string; dueState?: string; summary?: string; namedEvidence?: string[]; totalFacts?: number };
+  type Facts = { representedTaskIds: string[]; detail?: string; summary?: string; namedEvidence?: string[]; totalFacts?: number };
   const factsByDependent = new Map<TaskSignal, Facts>();
   const factsFor = (dependent: TaskSignal): Facts => {
     const cached = factsByDependent.get(dependent);
@@ -76,17 +76,22 @@ export function enrichRelationshipCandidates(candidates: Triggered[], signals: T
       ? dependentsByWorkspace.get(candidate.task.workspaceId ?? "")?.get(candidate.relatedTaskId ?? "")
       : candidate.task;
     if (!dependent?.workspaceId) return candidate;
-    const facts = factsFor(dependent);
-    const enriched = { ...candidate, representedTaskIds: facts.representedTaskIds };
-    if (facts.detail === undefined) return enriched;
-    if (candidate.trigger === "blocking-due-work" && facts.due === undefined) {
+    if (candidate.trigger === "blocking-due-work") {
+      // This row claims one inspected directed edge, not every listed state.
+      // Completed siblings and unknown references remain in whole-list context.
       const days = deadlineDayDifference(signalDeadline(dependent), now, timezone);
       const due = days !== null && deadlineIsOverdue(signalDeadline(dependent), now, timezone) ? "past its saved deadline"
         : days === 0 ? "due today" : days === 1 ? "due tomorrow" : days === 2 ? "due in two days" : "open";
-      facts.due = `“${dependent.title}” is ${due}.`;
-      facts.dueState = `The dependent task is ${due}.`;
+      const detail = `“${dependent.title}” is ${due}. Listed prerequisite still open: “${candidate.task.title}”.`;
+      return { ...candidate, representedTaskIds: [dependent.id, candidate.task.id].sort(),
+        detailOverride: detail.length <= 520 ? detail : `The dependent task is ${due}. This inspected listed prerequisite remains open.`,
+        reasons: detail.length <= 520 ? candidate.reasons : [...candidate.reasons,
+          ...[`Dependent: “${dependent.title}”.`, `Open prerequisite: “${candidate.task.title}”.`].filter(reason => reason.length <= 280)].slice(0, 6) };
     }
-    const fullDetail = candidate.trigger === "blocking-due-work" ? `${facts.due} ${facts.detail}` : facts.detail;
+    const facts = factsFor(dependent);
+    const enriched = { ...candidate, representedTaskIds: facts.representedTaskIds };
+    if (facts.detail === undefined) return enriched;
+    const fullDetail = facts.detail;
     if (fullDetail.length <= 520) return { ...enriched, detailOverride: fullDetail };
     // Keep certainty ahead of names at the receiving boundary. Evidence names
     // enter only as complete facts, never as a clipped title or partial word.
@@ -100,7 +105,6 @@ export function enrichRelationshipCandidates(candidates: Triggered[], signals: T
     }
     const remaining = (facts.totalFacts ?? 0) - named;
     if (remaining > 0) reasons.push(`${remaining} remaining prerequisite facts are represented in the state counts; their names or states are not individually shown here.`);
-    return { ...enriched, reasons, detailOverride: [facts.summary,
-      ...(candidate.trigger === "blocking-due-work" ? [facts.dueState] : [])].join(" ") };
+    return { ...enriched, reasons, detailOverride: facts.summary };
   });
 }

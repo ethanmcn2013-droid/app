@@ -46,7 +46,7 @@ async function withClient(operation) {
 
 test("authoritative ledger registers every SQL file with receipt and journal parity", () => {
   const context = loadAndValidateLedger();
-  assert.equal(context.entries.length, 39);
+  assert.equal(context.entries.length, 40);
   assert.equal(context.baseline.id, "0014_current_schema_baseline");
   assert.deepEqual(context.forward.map((entry) => entry.id), [
     "0015_notes_extract_exact_identity",
@@ -71,7 +71,7 @@ test("authoritative ledger registers every SQL file with receipt and journal par
     "0034_project_direct_messages",
     "0035_task_discussion",
     "0036_conversation_erasure_tombstones",
-    "0037_message_read_coverage", "0038_project_drive_token_revocation",
+    "0037_message_read_coverage", "0038_project_drive_token_revocation", "0039_conversation_messages_workspace_index",
   ]);
   assert.equal(context.entries.filter((entry) => entry.policy === "legacy-adopt-only").length, 14);
 });
@@ -153,13 +153,13 @@ test("fresh databases apply the canonical baseline plus forwards and rerun as a 
     "0034_project_direct_messages",
     "0035_task_discussion",
     "0036_conversation_erasure_tombstones",
-    "0037_message_read_coverage", "0038_project_drive_token_revocation",
+    "0037_message_read_coverage", "0038_project_drive_token_revocation", "0039_conversation_messages_workspace_index",
   ]);
-  assert.equal(first.proofs.length, 212);
+  assert.equal(first.proofs.length, 216);
 
   const objectCounts = await client.execute("SELECT type, COUNT(*) AS value FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' AND name NOT IN ('signal_schema_migrations', '__drizzle_migrations') GROUP BY type ORDER BY type");
   assert.deepEqual(objectCounts.rows.map((row) => [row.type, Number(row.value)]), [
-    ["index", 65],
+    ["index", 66],
     ["table", 47],
     ["trigger", 63],
   ]);
@@ -212,7 +212,7 @@ test("populated 0027 production-shaped ledger upgrades through January and conve
     "0028_project_drive", "0029_project_drive_operations", "0030_sponsored_use_intents",
     "0031_event_purchase_designations", "0032_project_conversations",
     "0033_conversation_task_outcomes", "0034_project_direct_messages", "0035_task_discussion",
-    "0036_conversation_erasure_tombstones", "0037_message_read_coverage", "0038_project_drive_token_revocation",
+    "0036_conversation_erasure_tombstones", "0037_message_read_coverage", "0038_project_drive_token_revocation", "0039_conversation_messages_workspace_index",
   ]);
   assert.equal((await client.execute("SELECT title FROM tasks WHERE id='historic_task'")).rows[0].title, "Preserved task");
   const comment = (await client.execute("SELECT id,body,workspace_id,revision FROM comments WHERE id='historic_comment'")).rows[0];
@@ -334,7 +334,7 @@ test("0037 preserves populated conversation and Task Discussion history; failed 
   assert.equal(Number((await client.execute("SELECT count(*) AS n FROM sqlite_schema WHERE name='message_read_coverage'")).rows[0].n), 0);
   assert.equal(Number((await client.execute("SELECT count(*) AS n FROM signal_schema_migrations WHERE id='0037_message_read_coverage'")).rows[0].n), 0);
   const applied = await runMigrations({ client, releaseSha: "coverage-upgrade" });
-  assert.deepEqual(applied.applied, ["0037_message_read_coverage", "0038_project_drive_token_revocation"]);
+  assert.deepEqual(applied.applied, ["0037_message_read_coverage", "0038_project_drive_token_revocation", "0039_conversation_messages_workspace_index"]);
   assert.deepEqual((await client.execute("SELECT id,body,create_seq FROM conversation_messages WHERE conversation_id='coverage_room'")).rows, original.messages);
   assert.deepEqual((await client.execute("SELECT id,body,create_seq FROM comments WHERE task_id='coverage_task'")).rows, original.comments);
   assert.deepEqual((await client.execute("SELECT id,message_id,observed_at FROM conversation_attention WHERE id='coverage_event'")).rows, original.directed);
@@ -361,7 +361,7 @@ test("0038 preserves legacy credentials, rolls back failed proofs and reruns as 
   assert.equal(Number((await client.execute("SELECT count(*) AS n FROM signal_schema_migrations WHERE id='0038_project_drive_token_revocation'")).rows[0].n), 0);
   assert.deepEqual((await client.execute("SELECT * FROM provider_connections WHERE id='revoke_legacy'")).rows[0], original);
   const applied = await runMigrations({ client, releaseSha: "revocation-upgrade" });
-  assert.deepEqual(applied.applied, ["0038_project_drive_token_revocation"]);
+  assert.deepEqual(applied.applied, ["0038_project_drive_token_revocation", "0039_conversation_messages_workspace_index"]);
   const upgraded = (await client.execute("SELECT * FROM provider_connections WHERE id='revoke_legacy'")).rows[0];
   for (const key of Object.keys(original)) assert.deepEqual(upgraded[key], original[key]);
   for (const key of ["revoke_requested_at", "revoke_confirmed_at", "revoke_attempt_id", "revoke_attempted_at"]) assert.equal(upgraded[key], null);
@@ -1206,7 +1206,7 @@ test("usage migration proof failure rolls back both new tables and its ledger re
   assert.deepEqual(applied.applied, [
     "0030_sponsored_use_intents", "0031_event_purchase_designations",
     "0032_project_conversations", "0033_conversation_task_outcomes",
-    "0034_project_direct_messages", "0035_task_discussion", "0036_conversation_erasure_tombstones", "0037_message_read_coverage", "0038_project_drive_token_revocation",
+    "0034_project_direct_messages", "0035_task_discussion", "0036_conversation_erasure_tombstones", "0037_message_read_coverage", "0038_project_drive_token_revocation", "0039_conversation_messages_workspace_index",
   ]);
   assert.equal((await runMigrations({ client, releaseSha: "usage-no-op" })).status, "no-op");
 }));
@@ -1252,4 +1252,63 @@ test("Event additive migration preserves populated history; failed proof rolls b
   ], "write");
   assert.deepEqual(await snapshot(), original);
   assert.deepEqual((await runMigrations({ client, context: eventOnly, releaseSha: "event-reapply-local" })).applied, ["0031_event_purchase_designations"]);
+}));
+
+test("0039 populated upgrade preserves all message states and triggers, then no-ops", async () => withClient(async (client) => {
+  const before = loadAndValidateLedger();
+  before.forward = before.forward.filter(entry => entry.ordinal <= 38);
+  await runMigrations({ client, context: before, releaseSha: "workspace-index-before" });
+  await client.executeMultiple(`
+    INSERT INTO users(id,color,initials) VALUES ('index_owner','#111','IO');
+    INSERT INTO workspaces(id,slug,name,owner_user_id) VALUES ('index_project','index-project','Index project','index_owner');
+    INSERT INTO workspace_members(workspace_id,user_id,role) VALUES ('index_project','index_owner','owner');
+    INSERT INTO conversations(id,workspace_id,kind,created_by,created_at) VALUES ('index_room','index_project','project','index_owner',1000);
+    INSERT INTO conversation_messages(id,conversation_id,workspace_id,author_id,create_seq,revision,body,created_at,deleted_at)
+      VALUES ('index_live','index_room','index_project','index_owner',1,1,'Live',1000,NULL),
+        ('index_deleted','index_room','index_project','index_owner',2,1,NULL,2000,3000),
+        ('index_erased','index_room','index_project','index_owner',3,1,'Erased',2000,NULL);
+    INSERT INTO meta(key,value) VALUES ('google-drive:account-erasure:user:index_owner','active:v1');
+    UPDATE conversation_messages SET author_id=NULL,client_request_id=NULL,request_hash=NULL,body=NULL,deleted_at=3000,revision=revision+1 WHERE id='index_erased';
+    DELETE FROM meta WHERE key='google-drive:account-erasure:user:index_owner';
+  `);
+  const original = (await client.execute("SELECT * FROM conversation_messages ORDER BY id")).rows;
+  const triggers = (await client.execute("SELECT name,sql FROM sqlite_schema WHERE type='trigger' ORDER BY name")).rows;
+  const applied = await runMigrations({ client, releaseSha: "workspace-index-upgrade" });
+  assert.deepEqual(applied.applied, ["0039_conversation_messages_workspace_index"]);
+  assert.equal(applied.proofs.length, 4);
+  assert.deepEqual((await client.execute("SELECT * FROM conversation_messages ORDER BY id")).rows, original);
+  assert.deepEqual((await client.execute("SELECT name,sql FROM sqlite_schema WHERE type='trigger' ORDER BY name")).rows, triggers);
+  assert.deepEqual((await client.execute("SELECT name,\"unique\",partial FROM pragma_index_list('conversation_messages') WHERE name='conversation_messages_workspace'")).rows.map(row=>[row.name,Number(row.unique),Number(row.partial)]), [["conversation_messages_workspace",0,0]]);
+  assert.deepEqual((await client.execute("SELECT seqno,name FROM pragma_index_info('conversation_messages_workspace')")).rows.map(row=>[Number(row.seqno),row.name]), [[0,"workspace_id"]]);
+  assert((await client.execute("EXPLAIN QUERY PLAN SELECT id FROM conversation_messages WHERE workspace_id='index_project'")).rows.some(row=>row.detail.includes("conversation_messages_workspace")));
+  const changes = (await client.execute("SELECT total_changes() AS n")).rows[0].n;
+  assert.deepEqual(await runMigrations({ client, releaseSha: "workspace-index-no-op" }), {status:"no-op",applied:[]});
+  assert.equal((await client.execute("SELECT total_changes() AS n")).rows[0].n, changes);
+  assert.equal((await client.execute("PRAGMA foreign_key_check")).rows.length,0);
+}));
+
+test("0039 failed proof rolls back index and exact metadata", async () => withClient(async (client) => {
+  const before=loadAndValidateLedger();
+  before.forward=before.forward.filter(entry=>entry.ordinal<=38);
+  await runMigrations({client,context:before,releaseSha:"workspace-index-failure-before"});
+  const schema=(await client.execute("SELECT type,name,sql FROM sqlite_schema ORDER BY type,name")).rows;
+  const ledger=(await client.execute("SELECT * FROM signal_schema_migrations ORDER BY id")).rows;
+  const highWater=(await client.execute("SELECT * FROM __drizzle_migrations ORDER BY id")).rows;
+  const broken=loadAndValidateLedger();
+  broken.forward.find(entry=>entry.ordinal===39).receipt.record.proofs.push({id:"workspace-index-forced-failure",sql:"SELECT 0 AS value",expected:1});
+  await assert.rejects(runMigrations({client,context:broken}),/workspace-index-forced-failure/);
+  assert.deepEqual((await client.execute("SELECT type,name,sql FROM sqlite_schema ORDER BY type,name")).rows,schema);
+  assert.deepEqual((await client.execute("SELECT * FROM signal_schema_migrations ORDER BY id")).rows,ledger);
+  assert.deepEqual((await client.execute("SELECT * FROM __drizzle_migrations ORDER BY id")).rows,highWater);
+}));
+
+test("0039 refuses unexpected same-name index drift without adoption", async () => withClient(async (client) => {
+  const before=loadAndValidateLedger();
+  before.forward=before.forward.filter(entry=>entry.ordinal<=38);
+  await runMigrations({client,context:before});
+  await client.execute("CREATE INDEX conversation_messages_workspace ON conversation_messages(author_id)");
+  const ledger=(await client.execute("SELECT * FROM signal_schema_migrations ORDER BY id")).rows;
+  await assert.rejects(runMigrations({client}),/already exists/);
+  assert.deepEqual((await client.execute("SELECT * FROM signal_schema_migrations ORDER BY id")).rows,ledger);
+  assert.deepEqual((await client.execute("SELECT name FROM pragma_index_info('conversation_messages_workspace')")).rows.map(row=>row.name),["author_id"]);
 }));

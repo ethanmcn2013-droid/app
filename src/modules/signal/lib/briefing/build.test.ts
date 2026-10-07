@@ -8,6 +8,18 @@ const DAY = 86_400_000;
 const NOW = 1_700_000_000_000;
 const CTX = { userId: "u-test", email: "test@example.com" };
 
+test("prospective completion and unknown context leave selection to genuine pressure and recorded events", async () => {
+  const signals = [task({ id: "done", title: "Saved completion", workspaceId: "w", lane: "shipped", movedToShippedAt: NOW - 3600000 }),
+    task({ id: "unknown", title: "Unverified work", workspaceId: "w", blockedBy: ["private"], dependencyCoverage: "partial", dueAt: NOW + DAY }),
+    task({ id: "comment", workspaceId: "w", latestValidatedComment: { at: new Date(NOW - 1000).toISOString(), kind: "commentAdd" } })];
+  const brief = await buildBriefing(source(signals), CTX, NOW);
+  assert.ok([...brief.needsAttention, ...brief.quietRisks, ...brief.movingWell].every(row => row.trigger !== "just-shipped" && row.trigger !== "prerequisites-unverified"));
+  assert.ok(brief.needsAttention.some(row => row.trigger === "due-soon"));
+  assert.ok(brief.movingWell.some(row => row.trigger === "recorded-activity"));
+  assert.match(brief.activityCoverageNote!, /past 24 hours.*Saved completion/);
+  assert.match(brief.activityCoverageNote!, /Unverified work.*prerequisites could not be fully verified/);
+});
+
 function source(signals: TaskSignal[]): BriefingSource {
   return { async getSignalsForUser() { return signals; } };
 }
@@ -177,13 +189,14 @@ test("dependent context excludes terminal, foreign, missing and self prerequisit
     assert.equal(row.trigger, "due-soon");
     assert.match(row.detail, /tomorrow/i);
     assert.doesNotMatch(row.detail, /Private title|Completed title|open prerequisite:/);
-    assert.match(brief.quietRisks.find(item => item.trigger === "prerequisites-unverified")!.detail, /could not be fully verified/);
+    assert.match(brief.activityCoverageNote!, /could not be fully verified/);
+    assert.ok(!brief.quietRisks.some(item => item.trigger === "prerequisites-unverified"));
   }
   const confirmed = task({ id: "check", title: "Verified check", workspaceId: "owned", idleDays: null });
   const partial = await buildBriefing(source([dependent, confirmed]), CTX, NOW);
   assert.doesNotMatch(partial.needsAttention.find(item => item.id === "publish")!.detail, /Verified check/);
   assert.ok(partial.needsAttention.some(item => item.trigger === "blocking-due-work"));
-  assert.match(partial.quietRisks[0]!.detail, /could not be fully verified/);
+  assert.match(partial.activityCoverageNote!, /could not be fully verified/);
 });
 
 test("partial activity describes metadata evidence without inventing an event or actionable work", async () => {
@@ -299,31 +312,27 @@ test("independent prerequisite meaning respects suppression, uncertainty and lif
   }
 });
 
-test("unknown prerequisites are specific to near-term work, retain deadline rank, and never invent a blocker", async () => {
-  const uncertain = task({ id: "launch", title: "Publish the guide", workspaceId: "owned", dueAt: NOW + DAY,
+test("unknown prerequisite context remains truthful outside the deadline window without becoming risk", async () => {
+  const uncertain = task({ id: "launch", title: "Launch work", workspaceId: "owned", blockedBy: [], dueAt: NOW + DAY,
     dependencyCoverage: "partial", hasCompletedListedPrerequisite: true, idleDays: null });
-  for (const days of [-1, 0, 1, 3, 7]) {
+  for (const days of [-1, 0, 1, 3, 7, 8]) {
     const brief = await buildBriefing(source([{ ...uncertain, dueAt: NOW + days * DAY }]), CTX, NOW);
     const rows = [...brief.needsAttention, ...brief.quietRisks];
-    assert.equal(rows.length, days <= 2 ? 2 : 1);
-    assert.equal(rows[0]?.trigger, days <= 2 ? "due-soon" : "prerequisites-unverified");
-    const uncertainty = rows.find(item => item.trigger === "prerequisites-unverified")!;
-    assert.match(uncertainty.detail, /prerequisites could not be fully verified/i);
-    assert.match(uncertainty.detail, /not confirmed clear to move ahead/i);
-    assert.doesNotMatch(rows[0]!.detail, /listed prerequisites are complete|waiting on something upstream|is blocked/);
+    assert.equal(rows.length, days <= 2 ? 1 : 0);
+    if (rows[0]) assert.equal(rows[0].trigger, "due-soon");
+    assert.match(brief.activityCoverageNote!, /Launch work.*prerequisites could not be fully verified/);
+    assert.match(brief.activityCoverageNote!, /not confirmed clear to move ahead/);
+    assert.ok(rows.every(row => !/listed prerequisites are complete|is blocked/.test(row.detail)));
   }
-  for (const changed of [{ dueAt: null }, { dueAt: NOW + 8 * DAY }, { lane: "shipped" as const },
-    { dependencyCoverage: "complete" as const, hasCompletedListedPrerequisite: false }]) {
+  for (const changed of [{ lane: "shipped" as const }, { dependencyCoverage: "complete" as const, hasCompletedListedPrerequisite: false }]) {
     const brief = await buildBriefing(source([{ ...uncertain, ...changed }]), CTX, NOW);
     assert.doesNotMatch(JSON.stringify(brief), /could not be fully verified/);
   }
-  const dismissed = await buildBriefing(source([uncertain]), CTX, NOW, {
-    suppressed: new Set(["prerequisites-unverified:launch"]),
-  });
-  assert.equal(dismissed.needsAttention[0]?.trigger, "due-soon");
-  assert.doesNotMatch(dismissed.needsAttention[0]!.detail, /could not be fully verified/);
-  const wildcard = await buildBriefing(source([uncertain]), CTX, NOW, { suppressed: new Set(["*:launch"]) });
-  assert.equal(wildcard.isEmpty, true);
+  for (const key of ["prerequisites-unverified:launch", "*:launch"]) {
+    const dismissed = await buildBriefing(source([uncertain]), CTX, NOW, { suppressed: new Set([key]) });
+    assert.doesNotMatch(dismissed.activityCoverageNote ?? "", /could not be fully verified/);
+    assert.equal(dismissed.needsAttention.length, key.startsWith("*") ? 0 : 1);
+  }
 });
 
 test("equal rule and severity honor P0..P3 then unknown before adverse IDs and the cap", async () => {
@@ -443,12 +452,11 @@ describe("buildBriefing, bucket caps", () => {
     assert.equal(b.quietRisks.length, 3);
   });
 
-  test("Moving well is hard-capped at 3 items", async () => {
+  test("Recorded moving well is hard-capped at 3 items", async () => {
     const signals = Array.from({ length: 5 }, (_, i) =>
       task({
         id: `t${i}`,
-        lane: "shipped",
-        movedToShippedAt: NOW - i * 3_600_000,
+        latestValidatedComment: { kind: "commentAdd", at: new Date(NOW - i * 3_600_000).toISOString() },
       }),
     );
     const b = await buildBriefing(source(signals), CTX, NOW);
@@ -698,7 +706,7 @@ describe("buildBriefing, the accounting", () => {
   // It still counts as flagged, because it did cross a rule and dropping
   // it would make read = flagged + cleared false. The all-clear copy is
   // what names it (voice.ts readCountSentence).
-  test("a lone just-shipped item is still counted as having crossed a rule", async () => {
+  test("completion recognition is context and does not count as actionable pressure", async () => {
     const signals = [
       task({ id: "a" }),
       task({
@@ -709,7 +717,8 @@ describe("buildBriefing, the accounting", () => {
     ];
     const b = await buildBriefing(source(signals), CTX, NOW);
     assert.equal(b.readCount, 2);
-    assert.equal(b.triggeredCount, 1);
+    assert.equal(b.triggeredCount, 0);
+    assert.match(b.activityCoverageNote!, /past 24 hours/);
     assert.equal(b.needsAttention.length, 0);
     assert.equal(b.quietRisks.length, 0);
   });
@@ -1063,8 +1072,9 @@ test("round8 full prerequisite relation preserves a separate consequential date 
   const b = await buildBriefing(source([delivery, ...checks, separate]), CTX, NOW);
   const relationships = b.needsAttention.filter(row => row.trigger === "blocking-due-work");
   assert.equal(relationships.length, 1);
-  assert.deepEqual(relationships[0]!.evidenceTaskIds, ["access", "copy", "deliver", "safety"]);
-  for (const name of ["copy", "safety", "access"]) assert.ok(relationships[0]!.detail.includes(name));
+  assert.deepEqual(relationships[0]!.evidenceTaskIds, ["access", "deliver"]);
+  assert.ok(relationships[0]!.detail.includes("access"));
+  for (const name of ["copy", "safety", "access"]) assert.ok(b.activityCoverageNote!.includes(name));
   assert.ok(b.needsAttention.some(row => row.id === separate.id && row.trigger === "due-soon"));
   assert.equal(b.needsAttention.length + b.quietRisks.length + b.movingWell.length, 3);
 });
@@ -1078,9 +1088,11 @@ test("round8 mixed prerequisite states retain completed evidence and anonymous u
     ] });
   const b = await buildBriefing(source([dependent, open, done]), CTX, NOW);
   const row = b.needsAttention.find(item => item.trigger === "blocking-due-work")!;
-  assert.deepEqual(row.evidenceTaskIds, ["legal-proof", "packet", "review-copy"]);
-  assert.match(row.detail, /Legal proof/); assert.match(row.detail, /complete/i);
-  assert.match(row.detail, /unverified|unknown|not fully/i);
+  assert.deepEqual(row.evidenceTaskIds, ["packet", "review-copy"]);
+  assert.match(row.detail, /Review copy/);
+  assert.doesNotMatch(row.detail, /Legal proof|unverified/);
+  assert.match(b.activityCoverageNote!, /Legal proof.*complete/);
+  assert.match(b.activityCoverageNote!, /unverified|unknown|not fully/i);
 });
 test("round8 complete prerequisite observation names visible set and hides terminal evidence identities", async () => {
   const done = task({ id: "safety-cert", title: "Safety certificate", workspaceId: "show", lane: "shipped", idleDays: null });

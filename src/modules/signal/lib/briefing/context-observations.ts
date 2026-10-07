@@ -3,7 +3,8 @@ import type { TaskSignal } from "./types";
 import type { Triggered } from "./triggers";
 
 /** Positive occurrences and current inventory; neither establishes progress or inactivity. */
-export function contextObservations(signals: TaskSignal[], now: number, timezone: string): {
+export function contextObservations(signals: TaskSignal[], now: number, timezone: string,
+  options: { canonicalUserId?: string; suppressed?: ReadonlySet<string> } = {}): {
   candidates: Triggered[]; coverageNotes: string[];
 } {
   const candidates: Triggered[] = [];
@@ -25,12 +26,25 @@ export function contextObservations(signals: TaskSignal[], now: number, timezone
   const date = (at: number): string => dateFormatter.format(at);
   const occurrence = (at: number): string => `${date(at)} at ${timeFormatter.format(at)} (${timezone})`;
   const groups = new Map<string, TaskSignal[]>();
-  for (const task of [...signals].sort((a, b) => a.id.localeCompare(b.id))) {
+  const unique = [...new Map(signals.map(task => [task.id, task])).values()].sort((a, b) => a.id.localeCompare(b.id));
+  const visible = new Map(unique.map(task => [task.id, task]));
+  const dismissed = (task: TaskSignal, trigger: string) => options.suppressed?.has(`${trigger}:${task.id}`) || options.suppressed?.has(`*:${task.id}`);
+  const completion = (task: TaskSignal): number | null => {
+    const at = task.movedToShippedAt;
+    return (task.stage ? task.stage.complete : task.lane === "shipped") && typeof at === "number" &&
+      Number.isFinite(at) && at >= 0 && at <= now && now - at <= 86_400_000 && !dismissed(task, "just-shipped") ? at : null;
+  };
+  const digest = (tasks: TaskSignal[], source: string) => {
+    const members = tasks.flatMap(task => completion(task) === null ? [] : [{ task, at: completion(task)! }]);
+    if (!members.length) return;
+    notes.add(`${members.length} ${members.length === 1 ? "task has" : "tasks have"} a saved completion in the past 24 hours (${source}). Recorded completions shown: ${members.map(({ task, at }) => `“${task.title}” on ${occurrence(at)} [${new Date(at).toISOString()}]`).join("; ")}. This covers the saved completion records included in this read.`);
+  };
+  for (const task of unique) {
     if (task.workspaceId) {
       let group = groups.get(task.workspaceId);
       if (!group) { group = []; groups.set(task.workspaceId, group); }
       group.push(task);
-    }
+    } else digest([task], task.sourceLabel);
     const events = [
       task.latestValidatedTitleEdit?.kind === "update" && task.latestValidatedTitleEdit.field === "title"
         ? { at: validTime(task.latestValidatedTitleEdit.at), label: "Title edited" } : null,
@@ -63,13 +77,42 @@ export function contextObservations(signals: TaskSignal[], now: number, timezone
         ? `${prefix}Activity history for “${task.title}” is partial; earlier activity is not established.`
         : `${prefix}The earliest available inspected activity record for “${task.title}” is dated ${date(start)}; earlier activity is not established.`);
     }
+    // Whole-list context is distinct from the chosen current open edge. Unknown
+    // references remain unnamed; only the authorized inspected task is identified.
+    const listed = [...new Set(task.blockedBy.filter(id => id !== task.id))];
+    if (isOpen && (listed.length || task.prerequisiteEvidence?.length || task.dependencyCoverage === "partial") && !options.suppressed?.has(`*:${task.id}`)) {
+      const records = new Map((task.prerequisiteEvidence ?? [])
+        .filter(record => task.workspaceId && record.workspaceId === task.workspaceId && record.id !== task.id)
+        .map(record => [record.id, record.complete]));
+      for (const id of listed) {
+        const known = visible.get(id);
+        if (!records.has(id) && known && task.workspaceId && known.workspaceId === task.workspaceId) {
+          records.set(id, known.stage ? known.stage.complete : known.lane === "shipped");
+        }
+      }
+      const unknown = listed.filter(id => !records.has(id)).length;
+      const partial = task.dependencyCoverage === "partial" || unknown > 0;
+      if (partial && dismissed(task, "prerequisites-unverified")) continue;
+      const open = [...records].filter(([, complete]) => !complete);
+      const complete = [...records].filter(([, complete]) => complete);
+      const named = [...records].flatMap(([id, done]) => {
+        const known = visible.get(id);
+        return known && known.workspaceId === task.workspaceId ? [`“${known.title}” (${done ? "complete" : "open"})`] : [];
+      });
+      notes.add(`Inspected listed prerequisite state for “${task.title}”: ${open.length} open, ${complete.length} complete${partial ? `, ${unknown ? `${unknown} unverified` : "further state unverified"}` : ""}.${named.length ? ` Inspected task names: ${named.join("; ")}.` : ""}${partial ? ` Its prerequisites could not be fully verified. The unverified prerequisites' state is unknown. It is not confirmed clear to move ahead on that work.${task.activityCoverage === "partial" ? " Activity history for this task is incomplete; earlier meaningful activity is not established." : ""}` : ""}`);
+    }
   }
-  for (const [workspaceId, tasks] of [...groups].sort(([a], [b]) => a.localeCompare(b))) {
+  for (const [, tasks] of [...groups].sort(([a], [b]) => a.localeCompare(b))) {
+    digest(tasks, tasks[0]!.sourceLabel);
     if (!tasks.every(task => task.taskCoverage === "complete")) continue;
     const open = tasks.filter(task => task.stage ? !task.stage.complete : task.lane !== "shipped");
     if (!open.length) continue;
     const count = open.length;
-    notes.add(`${count} ${count === 1 ? "task is" : "tasks are"} currently open in this project (${tasks[0]!.sourceLabel}).`);
+    notes.add(`${count} ${count === 1 ? "task is" : "tasks are"} currently open in this project (${tasks[0]!.sourceLabel}). Open tasks: ${open.map(task => `“${task.title}”`).join("; ")}.`);
+    if (options.canonicalUserId && open.every(task => task.assignees !== undefined)) {
+      const assigned = open.filter(task => task.assignees!.some(user => user.id === options.canonicalUserId));
+      notes.add(`${assigned.length} open ${assigned.length === 1 ? "task is" : "tasks are"} assigned to you in this project (${tasks[0]!.sourceLabel}).${assigned.length ? ` Assigned open tasks: ${assigned.map(task => `“${task.title}”`).join("; ")}.` : ""}`);
+    }
   }
   return { candidates, coverageNotes: [...notes] };
 }

@@ -377,7 +377,7 @@ export async function buildBriefingForUser(opts: {
   const capture = captureSignals(source);
   const briefing = await buildBriefing(
     capture.source,
-    { userId: clerkId, email: "" },
+    { userId: clerkId, email: "", canonicalUserId: authorizedScope.canonicalUserId },
     now,
     { suppressed, ages, timezone: authorizedScope.timezone },
   );

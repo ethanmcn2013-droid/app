@@ -11,6 +11,65 @@ const task = (patch: Partial<TaskSignal> = {}): TaskSignal => ({
 });
 const read = (signals: TaskSignal[]) => contextObservations(signals, NOW, "Europe/Dublin");
 
+test("prospective completion digest preserves distinct durable times without suggestion rows", () => {
+  const completed = task({ id: "closed", title: "Closed work", lane: "shipped", movedToShippedAt: NOW - 3600000 });
+  const result = read([completed, completed, task({ id: "future", lane: "shipped", movedToShippedAt: NOW + 1 }),
+    task({ id: "open", movedToShippedAt: NOW - 1000 }), task({ id: "old", lane: "shipped", movedToShippedAt: NOW - 86400001 })]);
+  const digest = result.coverageNotes.filter(note => note.includes("past 24 hours"));
+  assert.equal(digest.length, 1);
+  assert.match(digest[0]!, /1 task.*Closed work.*2026-10-07T11:00:00.000Z/);
+  assert.doesNotMatch(digest[0]!, /future|old|progress|all complete|today/);
+  assert.equal(result.candidates.length, 0);
+});
+
+test("prospective completion digest respects reason and wildcard dismissal", () => {
+  const completed = task({ lane: "shipped", movedToShippedAt: NOW - 1000 });
+  for (const key of ["just-shipped:visible", "*:visible"]) {
+    const result = contextObservations([completed], NOW, "UTC", { suppressed: new Set([key]) });
+    assert.ok(!result.coverageNotes.some(note => note.includes("past 24 hours")));
+  }
+  const other = task({ id: "other", title: "Other completion", lane: "shipped", movedToShippedAt: NOW - 2000, taskCoverage: "partial" });
+  const subset = contextObservations([completed, other], NOW, "UTC", { suppressed: new Set(["just-shipped:visible"]) });
+  const digest = subset.coverageNotes.find(note => note.includes("past 24 hours"))!;
+  assert.match(digest, /1 task.*Other completion.*included in this read/);
+  assert.doesNotMatch(digest, /Inspect the venue|all tasks|complete project/);
+});
+
+test("durable canonical state and inclusive completion window win over stale lane and timestamps", () => {
+  const inputs = [task({ id: "boundary", title: "Boundary completion", lane: "next", movedToShippedAt: NOW - 86400000,
+    stage: { key: "custom", label: "Custom", phase: "shipped", complete: true } }),
+    task({ id: "reopened", lane: "shipped", movedToShippedAt: NOW - 1000,
+      stage: { key: "active", label: "Active", phase: "next", complete: false } }),
+    task({ id: "invalid", lane: "shipped", movedToShippedAt: NaN })];
+  const note = read(inputs).coverageNotes.find(note => note.includes("past 24 hours"))!;
+  assert.match(note, /1 task.*Boundary completion.*6 October 2026.*Europe\/Dublin.*2026-10-06T12:00:00.000Z/);
+  assert.doesNotMatch(note, /reopened|invalid/);
+});
+
+test("prospective prerequisite uncertainty is task-bound and co-locates incomplete history", () => {
+  const dependent = task({ blockedBy: ["restricted"], dependencyCoverage: "partial", activityCoverage: "partial" });
+  const result = read([dependent]);
+  const note = result.coverageNotes.find(note => note.includes("prerequisites could not be fully verified"));
+  assert.ok(note);
+  assert.match(note, /Inspect the venue.*unverified.*state is unknown.*Activity history.*incomplete/);
+  assert.doesNotMatch(note, /restricted|is blocked|are complete/);
+});
+
+test("prospective neutral inventory names complete members and canonical assignee count", () => {
+  const signals = [task({ taskCoverage: "complete", assignees: [{ id: "canonical-reader" }] }),
+    task({ id: "second", title: "Other work", taskCoverage: "complete", assignees: [] })];
+  const result = contextObservations(signals, NOW, "UTC", { canonicalUserId: "canonical-reader" });
+  assert.equal(result.candidates.length, 0);
+  assert.ok(result.coverageNotes.some(note => /2 tasks.*currently open/.test(note) && note.includes("Inspect the venue") && note.includes("Other work")));
+  assert.ok(result.coverageNotes.some(note => /1.*assigned to you.*Inspect the venue/.test(note)));
+  const unknown = contextObservations(signals, NOW, "UTC");
+  assert.ok(!unknown.coverageNotes.some(note => note.includes("assigned to you")));
+  const incomplete = contextObservations([{ ...signals[0]!, assignees: undefined }, signals[1]!], NOW, "UTC", { canonicalUserId: "canonical-reader" });
+  assert.ok(!incomplete.coverageNotes.some(note => note.includes("assigned to you")));
+  const deduplicated = contextObservations([signals[0]!, signals[0]!, signals[1]!], NOW, "UTC", { canonicalUserId: "canonical-reader" });
+  assert.deepEqual(deduplicated, result);
+});
+
 test("saved title and comment occurrences select newest deterministically; metadata is no progress", () => {
   const edited = task({ latestValidatedTitleEdit: { at: "2020-01-01T12:00:00Z", kind: "update", field: "title" },
     latestValidatedComment: { at: "2020-01-02T12:00:00Z", kind: "commentAdd" } });
@@ -35,11 +94,11 @@ test("complete project inventory counts every open phase including unknown and e
   task({ id: "done", taskCoverage: "complete", stage: { key: "done", label: "Done", phase: "shipped", complete: true } })];
   const result = read(signals);
   assert.deepEqual(result.candidates, []);
-  assert.deepEqual(result.coverageNotes, ["2 tasks are currently open in this project (Tasks · Launch)."]);
+  assert.deepEqual(result.coverageNotes, ["2 tasks are currently open in this project (Tasks · Launch). Open tasks: “Inspect the venue”; “Inspect the venue”."]);
   assert.ok(result.coverageNotes.every(note => !/unknown|visible|owned|done/.test(note)));
   const joined = read([...signals, task({ id: "garden", workspaceId: "garden-workspace", sourceLabel: "Tasks · Garden", taskCoverage: "complete" })]);
   assert.deepEqual(joined.candidates, []);
-  assert.deepEqual(joined.coverageNotes, ["1 task is currently open in this project (Tasks · Garden).", "2 tasks are currently open in this project (Tasks · Launch)."]);
+  assert.deepEqual(joined.coverageNotes, ["1 task is currently open in this project (Tasks · Garden). Open tasks: “Inspect the venue”.", "2 tasks are currently open in this project (Tasks · Launch). Open tasks: “Inspect the venue”; “Inspect the venue”."]);
 });
 
 test("partial or omitted exact workspace coverage refuses summary without poisoning another workspace", () => {
@@ -47,7 +106,7 @@ test("partial or omitted exact workspace coverage refuses summary without poison
     const result = read([task({ taskCoverage: "complete" }), task({ id: "partial", taskCoverage }),
       task({ id: "other", workspaceId: "other", sourceLabel: "Tasks · Garden", taskCoverage: "complete" })]);
     assert.deepEqual(result.candidates, []);
-    assert.deepEqual(result.coverageNotes, ["1 task is currently open in this project (Tasks · Garden)."]);
+    assert.deepEqual(result.coverageNotes, ["1 task is currently open in this project (Tasks · Garden). Open tasks: “Inspect the venue”."]);
   }
 });
 

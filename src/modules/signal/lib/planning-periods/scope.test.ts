@@ -48,6 +48,7 @@ async function fixture(options: { unavailableCatalog?: boolean } = {}) {
       ('task-loose','loose-a',1,'Loose synthetic work','todo','normal'),
       ('task-b','loose-b',1,'Other actor synthetic work','todo','normal'),
       ('task-shared','shared-b',1,'Shared synthetic work','todo','normal');
+    UPDATE tasks SET assignees='["local-a"]' WHERE id='task-loose';
   `);
   const signalClient = createClient({ url: ":memory:" });
   await signalClient.executeMultiple(readFileSync(new URL("../../../../../drizzle-signal/0000_signal_baseline.sql", import.meta.url), "utf8"));
@@ -86,6 +87,8 @@ test("real mixed catalog includes genuinely loose owner/member projects, preserv
     const identity = { clerkId: "clerk-a", email: "same@example.invalid" };
     const catalog = await f.scope.listPlanningCatalogForUser(identity);
     assert.equal(catalog.planningSchemaAvailable, true);
+    assert.equal(catalog.canonicalUserId, "local-a");
+    assert.equal(f.scope.authorizeSignalScope(catalog, { kind: "workspace", workspaceId: "loose-a" })?.canonicalUserId, "local-a");
     assert.deepEqual(catalog.workspaces.map(w => w.id).sort(), ["grouped-a", "loose-a", "shared-b"]);
     assert.deepEqual(catalog.periods.map(p => p.id), ["period-a"]);
     assert.equal(catalog.workspaces.find(w => w.id === "shared-b")?.role, "member");
@@ -111,6 +114,7 @@ test("actual briefing reads the exact loose project and refuses foreign/removed 
     const loose = await read("clerk-a", "loose-a");
     assert.equal(loose.kind, "ok");
     if (loose.kind !== "ok") throw Error("Expected authorized loose project");
+    assert.match(loose.briefing.activityCoverageNote!, /1 open task is assigned to you.*Loose synthetic work/);
     assert.deepEqual(loose.signals.map(t => [t.id, t.workspaceId]), [["task-loose", "loose-a"]]);
     assert.equal((await read("clerk-a", "shared-b")).kind, "ok");
     await f.client.execute("DELETE FROM workspace_members WHERE workspace_id='shared-b' AND user_id='local-a'");

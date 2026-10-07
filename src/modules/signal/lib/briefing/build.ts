@@ -8,10 +8,8 @@ import {
   detectBlockingDueWork,
   detectCrowdedWeek,
   detectDueSoon,
-  detectJustShipped,
   detectOverload,
   detectPrerequisitesComplete,
-  detectPrerequisitesUnverified,
   detectStuckWork,
   type Triggered,
 } from "./triggers";
@@ -75,13 +73,11 @@ export async function buildBriefing(
 
   const stuck = detectStuckWork(signals).filter(notDismissed);
   const dueSoon = detectDueSoon(signals, now, timezone).filter(notDismissed);
-  const shipped = detectJustShipped(signals, now).filter(notDismissed);
   const overload = detectOverload(signals).filter(notDismissed);
   const crowded = detectCrowdedWeek(signals, now, timezone).filter(notDismissed);
   const blocked = detectBlockedTooLong(signals).filter(notDismissed);
   const blockingDueWork = detectBlockingDueWork(signals, now, timezone).filter(notDismissed);
   const prerequisitesComplete = detectPrerequisitesComplete(signals, now, timezone).filter(notDismissed);
-  const prerequisitesUnverified = detectPrerequisitesUnverified(signals, now, timezone).filter(notDismissed);
 
   // Build a {taskId → title} map once so blocked-too-long prose can
   // name the upstream blocker ("blocked by Music supplier") instead
@@ -98,8 +94,8 @@ export async function buildBriefing(
     }),
   ]));
 
-  const relationCandidates = enrichRelationshipCandidates([...blockingDueWork, ...blocked, ...prerequisitesComplete, ...prerequisitesUnverified], signals, now, timezone);
-  const context = contextObservations(signals, now, timezone);
+  const relationCandidates = enrichRelationshipCandidates([...blockingDueWork, ...blocked, ...prerequisitesComplete], signals, now, timezone);
+  const context = contextObservations(signals, now, timezone, { canonicalUserId: ctx.canonicalUserId, suppressed });
   const contextCandidates = context.candidates.filter(notDismissed);
   const rotationIndex = dayRotation(userId, now);
 
@@ -113,7 +109,6 @@ export async function buildBriefing(
     ...crowded,
     ...stuck,
     ...relationCandidates,
-    ...shipped,
     ...contextCandidates,
   ]) {
     // Primary task pressure still has one winning rule. Relationships and
@@ -152,10 +147,9 @@ export async function buildBriefing(
   ]);
   const attention = selected.filter((item) => attentionKinds.has(item.trigger));
 
-  // Saved activity and completed work share the finite selection cap and stay below
-  // consequential work in the existing comparator. Home and ledger
-  // now expose these positive observations with their saved date.
-  const moving = selected.filter((item) => item.trigger === "just-shipped" || item.trigger === "recorded-activity");
+  // Recorded title/comment observations retain the cap; completion recognition
+  // is a dated context digest and does not repeat congratulatory suggestion rows.
+  const moving = selected.filter((item) => item.trigger === "recorded-activity");
 
   // ─ Quiet risks: stuck-work, ordered by severity, EXCLUDING items
   // already in attention (so a stuck-work item that's also overdue
