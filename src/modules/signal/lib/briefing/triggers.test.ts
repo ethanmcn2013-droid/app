@@ -24,7 +24,9 @@ test("unknown custom phases do not count as started or review in overload", () =
   assert.deepEqual(detectOverload(doing)[0]?.representedTaskIds, doing.map(task => task.id).sort());
   const dueUnknown = detectDueSoon([{ ...unknown[0]!, dueAt: NOW + DAY }], NOW)[0]!;
   assert.ok(dueUnknown.reasons.some(reason => /Still open in “Quality check”/.test(reason)));
-  assert.ok(dueUnknown.reasons.every(reason => !/^Started|^Not started|^Sitting in review/.test(reason)));
+  assert.ok(dueUnknown.reasons.every(reason => !/\bstarted\b/i.test(reason)));
+  const unnamedUnknown = detectDueSoon([{ ...unknown[0]!, stage: { key: "custom", label: null, phase: "unknown", complete: false }, dueAt: NOW + DAY }], NOW)[0]!;
+  assert.ok(unnamedUnknown.reasons.includes("Still open. Its saved stage is unknown."));
 });
 
 describe("current dependency relevance", () => {
@@ -522,7 +524,7 @@ describe("reasons carry evidence, not restatement", () => {
     ]);
     assert.deepEqual(blocked.reasons, [
       "Signal flags blocked work after five days without movement.",
-      "Sitting in review.",
+      "Saved stage: “Review”.",
       "One upstream item has not cleared.",
     ]);
   });
@@ -547,33 +549,36 @@ describe("reasons carry evidence, not restatement", () => {
     }
   });
 
-  // The row already reads "Nothing has moved on it for eighteen days", so
-  // a bullet reading "Last update was eighteen days ago" spent the click
-  // restating it. The bullets now name the rule, then say the one thing
-  // the row cannot: whether the work was ever started.
-  test("stuck work adds the lane fact its row cannot carry", () => {
+  // The row already carries age. The second bullet adds the current saved
+  // stage without treating that stage as evidence of task history.
+  test("stuck work adds the saved stage without inferring task history", () => {
     assert.deepEqual(
       detectStuckWork([makeTask({ idleDays: 18, lane: "in-flight" })])[0]!
         .reasons,
       [
         "Signal flags anything quiet for three days or more.",
-        "Started, and still open.",
+        "Saved stage: “In progress”.",
       ],
     );
     assert.deepEqual(
       detectStuckWork([makeTask({ idleDays: 18, lane: "next" })])[0]!.reasons,
       [
         "Signal flags anything quiet for three days or more.",
-        "Not started yet.",
+        "Saved stage: “Next”.",
       ],
     );
     assert.deepEqual(
       detectStuckWork([makeTask({ idleDays: 18, lane: "review" })])[0]!.reasons,
       [
         "Signal flags anything quiet for three days or more.",
-        "Sitting in review.",
+        "Saved stage: “Review”.",
       ],
     );
+    const labelledStage = detectStuckWork([makeTask({ idleDays: 18, stage: {
+      key: "doing", label: "Doing", phase: "in-flight", complete: false,
+    } })])[0]!;
+    assert.equal(labelledStage.reasons[1], "Saved stage: “Doing”.");
+    assert.ok(labelledStage.reasons.every(reason => !/\bstarted\b/i.test(reason)));
   });
 
   test("no stuck-work bullet restates the age the row already carries", () => {
@@ -597,14 +602,23 @@ describe("reasons carry evidence, not restatement", () => {
     ]);
   });
 
-  test("an untouched due item reports where it is sitting instead", () => {
-    const [fired] = detectDueSoon(
-      [makeTask({ dueAt: NOW + DAY, idleDays: 0, lane: "next" })],
+  test("due triggers keep their deadline reason and report saved stage", () => {
+    const [next, inProgress] = detectDueSoon(
+      [
+        makeTask({ id: "next", dueAt: NOW + DAY, idleDays: 0, lane: "next" }),
+        makeTask({ id: "in-progress", dueAt: NOW + DAY, idleDays: 0, lane: "in-flight" }),
+      ],
       NOW,
     );
-    assert.deepEqual(fired.reasons, [
+    assert.equal(next.trigger, "due-soon");
+    assert.deepEqual(next.reasons, [
       "Signal flags anything due inside two days.",
-      "Not started yet.",
+      "Saved stage: “Next”.",
+    ]);
+    assert.equal(inProgress.trigger, "due-soon");
+    assert.deepEqual(inProgress.reasons, [
+      "Signal flags anything due inside two days.",
+      "Saved stage: “In progress”.",
     ]);
   });
 

@@ -32,27 +32,25 @@ export type Triggered = {
 };
 
 /**
- * Where the work has actually got to, as a sentence. Lane names are
- * board vocabulary; "Still sitting in In flight" is not a thing anyone
- * says. This is the fact a date alone cannot give the reader: whether
- * the item has been started at all.
+ * The task's current saved stage, in language a reader can scan. This
+ * reports the saved status; it does not infer whether work has ever
+ * started from the current board position.
  */
 function lanePosition(task: TaskSignal): string {
+  const stageLabel = task.stage?.label?.trim();
   if (task.stage?.phase === "unknown") {
-    return task.stage.label
-      ? `Still open in “${task.stage.label}”.`
-      : "Still open. Its saved stage does not establish whether work has started.";
+    return stageLabel
+      ? `Still open in “${stageLabel}”.`
+      : "Still open. Its saved stage is unknown.";
   }
-  switch (task.stage?.phase ?? task.lane) {
-    case "next":
-      return "Not started yet.";
-    case "in-flight":
-      return "Started, and still open.";
-    case "review":
-      return "Sitting in review.";
-    case "shipped":
-      return "Already closed.";
-  }
+  const phase = task.stage?.phase ?? task.lane;
+  const fallbackLabel = {
+    next: "Next",
+    "in-flight": "In progress",
+    review: "Review",
+    shipped: "Done",
+  }[phase];
+  return `Saved stage: “${stageLabel || fallbackLabel}”.`;
 }
 
 /** Plain phrase for a date this many calendar days out (always ≥ 0). */
@@ -80,8 +78,8 @@ export function detectStuckWork(signals: TaskSignal[]): Triggered[] {
       // The row above already reads "Nothing has moved on it for eighteen
       // days", so a first bullet reading "Last update was eighteen days
       // ago" spent the reader's click restating it in different words.
-      // Rule first, then the one fact the row has no room for: whether
-      // the work has been started at all.
+      // Rule first, then the current saved stage. A board position does
+      // not establish whether work has ever started.
       reasons: [
         "Signal flags anything quiet for three days or more.",
         lanePosition(task),
@@ -106,8 +104,7 @@ export function detectDueSoon(
       const overdueDays = Math.round(Math.abs(daysOut));
       // The row already states the date position, so neither line here
       // repeats it. Line one names the rule that fired; line two is the
-      // fact the date alone does not give you, which is whether anyone
-      // has touched it and where it is sitting.
+      // fact the date alone does not give you: its current saved stage.
       const evidence =
         task.idleDays != null && task.idleDays >= 1
           ? `No update on it in ${plural(task.idleDays, "day", "days")}.`
