@@ -435,35 +435,41 @@ test("the rendered Overview speaks plainly and opens signals only by opaque id",
 });
 
 
-test("round8receiving recorded work stays neutral and visible after real attention and risks", async () => {
+test("title edits stay dated context while real attention and risks keep their order", async () => {
   const base: TaskSignal = { id: "saved", title: "Saved catalogue", lane: "next", priority: 2, dueAt: null, idleDays: null,
     commentCount: 0, blockedBy: [], sourceLabel: "Tasks · The Orchard, events", movedToShippedAt: null, workspaceId: "ws-orchard" };
-  const title = { ...base, latestValidatedTitleEdit: { at: new Date(NOW - 1_000).toISOString(), kind: "update" as const, field: "title" as const } };
+  const title = { ...base, activityCoverage: "partial" as const, hasRecordedTitleEdit: true,
+    latestValidatedTitleEdit: { at: new Date(NOW - 1_000).toISOString(), kind: "update" as const, field: "title" as const } };
   const completed: TaskSignal = { ...base, id: "completed", title: "Completed records", lane: "shipped", movedToShippedAt: NOW - 3_600_000 };
   const positive = await build([title, completed]);
-  assert.deepEqual(positive.ledger.entries.map(entry => [entry.section, entry.state]), [["activity", "recorded"]]);
+  assert.deepEqual(positive.ledger.entries, []);
   assert.equal(positive.model.attention.length + positive.model.risks.length, 0);
-  assert.equal(positive.model.activity.length, 1);
+  assert.equal(positive.model.activity.length, 0);
+  assert.match(positive.ledger.coverageNote ?? "", /Title edited for “Saved catalogue” on 16 July 2026 at 08:59:59 \(Europe\/Dublin\); this does not establish meaningful work progress/);
+  assert.match(positive.ledger.coverageNote ?? "", /history is incomplete/i);
   assert.match(positive.ledger.coverageNote!, /1 task has a saved completion in the past 24 hours.*Completed records.*16 July 2026.*08:00:00 \(Europe\/Dublin\).*2026-07-16T07:00:00.000Z/);
-  assert.equal(positive.model.verdict.tone, "neutral");
-  assert.doesNotMatch(positive.model.verdict.sentence, /needs attention|at risk|part of the picture/i);
+  assert.equal(positive.model.verdict.tone, "success");
+  assert.equal(positive.model.verdict.sentence, "On track. 1 finished this week.");
+  assert.match(positive.model.coverage?.note ?? "", /Title edited for “Saved catalogue”/);
+  assert.match(positive.model.coverage?.note ?? "", /history is incomplete/i);
   const { OverviewView } = loadView();
   const positiveHtml = renderToStaticMarkup(createElement(OverviewView, { model: positive.model }));
-  assert.match(positiveHtml, /<h2[^>]*>Recorded work<\/h2>/);
-  assert.match(positiveHtml, /Completed records/);
-  assert.match(positiveHtml, /past 24 hours/);
-  assert.match(positiveHtml, /2026-07-16T07:00:00.000Z/);
+  assert.doesNotMatch(positiveHtml, /<h2[^>]*>Recorded work<\/h2>/);
+  assert.match(positiveHtml, /Title edited for “Saved catalogue”/);
+  assert.match(positiveHtml, /Activity history is incomplete/);
   assert.doesNotMatch(positiveHtml, /<h2[^>]*>(?:Needs attention|At risk)<\/h2>/);
   const mixed = await build([title, completed, { ...base, id: "urgent", title: "Due record", dueAt: NOW + 3_600_000 },
     { ...base, id: "stalled", title: "Stalled record", lane: "in-flight", idleDays: 10 }]);
-  assert.deepEqual(mixed.ledger.entries.map(entry => entry.section), ["attention", "risks", "activity"]);
-  assert.equal(mixed.model.activity.length, 1);
+  assert.deepEqual(mixed.ledger.entries.map(entry => entry.section), ["attention", "risks"]);
+  assert.equal(mixed.model.activity.length, 0);
   assert.equal(mixed.model.attention.length, 1); assert.equal(mixed.model.risks.length, 1);
   assert.match(mixed.model.verdict.sentence, /^1 thing needs attention and 1 is at risk\.$/);
   assert.doesNotMatch(mixed.model.readNote ?? "", /asks? something of you/i);
   const mixedHtml = renderToStaticMarkup(createElement(OverviewView, { model: mixed.model }));
   assert.ok(mixedHtml.indexOf(">Needs attention</h2>") < mixedHtml.indexOf(">At risk</h2>"));
-  assert.ok(mixedHtml.indexOf(">At risk</h2>") < mixedHtml.indexOf(">Recorded work</h2>"));
+  assert.doesNotMatch(mixedHtml, /<h2[^>]*>Recorded work<\/h2>/);
+  assert.match(mixed.ledger.coverageNote ?? "", /Title edited for “Saved catalogue”/);
+  assert.match(mixed.ledger.coverageNote ?? "", /history is incomplete/i);
   assert.match(mixedHtml, /Completed records.*2026-07-16T07:00:00.000Z/);
 });
 
