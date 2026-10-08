@@ -18,12 +18,13 @@ const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 const workbench = path.join(repo, "experience", "workbench");
 const definitionPath = path.join(workbench, "definition.json");
 const definition = JSON.parse(readFileSync(definitionPath, "utf8"));
+const APPROVED_DEFINITION_SHA256 = "4dd337fc722a0b043a6daf367a818cd2182d114c7d0a71d38469b55e5bf0718a";
 const outputRoot = path.join(repo, "experience", "output", "workbench-runs");
-const title = definition.scenario.playwrightTitle;
+const title = "tasks.surface.task-detail-panel / populated task";
 const startedAt = new Date().toISOString();
 const started = Date.now();
 const runId = `workbench-${new Date().toISOString().replaceAll(/[-:.TZ]/g, "").slice(0, 14)}-${randomUUID().slice(0, 8)}`;
-const missingProof = [
+const limitations = [
   "No authenticated identity, customer data, or persistence is exercised.",
   "No database readback or server-action mutation is exercised.",
   "No original-build versus candidate-build visual comparison is produced.",
@@ -110,9 +111,8 @@ function parseArgs(argv) {
 }
 
 function verifyDefinition() {
-  if (definition.schema !== "signal-workbench-scenario/1" || definition.id !== "tasks-populated-task-detail-panel" || definition.version !== 1) {
-    fail("scenario definition is not the admitted version");
-  }
+  const definitionDigest = sha256(Buffer.from(canonical(definition)));
+  if (definition.schema !== "signal-workbench-scenario/1" || definition.id !== "tasks-populated-task-detail-panel" || definition.version !== 1 || definitionDigest !== APPROVED_DEFINITION_SHA256) fail("scenario definition differs from the admitted version");
   const branch = git(["branch", "--show-current"]);
   if (branch !== definition.source.branch) fail("current branch does not match the scenario source pin");
   const head = git(["rev-parse", "HEAD"]);
@@ -122,7 +122,7 @@ function verifyDefinition() {
   }
   const status = gitRaw(["status", "--porcelain=v1", "--untracked-files=all"]);
   const runtimeDirty = status.split(/\r?\n/).filter(Boolean).map((line) => line.slice(3)).filter((file) =>
-    /^(src\/|app\/|pages\/|components\/|next\.config\.|package\.json$|pnpm-lock\.yaml$|experience\/(tests\/|critical-fixtures\.json$|browser-contract\.json$|playwright\.config\.ts$))/.test(file.replaceAll("\\", "/")),
+    /^(src\/|app\/|pages\/|components\/|next\.config\.|package\.json$|pnpm-lock\.yaml$|vercel\.json$|experience\/(workbench\/|tests\/|critical-fixtures\.json$|browser-contract\.json$|playwright\.config\.ts$))/.test(file.replaceAll("\\", "/")),
   );
   if (runtimeDirty.length) fail(`runtime source is dirty (${runtimeDirty.length} path(s)); commit the candidate before evidence capture`);
   const localEnvFiles = readdirSync(repo, { withFileTypes: true })
@@ -156,8 +156,9 @@ function verifyDefinition() {
     runtimeSourceSha256: sha256(Buffer.from(`${tree}\n`)),
     fixtureSha256: sha256(readFileSync(path.join(repo, definition.scenario.fixtureSource))),
     browserContractSha256: sha256(readFileSync(path.join(repo, definition.scenario.browserContract))),
-    playrightConfigSha256: sha256(readFileSync(path.join(repo, "experience", "playwright.config.ts"))),
+    playwrightConfigSha256: sha256(readFileSync(path.join(repo, "experience", "playwright.config.ts"))),
     testSourceSha256: sha256(readFileSync(path.join(repo, "experience", "tests", "critical-experiences.spec.ts"))),
+    definitionSha256: definitionDigest,
   };
 }
 
@@ -180,12 +181,14 @@ function runPlaywright(output) {
     const child = spawn(process.execPath, args, {
       cwd: repo,
       env: safeEnv,
-      stdio: ["ignore", "pipe", "ignore"],
+      stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
       shell: false,
     });
     const chunks = [];
+    const errorChunks = [];
     let bytes = 0;
+    let errorBytes = 0;
     let overflow = false;
     child.stdout.on("data", (chunk) => {
       bytes += chunk.length;
@@ -194,18 +197,35 @@ function runPlaywright(output) {
         child.kill();
       } else chunks.push(chunk);
     });
-    child.on("error", () => resolve({ exitCode: null, report: null, outputOverflow: false }));
+    child.stderr.on("data", (chunk) => {
+      errorBytes += chunk.length;
+      if (errorBytes > 100 * 1024 * 1024) {
+        overflow = true;
+        child.kill();
+      } else errorChunks.push(chunk);
+    });
+    child.on("error", () => {
+      const stdout = Buffer.concat(chunks);
+      const stderr = Buffer.concat(errorChunks);
+      writeFileSync(path.join(output, "playwright-report.json"), stdout, { flag: "wx" });
+      writeFileSync(path.join(output, "playwright-stderr.log"), stderr, { flag: "wx" });
+      resolve({ exitCode: null, report: null, stdout, stderr, outputOverflow: false });
+    });
     child.on("close", (code) => {
+      const stdout = Buffer.concat(chunks);
+      const stderr = Buffer.concat(errorChunks);
       let report = null;
       if (!overflow) {
-        const text = Buffer.concat(chunks).toString("utf8");
+        const text = stdout.toString("utf8");
         const first = text.indexOf("{");
         const last = text.lastIndexOf("}");
         if (first >= 0 && last > first) {
           try { report = JSON.parse(text.slice(first, last + 1)); } catch { report = null; }
         }
       }
-      resolve({ exitCode: code, report, outputOverflow: overflow });
+      writeFileSync(path.join(output, "playwright-report.json"), stdout, { flag: "wx" });
+      writeFileSync(path.join(output, "playwright-stderr.log"), stderr, { flag: "wx" });
+      resolve({ exitCode: code, report, stdout, stderr, outputOverflow: overflow });
     });
   });
 }
@@ -283,7 +303,8 @@ async function collectRuntimeMetadata(report) {
     platform: process.platform,
     architecture: process.arch,
     playwright: JSON.parse(readFileSync(path.join(repo, "node_modules", "@playwright", "test", "package.json"), "utf8")).version,
-    browser: { engine: "chromium", configuredChannel: channel ?? "playwright-bundled", actualVersion, versionError },
+    browser: actualVersion ? `Chrome ${actualVersion}` : `Chromium (version unavailable: ${versionError ?? "unknown"})`,
+    browserDetails: { engine: "chromium", configuredChannel: channel ?? "playwright-bundled", actualVersion, versionError },
     projects: projectData,
   };
 }
@@ -315,44 +336,82 @@ async function main() {
   rejectSymlinkComponents(outputRoot);
   mkdirSync(output);
 
-  const scenarioDigest = sha256(Buffer.from(canonical(definition)));
+  const scenarioDigest = source.definitionSha256;
   const execution = await runPlaywright(output);
   let screenshots = [];
   if (execution.report) screenshots = extractScreenshots(execution.report, output);
-  let build = null;
-  try { build = buildMetadata(); } catch { /* Failed builds have no completed build receipt. */ }
+  let buildFiles = null;
+  try { buildFiles = buildMetadata(); } catch { /* A stale build is not presented as this run's build. */ }
   const cases = summarizeReport(execution.report);
   const expectedProjects = definition.journey.viewports;
   const passed = execution.exitCode === 0 && cases.length === expectedProjects.length && cases.every((item) => item.status === "passed") && screenshots.length === expectedProjects.length;
+  const build = cases.length > 0 && buildFiles ? { ...buildFiles, sourceTree: source.tree, status: "built-by-playwright-webserver" } : { status: "not-confirmed" };
   const browser = await collectRuntimeMetadata(execution.report);
   const status = execution.exitCode === null ? "unknown" : passed ? "passed" : "failed";
+  const missingProof = passed ? [] : ["The fixed populated-task browser journey did not pass with four captured viewport screenshots."];
   const viewportByName = new Map(browser.projects.map((project) => [project.name, project.viewport]));
-  const artifacts = screenshots.map((shot) => ({
-    name: shot.file,
-    path: shot.file,
-    sha256: `sha256:${shot.sha256}`,
-    mediaType: "image/png",
-  }));
+  const runnerBytes = readFileSync(fileURLToPath(import.meta.url));
+  const definitionBytes = readFileSync(definitionPath);
+  writeFileSync(path.join(output, "runner-source.mjs"), runnerBytes, { flag: "wx" });
+  writeFileSync(path.join(output, "scenario-definition.json"), definitionBytes, { flag: "wx" });
+  const sourceEvidence = {
+    repository: definition.source.repository,
+    candidate: { commit: source.head, tree: source.tree, dirty: false },
+    branch: source.branch,
+    baseCommit: source.baseCommit,
+    runtimeSourceSha256: `sha256:${source.runtimeSourceSha256}`,
+    fixtureSha256: `sha256:${source.fixtureSha256}`,
+    browserContractSha256: `sha256:${source.browserContractSha256}`,
+    playwrightConfigSha256: `sha256:${source.playwrightConfigSha256}`,
+    testSourceSha256: `sha256:${source.testSourceSha256}`,
+    runnerSourceSha256: `sha256:${sha256(runnerBytes)}`,
+    scenarioDefinitionSha256: `sha256:${sha256(definitionBytes)}`,
+    runtimeDirty: source.runtimeDirty,
+  };
+  const buildEvidence = { ...build, sourceTree: source.tree };
+  writeFileSync(path.join(output, "source-metadata.json"), `${JSON.stringify(sourceEvidence, null, 2)}\n`, { flag: "wx" });
+  writeFileSync(path.join(output, "build-metadata.json"), `${JSON.stringify(buildEvidence, null, 2)}\n`, { flag: "wx" });
+  const artifactNames = [
+    ...screenshots.map((shot) => shot.file),
+    "playwright-report.json",
+    "playwright-stderr.log",
+    "source-metadata.json",
+    "build-metadata.json",
+    "runner-source.mjs",
+    "scenario-definition.json",
+  ];
+  const artifacts = artifactNames.map((file) => {
+    const bytes = readFileSync(path.join(output, file));
+    const mediaType = file.endsWith(".png") ? "image/png" : file.endsWith(".json") ? "application/json" : file.endsWith(".mjs") ? "text/javascript" : "text/plain";
+    return { name: file, path: file, sha256: `sha256:${sha256(bytes)}`, mediaType, bytes: bytes.length };
+  });
+  const completedAt = new Date().toISOString();
+  const durationMs = Date.now() - started;
   const receipt = {
     schema: "signal-workbench-run/1",
     candidate: { commit: source.head, tree: source.tree, dirty: false },
     definition: { id: "tasks-detail-panel@1", digest: `sha256:${scenarioDigest}` },
     instanceId: runId,
     startedAt,
-    completedAt: new Date().toISOString(),
-    durationMs: Date.now() - started,
+    completedAt,
+    durationMs,
     status,
     exitCode: execution.exitCode,
     ready: passed,
-    fidelity: { rendering: "built-product", identity: "synthetic", persistence: "not-exercised" },
+    fidelity: {
+      rendering: "built-product",
+      identity: "synthetic",
+      persistence: "not-exercised",
+      details: { ...definition.fidelity, source: "experience/browser-contract.json and experience/critical-fixtures.json" },
+    },
     viewports: expectedProjects.map((name) => ({ name, ...(viewportByName.get(name) ?? {}) })),
     artifacts,
     missingProof,
-    limitations: missingProof,
+    limitations,
     scenario: { id: definition.id, version: definition.version, digest: `sha256:${scenarioDigest}` },
-    run: { id: runId, startedAt, completedAt: new Date().toISOString(), durationMs: Date.now() - started },
+    run: { id: runId, startedAt, completedAt, durationMs },
     source: { repository: definition.source.repository, ...source },
-    build: build ? { ...build, sourceTree: source.tree, status: execution.exitCode === 0 ? "built-by-playwright-webserver" : "build-or-browser-command-failed" } : { status: "unavailable" },
+    build,
     journey: {
       title,
       command: "node_modules/@playwright/test/cli.js test --config experience/playwright.config.ts --grep <fixed-title> --reporter=json --output <run-dir>/playwright-results",
@@ -361,12 +420,11 @@ async function main() {
       cases,
       screenshotCount: screenshots.length,
     },
-    fidelity: { ...definition.fidelity, source: "experience/browser-contract.json and experience/critical-fixtures.json" },
     runtime: browser,
     screenshots,
-    proofLimits: missingProof,
-    failure: execution.outputOverflow ? "Reporter output exceeded the 100 MiB safety cap." : execution.exitCode === null ? "Playwright process could not be started." : passed ? null : "The exact journey did not complete with four passed viewport cases and four captured PNGs. Consult the run status; raw process output was intentionally not retained.",
-    custody: { location: path.relative(repo, output).replaceAll("\\", "/"), secretFree: true, rawLogsRetained: false },
+    proofLimits: limitations,
+    failure: execution.outputOverflow ? "Process output exceeded the 100 MiB safety cap and was truncated." : execution.exitCode === null ? "Playwright process could not be started." : passed ? null : "The exact journey did not complete with four passed viewport cases and four captured PNGs; inspect the retained Playwright report and stderr artifacts.",
+    custody: { location: path.relative(repo, output).replaceAll("\\", "/"), secretFree: true, rawLogsRetained: true },
   };
   writeFileSync(path.join(output, "receipt.json"), `${JSON.stringify(receipt, null, 2)}\n`, { flag: "wx" });
   console.log(JSON.stringify({ status: receipt.journey.status, runId, scenarioDigest: receipt.scenario.digest, screenshots: screenshots.length, output: receipt.custody.location }));
