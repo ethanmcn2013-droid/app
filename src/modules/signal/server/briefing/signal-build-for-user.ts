@@ -323,9 +323,7 @@ export async function buildBriefingForUser(opts: {
       if (returnedIds.length !== workspaceIds.length || new Set(returnedIds).size !== returnedIds.length || returnedIds.some(id => !workspaceIds.includes(id))) {
         throw new Error("Signal source workspace coverage mismatch");
       }
-      if (workspaces.some(work => work.coverage && Object.entries(work.coverage).some(([dimension, status]) =>
-        status === "partial" && !(dimension === "activity" && work.coverage?.tasks === "complete" && work.tasks.length === 0),
-      ))) {
+      if (workspaces.some(work => work.coverage && Object.values(work.coverage).some(status => status === "partial"))) {
         coverageStatus = "partial";
       }
       return workspaces.flatMap((work) =>

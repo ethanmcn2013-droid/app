@@ -85,7 +85,7 @@ async function config(value: string) {
   await fixture.client.execute({ sql: "INSERT INTO meta(key,value,updated_at) VALUES (?,?,?)", args: [`board:${WORKSPACE}:columns`, value, NOW / 1000] });
 }
 
-test("explicit complete empty inventory makes partial activity capability inapplicable without changing the raw read", async () => {
+test("empty inventory with partial activity coverage cannot produce a healthy all-clear", async () => {
   const { dataSource } = await import("../../lib/data/source");
   const before = await hashes();
   const raw = await dataSource.read(WORKSPACE);
@@ -93,12 +93,12 @@ test("explicit complete empty inventory makes partial activity capability inappl
   assert.equal(raw.coverage?.tasks, "complete");
   assert.equal(raw.coverage?.activity, "partial");
   const result = await build();
-  assert.equal(result.briefing.coverageStatus, "complete");
-  assert.equal(ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Test read", allowedAppOrigin: "https://app.signalstudio.ie" }).emptyState?.kind, "healthy");
+  assert.equal(result.briefing.coverageStatus, "partial");
+  assert.equal(ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Test read", allowedAppOrigin: "https://app.signalstudio.ie" }).emptyState?.kind, "coverage");
   assert.deepEqual(await hashes(), before);
 });
 
-test("empty inventory exemption retains other partial dimensions and requires explicit task completeness", async () => {
+test("empty inventory still retains other partial dimensions and requires explicit task completeness", async () => {
   const { dataSource } = await import("../../lib/data/source");
   const original = dataSource.readMany;
   assert.ok(original);
@@ -117,6 +117,20 @@ test("empty inventory exemption retains other partial dimensions and requires ex
     await task("nonempty-history", { lane: "doing" });
     assert.equal((await build()).briefing.coverageStatus, "partial", "nonempty inventory still needs activity history");
   } finally { dataSource.readMany = original; }
+});
+
+test("archived-only inventory with partial activity coverage cannot produce a healthy all-clear", async () => {
+  const { dataSource } = await import("../../lib/data/source");
+  await task("archived-only-history", { lane: "doing", archived: NOW - DAY });
+  const before = await hashes();
+  const raw = await dataSource.read(WORKSPACE);
+  assert.deepEqual(raw.tasks, []);
+  assert.equal(raw.coverage?.tasks, "complete");
+  assert.equal(raw.coverage?.activity, "partial");
+  const result = await build();
+  assert.equal(result.briefing.coverageStatus, "partial");
+  assert.equal(ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Test read", allowedAppOrigin: "https://app.signalstudio.ie" }).emptyState?.kind, "coverage");
+  assert.deepEqual(await hashes(), before);
 });
 
 test("mixed authorized scope does not let an empty workspace hide another workspace's partial history", async () => {
