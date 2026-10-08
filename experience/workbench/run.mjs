@@ -162,7 +162,29 @@ function verifyDefinition() {
   };
 }
 
-function runPlaywright(output) {
+function terminateChildTree(child) {
+  if (!child.pid) return { requested: true, mechanism: "child process had no PID", result: "unavailable" };
+  if (process.platform === "win32") {
+    const taskkill = path.join(process.env.SystemRoot ?? "C:\\Windows", "System32", "taskkill.exe");
+    const result = spawnSync(taskkill, ["/PID", String(child.pid), "/T", "/F"], {
+      cwd: repo,
+      encoding: "utf8",
+      windowsHide: true,
+      shell: false,
+    });
+    if (result.status !== 0) child.kill();
+    return { requested: true, mechanism: `taskkill /PID ${child.pid} /T /F`, result: result.status === 0 ? "terminated-process-tree" : "taskkill-failed-child-kill-requested" };
+  }
+  try {
+    process.kill(-child.pid, "SIGTERM");
+    return { requested: true, mechanism: `SIGTERM process group ${child.pid}`, result: "termination-requested" };
+  } catch {
+    child.kill("SIGTERM");
+    return { requested: true, mechanism: `SIGTERM child ${child.pid}`, result: "termination-requested" };
+  }
+}
+
+function runPlaywright(output, { signal } = {}) {
   return new Promise((resolve) => {
     const cli = path.join(repo, "node_modules", "@playwright", "test", "cli.js");
     const args = [
@@ -184,12 +206,51 @@ function runPlaywright(output) {
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
       shell: false,
+      detached: process.platform !== "win32",
     });
     const chunks = [];
     const errorChunks = [];
     let bytes = 0;
     let errorBytes = 0;
     let overflow = false;
+    let settled = false;
+    let termination = null;
+    const persistProcessOutput = () => {
+      const stdout = Buffer.concat(chunks);
+      const stderr = Buffer.concat(errorChunks);
+      let report = null;
+      if (!overflow) {
+        const text = stdout.toString("utf8");
+        const first = text.indexOf("{");
+        const last = text.lastIndexOf("}");
+        if (first >= 0 && last > first) {
+          try { report = JSON.parse(text.slice(first, last + 1)); } catch { report = null; }
+        }
+      }
+      const stdoutName = report ? "playwright-report.json" : "playwright-stdout.partial.txt";
+      writeFileSync(path.join(output, stdoutName), stdout, { flag: "wx" });
+      writeFileSync(path.join(output, "playwright-stderr.log"), stderr, { flag: "wx" });
+      return { stdout, stderr, report, stdoutName };
+    };
+    const onAbort = () => {
+      if (settled || termination) return;
+      termination = terminateChildTree(child);
+    };
+    const removeAbortListener = () => signal?.removeEventListener("abort", onAbort);
+    const finish = ({ code = null, childSignal = null, spawnError = null } = {}) => {
+      if (settled) return;
+      settled = true;
+      removeAbortListener();
+      const persisted = persistProcessOutput();
+      resolve({
+        exitCode: termination || spawnError ? null : code,
+        childSignal,
+        termination,
+        spawnError: spawnError?.message ?? null,
+        ...persisted,
+        outputOverflow: overflow,
+      });
+    };
     child.stdout.on("data", (chunk) => {
       bytes += chunk.length;
       if (bytes > 100 * 1024 * 1024) {
@@ -204,29 +265,10 @@ function runPlaywright(output) {
         child.kill();
       } else errorChunks.push(chunk);
     });
-    child.on("error", () => {
-      const stdout = Buffer.concat(chunks);
-      const stderr = Buffer.concat(errorChunks);
-      writeFileSync(path.join(output, "playwright-report.json"), stdout, { flag: "wx" });
-      writeFileSync(path.join(output, "playwright-stderr.log"), stderr, { flag: "wx" });
-      resolve({ exitCode: null, report: null, stdout, stderr, outputOverflow: false });
-    });
-    child.on("close", (code) => {
-      const stdout = Buffer.concat(chunks);
-      const stderr = Buffer.concat(errorChunks);
-      let report = null;
-      if (!overflow) {
-        const text = stdout.toString("utf8");
-        const first = text.indexOf("{");
-        const last = text.lastIndexOf("}");
-        if (first >= 0 && last > first) {
-          try { report = JSON.parse(text.slice(first, last + 1)); } catch { report = null; }
-        }
-      }
-      writeFileSync(path.join(output, "playwright-report.json"), stdout, { flag: "wx" });
-      writeFileSync(path.join(output, "playwright-stderr.log"), stderr, { flag: "wx" });
-      resolve({ exitCode: code, report, stdout, stderr, outputOverflow: overflow });
-    });
+    child.on("error", (error) => finish({ spawnError: error }));
+    child.on("close", (code, childSignal) => finish({ code, childSignal }));
+    signal?.addEventListener("abort", onAbort, { once: true });
+    if (signal?.aborted) onAbort();
   });
 }
 
@@ -328,16 +370,17 @@ function summarizeReport(report) {
   return cases;
 }
 
-async function main() {
+export async function runWithOutput({ output: requestedOutput, signal } = {}) {
   if (definition.source.repository !== "ethanmcn2013-droid/app") fail("scenario repository mismatch");
-  const output = parseArgs(process.argv.slice(2));
+  if (!requestedOutput) fail("--output <fresh-run-directory> is required");
+  const output = parseArgs(["--output", requestedOutput]);
   const source = verifyDefinition();
   mkdirSync(outputRoot, { recursive: true });
   rejectSymlinkComponents(outputRoot);
   mkdirSync(output);
 
   const scenarioDigest = source.definitionSha256;
-  const execution = await runPlaywright(output);
+  const execution = await runPlaywright(output, { signal });
   let screenshots = [];
   if (execution.report) screenshots = extractScreenshots(execution.report, output);
   let buildFiles = null;
@@ -373,7 +416,7 @@ async function main() {
   writeFileSync(path.join(output, "build-metadata.json"), `${JSON.stringify(buildEvidence, null, 2)}\n`, { flag: "wx" });
   const artifactNames = [
     ...screenshots.map((shot) => shot.file),
-    "playwright-report.json",
+    execution.stdoutName,
     "playwright-stderr.log",
     "source-metadata.json",
     "build-metadata.json",
@@ -398,6 +441,7 @@ async function main() {
     status,
     exitCode: execution.exitCode,
     ready: passed,
+    wrapperExitCode: passed ? 0 : 1,
     fidelity: {
       rendering: "built-product",
       identity: "synthetic",
@@ -415,7 +459,10 @@ async function main() {
     journey: {
       title,
       command: "node_modules/@playwright/test/cli.js test --config experience/playwright.config.ts --grep <fixed-title> --reporter=json --output <run-dir>/playwright-results",
+      commandArgv: [process.execPath, path.join(repo, "node_modules", "@playwright", "test", "cli.js"), "test", "--config", "experience/playwright.config.ts", "--grep", title, "--reporter=json", "--output", path.join(output, "playwright-results")],
       exitCode: execution.exitCode,
+      childSignal: execution.childSignal,
+      termination: execution.termination,
       status,
       cases,
       screenshotCount: screenshots.length,
@@ -423,15 +470,23 @@ async function main() {
     runtime: browser,
     screenshots,
     proofLimits: limitations,
-    failure: execution.outputOverflow ? "Process output exceeded the 100 MiB safety cap and was truncated." : execution.exitCode === null ? "Playwright process could not be started." : passed ? null : "The exact journey did not complete with four passed viewport cases and four captured PNGs; inspect the retained Playwright report and stderr artifacts.",
+    failure: execution.outputOverflow ? "Process output exceeded the 100 MiB safety cap and was truncated." : execution.termination ? "The Playwright process tree was terminated; journey outcome is unknown." : execution.spawnError ? "The Playwright process could not be started." : execution.exitCode === null ? "Playwright process could not be started." : passed ? null : "The exact journey did not complete with four passed viewport cases and four captured PNGs; inspect the retained Playwright report and stderr artifacts.",
     custody: { location: path.relative(repo, output).replaceAll("\\", "/"), secretFree: true, rawLogsRetained: true },
   };
   writeFileSync(path.join(output, "receipt.json"), `${JSON.stringify(receipt, null, 2)}\n`, { flag: "wx" });
-  console.log(JSON.stringify({ status: receipt.journey.status, runId, scenarioDigest: receipt.scenario.digest, screenshots: screenshots.length, output: receipt.custody.location }));
-  process.exitCode = passed ? 0 : 1;
+  return receipt;
 }
 
-main().catch((error) => {
-  console.error(`Workbench runner failed: ${error.message}`);
-  process.exitCode = 1;
-});
+export async function main(argv = process.argv.slice(2)) {
+  const output = parseArgs(argv);
+  const receipt = await runWithOutput({ output });
+  console.log(JSON.stringify({ status: receipt.status, runId, scenarioDigest: receipt.scenario.digest, screenshots: receipt.screenshots.length, output: receipt.custody.location, wrapperExitCode: receipt.wrapperExitCode }));
+  return receipt.wrapperExitCode;
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().then((exitCode) => { process.exitCode = exitCode; }).catch((error) => {
+    console.error(`Workbench runner failed: ${error.message}`);
+    process.exitCode = 1;
+  });
+}
