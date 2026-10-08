@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import {
   isCompletedQualifiedViewResponse, isIntentionalEventSourceDisableResponse,
-  normalizeUrl, runtimeFailures, type RuntimeWatch,
+  normalizeUrl, runtimeFailures, type RuntimeIssue, type RuntimeWatch,
 } from "../../runtime-policy";
 
 const contract = JSON.parse(readFileSync("experience/browser-contract.json", "utf8"));
@@ -25,6 +25,59 @@ function canonical(value: unknown): string {
   return JSON.stringify(value);
 }
 function digest(value: unknown) { return `sha256:${createHash("sha256").update(canonical(value)).digest("hex")}`; }
+const evidenceLimits = { rules: 25, nodesPerRule: 10, targetsPerNode: 4, runtimeItems: 50, textCharacters: 1_000 };
+function evidenceText(text: string) { return text.slice(0, evidenceLimits.textCharacters); }
+function axeSummary(violations: Awaited<ReturnType<AxeBuilder["analyze"]>>["violations"]) {
+  return {
+    total: violations.length, truncated: violations.length > evidenceLimits.rules,
+    rules: violations.slice(0, evidenceLimits.rules).map(rule => ({
+      ruleId: evidenceText(rule.id), impact: rule.impact, helpUrl: evidenceText(rule.helpUrl), helpUrlTruncated: rule.helpUrl.length > evidenceLimits.textCharacters,
+      affectedNodeCount: rule.nodes.length, nodesTruncated: rule.nodes.length > evidenceLimits.nodesPerRule,
+      affectedSelectors: rule.nodes.slice(0, evidenceLimits.nodesPerRule).map(node => ({
+        targets: node.target.slice(0, evidenceLimits.targetsPerNode).map(target => evidenceText(typeof target === "string" ? target : JSON.stringify(target))),
+        targetTextTruncated: node.target.slice(0, evidenceLimits.targetsPerNode).some(target => (typeof target === "string" ? target : JSON.stringify(target)).length > evidenceLimits.textCharacters),
+        targetCount: node.target.length, targetsTruncated: node.target.length > evidenceLimits.targetsPerNode,
+      })),
+    })),
+  };
+}
+function runtimeIssueSummary(issue: RuntimeIssue) {
+  return { ...issue, ...("message" in issue ? { message: evidenceText(issue.message) } : {}),
+    ...("url" in issue ? { url: evidenceText(issue.url) } : {}),
+    textTruncated: ("message" in issue && issue.message.length > evidenceLimits.textCharacters) || ("url" in issue && issue.url.length > evidenceLimits.textCharacters) };
+}
+function nonblockingRationale(issue: RuntimeIssue, runtime: RuntimeWatch) {
+  // This describes a prior canonical-policy classification; it never decides acceptance.
+  if (issue.kind === "requestfailed") {
+    if (issue.resourceType === "eventsource") return "Canonical policy matched an aborted realtime stream after its observed 204 realtime-disable response.";
+    if (runtime.completedQualifiedViewWrites.has(normalizeUrl(issue.url))) return "Canonical policy matched a qualified-view abort after its observed successful 204 POST response.";
+    if (issue.resourceType === "script" || issue.resourceType === "stylesheet") return "Canonical policy matched a cancelled immutable build asset on the page's own origin.";
+    const url = new URL(issue.url);
+    if (url.searchParams.has("_rsc")) return "Canonical policy matched a same-origin cancelled RSC fetch during navigation.";
+    if (url.pathname.startsWith("/app") && url.searchParams.has("task")) return "Canonical policy matched a same-origin cancelled task-navigation fetch.";
+  }
+  return "The existing canonical runtime policy excluded this observed issue with no document allowance.";
+}
+function runtimeSummary(runtime: RuntimeWatch, pageUrl: string, failures: string[]) {
+  const nonblocking = runtime.issues.filter(issue => runtimeFailures({ ...runtime, issues: [issue] }, null, pageUrl).length === 0);
+  const urls = (values: Set<string>) => ({ total: values.size, truncated: values.size > evidenceLimits.runtimeItems,
+    urls: [...values].slice(0, evidenceLimits.runtimeItems).map(evidenceText) });
+  return {
+    policySource: "experience/runtime-policy.ts", allowance: null, currentPageUrl: evidenceText(pageUrl), limits: evidenceLimits,
+    issueCount: runtime.issues.length, issuesTruncated: runtime.issues.length > evidenceLimits.runtimeItems,
+    issues: runtime.issues.slice(0, evidenceLimits.runtimeItems).map(runtimeIssueSummary),
+    failureCount: failures.length, failuresTruncated: failures.length > evidenceLimits.runtimeItems,
+    failures: failures.slice(0, evidenceLimits.runtimeItems).map(evidenceText),
+    nonblockingCount: nonblocking.length, nonblockingTruncated: nonblocking.length > evidenceLimits.runtimeItems,
+    nonblocking: nonblocking.slice(0, evidenceLimits.runtimeItems).map(issue => ({
+      issue: runtimeIssueSummary(issue), classification: "nonblocking-by-canonical-policy", rationale: nonblockingRationale(issue, runtime),
+      evidence: { classifier: "runtimeFailures(single observed issue, null allowance, current page URL)",
+        intentionalEventSourceTeardown: "url" in issue && runtime.intentionalEventSourceTeardowns.has(normalizeUrl(issue.url)),
+        completedQualifiedViewWrite: "url" in issue && runtime.completedQualifiedViewWrites.has(normalizeUrl(issue.url)) },
+    })),
+    responseEvidence: { intentionalEventSourceTeardowns: urls(runtime.intentionalEventSourceTeardowns), completedQualifiedViewWrites: urls(runtime.completedQualifiedViewWrites) },
+  };
+}
 function watchRuntime(page: Page): RuntimeWatch {
   const runtime: RuntimeWatch = { issues: [], intentionalEventSourceTeardowns: new Set(), completedQualifiedViewWrites: new Set() };
   page.on("pageerror", error => runtime.issues.push({ kind: "pageerror", message: error.message }));
@@ -167,7 +220,10 @@ test("tasks detail workshop / equal-state comparison and interactions", async ({
         await check(item, "initial-axe", async () => {
           const axe = await new AxeBuilder({ page }).analyze();
           const blocking = axe.violations.filter(v => v.impact === "critical" || v.impact === "serious");
-          item.metrics.initialAxe = { blocking, violationCount: axe.violations.length };
+          item.metrics.initialAxe = { blocking: axeSummary(blocking), violations: axeSummary(axe.violations), violationCount: axe.violations.length,
+            nonblockingViolationCount: axe.violations.length - blocking.length, criterion: "No serious or critical violations", limits: evidenceLimits,
+            scope: { target: "whole-document", fixtureId: "tasks.surface.task-detail-panel", variant: item.variant, viewport: item.viewport,
+              source: "experience/workbench/tests/workshop-task-detail.spec.ts", retainedSource: "workshop-spec.ts.txt" } };
           expect(blocking).toEqual([]);
         });
         await check(item, "initial-overflow", async () => {
@@ -175,7 +231,7 @@ test("tasks detail workshop / equal-state comparison and interactions", async ({
           expect(measured.document).toBeLessThanOrEqual(1); expect(measured.panel).toBeLessThanOrEqual(1);
         });
         const errors = runtimeFailures(runtime, null, page.url());
-        item.metrics.initialRuntime = { issues: runtime.issues, failures: errors };
+        item.metrics.initialRuntime = runtimeSummary(runtime, page.url(), errors);
         expect(errors).toEqual([]);
       } catch (error) {
         item.failure = `Initial capture/audit: ${error instanceof Error ? error.message : String(error)}`;
@@ -330,7 +386,7 @@ test("tasks detail workshop / equal-state comparison and interactions", async ({
       } finally {
         try {
           await check(item, "runtime", async () => {
-            const errors = runtimeFailures(runtime, null, page.url()); item.metrics.runtime = { issues: runtime.issues, failures: errors }; expect(errors).toEqual([]);
+            const errors = runtimeFailures(runtime, null, page.url()); item.metrics.runtime = runtimeSummary(runtime, page.url(), errors); expect(errors).toEqual([]);
           });
         } catch (error) { item.failure ??= String(error); failures.push(`${item.variant}/${item.viewport}: runtime failure`); }
         item.passed = item.failure === null && item.checks.every(entry => entry.passed);
