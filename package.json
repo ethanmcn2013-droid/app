@@ -26,6 +26,7 @@
     "experience:test:utility-navigation": "playwright test --config experience/utility-navigation.playwright.config.ts",
     "experience:test:project-switch": "playwright test --config experience/project-switch.playwright.config.ts",
     "experience:attest": "node scripts/experience/attest-playwright.mjs",
+    "experience:workbench": "node experience/workbench/run.mjs",
     "experience:council": "node scripts/experience/quality-council.mjs",
     "experience:council:ci": "node scripts/experience/quality-council.mjs --ci",
     "experience:council:prepare": "node scripts/experience/quality-council.mjs --prepare",
