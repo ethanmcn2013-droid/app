@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import { spawn, spawnSync } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
-import { mkdirSync, readFileSync, readdirSync, lstatSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, readdirSync, lstatSync, writeFileSync, statfsSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -12,10 +13,12 @@ const APPROVED_DEFINITION_SHA256 = "571fde8b22427e4f2fd19139c06814e569221da4f5f1
 const outputRoot = path.join(repo, "experience/output/workbench-workshop-runs");
 const variants = ["record-first", "context-first"];
 const viewports = ["mobile", "tablet", "desktop", "wide"];
+const MINIMUM_VOLUME_BYTES = 2 * 1024 ** 3;
 const requiredChecks = ["section-order", "original-controls", "initial-axe", "initial-overflow", "keyboard-open-close-focus", "popover-escape", "title-edit", "priority-edit", "notes-edit", "expand-baseline", "navigation-selector", "invalid-selector-default", "long-content", "runtime"];
 const recipeFiles = ["experience/workbench/workshop-run.mjs", "experience/workbench/workshop-definition.json",
   "experience/workbench/workshop.playwright.config.ts", "experience/workbench/tests/workshop-task-detail.spec.ts",
   "experience/browser-contract.json", "experience/critical-fixtures.json", "experience/runtime-policy.ts",
+  "src/components/primitives/open-layer.ts",
   "package.json", "pnpm-lock.yaml", "tsconfig.json", "vercel.json"];
 const retainedSources = {
   "runner-source.mjs": "experience/workbench/workshop-run.mjs",
@@ -25,6 +28,7 @@ const retainedSources = {
   "browser-contract.json": "experience/browser-contract.json",
   "critical-fixtures.json": "experience/critical-fixtures.json",
   "runtime-policy.ts.txt": "experience/runtime-policy.ts",
+  "open-layer.ts.txt": "src/components/primitives/open-layer.ts",
 };
 const limitations = [
   "The real built App uses its registered synthetic demo task; authenticated identity and customer data are not exercised.",
@@ -84,6 +88,47 @@ function verifySource() {
   }));
   return { repository: definition.source.repository, branch, candidate: { commit: git(["rev-parse", "HEAD"]), tree: git(["rev-parse", "HEAD^{tree}"]), dirty: false }, baseCommit: definition.source.baseCommit, recipeFiles: files };
 }
+export function assessCapacity(observations) {
+  return {
+    policy: "Conservative minimum available space per relevant volume before build; not an observed peak or a guarantee of future capacity.",
+    minimumAvailableBytesPerVolume: MINIMUM_VOLUME_BYTES,
+    passed: observations.length === 4 && observations.every(item => item.error === null && Number.isSafeInteger(item.availableBytes) && item.availableBytes >= MINIMUM_VOLUME_BYTES),
+    observations,
+  };
+}
+export function capacityPreflight(output) {
+  const paths = [
+    ["source-and-build", repo],
+    ["temporary-TEMP", process.env.TEMP ?? tmpdir()],
+    ["temporary-TMP", process.env.TMP ?? tmpdir()],
+    ["raw-output", output],
+  ];
+  const observations = paths.map(([role, requested]) => {
+    const target = path.resolve(requested);
+    let existing = target;
+    try {
+      // The output is a validated, owned fixed-root child. Walk only its missing
+      // ancestors inside this checkout; TEMP/TMP must already name directories.
+      while (true) {
+        try { if (!lstatSync(existing).isDirectory()) throw new Error("Capacity path is not a directory"); break; }
+        catch (error) {
+          if (error.code !== "ENOENT" || role !== "raw-output") throw error;
+          const parent = path.dirname(existing);
+          const relative = path.relative(repo, parent);
+          if (parent === existing || relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) throw new Error("Output capacity ancestor escaped the owned checkout");
+          existing = parent;
+        }
+      }
+      const stats = statfsSync(existing, { bigint: true });
+      const bytes = stats.bavail * stats.bsize;
+      if (bytes > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error("Capacity exceeds safe numeric representation");
+      return { role, requestedPath: target, observedPath: existing, availableBytes: Number(bytes), minimumAvailableBytes: MINIMUM_VOLUME_BYTES, error: null };
+    } catch (error) {
+      return { role, requestedPath: target, observedPath: existing, availableBytes: null, minimumAvailableBytes: MINIMUM_VOLUME_BYTES, error: error.message };
+    }
+  });
+  return { observedAt: new Date().toISOString(), ...assessCapacity(observations) };
+}
 function terminate(child) {
   if (!child.pid) return { requested: true, result: "no-child-pid" };
   if (process.platform === "win32") {
@@ -102,6 +147,7 @@ function runPlaywright(output, signal) {
     for (const name of ["PATH", "SystemRoot", "WINDIR", "TEMP", "TMP", "APPDATA", "LOCALAPPDATA", "USERPROFILE"]) if (process.env[name]) env[name] = process.env[name];
     if (process.env.CI) env.CI = "1";
     env.PLAYWRIGHT_JSON_OUTPUT_NAME = path.join(output, "playwright-report.json");
+    env.SIGNAL_WORKSHOP_RESULTS_DIR = path.join(output, "playwright-results");
     const cli = path.join(repo, "node_modules/@playwright/test/cli.js");
     const args = [cli, "test", "--config", "experience/workbench/workshop.playwright.config.ts", "--output", path.join(output, "playwright-results")];
     const child = spawn(process.execPath, args, { cwd: repo, env, windowsHide: true, shell: false, detached: process.platform !== "win32", stdio: ["ignore", "pipe", "pipe"] });
@@ -131,10 +177,26 @@ function extractEvidence(report, output) {
   const expected = new Set(viewports.flatMap(viewport => variants.map(variant => `task-detail-${variant}-${viewport}.png`)));
   let qualification = null;
   const screenshots = [];
+  const traces = [];
   const failures = [];
   const walk = suite => {
     for (const spec of suite.specs ?? []) for (const test of spec.tests ?? []) for (const result of test.results ?? []) {
       for (const attachment of result.attachments ?? []) {
+        if (attachment.contentType === "application/zip" && typeof attachment.path === "string") {
+          const file = path.resolve(repo, attachment.path);
+          const relative = path.relative(path.join(output, "playwright-results"), file);
+          if (relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
+            failures.push("Native trace attachment escaped this run's results directory"); continue;
+          }
+          try {
+            rejectSymlinks(file);
+            const bytes = readFileSync(file);
+            const name = `playwright-trace-${traces.length + 1}.zip`;
+            writeFileSync(path.join(output, name), bytes, { flag: "wx" });
+            traces.push({ file: name, source: path.relative(output, file).replaceAll("\\", "/"), sha256: `sha256:${hash(bytes)}`, bytes: bytes.length });
+          } catch (error) { failures.push(`Native trace could not be retained: ${error.message}`); }
+          continue;
+        }
         if (typeof attachment.body !== "string") continue;
         const bytes = Buffer.from(attachment.body, "base64");
         if (expected.has(attachment.name) && attachment.contentType === "image/png") {
@@ -151,7 +213,7 @@ function extractEvidence(report, output) {
     for (const nested of suite.suites ?? []) walk(nested);
   };
   for (const suite of report?.suites ?? []) walk(suite);
-  return { qualification, screenshots, failures };
+  return { qualification, screenshots, traces, failures };
 }
 export function validateQualification(qualification, screenshots) {
   const errors = [];
@@ -190,9 +252,19 @@ export async function runWithOutput({ output: requestedOutput, signal } = {}) {
   const instanceId = `task-workshop-${randomUUID()}`;
   const output = parseArgs(["--output", requestedOutput]);
   const source = verifySource();
+  const preflight = capacityPreflight(output);
   const sourceBytes = Object.fromEntries(Object.entries(retainedSources).map(([name, file]) => [name, readFileSync(path.join(repo, file))]));
   mkdirSync(outputRoot, { recursive: true }); rejectSymlinks(outputRoot); mkdirSync(output);
-  const execution = await runPlaywright(output, signal);
+  writeFileSync(path.join(output, "capacity-preflight.json"), `${JSON.stringify(preflight, null, 2)}\n`, { flag: "wx" });
+  let execution;
+  if (preflight.passed) execution = await runPlaywright(output, signal);
+  else {
+    const refusal = "Playwright build refused: available space was below the fixed 2 GiB minimum on a relevant volume or could not be established; inspect capacity-preflight.json.";
+    console.error(refusal);
+    writeFileSync(path.join(output, "playwright-stdout.log"), "Playwright was not started.\n", { flag: "wx" });
+    writeFileSync(path.join(output, "playwright-stderr.log"), `${refusal}\n`, { flag: "wx" });
+    execution = { exitCode: null, childSignal: null, termination: null, outputOverflow: false, spawnError: null, report: null, reportError: refusal, commandArgv: [] };
+  }
   const evidence = extractEvidence(execution.report, output);
   const qualification = evidence.qualification ?? emptyQualification(execution.spawnError ?? execution.reportError ?? "Qualification attachment not produced.");
   const validation = validateQualification(qualification, evidence.screenshots);
@@ -200,12 +272,13 @@ export async function runWithOutput({ output: requestedOutput, signal } = {}) {
   try { sourceAfter = verifySource(); if (canonical(sourceAfter) !== canonical(source)) sourceFailure = "Candidate commit, tree or recipe hashes changed during qualification."; }
   catch (error) { sourceFailure = error.message; }
   const missingProof = [...evidence.failures, ...validation.errors];
+  if (!preflight.passed) missingProof.unshift(execution.reportError);
   if (sourceFailure) missingProof.push(sourceFailure);
   if (!execution.report || execution.report.errors?.length || execution.report.stats?.expected !== 1 || execution.report.stats?.unexpected !== 0 || execution.report.stats?.skipped !== 0 || execution.report.stats?.flaky !== 0) missingProof.push("Native Playwright report did not confirm the one complete serial journey without errors, skipped or failed cases.");
   const build = buildMetadata(source, !!evidence.qualification);
   if (build.status !== "built-by-playwright-webserver") missingProof.push("Built App metadata was not confirmed.");
   const passed = execution.exitCode === 0 && !execution.outputOverflow && missingProof.length === 0;
-  const status = execution.exitCode === null ? "unknown" : passed ? "passed" : "failed";
+  const status = !preflight.passed ? "failed" : execution.exitCode === null ? "unknown" : passed ? "passed" : "failed";
   if (!passed && !missingProof.length) missingProof.push("Browser journey process did not complete successfully.");
   const sourceEvidence = { ...source, sourceAfter, sourceStable: !sourceFailure, sourceFailure };
   const saveJson = (name, value) => writeFileSync(path.join(output, name), `${JSON.stringify(value, null, 2)}\n`, { flag: "wx" });
@@ -216,7 +289,7 @@ export async function runWithOutput({ output: requestedOutput, signal } = {}) {
   const artifacts = readdirSync(output, { withFileTypes: true }).filter(entry => entry.isFile()).map(entry => {
     const bytes = readFileSync(path.join(output, entry.name));
     return { name: entry.name, path: entry.name, sha256: `sha256:${hash(bytes)}`, bytes: bytes.length,
-      mediaType: entry.name.endsWith(".png") ? "image/png" : entry.name.endsWith(".json") ? "application/json" : entry.name.endsWith(".mjs") ? "text/javascript" : "text/plain" };
+      mediaType: entry.name.endsWith(".png") ? "image/png" : entry.name.endsWith(".json") ? "application/json" : entry.name.endsWith(".mjs") ? "text/javascript" : entry.name.endsWith(".zip") ? "application/zip" : "text/plain" };
   });
   const browserVersion = typeof qualification.browserVersion === "string" ? qualification.browserVersion : null;
   const receipt = {
@@ -228,10 +301,10 @@ export async function runWithOutput({ output: requestedOutput, signal } = {}) {
     viewports: JSON.parse(readFileSync(path.join(repo, "experience/browser-contract.json"), "utf8")).projects.map(project => ({ name: project.name, ...project.viewport })),
     artifacts, limitations, missingProof,
     comparison: { fixtureId: "tasks.surface.task-detail-panel", taskName: definition.scenario.taskName, variants, initialStateDigests: validation.initialStateDigests },
-    runtime: { node: process.version, platform: process.platform, architecture: process.arch,
+    runtime: { node: process.version, platform: process.platform, architecture: process.arch, capacityPreflight: preflight,
       playwright: JSON.parse(readFileSync(path.join(repo, "node_modules/@playwright/test/package.json"), "utf8")).version,
       browser: browserVersion ? `Chromium ${browserVersion}` : "unknown", browserVersion, channel: process.env.CI ? "playwright-bundled" : "chrome" },
-    source: sourceEvidence, build, screenshots: evidence.screenshots,
+    source: sourceEvidence, build, screenshots: evidence.screenshots, traces: evidence.traces,
     journey: { commandArgv: execution.commandArgv, exitCode: execution.exitCode, childSignal: execution.childSignal, termination: execution.termination, spawnError: execution.spawnError, reportError: execution.reportError, outputOverflow: execution.outputOverflow },
     failure: passed ? null : missingProof.join("\n"), custody: { location: path.relative(repo, output).replaceAll("\\", "/"), rawLogsRetained: true },
   };

@@ -199,9 +199,19 @@ test("tasks detail workshop / equal-state comparison and interactions", async ({
         });
         const priority = panel.locator("dl > div").filter({ has: page.locator("dt").filter({ hasText: /^Priority$/ }) }).getByRole("button");
         await check(item, "popover-escape", async () => {
+          const taskId = new URL(page.url()).searchParams.get("task");
           await priority.click(); const popover = page.getByRole("dialog", { name: "Priority", exact: true });
+          await expect(popover).toHaveAttribute("data-tasks-layer", "");
           await expect(popover).toBeVisible(); await page.keyboard.press("Escape");
           await expect(popover).toHaveCount(0); await expect(panel).toBeVisible(); await expect(priority).toBeFocused();
+          expect(new URL(page.url()).searchParams.get("task")).toBe(taskId);
+          expect(new URL(page.url()).searchParams.get("panelComposition")).toBe(item.variant);
+          // The next Escape now belongs to the outer panel, not the vanished layer.
+          await page.keyboard.press("Escape"); await expect(panel).toHaveCount(0); await expect(opener).toBeFocused();
+          expect(new URL(page.url()).searchParams.get("task")).toBeNull();
+          expect(new URL(page.url()).searchParams.get("panelComposition")).toBe(item.variant);
+          await page.keyboard.press("Enter"); await expect(panel).toBeVisible();
+          item.metrics.popoverEscape = { taskId, firstEscape: "priority-only", secondEscape: "panel-and-opener-focus", selector: item.variant };
         });
         await check(item, "expand-baseline", async () => {
           // Both entry controls must retain the shared page composition.

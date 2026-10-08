@@ -1,6 +1,7 @@
 import { defineConfig } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 
 const contract = JSON.parse(readFileSync(path.join(process.cwd(), "experience/browser-contract.json"), "utf8"));
 const next = path.join(process.cwd(), "node_modules/next/dist/bin/next");
@@ -8,6 +9,14 @@ const next = path.join(process.cwd(), "node_modules/next/dist/bin/next");
 const quote = (value: string) => `"${value}"`;
 const node = quote(process.execPath);
 const port = 4353;
+const runRoot = path.join(process.cwd(), "experience/output/workbench-workshop-runs");
+// The trusted producer overrides this for its already-created fresh instance.
+// Direct invocations also get a fresh directory rather than overwriting history.
+const outputDir = path.resolve(process.env.SIGNAL_WORKSHOP_RESULTS_DIR ??
+  path.join(runRoot, `standalone-${randomUUID()}`, "playwright-results"));
+if (path.basename(outputDir) !== "playwright-results" || path.dirname(path.dirname(outputDir)) !== runRoot) {
+  throw new Error("Workshop results must stay inside one fixed-root run instance");
+}
 
 export default defineConfig({
   testDir: "./tests",
@@ -17,7 +26,7 @@ export default defineConfig({
   projects: [{ name: "workshop" }],
   fullyParallel: false,
   workers: 1,
-  outputDir: "../output/workshop-playwright-results",
+  outputDir,
   retries: 0,
   timeout: 360_000,
   expect: { timeout: 8_000 },
@@ -30,7 +39,7 @@ export default defineConfig({
     timezoneId: contract.determinism.timezoneId,
     colorScheme: contract.determinism.colorScheme,
     navigationTimeout: 30_000,
-    trace: "retain-on-failure",
+    trace: "on",
   },
   webServer: {
     command: `${node} ${quote(next)} build && ${node} ${quote(next)} start -H 127.0.0.1 -p ${port}`,
