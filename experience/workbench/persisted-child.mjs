@@ -5,6 +5,7 @@ import { createClient } from '@libsql/client';
 import { drizzle } from 'drizzle-orm/libsql';
 import { eq } from 'drizzle-orm';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 const [mode, output, operationFile, checkpoint] = process.argv.slice(2);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const runs = path.join(root, 'experience/output/workbench-persisted-runs');
@@ -57,7 +58,7 @@ try {
         if (operation.action === 'erase-actor') await database.insert(schema.meta).values({ key, value: 'erasure-requested:v1', updatedAt: stamp });
         else await database.delete(schema.meta).where(eq(schema.meta.key, key));
       } else if (operation.action === 'deleting' || operation.action === 'restore-project') {
-        if (operation.action === 'deleting') await database.insert(schema.projectDriveOperations).values({ id: 'workbench-deletion', workspaceId: operation.project, operationKind: 'project_delete', dedupeKey: 'workbench-deletion', status: 'pending' });
+        if (operation.action === 'deleting') await database.insert(schema.projectDriveOperations).values({ id: 'workbench-deletion', workspaceId: operation.project, operationKind: 'project_delete', dedupeKey: createHash('sha256').update('workbench-deletion').digest('hex'), status: 'pending' });
         else await database.delete(schema.projectDriveOperations).where(eq(schema.projectDriveOperations.id, 'workbench-deletion'));
       } else if (operation.action === 'corrupt-task')
         await database.update(schema.tasks).set({ title: 'Contradictory retained task' }).where(eq(schema.tasks.id, operation.taskId));
