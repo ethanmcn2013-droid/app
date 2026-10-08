@@ -16,15 +16,15 @@ const requiredChecks = ["section-order", "original-controls", "initial-axe", "in
 const recipeFiles = ["experience/workbench/workshop-run.mjs", "experience/workbench/workshop-definition.json",
   "experience/workbench/workshop.playwright.config.ts", "experience/tests/workshop-task-detail.spec.ts",
   "experience/browser-contract.json", "experience/critical-fixtures.json", "experience/runtime-policy.ts",
-  "package.json", "pnpm-lock.yaml", "vercel.json"];
+  "package.json", "pnpm-lock.yaml", "tsconfig.json", "vercel.json"];
 const retainedSources = {
   "runner-source.mjs": "experience/workbench/workshop-run.mjs",
   "scenario-definition.json": "experience/workbench/workshop-definition.json",
-  "workshop-config.ts": "experience/workbench/workshop.playwright.config.ts",
-  "workshop-spec.ts": "experience/tests/workshop-task-detail.spec.ts",
+  "workshop-config.ts.txt": "experience/workbench/workshop.playwright.config.ts",
+  "workshop-spec.ts.txt": "experience/tests/workshop-task-detail.spec.ts",
   "browser-contract.json": "experience/browser-contract.json",
   "critical-fixtures.json": "experience/critical-fixtures.json",
-  "runtime-policy.ts": "experience/runtime-policy.ts",
+  "runtime-policy.ts.txt": "experience/runtime-policy.ts",
 };
 const limitations = [
   "The real built App uses its registered synthetic demo task; authenticated identity and customer data are not exercised.",

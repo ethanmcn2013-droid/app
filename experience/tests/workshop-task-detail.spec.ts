@@ -79,12 +79,16 @@ async function state(page: Page, panel: Locator) {
 async function geometry(panel: Locator) {
   return panel.evaluate(node => {
     const props = node.querySelector("dl")!;
-    const notes = [...node.querySelectorAll("section")].find(section => section.getAttribute("aria-labelledby")?.startsWith("notes-"))!;
-    const divider = props.parentElement!.querySelector('[class*="divider"]')!;
-    const rect = (el: Element) => { const r = el.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, height: r.height }; };
+    // Section identity comes from the actual heading, including reused sections;
+    // hashed CSS names and task-specific heading IDs are not the selector contract.
+    const notes = [...node.querySelectorAll("h2")].find(heading => heading.textContent?.trim() === "Notes")!.closest("section")!;
     const children = [...props.parentElement!.children];
+    const divider = children.find((el, index) => index > children.indexOf(props) && el.tagName === "DIV" && el.childElementCount === 0 && !el.textContent?.trim())!;
+    const rect = (el: Element) => { const r = el.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, height: r.height }; };
     const style = getComputedStyle(divider);
+    const notesStyle = getComputedStyle(notes);
     return { properties: rect(props), notes: rect(notes), divider: rect(divider), dividerBackground: style.backgroundColor,
+      notesTopBorder: { width: Number.parseFloat(notesStyle.borderTopWidth), style: notesStyle.borderTopStyle, color: notesStyle.borderTopColor },
       propertyIndex: children.indexOf(props), notesIndex: children.indexOf(notes), dividerIndex: children.indexOf(divider),
       dividerDirectChild: divider.parentElement === props.parentElement, dividerEmpty: !divider.textContent?.trim(),
       notesImmediatelyAfterDivider: notes.previousElementSibling === divider };
@@ -125,8 +129,12 @@ test("tasks detail workshop / equal-state comparison and interactions", async ({
         await check(item, "section-order", async () => {
           const g = await geometry(panel); item.metrics.initialGeometry = g;
           expect(g.dividerDirectChild && g.dividerEmpty).toBe(true);
-          expect(g.divider.height).toBeGreaterThanOrEqual(1);
-          expect(g.dividerBackground).not.toBe("rgba(0, 0, 0, 0)");
+          // The modal's divider node is a spacer. Notes draws the real hairline,
+          // so prove its computed border and physical location, not spacer height.
+          expect(g.notesTopBorder.width).toBeGreaterThanOrEqual(1);
+          expect(g.notesTopBorder.style).not.toBe("none");
+          expect(g.notesTopBorder.style).not.toBe("hidden");
+          expect(g.notesTopBorder.color).not.toBe("rgba(0, 0, 0, 0)");
           if (item.variant === "record-first") {
             expect(g.propertyIndex).toBeLessThan(g.dividerIndex);
             expect(g.dividerIndex).toBeLessThan(g.notesIndex);
@@ -204,8 +212,8 @@ test("tasks detail workshop / equal-state comparison and interactions", async ({
             const baseline = await panel.evaluate(node => {
               const dl = node.querySelector("dl[data-grid]")!;
               const description = node.querySelector('section[aria-label="Description"]')!;
-              const divider = dl.parentElement!.querySelector('[class*="divider"]')!;
               const children = [...dl.parentElement!.children];
+              const divider = children.find((el, index) => index > children.indexOf(dl) && el.tagName === "DIV" && el.childElementCount === 0 && !el.textContent?.trim())!;
               return { props: children.indexOf(dl), divider: children.indexOf(divider), description: children.indexOf(description), height: divider.getBoundingClientRect().height };
             });
             expect(baseline.props).toBeLessThan(baseline.divider); expect(baseline.divider).toBeLessThan(baseline.description); expect(baseline.height).toBeGreaterThanOrEqual(1);
