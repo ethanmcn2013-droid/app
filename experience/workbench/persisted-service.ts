@@ -61,7 +61,7 @@ async function prove(tx: Transaction, operation: Operation): Promise<Proof> {
     !task || task.workspaceId !== operation.project || task.title !== operation.title || task.lane !== "todo" || task.priority !== "p2" ||
     task.seq !== result.seq || task.position !== result.position || task.parentTaskId !== null || task.description !== null ||
     task.assignees.length !== 0 || task.completedAt !== null || task.updatedAt.toISOString() !== operation.createdAt ||
-    activity.length !== 1 || activity[0].workspaceId !== operation.project || activity[0].taskId !== operation.taskId ||
+    activity.length !== 1 || activity[0].id !== result.activityId || activity[0].workspaceId !== operation.project || activity[0].taskId !== operation.taskId ||
     activity[0].userId !== operation.actor || activity[0].kind !== "taskAdd" || activity[0].payload.kind !== "taskAdd" ||
     activity[0].payload.lane !== "todo" || activity[0].createdAt.toISOString() !== operation.createdAt) return { status: "unknown" };
   return { status: "present", result };

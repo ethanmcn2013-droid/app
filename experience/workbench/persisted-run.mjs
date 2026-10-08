@@ -34,6 +34,10 @@ const phase = (name, mode, value, expected = true, checkpoint) => {
   put(`${ordinal}-${name}-process.json`, { exitCode: result.status, signal: result.signal, error: result.error?.code ?? null, stdout: result.stdout, stderr: result.stderr });
   assert.equal(result.status, expected ? 0 : 1, name);
   const received = JSON.parse(result.stdout); assert.equal(received.ok, expected, name);
+  if (!expected) {
+    const expectedMessage = name.startsWith('changed-') ? 'Operation identity conflicts' : name.startsWith('failure-after-') ? `Injected ${name.slice('failure-after-'.length)} write failure` : name.startsWith('contradictory-') ? 'Operation facts are unknown; no retry permitted' : 'Project is unavailable';
+    assert.equal(received.message, expectedMessage, `${name}: actual refusal class`);
+  }
   checks.push({ name, passed: true, processExitCode: result.status, result: received }); return received.result;
 };
 async function interrupted(name, operation, checkpoint) {
@@ -91,6 +95,10 @@ try {
   phase('corrupt-retained-task', 'fixture', { ...contradictory, action: 'corrupt-task' });
   assert.equal(phase('contradictory-read-stays-unknown', 'read', contradictory).status, 'unknown');
   phase('contradictory-retry-refused', 'create', contradictory, false);
+  const replacedActivity = make('replaced-activity'); phase('create-activity-fixture', 'create', replacedActivity);
+  phase('replace-operation-activity', 'fixture', { ...replacedActivity, action: 'replace-activity' });
+  assert.equal(phase('contradictory-activity-read-stays-unknown', 'read', replacedActivity).status, 'unknown');
+  phase('contradictory-activity-retry-refused', 'create', replacedActivity, false);
   assert.equal(phase('final-main-read', 'read', main).status, 'present');
   assert.equal(run('git', ['status', '--porcelain']), '', 'Source changed during qualification');
   assert.equal(run('git', ['rev-parse', 'HEAD']), candidate.commit, 'Candidate changed during qualification');

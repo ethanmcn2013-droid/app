@@ -63,6 +63,12 @@ try {
         else await database.delete(schema.projectDriveOperations).where(eq(schema.projectDriveOperations.id, 'workbench-deletion'));
       } else if (operation.action === 'corrupt-task')
         await database.update(schema.tasks).set({ title: 'Contradictory retained task' }).where(eq(schema.tasks.id, operation.taskId));
+      else if (operation.action === 'replace-activity') {
+        const [row] = await database.select().from(schema.activities).where(eq(schema.activities.id, service.activityId(operation))).limit(1);
+        assert.ok(row);
+        await database.delete(schema.activities).where(eq(schema.activities.id, row.id));
+        await database.insert(schema.activities).values({ ...row, id: 'a-workbench-replacement' });
+      }
       else throw Error('Unknown fixture change');
       result = { fixtureChanged: operation.action };
     } else if (mode === 'create') {
@@ -78,6 +84,6 @@ try {
   process.stdout.write(JSON.stringify({ ok: true, result }) + '\n');
 } catch (error) {
   client.close();
-  process.stdout.write(JSON.stringify({ ok: false, message: ['Operation identity conflicts', 'Operation facts are unknown; no retry permitted', 'Project is unavailable', 'Injected task write failure', 'Injected activity write failure'].includes(error.message) ? error.message : 'Local operation refused' }) + '\n');
+  process.stdout.write(JSON.stringify({ ok: false, message: error.code === 'project-deletion-in-progress' ? 'Project is unavailable' : ['Operation identity conflicts', 'Operation facts are unknown; no retry permitted', 'Project is unavailable', 'Injected task write failure', 'Injected activity write failure'].includes(error.message) ? error.message : 'Local operation refused' }) + '\n');
   process.exitCode = 1;
 }
