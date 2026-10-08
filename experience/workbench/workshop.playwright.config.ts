@@ -10,7 +10,7 @@ const node = quote(process.execPath);
 const port = 4353;
 
 export default defineConfig({
-  testDir: "../tests",
+  testDir: "./tests",
   testMatch: "workshop-task-detail.spec.ts",
   // One serial two-phase journey captures every initial viewport/variant before edits.
   // The four registered widths are explicitly applied to fresh contexts in the spec.

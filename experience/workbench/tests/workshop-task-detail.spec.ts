@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import {
   isCompletedQualifiedViewResponse, isIntentionalEventSourceDisableResponse,
   normalizeUrl, runtimeFailures, type RuntimeWatch,
-} from "../runtime-policy";
+} from "../../runtime-policy";
 
 const contract = JSON.parse(readFileSync("experience/browser-contract.json", "utf8"));
 const taskName = "Confirm marquee sides with the hire company";

@@ -14,14 +14,14 @@ const variants = ["record-first", "context-first"];
 const viewports = ["mobile", "tablet", "desktop", "wide"];
 const requiredChecks = ["section-order", "original-controls", "initial-axe", "initial-overflow", "keyboard-open-close-focus", "popover-escape", "title-edit", "priority-edit", "notes-edit", "expand-baseline", "navigation-selector", "invalid-selector-default", "long-content", "runtime"];
 const recipeFiles = ["experience/workbench/workshop-run.mjs", "experience/workbench/workshop-definition.json",
-  "experience/workbench/workshop.playwright.config.ts", "experience/tests/workshop-task-detail.spec.ts",
+  "experience/workbench/workshop.playwright.config.ts", "experience/workbench/tests/workshop-task-detail.spec.ts",
   "experience/browser-contract.json", "experience/critical-fixtures.json", "experience/runtime-policy.ts",
   "package.json", "pnpm-lock.yaml", "tsconfig.json", "vercel.json"];
 const retainedSources = {
   "runner-source.mjs": "experience/workbench/workshop-run.mjs",
   "scenario-definition.json": "experience/workbench/workshop-definition.json",
   "workshop-config.ts.txt": "experience/workbench/workshop.playwright.config.ts",
-  "workshop-spec.ts.txt": "experience/tests/workshop-task-detail.spec.ts",
+  "workshop-spec.ts.txt": "experience/workbench/tests/workshop-task-detail.spec.ts",
   "browser-contract.json": "experience/browser-contract.json",
   "critical-fixtures.json": "experience/critical-fixtures.json",
   "runtime-policy.ts.txt": "experience/runtime-policy.ts",
