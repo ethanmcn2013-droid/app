@@ -53,6 +53,7 @@ import { useTaskConversation } from "./use-task-conversation";
 import styles from "./task-sheet.module.css";
 
 export type SheetMode = "docked" | "modal" | "page";
+export type TaskPanelComposition = "record-first" | "context-first";
 
 export type TaskSheetProps = {
   task: Task;
@@ -65,13 +66,15 @@ export type TaskSheetProps = {
   position?: string | null;
   /** The page layout shown over the app (expanded from the sheet) keeps a close button. */
   overlay?: boolean;
+  /** A demo/review-only ordering for the modal and docked task sheet. */
+  panelComposition?: TaskPanelComposition;
 };
 
 function isoFromLocal(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-export function TaskSheet({ task, mode, onClose, onNavigate, onExpand, position, overlay = false }: TaskSheetProps) {
+export function TaskSheet({ task, mode, onClose, onNavigate, onExpand, position, overlay = false, panelComposition = "record-first" }: TaskSheetProps) {
   const dispatchers = useTasksDispatch();
   const columnConfig = useColumnConfig();
   const done = isTaskDone(task, columnConfig);
@@ -178,21 +181,22 @@ export function TaskSheet({ task, mode, onClose, onNavigate, onExpand, position,
     </div>
   );
 
-  const main = (
+  const notes = mode === "page" ? (
+    <section className={styles.section} aria-label="Description">
+      <DescriptionEditor key={task.id} task={task} />
+    </section>
+  ) : (
+    <section className={`${styles.section} ${styles.notes}`} aria-labelledby={`notes-${task.id}`}>
+      <div className={styles.sectionHead}>
+        <h2 className={styles.sectionName} id={`notes-${task.id}`}>Notes</h2>
+        {seeAll}
+      </div>
+      <DescriptionEditor key={task.id} task={task} />
+    </section>
+  );
+
+  const supportingSections = (
     <>
-      {mode === "page" ? (
-        <section className={styles.section} aria-label="Description">
-          <DescriptionEditor key={task.id} task={task} />
-        </section>
-      ) : (
-        <section className={`${styles.section} ${styles.notes}`} aria-labelledby={`notes-${task.id}`}>
-          <div className={styles.sectionHead}>
-            <h2 className={styles.sectionName} id={`notes-${task.id}`}>Notes</h2>
-            {seeAll}
-          </div>
-          <DescriptionEditor key={task.id} task={task} />
-        </section>
-      )}
       <div className={styles.legacySection}>
         <SubtasksSection key={`subtasks-${task.id}`} task={task} />
       </div>
@@ -201,6 +205,7 @@ export function TaskSheet({ task, mode, onClose, onNavigate, onExpand, position,
       </div>
     </>
   );
+  const main = <>{notes}{supportingSections}</>;
 
   const activity = (
       <section className={`${sx.section} ${styles.activity}`} aria-labelledby={`activity-${task.id}`}>
@@ -269,13 +274,14 @@ export function TaskSheet({ task, mode, onClose, onNavigate, onExpand, position,
   }
 
   return (
-    <div className={styles.sheet} data-mode={mode} ref={rootRef}>
+    <div className={styles.sheet} data-mode={mode} data-panel-composition={panelComposition} ref={rootRef}>
       {header}
       <div className={styles.scroll}>
         {title}
-        <Properties task={task} />
+        {panelComposition === "context-first" ? notes : <Properties task={task} />}
+        {panelComposition === "context-first" ? <Properties task={task} /> : notes}
         <div className={styles.divider} />
-        {main}
+        {supportingSections}
         {activity}
       </div>
     </div>

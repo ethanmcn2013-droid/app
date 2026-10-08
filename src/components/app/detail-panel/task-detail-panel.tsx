@@ -12,19 +12,28 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useSearchParams } from "next/navigation";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
+import { isDemoMode } from "@/lib/access-mode";
 import { hasOpenLayer } from "@/components/primitives/open-layer";
 import { useHydrated } from "@/lib/use-hydrated";
 import { getVisibleTaskOrder } from "@/components/tasks/sheet-bridge";
-import { StaleTask, TaskSheet } from "./task-sheet";
+import { StaleTask, TaskSheet, type TaskPanelComposition } from "./task-sheet";
 import styles from "./task-sheet.module.css";
 
 export function TaskDetailPanel() {
+  const searchParams = useSearchParams();
   const { taskId, closeTask, openTask } = useTaskPanel();
   const state = useTasksState();
   const hydrated = useHydrated();
   const task = taskId ? state.tasks.find((t) => t.id === taskId) ?? null : null;
+  const compositionValues = searchParams?.getAll("panelComposition") ?? [];
+  const requestedComposition = compositionValues.length === 1 ? compositionValues[0] : null;
+  const panelComposition: TaskPanelComposition = isDemoMode() &&
+    (requestedComposition === "context-first" || requestedComposition === "record-first")
+    ? requestedComposition
+    : "record-first";
 
   // Up and down follow the order the current view shows, falling back to
   // the store's order when the sheet is open over another page.
@@ -72,6 +81,7 @@ export function TaskDetailPanel() {
     <TaskSheet
       task={task}
       mode="modal"
+      panelComposition={panelComposition}
       onClose={closeTask}
       onNavigate={navigate}
       onExpand={expand}
