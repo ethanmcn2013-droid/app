@@ -45,7 +45,8 @@ try {
     await database.insert(schema.workspaceMembers).values({ workspaceId: project, userId: 'workbench-coowner', role: 'owner' });
     await database.insert(schema.workspaces).values({ id: 'foreign-project', slug: 'foreign-project', name: 'Foreign synthetic project', ownerUserId: 'workbench-other' });
     await database.insert(schema.workspaceMembers).values({ workspaceId: 'foreign-project', userId: 'workbench-other', role: 'owner' });
-    result = { seeded, project, mark: JSON.parse(mark.value), schemaFiles: files };
+    result = { seeded, project, otherOwnedProject: seeder.sampleProjectId('workbench-owner', 'wedding', 'honeymoon'), mark: JSON.parse(mark.value), schemaFiles: files.map(name => ({ name,
+      sha256: createHash('sha256').update(readFileSync(path.join(root, 'drizzle', name))).digest('hex') })) };
   } else {
     const operation = JSON.parse(readFileSync(operationFile, 'utf8'));
     if (mode === 'fixture') {

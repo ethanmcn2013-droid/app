@@ -1,6 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import type { db } from "@/server/db";
 import { activities, meta, tasks, users, workspaces } from "@/server/db/schema";
 import { authorizeStoredProject } from "@/server/actions/project-authz";
@@ -45,19 +45,25 @@ function validate(operation: Operation) {
 async function prove(tx: Transaction, operation: Operation): Promise<Proof> {
   const [record] = await tx.select().from(meta).where(eq(meta.key, operationKey(operation))).limit(1);
   const [task] = await tx.select().from(tasks).where(eq(tasks.id, operation.taskId)).limit(1);
-  const activity = await tx.select().from(activities).where(eq(activities.id, activityId(operation))).limit(2);
-  if (!record) return !task && activity.length === 0 ? { status: "absent" } : { status: "unknown" };
+  const activity = await tx.select().from(activities).where(or(eq(activities.id, activityId(operation)), eq(activities.taskId, operation.taskId))).limit(2);
+  if (!record) {
+    if (activity.some(row => row.id === activityId(operation) && (row.workspaceId !== operation.project || row.taskId !== operation.taskId || row.userId !== operation.actor)))
+      throw new Error("Operation identity conflicts");
+    return !task && activity.length === 0 ? { status: "absent" } : { status: "unknown" };
+  }
   let result: Stored;
   try { result = JSON.parse(record.value) as Stored; } catch { return { status: "unknown" }; }
   const expected = identity(operation);
+  if (!result || typeof result !== "object" || Object.keys(result).length !== Object.keys(expected).length + 3) return { status: "unknown" };
   if (Object.keys(expected).some(key => result[key as keyof typeof expected] !== expected[key as keyof typeof expected]))
     throw new Error("Operation identity conflicts");
   if (!Number.isSafeInteger(result.seq) || result.seq < 1 || !Number.isFinite(result.position) || result.activityId !== activityId(operation) ||
     !task || task.workspaceId !== operation.project || task.title !== operation.title || task.lane !== "todo" || task.priority !== "p2" ||
-    task.seq !== result.seq || task.position !== result.position || task.parentTaskId !== null ||
+    task.seq !== result.seq || task.position !== result.position || task.parentTaskId !== null || task.description !== null ||
+    task.assignees.length !== 0 || task.completedAt !== null || task.updatedAt.toISOString() !== operation.createdAt ||
     activity.length !== 1 || activity[0].workspaceId !== operation.project || activity[0].taskId !== operation.taskId ||
     activity[0].userId !== operation.actor || activity[0].kind !== "taskAdd" || activity[0].payload.kind !== "taskAdd" ||
-    activity[0].createdAt.toISOString() !== operation.createdAt) return { status: "unknown" };
+    activity[0].payload.lane !== "todo" || activity[0].createdAt.toISOString() !== operation.createdAt) return { status: "unknown" };
   return { status: "present", result };
 }
 

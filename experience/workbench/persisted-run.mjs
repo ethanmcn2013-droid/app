@@ -17,12 +17,16 @@ for (let cursor = output; cursor !== path.dirname(cursor); cursor = path.dirname
   if (existsSync(cursor)) assert.equal(lstatSync(cursor).isSymbolicLink(), false);
 assert.equal(run('git', ['status', '--porcelain']), '');
 const candidate = { commit: run('git', ['rev-parse', 'HEAD']), tree: run('git', ['rev-parse', 'HEAD^{tree}']), dirty: false };
+const sourceFiles = ['persisted-child.mjs', 'persisted-service.ts', 'persisted-run.mjs', 'persisted-definition.json'];
+const sourceHashes = sourceFiles.map(name => ({ name, digest: hash(readFileSync(path.join(root, 'experience/workbench', name))) }));
 const startedAt = new Date().toISOString();
 mkdirSync(output, { recursive: true });
 const env = Object.fromEntries(['PATH', 'Path', 'SystemRoot', 'WINDIR', 'TEMP', 'TMP', 'LOCALAPPDATA', 'APPDATA', 'USERPROFILE', 'COMSPEC', 'PATHEXT'].filter(k => process.env[k]).map(k => [k, process.env[k]]));
 Object.assign(env, { NODE_ENV: 'test', NEXT_PUBLIC_SIGNAL_ACCESS_MODE: 'review', NEXT_PUBLIC_SIGNAL_DEPLOYMENT_ENV: 'preview' });
 const checks = []; let ordinal = 0;
 const put = (name, value) => { const file = path.join(output, name); writeFileSync(file, JSON.stringify(value, null, 2) + '\n', { flag: 'wx' }); return file; };
+put('source-provenance.json', { candidate, sourceFiles: sourceHashes });
+for (const name of sourceFiles) writeFileSync(path.join(output, name), readFileSync(path.join(root, 'experience/workbench', name)), { flag: 'wx' });
 const args = (mode, file, checkpoint) => ['--import', 'tsx', '--import', './src/test/register-server-only.mjs', 'experience/workbench/persisted-child.mjs', mode, output, file ?? '', checkpoint ?? ''];
 const phase = (name, mode, value, expected = true, checkpoint) => {
   const file = value ? put(`${++ordinal}-${name}-intent.json`, value) : undefined;
@@ -62,6 +66,7 @@ try {
   phase('changed-payload-conflict', 'create', { ...main, title: 'Changed title' }, false);
   phase('changed-task-conflict', 'create', { ...main, taskId: 't-workbench-changed' }, false);
   phase('changed-authorized-actor-conflict', 'create', { ...main, actor: 'workbench-coowner' }, false);
+  phase('changed-authorized-project-conflict', 'create', { ...main, project: prepared.otherOwnedProject }, false);
   phase('foreign-actor-denied', 'create', { ...make('foreign-actor'), actor: 'workbench-other' }, false);
   phase('foreign-project-denied', 'create', { ...make('foreign-project'), project: 'foreign-project' }, false);
   const fix = action => ({ ...main, action });
@@ -87,12 +92,16 @@ try {
   assert.equal(phase('contradictory-read-stays-unknown', 'read', contradictory).status, 'unknown');
   phase('contradictory-retry-refused', 'create', contradictory, false);
   assert.equal(phase('final-main-read', 'read', main).status, 'present');
+  assert.equal(run('git', ['status', '--porcelain']), '', 'Source changed during qualification');
+  assert.equal(run('git', ['rev-parse', 'HEAD']), candidate.commit, 'Candidate changed during qualification');
+  assert.equal(run('git', ['rev-parse', 'HEAD^{tree}']), candidate.tree, 'Candidate tree changed during qualification');
+  assert.deepEqual(sourceFiles.map(name => ({ name, digest: hash(readFileSync(path.join(root, 'experience/workbench', name))) })), sourceHashes, 'Recipe source bytes changed during qualification');
   status = 'passed';
 } catch (error) { failure = error.message; }
 put('qualification.json', { checks, failure });
 assert.equal(existsSync(path.join(output, 'tasks.db-wal')), false);
 assert.equal(existsSync(path.join(output, 'tasks.db-journal')), false);
-const artifacts = readdirSync(output).map(name => { const bytes = readFileSync(path.join(output, name)); return { name, path: name, bytes: bytes.length, sha256: hash(bytes), mediaType: name.endsWith('.db') ? 'application/vnd.sqlite3' : 'application/json' }; });
+const artifacts = readdirSync(output).map(name => { const bytes = readFileSync(path.join(output, name)); return { name, path: name, bytes: bytes.length, sha256: hash(bytes), mediaType: name.endsWith('.db') ? 'application/vnd.sqlite3' : name.endsWith('.ts') ? 'text/plain' : name.endsWith('.mjs') ? 'text/javascript' : 'application/json' }; });
 const definition = readFileSync(path.join(root, 'experience/workbench/persisted-definition.json'));
 const completedAt = new Date().toISOString();
 put('receipt.json', { candidate, definition: { id: 'tasks-persisted-local@1', digest: hash(definition) }, instanceId: path.basename(output), startedAt, completedAt,
