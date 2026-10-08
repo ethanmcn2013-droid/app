@@ -202,7 +202,17 @@ test("tasks detail workshop / equal-state comparison and interactions", async ({
           const taskId = new URL(page.url()).searchParams.get("task");
           await priority.click(); const popover = page.getByRole("dialog", { name: "Priority", exact: true });
           await expect(popover).toHaveAttribute("data-tasks-layer", "");
-          await expect(popover).toBeVisible(); await page.keyboard.press("Escape");
+          await expect(popover).toBeVisible();
+          const options = popover.getByRole("option");
+          await expect(options.first()).toBeFocused();
+          expect(await popover.evaluate(node => node.contains(document.activeElement))).toBe(true);
+          const initialFocus = await options.first().innerText();
+          await page.keyboard.press("Tab");
+          await expect(options.nth(1)).toBeFocused();
+          expect(await popover.evaluate(node => node.contains(document.activeElement))).toBe(true);
+          const tabFocus = await options.nth(1).innerText();
+          item.metrics.popoverFocus = { initialFocus, tabFocus, tabStayedInPriorityPopup: true };
+          await page.keyboard.press("Escape");
           await expect(popover).toHaveCount(0); await expect(panel).toBeVisible(); await expect(priority).toBeFocused();
           expect(new URL(page.url()).searchParams.get("task")).toBe(taskId);
           expect(new URL(page.url()).searchParams.get("panelComposition")).toBe(item.variant);

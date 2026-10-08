@@ -174,23 +174,41 @@ function runPlaywright(output, signal) {
 function emptyQualification(failure) {
   return { failure, cases: viewports.flatMap(viewport => variants.map(variant => ({ variant, viewport, passed: false, initialCaptureBeforeEditing: false, initialStateDigest: null, checks: [], failure: "not observed" }))) };
 }
-export function traceEligible(bytes, signature) {
-  return Number.isSafeInteger(bytes) && bytes >= 22 && bytes <= MAXIMUM_TRACE_BYTES &&
-    ["504b0304", "504b0506"].includes(signature);
+export function traceArtifactName(ordinal) {
+  return Number.isInteger(ordinal) && ordinal >= 1 && ordinal <= 20 ? `trace-${String(ordinal).padStart(2, "0")}.zip` : null;
+}
+export function traceEligible(bytes, signature, tail) {
+  if (!Number.isSafeInteger(bytes) || bytes < 22 || bytes > MAXIMUM_TRACE_BYTES || signature !== "504b0304" ||
+      !Buffer.isBuffer(tail) || tail.length !== Math.min(bytes, 65557)) return false;
+  // Bounded ZIP envelope only: no decompression, CRC or archive-integrity claim.
+  for (let index = tail.length - 22; index >= 0; index--) {
+    if (tail.readUInt32LE(index) !== 0x06054b50 || index + 22 + tail.readUInt16LE(index + 20) !== tail.length) continue;
+    const footerOffset = bytes - tail.length + index;
+    return tail.readUInt32LE(index + 12) + tail.readUInt32LE(index + 16) <= footerOffset;
+  }
+  return false;
 }
 function traceIdentity(file) {
   const fd = openSync(file, "r");
   const hasher = createHash("sha256");
   const chunk = Buffer.alloc(1024 * 1024);
-  let bytes = 0, signature = null;
+  let bytes = 0, signature = null, envelopeComplete = false;
   try {
     let count;
     while ((count = readSync(fd, chunk, 0, chunk.length, null)) > 0) {
       signature ??= chunk.subarray(0, Math.min(4, count)).toString("hex");
       bytes += count; hasher.update(chunk.subarray(0, count));
     }
+    const tail = Buffer.alloc(Math.min(bytes, 65557));
+    let read = 0;
+    while (read < tail.length) {
+      const count = readSync(fd, tail, read, tail.length - read, bytes - tail.length + read);
+      if (count === 0) break;
+      read += count;
+    }
+    envelopeComplete = read === tail.length && traceEligible(bytes, signature, tail);
   } finally { closeSync(fd); }
-  return { bytes, signature, sha256: `sha256:${hasher.digest("hex")}` };
+  return { bytes, signature, envelopeComplete, sha256: `sha256:${hasher.digest("hex")}` };
 }
 function extractEvidence(report, output) {
   const expected = new Set(viewports.flatMap(viewport => variants.map(variant => `task-detail-${variant}-${viewport}.png`)));
@@ -210,10 +228,10 @@ function extractEvidence(report, output) {
           try {
             rejectSymlinks(file);
             const identity = traceIdentity(file);
-            const name = `trace-${String(traces.length + 1).padStart(2, "0")}.zip`;
+            const name = traceArtifactName(traces.length + 1);
             const source = path.relative(output, file).replaceAll("\\", "/");
-            if (traces.length >= 99 || !traceEligible(identity.bytes, identity.signature)) {
-              const error = "Native trace is not a recognized ZIP, exceeds the fixed 128 MiB trace bound, or exceeds the two-digit trace namespace; native file retained without truncation.";
+            if (!name || !identity.envelopeComplete) {
+              const error = "Native trace lacks a supported complete nonempty ZIP envelope, exceeds the fixed 128 MiB trace bound, or exceeds the fixed trace-01..20 namespace; native file retained without truncation.";
               traces.push({ file: name, source, ...identity, status: "native-only-refused", error }); failures.push(error); continue;
             }
             const bytes = readFileSync(file);
