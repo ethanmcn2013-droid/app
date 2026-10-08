@@ -1,0 +1,36 @@
+{
+  "schema": "signal-workbench-scenario/1",
+  "id": "tasks-populated-task-detail-panel",
+  "version": 1,
+  "purpose": "Prepare the existing populated wedding task detail panel for private visual review on the actual built App.",
+  "source": {
+    "repository": "ethanmcn2013-droid/app",
+    "branch": "feat/real-product-workbench",
+    "baseCommit": "aaa7283d65c9a3e0549396c12ac15a5e65ca606b"
+  },
+  "scenario": {
+    "fixtureId": "tasks.surface.task-detail-panel",
+    "caseName": "populated task",
+    "playwrightTitle": "tasks.surface.task-detail-panel / populated task",
+    "route": "/app/tasks",
+    "taskName": "Confirm marquee sides with the hire company",
+    "fixtureSource": "experience/critical-fixtures.json",
+    "browserContract": "experience/browser-contract.json",
+    "clock": "Clock behavior is inherited from the registered built-App fixture; no clock override is claimed."
+  },
+  "journey": {
+    "command": "playwright test --config experience/playwright.config.ts --grep <fixed-test-title> --reporter=json",
+    "buildByDefault": true,
+    "viewports": ["mobile", "tablet", "desktop", "wide"]
+  },
+  "fidelity": {
+    "level": "built-app-synthetic-demo",
+    "accessMode": "demo",
+    "deploymentEnvironment": "preview",
+    "locale": "en-GB",
+    "timezoneId": "Europe/London",
+    "colorScheme": "light",
+    "authenticated": false,
+    "persistence": false
+  }
+}
