@@ -278,9 +278,11 @@ export function TaskSheet({ task, mode, onClose, onNavigate, onExpand, position,
       {header}
       <div className={styles.scroll}>
         {title}
-        {panelComposition === "context-first" ? notes : <Properties task={task} />}
-        {panelComposition === "context-first" ? <Properties task={task} /> : notes}
-        <div className={styles.divider} />
+        {panelComposition === "context-first" ? (
+          <>{notes}<Properties task={task} /><div className={styles.divider} /></>
+        ) : (
+          <><Properties task={task} /><div className={styles.divider} />{notes}</>
+        )}
         {supportingSections}
         {activity}
       </div>
