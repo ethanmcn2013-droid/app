@@ -60,10 +60,11 @@ async function prove(tx: Transaction, operation: Operation): Promise<Proof> {
   if (!Number.isSafeInteger(result.seq) || result.seq < 1 || !Number.isFinite(result.position) || result.activityId !== activityId(operation) ||
     !task || task.workspaceId !== operation.project || task.title !== operation.title || task.lane !== "todo" || task.priority !== "p2" ||
     task.seq !== result.seq || task.position !== result.position || task.parentTaskId !== null || task.description !== null ||
-    task.assignees.length !== 0 || task.completedAt !== null || task.updatedAt.toISOString() !== operation.createdAt ||
+    task.assignees.length !== 0 || task.isMilestone !== false || task.createdAt.toISOString() !== operation.createdAt || task.updatedAt.toISOString() !== operation.createdAt ||
+    (["completedAt", "archivedAt", "estimate", "due", "dueAt", "tags", "recurrence", "externalContactName", "externalContactEmail", "cents", "idleDays", "blockedBy", "startDay", "durationDays", "sourceNoteId", "sourceNoteExtractBody", "sourceNoteExtractSha256", "boardColumnKey"] as const).some(key => task[key] !== null) ||
     activity.length !== 1 || activity[0].id !== result.activityId || activity[0].workspaceId !== operation.project || activity[0].taskId !== operation.taskId ||
     activity[0].userId !== operation.actor || activity[0].kind !== "taskAdd" || activity[0].payload.kind !== "taskAdd" ||
-    activity[0].payload.lane !== "todo" || activity[0].createdAt.toISOString() !== operation.createdAt) return { status: "unknown" };
+    activity[0].payload.lane !== "todo" || Object.keys(activity[0].payload).length !== 2 || activity[0].createdAt.toISOString() !== operation.createdAt) return { status: "unknown" };
   return { status: "present", result };
 }
 
@@ -91,7 +92,7 @@ export async function createOwnedLocalTask(database: Database, operation: Operat
       async insertTask(value) {
         const [row] = await privateTaskDbWrite(() => tx.insert(tasks).values({ id: value.id, workspaceId: value.workspaceId,
           seq: nextTaskSeq(value.workspaceId), title: value.title, description: value.description, lane: value.lane, priority: value.priority,
-          assignees: [...value.assignees], position: value.position, updatedAt: new Date(value.createdAtSeconds * 1000) }).returning({ seq: tasks.seq }));
+          assignees: [...value.assignees], position: value.position, createdAt: new Date(value.createdAtSeconds * 1000), updatedAt: new Date(value.createdAtSeconds * 1000) }).returning({ seq: tasks.seq }));
         if (!row || row.seq === null) throw new Error("Canonical insert did not return sequence");
         await hooks.afterTask?.();
         return { seq: row.seq };
