@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawn, spawnSync } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
-import { mkdirSync, readFileSync, readdirSync, lstatSync, writeFileSync, statfsSync } from "node:fs";
+import { mkdirSync, readFileSync, readdirSync, lstatSync, writeFileSync, statfsSync, openSync, readSync, closeSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,6 +14,7 @@ const outputRoot = path.join(repo, "experience/output/workbench-workshop-runs");
 const variants = ["record-first", "context-first"];
 const viewports = ["mobile", "tablet", "desktop", "wide"];
 const MINIMUM_VOLUME_BYTES = 2 * 1024 ** 3;
+const MAXIMUM_TRACE_BYTES = 128 * 1024 ** 2;
 const requiredChecks = ["section-order", "original-controls", "initial-axe", "initial-overflow", "keyboard-open-close-focus", "popover-escape", "title-edit", "priority-edit", "notes-edit", "expand-baseline", "navigation-selector", "invalid-selector-default", "long-content", "runtime"];
 const recipeFiles = ["experience/workbench/workshop-run.mjs", "experience/workbench/workshop-definition.json",
   "experience/workbench/workshop.playwright.config.ts", "experience/workbench/tests/workshop-task-detail.spec.ts",
@@ -173,6 +174,24 @@ function runPlaywright(output, signal) {
 function emptyQualification(failure) {
   return { failure, cases: viewports.flatMap(viewport => variants.map(variant => ({ variant, viewport, passed: false, initialCaptureBeforeEditing: false, initialStateDigest: null, checks: [], failure: "not observed" }))) };
 }
+export function traceEligible(bytes, signature) {
+  return Number.isSafeInteger(bytes) && bytes >= 22 && bytes <= MAXIMUM_TRACE_BYTES &&
+    ["504b0304", "504b0506"].includes(signature);
+}
+function traceIdentity(file) {
+  const fd = openSync(file, "r");
+  const hasher = createHash("sha256");
+  const chunk = Buffer.alloc(1024 * 1024);
+  let bytes = 0, signature = null;
+  try {
+    let count;
+    while ((count = readSync(fd, chunk, 0, chunk.length, null)) > 0) {
+      signature ??= chunk.subarray(0, Math.min(4, count)).toString("hex");
+      bytes += count; hasher.update(chunk.subarray(0, count));
+    }
+  } finally { closeSync(fd); }
+  return { bytes, signature, sha256: `sha256:${hasher.digest("hex")}` };
+}
 function extractEvidence(report, output) {
   const expected = new Set(viewports.flatMap(viewport => variants.map(variant => `task-detail-${variant}-${viewport}.png`)));
   let qualification = null;
@@ -190,10 +209,16 @@ function extractEvidence(report, output) {
           }
           try {
             rejectSymlinks(file);
+            const identity = traceIdentity(file);
+            const name = `trace-${String(traces.length + 1).padStart(2, "0")}.zip`;
+            const source = path.relative(output, file).replaceAll("\\", "/");
+            if (traces.length >= 99 || !traceEligible(identity.bytes, identity.signature)) {
+              const error = "Native trace is not a recognized ZIP, exceeds the fixed 128 MiB trace bound, or exceeds the two-digit trace namespace; native file retained without truncation.";
+              traces.push({ file: name, source, ...identity, status: "native-only-refused", error }); failures.push(error); continue;
+            }
             const bytes = readFileSync(file);
-            const name = `playwright-trace-${traces.length + 1}.zip`;
             writeFileSync(path.join(output, name), bytes, { flag: "wx" });
-            traces.push({ file: name, source: path.relative(output, file).replaceAll("\\", "/"), sha256: `sha256:${hash(bytes)}`, bytes: bytes.length });
+            traces.push({ file: name, source, ...identity, status: "retained-as-artifact" });
           } catch (error) { failures.push(`Native trace could not be retained: ${error.message}`); }
           continue;
         }
@@ -285,6 +310,7 @@ export async function runWithOutput({ output: requestedOutput, signal } = {}) {
   saveJson("qualification.json", qualification);
   saveJson("source-metadata.json", sourceEvidence);
   saveJson("build-metadata.json", build);
+  saveJson("trace-diagnostics.json", { traces: evidence.traces, maximumArtifactBytes: MAXIMUM_TRACE_BYTES, failures: evidence.failures });
   for (const [name, bytes] of Object.entries(sourceBytes)) writeFileSync(path.join(output, name), bytes, { flag: "wx" });
   const artifacts = readdirSync(output, { withFileTypes: true }).filter(entry => entry.isFile()).map(entry => {
     const bytes = readFileSync(path.join(output, entry.name));
