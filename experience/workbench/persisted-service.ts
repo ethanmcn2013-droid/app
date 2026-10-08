@@ -38,7 +38,7 @@ function validate(operation: Operation) {
     if (!/^[a-zA-Z0-9_-]{1,128}$/.test(operation[name])) throw new Error("Invalid local operation identity");
   }
   if (typeof operation.title !== "string" || !operation.title.trim() || operation.title.length > 500 ||
-    !Number.isFinite(Date.parse(operation.createdAt)) || new Date(operation.createdAt).toISOString() !== operation.createdAt)
+    !Number.isFinite(Date.parse(operation.createdAt)) || new Date(operation.createdAt).toISOString() !== operation.createdAt || new Date(operation.createdAt).getUTCMilliseconds() !== 0)
     throw new Error("Invalid local operation payload");
 }
 
