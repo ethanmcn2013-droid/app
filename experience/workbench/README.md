@@ -8,6 +8,12 @@ Run it from the App repository with a new direct-child folder under `experience/
 pnpm experience:workbench -- --output experience/output/workbench-runs/run-001
 ```
 
+The controlled termination qualification runs the same fixed Playwright command, terminates its process tree through the runner's internal `AbortSignal` interface, and checks that the attempt remains `unknown` with `exitCode: null` and wrapper exit 1:
+
+```powershell
+node --test experience/workbench/termination.test.mjs
+```
+
 The runner rejects a different branch, an obsolete scenario/fixture mapping, runtime-source edits that have not been committed, a reused output folder, symlinked output paths, extra CLI arguments, or an output path outside the evidence directory. It invokes the fixed Playwright test through Node without a shell. The Playwright configuration builds the app before starting the local production server.
 
 Each run writes `receipt.json`, the full Playwright JSON report, captured stderr, source/build metadata, the exact runner and scenario definition, and the four actual screenshot PNG files. The receipt hashes each artifact and binds the scenario definition digest, source commit/tree, fixture/config/test hashes, local build manifests, process exit, test results, screenshot hashes and the declared browser environment. The manifest version and digest identify the reusable scenario; the unique run ID identifies one attempt.
