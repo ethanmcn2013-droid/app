@@ -38,6 +38,7 @@ export default defineConfig({
     locale: contract.determinism.locale,
     timezoneId: contract.determinism.timezoneId,
     colorScheme: contract.determinism.colorScheme,
+    actionTimeout: 8_000,
     navigationTimeout: 30_000,
     trace: "on",
   },

@@ -61,6 +61,9 @@ async function fresh(browser: Browser, viewport: { width: number; height: number
   const context = await browser.newContext({ baseURL: "http://127.0.0.1:4353", viewport,
     locale: contract.determinism.locale, timezoneId: contract.determinism.timezoneId,
     colorScheme: contract.determinism.colorScheme });
+  // These manually created contexts do not inherit the test fixture's use timeouts.
+  context.setDefaultTimeout(8_000);
+  context.setDefaultNavigationTimeout(30_000);
   const page = await context.newPage();
   const runtime = watchRuntime(page);
   return { context, page, runtime };
@@ -254,14 +257,29 @@ test("tasks detail workshop / equal-state comparison and interactions", async ({
         });
         await check(item, "title-edit", async () => {
           const edited = `${taskName} — workshop readback`;
-          await panel.getByRole("textbox", { name: "Task title", exact: true }).fill(edited);
-          await panel.getByRole("textbox", { name: "Task title", exact: true }).press("Enter");
-          panel = page.getByRole("dialog", { name: edited, exact: true }); await expect(panel).toBeVisible();
+          const taskId = new URL(page.url()).searchParams.get("task");
+          expect(taskId).toBeTruthy();
+          // The dialog's accessible name changes with its title. Keep its actual
+          // task host stable while filling and committing, then assert the new name.
+          panel = page.locator("[data-task-detail-panel]");
+          await expect(panel).toHaveCount(1);
+          const title = panel.getByRole("textbox", { name: "Task title", exact: true });
+          await title.fill(edited);
+          await expect(title).toHaveValue(edited);
+          await title.press("Enter");
+          await expect(panel).toHaveAccessibleName(edited);
+          await expect(page.getByRole("dialog", { name: edited, exact: true })).toBeVisible();
+          expect(new URL(page.url()).searchParams.get("task")).toBe(taskId);
           await panel.getByRole("button", { name: "Close", exact: true }).click();
-          opener = page.locator('article[data-id][aria-label]').filter({ hasText: edited }).first();
+          await expect(panel).toHaveCount(0);
+          opener = page.locator(`article[data-id=${JSON.stringify(taskId)}][aria-label]`);
+          await expect(opener).toHaveCount(1);
           await expect(opener).toHaveAttribute("aria-label", edited); await opener.focus(); await page.keyboard.press("Enter");
+          await expect(panel).toHaveAccessibleName(edited);
           await expect(panel.getByRole("textbox", { name: "Task title", exact: true })).toHaveValue(edited);
-          item.metrics.titleReadback = edited;
+          expect(new URL(page.url()).searchParams.get("task")).toBe(taskId);
+          expect(new URL(page.url()).searchParams.get("panelComposition")).toBe(item.variant);
+          item.metrics.titleReadback = { taskId, title: edited, accessibleName: edited, persistence: "not-exercised" };
         });
         await check(item, "priority-edit", async () => {
           const field = panel.locator("dl > div").filter({ has: page.locator("dt").filter({ hasText: /^Priority$/ }) }).getByRole("button");

@@ -260,7 +260,8 @@ function extractEvidence(report, output) {
 }
 export function validateQualification(qualification, screenshots) {
   const errors = [];
-  if (!qualification || qualification.failure !== null || !Array.isArray(qualification.cases) || qualification.cases.length !== 8 || qualification.allInitialCapturesBeforeEditing !== true || qualification.initialCaptureCount !== 8) errors.push("Eight initial captures and qualification cases were not all completed before editing.");
+  if (!qualification || !Array.isArray(qualification.cases) || qualification.cases.length !== 8 || qualification.allInitialCapturesBeforeEditing !== true || qualification.initialCaptureCount !== 8) errors.push("Eight initial captures and qualification cases were not all completed before editing.");
+  if (qualification && qualification.failure !== null) errors.push(`Qualification retained a failure: ${typeof qualification.failure === "string" ? qualification.failure : "missing or invalid failure result"}`);
   const cases = Array.isArray(qualification?.cases) ? qualification.cases : [];
   const initialStateDigests = {};
   for (const variant of variants) {
