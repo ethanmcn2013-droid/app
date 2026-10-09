@@ -430,5 +430,9 @@
     "./src/test/register-server-only.mjs",
     "--test",
     "src/server/sponsor-report/proxy.test.ts"
+  ],
+  [
+    "pnpm",
+    "test:reliability"
   ]
 ]
