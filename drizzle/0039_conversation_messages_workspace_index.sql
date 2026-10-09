@@ -1,0 +1,1 @@
+CREATE INDEX conversation_messages_workspace ON conversation_messages(workspace_id);

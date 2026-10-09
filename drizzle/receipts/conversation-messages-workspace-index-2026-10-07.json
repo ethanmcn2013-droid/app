@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "conversation-messages-workspace-index-2026-10-07",
+  "authorizedBy": "Root delegated founder-authorized bounded local implementation on 2026-10-07. Local and CI rehearsal only; target-bound remote migration authorization remains separate.",
+  "reviewedBy": "Sol6.1 implementation candidate review. Astra approved the source proposal only in round8-cleanup-index-proposal-independent-review-astra-v1.json; independent review of this patch remains required before integration or remote application.",
+  "authorizationSource": "Current Root assignment: append only migration0039 after failed quality evidence was archived; no hosted database, provider or cleanup execution.",
+  "migrations": [
+    {
+      "id": "0039_conversation_messages_workspace_index",
+      "sha256": "e9874a3f361ebcbc1a01d30fe0e36ebadb04d508392c9f9ff418d33a5b494264",
+      "reviewedAt": "2026-10-07T04:03:32.126Z",
+      "risk": "Builds one full nonunique single-column workspace lookup index on all existing conversation_messages, including tombstones and author-null retained rows. Index construction reads existing rows and consumes storage/write work. No table, trigger, FK, identity or uniqueness constraint changes. Local planner evidence does not qualify hosted quota or complete cleanup cost.",
+      "rollbackPlan": "Retain the valid additive index and investigate runtime or cost concerns first. If reversal is necessary, use a separately reviewed forward DROP INDEX migration after target-bound review; never rewrite0032/0036/0039, applied migration metadata, message rows or cleanup triggers.",
+      "postconditions": [
+        "exactly one nonunique nonpartial conversation_messages_workspace index exists",
+        "its sole indexed column is workspace_id",
+        "all preexisting application rows and trigger definitions are preserved",
+        "integrity and foreign key checks pass"
+      ],
+      "proofs": [
+        {
+          "id": "workspace-message-index",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_index_list('conversation_messages') WHERE name='conversation_messages_workspace' AND \"unique\"=0 AND partial=0",
+          "expected": 1
+        },
+        {
+          "id": "workspace-message-index-column",
+          "sql": "SELECT CASE WHEN COUNT(*)=1 AND SUM(CASE WHEN seqno=0 AND name='workspace_id' THEN 1 ELSE 0 END)=1 THEN 1 ELSE 0 END AS value FROM pragma_index_info('conversation_messages_workspace')",
+          "expected": 1
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}
