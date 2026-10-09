@@ -13,3 +13,7 @@ Astra independently reviewed the seven exact source differences whose registry h
 | tasks.page.app-files | e01dfeb4557865d9 | Page props retain missing search-parameter handling. |
 
 This is an explicit engineering source-materiality review, not new visual acceptance or a rendered four-project attestation. Existing visual audit dates, coverage levels, scores and baseline receipts are retained. Final sprint browser receiving remains a separate gate. The reviewed source differences introduced no blocking functional or access finding.
+
+## Bounded accessibility correction approved on 10 October (Dublin)
+
+The user explicitly approved changing only the sidebar text labels “Channels” and “Direct messages” from the computed `#7c7c7c` to `#7e7e7e`. The scoped non-hover span rules preserve icons, hover behaviour, other labels, layout, fonts and spacing. Against the existing `#141414` sidebar, the calculated contrast increases from 4.414:1 to 4.538:1, passing the existing 4.5:1 requirement. An isolated check of the actual CSS confirmed both computed colours, retained hover colour and no target contrast violation; full application CI remains required. The registry has no direct source reference to this shell CSS, so its reviewed hashes were not changed for this correction.
