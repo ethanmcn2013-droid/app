@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { opLog } from "../operational-log";
 
 const codes = new Set(["SQLITE_BUSY", "SQLITE_BUSY_SNAPSHOT", "SQLITE_LOCKED", "HRANA_PROTO_ERROR", "HRANA_CLOSED_ERROR", "HRANA_WEBSOCKET_ERROR", "SERVER_ERROR", "TRANSACTION_CLOSED", "CLIENT_CLOSED", "SQLITE_CONSTRAINT", "SQLITE_CONSTRAINT_UNIQUE"]);
 export function conversationFailureCode(error: unknown): string {
@@ -19,6 +20,6 @@ export type ConversationFailureDiagnostic = Readonly<{
 }>;
 /** No error objects, request keys, actor identities or source content reach logs. */
 export function reportConversationFailure(diagnostic: ConversationFailureDiagnostic) {
-  try { console.warn("conversation_operation_failure", diagnostic); } catch { /* Diagnostics never decide the operation outcome. */ }
+  try { opLog("warn", "conversation_operation_failure", "Operation outcome", { ...diagnostic }); } catch { /* Diagnostics never decide the operation outcome. */ }
 }
 export const newConversationCorrelation = randomUUID;
