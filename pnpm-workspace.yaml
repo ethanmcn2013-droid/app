@@ -6,7 +6,7 @@ overrides:
   "@babel/core@>=7.0.0 <7.29.6": 7.29.6
   "@opentelemetry/core@>=2.0.0 <2.8.0": 2.8.0
   "undici@>=6.0.0 <6.28.1": 6.28.1
-  "brace-expansion@>=4.0.0 <5.0.11": 5.0.11
+  "brace-expansion@>=4.0.0 <5.0.12": 5.0.12
   browserslist: 4.28.8
   fast-uri: 3.1.8
   js-cookie: 3.0.8
