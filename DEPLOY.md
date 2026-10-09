@@ -227,6 +227,88 @@ pnpm db:migrate -- \
   --receipt=<execution-receipt.json>
 ```
 
+### Applying an exact reviewed candidate before receiving its ledger
+
+The required production-drift check compares a PR's ledger with live production.
+When a new migration is pending, the main-only encrypted workflow may import its
+reviewed migration data before that PR can merge. All scripts, dependencies and
+workflow steps still execute from the actual main `GITHUB_SHA`; the candidate is
+never checked out or executed. Branch protection and the drift check stay intact.
+
+Create a migration-only candidate commit whose sole parent is its recorded base.
+Reconcile competing migration ordinals first and preserve every main entry,
+SQL file, journal item, snapshot and review receipt unchanged. Pass ordinary
+source/fixture checks and obtain an independent review at the exact candidate SHA.
+Record actual production authority and review in the private Delivery Project.
+Do not substitute a producer's receipt or a manifest field for that review.
+
+Then receive a separate main PR adding the reviewed manifest under
+`docs/ops/migration-candidates/NAME.json`, without changing the main ledger.
+Schema version is `tasks-reviewed-migration-candidate/1`. Required fields are:
+`id`, `repository` (`ethanmcn2013-droid/app`), `pullRequestNumber`,
+`candidateSourceRevision`, `candidateBaseRevision`, `baseLedgerSha256`,
+`candidateLedgerSha256`, `expectedLastMigrationId`, `targetUrlSha256`,
+`databaseIdentitySha256`, `notBefore`, `expiresAt`,
+`authorization: {source, authorizedBy}`, and
+`review: {verdict: "approved", sourceRevision, reviewedBy, reference, reviewedAt}`.
+The validity window must be no more than 24 hours. Record the independently
+observed target URL hash and normalized database-identity hash; never a raw URL,
+token, private key or invented approval. `migrations` contains the exact ordered
+`{id, sha256, receiptSha256}` appended forwards. `files` contains canonical
+LF `{path, sha256}` for the ledger, journal, each new SQL file and its new review
+receipt. No historical changes, snapshots, executable files, symlinks, submodules
+or additional migration-data files are permitted.
+
+The normal main-only `status` step first prints a
+`tasks-production-target-metadata/1` record: trusted operator revision, target
+URL hash, normalized database identity hash, current source ledger hash and last
+registered migration ID. This metadata command validates the existing exact
+production binding and computes hashes without making a provider request; the
+ordinary live migration status query still runs afterward. Use this fresh trusted
+record to supply the manifest's actual target identity. It contains no URL,
+credential or database rows, and does not by itself attest live schema state.
+
+After the manifest is received on main **A**, merge that trusted main into the
+receiving migration PR to create head **D**, retaining the reviewed data commit
+**B** as an ancestor. Both A and B must be ancestors of D. The exhaustive diff
+from A to D must contain exactly the manifest's data paths and hashes, with no
+additional test, executable, policy or documentation changes. This resolves
+strict up-to-date branch protection without changing the immutable data approval.
+Do not rebase away B, regenerate SQL, or include unrelated changes. Pass all
+non-production required checks and independently review receiving D before apply.
+
+Candidate mode supports only `execute`. Dispatch the main workflow with the
+manifest **basename**, for example:
+
+```text
+gh workflow run db-migrate-encrypted.yml --repo ethanmcn2013-droid/app --ref main -f command=execute -f candidate_manifest=NAME.json
+```
+
+The importer uses only regular immutable Git blobs from the same repository and
+captures the verified receiving head D of the open same-repository PR. Historical data comes
+from main. The fresh private data root stays under `RUNNER_TEMP`. Prepare,
+acknowledgment and apply recheck the manifest, expiry, exact captured receiving
+head, actual current main, both ancestries, exhaustive diff and all hashes.
+Prepare requires live production to match main's complete current prefix, then
+uses the trusted runner and candidate context for its restored-copy rehearsal.
+Immediately before mutation, apply repeats candidate verification and the existing
+target/schema/ledger/upload checks. Final production schema must match the dry run.
+`sourceRevision` remains the trusted operator main revision. Separate `candidate`
+receipt fields bind candidate/base/receiving/manifest/expiry/review-receipt hashes; the
+database ledger's `release_sha` records the candidate SQL revision. No new
+credential, decryption identity or provider permission is introduced.
+
+Freeze unrelated merges during apply-to-receive. Have the migration-only PR
+merge-ready before mutation, require a verified target-bound final result, rerun
+its production check, and merge it normally with exact head binding. Read back
+main's exact ledger and fresh status before integrating dependent runtime code.
+Applying multiple migrations but receiving a source with only a subset fails
+closed. Each migration is atomic; the whole list is not. A failed later migration
+can leave a verified earlier migration applied and main ahead-of-source checks
+failing. Preserve the partial result, stop dependent release, and prepare a new
+reviewed forward resolution with a fresh observed baseline and backup. Never
+edit applied hashes/IDs/receipts or invent ledger rows to make a check pass.
+
 The old `db-migrate` GitHub workflow is retired and must remain disabled: it
 uploaded raw database JSONL and a local dry-run database from `.db-evidence/`.
 Use the separate `db-migrate-encrypted` workflow on `main` only. Its `status`

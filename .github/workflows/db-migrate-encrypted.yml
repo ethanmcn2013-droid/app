@@ -9,6 +9,11 @@ on:
         options: [status, measure, backup, execute]
         required: true
         default: status
+      candidate_manifest:
+        description: 'Optional main-reviewed manifest basename; execute only'
+        type: string
+        required: false
+        default: ''
 
 concurrency:
   group: db-migrate-production
@@ -32,12 +37,27 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
 
+      - name: Reject candidate mode outside execute
+        env:
+          CANDIDATE_MANIFEST: ${{ inputs.candidate_manifest }}
+          BACKUP_MODE: ${{ inputs.command }}
+        run: node -e "if(process.env.CANDIDATE_MANIFEST && process.env.BACKUP_MODE !== 'execute') process.exit(1)"
+
+      - name: Import exact reviewed migration data with trusted main code
+        if: inputs.command == 'execute' && inputs.candidate_manifest != ''
+        env:
+          CANDIDATE_MANIFEST: ${{ inputs.candidate_manifest }}
+          BACKUP_MODE: ${{ inputs.command }}
+        run: node scripts/db/prepare-reviewed-candidate.mjs
+
       - name: Status (read-only)
         if: inputs.command == 'status'
         env:
           TASKS_DATABASE_URL: ${{ secrets.TASKS_DATABASE_URL }}
           TASKS_AUTH_TOKEN: ${{ secrets.TASKS_AUTH_TOKEN }}
-        run: node scripts/db/migrate.mjs status --confirm-production=tasks
+        run: |
+          node scripts/db/production-backup-custody.mjs metadata
+          node scripts/db/migrate.mjs status --confirm-production=tasks
 
       - name: Measure (read-only)
         if: inputs.command == 'measure'
@@ -72,6 +92,7 @@ jobs:
           DB_BACKUP_AGE_RECIPIENT: ${{ vars.DB_BACKUP_AGE_RECIPIENT }}
           AGE_BINARY: ${{ runner.temp }}/age/age
           BACKUP_MODE: ${{ inputs.command }}
+          CANDIDATE_MANIFEST: ${{ inputs.candidate_manifest }}
         run: node scripts/db/production-backup-custody.mjs prepare
 
       - name: Upload ciphertext and sanitized receipt
@@ -91,6 +112,7 @@ jobs:
         env:
           BACKUP_ARTIFACT_ID: ${{ steps.encrypted_backup.outputs.artifact-id }}
           BACKUP_ARTIFACT_DIGEST: ${{ steps.encrypted_backup.outputs.artifact-digest }}
+          CANDIDATE_MANIFEST: ${{ inputs.candidate_manifest }}
         run: node scripts/db/production-backup-custody.mjs acknowledge
 
       - name: Apply only after encrypted artifact upload
@@ -102,6 +124,7 @@ jobs:
           DB_BACKUP_AGE_RECIPIENT: ${{ vars.DB_BACKUP_AGE_RECIPIENT }}
           BACKUP_ARTIFACT_ID: ${{ steps.encrypted_backup.outputs.artifact-id }}
           BACKUP_ARTIFACT_DIGEST: ${{ steps.encrypted_backup.outputs.artifact-digest }}
+          CANDIDATE_MANIFEST: ${{ inputs.candidate_manifest }}
         run: node scripts/db/production-backup-custody.mjs apply
 
       - name: Retain sanitized migration result

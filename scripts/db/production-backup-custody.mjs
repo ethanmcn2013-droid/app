@@ -10,6 +10,7 @@ import {takeBackup} from './backup.mjs';
 import {restoreInto, measure, compare, compareDdl} from './restore-verify.mjs';
 import {canonicalFileSha256, loadAndValidateLedger, rawFileSha256, sha256} from './migration-ledger.mjs';
 import {databaseIdentitySha256, migrationStatus, runMigrations, schemaFingerprintSha256} from './migrate.mjs';
+import {candidateProvenance, loadReviewedCandidate} from './prepare-reviewed-candidate.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const cipherDir = path.join(root, '.db-cipher');
@@ -90,6 +91,7 @@ export function finalResult(input) {
         ? 'partial_or_complete_unverified' : 'none_started',
     errorCode:result === 'failed' ? safeCode(input.error) : null,
     sourceRevision:validSource(input.sourceRevision),
+    candidate:candidateResult(input.candidate),
     targetSha256:validSha(input.targetSha256),
     ledgerSha256:validSha(input.ledgerSha256),
     snapshotSchemaSha256:validSha(input.snapshotSchemaSha256),
@@ -105,6 +107,46 @@ export function finalResult(input) {
     appliedCount:result === 'applied' && Number.isSafeInteger(input.appliedCount)
       ? input.appliedCount : null,
   };
+}
+
+// An explicit allowlist, including nested fields; never spread arbitrary input
+// into a public artifact, even when candidate preparation has already passed.
+export function candidateResult(candidate) {
+  if (!candidate) return null;
+  requireValue(sha40.test(candidate.candidateSourceRevision ?? '') &&
+    sha40.test(candidate.candidateBaseRevision ?? '') &&
+    sha40.test(candidate.receivingSourceRevision ?? '') &&
+    /^[a-z0-9][a-z0-9-]{0,79}$/.test(candidate.candidateManifestId ?? '') &&
+    sha64.test(candidate.candidateManifestSha256 ?? '') &&
+    sha64.test(candidate.candidateDatabaseIdentitySha256 ?? '') &&
+    Number.isFinite(Date.parse(candidate.candidateExpiresAt)) &&
+    Array.isArray(candidate.candidateMigrations) && candidate.candidateMigrations.every(entry =>
+      /^[0-9]{4}[a-z]?_[a-z0-9_]+$/.test(entry?.id ?? '') && sha64.test(entry.sha256 ?? '') &&
+      sha64.test(entry.receiptSha256 ?? '')), 'CANDIDATE_RESULT_INVALID');
+  return {candidateSourceRevision:candidate.candidateSourceRevision,
+    candidateBaseRevision:candidate.candidateBaseRevision,
+    receivingSourceRevision:candidate.receivingSourceRevision,
+    candidateManifestId:candidate.candidateManifestId,
+    candidateManifestSha256:candidate.candidateManifestSha256,
+    candidateDatabaseIdentitySha256:candidate.candidateDatabaseIdentitySha256,
+    candidateExpiresAt:candidate.candidateExpiresAt,
+    candidateMigrations:candidate.candidateMigrations.map(entry =>
+      ({id:entry.id,sha256:entry.sha256,receiptSha256:entry.receiptSha256}))};
+}
+
+export function requireCandidateBinding(expected, current) {
+  requireValue(JSON.stringify(candidateResult(expected)) === JSON.stringify(candidateResult(current)),
+    'CANDIDATE_BINDING_CHANGED');
+}
+
+async function reviewedCandidate(source, url = undefined) {
+  const name = process.env.CANDIDATE_MANIFEST;
+  if (!name) return null;
+  const candidate = await loadReviewedCandidate({root,sourceRevision:source,
+    manifestName:name,runnerTemp:process.env.RUNNER_TEMP});
+  if (url) requireValue(candidate.manifest.targetUrlSha256 === sha256(url) &&
+    candidate.manifest.databaseIdentitySha256 === databaseIdentitySha256(url), 'CANDIDATE_TARGET_CHANGED');
+  return candidate;
 }
 
 export function writeFinalResult(dir, input) {
@@ -141,6 +183,21 @@ function connection() {
   requireValue(url && authToken, 'PRODUCTION_BINDING_MISSING');
   requireProductionTasksTarget(url);
   return {url, authToken};
+}
+
+export function publicTargetMetadata({sourceRevision, targetUrlSha256, identitySha256, context}) {
+  requireValue(sha40.test(sourceRevision ?? '') && sha64.test(targetUrlSha256 ?? '') &&
+    sha64.test(identitySha256 ?? ''), 'TARGET_METADATA_INVALID');
+  return {schema:'tasks-production-target-metadata/1',operatorSourceRevision:sourceRevision,
+    targetUrlSha256,databaseIdentitySha256:identitySha256,ledgerSha256:context.ledgerSha256,
+    lastMigrationId:context.entries.at(-1).id};
+}
+
+function metadata() {
+  const source = sourceRevision(); // main/GITHUB_SHA before secret binding
+  const {url} = connection(); // existing exact production URL guard; no client
+  console.log(JSON.stringify(publicTargetMetadata({sourceRevision:source,targetUrlSha256:sha256(url),
+    identitySha256:databaseIdentitySha256(url),context:loadAndValidateLedger({root})})));
 }
 
 function paths() {
@@ -180,10 +237,14 @@ function pendingMigrations(context, rows) {
   return context.forward.filter(entry => !applied.has(entry.id));
 }
 
-async function sourceSnapshot(client, url) {
+async function sourceSnapshot(client, url, baselineContext = undefined) {
   let tx;
   try {
     tx = await client.transaction('read');
+    if (baselineContext) {
+      const baseline = await migrationStatus({client:tx,context:baselineContext});
+      requireValue(baseline.state === 'current', 'CANDIDATE_BASE_NOT_CURRENT');
+    }
     const backup = await takeBackup(tx, {label:'tasks-production', url});
     const rows = await ledgerRows(tx);
     const snapshot = {
@@ -217,12 +278,14 @@ async function prepare() {
   const source = sourceRevision();
   const mode = process.env.BACKUP_MODE;
   requireValue(mode === 'backup' || mode === 'execute', 'BACKUP_MODE_INVALID');
+  requireValue(!process.env.CANDIDATE_MANIFEST || mode === 'execute', 'CANDIDATE_EXECUTE_ONLY');
   const recipient = process.env.DB_BACKUP_AGE_RECIPIENT;
   const ageBinary = process.env.AGE_BINARY;
   requireEncryptionPreflight(recipient, ageBinary); // before any provider connection
   const {url, authToken} = connection();
+  const candidate = await reviewedCandidate(source,url);
   const p = paths();
-  const context = loadAndValidateLedger({root});
+  const context = candidate?.context ?? loadAndValidateLedger({root});
   requireValue(!fs.existsSync(p.privateDir) && !fs.existsSync(cipherDir), 'OUTPUT_ALREADY_EXISTS');
   fs.mkdirSync(p.privateDir, {mode:0o700});
   fs.mkdirSync(cipherDir, {mode:0o700});
@@ -230,7 +293,7 @@ async function prepare() {
   let client;
   try {
     client = createClient({url, authToken});
-    const {backup, snapshot, rows} = await sourceSnapshot(client, url);
+    const {backup, snapshot, rows} = await sourceSnapshot(client, url, candidate?.base);
     client.close();
     client = undefined;
     fs.writeFileSync(p.backupPath, backup.body, {flag:'wx', mode:0o600});
@@ -239,12 +302,13 @@ async function prepare() {
     let dryRunFingerprint = null;
     if (mode === 'execute') {
       requireValue(pending.length > 0, 'NO_PENDING_MIGRATIONS');
-      const dryRun = spawnSync(process.execPath,
-        [path.join(root, 'scripts/db/migrate.mjs'), 'migrate', '--database-url',
-          pathToFileURL(p.restorePath).href], {stdio:'ignore'});
-      requireValue(!dryRun.error && dryRun.status === 0, 'LOCAL_DRY_RUN_FAILED');
       const local = createClient({url:pathToFileURL(p.restorePath).href});
-      try { dryRunFingerprint = await schemaFingerprintSha256(local); }
+      try {
+        await runMigrations({client:local,context,environment:'local',
+          databaseUrl:pathToFileURL(p.restorePath).href,
+          releaseSha:candidate?.manifest.candidateSourceRevision ?? source});
+        dryRunFingerprint = await schemaFingerprintSha256(local);
+      } catch { requireValue(false,'LOCAL_DRY_RUN_FAILED'); }
       finally { local.close(); }
     }
     fs.writeFileSync(p.bundlePath, JSON.stringify(makeBackupBundle(backup)) + '\n',
@@ -252,6 +316,7 @@ async function prepare() {
     const cipherSha256 = encryptBackup(p.bundlePath, p.cipherPath, recipient, ageBinary);
     const prepared = {
       schema:'tasks-encrypted-backup-prepared/1', mode, sourceRevision:source,
+      candidate:candidateProvenance(candidate),
       targetUrlSha256:sha256(url), databaseIdentitySha256:databaseIdentitySha256(url),
       ledgerSha256:context.ledgerSha256, snapshot, backupSha256:backup.manifest.backupSha256,
       cipherSha256, recipientSha256:sha256(recipient), dryRunFingerprint,
@@ -264,6 +329,7 @@ async function prepare() {
     const artifactReceipt = {
       schema:'tasks-encrypted-backup-artifact/1', result:'prepared',
       sourceRevision:source, targetSha256:prepared.targetUrlSha256,
+      candidate:prepared.candidate,
       backupSha256:prepared.backupSha256, cipherSha256,
       tableCount:prepared.tableCount, totalRows:prepared.totalRows,
       rowsAndHashesMatch:true, ddlPresent:true, integrity:'ok', foreignKeyViolations:0,
@@ -293,9 +359,13 @@ async function apply(progress) {
   progress.artifactId = ack.artifactId;
   progress.artifactDigest = ack.artifactDigest;
   const {url, authToken} = connection();
+  const candidate = await reviewedCandidate(source,url);
+  progress.candidate = candidateProvenance(candidate);
   const prepared = JSON.parse(fs.readFileSync(p.preparedPath, 'utf8'));
   requireValue(prepared.schema === 'tasks-encrypted-backup-prepared/1' &&
     prepared.mode === 'execute', 'EXECUTION_PREPARE_MISSING');
+  requireCandidateBinding(prepared.candidate,progress.candidate);
+  requireCandidateBinding(acknowledged.candidate,progress.candidate);
   requireValue(prepared.sourceRevision === source && prepared.targetUrlSha256 === sha256(url) &&
     prepared.databaseIdentitySha256 === databaseIdentitySha256(url), 'PREPARED_TARGET_CHANGED');
   requireValue(prepared.recipientSha256 === sha256(process.env.DB_BACKUP_AGE_RECIPIENT ?? ''),
@@ -311,7 +381,7 @@ async function apply(progress) {
   progress.snapshotLedgerRowsSha256 = prepared.snapshot.ledgerRowsSha256;
   progress.dryRunFingerprint = prepared.dryRunFingerprint;
   requireCipherArtifactContents(cipherDir);
-  const context = loadAndValidateLedger({root});
+  const context = candidate?.context ?? loadAndValidateLedger({root});
   requireValue(context.ledgerSha256 === prepared.ledgerSha256, 'SOURCE_LEDGER_CHANGED');
   const pending = prepared.migrations;
   requireValue(Array.isArray(pending) && pending.length > 0 &&
@@ -344,17 +414,25 @@ async function apply(progress) {
       ledgerSha256:prepared.ledgerSha256, backupSha256:prepared.backupSha256,
       backupRows:prepared.totalRows, dryRun:{status:'passed', databaseSha256:prepared.dryRunFingerprint},
       migrations:pending, sourceRevision:source, snapshot:prepared.snapshot,
+      candidate:progress.candidate,
       encryptedBackup:{cipherSha256:prepared.cipherSha256, ...ack},
     };
     fs.writeFileSync(p.executionReceiptPath, JSON.stringify(receipt, null, 2) + '\n',
       {flag:'wx', mode:0o600});
     progress.executionReceiptSha256 = canonicalFileSha256(p.executionReceiptPath);
+    // Check expiry, exact PR head, manifest and every imported byte again as
+    // close to mutation as possible, after the remote baseline observation.
+    const freshCandidate = await reviewedCandidate(source,url);
+    requireCandidateBinding(progress.candidate,candidateProvenance(freshCandidate));
     progress.phase = 'migration_attempted';
     const result = await runMigrations({client, context, environment:'production', databaseUrl:url,
-      executionReceiptPath:p.executionReceiptPath, releaseSha:source});
+      executionReceiptPath:p.executionReceiptPath,
+      releaseSha:candidate?.manifest.candidateSourceRevision ?? source});
     progress.phase = 'postcheck';
     const status = await migrationStatus({client, context});
     requireValue(status.state === 'current', 'POST_APPLY_STATUS_FAILED');
+    requireValue(await schemaFingerprintSha256(client) === prepared.dryRunFingerprint,
+      'POST_APPLY_FINGERPRINT_CHANGED');
     progress.phase = 'complete';
     progress.appliedCount = result.applied?.length ?? 0;
     console.log(JSON.stringify({result:'applied', applied:result.applied?.length ?? 0,
@@ -408,16 +486,19 @@ async function recover(argv) {
     restore:'fresh_local_verified'}));
 }
 
-function acknowledge() {
+async function acknowledge() {
   const source = sourceRevision();
   const ack = requireUploadAck(process.env.BACKUP_ARTIFACT_ID, process.env.BACKUP_ARTIFACT_DIGEST);
   const p = paths();
   const prepared = JSON.parse(fs.readFileSync(p.preparedPath, 'utf8'));
+  const candidate = await reviewedCandidate(source);
+  requireCandidateBinding(prepared.candidate,candidateProvenance(candidate));
   requireValue(prepared.sourceRevision === source &&
     rawFileSha256(p.cipherPath) === prepared.cipherSha256, 'PREPARED_DIGEST_CHANGED');
   requireCipherArtifactContents(cipherDir);
   fs.writeFileSync(p.uploadAckPath, JSON.stringify({
     schema:'tasks-encrypted-backup-upload/1', sourceRevision:source,
+    candidate:candidateProvenance(candidate),
     cipherSha256:prepared.cipherSha256, ...ack,
   }, null, 2) + '\n', {flag:'wx', mode:0o600});
   console.log(JSON.stringify({result:'uploaded', artifactId:ack.artifactId}));
@@ -428,10 +509,11 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const command = process.argv[2];
   const progress = {phase:'preflight'};
   try {
-    requireValue(['prepare','acknowledge','apply','recover'].includes(command), 'COMMAND_INVALID');
+    requireValue(['prepare','acknowledge','apply','recover','metadata'].includes(command), 'COMMAND_INVALID');
     stage = command;
+    if (command === 'metadata') metadata();
     if (command === 'prepare') await prepare();
-    if (command === 'acknowledge') acknowledge();
+    if (command === 'acknowledge') await acknowledge();
     if (command === 'apply') {
       await apply(progress);
       writeFinalResult(finalOutputDir(), {...progress, result:'applied'});

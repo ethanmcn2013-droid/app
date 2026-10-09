@@ -122,6 +122,19 @@ bundle of the backup body and full verification manifest with a sanitized
 receipt, and requires upload acknowledgment before production apply. It retains
 a separate sanitized final result even if apply fails after mutation starts.
 The App migration workflow does not receive the private decryption identity.
+A main-reviewed candidate manifest can authorize an exact unapplied forward
+package before its migration-only PR is received, resolving the required drift
+check's apply-before-merge dependency. The encrypted workflow still runs only
+trusted main scripts and dependencies. It imports allowlisted regular Git blobs
+as data, preserves the complete main prefix, checks a same-repository immutable
+data commit and short expiry, and keeps encrypted backup/upload/target gates.
+The distinct receiving PR head must contain both actual current main and the
+reviewed data commit as ancestors, with an exhaustive diff comprising only the
+approved migration-data paths/hashes. Receiving head and main freshness are
+rechecked and bound separately from immutable data approval.
+See `DEPLOY.md` section 4 for the manifest contract, two-source receipts and
+apply-to-receive sequence. This grants no general candidate-code execution,
+historical ledger rewriting or branch-protection exception.
 A separate main-only environment in the private workspace repository holds
 the key for the accepted hosted five-store Windows-loss recovery drill.
 See `DEPLOY.md` §4 for custody limits and the trusted-hash offline rehearsal;
