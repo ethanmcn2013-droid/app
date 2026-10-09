@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "sponsored-measurement-choice-release-2026-10-09",
+  "authorizedBy": "Founder-authorized safe PR release, bounded package assignment by Root on 2026-10-09. Remote apply still requires the main-reviewed target-bound candidate manifest and fresh encrypted execution receipt.",
+  "reviewedBy": "Codex release package producer verification. Independent review at the frozen candidate SHA remains required before main manifest authorization.",
+  "authorizationSource": "Root bounded migration release package assignment on 2026-10-09; preserve index 0039 and reallocate the unapplied sponsor migration to 0040.",
+  "migrations": [
+    {
+      "id": "0040_sponsored_measurement_choice",
+      "sha256": "5c6e94d2305ef142d072266a6e69e7f9617eeadeaa129ecfaf947729b747e662",
+      "reviewedAt": "2026-10-09T20:22:46.451Z",
+      "risk": "Additive default-on measurement preference and pseudonymous recipient-to-Project erasure link. No entitlement, access, or existing preference value changes. Collection still requires its separate disabled-by-default flag.",
+      "rollbackPlan": "Disable collection and retain erasure controls for existing links. Resolve issues with a separately reviewed target-bound forward migration; do not rewrite applied SQL, IDs or receipts. A backup restore can discard later writes and is not automatic.",
+      "postconditions": [
+        "Measurement choice column exists with default one",
+        "Pseudonymous Project erasure links exist and start empty",
+        "Integrity and foreign keys pass"
+      ],
+      "proofs": [
+        {
+          "id": "measurement-choice-column",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('user_preferences') WHERE name='sponsor_measurement_enabled' AND dflt_value='1'",
+          "expected": 1
+        },
+        {
+          "id": "project-link-columns",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('sponsored_use_project_links')",
+          "expected": 5
+        },
+        {
+          "id": "project-link-primary-key",
+          "sql": "SELECT group_concat(name, ',') AS value FROM (SELECT name FROM pragma_table_info('sponsored_use_project_links') WHERE pk>0 ORDER BY pk)",
+          "expected": "recipient_key,epoch,workspace_id_hash"
+        },
+        {
+          "id": "project-links-empty",
+          "sql": "SELECT COUNT(*) AS value FROM sponsored_use_project_links",
+          "expected": 0
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ],
+  "provenance": {
+    "originalSourceRevision": "f51b37f85bdb2ca1e232d74d7cb1f4b02ca19051",
+    "originalMigrationId": "0039_sponsored_measurement_choice",
+    "originalReceipt": "drizzle/receipts/sponsored-measurement-choice-2026-10-01.json",
+    "originalReceiptSha256": "150a1898cd5f12c8b5502264c112e5c1b9bdbcc3e64f3bffd1f43317bf898b10",
+    "reason": "Two unapplied PRs allocated 0039 independently. Preserve index 0039; allocate sponsor 0040 with strictly later journal timestamp. SQL bytes unchanged. Empty links is an initial application proof only."
+  }
+}
