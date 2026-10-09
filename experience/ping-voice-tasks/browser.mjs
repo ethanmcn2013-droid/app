@@ -34,7 +34,7 @@ const stubs = new Map([
   ['next/link', `import {createElement} from 'react';export default function Link({href,prefetch,scroll,...rest}){return createElement('a',{href,...rest})}`],
   ['next/dynamic', `import {createElement,lazy,Suspense} from 'react';export default function dynamic(load,options={}){const View=lazy(()=>load().then(m=>({default:m.default??m})));return function Dynamic(props){return createElement(Suspense,{fallback:null},createElement(View,props))}}`],
   ['@clerk/nextjs', `export const useUser=()=>({isLoaded:true,isSignedIn:true,user:{id:window.pingFixtureUser}});export const useAuth=()=>({isLoaded:true,isSignedIn:true,userId:window.pingFixtureUser,sessionId:window.pingFixtureSession});`],
-  ['@/server/actions/tasks', `export async function getTasksAction(project){const response=await fetch('/fixture/initial');const data=await response.json();if(data.projectId!==project)throw Error('Fixture Project changed');return data.tasks.map(task=>({...task,updatedAt:new Date(task.updatedAt),dueAt:task.dueAt?new Date(task.dueAt):null}));}` + ['addTaskAction','duplicateTaskAction','moveTaskAction','removeTaskAction','reorderTaskAction','setTaskArchivedAction','setTaskMilestoneAction','toggleCompleteAction','updateTaskAction'].map(name=>`export const ${name}=()=>{throw Error('Unrelated server action ${name} not exercised')};`).join('')],
+  ['@/server/actions/tasks', `export async function getTasksAction(project){const response=await fetch('/fixture/initial');const data=await response.json();if(data.projectId!==project)throw Error('Fixture Project changed');return data.tasks.map(task=>{for(const key of ['dueAt','updatedAt','archivedAt','completedAt'])if(typeof task[key]==='string')task[key]=new Date(task[key]);return task;});}` + ['addTaskAction','duplicateTaskAction','moveTaskAction','removeTaskAction','reorderTaskAction','setTaskArchivedAction','setTaskMilestoneAction','toggleCompleteAction','updateTaskAction'].map(name=>`export const ${name}=()=>{throw Error('Unrelated server action ${name} not exercised')};`).join('')],
   ['@/server/actions/board', ['moveTaskToColumnAction','addColumnAction','deleteColumnAction','renameColumnAction','reorderColumnsAction','setColumnColorAction','setColumnDescriptionAction','setColumnDoneAction','setColumnLimitAction'].map(name=>`export const ${name}=()=>{throw Error('Unrelated board action not exercised')};`).join('')],
   ['@/server/actions/set-parent', `export const setParentAction=()=>{throw Error('Unrelated action not exercised')};`],
   ['@/components/app/add-task/add-task-context', `export const useAddTask=()=>({open:false,defaults:{},openDialog(){throw Error('Composer not exercised')},closeDialog(){},setDefaultsProvider(){}});`],
@@ -165,7 +165,8 @@ try {
   await page.getByRole('checkbox',{name:'Select Synthetic target',exact:true}).waitFor();
   const countReceipts=async()=>Number((await fixture.client.execute('SELECT COUNT(*) AS n FROM ping_command_receipts')).rows[0].n);
   const targetRow=async()=>(await fixture.client.execute("SELECT assignees,lane,due,start_day,duration_days FROM tasks WHERE id='target'")).rows[0];
-  const startVoice=async()=>{await page.getByTestId('ping-voice-start').click();await page.getByTestId('ping-voice-phase').filter({hasText:'listening'}).waitFor();await page.waitForTimeout(333);assert.ok(state.uploaded.length>0,'Actual native PCM reaches binary HTTP before Finish');};
+  const waitForNativeUpload=async()=>{const deadline=Date.now()+10000;while(!state.uploaded.length){assert.ok(Date.now()<deadline,'Actual native PCM did not reach binary HTTP');await new Promise(resolve=>setTimeout(resolve,10));}};
+  const startVoice=async()=>{await page.getByTestId('ping-voice-start').click();await page.getByTestId('ping-voice-phase').filter({hasText:'listening'}).waitFor();await waitForNativeUpload();assert.ok(state.uploaded.length>0,'Actual native PCM reaches binary HTTP before Finish');};
   const finishVoice=async()=>{await page.getByTestId('ping-voice-finish').evaluate(button=>{button.click();button.click();});};
   const waitSaved=async()=>{await page.getByTestId('ping-voice-receipt').waitFor();await page.waitForFunction(()=>window.pingObserved.find(task=>task.id==='target')?.lane==='doing');};
   const focusObservation=async(label)=>{
@@ -200,7 +201,7 @@ try {
     document.addEventListener('click',record,true);
   });
   await tabTo(page.getByTestId('ping-voice-start'),'voice Start');await page.keyboard.press('Enter');
-  await page.getByTestId('ping-voice-phase').filter({hasText:'listening'}).waitFor();await page.waitForTimeout(333);
+  await page.getByTestId('ping-voice-phase').filter({hasText:'listening'}).waitFor();await waitForNativeUpload();
   assert.ok(state.uploaded.length>0);assert.equal(executeCalls,0);assert.equal(await countReceipts(),0);assert.equal(voice.modelCalls.length,0);
   await tabTo(page.getByTestId('ping-voice-finish'),'voice Finish');await page.waitForTimeout(73);await page.keyboard.press('Space');await waitSaved();
   const firstTimingHandle=await page.waitForFunction(()=>{
@@ -392,7 +393,7 @@ try {
   const retryBegin=page.waitForResponse(response=>response.url()===origin+'/api/ping'&&response.request().postDataJSON().action==='begin');
   await tabTo(page.getByTestId('ping-voice-start'),'storage-retry Start');await page.keyboard.press('Enter');
   const retryCaptured=await (await retryBegin).json();assert.notEqual(retryCaptured.commandId,storageCaptured.commandId,'Fresh identity follows actual old-original not_invoked acknowledgement');
-  await page.getByTestId('ping-voice-phase').filter({hasText:'listening'}).waitFor();await page.waitForTimeout(333);
+  await page.getByTestId('ping-voice-phase').filter({hasText:'listening'}).waitFor();await waitForNativeUpload();
   const finishRequests=state.requests.filter(action=>action==='finish').length;
   await tabTo(page.getByTestId('ping-voice-finish'),'storage-failed Finish');await page.keyboard.press('Space');
   await page.getByTestId('ping-voice-status').filter({hasText:'Finish was not sent'}).waitFor();
