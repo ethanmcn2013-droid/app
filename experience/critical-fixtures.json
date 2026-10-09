@@ -1465,14 +1465,6 @@
           ]
         },
         {
-          "kind": "role",
-          "role": "button",
-          "name": "Attach a file",
-          "proves": [
-            "first-use"
-          ]
-        },
-        {
           "kind": "text",
           "text": "Fictional upload review. No file is sent or saved.",
           "proves": [
