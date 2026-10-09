@@ -34,6 +34,11 @@ export const componentSources = Object.freeze({
   'tasks.state.app-files-error': 'src/app/app/files/error.tsx',
 });
 
+export function componentDocumentHead(id) {
+  if (!Object.hasOwn(componentSources, id)) throw Error('Unknown component document');
+  return `<title>${id} · local component fixture</title>`;
+}
+
 export function assertFixtureEnvironment(env, origin) {
   const url = new URL(origin);
   if (url.protocol !== 'http:' || url.hostname !== '127.0.0.1' || url.username || url.password ||

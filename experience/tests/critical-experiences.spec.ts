@@ -543,14 +543,16 @@ for (const fixture of manifest.supplementalMaterialityRendered) {
     const expectedError = ownComponent && fixture.id.endsWith("-error");
     const response = await page.goto(ownComponent ? "http://127.0.0.1:4409" + fixture.path : fixture.path, { waitUntil: "domcontentloaded" });
     expect(response?.status()).toBe(200);
+    await enterDeterministicMotionMode(page);
     if (fixture.kind === "resources") {
       await expect(page.getByRole("heading", { name: "Tasks", level: 1 })).toBeVisible();
-      await page.keyboard.press("Enter");
+      const task = page.getByRole("article", { name: "Confirm marquee sides with the hire company", exact: true });
+      await expect(task).toBeVisible();
+      await task.getByText("Confirm marquee sides with the hire company", { exact: true }).click();
       await expect(page.getByRole("dialog", { name: "Confirm marquee sides with the hire company" })).toBeVisible();
       await expect(page.getByRole("heading", { name: "Files and links" })).toBeVisible();
       await expect(page.getByRole("button", { name: "Attach a file" })).toBeVisible();
     }
-    await enterDeterministicMotionMode(page);
     await expect(page.locator(fixture.selector).first()).toBeVisible();
     if (fixture.kind === "route") {
       // Require actual route-specific content, rather than only the App shell.
@@ -562,8 +564,22 @@ for (const fixture of manifest.supplementalMaterialityRendered) {
           await page.getByRole("navigation", {name:"Conversations"}).getByRole("button", {name:/The Orchard, events/}).click();
         }
         await expect(page.getByRole("navigation", { name: "Conversation views" })).toBeVisible();
-        await expect(page.getByRole("button", { name: "Chat", exact: true })).toBeVisible();
+        await expect(page.getByRole("navigation", { name: "Conversation views" }).getByRole("button", { name: "Chat", exact: true })).toBeVisible();
       } else await expect(page.getByRole("heading", { name: names[fixture.id], exact: true }).first()).toBeVisible();
+      if (fixture.id === "tasks.page.app-analytics") {
+        const standing = page.getByRole("region", { name: "Where we stand", exact: true });
+        await expect(standing).toBeVisible();
+        await expect(standing.getByRole("link", { name: /^Are we on track\?/ })).toBeVisible();
+      } else if (fixture.id === "tasks.page.app-files") {
+        const files = page.getByRole("region", { name: "Files", exact: true });
+        await expect(files).toBeVisible();
+        await expect(files.getByRole("button", { name: /^Run-sheet, Saturday v3\.pdf Document/ })).toBeVisible();
+      } else if (fixture.id === "tasks.page.app-concepts") {
+        const overview = page.getByRole("region", { name: "Overview", exact: true });
+        await expect(overview).toBeVisible();
+        await expect(overview.getByRole("link").first()).toHaveAttribute("href", "/app/concepts/overview/1");
+        await expect(page.getByText("Five or six directions for each view, using sample data. These are unpicked prototypes for review.", { exact: true })).toBeVisible();
+      }
     }
     await page.waitForTimeout(500);
     if (expectedError) {

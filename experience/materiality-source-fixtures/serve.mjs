@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { assertFixtureEnvironment, componentIdForPath, componentSources, fixtureDefines, navigationSeamSource, fixtureInputReceipt } from './contract.mjs';
+import { assertFixtureEnvironment, componentIdForPath, componentSources, fixtureDefines, navigationSeamSource, fixtureInputReceipt, componentDocumentHead } from './contract.mjs';
 
 const root = path.resolve(fileURLToPath(new URL('../../', import.meta.url)));
 const port = Number(process.env.TASKS_MATERIALITY_PORT ?? 4409);
@@ -81,9 +81,10 @@ const server = createServer((req, res) => {
     res.setHeader('Content-Type', file.endsWith('.css') ? 'text/css' : file.endsWith('.woff2') ? 'font/woff2' : 'application/javascript');
     return fs.createReadStream(file).pipe(res);
   }
-  if (!componentIdForPath(url.pathname)) { res.writeHead(404); return res.end(); }
+  const componentId = componentIdForPath(url.pathname);
+  if (!componentId) { res.writeHead(404); return res.end(); }
   res.setHeader('Content-Type', 'text/html');
-  res.end('<!doctype html><html lang="en" data-theme="light"><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,">' +
+  res.end('<!doctype html><html lang="en" data-theme="light"><head>' + componentDocumentHead(componentId) + '<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,">' +
     css.map(file => `<link rel="stylesheet" href="/_next/static/chunks/${file}">`).join('') +
     Object.keys(files).filter(name => name.endsWith('.css')).map(name => `<link rel="stylesheet" href="/${name}">`).join('') +
     '</head><body class="' + fontClasses.join(' ') + '" style="margin:0;background:var(--v3-canvas);color:var(--ink)"><main id="root"></main>' +

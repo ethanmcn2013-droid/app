@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
-import { assertFixtureEnvironment, componentIdForPath, componentSources, fixtureDefines, navigationSeamSource, fixtureInputReceipt } from './contract.mjs';
+import { assertFixtureEnvironment, componentIdForPath, componentSources, fixtureDefines, navigationSeamSource, fixtureInputReceipt, componentDocumentHead } from './contract.mjs';
 const env = { TASKS_MATERIALITY_FIXTURE: '1', VERCEL_ENV: 'preview', SIGNAL_ACCESS_MODE: 'demo' };
 test('explicit local synthetic launch only', () => {
   assert.doesNotThrow(() => assertFixtureEnvironment(env, 'http://127.0.0.1:4409'));
@@ -43,4 +43,14 @@ test('only exact nine IDs resolve, never arbitrary module paths', () => {
   for (const id of Object.keys(componentSources)) assert.equal(componentIdForPath('/materiality/' + id), id);
   for (const path of ['/materiality/../../src/env', '/materiality/%2e%2e', '/materiality/tasks.page.app-home', '/materiality/tasks.state.app-home-error/extra'])
     assert.equal(componentIdForPath(path), null);
+});
+
+test('actual component document producer names every own target and refuses foreign HTML', () => {
+  for (const id of Object.keys(componentSources)) {
+    const head = componentDocumentHead(id);
+    assert.ok(head.startsWith('<title>') && head.endsWith('</title>'));
+    assert.ok(head.includes(id) && head.includes('local component fixture'));
+  }
+  for (const foreign of ['', 'tasks.page.app-home', '<script>alert(1)</script>'])
+    assert.throws(() => componentDocumentHead(foreign), /Unknown component document/);
 });
