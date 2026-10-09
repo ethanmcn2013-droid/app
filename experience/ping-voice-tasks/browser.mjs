@@ -44,18 +44,22 @@ const stubs = new Map([
   ['@/components/app/done-dopamine/first-completion-moment', `export const maybeFireFirstCompletion=()=>{};`],
 ]);
 async function waitForHeldResponse(state) { const deadline=Date.now()+10000;while(!state.release){assert.ok(Date.now()<deadline,'Actual HTTP response did not reach barrier');await new Promise(resolve=>setTimeout(resolve,10));}}
-let browser, server, fixture;
+let browser, permissionBrowser, server, fixture;
 try {
   fixture = await createPingProofFixture();
   await seedProofTask(fixture.client, 'target', { assignees: ['bob'], startDay: 2, durationDays: 3 });
   await seedProofTask(fixture.client, 'other', { assignees: ['bob'] });
-  let executeCalls = 0;
+  let executeCalls = 0, transportSendCalls = 0, receiptLookupCalls = 0, firstCommittedReceipt = null;
+  const executedOriginals=[],lookedUpOriginals=[]; // Private correlation; identifiers are never exported.
+  const control = { paused: false, transports: 0 };
   const voice = { operation: {kind:'edit_selected',effects:{selfAssignment:'add',statusColumnKey:'doing'}},
     transcript:'Assign me and move these tasks to Doing.', append:[], commits:0, modelCalls:[], holdInterpret:false, releaseInterpret:null };
   const providers = {
     createTransport() {
+      control.transports++;
       let receive=()=>{},closed=false;
       return {queuedBytes:()=>0,close(){closed=true;},subscribe(listener){receive=listener;return()=>{receive=()=>{};};},send(raw){
+        transportSendCalls++;
         const message=JSON.parse(raw);
         if(message.type==='input_audio_buffer.append') voice.append.push(Buffer.from(message.audio,'base64'));
         else if(message.type==='input_audio_buffer.commit') {
@@ -72,9 +76,14 @@ try {
     }
   };
   const base = createPingCommandService(fixture.adapter, { now: Date.now });
-  const session = createPingTypedSession(fixture.adapter, { now: Date.now, voice:providers, service: { ...base, execute: original => { executeCalls++; return base.execute(original); } } });
+  const session = createPingTypedSession(fixture.adapter, { now: Date.now, isNewWorkAllowed: () => !control.paused, voice:providers, service: { ...base,
+    execute: async original => { executeCalls++;executedOriginals.push(original.command.commandId);const result=await base.execute(original);
+      if(result.ok&&!firstCommittedReceipt)firstCommittedReceipt=result.receipt;return result; },
+    getReceiptForCommand: original => {receiptLookupCalls++;lookedUpOriginals.push(original.command.commandId);return base.getReceiptForCommand(original);} } });
+  const observedCalls=()=>({transportSendCalls,providerCommitCalls:voice.commits,interpretationCalls:voice.modelCalls.length,executorCalls:executeCalls,receiptLookupCalls});
   const state = { actor: { actorId: 'alice', sessionId: 'synthetic-browser-session' }, failRefresh: false, dropFinish: false, holdAction: null, release: null, requests: [], uploaded:[], responses:[] };
   receipt.httpResponses=state.responses;
+  receipt.focusObservations=[];
   const handler = createPingTypedHttp({ authenticate: async () => state.actor, session: async () => session });
   const audioHandler = createPingAudioHttp({ authenticate: async () => state.actor, session: async () => session });
   const bundle = await esbuild.build({ absWorkingDir: root, entryPoints: ['experience/ping-typed/fixture.tsx'], outdir: path.join(out, 'bundle'), bundle: true, write: false, metafile: true, platform: 'browser', format: 'iife', jsx: 'automatic', alias: { '@': path.join(root, 'src') }, loader: { '.module.css': 'local-css', '.css': 'css' }, external: ['/fonts/*'], define: { 'process.env.NODE_ENV': '"production"', 'process.env.NEXT_PUBLIC_PROJECT_PING_TYPED_ENABLED': '"1"', 'process.env.NEXT_PUBLIC_PROJECT_PING_VOICE_ENABLED': '"1"', 'process.env': '{}' }, plugins: [{ name: 'explicit-fixture-boundaries', setup(build) { build.onResolve({ filter: /.*/ }, args => stubs.has(args.path) ? { path: args.path, namespace: 'fixture' } : undefined); build.onLoad({ filter: /.*/, namespace: 'fixture' }, args => ({ contents: stubs.get(args.path), loader: 'js', resolveDir: root })); } }] });
@@ -123,9 +132,11 @@ try {
   receipt.syntheticAudio={format:'PCM signed16LE mono24000',frequencyHz:440,sha256:createHash('sha256').update(wav).digest('hex')};
   browser=await chromium.launch({headless:true,args:['--use-fake-ui-for-media-stream','--use-fake-device-for-media-stream','--use-file-for-fake-audio-capture='+syntheticAudio]});
   const context=await browser.newContext({viewport:{width:1440,height:960},locale:'en-GB',timezoneId:'Europe/Dublin',permissions:['microphone']});
-  const page=await context.newPage();
+  let page=await context.newPage();
   await page.addInitScript(()=>{
-    window.voiceNativeLedger={frames:[],cuts:[]};
+    window.voiceNativeLedger={frames:[],cuts:[],microphoneCalls:0,microphoneErrors:[]};
+    const nativeGetUserMedia=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+    navigator.mediaDevices.getUserMedia=(constraints)=>{window.voiceNativeLedger.microphoneCalls++;return nativeGetUserMedia(constraints).catch(error=>{window.voiceNativeLedger.microphoneErrors.push(error.name);throw error;});};
     const NativeNode=window.AudioWorkletNode;
     window.AudioWorkletNode=class ObservedNode extends NativeNode {
       constructor(...args){super(...args);this.port.addEventListener('message',event=>{
@@ -157,9 +168,51 @@ try {
   const startVoice=async()=>{await page.getByTestId('ping-voice-start').click();await page.getByTestId('ping-voice-phase').filter({hasText:'listening'}).waitFor();await page.waitForTimeout(333);assert.ok(state.uploaded.length>0,'Actual native PCM reaches binary HTTP before Finish');};
   const finishVoice=async()=>{await page.getByTestId('ping-voice-finish').evaluate(button=>{button.click();button.click();});};
   const waitSaved=async()=>{await page.getByTestId('ping-voice-receipt').waitFor();await page.waitForFunction(()=>window.pingObserved.find(task=>task.id==='target')?.lane==='doing');};
-  await page.getByRole('checkbox',{name:'Select Synthetic target',exact:true}).check();
-  await startVoice();assert.equal(executeCalls,0);assert.equal(await countReceipts(),0);assert.equal(voice.modelCalls.length,0);
-  await finishVoice();await waitSaved();
+  const focusObservation=async(label)=>{
+    const observed=await page.evaluate(()=>{const el=document.activeElement,style=getComputedStyle(el);return {tag:el.tagName,
+      control:el.getAttribute('data-testid')??null,connected:el.isConnected,disabled:el.disabled===true,
+      focusVisible:el.matches(':focus-visible'),outlineStyle:style.outlineStyle,outlineWidth:style.outlineWidth,boxShadow:style.boxShadow,
+      voiceRefreshPresent:Boolean(document.querySelector('[data-testid=ping-voice-refresh-current]')),
+      voiceStartDisabled:document.querySelector('[data-testid=ping-voice-start]')?.disabled===true,
+      useful:el!==document.body&&el!==document.documentElement&&el.isConnected&&!el.disabled};});
+    receipt.focusObservations.push({label,...observed});return observed;
+  };
+  const tabTo=async(locator,label,direction='Tab')=>{
+    for(let i=0;i<100;i++){
+      await page.keyboard.press(direction);
+      if(await locator.evaluate(el=>el===document.activeElement)){
+        const observed=await focusObservation(label);assert.ok(observed.focusVisible,'Keyboard control must match focus-visible');
+        assert.ok(observed.outlineStyle!=='none'&&parseFloat(observed.outlineWidth)>0||observed.boxShadow!=='none','Keyboard focus must have visible treatment');return;
+      }
+    }
+    assert.fail('Keyboard could not reach '+label);
+  };
+  const selection=page.getByRole('checkbox',{name:'Select Synthetic target',exact:true});
+  // Existing Hybrid selection setup is outside this Ping-control keyboard packet.
+  await selection.check();
+  const firstBefore=observedCalls(),firstExecuteIndex=executedOriginals.length,firstLookupIndex=lookedUpOriginals.length;
+  await page.evaluate(()=>{
+    window.pingFirstLocalTiming={finishEventMs:null,confirmedMountedReadbackMs:null};
+    const record=event=>{
+      if(!event.isTrusted||!event.target.closest?.('[data-testid="ping-voice-finish"]'))return;
+      window.pingFirstLocalTiming.finishEventMs=Math.floor(performance.now());document.removeEventListener('click',record,true);
+    };
+    document.addEventListener('click',record,true);
+  });
+  await tabTo(page.getByTestId('ping-voice-start'),'voice Start');await page.keyboard.press('Enter');
+  await page.getByTestId('ping-voice-phase').filter({hasText:'listening'}).waitFor();await page.waitForTimeout(333);
+  assert.ok(state.uploaded.length>0);assert.equal(executeCalls,0);assert.equal(await countReceipts(),0);assert.equal(voice.modelCalls.length,0);
+  await tabTo(page.getByTestId('ping-voice-finish'),'voice Finish');await page.waitForTimeout(73);await page.keyboard.press('Space');await waitSaved();
+  const firstTimingHandle=await page.waitForFunction(()=>{
+    const task=window.pingObserved.find(row=>row.id==='target'),timing=window.pingFirstLocalTiming;
+    if(!task||task.lane!=='doing'||JSON.stringify(task.assignees)!=='["bob","alice"]'||
+      document.querySelector('[data-testid=ping-voice-status]')?.textContent!=='The saved result is confirmed in the current Tasks view.'||
+      document.querySelector('[data-testid=ping-voice-start]')?.disabled!==false||document.querySelector('[data-testid=ping-voice-refresh-current]'))return false;
+    if(timing.confirmedMountedReadbackMs===null)timing.confirmedMountedReadbackMs=Math.floor(performance.now());
+    return timing;
+  });
+  const firstTiming=await firstTimingHandle.jsonValue();await firstTimingHandle.dispose();
+  await focusObservation('after voice Finish confirmation');
   assert.equal(executeCalls,1);assert.equal(await countReceipts(),1);assert.equal(voice.commits,1);assert.equal(voice.modelCalls.length,1);
   assert.deepEqual(JSON.parse((await targetRow()).assignees),['bob','alice']);
   assert.deepEqual(Buffer.concat(state.uploaded),Buffer.concat(voice.append),'Actual uploaded bytes equal provider append bytes without requantization');
@@ -170,7 +223,28 @@ try {
   assert.equal(native.frames.reduce((sum,frame)=>sum+frame.samples,0),native.cuts[0].totalSamples);
   assert.equal(Buffer.concat(state.uploaded).length,native.cuts[0].totalSamples*2,'Independent actual native cut matches server upload coverage');
   assert.deepEqual(voice.modelCalls[0].keys,['referenceInstant','selectedTaskCount','systemColumnKeys','timeZone','transcript','version']);
-  receipt.cases.push({name:'native exact bytes and partial tail reach one trusted final, one execution and actual canonical render despite double Finish',passed:true,bytes:Buffer.concat(voice.append).length});
+  const firstAfter=observedCalls(),callDeltas=Object.fromEntries(Object.keys(firstBefore).map(name=>[name,firstAfter[name]-firstBefore[name]]));
+  assert.equal(callDeltas.interpretationCalls,1);assert.equal(callDeltas.executorCalls,1);assert.equal(callDeltas.receiptLookupCalls,1);assert.equal(callDeltas.providerCommitCalls,1);
+  assert.equal(callDeltas.transportSendCalls,voice.append.length+1);
+  const originalIds=executedOriginals.slice(firstExecuteIndex),lookupIds=lookedUpOriginals.slice(firstLookupIndex);
+  assert.equal(originalIds.length,1);assert.deepEqual(lookupIds,originalIds);
+  assert.equal(firstCommittedReceipt.commandId,originalIds[0]);assert.equal(firstCommittedReceipt.affectedCount,1);assert.equal(firstCommittedReceipt.changedCount,1);
+  assert.equal(Number((await targetRow()).start_day),2);assert.equal(Number((await targetRow()).duration_days),3);
+  assert.ok(Number.isSafeInteger(firstTiming.finishEventMs)&&Number.isSafeInteger(firstTiming.confirmedMountedReadbackMs));
+  assert.ok(firstTiming.confirmedMountedReadbackMs>=firstTiming.finishEventMs);
+  receipt.firstOriginalObservation={version:'ping.local-observation.v1',attemptLabel:'first_compound_original',sampleCount:1,
+    provider:'scripted_transcription_and_interpretation',knowledge:'committed',callDeltas,
+    counterProvenance:'Actual injected send/interpret/execute/getReceiptForCommand entry attempts; not HTTP summaries or database effect counts.',
+    oneExecutedOriginalAndMatchingLookups:true,effects:{affectedCount:firstCommittedReceipt.affectedCount,changedCount:firstCommittedReceipt.changedCount,literalSqlAndCanonicalOraclesPassed:true},
+    timing:{clock:'browser.performance.now',precisionMs:1,finishEventMs:firstTiming.finishEventMs,
+      finishEventProvenance:'Trusted keyboard-generated Finish click capture listener before React handler',
+      confirmedMountedReadbackMs:firstTiming.confirmedMountedReadbackMs,
+      readbackProvenance:'First satisfied browser polling predicate: canonical rows plus confirmed status, enabled Start and removed Refresh; not paint time',
+      finishToConfirmedMountedReadbackMs:firstTiming.confirmedMountedReadbackMs-firstTiming.finishEventMs,
+      speechEndMs:null,speechEndToConfirmedMountedReadbackMs:null},
+    billing:{amount:null,currency:null,realProviderUsage:null},evaluation:{outcome:'unavailable',reason:'Evaluator capture and receipt-read-window authority not supplied'},
+    limits:['One local diagnostic includes polling/automation/instrumentation overhead; no p50/p95, model quality, provider price or live speech latency claim.']};
+  receipt.cases.push({name:'keyboard native Start/Finish exact bytes and partial tail reach one trusted final, one execution and canonical render',passed:true,bytes:Buffer.concat(voice.append).length});
   await page.screenshot({path:path.join(out,'voice-tasks-desktop.png'),fullPage:true});
 
   await page.reload();await page.getByRole('checkbox',{name:'Select Synthetic target',exact:true}).waitFor();
@@ -187,13 +261,39 @@ try {
   await startVoice();state.dropFinish=true;
   const lostFinish=page.waitForEvent('requestfailed',{predicate:request=>new URL(request.url()).pathname==='/api/ping'&&request.method()==='POST'&&request.postDataJSON().action==='finish'});
   await finishVoice();await lostFinish;
+  control.paused=true;
   await page.getByTestId('ping-voice-check-original').waitFor();assert.equal(executeCalls,3);assert.equal(await countReceipts(),3);
   await page.reload();await page.getByTestId('ping-voice-check-original').waitFor();assert.equal(executeCalls,3);
-  state.failRefresh=true;await page.getByTestId('ping-voice-check-original').click();await page.getByTestId('ping-voice-receipt').waitFor();
+  state.failRefresh=true;
+  const failedRefresh=page.waitForResponse(response=>response.url()===origin+'/api/ping'&&response.request().postDataJSON().action==='refresh'&&response.status()===503);
+  await tabTo(page.getByTestId('ping-voice-check-original'),'voice Check original');await page.keyboard.press('Enter');await page.getByTestId('ping-voice-receipt').waitFor();await (await failedRefresh).finished();
+  await focusObservation('after Check original with failed refresh');
   assert.deepEqual(JSON.parse((await targetRow()).assignees),['bob']);assert.equal(executeCalls,3);
-  state.failRefresh=false;await page.getByTestId('ping-voice-refresh-current').click();
-  await page.waitForFunction(()=>JSON.stringify(window.pingObserved.find(task=>task.id==='target')?.assignees)==='["bob"]');assert.equal(executeCalls,3);
-  receipt.cases.push({name:'lost committed Finish response and reload recover original receipt; refresh failure preserves history and repair reads canonical rows',passed:true});
+  // Reload already supplied these rows: row equality alone cannot witness this new refresh settling.
+  assert.equal(await page.evaluate(()=>JSON.stringify(window.pingObserved.find(task=>task.id==='target')?.assignees)),'["bob"]');
+  state.failRefresh=false;state.holdAction='refresh';
+  const repairedRefresh=page.waitForResponse(response=>response.url()===origin+'/api/ping'&&response.request().postDataJSON().action==='refresh');
+  await tabTo(page.getByTestId('ping-voice-refresh-current'),'voice Refresh current');await page.keyboard.press('Space');await waitForHeldResponse(state);
+  assert.equal(await page.getByTestId('ping-voice-refresh-current').isDisabled(),true);
+  await focusObservation('pending original Refresh response barrier');
+  state.holdAction=null;state.release();state.release=null;
+  const repair=await repairedRefresh;assert.equal((await repair.json()).action,'refresh');await repair.finished();
+  await page.waitForFunction(()=>JSON.stringify(window.pingObserved.find(task=>task.id==='target')?.assignees)==='["bob"]'&&
+    !document.querySelector('[data-testid=ping-voice-refresh-current]')&&document.querySelector('[data-testid=ping-voice-start]')?.disabled===false&&
+    document.querySelector('[data-testid=ping-voice-status]')?.textContent==='The saved result is confirmed in the current Tasks view.');assert.equal(executeCalls,3);
+  await focusObservation('after original Refresh confirmation');
+  receipt.cases.push({name:'paused lost committed Finish response and reload recover original receipt; refresh failure preserves history and repair reads canonical rows',passed:true});
+  const beforeDenied={transports:control.transports,uploads:state.uploaded.length,appends:voice.append.length,models:voice.modelCalls.length};
+  const nativeBeforeDenied=await page.evaluate(()=>({calls:window.voiceNativeLedger.microphoneCalls,frames:window.voiceNativeLedger.frames.length}));
+  const deniedBegin=page.waitForResponse(response=>response.url()===origin+'/api/ping'&&response.request().postDataJSON().action==='begin');
+  await page.getByTestId('ping-voice-start').click();
+  const beginDenial=await (await deniedBegin).json();assert.equal(beginDenial.ok,false);assert.equal(beginDenial.code,'unavailable');
+  await page.waitForFunction(()=>document.querySelector('[data-testid=ping-voice-start]')?.disabled===false);
+  assert.deepEqual({transports:control.transports,uploads:state.uploaded.length,appends:voice.append.length,models:voice.modelCalls.length},beforeDenied);
+  assert.deepEqual(await page.evaluate(()=>({calls:window.voiceNativeLedger.microphoneCalls,frames:window.voiceNativeLedger.frames.length})),nativeBeforeDenied);
+  assert.equal(executeCalls,3);assert.equal(await countReceipts(),3);
+  receipt.cases.push({name:'paused fresh voice Start is refused before native capture or provider/model/executor work',passed:true});
+  control.paused=false;
 
   await page.reload();await page.getByRole('checkbox',{name:'Select Synthetic target',exact:true}).check();
   state.holdAction='begin';await page.getByTestId('ping-voice-start').click();await waitForHeldResponse(state);
@@ -209,20 +309,114 @@ try {
   await startVoice();await finishVoice();
   const deadline=Date.now()+10000;while(!voice.releaseInterpret){assert.ok(Date.now()<deadline,'Server interpretation did not reach barrier');await new Promise(resolve=>setTimeout(resolve,10));}
   const cancelled=page.waitForResponse(response=>response.url()===origin+'/api/ping'&&response.request().method()==='POST'&&response.request().postDataJSON().action==='cancel');
-  await page.getByTestId('ping-voice-cancel').click();
+  state.holdAction='cancel';
+  await tabTo(page.getByTestId('ping-voice-cancel'),'held interpretation Cancel');await page.keyboard.press('Enter');await waitForHeldResponse(state);
+  await tabTo(page.getByTestId('ping-input'),'user moved outside voice before Cancel response');
+  state.holdAction=null;state.release();state.release=null;
   assert.equal((await (await cancelled).json()).knowledge,'not_invoked','The server observes Cancel before the invocation latch');
   voice.holdInterpret=false;voice.releaseInterpret?.();voice.releaseInterpret=null;
   await page.waitForTimeout(150);assert.equal(executeCalls,3);assert.equal(await countReceipts(),3);assert.equal((await targetRow()).lane,'doing');
+  assert.equal(await page.getByTestId('ping-input').evaluate(el=>el===document.activeElement),true,'Later original response must not steal connected user focus');
+  await focusObservation('after Cancel response preserves user moved focus');
   receipt.cases.push({name:'Cancel while trusted server interpretation waits prevents later execution',passed:true});
+  await page.reload();await page.getByRole('checkbox',{name:'Select Synthetic target',exact:true}).check();
+  await tabTo(page.getByTestId('ping-input'),'typed input');await page.keyboard.type('status review');
+  await tabTo(page.getByTestId('ping-review'),'typed Review');await page.keyboard.press('Enter');await page.getByTestId('ping-apply').waitFor();
+  control.paused=true;
+  const deniedExecute=page.waitForResponse(response=>response.url()===origin+'/api/ping'&&response.request().postDataJSON().action==='execute');
+  await tabTo(page.getByTestId('ping-apply'),'typed Apply');await page.keyboard.press('Space');const executeDenial=await (await deniedExecute).json();assert.equal(executeDenial.ok,false);assert.ok(['unavailable','stale_capture'].includes(executeDenial.code));
+  await focusObservation('after denied typed Apply');
+  await page.getByTestId('ping-cancel-prepared').filter({hasText:'Cancel or check original'}).waitFor();
+  const untouchedCancel=page.waitForResponse(response=>response.url()===origin+'/api/ping'&&response.request().postDataJSON().action==='cancel');
+  await tabTo(page.getByTestId('ping-cancel-prepared'),'typed Cancel original','Shift+Tab');await page.keyboard.press('Enter');assert.equal((await (await untouchedCancel).json()).knowledge,'not_invoked');
+  await page.waitForFunction(()=>document.querySelector('[data-testid=ping-input]')?.disabled===false);
+  await focusObservation('after typed untouched Cancel acknowledgement');
+  assert.equal(executeCalls,3);assert.equal(await countReceipts(),3);assert.equal((await targetRow()).lane,'doing');
+  receipt.cases.push({name:'paused typed Apply invokes nothing and acknowledged original Cancel clears only the untouched handle',passed:true});
+  control.paused=false;
+
+  // Native browser denial, not a getUserMedia rejection stub. CDP overrides this context only.
+  const normalPage=page;
+  // Full Chromium implements native denial; its headless-shell variant returns NotSupportedError here.
+  permissionBrowser=await chromium.launch({headless:true,channel:'chromium',args:['--use-fake-device-for-media-stream','--use-file-for-fake-audio-capture='+syntheticAudio]});
+  const deniedContext=await permissionBrowser.newContext({viewport:{width:1440,height:960}});
+  page=await deniedContext.newPage();
+  await page.addInitScript(()=>{
+    window.voiceNativeLedger={microphoneCalls:0,microphoneErrors:[]};const native=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+    navigator.mediaDevices.getUserMedia=constraints=>{window.voiceNativeLedger.microphoneCalls++;return native(constraints).catch(error=>{window.voiceNativeLedger.microphoneErrors.push(error.name);throw error;});};
+  });
+  await page.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
+  const pageCdp=await deniedContext.newCDPSession(page), {targetInfo}=await pageCdp.send('Target.getTargetInfo');
+  assert.ok(targetInfo.browserContextId);const cdp=await permissionBrowser.newBrowserCDPSession();
+  await cdp.send('Browser.setPermission',{permission:{name:'microphone'},setting:'denied',origin,browserContextId:targetInfo.browserContextId});
+  await page.goto(origin);await page.getByRole('checkbox',{name:'Select Synthetic target',exact:true}).check();
+  assert.equal(await page.evaluate(async()=> (await navigator.permissions.query({name:'microphone'})).state),'denied');
+  const beforePermission={uploads:state.uploaded.length,commits:voice.commits,models:voice.modelCalls.length,calls:executeCalls,receipts:await countReceipts()};
+  const deniedCapture=page.waitForResponse(response=>response.url()===origin+'/api/ping'&&response.request().postDataJSON().action==='begin');
+  const deniedCancel=page.waitForResponse(response=>response.url()===origin+'/api/ping'&&response.request().postDataJSON().action==='cancel');
+  await tabTo(page.getByTestId('ping-voice-start'),'permission-denied Start');await page.keyboard.press('Enter');
+  const captured=await (await deniedCapture).json();
+  try { await page.waitForFunction(()=>window.voiceNativeLedger.microphoneErrors.length>0,null,{timeout:5000}); }
+  finally { receipt.nativePermission=await page.evaluate(async()=>({permission:(await navigator.permissions.query({name:'microphone'})).state,
+    calls:window.voiceNativeLedger.microphoneCalls,errors:window.voiceNativeLedger.microphoneErrors,phase:document.querySelector('[data-testid=ping-voice-phase]')?.textContent})); }
+  if(await page.getByTestId('ping-voice-cancel').isVisible()) {await tabTo(page.getByTestId('ping-voice-cancel'),'permission-denied original Cancel');await page.keyboard.press('Enter');}
+  const cancelledPermission=await (await deniedCancel).json();
+  assert.equal(cancelledPermission.knowledge,'not_invoked');assert.equal(cancelledPermission.commandId,captured.commandId);
+  await page.waitForFunction(()=>document.querySelector('[data-testid=ping-voice-start]')?.disabled===false);
+  assert.deepEqual(await page.evaluate(()=>window.voiceNativeLedger.microphoneErrors),['NotAllowedError']);
+  assert.equal(await page.evaluate(()=>window.voiceNativeLedger.microphoneCalls),1);
+  assert.deepEqual({uploads:state.uploaded.length,commits:voice.commits,models:voice.modelCalls.length,calls:executeCalls,receipts:await countReceipts()},beforePermission);
+  await focusObservation('after native permission denial acknowledged not_invoked');
+  receipt.cases.push({name:'CDP-denied native microphone returns NotAllowedError with zero upload/commit/model/execution and acknowledged original Cancel',passed:true});
+  await cdp.detach();await pageCdp.detach();await deniedContext.close();await permissionBrowser.close();permissionBrowser=null;page=normalPage;
+
+  await page.reload();await selection.check();
+  await page.evaluate(()=>{
+    window.pingStorageFailure='start';const nativeSet=Storage.prototype.setItem;
+    Storage.prototype.setItem=function(key,value){if(this===window.sessionStorage&&key.startsWith('signal:ping-voice:intent:v1:')&&
+      (window.pingStorageFailure==='start'||window.pingStorageFailure==='finish'&&JSON.parse(value).phase==='finishing'))throw new DOMException('Synthetic storage refusal','QuotaExceededError');
+      return nativeSet.call(this,key,value);};
+  });
+  const beforeStorage={uploads:state.uploaded.length,commits:voice.commits,models:voice.modelCalls.length,calls:executeCalls,receipts:await countReceipts()};
+  const storageBegin=page.waitForResponse(response=>response.url()===origin+'/api/ping'&&response.request().postDataJSON().action==='begin');
+  const storageCancel=page.waitForResponse(response=>response.url()===origin+'/api/ping'&&response.request().postDataJSON().action==='cancel');
+  await tabTo(page.getByTestId('ping-voice-start'),'storage-failed Start');await page.keyboard.press('Space');
+  const storageCaptured=await (await storageBegin).json(), storageCancelled=await (await storageCancel).json();
+  assert.equal(storageCancelled.knowledge,'not_invoked');assert.equal(storageCancelled.commandId,storageCaptured.commandId);
+  await page.waitForFunction(()=>document.querySelector('[data-testid=ping-voice-start]')?.disabled===false);
+  assert.equal(await page.evaluate(()=>window.voiceNativeLedger.microphoneCalls),0);
+  assert.deepEqual({uploads:state.uploaded.length,commits:voice.commits,models:voice.modelCalls.length,calls:executeCalls,receipts:await countReceipts()},beforeStorage);
+  await focusObservation('after Start storage refusal acknowledged not_invoked');
+  receipt.cases.push({name:'synthetic Start storage refusal prevents microphone/upload/model/execution and cancels the captured original',passed:true});
+  await page.evaluate(()=>{window.pingStorageFailure='finish';});
+  const retryBegin=page.waitForResponse(response=>response.url()===origin+'/api/ping'&&response.request().postDataJSON().action==='begin');
+  await tabTo(page.getByTestId('ping-voice-start'),'storage-retry Start');await page.keyboard.press('Enter');
+  const retryCaptured=await (await retryBegin).json();assert.notEqual(retryCaptured.commandId,storageCaptured.commandId,'Fresh identity follows actual old-original not_invoked acknowledgement');
+  await page.getByTestId('ping-voice-phase').filter({hasText:'listening'}).waitFor();await page.waitForTimeout(333);
+  const finishRequests=state.requests.filter(action=>action==='finish').length;
+  await tabTo(page.getByTestId('ping-voice-finish'),'storage-failed Finish');await page.keyboard.press('Space');
+  await page.getByTestId('ping-voice-status').filter({hasText:'Finish was not sent'}).waitFor();
+  assert.equal(state.requests.filter(action=>action==='finish').length,finishRequests);
+  assert.equal(voice.commits,beforeStorage.commits);assert.equal(voice.modelCalls.length,beforeStorage.models);assert.equal(executeCalls,beforeStorage.calls);
+  await focusObservation('after Finish storage refusal');await page.evaluate(()=>{window.pingStorageFailure=null;});
+  const finishCancel=page.waitForResponse(response=>response.url()===origin+'/api/ping'&&response.request().postDataJSON().action==='cancel');
+  await tabTo(page.getByTestId('ping-voice-cancel'),'storage-recovery Cancel');await page.keyboard.press('Enter');
+  const finishCancelled=await (await finishCancel).json();assert.equal(finishCancelled.knowledge,'not_invoked');assert.equal(finishCancelled.commandId,retryCaptured.commandId);
+  await page.waitForFunction(()=>document.querySelector('[data-testid=ping-voice-start]')?.disabled===false);
+  await focusObservation('after Finish storage original Cancel acknowledgement');
+  assert.equal(await countReceipts(),beforeStorage.receipts);assert.equal(executeCalls,beforeStorage.calls);
+  assert.equal((await targetRow()).lane,'doing');assert.deepEqual(JSON.parse((await targetRow()).assignees),['bob']);
+  receipt.cases.push({name:'synthetic Finish storage refusal sends no Finish/model/execute and keyboard Cancel settles the same original',passed:true});
   const preserved=(await fixture.client.execute("SELECT assignees,lane FROM tasks WHERE id='other'")).rows[0];assert.deepEqual(JSON.parse(preserved.assignees),['bob']);assert.equal(preserved.lane,'todo');
   assert.equal(Number((await targetRow()).start_day),2);assert.equal(Number((await targetRow()).duration_days),3);assert.deepEqual(errors,[]);
-  const accessibility=await new AxeBuilder({page}).include('[data-testid=ping-voice-panel]').analyze();assert.deepEqual(accessibility.violations.map(({id,impact,nodes})=>({id,impact,count:nodes.length})),[]);
-  receipt.accessibility={scope:'voice panel',violations:0};await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
+  const accessibility=await new AxeBuilder({page}).include('[data-testid=project-ping-typed-panel]').analyze();assert.deepEqual(accessibility.violations.map(({id,impact,nodes})=>({id,impact,count:nodes.length})),[]);
+  receipt.accessibility={scope:'typed and voice panels',violations:0};await page.screenshot({path:path.join(out,'operating-controls-desktop.png'),fullPage:true});await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
   await page.screenshot({path:path.join(out,'voice-tasks-phone.png'),fullPage:true});
-  assert.ok(consoleErrors.every(message=>/ERR_EMPTY_RESPONSE|ERR_CONNECTION_CLOSED|ERR_FAILED|status of 503/.test(message)),'Unexpected browser console error');
+  assert.ok(consoleErrors.every(message=>/ERR_EMPTY_RESPONSE|ERR_CONNECTION_CLOSED|ERR_FAILED|status of (404|409|503)/.test(message)),'Unexpected browser console error');
   assert.ok(failedRequests.every(request=>request.path==='/api/ping'&&/ERR_EMPTY_RESPONSE|ERR_CONNECTION_CLOSED|ERR_FAILED/.test(request.error)),'Unexpected failed browser request');
   receipt.expectedTransportDiagnostics={consoleErrors,failedRequests};receipt.executeCalls=executeCalls;receipt.receiptCount=await countReceipts();receipt.httpActions=state.requests;
+  assert.ok(receipt.focusObservations.filter(item=>item.label.startsWith('after ')).every(item=>item.useful),'Completed keyboard transitions must leave useful connected focus');
   receipt.status='passed';
 
 } catch(error) {receipt.status='failed';receipt.error=error.message;throw error;}
-finally {await fs.writeFile(path.join(out,'receipt.json'),JSON.stringify(receipt,null,2));await browser?.close();if(server){server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}fixture?.client.close();}
+finally {await fs.writeFile(path.join(out,'receipt.json'),JSON.stringify(receipt,null,2));await permissionBrowser?.close();await browser?.close();if(server){server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}fixture?.client.close();}
