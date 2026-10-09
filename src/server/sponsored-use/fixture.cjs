@@ -91,9 +91,62 @@ async function usageFixture(options = {}) {
       startedAt:new Date(now-86400000),expiresAt:new Date(now+86400000),notes:"comp:"+code});
     return {manifest,code};
   }
+  async function seedVenueCohort({ count = 40, claimAt, grantEndsAt }) {
+    if (!Number.isSafeInteger(count) || count < 1 || count > 50 ||
+        !Number.isSafeInteger(claimAt) || !Number.isSafeInteger(grantEndsAt) || grantEndsAt <= claimAt)
+      throw new Error("Invalid synthetic cohort");
+    const protocol = load("src/lib/venue-issuance/protocol.ts");
+    const canonical = load("src/server/venue-issuance/canonical.ts");
+    const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    const rows = [], issuances = [];
+    for (let start = 0; start < count; start += 25) {
+      const cohort = Math.floor(start / 25) + 1;
+      const chunk = Math.min(25, count - start);
+      const codes = Array.from({ length: chunk }, (_, offset) => {
+        const n = start + offset + 1;
+        const suffix = Array.from({ length: 5 }, (_, place) => alphabet[Math.floor(n / (alphabet.length ** place)) % alphabet.length]).join("");
+        const code = "VENUE-ABCDE-" + suffix;
+        return { licenseCodeId: "vlc-" + n.toString(16).padStart(32, "0"), code,
+          codeFingerprint: protocol.venueCodeFingerprint(code) };
+      });
+      const manifest = { version: 1, issuanceId: "vi-" + cohort.toString(16).padStart(32, "0"),
+        sponsorId: "synthetic-sponsor", sponsorSlug: "synthetic", sponsorName: "Synthetic venue",
+        environment: "internal_test", issuedAt: claimAt - 2 * 86400000,
+        eligibility: { kind: "pilot", reference: "pilot-cohort-fixture", startsAt: claimAt - 3 * 86400000,
+          endsAt: grantEndsAt + 86400000 }, tier: "wedding", durationDays: 548,
+        codes: codes.map(({ licenseCodeId, codeFingerprint }) => ({ licenseCodeId, codeFingerprint })) };
+      issuances.push({ manifest, codes });
+      await db.insert(schema.meta).values({ key: protocol.issuanceReceiptKey(manifest.issuanceId),
+        value: JSON.stringify({ manifest, manifestHash: protocol.manifestHash(manifest) }) });
+      for (let i = 0; i < codes.length; i++) {
+        const n = start + i + 1;
+        const userId = "cohort-user-" + n, projectId = "cohort-project-" + n;
+        await db.insert(schema.users).values({ id: userId, clerkId: "clerk-cohort-" + n, initials: "FX", color: "fixture" });
+        await db.insert(schema.workspaces).values({ id: projectId, slug: projectId, name: projectId, ownerUserId: userId });
+        await db.insert(schema.workspaceMembers).values({ workspaceId: projectId, userId, role: "owner" });
+        await db.insert(schema.compCodes).values({ code: codes[i].code, tier: "wedding", durationDays: 548,
+          quantity: 1, redeemed: 0, notes: canonical.canonicalVenueCodeNotes(manifest, manifest.codes[i]) });
+        const claimed = await load("src/server/db/comp-redemption.ts").claimCompEntitlement(db, {
+          code: codes[i].code, actorUserId: userId, candidateProjectId: projectId, now: new Date(claimAt),
+        });
+        if (!claimed.ok || claimed.entitlement.expiresAt.getTime() < grantEndsAt)
+          throw new Error("Synthetic canonical venue claim failed");
+        const entitlementId = claimed.entitlement.id;
+        rows.push({ n, userId, projectId, entitlementId, issuanceId: manifest.issuanceId,
+          licenseCodeId: codes[i].licenseCodeId });
+      }
+    }
+    return { rows, issuances };
+  }
+  async function actionAt(instant, input) {
+    const old = Date.now;
+    Date.now = () => instant;
+    try { return await load("src/server/actions/tasks.ts").addTaskAction(input); }
+    finally { Date.now = old; }
+  }
   const issued = options.seedClaim === false ? null : await seedClaim();
   const usageSchema = load("src/server/sponsored-use/schema.ts");
-  return { db, client, schema, usageSchema, state, load, now, issued, seedClaim,
+  return { db, client, schema, usageSchema, state, load, now, issued, seedClaim, seedVenueCohort, actionAt,
     action: load("src/server/actions/tasks.ts").addTaskAction,
     counts: async () => {
       const out = {};

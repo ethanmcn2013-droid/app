@@ -19,3 +19,11 @@ export const sponsoredUseSubjects = sqliteTable("sponsored_use_subjects", {
   subjectIdHash: text("subject_id_hash").notNull(),
   updatedAt: integer("updated_at").notNull(),
 }, t => [primaryKey({ columns: [t.actorKey, t.epoch] })]);
+/** Recipient-to-Project hash link for erasure after raw events expire. */
+export const sponsoredUseProjectLinks = sqliteTable("sponsored_use_project_links", {
+  recipientKey: text("recipient_key").notNull(),
+  epoch: text("epoch").notNull(),
+  workspaceIdHash: text("workspace_id_hash").notNull(),
+  sponsorId: text("sponsor_id").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, t => [primaryKey({ columns: [t.recipientKey, t.epoch, t.workspaceIdHash] })]);

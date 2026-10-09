@@ -46,7 +46,7 @@ async function withClient(operation) {
 
 test("authoritative ledger registers every SQL file with receipt and journal parity", () => {
   const context = loadAndValidateLedger();
-  assert.equal(context.entries.length, 39);
+  assert.equal(context.entries.length, 40);
   assert.equal(context.baseline.id, "0014_current_schema_baseline");
   assert.deepEqual(context.forward.map((entry) => entry.id), [
     "0015_notes_extract_exact_identity",
@@ -71,7 +71,7 @@ test("authoritative ledger registers every SQL file with receipt and journal par
     "0034_project_direct_messages",
     "0035_task_discussion",
     "0036_conversation_erasure_tombstones",
-    "0037_message_read_coverage", "0038_project_drive_token_revocation",
+    "0037_message_read_coverage", "0038_project_drive_token_revocation", "0039_sponsored_measurement_choice",
   ]);
   assert.equal(context.entries.filter((entry) => entry.policy === "legacy-adopt-only").length, 14);
 });
@@ -153,14 +153,14 @@ test("fresh databases apply the canonical baseline plus forwards and rerun as a 
     "0034_project_direct_messages",
     "0035_task_discussion",
     "0036_conversation_erasure_tombstones",
-    "0037_message_read_coverage", "0038_project_drive_token_revocation",
+    "0037_message_read_coverage", "0038_project_drive_token_revocation", "0039_sponsored_measurement_choice",
   ]);
-  assert.equal(first.proofs.length, 212);
+  assert.equal(first.proofs.length, 218);
 
   const objectCounts = await client.execute("SELECT type, COUNT(*) AS value FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' AND name NOT IN ('signal_schema_migrations', '__drizzle_migrations') GROUP BY type ORDER BY type");
   assert.deepEqual(objectCounts.rows.map((row) => [row.type, Number(row.value)]), [
     ["index", 65],
-    ["table", 47],
+    ["table", 48],
     ["trigger", 63],
   ]);
 
@@ -212,7 +212,7 @@ test("populated 0027 production-shaped ledger upgrades through January and conve
     "0028_project_drive", "0029_project_drive_operations", "0030_sponsored_use_intents",
     "0031_event_purchase_designations", "0032_project_conversations",
     "0033_conversation_task_outcomes", "0034_project_direct_messages", "0035_task_discussion",
-    "0036_conversation_erasure_tombstones", "0037_message_read_coverage", "0038_project_drive_token_revocation",
+    "0036_conversation_erasure_tombstones", "0037_message_read_coverage", "0038_project_drive_token_revocation", "0039_sponsored_measurement_choice",
   ]);
   assert.equal((await client.execute("SELECT title FROM tasks WHERE id='historic_task'")).rows[0].title, "Preserved task");
   const comment = (await client.execute("SELECT id,body,workspace_id,revision FROM comments WHERE id='historic_comment'")).rows[0];
@@ -334,7 +334,7 @@ test("0037 preserves populated conversation and Task Discussion history; failed 
   assert.equal(Number((await client.execute("SELECT count(*) AS n FROM sqlite_schema WHERE name='message_read_coverage'")).rows[0].n), 0);
   assert.equal(Number((await client.execute("SELECT count(*) AS n FROM signal_schema_migrations WHERE id='0037_message_read_coverage'")).rows[0].n), 0);
   const applied = await runMigrations({ client, releaseSha: "coverage-upgrade" });
-  assert.deepEqual(applied.applied, ["0037_message_read_coverage", "0038_project_drive_token_revocation"]);
+  assert.deepEqual(applied.applied, ["0037_message_read_coverage", "0038_project_drive_token_revocation", "0039_sponsored_measurement_choice"]);
   assert.deepEqual((await client.execute("SELECT id,body,create_seq FROM conversation_messages WHERE conversation_id='coverage_room'")).rows, original.messages);
   assert.deepEqual((await client.execute("SELECT id,body,create_seq FROM comments WHERE task_id='coverage_task'")).rows, original.comments);
   assert.deepEqual((await client.execute("SELECT id,message_id,observed_at FROM conversation_attention WHERE id='coverage_event'")).rows, original.directed);
@@ -361,7 +361,7 @@ test("0038 preserves legacy credentials, rolls back failed proofs and reruns as 
   assert.equal(Number((await client.execute("SELECT count(*) AS n FROM signal_schema_migrations WHERE id='0038_project_drive_token_revocation'")).rows[0].n), 0);
   assert.deepEqual((await client.execute("SELECT * FROM provider_connections WHERE id='revoke_legacy'")).rows[0], original);
   const applied = await runMigrations({ client, releaseSha: "revocation-upgrade" });
-  assert.deepEqual(applied.applied, ["0038_project_drive_token_revocation"]);
+  assert.deepEqual(applied.applied, ["0038_project_drive_token_revocation", "0039_sponsored_measurement_choice"]);
   const upgraded = (await client.execute("SELECT * FROM provider_connections WHERE id='revoke_legacy'")).rows[0];
   for (const key of Object.keys(original)) assert.deepEqual(upgraded[key], original[key]);
   for (const key of ["revoke_requested_at", "revoke_confirmed_at", "revoke_attempt_id", "revoke_attempted_at"]) assert.equal(upgraded[key], null);
@@ -1206,7 +1206,7 @@ test("usage migration proof failure rolls back both new tables and its ledger re
   assert.deepEqual(applied.applied, [
     "0030_sponsored_use_intents", "0031_event_purchase_designations",
     "0032_project_conversations", "0033_conversation_task_outcomes",
-    "0034_project_direct_messages", "0035_task_discussion", "0036_conversation_erasure_tombstones", "0037_message_read_coverage", "0038_project_drive_token_revocation",
+    "0034_project_direct_messages", "0035_task_discussion", "0036_conversation_erasure_tombstones", "0037_message_read_coverage", "0038_project_drive_token_revocation", "0039_sponsored_measurement_choice",
   ]);
   assert.equal((await runMigrations({ client, releaseSha: "usage-no-op" })).status, "no-op");
 }));
