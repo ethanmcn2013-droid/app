@@ -1,0 +1,792 @@
+{
+  "id": "ping",
+  "base": "7d318c206bf0dcb103a564c8de1b2c2ee5f51364",
+  "commit": "049340ba59c764a502548018c2aec41a76d235cb",
+  "tree": "c9dc7636a7a297b21ccbbdefafdf34f1d3c48726",
+  "paths": [
+    {
+      "status": "A",
+      "path": "docs/guides/project-ping-keyboard-receiving.md",
+      "baseBlob": null,
+      "sourceBlob": "7c8f0831bd7c697c2f8da791552c1e3fcb1a1acb",
+      "mainBlob": null,
+      "aggregateBlob": "7c8f0831bd7c697c2f8da791552c1e3fcb1a1acb",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/guides/project-ping-operating-controls.md",
+      "baseBlob": null,
+      "sourceBlob": "05013d5e336afab6a0a2477e51f2178970986ead",
+      "mainBlob": null,
+      "aggregateBlob": "05013d5e336afab6a0a2477e51f2178970986ead",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "experience/ping-typed/README.md",
+      "baseBlob": null,
+      "sourceBlob": "992492e9bbbd1844c62ebf79322afa3cfe55c392",
+      "mainBlob": null,
+      "aggregateBlob": "992492e9bbbd1844c62ebf79322afa3cfe55c392",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "experience/ping-typed/browser.mjs",
+      "baseBlob": null,
+      "sourceBlob": "6a20d2dbfbbfd8d9ebf3552e34cda020b88d523d",
+      "mainBlob": null,
+      "aggregateBlob": "5391399ab963034c1c0338deb21f77024ca92b9f",
+      "receiving": "adapted"
+    },
+    {
+      "status": "A",
+      "path": "experience/ping-typed/fixture.css",
+      "baseBlob": null,
+      "sourceBlob": "80f3f1b249f7b3086b883785db1663921ef810e8",
+      "mainBlob": null,
+      "aggregateBlob": "80f3f1b249f7b3086b883785db1663921ef810e8",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "experience/ping-typed/fixture.tsx",
+      "baseBlob": null,
+      "sourceBlob": "4173ed09cd7c853b1e9ab2c4fc2be4232eb34f9a",
+      "mainBlob": null,
+      "aggregateBlob": "5e325b20807e516f2828827136e04eba3fb5c4fe",
+      "receiving": "adapted"
+    },
+    {
+      "status": "A",
+      "path": "experience/ping-voice-tasks/README.md",
+      "baseBlob": null,
+      "sourceBlob": "bec542ebd379cb4d5a7c376dad0dabc5e8bd858b",
+      "mainBlob": null,
+      "aggregateBlob": "bec542ebd379cb4d5a7c376dad0dabc5e8bd858b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "experience/ping-voice-tasks/browser.mjs",
+      "baseBlob": null,
+      "sourceBlob": "cb712cb6fdda822656fcbb2de7ed59d92c3efaf3",
+      "mainBlob": null,
+      "aggregateBlob": "d35fc0583fecca9f1eef91d01196d04813d0f99b",
+      "receiving": "adapted"
+    },
+    {
+      "status": "A",
+      "path": "experience/ping-voice/README.md",
+      "baseBlob": null,
+      "sourceBlob": "159c9ec72ac2b4fc4ec0c787d13371d94650c9f5",
+      "mainBlob": null,
+      "aggregateBlob": "159c9ec72ac2b4fc4ec0c787d13371d94650c9f5",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "experience/project-recovery/browser.mjs",
+      "baseBlob": "0ac65a098855357e105d3ee949306fadbeebcdec",
+      "sourceBlob": "e150ca6d369fae90488dd5e2af77aa20d77b9da7",
+      "mainBlob": "0ac65a098855357e105d3ee949306fadbeebcdec",
+      "aggregateBlob": "e150ca6d369fae90488dd5e2af77aa20d77b9da7",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "experience/recipient-project-work/realtime-fixture.cjs",
+      "baseBlob": "243756b2bc81bbc2371441ea10508992b9d51e48",
+      "sourceBlob": "88506148bcd7a9ed2e9a2a662ae242c6c6f50e09",
+      "mainBlob": "243756b2bc81bbc2371441ea10508992b9d51e48",
+      "aggregateBlob": "88506148bcd7a9ed2e9a2a662ae242c6c6f50e09",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "package.json",
+      "baseBlob": "9eb458b18f5a4cc7b066050938532feaacc4db97",
+      "sourceBlob": "7c712a0d32c6436c86ea60d18df06a9cbdc6a6eb",
+      "mainBlob": "9eb458b18f5a4cc7b066050938532feaacc4db97",
+      "aggregateBlob": "6fe57f5f0998c182199331692f7b305079347da4",
+      "receiving": "adapted"
+    },
+    {
+      "status": "A",
+      "path": "public/ping/pcm-worklet.js",
+      "baseBlob": null,
+      "sourceBlob": "de40a0301e914ecb93d168aaf283dfb7b43008ec",
+      "mainBlob": null,
+      "aggregateBlob": "de40a0301e914ecb93d168aaf283dfb7b43008ec",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "scripts/ping/TYPED_RUNTIME.md",
+      "baseBlob": null,
+      "sourceBlob": "0580267d152c21f8ac7177402b0664189e260f13",
+      "mainBlob": null,
+      "aggregateBlob": "0580267d152c21f8ac7177402b0664189e260f13",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "scripts/ping/bridge/README.md",
+      "baseBlob": null,
+      "sourceBlob": "9078b155f5b6075f839aa6a3b49cd072115877c2",
+      "mainBlob": null,
+      "aggregateBlob": "9078b155f5b6075f839aa6a3b49cd072115877c2",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "scripts/ping/bridge/proof-readback.ts",
+      "baseBlob": null,
+      "sourceBlob": "3c745b4d6d4fb24adad1e126292d15fc04728e6b",
+      "mainBlob": null,
+      "aggregateBlob": "3c745b4d6d4fb24adad1e126292d15fc04728e6b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "scripts/ping/bridge/proof-runner.ts",
+      "baseBlob": null,
+      "sourceBlob": "74bb6e952225f310aa64cbf82d8cdfad1b4ef623",
+      "mainBlob": null,
+      "aggregateBlob": "74bb6e952225f310aa64cbf82d8cdfad1b4ef623",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "scripts/ping/comparison/paired-trial.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "61b894e00308cbb1ccc925a28389bea6ed7d59c6",
+      "mainBlob": null,
+      "aggregateBlob": "61b894e00308cbb1ccc925a28389bea6ed7d59c6",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "scripts/ping/comparison/paired-trial.ts",
+      "baseBlob": null,
+      "sourceBlob": "885880e15422024813f71d9cf2336598754ea5dd",
+      "mainBlob": null,
+      "aggregateBlob": "885880e15422024813f71d9cf2336598754ea5dd",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "scripts/ping/prepare-typed-fixture.ts",
+      "baseBlob": null,
+      "sourceBlob": "436ce63d517b667c96b30bec47ccd94fcd986aa8",
+      "mainBlob": null,
+      "aggregateBlob": "436ce63d517b667c96b30bec47ccd94fcd986aa8",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "scripts/ping/proof-contention-worker.ts",
+      "baseBlob": null,
+      "sourceBlob": "97c11a0ee0e949b3cc6a7e33e6c63e5080f41a95",
+      "mainBlob": null,
+      "aggregateBlob": "97c11a0ee0e949b3cc6a7e33e6c63e5080f41a95",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "scripts/ping/tsconfig.json",
+      "baseBlob": null,
+      "sourceBlob": "c94931971c87cea8f009af36f7e661b32ed89934",
+      "mainBlob": null,
+      "aggregateBlob": "c94931971c87cea8f009af36f7e661b32ed89934",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "scripts/ping/voice/CONTRACT.md",
+      "baseBlob": null,
+      "sourceBlob": "b648136dc5f23b8fb74accb0481d7d78f7ea2652",
+      "mainBlob": null,
+      "aggregateBlob": "b648136dc5f23b8fb74accb0481d7d78f7ea2652",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "scripts/ping/voice/README.md",
+      "baseBlob": null,
+      "sourceBlob": "935fdfbe2635c854f0f7eacad732e7a83ae165ba",
+      "mainBlob": null,
+      "aggregateBlob": "935fdfbe2635c854f0f7eacad732e7a83ae165ba",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "scripts/ping/voice/browser.mjs",
+      "baseBlob": null,
+      "sourceBlob": "7b80292243e4b1da296d764433907ca1a366fee8",
+      "mainBlob": null,
+      "aggregateBlob": "7b80292243e4b1da296d764433907ca1a366fee8",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "scripts/ping/voice/fixture.tsx",
+      "baseBlob": null,
+      "sourceBlob": "2a58fde293651185dc4798ebd369e80ffd02f1b9",
+      "mainBlob": null,
+      "aggregateBlob": "2a58fde293651185dc4798ebd369e80ffd02f1b9",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/app/api/ping/audio/route.ts",
+      "baseBlob": null,
+      "sourceBlob": "608eed7d5501f546feed1da26efc206325bc143e",
+      "mainBlob": null,
+      "aggregateBlob": "608eed7d5501f546feed1da26efc206325bc143e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/app/api/ping/route.ts",
+      "baseBlob": null,
+      "sourceBlob": "7af70b417d208900cd631e5512532d756ff11b22",
+      "mainBlob": null,
+      "aggregateBlob": "7af70b417d208900cd631e5512532d756ff11b22",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/tasks/ping-typed-panel.tsx",
+      "baseBlob": null,
+      "sourceBlob": "2334f46640afbc646a2167b2c473f8189c5541e8",
+      "mainBlob": null,
+      "aggregateBlob": "107d7d9528f12b0fee34a605fa94ed71bbcfec8d",
+      "receiving": "adapted"
+    },
+    {
+      "status": "A",
+      "path": "src/components/tasks/ping-voice-panel.tsx",
+      "baseBlob": null,
+      "sourceBlob": "2149a4fc5c41550bdcfa3f5bc6f305986090d1ed",
+      "mainBlob": null,
+      "aggregateBlob": "368d2d6ec8deebd028c2390a40817b2f8a55e0cc",
+      "receiving": "adapted"
+    },
+    {
+      "status": "M",
+      "path": "src/components/tasks/tasks-workspace.tsx",
+      "baseBlob": "6635cb9bd089a5660c8c9b9da75a48e55c523fcd",
+      "sourceBlob": "6f97e1179be6c2cdd14d8765240d8c83387d0cb7",
+      "mainBlob": "6635cb9bd089a5660c8c9b9da75a48e55c523fcd",
+      "aggregateBlob": "6f97e1179be6c2cdd14d8765240d8c83387d0cb7",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/README.md",
+      "baseBlob": null,
+      "sourceBlob": "edeff7dcdc8128042b1e6c2790971084d44418a5",
+      "mainBlob": null,
+      "aggregateBlob": "edeff7dcdc8128042b1e6c2790971084d44418a5",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/command-independent.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "0194a08e89d6e885175bd7906138143b721edc60",
+      "mainBlob": null,
+      "aggregateBlob": "0194a08e89d6e885175bd7906138143b721edc60",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/command.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "60683eb3fdda4f7e8cb4f91c38ff267d0705d223",
+      "mainBlob": null,
+      "aggregateBlob": "60683eb3fdda4f7e8cb4f91c38ff267d0705d223",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/command.ts",
+      "baseBlob": null,
+      "sourceBlob": "c2179de56ef9490f8f85494a49cad2cdfef4bdc8",
+      "mainBlob": null,
+      "aggregateBlob": "c2179de56ef9490f8f85494a49cad2cdfef4bdc8",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/evaluation.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "9b5ab7193aba20bd2aaf0cb2c6c2dd04585c625a",
+      "mainBlob": null,
+      "aggregateBlob": "9b5ab7193aba20bd2aaf0cb2c6c2dd04585c625a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/evaluation.ts",
+      "baseBlob": null,
+      "sourceBlob": "67fcf08c675494f15fc294403d2cae648c5a6e33",
+      "mainBlob": null,
+      "aggregateBlob": "67fcf08c675494f15fc294403d2cae648c5a6e33",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/input-independent.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "fe4a4643d4fdd897ec9eceb075271d374efa707e",
+      "mainBlob": null,
+      "aggregateBlob": "fe4a4643d4fdd897ec9eceb075271d374efa707e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/input-protocol.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "b9ca4712088ed76436e34f568f355313e708fee5",
+      "mainBlob": null,
+      "aggregateBlob": "b9ca4712088ed76436e34f568f355313e708fee5",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/input-protocol.ts",
+      "baseBlob": null,
+      "sourceBlob": "8e33fdc2cc30a2e24b73398a611c71a98244acf6",
+      "mainBlob": null,
+      "aggregateBlob": "8e33fdc2cc30a2e24b73398a611c71a98244acf6",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/input-test-fixture.ts",
+      "baseBlob": null,
+      "sourceBlob": "25bc8aaaed27cf3a865ec4653d328e2a03a3a3c9",
+      "mainBlob": null,
+      "aggregateBlob": "25bc8aaaed27cf3a865ec4653d328e2a03a3a3c9",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/input-validation.ts",
+      "baseBlob": null,
+      "sourceBlob": "e5af6d4ea4d711a7cba4b7413decc54fff342ee1",
+      "mainBlob": null,
+      "aggregateBlob": "e5af6d4ea4d711a7cba4b7413decc54fff342ee1",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/pcm.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "f5f1498601ca3cfecb3bc68734ed7917ad62ebc1",
+      "mainBlob": null,
+      "aggregateBlob": "f5f1498601ca3cfecb3bc68734ed7917ad62ebc1",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/pcm.ts",
+      "baseBlob": null,
+      "sourceBlob": "1bdcbe2ec3dbd0cef22a95caebe7903b23e68073",
+      "mainBlob": null,
+      "aggregateBlob": "1bdcbe2ec3dbd0cef22a95caebe7903b23e68073",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/proposal.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "486db364f4a64e88dfcd88d29d8a35b6c208ac51",
+      "mainBlob": null,
+      "aggregateBlob": "486db364f4a64e88dfcd88d29d8a35b6c208ac51",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/proposal.ts",
+      "baseBlob": null,
+      "sourceBlob": "9151047c3f100b258a48852277c93663413e2b1c",
+      "mainBlob": null,
+      "aggregateBlob": "9151047c3f100b258a48852277c93663413e2b1c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/realtime-transcription.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "853bfa81b2cdf75cca7ec8f6b2717cc04a7b5629",
+      "mainBlob": null,
+      "aggregateBlob": "853bfa81b2cdf75cca7ec8f6b2717cc04a7b5629",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/realtime-transcription.ts",
+      "baseBlob": null,
+      "sourceBlob": "756b147285fd7d96a097ddb6eed4caba306b0886",
+      "mainBlob": null,
+      "aggregateBlob": "756b147285fd7d96a097ddb6eed4caba306b0886",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/typed-client.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "b9881edb45d530bd437f392a18391222b69fc4c2",
+      "mainBlob": null,
+      "aggregateBlob": "b9881edb45d530bd437f392a18391222b69fc4c2",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/typed-client.ts",
+      "baseBlob": null,
+      "sourceBlob": "98280c0cba6f17b258aa39552a880c0d03ccd433",
+      "mainBlob": null,
+      "aggregateBlob": "98280c0cba6f17b258aa39552a880c0d03ccd433",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/typed-command.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "5d83f9bf315b3a753a7126ce4c2dd53bc77dc5af",
+      "mainBlob": null,
+      "aggregateBlob": "5d83f9bf315b3a753a7126ce4c2dd53bc77dc5af",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/typed-command.ts",
+      "baseBlob": null,
+      "sourceBlob": "645c6deb6c5b162b2c0712c83a5f3c446e4f0136",
+      "mainBlob": null,
+      "aggregateBlob": "645c6deb6c5b162b2c0712c83a5f3c446e4f0136",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/typed-contract.ts",
+      "baseBlob": null,
+      "sourceBlob": "15cd7867aa41d7568ab15568a4cc0bda06f1e83d",
+      "mainBlob": null,
+      "aggregateBlob": "15cd7867aa41d7568ab15568a4cc0bda06f1e83d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/use-voice-capture.ts",
+      "baseBlob": null,
+      "sourceBlob": "26eef344f7531dc7732d27bb47385a07dda19a1c",
+      "mainBlob": null,
+      "aggregateBlob": "26eef344f7531dc7732d27bb47385a07dda19a1c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/voice-client.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "fcc8458ae8014e92060da402d9e7c42d79e6c27d",
+      "mainBlob": null,
+      "aggregateBlob": "fcc8458ae8014e92060da402d9e7c42d79e6c27d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/voice-client.ts",
+      "baseBlob": null,
+      "sourceBlob": "c49c76cdf5752cb5de0a7e23266188aa4d350fb1",
+      "mainBlob": null,
+      "aggregateBlob": "c49c76cdf5752cb5de0a7e23266188aa4d350fb1",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/voice-contract.ts",
+      "baseBlob": null,
+      "sourceBlob": "68acead730c0ca71b8b1d38f116afeeb870d4071",
+      "mainBlob": null,
+      "aggregateBlob": "68acead730c0ca71b8b1d38f116afeeb870d4071",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/voice-session.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "bd493f0934544e8638615e356feab291d45421bd",
+      "mainBlob": null,
+      "aggregateBlob": "bd493f0934544e8638615e356feab291d45421bd",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/ping/voice-session.ts",
+      "baseBlob": null,
+      "sourceBlob": "bc6fff8bf3cee46515994ec5b02f00804ce86009",
+      "mainBlob": null,
+      "aggregateBlob": "bc6fff8bf3cee46515994ec5b02f00804ce86009",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/lib/tasks/tasks-context.tsx",
+      "baseBlob": "eb1ba973d0c37db5276275651c4d6d95de84ca36",
+      "sourceBlob": "2ff38b35900ea971b3ce4ab19d07c61f0a45943f",
+      "mainBlob": "eb1ba973d0c37db5276275651c4d6d95de84ca36",
+      "aggregateBlob": "e4f3561738f694a357c7fe9f2dba47d601eb81df",
+      "receiving": "adapted"
+    },
+    {
+      "status": "M",
+      "path": "src/server/db/queries.ts",
+      "baseBlob": "a4302c800c1253768f42122dae2bafccf53b1c0c",
+      "sourceBlob": "79b6b03634e155afbd3f14c92099de8fc8801815",
+      "mainBlob": "a4302c800c1253768f42122dae2bafccf53b1c0c",
+      "aggregateBlob": "79b6b03634e155afbd3f14c92099de8fc8801815",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/db/task-columns.ts",
+      "baseBlob": null,
+      "sourceBlob": "7289252a0c6e9eea3d39fc651aae32e44bd45146",
+      "mainBlob": null,
+      "aggregateBlob": "7289252a0c6e9eea3d39fc651aae32e44bd45146",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/db/task-read.ts",
+      "baseBlob": null,
+      "sourceBlob": "90105c73a7be948a2072bdccb42e570322b563a4",
+      "mainBlob": null,
+      "aggregateBlob": "77f51b95c1de16dd7f191d6d1974219fe4c1b870",
+      "receiving": "adapted"
+    },
+    {
+      "status": "A",
+      "path": "src/server/db/task-rollup.persistence.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "d7d435c554b14e944ed66a6aa5381276e40e4cbc",
+      "mainBlob": null,
+      "aggregateBlob": "d7d435c554b14e944ed66a6aa5381276e40e4cbc",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/ping/README.md",
+      "baseBlob": null,
+      "sourceBlob": "0193b30dffaa45c07af8fa680c00947686b40e14",
+      "mainBlob": null,
+      "aggregateBlob": "0193b30dffaa45c07af8fa680c00947686b40e14",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/ping/bridge-independent.persistence.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "93c8859c1182bab9dc8474c2700a0c04f1a4b6ed",
+      "mainBlob": null,
+      "aggregateBlob": "93c8859c1182bab9dc8474c2700a0c04f1a4b6ed",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/ping/bridge.persistence.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "105e3efc9f58ee44d54951669d61af18d15218ce",
+      "mainBlob": null,
+      "aggregateBlob": "105e3efc9f58ee44d54951669d61af18d15218ce",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/ping/command-independent.persistence.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "6b72bd8e964361c2d531ef1d4bbfc6cf6eba0b24",
+      "mainBlob": null,
+      "aggregateBlob": "6b72bd8e964361c2d531ef1d4bbfc6cf6eba0b24",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/ping/command-service.persistence.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "c5e397e2c970f1d9b70dbc127c56ae0ef0fd8746",
+      "mainBlob": null,
+      "aggregateBlob": "ebbdb7c7e4af06f253c3bf06d42f4129f94c0eb6",
+      "receiving": "adapted"
+    },
+    {
+      "status": "A",
+      "path": "src/server/ping/command-service.ts",
+      "baseBlob": null,
+      "sourceBlob": "7eb6a03e7680d45bf73acd0ce99eafc5552ae19d",
+      "mainBlob": null,
+      "aggregateBlob": "7eb6a03e7680d45bf73acd0ce99eafc5552ae19d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/ping/http.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "466802283ced0eec25e46878d1083a569f4d522e",
+      "mainBlob": null,
+      "aggregateBlob": "466802283ced0eec25e46878d1083a569f4d522e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/ping/http.ts",
+      "baseBlob": null,
+      "sourceBlob": "2ba3b5c5182d6de1c93dcb592afe71f2c6e3828d",
+      "mainBlob": null,
+      "aggregateBlob": "2ba3b5c5182d6de1c93dcb592afe71f2c6e3828d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/ping/openai-clip-transcription.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "5cfcc97b9af4e0bbd76d306d4f8665fa2d2f69f3",
+      "mainBlob": null,
+      "aggregateBlob": "5cfcc97b9af4e0bbd76d306d4f8665fa2d2f69f3",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/ping/openai-clip-transcription.ts",
+      "baseBlob": null,
+      "sourceBlob": "aa8edd9c2d8d78d38d1a19f3c2aaa5a447316646",
+      "mainBlob": null,
+      "aggregateBlob": "aa8edd9c2d8d78d38d1a19f3c2aaa5a447316646",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/ping/openai-interpreter.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "71fec9f52a962229e048fa5c2f62cf4666e6f4b8",
+      "mainBlob": null,
+      "aggregateBlob": "71fec9f52a962229e048fa5c2f62cf4666e6f4b8",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/ping/openai-interpreter.ts",
+      "baseBlob": null,
+      "sourceBlob": "5d89d380f39cea6753af0e2cc8796a70667639f2",
+      "mainBlob": null,
+      "aggregateBlob": "5d89d380f39cea6753af0e2cc8796a70667639f2",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/ping/openai-native-audio.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "582e940621c623d16cad8552e5feb7bd2b8cd9fd",
+      "mainBlob": null,
+      "aggregateBlob": "582e940621c623d16cad8552e5feb7bd2b8cd9fd",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/ping/openai-native-audio.ts",
+      "baseBlob": null,
+      "sourceBlob": "a842b758cf5c293ac30bf2b471eea252778f96b0",
+      "mainBlob": null,
+      "aggregateBlob": "a842b758cf5c293ac30bf2b471eea252778f96b0",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/ping/openai-streaming-transcription.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "a4ca6faada7cfa3b46201371f95cdc362883223d",
+      "mainBlob": null,
+      "aggregateBlob": "a4ca6faada7cfa3b46201371f95cdc362883223d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/ping/openai-streaming-transcription.ts",
+      "baseBlob": null,
+      "sourceBlob": "b27f6260f9d90616ebab900a8559e6ab5c2bf85f",
+      "mainBlob": null,
+      "aggregateBlob": "b27f6260f9d90616ebab900a8559e6ab5c2bf85f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/ping/operating-controls.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "56e81979952445c870dc93afea9f996f544594ef",
+      "mainBlob": null,
+      "aggregateBlob": "56e81979952445c870dc93afea9f996f544594ef",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/ping/proof-fixture.ts",
+      "baseBlob": null,
+      "sourceBlob": "681a2fc2c51b77446785539c96582e17b8206bad",
+      "mainBlob": null,
+      "aggregateBlob": "681a2fc2c51b77446785539c96582e17b8206bad",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/ping/runtime.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "e5d09026bc6983861b3543849e4d900fcd04bcb2",
+      "mainBlob": null,
+      "aggregateBlob": "951f98f6d318f1d78022a389eecbc87be57b5960",
+      "receiving": "adapted"
+    },
+    {
+      "status": "A",
+      "path": "src/server/ping/runtime.ts",
+      "baseBlob": null,
+      "sourceBlob": "034bc3ed9fffda99edecbdc66898bb0f584132c1",
+      "mainBlob": null,
+      "aggregateBlob": "034bc3ed9fffda99edecbdc66898bb0f584132c1",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/ping/streaming-paired-transcriber.ts",
+      "baseBlob": null,
+      "sourceBlob": "7f9c15c043294d5073c12c45299ae0479628df65",
+      "mainBlob": null,
+      "aggregateBlob": "7f9c15c043294d5073c12c45299ae0479628df65",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/ping/typed-session.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "d67dd39c11819fa197afa9632ab67dd1a3f681cb",
+      "mainBlob": null,
+      "aggregateBlob": "d67dd39c11819fa197afa9632ab67dd1a3f681cb",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/ping/typed-session.ts",
+      "baseBlob": null,
+      "sourceBlob": "452a3ec1d3c962baddf7f3465300ec6a8574e4d0",
+      "mainBlob": null,
+      "aggregateBlob": "452a3ec1d3c962baddf7f3465300ec6a8574e4d0",
+      "receiving": "byte-exact"
+    }
+  ],
+  "mainOverlaps": []
+}

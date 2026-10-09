@@ -1,0 +1,21 @@
+{
+  "label": "ping-compiled-config-frozen",
+  "head": "7cfe85b7ae96a5d683d1fdfebaa230565f5a3b33",
+  "tree": "bfff096c90fcced3b57c5a2e0a16c67baccb0c85",
+  "node": "v22.23.2",
+  "args": [
+    "--import",
+    "tsx",
+    "--import",
+    "./src/test/register-server-only.mjs",
+    "--test",
+    "src/server/ping/runtime.test.ts"
+  ],
+  "startedAt": "2026-10-09T21:09:26.287Z",
+  "endedAt": "2026-10-09T21:09:34.356Z",
+  "exitCode": 0,
+  "signal": null,
+  "error": null,
+  "passed": true,
+  "log": "D:\\Codex-scratch\\release-all-20261009\\runtime-aggregation\\receipts\\ping-compiled-config-frozen.log"
+}

@@ -1,0 +1,17 @@
+{
+  "label": "typecheck-frozen",
+  "head": "9cfaf9313d3de0cac529748305b66154429867b1",
+  "tree": "e455f3a27e7d8415164928f1fd6be94d6d36ea89",
+  "node": "v22.23.2",
+  "args": [
+    "D:/Codex-scratch/corepack/v1/pnpm/11.9.0/bin/pnpm.cjs",
+    "typecheck"
+  ],
+  "startedAt": "2026-10-09T20:33:17.768Z",
+  "endedAt": "2026-10-09T20:34:27.118Z",
+  "exitCode": 2,
+  "signal": null,
+  "error": null,
+  "passed": false,
+  "log": "D:\\Codex-scratch\\release-all-20261009\\runtime-aggregation\\receipts\\typecheck-frozen.log"
+}

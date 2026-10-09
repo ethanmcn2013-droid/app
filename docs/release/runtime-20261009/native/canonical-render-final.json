@@ -1,0 +1,19 @@
+{
+  "label": "canonical-render-final",
+  "head": "04bed4b84b1559d127575751880473256851c430",
+  "tree": "7093b9f3046a89e98e27033adb2a0f2a7c802c2d",
+  "node": "v22.23.2",
+  "args": [
+    "node_modules/@playwright/test/cli.js",
+    "test",
+    "--config",
+    "experience/playwright.config.ts"
+  ],
+  "startedAt": "2026-10-09T20:46:40.374Z",
+  "endedAt": "2026-10-09T20:56:48.875Z",
+  "exitCode": 0,
+  "signal": null,
+  "error": null,
+  "passed": true,
+  "log": "D:\\Codex-scratch\\release-all-20261009\\runtime-aggregation\\receipts\\canonical-render-final.log"
+}

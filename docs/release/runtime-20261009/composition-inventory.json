@@ -1,0 +1,377 @@
+{
+  "aggregate": "05f5bd30a799c1cdefd933910cdbbbeec53a860d",
+  "aggregateTree": "805dd2da3a4923c58ebcdaf79426255eb390bb91",
+  "main": "ad0529bcb24db1fab06934deceb0617b2b320fe3",
+  "mainTree": "c3f1815c19fa1f81756a7bc0bbde63413cce1d19",
+  "sources": [
+    {
+      "id": "backend",
+      "base": "7d318c206bf0dcb103a564c8de1b2c2ee5f51364",
+      "commit": "6d63212ca837556543129820b57f79820f41a8a2",
+      "count": 179,
+      "exact": 167,
+      "adapted": [
+        {
+          "status": "M",
+          "path": ".github/workflows/verify.yml",
+          "baseBlob": "69d0682d16f89b6d437828c12e842f984661060d",
+          "sourceBlob": "4ac6f0c3a2f0e7577387f5fce284047594940af3",
+          "mainBlob": "69d0682d16f89b6d437828c12e842f984661060d",
+          "aggregateBlob": "57844b864e278e4ccfaf1074f39727a3fc8b0622",
+          "receiving": "adapted"
+        },
+        {
+          "status": "M",
+          "path": "next.config.ts",
+          "baseBlob": "30f8caa4a76f5f787e23dd21f0888d4581e1617a",
+          "sourceBlob": "c3b011e94f96e90071ff5aecdd3071db730b592f",
+          "mainBlob": "30f8caa4a76f5f787e23dd21f0888d4581e1617a",
+          "aggregateBlob": "6aa6524a2b0744f35e27880bd3275410894564c7",
+          "receiving": "adapted"
+        },
+        {
+          "status": "M",
+          "path": "package.json",
+          "baseBlob": "9eb458b18f5a4cc7b066050938532feaacc4db97",
+          "sourceBlob": "b6405e0604aff3b59e9dc3d897cba54efdf980ae",
+          "mainBlob": "9eb458b18f5a4cc7b066050938532feaacc4db97",
+          "aggregateBlob": "6fe57f5f0998c182199331692f7b305079347da4",
+          "receiving": "adapted"
+        },
+        {
+          "status": "A",
+          "path": "scripts/app-test-stages.json",
+          "baseBlob": null,
+          "sourceBlob": "2c8d192d5e1043a732c3c26eb1f1584e3e096f55",
+          "mainBlob": null,
+          "aggregateBlob": "6cc1e5b43596b7e86eb91c5e4c9aa3bb401400c1",
+          "receiving": "adapted"
+        },
+        {
+          "status": "A",
+          "path": "scripts/run-app-tests.test.mjs",
+          "baseBlob": null,
+          "sourceBlob": "4de3c95532edfcfede709f4fae6380eb2bf5b900",
+          "mainBlob": null,
+          "aggregateBlob": "ac5f008626457e52e0e4bacb469a13fed2ab07b9",
+          "receiving": "adapted"
+        },
+        {
+          "status": "M",
+          "path": "src/components/app/detail-panel/task-sheet.tsx",
+          "baseBlob": "ff76c2118766216003ba2add5ac95bb82af26355",
+          "sourceBlob": "0beec544e171e33868f9e91302acd5fdd5fce423",
+          "mainBlob": "5f69710d859bd5f849037c70d92928b0ddce790c",
+          "aggregateBlob": "b28e80119b5c64bc1cf39f9ad96c9fb9e2ab94eb",
+          "receiving": "adapted"
+        },
+        {
+          "status": "A",
+          "path": "src/lib/tasks/task-provider-ordering.test.mjs",
+          "baseBlob": null,
+          "sourceBlob": "e001e04d0da305ed9d0cfd4618e4f2944c95d6d0",
+          "mainBlob": null,
+          "aggregateBlob": "4a5aa87c1dbc20a7814d8eaf1374d8619559eed9",
+          "receiving": "adapted"
+        },
+        {
+          "status": "M",
+          "path": "src/lib/tasks/tasks-context.tsx",
+          "baseBlob": "eb1ba973d0c37db5276275651c4d6d95de84ca36",
+          "sourceBlob": "1fa0c0516ca8223edb0c4fe5038d2db34dbfc82a",
+          "mainBlob": "eb1ba973d0c37db5276275651c4d6d95de84ca36",
+          "aggregateBlob": "e4f3561738f694a357c7fe9f2dba47d601eb81df",
+          "receiving": "adapted"
+        },
+        {
+          "status": "M",
+          "path": "src/server/db/queries.ts",
+          "baseBlob": "a4302c800c1253768f42122dae2bafccf53b1c0c",
+          "sourceBlob": "5a0d5d473675b969176a530dd680a6b72ffef51e",
+          "mainBlob": "a4302c800c1253768f42122dae2bafccf53b1c0c",
+          "aggregateBlob": "79b6b03634e155afbd3f14c92099de8fc8801815",
+          "receiving": "adapted"
+        },
+        {
+          "status": "A",
+          "path": "src/server/diagnostics/task-timing.test.mjs",
+          "baseBlob": null,
+          "sourceBlob": "e448e36920a762ad1c0988c7c94f5e2615b70efd",
+          "mainBlob": null,
+          "aggregateBlob": "50e5e967eb9f1331071b85218188e335b844c014",
+          "receiving": "adapted"
+        },
+        {
+          "status": "M",
+          "path": "src/server/sponsored-use/action.test.cjs",
+          "baseBlob": "936979daa39aaf2d09a30bc4a136c0226a4ad690",
+          "sourceBlob": "0c91f83b64871cd620f3458c69ecdfec0a09b495",
+          "mainBlob": "936979daa39aaf2d09a30bc4a136c0226a4ad690",
+          "aggregateBlob": "a95e4c765a74d25a4c4d202d3e0e9937f7a5a94f",
+          "receiving": "adapted"
+        },
+        {
+          "status": "M",
+          "path": "src/server/sponsored-use/fixture.cjs",
+          "baseBlob": "08609cc0ebd1f14cd4887b7e9af8d79c95fa428d",
+          "sourceBlob": "c5152dd83b0ec39645530d78f9d18b0db8adcd4d",
+          "mainBlob": "08609cc0ebd1f14cd4887b7e9af8d79c95fa428d",
+          "aggregateBlob": "4e9c1d12eba08c324e13f206f43841501ccf9375",
+          "receiving": "adapted"
+        }
+      ],
+      "mainOverlaps": [
+        {
+          "status": "M",
+          "path": "src/components/app/detail-panel/task-sheet.tsx",
+          "baseBlob": "ff76c2118766216003ba2add5ac95bb82af26355",
+          "sourceBlob": "0beec544e171e33868f9e91302acd5fdd5fce423",
+          "mainBlob": "5f69710d859bd5f849037c70d92928b0ddce790c",
+          "aggregateBlob": "b28e80119b5c64bc1cf39f9ad96c9fb9e2ab94eb",
+          "receiving": "adapted"
+        }
+      ]
+    },
+    {
+      "id": "ping",
+      "base": "7d318c206bf0dcb103a564c8de1b2c2ee5f51364",
+      "commit": "049340ba59c764a502548018c2aec41a76d235cb",
+      "count": 87,
+      "exact": 77,
+      "adapted": [
+        {
+          "status": "A",
+          "path": "experience/ping-typed/browser.mjs",
+          "baseBlob": null,
+          "sourceBlob": "6a20d2dbfbbfd8d9ebf3552e34cda020b88d523d",
+          "mainBlob": null,
+          "aggregateBlob": "5391399ab963034c1c0338deb21f77024ca92b9f",
+          "receiving": "adapted"
+        },
+        {
+          "status": "A",
+          "path": "experience/ping-typed/fixture.tsx",
+          "baseBlob": null,
+          "sourceBlob": "4173ed09cd7c853b1e9ab2c4fc2be4232eb34f9a",
+          "mainBlob": null,
+          "aggregateBlob": "5e325b20807e516f2828827136e04eba3fb5c4fe",
+          "receiving": "adapted"
+        },
+        {
+          "status": "A",
+          "path": "experience/ping-voice-tasks/browser.mjs",
+          "baseBlob": null,
+          "sourceBlob": "cb712cb6fdda822656fcbb2de7ed59d92c3efaf3",
+          "mainBlob": null,
+          "aggregateBlob": "d35fc0583fecca9f1eef91d01196d04813d0f99b",
+          "receiving": "adapted"
+        },
+        {
+          "status": "M",
+          "path": "package.json",
+          "baseBlob": "9eb458b18f5a4cc7b066050938532feaacc4db97",
+          "sourceBlob": "7c712a0d32c6436c86ea60d18df06a9cbdc6a6eb",
+          "mainBlob": "9eb458b18f5a4cc7b066050938532feaacc4db97",
+          "aggregateBlob": "6fe57f5f0998c182199331692f7b305079347da4",
+          "receiving": "adapted"
+        },
+        {
+          "status": "A",
+          "path": "src/components/tasks/ping-typed-panel.tsx",
+          "baseBlob": null,
+          "sourceBlob": "2334f46640afbc646a2167b2c473f8189c5541e8",
+          "mainBlob": null,
+          "aggregateBlob": "107d7d9528f12b0fee34a605fa94ed71bbcfec8d",
+          "receiving": "adapted"
+        },
+        {
+          "status": "A",
+          "path": "src/components/tasks/ping-voice-panel.tsx",
+          "baseBlob": null,
+          "sourceBlob": "2149a4fc5c41550bdcfa3f5bc6f305986090d1ed",
+          "mainBlob": null,
+          "aggregateBlob": "368d2d6ec8deebd028c2390a40817b2f8a55e0cc",
+          "receiving": "adapted"
+        },
+        {
+          "status": "M",
+          "path": "src/lib/tasks/tasks-context.tsx",
+          "baseBlob": "eb1ba973d0c37db5276275651c4d6d95de84ca36",
+          "sourceBlob": "2ff38b35900ea971b3ce4ab19d07c61f0a45943f",
+          "mainBlob": "eb1ba973d0c37db5276275651c4d6d95de84ca36",
+          "aggregateBlob": "e4f3561738f694a357c7fe9f2dba47d601eb81df",
+          "receiving": "adapted"
+        },
+        {
+          "status": "A",
+          "path": "src/server/db/task-read.ts",
+          "baseBlob": null,
+          "sourceBlob": "90105c73a7be948a2072bdccb42e570322b563a4",
+          "mainBlob": null,
+          "aggregateBlob": "77f51b95c1de16dd7f191d6d1974219fe4c1b870",
+          "receiving": "adapted"
+        },
+        {
+          "status": "A",
+          "path": "src/server/ping/command-service.persistence.test.ts",
+          "baseBlob": null,
+          "sourceBlob": "c5e397e2c970f1d9b70dbc127c56ae0ef0fd8746",
+          "mainBlob": null,
+          "aggregateBlob": "ebbdb7c7e4af06f253c3bf06d42f4129f94c0eb6",
+          "receiving": "adapted"
+        },
+        {
+          "status": "A",
+          "path": "src/server/ping/runtime.test.ts",
+          "baseBlob": null,
+          "sourceBlob": "e5d09026bc6983861b3543849e4d900fcd04bcb2",
+          "mainBlob": null,
+          "aggregateBlob": "951f98f6d318f1d78022a389eecbc87be57b5960",
+          "receiving": "adapted"
+        }
+      ],
+      "mainOverlaps": []
+    },
+    {
+      "id": "concepts",
+      "base": "3e9e53d606731ca5c8395703cf0e53ecaccd09a5",
+      "commit": "b1ffca5a78603176b0e6ddbea56a6ae3ca035e3e",
+      "count": 553,
+      "exact": 550,
+      "adapted": [
+        {
+          "status": "M",
+          "path": ".github/workflows/verify.yml",
+          "baseBlob": "69d0682d16f89b6d437828c12e842f984661060d",
+          "sourceBlob": "97c419995dc410210fef1bc8c67889ee9cf08536",
+          "mainBlob": "69d0682d16f89b6d437828c12e842f984661060d",
+          "aggregateBlob": "57844b864e278e4ccfaf1074f39727a3fc8b0622",
+          "receiving": "adapted"
+        },
+        {
+          "status": "M",
+          "path": "next.config.ts",
+          "baseBlob": "30f8caa4a76f5f787e23dd21f0888d4581e1617a",
+          "sourceBlob": "8bd7234be967d9ed6d5cf76ef9100ddd613f4269",
+          "mainBlob": "30f8caa4a76f5f787e23dd21f0888d4581e1617a",
+          "aggregateBlob": "6aa6524a2b0744f35e27880bd3275410894564c7",
+          "receiving": "adapted"
+        },
+        {
+          "status": "M",
+          "path": "package.json",
+          "baseBlob": "9eb458b18f5a4cc7b066050938532feaacc4db97",
+          "sourceBlob": "5a80182074f00e03668819af4a542bed81f08da3",
+          "mainBlob": "9eb458b18f5a4cc7b066050938532feaacc4db97",
+          "aggregateBlob": "6fe57f5f0998c182199331692f7b305079347da4",
+          "receiving": "adapted"
+        }
+      ],
+      "mainOverlaps": []
+    },
+    {
+      "id": "security",
+      "base": "7d318c206bf0dcb103a564c8de1b2c2ee5f51364",
+      "commit": "d33cfeec1a31df787558c268b22f60b9a87d7be7",
+      "count": 3,
+      "exact": 2,
+      "adapted": [
+        {
+          "status": "M",
+          "path": "package.json",
+          "baseBlob": "9eb458b18f5a4cc7b066050938532feaacc4db97",
+          "sourceBlob": "1ccf8095a442dc78a8fd6f84b30f9ab2901b9970",
+          "mainBlob": "9eb458b18f5a4cc7b066050938532feaacc4db97",
+          "aggregateBlob": "6fe57f5f0998c182199331692f7b305079347da4",
+          "receiving": "adapted"
+        }
+      ],
+      "mainOverlaps": []
+    },
+    {
+      "id": "sponsor",
+      "base": "928d146926aef82f22a98ac293f3aaa34de7840c",
+      "commit": "c8d2eaad10f9a4434b509f61bbb602cad98c89f0",
+      "count": 21,
+      "exact": 20,
+      "adapted": [
+        {
+          "status": "M",
+          "path": "scripts/app-test-stages.json",
+          "baseBlob": "2c8d192d5e1043a732c3c26eb1f1584e3e096f55",
+          "sourceBlob": "56fcef83f06c309d3cf2fa71074202495ac5cc16",
+          "mainBlob": null,
+          "aggregateBlob": "6cc1e5b43596b7e86eb91c5e4c9aa3bb401400c1",
+          "receiving": "adapted"
+        }
+      ],
+      "mainOverlaps": [
+        {
+          "status": "M",
+          "path": "scripts/app-test-stages.json",
+          "baseBlob": "2c8d192d5e1043a732c3c26eb1f1584e3e096f55",
+          "sourceBlob": "56fcef83f06c309d3cf2fa71074202495ac5cc16",
+          "mainBlob": null,
+          "aggregateBlob": "6cc1e5b43596b7e86eb91c5e4c9aa3bb401400c1",
+          "receiving": "adapted"
+        },
+        {
+          "status": "M",
+          "path": "src/server/sponsored-use/action.test.cjs",
+          "baseBlob": "0c91f83b64871cd620f3458c69ecdfec0a09b495",
+          "sourceBlob": "a95e4c765a74d25a4c4d202d3e0e9937f7a5a94f",
+          "mainBlob": "936979daa39aaf2d09a30bc4a136c0226a4ad690",
+          "aggregateBlob": "a95e4c765a74d25a4c4d202d3e0e9937f7a5a94f",
+          "receiving": "byte-exact"
+        },
+        {
+          "status": "M",
+          "path": "src/server/sponsored-use/fixture.cjs",
+          "baseBlob": "c5152dd83b0ec39645530d78f9d18b0db8adcd4d",
+          "sourceBlob": "4e9c1d12eba08c324e13f206f43841501ccf9375",
+          "mainBlob": "08609cc0ebd1f14cd4887b7e9af8d79c95fa428d",
+          "aggregateBlob": "4e9c1d12eba08c324e13f206f43841501ccf9375",
+          "receiving": "byte-exact"
+        }
+      ]
+    },
+    {
+      "id": "migration-data",
+      "base": "ad0529bcb24db1fab06934deceb0617b2b320fe3",
+      "commit": "d8aa82b130d5e3d739208032b48b87cd01f8bc7d",
+      "count": 6,
+      "exact": 6,
+      "adapted": [],
+      "mainOverlaps": []
+    },
+    {
+      "id": "migration-controls",
+      "base": "ad0529bcb24db1fab06934deceb0617b2b320fe3",
+      "commit": "b2adaf8482bea4e0cbe720c696af8117775290d4",
+      "count": 9,
+      "exact": 9,
+      "adapted": [],
+      "mainOverlaps": []
+    }
+  ],
+  "unionOverlaps": [
+    {
+      "path": "package.json",
+      "backendBlob": "b6405e0604aff3b59e9dc3d897cba54efdf980ae",
+      "pingBlob": "7c712a0d32c6436c86ea60d18df06a9cbdc6a6eb",
+      "same": false
+    },
+    {
+      "path": "src/lib/tasks/tasks-context.tsx",
+      "backendBlob": "1fa0c0516ca8223edb0c4fe5038d2db34dbfc82a",
+      "pingBlob": "2ff38b35900ea971b3ce4ab19d07c61f0a45943f",
+      "same": false
+    },
+    {
+      "path": "src/server/db/queries.ts",
+      "backendBlob": "5a0d5d473675b969176a530dd680a6b72ffef51e",
+      "pingBlob": "79b6b03634e155afbd3f14c92099de8fc8801815",
+      "same": false
+    }
+  ]
+}

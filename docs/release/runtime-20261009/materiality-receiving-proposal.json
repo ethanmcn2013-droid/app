@@ -1,0 +1,82 @@
+{
+  "status": "draft-awaiting-canonical-and-root-decision",
+  "head": "04bed4b84b1559d127575751880473256851c430",
+  "tree": "7093b9f3046a89e98e27033adb2a0f2a7c802c2d",
+  "base": "ad0529bcb24db1fab06934deceb0617b2b320fe3",
+  "registryUnchanged": true,
+  "designBaselineUnchanged": true,
+  "entries": [
+    {
+      "id": "tasks.page.app-tasks",
+      "path": "src/app/app/tasks/page.tsx",
+      "receivingTool": "critical-fixture",
+      "fixtureId": "tasks.page.app-tasks",
+      "caseName": "canonical populated Tasks workspace",
+      "sourceBlob": "73ce93a791853509cd6a29a0da40f7d1153f6986",
+      "materialityHash": "76d706824e1b1cb3",
+      "reviewedChange": "Reuse the resolved arrival actor for sponsored wedding and venue welcome reads, avoiding repeated auth without changing rendered composition.",
+      "diff": "diff --git a/src/app/app/tasks/page.tsx b/src/app/app/tasks/page.tsx\nindex e50c1ea5..73ce93a7 100644\n--- a/src/app/app/tasks/page.tsx\n+++ b/src/app/app/tasks/page.tsx\n@@ -12,7 +12,6 @@ import {\n   detectVenueWelcome,\n   markVenueEntitlementReached,\n } from \"@/server/db/venue-welcome\";\n-import { getCurrentUser } from \"@/server/auth\";\n import { isDemoMode } from \"@/lib/access-mode\";\n import { resolveTasksArrival, TasksArrivalRefusal } from \"@/components/app/tasks-project-arrival\";\n import {\n@@ -46,7 +45,7 @@ export default async function TasksPage({\n \n   let venue: { sponsorName: string; sponsorSlug: string } | null = null;\n   const weddingDate = isDemoMode() ? null : await readSponsoredWeddingDate(db, {\n-    actorUserId: await getCurrentUser(), projectId: arrival.project.workspaceId,\n+    actorUserId: arrival.actorUserId, projectId: arrival.project.workspaceId,\n   });\n   if (sp.welcome === \"venue\") {\n     if (isDemoMode()) {\n@@ -55,7 +54,7 @@ export default async function TasksPage({\n         sponsorSlug: DEMO_WORKSPACE_SLUG,\n       };\n     } else {\n-      const me = await getCurrentUser();\n+      const me = arrival.actorUserId;\n       const project = arrival.project;\n       if (project.kind === \"ready\") {\n         const welcome = await detectVenueWelcome(me, project.workspaceId);",
+      "proposedDecision": "Accept only the reviewed technical receiving hash after the full canonical run and supporting captures pass. Preserve auditStatus, coverageStatus, all baseline fields and quality scores; founder taste and production/provider acceptance remain separate."
+    },
+    {
+      "id": "tasks.page.app-home",
+      "path": "src/app/app/home/page.tsx",
+      "receivingTool": "critical-fixture",
+      "fixtureId": "tasks.page.app-home",
+      "caseName": "home front door",
+      "sourceBlob": "513ce514454a3fe4db0c933c29840ba489427e9e",
+      "materialityHash": "cc412a345ba4d663",
+      "reviewedChange": "Remove an optional default function argument to match the Next page contract; searchParams remains optional and route behavior is unchanged.",
+      "diff": "diff --git a/src/app/app/home/page.tsx b/src/app/app/home/page.tsx\nindex fc97a45d..513ce514 100644\n--- a/src/app/app/home/page.tsx\n+++ b/src/app/app/home/page.tsx\n@@ -18,7 +18,7 @@ export const metadata = { title: \"Home · Signal Studio\" };\n  */\n export default async function HomePage({ searchParams }: {\n   searchParams?: Promise<Record<string, string | string[] | undefined>>;\n-} = {}) {\n+}) {\n   await requireAppAccessTasks();\n \n   const demo = isDemoMode();",
+      "proposedDecision": "Accept only the reviewed technical receiving hash after the full canonical run and supporting captures pass. Preserve auditStatus, coverageStatus, all baseline fields and quality scores; founder taste and production/provider acceptance remain separate."
+    },
+    {
+      "id": "tasks.resources.drive-upload",
+      "path": "src/components/app/detail-panel/resources-section.tsx",
+      "receivingTool": "materiality-review",
+      "fixtureId": "tasks.surface.task-detail-panel",
+      "caseName": "populated task",
+      "sourceBlob": "ea983860e610468d041343a4b6b6438583f62478",
+      "materialityHash": "19f85eac6f784ffa",
+      "reviewedChange": "Read canonical resources through the bounded detail transport and refetch on authoritative task revision, with existing upload/error rendering preserved.",
+      "diff": "diff --git a/src/components/app/detail-panel/resources-section.tsx b/src/components/app/detail-panel/resources-section.tsx\nindex 8bf4a490..ea983860 100644\n--- a/src/components/app/detail-panel/resources-section.tsx\n+++ b/src/components/app/detail-panel/resources-section.tsx\n@@ -11,6 +11,7 @@ import {\n   type DragEvent,\n } from \"react\";\n import type { Task } from \"@/lib/data\";\n+import { useAuthoritativeTaskRevision } from \"@/lib/tasks/tasks-context\";\n import { useCurrentUser } from \"@/lib/auth-context\";\n import { Avatar } from \"@/components/showcase/avatar\";\n import { EASE_OUT_TOKEN } from \"@/components/primitives/anchored-layer\";\n@@ -31,10 +32,10 @@ import {\n } from \"@/lib/upload-limit\";\n import {\n   addLinkResourceAction,\n-  listTaskResourcesAction,\n   removeResourceAction,\n   type ResourceRow,\n } from \"@/server/actions/resources\";\n+import { readTaskResources } from \"@/lib/tasks/detail-read-transport\";\n import { Popover } from \"./popover\";\n import sx from \"./sheet-sections.module.css\";\n import { isDemoMode } from \"@/lib/access-mode\";\n@@ -178,10 +179,11 @@ function finalizeMessage(reason: string): string {\n  */\n /** `seeAll`: the task panel's link to the full page, after Attach file. */\n export function ResourcesSection({ task, seeAll = null }: { task: Task; seeAll?: React.ReactNode }) {\n-  return <TaskResources key={task.id} task={task} seeAll={seeAll} />;\n+  const authoritativeRevision = useAuthoritativeTaskRevision(task.id);\n+  return <TaskResources key={task.id} task={task} seeAll={seeAll} authoritativeRevision={authoritativeRevision} />;\n }\n \n-function TaskResources({ task, seeAll }: { task: Task; seeAll: React.ReactNode }) {\n+function TaskResources({ task, seeAll, authoritativeRevision }: { task: Task; seeAll: React.ReactNode; authoritativeRevision: number }) {\n   const reduceMotion = useReducedMotion();\n   const me = useCurrentUser();\n   const { toast } = useToast();\n@@ -207,7 +209,7 @@ function TaskResources({ task, seeAll }: { task: Task; seeAll: React.ReactNode }\n     // A completion returned by the probe alone never fabricates a visible row.\n     const sequence = ++resourceRead.current;\n     try {\n-      const rows = await listTaskResourcesAction(task.id);\n+      const rows = await readTaskResources(task.id);\n       if (resourceRead.current === sequence) { setItems(rows.map(toDisplayRow)); setLoadFailed(false); }\n     } catch {\n       if (resourceRead.current === sequence) setLoadFailed(true);\n@@ -215,12 +217,10 @@ function TaskResources({ task, seeAll }: { task: Task; seeAll: React.ReactNode }\n     }\n   });\n \n-  const refreshKey = task.updatedAt?.getTime();\n-\n   useEffect(() => {\n     let ignore = false;\n     const sequence = ++resourceRead.current;\n-    listTaskResourcesAction(task.id)\n+    readTaskResources(task.id)\n       .then((rows) => {\n         if (!ignore && resourceRead.current === sequence) { setItems(rows.map(toDisplayRow)); setLoadFailed(false); }\n       })\n@@ -233,7 +233,7 @@ function TaskResources({ task, seeAll }: { task: Task; seeAll: React.ReactNode }\n       ignore = true;\n       resourceRead.current += 1;\n     };\n-  }, [task.id, refreshKey, reload]);\n+  }, [task.id, authoritativeRevision, reload]);\n \n   // ── Upload handler (unchanged path) ──────────────────────────────────\n \n@@ -282,7 +282,7 @@ function TaskResources({ task, seeAll }: { task: Task; seeAll: React.ReactNode }\n             const result = await sendFile(task.id, file);\n             window.clearTimeout(placeholderTimer);\n             // Refresh from server to get the canonical resource row.\n-            const rows = await listTaskResourcesAction(task.id);\n+            const rows = await readTaskResources(task.id);\n             setItems(rows.map(toDisplayRow));\n             // Surface calm storage-usage warning if a threshold was crossed.\n             if (result && result.warnThresholds.length > 0) {",
+      "proposedDecision": "Accept only the reviewed technical receiving hash after the full canonical run and supporting captures pass. Preserve auditStatus, coverageStatus, all baseline fields and quality scores; founder taste and production/provider acceptance remain separate."
+    },
+    {
+      "id": "tasks.page.app-analytics",
+      "path": "src/app/app/analytics/page.tsx",
+      "receivingTool": "materiality-review",
+      "fixtureId": "tasks.page.app-tasks",
+      "caseName": "canonical populated Tasks workspace",
+      "sourceBlob": "656578701b0508405519254954390cd084c5d4ca",
+      "materialityHash": "d89f2a4abd38ee57",
+      "reviewedChange": "Remove an optional default function argument to match the Next page contract; supporting actual Analytics capture is required because the critical suite does not open this route.",
+      "diff": "diff --git a/src/app/app/analytics/page.tsx b/src/app/app/analytics/page.tsx\nindex 928a1921..65657870 100644\n--- a/src/app/app/analytics/page.tsx\n+++ b/src/app/app/analytics/page.tsx\n@@ -44,7 +44,7 @@ function cardStats(analytics: ProjectAnalytics, standing: ProjectStanding): Proj\n  */\n export default async function AnalyticsPage({ searchParams }: {\n   searchParams?: Promise<Record<string, string | string[] | undefined>>;\n-} = {}) {\n+}) {\n   await requireAppAccessTasks();\n   const params = await searchParams ?? {};\n   const one = (key: string) => (typeof params[key] === \"string\" ? (params[key] as string) : null);",
+      "proposedDecision": "Accept only the reviewed technical receiving hash after the full canonical run and supporting captures pass. Preserve auditStatus, coverageStatus, all baseline fields and quality scores; founder taste and production/provider acceptance remain separate."
+    },
+    {
+      "id": "tasks.page.app-concepts",
+      "path": "src/app/app/concepts/page.tsx",
+      "receivingTool": "materiality-review",
+      "fixtureId": "tasks.page.app-tasks",
+      "caseName": "canonical populated Tasks workspace",
+      "sourceBlob": "7ba746875a5e7002f3bd627afea1466c34e7456b",
+      "materialityHash": "63e7924b683e8c06",
+      "reviewedChange": "Admit the 33 unpicked sample prototypes into nine gallery sections, alongside 15 historical placeholders; replace missing thumbnail references with truthful text cards. Supporting actual gallery capture is required; no product direction is selected.",
+      "diff": "diff --git a/src/app/app/concepts/page.tsx b/src/app/app/concepts/page.tsx\nindex 7dc9aed6..7ba74687 100644\n--- a/src/app/app/concepts/page.tsx\n+++ b/src/app/app/concepts/page.tsx\n@@ -11,16 +11,22 @@ const VIEWS = [\n   { key: \"overview\", label: \"Overview\" },\n   { key: \"projects\", label: \"Projects\" },\n   { key: \"files\", label: \"Files\" },\n+  { key: \"board\", label: \"Tasks board\" },\n+  { key: \"list\", label: \"Tasks list\" },\n+  { key: \"calendar\", label: \"Tasks calendar\" },\n+  { key: \"analytics\", label: \"Analytics\" },\n+  { key: \"apps\", label: \"Apps and tools\" },\n+  { key: \"shared-timeline\", label: \"Shared timeline\" },\n ] as const;\n \n-/** Review-only gallery of the five concepts for each view. */\n+/** Review-only gallery of the concepts for each view. */\n export default function ConceptsGallery() {\n   if (!isDemoMode()) notFound();\n   return (\n     <div className={styles.page}>\n       <div className={styles.inner}>\n         <h1 className={styles.title}>Concepts</h1>\n-        <p className={styles.subtitle}>Five directions for each view. Open one, then pick your favourites to refine.</p>\n+        <p className={styles.subtitle}>Five or six directions for each view, using sample data. These are unpicked prototypes for review.</p>\n         {VIEWS.map((view) => (\n           <section key={view.key} className={styles.section} aria-labelledby={`c-${view.key}`}>\n             <h2 id={`c-${view.key}`} className={styles.sectionTitle}>{view.label}</h2>\n@@ -28,10 +34,6 @@ export default function ConceptsGallery() {\n               {CONCEPTS.filter((concept) => concept.view === view.key).map((concept) => (\n                 <li key={concept.n}>\n                   <Link href={`/app/concepts/${concept.view}/${concept.n}`} className={styles.card}>\n-                    <span className={styles.shot}>\n-                      {/* eslint-disable-next-line @next/next/no-img-element */}\n-                      <img src={`/concepts/${concept.view}-${concept.n}.png`} alt=\"\" loading=\"lazy\" />\n-                    </span>\n                     <span className={styles.number}>{view.label} {concept.n}</span>\n                     <span className={styles.cardTitle}>{concept.title}</span>\n                     <span className={styles.thesis}>{concept.thesis}</span>",
+      "proposedDecision": "Accept only the reviewed technical receiving hash after the full canonical run and supporting captures pass. Preserve auditStatus, coverageStatus, all baseline fields and quality scores; founder taste and production/provider acceptance remain separate."
+    },
+    {
+      "id": "tasks.page.app-files",
+      "path": "src/app/app/files/page.tsx",
+      "receivingTool": "materiality-review",
+      "fixtureId": "tasks.page.app-tasks",
+      "caseName": "canonical populated Tasks workspace",
+      "sourceBlob": "7b46515d7d5214337ced7c419d2a7ab7a1f35643",
+      "materialityHash": "85929e83ebaece9a",
+      "reviewedChange": "Remove an optional default function argument to match the Next page contract; supporting actual Files capture is required because the critical suite does not open this route.",
+      "diff": "diff --git a/src/app/app/files/page.tsx b/src/app/app/files/page.tsx\nindex c115223b..7b46515d 100644\n--- a/src/app/app/files/page.tsx\n+++ b/src/app/app/files/page.tsx\n@@ -17,7 +17,7 @@ export const metadata = { title: \"Files · Signal Studio\" };\n  */\n export default async function FilesPage({ searchParams }: {\n   searchParams?: Promise<Record<string, string | string[] | undefined>>;\n-} = {}) {\n+}) {\n   await requireAppAccessTasks();\n   const params = await searchParams ?? {};\n   const requested = typeof params.workspaceId === \"string\" ? params.workspaceId : null;",
+      "proposedDecision": "Accept only the reviewed technical receiving hash after the full canonical run and supporting captures pass. Preserve auditStatus, coverageStatus, all baseline fields and quality scores; founder taste and production/provider acceptance remain separate."
+    }
+  ]
+}

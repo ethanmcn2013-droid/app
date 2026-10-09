@@ -1,0 +1,18 @@
+{
+  "label": "ping-voice-browser",
+  "head": "772e122feb548f7a2c69221ac2ac855b15791f3d",
+  "tree": "cdd7e5dc21ac0a97d0dded7101633376e23c6f71",
+  "node": "v22.23.2",
+  "args": [
+    "--import",
+    "tsx",
+    "scripts/ping/voice/browser.mjs"
+  ],
+  "startedAt": "2026-10-09T20:22:38.927Z",
+  "endedAt": "2026-10-09T20:23:08.623Z",
+  "exitCode": 0,
+  "signal": null,
+  "error": null,
+  "passed": true,
+  "log": "D:\\Codex-scratch\\release-all-20261009\\runtime-aggregation\\receipts\\ping-voice-browser.log"
+}

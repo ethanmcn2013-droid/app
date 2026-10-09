@@ -1,0 +1,19 @@
+{
+  "label": "typecheck-initial",
+  "head": "1bd6c967fdad68c6c4982a2e946b0ddd7df14117",
+  "tree": "86bf6e6cb05ddcada31ca8e161e55b941a40d054",
+  "node": "v22.23.2",
+  "args": [
+    "node_modules/typescript/bin/tsc",
+    "--noEmit",
+    "--incremental",
+    "false"
+  ],
+  "startedAt": "2026-10-09T20:19:52.674Z",
+  "endedAt": "2026-10-09T20:24:52.103Z",
+  "exitCode": 0,
+  "signal": null,
+  "error": null,
+  "passed": true,
+  "log": "D:\\Codex-scratch\\release-all-20261009\\runtime-aggregation\\receipts\\typecheck-initial.log"
+}

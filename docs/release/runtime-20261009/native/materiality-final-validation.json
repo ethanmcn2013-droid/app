@@ -1,0 +1,16 @@
+{
+  "label": "materiality-final-validation",
+  "head": "05f5bd30a799c1cdefd933910cdbbbeec53a860d",
+  "tree": "805dd2da3a4923c58ebcdaf79426255eb390bb91",
+  "node": "v22.23.2",
+  "args": [
+    "scripts/experience/validate.mjs"
+  ],
+  "startedAt": "2026-10-09T21:16:59.825Z",
+  "endedAt": "2026-10-09T21:17:00.236Z",
+  "exitCode": 0,
+  "signal": null,
+  "error": null,
+  "passed": true,
+  "log": "D:\\Codex-scratch\\release-all-20261009\\runtime-aggregation\\receipts\\materiality-final-validation.log"
+}

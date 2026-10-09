@@ -1,0 +1,1630 @@
+{
+  "id": "backend",
+  "base": "7d318c206bf0dcb103a564c8de1b2c2ee5f51364",
+  "commit": "6d63212ca837556543129820b57f79820f41a8a2",
+  "tree": "cb0c010163441ee974937d79c128b462517640ab",
+  "paths": [
+    {
+      "status": "M",
+      "path": ".github/workflows/verify.yml",
+      "baseBlob": "69d0682d16f89b6d437828c12e842f984661060d",
+      "sourceBlob": "4ac6f0c3a2f0e7577387f5fce284047594940af3",
+      "mainBlob": "69d0682d16f89b6d437828c12e842f984661060d",
+      "aggregateBlob": "57844b864e278e4ccfaf1074f39727a3fc8b0622",
+      "receiving": "adapted"
+    },
+    {
+      "status": "M",
+      "path": "next.config.ts",
+      "baseBlob": "30f8caa4a76f5f787e23dd21f0888d4581e1617a",
+      "sourceBlob": "c3b011e94f96e90071ff5aecdd3071db730b592f",
+      "mainBlob": "30f8caa4a76f5f787e23dd21f0888d4581e1617a",
+      "aggregateBlob": "6aa6524a2b0744f35e27880bd3275410894564c7",
+      "receiving": "adapted"
+    },
+    {
+      "status": "M",
+      "path": "package.json",
+      "baseBlob": "9eb458b18f5a4cc7b066050938532feaacc4db97",
+      "sourceBlob": "b6405e0604aff3b59e9dc3d897cba54efdf980ae",
+      "mainBlob": "9eb458b18f5a4cc7b066050938532feaacc4db97",
+      "aggregateBlob": "6fe57f5f0998c182199331692f7b305079347da4",
+      "receiving": "adapted"
+    },
+    {
+      "status": "A",
+      "path": "scripts/app-test-stages.json",
+      "baseBlob": null,
+      "sourceBlob": "2c8d192d5e1043a732c3c26eb1f1584e3e096f55",
+      "mainBlob": null,
+      "aggregateBlob": "6cc1e5b43596b7e86eb91c5e4c9aa3bb401400c1",
+      "receiving": "adapted"
+    },
+    {
+      "status": "M",
+      "path": "scripts/db/backup-restore.test.mjs",
+      "baseBlob": "b8c900222b110433654883c1dd8ee297ab41a8e7",
+      "sourceBlob": "4dc960156f13673fd29a8e83e4f5b5964b954ea7",
+      "mainBlob": "b8c900222b110433654883c1dd8ee297ab41a8e7",
+      "aggregateBlob": "4dc960156f13673fd29a8e83e4f5b5964b954ea7",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "scripts/db/restore-verify.mjs",
+      "baseBlob": "a2603e42c3a422bc207f51826e72a3c8da4d69a7",
+      "sourceBlob": "2ee0fc089c6bd0e5cf602c517873c1b946421bd9",
+      "mainBlob": "a2603e42c3a422bc207f51826e72a3c8da4d69a7",
+      "aggregateBlob": "2ee0fc089c6bd0e5cf602c517873c1b946421bd9",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "scripts/run-app-tests.mjs",
+      "baseBlob": null,
+      "sourceBlob": "bfb53acbb91f5d46dc935d72f83aa89998e300d5",
+      "mainBlob": null,
+      "aggregateBlob": "bfb53acbb91f5d46dc935d72f83aa89998e300d5",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "scripts/run-app-tests.test.mjs",
+      "baseBlob": null,
+      "sourceBlob": "4de3c95532edfcfede709f4fae6380eb2bf5b900",
+      "mainBlob": null,
+      "aggregateBlob": "ac5f008626457e52e0e4bacb469a13fed2ab07b9",
+      "receiving": "adapted"
+    },
+    {
+      "status": "A",
+      "path": "scripts/test-board-fidelity.mjs",
+      "baseBlob": null,
+      "sourceBlob": "339a2eee1f6d84d685f144ec245e1fadedf9a609",
+      "mainBlob": null,
+      "aggregateBlob": "339a2eee1f6d84d685f144ec245e1fadedf9a609",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "scripts/test-board-fidelity.test.mjs",
+      "baseBlob": null,
+      "sourceBlob": "bcaaccd687c71480d59d02964999adf492470ea0",
+      "mainBlob": null,
+      "aggregateBlob": "bcaaccd687c71480d59d02964999adf492470ea0",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "scripts/test-provision-fast.mjs",
+      "baseBlob": null,
+      "sourceBlob": "e1abe19532e932b0c057a459b9ea8d9518244eaf",
+      "mainBlob": null,
+      "aggregateBlob": "e1abe19532e932b0c057a459b9ea8d9518244eaf",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "scripts/test-provision-fast.test.mjs",
+      "baseBlob": null,
+      "sourceBlob": "33a337bc836e3ff0ea34a5363fd18e2864b8c819",
+      "mainBlob": null,
+      "aggregateBlob": "33a337bc836e3ff0ea34a5363fd18e2864b8c819",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/app/api/cron/project-drive-grant-repair/route-handler.ts",
+      "baseBlob": null,
+      "sourceBlob": "dfb18311e388541b6c4a939d70906518ddf9b2f3",
+      "mainBlob": null,
+      "aggregateBlob": "dfb18311e388541b6c4a939d70906518ddf9b2f3",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/app/api/cron/project-drive-grant-repair/route.test.ts",
+      "baseBlob": "9262896188f1ad8e251b5620aeeb2df9ca544fef",
+      "sourceBlob": "2f1150d4a7c31b940a6333c73a40a656ab278a40",
+      "mainBlob": "9262896188f1ad8e251b5620aeeb2df9ca544fef",
+      "aggregateBlob": "2f1150d4a7c31b940a6333c73a40a656ab278a40",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/app/api/cron/project-drive-grant-repair/route.ts",
+      "baseBlob": "8318bb4a4b42274b539dfc36c466be08ab118ad4",
+      "sourceBlob": "8c4b4a1c7c391f232aa905a9fd146019f2e2ce41",
+      "mainBlob": "8318bb4a4b42274b539dfc36c466be08ab118ad4",
+      "aggregateBlob": "8c4b4a1c7c391f232aa905a9fd146019f2e2ce41",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/app/api/internal/reliability-target/route.ts",
+      "baseBlob": null,
+      "sourceBlob": "622c54ae15eddeb330eabf8668e4ec93d93d4caa",
+      "mainBlob": null,
+      "aggregateBlob": "622c54ae15eddeb330eabf8668e4ec93d93d4caa",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/app/api/tasks/detail-read/route.ts",
+      "baseBlob": null,
+      "sourceBlob": "edba8f31fcd3e68560830a487348fdc660d19c66",
+      "mainBlob": null,
+      "aggregateBlob": "edba8f31fcd3e68560830a487348fdc660d19c66",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/app/api/tasks/mutate/route.ts",
+      "baseBlob": null,
+      "sourceBlob": "58da89373b75308d93b7fd192206e68fba0b3188",
+      "mainBlob": null,
+      "aggregateBlob": "58da89373b75308d93b7fd192206e68fba0b3188",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/app/app/analytics/page.tsx",
+      "baseBlob": "928a192112cccc019c8d1968d5d370d106193e2a",
+      "sourceBlob": "656578701b0508405519254954390cd084c5d4ca",
+      "mainBlob": "928a192112cccc019c8d1968d5d370d106193e2a",
+      "aggregateBlob": "656578701b0508405519254954390cd084c5d4ca",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/app/app/files/page.tsx",
+      "baseBlob": "c115223b0e758af0aec10d99092c039101daeba1",
+      "sourceBlob": "7b46515d7d5214337ced7c419d2a7ab7a1f35643",
+      "mainBlob": "c115223b0e758af0aec10d99092c039101daeba1",
+      "aggregateBlob": "7b46515d7d5214337ced7c419d2a7ab7a1f35643",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/app/app/home/home-data.test.tsx",
+      "baseBlob": "ff8342d024e4a3d521108c19c035808d87acee9c",
+      "sourceBlob": "78d5e922c40142a2fdfa024298dd9ec395a4e6b3",
+      "mainBlob": "ff8342d024e4a3d521108c19c035808d87acee9c",
+      "aggregateBlob": "78d5e922c40142a2fdfa024298dd9ec395a4e6b3",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/app/app/home/home-data.ts",
+      "baseBlob": "5fa21fbec2f9dd23a20cb1e7e249aae344d10270",
+      "sourceBlob": "503389404e2801175264a0ea05cb82de50e44185",
+      "mainBlob": "5fa21fbec2f9dd23a20cb1e7e249aae344d10270",
+      "aggregateBlob": "503389404e2801175264a0ea05cb82de50e44185",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/app/app/home/page.tsx",
+      "baseBlob": "fc97a45da41b13691a383616221c8a11cc664d40",
+      "sourceBlob": "513ce514454a3fe4db0c933c29840ba489427e9e",
+      "mainBlob": "fc97a45da41b13691a383616221c8a11cc664d40",
+      "aggregateBlob": "513ce514454a3fe4db0c933c29840ba489427e9e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/app/app/layout.tsx",
+      "baseBlob": "c7d4ad922ff657d61d69d4aae1b9f6de7f8f1b63",
+      "sourceBlob": "29d30c0143f9d76f4a51052f87304404808783c6",
+      "mainBlob": "c7d4ad922ff657d61d69d4aae1b9f6de7f8f1b63",
+      "aggregateBlob": "29d30c0143f9d76f4a51052f87304404808783c6",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/app/app/tasks/page.tsx",
+      "baseBlob": "e50c1ea5c480d045351bf78fa03ccb5c0182bf04",
+      "sourceBlob": "73ce93a791853509cd6a29a0da40f7d1153f6986",
+      "mainBlob": "e50c1ea5c480d045351bf78fa03ccb5c0182bf04",
+      "aggregateBlob": "73ce93a791853509cd6a29a0da40f7d1153f6986",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/app/app/tasks/wedding-date-entry.test.ts",
+      "baseBlob": "96b51d4f8931dabea05f33e4d91f24e8e40efb85",
+      "sourceBlob": "9cd43c03966d7a4de973348e259ae8ed522304ef",
+      "mainBlob": "96b51d4f8931dabea05f33e4d91f24e8e40efb85",
+      "aggregateBlob": "9cd43c03966d7a4de973348e259ae8ed522304ef",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/components/app/detail-panel/field-rows.tsx",
+      "baseBlob": "dfded34b856cf606d2d1ceef9e180062d9f4edd9",
+      "sourceBlob": "b4930ff5875413d6700bd06de53214ed4a6e0113",
+      "mainBlob": "dfded34b856cf606d2d1ceef9e180062d9f4edd9",
+      "aggregateBlob": "b4930ff5875413d6700bd06de53214ed4a6e0113",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/components/app/detail-panel/resources-section.tsx",
+      "baseBlob": "8bf4a490eb477d984f2fc9648ca23d7d198b551e",
+      "sourceBlob": "ea983860e610468d041343a4b6b6438583f62478",
+      "mainBlob": "8bf4a490eb477d984f2fc9648ca23d7d198b551e",
+      "aggregateBlob": "ea983860e610468d041343a4b6b6438583f62478",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/components/app/detail-panel/subtasks-section.tsx",
+      "baseBlob": "18603037f58c1fca0ca9606d1e4e5fe2029ffa34",
+      "sourceBlob": "08a884e8d21a735827f58edec843fe64f8fc2e1c",
+      "mainBlob": "18603037f58c1fca0ca9606d1e4e5fe2029ffa34",
+      "aggregateBlob": "08a884e8d21a735827f58edec843fe64f8fc2e1c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/components/app/detail-panel/task-sheet.tsx",
+      "baseBlob": "ff76c2118766216003ba2add5ac95bb82af26355",
+      "sourceBlob": "0beec544e171e33868f9e91302acd5fdd5fce423",
+      "mainBlob": "5f69710d859bd5f849037c70d92928b0ddce790c",
+      "aggregateBlob": "b28e80119b5c64bc1cf39f9ad96c9fb9e2ab94eb",
+      "receiving": "adapted"
+    },
+    {
+      "status": "M",
+      "path": "src/components/app/detail-panel/use-task-conversation.ts",
+      "baseBlob": "ec8dda91bd6f28ed0d0b090e81a68dec5a13c5a9",
+      "sourceBlob": "66a8f06511c126f6850779019ecdf9c197166c7a",
+      "mainBlob": "ec8dda91bd6f28ed0d0b090e81a68dec5a13c5a9",
+      "aggregateBlob": "66a8f06511c126f6850779019ecdf9c197166c7a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/components/app/tasks-project-arrival.tsx",
+      "baseBlob": "6c15ef727b6c5c3ed535ee8e82e1771529e608c3",
+      "sourceBlob": "4f7c4642f4a429027ab4f00c0ee5c9dbcdde12ed",
+      "mainBlob": "6c15ef727b6c5c3ed535ee8e82e1771529e608c3",
+      "aggregateBlob": "4f7c4642f4a429027ab4f00c0ee5c9dbcdde12ed",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/components/app/tasks-runtime-shell.tsx",
+      "baseBlob": "99fdeda49f1a6ca5a16ac0a94795912fa2e96541",
+      "sourceBlob": "76ed1bc9dd1bd8d18465e37679d188f5f36560df",
+      "mainBlob": "99fdeda49f1a6ca5a16ac0a94795912fa2e96541",
+      "aggregateBlob": "76ed1bc9dd1bd8d18465e37679d188f5f36560df",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/components/shell/app-sidebar.tsx",
+      "baseBlob": "0f13a993dc2f0767f02a85bffdefdb27af963ecc",
+      "sourceBlob": "5ea335f149cf7bba7a6832f7a3e53e15c311122d",
+      "mainBlob": "0f13a993dc2f0767f02a85bffdefdb27af963ecc",
+      "aggregateBlob": "5ea335f149cf7bba7a6832f7a3e53e15c311122d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/components/shell/shell-nav.test.ts",
+      "baseBlob": "d8b9300f6d64eb945cb2e23ac0e6afb3150427cc",
+      "sourceBlob": "3c79c218d8f4e6b4e1af14c2ef559125b0b93185",
+      "mainBlob": "d8b9300f6d64eb945cb2e23ac0e6afb3150427cc",
+      "aggregateBlob": "3c79c218d8f4e6b4e1af14c2ef559125b0b93185",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/shell/sidebar-intent-link.tsx",
+      "baseBlob": null,
+      "sourceBlob": "9bcc2a8f4bea0973b7bb3510da6eb3db7c4b971b",
+      "mainBlob": null,
+      "aggregateBlob": "9bcc2a8f4bea0973b7bb3510da6eb3db7c4b971b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/tasks/column-config-state.test.mjs",
+      "baseBlob": null,
+      "sourceBlob": "694bcf88fca85abe860d102b17420a60d9f6f9a6",
+      "mainBlob": null,
+      "aggregateBlob": "694bcf88fca85abe860d102b17420a60d9f6f9a6",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/tasks/column-config-state.ts",
+      "baseBlob": null,
+      "sourceBlob": "301523465821bfb54fa718418dedb295734a3502",
+      "mainBlob": null,
+      "aggregateBlob": "301523465821bfb54fa718418dedb295734a3502",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/components/tasks/column-config.tsx",
+      "baseBlob": "ef261b879ca800b2f8497651482931a534132a16",
+      "sourceBlob": "734d358ee753264b78c74b9df2cb3f3795feea42",
+      "mainBlob": "ef261b879ca800b2f8497651482931a534132a16",
+      "aggregateBlob": "734d358ee753264b78c74b9df2cb3f3795feea42",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/lib/auth/recipient-proof-authorized-parties.test.ts",
+      "baseBlob": "5bdde55e198abc7503fe48a1a092cd628ea29092",
+      "sourceBlob": "e026ff4184abf52a3da962481712403ed92c205a",
+      "mainBlob": "5bdde55e198abc7503fe48a1a092cd628ea29092",
+      "aggregateBlob": "e026ff4184abf52a3da962481712403ed92c205a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/lib/auth/recipient-proof-authorized-parties.ts",
+      "baseBlob": "08fd469a5ff932d5c4cd38aed4e3cb3b874b0065",
+      "sourceBlob": "b69d11ca8550040630614124bcf0a3989c5e9af8",
+      "mainBlob": "08fd469a5ff932d5c4cd38aed4e3cb3b874b0065",
+      "aggregateBlob": "b69d11ca8550040630614124bcf0a3989c5e9af8",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/lib/tasks/anchor-due.test.ts",
+      "baseBlob": "98bc8ebbe74a07a14a978cbb042dbd121ce5909e",
+      "sourceBlob": "2106810b7643b46dbd9c7f585162f5f1eca6a4eb",
+      "mainBlob": "98bc8ebbe74a07a14a978cbb042dbd121ce5909e",
+      "aggregateBlob": "2106810b7643b46dbd9c7f585162f5f1eca6a4eb",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/lib/tasks/anchor-due.ts",
+      "baseBlob": "27df850d5227d294dae7b4c048c9ed861828b0e8",
+      "sourceBlob": "19f191acd3a19f4729bb1068663896793c945460",
+      "mainBlob": "27df850d5227d294dae7b4c048c9ed861828b0e8",
+      "aggregateBlob": "19f191acd3a19f4729bb1068663896793c945460",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/tasks/authoritative-refresh.browser.test.mjs",
+      "baseBlob": null,
+      "sourceBlob": "5ea9c6f239e154740e0a930ae5c87c1bcce03e1a",
+      "mainBlob": null,
+      "aggregateBlob": "5ea9c6f239e154740e0a930ae5c87c1bcce03e1a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/tasks/authoritative-refresh.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "409418417a77966cf0fcb3f5f6c711e7bb5a8f7f",
+      "mainBlob": null,
+      "aggregateBlob": "409418417a77966cf0fcb3f5f6c711e7bb5a8f7f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/tasks/authoritative-refresh.ts",
+      "baseBlob": null,
+      "sourceBlob": "0e08ea370fd0f0d54ca9717fe693363806dcaf95",
+      "mainBlob": null,
+      "aggregateBlob": "0e08ea370fd0f0d54ca9717fe693363806dcaf95",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/tasks/delight-events.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "ef9123f13c767bce853b268d1f821e6b72dc15ad",
+      "mainBlob": null,
+      "aggregateBlob": "ef9123f13c767bce853b268d1f821e6b72dc15ad",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/lib/tasks/delight-events.ts",
+      "baseBlob": "85694973543c5a8825e34a9b2280378a5e63b500",
+      "sourceBlob": "0c03c793a292b9a53e9af33ebd1bd13dd4953b3f",
+      "mainBlob": "85694973543c5a8825e34a9b2280378a5e63b500",
+      "aggregateBlob": "0c03c793a292b9a53e9af33ebd1bd13dd4953b3f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/tasks/detail-read-transport.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "d6b65f8cb56844db859e71c12e6813968e15167b",
+      "mainBlob": null,
+      "aggregateBlob": "d6b65f8cb56844db859e71c12e6813968e15167b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/tasks/detail-read-transport.ts",
+      "baseBlob": null,
+      "sourceBlob": "3615cf61afa8feaa3404732d0313404b1f3cfdc2",
+      "mainBlob": null,
+      "aggregateBlob": "3615cf61afa8feaa3404732d0313404b1f3cfdc2",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/tasks/stored-deadline.ts",
+      "baseBlob": null,
+      "sourceBlob": "10f87f286e25d732cc2f08ce0ea0ed239c84da6f",
+      "mainBlob": null,
+      "aggregateBlob": "10f87f286e25d732cc2f08ce0ea0ed239c84da6f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/tasks/stored-due-transition.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "b8ca261670fb0074b6a6df461493f0d8ee3a5252",
+      "mainBlob": null,
+      "aggregateBlob": "b8ca261670fb0074b6a6df461493f0d8ee3a5252",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/tasks/stored-due-transition.ts",
+      "baseBlob": null,
+      "sourceBlob": "5e123e1095a2a74bb8f7c2b852f44a345143eeac",
+      "mainBlob": null,
+      "aggregateBlob": "5e123e1095a2a74bb8f7c2b852f44a345143eeac",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/tasks/task-provider-ordering.test.mjs",
+      "baseBlob": null,
+      "sourceBlob": "e001e04d0da305ed9d0cfd4618e4f2944c95d6d0",
+      "mainBlob": null,
+      "aggregateBlob": "4a5aa87c1dbc20a7814d8eaf1374d8619559eed9",
+      "receiving": "adapted"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/tasks/task-snapshot-epoch.ts",
+      "baseBlob": null,
+      "sourceBlob": "a6b583e77cf655d6317d30a662f68eed94160988",
+      "mainBlob": null,
+      "aggregateBlob": "a6b583e77cf655d6317d30a662f68eed94160988",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/tasks/task-transport.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "2bfa279e3e272e1dbe5eda9083eb759ac60b429a",
+      "mainBlob": null,
+      "aggregateBlob": "2bfa279e3e272e1dbe5eda9083eb759ac60b429a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/tasks/task-transport.ts",
+      "baseBlob": null,
+      "sourceBlob": "bed1eed36ceec4b2526334bc46599c483d267b3c",
+      "mainBlob": null,
+      "aggregateBlob": "bed1eed36ceec4b2526334bc46599c483d267b3c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/tasks/task-wire.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "aa8ab2353ee96e6176deee561b9e120c92098449",
+      "mainBlob": null,
+      "aggregateBlob": "aa8ab2353ee96e6176deee561b9e120c92098449",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/lib/tasks/task-wire.ts",
+      "baseBlob": null,
+      "sourceBlob": "21cbde54f9da3156489323324623942d2e27c24a",
+      "mainBlob": null,
+      "aggregateBlob": "21cbde54f9da3156489323324623942d2e27c24a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/lib/tasks/tasks-context.tsx",
+      "baseBlob": "eb1ba973d0c37db5276275651c4d6d95de84ca36",
+      "sourceBlob": "1fa0c0516ca8223edb0c4fe5038d2db34dbfc82a",
+      "mainBlob": "eb1ba973d0c37db5276275651c4d6d95de84ca36",
+      "aggregateBlob": "e4f3561738f694a357c7fe9f2dba47d601eb81df",
+      "receiving": "adapted"
+    },
+    {
+      "status": "M",
+      "path": "src/lib/tasks/tasks-reducer.ts",
+      "baseBlob": "aa601cccd3e36cd4d4801b148af9d4b4f27c2bba",
+      "sourceBlob": "9ab9c9c26f70fcef2972d84799b5449eaf0e9172",
+      "mainBlob": "aa601cccd3e36cd4d4801b148af9d4b4f27c2bba",
+      "aggregateBlob": "9ab9c9c26f70fcef2972d84799b5449eaf0e9172",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/lib/tasks/use-realtime-sync.ts",
+      "baseBlob": "60f67309e5be3adef1a22eafb321b1e6f04244e2",
+      "sourceBlob": "cb6149a12aac953cd9b03b76f1292110c1bfb6ab",
+      "mainBlob": "60f67309e5be3adef1a22eafb321b1e6f04244e2",
+      "aggregateBlob": "cb6149a12aac953cd9b03b76f1292110c1bfb6ab",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/lib/ui-wave3-contract.test.ts",
+      "baseBlob": "588c2ff6b997d4f19a21e037c4e29c0575369d0d",
+      "sourceBlob": "d6191c53e287b4ebcc33c622001e9b689c6b2e33",
+      "mainBlob": "588c2ff6b997d4f19a21e037c4e29c0575369d0d",
+      "aggregateBlob": "d6191c53e287b4ebcc33c622001e9b689c6b2e33",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/components/overview/overview-view.tsx",
+      "baseBlob": "de95e1c904799f02677311c00a83104913b598b6",
+      "sourceBlob": "d5f84a957cda63c7fa9e96100991e94400f35009",
+      "mainBlob": "de95e1c904799f02677311c00a83104913b598b6",
+      "aggregateBlob": "d5f84a957cda63c7fa9e96100991e94400f35009",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/home.ts",
+      "baseBlob": "5f79a045756e75931556d789559ebdc190a9f45f",
+      "sourceBlob": "c273f649ae207897f9446451f2139583f4ce75aa",
+      "mainBlob": "5f79a045756e75931556d789559ebdc190a9f45f",
+      "aggregateBlob": "c273f649ae207897f9446451f2139583f4ce75aa",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/analytics/contracts.ts",
+      "baseBlob": "e23ddc09643f2c93298c5a042237c380d3573d13",
+      "sourceBlob": "4f0ef2a9e53795011d1e892f4f1c34d3b4b6725a",
+      "mainBlob": "e23ddc09643f2c93298c5a042237c380d3573d13",
+      "aggregateBlob": "4f0ef2a9e53795011d1e892f4f1c34d3b4b6725a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/analytics/ledger-adapters.test.ts",
+      "baseBlob": "879d2e3945fc25740bacd703796dc1a32d82123c",
+      "sourceBlob": "8713002272f7233c4d74904920f433b17a26e152",
+      "mainBlob": "879d2e3945fc25740bacd703796dc1a32d82123c",
+      "aggregateBlob": "8713002272f7233c4d74904920f433b17a26e152",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/analytics/ledger-adapters.ts",
+      "baseBlob": "87d39d051e23af43df82c0230c50d9b94cbc002e",
+      "sourceBlob": "0a1554d02e48195333f96066e5e10651c744af34",
+      "mainBlob": "87d39d051e23af43df82c0230c50d9b94cbc002e",
+      "aggregateBlob": "0a1554d02e48195333f96066e5e10651c744af34",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/analytics/ledger-contract.test.ts",
+      "baseBlob": "1452a2b3b35fabe29803d7da3575accf39b22c0f",
+      "sourceBlob": "a1ae6aa8635240bf22b54d7c0c5e2f3955911bc8",
+      "mainBlob": "1452a2b3b35fabe29803d7da3575accf39b22c0f",
+      "aggregateBlob": "a1ae6aa8635240bf22b54d7c0c5e2f3955911bc8",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/analytics/ledger-contract.ts",
+      "baseBlob": "93195b8d2e48da486c232048c34ee6d64df7e221",
+      "sourceBlob": "1c144c63d6786b5bdb9e7987fc4893e5870d790c",
+      "mainBlob": "93195b8d2e48da486c232048c34ee6d64df7e221",
+      "aggregateBlob": "1c144c63d6786b5bdb9e7987fc4893e5870d790c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/analytics/metric-registry.test.ts",
+      "baseBlob": "fab1ff769ebdd4ea2116a6c6d70b015af8ce1917",
+      "sourceBlob": "b9f738358628ed6356b91ddfe786c18d65e296ec",
+      "mainBlob": "fab1ff769ebdd4ea2116a6c6d70b015af8ce1917",
+      "aggregateBlob": "b9f738358628ed6356b91ddfe786c18d65e296ec",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/analytics/metrics.ts",
+      "baseBlob": "91ead3db32d09049d2f84f9caa357f408153bcf8",
+      "sourceBlob": "84527518f9727f1324a16b9159d6255122ad44a1",
+      "mainBlob": "91ead3db32d09049d2f84f9caa357f408153bcf8",
+      "aggregateBlob": "84527518f9727f1324a16b9159d6255122ad44a1",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/briefing/build.test.ts",
+      "baseBlob": "b43bc143dcd0378859af5f5e3c2ef54a9a2b4987",
+      "sourceBlob": "2be73a6c91366c9e574a718c11370fdf9c45b5b5",
+      "mainBlob": "b43bc143dcd0378859af5f5e3c2ef54a9a2b4987",
+      "aggregateBlob": "2be73a6c91366c9e574a718c11370fdf9c45b5b5",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/briefing/build.ts",
+      "baseBlob": "5f691dc3ed43d0e6b803d3eb157415e5ce8bff7c",
+      "sourceBlob": "415f7418bb0953af38b4a141300756ca4209b677",
+      "mainBlob": "5f691dc3ed43d0e6b803d3eb157415e5ce8bff7c",
+      "aggregateBlob": "415f7418bb0953af38b4a141300756ca4209b677",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/briefing/calendar-time.test.ts",
+      "baseBlob": "1b46db7538867fbf554521845ad79ad5c627dadb",
+      "sourceBlob": "0f4f04f91ca450c1bd11cf107789dd194dbbdfa0",
+      "mainBlob": "1b46db7538867fbf554521845ad79ad5c627dadb",
+      "aggregateBlob": "0f4f04f91ca450c1bd11cf107789dd194dbbdfa0",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/briefing/calendar-time.ts",
+      "baseBlob": "8e9cb135daf3e184ed7c21b7e89978f495438a0f",
+      "sourceBlob": "406bf5f7d61281b3f0aef212e321367ad6188010",
+      "mainBlob": "8e9cb135daf3e184ed7c21b7e89978f495438a0f",
+      "aggregateBlob": "406bf5f7d61281b3f0aef212e321367ad6188010",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/modules/signal/lib/briefing/context-observations.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "3b748a90c0350afe54cc3301550b8f4e1dcb3a41",
+      "mainBlob": null,
+      "aggregateBlob": "3b748a90c0350afe54cc3301550b8f4e1dcb3a41",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/modules/signal/lib/briefing/context-observations.ts",
+      "baseBlob": null,
+      "sourceBlob": "1184d7ad9c257bf026a604397ed73d2c928c0d7a",
+      "mainBlob": null,
+      "aggregateBlob": "1184d7ad9c257bf026a604397ed73d2c928c0d7a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/modules/signal/lib/briefing/overload-truth.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "40e5082cf045f077af9be2e45a578984b25b1764",
+      "mainBlob": null,
+      "aggregateBlob": "40e5082cf045f077af9be2e45a578984b25b1764",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/briefing/prose.test.ts",
+      "baseBlob": "b7e5bc17630103e8c1a26174d81a369bffa2a63d",
+      "sourceBlob": "c95d3d5b44b1093203d70ff6bd313bc9dc74b40a",
+      "mainBlob": "b7e5bc17630103e8c1a26174d81a369bffa2a63d",
+      "aggregateBlob": "c95d3d5b44b1093203d70ff6bd313bc9dc74b40a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/briefing/prose.ts",
+      "baseBlob": "3a6c96daf8114a27dce081a9ecaf38d7582b5a6f",
+      "sourceBlob": "2f8ab96935ddec4358ed8c9570aba1466af5e67f",
+      "mainBlob": "3a6c96daf8114a27dce081a9ecaf38d7582b5a6f",
+      "aggregateBlob": "2f8ab96935ddec4358ed8c9570aba1466af5e67f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/modules/signal/lib/briefing/relationship-observations.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "47be0aec92c758fc7108aec0fd48a08ae9522a5f",
+      "mainBlob": null,
+      "aggregateBlob": "47be0aec92c758fc7108aec0fd48a08ae9522a5f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/modules/signal/lib/briefing/relationship-observations.ts",
+      "baseBlob": null,
+      "sourceBlob": "aa66469d81b0edaa33e5e470d7c1944e6cef4d89",
+      "mainBlob": null,
+      "aggregateBlob": "aa66469d81b0edaa33e5e470d7c1944e6cef4d89",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/briefing/source.ts",
+      "baseBlob": "bc59e375fdabc70a7aedc266cae5e7b9032cb2e4",
+      "sourceBlob": "353ad4237c798d95b38031aeb710519e00bf1257",
+      "mainBlob": "bc59e375fdabc70a7aedc266cae5e7b9032cb2e4",
+      "aggregateBlob": "353ad4237c798d95b38031aeb710519e00bf1257",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/briefing/triggers.test.ts",
+      "baseBlob": "de79b244987970d3de92df4bd6c60133c6cff8e3",
+      "sourceBlob": "6c374e1fcb626ae21855e8bc1c5c7ff9ab6208dd",
+      "mainBlob": "de79b244987970d3de92df4bd6c60133c6cff8e3",
+      "aggregateBlob": "6c374e1fcb626ae21855e8bc1c5c7ff9ab6208dd",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/briefing/triggers.ts",
+      "baseBlob": "aee597b9e3e6d347135bf37a2a82136793a3caa5",
+      "sourceBlob": "9e111ee46627be938dde31a0d4e156f4cd7220d9",
+      "mainBlob": "aee597b9e3e6d347135bf37a2a82136793a3caa5",
+      "aggregateBlob": "9e111ee46627be938dde31a0d4e156f4cd7220d9",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/briefing/types.ts",
+      "baseBlob": "7e893bdbd10ec8b22ac18e6349a81cd9da020a3c",
+      "sourceBlob": "65d3bbb318a9ef61831212f801b047cb9a04577f",
+      "mainBlob": "7e893bdbd10ec8b22ac18e6349a81cd9da020a3c",
+      "aggregateBlob": "65d3bbb318a9ef61831212f801b047cb9a04577f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/briefing/voice.test.ts",
+      "baseBlob": "02120cac21b4c285bb1c6d97235967d398dddd7c",
+      "sourceBlob": "dbb1869b06b61b52618febe9edf8813249b7c7ae",
+      "mainBlob": "02120cac21b4c285bb1c6d97235967d398dddd7c",
+      "aggregateBlob": "dbb1869b06b61b52618febe9edf8813249b7c7ae",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/briefing/voice.ts",
+      "baseBlob": "4406063704003e3ad0fe450a55aceca1ffefafae",
+      "sourceBlob": "85878e35fdd18f0c8e62edb82a104f27621f9845",
+      "mainBlob": "4406063704003e3ad0fe450a55aceca1ffefafae",
+      "aggregateBlob": "85878e35fdd18f0c8e62edb82a104f27621f9845",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/modules/signal/lib/data/deadline.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "23d1f6322ff4430b9cbdf3b87b1eb664cb3d92e5",
+      "mainBlob": null,
+      "aggregateBlob": "23d1f6322ff4430b9cbdf3b87b1eb664cb3d92e5",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/modules/signal/lib/data/deadline.ts",
+      "baseBlob": null,
+      "sourceBlob": "51a9bf72eec2028f2d4b9ea6bb93387655c19874",
+      "mainBlob": null,
+      "aggregateBlob": "51a9bf72eec2028f2d4b9ea6bb93387655c19874",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/modules/signal/lib/data/source.persisted.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "17ec8e49b731d7daa9ccacf21f9f80d3de6b28eb",
+      "mainBlob": null,
+      "aggregateBlob": "17ec8e49b731d7daa9ccacf21f9f80d3de6b28eb",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/data/source.ts",
+      "baseBlob": "b354bf39ba901caf49dba91ba6f121b4a99f4d96",
+      "sourceBlob": "2425b7f15d225a282fc57e9b5434385e821e6336",
+      "mainBlob": "b354bf39ba901caf49dba91ba6f121b4a99f4d96",
+      "aggregateBlob": "2425b7f15d225a282fc57e9b5434385e821e6336",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/data/types.ts",
+      "baseBlob": "a523e03039c2233c749a2e8f7b0bb3f4e149927f",
+      "sourceBlob": "b238fb92e2658423e45406240deae80e5195e376",
+      "mainBlob": "a523e03039c2233c749a2e8f7b0bb3f4e149927f",
+      "aggregateBlob": "b238fb92e2658423e45406240deae80e5195e376",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/overview/overview-model.test.ts",
+      "baseBlob": "56dbebe42d92e17d1264ad1f74e1ce6471338dbb",
+      "sourceBlob": "85ff34736aed4a4256cd6b4849303bd09024f32c",
+      "mainBlob": "56dbebe42d92e17d1264ad1f74e1ce6471338dbb",
+      "aggregateBlob": "85ff34736aed4a4256cd6b4849303bd09024f32c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/overview/overview-model.ts",
+      "baseBlob": "2191b068e048d9a24191c9f1f44fd6c0c68f1234",
+      "sourceBlob": "164ca73a05c8ebbb584dd9339ea775401ba697c0",
+      "mainBlob": "2191b068e048d9a24191c9f1f44fd6c0c68f1234",
+      "aggregateBlob": "164ca73a05c8ebbb584dd9339ea775401ba697c0",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/planning-periods/scope.test.ts",
+      "baseBlob": "0fabca7799cbe7ab111aa2d462fb84a57d8b8c7c",
+      "sourceBlob": "0fc11e36d33312e149532d37f7a39962c095d323",
+      "mainBlob": "0fabca7799cbe7ab111aa2d462fb84a57d8b8c7c",
+      "aggregateBlob": "0fc11e36d33312e149532d37f7a39962c095d323",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/planning-periods/scope.ts",
+      "baseBlob": "f57a5611258548f23c073cf16b8bae60904cd324",
+      "sourceBlob": "13b48d446b50726f088388a859def915303ef29a",
+      "mainBlob": "f57a5611258548f23c073cf16b8bae60904cd324",
+      "aggregateBlob": "13b48d446b50726f088388a859def915303ef29a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/triggers/blocked.ts",
+      "baseBlob": "d53240d7281ed4a95751dd29fcd5049bb434994e",
+      "sourceBlob": "966fdbb2906defd16388c06545c2ddd980140390",
+      "mainBlob": "d53240d7281ed4a95751dd29fcd5049bb434994e",
+      "aggregateBlob": "966fdbb2906defd16388c06545c2ddd980140390",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/triggers/dependency-stall.ts",
+      "baseBlob": "eeee453097f1a00e8650c114b6a7c34b9c23ff7a",
+      "sourceBlob": "c1ef2e9ef7aa9ea7939d9cf62f6473a7ba84004b",
+      "mainBlob": "eeee453097f1a00e8650c114b6a7c34b9c23ff7a",
+      "aggregateBlob": "c1ef2e9ef7aa9ea7939d9cf62f6473a7ba84004b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/triggers/inactive-project.ts",
+      "baseBlob": "557cf3a5515bb9b9fd0cc2b5257db49539fd54b3",
+      "sourceBlob": "ced4986a63ad1884456fcec60c5ef3f07a168d5c",
+      "mainBlob": "557cf3a5515bb9b9fd0cc2b5257db49539fd54b3",
+      "aggregateBlob": "ced4986a63ad1884456fcec60c5ef3f07a168d5c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/triggers/momentum-positive.ts",
+      "baseBlob": "cfd1973b4b15bb48540bf82c19b56d8117f8995b",
+      "sourceBlob": "2255b211f22ad7a9c4e3a87697f83294ee70744d",
+      "mainBlob": "cfd1973b4b15bb48540bf82c19b56d8117f8995b",
+      "aggregateBlob": "2255b211f22ad7a9c4e3a87697f83294ee70744d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/triggers/overdue.ts",
+      "baseBlob": "f8ee63bffca50cb395aeedf0b0db4a90424a417e",
+      "sourceBlob": "34ed4cc8e329b80870c6262b12d72595ec55c84e",
+      "mainBlob": "f8ee63bffca50cb395aeedf0b0db4a90424a417e",
+      "aggregateBlob": "34ed4cc8e329b80870c6262b12d72595ec55c84e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/lib/triggers/streak.ts",
+      "baseBlob": "c068d4dd161dd53933fe72e937becf331415d0ed",
+      "sourceBlob": "f5bf08d1d53232aaf64fe40ec496c8b3b519a372",
+      "mainBlob": "c068d4dd161dd53933fe72e937becf331415d0ed",
+      "aggregateBlob": "f5bf08d1d53232aaf64fe40ec496c8b3b519a372",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/modules/signal/server/analytics/policy-contract.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "39d0ebfe01a707e788ff9dee3584632d3cfc4b1e",
+      "mainBlob": null,
+      "aggregateBlob": "39d0ebfe01a707e788ff9dee3584632d3cfc4b1e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/modules/signal/server/analytics/providers/column-config.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "116c1116feeae7183aabd92225bbe226e6853cae",
+      "mainBlob": null,
+      "aggregateBlob": "116c1116feeae7183aabd92225bbe226e6853cae",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/server/analytics/providers/column-config.ts",
+      "baseBlob": "7b490a78f1fccc9e9c4a3b701db9761f16f95718",
+      "sourceBlob": "3fce2550241af8c59b6a33ce55ac1cf8f9bd7013",
+      "mainBlob": "7b490a78f1fccc9e9c4a3b701db9761f16f95718",
+      "aggregateBlob": "3fce2550241af8c59b6a33ce55ac1cf8f9bd7013",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/server/analytics/providers/notes.ts",
+      "baseBlob": "e6d16a16139ab92d6568e5a1b24e16f94f084fa3",
+      "sourceBlob": "34594576a0cc7218a751cbd2c41ce794c01b341c",
+      "mainBlob": "e6d16a16139ab92d6568e5a1b24e16f94f084fa3",
+      "aggregateBlob": "34594576a0cc7218a751cbd2c41ce794c01b341c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/server/analytics/providers/tasks-provider.live.test.ts",
+      "baseBlob": "3330af6d552ab42b8121009161d218155b90c8b9",
+      "sourceBlob": "fc7102fbd6a43f84e225bcd6220a7023231bafbe",
+      "mainBlob": "3330af6d552ab42b8121009161d218155b90c8b9",
+      "aggregateBlob": "fc7102fbd6a43f84e225bcd6220a7023231bafbe",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/server/analytics/providers/tasks.ts",
+      "baseBlob": "fd4dd898de51b16a7a65379ea04e934d31be6a56",
+      "sourceBlob": "d751259eeb4873bcf9444c5475efd7c16f293634",
+      "mainBlob": "fd4dd898de51b16a7a65379ea04e934d31be6a56",
+      "aggregateBlob": "d751259eeb4873bcf9444c5475efd7c16f293634",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/modules/signal/server/analytics/service-persisted.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "70a1ab22937b091dfe32d537603c36147cbb3188",
+      "mainBlob": null,
+      "aggregateBlob": "70a1ab22937b091dfe32d537603c36147cbb3188",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/modules/signal/server/briefing/signal-build-for-user.persisted.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "14cfb966fc920f83bebd8ffb4c7ea9c688a6a225",
+      "mainBlob": null,
+      "aggregateBlob": "14cfb966fc920f83bebd8ffb4c7ea9c688a6a225",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/server/briefing/signal-build-for-user.ts",
+      "baseBlob": "3c5d4546dc5c357e43b09f076e8f39bd2d423517",
+      "sourceBlob": "aa74f55564b77a14bc0235ef1c04faf1ca387247",
+      "mainBlob": "3c5d4546dc5c357e43b09f076e8f39bd2d423517",
+      "aggregateBlob": "aa74f55564b77a14bc0235ef1c04faf1ca387247",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/modules/signal/server/tasks-db/signal-tasks-db-schema.ts",
+      "baseBlob": "84ee1b32c6dd21bbb2185ed6bfc539a319e2f461",
+      "sourceBlob": "96838e6da520c8f1ef58db272f9aa6db81dd56c3",
+      "mainBlob": "84ee1b32c6dd21bbb2185ed6bfc539a319e2f461",
+      "aggregateBlob": "96838e6da520c8f1ef58db272f9aa6db81dd56c3",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/proxy.ts",
+      "baseBlob": "40bc48630c94a4ee282c4a16682c2db4180e5cf4",
+      "sourceBlob": "afaa65816e87b5cbbf0f7446e9b359fea126be1d",
+      "mainBlob": "40bc48630c94a4ee282c4a16682c2db4180e5cf4",
+      "aggregateBlob": "afaa65816e87b5cbbf0f7446e9b359fea126be1d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/account-deletion-lifecycle-contract.test.mjs",
+      "baseBlob": "76dd64da7bc22ed3f2d8c2b8592cde498c605fdd",
+      "sourceBlob": "e9b470667a1b07fdca6e407f85442e80f475a6b1",
+      "mainBlob": "76dd64da7bc22ed3f2d8c2b8592cde498c605fdd",
+      "aggregateBlob": "e9b470667a1b07fdca6e407f85442e80f475a6b1",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/actions/board-fidelity.fixture-stub.cjs",
+      "baseBlob": null,
+      "sourceBlob": "5307ad9730ef24d307cfa67ccf04d340e1e845db",
+      "mainBlob": null,
+      "aggregateBlob": "5307ad9730ef24d307cfa67ccf04d340e1e845db",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/actions/board-fidelity.persisted.test.mjs",
+      "baseBlob": null,
+      "sourceBlob": "fdfe95b2eede4eecf54e1c0cce30b4f1a4c89c4e",
+      "mainBlob": null,
+      "aggregateBlob": "fdfe95b2eede4eecf54e1c0cce30b4f1a4c89c4e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/actions/board.ts",
+      "baseBlob": "c623512fe013761cdeedb814fd17f2956e6b8c94",
+      "sourceBlob": "7c209a287e8c11019905ac4d561dd7e60b6c1363",
+      "mainBlob": "c623512fe013761cdeedb814fd17f2956e6b8c94",
+      "aggregateBlob": "7c209a287e8c11019905ac4d561dd7e60b6c1363",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/actions/duplicate-task.ts",
+      "baseBlob": "a47954d417b9ec6e9cbabae2f3e9393035b9988b",
+      "sourceBlob": "5ecd02a6d47055423b181870a3a773b7c515cac6",
+      "mainBlob": "a47954d417b9ec6e9cbabae2f3e9393035b9988b",
+      "aggregateBlob": "5ecd02a6d47055423b181870a3a773b7c515cac6",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/actions/private-task-db-write.test.cjs",
+      "baseBlob": "75140ff68c929e9b71657f383c0d38ff021309a0",
+      "sourceBlob": "b2b95cdbb76f19b1561581b8ecec6ea8db49b921",
+      "mainBlob": "75140ff68c929e9b71657f383c0d38ff021309a0",
+      "aggregateBlob": "b2b95cdbb76f19b1561581b8ecec6ea8db49b921",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/actions/project-authz-contract.test.mjs",
+      "baseBlob": "989f91032a67cd6cc076f346736b1da59c10307c",
+      "sourceBlob": "6c0e5744c818d8d94988e337a458e22a5988ffd9",
+      "mainBlob": "989f91032a67cd6cc076f346736b1da59c10307c",
+      "aggregateBlob": "6c0e5744c818d8d94988e337a458e22a5988ffd9",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/actions/project-authz.ts",
+      "baseBlob": "cccf5a07842ac9cdbc267d18b7bf751d693d6fba",
+      "sourceBlob": "2bdb9ef3d7793f07b9a4c867171ed3932e787e23",
+      "mainBlob": "cccf5a07842ac9cdbc267d18b7bf751d693d6fba",
+      "aggregateBlob": "2bdb9ef3d7793f07b9a4c867171ed3932e787e23",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/actions/projects-tree.ts",
+      "baseBlob": "b54fe2485249b7b8345955973c13e63bb003b549",
+      "sourceBlob": "5bee07fa8f28a7aabd002d4dc83ce87ad2172302",
+      "mainBlob": "b54fe2485249b7b8345955973c13e63bb003b549",
+      "aggregateBlob": "5bee07fa8f28a7aabd002d4dc83ce87ad2172302",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/actions/task-action-concurrency.test.cjs",
+      "baseBlob": null,
+      "sourceBlob": "18ad892db108103e5135e5a749d15331b599ccde",
+      "mainBlob": null,
+      "aggregateBlob": "18ad892db108103e5135e5a749d15331b599ccde",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/actions/task-action-identity.test.mjs",
+      "baseBlob": null,
+      "sourceBlob": "d33c9bd906a9d409aaabdc8e8964e850ef37bc0a",
+      "mainBlob": null,
+      "aggregateBlob": "d33c9bd906a9d409aaabdc8e8964e850ef37bc0a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/actions/task-bound-mutation.test.cjs",
+      "baseBlob": null,
+      "sourceBlob": "6bd8f33b00198f2fdce3585984cbf1e7f3669cca",
+      "mainBlob": null,
+      "aggregateBlob": "6bd8f33b00198f2fdce3585984cbf1e7f3669cca",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/actions/tasks.ts",
+      "baseBlob": "f0474198b0da559b4b59a07d924d9bd217bedf12",
+      "sourceBlob": "7531b848c0ea7d62e0cccd70997bf0676121e666",
+      "mainBlob": "f0474198b0da559b4b59a07d924d9bd217bedf12",
+      "aggregateBlob": "7531b848c0ea7d62e0cccd70997bf0676121e666",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/app-access.ts",
+      "baseBlob": "e69347ced955f49ba18f65a2eca2fc1262b504de",
+      "sourceBlob": "984fb1e905e8522036c6afc52e4e7efbf9c8ffb0",
+      "mainBlob": "e69347ced955f49ba18f65a2eca2fc1262b504de",
+      "aggregateBlob": "984fb1e905e8522036c6afc52e4e7efbf9c8ffb0",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/app-gate-contract.test.mjs",
+      "baseBlob": "423674369953d3bda52406185934e51df7be61e0",
+      "sourceBlob": "bdae13c30ed33c20578cf7c593cf962b28ffb377",
+      "mainBlob": "423674369953d3bda52406185934e51df7be61e0",
+      "aggregateBlob": "bdae13c30ed33c20578cf7c593cf962b28ffb377",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/auth.ts",
+      "baseBlob": "9d1ba49d29f083c9b911c9ba85ae050f2663da80",
+      "sourceBlob": "f1e37509bb335c7bbf516e7e885c43602270e317",
+      "mainBlob": "9d1ba49d29f083c9b911c9ba85ae050f2663da80",
+      "aggregateBlob": "f1e37509bb335c7bbf516e7e885c43602270e317",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/conversations/database.batch.persistence.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "0e21a1a39f177fbffa3788dd7b7c55a3f471d853",
+      "mainBlob": null,
+      "aggregateBlob": "0e21a1a39f177fbffa3788dd7b7c55a3f471d853",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/conversations/database.remote.test.ts",
+      "baseBlob": "b4d1c6e2c410f9d094d481335543e38f34805dde",
+      "sourceBlob": "411b90afa7bc6a8c10ff2d8dbd8663b648d27224",
+      "mainBlob": "b4d1c6e2c410f9d094d481335543e38f34805dde",
+      "aggregateBlob": "411b90afa7bc6a8c10ff2d8dbd8663b648d27224",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/conversations/database.ts",
+      "baseBlob": "beb141f5e6f0779b6a962063aa0cc84c18fdd741",
+      "sourceBlob": "2e7f718fe1f1ce3430fa8a626bbe941286533a03",
+      "mainBlob": "beb141f5e6f0779b6a962063aa0cc84c18fdd741",
+      "aggregateBlob": "2e7f718fe1f1ce3430fa8a626bbe941286533a03",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/conversations/runtime.ts",
+      "baseBlob": "f80bcb7ff8c8e4d9acf16d38e114fd835de91bf7",
+      "sourceBlob": "5aa6ec79ab804bf7daf2c018ce1bfbea63537e81",
+      "mainBlob": "f80bcb7ff8c8e4d9acf16d38e114fd835de91bf7",
+      "aggregateBlob": "5aa6ec79ab804bf7daf2c018ce1bfbea63537e81",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/conversations/service.ts",
+      "baseBlob": "26c1f466a7ee722a0fb5ee82b83cdbe4d12475e0",
+      "sourceBlob": "385e5c51a4ccf9ff363141b28d002287e4a6b45e",
+      "mainBlob": "26c1f466a7ee722a0fb5ee82b83cdbe4d12475e0",
+      "aggregateBlob": "385e5c51a4ccf9ff363141b28d002287e4a6b45e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/conversations/work-links.persistence.test.ts",
+      "baseBlob": "0b1049c7c33728e57adeb8f707d2bfbf4169feb9",
+      "sourceBlob": "6a72b3eeb201e9ffded173342f46d56c7417c285",
+      "mainBlob": "0b1049c7c33728e57adeb8f707d2bfbf4169feb9",
+      "aggregateBlob": "6a72b3eeb201e9ffded173342f46d56c7417c285",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/conversations/work-links.ts",
+      "baseBlob": "65051f0b396326096f72dacc163ced7df22b2eaa",
+      "sourceBlob": "c1624fc1907ef69bf142f32e576326bae3db0e2d",
+      "mainBlob": "65051f0b396326096f72dacc163ced7df22b2eaa",
+      "aggregateBlob": "c1624fc1907ef69bf142f32e576326bae3db0e2d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/conversations/write-fences.ts",
+      "baseBlob": "ee9f5ab429d296b8fb0ffdbbe90d26723f78df1b",
+      "sourceBlob": "276cbb9c1723d44f0c1f03b7a9616287868ed3cb",
+      "mainBlob": "ee9f5ab429d296b8fb0ffdbbe90d26723f78df1b",
+      "aggregateBlob": "276cbb9c1723d44f0c1f03b7a9616287868ed3cb",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/db/activity.ts",
+      "baseBlob": "1c412489e03151f9a77b16ecaf47a291ceab095c",
+      "sourceBlob": "d95331a280e82f470d2a51f08e4566388b98c980",
+      "mainBlob": "1c412489e03151f9a77b16ecaf47a291ceab095c",
+      "aggregateBlob": "d95331a280e82f470d2a51f08e4566388b98c980",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/db/development-seed-policy.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "f791397c905a628ddce8a458a3ab4eba00854e8d",
+      "mainBlob": null,
+      "aggregateBlob": "f791397c905a628ddce8a458a3ab4eba00854e8d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/db/development-seed-policy.ts",
+      "baseBlob": null,
+      "sourceBlob": "1f6a085db8f63621487550280cffe9904a4a7c8c",
+      "mainBlob": null,
+      "aggregateBlob": "1f6a085db8f63621487550280cffe9904a4a7c8c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/db/ensure-user-fast-path.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "7aacbe5a7a48d5929da0cff257ba862c28448300",
+      "mainBlob": null,
+      "aggregateBlob": "7aacbe5a7a48d5929da0cff257ba862c28448300",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/db/ensure-user.ts",
+      "baseBlob": "9ab134c9497325516c6aec70c0f5484efa1cd181",
+      "sourceBlob": "27b19972fc64dbfbd5e100ee7d45dd6fa55f29c6",
+      "mainBlob": "9ab134c9497325516c6aec70c0f5484efa1cd181",
+      "aggregateBlob": "27b19972fc64dbfbd5e100ee7d45dd6fa55f29c6",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/db/index.ts",
+      "baseBlob": "f660e16d2da4e4aa9614b370cd290134f5136f3f",
+      "sourceBlob": "94953a6cacee5754a1694bcf273aa116cb3abbc8",
+      "mainBlob": "f660e16d2da4e4aa9614b370cd290134f5136f3f",
+      "aggregateBlob": "94953a6cacee5754a1694bcf273aa116cb3abbc8",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/db/notifications.ts",
+      "baseBlob": "d68cbf994359d3b3812a996431434d87cd51ef2e",
+      "sourceBlob": "bea3600bdcf4829715ed0189335075ed384cbb21",
+      "mainBlob": "d68cbf994359d3b3812a996431434d87cd51ef2e",
+      "aggregateBlob": "bea3600bdcf4829715ed0189335075ed384cbb21",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/db/queries.ts",
+      "baseBlob": "a4302c800c1253768f42122dae2bafccf53b1c0c",
+      "sourceBlob": "5a0d5d473675b969176a530dd680a6b72ffef51e",
+      "mainBlob": "a4302c800c1253768f42122dae2bafccf53b1c0c",
+      "aggregateBlob": "79b6b03634e155afbd3f14c92099de8fc8801815",
+      "receiving": "adapted"
+    },
+    {
+      "status": "A",
+      "path": "src/server/diagnostics/identity-outbound.test.mjs",
+      "baseBlob": null,
+      "sourceBlob": "c0ae043c5999382e4a4e67ca2680f8299516989b",
+      "mainBlob": null,
+      "aggregateBlob": "c0ae043c5999382e4a4e67ca2680f8299516989b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/diagnostics/identity-outbound.ts",
+      "baseBlob": null,
+      "sourceBlob": "a00efb8dd8e8030c24097b81c3bea7d5681c442f",
+      "mainBlob": null,
+      "aggregateBlob": "a00efb8dd8e8030c24097b81c3bea7d5681c442f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/diagnostics/identity-timing.test.mjs",
+      "baseBlob": null,
+      "sourceBlob": "84d82215e0206be842faadc9039acb4dce84db49",
+      "mainBlob": null,
+      "aggregateBlob": "84d82215e0206be842faadc9039acb4dce84db49",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/diagnostics/identity-timing.ts",
+      "baseBlob": null,
+      "sourceBlob": "ecc897142840bf3e794ac350df315f923f0501b8",
+      "mainBlob": null,
+      "aggregateBlob": "ecc897142840bf3e794ac350df315f923f0501b8",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/diagnostics/proxy-timing.test.mjs",
+      "baseBlob": null,
+      "sourceBlob": "b3bd906fcc9b84170c4df6f02299e47ccf02b848",
+      "mainBlob": null,
+      "aggregateBlob": "b3bd906fcc9b84170c4df6f02299e47ccf02b848",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/diagnostics/proxy-timing.ts",
+      "baseBlob": null,
+      "sourceBlob": "91aef577e6a9a9c4c8bd2abcc5d739c5145ef8d4",
+      "mainBlob": null,
+      "aggregateBlob": "91aef577e6a9a9c4c8bd2abcc5d739c5145ef8d4",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/diagnostics/task-timing.test.mjs",
+      "baseBlob": null,
+      "sourceBlob": "e448e36920a762ad1c0988c7c94f5e2615b70efd",
+      "mainBlob": null,
+      "aggregateBlob": "50e5e967eb9f1331071b85218188e335b844c014",
+      "receiving": "adapted"
+    },
+    {
+      "status": "A",
+      "path": "src/server/diagnostics/task-timing.ts",
+      "baseBlob": null,
+      "sourceBlob": "53fc8219d5b1dbc858d31c13367975a59c453c23",
+      "mainBlob": null,
+      "aggregateBlob": "53fc8219d5b1dbc858d31c13367975a59c453c23",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/instrumentation-call-site-contract.test.mjs",
+      "baseBlob": "de71bc493301bffe734468118c34046660db94ac",
+      "sourceBlob": "0aabe4d98d725191dfa779b854899e32654b1097",
+      "mainBlob": "de71bc493301bffe734468118c34046660db94ac",
+      "aggregateBlob": "0aabe4d98d725191dfa779b854899e32654b1097",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/milestones.ts",
+      "baseBlob": "5cf59c49075799d12a6336dfc35edca24921564d",
+      "sourceBlob": "9bcfa4936643d9ca2acdf164b10688ca3a0af888",
+      "mainBlob": "5cf59c49075799d12a6336dfc35edca24921564d",
+      "aggregateBlob": "9bcfa4936643d9ca2acdf164b10688ca3a0af888",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/personality-read.ts",
+      "baseBlob": "366c12e0cbc2e03f99d76e9ebe4224a61585f06b",
+      "sourceBlob": "be0662182f9b733feb197e88bcdfc699c70f8640",
+      "mainBlob": "366c12e0cbc2e03f99d76e9ebe4224a61585f06b",
+      "aggregateBlob": "be0662182f9b733feb197e88bcdfc699c70f8640",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/projects/member-workspaces.ts",
+      "baseBlob": null,
+      "sourceBlob": "57c09c9860c6ca62a5cbdc6c385241246ed24ac4",
+      "mainBlob": null,
+      "aggregateBlob": "57c09c9860c6ca62a5cbdc6c385241246ed24ac4",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/projects/project-deletion-fence.ts",
+      "baseBlob": "d4a5285e23f0615589a80a9f5f89779a6c02c1ca",
+      "sourceBlob": "e1a415470793993e7b3847741a90843959e20a2d",
+      "mainBlob": "d4a5285e23f0615589a80a9f5f89779a6c02c1ca",
+      "aggregateBlob": "e1a415470793993e7b3847741a90843959e20a2d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/projects/projects-tree-read.ts",
+      "baseBlob": null,
+      "sourceBlob": "c0815dcbc6ab10354949abcc2471da4553718f6f",
+      "mainBlob": null,
+      "aggregateBlob": "c0815dcbc6ab10354949abcc2471da4553718f6f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/projects/render-guard-cache.test.mjs",
+      "baseBlob": null,
+      "sourceBlob": "867662d72a1acb6c1d768e9e7d99f58416b15b8b",
+      "mainBlob": null,
+      "aggregateBlob": "867662d72a1acb6c1d768e9e7d99f58416b15b8b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/projects/render-read-boundary.test.mjs",
+      "baseBlob": null,
+      "sourceBlob": "d62dadda75d05dfd161194c846df1d062db088fe",
+      "mainBlob": null,
+      "aggregateBlob": "d62dadda75d05dfd161194c846df1d062db088fe",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/projects/render-read-reuse.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "d08b2692b9965ef1ccaa1a24fee578c13590e5ad",
+      "mainBlob": null,
+      "aggregateBlob": "d08b2692b9965ef1ccaa1a24fee578c13590e5ad",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/projects/route-authz-contract.test.mjs",
+      "baseBlob": "28c9656ed62ed106d7bf401cc9c30e6202133a8d",
+      "sourceBlob": "155097ed92b15eb66a82684ce71e57a51e8349be",
+      "mainBlob": "28c9656ed62ed106d7bf401cc9c30e6202133a8d",
+      "aggregateBlob": "155097ed92b15eb66a82684ce71e57a51e8349be",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/projects/route-authz.ts",
+      "baseBlob": "8a7d98b61122572b1867c66178015c8ddbaaabc5",
+      "sourceBlob": "946e623b238025bc077bd423b4a71a6a2bfb474a",
+      "mainBlob": "8a7d98b61122572b1867c66178015c8ddbaaabc5",
+      "aggregateBlob": "946e623b238025bc077bd423b4a71a6a2bfb474a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/projects/tasks-render-reads.ts",
+      "baseBlob": null,
+      "sourceBlob": "87a7662682b9d1995a48d50b386d1fb5b6d0c700",
+      "mainBlob": null,
+      "aggregateBlob": "87a7662682b9d1995a48d50b386d1fb5b6d0c700",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/release/preview-reliability-attestation.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "67e7abb7757fd292115e347e89ef9d390582c3db",
+      "mainBlob": null,
+      "aggregateBlob": "67e7abb7757fd292115e347e89ef9d390582c3db",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/release/preview-reliability-attestation.ts",
+      "baseBlob": null,
+      "sourceBlob": "cb1257bb94047020c061a798e3fe77656cdad196",
+      "mainBlob": null,
+      "aggregateBlob": "cb1257bb94047020c061a798e3fe77656cdad196",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/sponsored-use/action.test.cjs",
+      "baseBlob": "936979daa39aaf2d09a30bc4a136c0226a4ad690",
+      "sourceBlob": "0c91f83b64871cd620f3458c69ecdfec0a09b495",
+      "mainBlob": "936979daa39aaf2d09a30bc4a136c0226a4ad690",
+      "aggregateBlob": "a95e4c765a74d25a4c4d202d3e0e9937f7a5a94f",
+      "receiving": "adapted"
+    },
+    {
+      "status": "M",
+      "path": "src/server/sponsored-use/fixture.cjs",
+      "baseBlob": "08609cc0ebd1f14cd4887b7e9af8d79c95fa428d",
+      "sourceBlob": "c5152dd83b0ec39645530d78f9d18b0db8adcd4d",
+      "mainBlob": "08609cc0ebd1f14cd4887b7e9af8d79c95fa428d",
+      "aggregateBlob": "4e9c1d12eba08c324e13f206f43841501ccf9375",
+      "receiving": "adapted"
+    },
+    {
+      "status": "M",
+      "path": "src/server/tasks-security-regression.test.mjs",
+      "baseBlob": "93cd97ecb7a0e15923c1409ce31161161ef66d0a",
+      "sourceBlob": "ff09f14b5643cd7e3759dae608cd6bfef41c6a89",
+      "mainBlob": "93cd97ecb7a0e15923c1409ce31161161ef66d0a",
+      "aggregateBlob": "ff09f14b5643cd7e3759dae608cd6bfef41c6a89",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/tasks/create-task-core.test.ts",
+      "baseBlob": "ab55ab5c6ac875bec24fa509dcef0e6890608e3e",
+      "sourceBlob": "6391599fbcf07f17c9d44cb9e44f277bc0990e22",
+      "mainBlob": "ab55ab5c6ac875bec24fa509dcef0e6890608e3e",
+      "aggregateBlob": "6391599fbcf07f17c9d44cb9e44f277bc0990e22",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/tasks/create-task-core.ts",
+      "baseBlob": "e6baa3eed96098c74e4660e079233865be96e480",
+      "sourceBlob": "4973c6efc41b94c61db322fd7c684281c28775ce",
+      "mainBlob": "e6baa3eed96098c74e4660e079233865be96e480",
+      "aggregateBlob": "4973c6efc41b94c61db322fd7c684281c28775ce",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/tasks/detail-read-http.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "e5f0a87160ca4c91cac41a24d4d69a4ed5cdc139",
+      "mainBlob": null,
+      "aggregateBlob": "e5f0a87160ca4c91cac41a24d4d69a4ed5cdc139",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/tasks/detail-read-http.ts",
+      "baseBlob": null,
+      "sourceBlob": "0d2826f86ed5efeecc69935e7ff5ceb6979726d2",
+      "mainBlob": null,
+      "aggregateBlob": "0d2826f86ed5efeecc69935e7ff5ceb6979726d2",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/tasks/mutation-http.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "094a856d0ba910c080d833c84a4bfed2dd19ab2b",
+      "mainBlob": null,
+      "aggregateBlob": "094a856d0ba910c080d833c84a4bfed2dd19ab2b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/tasks/mutation-http.ts",
+      "baseBlob": null,
+      "sourceBlob": "6ce8dc8b8116ff7b047e20a9331e9d5d363ca263",
+      "mainBlob": null,
+      "aggregateBlob": "6ce8dc8b8116ff7b047e20a9331e9d5d363ca263",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/tasks/mutation-refusal.ts",
+      "baseBlob": null,
+      "sourceBlob": "ca163fd4be3dd0bea9365fd7d97fc4e75e870997",
+      "mainBlob": null,
+      "aggregateBlob": "ca163fd4be3dd0bea9365fd7d97fc4e75e870997",
+      "receiving": "byte-exact"
+    }
+  ],
+  "mainOverlaps": [
+    {
+      "status": "M",
+      "path": "src/components/app/detail-panel/task-sheet.tsx",
+      "baseBlob": "ff76c2118766216003ba2add5ac95bb82af26355",
+      "sourceBlob": "0beec544e171e33868f9e91302acd5fdd5fce423",
+      "mainBlob": "5f69710d859bd5f849037c70d92928b0ddce790c",
+      "aggregateBlob": "b28e80119b5c64bc1cf39f9ad96c9fb9e2ab94eb",
+      "receiving": "adapted"
+    }
+  ]
+}

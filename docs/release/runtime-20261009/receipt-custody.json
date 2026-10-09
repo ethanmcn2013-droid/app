@@ -1,0 +1,76 @@
+{
+  "receivingSourceHead": "05f5bd30a799c1cdefd933910cdbbbeec53a860d",
+  "generatedAt": "2026-10-09T21:17:35.520Z",
+  "files": [
+    {
+      "path": "backend-source-manifest.json",
+      "sha256": "1f71dc6150446afaff09605e9f85c309961682e0d01261eb33afe040b67837fb"
+    },
+    {
+      "path": "browser-source-continuity.json",
+      "sha256": "bf041fe5e29636a1586933aa25fd2460f7a3ba35444eaa1bf3c37af945028414"
+    },
+    {
+      "path": "canonical-attestation-04bed.json",
+      "sha256": "bdcc804473ebfdc72df12b82e14b22a531d7bf0fea39ea34c7e262f2a0b3e496"
+    },
+    {
+      "path": "composition-inventory.json",
+      "sha256": "4fe05dfc84c99064211e2fbe7b2aca7618a5a66afb605100a80507ac67e01f3b"
+    },
+    {
+      "path": "concepts-source-manifest.json",
+      "sha256": "4a12b02770a8ca7da6e9d3e7717a84f88b63b418c986619a8238b77f11d54fcd"
+    },
+    {
+      "path": "materiality-receiving-proposal.json",
+      "sha256": "0adab7b162d1b63b9d27f7868a5137ad3dec09ad28bea611e6b5b9fdccac6703"
+    },
+    {
+      "path": "materiality-receiving-written.json",
+      "sha256": "80f21d06571aa517ef9f8f1a3811580c93e132d4a1d18ef2bbe70131c687d67b"
+    },
+    {
+      "path": "migration-controls-source-manifest.json",
+      "sha256": "2898d84bc7d8447d6e377cf42522f87a09c092259ec10ac3d160c1e3d7938a65"
+    },
+    {
+      "path": "migration-data-source-manifest.json",
+      "sha256": "1cfa289ef17f805a0e4a20e3d8c01e66ae872163ef2ba5835c9a3008691c55cd"
+    },
+    {
+      "path": "ping-source-manifest.json",
+      "sha256": "a58aa4dd7098d74b009da5372f52d22860a5604cfc331f03044098e45050a54b"
+    },
+    {
+      "path": "ping-test-reconciliation-independent-review.json",
+      "sha256": "fa0c1e4ed95aa2bd633ffe1b36dff3df2864aa8d6ae88504792044fa18cdb610"
+    },
+    {
+      "path": "production-ping-literal-posture.json",
+      "sha256": "1fd425f702712a288c117c6434a14545c43d348675b7cb42d15816d7113781d5"
+    },
+    {
+      "path": "README.md",
+      "sha256": "bf4593fc7b8fa61d271b0275bd1eea7982be52589427aacf897d9b87a53ab9d7"
+    },
+    {
+      "path": "render-source-continuity.json",
+      "sha256": "b5a8ae69c1eba76e45e70fccc34531a598f61992c927c8ccb06d60a70744e616"
+    },
+    {
+      "path": "security-source-manifest.json",
+      "sha256": "04ca9b0b64a10c61fcab70acc72f42a401f261a4397ac2696db7de9e4c16ba08"
+    },
+    {
+      "path": "sponsor-source-manifest.json",
+      "sha256": "f7f11bd116c47e16183098c30715e0f4c1c7f234a8e5aff5c6feb26a9fc94df8"
+    },
+    {
+      "path": "validation-index.json",
+      "sha256": "a94554d660e4ab5c8ca00e8add94fcb17f6890cbefcef3744bf63368ed778467"
+    }
+  ],
+  "rawArtifacts": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts",
+  "rawCanonicalSha256": "27d7e46f5186032bca22eea7273c4a3722dcf853d7aec32a4cc61a201c941ecf"
+}

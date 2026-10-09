@@ -1,0 +1,399 @@
+{
+  "schemaVersion": "signal-technical-supporting-render/1",
+  "head": "04bed4b84b1559d127575751880473256851c430",
+  "tree": "7093b9f3046a89e98e27033adb2a0f2a7c802c2d",
+  "buildId": "m67AqmQ8rHEHSxOWeiTwn",
+  "environment": "local demo / Preview; synthetic sample data; no provider or authenticated receiving acceptance",
+  "contract": {
+    "schemaVersion": "signal-experience-browser/1",
+    "determinism": {
+      "accessMode": "demo",
+      "deploymentEnvironment": "preview",
+      "locale": "en-GB",
+      "timezoneId": "Europe/London",
+      "colorScheme": "light",
+      "reducedMotion": "reduce",
+      "animationPolicy": "disabled"
+    },
+    "projects": [
+      {
+        "name": "mobile",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        }
+      },
+      {
+        "name": "tablet",
+        "viewport": {
+          "width": 768,
+          "height": 1024
+        }
+      },
+      {
+        "name": "desktop",
+        "viewport": {
+          "width": 1280,
+          "height": 900
+        }
+      },
+      {
+        "name": "wide",
+        "viewport": {
+          "width": 1440,
+          "height": 960
+        }
+      }
+    ]
+  },
+  "cases": [
+    {
+      "route": "concepts",
+      "project": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "responseStatus": 200,
+      "source": "src/app/app/concepts/page.tsx",
+      "sourceBlob": "7ba746875a5e7002f3bd627afea1466c34e7456b",
+      "title": "Concepts · Signal Studio",
+      "url": "http://127.0.0.1:4401/app/concepts",
+      "headings": [
+        "Concepts",
+        "Overview",
+        "Projects",
+        "Files",
+        "Tasks board",
+        "Tasks list",
+        "Tasks calendar",
+        "Analytics",
+        "Apps and tools",
+        "Shared timeline"
+      ],
+      "horizontalOverflow": 0,
+      "conceptCards": 48,
+      "bodyText": "Skip to main content\nSignal Studio\nSearch or jump to…\nCtrl K\nHome\nWorkspace\nProjects\nTasks\nTimeline\nFiles\nAnalytics\nBuild\nAutomations\nPreview\nWhiteboard\nComing\nSoon\nChat\nAll conversations\n6\nwaiting\nThe Orchard, events\n1\nmention\nBuild the Saturday run-sheet\n1\nmention\nApprove the final seating plan\n, unread\nNK\nNiamh Kelly\n, online\n1\nnew message\nAW\nAoife Walsh\n, online\n2\nnew messages\nDQ\nDara Quinn\nCB\nCiarán Byrne\n, unread\nRequest\nSettings\nSignal Studio\nDO\nConcepts\n\nFive or six directions for each view, using sample data. These are unpicked prototypes for review.\n\nOverview\nOverview 1\nConcept 1\nIn progress.\nOverview 2\nConcept 2\nIn progress.\nOverview 3\nConcept 3\nIn progress.\nOverview 4\nConcept 4\nIn progress.\nOverview 5\nConcept 5\nIn progress.\nProjects\nProjects 1\nConcept 1\nIn progress.\nProjects 2\nConcept 2\nIn progress.\nProjects 3\nConcept 3\nIn progress.\nProjects 4\nConcept 4\nIn progress.\nProjects 5\nConcept 5\nIn progress.\nFiles\nFiles 1\nConcept 1\nIn progress.\nFiles 2\nConcept 2\nIn progress.\nFiles 3\nConcept 3\nIn progress.\nFiles 4\nConcept 4\nIn progress.\nFiles 5\nConcept 5\nIn progress.\nTasks board\nTasks board 1\nStudio columns\nThe classic stage board taken to its finest finish, where every card, column and drag feels as sure-footed as Linear and as friendly as Trello.\nTasks board 2\nWho's carrying what\nA board sliced by person, so a small team sees at a glance who is overloaded, who is free, and hands work across with a single drag.\nTasks board 3\nToday's desk\nA focus board that clears everything away except today: a queue of what is up next, a small hand of at most three things you are working, and a real pile of what you finished.\nTasks board 4\nFlow and friction\nA board that shows time as well as place, so stuck, ageing work and bottlenecked stages surface themselves before anyone has to ask.\nTasks board 5\nThe planning wall\nA spatial board that feels like the wall of sticky notes a team stands in front of, where you can think freely and one press tidies it into trackable columns and back.\nTasks list\nTasks list 1\nKeyboard command list\nA dense, single-line list you drive entirely from the keyboard, where a command line at the foot of the page turns plain sentences into edits across everything you have selected.\nTasks list 2\nLiving outline\nTasks are a nested outline you can zoom into, where every parent rolls up the progress of everything beneath it, so the list shows the shape of the plan and not just its items.\nTasks list 3\nPlanner's sheet\nA true spreadsheet for planners who think in columns, with cell-level selection, fill-down, typed columns like budget and headcount, and live totals, so the task list doubles as the event's working sheet.\nTasks list 4\nToday, next, later\nThe list is organised by when you will do something, not by its status, with an honest capacity meter for today and a short daily ritual that turns a pile of tasks into a plan you can finish.\nTasks list 5\nWho owes what\nEvery task is a plain sentence of who promised what, for whom and by when, grouped by person, and every part of it is a word you can click to change.\nTasks calendar\nTasks calendar 1\nThe living month\nA month grid made to Fantastical's standard, where how busy each day is and what runs over several days read at a glance, and a plain sentence typed at the top lands on the right day as you write it.\nTasks calendar 2\nPlan my week\nA time-blocking planner where you pull tasks from a tray into real hours, and each day shows honestly whether the plan fits the time you have.\nTasks calendar 3\nTeam load\nA calendar turned on its side, with people as rows and days as columns, so a small team can see who is overloaded on which day and rebalance by dragging work from one person to another.\nTasks calendar 4\nCountdown runway\nFor work that builds to one big date, the calendar becomes a countdown runway where every week is labelled by how far it is from the day, and you can always see whether you are on track to get there.\nTasks calendar 5\nThe agenda river\nOne calm stream of days that merges tasks, milestones and events in reading order, folds quiet stretches into a single line and keeps today anchored, so the calendar reads like a well-edited diary rather than a grid.\nAnalytics\nAnalytics 1\nThe Friday letter\nAnalytics as a short, warm letter from a good project manager, written fresh each Friday, with word-sized charts set into the sentences and a margin that lights up the exact bar a phrase refers to.\nAnalytics 2\nWill we make it\nOne question answered with one picture: a landing forecast of when the remaining work finishes against the big date, and plain-English levers that visibly slide it.\nAnalytics 3\nWho needs a hand\nEach person's coming weeks stack up as tiles against their own usual pace, so anyone can see whose pile spills over and drag work to someone with room.\nAnalytics 4\nProject replay\nReplay the whole Project day by day on a simple board, with the moments that changed its course pinned to the timeline, so you can watch how it got here instead of reading about it.\nAnalytics 5\nAsk a question\nA question-first page where you pick or type what you want to know and get back one plain sentence and the one chart that proves it, chained into a thread of follow-ups you can pin.\nAnalytics 6\nAll projects wall\nA calm wall of identical small multiples puts every Project side by side on the same scales, with one crosshair that lights the same week on all of them, for the owner who wants to compare everything.\nApps and tools\nApps and tools 1\nYour tool shelf\nApps and tools becomes a home screen you arrange like a phone, where every tool that is on shows as a small live widget, so being on and being useful look like the same thing.\nApps and tools 2\nThe shadow board\nEach Project gets a workshop shadow board laid out for what it is, where tools that are on hang in place and tools that would help show only as a labelled outline, so what is missing is as visible as what is there.\nApps and tools 3\nThe field guide\nApps and tools reads like a beautifully kept field guide, where each tool is introduced through a short true story of how a team like yours used it, and every story can be tried on your own Project in place.\nApps and tools 4\nAsk for a tool\nInstead of browsing, you say what you need in your own words and the right tool assembles itself in front of you, previewed with your Project's own data, before you decide to keep it.\nApps and tools 5\nThe workbench\nTools are not a destination but a second pane: you open them beside your tasks and timeline, work across both at once, and save the arrangement as a bench you come back to.\nApps and tools 6\nHow it all connects\nApps and tools becomes a calm, living map of what talks to what, where your email, WhatsApp, calendars, forms and files visibly feed your Projects, so turning something on means drawing a line and watching real things start to flow.\nShared timeline\nShared timeline 1\nThe Road There\nThe shared timeline as a story read top to bottom, one chapter per milestone, with a sticky path that fills to today and a countdown that ends at the day.\nShared timeline 2\nCountdown Instrument\nOne precise, ticking dial where a single turn is the whole project, so the shared page feels like the minutes before a launch and anyone can drag the hand back through what already happened.\nShared timeline 3\nThe Invitation Suite\nThe timeline arrives as a printed stationery suite: tap the wax seal and the envelope opens into one card for each moment on the way to the day.\nShared timeline 4\nEvery Day Poster\nThe shared timeline as a living poster: every day of the project is one dot, filled up to today, laid out to be screenshotted, saved and posted.\nShared timeline 5\nThe Dispatch\nThe shared timeline as a quiet run of letters from the people organising it, so stakeholders follow the progress the way they would follow a friend's news.\nShared timeline 6\nThe Line\nThe journey drawn as a transit map, where each strand of work is a coloured line running into the day, milestones are stations, and small trains show exactly where things are right now.\nIn development. You’re seeing it early.\n×",
+      "errors": [],
+      "failedResponses": [],
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/concepts-mobile.png",
+      "screenshotSha256": "48fb2c53cabb4680ee71d081ca8ec17c59ab84616df1d12f8205fba8b0099e4b",
+      "passed": true
+    },
+    {
+      "route": "concepts",
+      "project": "tablet",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "responseStatus": 200,
+      "source": "src/app/app/concepts/page.tsx",
+      "sourceBlob": "7ba746875a5e7002f3bd627afea1466c34e7456b",
+      "title": "Concepts · Signal Studio",
+      "url": "http://127.0.0.1:4401/app/concepts",
+      "headings": [
+        "Concepts",
+        "Overview",
+        "Projects",
+        "Files",
+        "Tasks board",
+        "Tasks list",
+        "Tasks calendar",
+        "Analytics",
+        "Apps and tools",
+        "Shared timeline"
+      ],
+      "horizontalOverflow": 0,
+      "conceptCards": 48,
+      "bodyText": "Skip to main content\nSignal Studio\nSearch or jump to…\nCtrl K\nHome\nWorkspace\nProjects\nTasks\nTimeline\nFiles\nAnalytics\nBuild\nAutomations\nPreview\nWhiteboard\nComing\nSoon\nChat\nAll conversations\n6\nwaiting\nThe Orchard, events\n1\nmention\nBuild the Saturday run-sheet\n1\nmention\nApprove the final seating plan\n, unread\nNK\nNiamh Kelly\n, online\n1\nnew message\nAW\nAoife Walsh\n, online\n2\nnew messages\nDQ\nDara Quinn\nCB\nCiarán Byrne\n, unread\nRequest\nSettings\nSignal Studio\nDO\nConcepts\n\nFive or six directions for each view, using sample data. These are unpicked prototypes for review.\n\nOverview\nOverview 1\nConcept 1\nIn progress.\nOverview 2\nConcept 2\nIn progress.\nOverview 3\nConcept 3\nIn progress.\nOverview 4\nConcept 4\nIn progress.\nOverview 5\nConcept 5\nIn progress.\nProjects\nProjects 1\nConcept 1\nIn progress.\nProjects 2\nConcept 2\nIn progress.\nProjects 3\nConcept 3\nIn progress.\nProjects 4\nConcept 4\nIn progress.\nProjects 5\nConcept 5\nIn progress.\nFiles\nFiles 1\nConcept 1\nIn progress.\nFiles 2\nConcept 2\nIn progress.\nFiles 3\nConcept 3\nIn progress.\nFiles 4\nConcept 4\nIn progress.\nFiles 5\nConcept 5\nIn progress.\nTasks board\nTasks board 1\nStudio columns\nThe classic stage board taken to its finest finish, where every card, column and drag feels as sure-footed as Linear and as friendly as Trello.\nTasks board 2\nWho's carrying what\nA board sliced by person, so a small team sees at a glance who is overloaded, who is free, and hands work across with a single drag.\nTasks board 3\nToday's desk\nA focus board that clears everything away except today: a queue of what is up next, a small hand of at most three things you are working, and a real pile of what you finished.\nTasks board 4\nFlow and friction\nA board that shows time as well as place, so stuck, ageing work and bottlenecked stages surface themselves before anyone has to ask.\nTasks board 5\nThe planning wall\nA spatial board that feels like the wall of sticky notes a team stands in front of, where you can think freely and one press tidies it into trackable columns and back.\nTasks list\nTasks list 1\nKeyboard command list\nA dense, single-line list you drive entirely from the keyboard, where a command line at the foot of the page turns plain sentences into edits across everything you have selected.\nTasks list 2\nLiving outline\nTasks are a nested outline you can zoom into, where every parent rolls up the progress of everything beneath it, so the list shows the shape of the plan and not just its items.\nTasks list 3\nPlanner's sheet\nA true spreadsheet for planners who think in columns, with cell-level selection, fill-down, typed columns like budget and headcount, and live totals, so the task list doubles as the event's working sheet.\nTasks list 4\nToday, next, later\nThe list is organised by when you will do something, not by its status, with an honest capacity meter for today and a short daily ritual that turns a pile of tasks into a plan you can finish.\nTasks list 5\nWho owes what\nEvery task is a plain sentence of who promised what, for whom and by when, grouped by person, and every part of it is a word you can click to change.\nTasks calendar\nTasks calendar 1\nThe living month\nA month grid made to Fantastical's standard, where how busy each day is and what runs over several days read at a glance, and a plain sentence typed at the top lands on the right day as you write it.\nTasks calendar 2\nPlan my week\nA time-blocking planner where you pull tasks from a tray into real hours, and each day shows honestly whether the plan fits the time you have.\nTasks calendar 3\nTeam load\nA calendar turned on its side, with people as rows and days as columns, so a small team can see who is overloaded on which day and rebalance by dragging work from one person to another.\nTasks calendar 4\nCountdown runway\nFor work that builds to one big date, the calendar becomes a countdown runway where every week is labelled by how far it is from the day, and you can always see whether you are on track to get there.\nTasks calendar 5\nThe agenda river\nOne calm stream of days that merges tasks, milestones and events in reading order, folds quiet stretches into a single line and keeps today anchored, so the calendar reads like a well-edited diary rather than a grid.\nAnalytics\nAnalytics 1\nThe Friday letter\nAnalytics as a short, warm letter from a good project manager, written fresh each Friday, with word-sized charts set into the sentences and a margin that lights up the exact bar a phrase refers to.\nAnalytics 2\nWill we make it\nOne question answered with one picture: a landing forecast of when the remaining work finishes against the big date, and plain-English levers that visibly slide it.\nAnalytics 3\nWho needs a hand\nEach person's coming weeks stack up as tiles against their own usual pace, so anyone can see whose pile spills over and drag work to someone with room.\nAnalytics 4\nProject replay\nReplay the whole Project day by day on a simple board, with the moments that changed its course pinned to the timeline, so you can watch how it got here instead of reading about it.\nAnalytics 5\nAsk a question\nA question-first page where you pick or type what you want to know and get back one plain sentence and the one chart that proves it, chained into a thread of follow-ups you can pin.\nAnalytics 6\nAll projects wall\nA calm wall of identical small multiples puts every Project side by side on the same scales, with one crosshair that lights the same week on all of them, for the owner who wants to compare everything.\nApps and tools\nApps and tools 1\nYour tool shelf\nApps and tools becomes a home screen you arrange like a phone, where every tool that is on shows as a small live widget, so being on and being useful look like the same thing.\nApps and tools 2\nThe shadow board\nEach Project gets a workshop shadow board laid out for what it is, where tools that are on hang in place and tools that would help show only as a labelled outline, so what is missing is as visible as what is there.\nApps and tools 3\nThe field guide\nApps and tools reads like a beautifully kept field guide, where each tool is introduced through a short true story of how a team like yours used it, and every story can be tried on your own Project in place.\nApps and tools 4\nAsk for a tool\nInstead of browsing, you say what you need in your own words and the right tool assembles itself in front of you, previewed with your Project's own data, before you decide to keep it.\nApps and tools 5\nThe workbench\nTools are not a destination but a second pane: you open them beside your tasks and timeline, work across both at once, and save the arrangement as a bench you come back to.\nApps and tools 6\nHow it all connects\nApps and tools becomes a calm, living map of what talks to what, where your email, WhatsApp, calendars, forms and files visibly feed your Projects, so turning something on means drawing a line and watching real things start to flow.\nShared timeline\nShared timeline 1\nThe Road There\nThe shared timeline as a story read top to bottom, one chapter per milestone, with a sticky path that fills to today and a countdown that ends at the day.\nShared timeline 2\nCountdown Instrument\nOne precise, ticking dial where a single turn is the whole project, so the shared page feels like the minutes before a launch and anyone can drag the hand back through what already happened.\nShared timeline 3\nThe Invitation Suite\nThe timeline arrives as a printed stationery suite: tap the wax seal and the envelope opens into one card for each moment on the way to the day.\nShared timeline 4\nEvery Day Poster\nThe shared timeline as a living poster: every day of the project is one dot, filled up to today, laid out to be screenshotted, saved and posted.\nShared timeline 5\nThe Dispatch\nThe shared timeline as a quiet run of letters from the people organising it, so stakeholders follow the progress the way they would follow a friend's news.\nShared timeline 6\nThe Line\nThe journey drawn as a transit map, where each strand of work is a coloured line running into the day, milestones are stations, and small trains show exactly where things are right now.\nIn development. You’re seeing it early.\n×",
+      "errors": [],
+      "failedResponses": [],
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/concepts-tablet.png",
+      "screenshotSha256": "530082b3820885cdd1157172b2faf46d08a28feccdb54378a47843e35cec85ab",
+      "passed": true
+    },
+    {
+      "route": "concepts",
+      "project": "desktop",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "responseStatus": 200,
+      "source": "src/app/app/concepts/page.tsx",
+      "sourceBlob": "7ba746875a5e7002f3bd627afea1466c34e7456b",
+      "title": "Concepts · Signal Studio",
+      "url": "http://127.0.0.1:4401/app/concepts",
+      "headings": [
+        "Concepts",
+        "Overview",
+        "Projects",
+        "Files",
+        "Tasks board",
+        "Tasks list",
+        "Tasks calendar",
+        "Analytics",
+        "Apps and tools",
+        "Shared timeline"
+      ],
+      "horizontalOverflow": 0,
+      "conceptCards": 48,
+      "bodyText": "Skip to main content\nSignal Studio\nSearch or jump to…\nCtrl K\nHome\nWorkspace\nProjects\nTasks\nTimeline\nFiles\nAnalytics\nBuild\nAutomations\nPreview\nWhiteboard\nComing\nSoon\nChat\nAll conversations\n6\nwaiting\nThe Orchard, events\n1\nmention\nBuild the Saturday run-sheet\n1\nmention\nApprove the final seating plan\n, unread\nNK\nNiamh Kelly\n, online\n1\nnew message\nAW\nAoife Walsh\n, online\n2\nnew messages\nDQ\nDara Quinn\nCB\nCiarán Byrne\n, unread\nRequest\nSettings\nSignal Studio\nSearch or jump to…\nCtrl K\nNew task\nDO\nConcepts\n\nFive or six directions for each view, using sample data. These are unpicked prototypes for review.\n\nOverview\nOverview 1\nConcept 1\nIn progress.\nOverview 2\nConcept 2\nIn progress.\nOverview 3\nConcept 3\nIn progress.\nOverview 4\nConcept 4\nIn progress.\nOverview 5\nConcept 5\nIn progress.\nProjects\nProjects 1\nConcept 1\nIn progress.\nProjects 2\nConcept 2\nIn progress.\nProjects 3\nConcept 3\nIn progress.\nProjects 4\nConcept 4\nIn progress.\nProjects 5\nConcept 5\nIn progress.\nFiles\nFiles 1\nConcept 1\nIn progress.\nFiles 2\nConcept 2\nIn progress.\nFiles 3\nConcept 3\nIn progress.\nFiles 4\nConcept 4\nIn progress.\nFiles 5\nConcept 5\nIn progress.\nTasks board\nTasks board 1\nStudio columns\nThe classic stage board taken to its finest finish, where every card, column and drag feels as sure-footed as Linear and as friendly as Trello.\nTasks board 2\nWho's carrying what\nA board sliced by person, so a small team sees at a glance who is overloaded, who is free, and hands work across with a single drag.\nTasks board 3\nToday's desk\nA focus board that clears everything away except today: a queue of what is up next, a small hand of at most three things you are working, and a real pile of what you finished.\nTasks board 4\nFlow and friction\nA board that shows time as well as place, so stuck, ageing work and bottlenecked stages surface themselves before anyone has to ask.\nTasks board 5\nThe planning wall\nA spatial board that feels like the wall of sticky notes a team stands in front of, where you can think freely and one press tidies it into trackable columns and back.\nTasks list\nTasks list 1\nKeyboard command list\nA dense, single-line list you drive entirely from the keyboard, where a command line at the foot of the page turns plain sentences into edits across everything you have selected.\nTasks list 2\nLiving outline\nTasks are a nested outline you can zoom into, where every parent rolls up the progress of everything beneath it, so the list shows the shape of the plan and not just its items.\nTasks list 3\nPlanner's sheet\nA true spreadsheet for planners who think in columns, with cell-level selection, fill-down, typed columns like budget and headcount, and live totals, so the task list doubles as the event's working sheet.\nTasks list 4\nToday, next, later\nThe list is organised by when you will do something, not by its status, with an honest capacity meter for today and a short daily ritual that turns a pile of tasks into a plan you can finish.\nTasks list 5\nWho owes what\nEvery task is a plain sentence of who promised what, for whom and by when, grouped by person, and every part of it is a word you can click to change.\nTasks calendar\nTasks calendar 1\nThe living month\nA month grid made to Fantastical's standard, where how busy each day is and what runs over several days read at a glance, and a plain sentence typed at the top lands on the right day as you write it.\nTasks calendar 2\nPlan my week\nA time-blocking planner where you pull tasks from a tray into real hours, and each day shows honestly whether the plan fits the time you have.\nTasks calendar 3\nTeam load\nA calendar turned on its side, with people as rows and days as columns, so a small team can see who is overloaded on which day and rebalance by dragging work from one person to another.\nTasks calendar 4\nCountdown runway\nFor work that builds to one big date, the calendar becomes a countdown runway where every week is labelled by how far it is from the day, and you can always see whether you are on track to get there.\nTasks calendar 5\nThe agenda river\nOne calm stream of days that merges tasks, milestones and events in reading order, folds quiet stretches into a single line and keeps today anchored, so the calendar reads like a well-edited diary rather than a grid.\nAnalytics\nAnalytics 1\nThe Friday letter\nAnalytics as a short, warm letter from a good project manager, written fresh each Friday, with word-sized charts set into the sentences and a margin that lights up the exact bar a phrase refers to.\nAnalytics 2\nWill we make it\nOne question answered with one picture: a landing forecast of when the remaining work finishes against the big date, and plain-English levers that visibly slide it.\nAnalytics 3\nWho needs a hand\nEach person's coming weeks stack up as tiles against their own usual pace, so anyone can see whose pile spills over and drag work to someone with room.\nAnalytics 4\nProject replay\nReplay the whole Project day by day on a simple board, with the moments that changed its course pinned to the timeline, so you can watch how it got here instead of reading about it.\nAnalytics 5\nAsk a question\nA question-first page where you pick or type what you want to know and get back one plain sentence and the one chart that proves it, chained into a thread of follow-ups you can pin.\nAnalytics 6\nAll projects wall\nA calm wall of identical small multiples puts every Project side by side on the same scales, with one crosshair that lights the same week on all of them, for the owner who wants to compare everything.\nApps and tools\nApps and tools 1\nYour tool shelf\nApps and tools becomes a home screen you arrange like a phone, where every tool that is on shows as a small live widget, so being on and being useful look like the same thing.\nApps and tools 2\nThe shadow board\nEach Project gets a workshop shadow board laid out for what it is, where tools that are on hang in place and tools that would help show only as a labelled outline, so what is missing is as visible as what is there.\nApps and tools 3\nThe field guide\nApps and tools reads like a beautifully kept field guide, where each tool is introduced through a short true story of how a team like yours used it, and every story can be tried on your own Project in place.\nApps and tools 4\nAsk for a tool\nInstead of browsing, you say what you need in your own words and the right tool assembles itself in front of you, previewed with your Project's own data, before you decide to keep it.\nApps and tools 5\nThe workbench\nTools are not a destination but a second pane: you open them beside your tasks and timeline, work across both at once, and save the arrangement as a bench you come back to.\nApps and tools 6\nHow it all connects\nApps and tools becomes a calm, living map of what talks to what, where your email, WhatsApp, calendars, forms and files visibly feed your Projects, so turning something on means drawing a line and watching real things start to flow.\nShared timeline\nShared timeline 1\nThe Road There\nThe shared timeline as a story read top to bottom, one chapter per milestone, with a sticky path that fills to today and a countdown that ends at the day.\nShared timeline 2\nCountdown Instrument\nOne precise, ticking dial where a single turn is the whole project, so the shared page feels like the minutes before a launch and anyone can drag the hand back through what already happened.\nShared timeline 3\nThe Invitation Suite\nThe timeline arrives as a printed stationery suite: tap the wax seal and the envelope opens into one card for each moment on the way to the day.\nShared timeline 4\nEvery Day Poster\nThe shared timeline as a living poster: every day of the project is one dot, filled up to today, laid out to be screenshotted, saved and posted.\nShared timeline 5\nThe Dispatch\nThe shared timeline as a quiet run of letters from the people organising it, so stakeholders follow the progress the way they would follow a friend's news.\nShared timeline 6\nThe Line\nThe journey drawn as a transit map, where each strand of work is a coloured line running into the day, milestones are stations, and small trains show exactly where things are right now.\nIn development. You’re seeing it early.\n×",
+      "errors": [],
+      "failedResponses": [],
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/concepts-desktop.png",
+      "screenshotSha256": "57bdb9bf83c684753cedbd991a0cfaa9304e28a7e2db6e2a477015952f5b334d",
+      "passed": true
+    },
+    {
+      "route": "concepts",
+      "project": "wide",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "responseStatus": 200,
+      "source": "src/app/app/concepts/page.tsx",
+      "sourceBlob": "7ba746875a5e7002f3bd627afea1466c34e7456b",
+      "title": "Concepts · Signal Studio",
+      "url": "http://127.0.0.1:4401/app/concepts",
+      "headings": [
+        "Concepts",
+        "Overview",
+        "Projects",
+        "Files",
+        "Tasks board",
+        "Tasks list",
+        "Tasks calendar",
+        "Analytics",
+        "Apps and tools",
+        "Shared timeline"
+      ],
+      "horizontalOverflow": 0,
+      "conceptCards": 48,
+      "bodyText": "Skip to main content\nSignal Studio\nSearch or jump to…\nCtrl K\nHome\nWorkspace\nProjects\nTasks\nTimeline\nFiles\nAnalytics\nBuild\nAutomations\nPreview\nWhiteboard\nComing\nSoon\nChat\nAll conversations\n6\nwaiting\nThe Orchard, events\n1\nmention\nBuild the Saturday run-sheet\n1\nmention\nApprove the final seating plan\n, unread\nNK\nNiamh Kelly\n, online\n1\nnew message\nAW\nAoife Walsh\n, online\n2\nnew messages\nDQ\nDara Quinn\nCB\nCiarán Byrne\n, unread\nRequest\nSettings\nSignal Studio\nSearch or jump to…\nCtrl K\nNew task\nDO\nConcepts\n\nFive or six directions for each view, using sample data. These are unpicked prototypes for review.\n\nOverview\nOverview 1\nConcept 1\nIn progress.\nOverview 2\nConcept 2\nIn progress.\nOverview 3\nConcept 3\nIn progress.\nOverview 4\nConcept 4\nIn progress.\nOverview 5\nConcept 5\nIn progress.\nProjects\nProjects 1\nConcept 1\nIn progress.\nProjects 2\nConcept 2\nIn progress.\nProjects 3\nConcept 3\nIn progress.\nProjects 4\nConcept 4\nIn progress.\nProjects 5\nConcept 5\nIn progress.\nFiles\nFiles 1\nConcept 1\nIn progress.\nFiles 2\nConcept 2\nIn progress.\nFiles 3\nConcept 3\nIn progress.\nFiles 4\nConcept 4\nIn progress.\nFiles 5\nConcept 5\nIn progress.\nTasks board\nTasks board 1\nStudio columns\nThe classic stage board taken to its finest finish, where every card, column and drag feels as sure-footed as Linear and as friendly as Trello.\nTasks board 2\nWho's carrying what\nA board sliced by person, so a small team sees at a glance who is overloaded, who is free, and hands work across with a single drag.\nTasks board 3\nToday's desk\nA focus board that clears everything away except today: a queue of what is up next, a small hand of at most three things you are working, and a real pile of what you finished.\nTasks board 4\nFlow and friction\nA board that shows time as well as place, so stuck, ageing work and bottlenecked stages surface themselves before anyone has to ask.\nTasks board 5\nThe planning wall\nA spatial board that feels like the wall of sticky notes a team stands in front of, where you can think freely and one press tidies it into trackable columns and back.\nTasks list\nTasks list 1\nKeyboard command list\nA dense, single-line list you drive entirely from the keyboard, where a command line at the foot of the page turns plain sentences into edits across everything you have selected.\nTasks list 2\nLiving outline\nTasks are a nested outline you can zoom into, where every parent rolls up the progress of everything beneath it, so the list shows the shape of the plan and not just its items.\nTasks list 3\nPlanner's sheet\nA true spreadsheet for planners who think in columns, with cell-level selection, fill-down, typed columns like budget and headcount, and live totals, so the task list doubles as the event's working sheet.\nTasks list 4\nToday, next, later\nThe list is organised by when you will do something, not by its status, with an honest capacity meter for today and a short daily ritual that turns a pile of tasks into a plan you can finish.\nTasks list 5\nWho owes what\nEvery task is a plain sentence of who promised what, for whom and by when, grouped by person, and every part of it is a word you can click to change.\nTasks calendar\nTasks calendar 1\nThe living month\nA month grid made to Fantastical's standard, where how busy each day is and what runs over several days read at a glance, and a plain sentence typed at the top lands on the right day as you write it.\nTasks calendar 2\nPlan my week\nA time-blocking planner where you pull tasks from a tray into real hours, and each day shows honestly whether the plan fits the time you have.\nTasks calendar 3\nTeam load\nA calendar turned on its side, with people as rows and days as columns, so a small team can see who is overloaded on which day and rebalance by dragging work from one person to another.\nTasks calendar 4\nCountdown runway\nFor work that builds to one big date, the calendar becomes a countdown runway where every week is labelled by how far it is from the day, and you can always see whether you are on track to get there.\nTasks calendar 5\nThe agenda river\nOne calm stream of days that merges tasks, milestones and events in reading order, folds quiet stretches into a single line and keeps today anchored, so the calendar reads like a well-edited diary rather than a grid.\nAnalytics\nAnalytics 1\nThe Friday letter\nAnalytics as a short, warm letter from a good project manager, written fresh each Friday, with word-sized charts set into the sentences and a margin that lights up the exact bar a phrase refers to.\nAnalytics 2\nWill we make it\nOne question answered with one picture: a landing forecast of when the remaining work finishes against the big date, and plain-English levers that visibly slide it.\nAnalytics 3\nWho needs a hand\nEach person's coming weeks stack up as tiles against their own usual pace, so anyone can see whose pile spills over and drag work to someone with room.\nAnalytics 4\nProject replay\nReplay the whole Project day by day on a simple board, with the moments that changed its course pinned to the timeline, so you can watch how it got here instead of reading about it.\nAnalytics 5\nAsk a question\nA question-first page where you pick or type what you want to know and get back one plain sentence and the one chart that proves it, chained into a thread of follow-ups you can pin.\nAnalytics 6\nAll projects wall\nA calm wall of identical small multiples puts every Project side by side on the same scales, with one crosshair that lights the same week on all of them, for the owner who wants to compare everything.\nApps and tools\nApps and tools 1\nYour tool shelf\nApps and tools becomes a home screen you arrange like a phone, where every tool that is on shows as a small live widget, so being on and being useful look like the same thing.\nApps and tools 2\nThe shadow board\nEach Project gets a workshop shadow board laid out for what it is, where tools that are on hang in place and tools that would help show only as a labelled outline, so what is missing is as visible as what is there.\nApps and tools 3\nThe field guide\nApps and tools reads like a beautifully kept field guide, where each tool is introduced through a short true story of how a team like yours used it, and every story can be tried on your own Project in place.\nApps and tools 4\nAsk for a tool\nInstead of browsing, you say what you need in your own words and the right tool assembles itself in front of you, previewed with your Project's own data, before you decide to keep it.\nApps and tools 5\nThe workbench\nTools are not a destination but a second pane: you open them beside your tasks and timeline, work across both at once, and save the arrangement as a bench you come back to.\nApps and tools 6\nHow it all connects\nApps and tools becomes a calm, living map of what talks to what, where your email, WhatsApp, calendars, forms and files visibly feed your Projects, so turning something on means drawing a line and watching real things start to flow.\nShared timeline\nShared timeline 1\nThe Road There\nThe shared timeline as a story read top to bottom, one chapter per milestone, with a sticky path that fills to today and a countdown that ends at the day.\nShared timeline 2\nCountdown Instrument\nOne precise, ticking dial where a single turn is the whole project, so the shared page feels like the minutes before a launch and anyone can drag the hand back through what already happened.\nShared timeline 3\nThe Invitation Suite\nThe timeline arrives as a printed stationery suite: tap the wax seal and the envelope opens into one card for each moment on the way to the day.\nShared timeline 4\nEvery Day Poster\nThe shared timeline as a living poster: every day of the project is one dot, filled up to today, laid out to be screenshotted, saved and posted.\nShared timeline 5\nThe Dispatch\nThe shared timeline as a quiet run of letters from the people organising it, so stakeholders follow the progress the way they would follow a friend's news.\nShared timeline 6\nThe Line\nThe journey drawn as a transit map, where each strand of work is a coloured line running into the day, milestones are stations, and small trains show exactly where things are right now.\nIn development. You’re seeing it early.\n×",
+      "errors": [],
+      "failedResponses": [],
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/concepts-wide.png",
+      "screenshotSha256": "ae89fb6d3191854e6a3991541f394850e42eaca0e308d4d4e91c0015f454b053",
+      "passed": true
+    },
+    {
+      "route": "files",
+      "project": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "responseStatus": 200,
+      "source": "src/app/app/files/page.tsx",
+      "sourceBlob": "7b46515d7d5214337ced7c419d2a7ab7a1f35643",
+      "title": "Files · Signal Studio",
+      "url": "http://127.0.0.1:4401/app/files",
+      "headings": [
+        "Files",
+        "Added in the last 7 days7",
+        "Earlier1",
+        "Run-sheet, Saturday v3.pdf"
+      ],
+      "horizontalOverflow": 0,
+      "conceptCards": 0,
+      "bodyText": "Skip to main content\nSignal Studio\nSearch or jump to…\nCtrl K\nHome\nWorkspace\nProjects\nTasks\nTimeline\nFiles\nAnalytics\nBuild\nAutomations\nPreview\nWhiteboard\nComing\nSoon\nChat\nAll conversations\n6\nwaiting\nThe Orchard, events\n1\nmention\nBuild the Saturday run-sheet\n1\nmention\nApprove the final seating plan\n, unread\nNK\nNiamh Kelly\n, online\n1\nnew message\nAW\nAoife Walsh\n, online\n2\nnew messages\nDQ\nDara Quinn\nCB\nCiarán Byrne\n, unread\nRequest\nSettings\nFiles\nDO\nFiles\nThe Orchard, events\n\n8 files across 7 tasks\n7 added in the last 7 days\n\nOpen Tasks\nAdded this week\n7\nDocuments\n3\nImages\n2\nSheets\n2\nLinks\n1\n\n8 files, newest first\n\nSample files. In your projects, each one opens or downloads from here.\n\nAdded in the last 7 days\n7\nRun-sheet, Saturday v3.pdf\nDocument\n402 KB\nOrla, 16 Jul\nBuild the Saturday run-sheet\nMarquee quote, Hireco.pdf\nDocument\n184 KB\nOrla, 15 Jul\nConfirm marquee sides with the hire company\nSeating plan, final\nSheet\nGoogle Drive\nOrla, 15 Jul\nApprove the final seating plan\nTerrace at golden hour.jpg\nImage\n2.3 MB\nOrla, 14 Jul\nConfirm marquee sides with the hire company\nBar order, July\nSheet\nGoogle Drive\nOrla, 13 Jul\nOrder tonic + the good olives\nWelcome sign artwork.png\nImage\n1.1 MB\nOrla, 12 Jul\nReprint the faded welcome sign before the open day\nRecommended suppliers\nLink\nOrla, 11 Jul\nSign off the recommended-suppliers list\nEarlier\n1\nDeposit invoice, Mara & Finn.pdf\nDocument\n94 KB\nOrla, 9 Jul\nDeposit invoice settled, Mara & Finn\n\n5 uploaded4.0 MB stored\n2 google driveLinked, not copied\n1 linksWeb pages and tools\n\nIn development. You’re seeing it early.\n×",
+      "errors": [],
+      "failedResponses": [],
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/files-mobile.png",
+      "screenshotSha256": "c82f5cba99371904c529a419a70235dce6627c64ad9b873ab04bf40302bdc047",
+      "passed": true
+    },
+    {
+      "route": "files",
+      "project": "tablet",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "responseStatus": 200,
+      "source": "src/app/app/files/page.tsx",
+      "sourceBlob": "7b46515d7d5214337ced7c419d2a7ab7a1f35643",
+      "title": "Files · Signal Studio",
+      "url": "http://127.0.0.1:4401/app/files",
+      "headings": [
+        "Files",
+        "Added in the last 7 days7",
+        "Earlier1",
+        "Run-sheet, Saturday v3.pdf"
+      ],
+      "horizontalOverflow": 0,
+      "conceptCards": 0,
+      "bodyText": "Skip to main content\nSignal Studio\nSearch or jump to…\nCtrl K\nHome\nWorkspace\nProjects\nTasks\nTimeline\nFiles\nAnalytics\nBuild\nAutomations\nPreview\nWhiteboard\nComing\nSoon\nChat\nAll conversations\n6\nwaiting\nThe Orchard, events\n1\nmention\nBuild the Saturday run-sheet\n1\nmention\nApprove the final seating plan\n, unread\nNK\nNiamh Kelly\n, online\n1\nnew message\nAW\nAoife Walsh\n, online\n2\nnew messages\nDQ\nDara Quinn\nCB\nCiarán Byrne\n, unread\nRequest\nSettings\nSignal Studio\n/\nFiles\nDO\nFiles\nThe Orchard, events\n\n8 files across 7 tasks\n7 added in the last 7 days\n\nOpen Tasks\n/\nNarrow\nAdded this week\n7\nDocuments\n3\nImages\n2\nSheets\n2\nLinks\n1\n\n8 files, newest first\n\nSample files. In your projects, each one opens or downloads from here.\n\nAdded in the last 7 days\n7\nRun-sheet, Saturday v3.pdf\nDocument\n402 KB\nOrla, 16 Jul\nBuild the Saturday run-sheet\nMarquee quote, Hireco.pdf\nDocument\n184 KB\nOrla, 15 Jul\nConfirm marquee sides with the hire company\nSeating plan, final\nSheet\nGoogle Drive\nOrla, 15 Jul\nApprove the final seating plan\nTerrace at golden hour.jpg\nImage\n2.3 MB\nOrla, 14 Jul\nConfirm marquee sides with the hire company\nBar order, July\nSheet\nGoogle Drive\nOrla, 13 Jul\nOrder tonic + the good olives\nWelcome sign artwork.png\nImage\n1.1 MB\nOrla, 12 Jul\nReprint the faded welcome sign before the open day\nRecommended suppliers\nLink\nOrla, 11 Jul\nSign off the recommended-suppliers list\nEarlier\n1\nDeposit invoice, Mara & Finn.pdf\nDocument\n94 KB\nOrla, 9 Jul\nDeposit invoice settled, Mara & Finn\n\n5 uploaded4.0 MB stored\n2 google driveLinked, not copied\n1 linksWeb pages and tools\n\nIn development. You’re seeing it early.\n×",
+      "errors": [],
+      "failedResponses": [],
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/files-tablet.png",
+      "screenshotSha256": "2236c7bbb17c5572b35982ed45194f1b5f6a53a8492b016aa90110a7ffc6167a",
+      "passed": true
+    },
+    {
+      "route": "files",
+      "project": "desktop",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "responseStatus": 200,
+      "source": "src/app/app/files/page.tsx",
+      "sourceBlob": "7b46515d7d5214337ced7c419d2a7ab7a1f35643",
+      "title": "Files · Signal Studio",
+      "url": "http://127.0.0.1:4401/app/files",
+      "headings": [
+        "Files",
+        "Added in the last 7 days7",
+        "Earlier1",
+        "Run-sheet, Saturday v3.pdf"
+      ],
+      "horizontalOverflow": 0,
+      "conceptCards": 0,
+      "bodyText": "Skip to main content\nSignal Studio\nSearch or jump to…\nCtrl K\nHome\nWorkspace\nProjects\nTasks\nTimeline\nFiles\nAnalytics\nBuild\nAutomations\nPreview\nWhiteboard\nComing\nSoon\nChat\nAll conversations\n6\nwaiting\nThe Orchard, events\n1\nmention\nBuild the Saturday run-sheet\n1\nmention\nApprove the final seating plan\n, unread\nNK\nNiamh Kelly\n, online\n1\nnew message\nAW\nAoife Walsh\n, online\n2\nnew messages\nDQ\nDara Quinn\nCB\nCiarán Byrne\n, unread\nRequest\nSettings\nSignal Studio\n/\nFiles\nSearch or jump to…\nCtrl K\nNew task\nDO\nFiles\nThe Orchard, events\n\n8 files across 7 tasks\n7 added in the last 7 days\n\nOpen Tasks\n/\nNarrow\nAdded this week\n7\nDocuments\n3\nImages\n2\nSheets\n2\nLinks\n1\n\n8 files, newest first\n\nSample files. In your projects, each one opens or downloads from here.\n\nAdded in the last 7 days\n7\nRun-sheet, Saturday v3.pdf\nDocument\n402 KB\nOrla, 16 Jul\nBuild the Saturday run-sheet\nMarquee quote, Hireco.pdf\nDocument\n184 KB\nOrla, 15 Jul\nConfirm marquee sides with the hire company\nSeating plan, final\nSheet\nGoogle Drive\nOrla, 15 Jul\nApprove the final seating plan\nTerrace at golden hour.jpg\nImage\n2.3 MB\nOrla, 14 Jul\nConfirm marquee sides with the hire company\nBar order, July\nSheet\nGoogle Drive\nOrla, 13 Jul\nOrder tonic + the good olives\nWelcome sign artwork.png\nImage\n1.1 MB\nOrla, 12 Jul\nReprint the faded welcome sign before the open day\nRecommended suppliers\nLink\nOrla, 11 Jul\nSign off the recommended-suppliers list\nEarlier\n1\nDeposit invoice, Mara & Finn.pdf\nDocument\n94 KB\nOrla, 9 Jul\nDeposit invoice settled, Mara & Finn\n\n5 uploaded4.0 MB stored\n2 google driveLinked, not copied\n1 linksWeb pages and tools\n\nRun-sheet, Saturday v3.pdf\n\nDocument\n402 KB\nAdded 16 Jul\n\nA sample file. In your own projects it opens from here.\n\nOpen the file to read it.\n\nKind\nDocument\nWhere it lives\nUploaded to Signal Studio\nSize\n402 KB\nAdded\n16 Jul by Orla\nTask\nBuild the Saturday run-sheet\nIn development. You’re seeing it early.\n×",
+      "errors": [],
+      "failedResponses": [],
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/files-desktop.png",
+      "screenshotSha256": "9d954f715ed13d037d13460facc57c369d81c7d338b951c5694f3bd3b8ad5021",
+      "passed": true
+    },
+    {
+      "route": "files",
+      "project": "wide",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "responseStatus": 200,
+      "source": "src/app/app/files/page.tsx",
+      "sourceBlob": "7b46515d7d5214337ced7c419d2a7ab7a1f35643",
+      "title": "Files · Signal Studio",
+      "url": "http://127.0.0.1:4401/app/files",
+      "headings": [
+        "Files",
+        "Added in the last 7 days7",
+        "Earlier1",
+        "Run-sheet, Saturday v3.pdf"
+      ],
+      "horizontalOverflow": 0,
+      "conceptCards": 0,
+      "bodyText": "Skip to main content\nSignal Studio\nSearch or jump to…\nCtrl K\nHome\nWorkspace\nProjects\nTasks\nTimeline\nFiles\nAnalytics\nBuild\nAutomations\nPreview\nWhiteboard\nComing\nSoon\nChat\nAll conversations\n6\nwaiting\nThe Orchard, events\n1\nmention\nBuild the Saturday run-sheet\n1\nmention\nApprove the final seating plan\n, unread\nNK\nNiamh Kelly\n, online\n1\nnew message\nAW\nAoife Walsh\n, online\n2\nnew messages\nDQ\nDara Quinn\nCB\nCiarán Byrne\n, unread\nRequest\nSettings\nSignal Studio\n/\nFiles\nSearch or jump to…\nCtrl K\nNew task\nDO\nFiles\nThe Orchard, events\n\n8 files across 7 tasks\n7 added in the last 7 days\n\nOpen Tasks\n/\nNarrow\nAdded this week\n7\nDocuments\n3\nImages\n2\nSheets\n2\nLinks\n1\n\n8 files, newest first\n\nSample files. In your projects, each one opens or downloads from here.\n\nAdded in the last 7 days\n7\nRun-sheet, Saturday v3.pdf\nDocument\n402 KB\nOrla, 16 Jul\nBuild the Saturday run-sheet\nMarquee quote, Hireco.pdf\nDocument\n184 KB\nOrla, 15 Jul\nConfirm marquee sides with the hire company\nSeating plan, final\nSheet\nGoogle Drive\nOrla, 15 Jul\nApprove the final seating plan\nTerrace at golden hour.jpg\nImage\n2.3 MB\nOrla, 14 Jul\nConfirm marquee sides with the hire company\nBar order, July\nSheet\nGoogle Drive\nOrla, 13 Jul\nOrder tonic + the good olives\nWelcome sign artwork.png\nImage\n1.1 MB\nOrla, 12 Jul\nReprint the faded welcome sign before the open day\nRecommended suppliers\nLink\nOrla, 11 Jul\nSign off the recommended-suppliers list\nEarlier\n1\nDeposit invoice, Mara & Finn.pdf\nDocument\n94 KB\nOrla, 9 Jul\nDeposit invoice settled, Mara & Finn\n\n5 uploaded4.0 MB stored\n2 google driveLinked, not copied\n1 linksWeb pages and tools\n\nRun-sheet, Saturday v3.pdf\n\nDocument\n402 KB\nAdded 16 Jul\n\nA sample file. In your own projects it opens from here.\n\nOpen the file to read it.\n\nKind\nDocument\nWhere it lives\nUploaded to Signal Studio\nSize\n402 KB\nAdded\n16 Jul by Orla\nTask\nBuild the Saturday run-sheet\nIn development. You’re seeing it early.\n×",
+      "errors": [],
+      "failedResponses": [],
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/files-wide.png",
+      "screenshotSha256": "6b78e176d271197975ea2a1adba7f29275075e0ae67faba3591c4d0d22745ba0",
+      "passed": true
+    },
+    {
+      "route": "analytics",
+      "project": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "responseStatus": 200,
+      "source": "src/app/app/analytics/page.tsx",
+      "sourceBlob": "656578701b0508405519254954390cd084c5d4ca",
+      "title": "Analytics · Signal Studio",
+      "url": "http://127.0.0.1:4401/app/analytics",
+      "headings": [
+        "Analytics",
+        "Where we stand",
+        "People",
+        "Patterns"
+      ],
+      "horizontalOverflow": 0,
+      "conceptCards": 0,
+      "bodyText": "Skip to main content\nSignal Studio\nSearch or jump to…\nCtrl K\nHome\nWorkspace\nProjects\nTasks\nTimeline\nFiles\nAnalytics\nBuild\nAutomations\nPreview\nWhiteboard\nComing\nSoon\nChat\nAll conversations\n6\nwaiting\nThe Orchard, events\n1\nmention\nBuild the Saturday run-sheet\n1\nmention\nApprove the final seating plan\n, unread\nNK\nNiamh Kelly\n, online\n1\nnew message\nAW\nAoife Walsh\n, online\n2\nnew messages\nDQ\nDara Quinn\nCB\nCiarán Byrne\n, unread\nRequest\nSettings\nAnalytics\nDO\nAnalytics\nThe Orchard, events\n\n8 open\n1 late\n5 done in the last 7 days\n\nPlain answers from your tasks, dates and history. Pick a question, or type to find one.\n\nWhere we stand\nAre we on track?\nLate work against the dates set\nWhat is late, and who has it?\nEach late task, oldest first\nWhat changed this week?\nLast week beside this week\nPeople\nWho has too much on?\nOpen work for each person\nWhat should we do first next week?\nThe next 7 days, in order\nPatterns\nWhere is the work sitting?\nTasks by column and priority\nHow long do things usually take us?\nDays from added to finished\nHow these numbers are counted\nIn development. You’re seeing it early.\n×",
+      "errors": [],
+      "failedResponses": [],
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/analytics-mobile.png",
+      "screenshotSha256": "0e29d7ea2dfe4f0a1ba4b595361ddafde50cc0bf482dc02e2cf3741d5413287b",
+      "passed": true
+    },
+    {
+      "route": "analytics",
+      "project": "tablet",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "responseStatus": 200,
+      "source": "src/app/app/analytics/page.tsx",
+      "sourceBlob": "656578701b0508405519254954390cd084c5d4ca",
+      "title": "Analytics · Signal Studio",
+      "url": "http://127.0.0.1:4401/app/analytics",
+      "headings": [
+        "Analytics",
+        "Where we stand",
+        "People",
+        "Patterns"
+      ],
+      "horizontalOverflow": 0,
+      "conceptCards": 0,
+      "bodyText": "Skip to main content\nSignal Studio\nSearch or jump to…\nCtrl K\nHome\nWorkspace\nProjects\nTasks\nTimeline\nFiles\nAnalytics\nBuild\nAutomations\nPreview\nWhiteboard\nComing\nSoon\nChat\nAll conversations\n6\nwaiting\nThe Orchard, events\n1\nmention\nBuild the Saturday run-sheet\n1\nmention\nApprove the final seating plan\n, unread\nNK\nNiamh Kelly\n, online\n1\nnew message\nAW\nAoife Walsh\n, online\n2\nnew messages\nDQ\nDara Quinn\nCB\nCiarán Byrne\n, unread\nRequest\nSettings\nSignal Studio\n/\nAnalytics\nDO\nAnalytics\nThe Orchard, events\n\n8 open\n1 late\n5 done in the last 7 days\n\n/\n\nPlain answers from your tasks, dates and history. Pick a question, or type to find one.\n\nWhere we stand\nAre we on track?\nLate work against the dates set\nWhat is late, and who has it?\nEach late task, oldest first\nWhat changed this week?\nLast week beside this week\nPeople\nWho has too much on?\nOpen work for each person\nWhat should we do first next week?\nThe next 7 days, in order\nPatterns\nWhere is the work sitting?\nTasks by column and priority\nHow long do things usually take us?\nDays from added to finished\nHow these numbers are counted\nIn development. You’re seeing it early.\n×",
+      "errors": [],
+      "failedResponses": [],
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/analytics-tablet.png",
+      "screenshotSha256": "178026d1e05b57e87d8381e8428075cd113c0038f1c5cb9d97faa25269438776",
+      "passed": true
+    },
+    {
+      "route": "analytics",
+      "project": "desktop",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "responseStatus": 200,
+      "source": "src/app/app/analytics/page.tsx",
+      "sourceBlob": "656578701b0508405519254954390cd084c5d4ca",
+      "title": "Analytics · Signal Studio",
+      "url": "http://127.0.0.1:4401/app/analytics",
+      "headings": [
+        "Analytics",
+        "Where we stand",
+        "People",
+        "Patterns"
+      ],
+      "horizontalOverflow": 0,
+      "conceptCards": 0,
+      "bodyText": "Skip to main content\nSignal Studio\nSearch or jump to…\nCtrl K\nHome\nWorkspace\nProjects\nTasks\nTimeline\nFiles\nAnalytics\nBuild\nAutomations\nPreview\nWhiteboard\nComing\nSoon\nChat\nAll conversations\n6\nwaiting\nThe Orchard, events\n1\nmention\nBuild the Saturday run-sheet\n1\nmention\nApprove the final seating plan\n, unread\nNK\nNiamh Kelly\n, online\n1\nnew message\nAW\nAoife Walsh\n, online\n2\nnew messages\nDQ\nDara Quinn\nCB\nCiarán Byrne\n, unread\nRequest\nSettings\nSignal Studio\n/\nAnalytics\nSearch or jump to…\nCtrl K\nNew task\nDO\nAnalytics\nThe Orchard, events\n\n8 open\n1 late\n5 done in the last 7 days\n\n/\n\nPlain answers from your tasks, dates and history. Pick a question, or type to find one.\n\nWhere we stand\nAre we on track?\nLate work against the dates set\nWhat is late, and who has it?\nEach late task, oldest first\nWhat changed this week?\nLast week beside this week\nPeople\nWho has too much on?\nOpen work for each person\nWhat should we do first next week?\nThe next 7 days, in order\nPatterns\nWhere is the work sitting?\nTasks by column and priority\nHow long do things usually take us?\nDays from added to finished\nHow these numbers are counted\nIn development. You’re seeing it early.\n×",
+      "errors": [],
+      "failedResponses": [],
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/analytics-desktop.png",
+      "screenshotSha256": "c9c0ba32ffab9af73045c1af13897a0585e29b5802a9f3bc41d81ef0e0107e1b",
+      "passed": true
+    },
+    {
+      "route": "analytics",
+      "project": "wide",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "responseStatus": 200,
+      "source": "src/app/app/analytics/page.tsx",
+      "sourceBlob": "656578701b0508405519254954390cd084c5d4ca",
+      "title": "Analytics · Signal Studio",
+      "url": "http://127.0.0.1:4401/app/analytics",
+      "headings": [
+        "Analytics",
+        "Where we stand",
+        "People",
+        "Patterns"
+      ],
+      "horizontalOverflow": 0,
+      "conceptCards": 0,
+      "bodyText": "Skip to main content\nSignal Studio\nSearch or jump to…\nCtrl K\nHome\nWorkspace\nProjects\nTasks\nTimeline\nFiles\nAnalytics\nBuild\nAutomations\nPreview\nWhiteboard\nComing\nSoon\nChat\nAll conversations\n6\nwaiting\nThe Orchard, events\n1\nmention\nBuild the Saturday run-sheet\n1\nmention\nApprove the final seating plan\n, unread\nNK\nNiamh Kelly\n, online\n1\nnew message\nAW\nAoife Walsh\n, online\n2\nnew messages\nDQ\nDara Quinn\nCB\nCiarán Byrne\n, unread\nRequest\nSettings\nSignal Studio\n/\nAnalytics\nSearch or jump to…\nCtrl K\nNew task\nDO\nAnalytics\nThe Orchard, events\n\n8 open\n1 late\n5 done in the last 7 days\n\n/\n\nPlain answers from your tasks, dates and history. Pick a question, or type to find one.\n\nWhere we stand\nAre we on track?\nLate work against the dates set\nWhat is late, and who has it?\nEach late task, oldest first\nWhat changed this week?\nLast week beside this week\nPeople\nWho has too much on?\nOpen work for each person\nWhat should we do first next week?\nThe next 7 days, in order\nPatterns\nWhere is the work sitting?\nTasks by column and priority\nHow long do things usually take us?\nDays from added to finished\nHow these numbers are counted\nIn development. You’re seeing it early.\n×",
+      "errors": [],
+      "failedResponses": [],
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/analytics-wide.png",
+      "screenshotSha256": "8a9833b14d07a7019491f5aa98dc1f25a6bfa776f26c5fd6986c7d3c8fb9b0c7",
+      "passed": true
+    }
+  ]
+}

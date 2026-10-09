@@ -1,0 +1,24 @@
+{
+  "label": "sponsor-action-final",
+  "head": "04bed4b84b1559d127575751880473256851c430",
+  "tree": "7093b9f3046a89e98e27033adb2a0f2a7c802c2d",
+  "node": "v22.23.2",
+  "args": [
+    "--import",
+    "tsx",
+    "--import",
+    "./src/test/register-server-only.mjs",
+    "--test",
+    "--test-concurrency=1",
+    "src/server/sponsor-report/proxy.test.ts",
+    "src/server/sponsored-use/action.test.cjs",
+    "src/server/sponsored-use/provenance.test.cjs"
+  ],
+  "startedAt": "2026-10-09T20:58:49.972Z",
+  "endedAt": "2026-10-09T21:00:35.571Z",
+  "exitCode": 1,
+  "signal": null,
+  "error": null,
+  "passed": false,
+  "log": "D:\\Codex-scratch\\release-all-20261009\\runtime-aggregation\\receipts\\sponsor-action-final.log"
+}

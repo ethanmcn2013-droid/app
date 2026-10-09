@@ -1,0 +1,15 @@
+{
+  "head": "7cfe85b7ae96a5d683d1fdfebaa230565f5a3b33",
+  "tree": "bfff096c90fcced3b57c5a2e0a16c67baccb0c85",
+  "purpose": "Fresh native production output measurement after exact opt-in literal normalization",
+  "explicitBuildEnvironment": {
+    "NODE_ENV": "production",
+    "VERCEL_ENV": "production",
+    "NEXT_PUBLIC_PROJECT_PING_TYPED_ENABLED": "0"
+  },
+  "runtimePosture": "Production fails closed; no provider credentials or schema operations were supplied by this worker",
+  "preservedFailure": "production-build-final succeeded at04bed, while its actual budget measured1123.9KB above the unchanged1113KB limit",
+  "limitsChanged": false,
+  "voiceFlagChanged": false,
+  "serverPingGuardChanged": false
+}

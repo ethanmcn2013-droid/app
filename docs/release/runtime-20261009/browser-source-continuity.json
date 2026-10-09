@@ -1,0 +1,1554 @@
+{
+  "finalHead": "05f5bd30a799c1cdefd933910cdbbbeec53a860d",
+  "scope": "Actual prior native browser receipts retained with original heads. This proves listed source inputs unchanged; it is not a new browser run or final whole-head CI attestation.",
+  "index": [
+    {
+      "id": "typed",
+      "path": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/ping-typed-verified/receipt.json",
+      "receiptSha256": "02fe0a3bb8e253d3443f30e0c2fa913e7678a3dddc9d56abcef86315e514e56c",
+      "originalHead": "1867aa751d69e8270891428de446bbbb5ace47a5",
+      "caseCount": 8,
+      "status": "passed",
+      "sourceCount": 133,
+      "mismatches": [],
+      "checks": [
+        {
+          "source": "src/server/actions/tasks.ts",
+          "expected": "58978a46653b497c8cefb3f8d016204f5dea78de41e85124afb9b6f198e14a09",
+          "actual": "58978a46653b497c8cefb3f8d016204f5dea78de41e85124afb9b6f198e14a09",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/db/board-config-read.ts",
+          "expected": "b1f7bbe86e220c00f3be7b84a78ebf187057b5feec4269dc5be09db28e355c8e",
+          "actual": "b1f7bbe86e220c00f3be7b84a78ebf187057b5feec4269dc5be09db28e355c8e",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/db/schema.ts",
+          "expected": "c05147ee0e5337e5b25d2173a78aa4fefcd5bec9072015fb06e945f3e379d824",
+          "actual": "c05147ee0e5337e5b25d2173a78aa4fefcd5bec9072015fb06e945f3e379d824",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/board-config.ts",
+          "expected": "0d8b3e99dc1423de916fcb3dcf4a94d443179d3540f38e52339d6b1169e5f6fc",
+          "actual": "0d8b3e99dc1423de916fcb3dcf4a94d443179d3540f38e52339d6b1169e5f6fc",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/data.ts",
+          "expected": "7759ec953f37f059920bdd0b1286fd95b3f7dc2a5a75b7076db2477f41b229b0",
+          "actual": "7759ec953f37f059920bdd0b1286fd95b3f7dc2a5a75b7076db2477f41b229b0",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/board-colors.ts",
+          "expected": "40dd070f8e89a0e2e8bcc8c5732cf1e5f61606b8e2ebafaf53e4f750f9a95f0e",
+          "actual": "40dd070f8e89a0e2e8bcc8c5732cf1e5f61606b8e2ebafaf53e4f750f9a95f0e",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/board-columns.ts",
+          "expected": "61351649199e5891654351432d0420b2322aabdb95c9aa5445632743f8984549",
+          "actual": "61351649199e5891654351432d0420b2322aabdb95c9aa5445632743f8984549",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/db/task-seq.ts",
+          "expected": "8ec18a675e83fcd87be43e622534a721cab7cd0c29f6313dd9e66cbeb7249af5",
+          "actual": "8ec18a675e83fcd87be43e622534a721cab7cd0c29f6313dd9e66cbeb7249af5",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/tasks/create-task-core.ts",
+          "expected": "ec09f70985787f1cab68e77d468361b45e50512bf0bcf60fd2ac6b916ec7ee9e",
+          "actual": "ec09f70985787f1cab68e77d468361b45e50512bf0bcf60fd2ac6b916ec7ee9e",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/db/activity.ts",
+          "expected": "697f5e8ce0ef3e99886e2285e904665ee37782721f2735f02dae96bec04d1a8c",
+          "actual": "697f5e8ce0ef3e99886e2285e904665ee37782721f2735f02dae96bec04d1a8c",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/diagnostics/identity-outbound.ts",
+          "expected": "ef04982dde20400a20839d28c9799849e8c6043103b8b661917f0f7430358cbf",
+          "actual": "ef04982dde20400a20839d28c9799849e8c6043103b8b661917f0f7430358cbf",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/diagnostics/identity-timing.ts",
+          "expected": "5d77e7165959af410f32d2d7e04843d573e039d0026509b0c18d741aa7f857a9",
+          "actual": "5d77e7165959af410f32d2d7e04843d573e039d0026509b0c18d741aa7f857a9",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/auth/recipient-proof-authorized-parties.ts",
+          "expected": "7de684fc81f680a3624fe445bc14ffd9ab1288c90ef9b27dd751361a3fcacb6b",
+          "actual": "7de684fc81f680a3624fe445bc14ffd9ab1288c90ef9b27dd751361a3fcacb6b",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/operational-log.ts",
+          "expected": "951020af87ae4478ea359a76806d6180b1d41b6574c7ddce4c3bb0177fe23171",
+          "actual": "951020af87ae4478ea359a76806d6180b1d41b6574c7ddce4c3bb0177fe23171",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/sentry-scrub.ts",
+          "expected": "1263f4f4ab1127cebac42dd0cff493c72dde2dadf67f29159701aca0252ffd0b",
+          "actual": "1263f4f4ab1127cebac42dd0cff493c72dde2dadf67f29159701aca0252ffd0b",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/diagnostics/task-timing.ts",
+          "expected": "a97d525408669cdfb424650433344e55d92623226ac0afab9bdf1dae03c30410",
+          "actual": "a97d525408669cdfb424650433344e55d92623226ac0afab9bdf1dae03c30410",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/actions/private-task-db-write.ts",
+          "expected": "3f011d4ddbb88a981efe9347ca2149820d15d2a8a0aabd61f4b92fbaccd23546",
+          "actual": "3f011d4ddbb88a981efe9347ca2149820d15d2a8a0aabd61f4b92fbaccd23546",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/actions/project-authz.ts",
+          "expected": "3287f5c9e9ce150d43f3a3f5cf991aab1df3249f8e3717e6438d42f3ad8a9f25",
+          "actual": "3287f5c9e9ce150d43f3a3f5cf991aab1df3249f8e3717e6438d42f3ad8a9f25",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/projects/capabilities.ts",
+          "expected": "ce2f5beb8bb7439d158dc8bfeefa6116b0174c2f6fdbfcdccc3dd623e785af98",
+          "actual": "ce2f5beb8bb7439d158dc8bfeefa6116b0174c2f6fdbfcdccc3dd623e785af98",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/projects/project-ref.ts",
+          "expected": "33f0ed7ee3f979a75a61f3273e1f5b2bad3b36ea422a23eea08d1daaac62bd6b",
+          "actual": "33f0ed7ee3f979a75a61f3273e1f5b2bad3b36ea422a23eea08d1daaac62bd6b",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/tasks/stored-due-transition.ts",
+          "expected": "b0c3b076bb2ad3fef4ee233e4f16c6c48522823ebfafa86cc2b0f5bf5bd1afb9",
+          "actual": "b0c3b076bb2ad3fef4ee233e4f16c6c48522823ebfafa86cc2b0f5bf5bd1afb9",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/tasks/stored-deadline.ts",
+          "expected": "8f753c19ca6f29d08863a8cbc76a3f3d52e2e2fff3f63227fef451b64a5f3813",
+          "actual": "8f753c19ca6f29d08863a8cbc76a3f3d52e2e2fff3f63227fef451b64a5f3813",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/account/instrumentation/call-site.ts",
+          "expected": "9a68a6825206362eb6c0feccb657ad8402da836f67e6cd64473c5311bed08693",
+          "actual": "9a68a6825206362eb6c0feccb657ad8402da836f67e6cd64473c5311bed08693",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/account/instrumentation/emitter.ts",
+          "expected": "5bf125cea3d5935d709ae8fb01ca3513a3829e8b48e9a943ea501bc8a60ced65",
+          "actual": "5bf125cea3d5935d709ae8fb01ca3513a3829e8b48e9a943ea501bc8a60ced65",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/account/instrumentation/event-schema.ts",
+          "expected": "57bb371c0f799ab0536b54171b7ab2ca87a7bca82c5fc5227f97507fa1251b20",
+          "actual": "57bb371c0f799ab0536b54171b7ab2ca87a7bca82c5fc5227f97507fa1251b20",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/projects/project-deletion-fence.ts",
+          "expected": "8fb441bc1e29ec497690982d90a725a159b1191db63d3d31792e56609cd92bc4",
+          "actual": "8fb441bc1e29ec497690982d90a725a159b1191db63d3d31792e56609cd92bc4",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/account-deletion-key.ts",
+          "expected": "c1f261ce07f736e8d16b8179da259a0771b55bf0441b72b61ee99443136fc180",
+          "actual": "c1f261ce07f736e8d16b8179da259a0771b55bf0441b72b61ee99443136fc180",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/sponsored-use/capture.ts",
+          "expected": "59b3aa36f92233c0aa7ba73a1f78107d0ec54b91c35a0bdc02947af08453ffcc",
+          "actual": "59b3aa36f92233c0aa7ba73a1f78107d0ec54b91c35a0bdc02947af08453ffcc",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/sponsored-use/service-auth.ts",
+          "expected": "7a565b44fc8f1ba468668bae924da5a804471b62707000defeaba0fc33f691c1",
+          "actual": "7a565b44fc8f1ba468668bae924da5a804471b62707000defeaba0fc33f691c1",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/sponsored-use/schema.ts",
+          "expected": "040e0c452dcfbc6a8b6b4930c7f90167b3c6e1edeb4f7b98ecff1b1d7e54d476",
+          "actual": "040e0c452dcfbc6a8b6b4930c7f90167b3c6e1edeb4f7b98ecff1b1d7e54d476",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/venue-issuance/canonical.ts",
+          "expected": "4ed66ab798d2a8d23538a1f240eb1a126c90629a5c0b94435140d4a62ddff98e",
+          "actual": "4ed66ab798d2a8d23538a1f240eb1a126c90629a5c0b94435140d4a62ddff98e",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/venue-issuance/protocol.ts",
+          "expected": "d95cf00f4cded05ea5c75a4e522b6d2d0381ad6cb58c9c7d927b0738bb5298a7",
+          "actual": "d95cf00f4cded05ea5c75a4e522b6d2d0381ad6cb58c9c7d927b0738bb5298a7",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/tasks/mutation-refusal.ts",
+          "expected": "cdf2f1bde2295c0a40b8589b61af39007c13027bfa2971319e532dca0a75bbd8",
+          "actual": "cdf2f1bde2295c0a40b8589b61af39007c13027bfa2971319e532dca0a75bbd8",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/auth-context.tsx",
+          "expected": "3bfd5f566f424ed8f388a37137432af7b483af5f2bc30b71a6c9587eae8a5598",
+          "actual": "3bfd5f566f424ed8f388a37137432af7b483af5f2bc30b71a6c9587eae8a5598",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/suite-contracts.v1.json",
+          "expected": "7bd4beddcadd03ae8bc7f0292f27958d975829d7cf9b0b7d3191b38fece15702",
+          "actual": "7bd4beddcadd03ae8bc7f0292f27958d975829d7cf9b0b7d3191b38fece15702",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/product-urls.ts",
+          "expected": "2211f956c507aff537b82c2a7ff9503364be1f7e9078060c1a89379fe95e0a79",
+          "actual": "2211f956c507aff537b82c2a7ff9503364be1f7e9078060c1a89379fe95e0a79",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/domains.ts",
+          "expected": "465a7a2fabf663acd2e519c0df26b81c0d96f4e536b66c4e176467ccb8b203b7",
+          "actual": "465a7a2fabf663acd2e519c0df26b81c0d96f4e536b66c4e176467ccb8b203b7",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/domain-context.tsx",
+          "expected": "78e2b553a88a164aadf9294941ea2f6d849dccbbbbdab533254052b2eb50c71a",
+          "actual": "78e2b553a88a164aadf9294941ea2f6d849dccbbbbdab533254052b2eb50c71a",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/tasks/tasks-reducer.ts",
+          "expected": "86a3c4daa618cc64cf43fedd143db45b0ead1c262b322fd33d277d48b2d5c6e8",
+          "actual": "86a3c4daa618cc64cf43fedd143db45b0ead1c262b322fd33d277d48b2d5c6e8",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/access-mode.ts",
+          "expected": "10ecdeb6477b5507850d8033af04c70fb6165f6da4b3d0afd8b4cd22eeda263b",
+          "actual": "10ecdeb6477b5507850d8033af04c70fb6165f6da4b3d0afd8b4cd22eeda263b",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/tasks/use-realtime-sync.ts",
+          "expected": "fd1621ebf8a1b642662ecd4c4308c1f811ca01228893c68c3b411a7b0ca61719",
+          "actual": "fd1621ebf8a1b642662ecd4c4308c1f811ca01228893c68c3b411a7b0ca61719",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/tasks/delight-events.ts",
+          "expected": "c5bfd4cdc6cbe2a4c6726069eb8d09bba20fe071aac339b13e27cf5fd5d648d4",
+          "actual": "c5bfd4cdc6cbe2a4c6726069eb8d09bba20fe071aac339b13e27cf5fd5d648d4",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/tasks/authoritative-refresh.ts",
+          "expected": "e91aa65de0e5b01bf524a1a5dd32de870874498f5ab7885f4b193cd9638d7a9d",
+          "actual": "e91aa65de0e5b01bf524a1a5dd32de870874498f5ab7885f4b193cd9638d7a9d",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/tasks/task-wire.ts",
+          "expected": "1cc281dbeb4f30504eeb2002429ee352207e36165fbd4953f87098f41a583361",
+          "actual": "1cc281dbeb4f30504eeb2002429ee352207e36165fbd4953f87098f41a583361",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/tasks/task-transport.ts",
+          "expected": "35f720e52b59fa754eca7ff9dfa1774b4ae1b125c973798f9b1011c634a74220",
+          "actual": "35f720e52b59fa754eca7ff9dfa1774b4ae1b125c973798f9b1011c634a74220",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/tasks/task-snapshot-epoch.ts",
+          "expected": "181eb5b34a6a527b95db2e7e0bfb06e16c4891e91d47a114de1f14ab3734f74a",
+          "actual": "181eb5b34a6a527b95db2e7e0bfb06e16c4891e91d47a114de1f14ab3734f74a",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/tasks/tasks-context.tsx",
+          "expected": "840d2d372983b8c46745db79d6b970e07b8d9de82406d68aa19876bae3180744",
+          "actual": "840d2d372983b8c46745db79d6b970e07b8d9de82406d68aa19876bae3180744",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/planning/dates.ts",
+          "expected": "320d5edc4b7ec528b9760b9e5ece163645d28f3bbd1e62152956fe5d3cdc3369",
+          "actual": "320d5edc4b7ec528b9760b9e5ece163645d28f3bbd1e62152956fe5d3cdc3369",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/calendar-frame.ts",
+          "expected": "abcad0837a2fa12a87aa20e46ed9eed1382862fdca8ddf7d7527c3975c6802c9",
+          "actual": "abcad0837a2fa12a87aa20e46ed9eed1382862fdca8ddf7d7527c3975c6802c9",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/app/room/room-brief-context.tsx",
+          "expected": "76dd01d690dc687a41b28a4c5742d0cf0088c48f50485d72429eca4c186edbba",
+          "actual": "76dd01d690dc687a41b28a4c5742d0cf0088c48f50485d72429eca4c186edbba",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/app/room/room-tools-context.tsx",
+          "expected": "1b5d0bf4f39c9670d29ae3da5a197767818cfdd9cc4ceb35c310610e8f58b06c",
+          "actual": "1b5d0bf4f39c9670d29ae3da5a197767818cfdd9cc4ceb35c310610e8f58b06c",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/hybrid/dates.ts",
+          "expected": "58ca508e2a6caee78f9e5f9c9731cc21a481b7c9e2264f75491d3c2fa27a6584",
+          "actual": "58ca508e2a6caee78f9e5f9c9731cc21a481b7c9e2264f75491d3c2fa27a6584",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/hybrid/store.tsx",
+          "expected": "ebd8ed354d17ee02eac9f5c47c8f422b2a722ec5393065a9ffc046b3917468d4",
+          "actual": "ebd8ed354d17ee02eac9f5c47c8f422b2a722ec5393065a9ffc046b3917468d4",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/tasks/use-task-panel.ts",
+          "expected": "012d198b9e234788954ed3fb52a96d62354c4db4c3c0ccf460e82d8bf5375321",
+          "actual": "012d198b9e234788954ed3fb52a96d62354c4db4c3c0ccf460e82d8bf5375321",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/tags.ts",
+          "expected": "1d66b5307fc5a97d18448d51afd8292bce91d79fc9784efa9b397d3e9e41b56b",
+          "actual": "1d66b5307fc5a97d18448d51afd8292bce91d79fc9784efa9b397d3e9e41b56b",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/hybrid/adapter.ts",
+          "expected": "9435ed749aaa73c874a7c224865b9aa1d15fef1a6b7d6a92ecf68c058f1cde62",
+          "actual": "9435ed749aaa73c874a7c224865b9aa1d15fef1a6b7d6a92ecf68c058f1cde62",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/hybrid/columns-context.tsx",
+          "expected": "9d5d75483f8bfd7c4da559f2789b5616ab1955d4cb86d12e93fc7c7b0a0d7d4b",
+          "actual": "9d5d75483f8bfd7c4da559f2789b5616ab1955d4cb86d12e93fc7c7b0a0d7d4b",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/use-tasks-undo.ts",
+          "expected": "ea93f8b240d8bae269f8b96ae6f06498489f595db3d1f4842df7acc7ea6a7d7e",
+          "actual": "ea93f8b240d8bae269f8b96ae6f06498489f595db3d1f4842df7acc7ea6a7d7e",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/tasks-pulse.ts",
+          "expected": "8b86df86e738fbe665eb13e828c5e74136c219d62b11ffec55bea038ad2cfc6d",
+          "actual": "8b86df86e738fbe665eb13e828c5e74136c219d62b11ffec55bea038ad2cfc6d",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/surface.tsx",
+          "expected": "3fd99ea642a693983125e39f610c3f215941564ed7793f63c9bfa028087d9978",
+          "actual": "3fd99ea642a693983125e39f610c3f215941564ed7793f63c9bfa028087d9978",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/visible-tasks.ts",
+          "expected": "8c48be17b35140b5004b2533eb42048110b37c94b42f42d73b2520189491cf9c",
+          "actual": "8c48be17b35140b5004b2533eb42048110b37c94b42f42d73b2520189491cf9c",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/app/presence/avatar-stack.module.css",
+          "expected": "ed4e3bc1b98867ab707653044bc966e5d9ed3212cc0afb77be229df327f80af0",
+          "actual": "ed4e3bc1b98867ab707653044bc966e5d9ed3212cc0afb77be229df327f80af0",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/app/presence/avatar-stack.tsx",
+          "expected": "591c2493841537c18d15502cd840cb0004d536fcf5ac918ec0f7e4be2f7e179c",
+          "actual": "591c2493841537c18d15502cd840cb0004d536fcf5ac918ec0f7e4be2f7e179c",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/public-board-lanes.ts",
+          "expected": "bfe1bf4fb51b049566b1175be64a1d55849be729e6ef12cdf84ad54c1d4c7813",
+          "actual": "bfe1bf4fb51b049566b1175be64a1d55849be729e6ef12cdf84ad54c1d4c7813",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/exports.ts",
+          "expected": "242957b43abc196027e74c7b78737873f0fc7a979514074ff0cebe8d9f2a0f38",
+          "actual": "242957b43abc196027e74c7b78737873f0fc7a979514074ff0cebe8d9f2a0f38",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/projects/project-url.ts",
+          "expected": "d64e515c7ed6a578b546c77fcf1a5dedc1a42a6425b6d93ecab5779db0ddeaf1",
+          "actual": "d64e515c7ed6a578b546c77fcf1a5dedc1a42a6425b6d93ecab5779db0ddeaf1",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/projects/floor-project-name.ts",
+          "expected": "d83fac43db474d54b4363ba3554096a0c082bc23b1a8874b4a796643466214ee",
+          "actual": "d83fac43db474d54b4363ba3554096a0c082bc23b1a8874b4a796643466214ee",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/identity-hue.ts",
+          "expected": "4b5eab6288ef1f4eb724ef818534f9c85a724ab01d7da5533fd0da270703ac1a",
+          "actual": "4b5eab6288ef1f4eb724ef818534f9c85a724ab01d7da5533fd0da270703ac1a",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/icons.tsx",
+          "expected": "f0c9bb048b2a7464929942eb1e37bab2fbd41ad4b6bc5cd477d2d8da2b1f753e",
+          "actual": "f0c9bb048b2a7464929942eb1e37bab2fbd41ad4b6bc5cd477d2d8da2b1f753e",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/hybrid/types.ts",
+          "expected": "643743cf0c3be249180c0b7773cf7d47f3ba102361a826a21e5b803e51f8ecbd",
+          "actual": "643743cf0c3be249180c0b7773cf7d47f3ba102361a826a21e5b803e51f8ecbd",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/status-glyph-model.ts",
+          "expected": "5f6f47508d7dc655e5f2a4719966df0339f76dd612fa1df402e16d5fc9441b43",
+          "actual": "5f6f47508d7dc655e5f2a4719966df0339f76dd612fa1df402e16d5fc9441b43",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/atoms.module.css",
+          "expected": "ec72e585a5b10c97f7b5d656701def1db4decac80fbcbdc2e3b03fb17388ec27",
+          "actual": "ec72e585a5b10c97f7b5d656701def1db4decac80fbcbdc2e3b03fb17388ec27",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/atoms.tsx",
+          "expected": "8ef23058ea880749b21bfe4cca45554c28c3dd17be8c64391bc2d47d9fdfa612",
+          "actual": "8ef23058ea880749b21bfe4cca45554c28c3dd17be8c64391bc2d47d9fdfa612",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/ui.module.css",
+          "expected": "7c4b461b81d51326650855a8f24eda563d0641f16dc592c59e280b77a2250246",
+          "actual": "7c4b461b81d51326650855a8f24eda563d0641f16dc592c59e280b77a2250246",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/ui.tsx",
+          "expected": "de11fd17559c96ee9d600bfc6abc26dcfd64dd51c2827db56f69ef5104742a3a",
+          "actual": "de11fd17559c96ee9d600bfc6abc26dcfd64dd51c2827db56f69ef5104742a3a",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/workspace.module.css",
+          "expected": "18bc6cb09487bd95b4377a4ef0abb4ef958d34a7ad12a8e76351be4e01c98efb",
+          "actual": "18bc6cb09487bd95b4377a4ef0abb4ef958d34a7ad12a8e76351be4e01c98efb",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/header.tsx",
+          "expected": "d51e735759e61a472ecc4b429bc50cfc42550a5601945e99232e737d1db5bf28",
+          "actual": "d51e735759e61a472ecc4b429bc50cfc42550a5601945e99232e737d1db5bf28",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/hybrid/fixtures.ts",
+          "expected": "e377b22360683d90efe634b1edbe5f3622343c4981a7969023046f13d2390996",
+          "actual": "e377b22360683d90efe634b1edbe5f3622343c4981a7969023046f13d2390996",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/task-bits.tsx",
+          "expected": "09c8848f12ae2ed28c133dbe0e4386034033a272340eed233738578f5ed2b53a",
+          "actual": "09c8848f12ae2ed28c133dbe0e4386034033a272340eed233738578f5ed2b53a",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/projects/floor-view-href.ts",
+          "expected": "2a434e41fc50b60f1c5709d0e25b611cbaee7ea41e0a445c3d7ca7d338436091",
+          "actual": "2a434e41fc50b60f1c5709d0e25b611cbaee7ea41e0a445c3d7ca7d338436091",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/hybrid/view-prefs.ts",
+          "expected": "37bf8ff33e8d917064fda64bd84e7fddbd31d50f840cb2ee206eeae5b9b076bf",
+          "actual": "37bf8ff33e8d917064fda64bd84e7fddbd31d50f840cb2ee206eeae5b9b076bf",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/display-prefs.ts",
+          "expected": "9ba082a907fc25e384014a3ccb0d05f7dbd6c0e9a8be6d630ec22e7cf777b0b6",
+          "actual": "9ba082a907fc25e384014a3ccb0d05f7dbd6c0e9a8be6d630ec22e7cf777b0b6",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/toolbar.tsx",
+          "expected": "f2e3fded9dd5446020a507ea17a79607e8ca591524d1cbb3009c5dbb101a093a",
+          "actual": "f2e3fded9dd5446020a507ea17a79607e8ca591524d1cbb3009c5dbb101a093a",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/sheet-bridge.ts",
+          "expected": "3e940635174244f5ebc53e001f77d9dfcb292d24a821d99c7cd913ae297d17b9",
+          "actual": "3e940635174244f5ebc53e001f77d9dfcb292d24a821d99c7cd913ae297d17b9",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/surface-keys.ts",
+          "expected": "88f8783c0efe16d4327f04331815d700e500c873c6060349a7aa2f412fa00958",
+          "actual": "88f8783c0efe16d4327f04331815d700e500c873c6060349a7aa2f412fa00958",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/bulk-bar.tsx",
+          "expected": "026dddce8eae326fe2c928ea1cba0739aadc79c216eaac8a3713598ca1307ef9",
+          "actual": "026dddce8eae326fe2c928ea1cba0739aadc79c216eaac8a3713598ca1307ef9",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/undo-toast.tsx",
+          "expected": "2a901099e6f66cca4f3d97f6c7a7b2bac3f42817b5e583a94ade4345dba01df7",
+          "actual": "2a901099e6f66cca4f3d97f6c7a7b2bac3f42817b5e583a94ade4345dba01df7",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/task-menu.tsx",
+          "expected": "9eaee9d74921b45e2f4f3fd55f42786ee3980eb6361bd607d2e324eaa0595287",
+          "actual": "9eaee9d74921b45e2f4f3fd55f42786ee3980eb6361bd607d2e324eaa0595287",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/app/detail-panel/due-calendar.tsx",
+          "expected": "bb4995a7db10082ac618b82c7b825e31692c9e094740ed53f51114f7a5db9c22",
+          "actual": "bb4995a7db10082ac618b82c7b825e31692c9e094740ed53f51114f7a5db9c22",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/time.ts",
+          "expected": "fa57be05ebaccb26be23586786a29a3120d6712d9b728101eeee3fd0131600e4",
+          "actual": "fa57be05ebaccb26be23586786a29a3120d6712d9b728101eeee3fd0131600e4",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/property-picker.tsx",
+          "expected": "eeafe3c846611661f990bc3ca7aa8f21df1c3877104149e9db579a83cc196694",
+          "actual": "eeafe3c846611661f990bc3ca7aa8f21df1c3877104149e9db579a83cc196694",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/delete-confirm.tsx",
+          "expected": "30d731989a7dbd48c42bcf2bebe42485a2549490bae4d9252abf3019372ebced",
+          "actual": "30d731989a7dbd48c42bcf2bebe42485a2549490bae4d9252abf3019372ebced",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/shortcuts-sheet.tsx",
+          "expected": "2adf0898131967f95ad0bcb25a4a7eddf8e2cb4de96bcbbcec15ca56131abddb",
+          "actual": "2adf0898131967f95ad0bcb25a4a7eddf8e2cb4de96bcbbcec15ca56131abddb",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/column-config-state.ts",
+          "expected": "9d1a2e0fa482e5329fe579f8c9bda0b9d9b664c6d2e13ee9e5a9bc952e54dbbb",
+          "actual": "9d1a2e0fa482e5329fe579f8c9bda0b9d9b664c6d2e13ee9e5a9bc952e54dbbb",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/column-config.tsx",
+          "expected": "109f226c1fac4f7daf2aca5817a0aa84112c60a78cb46f3c05eac52967aef3e3",
+          "actual": "109f226c1fac4f7daf2aca5817a0aa84112c60a78cb46f3c05eac52967aef3e3",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/typed-contract.ts",
+          "expected": "45f6ff8edd48d9779ab6e1b59aedeb980e540650f76afb6e4eadfc6c7db6d078",
+          "actual": "45f6ff8edd48d9779ab6e1b59aedeb980e540650f76afb6e4eadfc6c7db6d078",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/typed-client.ts",
+          "expected": "eba9eb07c5a2a767850d327bd7b2340f6a8630cb4072e445492339a4f736852b",
+          "actual": "eba9eb07c5a2a767850d327bd7b2340f6a8630cb4072e445492339a4f736852b",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/command.ts",
+          "expected": "1fb1f411ddff35448222db3c1ac6f2bbfafbe2d3189fdbc859e24cf6375fad9b",
+          "actual": "1fb1f411ddff35448222db3c1ac6f2bbfafbe2d3189fdbc859e24cf6375fad9b",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/input-validation.ts",
+          "expected": "79025240aeea6203cece6eb43bc7858dbd626b3e962adf50e63c16ea64452f08",
+          "actual": "79025240aeea6203cece6eb43bc7858dbd626b3e962adf50e63c16ea64452f08",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/proposal.ts",
+          "expected": "f1bc9dd53e077ac0e1695cf3c96b84353ccdb9e8661c911ee2e42981905fcebb",
+          "actual": "f1bc9dd53e077ac0e1695cf3c96b84353ccdb9e8661c911ee2e42981905fcebb",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/input-protocol.ts",
+          "expected": "dd49df61c2242ae9439e9494fd9a7cb223a6276958ce207c3e90b24d34adb3bc",
+          "actual": "dd49df61c2242ae9439e9494fd9a7cb223a6276958ce207c3e90b24d34adb3bc",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/use-voice-capture.ts",
+          "expected": "6af6fd74db45716789cef0bb7f71630dd91e28e40b5286e73841f6270c997bb2",
+          "actual": "6af6fd74db45716789cef0bb7f71630dd91e28e40b5286e73841f6270c997bb2",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/pcm.ts",
+          "expected": "52e3eb11a95fb45dbe4478d10a1926e777e3b5ebb3719c7c06e05541cd1a4f6b",
+          "actual": "52e3eb11a95fb45dbe4478d10a1926e777e3b5ebb3719c7c06e05541cd1a4f6b",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/voice-contract.ts",
+          "expected": "7d5480333b20c9e8b75aeab8d80af61e11faadc129dce558acf8e4826c39ab82",
+          "actual": "7d5480333b20c9e8b75aeab8d80af61e11faadc129dce558acf8e4826c39ab82",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/voice-client.ts",
+          "expected": "529a5f4cbeb71f4698f82dc8ce8d73510bdac46ea2e2bcc6a67e95d50915a09d",
+          "actual": "529a5f4cbeb71f4698f82dc8ce8d73510bdac46ea2e2bcc6a67e95d50915a09d",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/ping-voice-panel.tsx",
+          "expected": "7a2fdd29fbfd5b66293b221712db64f4ee260fa2b4a1be61e9fd181b96fb1e6f",
+          "actual": "7a2fdd29fbfd5b66293b221712db64f4ee260fa2b4a1be61e9fd181b96fb1e6f",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/ping-typed-panel.tsx",
+          "expected": "d1e59e35ac48f02db6f0b9a6d4569c1eaf2595035ea582acaad700bac5ac1ab2",
+          "actual": "d1e59e35ac48f02db6f0b9a6d4569c1eaf2595035ea582acaad700bac5ac1ab2",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/skeletons.module.css",
+          "expected": "89653a6d77db75895f07716f85f78927d0a8678e53708321374571d3ed187fe0",
+          "actual": "89653a6d77db75895f07716f85f78927d0a8678e53708321374571d3ed187fe0",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/skeletons.tsx",
+          "expected": "24d184ba52ce41dd8b262512109776104a073e9b2c0f9c456ab8fa05fe6254a2",
+          "actual": "24d184ba52ce41dd8b262512109776104a073e9b2c0f9c456ab8fa05fe6254a2",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/use-tasks-place.ts",
+          "expected": "853b17fae98ff509800af2f15590b172a248d1a7308e22cd8e57530fbca4bd9f",
+          "actual": "853b17fae98ff509800af2f15590b172a248d1a7308e22cd8e57530fbca4bd9f",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/use-tasks-flight.ts",
+          "expected": "aa36fd0860fe4ca3a3aa8b050121bfc8b0d18efd81517a1a744316f25a8e97ab",
+          "actual": "aa36fd0860fe4ca3a3aa8b050121bfc8b0d18efd81517a1a744316f25a8e97ab",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/use-board-drag.ts",
+          "expected": "6a40a822154776d7e8b753e40fd8159681b0e3a7dc9bc60f7126a4487c93fd57",
+          "actual": "6a40a822154776d7e8b753e40fd8159681b0e3a7dc9bc60f7126a4487c93fd57",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/board.module.css",
+          "expected": "f06380cf11ecb6dcad810755176a3c422e6c2c261afb3ee8b64e5a6f028c6e37",
+          "actual": "f06380cf11ecb6dcad810755176a3c422e6c2c261afb3ee8b64e5a6f028c6e37",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/column-menu.tsx",
+          "expected": "920d11f50e6155b9fa79816e0db746933c45209b536730c8100182e89526933f",
+          "actual": "920d11f50e6155b9fa79816e0db746933c45209b536730c8100182e89526933f",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/view-order.ts",
+          "expected": "a2db0f085e8a0bfbbcbf51aaf3c1fb3950f1afcb8cd61a395dcaf4541b1e9f42",
+          "actual": "a2db0f085e8a0bfbbcbf51aaf3c1fb3950f1afcb8cd61a395dcaf4541b1e9f42",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/board-view.tsx",
+          "expected": "006ad055acac221e907308413e3523446798c2790f69c543668b09c3dff6994c",
+          "actual": "006ad055acac221e907308413e3523446798c2790f69c543668b09c3dff6994c",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/list.module.css",
+          "expected": "18135c66bb3d6adbf83e45cb14f5dcccaae6a8b346117a90cd406a8a08e682c7",
+          "actual": "18135c66bb3d6adbf83e45cb14f5dcccaae6a8b346117a90cd406a8a08e682c7",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/list-view.tsx",
+          "expected": "0b39e69a74019d28e55c71b96d996b7d068e3380dea8ce532a06170727a4842d",
+          "actual": "0b39e69a74019d28e55c71b96d996b7d068e3380dea8ce532a06170727a4842d",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/hybrid/planning.ts",
+          "expected": "b0913d1366109cfde770f882a2efa01ab329581a998b04f824755070c2d0bf77",
+          "actual": "b0913d1366109cfde770f882a2efa01ab329581a998b04f824755070c2d0bf77",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/calendar.module.css",
+          "expected": "0a0fb7a8601d10c70d5c6c226cf91a28702fae86ab9219136b6befe34a0d5fb3",
+          "actual": "0a0fb7a8601d10c70d5c6c226cf91a28702fae86ab9219136b6befe34a0d5fb3",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/calendar-view.tsx",
+          "expected": "a52d02ef180e1ee885c06fed53d714fb6620897ee6e990f8b48b138f02197cda",
+          "actual": "a52d02ef180e1ee885c06fed53d714fb6620897ee6e990f8b48b138f02197cda",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/tasks-workspace.tsx",
+          "expected": "df4baa7841fda15b0549d0fba8ba74f12fa598847d363e1ef61498c0110ebba5",
+          "actual": "df4baa7841fda15b0549d0fba8ba74f12fa598847d363e1ef61498c0110ebba5",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/hybrid/hybrid-store.tsx",
+          "expected": "6db96f3079b6b86c0c415907878b5be5f11e075af5122cc54825067fddae95b6",
+          "actual": "6db96f3079b6b86c0c415907878b5be5f11e075af5122cc54825067fddae95b6",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/hybrid/hybrid-workspace.tsx",
+          "expected": "3bfed9b72aeb09378046ad404ada464c1935f7b715dca5d5e29f875313466791",
+          "actual": "3bfed9b72aeb09378046ad404ada464c1935f7b715dca5d5e29f875313466791",
+          "unchanged": true
+        },
+        {
+          "source": "src/ds/v3.css",
+          "expected": "d7bc5bf3dd46214a67685c698804af832b6364ef30ab71aed1d691f32a96ac3c",
+          "actual": "d7bc5bf3dd46214a67685c698804af832b6364ef30ab71aed1d691f32a96ac3c",
+          "unchanged": true
+        },
+        {
+          "source": "experience/ping-typed/browser.mjs",
+          "expected": "f229873215ff1f40be573f293bfd6291fab7ff348990cbc3c99f518b8c6e5bfe",
+          "actual": "f229873215ff1f40be573f293bfd6291fab7ff348990cbc3c99f518b8c6e5bfe",
+          "unchanged": true
+        },
+        {
+          "source": "experience/ping-typed/fixture.tsx",
+          "expected": "beb73c2fedc3c7acadcdb4f706b2197b53ee45d5dea1294c82bd70da812fd1f9",
+          "actual": "beb73c2fedc3c7acadcdb4f706b2197b53ee45d5dea1294c82bd70da812fd1f9",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/ping/http.ts",
+          "expected": "bd2ce7ed26e1ef6dedd1165d3be051ba65ecaa81b0e2074aa86e6f4001782398",
+          "actual": "bd2ce7ed26e1ef6dedd1165d3be051ba65ecaa81b0e2074aa86e6f4001782398",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/ping/typed-session.ts",
+          "expected": "9c70c883553b54c766b28c1fabd37b4e85b0dca650017886c207932f0bc0a198",
+          "actual": "9c70c883553b54c766b28c1fabd37b4e85b0dca650017886c207932f0bc0a198",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/ping/command-service.ts",
+          "expected": "f11203e348515ae4e6d47c3cefa7588d75645c154ba59d5addaa4941ed3bbc92",
+          "actual": "f11203e348515ae4e6d47c3cefa7588d75645c154ba59d5addaa4941ed3bbc92",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/db/task-read.ts",
+          "expected": "183bb8b9932acb0a83f7073f2f18656043cf289da324dcbefbdef97afa11b53f",
+          "actual": "183bb8b9932acb0a83f7073f2f18656043cf289da324dcbefbdef97afa11b53f",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/ping/proof-fixture.ts",
+          "expected": "a9b52a3b6da1196b1ee840738514374c5fff120e17d494906b8fa93bca2a584f",
+          "actual": "a9b52a3b6da1196b1ee840738514374c5fff120e17d494906b8fa93bca2a584f",
+          "unchanged": true
+        },
+        {
+          "source": "src/app/globals.css",
+          "expected": "2b74e33abce335fd43e00c115dd44409e89a10bcd17ef27921b36791cf9fb74b",
+          "actual": "2b74e33abce335fd43e00c115dd44409e89a10bcd17ef27921b36791cf9fb74b",
+          "unchanged": true
+        }
+      ]
+    },
+    {
+      "id": "voice-capture",
+      "path": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/app/experience/output/ping-voice/2026-10-09T20-22-42-961Z/receipt.json",
+      "receiptSha256": "caba340f4a00bcd494509e5749f559788dd83f9df75fb255523e582c3a70c6a7",
+      "originalHead": "772e122feb548f7a2c69221ac2ac855b15791f3d",
+      "caseCount": 8,
+      "status": "passed",
+      "sourceCount": 11,
+      "mismatches": [],
+      "checks": [
+        {
+          "source": "src/lib/ping/command.ts",
+          "expected": "1fb1f411ddff35448222db3c1ac6f2bbfafbe2d3189fdbc859e24cf6375fad9b",
+          "actual": "1fb1f411ddff35448222db3c1ac6f2bbfafbe2d3189fdbc859e24cf6375fad9b",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/input-validation.ts",
+          "expected": "79025240aeea6203cece6eb43bc7858dbd626b3e962adf50e63c16ea64452f08",
+          "actual": "79025240aeea6203cece6eb43bc7858dbd626b3e962adf50e63c16ea64452f08",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/proposal.ts",
+          "expected": "f1bc9dd53e077ac0e1695cf3c96b84353ccdb9e8661c911ee2e42981905fcebb",
+          "actual": "f1bc9dd53e077ac0e1695cf3c96b84353ccdb9e8661c911ee2e42981905fcebb",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/input-protocol.ts",
+          "expected": "dd49df61c2242ae9439e9494fd9a7cb223a6276958ce207c3e90b24d34adb3bc",
+          "actual": "dd49df61c2242ae9439e9494fd9a7cb223a6276958ce207c3e90b24d34adb3bc",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/use-voice-capture.ts",
+          "expected": "6af6fd74db45716789cef0bb7f71630dd91e28e40b5286e73841f6270c997bb2",
+          "actual": "6af6fd74db45716789cef0bb7f71630dd91e28e40b5286e73841f6270c997bb2",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/pcm.ts",
+          "expected": "52e3eb11a95fb45dbe4478d10a1926e777e3b5ebb3719c7c06e05541cd1a4f6b",
+          "actual": "52e3eb11a95fb45dbe4478d10a1926e777e3b5ebb3719c7c06e05541cd1a4f6b",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/realtime-transcription.ts",
+          "expected": "c1303386f27b006c0654b8fc3f414240661f7546a12b0ab8313d10ed4a8de62f",
+          "actual": "c1303386f27b006c0654b8fc3f414240661f7546a12b0ab8313d10ed4a8de62f",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/voice-session.ts",
+          "expected": "096203ec366464267f4703b7d75be21298d46bc8ed5aeeca0d2febf2981b7d6c",
+          "actual": "096203ec366464267f4703b7d75be21298d46bc8ed5aeeca0d2febf2981b7d6c",
+          "unchanged": true
+        },
+        {
+          "source": "scripts/ping/voice/fixture.tsx",
+          "expected": "88cf450c65d4512bbe9d5bc561fc5be18cae7cc8700fb86b0e11021f08e2e04a",
+          "actual": "88cf450c65d4512bbe9d5bc561fc5be18cae7cc8700fb86b0e11021f08e2e04a",
+          "unchanged": true
+        },
+        {
+          "source": "scripts/ping/voice/browser.mjs",
+          "expected": "534088aaa6f97e2e1e8c69cb427177397cf6dbbbd276f43f3b6c7df3d16e9d18",
+          "actual": "534088aaa6f97e2e1e8c69cb427177397cf6dbbbd276f43f3b6c7df3d16e9d18",
+          "unchanged": true
+        },
+        {
+          "source": "public/ping/pcm-worklet.js",
+          "expected": "80dae59fe99ed11ee6e1273c9fca0e1ffd4a872cb8ee2d6559a555a2280c11d1",
+          "actual": "80dae59fe99ed11ee6e1273c9fca0e1ffd4a872cb8ee2d6559a555a2280c11d1",
+          "unchanged": true
+        }
+      ]
+    },
+    {
+      "id": "voice-tasks",
+      "path": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/ping-voice-tasks-final/receipt.json",
+      "receiptSha256": "e28143fe0cabd6f717825f41ff3741427a1295ebf975ae62278d1af28089face",
+      "originalHead": "09ac5d4c8eac04f4c80cb3f10cf0c403f709c374",
+      "caseCount": 10,
+      "status": "passed",
+      "sourceCount": 108,
+      "mismatches": [],
+      "checks": [
+        {
+          "source": "src/lib/data.ts",
+          "expected": "7759ec953f37f059920bdd0b1286fd95b3f7dc2a5a75b7076db2477f41b229b0",
+          "actual": "7759ec953f37f059920bdd0b1286fd95b3f7dc2a5a75b7076db2477f41b229b0",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/auth-context.tsx",
+          "expected": "3bfd5f566f424ed8f388a37137432af7b483af5f2bc30b71a6c9587eae8a5598",
+          "actual": "3bfd5f566f424ed8f388a37137432af7b483af5f2bc30b71a6c9587eae8a5598",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/suite-contracts.v1.json",
+          "expected": "7bd4beddcadd03ae8bc7f0292f27958d975829d7cf9b0b7d3191b38fece15702",
+          "actual": "7bd4beddcadd03ae8bc7f0292f27958d975829d7cf9b0b7d3191b38fece15702",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/product-urls.ts",
+          "expected": "2211f956c507aff537b82c2a7ff9503364be1f7e9078060c1a89379fe95e0a79",
+          "actual": "2211f956c507aff537b82c2a7ff9503364be1f7e9078060c1a89379fe95e0a79",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/domains.ts",
+          "expected": "465a7a2fabf663acd2e519c0df26b81c0d96f4e536b66c4e176467ccb8b203b7",
+          "actual": "465a7a2fabf663acd2e519c0df26b81c0d96f4e536b66c4e176467ccb8b203b7",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/domain-context.tsx",
+          "expected": "78e2b553a88a164aadf9294941ea2f6d849dccbbbbdab533254052b2eb50c71a",
+          "actual": "78e2b553a88a164aadf9294941ea2f6d849dccbbbbdab533254052b2eb50c71a",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/tasks/tasks-reducer.ts",
+          "expected": "86a3c4daa618cc64cf43fedd143db45b0ead1c262b322fd33d277d48b2d5c6e8",
+          "actual": "86a3c4daa618cc64cf43fedd143db45b0ead1c262b322fd33d277d48b2d5c6e8",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/access-mode.ts",
+          "expected": "10ecdeb6477b5507850d8033af04c70fb6165f6da4b3d0afd8b4cd22eeda263b",
+          "actual": "10ecdeb6477b5507850d8033af04c70fb6165f6da4b3d0afd8b4cd22eeda263b",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/tasks/use-realtime-sync.ts",
+          "expected": "fd1621ebf8a1b642662ecd4c4308c1f811ca01228893c68c3b411a7b0ca61719",
+          "actual": "fd1621ebf8a1b642662ecd4c4308c1f811ca01228893c68c3b411a7b0ca61719",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/tasks/delight-events.ts",
+          "expected": "c5bfd4cdc6cbe2a4c6726069eb8d09bba20fe071aac339b13e27cf5fd5d648d4",
+          "actual": "c5bfd4cdc6cbe2a4c6726069eb8d09bba20fe071aac339b13e27cf5fd5d648d4",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/tasks/authoritative-refresh.ts",
+          "expected": "e91aa65de0e5b01bf524a1a5dd32de870874498f5ab7885f4b193cd9638d7a9d",
+          "actual": "e91aa65de0e5b01bf524a1a5dd32de870874498f5ab7885f4b193cd9638d7a9d",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/tasks/task-wire.ts",
+          "expected": "1cc281dbeb4f30504eeb2002429ee352207e36165fbd4953f87098f41a583361",
+          "actual": "1cc281dbeb4f30504eeb2002429ee352207e36165fbd4953f87098f41a583361",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/tasks/task-transport.ts",
+          "expected": "35f720e52b59fa754eca7ff9dfa1774b4ae1b125c973798f9b1011c634a74220",
+          "actual": "35f720e52b59fa754eca7ff9dfa1774b4ae1b125c973798f9b1011c634a74220",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/tasks/task-snapshot-epoch.ts",
+          "expected": "181eb5b34a6a527b95db2e7e0bfb06e16c4891e91d47a114de1f14ab3734f74a",
+          "actual": "181eb5b34a6a527b95db2e7e0bfb06e16c4891e91d47a114de1f14ab3734f74a",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/tasks/tasks-context.tsx",
+          "expected": "840d2d372983b8c46745db79d6b970e07b8d9de82406d68aa19876bae3180744",
+          "actual": "840d2d372983b8c46745db79d6b970e07b8d9de82406d68aa19876bae3180744",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/planning/dates.ts",
+          "expected": "320d5edc4b7ec528b9760b9e5ece163645d28f3bbd1e62152956fe5d3cdc3369",
+          "actual": "320d5edc4b7ec528b9760b9e5ece163645d28f3bbd1e62152956fe5d3cdc3369",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/calendar-frame.ts",
+          "expected": "abcad0837a2fa12a87aa20e46ed9eed1382862fdca8ddf7d7527c3975c6802c9",
+          "actual": "abcad0837a2fa12a87aa20e46ed9eed1382862fdca8ddf7d7527c3975c6802c9",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/app/room/room-brief-context.tsx",
+          "expected": "76dd01d690dc687a41b28a4c5742d0cf0088c48f50485d72429eca4c186edbba",
+          "actual": "76dd01d690dc687a41b28a4c5742d0cf0088c48f50485d72429eca4c186edbba",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/app/room/room-tools-context.tsx",
+          "expected": "1b5d0bf4f39c9670d29ae3da5a197767818cfdd9cc4ceb35c310610e8f58b06c",
+          "actual": "1b5d0bf4f39c9670d29ae3da5a197767818cfdd9cc4ceb35c310610e8f58b06c",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/board-colors.ts",
+          "expected": "40dd070f8e89a0e2e8bcc8c5732cf1e5f61606b8e2ebafaf53e4f750f9a95f0e",
+          "actual": "40dd070f8e89a0e2e8bcc8c5732cf1e5f61606b8e2ebafaf53e4f750f9a95f0e",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/board-config.ts",
+          "expected": "0d8b3e99dc1423de916fcb3dcf4a94d443179d3540f38e52339d6b1169e5f6fc",
+          "actual": "0d8b3e99dc1423de916fcb3dcf4a94d443179d3540f38e52339d6b1169e5f6fc",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/board-columns.ts",
+          "expected": "61351649199e5891654351432d0420b2322aabdb95c9aa5445632743f8984549",
+          "actual": "61351649199e5891654351432d0420b2322aabdb95c9aa5445632743f8984549",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/hybrid/dates.ts",
+          "expected": "58ca508e2a6caee78f9e5f9c9731cc21a481b7c9e2264f75491d3c2fa27a6584",
+          "actual": "58ca508e2a6caee78f9e5f9c9731cc21a481b7c9e2264f75491d3c2fa27a6584",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/hybrid/store.tsx",
+          "expected": "ebd8ed354d17ee02eac9f5c47c8f422b2a722ec5393065a9ffc046b3917468d4",
+          "actual": "ebd8ed354d17ee02eac9f5c47c8f422b2a722ec5393065a9ffc046b3917468d4",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/tasks/use-task-panel.ts",
+          "expected": "012d198b9e234788954ed3fb52a96d62354c4db4c3c0ccf460e82d8bf5375321",
+          "actual": "012d198b9e234788954ed3fb52a96d62354c4db4c3c0ccf460e82d8bf5375321",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/tags.ts",
+          "expected": "1d66b5307fc5a97d18448d51afd8292bce91d79fc9784efa9b397d3e9e41b56b",
+          "actual": "1d66b5307fc5a97d18448d51afd8292bce91d79fc9784efa9b397d3e9e41b56b",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/hybrid/adapter.ts",
+          "expected": "9435ed749aaa73c874a7c224865b9aa1d15fef1a6b7d6a92ecf68c058f1cde62",
+          "actual": "9435ed749aaa73c874a7c224865b9aa1d15fef1a6b7d6a92ecf68c058f1cde62",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/hybrid/columns-context.tsx",
+          "expected": "9d5d75483f8bfd7c4da559f2789b5616ab1955d4cb86d12e93fc7c7b0a0d7d4b",
+          "actual": "9d5d75483f8bfd7c4da559f2789b5616ab1955d4cb86d12e93fc7c7b0a0d7d4b",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/use-tasks-undo.ts",
+          "expected": "ea93f8b240d8bae269f8b96ae6f06498489f595db3d1f4842df7acc7ea6a7d7e",
+          "actual": "ea93f8b240d8bae269f8b96ae6f06498489f595db3d1f4842df7acc7ea6a7d7e",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/tasks-pulse.ts",
+          "expected": "8b86df86e738fbe665eb13e828c5e74136c219d62b11ffec55bea038ad2cfc6d",
+          "actual": "8b86df86e738fbe665eb13e828c5e74136c219d62b11ffec55bea038ad2cfc6d",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/surface.tsx",
+          "expected": "3fd99ea642a693983125e39f610c3f215941564ed7793f63c9bfa028087d9978",
+          "actual": "3fd99ea642a693983125e39f610c3f215941564ed7793f63c9bfa028087d9978",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/visible-tasks.ts",
+          "expected": "8c48be17b35140b5004b2533eb42048110b37c94b42f42d73b2520189491cf9c",
+          "actual": "8c48be17b35140b5004b2533eb42048110b37c94b42f42d73b2520189491cf9c",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/app/presence/avatar-stack.module.css",
+          "expected": "ed4e3bc1b98867ab707653044bc966e5d9ed3212cc0afb77be229df327f80af0",
+          "actual": "ed4e3bc1b98867ab707653044bc966e5d9ed3212cc0afb77be229df327f80af0",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/app/presence/avatar-stack.tsx",
+          "expected": "591c2493841537c18d15502cd840cb0004d536fcf5ac918ec0f7e4be2f7e179c",
+          "actual": "591c2493841537c18d15502cd840cb0004d536fcf5ac918ec0f7e4be2f7e179c",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/public-board-lanes.ts",
+          "expected": "bfe1bf4fb51b049566b1175be64a1d55849be729e6ef12cdf84ad54c1d4c7813",
+          "actual": "bfe1bf4fb51b049566b1175be64a1d55849be729e6ef12cdf84ad54c1d4c7813",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/exports.ts",
+          "expected": "242957b43abc196027e74c7b78737873f0fc7a979514074ff0cebe8d9f2a0f38",
+          "actual": "242957b43abc196027e74c7b78737873f0fc7a979514074ff0cebe8d9f2a0f38",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/projects/project-ref.ts",
+          "expected": "33f0ed7ee3f979a75a61f3273e1f5b2bad3b36ea422a23eea08d1daaac62bd6b",
+          "actual": "33f0ed7ee3f979a75a61f3273e1f5b2bad3b36ea422a23eea08d1daaac62bd6b",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/projects/project-url.ts",
+          "expected": "d64e515c7ed6a578b546c77fcf1a5dedc1a42a6425b6d93ecab5779db0ddeaf1",
+          "actual": "d64e515c7ed6a578b546c77fcf1a5dedc1a42a6425b6d93ecab5779db0ddeaf1",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/projects/floor-project-name.ts",
+          "expected": "d83fac43db474d54b4363ba3554096a0c082bc23b1a8874b4a796643466214ee",
+          "actual": "d83fac43db474d54b4363ba3554096a0c082bc23b1a8874b4a796643466214ee",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/identity-hue.ts",
+          "expected": "4b5eab6288ef1f4eb724ef818534f9c85a724ab01d7da5533fd0da270703ac1a",
+          "actual": "4b5eab6288ef1f4eb724ef818534f9c85a724ab01d7da5533fd0da270703ac1a",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/icons.tsx",
+          "expected": "f0c9bb048b2a7464929942eb1e37bab2fbd41ad4b6bc5cd477d2d8da2b1f753e",
+          "actual": "f0c9bb048b2a7464929942eb1e37bab2fbd41ad4b6bc5cd477d2d8da2b1f753e",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/hybrid/types.ts",
+          "expected": "643743cf0c3be249180c0b7773cf7d47f3ba102361a826a21e5b803e51f8ecbd",
+          "actual": "643743cf0c3be249180c0b7773cf7d47f3ba102361a826a21e5b803e51f8ecbd",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/status-glyph-model.ts",
+          "expected": "5f6f47508d7dc655e5f2a4719966df0339f76dd612fa1df402e16d5fc9441b43",
+          "actual": "5f6f47508d7dc655e5f2a4719966df0339f76dd612fa1df402e16d5fc9441b43",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/atoms.module.css",
+          "expected": "ec72e585a5b10c97f7b5d656701def1db4decac80fbcbdc2e3b03fb17388ec27",
+          "actual": "ec72e585a5b10c97f7b5d656701def1db4decac80fbcbdc2e3b03fb17388ec27",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/atoms.tsx",
+          "expected": "8ef23058ea880749b21bfe4cca45554c28c3dd17be8c64391bc2d47d9fdfa612",
+          "actual": "8ef23058ea880749b21bfe4cca45554c28c3dd17be8c64391bc2d47d9fdfa612",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/ui.module.css",
+          "expected": "7c4b461b81d51326650855a8f24eda563d0641f16dc592c59e280b77a2250246",
+          "actual": "7c4b461b81d51326650855a8f24eda563d0641f16dc592c59e280b77a2250246",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/ui.tsx",
+          "expected": "de11fd17559c96ee9d600bfc6abc26dcfd64dd51c2827db56f69ef5104742a3a",
+          "actual": "de11fd17559c96ee9d600bfc6abc26dcfd64dd51c2827db56f69ef5104742a3a",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/workspace.module.css",
+          "expected": "18bc6cb09487bd95b4377a4ef0abb4ef958d34a7ad12a8e76351be4e01c98efb",
+          "actual": "18bc6cb09487bd95b4377a4ef0abb4ef958d34a7ad12a8e76351be4e01c98efb",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/header.tsx",
+          "expected": "d51e735759e61a472ecc4b429bc50cfc42550a5601945e99232e737d1db5bf28",
+          "actual": "d51e735759e61a472ecc4b429bc50cfc42550a5601945e99232e737d1db5bf28",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/hybrid/fixtures.ts",
+          "expected": "e377b22360683d90efe634b1edbe5f3622343c4981a7969023046f13d2390996",
+          "actual": "e377b22360683d90efe634b1edbe5f3622343c4981a7969023046f13d2390996",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/task-bits.tsx",
+          "expected": "09c8848f12ae2ed28c133dbe0e4386034033a272340eed233738578f5ed2b53a",
+          "actual": "09c8848f12ae2ed28c133dbe0e4386034033a272340eed233738578f5ed2b53a",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/projects/floor-view-href.ts",
+          "expected": "2a434e41fc50b60f1c5709d0e25b611cbaee7ea41e0a445c3d7ca7d338436091",
+          "actual": "2a434e41fc50b60f1c5709d0e25b611cbaee7ea41e0a445c3d7ca7d338436091",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/hybrid/view-prefs.ts",
+          "expected": "37bf8ff33e8d917064fda64bd84e7fddbd31d50f840cb2ee206eeae5b9b076bf",
+          "actual": "37bf8ff33e8d917064fda64bd84e7fddbd31d50f840cb2ee206eeae5b9b076bf",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/display-prefs.ts",
+          "expected": "9ba082a907fc25e384014a3ccb0d05f7dbd6c0e9a8be6d630ec22e7cf777b0b6",
+          "actual": "9ba082a907fc25e384014a3ccb0d05f7dbd6c0e9a8be6d630ec22e7cf777b0b6",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/toolbar.tsx",
+          "expected": "f2e3fded9dd5446020a507ea17a79607e8ca591524d1cbb3009c5dbb101a093a",
+          "actual": "f2e3fded9dd5446020a507ea17a79607e8ca591524d1cbb3009c5dbb101a093a",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/sheet-bridge.ts",
+          "expected": "3e940635174244f5ebc53e001f77d9dfcb292d24a821d99c7cd913ae297d17b9",
+          "actual": "3e940635174244f5ebc53e001f77d9dfcb292d24a821d99c7cd913ae297d17b9",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/surface-keys.ts",
+          "expected": "88f8783c0efe16d4327f04331815d700e500c873c6060349a7aa2f412fa00958",
+          "actual": "88f8783c0efe16d4327f04331815d700e500c873c6060349a7aa2f412fa00958",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/bulk-bar.tsx",
+          "expected": "026dddce8eae326fe2c928ea1cba0739aadc79c216eaac8a3713598ca1307ef9",
+          "actual": "026dddce8eae326fe2c928ea1cba0739aadc79c216eaac8a3713598ca1307ef9",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/undo-toast.tsx",
+          "expected": "2a901099e6f66cca4f3d97f6c7a7b2bac3f42817b5e583a94ade4345dba01df7",
+          "actual": "2a901099e6f66cca4f3d97f6c7a7b2bac3f42817b5e583a94ade4345dba01df7",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/task-menu.tsx",
+          "expected": "9eaee9d74921b45e2f4f3fd55f42786ee3980eb6361bd607d2e324eaa0595287",
+          "actual": "9eaee9d74921b45e2f4f3fd55f42786ee3980eb6361bd607d2e324eaa0595287",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/app/detail-panel/due-calendar.tsx",
+          "expected": "bb4995a7db10082ac618b82c7b825e31692c9e094740ed53f51114f7a5db9c22",
+          "actual": "bb4995a7db10082ac618b82c7b825e31692c9e094740ed53f51114f7a5db9c22",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/time.ts",
+          "expected": "fa57be05ebaccb26be23586786a29a3120d6712d9b728101eeee3fd0131600e4",
+          "actual": "fa57be05ebaccb26be23586786a29a3120d6712d9b728101eeee3fd0131600e4",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/property-picker.tsx",
+          "expected": "eeafe3c846611661f990bc3ca7aa8f21df1c3877104149e9db579a83cc196694",
+          "actual": "eeafe3c846611661f990bc3ca7aa8f21df1c3877104149e9db579a83cc196694",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/delete-confirm.tsx",
+          "expected": "30d731989a7dbd48c42bcf2bebe42485a2549490bae4d9252abf3019372ebced",
+          "actual": "30d731989a7dbd48c42bcf2bebe42485a2549490bae4d9252abf3019372ebced",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/shortcuts-sheet.tsx",
+          "expected": "2adf0898131967f95ad0bcb25a4a7eddf8e2cb4de96bcbbcec15ca56131abddb",
+          "actual": "2adf0898131967f95ad0bcb25a4a7eddf8e2cb4de96bcbbcec15ca56131abddb",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/column-config-state.ts",
+          "expected": "9d1a2e0fa482e5329fe579f8c9bda0b9d9b664c6d2e13ee9e5a9bc952e54dbbb",
+          "actual": "9d1a2e0fa482e5329fe579f8c9bda0b9d9b664c6d2e13ee9e5a9bc952e54dbbb",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/column-config.tsx",
+          "expected": "109f226c1fac4f7daf2aca5817a0aa84112c60a78cb46f3c05eac52967aef3e3",
+          "actual": "109f226c1fac4f7daf2aca5817a0aa84112c60a78cb46f3c05eac52967aef3e3",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/typed-contract.ts",
+          "expected": "45f6ff8edd48d9779ab6e1b59aedeb980e540650f76afb6e4eadfc6c7db6d078",
+          "actual": "45f6ff8edd48d9779ab6e1b59aedeb980e540650f76afb6e4eadfc6c7db6d078",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/typed-client.ts",
+          "expected": "eba9eb07c5a2a767850d327bd7b2340f6a8630cb4072e445492339a4f736852b",
+          "actual": "eba9eb07c5a2a767850d327bd7b2340f6a8630cb4072e445492339a4f736852b",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/command.ts",
+          "expected": "1fb1f411ddff35448222db3c1ac6f2bbfafbe2d3189fdbc859e24cf6375fad9b",
+          "actual": "1fb1f411ddff35448222db3c1ac6f2bbfafbe2d3189fdbc859e24cf6375fad9b",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/input-validation.ts",
+          "expected": "79025240aeea6203cece6eb43bc7858dbd626b3e962adf50e63c16ea64452f08",
+          "actual": "79025240aeea6203cece6eb43bc7858dbd626b3e962adf50e63c16ea64452f08",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/proposal.ts",
+          "expected": "f1bc9dd53e077ac0e1695cf3c96b84353ccdb9e8661c911ee2e42981905fcebb",
+          "actual": "f1bc9dd53e077ac0e1695cf3c96b84353ccdb9e8661c911ee2e42981905fcebb",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/input-protocol.ts",
+          "expected": "dd49df61c2242ae9439e9494fd9a7cb223a6276958ce207c3e90b24d34adb3bc",
+          "actual": "dd49df61c2242ae9439e9494fd9a7cb223a6276958ce207c3e90b24d34adb3bc",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/use-voice-capture.ts",
+          "expected": "6af6fd74db45716789cef0bb7f71630dd91e28e40b5286e73841f6270c997bb2",
+          "actual": "6af6fd74db45716789cef0bb7f71630dd91e28e40b5286e73841f6270c997bb2",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/pcm.ts",
+          "expected": "52e3eb11a95fb45dbe4478d10a1926e777e3b5ebb3719c7c06e05541cd1a4f6b",
+          "actual": "52e3eb11a95fb45dbe4478d10a1926e777e3b5ebb3719c7c06e05541cd1a4f6b",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/voice-contract.ts",
+          "expected": "7d5480333b20c9e8b75aeab8d80af61e11faadc129dce558acf8e4826c39ab82",
+          "actual": "7d5480333b20c9e8b75aeab8d80af61e11faadc129dce558acf8e4826c39ab82",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/voice-client.ts",
+          "expected": "529a5f4cbeb71f4698f82dc8ce8d73510bdac46ea2e2bcc6a67e95d50915a09d",
+          "actual": "529a5f4cbeb71f4698f82dc8ce8d73510bdac46ea2e2bcc6a67e95d50915a09d",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/ping-voice-panel.tsx",
+          "expected": "7a2fdd29fbfd5b66293b221712db64f4ee260fa2b4a1be61e9fd181b96fb1e6f",
+          "actual": "7a2fdd29fbfd5b66293b221712db64f4ee260fa2b4a1be61e9fd181b96fb1e6f",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/ping-typed-panel.tsx",
+          "expected": "d1e59e35ac48f02db6f0b9a6d4569c1eaf2595035ea582acaad700bac5ac1ab2",
+          "actual": "d1e59e35ac48f02db6f0b9a6d4569c1eaf2595035ea582acaad700bac5ac1ab2",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/skeletons.module.css",
+          "expected": "89653a6d77db75895f07716f85f78927d0a8678e53708321374571d3ed187fe0",
+          "actual": "89653a6d77db75895f07716f85f78927d0a8678e53708321374571d3ed187fe0",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/skeletons.tsx",
+          "expected": "24d184ba52ce41dd8b262512109776104a073e9b2c0f9c456ab8fa05fe6254a2",
+          "actual": "24d184ba52ce41dd8b262512109776104a073e9b2c0f9c456ab8fa05fe6254a2",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/use-tasks-place.ts",
+          "expected": "853b17fae98ff509800af2f15590b172a248d1a7308e22cd8e57530fbca4bd9f",
+          "actual": "853b17fae98ff509800af2f15590b172a248d1a7308e22cd8e57530fbca4bd9f",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/use-tasks-flight.ts",
+          "expected": "aa36fd0860fe4ca3a3aa8b050121bfc8b0d18efd81517a1a744316f25a8e97ab",
+          "actual": "aa36fd0860fe4ca3a3aa8b050121bfc8b0d18efd81517a1a744316f25a8e97ab",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/use-board-drag.ts",
+          "expected": "6a40a822154776d7e8b753e40fd8159681b0e3a7dc9bc60f7126a4487c93fd57",
+          "actual": "6a40a822154776d7e8b753e40fd8159681b0e3a7dc9bc60f7126a4487c93fd57",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/board.module.css",
+          "expected": "f06380cf11ecb6dcad810755176a3c422e6c2c261afb3ee8b64e5a6f028c6e37",
+          "actual": "f06380cf11ecb6dcad810755176a3c422e6c2c261afb3ee8b64e5a6f028c6e37",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/column-menu.tsx",
+          "expected": "920d11f50e6155b9fa79816e0db746933c45209b536730c8100182e89526933f",
+          "actual": "920d11f50e6155b9fa79816e0db746933c45209b536730c8100182e89526933f",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/view-order.ts",
+          "expected": "a2db0f085e8a0bfbbcbf51aaf3c1fb3950f1afcb8cd61a395dcaf4541b1e9f42",
+          "actual": "a2db0f085e8a0bfbbcbf51aaf3c1fb3950f1afcb8cd61a395dcaf4541b1e9f42",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/board-view.tsx",
+          "expected": "006ad055acac221e907308413e3523446798c2790f69c543668b09c3dff6994c",
+          "actual": "006ad055acac221e907308413e3523446798c2790f69c543668b09c3dff6994c",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/list.module.css",
+          "expected": "18135c66bb3d6adbf83e45cb14f5dcccaae6a8b346117a90cd406a8a08e682c7",
+          "actual": "18135c66bb3d6adbf83e45cb14f5dcccaae6a8b346117a90cd406a8a08e682c7",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/list-view.tsx",
+          "expected": "0b39e69a74019d28e55c71b96d996b7d068e3380dea8ce532a06170727a4842d",
+          "actual": "0b39e69a74019d28e55c71b96d996b7d068e3380dea8ce532a06170727a4842d",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/hybrid/planning.ts",
+          "expected": "b0913d1366109cfde770f882a2efa01ab329581a998b04f824755070c2d0bf77",
+          "actual": "b0913d1366109cfde770f882a2efa01ab329581a998b04f824755070c2d0bf77",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/calendar.module.css",
+          "expected": "0a0fb7a8601d10c70d5c6c226cf91a28702fae86ab9219136b6befe34a0d5fb3",
+          "actual": "0a0fb7a8601d10c70d5c6c226cf91a28702fae86ab9219136b6befe34a0d5fb3",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/calendar-view.tsx",
+          "expected": "a52d02ef180e1ee885c06fed53d714fb6620897ee6e990f8b48b138f02197cda",
+          "actual": "a52d02ef180e1ee885c06fed53d714fb6620897ee6e990f8b48b138f02197cda",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/tasks/tasks-workspace.tsx",
+          "expected": "df4baa7841fda15b0549d0fba8ba74f12fa598847d363e1ef61498c0110ebba5",
+          "actual": "df4baa7841fda15b0549d0fba8ba74f12fa598847d363e1ef61498c0110ebba5",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/hybrid/hybrid-store.tsx",
+          "expected": "6db96f3079b6b86c0c415907878b5be5f11e075af5122cc54825067fddae95b6",
+          "actual": "6db96f3079b6b86c0c415907878b5be5f11e075af5122cc54825067fddae95b6",
+          "unchanged": true
+        },
+        {
+          "source": "src/components/hybrid/hybrid-workspace.tsx",
+          "expected": "3bfed9b72aeb09378046ad404ada464c1935f7b715dca5d5e29f875313466791",
+          "actual": "3bfed9b72aeb09378046ad404ada464c1935f7b715dca5d5e29f875313466791",
+          "unchanged": true
+        },
+        {
+          "source": "src/ds/v3.css",
+          "expected": "d7bc5bf3dd46214a67685c698804af832b6364ef30ab71aed1d691f32a96ac3c",
+          "actual": "d7bc5bf3dd46214a67685c698804af832b6364ef30ab71aed1d691f32a96ac3c",
+          "unchanged": true
+        },
+        {
+          "source": "experience/ping-voice-tasks/browser.mjs",
+          "expected": "39cb0acebac2e25afc4b5cae7d497e3450967597aa20b3012884e4deb4314143",
+          "actual": "39cb0acebac2e25afc4b5cae7d497e3450967597aa20b3012884e4deb4314143",
+          "unchanged": true
+        },
+        {
+          "source": "experience/ping-typed/fixture.tsx",
+          "expected": "beb73c2fedc3c7acadcdb4f706b2197b53ee45d5dea1294c82bd70da812fd1f9",
+          "actual": "beb73c2fedc3c7acadcdb4f706b2197b53ee45d5dea1294c82bd70da812fd1f9",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/ping/http.ts",
+          "expected": "bd2ce7ed26e1ef6dedd1165d3be051ba65ecaa81b0e2074aa86e6f4001782398",
+          "actual": "bd2ce7ed26e1ef6dedd1165d3be051ba65ecaa81b0e2074aa86e6f4001782398",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/ping/typed-session.ts",
+          "expected": "9c70c883553b54c766b28c1fabd37b4e85b0dca650017886c207932f0bc0a198",
+          "actual": "9c70c883553b54c766b28c1fabd37b4e85b0dca650017886c207932f0bc0a198",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/ping/command-service.ts",
+          "expected": "f11203e348515ae4e6d47c3cefa7588d75645c154ba59d5addaa4941ed3bbc92",
+          "actual": "f11203e348515ae4e6d47c3cefa7588d75645c154ba59d5addaa4941ed3bbc92",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/db/task-read.ts",
+          "expected": "183bb8b9932acb0a83f7073f2f18656043cf289da324dcbefbdef97afa11b53f",
+          "actual": "183bb8b9932acb0a83f7073f2f18656043cf289da324dcbefbdef97afa11b53f",
+          "unchanged": true
+        },
+        {
+          "source": "src/server/ping/proof-fixture.ts",
+          "expected": "a9b52a3b6da1196b1ee840738514374c5fff120e17d494906b8fa93bca2a584f",
+          "actual": "a9b52a3b6da1196b1ee840738514374c5fff120e17d494906b8fa93bca2a584f",
+          "unchanged": true
+        },
+        {
+          "source": "src/app/globals.css",
+          "expected": "2b74e33abce335fd43e00c115dd44409e89a10bcd17ef27921b36791cf9fb74b",
+          "actual": "2b74e33abce335fd43e00c115dd44409e89a10bcd17ef27921b36791cf9fb74b",
+          "unchanged": true
+        },
+        {
+          "source": "public/ping/pcm-worklet.js",
+          "expected": "80dae59fe99ed11ee6e1273c9fca0e1ffd4a872cb8ee2d6559a555a2280c11d1",
+          "actual": "80dae59fe99ed11ee6e1273c9fca0e1ffd4a872cb8ee2d6559a555a2280c11d1",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/voice-session.ts",
+          "expected": "096203ec366464267f4703b7d75be21298d46bc8ed5aeeca0d2febf2981b7d6c",
+          "actual": "096203ec366464267f4703b7d75be21298d46bc8ed5aeeca0d2febf2981b7d6c",
+          "unchanged": true
+        },
+        {
+          "source": "src/lib/ping/realtime-transcription.ts",
+          "expected": "c1303386f27b006c0654b8fc3f414240661f7546a12b0ab8313d10ed4a8de62f",
+          "actual": "c1303386f27b006c0654b8fc3f414240661f7546a12b0ab8313d10ed4a8de62f",
+          "unchanged": true
+        }
+      ]
+    }
+  ]
+}
