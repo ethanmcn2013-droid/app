@@ -17,7 +17,6 @@ import {
   activities,
   attachments,
   notifications,
-  shareLinks,
   shareLinkVisits,
   workspaces,
   workspaceMembers,
@@ -43,6 +42,8 @@ import { toPublicTask } from "@/lib/public-task";
 import { parseColumnConfig } from "@/lib/board-config";
 import { publicBoardColumns, type PublicColumn } from "@/lib/public-board-lanes";
 import { byWorkspace } from "./tenant";
+import { taskColumnsWithCount } from "./task-columns";
+import { readCanonicalTasks } from "./task-read";
 import { withReadRetry } from "./retry";
 import { isDemoMode } from "@/lib/access-mode";
 import { getCurrentUserOrNull } from "@/server/auth";
@@ -55,25 +56,6 @@ import {
   DEMO_WORKSPACE_SLUG,
   demoTasks,
 } from "@/server/demo/tasks-demo";
-
-const taskColumnsWithCount = {
-  ...getTableColumns(tasks),
-  commentCount:
-    sql<number>`(SELECT COUNT(*) FROM ${comments} WHERE ${comments.taskId} = ${tasks.id})`.as(
-      "comment_count",
-    ),
-  // Subtask rollups (Phase 3B): total children and how many are done, so
-  // the board card can show a compact "done/total" subtask receipt and
-  // open straight into the checklist without a second fetch.
-  subtaskCount:
-    sql<number>`(SELECT COUNT(*) FROM tasks child WHERE child.parent_task_id = ${tasks.id} AND child.archived_at IS NULL)`.as(
-      "subtask_count",
-    ),
-  subtaskDoneCount:
-    sql<number>`(SELECT COUNT(*) FROM tasks child WHERE child.parent_task_id = ${tasks.id} AND child.archived_at IS NULL AND child.lane = 'done')`.as(
-      "subtask_done_count",
-    ),
-};
 
 // Lane ordering matches the client's LANE_ORDER. Encoded as a CASE
 // expression so SQL can sort the (string) lane column the same way
@@ -95,30 +77,7 @@ export async function getTasks(workspaceId: string): Promise<Task[]> {
   // live exclusively in the detail panel for cycle 25. They'd
   // otherwise multiply into the board / list / timeline / calendar
   // alongside their parents.
-  return withReadRetry(async () => {
-  const rows = await db
-    .select(taskColumnsWithCount)
-    .from(tasks)
-    .where(
-      byWorkspace(
-        tasks.workspaceId,
-        workspaceId,
-        isNull(tasks.parentTaskId),
-        // Archived tasks leave every active view; they live only on the
-        // /app/archived surface until restored or deleted.
-        isNull(tasks.archivedAt),
-      ),
-    )
-    .orderBy(laneOrderSql, positionOrderSql)
-    // Hard safety cap. The board/list/timeline never need more than
-    // this, and the public `/p/{slug}` share path resolves through
-    // here too, without a bound a runaway workspace would scan the
-    // whole table on every public page hit. 2000 is well past any
-    // real workspace; if a workspace legitimately exceeds it, the
-    // overflow is the long tail of oldest in-lane rows.
-    .limit(2000);
-    return rows.map(rowToTask);
-  });
+  return withReadRetry(() => readCanonicalTasks(db, workspaceId));
 }
 
 /**
