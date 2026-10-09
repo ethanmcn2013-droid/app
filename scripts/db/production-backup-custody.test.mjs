@@ -5,13 +5,15 @@ import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {test} from 'node:test';
+// The ordinary production-custody gate includes candidate import regressions.
+import './prepare-reviewed-candidate.test.mjs';
 import {createClient} from '@libsql/client';
 import {takeBackup} from './backup.mjs';
 import {sha256} from './migration-ledger.mjs';
 import {
   encryptBackup, finalResult, makeBackupBundle, readBackupBundle,
   requireCipherArtifactContents, requireEncryptionPreflight, requireUploadAck,
-  requireProductionTasksTarget, writeFinalResult,
+  requireProductionTasksTarget, writeFinalResult, candidateResult, requireCandidateBinding, publicTargetMetadata,
 } from './production-backup-custody.mjs';
 
 const script = fileURLToPath(new URL('./production-backup-custody.mjs', import.meta.url));
@@ -30,6 +32,27 @@ test('prepare refuses missing encryption before provider access or artifact crea
     assert.equal(fs.existsSync(path.join(temp, 'signal-production-backup')), false);
   } finally {
     fs.rmSync(temp, {recursive:true, force:true});
+  }
+});
+
+test('target metadata is allowlisted and refuses missing or wrong production bindings without provider access', () => {
+  const result = publicTargetMetadata({sourceRevision:'a'.repeat(40),targetUrlSha256:'b'.repeat(64),
+    identitySha256:'c'.repeat(64),context:{ledgerSha256:'d'.repeat(64),entries:[{id:'0038_synthetic'}]},
+    authToken:'private-token',url:'private-url',rows:[{private:'row'}]});
+  assert.deepEqual(Object.keys(result).sort(),['schema','operatorSourceRevision','targetUrlSha256',
+    'databaseIdentitySha256','ledgerSha256','lastMigrationId'].sort());
+  assert.equal(JSON.stringify(result).includes('private'),false);
+  for (const values of [
+    {TASKS_DATABASE_URL:'',TASKS_AUTH_TOKEN:''},
+    {TASKS_DATABASE_URL:'libsql://unreachable.invalid',TASKS_AUTH_TOKEN:'synthetic-private-token'},
+  ]) {
+    const run = spawnSync(process.execPath,[script,'metadata'],{encoding:'utf8',
+      env:{...process.env,GITHUB_ACTIONS:'false',...values}});
+    assert.equal(run.status,1);
+    assert.match(run.stderr,/PRODUCTION_(BINDING_MISSING|TARGET_MISMATCH)/);
+    assert.equal(run.stdout,'');
+    assert.equal(run.stderr.includes('synthetic-private-token'),false);
+    assert.equal(run.stderr.includes('unreachable.invalid'),false);
   }
 });
 
@@ -83,7 +106,7 @@ test('final result is allowlisted and marks attempted migration failure as unver
     assert.equal(receipt.errorCode, 'SQLITE_BUSY');
     assert.equal(receipt.appliedCount, null);
     assert.deepEqual(Object.keys(receipt).sort(), [
-      'appliedCount', 'backupArtifactDigest', 'backupArtifactId', 'backupSha256',
+        'appliedCount', 'backupArtifactDigest', 'backupArtifactId', 'backupSha256', 'candidate',
       'cipherSha256', 'dryRunFingerprint', 'errorCode', 'executionReceiptSha256',
       'ledgerSha256', 'migrations', 'mutationState', 'phase', 'postApplyStatus',
       'result', 'schema', 'snapshotLedgerRowsSha256', 'snapshotSchemaSha256',
@@ -231,4 +254,29 @@ test('artifact directory refuses plaintext even when ciphertext exists', () => {
   } finally {
     fs.rmSync(temp, {recursive:true, force:true});
   }
+});
+
+test('candidate custody binds exact provenance and nested public results are allowlisted', () => {
+  const candidate = {candidateSourceRevision:'a'.repeat(40),candidateBaseRevision:'b'.repeat(40),
+    receivingSourceRevision:'2'.repeat(40),
+    candidateManifestId:'synthetic',candidateManifestSha256:'c'.repeat(64),
+    candidateDatabaseIdentitySha256:'d'.repeat(64),candidateExpiresAt:'2026-10-09T12:00:00Z',
+    candidateMigrations:[{id:'0039_synthetic',sha256:'e'.repeat(64),receiptSha256:'f'.repeat(64),
+      rawRow:'private'}],authToken:'private'};
+  const result = candidateResult(candidate);
+  assert.equal(JSON.stringify(result).includes('private'),false);
+  requireCandidateBinding(candidate,structuredClone(candidate));
+  requireCandidateBinding(undefined,null);
+  for (const field of ['candidateSourceRevision','candidateBaseRevision','receivingSourceRevision','candidateManifestSha256',
+    'candidateDatabaseIdentitySha256']) {
+    assert.throws(() => requireCandidateBinding(candidate,{...candidate,[field]:'1'.repeat(candidate[field].length)}),
+      /BINDING_CHANGED/);
+  }
+  assert.throws(() => requireCandidateBinding(candidate,null),/BINDING_CHANGED/);
+  assert.throws(() => requireCandidateBinding(null,candidate),/BINDING_CHANGED/);
+  const partial = finalResult({result:'failed',phase:'migration_attempted',sourceRevision:'1'.repeat(40),
+    candidate,error:Object.assign(new Error('private payload'),{code:'SQLITE_BUSY'})});
+  assert.equal(partial.mutationState,'partial_or_complete_unverified');
+  assert.equal(partial.candidate.candidateSourceRevision,candidate.candidateSourceRevision);
+  assert.equal(JSON.stringify(partial).includes('private'),false);
 });
