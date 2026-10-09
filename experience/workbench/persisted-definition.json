@@ -1,0 +1,14 @@
+{
+  "id": "tasks-persisted-local@1",
+  "environment": "disposable-local-canonical-task-service",
+  "sampleSet": "wedding",
+  "selectedProjectKey": "the-wedding",
+  "actor": "workbench-owner",
+  "clock": "2026-10-08T12:00:00.000Z",
+  "operation": "create top-level todo p2 Task through canonical seam",
+  "identity": "synthetic",
+  "persistence": "canonical-local-file-db",
+  "rendering": "not-exercised",
+  "trustMode": "attended-procedural",
+  "limitations": ["No Clerk authentication or private HTTP/UI proof", "No product action UI effects or sponsored-use instrumentation", "No hostile-code confinement or universal exactly-once guarantee", "Human active time and ROI unmeasured"]
+}

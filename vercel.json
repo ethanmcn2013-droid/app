@@ -3,6 +3,7 @@
   "git": {
     "deploymentEnabled": {
       "*": false,
+      "feat/workbench-persisted-scenario": false,
       "feat/real-product-workbench": false
     }
   },
