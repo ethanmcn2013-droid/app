@@ -1,12 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "git": {
-    "deploymentEnabled": {
-      "*": false,
-      "feat/workbench-persisted-scenario": false,
-      "feat/real-product-workbench": false,
-      "feat/workbench-task-workshop": false
-    }
+    "deploymentEnabled": false
   },
   "crons": [
     {

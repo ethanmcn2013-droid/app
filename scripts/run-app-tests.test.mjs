@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync } from "node:fs";
 import { runAppTests, stages } from "./run-app-tests.mjs";
+
+test("automatic Git deployments are disabled for every branch, including slash branches", () => {
+  const config = JSON.parse(readFileSync(new URL("../vercel.json", import.meta.url), "utf8"));
+  assert.equal(config.git.deploymentEnabled, false,
+    "Use the documented global boolean; a wildcard branch map can leave slash branches enabled");
+});
 
 test("ordered direct processes preserve arguments and stop on a failed gate", () => {
   const calls = [];
