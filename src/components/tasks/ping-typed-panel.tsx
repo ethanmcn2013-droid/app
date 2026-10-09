@@ -154,6 +154,8 @@ function PingTypedPanelFlow({
   const selectionEpoch = useRef(0);
   const currentScope = useRef({ scopeKey, selectionKey, selectionEpoch: 0 });
   const previousSelectionKey = useRef(selectionKey);
+  const panelRef = useRef<HTMLElement>(null);
+  const focusOrigin = useRef<{ node: HTMLElement; scope: string; epoch: number } | null>(null);
   const selectedSet = useMemo(() => new Set(selectedTaskIds), [selectedTaskIds]);
   const selectedTasks = useMemo(() => tasks.filter((task) => selectedSet.has(task.id)), [selectedSet, tasks]);
   const staleSelection = selectedTasks.length !== selectedSet.size;
@@ -190,6 +192,19 @@ function PingTypedPanelFlow({
   }, [scopeKey, selectionKey]);
 
   const busy = busyAction !== null;
+  useLayoutEffect(() => {
+    const origin = focusOrigin.current;
+    if (!origin) return;
+    const active = document.activeElement;
+    if (origin.scope !== currentScope.current.scopeKey || origin.epoch !== currentScope.current.selectionEpoch ||
+      (active !== origin.node && active !== document.body && active?.isConnected)) { focusOrigin.current = null; return; }
+    if (active === origin.node && origin.node.isConnected && !origin.node.matches(':disabled')) return;
+    if (busy) return;
+    const next = panelRef.current?.querySelector<HTMLElement>(
+      '[data-testid="ping-check-original"]:not(:disabled),[data-testid="ping-cancel-prepared"]:not(:disabled),' +
+      '[data-testid="ping-refresh-current"]:not(:disabled),[data-testid="ping-apply"]:not(:disabled),[data-testid="ping-input"]:not(:disabled)');
+    if (next) { next.focus(); focusOrigin.current = { ...origin, node: next }; }
+  });
   const codePointCount = [...draft].length;
   const canPrepare = markerLoaded && !busy && !hasRecovery && !prepared && draft.trim().length > 0 &&
     codePointCount <= PING_TYPED_MAX_TEXT_POINTS && !tooManyTargets && !staleSelection && !unsupportedTargets;
@@ -477,6 +492,12 @@ function PingTypedPanelFlow({
 
   return (
     <section
+      ref={panelRef}
+      onClickCapture={(event) => {
+        const node = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
+        if (node && node === document.activeElement && !node.closest('[data-testid="ping-voice-panel"]'))
+          focusOrigin.current = { node, scope: currentScope.current.scopeKey, epoch: currentScope.current.selectionEpoch };
+      }}
       aria-labelledby="ping-typed-heading"
       className="border-t border-[color:var(--v3-border)] py-3"
       data-testid="project-ping-typed-panel"
