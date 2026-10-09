@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "tasks-reviewed-migration-candidate/1",
+  "id": "release-0039-0040-20261009",
+  "repository": "ethanmcn2013-droid/app",
+  "pullRequestNumber": 259,
+  "candidateSourceRevision": "d8aa82b130d5e3d739208032b48b87cd01f8bc7d",
+  "candidateBaseRevision": "ad0529bcb24db1fab06934deceb0617b2b320fe3",
+  "baseLedgerSha256": "f0149f14162a02993965760bb8ffe37a952f27e53b96819fefd86a8551ce7fc2",
+  "candidateLedgerSha256": "f31c2ea07cb500ed53a067d8da03fcb2c9edda6150e31f8010ecd877643ad59b",
+  "expectedLastMigrationId": "0038_project_drive_token_revocation",
+  "targetUrlSha256": "248b09a9d4560a8b66dd2d910e5d95c97b473eda4b656577d030592105a72eb0",
+  "databaseIdentitySha256": "248b09a9d4560a8b66dd2d910e5d95c97b473eda4b656577d030592105a72eb0",
+  "notBefore": "2026-10-09T21:04:54.0882469Z",
+  "expiresAt": "2026-10-10T03:04:54.0882469Z",
+  "authorization": {
+    "source": "Ethan explicitly requested all current App and workspace PRs safely merged and deployed; bounded release authority recorded in private Delivery https://github.com/ethanmcn2013-droid/signal-studio-workspace/issues/103#issuecomment-6089136630",
+    "authorizedBy": "Ethan McNamara, via explicit release delegation to root operator"
+  },
+  "review": {
+    "verdict": "approved",
+    "sourceRevision": "d8aa82b130d5e3d739208032b48b87cd01f8bc7d",
+    "reviewedBy": "Independent Sol 6.1 combined_source_review; root reviewed exact B and bound target/status",
+    "reference": "https://github.com/ethanmcn2013-droid/signal-studio-workspace/issues/103#issuecomment-6089136630; independent-controls-data-review-snapshot.md SHA256 a903f21cde674a30499818c36650daaac6447cadbb61f975be36c3982b8ed3f7",
+    "reviewedAt": "2026-10-09T21:04:54.0882469Z"
+  },
+  "migrations": [
+    {
+      "id": "0039_conversation_messages_workspace_index",
+      "sha256": "e9874a3f361ebcbc1a01d30fe0e36ebadb04d508392c9f9ff418d33a5b494264",
+      "receiptSha256": "6ccf7960dab5f0ca08167ea4adebf5a89c484b3d99fad39cfe3864b951fa3e1b"
+    },
+    {
+      "id": "0040_sponsored_measurement_choice",
+      "sha256": "5c6e94d2305ef142d072266a6e69e7f9617eeadeaa129ecfaf947729b747e662",
+      "receiptSha256": "206495025fc46a7ce681c44faf7d8caa1b2d2c8c9f383e7d34a36dfad05d93f9"
+    }
+  ],
+  "files": [
+    {
+      "path": "drizzle/migration-ledger.json",
+      "sha256": "f31c2ea07cb500ed53a067d8da03fcb2c9edda6150e31f8010ecd877643ad59b"
+    },
+    {
+      "path": "drizzle/meta/_journal.json",
+      "sha256": "157e1360a2e5eb363a4607ca3f30942b3996280fc95e646bf8908043d120e370"
+    },
+    {
+      "path": "drizzle/0039_conversation_messages_workspace_index.sql",
+      "sha256": "e9874a3f361ebcbc1a01d30fe0e36ebadb04d508392c9f9ff418d33a5b494264"
+    },
+    {
+      "path": "drizzle/receipts/conversation-messages-workspace-index-2026-10-07.json",
+      "sha256": "6ccf7960dab5f0ca08167ea4adebf5a89c484b3d99fad39cfe3864b951fa3e1b"
+    },
+    {
+      "path": "drizzle/0040_sponsored_measurement_choice.sql",
+      "sha256": "5c6e94d2305ef142d072266a6e69e7f9617eeadeaa129ecfaf947729b747e662"
+    },
+    {
+      "path": "drizzle/receipts/sponsored-measurement-choice-release-2026-10-09.json",
+      "sha256": "206495025fc46a7ce681c44faf7d8caa1b2d2c8c9f383e7d34a36dfad05d93f9"
+    }
+  ]
+}
