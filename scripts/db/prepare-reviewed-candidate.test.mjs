@@ -202,6 +202,31 @@ test('modified import, extra file, historical proof weakening, or different pend
   } finally { f.clean(); }
 });
 
+test('manifest-approved journal changes cannot alter any historical header or entry field', async () => {
+  const f = fixture();
+  try {
+    const c = await loadReviewedCandidate({...f.options,materialize:true});
+    const journalPath = path.resolve(c.context.root,c.context.ledger.journal);
+    const original = JSON.parse(fs.readFileSync(journalPath,'utf8'));
+    for (const alter of [
+      journal => { journal.entries[0].version = 'changed'; },
+      journal => { journal.entries[0].extra = {unreviewed:true}; },
+      journal => { journal.extra = {unreviewed:true}; },
+    ]) {
+      const journal = structuredClone(original); alter(journal);
+      fs.writeFileSync(journalPath,json(journal));
+      // General parity validation accepts these fields. Even approval of the
+      // resulting journal hash must not authorize rewriting the old prefix.
+      const candidate = loadAndValidateLedger({root:c.context.root});
+      const manifest = {...f.manifest,files:f.manifest.files.map(entry =>
+        entry.path === c.context.ledger.journal ? {...entry,sha256:canonicalFileSha256(journalPath)} : entry)};
+      assert.throws(() => validateCandidateContext(c.base,candidate,manifest),/JOURNAL_HISTORY_CHANGED/);
+    }
+    fs.writeFileSync(journalPath,json(original));
+    assert.doesNotThrow(() => validateCandidateContext(c.base,loadAndValidateLedger({root:c.context.root}),f.manifest));
+  } finally { f.clean(); }
+});
+
 test('Git reader refuses executable blobs, symlinks, missing files and traversal', () => {
   const f = fixture();
   try {
