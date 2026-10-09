@@ -31,7 +31,7 @@ const receipt = { sourceNormalization: 'LF', status: 'running', head: execFileSy
   'Explicit synthetic fixture authentication, Next navigation/server-action and disabled EventSource adapters; not genuine Next/Clerk admission or voice/provider proof.'
 ] };
 const stubs = new Map([
-  ['next/navigation', `export const useRouter=()=>({push(){throw Error('Unexpected navigation')},replace(){},refresh(){throw Error('Ping cannot use router refresh as receipt')}});export const usePathname=()=>'/app/tasks';export const useSearchParams=()=>new URLSearchParams();`],
+  ['next/navigation', `export const useRouter=()=>({push(){throw Error('Unexpected navigation')},replace(){},refresh(){window.fixtureRouterRefreshes=(window.fixtureRouterRefreshes??0)+1;}});export const usePathname=()=>'/app/tasks';export const useSearchParams=()=>new URLSearchParams();`],
   ['next/link', `import {createElement} from 'react';export default function Link({href,prefetch,scroll,...rest}){return createElement('a',{href,...rest})}`],
   ['next/dynamic', `import {createElement,lazy,Suspense} from 'react';export default function dynamic(load,options={}){const View=lazy(()=>load().then(m=>({default:m.default??m})));return function Dynamic(props){return createElement(Suspense,{fallback:null},createElement(View,props))}}`],
   ['@clerk/nextjs', `export const useUser=()=>({isLoaded:true,isSignedIn:true,user:{id:window.pingFixtureUser}});export const useAuth=()=>({isLoaded:true,isSignedIn:true,userId:window.pingFixtureUser,sessionId:window.pingFixtureSession});`],
@@ -325,6 +325,10 @@ try {
       limits:['One local sample per count includes polling/automation/instrumentation; selection and text entry excluded; no human value, p50/p95, cost, natural-language fidelity or genuine admission claim.']});
     receipt.cases.push({name:`actual typed ${selected.length}-target local floor commits one original and confirms every selected row while preserving all other rows`,passed:true});
   }
+  // Ping confirmation must use its canonical read; normal retained actions may
+  // subsequently request RSC freshness after their fenced Provider readback.
+  assert.equal(await page.evaluate(()=>window.fixtureRouterRefreshes??0),0,'Ping cannot use router refresh as receipt');
+  receipt.pingRouterRefreshCount=0;
   receipt.currentControlObservations=[];
   for(const selected of [[controlTargets[0]],controlTargets.slice(1)]) {
     await page.reload();await page.getByTestId('ping-input').waitFor();
