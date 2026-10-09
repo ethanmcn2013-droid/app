@@ -279,3 +279,42 @@ test('native Git import validates strict-main receiving and refuses changed head
     await assert.rejects(loadReviewedCandidate(freshOptions()),/RECEIVING_FILE_SET_CHANGED/);
   } finally { f.clean(); }
 });
+
+test('native Git origin accepts canonical checkout HTTPS with or without dotgit and rejects every other remote before lookup', async () => {
+  const f = fixture();
+  try {
+    const canonical = `https://github.com/${repository}`;
+    for (const remote of [canonical,`${canonical}.git`]) {
+      f.git(['remote','set-url','origin',remote]);
+      const candidate = await loadReviewedCandidate({...f.options,materialize:true,readBlob:readRegularGitBlob,
+        runnerTemp:fs.mkdtempSync(path.join(f.temp,'canonical-origin-'))});
+      assert.equal(candidate.receivingSourceRevision,f.pr.head.sha);
+      assert.equal(candidate.context.ledgerSha256,f.manifest.candidateLedgerSha256);
+      assert.equal(fs.existsSync(path.join(candidate.context.root,'candidate-payload.mjs')),false);
+    }
+    const forbidden = [
+      'https://github.com/attacker/app',`https://github.com/${repository}-other.git`,
+      `https://github.com.evil.invalid/${repository}`,`https://www.github.com/${repository}`,
+      `https://synthetic-user:synthetic-password@github.com/${repository}`,
+      `https://synthetic-user@github.com/${repository}`,`https://github.com@evil.invalid/${repository}`,
+      `http://github.com/${repository}`,`ssh://git@github.com/${repository}.git`,
+      `git@github.com:${repository}.git`,`git://github.com/${repository}.git`,
+      'file:///synthetic/app','../synthetic/app',
+      `${canonical}?synthetic=1`,`${canonical}.git?synthetic=1`,`${canonical}#synthetic`,`${canonical}.git#synthetic`,
+      `${canonical}/`,`${canonical}.git/`,`${canonical}.git.git`,`${canonical}.GIT`,
+      `https://github.com:443/${repository}`,`https://GITHUB.COM/${repository}`,
+      'https://github.com/ethanmcn2013-droid/%61pp',`https://github.com//${repository}`,
+    ];
+    let lookedUp = 0; let fetched = 0;
+    const options = {...f.options,materialize:true,readBlob:readRegularGitBlob,
+      runnerTemp:fs.mkdtempSync(path.join(f.temp,'forbidden-origin-')),
+      getPullRequest:async () => { lookedUp++; return f.pr; },fetchRevision:() => { fetched++; }};
+    for (const remote of forbidden) {
+      f.git(['remote','set-url','origin',remote]);
+      await assert.rejects(loadReviewedCandidate(options),/CANDIDATE_REMOTE_INVALID/);
+    }
+    assert.equal(lookedUp,0); assert.equal(fetched,0);
+    assert.equal(fs.existsSync(path.join(options.runnerTemp,'signal-reviewed-migration-candidate')),false);
+    assert.equal(fs.existsSync(path.join(options.runnerTemp,'signal-reviewed-migration-selection.json')),false);
+  } finally { f.clean(); }
+});
