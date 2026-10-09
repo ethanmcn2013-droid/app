@@ -309,11 +309,14 @@ test("saved title edit on completed work stays dated context without consuming H
     at: new Date(NOW - 1_000).toISOString(), kind: "update", field: "title",
   });
   assert.equal(catalogue?.idleDays, null);
-  assert.equal(view.signalRows.length, 1);
+  assert.equal(view.signalRows.length, 2);
+  assert.equal(view.signalRows[1]?.trigger, "just-shipped");
+  assert.match(view.signalRows[1]!.why, /2026-09-27T10:00:00.000Z/);
+  assert.doesNotMatch(view.signalRows[1]!.why, /11:59:59/);
   assert.equal(view.signalRows[0]?.id, "deadline-task");
   assert.equal(view.signalRows[0]?.trigger, "due-soon");
   const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
-  assert.equal(ledger.entries.length, 1);
+  assert.equal(ledger.entries.length, 2);
   assert.equal(ledger.entries[0]?.text, "Deadline-task");
   assert.ok(ledger.coverageNote?.includes("Title edited for “Catalogue books” on 27 September 2026 at 11:59:59 (UTC)"));
   assert.match(ledger.coverageNote ?? "", /recorded title edit does not establish meaningful work progress/i);
@@ -646,17 +649,22 @@ test("durable completion reaches dated full-read context and reopening removes r
   const view = await home();
   assert.equal(result.signals[0]!.stage?.complete, true);
   assert.equal(result.signals[0]!.movedToShippedAt, NOW - 20 * 3_600_000);
-  assert.deepEqual(view.signalRows, [], "recognition does not occupy attention selection");
+  assert.equal(view.signalRows.length, 1);
+  assert.equal(view.signalRows[0]?.trigger, "just-shipped");
+  assert.match(view.signalRows[0]!.why, /Saved completion.*2026-09-26T16:00:00.000Z/);
+  assert.equal(view.signalRows[0]?.due, null);
   assert.ok(!view.myTasks.some(row => row.id === "finished-record"));
   const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Test read", allowedAppOrigin: "https://app.signalstudio.ie" });
-  assert.deepEqual(ledger.entries, []);
+  assert.equal(ledger.entries.length, 1);
+  assert.equal(ledger.entries[0]?.section, "activity");
   assert.match(ledger.coverageNote ?? "", /1 task has a saved completion in the past 24 hours[^]*“finished-record”[^]*26 September 2026 at 16:00:00 \(UTC\)[^]*2026-09-26T16:00:00.000Z/);
   assert.match(ledger.coverageNote ?? "", /included in this read/);
   assert.equal(ledger.readCounts, null, "partial source history still withholds public totals");
   const overview = buildOverviewModel({ ledger, timezone: result.authorizedScope.timezone,
     legacy: { briefing: result.briefing, signals: result.signals, authorizedScope: result.authorizedScope } });
   assert.equal(overview.coverage?.note, ledger.coverageNote);
-  assert.equal(overview.attention.length + overview.risks.length + overview.activity.length, 0);
+  assert.equal(overview.attention.length + overview.risks.length, 0);
+  assert.equal(overview.activity.length, 1);
   assert.deepEqual(await hashes(), before);
   await fixture.client.execute("UPDATE tasks SET lane='todo',due_at=NULL WHERE id='finished-record'");
   const reopenedBefore = await hashes(), reopened = await build(), reopenedHome = await home();
@@ -707,4 +715,24 @@ test("round8 complete project open-work summary counts unknown stages without pe
   }, { generatedAtLabel: "Test read", allowedAppOrigin: "https://app.signalstudio.ie" });
   assert.equal(completeContext.coverageNote, "3 tasks are currently open in this project (Tasks · Test project).");
   assert.doesNotMatch(completeContext.coverageNote ?? "", /could not be checked|incomplete/i);
+});
+
+
+test("persisted canonical identity qualifies personal workload in Home without changing the project threshold", async () => {
+  for (let index = 0; index < 6; index++) {
+    await task(`assigned-load-${index}`, { lane: "doing", updated: NOW - 1000, assignees: ["synthetic-owner"] });
+  }
+  await fixture.client.execute("UPDATE tasks SET due_at=NULL");
+  const before = await hashes(), result = await build(), view = await home();
+  assert.equal(result.authorizedScope.canonicalUserId, "synthetic-owner");
+  const row = view.signalRows.find(row => row.trigger === "overload");
+  assert.ok(row);
+  assert.match(row.why, /Six of these open tasks are assigned to you.*exceed the threshold of five/);
+  assert.equal(row.destination, "briefing");
+  assert.equal(row.due, null);
+  assert.deepEqual(await hashes(), before);
+  await fixture.client.execute("UPDATE tasks SET assignees='[\"synthetic-second-owner\"]' WHERE id='assigned-load-0'");
+  const changed = await home(), changedRow = changed.signalRows.find(row => row.trigger === "overload");
+  assert.match(changedRow!.why, /Five of these open tasks are assigned to you/);
+  assert.doesNotMatch(changedRow!.why, /Your assigned.*exceed/);
 });

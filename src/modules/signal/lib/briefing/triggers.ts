@@ -326,12 +326,18 @@ export function detectPrerequisitesUnverified(signals: TaskSignal[], now: number
 /** Overload: > 5 tasks saved in-flight or in review in this read. The triggered
  *  signal isn't a task, it's the situation itself. We return a
  *  pseudo-task representing the overload state. */
-export function detectOverload(signals: TaskSignal[]): Triggered[] {
+export function detectOverload(signals: TaskSignal[], canonicalUserId?: string): Triggered[] {
   const inFlight = signals.filter(
     (s) => (s.stage?.phase ?? s.lane) === "in-flight" || (s.stage?.phase ?? s.lane) === "review",
   );
   if (inFlight.length <= 5) return [];
 
+  // A project total cannot establish the reader's load. Only a resolved
+  // identity and complete assignment fields support an exact personal count.
+  const assigned = canonicalUserId && inFlight.every(task => task.assignees !== undefined)
+    ? inFlight.filter(task => task.assignees!.some(user => user.id === canonicalUserId)) : null;
+  const personalDetail = assigned === null ? "" :
+    ` ${capitalise(numberWord(assigned.length))} of these open tasks are assigned to you.${assigned.length > 5 ? " Your assigned in-flight or review tasks exceed the threshold of five." : ""}`;
   const inReview = inFlight.filter((s) => (s.stage?.phase ?? s.lane) === "review").length;
 
   const synthetic: TaskSignal = {
@@ -352,7 +358,7 @@ export function detectOverload(signals: TaskSignal[]): Triggered[] {
       task: synthetic,
       trigger: "overload",
       representedTaskIds: inFlight.map(task => task.id).sort(),
-      detailOverride: `${capitalise(numberWord(inFlight.length))} tasks in this read have saved in-flight or review status.`,
+      detailOverride: `${capitalise(numberWord(inFlight.length))} tasks in this read have saved in-flight or review status.${personalDetail}`,
       reasons: [
         "Signal flags more than five tasks saved in-flight or in review.",
         `${capitalise(numberWord(inFlight.length - inReview))} are saved in-flight; ${numberWord(inReview)} are saved in review.`,

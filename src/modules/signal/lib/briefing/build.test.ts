@@ -8,14 +8,15 @@ const DAY = 86_400_000;
 const NOW = 1_700_000_000_000;
 const CTX = { userId: "u-test", email: "test@example.com" };
 
-test("prospective completion and unknown context leave selection to genuine pressure and recorded events", async () => {
+test("durable completion shares the cap with genuine pressure and recorded events", async () => {
   const signals = [task({ id: "done", title: "Saved completion", workspaceId: "w", lane: "shipped", movedToShippedAt: NOW - 3600000 }),
     task({ id: "unknown", title: "Unverified work", workspaceId: "w", blockedBy: ["private"], dependencyCoverage: "partial", dueAt: NOW + DAY }),
     task({ id: "comment", workspaceId: "w", latestValidatedComment: { at: new Date(NOW - 1000).toISOString(), kind: "commentAdd" } })];
   const brief = await buildBriefing(source(signals), CTX, NOW);
-  assert.ok([...brief.needsAttention, ...brief.quietRisks, ...brief.movingWell].every(row => row.trigger !== "just-shipped" && row.trigger !== "prerequisites-unverified"));
+  assert.ok([...brief.needsAttention, ...brief.quietRisks, ...brief.movingWell].every(row => row.trigger !== "prerequisites-unverified"));
   assert.ok(brief.needsAttention.some(row => row.trigger === "due-soon"));
   assert.ok(brief.movingWell.some(row => row.trigger === "recorded-activity"));
+  assert.ok(brief.movingWell.some(row => row.trigger === "just-shipped"));
   assert.match(brief.activityCoverageNote!, /past 24 hours.*Saved completion/);
   assert.match(brief.activityCoverageNote!, /Unverified work.*prerequisites could not be fully verified/);
 });
@@ -706,7 +707,7 @@ describe("buildBriefing, the accounting", () => {
   // It still counts as flagged, because it did cross a rule and dropping
   // it would make read = flagged + cleared false. The all-clear copy is
   // what names it (voice.ts readCountSentence).
-  test("completion recognition is context and does not count as actionable pressure", async () => {
+  test("completion recognition is selected activity without attention pressure", async () => {
     const signals = [
       task({ id: "a" }),
       task({
@@ -717,7 +718,8 @@ describe("buildBriefing, the accounting", () => {
     ];
     const b = await buildBriefing(source(signals), CTX, NOW);
     assert.equal(b.readCount, 2);
-    assert.equal(b.triggeredCount, 0);
+    assert.equal(b.triggeredCount, 1);
+    assert.equal(b.movingWell[0]?.trigger, "just-shipped");
     assert.match(b.activityCoverageNote!, /past 24 hours/);
     assert.equal(b.needsAttention.length, 0);
     assert.equal(b.quietRisks.length, 0);

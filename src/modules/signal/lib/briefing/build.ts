@@ -73,7 +73,7 @@ export async function buildBriefing(
 
   const stuck = detectStuckWork(signals).filter(notDismissed);
   const dueSoon = detectDueSoon(signals, now, timezone).filter(notDismissed);
-  const overload = detectOverload(signals).filter(notDismissed);
+  const overload = detectOverload(signals, ctx.canonicalUserId).filter(notDismissed);
   const crowded = detectCrowdedWeek(signals, now, timezone).filter(notDismissed);
   const blocked = detectBlockedTooLong(signals).filter(notDismissed);
   const blockingDueWork = detectBlockingDueWork(signals, now, timezone);
@@ -158,9 +158,9 @@ export async function buildBriefing(
   ]);
   const attention = selected.filter((item) => attentionKinds.has(item.trigger));
 
-  // Recorded title/comment observations retain the cap; completion recognition
-  // is a dated context digest and does not repeat congratulatory suggestion rows.
-  const moving = selected.filter((item) => item.trigger === "recorded-activity");
+  // Recorded comments and durable recent completions share the global cap.
+  // Their low existing weight leaves urgent open work ahead of recognition.
+  const moving = selected.filter((item) => item.trigger === "recorded-activity" || item.trigger === "just-shipped");
 
   // ─ Quiet risks: stuck-work, ordered by severity, EXCLUDING items
   // already in attention (so a stuck-work item that's also overdue
