@@ -9,6 +9,10 @@ on:
   pull_request:
     paths:
       - "docs/**"
+      - "scripts/db/**"
+      - "drizzle/**"
+      - "DEPLOY.md"
+      - ".github/workflows/db-migrate-encrypted.yml"
       - "src/app/**"
       - "src/components/**"
       - "src/ds/**"
@@ -33,6 +37,10 @@ on:
     branches: [main, release/january-2027]
     paths:
       - "docs/**"
+      - "scripts/db/**"
+      - "drizzle/**"
+      - "DEPLOY.md"
+      - ".github/workflows/db-migrate-encrypted.yml"
       - "src/app/**"
       - "src/components/**"
       - "src/ds/**"
