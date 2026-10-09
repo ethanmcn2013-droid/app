@@ -7,11 +7,16 @@ import type { PingVoiceModelInput } from "@/lib/ping/voice-session";
 import type { PingClipTranscription, PingClipUsage } from "@/server/ping/openai-clip-transcription";
 import { parsePingNativeAudioUsage, type PingNativeAudioContext, type PingNativeAudioResult,
   type PingNativeAudioUsage } from "@/server/ping/openai-native-audio";
-import { parsePingVoiceInterpretation } from "@/server/ping/openai-interpreter";
+import { parsePingVoiceInterpretation, parsePingResponsesUsage, type PingResponsesUsage,
+  type PingResponsesUsageObservation } from "@/server/ping/openai-interpreter";
+
+export type PingInterpretationUsageWitness = Readonly<{ invocations: number;
+  observation: Readonly<{ invocation: number; value: PingResponsesUsageObservation }> | null }>;
 
 type PingClipPairedRoute = Readonly<{ id: string;
   transcribe: (pcm: Uint8Array<ArrayBuffer>, signal: AbortSignal) => Promise<PingClipTranscription>;
-  interpret: (input: PingVoiceModelInput, signal: AbortSignal) => Promise<unknown> }>;
+  interpret: (input: PingVoiceModelInput, signal: AbortSignal) => Promise<unknown>;
+  readInterpretationUsage?: () => PingInterpretationUsageWitness }>;
 export type PingNativePairedRoute = Readonly<{ id: string; kind: "native_audio";
   interpretAudio: (pcm: Uint8Array<ArrayBuffer>, context: PingNativeAudioContext, signal: AbortSignal) => Promise<PingNativeAudioResult> }>;
 export type PingPairedRoute = PingClipPairedRoute | PingNativePairedRoute;
@@ -20,7 +25,7 @@ export type PingPairedTrial = Readonly<{ pcm: unknown; capture: unknown; label: 
 export type PingPrivateRouteReport = Readonly<{ routeId: string;
   status: "not_started" | "completed" | "failed" | "cancelled" | "deadline";
   transcribeCalls: number; interpretationCalls: number;
-  transcriptionUsage: PingClipUsage | null; interpretationUsage: null;
+  transcriptionUsage: PingClipUsage | null; interpretationUsage: PingResponsesUsage | null;
   nativeAudioUsage?: PingNativeAudioUsage | null;
   observation: PingEvaluationObservation; evaluation: PingWholePlanEvaluation | null }>;
 /** PRIVATE: expected/actual outcomes and matches are label-derived, even without raw labels.
@@ -32,6 +37,22 @@ const emptyObservation = (): PingEvaluationObservation => ({ interpretationCalls
   receiptReadsLifetime: 0, receiptReadWindows: [], observedCommittedEffects: 0, knowledge: "not_dispatched",
   timingSource: "measured", stages: [] });
 const count = (n: unknown): n is number => typeof n === "number" && Number.isSafeInteger(n) && n >= 0;
+function copiedWitness(value: unknown): PingInterpretationUsageWitness | null {
+  if (!dataRecord(value) || !exactKeys(value, ["invocations", "observation"]) || !count(value.invocations)) return null;
+  if (value.observation === null) return freeze({ invocations: value.invocations, observation: null });
+  const stamp = value.observation;
+  if (!dataRecord(stamp) || !exactKeys(stamp, ["invocation", "value"]) || !count(stamp.invocation) ||
+    stamp.invocation === 0 || stamp.invocation > value.invocations) return null;
+  const observation = stamp.value;
+  if (!dataRecord(observation) || !exactKeys(observation, ["version", "provenance", "state", "usage"]) ||
+    observation.version !== "ping.responses-usage.v1" || observation.provenance !== "interpretation") return null;
+  const usage = parsePingResponsesUsage(observation.usage);
+  if (usage === false || (observation.state === "observed" ? usage === null :
+    !["absent", "invalid", "unavailable"].includes(observation.state as string) || observation.usage !== null)) return null;
+  return freeze({ invocations: value.invocations, observation: { invocation: stamp.invocation,
+    value: { version: observation.version, provenance: observation.provenance,
+      state: observation.state as PingResponsesUsageObservation["state"], usage } } });
+}
 function copiedUsage(value: unknown): PingClipUsage | null {
   if (!dataRecord(value)) return null;
   if (value.type === "duration") return exactKeys(value, ["type", "seconds"]) && typeof value.seconds === "number" &&
@@ -97,17 +118,19 @@ export function createPingPairedInertTrialRunner() {
           typeof route.interpretAudio !== "function") throw Error("ping_trial_invalid_input");
         return { id: route.id, kind: "native_audio", interpretAudio: route.interpretAudio as PingNativePairedRoute["interpretAudio"] };
       }
-      if (!exactKeys(route, ["id", "transcribe", "interpret"]) ||
-        typeof route.transcribe !== "function" || typeof route.interpret !== "function") throw Error("ping_trial_invalid_input");
+      if (!exactKeys(route, ["id", "transcribe", "interpret"], ["readInterpretationUsage"]) ||
+        typeof route.transcribe !== "function" || typeof route.interpret !== "function" ||
+        (Object.hasOwn(route, "readInterpretationUsage") && typeof route.readInterpretationUsage !== "function")) throw Error("ping_trial_invalid_input");
       return { id: route.id, transcribe: route.transcribe as PingClipPairedRoute["transcribe"],
-        interpret: route.interpret as PingClipPairedRoute["interpret"] };
+        interpret: route.interpret as PingClipPairedRoute["interpret"],
+        ...(Object.hasOwn(route, "readInterpretationUsage") ? { readInterpretationUsage: route.readInterpretationUsage as NonNullable<PingClipPairedRoute["readInterpretationUsage"]> } : {}) };
     });
     if (!master || !capture || !label || routes[0].id === routes[1].id) throw new Error("ping_trial_invalid_input");
     const signal = options.signal, budget = options.deadlineMs ?? 10_000;
     const reports = routes.map(route => ({ routeId: route.id, status: "not_started" as PingPrivateRouteReport["status"],
       transcribeCalls: 0, interpretationCalls: 0, transcriptionUsage: null as PingClipUsage | null,
       ...("kind" in route ? { nativeAudioUsage: null as PingNativeAudioUsage | null } : {}),
-      interpretationUsage: null, observation: emptyObservation(), evaluation: null as PingWholePlanEvaluation | null }));
+      interpretationUsage: null as PingResponsesUsage | null, observation: emptyObservation(), evaluation: null as PingWholePlanEvaluation | null }));
     const snapshot = () => freeze({ routes: reports.map(report => ({ ...report,
       observation: { ...report.observation, stages: report.observation.stages.map(stage => ({ ...stage })) } })) });
     if (signal.aborted) return snapshot();
@@ -126,6 +149,17 @@ export function createPingPairedInertTrialRunner() {
     };
     const abort = () => stop("cancelled");
     const guard = () => { if (!stopped && performance.now() >= deadlineAt) stop("deadline"); return !stopped; };
+    const readUsage = (reader: NonNullable<PingClipPairedRoute["readInterpretationUsage"]>) => {
+      try { return copiedWitness(reader()); } catch { return null; }
+    };
+    const assignUsage = (reader: NonNullable<PingClipPairedRoute["readInterpretationUsage"]>, before: PingInterpretationUsageWitness | null) => {
+      if (!guard()) return;
+      const after = readUsage(reader);
+      if (!guard()) return;
+      if (before && after && Number.isSafeInteger(before.invocations + 1) && after.invocations === before.invocations + 1 &&
+        after.observation?.invocation === after.invocations && after.observation.value.state === "observed")
+        reports[current].interpretationUsage = after.observation.value.usage;
+    };
     const stage = (name: "finals_ready" | "interpretation_start" | "interpretation_end") => {
       reports[current].observation = { ...reports[current].observation,
         stages: [...reports[current].observation.stages, { name, atMs: Math.floor(performance.now() - started) }] };
@@ -173,10 +207,19 @@ export function createPingPairedInertTrialRunner() {
               selectedTaskCount: capture.selectedTaskIds.length, referenceInstant: capture.referenceInstant,
               timeZone: capture.timeZone, systemColumnKeys: ["todo", "doing", "review", "done"] });
             if (!guard()) return;
+            const reader = route.readInterpretationUsage;
+            const before = reader ? readUsage(reader) : null;
+            const atMs = Math.floor(performance.now() - started);
+            if (!guard()) return;
             reports[current].interpretationCalls++;
-            reports[current].observation = { ...reports[current].observation, interpretationCalls: 1 };
-            stage("interpretation_start");
-            actual = await route.interpret(input, controller.signal);
+            reports[current].observation = { ...reports[current].observation, interpretationCalls: 1,
+              stages: [...reports[current].observation.stages, { name: "interpretation_start", atMs }] };
+            try { actual = await route.interpret(input, controller.signal); }
+            catch (error) {
+              if (reader) assignUsage(reader, before);
+              throw error;
+            }
+            if (reader) assignUsage(reader, before);
           }
           if (!guard()) return;
           stage("interpretation_end");
