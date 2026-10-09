@@ -100,6 +100,25 @@ try {
   receipt.origin = origin; receipt.pid = process.pid;
   browser = await chromium.launch({ headless: true });
   const errors = [];
+  async function settleFonts(page) {
+    const faces = await page.evaluate(async () => {
+      const text = "Hamburgefontsiv ABCDEFG abcdefg 0123456789";
+      const requested = await Promise.all([
+        ["Geist", '16px Geist'], ["Geist Mono", '16px "Geist Mono"'],
+      ].map(async ([family, descriptor]) => {
+        const loaded = await document.fonts.load(descriptor, text);
+        return { family, descriptor, loaded };
+      }));
+      await document.fonts.ready;
+      return requested.map(({ family, descriptor, loaded }) => ({ family, count: loaded.length,
+        statuses: loaded.map(face => face.status), checked: document.fonts.check(descriptor, text) }));
+    });
+    for (const face of faces) {
+      assert.ok(face.count > 0, `${face.family} should match a declared font face`);
+      assert.ok(face.statuses.every(status => status === "loaded"), `${face.family} should finish loading`);
+      assert.equal(face.checked, true, `${face.family} should be available after document.fonts.ready`);
+    }
+  }
   async function open(viewport, theme = "light") {
     const page = await browser.newPage({ viewport, colorScheme: theme, reducedMotion: "reduce", locale: theme === "light" ? "de-DE" : "en-GB", timezoneId: "Asia/Tokyo" });
     page.on("pageerror", error => errors.push(error.message));
@@ -109,7 +128,7 @@ try {
     await page.goto(origin + "/settings/projects/project-b/recovery");
     await page.getByRole("heading", { name: "Project recovery", exact: true }).waitFor();
     await page.evaluate(theme => { document.documentElement.dataset.theme = theme; }, theme);
-    await page.evaluate(() => document.fonts.ready);
+    await settleFonts(page);
     return page;
   }
   async function capture(page, name) {
@@ -182,18 +201,22 @@ try {
     await capture(page, "record-keyboard-" + viewport.width);
     await page.getByRole("link", { name: "More shared links", exact: true }).click();
     await page.waitForFunction(() => document.querySelectorAll('li[aria-label^="Link reference "]').length === 5);
+    await settleFonts(page);
     await page.getByRole("link", { name: "More publications", exact: true }).click();
     await page.waitForFunction(() => document.querySelectorAll('li[aria-label^="Publication reference "]').length === 5);
+    await settleFonts(page);
     const olderLinks = await recordRows("Link"), olderPublications = await recordRows("Publication");
     assert.equal(new Set([...firstLinks, ...olderLinks].map(row => row.reference)).size, 25);
     assert.equal(new Set([...firstPublications, ...olderPublications].map(row => row.reference)).size, 25);
     await page.reload();
     await page.getByRole("heading", { name: "Project recovery", exact: true }).waitFor();
+    await settleFonts(page);
     assert.deepEqual(await recordRows("Link"), olderLinks);
     assert.deepEqual(await recordRows("Publication"), olderPublications);
     await capture(page, "record-pagination-" + viewport.width);
     await page.goto(origin + "/settings/projects/project-b/recovery");
     await page.getByRole("heading", { name: "Project recovery", exact: true }).waitFor();
+    await settleFonts(page);
     assert.deepEqual((await recordRows("Link")).map(row => row.reference), firstLinks.map(row => row.reference));
     assert.deepEqual((await recordRows("Publication")).map(row => row.reference), firstPublications.map(row => row.reference));
     await page.close();
@@ -214,6 +237,7 @@ try {
   await capture(page, "retry-mobile");
   await page.getByRole("link", { name: "More shared links", exact: true }).click();
   await page.waitForFunction(() => [...document.querySelectorAll("button")].filter(x => x.textContent === "Revoke link").length === 5);
+  await settleFonts(page);
   await page.getByRole("button", { name: /^Revoke link, / }).last().click();
   await page.waitForFunction(() => [...document.querySelectorAll("li")].some(x => x.textContent.includes("revoked")));
   assert.ok((await f.local.db.select().from(f.schema.shareLinks).where(eq(f.schema.shareLinks.token, "SECRET_B_0")))[0].revokedAt);
