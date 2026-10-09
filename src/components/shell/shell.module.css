@@ -621,6 +621,11 @@
   letter-spacing: 0.01em;
   cursor: pointer;
 }
+/* These two labels sit on the always-dark sidebar in either app theme. */
+.sidebar .section[aria-label="Channels"] .labelToggle:not(:hover) > span,
+.sidebar .section[aria-label="Direct messages"] .labelToggle:not(:hover) > span {
+  color: #7e7e7e;
+}
 .labelToggle:hover { color: var(--v3-text); background: var(--v3-hover); }
 .labelToggle:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: -2px; }
 .labelChevron { opacity: 0; transition: transform 160ms var(--v3-ease), opacity 120ms var(--v3-ease); }
