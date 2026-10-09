@@ -44,7 +44,7 @@
     },
     {
       "path": "ping-test-reconciliation-independent-review.json",
-      "sha256": "fa0c1e4ed95aa2bd633ffe1b36dff3df2864aa8d6ae88504792044fa18cdb610"
+      "sha256": "06ffc5d1958679d96a4692bc71e2f9bc3b69aea462d8a40478e4aa827884eb55"
     },
     {
       "path": "production-ping-literal-posture.json",
@@ -72,5 +72,6 @@
     }
   ],
   "rawArtifacts": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts",
-  "rawCanonicalSha256": "27d7e46f5186032bca22eea7273c4a3722dcf853d7aec32a4cc61a201c941ecf"
+  "rawCanonicalSha256": "27d7e46f5186032bca22eea7273c4a3722dcf853d7aec32a4cc61a201c941ecf",
+  "checksumEncoding": "UTF-8 text normalized to LF for portable Git custody; raw process artifacts retain their separately recorded original digests"
 }
