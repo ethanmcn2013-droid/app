@@ -249,3 +249,58 @@ constructors on literal WAV/context, inspect nullable usage and whole refusals,
 prove byte/context isolation and closed route boundaries, and hold native callback
 settlement across cancellation/deadline without inventing transcript stages.
 `pnpm test:ping-voice` already includes the existing paired test file.
+
+## Streaming paired transcription composition
+
+`createPingStreamingPairedTranscriber` is a server-only, explicitly constructed
+legacy transcription callback. Supply the same frozen original capture to its
+factory and the paired trial; the unchanged `(pcm, signal)` signature cannot
+independently authenticate that equality. The supplied accepted streaming opener
+establishes fresh created/update/clear readiness before any PCM append. The
+helper copies completed ordinary PCM, pumps actual full/partial blocks, records
+exact reducer coverage, seals the complete clip watermark and sends one commit.
+This replay boundary is not a microphone cut or paced live speech.
+
+The existing pure input reducer consumes real correlated ACK/complete finals in
+either order. Only its complete-final `interpret_once` descriptor yields text;
+the helper calls no model, creates no proposal and adds no executor/receipt. The
+paired runner subsequently invokes its real supplied interpreter once. Preview,
+bookkeeping, missing ACK/final, wrong identity or partial result cannot yield a
+prefix. Finite scheduled ticks and the existing event caps enforce the original
+budget across opening, pumping, finality and closure.
+
+`PingStreamingReady.closed` is the exact supplied physical socket promise. The
+callback returns `{text,usage}` only after that witness fulfills and the original
+deadline/abort still allows success. Detach/close requests are latched once;
+held closure retains work/admission, and rejected or unavailable witnesses never
+fabricate release. A late ready port after cancellation is closed without audio.
+The outer paired runner may publish its immutable logical deadline/cancellation
+while this callback remains held. These are supplied port obligations, not
+observed network/provider settlement. Temporary helper cleanup claims no erasure
+of caller buffers, returned transcript, socket content or provider records.
+
+Usage snapshots precede cleanup: zero observations gives unknown null, one closed
+transcription observation gives actual supported scalar usage/null, and multiple
+or unexpected observations fail rather than aggregate. Known zero remains zero;
+provider/item/session IDs, prices and complete billing are excluded. The paired
+route's `finals_ready` means its complete-final callback after physical closure,
+not speech end or visible Tasks completion. Label-derived outputs remain private
+to the authorized custodian; only public synthetic owning fixtures are inspected.
+No account eligibility, recognition quality, latency advantage, route winner,
+runtime connection, whole PP019/021/022 or programme gate is established.
+
+Four additional registered streaming groups inspect actual full/partial bytes,
+ACK/final ordering, metadata ambiguity, held/rejected/late closure, cancellation
+and deterministic missing-final budgets. One existing paired-file group composes
+the actual helper/Responses and clip/Responses constructors with injected socket
+and HTTP only; no provider call, credential lookup or reserved screening occurs.
+
+### Optional Responses usage and same-invocation attribution
+
+The disconnected Responses factory may take `onUsage`, captured once at construction; its proposal-only return API and default route/report serialization stay unchanged. Each actual fetch entry publishes one reconstructed, deeply frozen `ping.responses-usage.v1` observation after latching the original logical proposal/error, synchronously while physical admission remains held. Observer throws, rejected return promises or reentrant abort/reentry cannot replace that result, retry or release cleanup. Invalid input, busy rejection and pre-entry cancellation notify zero times. Late ignored-abort body settlement never publishes a second update or drains content for metering.
+
+The closed numeric subset follows the [official ResponseUsage schema](https://github.com/openai/openai-python/blob/main/src/openai/types/responses/response_usage.py): actual safe nonnegative `input_tokens`, `output_tokens`, equal `total_tokens`, optional copied `input_tokens_details` (`cached_tokens`, `cache_write_tokens`) and `output_tokens_details` (`reasoning_tokens`). This deliberately optional-detail projection preserves presence; it does not claim SDK fields are optional. Actual zero stays zero; absent/null usage is unknown, supplied null/unknown/malformed details are invalid metadata. Both unknown and invalid remain null, with distinct fixed observation states; neither changes operation permission. Timely real usage may accompany a rejected proposal. No IDs/content/model/headers/error strings or cost are exported.
+
+A legacy paired route may supply `readInterpretationUsage() -> {invocations, observation:{invocation,value}|null}`. Construct one closure retaining the SAME factory: increment the invocation ordinal and reset its observation synchronously before actual wrapper entry, then stamp its synchronous observer with that ordinal. Baseline/final reader snapshots must be closed, with count exactly baseline+1 and matching new stamp; the runner reconstructs valid observed counters into the existing `interpretationUsage` key. Old stamps, count drift, reader exceptions/malformed metadata and absence yield null without changing status/evaluation. Ordinary proposal rejection may retain correlated usage while remaining failed; published cancellation/deadline snapshots stay immutable/null and late assignments are skipped. Original guards cover diagnostic reads and physical invocation. This is a trusted local wrapper witness, not provider identity/authentication or arbitrary callback side-effect proof.
+
+Without the reader there are zero diagnostic reads and the exact existing null/key set; native and transcription usage remain separate. Case-linked reports still belong only to the authorized label custodian; public synthetic tests inspect their own literal results. No real provider/account calls, billing completeness, currency, spend cap, region/retention eligibility, reserved screening, model winner, runtime connection or programme gate follows. Failed/unavailable requests may incur unobserved usage.
