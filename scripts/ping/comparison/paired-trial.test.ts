@@ -2,13 +2,19 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { syntheticCapture, syntheticPlan } from "@/lib/ping/input-test-fixture";
 import { createPingOpenAiClipTranscriber } from "@/server/ping/openai-clip-transcription";
-import { createPingOpenAiInterpreter } from "@/server/ping/openai-interpreter";
-import { createPingPairedInertTrialRunner, type PingPairedRoute, type PingPrivateRouteReport } from "./paired-trial";
+import { createPingOpenAiInterpreter, type PingResponsesUsageObservation } from "@/server/ping/openai-interpreter";
+import { createPingOpenAiNativeAudio, type PingNativeAudioResult } from "@/server/ping/openai-native-audio";
+import { createPingOpenAiStreamingTranscription, type PingStreamingSocket } from "@/server/ping/openai-streaming-transcription";
+import { createPingStreamingPairedTranscriber } from "@/server/ping/streaming-paired-transcriber";
+import { createPingPairedInertTrialRunner, type PingPairedRoute, type PingPrivateRouteReport,
+  type PingInterpretationUsageWitness } from "./paired-trial";
 
 // Public literal synthetic labels only. No reserved labels, transcripts or outcome feedback.
 const pcm = () => new Uint8Array([0, 0, 255, 127, 0, 128, 255, 255]);
+const nativeResult = (): PingNativeAudioResult => ({ proposal: { version: "ping.proposal.v1", outcome: "plan",
+  operation: { kind: "edit_selected", effects: { selfAssignment: "add", dueDate: "2026-10-07", statusColumnKey: "doing" } } }, usage: null });
 const label = (expected: unknown = syntheticPlan()) => ({ id: "public-compound", source: "independent_fixture", expected });
-const route = (id: string, actual: unknown = syntheticPlan()): PingPairedRoute => ({ id,
+const route = (id: string, actual: unknown = syntheticPlan()): Extract<PingPairedRoute, { transcribe: unknown }> => ({ id,
   transcribe: async () => ({ text: "Assign these to me, due 2026-10-07, move to doing.", usage: null }),
   interpret: async () => actual });
 const options = (routes: [PingPairedRoute, PingPairedRoute] = [route("first"), route("second")]) =>
@@ -16,6 +22,12 @@ const options = (routes: [PingPairedRoute, PingPairedRoute] = [route("first"), r
 const deferred = <T>() => { let resolve!: (value: T) => void;
   const promise = new Promise<T>(done => { resolve = done; }); return { promise, resolve }; };
 const settle = () => new Promise(resolve => setImmediate(resolve));
+const responsesUsage = () => ({ input_tokens: 10, output_tokens: 2, total_tokens: 12,
+  input_tokens_details: { cached_tokens: 3, cache_write_tokens: 1 }, output_tokens_details: { reasoning_tokens: 1 } });
+const responsesBody = (proposal: unknown = syntheticPlan(), usage: unknown = responsesUsage()) => new Response(JSON.stringify({
+  status: "completed", error: null, incomplete_details: null, usage,
+  output: [{ type: "message", role: "assistant", status: "completed", content: [{ type: "output_text", annotations: [], logprobs: [],
+    text: JSON.stringify({ proposal }) }] }] }), { headers: { "content-type": "application/json" } });
 function exactInert(report: PingPrivateRouteReport, calls = 1) {
   assert.equal(report.observation.executorCalls, 0); assert.equal(report.observation.receiptReadsLifetime, 0);
   assert.deepEqual(report.observation.receiptReadWindows, []); assert.equal(report.observation.observedCommittedEffects, 0);
@@ -229,4 +241,253 @@ test("deadline expiring across byte-copy boundary prevents the physical callback
   const result = await createPingPairedInertTrialRunner()({ ...input, deadlineMs: 10 });
   assert.equal(result.routes[0].status, "deadline"); assert.equal(calls, 0);
   assert.equal(result.routes[0].transcribeCalls, 0); assert.equal(result.routes[1].transcribeCalls, 0);
+});
+
+test("public clip+Responses versus actual native constructor uses the same WAV/context without a native text stage", async () => {
+  let clips = 0, textCalls = 0, audioCalls = 0;
+  const expectedBytes = [0, 0, 255, 127, 0, 128, 255, 255];
+  const clip: PingPairedRoute = { id: "clip",
+    transcribe: createPingOpenAiClipTranscriber({ model: "gpt-4o-mini-transcribe", apiKey: "synthetic-key", fetch: async (_url, init) => {
+      clips++; const file = (init.body as FormData).get("file") as Blob;
+      assert.deepEqual([...new Uint8Array(await file.arrayBuffer()).subarray(44)], expectedBytes);
+      return new Response(JSON.stringify({ text: "Assign these to me, due 2026-10-07, move to doing." }),
+        { headers: { "content-type": "application/json" } });
+    } }),
+    interpret: createPingOpenAiInterpreter({ model: "synthetic-model", apiKey: "synthetic-key", fetch: async (_url, init) => {
+      textCalls++; const input = JSON.parse(JSON.parse(init.body as string).input[0].content[0].text);
+      assert.equal(input.selectedTaskCount, 1); assert.equal(input.transcript, "Assign these to me, due 2026-10-07, move to doing.");
+      return new Response(JSON.stringify({ status: "completed", error: null, incomplete_details: null,
+        output: [{ type: "message", role: "assistant", status: "completed", content: [{ type: "output_text", annotations: [], logprobs: [],
+          text: JSON.stringify({ proposal: syntheticPlan() }) }] }] }), { headers: { "content-type": "application/json" } });
+    } }) };
+  const native: PingPairedRoute = { id: "native", kind: "native_audio",
+    interpretAudio: createPingOpenAiNativeAudio({ model: "gpt-audio-1.5", apiKey: "synthetic-key", fetch: async (_url, init) => {
+      audioCalls++; const request = JSON.parse(init.body as string);
+      const parts = request.messages[1].content;
+      assert.deepEqual(JSON.parse(parts[0].text), { selectedTaskCount: 1, referenceInstant: "2026-10-06T09:00:00.000Z",
+        timeZone: "Europe/Dublin", systemColumnKeys: ["todo", "doing", "review", "done"] });
+      const wav = Buffer.from(parts[1].input_audio.data, "base64");
+      assert.deepEqual([...wav.subarray(44)], expectedBytes); assert.equal(wav.readUInt32LE(24), 24000);
+      return new Response(JSON.stringify({ id: "synthetic", object: "chat.completion", created: 1, model: "gpt-audio-1.5",
+        choices: [{ index: 0, message: { role: "assistant", tool_calls: [{ id: "synthetic_call", type: "function",
+          function: { name: "submit_ping_proposal", arguments: JSON.stringify({ proposal: syntheticPlan() }) } }] }, finish_reason: "tool_calls" }],
+        usage: { prompt_tokens: 3, completion_tokens: 2, total_tokens: 5, prompt_tokens_details: null,
+          completion_tokens_details: { audio_tokens: null, reasoning_tokens: 0 } } }), { headers: { "content-type": "application/json" } });
+    } }) };
+  const report = await createPingPairedInertTrialRunner()(options([clip, native]));
+  assert.deepEqual([clips, textCalls, audioCalls], [1, 1, 1]);
+  for (const result of report.routes) { assert.equal(result.status, "completed"); exactInert(result);
+    assert.ok(result.evaluation?.ok); assert.equal(result.evaluation.wholePlanMatch, true); }
+  assert.equal("nativeAudioUsage" in report.routes[0], false);
+  assert.deepEqual(report.routes[0].observation.stages.map(s => s.name), ["finals_ready", "interpretation_start", "interpretation_end"]);
+  assert.equal(report.routes[1].transcribeCalls, 0); assert.equal(report.routes[1].transcriptionUsage, null);
+  assert.deepEqual(report.routes[1].observation.stages.map(s => s.name), ["interpretation_start", "interpretation_end"]);
+  assert.deepEqual(report.routes[1].nativeAudioUsage, { prompt_tokens: 3, completion_tokens: 2, total_tokens: 5,
+    prompt_tokens_details: null, completion_tokens_details: { audio_tokens: null, reasoning_tokens: 0 } });
+});
+
+test("native refusal/clarification and copied nullable usage remain whole; malformed or missing results fail closed", async () => {
+  const run = createPingPairedInertTrialRunner();
+  const make = (value: unknown): PingPairedRoute => ({ id: "native", kind: "native_audio", interpretAudio: async () => value as PingNativeAudioResult });
+  const usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0, prompt_tokens_details: { audio_tokens: null as number | null },
+    completion_tokens_details: null };
+  for (const outcome of ["refusal", "clarification"] as const) {
+    const proposal = { version: "ping.proposal.v1", outcome, reason: "unsupported" };
+    const report = await run({ ...options([make({ proposal, usage }), route("clip", proposal)]), label: label(proposal) });
+    assert.equal(report.routes[0].status, "completed"); assert.equal(report.routes[0].transcribeCalls, 0); exactInert(report.routes[0]);
+    assert.ok(report.routes[0].evaluation?.ok); assert.equal(report.routes[0].evaluation.wholePlanMatch, true);
+    assert.deepEqual(report.routes[0].nativeAudioUsage, usage); assert.ok(Object.isFrozen(report.routes[0].nativeAudioUsage?.prompt_tokens_details));
+  }
+  const report = await run(options([make({ proposal: syntheticPlan(), usage }), route("clip")]));
+  usage.prompt_tokens_details.audio_tokens = 1;
+  assert.deepEqual(report.routes[0].nativeAudioUsage?.prompt_tokens_details, { audio_tokens: null });
+  const unknown = await run(options([make({ proposal: syntheticPlan(), usage: null }), route("clip")]));
+  assert.equal(unknown.routes[0].status, "completed"); assert.equal(unknown.routes[0].nativeAudioUsage, null);
+  for (const value of [{ proposal: syntheticPlan() }, { proposal: syntheticPlan(), usage: undefined },
+    { proposal: syntheticPlan(), usage: null, extra: true }, { proposal: { ...syntheticPlan(), actorId: "authority" }, usage: null },
+    { proposal: syntheticPlan(), usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 3 } },
+    { proposal: syntheticPlan(), usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0, price: 0 } }]) {
+    const invalid = await run(options([make(value), route("skip")]));
+    assert.equal(invalid.routes[0].status, "failed"); exactInert(invalid.routes[0]);
+    assert.equal(invalid.routes[0].evaluation, null); assert.equal(invalid.routes[1].status, "not_started");
+  }
+});
+
+test("native route owns separate bytes/frozen minimal context and closed route fields", async () => {
+  let second = 0; const original = pcm();
+  const first: PingPairedRoute = { id: "native", kind: "native_audio", interpretAudio: async (bytes, context) => {
+    assert.deepEqual([...bytes], [...original]); bytes.fill(90);
+    assert.deepEqual(Object.keys(context).sort(), ["referenceInstant", "selectedTaskCount", "systemColumnKeys", "timeZone"]);
+    assert.ok(Object.isFrozen(context)); assert.ok(Object.isFrozen(context.systemColumnKeys));
+    return nativeResult();
+  } };
+  const next: PingPairedRoute = { id: "other", kind: "native_audio", interpretAudio: async bytes => {
+    second++; assert.deepEqual([...bytes], [...original]); return nativeResult();
+  } };
+  const run = createPingPairedInertTrialRunner(), input = { ...options([first, next]), pcm: original };
+  const report = await run(input); assert.equal(second, 1); assert.deepEqual([...original], [0, 0, 255, 127, 0, 128, 255, 255]);
+  for (const result of report.routes) { assert.equal(result.status, "completed"); assert.equal(result.transcribeCalls, 0); exactInert(result); }
+  for (const bad of [{ ...first, interpret: async () => syntheticPlan() }, { ...first, kind: "unknown" },
+    { ...first, capture: syntheticCapture() }, { id: "bad", kind: "native_audio" }]) {
+    await assert.rejects(run({ ...options(), routes: [bad, next] } as never), /ping_trial_invalid_input/);
+  }
+  assert.equal(second, 1);
+});
+
+test("native original budget holds the actual callback through cancel/deadline, with immutable late results", async t => {
+  for (const reason of ["cancelled", "deadline"] as const) {
+    const held = deferred<PingNativeAudioResult>(), entered = deferred<void>(), controller = new AbortController();
+    let now = 0, calls = 0, nextCalls = 0;
+    const clock = t.mock.method(performance, "now", () => now); t.mock.timers.enable({ apis: ["setTimeout"] });
+    const first: PingPairedRoute = { id: "held", kind: "native_audio", interpretAudio: async () => { calls++; entered.resolve(); return held.promise; } };
+    const next: PingPairedRoute = { id: "skip", kind: "native_audio", interpretAudio: async () => {
+      nextCalls++; return nativeResult();
+    } };
+    const run = createPingPairedInertTrialRunner();
+    try {
+      const pending = run({ ...options([first, next]), signal: controller.signal, deadlineMs: 35 }); await entered.promise;
+      if (reason === "cancelled") controller.abort(); else { now = 35; t.mock.timers.tick(35); }
+      const report = await pending; assert.equal(report.routes[0].status, reason); assert.equal(calls, 1); exactInert(report.routes[0]);
+      assert.deepEqual(report.routes[0].observation.stages, [{ name: "interpretation_start", atMs: 0 }]);
+      assert.equal(report.routes[0].nativeAudioUsage, null); assert.equal(report.routes[0].evaluation, null);
+      await assert.rejects(run(options()), /ping_trial_busy/); held.resolve(nativeResult()); await settle();
+      assert.equal(nextCalls, 0); assert.equal(report.routes[0].evaluation, null); assert.equal(report.routes[0].observation.stages.length, 1);
+      assert.equal((await run(options())).routes[0].status, "completed");
+    } finally { held.resolve(nativeResult()); await settle(); t.mock.timers.reset(); clock.mock.restore(); }
+  }
+});
+
+test("public actual streaming transcription helper pairs with completed clip and one real Responses callback each", async () => {
+  const capture = syntheticCapture(), closed = deferred<void>();
+  let receive: (raw: unknown) => void = () => {}, socketCloses = 0, connects = 0, clips = 0, models = 0;
+  const sends: string[] = [], transcript = "Assign these to me, due 2026-10-07, move to doing.";
+  const emit = (value: unknown) => receive(JSON.stringify(value));
+  const socket: PingStreamingSocket = { closed: closed.promise, queuedBytes: () => 0,
+    subscribe: (fn) => { receive = fn; queueMicrotask(() => emit({ type: "session.created", event_id: "created",
+      session: { id: "session-public", object: "realtime.transcription_session", type: "transcription" } })); return () => {}; },
+    close: () => { socketCloses++; closed.resolve(); },
+    send: text => {
+      sends.push(text); const request = JSON.parse(text);
+      if (request.type === "session.update") emit({ type: "session.updated", event_id: "updated",
+        session: { id: "session-public", object: "realtime.transcription_session", ...request.session } });
+      if (request.type === "input_audio_buffer.clear") emit({ type: "input_audio_buffer.cleared", event_id: "cleared" });
+      if (request.type === "input_audio_buffer.commit") {
+        emit({ type: "conversation.item.input_audio_transcription.completed", event_id: "final", item_id: "item-public", content_index: 0,
+          transcript, usage: { type: "duration", seconds: 0 } });
+        emit({ type: "input_audio_buffer.committed", event_id: "ack", item_id: "item-public", previous_item_id: null });
+      }
+    } };
+  const open = createPingOpenAiStreamingTranscription({ model: "gpt-live-transcribe", apiKey: "synthetic-key", connect: async () => { connects++; return socket; } });
+  const interpret = () => createPingOpenAiInterpreter({ model: "synthetic-model", apiKey: "synthetic-key", fetch: async (_url, init) => {
+    models++; assert.equal(socketCloses, 1); // Streaming callback cannot return finals_ready before actual close.
+    const input = JSON.parse(JSON.parse(init.body as string).input[0].content[0].text);
+    assert.deepEqual(input, { version: "ping.interpretation.v1", transcript, selectedTaskCount: 1,
+      referenceInstant: "2026-10-06T09:00:00.000Z", timeZone: "Europe/Dublin", systemColumnKeys: ["todo", "doing", "review", "done"] });
+    return new Response(JSON.stringify({ status: "completed", error: null, incomplete_details: null,
+      output: [{ type: "message", role: "assistant", status: "completed", content: [{ type: "output_text", annotations: [], logprobs: [],
+        text: JSON.stringify({ proposal: syntheticPlan() }) }] }] }), { headers: { "content-type": "application/json" } });
+  } });
+  const stream: PingPairedRoute = { id: "stream", transcribe: createPingStreamingPairedTranscriber({ capture, open }), interpret: interpret() };
+  const clip: PingPairedRoute = { id: "clip", interpret: interpret(),
+    transcribe: createPingOpenAiClipTranscriber({ model: "gpt-4o-mini-transcribe", apiKey: "synthetic-key", fetch: async (_url, init) => {
+      clips++; const file = (init.body as FormData).get("file") as Blob;
+      assert.deepEqual([...new Uint8Array(await file.arrayBuffer()).subarray(44)], [...pcm()]);
+      return new Response(JSON.stringify({ text: transcript }), { headers: { "content-type": "application/json" } });
+    } }) };
+  // The same normalized original is deliberately supplied both to helper and trial; no authenticated equality seam is invented.
+  const result = await createPingPairedInertTrialRunner()({ ...options([stream, clip]), capture });
+  assert.deepEqual([connects, socketCloses, clips, models], [1, 1, 1, 2]);
+  assert.deepEqual(sends.map(s => JSON.parse(s).type), ["session.update", "input_audio_buffer.clear", "input_audio_buffer.append", "input_audio_buffer.commit"]);
+  assert.deepEqual([...Buffer.from(JSON.parse(sends[2]).audio, "base64")], [...pcm()]);
+  for (const report of result.routes) { assert.equal(report.status, "completed"); assert.equal(report.transcribeCalls, 1); exactInert(report);
+    assert.ok(report.evaluation?.ok); assert.equal(report.evaluation.wholePlanMatch, true);
+    assert.deepEqual(report.observation.stages.map(s => s.name), ["finals_ready", "interpretation_start", "interpretation_end"]); }
+  assert.deepEqual(result.routes[0].transcriptionUsage, { type: "duration", seconds: 0 });
+  assert.equal(result.routes[1].transcriptionUsage, null);
+});
+
+test("actual interpreter observer and original invocation reader attach numeric usage without changing default serialization", async t => {
+  const clock = t.mock.method(performance, "now", () => 0);
+  try {
+    let invocations = 0, fetches = 0, observers = 0, reads = 0;
+    let observation: PingInterpretationUsageWitness["observation"] = null;
+    const factory = createPingOpenAiInterpreter({ model: "synthetic-model", apiKey: "synthetic-key", fetch: async () => { fetches++; return responsesBody(); },
+      onUsage: value => { observers++; observation = { invocation: invocations, value }; } });
+    const first: PingPairedRoute = { ...route("first"), interpret: async (input, signal) => {
+      invocations++; observation = null; return factory(input, signal);
+    }, readInterpretationUsage: () => { reads++; return { invocations, observation }; } };
+    const result = await createPingPairedInertTrialRunner()(options([first, route("second")]));
+    assert.deepEqual([invocations, fetches, observers, reads], [1, 1, 1, 2]);
+    assert.deepEqual(result.routes[0].interpretationUsage, responsesUsage());
+    assert.ok(Object.isFrozen(result.routes[0].interpretationUsage?.input_tokens_details));
+    assert.equal(result.routes[0].transcriptionUsage, null); assert.equal(Object.hasOwn(result.routes[0], "nativeAudioUsage"), false);
+    assert.ok(result.routes[0].evaluation?.ok); assert.equal(result.routes[0].evaluation.wholePlanMatch, true);
+    assert.equal(result.routes[0].status, "completed");
+    const defaultReport = await createPingPairedInertTrialRunner()(options());
+    assert.equal(JSON.stringify({ routes: result.routes.map(r => ({ ...r, interpretationUsage: null })) }), JSON.stringify(defaultReport));
+    exactInert(result.routes[1]);
+    // The next invocation begins with a previous stamp, then clears it before calling the SAME factory.
+    const again = await createPingPairedInertTrialRunner()(options([first, route("second")]));
+    assert.deepEqual([invocations, fetches, observers, reads], [2, 2, 2, 4]);
+    assert.deepEqual(again.routes[0].interpretationUsage, responsesUsage());
+    let failedInvocation = 0; let failedObservation: PingInterpretationUsageWitness["observation"] = null;
+    const invalid = createPingOpenAiInterpreter({ model: "synthetic-model", apiKey: "synthetic-key", fetch: async () => responsesBody({ actorId: "not-authority" }),
+      onUsage: value => { failedObservation = { invocation: failedInvocation, value }; } });
+    const failed = await createPingPairedInertTrialRunner()(options([{ ...route("invalid"),
+      interpret: async (input, signal) => { failedInvocation++; failedObservation = null; return invalid(input, signal); },
+      readInterpretationUsage: () => ({ invocations: failedInvocation, observation: failedObservation }) }, route("skip")]));
+    assert.equal(failed.routes[0].status, "failed"); assert.equal(failed.routes[0].evaluation, null);
+    assert.deepEqual(failed.routes[0].interpretationUsage, responsesUsage()); assert.equal(failed.routes[1].transcribeCalls, 0);
+  } finally { clock.mock.restore(); }
+});
+
+test("stale stamps, counter drift and malformed diagnostics remain null without changing whole-plan status", async () => {
+  const value: PingResponsesUsageObservation = { version: "ping.responses-usage.v1", provenance: "interpretation", state: "observed", usage: responsesUsage() };
+  const cases: unknown[] = [
+    { invocations: 6, observation: { invocation: 5, value } },
+    { invocations: 7, observation: { invocation: 7, value } },
+    { invocations: 6, observation: { invocation: 6, value }, extra: 1 },
+    { invocations: 6, observation: { invocation: 6, value: { ...value, usage: { ...responsesUsage(), price: 0 } } } },
+    { invocations: 6, observation: { invocation: 6, value: { ...value, state: "absent", usage: responsesUsage() } } },
+    { invocations: 6, observation: null }, "throw", "invalid-baseline",
+  ];
+  for (const final of cases) {
+    let reads = 0;
+    const first: PingPairedRoute = { ...route("first"), readInterpretationUsage: () => {
+      reads++;
+      if (final === "throw") throw Error("synthetic diagnostic failure");
+      return (final === "invalid-baseline" ? { invocations: reads === 1 ? 5 : 6, observation: { invocation: 6, value } }
+        : reads === 1 ? { invocations: 5, observation: { invocation: 5, value } } : final) as PingInterpretationUsageWitness;
+    } };
+    const result = await createPingPairedInertTrialRunner()(options([first, route("second")]));
+    assert.equal(reads, 2); assert.equal(result.routes[0].status, "completed"); exactInert(result.routes[0]);
+    assert.ok(result.routes[0].evaluation?.ok); assert.equal(result.routes[0].evaluation.wholePlanMatch, true);
+  }
+  const controller = new AbortController(); let entries = 0;
+  const stopped = await createPingPairedInertTrialRunner()({ ...options([{ ...route("cancel-on-read"),
+    readInterpretationUsage: () => { controller.abort(); return { invocations: 0, observation: null }; },
+    interpret: async () => { entries++; return syntheticPlan(); } }, route("skip")]), signal: controller.signal });
+  assert.equal(stopped.routes[0].status, "cancelled"); assert.equal(entries, 0); assert.equal(stopped.routes[0].interpretationUsage, null);
+});
+
+test("outer cancellation retains immutable null usage while original callback and interpreter physical settlement remain held", async () => {
+  const entered = deferred<void>(), fetchHeld = deferred<Response>(), callbackSettled = deferred<void>(), controller = new AbortController();
+  let invocations = 0, reads = 0, fetches = 0;
+  let observation: PingInterpretationUsageWitness["observation"] = null;
+  const factory = createPingOpenAiInterpreter({ model: "synthetic-model", apiKey: "synthetic-key", fetch: async () => { fetches++; entered.resolve(); return fetchHeld.promise; },
+    onUsage: value => { observation = { invocation: invocations, value }; } });
+  const first: PingPairedRoute = { ...route("held"), interpret: async (input, signal) => {
+    invocations++; observation = null;
+    try { return await factory(input, signal); } finally { await callbackSettled.promise; }
+  }, readInterpretationUsage: () => { reads++; return { invocations, observation }; } };
+  const run = createPingPairedInertTrialRunner(), pending = run({ ...options([first, route("skip")]), signal: controller.signal });
+  await entered.promise; controller.abort(); const result = await pending;
+  assert.equal(result.routes[0].status, "cancelled"); assert.equal(result.routes[0].interpretationUsage, null);
+  assert.equal(reads, 1); assert.equal(fetches, 1);
+  await assert.rejects(run(options()), /ping_trial_busy/);
+  await assert.rejects(factory({ version: "ping.interpretation.v1", transcript: "Complete", selectedTaskCount: 1,
+    referenceInstant: "2026-10-06T09:00:00.000Z", timeZone: "Europe/Dublin", systemColumnKeys: ["todo", "doing", "review", "done"] }, new AbortController().signal), /busy$/);
+  fetchHeld.resolve(responsesBody()); await settle(); callbackSettled.resolve(); await settle();
+  assert.equal(result.routes[0].interpretationUsage, null); assert.equal(reads, 1);
+  assert.equal((await run(options())).routes[0].status, "completed");
 });

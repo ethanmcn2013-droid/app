@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { bindPingProposal } from "@/lib/ping/proposal";
 import { syntheticCapture, syntheticPlan } from "@/lib/ping/input-test-fixture";
-import { createPingOpenAiInterpreter, PING_RESPONSES_ENDPOINT, PING_RESPONSES_SCHEMA } from "./openai-interpreter";
+import { createPingOpenAiInterpreter, parsePingResponsesUsage, PING_RESPONSES_ENDPOINT, PING_RESPONSES_SCHEMA,
+  type PingResponsesUsageObservation } from "./openai-interpreter";
 
 const input = { version: "ping.interpretation.v1", transcript: "Assign these to me, due 2026-10-07, move to doing.",
   selectedTaskCount: 1, referenceInstant: "2026-10-06T09:00:00.000Z", timeZone: "Europe/Dublin",
@@ -138,18 +139,21 @@ test("deadline wins ignored abort; original physical call stays busy and late bo
 
 test("caller cancellation during stalled body rejects now but holds physical reservation until cancellation settles", async () => {
   const cancelSettled = deferred<void>(); const began = deferred<void>(); let calls = 0; let cancellations = 0;
-  const interpret = createPingOpenAiInterpreter(options(async () => {
+  const observations: PingResponsesUsageObservation[] = [];
+  const interpret = createPingOpenAiInterpreter({ ...options(async () => {
     calls++;
     if (calls > 1) return response();
     return new Response(new ReadableStream({ start() { began.resolve(); }, cancel() { cancellations++; return cancelSettled.promise; } }),
       { headers: { "content-type": "application/json" } });
-  }));
+  }), onUsage: observation => observations.push(observation) });
   const controller = new AbortController(); const pending = interpret(input, controller.signal);
   await began.promise; await settle(); controller.abort();
   await assert.rejects(pending, /cancelled$/);
   await assert.rejects(interpret(input, signal()), /busy$/); assert.equal(calls, 1); assert.equal(cancellations, 1);
+  assert.deepEqual(observations.map(value => [value.state, value.usage]), [["unavailable", null]]);
   cancelSettled.resolve(); await settle();
   assert.deepEqual(await interpret(input, signal()), syntheticPlan()); assert.equal(calls, 2);
+  assert.deepEqual(observations.map(value => [value.state, value.usage]), [["unavailable", null], ["absent", null]]);
 });
 
 test("synchronous injected fetch cancellation cannot revive interpretation", async () => {
@@ -159,4 +163,74 @@ test("synchronous injected fetch cancellation cannot revive interpretation", asy
     return new Response(new ReadableStream({ cancel() { cancelled++; } }), { headers: { "content-type": "application/json" } });
   }));
   await assert.rejects(interpret(input, controller.signal), /cancelled$/); await settle(); assert.equal(cancelled, 1);
+});
+
+const actualUsage = () => ({ input_tokens: 10, output_tokens: 2, total_tokens: 12,
+  input_tokens_details: { cached_tokens: 3, cache_write_tokens: 1 }, output_tokens_details: { reasoning_tokens: 1 } });
+test("optional usage is closed copied metadata, including real zeros, absence and invalidity without operation authority", async () => {
+  const zero = { input_tokens: 0, output_tokens: 0, total_tokens: 0 };
+  const cases = [actualUsage(), zero, undefined, null, { ...zero, total_tokens: 1 }, { ...zero, input_tokens_details: null },
+    { ...zero, input_tokens_details: { cached_tokens: null } }, { ...zero, output_tokens_details: { reasoning_tokens: -1 } },
+    { ...zero, price: 0 }, { ...zero, input_tokens_details: { audio_tokens: 0 } }, { ...zero, input_tokens: Number.MAX_SAFE_INTEGER + 1 }];
+  for (const usage of cases) {
+    const observations: PingResponsesUsageObservation[] = [];
+    const result = await createPingOpenAiInterpreter({ ...options(async () => response({ ...envelope(), usage })),
+      onUsage: observation => observations.push(observation) })(input, signal());
+    assert.deepEqual(result, syntheticPlan()); assert.equal(observations.length, 1);
+    const observation = observations[0], parsed = parsePingResponsesUsage(usage);
+    assert.deepEqual(Object.keys(observation).sort(), ["provenance", "state", "usage", "version"]);
+    assert.equal(observation.state, parsed === false ? "invalid" : parsed === null ? "absent" : "observed");
+    assert.deepEqual(observation.usage, parsed || null); assert.ok(Object.isFrozen(observation));
+    if (observation.usage) { assert.ok(Object.isFrozen(observation.usage)); assert.notEqual(observation.usage, usage); }
+  }
+  const mutable = actualUsage(), copied = parsePingResponsesUsage(mutable);
+  assert.ok(copied); mutable.input_tokens_details.cached_tokens = 9;
+  assert.equal(copied.input_tokens_details?.cached_tokens, 3); assert.ok(Object.isFrozen(copied.input_tokens_details));
+  const failed: PingResponsesUsageObservation[] = [];
+  await assert.rejects(createPingOpenAiInterpreter({ ...options(async () => response({ ...envelope({ actorId: "not-authority" }), usage: actualUsage() })),
+    onUsage: observation => failed.push(observation) })(input, signal()), /invalid_response$/);
+  assert.equal(failed[0].state, "observed"); assert.deepEqual(failed[0].usage, actualUsage());
+});
+
+test("once diagnostic publication follows the original outcome and cannot throw, abort or reenter physical ownership", async () => {
+  for (const promiseRejection of [false, true]) {
+    let calls = 0, notifications = 0; const controller = new AbortController();
+    let reentrant!: Promise<unknown>;
+    const supplied = { ...options(async () => { calls++; return response({ ...envelope(), usage: actualUsage() }); }),
+      onUsage: (observation: PingResponsesUsageObservation) => {
+        notifications++; assert.equal(observation.state, "observed");
+        reentrant = assert.rejects(interpret(input, signal()), /busy$/); controller.abort();
+        if (promiseRejection) return Promise.reject(Error("synthetic diagnostic rejection"));
+        throw Error("synthetic diagnostic throw");
+      } };
+    const interpret = createPingOpenAiInterpreter(supplied);
+    supplied.onUsage = () => { throw Error("must not replace captured observer"); };
+    assert.deepEqual(await interpret(input, controller.signal), syntheticPlan());
+    await reentrant; await settle(); assert.equal(calls, 1); assert.equal(notifications, 1);
+    await assert.rejects(interpret({ ...input, actorId: "invalid" }, signal()), /invalid_input$/);
+    await assert.rejects(interpret(input, controller.signal), /cancelled$/); assert.equal(notifications, 1);
+  }
+});
+
+test("cancelled or expired actual fetch publishes unavailable once and late usage cannot populate a new invocation", async t => {
+  let now = 0; const clock = t.mock.method(performance, "now", () => now);
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  try {
+    for (const reason of ["cancelled", "deadline"] as const) {
+      now = 0; const held = deferred<Response>(), controller = new AbortController();
+      let calls = 0, cancellations = 0; const observations: PingResponsesUsageObservation[] = [];
+      const interpret = createPingOpenAiInterpreter({ ...options(async () => { calls++; return calls === 1 ? held.promise : response({ ...envelope(), usage: actualUsage() }); }, 1000),
+        onUsage: observation => observations.push(observation) });
+      const pending = interpret(input, controller.signal);
+      if (reason === "cancelled") controller.abort(); else { now = 1000; t.mock.timers.tick(1000); }
+      await assert.rejects(pending, new RegExp(`${reason}$`));
+      assert.deepEqual(observations, [{ version: "ping.responses-usage.v1", provenance: "interpretation", state: "unavailable", usage: null }]);
+      await assert.rejects(interpret(input, signal()), /busy$/); assert.equal(calls, 1);
+      held.resolve(new Response(new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(JSON.stringify({ ...envelope(), usage: actualUsage() }))); },
+        cancel() { cancellations++; } }), { headers: { "content-type": "application/json" } }));
+      await settle(); assert.equal(cancellations, 1); assert.equal(observations.length, 1);
+      assert.deepEqual(await interpret(input, signal()), syntheticPlan()); assert.equal(calls, 2);
+      assert.equal(observations.length, 2); assert.equal(observations[1].state, "observed");
+    }
+  } finally { t.mock.timers.reset(); clock.mock.restore(); }
 });
