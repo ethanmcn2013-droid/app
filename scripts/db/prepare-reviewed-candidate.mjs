@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
+import {isDeepStrictEqual} from 'node:util';
 import {canonicalText, loadAndValidateLedger, sha256} from './migration-ledger.mjs';
 
 const repository = 'ethanmcn2013-droid/app';
@@ -133,6 +134,13 @@ export function validateCandidateContext(base, candidate, manifest) {
   requireValue(JSON.stringify(baseHeader) === JSON.stringify(candidateHeader) &&
     JSON.stringify(candidate.ledger.entries.slice(0, base.entries.length)) ===
       JSON.stringify(base.ledger.entries), 'CANDIDATE_HISTORY_CHANGED');
+  // The general ledger loader validates journal scheduling fields, but an
+  // append-only release must also preserve every historical journal field.
+  const baseJournal = JSON.parse(fs.readFileSync(path.resolve(base.root,base.ledger.journal),'utf8'));
+  const candidateJournal = JSON.parse(fs.readFileSync(path.resolve(candidate.root,candidate.ledger.journal),'utf8'));
+  requireValue(isDeepStrictEqual({...baseJournal,entries:undefined},{...candidateJournal,entries:undefined}) &&
+    isDeepStrictEqual(candidateJournal.entries.slice(0,baseJournal.entries.length),baseJournal.entries),
+  'CANDIDATE_JOURNAL_HISTORY_CHANGED');
   const appended = candidate.entries.slice(base.entries.length);
   requireValue(appended.every(entry => entry.policy === 'forward') &&
     JSON.stringify(appended.map(entry => ({id:entry.id,sha256:entry.sha256,receiptSha256:entry.receiptSha256}))) ===
