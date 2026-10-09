@@ -9,6 +9,8 @@ import { assertProjectId } from "@/lib/projects/project-ref";
 import * as schema from "@/server/db/schema";
 import { canonicalVenueCodeNotes } from "@/server/venue-issuance/canonical";
 import { issuanceReceiptKey, manifestHash, venueCodeFingerprint, type IssuanceManifest } from "@/lib/venue-issuance/protocol";
+import type { ConversationDatabaseAdapter } from "./database";
+import type { ConversationFailureDiagnostic } from "./failure-diagnostic";
 import { createLocalConversationDatabaseAdapter } from "./database";
 import { createConversationService } from "./service";
 import { createConversationTaskOutcomeService, type PromoteMessageToTaskInput } from "./work-links";
@@ -403,6 +405,143 @@ test("usable links require current source, destination, message, and task relati
         assert.deepEqual(lookup.value.receipt, committed.value);
         assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: f.input }), committed);
       }
+    } finally { f.client.close(); }
+  }
+});
+
+function faultAdapter(f: Awaited<ReturnType<typeof fixture>>, fault: (mode: "read" | "write", attempt: number, execute: () => Promise<unknown>) => Promise<unknown>): ConversationDatabaseAdapter {
+  let attempts = 0;
+  return { ...f.adapter, async transaction<T>(mode: "read" | "write", operation: Parameters<ConversationDatabaseAdapter["transaction"]>[1]): Promise<T> {
+    if (mode === "write") attempts++;
+    return await fault(mode, attempts, () => f.adapter.transaction(mode, operation)) as T;
+  } };
+}
+const codedFailure = (code: string) => Object.assign(new Error("secret SQL source body credential"), { code });
+
+test("typed contention retries once with receipt-first authorization and exactly one effect", async () => {
+  const f = await fixture();
+  const diagnostics: ConversationFailureDiagnostic[] = [];
+  let writes = 0;
+  try {
+    const adapter = faultAdapter(f, async (mode, attempt, execute) => {
+      if (mode === "write") { writes++; if (attempt === 1) throw codedFailure("SQLITE_BUSY"); }
+      return execute();
+    });
+    const service = createConversationTaskOutcomeService(adapter, { diagnostic: value => diagnostics.push(value) });
+    const result = await service.promoteMessageToTask({ actorId: "alice", input: f.input });
+    assert.equal(result.ok, true); assert.equal(writes, 2);
+    for (const table of ["tasks", "activities", "work_links", "suite_outbox", "work_operation_receipts"]) assert.equal(await count(f.client, table), 1, table);
+    assert.equal(diagnostics[0].code, "SQLITE_BUSY"); assert.equal(diagnostics[0].outcome, "retry");
+    assert.match(diagnostics[0].correlationId, /^[0-9a-f-]{36}$/);
+    assert.doesNotMatch(JSON.stringify(diagnostics), /secret|credential|alice|promotion_request/);
+    assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: { ...f.input, title: "Conflict" } }), { ok: false, code: "request_conflict" });
+  } finally { f.client.close(); }
+});
+
+test("contention retry is bounded and does not turn a rolled-back write into success", async () => {
+  const f = await fixture(); let writes = 0;
+  try {
+    const adapter = faultAdapter(f, async (mode, _attempt, execute) => {
+      if (mode === "write") { writes++; throw codedFailure("SQLITE_BUSY"); }
+      return execute();
+    });
+    const service = createConversationTaskOutcomeService(adapter, { diagnostic: () => {} });
+    assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: f.input }), { ok: false, code: "temporarily_unavailable" });
+    assert.equal(writes, 2);
+    for (const table of ["tasks", "work_links", "suite_outbox", "work_operation_receipts"]) assert.equal(await count(f.client, table), 0, table);
+  } finally { f.client.close(); }
+});
+
+test("ambiguous committed response recovers only its authorized matching receipt without another write", async () => {
+  for (const code of ["HRANA_CLOSED_ERROR", "SQLITE_BUSY", "unrecognized_code"]) {
+    const f = await fixture(); let writes = 0;
+    try {
+      const adapter = faultAdapter(f, async (mode, _attempt, execute) => {
+        const result = await execute();
+        if (mode === "write") { writes++; throw code === "ETIMEDOUT" ? Object.assign(codedFailure(code), { cause: codedFailure("SQLITE_BUSY") }) : codedFailure(code); }
+        return result;
+      });
+      const service = createConversationTaskOutcomeService(adapter, { diagnostic: () => {} });
+      assert.equal((await service.promoteMessageToTask({ actorId: "alice", input: f.input })).ok, true);
+      assert.equal(writes, 1);
+      for (const table of ["tasks", "activities", "work_links", "suite_outbox", "work_operation_receipts"]) assert.equal(await count(f.client, table), 1, table);
+    } finally { f.client.close(); }
+  }
+});
+
+test("fresh contention retry rechecks revoked access and wrong-project scope", async () => {
+  const f = await fixture(); let writes = 0;
+  try {
+    const adapter = faultAdapter(f, async (mode, attempt, execute) => {
+      if (mode === "write") {
+        writes++;
+        if (attempt === 1) {
+          await f.client.execute({ sql: "DELETE FROM workspace_members WHERE workspace_id=? AND user_id='alice'", args: [destinationProject] });
+          throw codedFailure("SQLITE_BUSY");
+        }
+      }
+      return execute();
+    });
+    const service = createConversationTaskOutcomeService(adapter, { diagnostic: () => {} });
+    assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: f.input }), { ok: false, code: "unavailable" });
+    assert.equal(writes, 2);
+    assert.deepEqual(await service.promoteMessageToTask({ actorId: "bob", input: { ...f.input, sourceProjectId: destinationProject } }), { ok: false, code: "unavailable" });
+    for (const table of ["tasks", "work_links", "suite_outbox", "work_operation_receipts"]) assert.equal(await count(f.client, table), 0, table);
+  } finally { f.client.close(); }
+});
+
+test("transport or permanent failure before commit never automatically repeats a write", async () => {
+  for (const code of ["HRANA_WEBSOCKET_ERROR", "SQLITE_CONSTRAINT", "unknown", "ETIMEDOUT"]) {
+    const f = await fixture(); let writes = 0;
+    try {
+      const adapter = faultAdapter(f, async (mode, _attempt, execute) => {
+        if (mode === "write") { writes++; throw code === "ETIMEDOUT" ? Object.assign(codedFailure(code), { cause: codedFailure("SQLITE_BUSY") }) : codedFailure(code); }
+        return execute();
+      });
+      const service = createConversationTaskOutcomeService(adapter, { diagnostic: () => {} });
+      if (code === "HRANA_WEBSOCKET_ERROR") assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: f.input }), { ok: false, code: "temporarily_unavailable" });
+      else await assert.rejects(service.promoteMessageToTask({ actorId: "alice", input: f.input }));
+      assert.equal(writes, 1); assert.equal(await count(f.client, "tasks"), 0);
+    } finally { f.client.close(); }
+  }
+});
+
+
+test("typed failure after durable statements rolls back before one fresh promotion", async () => {
+  const f = await fixture(); let failed = false;
+  try {
+    const service = createConversationTaskOutcomeService(f.adapter, {
+      diagnostic: () => {},
+      afterWrite(seam) { if (seam === "receipt" && !failed) { failed = true; throw codedFailure("SQLITE_BUSY"); } },
+    });
+    assert.equal((await service.promoteMessageToTask({ actorId: "alice", input: f.input })).ok, true);
+    assert.equal(failed, true);
+    for (const table of ["tasks", "activities", "work_links", "suite_outbox", "work_operation_receipts"]) assert.equal(await count(f.client, table), 1, table);
+  } finally { f.client.close(); }
+});
+
+
+test("ambiguous receipt recovery refuses revoked access and conflicting payloads without a second write", async () => {
+  for (const scenario of ["revoked", "conflicting"] as const) {
+    const f = await fixture(); let writes = 0;
+    try {
+      if (scenario === "conflicting") {
+        const prior = createConversationTaskOutcomeService(f.adapter);
+        assert.equal((await prior.promoteMessageToTask({ actorId: "alice", input: { ...f.input, title: "Earlier payload" } })).ok, true);
+      }
+      const adapter = faultAdapter(f, async (mode, _attempt, execute) => {
+        const result = await execute();
+        if (mode === "write") {
+          writes++;
+          if (scenario === "revoked") await f.client.execute({ sql: "DELETE FROM workspace_members WHERE workspace_id=? AND user_id='alice'", args: [destinationProject] });
+          throw codedFailure("HRANA_CLOSED_ERROR");
+        }
+        return result;
+      });
+      const service = createConversationTaskOutcomeService(adapter, { diagnostic: () => {} });
+      assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: f.input }), { ok: false, code: scenario === "revoked" ? "unavailable" : "request_conflict" });
+      assert.equal(writes, 1);
+      for (const table of ["tasks", "activities", "work_links", "suite_outbox", "work_operation_receipts"]) assert.equal(await count(f.client, table), 1, table);
     } finally { f.client.close(); }
   }
 });

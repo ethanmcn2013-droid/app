@@ -159,3 +159,22 @@ test("operational failure returns a neutral retryable response without content o
   assert.deepEqual(await result.json(), { ok: false, code: "temporarily_unavailable" });
   assert.equal(result.headers.get("vercel-cdn-cache-control"), "no-store");
 });
+
+
+test("HTTP exception diagnostics contain only an opaque correlation and allowlisted code", async () => {
+  const original = console.warn;
+  const observed: unknown[] = [];
+  console.warn = (...values: unknown[]) => { observed.push(values); };
+  try {
+    const f = fixture({ throwService: true });
+    const result = await f.handle(post(input));
+    assert.deepEqual(await result.json(), { ok: false, code: "temporarily_unavailable" });
+    assert.equal(result.status, 503);
+    assert.equal(observed.length, 1);
+    const diagnostic = (observed[0] as unknown[])[1] as Record<string, unknown>;
+    assert.deepEqual(Object.keys(diagnostic).sort(), ["attempt", "code", "correlationId", "operation", "outcome"]);
+    assert.match(String(diagnostic.correlationId), /^[0-9a-f-]{36}$/);
+    assert.equal(diagnostic.code, "unknown");
+    assert.doesNotMatch(JSON.stringify(observed), /SQL|secret|bearer|Reviewed|canonical-alice|request_http/);
+  } finally { console.warn = original; }
+});

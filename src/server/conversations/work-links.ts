@@ -1,5 +1,7 @@
 import "server-only";
 
+import { conversationFailureCode, newConversationCorrelation, reportConversationFailure, type ConversationFailureDiagnostic } from "./failure-diagnostic";
+
 import { createHash } from "node:crypto";
 import type { Client } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
@@ -250,7 +252,7 @@ async function taskIsAvailable(executor: ConversationSqlExecutor, receipt: Recor
 
 export function createConversationTaskOutcomeService(
   adapter: ConversationDatabaseAdapter,
-  options: Readonly<{ afterWrite?: (seam: Seam) => void | Promise<void>; captureConfig?: CaptureConfig; directMessagesEnabled?: boolean }> = {},
+  options: Readonly<{ afterWrite?: (seam: Seam) => void | Promise<void>; captureConfig?: CaptureConfig; directMessagesEnabled?: boolean; diagnostic?: (value: ConversationFailureDiagnostic) => void }> = {},
 ) {
   const directMessagesEnabled = options.directMessagesEnabled ?? false;
   async function promoteMessageToTask(args: Readonly<{ actorId: string; input: PromoteMessageToTaskInput }>): Promise<ConversationResult<TaskOutcomeReceipt>> {
@@ -260,8 +262,11 @@ export function createConversationTaskOutcomeService(
     const payloadHash = hash(["conversation_task_v1", args.actorId, input.clientRequestId, input.sourceProjectId,
       input.conversationId, input.messageId, input.expectedRevision, input.expectedAudienceEpoch,
       input.destinationProjectId, input.title, input.ownerUserId, input.dueDate]);
-    try {
-      return await adapter.transaction("write", async (executor) => {
+    const correlationId = newConversationCorrelation();
+    const diagnostic = (value: ConversationFailureDiagnostic) => {
+      try { (options.diagnostic ?? reportConversationFailure)(value); } catch { /* Diagnostics never change an outcome. */ }
+    };
+    const attemptPromotion = () => adapter.transaction("write", async (executor) => {
         const existing = await findStoredReceipt(executor, args.actorId, input.clientRequestId);
         if (existing) {
           if (!await actorCanRecoverReceipt(executor, args.actorId, existing, directMessagesEnabled)) return fail("unavailable");
@@ -322,10 +327,39 @@ export function createConversationTaskOutcomeService(
         }
         return { ok: true, value: { taskId, workLinkId, clientRequestId: input.clientRequestId, committedAt } };
       });
-    } catch (error) {
-      if (/SQLITE_BUSY|database is locked|conversation_database_unavailable/i.test(String(error))) return fail("temporarily_unavailable");
-      throw error;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        return await attemptPromotion();
+      } catch (error) {
+        const code = conversationFailureCode(error);
+        // A rejected COMMIT may already be durable. Read only: an absent or
+        // inaccessible receipt cannot establish rollback or authorize a write.
+        try {
+          const recovered = await adapter.transaction("read", async (executor): Promise<ConversationResult<TaskOutcomeReceipt> | null> => {
+            const receipt = await findStoredReceipt(executor, args.actorId, input.clientRequestId);
+            if (!receipt) return null;
+            if (!await actorCanRecoverReceipt(executor, args.actorId, receipt, directMessagesEnabled)) return fail("unavailable");
+            if (receipt.payload_hash !== payloadHash) return fail("request_conflict");
+            return { ok: true, value: receiptValue(receipt, input.clientRequestId) };
+          });
+          if (recovered) {
+            diagnostic({ correlationId, operation: "promotion", code, outcome: recovered.ok ? "recovered" : "unresolved", attempt });
+            return recovered;
+          }
+        } catch { /* Recovery failure leaves the original outcome unknown. */ }
+        const contention = code === "SQLITE_BUSY" || code === "SQLITE_BUSY_SNAPSHOT" || code === "SQLITE_LOCKED";
+        if (contention && attempt === 1) {
+          diagnostic({ correlationId, operation: "promotion", code, outcome: "retry", attempt });
+          await new Promise(resolve => setTimeout(resolve, 25));
+          // The fresh transaction rechecks the receipt and all current access.
+          continue;
+        }
+        diagnostic({ correlationId, operation: "promotion", code, outcome: "unresolved", attempt });
+        if (code !== "unknown" && code !== "SQLITE_CONSTRAINT" && code !== "SQLITE_CONSTRAINT_UNIQUE") return fail("temporarily_unavailable");
+        throw error;
+      }
     }
+    return fail("temporarily_unavailable");
   }
 
   async function getTaskReceipt(args: Readonly<{ actorId: string; clientRequestId: string }>): Promise<ConversationResult<TaskReceiptLookup>> {
