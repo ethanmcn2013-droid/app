@@ -8,12 +8,13 @@ import { RoomToolsProvider } from "@/components/app/room/room-tools-context";
 import { HybridWorkspace } from "@/components/hybrid/hybrid-workspace";
 import { createCalendarFrame } from "@/lib/calendar-frame";
 import type { Task } from "@/lib/data";
+import { ensureTaskSnapshotEpoch } from "@/lib/tasks/task-snapshot-epoch";
 import "@/ds/v3.css";
 import "./fixture.css";
 
 // Explicit browser-fixture auth and initial read adapters. Ping refresh itself
 // must travel through the real panel, HTTP handler and provider hydration seam.
-type Props = { actorId: string; projectId: string; tasks: Task[] };
+type Props = { actorId: string; projectId: string; tasks: Task[]; tasksEpoch?: string | null };
 declare global {
   interface Window {
     pingObserved: Task[];
@@ -41,7 +42,7 @@ function Probe() {
 function Fixture() {
   const [props, setProps] = useState<Props | null>(null);
   useEffect(() => {
-    window.pingMount = value => setProps({ ...value, tasks: revive(value.tasks) });
+    window.pingMount = value => setProps({ ...value, tasks: revive(value.tasks), tasksEpoch: ensureTaskSnapshotEpoch() });
     void fetch("/fixture/initial").then(response => response.json()).then(window.pingMount);
   }, []);
   if (!props) return null;
@@ -49,7 +50,7 @@ function Fixture() {
     <DomainProvider domain="wedding" workspaceId={props.projectId} workspaceSlug={props.projectId} workspaceName="Synthetic Ping project"
       personalization={{ headline: "Plan the work", body: "An isolated synthetic project.", firstTaskExample: "A task", workspaceTitle: "Synthetic Ping project" }}
       members={[{ id: "alice", name: "Alice", knownName: "Alice", initials: "AL", role: "member", color: "#555" }, { id: "bob", name: "Bob", knownName: "Bob", initials: "BO", role: "member", color: "#777" }]}>
-      <TasksProvider key={JSON.stringify([props.actorId, props.projectId])} actorId={props.actorId} projectId={props.projectId} initialTasks={props.tasks}>
+      <TasksProvider key={JSON.stringify([props.actorId, props.projectId])} actorId={props.actorId} projectId={props.projectId} initialTasks={props.tasks} initialTasksEpoch={props.tasksEpoch}>
         <RoomBriefProvider value={{ calendarFrame, periodName: null, dateWindow: null, ownerName: "Synthetic owner", purpose: "Isolated synthetic browser verification" }}>
           <RoomToolsProvider><main><HybridWorkspace view="list" canEdit canManage={false} /><Probe /></main></RoomToolsProvider>
         </RoomBriefProvider>

@@ -35,7 +35,7 @@ const stubs = new Map([
   ['next/link', `import {createElement} from 'react';export default function Link({href,prefetch,scroll,...rest}){return createElement('a',{href,...rest})}`],
   ['next/dynamic', `import {createElement,lazy,Suspense} from 'react';export default function dynamic(load,options={}){const View=lazy(()=>load().then(m=>({default:m.default??m})));return function Dynamic(props){return createElement(Suspense,{fallback:null},createElement(View,props))}}`],
   ['@clerk/nextjs', `export const useUser=()=>({isLoaded:true,isSignedIn:true,user:{id:window.pingFixtureUser}});export const useAuth=()=>({isLoaded:true,isSignedIn:true,userId:window.pingFixtureUser,sessionId:window.pingFixtureSession});`],
-  ['@/server/actions/tasks', ['addTaskAction','duplicateTaskAction','getTasksAction','moveTaskAction','removeTaskAction','reorderTaskAction','setTaskArchivedAction','setTaskMilestoneAction','toggleCompleteAction','updateTaskAction'].map(name=>`export const ${name}=()=>{throw Error('Unrelated server action ${name} not exercised')};`).join('')],
+  ['@/server/actions/tasks', `export async function getTasksAction(project){const response=await fetch('/fixture/initial');const data=await response.json();if(data.projectId!==project)throw Error('Fixture Project changed');return data.tasks.map(task=>({...task,updatedAt:new Date(task.updatedAt),dueAt:task.dueAt?new Date(task.dueAt):null}));}` + ['addTaskAction','duplicateTaskAction','moveTaskAction','removeTaskAction','reorderTaskAction','setTaskArchivedAction','setTaskMilestoneAction','toggleCompleteAction','updateTaskAction'].map(name=>`export const ${name}=()=>{throw Error('Unrelated server action ${name} not exercised')};`).join('')],
   ['@/server/actions/board', ['moveTaskToColumnAction','addColumnAction','deleteColumnAction','renameColumnAction','reorderColumnsAction','setColumnColorAction','setColumnDescriptionAction','setColumnDoneAction','setColumnLimitAction'].map(name=>`export const ${name}=()=>{throw Error('Unrelated board action not exercised')};`).join('')],
   ['@/server/actions/set-parent', `export const setParentAction=()=>{throw Error('Unrelated action not exercised')};`],
   ['@/components/app/add-task/add-task-context', `export const useAddTask=()=>({open:false,defaults:{},openDialog(){throw Error('Composer not exercised')},closeDialog(){},setDefaultsProvider(){}});`],
@@ -52,7 +52,7 @@ function loadFixtureMove(db, actor, sourceInputs) {
     const file=[name,name+'.ts',name+'.tsx',name+'/index.ts'].find(candidate=>existsSync(path.join(root,candidate))&&statSync(path.join(root,candidate)).isFile());
     assert.ok(file, 'Missing fixture action module');
     if(file==='src/server/db/index.ts')return {db};
-    if(file==='src/server/auth.ts')return {getCurrentUser:async()=>actor.actorId,getCurrentUserOrNull:async()=>actor.actorId,getActiveWorkspaceOrNull:async()=>PROOF_PROJECT};
+    if(file==='src/server/auth.ts')return {getCurrentUser:async()=>actor.actorId,getCurrentUserOrNull:async()=>actor.actorId,getActiveWorkspaceOrNull:async()=>PROOF_PROJECT,getCurrentUserAndActiveWorkspaceOrNull:async()=>[actor.actorId,PROOF_PROJECT],activeWorkspaceOrNullForUser:async()=>PROOF_PROJECT};
     if(file==='src/lib/access-mode.ts')return {isDemoMode:()=>false};
     if(file==='src/server/db/queries.ts')return {getTasks:project=>readCanonicalTasks(db,project),getSubtasks:()=>{throw Error('Unrelated query not exercised');}};
     if(file==='src/server/events.ts')return {emitTasksChanged:()=>{}};
