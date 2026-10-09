@@ -16,7 +16,9 @@ Deploy the Studio receiver that accepts both `{subjectIdHash}` and `{workspaceId
 
 Both services need distinct random `SPONSOR_USAGE_SERVICE_SECRET` and `VENUE_ISSUANCE_SECRET`; equal values are refused. Usage HMAC includes purpose `usage.v1`, POST, exact pathname, timestamp, salt epoch and exact body digest. Request size is16KiB and skew is5 minutes. Usage credentials cannot enter issuance. Origins are trusted operator configuration; redirects are refused. No broad App database credential is given to Studio.
 
-Migration `0030_sponsored_use_intents` adds the queue and actor erasure link. Migration `0039_sponsored_measurement_choice` adds the measurement preference and recipient-to-Project erasure link. Apply both before this runtime, including when capture is off: deletion hooks use their tables. The migration tests cover fresh application, no-op and semantic ledger checks. Production migration/deployment remains unauthorized in this task.
+Migration `0030_sponsored_use_intents` adds the queue and actor erasure link. The reconciled release migration `0040_sponsored_measurement_choice` adds the measurement preference and recipient-to-Project erasure link; `0039` is reserved for the conversation-message index. The sponsor SQL bytes are unchanged from the original `0039` proposal, with a new registered ordinal and release receipt. Apply both sponsored-use migrations before this runtime, including when capture is off: ordinary preferences and deletion hooks use their schema.
+
+The 9 October release authorization covers safely receiving and deploying App source with collection and reporting flags off. It does not activate sponsor measurement or establish completed Project-wide remote withdrawal. The root release operator must verify the actual production flag posture and receive the reconciled migration through the supported encrypted, target-bound backup, acknowledgement and apply workflow before deploying this runtime. Source inclusion and local migration tests do not prove production application. The Studio receiver and its migrations remain a separate acceptance requirement before enabling reporting or accepting Project-wide remote withdrawal; a refused control remains pending in App.
 
 Authenticated App report proxy routes are `/api/sponsor-programmes/{programmeId}/reports/{month}` (`format=json|csv|html`) and `/api/sponsor-programmes/{programmeId}/invitations` (GET/POST). They require a Clerk session, internal-test reporting flags and a distinct `SPONSOR_REPORT_ASSERTION_SECRET`; the App mints a five-minute purpose-bound Bearer assertion for Studio. Studio checks the actor's programme capability on every request. The App accepts only a configured Studio origin and exact route, with bounded request/response bodies and no redirects.
 
@@ -24,12 +26,13 @@ Authenticated App report proxy routes are `/api/sponsor-programmes/{programmeId}
 
 Delivery retires event or erasure custody only after an unredirected HTTP200 `application/json` response containing exactly `{ "ok": true }` (JSON whitespace allowed). The response is streamed with a256-byte bound and a5-second body deadline; extra/duplicate keys, non-JSON, incomplete streams and other2xx responses remain pending. No remote body is logged or persisted. This is defensive transport hardening; no attacker path through the real Studio handler was demonstrated. The two current Studio handlers already return this acknowledgement after their transaction succeeds.
 
-Run on the pinned installed dependencies with Node24. These commands use disposable local SQLite and synthetic Request transport:
+Run on the locked installed dependencies and the repository's declared CI Node version. These commands use disposable local SQLite and synthetic Request transport after the reconciled migration package has been registered:
 
 ```sh
-node --test src/server/sponsored-use/action.test.cjs src/server/sponsored-use/provenance.test.cjs scripts/db/migration-ledger.test.mjs
+node --import tsx --import ./src/test/register-server-only.mjs --test --test-concurrency=1 src/server/sponsor-report/proxy.test.ts src/server/sponsored-use/action.test.cjs src/server/sponsored-use/provenance.test.cjs
 node node_modules/tsx/dist/cli.mjs --import ./src/test/register-server-only.mjs --test src/lib/sponsored-use/service-auth.test.ts src/server/venue-issuance/canonical.test.ts src/server/account-deletion-lifecycle.test.ts
-node scripts/sponsored-use/acceptance.cjs --studio-root /path/to/matching/studio-checkout
+pnpm test:sponsored-use:paired --studio-root /path/to/legacy-ci-studio-checkout
+pnpm test:sponsored-use:paired --studio-root /path/to/matching-studio-201-checkout --workspace-receiver
 node node_modules/typescript/bin/tsc --noEmit --incremental false
 ```
 
