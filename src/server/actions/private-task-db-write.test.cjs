@@ -71,6 +71,49 @@ test('failed activity INSERT logs a fixed category while the authorized Task edi
   }
 });
 
+test('real activity writer inserts only for the exact stored Task and Project', async () => {
+  const f=await usageFixture({seedClaim:false});
+  try {
+    await f.action({id:'scoped-activity-task',title:'Scoped',projectId:'a'});
+    const writer=f.load('src/server/db/activity.ts').recordActivity;
+    const before=await f.counts();
+    const started=Math.floor(Date.now()/1000);
+    await writer('scoped-activity-task',{kind:'update',field:'title'},{workspaceId:'a',userId:'owner'});
+    const rows=(await f.client.execute({sql:'SELECT workspace_id,task_id,user_id,kind,payload,created_at FROM activities WHERE task_id=? ORDER BY created_at DESC',args:['scoped-activity-task']})).rows;
+    assert.equal(rows.length,before.activities+1);
+    const latest=rows.find(row=>JSON.parse(row.payload).field==='title');
+    assert.deepEqual([latest.workspace_id,latest.task_id,latest.user_id,latest.kind],['a','scoped-activity-task','owner','update']);
+    assert.ok(Number(latest.created_at)>=started && Number(latest.created_at)<=Math.floor(Date.now()/1000));
+    await writer('scoped-activity-task',{kind:'update',field:'title'},{workspaceId:'b',userId:'owner'});
+    await writer('missing-task',{kind:'update',field:'title'},{workspaceId:'a',userId:'owner'});
+    assert.equal((await f.counts()).activities,before.activities+1);
+    f.state.actor='member';
+    await writer('scoped-activity-task',{kind:'update',field:'priority'},{workspaceId:'a'});
+    const fallback=(await f.client.execute({sql:'SELECT user_id,payload FROM activities WHERE task_id=?',args:['scoped-activity-task']})).rows
+      .find(row=>JSON.parse(row.payload).field==='priority');
+    assert.equal(fallback.user_id,'member');
+  } finally { f.close(); }
+});
+
+test('explicit create and stored-Project completion do not read ambient selection; implicit create still does', async () => {
+  const f=await usageFixture({seedClaim:false});
+  try {
+    let ambientReads=0;
+    Object.defineProperty(f.state,'ambient',{configurable:true,get(){ambientReads++; return 'a';}});
+    await f.action({id:'explicit-no-ambient',title:'Explicit',projectId:'a'});
+    assert.equal(ambientReads,0);
+    const tasks=f.load('src/server/actions/tasks.ts');
+    await tasks.toggleCompleteAction('explicit-no-ambient');
+    assert.equal(ambientReads,0);
+    const [done]=await f.db.select().from(f.schema.tasks).where(eq(f.schema.tasks.id,'explicit-no-ambient'));
+    assert.equal(done.lane,'done');
+    await f.action({id:'implicit-uses-ambient',title:'Implicit'});
+    assert.ok(ambientReads>0);
+    const [implicit]=await f.db.select().from(f.schema.tasks).where(eq(f.schema.tasks.id,'implicit-uses-ambient'));
+    assert.equal(implicit.workspaceId,'a');
+  } finally { f.close(); }
+});
+
 test('failed share visit INSERT logs no private user-agent while retaining the visit counter', async () => {
   // The fixture uses the production helper's equivalent Drizzle INSERT and
   // 60-character hint limit; the Server Action itself is loaded from source.

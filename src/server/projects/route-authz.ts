@@ -41,6 +41,8 @@ import "server-only";
  */
 
 import { redirect } from "next/navigation";
+import { cache } from "react";
+import type { UserId } from "@/lib/data";
 import { isDemoMode } from "@/lib/access-mode";
 import {
   assertProjectId,
@@ -50,9 +52,12 @@ import {
 } from "@/lib/projects/project-ref";
 import { projectCapabilities } from "@/server/projects/capabilities";
 import { getCurrentUser } from "@/server/auth";
+import { withRouteResolverIdentityTiming } from "@/server/diagnostics/identity-timing";
+import { withIdentityOutboundScope } from "@/server/diagnostics/identity-outbound";
 import { readActiveProjectCookies } from "@/server/projects/active-project-cookie";
 import { resolveActiveProjectForRoute } from "@/server/projects/request-scope";
 import {
+  DEMO_USER_ID,
   DEMO_WORKSPACE_ID,
   DEMO_WORKSPACE_NAME,
   DEMO_WORKSPACE_SLUG,
@@ -185,15 +190,15 @@ function toDecision(
  * the caller belongs to nothing, the answer is `empty` — never
  * `LEGACY_WORKSPACE_ID` (DECISIONS D-005).
  */
-export async function resolveProjectForRoute(
+async function resolveProjectForRouteWithActorFresh(
   requestedWorkspaceId?: string | readonly string[] | null,
-): Promise<RouteProjectDecision> {
-  if (isDemoMode()) return demoDecision();
+): Promise<{ actorUserId: UserId; decision: RouteProjectDecision }> {
+  if (isDemoMode()) return { actorUserId: DEMO_USER_ID, decision: demoDecision() };
 
-  const actorUserId = await getCurrentUser();
+  const actorUserId = await withIdentityOutboundScope("routeResolver", () => withRouteResolverIdentityTiming(getCurrentUser));
   const { unified, legacy } = await readActiveProjectCookies();
 
-  return toDecision(
+  const decision = toDecision(
     await resolveActiveProjectForRoute({
       actorUserId,
       requestedWorkspaceId,
@@ -201,6 +206,42 @@ export async function resolveProjectForRoute(
       legacyCookieWorkspaceId: legacy,
     }),
   );
+  return { actorUserId, decision };
+}
+
+type RequestedClass = "absent" | "malformed" | "explicit";
+
+// Match request-scope's classification, but use primitive cache keys. In
+// particular, an array or malformed explicit URL must not become bare entry.
+function classifyRequestedForRender(value: string | readonly string[] | null | undefined): {
+  kind: RequestedClass;
+  id: string | null;
+} {
+  if (value === undefined || value === null || value === "") return { kind: "absent", id: null };
+  const id = parseProjectId(value);
+  return id === null ? { kind: "malformed", id: null } : { kind: "explicit", id };
+}
+
+const resolveForRender = cache(async (kind: RequestedClass, id: string | null) =>
+  resolveProjectForRouteWithActorFresh(
+    kind === "absent" ? undefined : kind === "malformed" ? " malformed " : id,
+  ),
+);
+
+/** Share identical page/shell proofs only within this RSC render. */
+export async function resolveProjectForRouteWithActor(
+  requestedWorkspaceId?: string | readonly string[] | null,
+): Promise<{ actorUserId: UserId; decision: RouteProjectDecision }> {
+  if (isDemoMode()) return { actorUserId: DEMO_USER_ID, decision: demoDecision() };
+  const key = classifyRequestedForRender(requestedWorkspaceId);
+  return resolveForRender(key.kind, key.id);
+}
+
+/** Also used by a Server Action: its identity and cookies must remain fresh. */
+export async function resolveProjectForRoute(
+  requestedWorkspaceId?: string | readonly string[] | null,
+): Promise<RouteProjectDecision> {
+  return (await resolveProjectForRouteWithActorFresh(requestedWorkspaceId)).decision;
 }
 
 /**
@@ -260,7 +301,7 @@ export async function authorizeObjectProject(
       : { kind: "unavailable" };
   }
 
-  const actorUserId = await getCurrentUser();
+  const actorUserId = await withIdentityOutboundScope("routeResolver", () => withRouteResolverIdentityTiming(getCurrentUser));
   const decision = toDecision(
     await resolveActiveProjectForRoute({
       actorUserId,

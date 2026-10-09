@@ -166,6 +166,41 @@ test("promotion rejects stale source audience/revision, forged owner, revoked me
   } finally { f.client.close(); }
 });
 
+test("source denial precedence survives a simultaneously missing or archived destination", async () => {
+  const f = await fixture();
+  try {
+    const service = createConversationTaskOutcomeService(f.adapter);
+    await f.client.execute({ sql: "UPDATE workspaces SET archived_at=? WHERE id=?", args: [Date.now(), destinationProject] });
+    const missingDestination = assertProjectId("synthetic_project_missing");
+    for (const destinationProjectId of [destinationProject, missingDestination]) {
+      const input = { ...f.input, destinationProjectId };
+      assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: { ...input, expectedAudienceEpoch: 9 } }), { ok: false, code: "audience_changed" });
+      assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: { ...input, expectedRevision: 9 } }), { ok: false, code: "revision_conflict" });
+    }
+    await f.client.execute({ sql: "UPDATE workspaces SET archived_at=? WHERE id=?", args: [Date.now(), sourceProject] });
+    assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: { ...f.input, destinationProjectId: missingDestination } }), { ok: false, code: "archived" });
+    await f.client.execute({ sql: "DELETE FROM workspace_members WHERE workspace_id=? AND user_id='alice'", args: [sourceProject] });
+    assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: f.input }), { ok: false, code: "unavailable" });
+    for (const table of ["tasks", "activities", "work_links", "suite_outbox", "work_operation_receipts"]) assert.equal(await count(f.client, table), 0, table);
+  } finally { f.client.close(); }
+});
+
+test("same-project promotions retain canonical position and sequence allocation across distinct intents", async () => {
+  const f = await fixture();
+  try {
+    const service = createConversationTaskOutcomeService(f.adapter);
+    const input = { ...f.input, destinationProjectId: sourceProject };
+    const first = await service.promoteMessageToTask({ actorId: "alice", input });
+    const second = await service.promoteMessageToTask({ actorId: "alice", input: { ...input, clientRequestId: "promotion_request_0002" } });
+    assert.equal(first.ok, true);
+    assert.equal(second.ok, true);
+    assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input }), first);
+    const tasks = await f.client.execute({ sql: "SELECT seq,position,workspace_id FROM tasks ORDER BY seq", args: [] });
+    assert.deepEqual(tasks.rows.map(row => [Number(row.seq), Number(row.position), row.workspace_id]), [[1, 1, sourceProject], [2, 2, sourceProject]]);
+    for (const table of ["tasks", "activities", "work_links", "suite_outbox", "work_operation_receipts"]) assert.equal(await count(f.client, table), 2, table);
+  } finally { f.client.close(); }
+});
+
 test("promotion refuses January Project deletion and actor/owner account fences before creating anything", async () => {
   const f = await fixture();
   try {

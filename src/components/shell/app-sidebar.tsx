@@ -15,7 +15,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import Link from "next/link";
+import { SidebarIntentLink } from "./sidebar-intent-link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useActiveProject } from "@/components/app/active-project-provider";
 import { useSuiteContext } from "@/components/app/use-suite-context";
@@ -201,7 +201,7 @@ export function AppSidebar({
       ? withSuiteContext(destination.href, suiteContext)
       : destination.href;
     return (
-      <Link
+      <SidebarIntentLink
         key={destination.id}
         href={href}
         className={styles.item}
@@ -218,7 +218,7 @@ export function AppSidebar({
         ) : null}
         {destination.preview ? <span className={styles.soonTag} data-tone="preview">Preview</span> : null}
         {extra}
-      </Link>
+      </SidebarIntentLink>
     );
   };
 
@@ -275,7 +275,7 @@ export function AppSidebar({
       );
     }
     return (
-      <Link
+      <SidebarIntentLink
         key={row.id}
         href={buildProjectUrl({ surface: "project" }, row.id)}
         className={styles.item}
@@ -289,7 +289,7 @@ export function AppSidebar({
         {tile}
         <span className={styles.itemLabel}>{row.name}</span>
         {dot}
-      </Link>
+      </SidebarIntentLink>
     );
   };
 
@@ -299,7 +299,7 @@ export function AppSidebar({
       ? count(entry.count, entry.kind === "dm" ? (entry.count === 1 ? "new message" : "new messages") : entry.count === 1 ? "mention" : "mentions")
       : entry.request ? <span className={styles.chatTag}>Request</span> : null;
     return (
-      <Link
+      <SidebarIntentLink
         key={entry.id}
         href={entry.href}
         className={styles.item}
@@ -322,7 +322,7 @@ export function AppSidebar({
           {entry.unread && entry.count === 0 ? <span className="sr-only">, unread</span> : null}
         </span>
         {trailing}
-      </Link>
+      </SidebarIntentLink>
     );
   };
 
@@ -331,7 +331,7 @@ export function AppSidebar({
   return (
     <aside className={styles.sidebar} aria-label="Signal Studio" {...{ [CHAT_ENABLED_ATTRIBUTE]: messagesEnabled ? "" : undefined }}>
       <div className={styles.brandRow}>
-        <Link href="/app/home" className={styles.brand} aria-label="Signal Studio home">
+        <SidebarIntentLink href="/app/home" className={styles.brand} aria-label="Signal Studio home">
           <span className={styles.brandMark} aria-hidden="true">
             {/* The Signal Studio mark, the same backgroundless ring and dot as
                 the tab icon, from the same geometry. */}
@@ -341,7 +341,7 @@ export function AppSidebar({
             </svg>
           </span>
           <span className={styles.brandName}>Signal Studio</span>
-        </Link>
+        </SidebarIntentLink>
         <button
           type="button"
           className={`${styles.iconButton} ${styles.collapseButton ?? ""}`}
@@ -378,12 +378,12 @@ export function AppSidebar({
                 {rows?.length === 0 ? (
                   <div className={styles.groupEmpty}>
                     <span>No projects yet</span>
-                    <Link href="/app/project" onClick={() => setMobileOpen(false)}>Start one</Link>
+                    <SidebarIntentLink href="/app/project" onClick={() => setMobileOpen(false)}>Start one</SidebarIntentLink>
                   </div>
                 ) : null}
                 {rows?.slice(0, projectLimit).map((row) => projectRow(row))}
                 {rows && rows.length > projectLimit ? (
-                  <Link
+                  <SidebarIntentLink
                     href="/app/project"
                     className={`${styles.item} ${styles.quietRow}`}
                     title={collapsed ? `All ${rows.length} projects` : undefined}
@@ -391,16 +391,16 @@ export function AppSidebar({
                   >
                     <ShellIcon.chevronRight />
                     <span className={styles.itemLabel}>All {rows.length} projects</span>
-                  </Link>
+                  </SidebarIntentLink>
                 ) : null}
               </>,
               <>
-                <Link href="/app/archived" aria-label="Archived projects" title="Archived projects" onClick={() => setMobileOpen(false)}>
+                <SidebarIntentLink href="/app/archived" aria-label="Archived projects" title="Archived projects" onClick={() => setMobileOpen(false)}>
                   <ShellIcon.archive size={13} />
-                </Link>
-                <Link href="/app/project" aria-label="All projects" title="All projects" onClick={() => setMobileOpen(false)}>
+                </SidebarIntentLink>
+                <SidebarIntentLink href="/app/project" aria-label="All projects" title="All projects" onClick={() => setMobileOpen(false)}>
                   <ShellIcon.arrowRight size={13} />
-                </Link>
+                </SidebarIntentLink>
               </>,
             )
           : null}
@@ -422,9 +422,9 @@ export function AppSidebar({
                 ) : null}
               </>,
               directory?.newMessageHref ? (
-                <Link href={directory.newMessageHref} aria-label="New message" title="New message" onClick={() => setMobileOpen(false)}>
+                <SidebarIntentLink href={directory.newMessageHref} aria-label="New message" title="New message" onClick={() => setMobileOpen(false)}>
                   <ShellIcon.plus size={13} />
-                </Link>
+                </SidebarIntentLink>
               ) : null,
             )
           : collapsed || chatPending

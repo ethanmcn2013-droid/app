@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { dataSource, type UserIdentity } from "../data/source";
+import { dataSource, _listForUserFromDb, type UserIdentity } from "../data/source";
 import { getTasksDb } from "../../server/tasks-db/signal-tasks-db-client";
 
 export type SignalScope =
@@ -26,12 +26,14 @@ export type PlanningWorkspaceCatalogItem = {
 };
 
 export type PlanningCatalog = {
+  canonicalUserId?: string;
   periods: PlanningPeriodCatalogItem[];
   workspaces: PlanningWorkspaceCatalogItem[];
   planningSchemaAvailable: boolean;
 };
 
 export type AuthorizedSignalScope = {
+  canonicalUserId?: string;
   scope: SignalScope;
   label: string;
   timezone: string;
@@ -40,6 +42,7 @@ export type AuthorizedSignalScope = {
 };
 
 type PlanningRow = {
+  canonical_user_id: unknown;
   period_id: unknown;
   period_name: unknown;
   period_context_type: unknown;
@@ -53,6 +56,17 @@ type PlanningRow = {
   primary_date_label: unknown;
   role: unknown;
 };
+
+// A bounded catalog must be complete before it can authorize a reading scope.
+// The existing route error boundaries represent unavailability; no-workspace
+// is reserved for an actual absence of authorized work.
+const MAX_CATALOG_WORKSPACES = 200;
+class CatalogUnavailableError extends Error {
+  constructor() {
+    super("signal_catalog_unavailable");
+    this.name = "CatalogUnavailableError";
+  }
+}
 
 function text(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value : null;
@@ -78,27 +92,36 @@ async function hasLegacyPlanningSchema(tasksDb: NonNullable<ReturnType<typeof ge
  * bounded and selects only period/workspace context. If Tasks has not yet
  * rolled out the additive columns, their exact absence permits workspace scope
  * through the v1 membership query. Partial schema and operational failures
- * authorize no scope; they cannot reclassify excluded projects as loose.
+ * throw an unavailable error; they cannot reclassify excluded projects as loose
+ * or turn an unreadable catalog into a new-user state.
  */
 export async function listPlanningCatalogForUser(
   identity: UserIdentity,
 ): Promise<PlanningCatalog> {
-  const legacy = await dataSource.listForUser(identity);
-  const fallback: PlanningCatalog = {
-    periods: [],
-    workspaces: legacy.slice(0, 200).map((workspace) => ({
-      id: workspace.workspaceId,
-      name: workspace.name,
-      role: workspace.role,
-      planningPeriodId: null,
-      contextType: null,
-      primaryDate: null,
-      primaryDateLabel: null,
-    })),
-    planningSchemaAvailable: false,
-  };
   const tasksDb = getTasksDb();
-  if (!tasksDb) return fallback;
+  const legacyCatalog = async (): Promise<PlanningCatalog> => {
+    // Only read legacy membership when the schema really requires it. Calling
+    // the DB helper directly preserves operational failures instead of using
+    // listForUser's onboarding fallback to an empty list.
+    const legacy = tasksDb
+      ? await _listForUserFromDb(tasksDb, identity)
+      : await dataSource.listForUser(identity);
+    if (legacy.length > MAX_CATALOG_WORKSPACES) throw new CatalogUnavailableError();
+    return {
+      periods: [],
+      workspaces: legacy.map((workspace) => ({
+        id: workspace.workspaceId,
+        name: workspace.name,
+        role: workspace.role,
+        planningPeriodId: null,
+        contextType: null,
+        primaryDate: null,
+        primaryDateLabel: null,
+      })),
+      planningSchemaAvailable: false,
+    };
+  };
+  if (!tasksDb) return legacyCatalog();
 
   try {
     const rows = await tasksDb.all<PlanningRow>(sql`
@@ -106,6 +129,7 @@ export async function listPlanningCatalogForUser(
         SELECT id FROM users WHERE clerk_id = ${identity.clerkId} LIMIT 1
       )
       SELECT DISTINCT
+        cu.id AS canonical_user_id,
         p.id AS period_id,
         p.name AS period_name,
         p.context_type AS period_context_type,
@@ -128,9 +152,10 @@ export async function listPlanningCatalogForUser(
       LEFT JOIN planning_periods p ON p.id = w.planning_period_id
       WHERE w.archived_at IS NULL AND p.archived_at IS NULL
         AND (w.planning_period_id IS NULL OR p.id IS NOT NULL)
-      ORDER BY p.position ASC, w.position ASC, w.name ASC
-      LIMIT 200
+      ORDER BY p.position ASC, w.position ASC, w.name ASC, w.id ASC
+      LIMIT ${MAX_CATALOG_WORKSPACES + 1}
     `);
+    if (rows.length > MAX_CATALOG_WORKSPACES) throw new CatalogUnavailableError();
     const periods = new Map<string, PlanningPeriodCatalogItem>();
     const workspaces: PlanningWorkspaceCatalogItem[] = [];
     for (const row of rows) {
@@ -140,11 +165,11 @@ export async function listPlanningCatalogForUser(
       const workspaceName = text(row.workspace_name);
       const contextType = text(row.period_context_type);
       const timezone = text(row.timezone);
-      if (!workspaceId || !workspaceName) continue;
+      if (!workspaceId || !workspaceName) throw new CatalogUnavailableError();
       // SQL admits only genuinely loose projects or a present, active period.
       // Invalid non-null period metadata must not become a loose project.
       if (row.period_id !== null) {
-        if (!periodId || !periodName || !contextType || !timezone) continue;
+        if (!periodId || !periodName || !contextType || !timezone) throw new CatalogUnavailableError();
         if (!periods.has(periodId)) {
           periods.set(periodId, {
             id: periodId,
@@ -167,17 +192,19 @@ export async function listPlanningCatalogForUser(
       });
     }
     return {
+      canonicalUserId: text(rows[0]?.canonical_user_id) ?? undefined,
       periods: Array.from(periods.values()),
       workspaces,
       planningSchemaAvailable: true,
     };
-  } catch {
+  } catch (error) {
+    if (error instanceof CatalogUnavailableError) throw error;
     try {
-      if (await hasLegacyPlanningSchema(tasksDb)) return fallback;
+      if (await hasLegacyPlanningSchema(tasksDb)) return await legacyCatalog();
     } catch {
       // Metadata is unavailable too. This cannot prove legacy compatibility.
     }
-    return { periods: [], workspaces: [], planningSchemaAvailable: false };
+    throw new CatalogUnavailableError();
   }
 }
 
@@ -193,6 +220,7 @@ export function authorizeSignalScope(
       ? catalog.periods.find((item) => item.id === workspace.planningPeriodId) ?? null
       : null;
     return {
+      canonicalUserId: catalog.canonicalUserId,
       scope,
       label: workspace.name,
       timezone: period?.timezone ?? fallbackTimezone,
@@ -207,6 +235,7 @@ export function authorizeSignalScope(
   );
   if (workspaces.length === 0) return null;
   return {
+    canonicalUserId: catalog.canonicalUserId,
     scope,
     label: period.name,
     timezone: period.timezone,

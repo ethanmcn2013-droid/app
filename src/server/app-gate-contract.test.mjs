@@ -24,7 +24,7 @@ const layout = readFileSync(
 test("the shared /app gate uses the membership-aware access check", () => {
   assert.match(
     layout,
-    /await\s+requireAppAccessTasks\(\)/,
+    /await\s+requireAppAccessTasks\("layout"\)/,
     "src/app/app/layout.tsx must await requireAppAccessTasks(). The allowlist-only requireAppAccess() bounces every invited and redeemed user to /waitlist after their token is spent.",
   );
 });

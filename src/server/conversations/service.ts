@@ -19,6 +19,7 @@ import {
 } from "@/lib/conversations/contracts";
 import { isProjectId, type ProjectId } from "@/lib/projects/project-ref";
 import type { ConversationDatabaseAdapter, ConversationSqlExecutor } from "./database";
+import { executeConversationBatch, type ConversationSqlStatement } from "./database";
 import { conversationWriteFencesClear } from "./write-fences";
 
 export type ProjectConversationScope = Readonly<{
@@ -178,9 +179,12 @@ async function authorizeConversation(
   executor: ConversationSqlExecutor,
   input: ActorConversation,
   directMessagesEnabled: boolean,
-): Promise<ConversationResult<{ row: Record<string, unknown>; scope: ProjectConversationScope | DirectMessageScope }>> {
-  const result = await executor.execute({
+  receiptRequestId?: string,
+): Promise<ConversationResult<{ row: Record<string, unknown>; scope: ProjectConversationScope | DirectMessageScope; priorReceipt?: Record<string, unknown> | null }>> {
+  const statement: ConversationSqlStatement = {
     sql: `SELECT c.*, w.archived_at AS workspace_archived_at, w.name AS workspace_name,
+        u.id AS actor_id, u.clerk_id AS actor_clerk_id,
+        workspace_owner.id AS owner_id, workspace_owner.clerk_id AS owner_clerk_id,
         wm.user_id AS current_member, p.status AS participant_status, p.consented, p.retains_history, p.reopen_confirmed,
         CASE WHEN c.dm_low_user_id=? THEN c.dm_high_user_id ELSE c.dm_low_user_id END AS other_pair_id,
         other.id AS other_id, COALESCE(NULLIF(other.name,''),NULLIF(other.handle,''),other.initials) AS other_name,
@@ -191,15 +195,23 @@ async function authorizeConversation(
       JOIN workspaces w ON w.id = c.workspace_id
       JOIN workspace_members wm ON wm.workspace_id = c.workspace_id AND wm.user_id = ?
       JOIN users u ON u.id = wm.user_id
+      LEFT JOIN users workspace_owner ON workspace_owner.id = w.owner_user_id
       LEFT JOIN conversation_participants p ON p.conversation_id=c.id AND p.user_id=?
       LEFT JOIN users other ON other.id=CASE WHEN c.dm_low_user_id=? THEN c.dm_high_user_id ELSE c.dm_low_user_id END
       WHERE c.id = ? AND c.workspace_id = ? AND (c.kind='project' OR (? = 1 AND c.kind='dm' AND ? IN(c.dm_low_user_id,c.dm_high_user_id)))`,
     args: [input.actorId, input.actorId, input.actorId, input.actorId, input.conversationId, input.projectId, directMessagesEnabled ? 1 : 0, input.actorId],
-  });
+  };
+  // Separate ordered result sets retain authorization cardinality and denial
+  // precedence. Local adapters keep their existing sequential read path.
+  const results = receiptRequestId && executor.batch
+    ? await executeConversationBatch(executor, [statement, receiptStatement({ ...input, clientRequestId: receiptRequestId })])
+    : [await executor.execute(statement)];
+  const result = results[0];
   const row = result.rows[0];
   if (!row) return failure("unavailable");
   if (row.kind === "dm" && !row.participant_status) return failure("unavailable");
-  return { ok: true, value: { row, scope: row.kind === "dm" ? dmScopeFromRow(row) : scopeFromRow(row) } };
+  return { ok: true, value: { row, scope: row.kind === "dm" ? dmScopeFromRow(row) : scopeFromRow(row),
+    ...(results.length === 2 ? { priorReceipt: results[1].rows[0] ?? null } : {}) } };
 }
 
 function writeGate(
@@ -250,14 +262,18 @@ async function findReceipt(
   executor: ConversationSqlExecutor,
   input: ActorConversation & { clientRequestId: string },
 ): Promise<Record<string, unknown> | null> {
-  const result = await executor.execute({
+  const result = await executor.execute(receiptStatement(input));
+  return result.rows[0] ?? null;
+}
+
+function receiptStatement(input: ActorConversation & { clientRequestId: string }): ConversationSqlStatement {
+  return {
     sql: `SELECT operation, payload_hash, message_id, client_request_id,
         create_seq, change_seq, revision, committed_at
       FROM conversation_receipts
       WHERE conversation_id = ? AND actor_id = ? AND client_request_id = ?`,
     args: [input.conversationId, input.actorId, input.clientRequestId],
-  });
-  return result.rows[0] ?? null;
+  };
 }
 
 function isTransientDatabaseError(error: unknown): boolean {
@@ -290,6 +306,16 @@ export function createConversationService(
 
   async function resolveActor(clerkId: string): Promise<string | null> {
     if (typeof clerkId !== "string" || clerkId.length < 3 || clerkId.length > 256) return null;
+    if (!adapter.available) return null;
+    if (adapter.readStatement) {
+      try {
+        const user = await adapter.readStatement({ sql: "SELECT id FROM users WHERE clerk_id = ? LIMIT 1", args: [clerkId] });
+        return user.rows[0] ? text(user.rows[0].id) : null;
+      } catch (error) {
+        if (isTransientDatabaseError(error)) return null;
+        throw error;
+      }
+    }
     const result = await inTransaction("read", async (executor) => {
       const user = await executor.execute({
         sql: "SELECT id FROM users WHERE clerk_id = ? LIMIT 1",
@@ -512,11 +538,12 @@ export function createConversationService(
     const payloadHash = hashTuple(["send", actorId, input.conversationId, body, input.rootId, mentions]);
 
     return inTransaction("write", async (executor) => {
-      const authorized = await authorize(executor, { actorId, ...input });
+      const authorized = await authorizeConversation(executor, { actorId, ...input }, directMessagesEnabled, input.clientRequestId);
       if (!authorized.ok) return authorized;
       if (authorized.value.scope.kind === "dm" && !authorized.value.scope.canRead &&
           !["pending", "declined"].includes(authorized.value.scope.pairState)) return failure("unavailable");
-      const prior = await findReceipt(executor, { actorId, ...input });
+      const prior = authorized.value.priorReceipt !== undefined
+        ? authorized.value.priorReceipt : await findReceipt(executor, { actorId, ...input });
       if (prior) {
         return prior.operation === "send" && prior.payload_hash === payloadHash
           ? { ok: true, value: sendReceipt(prior) }
@@ -524,7 +551,10 @@ export function createConversationService(
       }
       const gate = writeGate(authorized.value.scope, input.expectedAudienceEpoch);
       if (!gate.ok) return gate;
-      if (!await conversationWriteFencesClear(executor, actorId, input.projectId)) return failure("unavailable");
+      const row = authorized.value.row;
+      if (!await conversationWriteFencesClear(executor, actorId, input.projectId, {
+        actor_id: row.actor_id, actor_clerk_id: row.actor_clerk_id, owner_id: row.owner_id, owner_clerk_id: row.owner_clerk_id,
+      })) return failure("unavailable");
       if (!await validateMentionMembers(executor, input.projectId, mentions, input.conversationId)) return failure("invalid_input");
       if (input.rootId !== null) {
         const root = await executor.execute({
@@ -534,33 +564,29 @@ export function createConversationService(
         });
         if (root.rows.length !== 1) return failure("invalid_input");
       }
-      const sequence = await executor.execute({
-        sql: "SELECT next_create_seq, next_change_seq FROM conversations WHERE id = ?",
-        args: [input.conversationId],
-      });
-      const createSeq = integer(sequence.rows[0]?.next_create_seq);
-      const changeSeq = integer(sequence.rows[0]?.next_change_seq);
+      // Authorization selected c.* on this write transaction; intervening
+      // replay/fence/root checks are reads, so these counters are still current.
+      const createSeq = integer(authorized.value.row.next_create_seq);
+      const changeSeq = integer(authorized.value.row.next_change_seq);
       const committedAt = Date.now();
       const id = messageId(actorId, input.conversationId, input.clientRequestId);
-      await executor.execute({
+      const writes: ConversationSqlStatement[] = [{
         sql: `UPDATE conversations SET next_create_seq = next_create_seq + 1,
           next_change_seq = next_change_seq + 1 WHERE id = ?`,
         args: [input.conversationId],
-      });
-      await executor.execute({
+      }, {
         sql: `INSERT INTO conversation_messages
           (id, conversation_id, workspace_id, author_id, client_request_id, request_hash,
            root_id, create_seq, revision, body, created_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
         args: [id, input.conversationId, input.projectId, actorId, input.clientRequestId,
           payloadHash, input.rootId, createSeq, body, committedAt],
-      });
-      await executor.execute({
+      }, {
         sql: `INSERT INTO conversation_changes
           (conversation_id, change_seq, kind, message_id, revision, audience_epoch, happened_at)
           VALUES (?, ?, 'create', ?, 1, ?, ?)`,
         args: [input.conversationId, changeSeq, id, authorized.value.scope.audienceEpoch, committedAt],
-      });
+      }];
       // Membership grants history access; only explicit mentions direct attention.
       // The normalized set was validated against live members in this transaction.
       const recipients = authorized.value.scope.kind === "dm"
@@ -568,13 +594,13 @@ export function createConversationService(
         : mentions.filter((id) => id !== actorId);
       for (const recipientId of [...new Set(recipients)]) {
         const eventKey = hashTuple([input.conversationId, id, recipientId]).slice(0, 32);
-        await executor.execute({
+        writes.push({
           sql: `INSERT INTO conversation_attention
             (id, conversation_id, workspace_id, recipient_id, message_id, root_id, create_seq)
             VALUES (?, ?, ?, ?, ?, ?, ?)`,
           args: [`attention_${eventKey}`, input.conversationId, input.projectId, recipientId, id, input.rootId, createSeq],
         });
-        await executor.execute({
+        writes.push({
           sql: `INSERT INTO conversation_outbox
             (id, conversation_id, workspace_id, recipient_id, message_id, source_revision,
              audience_epoch, state, created_at)
@@ -583,13 +609,14 @@ export function createConversationService(
             authorized.value.scope.audienceEpoch, committedAt],
         });
       }
-      await executor.execute({
+      writes.push({
         sql: `INSERT INTO conversation_receipts
           (conversation_id, actor_id, client_request_id, operation, payload_hash,
            message_id, create_seq, change_seq, revision, committed_at)
           VALUES (?, ?, ?, 'send', ?, ?, ?, ?, 1, ?)`,
         args: [input.conversationId, actorId, input.clientRequestId, payloadHash, id, createSeq, changeSeq, committedAt],
       });
+      await executeConversationBatch(executor, writes);
       return { ok: true, value: { messageId: id, clientRequestId: input.clientRequestId, createSeq, changeSeq, revision: 1, committedAt } };
     });
   }

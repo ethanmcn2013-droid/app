@@ -25,6 +25,8 @@ import {
   describeAnchorFromToday,
   dueInstantForDay,
   relateDueToAnchor,
+  taskDueCalendarDate,
+  taskDuePickerValue,
   toCalendarDate,
 } from "@/lib/tasks/anchor-due";
 import { sendNudgeAction } from "@/server/actions/nudge";
@@ -706,14 +708,14 @@ export function DueRow({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
   const frame = useCalendarFrame();
   const anchor = useWorkspaceAnchor();
-  const current = task.dueAt ? new Date(task.dueAt) : null;
+  const current = taskDuePickerValue(task.due, task.dueAt ? new Date(task.dueAt) : null);
   const hasDate = Boolean(task.due || task.dueAt);
   // A wedding workspace has one date every other date is judged by. A bare
   // "14 May" does not say whether that is four months out or four days out;
   // this does, in exact calendar days. Renders only when the workspace has an
   // anchor date and the task has a structured due date, never from a guess.
   const anchorRelation = relateDueToAnchor(
-    current ? toCalendarDate(current) : null,
+    taskDueCalendarDate(task.due, task.dueAt ? new Date(task.dueAt) : null, frame.timeZone),
     anchor.date,
     anchor.label,
   );
@@ -725,7 +727,7 @@ export function DueRow({ task }: { task: Task }) {
   // this agrees with the board cards and survives SSR without a hydration
   // guard.
   const dueLabel = current
-    ? formatDueLabelOn(current, new Date(frame.nowIso))
+    ? formatDueLabelOn(current, new Date(`${frame.today}T12:00:00`))
     : task.due;
   return (
     <div className="flex flex-col items-start gap-0.5">
@@ -766,14 +768,20 @@ export function DueRow({ task }: { task: Task }) {
       {(close) => (
         <DueCalendar
           value={current}
+          today={new Date(`${frame.today}T12:00:00`)}
           anchorDate={anchor.date}
           anchorNote={describeAnchorFromToday(
             frame.today,
             anchor.date,
             anchor.label,
           )}
-          onSelect={(date, label) => {
-            updateTask(task.id, { due: label, dueAt: dueInstantForDay(date) ?? date });
+          onSelect={(date) => {
+            const day = toCalendarDate(date);
+            const at = dueInstantForDay(date);
+            if (!day || !at) return;
+            // Persist the selected calendar day as a canonical label. The
+            // rendered chip still formats it in the reader's calendar frame.
+            updateTask(task.id, { due: day, dueAt: at });
             close();
           }}
           onClear={() => {

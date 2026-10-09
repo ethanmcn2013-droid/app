@@ -7,6 +7,9 @@
  * dashboard.
  */
 
+import type { Deadline } from "../data/deadline";
+import type { KnownPriority, PrerequisiteEvidence, TaskStage, UserRef, ValidatedTitleEdit } from "../data/types";
+
 export type Lane = "next" | "in-flight" | "review" | "shipped";
 
 /**
@@ -18,11 +21,31 @@ export type TaskSignal = {
   id: string;
   title: string;
   lane: Lane;
-  priority: 0 | 1 | 2 | 3; // 0 = P0 (highest)
-  dueAt: number | null; // unix ms; null = no due date
-  idleDays: number; // days since last activity
+  stage?: TaskStage;
+  priority: KnownPriority | null; // 0 = P0 (highest); null = not known
+  dueAt: number | null; // legacy instant; date-only values use deadline
+  deadline?: Deadline;
+  idleDays: number | null; // null when activity history is incomplete
+  activityCoverage?: "complete" | "partial";
+  /** Positive saved title-edit evidence; false/absent never proves no activity. */
+  hasRecordedTitleEdit?: boolean;
+  /** Complete canonical assignee identities when provided; omission is unknown, not unassigned. Internal only. */
+  assignees?: UserRef[];
+  /** Most recent validated title update found by the reader; no exhaustive-history claim. Internal only. */
+  latestValidatedTitleEdit?: ValidatedTitleEdit;
+  latestValidatedComment?: { at: string; kind: "commentAdd" };
+  latestValidatedMetadataEdit?: { at: string; field: "tags" };
+  activityHistoryStartAt?: string;
+  /** Complete authorized current task-list evidence, separate from history. */
+  taskCoverage?: "complete" | "partial";
   commentCount: number;
   blockedBy: string[]; // task ids
+  dependencyCoverage?: "complete" | "partial";
+  /** Current terminal evidence for a listed prerequisite; no identity leaves this read model. */
+  hasCompletedListedPrerequisite?: boolean;
+  /** Internal verified dependency evidence, not a public navigation inventory. */
+  verifiedPrerequisiteIds?: string[];
+  prerequisiteEvidence?: PrerequisiteEvidence[];
   sourceLabel: string; // e.g. "Tasks · Wedding 2026"
   // Recent shipped detection
   movedToShippedAt: number | null;
@@ -38,6 +61,10 @@ export type TaskSignal = {
  */
 export type BriefItem = {
   id: string;
+  /** Opaque observation identity; `id` remains the navigation/read-state task. */
+  observationId?: string;
+  /** Internal inspected task evidence; adapters publish counts, never these ids. */
+  evidenceTaskIds?: string[];
   /** The task title, sentence-cased and otherwise verbatim. Nothing is
    *  appended: titles are imperatives, questions, and shouts, and any
    *  observation glued onto one reads as broken English ("Approve the
@@ -65,12 +92,17 @@ export type TriggerKind =
   | "just-shipped"
   | "overload"
   | "crowded-week"
-  | "blocked-too-long";
+  | "blocked-too-long"
+  | "blocking-due-work"
+  | "prerequisites-complete"
+  | "prerequisites-unverified"
+  | "recorded-activity";
 
 export type FocusItem = {
   id: string;
+  observationId?: string;
   text: string;
-  due: string; // "today" | "by Friday" | "this week" | ISO-ish
+  due: string | null; // null for workload without an own deadline; otherwise a saved-date phrase or explicit no-confirmed-date state
   trigger: TriggerKind;
 };
 
@@ -86,12 +118,19 @@ export type Briefing = {
   // The brief is "empty" when no bucket has anything. Renderer
   // shows a quiet "Nothing to flag today" state, no email is sent.
   isEmpty: boolean;
-  /** Total signals the engine examined in scope on this run, surfaced
-   *  or not. The product's claim is that it filters, so a count of what
-   *  it showed without a count of what it read is an assertion rather
-   *  than a receipt. Threaded to the ledger as `readCount`. */
+  /** A partial read may surface known facts but cannot assert all-clear. */
+  coverageStatus?: "complete" | "partial";
+  /** Specific non-actionable limitation from the same authorized source read. */
+  activityCoverageNote?: string;
+  /** Distinct task records examined, including verified same-workspace
+   *  prerequisite evidence. Inspected terminal records do not establish
+   *  open work or recent progress. Threaded to the ledger as `readCount`. */
   readCount: number;
-  /** How many distinct signals crossed a rule, counted BEFORE the
+  /** Authoritative inspected source universe, including verified dependencies. */
+  readTaskIds?: string[];
+  triggeredTaskIds?: string[];
+  /** How many distinct inspected task sources contributed to eligible
+   *  observations, counted BEFORE the
    *  three-per-bucket cap. Without it the ledger cannot tell "cleared"
    *  (crossed nothing) from "held back" (crossed a rule but lost its
    *  slot), and would describe held-back work as clear. */

@@ -1,12 +1,36 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { formatDueLabelOn } from "@/components/app/detail-panel/due-calendar";
 
 import {
   anchorNoun,
   describeAnchorFromToday,
   relateDueToAnchor,
   toCalendarDate,
+  taskDueCalendarDate,
+  taskDuePickerValue,
 } from "./anchor-due";
+
+test("picker label remains its selected day in UTC−12, UTC+14 and Dublin DST", () => {
+  const at = new Date("2026-03-29T09:00:00.000Z");
+  for (const zone of ["Etc/GMT+12", "Pacific/Kiritimati", "Europe/Dublin"]) {
+    assert.equal(taskDueCalendarDate("2026-03-29", at, zone), "2026-03-29");
+  }
+  const selected = taskDuePickerValue("2026-03-29", at);
+  assert.equal(selected?.getFullYear(), 2026);
+  assert.equal(selected?.getMonth(), 2);
+  assert.equal(selected?.getDate(), 29);
+  assert.notEqual(taskDueCalendarDate("29 Mar", at, "Etc/GMT+12"), "2026-03-29");
+});
+
+test("detail picker uses the server frame's calendar day for Today and Tomorrow", () => {
+  const picked = taskDuePickerValue("2026-03-30", new Date("2026-03-30T09:00:00Z"));
+  assert.ok(picked);
+  assert.equal(formatDueLabelOn(picked, new Date("2026-03-30T12:00:00")), "Today");
+  assert.equal(formatDueLabelOn(picked, new Date("2026-03-29T12:00:00")), "Tomorrow");
+  // The reader can be in UTC+14 on Mar 30 while the shared UTC instant is Mar 29.
+  assert.equal(new Date("2026-03-29T12:00:00Z").toISOString().slice(0, 10), "2026-03-29");
+});
 
 test("a due date before the anchor counts down in exact days", () => {
   const rel = relateDueToAnchor("2027-05-01", "2027-06-12", "Wedding");

@@ -12,7 +12,6 @@ import {
   detectVenueWelcome,
   markVenueEntitlementReached,
 } from "@/server/db/venue-welcome";
-import { getCurrentUser } from "@/server/auth";
 import { isDemoMode } from "@/lib/access-mode";
 import { resolveTasksArrival, TasksArrivalRefusal } from "@/components/app/tasks-project-arrival";
 import {
@@ -46,7 +45,7 @@ export default async function TasksPage({
 
   let venue: { sponsorName: string; sponsorSlug: string } | null = null;
   const weddingDate = isDemoMode() ? null : await readSponsoredWeddingDate(db, {
-    actorUserId: await getCurrentUser(), projectId: arrival.project.workspaceId,
+    actorUserId: arrival.actorUserId, projectId: arrival.project.workspaceId,
   });
   if (sp.welcome === "venue") {
     if (isDemoMode()) {
@@ -55,7 +54,7 @@ export default async function TasksPage({
         sponsorSlug: DEMO_WORKSPACE_SLUG,
       };
     } else {
-      const me = await getCurrentUser();
+      const me = arrival.actorUserId;
       const project = arrival.project;
       if (project.kind === "ready") {
         const welcome = await detectVenueWelcome(me, project.workspaceId);

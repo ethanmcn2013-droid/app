@@ -11,6 +11,7 @@ import {
   sql,
 } from "drizzle-orm";
 import { db } from "./index";
+import { measureTaskBoardMap, measureTaskBoardQuery } from "@/server/diagnostics/task-timing";
 import {
   tasks,
   comments,
@@ -96,7 +97,7 @@ export async function getTasks(workspaceId: string): Promise<Task[]> {
   // otherwise multiply into the board / list / timeline / calendar
   // alongside their parents.
   return withReadRetry(async () => {
-  const rows = await db
+  const rows = await measureTaskBoardQuery(() => db
     .select(taskColumnsWithCount)
     .from(tasks)
     .where(
@@ -116,8 +117,8 @@ export async function getTasks(workspaceId: string): Promise<Task[]> {
     // whole table on every public page hit. 2000 is well past any
     // real workspace; if a workspace legitimately exceeds it, the
     // overflow is the long tail of oldest in-lane rows.
-    .limit(2000);
-    return rows.map(rowToTask);
+    .limit(2000));
+    return measureTaskBoardMap(rows.length, () => rows.map(rowToTask));
   });
 }
 

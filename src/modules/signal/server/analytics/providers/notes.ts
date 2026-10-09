@@ -16,6 +16,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import { getNotesClient } from "./optional-clients";
 import { providerCoverage } from "./coverage";
 import { labelIdFromTag } from "./tasks";
+import { storedDeadline } from "../../../lib/data/deadline";
 
 const MAX_LINKED_TASKS = 500;
 const MAX_COMPLETION_EVENTS = 2_000;
@@ -195,6 +196,10 @@ export class NotesAnalyticsProvider implements NotesProvider {
             ? ["follow_up_completion_event_limit_reached"]
             : []),
           ...(taskRows.length > MAX_LINKED_TASKS ? ["notes_task_link_limit_reached"] : []),
+          ...(records.some(record => {
+            const linked = tasksById.get(record.linkedTaskIds[0] ?? "");
+            return linked && storedDeadline(linked.due, linked.dueAt)?.kind === "unknown";
+          }) ? ["follow_up_due_kind_ambiguous"] : []),
           ...(columnConfig.unreadable ? ["board_column_config_unreadable"] : []),
         ],
       }),
@@ -203,8 +208,9 @@ export class NotesAnalyticsProvider implements NotesProvider {
 }
 
 function taskDate(dueAt: Date | null, due: string | null): AnalyticsDate | null {
-  if (dueAt) return { kind: "instant", value: dueAt.toISOString() };
-  if (due && /^\d{4}-\d{2}-\d{2}$/.test(due)) return { kind: "date", value: due };
+  const deadline = storedDeadline(due, dueAt);
+  if (deadline?.kind === "date-only") return { kind: "date", value: deadline.date };
+  if (deadline?.kind === "instant") return { kind: "instant", value: new Date(deadline.at).toISOString() };
   return null;
 }
 

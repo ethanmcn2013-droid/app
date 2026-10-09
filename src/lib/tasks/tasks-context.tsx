@@ -2,15 +2,17 @@
 
 import {
   createContext,
-  startTransition,
   useCallback,
   useContext,
   useEffect,
   useMemo,
   useReducer,
   useRef,
+  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
+import { useRouter } from "next/navigation";
 import {
   LANE_ORDER,
   SEED_TASKS,
@@ -41,8 +43,26 @@ import { moveTaskToColumnAction } from "@/server/actions/board";
 import { isDemoMode } from "@/lib/access-mode";
 import { setParentAction } from "@/server/actions/set-parent";
 import { useRealtimeSync } from "./use-realtime-sync";
-import { beginTaskSync } from "./delight-events";
+import { beginTaskSync, type TaskAckOperation } from "./delight-events";
 import { maybeFireFirstCompletion } from "@/components/app/done-dopamine/first-completion-moment";
+import { reconcileAuthoritativeTasks, type AuthoritativeTaskVersions } from "./authoritative-refresh";
+import {
+  createTask,
+  editTask,
+  toggleTaskComplete,
+  TaskMutationRefusedError,
+  TaskMutationRequestRejectedError,
+  readTaskSnapshot,
+} from "./task-transport";
+import {
+  ensureTaskSnapshotEpoch,
+  invalidateTaskSnapshotEpoch,
+  readTaskSnapshotEpoch,
+  readTaskSnapshotFreshness,
+  rotateTaskSnapshotEpoch,
+  serverTaskSnapshotFreshness,
+  subscribeTaskSnapshotEpoch,
+} from "./task-snapshot-epoch";
 
 /** Gap-numbered float position so inserts never need to renumber the
  *  whole lane. Conventions:
@@ -137,6 +157,7 @@ export type TasksDispatchers = {
 
 const TasksStateContext = createContext<TasksState | null>(null);
 const TasksDispatchContext = createContext<TasksDispatchers | null>(null);
+const AuthoritativeTaskContext = createContext<AuthoritativeTaskVersions | null>(null);
 
 function commitTasksState(
   _currentState: TasksState,
@@ -145,23 +166,70 @@ function commitTasksState(
   return nextState;
 }
 
+type TaskIntent = {
+  generation: number;
+  status: "queued" | "sent" | "uncertain";
+  abandoned?: boolean;
+  targetId?: string;
+  operation: TaskAckOperation;
+  startedAt: number;
+  makeAction: (state: TasksState) => TasksAction | null;
+  send: (action: TasksAction | null) => Promise<unknown>;
+  transport: "json" | "legacy";
+  finish: ReturnType<typeof beginTaskSync>;
+  verify?: (tasks: Task[]) => boolean;
+};
+
 export function TasksProvider({
   projectId,
   actorId,
   children,
   initialTasks,
+  initialTasksEpoch = null,
   initialPreviousLane,
 }: {
   projectId: string;
   actorId: UserId;
   children: ReactNode;
   initialTasks?: Task[];
+  initialTasksEpoch?: string | null;
   initialPreviousLane?: Record<string, LaneId>;
 }) {
+  const router = useRouter();
+  const browserFreshness = useSyncExternalStore(
+    subscribeTaskSnapshotEpoch,
+    readTaskSnapshotFreshness,
+    () => serverTaskSnapshotFreshness(initialTasksEpoch),
+  );
   const [state, commitState] = useReducer(commitTasksState, {
     tasks: (initialTasks ?? SEED_TASKS).map((t) => ({ ...t })),
     previousLane: initialPreviousLane ?? {},
   });
+  const [authoritativeVersions, setAuthoritativeVersions] = useState<AuthoritativeTaskVersions>(
+    () => new Map(),
+  );
+  const authoritativeVersionsRef = useRef(authoritativeVersions);
+  const baseRef = useRef<TasksState>({
+    tasks: (initialTasks ?? SEED_TASKS).map((task) => ({ ...task })),
+    previousLane: initialPreviousLane ?? {},
+  });
+  const acceptedEpochRef = useRef<string | null>(initialTasksEpoch);
+  const acceptedFreshnessRef = useRef(serverTaskSnapshotFreshness(initialTasksEpoch));
+  const acceptedSnapshotSerialRef = useRef(0);
+  const seedAcceptedRef = useRef(false);
+  const quarantinedRef = useRef(false);
+  const cookieUnavailableRef = useRef(false);
+  const generationRef = useRef(0);
+  const pendingRef = useRef<TaskIntent[]>([]);
+  const activeIntentRef = useRef<TaskIntent | null>(null);
+  const pumpingRef = useRef(false);
+  const dirtyRef = useRef(false);
+  const readingRef = useRef(false);
+  const refreshNeededRef = useRef(false);
+  const readStaleRetriesRef = useRef(0);
+  const readRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pumpRef = useRef<() => void>(() => {});
+  const readRef = useRef<() => void>(() => {});
 
   // Track latest state so dispatchers can capture pre-mutation
   // snapshots for revert without becoming stale closures or being
@@ -171,8 +239,21 @@ export function TasksProvider({
   const stateRef = useRef(state);
   const mounted = useRef(false);
   useEffect(() => {
+    const mountedGeneration = generationRef.current;
     mounted.current = true;
-    return () => { mounted.current = false; };
+    return () => {
+      mounted.current = false;
+      generationRef.current = mountedGeneration + 1;
+      const active = activeIntentRef.current;
+      const sent = new Set(pendingRef.current.filter((intent) => intent.status !== "queued"));
+      if (active && active.status !== "queued") sent.add(active);
+      if (sent.size) invalidateTaskSnapshotEpoch();
+      for (const intent of sent) intent.abandoned = true;
+      for (const intent of pendingRef.current) intent.finish.cancel();
+      if (active && !pendingRef.current.includes(active)) active.finish.cancel();
+      pendingRef.current = [];
+      if (readRetryTimerRef.current) clearTimeout(readRetryTimerRef.current);
+    };
   }, []);
   const dispatch = useCallback(
     (action: TasksAction) => {
@@ -182,129 +263,316 @@ export function TasksProvider({
     },
     [commitState],
   );
+  const rebuild = useCallback(() => {
+    let next = baseRef.current;
+    for (const intent of pendingRef.current) {
+      const action = intent.makeAction(next);
+      if (action) next = tasksReducer(next, action);
+    }
+    stateRef.current = next;
+    commitState(next);
+  }, []);
 
-  // Realtime cross-tab sync: subscribe to SSE peer-mutation events
-  // and replace local state with the server's authoritative result.
-  // The provider's own optimistic + reconcile path already handles
-  // this tab's mutations; this hook only reacts to peer events.
-  useRealtimeSync({
-    projectId,
-    actorId,
-    onChange: (fresh) => dispatch({ type: "hydrate", tasks: fresh }),
-  });
+  const publishBase = useCallback((fresh: Task[], settledAction: TasksAction | null = null) => {
+    const advanced = settledAction ? tasksReducer(baseRef.current, settledAction) : baseRef.current;
+    baseRef.current = { tasks: fresh.map((task) => ({ ...task })), previousLane: advanced.previousLane };
+    const versions = reconcileAuthoritativeTasks(authoritativeVersionsRef.current, fresh);
+    authoritativeVersionsRef.current = versions;
+    setAuthoritativeVersions(versions);
+    acceptedSnapshotSerialRef.current++;
+    rebuild();
+  }, [rebuild]);
 
-  // When the server-rendered layout passes a fresh `initialTasks`
-  // (after revalidatePath fires for things like comment counts),
-  // hydrate the client store. The reference identity of the array
-  // is the change signal, same array reference means no work.
-  const lastInitialRef = useRef(initialTasks);
-  useEffect(() => {
-    if (!initialTasks) return;
-    if (initialTasks === lastInitialRef.current) return;
-    lastInitialRef.current = initialTasks;
-    dispatch({ type: "hydrate", tasks: initialTasks });
-  }, [dispatch, initialTasks]);
+  const markDirty = useCallback(() => {
+    dirtyRef.current = true;
+    readStaleRetriesRef.current = 0;
+    readRef.current();
+  }, []);
 
-  /** Run an optimistic action: dispatch locally for snappy UI, then
-   *  reconcile with the server's authoritative result. Revert on
-   *  failure. */
-  const withServerSync = useCallback(
-    (optimistic: () => void, server: () => Promise<Task[]>) => {
-      // Demo/review posture: the server actions are stateless no-ops that
-      // return the seed, so reconciling would visibly revert every edit
-      // ~1s after it was made — a board that appears to reject its user.
-      // The optimistic state IS the session's truth (in-memory only; the
-      // demo safety invariant means no real DB is reachable either way).
-      if (isDemoMode()) {
-        optimistic();
+  const readTasks = useCallback(() => {
+    if (!mounted.current || readingRef.current || pumpingRef.current ||
+        (pendingRef.current.length && !quarantinedRef.current) || !dirtyRef.current) return;
+    dirtyRef.current = false;
+    readingRef.current = true;
+    const epoch = readTaskSnapshotEpoch();
+    const freshness = readTaskSnapshotFreshness();
+    const snapshotSerial = acceptedSnapshotSerialRef.current;
+    const generation = generationRef.current;
+    void getTasksAction(projectId).then((fresh) => {
+      if (!mounted.current || generation !== generationRef.current) return;
+      if (readTaskSnapshotEpoch() !== epoch || readTaskSnapshotFreshness() !== freshness ||
+          acceptedSnapshotSerialRef.current !== snapshotSerial ||
+          (pendingRef.current.length && !quarantinedRef.current)) {
+        dirtyRef.current = true;
+        readStaleRetriesRef.current++;
         return;
       }
-      const prior = stateRef.current.tasks;
-      optimistic();
-      const finishSync = beginTaskSync();
-      startTransition(async () => {
-        try {
-          const fresh = await server();
-          dispatch({ type: "hydrate", tasks: fresh });
-          finishSync();
-        } catch (err) {
-          console.warn("tasks: server action failed; reverting", err);
-          dispatch({ type: "hydrate", tasks: prior });
-          finishSync(err);
+      const uncertain = pendingRef.current[0];
+      if (uncertain?.status === "uncertain") {
+        if ((epoch === null && !(cookieUnavailableRef.current && uncertain.transport === "legacy")) ||
+            (uncertain.verify && !uncertain.verify(fresh))) return;
+        pendingRef.current.shift();
+        refreshNeededRef.current = true;
+      }
+      acceptedEpochRef.current = epoch;
+      acceptedFreshnessRef.current = freshness;
+      readStaleRetriesRef.current = 0;
+      quarantinedRef.current = false;
+      seedAcceptedRef.current = true;
+      publishBase(fresh);
+      pumpRef.current();
+    }).catch((error) => {
+      console.warn("tasks: fresh read failed", error);
+    }).finally(() => {
+      readingRef.current = false;
+      if (dirtyRef.current && readStaleRetriesRef.current <= 2 &&
+          (!pendingRef.current.length || quarantinedRef.current)) {
+        readRetryTimerRef.current = setTimeout(() => {
+          readRetryTimerRef.current = null;
+          readRef.current();
+        }, 100);
+      }
+    });
+  }, [projectId, publishBase]);
+  useEffect(() => { readRef.current = readTasks; }, [readTasks]);
+
+  // SSE is a dirty signal; only this Provider can accept a scope/epoch-fenced read.
+  useRealtimeSync({ projectId, actorId, onDirty: markDirty });
+
+  const lastInitialRef = useRef<Task[] | undefined>(undefined);
+  useEffect(() => {
+    if (!initialTasks) return;
+    if (isDemoMode()) {
+      seedAcceptedRef.current = true;
+      return;
+    }
+    if (initialTasks === lastInitialRef.current && seedAcceptedRef.current) return;
+    lastInitialRef.current = initialTasks;
+    const current = readTaskSnapshotEpoch();
+    if (current === null) {
+      // Establish the marker during bootstrap, before the first gesture, then
+      // read under it. A blocked cookie remains on the guarded legacy path.
+      ensureTaskSnapshotEpoch();
+      quarantinedRef.current = true;
+      markDirty();
+      return;
+    }
+    if (current !== initialTasksEpoch ||
+        readTaskSnapshotFreshness() !== serverTaskSnapshotFreshness(initialTasksEpoch) ||
+        pendingRef.current.length ||
+        cookieUnavailableRef.current) {
+      if (!seedAcceptedRef.current) quarantinedRef.current = true;
+      markDirty();
+      return;
+    }
+    acceptedEpochRef.current = current;
+    acceptedFreshnessRef.current = readTaskSnapshotFreshness();
+    seedAcceptedRef.current = true;
+    quarantinedRef.current = false;
+    publishBase(initialTasks);
+    pumpRef.current();
+  }, [initialTasks, initialTasksEpoch, markDirty, publishBase]);
+
+  useEffect(() => {
+    if (isDemoMode()) return;
+    if (!mounted.current || !seedAcceptedRef.current) return;
+    if (browserFreshness === acceptedFreshnessRef.current) return;
+    quarantinedRef.current = true;
+    authoritativeVersionsRef.current = new Map();
+    setAuthoritativeVersions(authoritativeVersionsRef.current);
+    markDirty();
+  }, [browserFreshness, markDirty]);
+
+  const pump = useCallback(() => {
+    if (!mounted.current || pumpingRef.current || quarantinedRef.current || !seedAcceptedRef.current) return;
+    const head = pendingRef.current[0];
+    if (!head) {
+      if (refreshNeededRef.current) {
+        refreshNeededRef.current = false;
+        router.refresh();
+      }
+      if (dirtyRef.current) readRef.current();
+      return;
+    }
+    if (head.status !== "queued") return;
+    pumpingRef.current = true;
+    activeIntentRef.current = head;
+    const expectedEpoch = readTaskSnapshotEpoch();
+    const expectedFreshness = readTaskSnapshotFreshness();
+    const sameScope = () => mounted.current && head.generation === generationRef.current;
+    let headRemoved = false;
+    const recover = async (error: unknown) => {
+      head.status = "uncertain";
+      const current = readTaskSnapshotEpoch();
+      const legacyWithoutCookie = head.transport === "legacy" &&
+        cookieUnavailableRef.current && expectedEpoch === null && current === null;
+      const rotated = current === expectedEpoch
+        ? legacyWithoutCookie ? null : rotateTaskSnapshotEpoch(expectedEpoch)
+        : current;
+      if (!rotated && !legacyWithoutCookie) {
+        quarantinedRef.current = true;
+        head.finish(error, true, true);
+        return;
+      }
+      quarantinedRef.current = true;
+      const recoveryFreshness = readTaskSnapshotFreshness();
+      try {
+        const fresh = legacyWithoutCookie
+          ? await getTasksAction(projectId)
+          : await readTaskSnapshot(projectId);
+        if (!sameScope() || readTaskSnapshotEpoch() !== rotated ||
+            readTaskSnapshotFreshness() !== recoveryFreshness ||
+            (head.verify && !head.verify(fresh))) {
+          quarantinedRef.current = true;
+          return;
         }
-      });
-    },
-    [dispatch],
-  );
+        if (!headRemoved) pendingRef.current.shift();
+        acceptedEpochRef.current = rotated;
+        acceptedFreshnessRef.current = recoveryFreshness;
+        quarantinedRef.current = false;
+        publishBase(fresh);
+        refreshNeededRef.current = true;
+      } catch (readError) {
+        quarantinedRef.current = true;
+        console.warn("tasks: uncertain change needs a fresh read", readError);
+      } finally {
+        head.finish(error, true, true);
+      }
+    };
+    void (async () => {
+      try {
+        if (head.targetId && !baseRef.current.tasks.some((task) => task.id === head.targetId)) {
+          throw new TaskMutationRefusedError();
+        }
+        const action = head.makeAction(baseRef.current);
+        if (expectedEpoch !== acceptedEpochRef.current ||
+            expectedFreshness !== acceptedFreshnessRef.current) throw new Error("task_snapshot_epoch_changed");
+        head.status = "sent";
+        const result = await head.send(action);
+        if (!sameScope()) return;
+        // Bound JSON results already carry the exact displayed Project.
+        // Retained Server Actions can return ambient neutral arrays, so their
+        // result is deliberately discarded in favor of this scoped read.
+        const fresh = head.transport === "json"
+          ? result as Task[]
+          : await getTasksAction(projectId);
+        if (!sameScope()) return;
+        if (readTaskSnapshotEpoch() !== expectedEpoch ||
+            readTaskSnapshotFreshness() !== expectedFreshness ||
+            (head.verify && !head.verify(fresh))) throw new Error("task_snapshot_not_current");
+        pendingRef.current.shift();
+        headRemoved = true;
+        publishBase(fresh, action);
+        if (head.transport === "legacy" && cookieUnavailableRef.current && expectedEpoch === null) {
+          invalidateTaskSnapshotEpoch();
+          acceptedEpochRef.current = null;
+          acceptedFreshnessRef.current = readTaskSnapshotFreshness();
+          refreshNeededRef.current = true;
+          head.finish();
+          return;
+        }
+        const rotated = rotateTaskSnapshotEpoch(expectedEpoch);
+        if (!rotated) {
+          await recover(new Error("task_snapshot_epoch_unavailable"));
+          return;
+        }
+        acceptedEpochRef.current = rotated;
+        acceptedFreshnessRef.current = readTaskSnapshotFreshness();
+        refreshNeededRef.current = true;
+        head.finish();
+      } catch (error) {
+        if (!sameScope()) return;
+        if (error instanceof TaskMutationRefusedError ||
+            error instanceof TaskMutationRequestRejectedError) {
+          pendingRef.current.shift();
+          rebuild();
+          head.finish(error, true);
+        } else {
+          await recover(error);
+        }
+      } finally {
+        pumpingRef.current = false;
+        if (activeIntentRef.current === head) activeIntentRef.current = null;
+        if (!sameScope() && head.abandoned) invalidateTaskSnapshotEpoch();
+        if (sameScope() && !quarantinedRef.current) pumpRef.current();
+      }
+    })();
+  }, [projectId, publishBase, rebuild, router]);
+  useEffect(() => {
+    pumpRef.current = pump;
+    pumpRef.current();
+  }, [pump]);
+
+  const enqueue = useCallback((intent: Omit<TaskIntent, "generation" | "finish" | "status">) => {
+    if (intent.targetId && !stateRef.current.tasks.some((task) => task.id === intent.targetId)) return;
+    if (isDemoMode()) {
+      const action = intent.makeAction(stateRef.current);
+      if (action) dispatch(action);
+      return;
+    }
+    const current = readTaskSnapshotEpoch() ?? ensureTaskSnapshotEpoch();
+    if (current === null) cookieUnavailableRef.current = true;
+    if (current !== acceptedEpochRef.current) {
+      quarantinedRef.current = true;
+      markDirty();
+    }
+    const queued: TaskIntent = {
+      ...intent,
+      generation: generationRef.current,
+      status: "queued",
+      finish: beginTaskSync(intent.operation, intent.startedAt),
+    };
+    pendingRef.current.push(queued);
+    rebuild();
+    pumpRef.current();
+  }, [dispatch, markDirty, rebuild]);
 
   // Reconciliation belongs to this provider's displayed Project. The runtime
   // keys the provider by verified actor/Project so old optimistic state and
   // pending mutation callbacks cannot hydrate a replacement context.
   const dispatchers = useMemo<TasksDispatchers>(
     () => ({
-      moveTask: (id, toLane) =>
-        withServerSync(
-          () => dispatch({ type: "move", id, toLane }),
-          () => moveTaskAction(id, toLane),
-        ),
+      moveTask: (id, toLane) => {
+        const at = new Date();
+        enqueue({ targetId: id, operation: "other", startedAt: performance.now(), transport: "legacy",
+          makeAction: () => ({ type: "move", id, toLane, at }),
+          send: () => moveTaskAction(id, toLane) });
+      },
       moveTaskToColumn: (id, columnKey) => {
         const isSystemLane = (LANE_ORDER as string[]).includes(columnKey);
-        const prior = stateRef.current.tasks;
-        // Optimistic: update local state immediately.
-        dispatch({ type: "moveToColumn", id, columnKey, isSystemLane });
-        if (isDemoMode()) return;
-        // Server sync: fire and reconcile via getTasksAction after completion.
-        startTransition(async () => {
-          try {
-            await moveTaskToColumnAction(id, columnKey);
-            if (!mounted.current) return;
-            const fresh = await getTasksAction(projectId);
-            if (!mounted.current) return;
-            // Only accept the server's copy when it actually carries the move.
-            // The unconditional hydrate meant any surface whose read does not
-            // reflect the write — a deterministic demo board, a replica that
-            // has not caught up — silently reverted the operator's drag a beat
-            // after it landed, and only for custom columns, because the system
-            // lanes reconcile through withServerSync and never re-read here.
+        const at = new Date();
+        enqueue({ targetId: id, operation: "other", startedAt: performance.now(), transport: "legacy",
+          makeAction: () => ({ type: "moveToColumn", id, columnKey, isSystemLane, at }),
+          send: () => moveTaskToColumnAction(id, columnKey),
+          verify: (fresh) => {
             const landed = fresh.find((task) => task.id === id);
-            const effective = landed ? landed.boardColumnKey || landed.lane : null;
-            if (effective === columnKey) dispatch({ type: "hydrate", tasks: fresh });
-          } catch (err) {
-            if (!mounted.current) return;
-            console.warn("tasks: moveTaskToColumn failed; reverting", err);
-            dispatch({ type: "hydrate", tasks: prior });
-          }
-        });
+            return (landed ? landed.boardColumnKey || landed.lane : null) === columnKey;
+          } });
       },
       reorderTask: (id, toLane, toIndex) => {
-        const position = computeDropPosition(
-          stateRef.current.tasks,
-          id,
-          toLane,
-          toIndex,
-        );
-        withServerSync(
-          () =>
-            dispatch({
-              type: "place",
-              id,
-              toLane,
-              toIndex,
-              position,
-            }),
-          () => reorderTaskAction(id, toLane, position),
-        );
+        const at = new Date();
+        enqueue({ targetId: id, operation: "other", startedAt: performance.now(), transport: "legacy",
+          makeAction: (current) => ({ type: "place", id, toLane, toIndex,
+            position: computeDropPosition(current.tasks, id, toLane, toIndex), at }),
+          send: (action) => {
+            if (action?.type !== "place") throw new Error("task_reorder_action_missing");
+            return reorderTaskAction(id, toLane, action.position);
+          } });
       },
-      updateTask: (id, patch) =>
-        withServerSync(
-          () => dispatch({ type: "update", id, patch }),
-          () => updateTaskAction(id, patch),
-        ),
-      setMilestone: (id, isMilestone) =>
-        withServerSync(
-          () => dispatch({ type: "update", id, patch: { isMilestone } }),
-          () => setTaskMilestoneAction(id, isMilestone),
-        ),
+      updateTask: (id, patch) => {
+        const at = new Date();
+        const json = ensureTaskSnapshotEpoch() !== null;
+        if (!json) cookieUnavailableRef.current = true;
+        enqueue({ targetId: id, operation: "edit", startedAt: performance.now(), transport: json ? "json" : "legacy",
+          makeAction: () => ({ type: "update", id, patch, at }),
+          send: () => json ? editTask(id, patch, projectId) : updateTaskAction(id, patch) });
+      },
+      setMilestone: (id, isMilestone) => {
+        const at = new Date();
+        enqueue({ targetId: id, operation: "other", startedAt: performance.now(), transport: "legacy",
+          makeAction: () => ({ type: "update", id, patch: { isMilestone }, at }),
+          send: () => setTaskMilestoneAction(id, isMilestone) });
+      },
       addTask: (input) => {
         const task: Task = {
           id: generateId(),
@@ -324,83 +592,62 @@ export function TasksProvider({
           parentTaskId: null,
           updatedAt: new Date(),
         };
-        withServerSync(
-          () => dispatch({ type: "add", task }),
-          () => addTaskAction({ ...input, id: task.id, projectId }),
-        );
+        const json = ensureTaskSnapshotEpoch() !== null;
+        if (!json) cookieUnavailableRef.current = true;
+        enqueue({ operation: "create", startedAt: performance.now(), transport: json ? "json" : "legacy",
+          makeAction: () => ({ type: "add", task }),
+          send: () => json
+            ? createTask({ ...input, id: task.id }, projectId)
+            : addTaskAction({ ...input, id: task.id, projectId }) });
         return task;
       },
-      removeTask: (id) =>
-        withServerSync(
-          () => dispatch({ type: "remove", id }),
-          () => removeTaskAction(id),
-        ),
-      archiveTask: (id) =>
-        // Archived tasks leave every active view, so optimistically drop the
-        // row from board state exactly like a delete; the server sets
-        // archived_at instead of deleting, so it can be restored later.
-        withServerSync(
-          () => dispatch({ type: "remove", id }),
-          () => setTaskArchivedAction(id, true),
-        ),
+      removeTask: (id) => enqueue({ targetId: id, operation: "other", startedAt: performance.now(),
+        transport: "legacy", makeAction: () => ({ type: "remove", id }),
+        send: () => removeTaskAction(id) }),
+      archiveTask: (id) => enqueue({ targetId: id, operation: "other", startedAt: performance.now(),
+        transport: "legacy", makeAction: () => ({ type: "remove", id }),
+        send: () => setTaskArchivedAction(id, true) }),
       toggleComplete: (id) => {
         const task = stateRef.current.tasks.find((item) => item.id === id);
-        if (task?.lane !== "done") maybeFireFirstCompletion();
-        withServerSync(
-          () => dispatch({ type: "toggleComplete", id }),
-          () => toggleCompleteAction(id),
-        );
+        if (task && task.lane !== "done") maybeFireFirstCompletion();
+        const at = new Date();
+        const json = ensureTaskSnapshotEpoch() !== null;
+        if (!json) cookieUnavailableRef.current = true;
+        enqueue({ targetId: id, operation: "complete", startedAt: performance.now(), transport: json ? "json" : "legacy",
+          makeAction: () => ({ type: "toggleComplete", id, at }),
+          send: () => json ? toggleTaskComplete(id, projectId) : toggleCompleteAction(id) });
       },
-      duplicateTask: (id) => {
-        const finishSync = beginTaskSync();
-        startTransition(async () => {
-          try {
-            const fresh = await duplicateTaskAction(id);
-            dispatch({ type: "hydrate", tasks: fresh });
-            finishSync();
-          } catch (err) {
-            console.warn("tasks: duplicateTask failed", err);
-            finishSync(err);
-          }
-        });
-      },
+      duplicateTask: (id) => enqueue({ targetId: id, operation: "other", startedAt: performance.now(),
+        transport: "legacy", makeAction: () => null, send: () => duplicateTaskAction(id) }),
       setParent: (id, parentId) => {
-        const prior = stateRef.current.tasks;
-        const finishSync = beginTaskSync();
-        // Optimistically remove from board when reparenting (task becomes a subtask
-        // and leaves the flat lane view). Promoting to top-level (null) has no
-        // optimistic visual since the task re-enters at an unknown position.
-        if (parentId !== null) dispatch({ type: "remove", id });
-        startTransition(async () => {
-          try {
+        enqueue({ targetId: id, operation: "other", startedAt: performance.now(), transport: "legacy",
+          makeAction: () => parentId === null ? null : { type: "remove", id },
+          send: async () => {
             const result = await setParentAction(id, parentId);
-            if (result.ok) {
-              dispatch({ type: "hydrate", tasks: result.tasks });
-              finishSync();
-            } else {
-              console.warn("tasks: setParent failed;", result.error);
-              dispatch({ type: "hydrate", tasks: prior });
-              finishSync(new Error(result.error));
-            }
-          } catch (err) {
-            console.warn("tasks: setParent threw; reverting", err);
-            dispatch({ type: "hydrate", tasks: prior });
-            finishSync(err);
-          }
-        });
+            if (!result.ok) throw new TaskMutationRefusedError();
+            return result.tasks;
+          } });
       },
     }),
-
-    [dispatch, withServerSync, projectId],
+    [enqueue, projectId],
   );
 
   return (
-    <TasksStateContext.Provider value={state}>
-      <TasksDispatchContext.Provider value={dispatchers}>
-        {children}
-      </TasksDispatchContext.Provider>
-    </TasksStateContext.Provider>
+    <AuthoritativeTaskContext.Provider value={authoritativeVersions}>
+      <TasksStateContext.Provider value={state}>
+        <TasksDispatchContext.Provider value={dispatchers}>
+          {children}
+        </TasksDispatchContext.Provider>
+      </TasksStateContext.Provider>
+    </AuthoritativeTaskContext.Provider>
   );
+}
+
+/** Changes only when the server's task snapshot changes, never optimistically. */
+export function useAuthoritativeTaskRevision(taskId: string): number {
+  const versions = useContext(AuthoritativeTaskContext);
+  if (!versions) throw new Error("useAuthoritativeTaskRevision must be used within <TasksProvider>");
+  return versions.get(taskId)?.revision ?? 0;
 }
 
 export function useTasksState(): TasksState {

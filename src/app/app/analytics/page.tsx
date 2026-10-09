@@ -44,7 +44,7 @@ function cardStats(analytics: ProjectAnalytics, standing: ProjectStanding): Proj
  */
 export default async function AnalyticsPage({ searchParams }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
-} = {}) {
+}) {
   await requireAppAccessTasks();
   const params = await searchParams ?? {};
   const one = (key: string) => (typeof params[key] === "string" ? (params[key] as string) : null);

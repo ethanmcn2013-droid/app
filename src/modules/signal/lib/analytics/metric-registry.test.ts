@@ -117,3 +117,24 @@ describe("metric registry", () => {
     );
   });
 });
+
+describe("canonical archive lifecycle in current and historical metrics", () => {
+  it("excludes archived open work from current concerns and owner workload", () => {
+    const fixture = getAnalyticsFixture("signature");
+    const archived = Object.assign(structuredClone(fixture.snapshot.tasks[0]), { id: "archived-open-contract", archived: true, terminal: false, completedAt: null });
+    fixture.snapshot.tasks = [archived]; fixture.snapshot.events = []; fixture.snapshot.notes = []; fixture.snapshot.milestones = [];
+    const metrics = calculateMetrics(fixture.snapshot, fixture.query);
+    assert.equal(metrics.open_work.value?.count, 0);
+    for (const key of ["open_overdue_work", "open_work_age", "stalled_work", "blocked_work", "unowned_work", "workload_distribution"] as const) {
+      assert.ok(metrics[key].sources.every(source => source.id !== archived.id), `${key} must exclude archived current concerns`);
+    }
+  });
+  it("retains archived top-level completion in historical work-completed totals", () => {
+    const fixture = getAnalyticsFixture("signature");
+    const inPeriod = new Date((Date.parse(fixture.query.period.start) + Date.parse(fixture.query.period.end)) / 2).toISOString();
+    const archived = Object.assign(structuredClone(fixture.snapshot.tasks[0]), { id: "archived-completed-contract", archived: true, terminal: true, completedAt: inPeriod });
+    fixture.snapshot.tasks = [archived]; fixture.snapshot.events = [];
+    const metrics = calculateMetrics(fixture.snapshot, fixture.query);
+    assert.equal(metrics.work_completed.value?.count, 1); assert.equal(metrics.open_work.value?.count, 0);
+  });
+});

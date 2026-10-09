@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
-import { createProjectDriveGrantRepairRoute } from "./route";
+import { createProjectDriveGrantRepairRoute } from "./route-handler";
 
 const originalSecret = process.env.CRON_SECRET;
 const originalRevokeFlag =

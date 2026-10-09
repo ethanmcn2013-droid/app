@@ -1,9 +1,36 @@
 const DAY = 86_400_000;
+import type { Deadline } from "../data/deadline";
+import type { TaskSignal } from "./types";
+
+export function signalDeadline(signal: TaskSignal): Deadline {
+  if (signal.deadline !== undefined) return signal.deadline;
+  return signal.dueAt == null ? null : { kind: "instant", at: signal.dueAt };
+}
 
 type CalendarParts = { year: number; month: number; day: number };
 
+// Formatters retain only fixed formatting rules, never timestamps, task data,
+// authorization or calculated dates. Bound the pool across reader timezones.
+const FORMATTER_CAP = 64;
+const formatters = new Map<string, Intl.DateTimeFormat>();
+
+function calendarFormatter(locale: string, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  const key = JSON.stringify([locale, options]);
+  const existing = formatters.get(key);
+  if (existing) {
+    formatters.delete(key);
+    formatters.set(key, existing);
+    return existing;
+  }
+  // An invalid timezone must still throw, without changing the retained pool.
+  const formatter = new Intl.DateTimeFormat(locale, options);
+  if (formatters.size >= FORMATTER_CAP) formatters.delete(formatters.keys().next().value!);
+  formatters.set(key, formatter);
+  return formatter;
+}
+
 function partsAt(timestamp: number, timezone: string): CalendarParts {
-  const formatter = new Intl.DateTimeFormat("en-CA", {
+  const formatter = calendarFormatter("en-CA", {
     timeZone: timezone,
     year: "numeric",
     month: "2-digit",
@@ -18,7 +45,75 @@ function partsAt(timestamp: number, timezone: string): CalendarParts {
 }
 
 function ordinal(parts: CalendarParts): number {
-  return Math.floor(Date.UTC(parts.year, parts.month - 1, parts.day) / DAY);
+  const date = new Date(0);
+  date.setUTCFullYear(parts.year, parts.month - 1, parts.day);
+  return Math.floor(date.getTime() / DAY);
+}
+
+/** A stored calendar date has no time of day and no timezone conversion. */
+export function dateOrdinal(value: string): number {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) throw new RangeError("Invalid calendar date");
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(0);
+  date.setUTCFullYear(year, month - 1, day);
+  const timestamp = date.getTime();
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+    throw new RangeError("Invalid calendar date");
+  }
+  return Math.floor(timestamp / DAY);
+}
+
+export function deadlineDayDifference(deadline: Deadline, origin: number, timezone: string): number | null {
+  if (!deadline || deadline.kind === "unknown") return null;
+  return deadline.kind === "date-only"
+    ? dateOrdinal(deadline.date) - ordinal(partsAt(origin, timezone))
+    : calendarDayDifference(deadline.at, origin, timezone);
+}
+
+/** Timed deadlines expire at their instant; calendar dates expire after their local day. */
+export function deadlineIsOverdue(deadline: Deadline, now: number, timezone: string): boolean {
+  if (!deadline || deadline.kind === "unknown") return false;
+  return deadline.kind === "instant"
+    ? deadline.at < now
+    : deadlineDayDifference(deadline, now, timezone)! < 0;
+}
+
+export function compareDeadlines(a: Deadline, b: Deadline, timezone: string, now?: number): number {
+  const day = (deadline: Deadline) => {
+    if (!deadline || deadline.kind === "unknown") return Number.POSITIVE_INFINITY;
+    return deadline.kind === "date-only"
+      ? dateOrdinal(deadline.date)
+      : ordinal(partsAt(deadline.at, timezone));
+  };
+  const aDay = day(a), bDay = day(b);
+  if (aDay !== bDay) return aDay - bDay;
+  if (now !== undefined) {
+    const expired = Number(deadlineIsOverdue(b, now, timezone)) - Number(deadlineIsOverdue(a, now, timezone));
+    if (expired !== 0) return expired;
+  }
+  // An unexpired calendar date has no clock time. Keep the input's stable
+  // order beside timed entries on the same day rather than invent midnight.
+  if (a?.kind === "date-only" || b?.kind === "date-only") return 0;
+  if (a?.kind === "instant" && b?.kind === "instant") return a.at - b.at;
+  return 0;
+}
+
+export function deadlineWeekday(deadline: Deadline, timezone: string): string | null {
+  if (!deadline || deadline.kind === "unknown") return null;
+  if (deadline.kind === "instant") return localWeekday(deadline.at, timezone);
+  return calendarFormatter("en-IE", { timeZone: "UTC", weekday: "long" })
+    .format(new Date(`${deadline.date}T00:00:00.000Z`));
+}
+
+export function deadlineShortDate(deadline: Deadline, timezone: string): string | null {
+  if (!deadline || deadline.kind === "unknown") return null;
+  return calendarFormatter("en-GB", {
+    timeZone: deadline.kind === "date-only" ? "UTC" : timezone,
+    day: "numeric", month: "short",
+  }).format(new Date(deadline.kind === "date-only" ? `${deadline.date}T00:00:00.000Z` : deadline.at));
 }
 
 /** Calendar-day difference in an explicit IANA zone, immune to 23/25h DST days. */
@@ -31,7 +126,7 @@ export function calendarDayDifference(
 }
 
 export function localHour(timestamp: number, timezone: string): number {
-  const value = new Intl.DateTimeFormat("en-GB", {
+  const value = calendarFormatter("en-GB", {
     timeZone: timezone,
     hour: "2-digit",
     hourCycle: "h23",
@@ -40,7 +135,7 @@ export function localHour(timestamp: number, timezone: string): number {
 }
 
 export function localWeekday(timestamp: number, timezone: string): string {
-  return new Intl.DateTimeFormat("en-IE", {
+  return calendarFormatter("en-IE", {
     timeZone: timezone,
     weekday: "long",
   }).format(new Date(timestamp));
@@ -52,7 +147,7 @@ export function localWeekday(timestamp: number, timezone: string): string {
  * the calendar conversion DST-aware.
  */
 export function briefingTimestampLabel(timestamp: number, timezone: string): string {
-  const parts = new Intl.DateTimeFormat("en-IE", {
+  const parts = calendarFormatter("en-IE", {
     timeZone: timezone,
     weekday: "long",
     hour: "2-digit",
@@ -66,21 +161,4 @@ export function briefingTimestampLabel(timestamp: number, timezone: string): str
   const minute = read("minute");
   if (!weekday || !hour || !minute) throw new RangeError("Invalid briefing timestamp");
   return `${weekday} ${hour.padStart(2, "0")}:${minute.padStart(2, "0")}`;
-}
-
-/** Parse a canonical date-only field at UTC noon so local DST offsets never change its day. */
-export function dateOnlyToTimestamp(value: string): number | null {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!match) return null;
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  const timestamp = Date.UTC(year, month - 1, day, 12);
-  const date = new Date(timestamp);
-  if (
-    date.getUTCFullYear() !== year ||
-    date.getUTCMonth() !== month - 1 ||
-    date.getUTCDate() !== day
-  ) return null;
-  return timestamp;
 }

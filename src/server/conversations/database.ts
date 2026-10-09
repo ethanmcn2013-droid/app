@@ -14,10 +14,30 @@ export type ConversationSqlResult = Readonly<{
 
 export interface ConversationSqlExecutor {
   execute(statement: ConversationSqlStatement | string): Promise<ConversationSqlResult>;
+  /** Ordered statements on this already-open transaction; never client.batch. */
+  batch?(statements: readonly (ConversationSqlStatement | string)[]): Promise<readonly ConversationSqlResult[]>;
+}
+
+export async function executeConversationBatch(
+  executor: ConversationSqlExecutor,
+  statements: readonly (ConversationSqlStatement | string)[],
+): Promise<readonly ConversationSqlResult[]> {
+  if (statements.length === 0) return [];
+  if (executor.batch) {
+    const results = await executor.batch(statements);
+    if (results.length !== statements.length || results.some(result => !result || !Array.isArray(result.rows))) {
+      throw new Error("conversation_batch_results_invalid");
+    }
+    return results;
+  }
+  const results: ConversationSqlResult[] = [];
+  for (const statement of statements) results.push(await executor.execute(statement));
+  return results;
 }
 
 export interface ConversationTransactionalClient {
   transaction(mode: "read" | "write"): Promise<ConversationTransaction>;
+  execute?(statement: ConversationSqlStatement | string): Promise<ConversationSqlResult>;
 }
 
 export interface ConversationTransaction extends ConversationSqlExecutor {
@@ -29,6 +49,8 @@ export interface ConversationDatabaseAdapter {
   readonly available: boolean;
   readonly boundary: "remote-interactive-transaction" | "local-serialized-connection" | "unavailable";
   readonly unavailableReason?: string;
+  /** Optional fresh one-statement read, exposed only by the remote adapter. */
+  readStatement?(statement: ConversationSqlStatement | string): Promise<ConversationSqlResult>;
   transaction<T>(
     mode: "read" | "write",
     operation: (executor: ConversationSqlExecutor) => Promise<T>,
@@ -65,6 +87,7 @@ export function createRemoteConversationDatabaseAdapter(input: {
   return {
     available: true,
     boundary: "remote-interactive-transaction",
+    ...(input.client.execute ? { readStatement: (statement: ConversationSqlStatement | string) => input.client.execute!(statement) } : {}),
     transaction: (mode, operation) => runInteractiveTransaction(input.client, mode, operation),
   };
 }
@@ -75,7 +98,7 @@ export function createRemoteConversationDatabaseAdapter(input: {
  * EX-01, so local operations share one explicit queue and one connection.
  */
 export function createLocalConversationDatabaseAdapter(input: {
-  client: ConversationSqlExecutor;
+  client: Pick<ConversationSqlExecutor, "execute">;
 }): ConversationDatabaseAdapter {
   let tail: Promise<void> = Promise.resolve();
 
@@ -99,7 +122,9 @@ export function createLocalConversationDatabaseAdapter(input: {
     transaction: (mode, operation) => queued(async () => {
       await input.client.execute(mode === "write" ? "BEGIN IMMEDIATE" : "BEGIN TRANSACTION");
       try {
-        const value = await operation(input.client);
+        // A native client's batch starts its own transaction. Do not expose it
+        // through this adapter's manually opened, serialized connection.
+        const value = await operation({ execute: statement => input.client.execute(statement) });
         await input.client.execute("COMMIT");
         return value;
       } catch (error) {

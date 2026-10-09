@@ -18,7 +18,7 @@ export const metadata = { title: "Home · Signal Studio" };
  */
 export default async function HomePage({ searchParams }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
-} = {}) {
+}) {
   await requireAppAccessTasks();
 
   const demo = isDemoMode();

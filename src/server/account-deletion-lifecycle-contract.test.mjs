@@ -18,12 +18,27 @@ test("the in-app route fences identity before product and Clerk deletion", () =>
 test("fallback provisioning checks the tombstone in its writer transaction", () => {
   const source = read("src/server/db/ensure-user.ts");
   const transaction = source.indexOf("database.transaction");
-  const fence = source.indexOf("hasAccountDeletionStartedWith(tx, clerkUserId)");
+  const combinedRead = source.indexOf("const [complete] = await tx.select({", transaction);
+  const readEnd = source.indexOf(".limit(1);", combinedRead);
+  const deletionCheck = source.indexOf("if (complete.deletionStarted === 1) return false;", readEnd);
+  const warmAcceptance = source.indexOf("if (complete.userId !== null", deletionCheck);
+  const mutationStarted = source.indexOf("mutationStarted = true;", warmAcceptance);
   const userInsert = source.indexOf("INSERT OR IGNORE INTO users");
 
   assert.ok(transaction >= 0);
-  assert.ok(fence > transaction);
-  assert.ok(userInsert > fence);
+  assert.ok(combinedRead > transaction, "the tombstone must be read inside the writer transaction");
+  assert.ok(readEnd > combinedRead, "the combined read must be awaited before any write");
+  const query = source.slice(combinedRead, readEnd);
+  assert.match(query, /deletionStarted: sql<number>`EXISTS \([\s\S]*?FROM \$\{schema\.meta\}[\s\S]*?WHERE \$\{schema\.meta\.key\} = \$\{accountDeletionTombstoneKey\(clerkUserId\)\}/);
+  assert.match(query, /\.from\(sql`\(SELECT 1\) AS provision_anchor`\)/,
+    "a missing user must still produce a row carrying the tombstone");
+  assert.match(query, /\.leftJoin\(schema\.users, eq\(schema\.users\.clerkId, clerkUserId\)\)/);
+  assert.doesNotMatch(query, /\.where\(eq\(schema\.users\.clerkId/,
+    "a user WHERE clause would discard the tombstone for an absent user");
+  assert.ok(deletionCheck > readEnd, "a tombstone must refuse before warm acceptance");
+  assert.ok(warmAcceptance > deletionCheck, "a missing user must not pass warm completeness");
+  assert.ok(mutationStarted > warmAcceptance && userInsert > mutationStarted,
+    "the deletion fence and warm check must precede the first write");
   assert.match(source, /serializeProvisioning\(database, clerkUserId/);
   assert.match(source, /\{ behavior: "immediate" \}/);
 });
