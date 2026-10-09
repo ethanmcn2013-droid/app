@@ -447,6 +447,7 @@ test("title edits stay dated context while real attention and risks keep their o
   assert.equal(positive.ledger.entries.length, 1);
   assert.equal(positive.ledger.entries[0]?.section, "activity");
   assert.equal(positive.ledger.entries[0]?.text, "Completed records");
+  assert.ok(positive.ledger.entries[0]!.detail);
   assert.match(positive.ledger.entries[0]!.detail, /Saved completion.*2026-07-16T07:00:00.000Z/);
   assert.doesNotMatch(positive.ledger.entries[0]!.detail, /Saved catalogue|08:59:59/);
   assert.equal(positive.model.attention.length + positive.model.risks.length, 0);
