@@ -84,6 +84,23 @@ for (const count of [1, 10]) test(`actual ${count}-target compound commit, typed
     assert.equal(f.instrument.snapshot().executor.writeAttempts, 1); assert.equal(f.instrument.snapshot().readback.readAttempts, 1);
     assert.equal(f.instrument.snapshot().readback.writeAttempts, 0); assert.ok(f.instrument.snapshot().readback.statements >= 4);
     assert.equal(await f.bridge.invoke(), false); assert.equal(f.bridge.snapshot().counters.executorCalls, 1);
+    const instrumented = f.instrument.snapshot();
+    t.diagnostic(`ping-harness-counts ${JSON.stringify({
+      version: "ping-harness-counts/1",
+      targets: count,
+      executorCalls: state.counters.executorCalls,
+      authorizedReceiptCalls: state.counters.authorizedReceiptCalls,
+      localReadbackAttempts: state.counters.localReadbackAttempts,
+      affectedCount: state.receipt?.affectedCount ?? null,
+      changedCount: state.receipt?.changedCount ?? null,
+      activityRows: observed.counts.activities,
+      receiptRows: observed.counts.ping_command_receipts,
+      dbPhases: {
+        executor: instrumented.executor,
+        receipt: instrumented.receipt,
+        readback: instrumented.readback,
+      },
+    })}`);
     assert.ok(state.localCompletionMs !== null && state.localCompletionMs >= 0);
     t.diagnostic(`isolated fixture-open local invocation-to-projection: ${state.localCompletionMs} ms; n=1; targets=${count}; no browser/provider stages`);
   } finally { f.client.close(); }

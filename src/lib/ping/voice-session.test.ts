@@ -48,6 +48,20 @@ test("real PCM ledger drains late partial tail before one commit and final-befor
   assert.equal(f.closed, 1); assert.equal(f.detached, 1);
 });
 
+test("server exact PCM seam forwards original Int16LE bytes without Float32 reinterpretation", async () => {
+  const f = fixture();
+  const bytes = new Uint8Array([1, 128, 1, 0, 254, 127]);
+  f.session.acceptPcmFrame({ type: "pcm_frame", generationId: "voice-gen", connectionEpoch: "voice-epoch",
+    ordinal: 1, format: "pcm_s16le_mono_24000", bytes });
+  assert.deepEqual(JSON.parse(f.sends[0]), { type: "input_audio_buffer.append", audio: "AYABAP5/" });
+  bytes.fill(0); f.session.requestFinish(); f.cut(1, 3); f.emit(ack()); f.emit(final()); await flush();
+  assert.equal(f.session.getSnapshot().counters.appendedBytes, 6); assert.equal(f.interpreted.length, 1);
+  f.session.dispose();
+  const malformed = fixture(); malformed.session.acceptPcmFrame({ type: "pcm_frame", generationId: "voice-gen",
+    connectionEpoch: "voice-epoch", ordinal: 1, format: "pcm_s16le_mono_24000", bytes: new Uint8Array([1]) });
+  assert.equal(malformed.sends.length, 0); assert.equal(malformed.session.getSnapshot().phase, "closed");
+});
+
 test("synchronous commit callback reentrancy sees the reserved pending item, not a second call", async () => {
   const f = fixture(); f.onSend((text) => { if (JSON.parse(text).type === "input_audio_buffer.commit") { f.emit(final()); f.emit(ack()); } });
   f.frame(); f.session.requestFinish(); f.cut(); await flush();

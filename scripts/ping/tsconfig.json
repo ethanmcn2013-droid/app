@@ -9,7 +9,8 @@
   "include": [
     "./proof-contention-worker.ts",
     "./bridge/*.ts",
-    "./prepare-typed-fixture.ts"
+    "./prepare-typed-fixture.ts",
+    "./comparison/*.ts"
   ],
   "exclude": []
 }
