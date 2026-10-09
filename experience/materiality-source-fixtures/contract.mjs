@@ -1,3 +1,27 @@
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
+export const fixtureDefines = Object.freeze({ 'process.env.NODE_ENV': '"production"', 'process.env': '{}' });
+export const navigationSeamSource = 'import React from "react";export default function Link({href,children,...props}){return <a href={href} {...props}>{children}</a>}';
+
+export function fixtureInputReceipt(inputs, root) {
+  const inputHashes = {}, virtualInputs = {};
+  const digest = bytes => createHash('sha256').update(bytes).digest('hex');
+  for (const name of Object.keys(inputs)) {
+    if (name === '<define:process.env>') {
+      virtualInputs[name] = { kind: 'esbuild-define', value: fixtureDefines['process.env'], sha256: digest(fixtureDefines['process.env']) };
+    } else if (name === 'local:link') {
+      virtualInputs[name] = { kind: 'local-navigation-seam', source: navigationSeamSource, sha256: digest(navigationSeamSource) };
+    } else {
+      if (name.startsWith('<') || name.startsWith('local:')) throw Error('Undeclared virtual bundle input: ' + name);
+      // A missing real input must fail rather than disappear from provenance.
+      inputHashes[name] = digest(readFileSync(path.resolve(root, name)));
+    }
+  }
+  return { inputHashes, virtualInputs, defines: fixtureDefines, definesSha256: digest(JSON.stringify(fixtureDefines)) };
+}
+
 export const componentSources = Object.freeze({
   'tasks.state.app-project-loading': 'src/app/app/project/loading.tsx',
   'tasks.state.app-home-loading': 'src/app/app/home/loading.tsx',

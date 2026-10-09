@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { assertFixtureEnvironment, componentIdForPath, componentSources } from './contract.mjs';
+import { assertFixtureEnvironment, componentIdForPath, componentSources, fixtureDefines, navigationSeamSource, fixtureInputReceipt } from './contract.mjs';
 
 const root = path.resolve(fileURLToPath(new URL('../../', import.meta.url)));
 const port = Number(process.env.TASKS_MATERIALITY_PORT ?? 4409);
@@ -36,11 +36,11 @@ const result = await esbuild.build({
   absWorkingDir: root, bundle: true, write: false, metafile: true,
   outdir: output, format: 'iife', platform: 'browser', jsx: 'automatic',
   alias: { '@': path.join(root, 'src') },
-  define: { 'process.env.NODE_ENV': '"production"', 'process.env': '{}' },
+  define: fixtureDefines,
   plugins: [{ name: 'local-navigation-seam', setup(build) {
     build.onResolve({ filter: /^next\/link$/ }, () => ({ path: 'link', namespace: 'local' }));
     build.onLoad({ filter: /^link$/, namespace: 'local' }, () => ({ loader: 'jsx', resolveDir: root,
-      contents: 'import React from "react";export default function Link({href,children,...props}){return <a href={href} {...props}>{children}</a>}' }));
+      contents: navigationSeamSource }));
     build.onResolve({ filter: /^@\/server\// }, () => { throw Error('Server code is outside component fixture scope'); });
   }}],
 });
@@ -53,8 +53,7 @@ const fontClasses = css.flatMap(file => [...fs.readFileSync(path.join(builtRoot,
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 const files = Object.fromEntries(result.outputFiles.map(file => [path.basename(file.path), file.contents]));
 const git = value => execFileSync('git', ['rev-parse', value], { cwd: root, encoding: 'utf8' }).trim();
-const inputHashes = Object.fromEntries(Object.keys(result.metafile.inputs).filter(name => !name.startsWith('local:'))
-  .map(name => [name, digest(fs.readFileSync(path.resolve(root, name)))]));
+const inputReceipt = fixtureInputReceipt(result.metafile.inputs, root);
 const buildAssets = {};
 function inventory(dir) { for (const item of fs.readdirSync(dir, { withFileTypes: true })) {
   const file = path.join(dir, item.name); if (item.isDirectory()) inventory(file);
@@ -62,7 +61,7 @@ function inventory(dir) { for (const item of fs.readdirSync(dir, { withFileTypes
 }}
 inventory(builtRoot);
 const receipt = { scope: 'Actual nine components and their CSS; synthetic Error and local callback; anchor navigation seam; no Next segment recovery or provider claim',
-  head: git('HEAD'), tree: git('HEAD^{tree}'), origin, componentSources, inputHashes, buildAssets,
+  head: git('HEAD'), tree: git('HEAD^{tree}'), origin, componentSources, ...inputReceipt, buildAssets,
   bundler: { tsx: ownedRequire('tsx/package.json').version, esbuild: esbuild.version },
   outputHashes: Object.fromEntries(Object.entries(files).map(([name, bytes]) => [name, digest(bytes)])) };
 fs.writeFileSync(path.join(output, 'build-receipt.json'), JSON.stringify(receipt, null, 2) + '\n');

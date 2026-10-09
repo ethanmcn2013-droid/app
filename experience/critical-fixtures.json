@@ -1654,9 +1654,9 @@
   ],
   "renderedSourceInputs": {
     "experience/materiality-source-fixtures/client.jsx": "0df18087ecd80b255e4bc834cae7e7e93caf84f449c470340584e3d4b64feb3d",
-    "experience/materiality-source-fixtures/contract.mjs": "fb9d4c02cda0164a83dd168d9d33ab4068466afbf357e050839525f3a66e7cab",
+    "experience/materiality-source-fixtures/contract.mjs": "2b7825b9060ede6ccc2beda2817575cf65186e9220689b039e42d57c37389613",
     "experience/materiality-source-fixtures/runtime.ts": "2e8e209197464183f8334c148f01baa431e557bb6e926597ddfb96c1e8d71abb",
-    "experience/materiality-source-fixtures/serve.mjs": "125da086f8864a65cf79d0eb3839e9ddb00b5d5fc60c7f4304fee6925de260d1",
+    "experience/materiality-source-fixtures/serve.mjs": "209ae05280e633f7020b69e385268ac43bce8ec52fa4bdb612da6d00a82c44a4",
     "experience/runtime-policy.ts": "67923cb27d3687ed94ebfe74babba4b54ea1695b799343465dbcb3c130038537",
     "public/file.svg": "2b67812c325c199a02536cdbeea0c593a72f707d323b72ee3e08dbab06753bd4",
     "public/globe.svg": "b614b9bf183925957661ac851498fe1d8029fd43a62fbfed86f9e2624a57e7cf",
