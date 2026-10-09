@@ -5,14 +5,14 @@ overrides:
   # September advisory remediation; remove each bound once the owning dependency resolves a patched version.
   "@babel/core@>=7.0.0 <7.29.6": 7.29.6
   "@opentelemetry/core@>=2.0.0 <2.8.0": 2.8.0
-  "undici@>=6.0.0 <6.28.0": 6.28.0
-  "brace-expansion@>=4.0.0 <5.0.9": 5.0.9
+  "undici@>=6.0.0 <6.28.1": 6.28.1
+  "brace-expansion@>=4.0.0 <5.0.11": 5.0.11
   browserslist: 4.28.8
-  fast-uri: 3.1.6
+  fast-uri: 3.1.8
   js-cookie: 3.0.8
   nanoid: 3.3.18
   postcss: 8.5.26
-  sharp: 0.35.4
+  sharp: 0.35.5
   ws: 8.21.3
 
 allowBuilds:
