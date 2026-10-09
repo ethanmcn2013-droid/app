@@ -34,9 +34,11 @@ export type PingExecutionResult = Readonly<{ ok: true; receipt: PingReceipt; rep
 export type PingReceiptLookup = Readonly<{ ok: true; state: "absent" }> |
   Readonly<{ ok: true; state: "committed"; receipt: PingReceipt }> |
   Readonly<{ ok: false; reason: "unavailable" | "invalid_command" | "temporarily_unavailable" }>;
+export type PingBoundReceiptLookup = Exclude<PingReceiptLookup, { ok: false }> |
+  Readonly<{ ok: false; reason: PingFailureReason }>;
 export type PingProofSeam = "task" | "activity" | "capture" | "receipt";
 
-const fail = (reason: PingFailureReason): PingExecutionResult => ({ ok: false, reason });
+const fail = (reason: PingFailureReason): Extract<PingExecutionResult, { ok: false }> => ({ ok: false, reason });
 function stable(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stable).join(",")}]`;
   if (value !== null && typeof value === "object") return `{${Object.keys(value).sort()
@@ -271,5 +273,29 @@ export function createPingCommandService(adapter: ConversationDatabaseAdapter, o
       });
     } catch { return { ok: false, reason: "temporarily_unavailable" }; }
   }
-  return { execute, getReceipt };
+  /** Read-only original-intent recovery. Absence never delegates permission to retry a mutation. */
+  async function getReceiptForCommand(args: Readonly<{ command: unknown; context: PingExecutionContext }>): Promise<PingBoundReceiptLookup> {
+    try {
+      const normalized = normalizePingCommand(args.command);
+      if (!normalized.ok) return fail("invalid_command");
+      const context: PingExecutionContext = structuredClone(args.context);
+      const command = normalized.value;
+      if (!context || !capturedContextMatches(command, context)) return fail("invalid_command");
+      if (context.input.state !== "complete") return fail("incomplete_input");
+      if (!adapter.available) return fail("temporarily_unavailable");
+      const actorId = context.actorId;
+      const planHash = hash({ actorId, command, captured: { ...context.captured, commandId: command.commandId } });
+      return await adapter.transaction("read", async (tx): Promise<PingBoundReceiptLookup> => {
+        // Fresh authority also applies to an absent read; no arbitrary Project probing through this seam.
+        if (!await authorized(tx, actorId, command.projectId, false)) return fail("unavailable");
+        const previous = await storedReceipt(tx, actorId, command.commandId);
+        if (!previous) return { ok: true, state: "absent" };
+        if (previous.project_id !== command.projectId || previous.plan_hash !== planHash) return fail("request_conflict");
+        const receipt = JSON.parse(String(previous.receipt_json)) as PingReceipt;
+        if (receipt.commandId !== command.commandId || receipt.projectId !== command.projectId) return fail("request_conflict");
+        return { ok: true, state: "committed", receipt };
+      });
+    } catch { return fail("temporarily_unavailable"); }
+  }
+  return { execute, getReceipt, getReceiptForCommand };
 }

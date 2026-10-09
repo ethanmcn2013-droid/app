@@ -6,6 +6,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useReducer,
   useRef,
@@ -87,6 +88,8 @@ function generateId(): string {
 }
 
 export type TasksDispatchers = {
+  /** Install an already-authorized canonical Project read without starting a new write. */
+  hydratePingRefresh: (expectedProjectId: string, expectedActorId: string, tasks: Task[]) => boolean;
   moveTask: (id: string, toLane: LaneId) => void;
   /**
    * Move a task to any board column, system lane or custom column.
@@ -170,10 +173,15 @@ export function TasksProvider({
   // This keeps timestamped optimistic updates identical in both places.
   const stateRef = useRef(state);
   const mounted = useRef(false);
+  const liveScope = useRef({ projectId, actorId });
   useEffect(() => {
     mounted.current = true;
     return () => { mounted.current = false; };
   }, []);
+
+  useLayoutEffect(() => {
+    liveScope.current = { projectId, actorId };
+  }, [actorId, projectId]);
   const dispatch = useCallback(
     (action: TasksAction) => {
       const nextState = tasksReducer(stateRef.current, action);
@@ -181,6 +189,17 @@ export function TasksProvider({
       commitState(nextState);
     },
     [commitState],
+  );
+
+  const hydratePingRefresh = useCallback(
+    (expectedProjectId: string, expectedActorId: string, fresh: Task[]) => {
+      const current = liveScope.current;
+      if (!mounted.current || current.projectId !== expectedProjectId || current.actorId !== expectedActorId ||
+        fresh.some((task) => task.workspaceId !== expectedProjectId)) return false;
+      dispatch({ type: "hydrate", tasks: fresh });
+      return true;
+    },
+    [dispatch],
   );
 
   // Realtime cross-tab sync: subscribe to SSE peer-mutation events
@@ -242,6 +261,7 @@ export function TasksProvider({
   // pending mutation callbacks cannot hydrate a replacement context.
   const dispatchers = useMemo<TasksDispatchers>(
     () => ({
+      hydratePingRefresh,
       moveTask: (id, toLane) =>
         withServerSync(
           () => dispatch({ type: "move", id, toLane }),
@@ -391,7 +411,7 @@ export function TasksProvider({
       },
     }),
 
-    [dispatch, withServerSync, projectId],
+    [dispatch, hydratePingRefresh, withServerSync, projectId],
   );
 
   return (
