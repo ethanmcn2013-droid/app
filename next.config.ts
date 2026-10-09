@@ -336,6 +336,9 @@ const nextConfig: NextConfig = {
   // at 375px and contaminates every mobile design capture. No production effect.
   devIndicators: false,
   env: {
+    // Compile the existing exact opt-in into the client bundle. An unset flag
+    // stays off and lets production omit the isolated Ping panel's subtree.
+    NEXT_PUBLIC_PROJECT_PING_TYPED_ENABLED: process.env.NEXT_PUBLIC_PROJECT_PING_TYPED_ENABLED === "1" ? "1" : "0",
     // Build-time, non-secret deployment posture used by shared server/client
     // access-mode code. Vercel preview and production builds receive the same
     // literal on both sides of hydration; an unset production build still

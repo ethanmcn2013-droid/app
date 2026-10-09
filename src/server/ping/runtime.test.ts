@@ -1,9 +1,24 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { pingTypedTarget, pingNewWorkAllowed } from "./runtime";
+
+test("loaded Next config compiles only exact typed Ping opt-in and leaves voice opt-in independent", () => {
+  const configUrl = new URL("../../../next.config.ts", import.meta.url).href;
+  const script = `const m=await import(${JSON.stringify(configUrl)}); const c=m.default.default??m.default; console.log(JSON.stringify([c.env.NEXT_PUBLIC_PROJECT_PING_TYPED_ENABLED,c.env.NEXT_PUBLIC_PROJECT_PING_VOICE_ENABLED??null]));`;
+  for (const value of [undefined, "0", "1", "true", " 1", "1 "]) {
+    const env: NodeJS.ProcessEnv = { ...process.env, NEXT_PUBLIC_PROJECT_PING_VOICE_ENABLED: "1" };
+    delete env.NEXT_PUBLIC_PROJECT_PING_TYPED_ENABLED;
+    if (value !== undefined) env.NEXT_PUBLIC_PROJECT_PING_TYPED_ENABLED = value;
+    const actual = JSON.parse(execFileSync(process.execPath,
+      ["--import", "tsx", "--input-type=module", "-e", script],
+      { env, encoding: "utf8", windowsHide: true }));
+    assert.deepEqual(actual, [value === "1" ? "1" : "0", null]);
+  }
+});
 
 test("isolated runtime stays off without exact explicit local target and rejects hosted/demo/remote/mismatch", () => {
   const target = pathToFileURL(join(tmpdir(), "synthetic-target", "synthetic.db")).href;
