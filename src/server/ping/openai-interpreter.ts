@@ -48,7 +48,7 @@ function projection(value: unknown): PingVoiceModelInput | null {
   return freeze({ version: value.version, transcript: value.transcript, selectedTaskCount: value.selectedTaskCount,
     referenceInstant: value.referenceInstant, timeZone: value.timeZone, systemColumnKeys: [...PING_SYSTEM_COLUMNS] as const });
 }
-function proposal(value: unknown, selected: number): PingProposal | null {
+export function parsePingVoiceInterpretation(value: unknown, selected: number): PingProposal | null {
   if (!dataRecord(value) || value.version !== PING_PROPOSAL_VERSION) return null;
   if (value.outcome === "refusal" || value.outcome === "clarification") {
     return exactKeys(value, ["version", "outcome", "reason"]) && ["unsupported", "ambiguous", "incomplete"].includes(value.reason as string)
@@ -82,20 +82,43 @@ function completed(value: unknown, selected: number): PingProposal | null {
     content.type !== "output_text" || typeof content.text !== "string" || content.text.length > BODY_BYTES ||
     !jsonArray(content.annotations, 0) || (content.logprobs !== undefined && !jsonArray(content.logprobs, 0))) return null;
   const wrapper: unknown = JSON.parse(content.text);
-  return dataRecord(wrapper) && exactKeys(wrapper, ["proposal"]) ? proposal(wrapper.proposal, selected) : null;
+  return dataRecord(wrapper) && exactKeys(wrapper, ["proposal"]) ? parsePingVoiceInterpretation(wrapper.proposal, selected) : null;
 }
 
+export type PingResponsesUsage = Readonly<{ input_tokens: number; output_tokens: number; total_tokens: number;
+  input_tokens_details?: Readonly<{ cached_tokens?: number; cache_write_tokens?: number }>;
+  output_tokens_details?: Readonly<{ reasoning_tokens?: number }> }>;
+export type PingResponsesUsageObservation = Readonly<{ version: "ping.responses-usage.v1"; provenance: "interpretation";
+  state: "observed" | "absent" | "invalid" | "unavailable"; usage: PingResponsesUsage | null }>;
+const usageCount = (n: unknown): n is number => typeof n === "number" && Number.isSafeInteger(n) && n >= 0;
+/** Closed numeric subset only. Null is unknown; false is invalid metadata, never operation authority. */
+export function parsePingResponsesUsage(value: unknown): PingResponsesUsage | null | false {
+  if (value === undefined || value === null) return null;
+  if (!dataRecord(value) || !exactKeys(value, ["input_tokens", "output_tokens", "total_tokens"], ["input_tokens_details", "output_tokens_details"]) ||
+    !usageCount(value.input_tokens) || !usageCount(value.output_tokens) || !usageCount(value.total_tokens) ||
+    !Number.isSafeInteger(value.input_tokens + value.output_tokens) || value.input_tokens + value.output_tokens !== value.total_tokens) return false;
+  const details: { input_tokens_details?: { cached_tokens?: number; cache_write_tokens?: number }; output_tokens_details?: { reasoning_tokens?: number } } = {};
+  for (const [key, members] of [["input_tokens_details", ["cached_tokens", "cache_write_tokens"]], ["output_tokens_details", ["reasoning_tokens"]]] as const) {
+    if (!Object.hasOwn(value, key)) continue;
+    const record = value[key];
+    if (!dataRecord(record) || !exactKeys(record, [], members) || members.some(member => Object.hasOwn(record, member) && !usageCount(record[member]))) return false;
+    details[key] = Object.fromEntries(members.filter(member => Object.hasOwn(record, member)).map(member => [member, record[member]]));
+  }
+  return freeze({ input_tokens: value.input_tokens, output_tokens: value.output_tokens, total_tokens: value.total_tokens, ...details });
+}
 export type PingOpenAiInterpreterOptions = Readonly<{ model: string; apiKey: string;
-  fetch: (input: string, init: RequestInit) => Promise<Response>; deadlineMs?: number }>;
+  fetch: (input: string, init: RequestInit) => Promise<Response>; deadlineMs?: number;
+  onUsage?: (observation: PingResponsesUsageObservation) => unknown }>;
 
 /** Disconnected source candidate. The caller owns endpoint/account eligibility and capture/finality/authentication. */
 export function createPingOpenAiInterpreter(options: PingOpenAiInterpreterOptions) {
-  if (!dataRecord(options) || !exactKeys(options, ["model", "apiKey", "fetch"], ["deadlineMs"]) ||
+  if (!dataRecord(options) || !exactKeys(options, ["model", "apiKey", "fetch"], ["deadlineMs", "onUsage"]) ||
     typeof options.model !== "string" || !/^[A-Za-z0-9._:-]{1,128}$/.test(options.model) ||
     typeof options.apiKey !== "string" || !/^[\x21-\x7e]{1,512}$/.test(options.apiKey) || typeof options.fetch !== "function" ||
-    (options.deadlineMs !== undefined && (!Number.isInteger(options.deadlineMs) || options.deadlineMs < 1 || options.deadlineMs > 10_000)))
+    (options.deadlineMs !== undefined && (!Number.isInteger(options.deadlineMs) || options.deadlineMs < 1 || options.deadlineMs > 10_000)) ||
+    (options.onUsage !== undefined && typeof options.onUsage !== "function"))
     throw new Error("ping_interpretation_configuration");
-  const { model, apiKey, fetch: fetchResponse } = options;
+  const { model, apiKey, fetch: fetchResponse, onUsage } = options;
   const deadlineMs = options.deadlineMs ?? 10_000;
   let physicalBusy = false;
   return async (input: unknown, signal: AbortSignal): Promise<PingProposal> => {
@@ -110,16 +133,27 @@ export function createPingOpenAiInterpreter(options: PingOpenAiInterpreterOption
     let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
     let cancellation: Promise<void> | null = null;
     let stopped: "cancelled" | "deadline" | null = null;
+    let entered = false, published = false;
+    let observed: PingResponsesUsageObservation = freeze({ version: "ping.responses-usage.v1", provenance: "interpretation", state: "unavailable", usage: null });
     let rejectPublic!: (reason: Error) => void;
     let resolvePublic!: (value: PingProposal) => void;
     const result = new Promise<PingProposal>((resolve, reject) => { resolvePublic = resolve; rejectPublic = reject; });
+    const publish = (outcome: PingProposal | Error) => {
+      if (published) return;
+      published = true;
+      if (outcome instanceof Error) rejectPublic(outcome); else resolvePublic(outcome);
+      // Diagnostics run after the immutable logical outcome, while original physical ownership is held.
+      if (entered && onUsage) {
+        try { void Promise.resolve(onUsage(observed)).catch(() => undefined); } catch { /* Diagnostic-only failure. */ }
+      }
+    };
     const cancelReader = () => {
       if (reader && !cancellation) cancellation = reader.cancel().then(() => undefined, () => undefined);
     };
     const stop = (reason: "cancelled" | "deadline") => {
       if (stopped) return;
       stopped = reason;
-      rejectPublic(new Error(`ping_interpretation_${reason}`));
+      publish(new Error(`ping_interpretation_${reason}`));
       controller.abort();
       cancelReader();
     };
@@ -131,11 +165,14 @@ export function createPingOpenAiInterpreter(options: PingOpenAiInterpreterOption
     void (async () => {
       try {
         if (stopped) return;
-        const response = await fetchResponse(PING_RESPONSES_ENDPOINT, { method: "POST", redirect: "error", cache: "no-store", credentials: "omit",
+        const request: RequestInit = { method: "POST", redirect: "error", cache: "no-store", credentials: "omit",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` }, signal: controller.signal,
           body: JSON.stringify({ model, instructions: INSTRUCTIONS, input: [{ role: "user", content: [{ type: "input_text", text: JSON.stringify(captured) }] }],
             store: false, stream: false, background: false, max_output_tokens: 2048,
-            text: { format: { type: "json_schema", name: "ping_operation", strict: true, schema: PING_RESPONSES_SCHEMA } } }) });
+            text: { format: { type: "json_schema", name: "ping_operation", strict: true, schema: PING_RESPONSES_SCHEMA } } }) };
+        if (expired()) return;
+        entered = true;
+        const response = await fetchResponse(PING_RESPONSES_ENDPOINT, request);
         if (response.body) reader = response.body.getReader();
         if (expired()) { cancelReader(); return; }
         if (response.status !== 200 || response.redirected || !/^application\/json(?:\s*;|$)/i.test(response.headers.get("content-type") ?? "") || !reader)
@@ -157,11 +194,19 @@ export function createPingOpenAiInterpreter(options: PingOpenAiInterpreterOption
         const body = new Uint8Array(bytes);
         let offset = 0;
         for (const chunk of chunks) { body.set(chunk, offset); offset += chunk.byteLength; }
-        const value = completed(JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(body)), captured.selectedTaskCount);
+        const parsed: unknown = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(body));
+        if (expired()) return;
+        if (dataRecord(parsed)) {
+          const usage = parsePingResponsesUsage(parsed.usage);
+          if (expired()) return;
+          observed = freeze({ version: "ping.responses-usage.v1", provenance: "interpretation",
+            state: usage === false ? "invalid" : usage === null ? "absent" : "observed", usage: usage || null });
+        }
+        const value = completed(parsed, captured.selectedTaskCount);
         if (!value) throw new Error("invalid_response");
-        if (!expired()) resolvePublic(value);
+        if (!expired()) publish(value);
       } catch {
-        if (!stopped) rejectPublic(new Error("ping_interpretation_invalid_response"));
+        if (!expired()) publish(new Error("ping_interpretation_invalid_response"));
         cancelReader();
       } finally {
         if (cancellation) await cancellation;
