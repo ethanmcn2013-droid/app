@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page, type Response, type TestInfo } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { removeDeclaredComponentError } from "../materiality-source-fixtures/runtime";
 import {
   isCompletedQualifiedViewResponse,
   isIntentionalEventSourceDisableResponse,
@@ -47,6 +48,7 @@ type FixtureEntry = {
 
 type FixtureManifest = {
   experiences: FixtureEntry[];
+  supplementalMaterialityRendered: Array<{id: string; source: string; kind: "component" | "route" | "resources"; caseName: string; path: string; selector: string; states: string[]}>;
 };
 
 const manifest = JSON.parse(
@@ -532,3 +534,50 @@ test("tasks.surface.task-detail-panel / populated task", async ({ page }, testIn
     timelineEvidence,
   );
 });
+
+// Additional own-target cases preserve all original33 critical case identities.
+for (const fixture of manifest.supplementalMaterialityRendered) {
+  test(fixture.id + " / " + fixture.caseName, async ({ page }, testInfo) => {
+    const runtime = watchRuntime(page);
+    const ownComponent = fixture.kind === "component";
+    const expectedError = ownComponent && fixture.id.endsWith("-error");
+    const response = await page.goto(ownComponent ? "http://127.0.0.1:4409" + fixture.path : fixture.path, { waitUntil: "domcontentloaded" });
+    expect(response?.status()).toBe(200);
+    if (fixture.kind === "resources") {
+      await expect(page.getByRole("heading", { name: "Tasks", level: 1 })).toBeVisible();
+      await page.keyboard.press("Enter");
+      await expect(page.getByRole("dialog", { name: "Confirm marquee sides with the hire company" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Files and links" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Attach a file" })).toBeVisible();
+    }
+    await enterDeterministicMotionMode(page);
+    await expect(page.locator(fixture.selector).first()).toBeVisible();
+    if (fixture.kind === "route") {
+      // Require actual route-specific content, rather than only the App shell.
+      const names: Record<string,string> = {"tasks.page.app-settings":"Settings", "tasks.page.app-project":"The Orchard, events", "tasks.page.app-analytics":"Analytics", "tasks.page.app-concepts":"Concepts", "tasks.page.app-files":"Files"};
+      if (fixture.id === "tasks.page.app-messages") {
+        // A phone opens the directory first. Enter the real selected Project
+        // conversation through the same row control as its reader.
+        if (!await page.getByRole("navigation", { name: "Conversation views" }).isVisible()) {
+          await page.getByRole("navigation", {name:"Conversations"}).getByRole("button", {name:/The Orchard, events/}).click();
+        }
+        await expect(page.getByRole("navigation", { name: "Conversation views" })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Chat", exact: true })).toBeVisible();
+      } else await expect(page.getByRole("heading", { name: names[fixture.id], exact: true }).first()).toBeVisible();
+    }
+    await page.waitForTimeout(500);
+    if (expectedError) {
+      await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
+      await page.getByRole("button", { name: "Try again" }).click();
+      expect(await page.evaluate(() => (window as unknown as {__materiality: {retryCount: number}}).__materiality.retryCount)).toBe(1);
+      await expect(page.getByRole("link", {name:"Open Tasks"})).toHaveAttribute("href", "/app/tasks");
+      const prefix = fixture.id.includes("home") ? "home" : fixture.id.includes("analytics") ? "analytics" : "files";
+      removeDeclaredComponentError(runtime, prefix, fixture.id);
+    }
+    await expectNoDocumentOverflow(page);
+    await expectNoBlockingAccessibilityIssues(page);
+    await attachRenderedEvidence(page, testInfo, fixture.id, fixture.caseName);
+    await testInfo.attach("own-target-source-and-scope", { body: JSON.stringify({id: fixture.id, source: fixture.source, states:fixture.states, scope:ownComponent?"actual component render; synthetic Error/local retry callback/anchor seam only":"actual demo App surface; no provider/authenticated production claim"}), contentType:"application/json" });
+    expect(runtimeFailures(runtime, null, page.url())).toEqual([]);
+  });
+}

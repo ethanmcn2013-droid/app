@@ -1,5 +1,17 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-09 — Runtime source receiving (live release pending)
+
+Receives backend refresh and intelligence safeguards, disabled Ping construction,
+concept previews, disabled sponsor reporting source, reviewed migration controls,
+bounded dependency security patches, and guarded reliability operator/test tools.
+Hosted workload acceptance remains failed/pending; the historical 800ms benchmark
+and Windows native test failures are retained. The dependency audit has no high or
+critical findings and retains six moderate OpenTelemetry and one low AI advisory.
+Synthetic/browser receipts establish their stated local scope only. Production
+Ping/sponsor flags, migrations, provider checks and deployment remain separate gates.
+
+
 The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.

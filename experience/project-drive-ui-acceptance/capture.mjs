@@ -3,7 +3,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 const [scratch,label,port] = process.argv.slice(2);
-const resolution = createRequire('C:/Users/ethan/signal-studio-workspace/worktrees/app/feat-january-final-journeys/package.json');
+const resolution = createRequire(path.resolve('package.json'));
 const playwright = await import(pathToFileURL(resolution.resolve('@playwright/test')).href);
 const { chromium, expect } = playwright.default || playwright;
 const out = path.join(scratch,label), origin='http://127.0.0.1:'+port;

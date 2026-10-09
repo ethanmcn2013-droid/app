@@ -1,0 +1,85 @@
+{
+  "classification": "historical, nonqualifying for current schema2 acceptance",
+  "records": [
+    {
+      "experienceId": "tasks.page.app-settings",
+      "original": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.page.app-settings-materiality.json",
+      "archive": "experience/reviews/history-runtime-20261009/tasks.page.app-settings.json"
+    },
+    {
+      "experienceId": "tasks.page.app-project",
+      "original": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.page.app-project-materiality.json",
+      "archive": "experience/reviews/history-runtime-20261009/tasks.page.app-project.json"
+    },
+    {
+      "experienceId": "tasks.state.app-project-loading",
+      "original": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.state.app-project-loading-materiality.json",
+      "archive": "experience/reviews/history-runtime-20261009/tasks.state.app-project-loading.json"
+    },
+    {
+      "experienceId": "tasks.state.app-home-loading",
+      "original": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.state.app-home-loading-materiality.json",
+      "archive": "experience/reviews/history-runtime-20261009/tasks.state.app-home-loading.json"
+    },
+    {
+      "experienceId": "tasks.state.app-home-error",
+      "original": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.state.app-home-error-materiality.json",
+      "archive": "experience/reviews/history-runtime-20261009/tasks.state.app-home-error.json"
+    },
+    {
+      "experienceId": "tasks.state.app-tasks-loading",
+      "original": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.state.app-tasks-loading-materiality.json",
+      "archive": "experience/reviews/history-runtime-20261009/tasks.state.app-tasks-loading.json"
+    },
+    {
+      "experienceId": "tasks.resources.drive-upload",
+      "original": "experience/reviews/release-runtime-20261009/tasks.resources.drive-upload.json",
+      "archive": "experience/reviews/history-runtime-20261009/tasks.resources.drive-upload.json"
+    },
+    {
+      "experienceId": "tasks.page.app-messages",
+      "original": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.page.app-messages-materiality.json",
+      "archive": "experience/reviews/history-runtime-20261009/tasks.page.app-messages.json"
+    },
+    {
+      "experienceId": "tasks.page.app-analytics",
+      "original": "experience/reviews/release-runtime-20261009/tasks.page.app-analytics.json",
+      "archive": "experience/reviews/history-runtime-20261009/tasks.page.app-analytics.json"
+    },
+    {
+      "experienceId": "tasks.state.app-analytics-loading",
+      "original": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.state.app-analytics-loading-materiality.json",
+      "archive": "experience/reviews/history-runtime-20261009/tasks.state.app-analytics-loading.json"
+    },
+    {
+      "experienceId": "tasks.state.app-analytics-error",
+      "original": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.state.app-analytics-error-materiality.json",
+      "archive": "experience/reviews/history-runtime-20261009/tasks.state.app-analytics-error.json"
+    },
+    {
+      "experienceId": "tasks.state.app-tools-loading",
+      "original": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.state.app-tools-loading-materiality.json",
+      "archive": "experience/reviews/history-runtime-20261009/tasks.state.app-tools-loading.json"
+    },
+    {
+      "experienceId": "tasks.page.app-concepts",
+      "original": "experience/reviews/release-runtime-20261009/tasks.page.app-concepts.json",
+      "archive": "experience/reviews/history-runtime-20261009/tasks.page.app-concepts.json"
+    },
+    {
+      "experienceId": "tasks.page.app-files",
+      "original": "experience/reviews/release-runtime-20261009/tasks.page.app-files.json",
+      "archive": "experience/reviews/history-runtime-20261009/tasks.page.app-files.json"
+    },
+    {
+      "experienceId": "tasks.state.app-files-loading",
+      "original": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.state.app-files-loading-materiality.json",
+      "archive": "experience/reviews/history-runtime-20261009/tasks.state.app-files-loading.json"
+    },
+    {
+      "experienceId": "tasks.state.app-files-error",
+      "original": "experience/reviews/2026-10-06-timeline-countdown/receipts/tasks.state.app-files-error-materiality.json",
+      "archive": "experience/reviews/history-runtime-20261009/tasks.state.app-files-error.json"
+    }
+  ]
+}

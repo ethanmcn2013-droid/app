@@ -13,8 +13,11 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import {
   ARTIFACT_PATH,
+  ATTESTATION_SCHEMA,
   RECEIPT_SCHEMA,
+  canonicalEvidenceDigest,
   canonicalJson,
+  collectPlaywrightOutcomes,
   normalizedFileHash,
   sha256,
   validateMaterialityReceipt,
@@ -23,58 +26,16 @@ import {
 const OUTPUT_PATH = "experience/output/evidence-attestation.json";
 
 function expectedTitles(manifest) {
-  return manifest.experiences
+  const critical = manifest.experiences
     .filter((entry) => entry.evidence === "rendered")
     .flatMap((entry) =>
       entry.interaction
         ? [`${entry.id} / ${entry.caseName}`]
         : (entry.cases ?? []).map((item) => `${entry.id} / ${item.name}`),
-    )
-    .sort();
-}
-
-function collectOutcomes(report) {
-  const outcomes = [];
-  function visit(suite) {
-    for (const spec of suite.specs ?? []) {
-      for (const test of spec.tests ?? []) {
-        const finalResult = test.results?.at(-1);
-        outcomes.push({
-          title: spec.title,
-          project: test.projectName,
-          expectedStatus: test.expectedStatus,
-          status: test.status,
-          finalResultStatus: finalResult?.status ?? "missing",
-          errorCount: finalResult?.errors?.length ?? 0,
-        });
-      }
-    }
-    for (const child of suite.suites ?? []) visit(child);
-  }
-  for (const suite of report.suites ?? []) visit(suite);
-  return outcomes.sort(
-    (left, right) =>
-      left.title.localeCompare(right.title) || left.project.localeCompare(right.project),
-  );
-}
-
-function canonicalDigest({ outcomes, hashes }) {
-  const canonical = {
-    schemaVersion: "signal-playwright-canonical/1",
-    browserContractSha256: hashes.browserContractSha256,
-    fixtureManifestSha256: hashes.fixtureManifestSha256,
-    playwrightConfigSha256: hashes.playwrightConfigSha256,
-    playwrightSpecSha256: hashes.playwrightSpecSha256,
-    outcomes: outcomes.map(({ title, project, expectedStatus, status, finalResultStatus, errorCount }) => ({
-      title,
-      project,
-      expectedStatus,
-      status,
-      finalResultStatus,
-      errorCount,
-    })),
-  };
-  return sha256(JSON.stringify(canonical));
+    );
+  const supplemental = (manifest.supplementalMaterialityRendered ?? [])
+    .map((entry) => `${entry.id} / ${entry.caseName}`);
+  return [...critical, ...supplemental].sort();
 }
 
 function buildAttestation(repoRoot, artifactFile = path.join(repoRoot, ARTIFACT_PATH)) {
@@ -91,7 +52,7 @@ function buildAttestation(repoRoot, artifactFile = path.join(repoRoot, ARTIFACT_
   const expectedPairs = titles
     .flatMap((title) => projects.map((project) => `${project}\u0000${title}`))
     .sort();
-  const outcomes = collectOutcomes(report);
+  const outcomes = collectPlaywrightOutcomes(report);
   const actualPairs = outcomes.map((outcome) => `${outcome.project}\u0000${outcome.title}`).sort();
   if (JSON.stringify(actualPairs) !== JSON.stringify(expectedPairs)) {
     throw new Error("Playwright report cases/projects do not exactly match the fixture manifest and browser contract");
@@ -103,7 +64,7 @@ function buildAttestation(repoRoot, artifactFile = path.join(repoRoot, ARTIFACT_
       outcome.finalResultStatus !== "passed" ||
       outcome.errorCount !== 0,
   );
-  if (failed.length > 0 || report.stats?.unexpected !== 0 || report.stats?.skipped !== 0) {
+  if (failed.length > 0 || report.stats?.unexpected !== 0 || report.stats?.skipped !== 0 || (report.errors?.length ?? 0) !== 0) {
     throw new Error(`Playwright report is not fully green (${failed.length} failed outcome records)`);
   }
 
@@ -113,7 +74,7 @@ function buildAttestation(repoRoot, artifactFile = path.join(repoRoot, ARTIFACT_
     playwrightConfigSha256: normalizedFileHash(configFile),
     playwrightSpecSha256: normalizedFileHash(specFile),
   };
-  const canonicalEvidenceSha256 = canonicalDigest({ outcomes, hashes });
+  const canonicalEvidenceSha256 = canonicalEvidenceDigest({ outcomes, hashes });
   const rawArtifactSha256 = sha256(rawArtifact);
   const projectCounts = projects.map((name) => ({
     name,
@@ -121,12 +82,13 @@ function buildAttestation(repoRoot, artifactFile = path.join(repoRoot, ARTIFACT_
   }));
 
   return {
-    schemaVersion: "signal-playwright-attestation/1",
+    schemaVersion: ATTESTATION_SCHEMA,
     runId: `tasks-playwright-${canonicalEvidenceSha256.slice(0, 24)}`,
     canonicalEvidenceSha256,
     rawArtifactSha256,
     artifactPath: ARTIFACT_PATH,
     ...hashes,
+    outcomes,
     projects: projectCounts,
     testCount: outcomes.length,
     passedCount: outcomes.length,
@@ -138,9 +100,17 @@ function buildAttestation(repoRoot, artifactFile = path.join(repoRoot, ARTIFACT_
 function verifyReceipts(repoRoot, attestation) {
   const reviewsDirectory = path.join(repoRoot, "experience", "reviews");
   if (!existsSync(reviewsDirectory)) return;
-  const receipts = readdirSync(reviewsDirectory).filter((name) => name.endsWith(".json"));
-  for (const name of receipts) {
-    const evidencePath = `experience/reviews/${name}`;
+  const receipts = new Set(readdirSync(reviewsDirectory).filter((name) => name.endsWith(".json"))
+    .map(name => `experience/reviews/${name}`));
+  const registryFile = path.join(repoRoot, "experience", "registry.json");
+  if (existsSync(registryFile)) {
+    const registry = JSON.parse(readFileSync(registryFile, "utf8"));
+    for (const entry of registry.experiences ?? []) {
+      if (entry.materialityReview?.evidence) receipts.add(entry.materialityReview.evidence);
+    }
+  }
+  for (const evidencePath of receipts) {
+    const name = evidencePath;
     const { receipt } = validateMaterialityReceipt({ repoRoot, evidencePath });
     if (receipt.schemaVersion !== RECEIPT_SCHEMA) {
       throw new Error(`${name}: unsupported materiality receipt schema`);
@@ -209,6 +179,22 @@ function runSelfTest() {
     const first = buildAttestation(root, artifactFile);
     writeFileSync(artifactFile, JSON.stringify(report("2026-02-02T00:00:00.000Z", 999, "two")));
     const second = buildAttestation(root, artifactFile);
+    for (const mutate of [
+      candidate => { candidate.errors = [{ message: "unexpected global teardown error" }]; },
+      candidate => { candidate.suites[0].specs[0].tests[0].results[0].error = { message: "hidden result error" }; },
+      candidate => { candidate.suites[0].specs[0].tests[0].results.unshift({ status: "failed", errors: [{ message: "earlier retry failure" }] }); },
+      candidate => { candidate.suites[0].specs[0].tests.push(candidate.suites[0].specs[0].tests[0]); },
+      candidate => { candidate.suites[0].specs[0].tests[0].projectName = "foreign"; },
+      candidate => { candidate.suites[0].specs[0].tests[0].results[0].status = "skipped"; },
+    ]) {
+      const candidate = report("2026-02-02T00:00:00.000Z", 999, "two");
+      mutate(candidate);
+      writeFileSync(artifactFile, JSON.stringify(candidate));
+      let rejected = false;
+      try { buildAttestation(root, artifactFile); } catch { rejected = true; }
+      if (!rejected) throw Error("self-test accepted failed, hidden/global error, retry, duplicate or foreign outcome");
+    }
+    writeFileSync(artifactFile, JSON.stringify(report("2026-02-02T00:00:00.000Z", 999, "two")));
     if (first.rawArtifactSha256 === second.rawArtifactSha256) {
       throw new Error("self-test failed: raw artifact digest ignored volatile run bytes");
     }
@@ -218,7 +204,7 @@ function runSelfTest() {
     ) {
       throw new Error("self-test failed: canonical run identity changed with timestamps/durations/attachments");
     }
-    const changedOutcome = canonicalDigest({
+    const changedOutcome = canonicalEvidenceDigest({
       outcomes: [
         {
           title: "tasks.page.root / home",
@@ -239,6 +225,16 @@ function runSelfTest() {
     if (changedOutcome === first.canonicalEvidenceSha256) {
       throw new Error("self-test failed: changed outcome did not change canonical digest");
     }
+
+    const manifestFile = path.join(root, "experience", "critical-fixtures.json");
+    const originalManifest = readFileSync(manifestFile, "utf8");
+    const withSupplemental = JSON.parse(originalManifest);
+    withSupplemental.supplementalMaterialityRendered = [{ id: "tasks.page.app-messages", caseName: "Project conversation in demo" }];
+    writeFileSync(manifestFile, JSON.stringify(withSupplemental));
+    let missingSupplementalRejected = false;
+    try { buildAttestation(root, artifactFile); } catch { missingSupplementalRejected = true; }
+    if (!missingSupplementalRejected) throw new Error("self-test failed: missing supplemental rendered outcome was accepted");
+    writeFileSync(manifestFile, originalManifest);
 
     mkdirSync(path.join(root, "experience", "evidence-runs"), { recursive: true });
     mkdirSync(path.join(root, "experience", "reviews"), { recursive: true });
