@@ -121,7 +121,7 @@
     "test:ping-bridge-independent": "node --import tsx --import ./src/test/register-server-only.mjs --test src/server/ping/bridge-independent.persistence.test.ts",
     "test:ping-typed": "node --import tsx --import ./src/test/register-server-only.mjs --test --test-concurrency=1 src/lib/ping/typed-command.test.ts src/lib/ping/typed-client.test.ts src/server/ping/typed-session.test.ts src/server/ping/http.test.ts src/server/ping/runtime.test.ts src/server/ping/operating-controls.test.ts",
     "test:ping-typed:browser": "node --import tsx --import ./src/test/register-server-only.mjs experience/ping-typed/browser.mjs",
-    "test:ping-voice": "node --import tsx --import ./src/test/register-server-only.mjs --test src/lib/ping/pcm.test.ts src/lib/ping/realtime-transcription.test.ts src/lib/ping/voice-session.test.ts src/lib/ping/voice-client.test.ts src/server/ping/openai-interpreter.test.ts src/server/ping/openai-clip-transcription.test.ts scripts/ping/comparison/paired-trial.test.ts",
+    "test:ping-voice": "node --import tsx --import ./src/test/register-server-only.mjs --test src/lib/ping/pcm.test.ts src/lib/ping/realtime-transcription.test.ts src/lib/ping/voice-session.test.ts src/lib/ping/voice-client.test.ts src/server/ping/openai-interpreter.test.ts src/server/ping/openai-clip-transcription.test.ts src/server/ping/openai-streaming-transcription.test.ts src/server/ping/openai-native-audio.test.ts scripts/ping/comparison/paired-trial.test.ts",
     "test:ping-voice:browser": "node --import tsx scripts/ping/voice/browser.mjs",
     "test:ping-voice:tasks-browser": "node --import tsx --import ./src/test/register-server-only.mjs experience/ping-voice-tasks/browser.mjs"
   },
