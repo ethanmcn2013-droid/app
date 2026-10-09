@@ -169,9 +169,11 @@ test("the read note closes its arithmetic in front of the reader", async () => {
   const { model, ledger } = await build();
   const counts = ledger.readCounts!;
   assert.equal(counts.read, counts.flagged + counts.cleared);
+  assert.deepEqual({ read: counts.read, flagged: counts.flagged, shown: counts.shown, cleared: counts.cleared },
+    { read: 8, flagged: 4, shown: 3, cleared: 4 });
   assert.equal(
     model.readNote,
-    `Signal read ${counts.read} tasks in The Orchard, events at 09:00. ${counts.flagged} crossed a rule and all of them are shown above. The other ${counts.cleared} were clear.`,
+    `Signal read ${counts.read} tasks in The Orchard, events at 09:00. ${counts.flagged} crossed a rule, and ${counts.shown} are shown above. The other ${counts.cleared} were clear.`,
   );
   assert.equal(readNoteFor({ ...ledger, readCounts: null }, "task", "09:00"), null, "no denominator, no sentence");
 
@@ -442,32 +444,37 @@ test("title edits stay dated context while real attention and risks keep their o
     latestValidatedTitleEdit: { at: new Date(NOW - 1_000).toISOString(), kind: "update" as const, field: "title" as const } };
   const completed: TaskSignal = { ...base, id: "completed", title: "Completed records", lane: "shipped", movedToShippedAt: NOW - 3_600_000 };
   const positive = await build([title, completed]);
-  assert.deepEqual(positive.ledger.entries, []);
+  assert.equal(positive.ledger.entries.length, 1);
+  assert.equal(positive.ledger.entries[0]?.section, "activity");
+  assert.equal(positive.ledger.entries[0]?.text, "Completed records");
+  assert.match(positive.ledger.entries[0]!.detail, /Saved completion.*2026-07-16T07:00:00.000Z/);
+  assert.doesNotMatch(positive.ledger.entries[0]!.detail, /Saved catalogue|08:59:59/);
   assert.equal(positive.model.attention.length + positive.model.risks.length, 0);
-  assert.equal(positive.model.activity.length, 0);
+  assert.equal(positive.model.activity.length, 1);
   assert.match(positive.ledger.coverageNote ?? "", /Title edited for “Saved catalogue” on 16 July 2026 at 08:59:59 \(Europe\/Dublin\); this does not establish meaningful work progress/);
   assert.match(positive.ledger.coverageNote ?? "", /history is incomplete/i);
   assert.match(positive.ledger.coverageNote!, /1 task has a saved completion in the past 24 hours.*Completed records.*16 July 2026.*08:00:00 \(Europe\/Dublin\).*2026-07-16T07:00:00.000Z/);
-  assert.equal(positive.model.verdict.tone, "success");
-  assert.equal(positive.model.verdict.sentence, "On track. 1 finished this week.");
+  assert.equal(positive.model.verdict.tone, "neutral");
+  assert.equal(positive.model.verdict.sentence, "1 recorded observation.");
   assert.match(positive.model.coverage?.note ?? "", /Title edited for “Saved catalogue”/);
   assert.match(positive.model.coverage?.note ?? "", /history is incomplete/i);
   const { OverviewView } = loadView();
   const positiveHtml = renderToStaticMarkup(createElement(OverviewView, { model: positive.model }));
-  assert.doesNotMatch(positiveHtml, /<h2[^>]*>Recorded work<\/h2>/);
+  assert.match(positiveHtml, /<h2[^>]*>Recorded work<\/h2>/);
   assert.match(positiveHtml, /Title edited for “Saved catalogue”/);
   assert.match(positiveHtml, /Activity history is incomplete/);
   assert.doesNotMatch(positiveHtml, /<h2[^>]*>(?:Needs attention|At risk)<\/h2>/);
   const mixed = await build([title, completed, { ...base, id: "urgent", title: "Due record", dueAt: NOW + 3_600_000 },
     { ...base, id: "stalled", title: "Stalled record", lane: "in-flight", idleDays: 10 }]);
-  assert.deepEqual(mixed.ledger.entries.map(entry => entry.section), ["attention", "risks"]);
-  assert.equal(mixed.model.activity.length, 0);
+  assert.deepEqual(mixed.ledger.entries.map(entry => entry.section), ["attention", "risks", "activity"]);
+  assert.equal(mixed.model.activity.length, 1);
   assert.equal(mixed.model.attention.length, 1); assert.equal(mixed.model.risks.length, 1);
   assert.match(mixed.model.verdict.sentence, /^1 thing needs attention and 1 is at risk\.$/);
   assert.doesNotMatch(mixed.model.readNote ?? "", /asks? something of you/i);
   const mixedHtml = renderToStaticMarkup(createElement(OverviewView, { model: mixed.model }));
   assert.ok(mixedHtml.indexOf(">Needs attention</h2>") < mixedHtml.indexOf(">At risk</h2>"));
-  assert.doesNotMatch(mixedHtml, /<h2[^>]*>Recorded work<\/h2>/);
+  assert.match(mixedHtml, /<h2[^>]*>Recorded work<\/h2>/);
+  assert.ok(mixedHtml.indexOf(">At risk</h2>") < mixedHtml.indexOf(">Recorded work</h2>"));
   assert.match(mixed.ledger.coverageNote ?? "", /Title edited for “Saved catalogue”/);
   assert.match(mixed.ledger.coverageNote ?? "", /history is incomplete/i);
   assert.match(mixedHtml, /Completed records.*2026-07-16T07:00:00.000Z/);
