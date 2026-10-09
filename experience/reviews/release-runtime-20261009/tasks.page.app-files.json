@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-files",
+  "source": "tasks/src/app/app/files/page.tsx",
+  "materialityHash": "85929e83ebaece9a",
+  "reviewedAt": "2026-10-09",
+  "reviewer": "Root technical receiving decision after independent source review and actual screenshot verification",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-726247c74b8b55b3dc04228c-27d7e46f5186032b.json",
+    "attestationSha256": "bdcc804473ebfdc72df12b82e14b22a531d7bf0fea39ea34c7e262f2a0b3e496",
+    "runId": "tasks-playwright-726247c74b8b55b3dc04228c",
+    "canonicalEvidenceSha256": "726247c74b8b55b3dc04228c6b32c0722b21e55d6c738f932f024e4019f2c4d9",
+    "rawArtifactSha256": "27d7e46f5186032bca22eea7273c4a3722dcf853d7aec32a4cc61a201c941ecf",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-tasks",
+    "caseName": "canonical populated Tasks workspace",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Remove an optional default function argument to match the Next page contract; supporting actual Files capture is required because the critical suite does not open this route. The canonical Tasks fixture supplies regression context, not route coverage. Actual four-viewport supporting route captures and gallery section captures at 04bed were independently read and SHA-verified by root. Captured source04bed; all2042 src/public blobs checked against the receiving source, with only explicitly recorded test differences. Original run heads remain unchanged in their receipts.",
+  "decision": "Accept this exact technical materiality hash under root explicit six-entry approval. Preserve design baseline, quality scores, and all audit/coverage classifications. Production/provider and design selection remain separate."
+}
