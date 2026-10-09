@@ -2,6 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/server/auth";
+import { eq, sql } from "drizzle-orm";
+import { db } from "@/server/db";
+import { userPreferences, users } from "@/server/db/schema";
+import { queueUsageErasure } from "@/server/sponsored-use/erasure";
 import {
   type DailySignalCadence,
   type WeeklySummary,
@@ -42,4 +46,18 @@ export async function updateUserPreferencesAction(
   }
   await upsertUserPreferences(me, patch);
   revalidatePath("/settings/notifications");
+}
+
+/** One-way measurement withdrawal. The gift and all app capabilities remain. */
+export async function optOutOfSponsoredMeasurementAction(): Promise<void> {
+  const me = await getCurrentUser();
+  await db.transaction(async tx => {
+    const [actor] = await tx.select({ clerkId: users.clerkId }).from(users).where(eq(users.id, me));
+    if (!actor?.clerkId) throw new Error("Account unavailable");
+    await tx.insert(userPreferences).values({ userId: me, sponsorMeasurementEnabled: false })
+      .onConflictDoUpdate({ target: userPreferences.userId,
+        set: { sponsorMeasurementEnabled: false, updatedAt: sql`(unixepoch())` } });
+    await queueUsageErasure(tx, actor.clerkId);
+  }, { behavior: "immediate" });
+  revalidatePath("/app/settings");
 }

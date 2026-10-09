@@ -991,6 +991,8 @@ export const notificationPrefs = sqliteTable("notification_prefs", {
  */
 export const userPreferences = sqliteTable("user_preferences", {
   userId: text("user_id").primaryKey(),
+  /** Controls sponsored-use measurement only; access is independent. */
+  sponsorMeasurementEnabled: integer("sponsor_measurement_enabled", { mode: "boolean" }).notNull().default(true),
   /** Signal daily briefing email cadence. */
   dailySignalCadence: text("daily_signal_cadence")
     .$type<"off" | "weekdays" | "daily">()

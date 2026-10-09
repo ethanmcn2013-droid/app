@@ -34,6 +34,7 @@ for (const clock of [
   const result = spawnSync(process.execPath, [
     "--import", `data:text/javascript,${encodeURIComponent(preload)}`,
     "scripts/sponsored-use/acceptance.cjs", "--studio-root", studioRoot,
+    ...(process.argv.includes("--workspace-receiver") ? ["--workspace-receiver"] : []),
   ], { cwd: root, env, encoding: "utf8", timeout: 120_000, maxBuffer: 8 * 1024 * 1024, windowsHide: true });
   const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
   process.stdout.write(`Fixture clock ${clock}\n${output}`);

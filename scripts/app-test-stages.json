@@ -421,5 +421,14 @@
     "node",
     "--test",
     "scripts/run-app-tests.test.mjs"
+  ],
+  [
+    "node",
+    "--import",
+    "tsx",
+    "--import",
+    "./src/test/register-server-only.mjs",
+    "--test",
+    "src/server/sponsor-report/proxy.test.ts"
   ]
 ]
