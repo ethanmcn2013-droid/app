@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { createClient, type Client } from "@libsql/client";
@@ -317,6 +318,67 @@ export function classifyCommittedScope(action: string, rows: ReadonlyArray<Recor
     scopeAuthorized: committedEffectMatchesScope(action, rows, scope),
     unauthorizedContent: rows.some((row) => row.workspace_id !== scope.projectId ||
       (action === "send" && row.conversation_id !== scope.conversationId)) };
+}
+
+export type HostedPromotionProofInput = {
+  actorId: string; clientRequestId: string; projectId: string; conversationId: string; messageId: string;
+  expectedRevision: number; expectedAudienceEpoch: number; destinationProjectId: string;
+  title: string; ownerUserId: string; dueDate: string;
+};
+export function hostedPromotionIdentity(input: HostedPromotionProofInput) {
+  const hash = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
+  const taskId = `t-${hash(["conversation_task", input.actorId, input.clientRequestId]).slice(0, 24)}`;
+  const workLinkId = `work-${hash([taskId, input.messageId, input.expectedRevision]).slice(0, 24)}`;
+  return { taskId, workLinkId, eventId: `event-${hash(["conversation_task", taskId]).slice(0, 24)}`,
+    payloadHash: hash(["conversation_task_v1", input.actorId, input.clientRequestId, input.projectId,
+      input.conversationId, input.messageId, input.expectedRevision, input.expectedAudienceEpoch,
+      input.destinationProjectId, input.title.replace(/\r\n?/g, "\n"), input.ownerUserId, input.dueDate]) };
+}
+/** One atomic read batch includes deterministic orphan effects; joins cannot hide partial or mismatched writes. */
+export async function readHostedPromotionScope(client: Pick<Client, "batch">, input: HostedPromotionProofInput, allowAbsent: boolean) {
+  const identity = hostedPromotionIdentity(input);
+  const receiptPredicate = "actor_id=? AND client_request_id=? AND operation='conversation_task'";
+  const results = await client.batch([
+    { sql: `SELECT * FROM work_operation_receipts WHERE (${receiptPredicate}) OR task_id=? OR work_link_id=? LIMIT 3`,
+      args: [input.actorId, input.clientRequestId, identity.taskId, identity.workLinkId] },
+    { sql: `SELECT id,workspace_id,title,assignees,due FROM tasks WHERE id=? OR id IN (SELECT task_id FROM work_operation_receipts WHERE ${receiptPredicate}) LIMIT 3`,
+      args: [identity.taskId, input.actorId, input.clientRequestId] },
+    { sql: `SELECT * FROM work_links WHERE id=? OR task_id=? OR id IN (SELECT work_link_id FROM work_operation_receipts WHERE ${receiptPredicate}) LIMIT 3`,
+      args: [identity.workLinkId, identity.taskId, input.actorId, input.clientRequestId] },
+    { sql: "SELECT id,event_id,version,type,actor_user_id,workspace_id,object_ref,trace_id FROM suite_outbox WHERE id=? OR trace_id=? OR json_extract(object_ref, '$.taskId')=? LIMIT 3",
+      args: [identity.eventId, input.clientRequestId, identity.taskId] },
+  ], "read");
+  if (!Array.isArray(results) || results.length !== 4 || results.some(result => !result || !Array.isArray(result.rows))) throw new Error("hosted_write_effect_unverified");
+  const [receipts, tasks, links, outbox] = results.map(result => result.rows);
+  const actualProjectIds = [...new Set([
+    ...receipts.flatMap(row => [String(row.source_project_id), String(row.destination_project_id)]),
+    ...tasks.map(row => String(row.workspace_id)),
+    ...links.flatMap(row => [String(row.source_project_id), String(row.destination_project_id)]),
+    ...outbox.map(row => String(row.workspace_id)),
+  ])];
+  const effectIds = tasks.map(row => String(row.id));
+  if (results.every(result => result.rows.length === 0)) return {
+    scopeAuthorized: allowAbsent, actualProjectIds, unauthorizedContent: false, effectIds,
+  };
+  const foreign = actualProjectIds.some(id => id !== input.projectId && id !== input.destinationProjectId);
+  if (results.some(result => result.rows.length !== 1)) return {
+    scopeAuthorized: false, actualProjectIds, unauthorizedContent: foreign, effectIds,
+  };
+  const [receipt, task, link, event] = [receipts[0], tasks[0], links[0], outbox[0]];
+  const matches = receipt.actor_id === input.actorId && receipt.client_request_id === input.clientRequestId &&
+    receipt.operation === "conversation_task" && receipt.payload_hash === identity.payloadHash &&
+    receipt.source_project_id === input.projectId && receipt.source_conversation_id === input.conversationId &&
+    receipt.destination_project_id === input.destinationProjectId && receipt.task_id === identity.taskId && receipt.work_link_id === identity.workLinkId &&
+    task.id === identity.taskId && task.workspace_id === input.destinationProjectId && task.title === input.title &&
+    task.assignees === JSON.stringify([input.ownerUserId]) && task.due === input.dueDate &&
+    link.id === identity.workLinkId && link.task_id === identity.taskId && link.source_project_id === input.projectId &&
+    link.source_conversation_id === input.conversationId && link.source_message_id === input.messageId &&
+    Number(link.source_revision) === input.expectedRevision && Number(link.source_audience_epoch) === input.expectedAudienceEpoch &&
+    link.destination_project_id === input.destinationProjectId && link.created_by === input.actorId &&
+    event.id === identity.eventId && event.event_id === identity.eventId && Number(event.version) === 1 &&
+    event.type === "task.created" && event.actor_user_id === input.actorId && event.workspace_id === input.destinationProjectId &&
+    event.trace_id === input.clientRequestId && event.object_ref === JSON.stringify({ taskId: identity.taskId, workLinkId: identity.workLinkId });
+  return { scopeAuthorized: matches, actualProjectIds, unauthorizedContent: !matches, effectIds };
 }
 
 function requestForSlot(slot: Slot, room: HostedFixture["rooms"][number], fixture: HostedFixture, origin: string) {
@@ -653,7 +715,18 @@ export async function runHostedWorkload(input: HostedInput) {
           let scopeAuthorized = false;
           let actualProjectIds: string[] = [];
           let unauthorizedContent = false;
-          if (success && request.action === "history") {
+          let verifiedEffectIds: string[] | undefined;
+          if (request.action === "promote-task" && request.body && (success || (valid && response.status === 503 && object(envelope) && envelope.code === "temporarily_unavailable"))) {
+            failureStage = "write_effect_sql";
+            const proof = await readHostedPromotionScope(client, { ...request.body, actorId: actor.actorId } as HostedPromotionProofInput, !success);
+            verificationQueries += 4;
+            ({ actualProjectIds, scopeAuthorized, unauthorizedContent } = proof);
+            verifiedEffectIds = proof.effectIds;
+            if (success && (String(value.taskId) !== hostedPromotionIdentity({ ...request.body, actorId: actor.actorId } as HostedPromotionProofInput).taskId ||
+                String(value.workLinkId) !== hostedPromotionIdentity({ ...request.body, actorId: actor.actorId } as HostedPromotionProofInput).workLinkId)) {
+              scopeAuthorized = false; unauthorizedContent = true;
+            }
+          } else if (success && request.action === "history") {
             failureStage = "history_scope_validation";
             const ids = (value.messages as Array<{ id: string }>).map((message) => message.id);
             const history = await observeHostedPollHistory({ visibility, ids, actorHash: actor.actorHash, receivedAt: bodyReceivedAt,
@@ -686,7 +759,7 @@ export async function runHostedWorkload(input: HostedInput) {
             serverTiming: parseHostedServerTiming(response.headers.get("server-timing")),
             journey: slot.journey, phase: slot.phase, latencyMs: httpLatencyMs, response: { statusCode: response.status, valid, success, errorEnvelope: object(envelope) && envelope.ok === false },
             acknowledged: expectedOutcome === "write" && success, scopeAuthorized, actualProjectIds, unauthorizedContent,
-            effectIds: success && request.body ? [String(request.action === "send" ? value.messageId : value.taskId)] : [], bytes: body.bytes,
+            effectIds: verifiedEffectIds ?? (success && request.body ? [String(request.action === "send" ? value.messageId : value.taskId)] : []), bytes: body.bytes,
             finishedAtMs: performance.now() - start,
             ...(object(envelope) && typeof envelope.code === "string" && ERROR_CODES.has(envelope.code) ? { errorCode: envelope.code } : {}) };
           if (!valid || unauthorizedContent || [401, 403].includes(response.status)) fatal = true;
