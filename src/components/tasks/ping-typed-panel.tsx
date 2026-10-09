@@ -336,7 +336,7 @@ function PingTypedPanelFlow({
       setReceipt(sent.response.receipt);
       if (currentScope.current.scopeKey !== scopeKey || !taskDispatch.hydratePingRefresh(intent.projectId, actorId, currentTasks, refreshFence)) {
         setRefreshState("stale");
-        setError("The Project or sign-in changed before the current Tasks view could update. Reopen this Project to see its current state.");
+        setError("The current Tasks view changed before this refresh could finish. Check again after other changes finish, or reopen this Project.");
         return;
       }
       setRefreshState(sent.response.projection);
