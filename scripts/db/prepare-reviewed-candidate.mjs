@@ -177,7 +177,9 @@ export async function loadReviewedCandidate({root, sourceRevision, manifestName,
   const base = loadAndValidateLedger({root});
   const manifest = validateCandidateManifest(JSON.parse(bytes.toString('utf8')), base, now ?? Date.now());
   const remote = git(root,['remote','get-url','origin']).toString('utf8').trim();
-  requireValue(remote === `https://github.com/${repository}.git`, 'CANDIDATE_REMOTE_INVALID');
+  // actions/checkout uses the canonical HTTPS URL without the optional .git suffix.
+  const canonicalRemote = `https://github.com/${repository}`;
+  requireValue(remote === canonicalRemote || remote === `${canonicalRemote}.git`, 'CANDIDATE_REMOTE_INVALID');
   const receivingSourceRevision = requireCandidatePullRequest(await getPullRequest(manifest.pullRequestNumber), manifest);
   requireValue(readReceivingRevision(root,manifest.pullRequestNumber) === receivingSourceRevision,'CANDIDATE_PR_CHANGED');
   requireValue(readMainRevision(root) === sourceRevision,'CANDIDATE_MAIN_CHANGED');
