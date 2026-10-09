@@ -11,16 +11,22 @@ const VIEWS = [
   { key: "overview", label: "Overview" },
   { key: "projects", label: "Projects" },
   { key: "files", label: "Files" },
+  { key: "board", label: "Tasks board" },
+  { key: "list", label: "Tasks list" },
+  { key: "calendar", label: "Tasks calendar" },
+  { key: "analytics", label: "Analytics" },
+  { key: "apps", label: "Apps and tools" },
+  { key: "shared-timeline", label: "Shared timeline" },
 ] as const;
 
-/** Review-only gallery of the five concepts for each view. */
+/** Review-only gallery of the concepts for each view. */
 export default function ConceptsGallery() {
   if (!isDemoMode()) notFound();
   return (
     <div className={styles.page}>
       <div className={styles.inner}>
         <h1 className={styles.title}>Concepts</h1>
-        <p className={styles.subtitle}>Five directions for each view. Open one, then pick your favourites to refine.</p>
+        <p className={styles.subtitle}>Five or six directions for each view, using sample data. These are unpicked prototypes for review.</p>
         {VIEWS.map((view) => (
           <section key={view.key} className={styles.section} aria-labelledby={`c-${view.key}`}>
             <h2 id={`c-${view.key}`} className={styles.sectionTitle}>{view.label}</h2>
@@ -28,10 +34,6 @@ export default function ConceptsGallery() {
               {CONCEPTS.filter((concept) => concept.view === view.key).map((concept) => (
                 <li key={concept.n}>
                   <Link href={`/app/concepts/${concept.view}/${concept.n}`} className={styles.card}>
-                    <span className={styles.shot}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`/concepts/${concept.view}-${concept.n}.png`} alt="" loading="lazy" />
-                    </span>
                     <span className={styles.number}>{view.label} {concept.n}</span>
                     <span className={styles.cardTitle}>{concept.title}</span>
                     <span className={styles.thesis}>{concept.thesis}</span>

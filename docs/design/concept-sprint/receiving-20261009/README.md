@@ -1,0 +1,31 @@
+# App concept and workflow receiving
+
+This bounded candidate receives PR197, the useful owning paths from PR202/203, and the three historical HTML documents from PR205. Root owns final combined integration, CI, receiving, migration and deployment. Original PRs are not represented as literally merged by this extraction.
+
+`source-lineage.json` pins all original heads and per-file Git blobs. The403 admitted paths were402 exact blobs and one adapted gallery before independently evidenced runtime repairs; after repairs378 remain exact,25 are explicitly adapted. The existing15 Overview/Projects/Files placeholders and current shipped app styles remain unchanged. The additional33 Board/List/Calendar/Analytics/Apps/Shared Timeline concepts are actual implementations from terminal203, whose body described an earlier incomplete state.
+
+PR174 is excluded as superseded, with its source branch retained. The active Studio decision at [ee42c074](https://github.com/ethanmcn2013-droid/studio/blob/ee42c074fc6d0ff7d8ed7f1be21dc931ba1d804a/content/hq/decisions/home-page-v3-2026-10-02.md) records One Friday and explicitly retires Floor and sheet, already archived unbuilt there. No retired App homepage, duplicate archive, new founder taste choice, or public availability claim follows from this candidate. The live App root redirect is outside this source receipt.
+
+The gallery labels these sample, unpicked prototypes and renders48 links. Its references to untracked `/concepts/*.png` thumbnails are removed. Screenshots remain in unserved documents. Current production routing/access guards remain intact; the empty production registry alias also excludes prototype chunks for true or unclassified production even with the legacy override. The existing1113 performance ceiling is unchanged. Preview/development keep the full registry.
+
+PR197's original patch adds the exact full Project Drive posttest guard and removes only duplicate workflow invocations; full posttest is retained. Historical test counts and duration comments in that patch are historical observations. The new boundary tests execute the actual Next configuration under production, unclassified production, preview and development, and assert the retained route gates. No dependency or lockfile changes occur.
+
+## Verification boundaries
+
+Focused ESLint on all added implementations and the receiving seams passed without suppressions. TypeScript checking passed. Production/review configuration tests5/5 and existing access-mode tests6/6 passed. Source v3-token and module-boundary checks passed. The first boundary test attempt had an import-interop fixture defect; corrected test reads the actual default configuration. The first browser harness over-required an h1 in retained placeholders; that expectation is corrected and recorded separately. A first interaction probe selected the desktop composer instead of the mobile Add task button; its raw failed expectation is retained and the actual accessible mobile control is used.
+
+Local Chrome review-mode browser evidence is recorded by `scripts/design/receive-concepts.mjs` in this directory. It checks the four canonical gallery dimensions, existing15 placeholders, and desktop/mobile rendering for all new33 routes. Runtime errors are failures and remain recorded; screenshots are evidence, not visual direction or baseline approval. Any failed run is preserved before repairs, and repaired routes must be rerendered against exact changed source hashes.
+
+The gallery's source materiality record intentionally remains unchanged until the final aggregate full132 canonical suite and owning `experience:review` receiving. `experience:validate` currently reports exactly that gallery source drift; this is pending required work, not a waiver. Root must bind the final attestation and this bounded gallery receipt, then rerun the registry gate. Production chunk/performance checks, production404 behavior, fresh required CI, hosted readiness, canonical aliases and production acceptance are separate final root gates.
+
+## Rendered receiving results
+
+The complete before-repair sweep rendered85 cases (four gallery sizes,15 retained placeholders at desktop,33 added prototypes at desktop and mobile), with zero document overflow. It failed on21 actual runtime errors across10 routes: reduced-motion hydration differences and one negative SVG viewport while the mobile layout settled. `browser-receipt-before-repair.json`, its source lineage and before screenshots retain those failures.
+
+The concept-only shared preference hook uses React useSyncExternalStore with a false server snapshot, keeping the first hydration render identical before applying the real native preference.23 consumers in affected prototype folders use it. SharedTimeline4 waits for a positive calculated frame instead of emitting negative SVG dimensions. No production component, visual direction, sample dataset or interaction design changes. The affected10 routes then passed at all four canonical dimensions plus four gallery cases:44/44 rendered, zero runtime errors, zero document overflow (`browser-receipt-repaired.json`). Unchanged route results remain separately visible in the original failed full-scope receipt, without converting that original failure into a pass.
+
+Three additional real interaction probes passed without runtime errors: native reduced-motion changes unfold/refold Calendar4 after hydration; the actual Board1 mobile Add task sheet opens and Escape closes it; Apps6's local Connect something sheet opens and closes. `interaction-receipt.json` binds those sources. The SSR hook test also passes under the actual Node22 CI invocation without an extra loader (1/1). A receiving test variable initially violated Next's no-assign-module-variable lint rule; it is renamed and its first failure remains retained.
+
+Final focused lint and repaired TypeScript checks pass. Text source SHA-256 values in the custom browser/interaction receipts are normalized to LF, matching committed Git source on both Windows and Linux. Git blob lineage uses Git own filters.
+
+The optional Git whitespace check reports inherited whitespace-only findings in two exact accepted gallery HTML files and five exact accepted prototype files. Those original source blobs remain exact; this is recorded separately from required lint/type/runtime checks.

@@ -69,10 +69,14 @@ jobs:
       # removed so the build and later gates never see a second repository.
       - name: Remove parity checkout
         run: rm -rf studio-parity
-      - name: Project Drive lifecycle and recovery
-        run: pnpm test:project-drive
+      # Project Drive remains required once via pnpm test's posttest lifecycle.
       - name: Install Chromium for isolated task Provider proof
         run: pnpm exec playwright install --with-deps chromium
+      - name: Disabled Ping typed and voice receiving
+        run: |
+          pnpm test:ping-typed:browser
+          pnpm test:ping-voice:browser
+          pnpm test:ping-voice:tasks-browser
       - name: Task Provider ordering and snapshot freshness
         run: node --test src/lib/tasks/task-provider-ordering.test.mjs src/lib/tasks/authoritative-refresh.browser.test.mjs
       - run: pnpm build

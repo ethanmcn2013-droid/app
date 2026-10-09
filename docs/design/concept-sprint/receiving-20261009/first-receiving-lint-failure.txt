@@ -1,0 +1,5 @@
+
+D:\Codex-scratch\release-all-20261009\app-consolidation\scripts\design\concepts-boundary.test.mjs
+  35:3  error  Do not assign to the variable `module`. See: https://nextjs.org/docs/messages/no-assign-module-variable  @next/next/no-assign-module-variable
+
+✖ 1 problem (1 error, 0 warnings)

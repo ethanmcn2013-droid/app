@@ -320,8 +320,18 @@ const taskAckBuildEnabled =
   /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.vercel\.app$/.test(process.env.VERCEL_URL ?? "") &&
   Number.isSafeInteger(taskAckUntil) && taskAckUntil > Date.now() &&
   taskAckUntil - Date.now() <= 6 * 60 * 60 * 1_000;
+// Unpicked concepts belong to review/demo builds. Production never emits their
+// lazy chunks, including when a caller sets the old preview override flag.
+const conceptsExcludedFromBuild =
+  process.env.VERCEL_ENV === "production" ||
+  (process.env.NODE_ENV === "production" && !process.env.VERCEL_ENV);
 
 const nextConfig: NextConfig = {
+  turbopack: conceptsExcludedFromBuild ? {
+    resolveAlias: {
+      "@/components/concepts/registry": "./src/components/concepts/registry.production.ts",
+    },
+  } : undefined,
   // Dev-only: the floating dev-tools badge sits over the bottom-nav Home tab
   // at 375px and contaminates every mobile design capture. No production effect.
   devIndicators: false,

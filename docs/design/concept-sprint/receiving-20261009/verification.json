@@ -1,0 +1,55 @@
+{
+  "recordedAt": "2026-10-09T20:07:59Z",
+  "typecheck": {
+    "command": "pnpm exec tsc --noEmit --incremental false",
+    "beforeRepairExitCode": 0,
+    "afterRepairExitCode": 0
+  },
+  "boundaryTests": {
+    "command": "node --import tsx --test scripts/design/concepts-boundary.test.mjs",
+    "passed": 5,
+    "failed": 0
+  },
+  "finalSsrTest": {
+    "command": "node --test --test-name-pattern reduced-motion scripts/design/concepts-boundary.test.mjs",
+    "passed": 1,
+    "failed": 0
+  },
+  "accessModeTests": {
+    "passed": 6,
+    "failed": 0
+  },
+  "sourceV3Tokens": {
+    "exitCode": 0
+  },
+  "moduleBoundaries": {
+    "exitCode": 0
+  },
+  "beforeBrowser": {
+    "renderCases": 85,
+    "runtimeErrors": 21,
+    "documentOverflow": 0
+  },
+  "repairedBrowser": {
+    "renderCases": 44,
+    "runtimeErrors": 0,
+    "documentOverflow": 0
+  },
+  "interactionProbes": {
+    "passed": 3,
+    "runtimeErrors": 0
+  },
+  "pending": [
+    "Final aggregate canonical132-case attestation and gallery materiality receiving",
+    "Final combined required CI and actual production bundle/performance/404 checks",
+    "Root-owned hosted readiness, alias and deployment acceptance"
+  ],
+  "focusedLint": {
+    "exitCode": 0,
+    "suppressionsAdded": 0
+  },
+  "optionalDiffWhitespaceCheck": {
+    "passed": false,
+    "reason": "Inherited whitespace-only findings in two exact accepted gallery HTML files and five exact accepted prototype files; original source blobs preserved."
+  }
+}

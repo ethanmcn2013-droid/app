@@ -1,0 +1,34 @@
+import { chromium, expect } from '@playwright/test';
+import { writeFileSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+const browser=await chromium.launch({channel:'chrome'});
+const issues=[];const results=[];
+try{
+ const page=await browser.newPage({viewport:{width:1280,height:900},reducedMotion:'reduce'});
+ page.on('pageerror',e=>issues.push(e.message));page.on('console',m=>{if(m.type()==='error')issues.push(m.text());});
+ const base='http://127.0.0.1:4397';
+ await page.emulateMedia({reducedMotion:'no-preference'});
+ await page.goto(base+'/app/concepts/calendar/4',{waitUntil:'networkidle'});
+ const folded=page.getByText('The run-sheet opens as you reach the day.',{exact:true});
+ await expect(folded).toBeVisible();
+ await page.emulateMedia({reducedMotion:'reduce'});await expect(folded).toHaveCount(0);
+ await page.emulateMedia({reducedMotion:'no-preference'});await expect(folded).toBeVisible();
+ results.push('Calendar4 responds to native reduced-motion changes after hydration');
+ await page.emulateMedia({reducedMotion:'reduce'});
+ await page.setViewportSize({width:390,height:844});
+ await page.goto(base+'/app/concepts/board/1',{waitUntil:'networkidle'});
+ await page.getByRole('button',{name:'Add task',exact:true}).last().click();
+ await expect(page.getByRole('dialog',{name:'New task',exact:true})).toBeVisible();
+ await page.keyboard.press('Escape');await expect(page.getByRole('dialog',{name:'New task',exact:true})).toHaveCount(0);
+ results.push('Board1 mobile New task sheet opens and Escape closes it');
+ await page.setViewportSize({width:1280,height:900});
+ await page.goto(base+'/app/concepts/apps/6',{waitUntil:'networkidle'});
+ await page.getByRole('button',{name:'Connect something',exact:true}).click();
+ const dialog=page.getByRole('dialog');await expect(dialog).toBeVisible();
+ await dialog.getByRole('button',{name:'Close',exact:true}).click();await expect(dialog).toHaveCount(0);
+ results.push('Apps6 local Connect something sheet opens and closes without provider mutation');
+ const files=['src/components/concepts/use-review-reduced-motion.ts','src/components/concepts/calendar/c4/runway.tsx','src/components/concepts/board/c1/index.tsx','src/components/concepts/apps/c6/index.tsx'];
+ const sourceHashes=Object.fromEntries(files.map(f=>[f,createHash('sha256').update(readFileSync(f,'utf8').replace(/\r\n?/g,'\n')).digest('hex')]));
+ writeFileSync('docs/design/concept-sprint/receiving-20261009/interaction-receipt.json',JSON.stringify({scope:'Local review-only interaction proof. No production/provider/visual acceptance.',sourceHashes,results,issues},null,2)+'\n');
+ if(issues.length)throw Error(`${issues.length} runtime errors`);
+}finally{await browser.close();}
