@@ -1,0 +1,30 @@
+{
+  "schema": "signal-workbench-scenario/1",
+  "id": "tasks-detail-workshop",
+  "version": 1,
+  "source": {
+    "repository": "ethanmcn2013-droid/app",
+    "branch": "feat/workbench-task-workshop",
+    "baseCommit": "dbcde2bc196e37150a526f716d8a062c277f8cb6"
+  },
+  "scenario": {
+    "fixtureId": "tasks.surface.task-detail-panel",
+    "caseName": "populated task",
+    "route": "/app/tasks",
+    "taskName": "Confirm marquee sides with the hire company",
+    "fixtureSource": "experience/critical-fixtures.json",
+    "browserContract": "experience/browser-contract.json"
+  },
+  "journey": {
+    "viewports": ["mobile", "tablet", "desktop", "wide"],
+    "variants": ["record-first", "context-first"],
+    "initialCapturePolicy": "All eight untouched initial captures precede every editing journey; each journey then starts in a fresh browser context."
+  },
+  "fidelity": {
+    "accessMode": "demo",
+    "deploymentEnvironment": "preview",
+    "rendering": "built-product",
+    "identity": "synthetic",
+    "persistence": "not-exercised"
+  }
+}

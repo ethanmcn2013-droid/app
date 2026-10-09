@@ -4,7 +4,8 @@
     "deploymentEnabled": {
       "*": false,
       "feat/workbench-persisted-scenario": false,
-      "feat/real-product-workbench": false
+      "feat/real-product-workbench": false,
+      "feat/workbench-task-workshop": false
     }
   },
   "crons": [
