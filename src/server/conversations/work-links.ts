@@ -266,7 +266,7 @@ export function createConversationTaskOutcomeService(
     const diagnostic = (value: ConversationFailureDiagnostic) => {
       try { (options.diagnostic ?? reportConversationFailure)(value); } catch { /* Diagnostics never change an outcome. */ }
     };
-    const attemptPromotion = () => adapter.transaction("write", async (executor) => {
+    const attemptPromotion = (): Promise<ConversationResult<TaskOutcomeReceipt>> => adapter.transaction("write", async (executor): Promise<ConversationResult<TaskOutcomeReceipt>> => {
         const existing = await findStoredReceipt(executor, args.actorId, input.clientRequestId);
         if (existing) {
           if (!await actorCanRecoverReceipt(executor, args.actorId, existing, directMessagesEnabled)) return fail("unavailable");
