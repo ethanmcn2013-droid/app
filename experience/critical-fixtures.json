@@ -813,8 +813,8 @@
       "assertions": [
         {
           "kind": "role",
-          "role": "heading",
-          "name": "Files and links",
+          "role": "button",
+          "name": "Attach a file",
           "proves": [
             "default"
           ]
@@ -1458,8 +1458,8 @@
       "assertions": [
         {
           "kind": "role",
-          "role": "heading",
-          "name": "Files and links",
+          "role": "button",
+          "name": "Attach a file",
           "proves": [
             "first-use"
           ]
