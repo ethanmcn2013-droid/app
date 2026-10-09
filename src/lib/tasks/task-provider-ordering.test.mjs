@@ -88,6 +88,63 @@ async function fixture(bundle = built) {
   return { browser, page, errors, epoch };
 }
 
+test("Ping canonical refresh advances the epoch and base without losing later edits", async () => {
+  const { browser, page, errors, epoch } = await fixture();
+  try {
+    const accepted = await page.evaluate(() => {
+      const fence = window.api.capturePingRefreshFence();
+      return window.api.hydratePingRefresh('project-a', 'actor-a',
+        [{...window.task('one', 'Ping result'), workspaceId: 'project-a'}], fence);
+    });
+    assert.equal(accepted, true);
+    await page.waitForFunction(() => document.getElementById('title')?.textContent === 'Ping result');
+    assert.notEqual(await page.evaluate(() => document.cookie.split('=')[1]), epoch);
+    await page.evaluate(() => window.api.toggleComplete('one'));
+    await page.waitForFunction(() => window.calls.length === 1);
+    assert.equal(await page.locator('#title').textContent(), 'Ping result');
+    await page.evaluate(() => window.calls[0].resolve([window.task('one', 'Ping result', 'done')]));
+    await page.waitForFunction(() => window.acks.some(([phase]) => phase === 'success'));
+    assert.deepEqual(errors, []);
+  } finally { await browser.close(); }
+});
+
+test("Ping stale refresh cannot overwrite an edit queued while its read was in flight", async () => {
+  const { browser, page, errors } = await fixture();
+  try {
+    const accepted = await page.evaluate(() => {
+      const fence = window.api.capturePingRefreshFence();
+      window.api.updateTask('one', {title: 'New edit'});
+      return window.api.hydratePingRefresh('project-a', 'actor-a',
+        [{...window.task('one', 'Stale Ping result'), workspaceId: 'project-a'}], fence);
+    });
+    assert.equal(accepted, false);
+    assert.equal(await page.locator('#title').textContent(), 'New edit');
+    await page.waitForFunction(() => window.calls.length === 1);
+    await page.evaluate(() => window.calls[0].resolve([window.task('one', 'New edit')]));
+    await page.waitForFunction(() => window.acks.some(([phase]) => phase === 'success'));
+    assert.equal(await page.locator('#title').textContent(), 'New edit');
+    assert.deepEqual(errors, []);
+  } finally { await browser.close(); }
+});
+
+test("Ping refresh refuses a replaced scope and a newer accepted snapshot", async () => {
+  const { browser, page, errors } = await fixture();
+  try {
+    const outcomes = await page.evaluate(() => {
+      const fence = window.api.capturePingRefreshFence();
+      const rows = [{...window.task('one', 'Fresh Ping result'), workspaceId: 'project-a'}];
+      const wrongScope = window.api.hydratePingRefresh('project-b', 'actor-a', rows, fence);
+      const wrongActor = window.api.hydratePingRefresh('project-a', 'actor-b', rows, fence);
+      const first = window.api.hydratePingRefresh('project-a', 'actor-a', rows, fence);
+      const replay = window.api.hydratePingRefresh('project-a', 'actor-a', rows, fence);
+      return {wrongScope, wrongActor, first, replay};
+    });
+    assert.deepEqual(outcomes, {wrongScope: false, wrongActor: false, first: true, replay: false});
+    await page.waitForFunction(() => document.getElementById('title')?.textContent === 'Fresh Ping result');
+    assert.deepEqual(errors, []);
+  } finally { await browser.close(); }
+});
+
 test("late E0 RSC cannot overwrite a settled E1 task list", async () => {
   const { browser, page, errors, epoch } = await fixture();
   try {

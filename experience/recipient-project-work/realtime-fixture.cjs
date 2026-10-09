@@ -8,18 +8,21 @@ async function until(predicate){for(let i=0;i<100;i++){if(predicate())return;awa
 // A controlled React hook host, not a replacement implementation of the hook
 // or reducer. Dependency changes run old cleanups before new effect setup.
 function hookHost(React) {
-  const slots=[],pending=[],transitions=[];let cursor=0,fn,props,output;
+  const slots=[],pending=[],layouts=[],transitions=[];let cursor=0,fn,props,output;
   const same=(a,b)=>a&&b&&a.length===b.length&&a.every((value,i)=>Object.is(value,b[i]));
   const memo=(make,deps)=>{const index=cursor++,old=slots[index];if(!old||!same(old.deps,deps))slots[index]={deps,value:make()};return slots[index].value;};
+  const schedule=(queue,effect,deps)=>{const index=cursor++,old=slots[index];if(!old||!same(old.deps,deps)){queue.push({index,effect,old});slots[index]={deps};}};
+  const flush=queue=>{const effects=queue.splice(0);for(const item of effects)item.old?.cleanup?.();for(const item of effects)slots[item.index].cleanup=item.effect();};
   const react={...React,
     useRef(value){const index=cursor++;return slots[index]??(slots[index]={current:value});},
     useMemo:memo,useCallback:(callback,deps)=>memo(()=>callback,deps),
-    useEffect(effect,deps){const index=cursor++,old=slots[index];if(!old||!same(old.deps,deps)){pending.push({index,effect,old});slots[index]={deps};}},
+    useEffect:(effect,deps)=>schedule(pending,effect,deps),
+    useLayoutEffect:(effect,deps)=>schedule(layouts,effect,deps),
     useReducer(reduce,initial){const index=cursor++;if(!slots[index])slots[index]={value:initial,dispatch:action=>{slots[index].value=reduce(slots[index].value,action);}};return [slots[index].value,slots[index].dispatch];},
     startTransition(callback){const promise=Promise.resolve(callback());transitions.push(promise);},
   };
   return {react,transitions,
-    render(nextFn=fn,nextProps=props){fn=nextFn;props=nextProps;cursor=0;output=fn(props);const effects=pending.splice(0);for(const item of effects)item.old?.cleanup?.();for(const item of effects)slots[item.index].cleanup=item.effect();return output;},
+    render(nextFn=fn,nextProps=props){fn=nextFn;props=nextProps;cursor=0;output=fn(props);flush(layouts);flush(pending);return output;},
     unmount(){for(const slot of slots)slot?.cleanup?.();},
   };
 }

@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useReducer,
   useRef,
@@ -106,7 +107,18 @@ function generateId(): string {
   return `t-${raw.replace(/-/g, "").slice(0, 8)}`;
 }
 
+export type PingTaskRefreshFence = {
+  generation: number;
+  projectId: string;
+  actorId: string;
+  epoch: string | null;
+  freshness: string;
+  snapshotSerial: number;
+};
+
 export type TasksDispatchers = {
+  capturePingRefreshFence: () => PingTaskRefreshFence | null;
+  hydratePingRefresh: (expectedProjectId: string, expectedActorId: string, tasks: Task[], fence: PingTaskRefreshFence | null) => boolean;
   moveTask: (id: string, toLane: LaneId) => void;
   /**
    * Move a task to any board column, system lane or custom column.
@@ -238,6 +250,10 @@ export function TasksProvider({
   // This keeps timestamped optimistic updates identical in both places.
   const stateRef = useRef(state);
   const mounted = useRef(false);
+  const liveScope = useRef({ projectId, actorId });
+  useLayoutEffect(() => {
+    liveScope.current = { projectId, actorId };
+  }, [actorId, projectId]);
   useEffect(() => {
     const mountedGeneration = generationRef.current;
     mounted.current = true;
@@ -288,6 +304,45 @@ export function TasksProvider({
     readStaleRetriesRef.current = 0;
     readRef.current();
   }, []);
+
+  const capturePingRefreshFence = useCallback((): PingTaskRefreshFence | null => {
+    if (!mounted.current || pendingRef.current.length || pumpingRef.current || readingRef.current ||
+        quarantinedRef.current || !seedAcceptedRef.current) return null;
+    return {
+      generation: generationRef.current,
+      ...liveScope.current,
+      epoch: readTaskSnapshotEpoch(),
+      freshness: readTaskSnapshotFreshness(),
+      snapshotSerial: acceptedSnapshotSerialRef.current,
+    };
+  }, []);
+
+  const hydratePingRefresh = useCallback((expectedProjectId: string, expectedActorId: string,
+    fresh: Task[], fence: PingTaskRefreshFence | null) => {
+    const current = liveScope.current;
+    if (!mounted.current || current.projectId !== expectedProjectId || current.actorId !== expectedActorId ||
+        fresh.some((task) => task.workspaceId !== expectedProjectId)) return false;
+    if (!fence || fence.projectId !== current.projectId || fence.actorId !== current.actorId ||
+        fence.generation !== generationRef.current || fence.epoch !== readTaskSnapshotEpoch() ||
+        fence.freshness !== readTaskSnapshotFreshness() ||
+        fence.snapshotSerial !== acceptedSnapshotSerialRef.current || pendingRef.current.length ||
+        pumpingRef.current || readingRef.current || quarantinedRef.current || !seedAcceptedRef.current) {
+      markDirty();
+      return false;
+    }
+    // An external committed write advances the marker, so older RSC payloads
+    // cannot undo the canonical Project read that Ping just confirmed.
+    const epoch = isDemoMode() ? fence.epoch : rotateTaskSnapshotEpoch(fence.epoch);
+    if (!isDemoMode() && epoch === null) {
+      quarantinedRef.current = true;
+      markDirty();
+      return false;
+    }
+    acceptedEpochRef.current = epoch;
+    acceptedFreshnessRef.current = readTaskSnapshotFreshness();
+    publishBase(fresh);
+    return true;
+  }, [markDirty, publishBase]);
 
   const readTasks = useCallback(() => {
     if (!mounted.current || readingRef.current || pumpingRef.current ||
@@ -532,6 +587,8 @@ export function TasksProvider({
   // pending mutation callbacks cannot hydrate a replacement context.
   const dispatchers = useMemo<TasksDispatchers>(
     () => ({
+      capturePingRefreshFence,
+      hydratePingRefresh,
       moveTask: (id, toLane) => {
         const at = new Date();
         enqueue({ targetId: id, operation: "other", startedAt: performance.now(), transport: "legacy",
@@ -629,7 +686,7 @@ export function TasksProvider({
           } });
       },
     }),
-    [enqueue, projectId],
+    [capturePingRefreshFence, enqueue, hydratePingRefresh, projectId],
   );
 
   return (

@@ -12,6 +12,7 @@ const timingPath = fileURLToPath(new URL("./identity-timing.ts", import.meta.url
 const operationalLogPath = fileURLToPath(new URL("../operational-log.ts", import.meta.url));
 const scrubPath = fileURLToPath(new URL("../../lib/sentry-scrub.ts", import.meta.url));
 const queriesPath = fileURLToPath(new URL("../db/queries.ts", import.meta.url));
+const canonicalPath = fileURLToPath(new URL("../db/task-read.ts", import.meta.url));
 
 function loadSource(path, dependencies) {
   const compiled = ts.transpileModule(readFileSync(path, "utf8"), {
@@ -200,21 +201,29 @@ test("getTasks source keeps its scoped query/map and return shape under instrume
   assert.ok(start >= 0 && end > start);
   const body = ts.transpileModule(source.slice(start, end).replace("export async function", "async function"),
     {compilerOptions: {module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022}}).outputText;
-  const f = fixture(); const queryLog = [];
+  const f = fixture(); const queryLog = []; const scoped = [];
   const db = {select() {return {from() {return {where() {return {orderBy() {return {
-    async limit(count) {queryLog.push(count); return [{id: "private-id", title: "private-title"}];},
+    async limit(count) {queryLog.push(count); return [{id: "private-id", title: "private-title", workspaceId: "private-project"}];},
   };}};}};}};}};
+  const sql = () => "sql"; sql.join = () => "joined";
+  const { readCanonicalTasks } = loadSource(canonicalPath, {
+    "server-only": {}, "drizzle-orm": {isNull: value => value, sql},
+    "@/lib/data": {LANE_ORDER: ["todo", "doing", "done"]},
+    "./schema": {tasks: {workspaceId: "workspace", parentTaskId: "parent", archivedAt: "archived"}},
+    "./task-columns": {taskColumnsWithCount: {}},
+    "./row-mappers": {rowToTask: row => ({id: row.id, title: row.title})},
+    "./tenant": {byWorkspace: (column, id, ...conditions) => {scoped.push({column, id, conditions}); return conditions;}},
+    "@/server/diagnostics/task-timing": f.task,
+  });
   const getTasks = new Function("deps", `with (deps) { ${body}; return getTasks; }`)({
     isDemoMode: () => false, demoTasks: () => [], withReadRetry: work => work(),
-    measureTaskBoardQuery: f.task.measureTaskBoardQuery, measureTaskBoardMap: f.task.measureTaskBoardMap,
-    db, taskColumnsWithCount: {}, tasks: {workspaceId: "workspace", parentTaskId: "parent", archivedAt: "archived"},
-    byWorkspace: (_column, _id, ...conditions) => conditions, isNull: value => value,
-    laneOrderSql: "lane", positionOrderSql: "position", rowToTask: row => ({id: row.id, title: row.title}),
+    db, readCanonicalTasks,
   });
   await withEnv(enabledEnv(), async () => {
     assert.deepEqual(await f.request.run(6, () => f.task.withTaskActionTiming("edit", () => getTasks("private-project"))),
-      [{id: "private-id", title: "private-title"}]);
+      [{id: "private-id", title: "private-title", workspaceId: "private-project"}]);
     assert.deepEqual(queryLog, [2000]);
+    assert.deepEqual(scoped, [{column: "workspace", id: "private-project", conditions: ["parent", "archived"]}]);
     f.callbacks.get(6)[0]();
     assert.equal(f.logs[0].fields.edit_boardQuery_count, 1);
     assert.equal(f.logs[0].fields.edit_boardMap_count, 1);

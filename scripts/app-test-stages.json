@@ -1,5 +1,25 @@
 [
   [
+    "pnpm",
+    "test:ping-input"
+  ],
+  [
+    "pnpm",
+    "test:ping"
+  ],
+  [
+    "pnpm",
+    "test:ping-bridge"
+  ],
+  [
+    "pnpm",
+    "test:ping-typed"
+  ],
+  [
+    "pnpm",
+    "test:ping-voice"
+  ],
+  [
     "node",
     "--import",
     "tsx",
@@ -387,5 +407,14 @@
   [
     "pnpm",
     "test:sample-data"
+  ],
+  [
+    "pnpm",
+    "test:task-rollups"
+  ],
+  [
+    "node",
+    "--test",
+    "scripts/run-app-tests.test.mjs"
   ]
 ]
