@@ -8,6 +8,9 @@ import { taskToSchedule } from "@/components/hybrid/adapter";
 import type { Task } from "@/lib/data";
 import type { CalendarFrame } from "@/lib/calendar-frame";
 import { accountDeletionTombstoneKey } from "@/server/account-deletion-key";
+import { hashIdentity } from "@/lib/account/instrumentation/emitter";
+import { hashEpoch } from "@/lib/sponsored-use/service-auth";
+import { usageActorKey } from "@/server/sponsored-use/capture";
 import { createLocalConversationDatabaseAdapter, type ConversationSqlExecutor, type ConversationSqlResult, type ConversationSqlStatement } from "@/server/conversations/database";
 import { createPingCommandService, type PingExecutionResult, type PingProofSeam } from "./command-service";
 import { createPingProofFixture, PROOF_NOW, PROOF_PROJECT, proofCommand, proofContext,
@@ -16,7 +19,7 @@ import { createPingProofFixture, PROOF_NOW, PROOF_PROJECT, proofCommand, proofCo
 const options = { now: () => PROOF_NOW };
 const frame: CalendarFrame = { nowIso: new Date(PROOF_NOW).toISOString(), today: "2026-10-06", locale: "en-IE",
   timeZone: "Europe/Dublin", source: "server", planningPeriod: null };
-const tables = ["tasks", "activities", "ping_command_receipts", "sponsored_use_intents", "sponsored_use_subjects"] as const;
+const tables = ["tasks", "activities", "ping_command_receipts", "sponsored_use_intents", "sponsored_use_subjects", "sponsored_use_project_links"] as const;
 
 const tableOrder = {
   tasks: "id",
@@ -24,7 +27,13 @@ const tableOrder = {
   ping_command_receipts: "actor_id,command_id",
   sponsored_use_intents: "id",
   sponsored_use_subjects: "actor_key,epoch",
+  sponsored_use_project_links: "recipient_key,epoch,workspace_id_hash",
 } as const;
+
+async function mutationRowCount(client: import("@libsql/client").Client, table: typeof tables[number]) {
+  if (table !== "sponsored_use_project_links") return proofCount(client, table);
+  return Number((await client.execute("SELECT COUNT(*) AS n FROM sponsored_use_project_links")).rows[0].n);
+}
 
 type SqlMutationLabel = string;
 
@@ -189,7 +198,7 @@ test("every durable seam and sixth insert failure rolls back actual sponsored in
       } });
       const command = proofCommand(1,{},10);
       assert.deepEqual(await service.execute({ command, context: proofContext(command) }), { ok:false, reason:"temporarily_unavailable" });
-      for (const table of tables) assert.equal(await proofCount(f.client,table),0, `${seam}:${table}`);
+      for (const table of tables) assert.equal(await mutationRowCount(f.client,table),0, `${seam}:${table}`);
     } finally { f.client.close(); }
   }
 });
@@ -332,7 +341,7 @@ test("every physical DML fault position rolls back a selected compound and the s
         { ok: false, reason: "temporarily_unavailable" }, `ordinal ${ordinal}`);
       assert.equal(trace.failureHits, 1, `fault sentinel reached exactly once at ${ordinal}`);
       assert.deepEqual(trace.labels, expected.slice(0, ordinal), `fixed mutation prefix at ${ordinal}`);
-      assert.deepEqual(await orderedMutationTables(f.client), before, `all five tables rolled back at ${ordinal}`);
+      assert.deepEqual(await orderedMutationTables(f.client), before, `all six tables rolled back at ${ordinal}`);
       assert.equal(Number((await f.client.execute({ sql: "SELECT COUNT(*) AS n FROM ping_command_receipts WHERE actor_id=? AND command_id=?",
         args: ["alice", command.commandId] })).rows[0].n), 0, `no original receipt at ${ordinal}`);
     }
@@ -348,6 +357,7 @@ test("every physical DML fault position rolls back a selected compound and the s
     assert.equal(await proofCount(f.client, "ping_command_receipts"), 1);
     assert.equal(await proofCount(f.client, "sponsored_use_intents"), 0);
     assert.equal(await proofCount(f.client, "sponsored_use_subjects"), 0);
+    assert.equal(await mutationRowCount(f.client, "sponsored_use_project_links"), 0);
   } finally { f.client.close(); }
 });
 
@@ -358,7 +368,7 @@ test("every physical DML fault position rolls back ten captured creates and the 
     const trace = { labels: [] as string[], failAt: null as number | null, failureHits: 0, sentinel: new Error("synthetic DML fault") };
     const service = createPingCommandService(observedAdapter(f.client, trace), { ...options, captureConfig });
     const expected = Array.from({ length: 10 }, () => [
-      "insert tasks", "insert activities", "insert sponsored_use_intents", "insert sponsored_use_subjects",
+      "insert tasks", "insert activities", "insert sponsored_use_intents", "insert sponsored_use_subjects", "insert sponsored_use_project_links",
     ]).flat().concat("insert ping_command_receipts");
 
     for (let ordinal = 1; ordinal <= expected.length; ordinal++) {
@@ -369,7 +379,7 @@ test("every physical DML fault position rolls back ten captured creates and the 
         { ok: false, reason: "temporarily_unavailable" }, `ordinal ${ordinal}`);
       assert.equal(trace.failureHits, 1, `fault sentinel reached exactly once at ${ordinal}`);
       assert.deepEqual(trace.labels, expected.slice(0, ordinal), `fixed mutation prefix at ${ordinal}`);
-      assert.deepEqual(await orderedMutationTables(f.client), before, `all five tables rolled back at ${ordinal}`);
+      assert.deepEqual(await orderedMutationTables(f.client), before, `all six tables rolled back at ${ordinal}`);
       assert.equal(Number((await f.client.execute({ sql: "SELECT COUNT(*) AS n FROM ping_command_receipts WHERE actor_id=? AND command_id=?",
         args: ["alice", command.commandId] })).rows[0].n), 0, `no original receipt at ${ordinal}`);
     }
@@ -378,12 +388,30 @@ test("every physical DML fault position rolls back ten captured creates and the 
     trace.labels = []; trace.failAt = null; trace.failureHits = 0;
     const result = await service.execute({ command, context: proofContext(command) });
     assert.equal(result.ok, true, JSON.stringify(result));
-    assert.deepEqual(trace.labels, expected, "positive control proves all 41 successful-path DML statements");
+    assert.deepEqual(trace.labels, expected, "positive control proves all 51 successful-path DML statements");
     assert.equal(await proofCount(f.client, "tasks"), 10);
     assert.equal(await proofCount(f.client, "activities"), 10);
     assert.equal(await proofCount(f.client, "sponsored_use_intents"), 10);
     assert.equal(await proofCount(f.client, "sponsored_use_subjects"), 1);
     assert.equal(await proofCount(f.client, "ping_command_receipts"), 1);
+    assert.equal(await mutationRowCount(f.client, "sponsored_use_project_links"), 1);
+    const link = (await f.client.execute("SELECT * FROM sponsored_use_project_links")).rows[0];
+    const subject = (await f.client.execute("SELECT * FROM sponsored_use_subjects")).rows[0];
+    assert.equal(link.recipient_key, usageActorKey("clerk_alice"));
+    assert.equal(link.epoch, hashEpoch(captureConfig.salt));
+    assert.equal(link.workspace_id_hash, hashIdentity(PROOF_PROJECT, captureConfig.salt));
+    assert.equal(link.sponsor_id, "synthetic-sponsor");
+    assert.equal(Number(link.updated_at), PROOF_NOW);
+    assert.equal(subject.actor_key, link.recipient_key);
+    assert.equal(subject.epoch, link.epoch);
+    assert.equal(subject.subject_id_hash, hashIdentity("clerk_alice", captureConfig.salt));
+    for (const intent of (await f.client.execute("SELECT actor_key,epoch,payload FROM sponsored_use_intents")).rows) {
+      const event = JSON.parse(String(intent.payload));
+      assert.equal(intent.actor_key, subject.actor_key);
+      assert.equal(intent.epoch, link.epoch);
+      assert.equal(event.workspaceIdHash, link.workspace_id_hash);
+      assert.equal(event.subjectIdHash, subject.subject_id_hash);
+    }
   } finally { f.client.close(); }
 });
 
@@ -424,7 +452,7 @@ test("fresh first-write authority denies five canonical blockers installed after
       const fenced = mode !== "membership" && mode !== "role";
       assert.equal(gate.trace.writeIdentity, fenced ? 1 : 0); assert.equal(gate.trace.writeFence, fenced ? 1 : 0);
       assert.deepEqual(gate.trace.mutations, [], "no physical task/activity/receipt prefix");
-      assert.deepEqual(await orderedMutationTables(f.client), baseline, "all five post-blocker tables and every task field preserved");
+      assert.deepEqual(await orderedMutationTables(f.client), baseline, "all six post-blocker tables and every task field preserved");
       assert.equal(await proofCount(f.client, "activities"), 0);
       assert.equal(Number((await f.client.execute({ sql: "SELECT COUNT(*) AS n FROM ping_command_receipts WHERE actor_id='alice' AND command_id=?",
         args: [command.commandId] })).rows[0].n), 0);
