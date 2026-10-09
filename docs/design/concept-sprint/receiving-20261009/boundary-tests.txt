@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: production excludes unpicked concepts with legacy override unset
+ok 1 - production excludes unpicked concepts with legacy override unset
+  ---
+  duration_ms: 27118.1453
+  type: 'test'
+  ...
+# Subtest: production excludes unpicked concepts with legacy override true
+ok 2 - production excludes unpicked concepts with legacy override true
+  ---
+  duration_ms: 11532.8845
+  type: 'test'
+  ...
+# Subtest: preview and development retain the complete review registry
+ok 3 - preview and development retain the complete review registry
+  ---
+  duration_ms: 7614.357
+  type: 'test'
+  ...
+# Subtest: concept routes retain the fail-closed access gate
+ok 4 - concept routes retain the fail-closed access gate
+  ---
+  duration_ms: 4.6744
+  type: 'test'
+  ...
+# Subtest: reduced-motion prototype hook has a deterministic SSR snapshot without window
+ok 5 - reduced-motion prototype hook has a deterministic SSR snapshot without window
+  ---
+  duration_ms: 3865.9593
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 58445.4296

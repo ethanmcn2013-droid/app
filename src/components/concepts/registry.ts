@@ -18,6 +18,39 @@ import { meta as files2Meta } from "./files/c2/meta";
 import { meta as files3Meta } from "./files/c3/meta";
 import { meta as files4Meta } from "./files/c4/meta";
 import { meta as files5Meta } from "./files/c5/meta";
+import { meta as board1Meta } from "./board/c1/meta";
+import { meta as board2Meta } from "./board/c2/meta";
+import { meta as board3Meta } from "./board/c3/meta";
+import { meta as board4Meta } from "./board/c4/meta";
+import { meta as board5Meta } from "./board/c5/meta";
+import { meta as list1Meta } from "./list/c1/meta";
+import { meta as list2Meta } from "./list/c2/meta";
+import { meta as list3Meta } from "./list/c3/meta";
+import { meta as list4Meta } from "./list/c4/meta";
+import { meta as list5Meta } from "./list/c5/meta";
+import { meta as calendar1Meta } from "./calendar/c1/meta";
+import { meta as calendar2Meta } from "./calendar/c2/meta";
+import { meta as calendar3Meta } from "./calendar/c3/meta";
+import { meta as calendar4Meta } from "./calendar/c4/meta";
+import { meta as calendar5Meta } from "./calendar/c5/meta";
+import { meta as analytics1Meta } from "./analytics/c1/meta";
+import { meta as analytics2Meta } from "./analytics/c2/meta";
+import { meta as analytics3Meta } from "./analytics/c3/meta";
+import { meta as analytics4Meta } from "./analytics/c4/meta";
+import { meta as analytics5Meta } from "./analytics/c5/meta";
+import { meta as analytics6Meta } from "./analytics/c6/meta";
+import { meta as apps1Meta } from "./apps/c1/meta";
+import { meta as apps2Meta } from "./apps/c2/meta";
+import { meta as apps3Meta } from "./apps/c3/meta";
+import { meta as apps4Meta } from "./apps/c4/meta";
+import { meta as apps5Meta } from "./apps/c5/meta";
+import { meta as apps6Meta } from "./apps/c6/meta";
+import { meta as sharedTimeline1Meta } from "./shared-timeline/c1/meta";
+import { meta as sharedTimeline2Meta } from "./shared-timeline/c2/meta";
+import { meta as sharedTimeline3Meta } from "./shared-timeline/c3/meta";
+import { meta as sharedTimeline4Meta } from "./shared-timeline/c4/meta";
+import { meta as sharedTimeline5Meta } from "./shared-timeline/c5/meta";
+import { meta as sharedTimeline6Meta } from "./shared-timeline/c6/meta";
 import type { ConceptMeta } from "./types";
 
 export const CONCEPTS: readonly ConceptMeta[] = [
@@ -36,6 +69,39 @@ export const CONCEPTS: readonly ConceptMeta[] = [
   files3Meta,
   files4Meta,
   files5Meta,
+  board1Meta,
+  board2Meta,
+  board3Meta,
+  board4Meta,
+  board5Meta,
+  list1Meta,
+  list2Meta,
+  list3Meta,
+  list4Meta,
+  list5Meta,
+  calendar1Meta,
+  calendar2Meta,
+  calendar3Meta,
+  calendar4Meta,
+  calendar5Meta,
+  analytics1Meta,
+  analytics2Meta,
+  analytics3Meta,
+  analytics4Meta,
+  analytics5Meta,
+  analytics6Meta,
+  apps1Meta,
+  apps2Meta,
+  apps3Meta,
+  apps4Meta,
+  apps5Meta,
+  apps6Meta,
+  sharedTimeline1Meta,
+  sharedTimeline2Meta,
+  sharedTimeline3Meta,
+  sharedTimeline4Meta,
+  sharedTimeline5Meta,
+  sharedTimeline6Meta,
 ];
 
 export const CONCEPT_LOADERS: Record<string, () => Promise<{ default: ComponentType }>> = {
@@ -54,4 +120,37 @@ export const CONCEPT_LOADERS: Record<string, () => Promise<{ default: ComponentT
   "files/3": () => import("./files/c3"),
   "files/4": () => import("./files/c4"),
   "files/5": () => import("./files/c5"),
+  "board/1": () => import("./board/c1"),
+  "board/2": () => import("./board/c2"),
+  "board/3": () => import("./board/c3"),
+  "board/4": () => import("./board/c4"),
+  "board/5": () => import("./board/c5"),
+  "list/1": () => import("./list/c1"),
+  "list/2": () => import("./list/c2"),
+  "list/3": () => import("./list/c3"),
+  "list/4": () => import("./list/c4"),
+  "list/5": () => import("./list/c5"),
+  "calendar/1": () => import("./calendar/c1"),
+  "calendar/2": () => import("./calendar/c2"),
+  "calendar/3": () => import("./calendar/c3"),
+  "calendar/4": () => import("./calendar/c4"),
+  "calendar/5": () => import("./calendar/c5"),
+  "analytics/1": () => import("./analytics/c1"),
+  "analytics/2": () => import("./analytics/c2"),
+  "analytics/3": () => import("./analytics/c3"),
+  "analytics/4": () => import("./analytics/c4"),
+  "analytics/5": () => import("./analytics/c5"),
+  "analytics/6": () => import("./analytics/c6"),
+  "apps/1": () => import("./apps/c1"),
+  "apps/2": () => import("./apps/c2"),
+  "apps/3": () => import("./apps/c3"),
+  "apps/4": () => import("./apps/c4"),
+  "apps/5": () => import("./apps/c5"),
+  "apps/6": () => import("./apps/c6"),
+  "shared-timeline/1": () => import("./shared-timeline/c1"),
+  "shared-timeline/2": () => import("./shared-timeline/c2"),
+  "shared-timeline/3": () => import("./shared-timeline/c3"),
+  "shared-timeline/4": () => import("./shared-timeline/c4"),
+  "shared-timeline/5": () => import("./shared-timeline/c5"),
+  "shared-timeline/6": () => import("./shared-timeline/c6"),
 };

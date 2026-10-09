@@ -1,0 +1,438 @@
+{
+  "scope": "Local review-mode render evidence; no visual direction approval, hosted or production proof.",
+  "sourceHashes": {
+    "src/app/app/concepts/page.tsx": "63e7924b683e8c066b772fda67a7a3c3d347062d1686b785716c6b5d82ba18a2",
+    "src/components/concepts/registry.ts": "7b094214edb25d72f03f5beb691442261c94a28f716163239a6a934109fd7b3d",
+    "next.config.ts": "aae6c2731998f9f6882cc8c3b6078a1bfb210d795f0438cc878eeba1844402ed",
+    "src/components/concepts/use-review-reduced-motion.ts": "7415e194f55572ca4c972b19cc826045bdde0942a0594d4bdcf03d9c2612847b",
+    "docs/design/concept-sprint/receiving-20261009/source-lineage.json": "37c9c5b064d4b5ff73fd7003aee6fd383cf8424f59184a1ae2a79737b8888c57"
+  },
+  "results": [
+    {
+      "kind": "gallery",
+      "viewport": "mobile",
+      "status": 200,
+      "links": 48
+    },
+    {
+      "kind": "gallery",
+      "viewport": "tablet",
+      "status": 200,
+      "links": 48
+    },
+    {
+      "kind": "gallery",
+      "viewport": "desktop",
+      "status": 200,
+      "links": 48
+    },
+    {
+      "kind": "gallery",
+      "viewport": "wide",
+      "status": 200,
+      "links": 48
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/list/4",
+      "viewport": "mobile",
+      "status": 200,
+      "heading": "Today, Friday 25 September",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-list-4-mobile.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/list/4",
+      "viewport": "tablet",
+      "status": 200,
+      "heading": "Today, Friday 25 September",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-list-4-tablet.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/list/4",
+      "viewport": "desktop",
+      "status": 200,
+      "heading": "Today, Friday 25 September",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-list-4-desktop.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/list/4",
+      "viewport": "wide",
+      "status": 200,
+      "heading": "Today, Friday 25 September",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-list-4-wide.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/calendar/4",
+      "viewport": "mobile",
+      "status": 200,
+      "heading": "Mara & Finn's wedding",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-calendar-4-mobile.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/calendar/4",
+      "viewport": "tablet",
+      "status": 200,
+      "heading": "Mara & Finn's wedding",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-calendar-4-tablet.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/calendar/4",
+      "viewport": "desktop",
+      "status": 200,
+      "heading": "Mara & Finn's wedding",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-calendar-4-desktop.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/calendar/4",
+      "viewport": "wide",
+      "status": 200,
+      "heading": "Mara & Finn's wedding",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-calendar-4-wide.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/analytics/5",
+      "viewport": "mobile",
+      "status": 200,
+      "heading": "Ask about your work",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-analytics-5-mobile.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/analytics/5",
+      "viewport": "tablet",
+      "status": 200,
+      "heading": "Ask about your work",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-analytics-5-tablet.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/analytics/5",
+      "viewport": "desktop",
+      "status": 200,
+      "heading": "Ask about your work",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-analytics-5-desktop.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/analytics/5",
+      "viewport": "wide",
+      "status": 200,
+      "heading": "Ask about your work",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-analytics-5-wide.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/apps/2",
+      "viewport": "mobile",
+      "status": 200,
+      "heading": "Apps and tools",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-apps-2-mobile.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/apps/2",
+      "viewport": "tablet",
+      "status": 200,
+      "heading": "Apps and tools",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-apps-2-tablet.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/apps/2",
+      "viewport": "desktop",
+      "status": 200,
+      "heading": "Apps and tools",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-apps-2-desktop.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/apps/2",
+      "viewport": "wide",
+      "status": 200,
+      "heading": "Apps and tools",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-apps-2-wide.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/apps/3",
+      "viewport": "mobile",
+      "status": 200,
+      "heading": "Apps and tools",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-apps-3-mobile.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/apps/3",
+      "viewport": "tablet",
+      "status": 200,
+      "heading": "Apps and tools",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-apps-3-tablet.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/apps/3",
+      "viewport": "desktop",
+      "status": 200,
+      "heading": "Apps and tools",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-apps-3-desktop.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/apps/3",
+      "viewport": "wide",
+      "status": 200,
+      "heading": "Apps and tools",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-apps-3-wide.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/shared-timeline/1",
+      "viewport": "mobile",
+      "status": 200,
+      "heading": "Mara & Finn",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-shared-timeline-1-mobile.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/shared-timeline/1",
+      "viewport": "tablet",
+      "status": 200,
+      "heading": "Mara & Finn",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-shared-timeline-1-tablet.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/shared-timeline/1",
+      "viewport": "desktop",
+      "status": 200,
+      "heading": "Mara & Finn",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-shared-timeline-1-desktop.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/shared-timeline/1",
+      "viewport": "wide",
+      "status": 200,
+      "heading": "Mara & Finn",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-shared-timeline-1-wide.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/shared-timeline/3",
+      "viewport": "mobile",
+      "status": 200,
+      "heading": "Mara & Finn",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-shared-timeline-3-mobile.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/shared-timeline/3",
+      "viewport": "tablet",
+      "status": 200,
+      "heading": "Mara & Finn",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-shared-timeline-3-tablet.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/shared-timeline/3",
+      "viewport": "desktop",
+      "status": 200,
+      "heading": "Mara & Finn",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-shared-timeline-3-desktop.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/shared-timeline/3",
+      "viewport": "wide",
+      "status": 200,
+      "heading": "Mara & Finn",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-shared-timeline-3-wide.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/shared-timeline/4",
+      "viewport": "mobile",
+      "status": 200,
+      "heading": "Mara & Finn",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-shared-timeline-4-mobile.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/shared-timeline/4",
+      "viewport": "tablet",
+      "status": 200,
+      "heading": "Mara & Finn",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-shared-timeline-4-tablet.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/shared-timeline/4",
+      "viewport": "desktop",
+      "status": 200,
+      "heading": "Mara & Finn",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-shared-timeline-4-desktop.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/shared-timeline/4",
+      "viewport": "wide",
+      "status": 200,
+      "heading": "Mara & Finn",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-shared-timeline-4-wide.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/shared-timeline/5",
+      "viewport": "mobile",
+      "status": 200,
+      "heading": "The River Dargle field study",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-shared-timeline-5-mobile.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/shared-timeline/5",
+      "viewport": "tablet",
+      "status": 200,
+      "heading": "The River Dargle field study",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-shared-timeline-5-tablet.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/shared-timeline/5",
+      "viewport": "desktop",
+      "status": 200,
+      "heading": "The River Dargle field study",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-shared-timeline-5-desktop.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/shared-timeline/5",
+      "viewport": "wide",
+      "status": 200,
+      "heading": "The River Dargle field study",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-shared-timeline-5-wide.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/shared-timeline/6",
+      "viewport": "mobile",
+      "status": 200,
+      "heading": "Mara & Finn \u00b7 the way to 22 May",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-shared-timeline-6-mobile.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/shared-timeline/6",
+      "viewport": "tablet",
+      "status": 200,
+      "heading": "Mara & Finn \u00b7 the way to 22 May",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-shared-timeline-6-tablet.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/shared-timeline/6",
+      "viewport": "desktop",
+      "status": 200,
+      "heading": "Mara & Finn \u00b7 the way to 22 May",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-shared-timeline-6-desktop.jpg"
+    },
+    {
+      "kind": "concept",
+      "path": "/app/concepts/shared-timeline/6",
+      "viewport": "wide",
+      "status": 200,
+      "heading": "Mara & Finn \u00b7 the way to 22 May",
+      "retainedPlaceholder": false,
+      "documentOverflow": false,
+      "screenshot": "repair-shared-timeline-6-wide.jpg"
+    }
+  ],
+  "issues": [],
+  "sourceHashNormalization": "UTF-8 text normalized to LF, matching committed Git source"
+}

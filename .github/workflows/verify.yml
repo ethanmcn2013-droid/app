@@ -45,7 +45,12 @@ jobs:
         run: corepack pnpm install --frozen-lockfile
       - name: Record paired Studio revision
         run: git -C studio-parity rev-parse HEAD
-      - name: Test (includes calendar, Signal, Timeline, and suite truth gates)
+      - name: Project Drive suite is wired into pnpm test
+        run: node -e "const s=require('./package.json').scripts.posttest||''; if(!/(^|&& )pnpm test:project-drive( &&|$)/.test(s)){console.error('posttest must run pnpm test:project-drive; it is the only CI entry point for the Project Drive suite');process.exit(1)}"
+      # `pnpm test` runs the Project Drive lifecycle and recovery suite through
+      # its `posttest` hook. Do not add a separate `pnpm test:project-drive`
+      # step: it ran the same 401 tests twice and cost 70-180s per run.
+      - name: Test (includes calendar, Signal, Timeline, suite truth, and Project Drive gates)
         run: pnpm test
         env:
           STUDIO_REPO_PATH: ${{ github.workspace }}/studio-parity
@@ -58,8 +63,6 @@ jobs:
       # removed so the build and later gates never see a second repository.
       - name: Remove parity checkout
         run: rm -rf studio-parity
-      - name: Project Drive lifecycle and recovery
-        run: pnpm test:project-drive
       - run: pnpm build
       # E08.10 — performance budgets, measured from the build above so this
       # costs no extra build time. The check ratchets: it fails when a

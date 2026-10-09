@@ -1,0 +1,231 @@
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+ExpectError: expect(locator).toBeVisible() failed
+
+Locator: getByRole('dialog', { name: 'New task', exact: true })
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "to.be.visible" with timeout 5000ms
+  - waiting for getByRole('dialog', { name: 'New task', exact: true })
+
+    at captureRawStack (D:\Codex-scratch\release-all-20261009\app-consolidation\node_modules\.pnpm\playwright-core@1.61.1\node_modules\playwright-core\lib\coreBundle.js:3172:17)
+    at callMatcherAsStep (D:\Codex-scratch\release-all-20261009\app-consolidation\node_modules\.pnpm\playwright@1.61.1\node_modules\playwright\lib\matchers\expect.js:12877:57)
+    at Object.toBeVisible (D:\Codex-scratch\release-all-20261009\app-consolidation\node_modules\.pnpm\playwright@1.61.1\node_modules\playwright\lib\matchers\expect.js:12867:23)
+    at D:\Codex-scratch\release-all-20261009\app-consolidation\scripts\design\receive-concepts-interactions.mjs:21:70 {
+  matcherResult: {
+    message: 'expect(locator).toBeVisible() failed\n' +
+      '\n' +
+      "Locator: getByRole('dialog', { name: 'New task', exact: true })\n" +
+      'Expected: visible\n' +
+      'Timeout: 5000ms\n' +
+      'Error: element(s) not found\n' +
+      '\n' +
+      'Call log:\n' +
+      '  - Expect "to.be.visible" with timeout 5000ms\n' +
+      "  - waiting for getByRole('dialog', { name: 'New task', exact: true })\n",
+    pass: false,
+    actual: undefined,
+    name: 'toBeVisible',
+    expected: 'visible',
+    log: [
+      '  - Expect "to.be.visible" with timeout 5000ms',
+      "  - waiting for getByRole('dialog', { name: 'New task', exact: true })"
+    ],
+    timeout: 5000,
+    ariaSnapshot: '- link "Skip to main content":\n' +
+      '  - /url: "#app-main-content"\n' +
+      '- complementary "Signal Studio":\n' +
+      '  - link "Signal Studio home":\n' +
+      '    - /url: /app/home\n' +
+      '    - text: Signal Studio\n' +
+      '  - button "Search or jump to": Search or jump to… Ctrl K\n' +
+      '  - navigation "Home":\n' +
+      '    - link "Home":\n' +
+      '      - /url: /app/home\n' +
+      '  - navigation "Workspace":\n' +
+      '    - link "Projects":\n' +
+      '      - /url: /app/project\n' +
+      '    - link "Tasks":\n' +
+      '      - /url: /app/tasks\n' +
+      '    - link "Timeline":\n' +
+      '      - /url: /app/timeline\n' +
+      '    - link "Files":\n' +
+      '      - /url: /app/files\n' +
+      '    - link "Analytics":\n' +
+      '      - /url: /app/analytics\n' +
+      '  - navigation "Build":\n' +
+      '    - link "Automations Preview":\n' +
+      '      - /url: /app/automations\n' +
+      '    - link "Whiteboard Coming Soon":\n' +
+      '      - /url: /app/tools/whiteboard\n' +
+      '  - navigation "Chat":\n' +
+      '    - button "Chat" [expanded]\n' +
+      '    - link "New message":\n' +
+      '      - /url: /app/messages?new=1\n' +
+      '    - link "All conversations 6 waiting":\n' +
+      '      - /url: /app/messages\n' +
+      '    - link "The Orchard, events 1 mention":\n' +
+      '      - /url: /app/messages?c=demo-conversation-project\n' +
+      '    - link "Build the Saturday run-sheet 1 mention":\n' +
+      '      - /url: /app/messages?c=demo-conversation-task-run-sheet\n' +
+      '    - link "Approve the final seating plan , unread":\n' +
+      '      - /url: /app/messages?c=demo-conversation-task-seating\n' +
+      '    - link "Niamh Kelly , online 1 new message":\n' +
+      '      - /url: /app/messages?c=demo-conversation-dm-niamh\n' +
+      '    - link "Aoife Walsh , online 2 new messages":\n' +
+      '      - /url: /app/messages?c=demo-conversation-dm-aoife\n' +
+      '    - link "Dara Quinn":\n' +
+      '      - /url: /app/messages?c=demo-conversation-dm-dara\n' +
+      '    - link "Ciarán Byrne , unread Request":\n' +
+      '      - /url: /app/messages?c=demo-conversation-dm-ciaran\n' +
+      '  - link "Settings":\n' +
+      '    - /url: /app/settings\n' +
+      '  - link "Help and feedback":\n' +
+      '    - /url: mailto:hello@signalstudio.ie?subject=Signal%20Studio%20help\n' +
+      `  - 'button "Theme: Dark. Switch to Light"'\n` +
+      '- banner:\n' +
+      '  - button "Open navigation"\n' +
+      '  - navigation "Breadcrumb": Signal Studio\n' +
+      '  - button "Search or jump to"\n' +
+      '  - link "Inbox":\n' +
+      '    - /url: /app/inbox\n' +
+      '  - button "Apps and tools"\n' +
+      '  - button "New task"\n' +
+      '  - button "New"\n' +
+      `  - 'button "Account: Demo operator"'\n` +
+      '- paragraph: Press space to pick up. Arrow keys move it, space drops it, escape cancels. Press enter for a quick look.\n' +
+      '- banner:\n' +
+      '  - heading "Tasks" [level=1]\n' +
+      '  - button "The Orchard"\n' +
+      '  - paragraph:\n' +
+      '    - strong: "9"\n' +
+      '    - text: of 24 done this week,\n' +
+      '    - button "2 late"\n' +
+      '- toolbar "Board view":\n' +
+      '  - group "Layout":\n' +
+      '    - button "Board" [pressed]\n' +
+      '    - button "List"\n' +
+      '    - button "Calendar"\n' +
+      '  - button "Stage"\n' +
+      '  - group "Show tasks for":\n' +
+      `    - button "Only Orla Byrne's tasks": OB\n` +
+      `    - button "Only Dev Patel's tasks": DP\n` +
+      `    - button "Only Siobhan Kelly's tasks": SK\n` +
+      `    - button "Only Mara Quinn's tasks": MQ\n` +
+      '  - text: Find a task\n' +
+      '  - searchbox "Find a task"\n' +
+      '- navigation "Stages":\n' +
+      '  - list:\n' +
+      '    - listitem:\n' +
+      '      - button "To do, 6 tasks": To do 6\n' +
+      '    - listitem:\n' +
+      '      - button "In progress, 3 tasks": In progress\n' +
+      '    - listitem:\n' +
+      '      - button "Review, 2 tasks": Review\n' +
+      '    - listitem:\n' +
+      '      - button "Waiting, 2 tasks": Waiting\n' +
+      '    - listitem:\n' +
+      '      - button "Done, 11 tasks": Done\n' +
+      '- region "To do":\n' +
+      '  - heading "To do" [level=2]\n' +
+      '  - text: "6"\n' +
+      '  - button "Confirm marquee sides with the hire company. Due Mon 28 Sep. High priority. Mara & Finn. 1 of 3 steps done. 2 comments. Orla Byrne":\n' +
+      '    - heading "Confirm marquee sides with the hire company" [level=3]\n' +
+      '    - text: Mon Mara & Finn 1/3 2\n' +
+      '  - button "Reprint the faded welcome sign. 3 days late, was due Tue 22 Sep. Medium priority. Venue. Siobhan Kelly":\n' +
+      '    - heading "Reprint the faded welcome sign" [level=3]\n' +
+      '    - text: 3 days late Venue\n' +
+      '  - button "Test the festoon lights on the terrace. Due Thu 1 Oct. Medium priority. Venue. 0 of 3 steps done. Dev Patel":\n' +
+      '    - heading "Test the festoon lights on the terrace" [level=3]\n' +
+      '    - text: Thu Venue 0/3\n' +
+      '  - button "Draft a wet-weather plan for the drinks reception, covering the terrace, the orchard lawn and the barn doors if the forecast turns on the day. Due Wed 30 Sep. High priority. Mara & Finn. 6 comments. Orla Byrne, Siobhan Kelly, Dev Patel, Mara Quinn":\n' +
+      '    - heading "Draft a wet-weather plan for the drinks reception, covering the terrace, the orchard lawn and the barn doors if the forecast turns on the day" [level=3]\n' +
+      '    - text: Wed Mara & Finn 6\n' +
+      '  - button "Book the extra cloakroom attendant. Low priority":\n' +
+      '    - heading "Book the extra cloakroom attendant" [level=3]\n' +
+      '  - button "Send the midweek rate card to the June 2027 walk-in couple. Due Fri 2 Oct. Low priority. Enquiry. Siobhan Kelly":\n' +
+      '    - heading "Send the midweek rate card to the June 2027 walk-in couple" [level=3]\n' +
+      '    - text: 2 Oct Enquiry\n' +
+      '  - button "Add task"\n' +
+      '- region "In progress":\n' +
+      '  - heading "In progress" [level=2]\n' +
+      '  - text: 3 3 of 3\n' +
+      '  - button "Menu tasting at The Orchard. Due today. High priority. Mara & Finn. 2 of 5 steps done. 3 comments. Orla Byrne, Mara Quinn":\n' +
+      '    - text: Tasting menu, v2\n' +
+      '    - heading "Menu tasting at The Orchard" [level=3]\n' +
+      '    - text: Today Mara & Finn 2/5 3\n' +
+      '  - button "Build the Saturday run-sheet. Due Tue 29 Sep. High priority. Mara & Finn. 3 of 8 steps done. 4 comments. Siobhan Kelly":\n' +
+      '    - text: Run-sheet draft\n' +
+      '    - heading "Build the Saturday run-sheet" [level=3]\n' +
+      '    - text: Tue Mara & Finn 3/8 4\n' +
+      '  - button "Order tonic and the good olives. 2 days late, was due Wed 23 Sep. Medium priority. Bar. Dev Patel":\n' +
+      '    - heading "Order tonic and the good olives" [level=3]\n' +
+      '    - text: 2 days late Bar\n' +
+      '  - button "Add task"\n' +
+      '- region "Review":\n' +
+      '  - heading "Review" [level=2]\n' +
+      '  - text: 2 2 of 3\n' +
+      '  - button "Approve final seating plan. Due today. High priority. Mara & Finn. 2 of 3 steps done. 5 comments. Orla Byrne, Siobhan Kelly":\n' +
+      '    - text: Floor plan v4\n' +
+      '    - heading "Approve final seating plan" [level=3]\n' +
+      '    - text: Today Mara & Finn 2/3 5\n' +
+      '  - button "Sign off the recommended suppliers list. Low priority. Venue. 1 comment. Orla Byrne":\n' +
+      '    - heading "Sign off the recommended suppliers list" [level=3]\n' +
+      '    - text: Venue 1\n' +
+      '  - button "Add task"\n' +
+      '- region "Waiting":\n' +
+      '  - heading "Waiting" [level=2]\n' +
+      '  - text: "2"\n' +
+      '  - button "Chase florist deposit. Due Mon 28 Sep. Medium priority. Mara & Finn. Waiting on Bloom and Wild reply. Siobhan Kelly":\n' +
+      '    - heading "Chase florist deposit" [level=3]\n' +
+      '    - paragraph:\n' +
+      '      - text: Waiting on\n' +
+      '      - strong: Bloom and Wild reply\n' +
+      '    - text: Mon Mara & Finn\n' +
+      `  - button "Confirm the band's arrival time. Due Tue 29 Sep. Low priority. Mara & Finn. Waiting on The Lindens' manager. Dev Patel":\n` +
+      `    - heading "Confirm the band's arrival time" [level=3]\n` +
+      '    - paragraph:\n' +
+      '      - text: Waiting on\n' +
+      "      - strong: The Lindens' manager\n" +
+      '    - text: Tue Mara & Finn\n' +
+      '  - button "Add task"\n' +
+      '- region "Done":\n' +
+      '  - heading "Done" [level=2]\n' +
+      '  - text: "11"\n' +
+      '  - button "Book the ceilidh band. Done. Medium priority. Mara & Finn. Siobhan Kelly":\n' +
+      '    - heading "Book the ceilidh band" [level=3]\n' +
+      '  - button "Send the final invoice to Mara and Finn. Done. Medium priority. Mara & Finn. Orla Byrne":\n' +
+      '    - heading "Send the final invoice to Mara and Finn" [level=3]\n' +
+      '  - button "Order 180 chair covers. Done. Low priority. Mara & Finn. Dev Patel":\n' +
+      '    - heading "Order 180 chair covers" [level=3]\n' +
+      '  - button "Walk the site with the photographer. Done. Low priority. Mara & Finn. Siobhan Kelly":\n' +
+      '    - heading "Walk the site with the photographer" [level=3]\n' +
+      '  - button "Confirm the shuttle bus times. Done. Medium priority. Orla Byrne":\n' +
+      '    - heading "Confirm the shuttle bus times" [level=3]\n' +
+      '  - button "Set the bar float for Saturday. Done. Low priority. Bar. Dev Patel":\n' +
+      '    - heading "Set the bar float for Saturday" [level=3]\n' +
+      '  - button "Update the allergy list for the kitchen. Done. High priority. Mara & Finn. Orla Byrne":\n' +
+      '    - heading "Update the allergy list for the kitchen" [level=3]\n' +
+      '  - button "Collect the table numbers from the printer. Done. Low priority. Siobhan Kelly":\n' +
+      '    - heading "Collect the table numbers from the printer" [level=3]\n' +
+      '  - button "Hang the new terrace heaters. Done. Low priority. Venue. Dev Patel":\n' +
+      '    - heading "Hang the new terrace heaters" [level=3]\n' +
+      '  - button "Renew the late licence. Done. Medium priority. Venue. Orla Byrne":\n' +
+      '    - heading "Renew the late licence" [level=3]\n' +
+      '  - button "Brief the kitchen on the vegan menu. Done. Low priority. Orla Byrne":\n' +
+      '    - heading "Brief the kitchen on the vegan menu" [level=3]\n' +
+      '  - button "Add task"\n' +
+      '- button "Add task"\n' +
+      '- alert\n' +
+      '- status:\n' +
+      '  - text: In development. You’re seeing it early.\n' +
+      '  - button "Hide development notice": ×'
+  }
+}
+
+Node.js v22.23.2

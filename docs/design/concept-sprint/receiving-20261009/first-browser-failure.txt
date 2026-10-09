@@ -1,0 +1,1 @@
+First receiving sweep failed on retained current-main Overview1 placeholder: no h1, locator timeout. New33 concepts have not yet been qualified. Original raw failure: D:/Codex-scratch/release-all-20261009/app-consolidation-browser.txt (original session13277). The harness is corrected to record unchanged existing placeholders explicitly, while requiring headings for the added33.
