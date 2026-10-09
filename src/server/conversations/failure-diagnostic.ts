@@ -20,6 +20,7 @@ export type ConversationFailureDiagnostic = Readonly<{
 }>;
 /** No error objects, request keys, actor identities or source content reach logs. */
 export function reportConversationFailure(diagnostic: ConversationFailureDiagnostic) {
-  try { opLog("warn", "conversation_operation_failure", "Operation outcome", { ...diagnostic }); } catch { /* Diagnostics never decide the operation outcome. */ }
+  const { correlationId, operation, code, outcome, attempt } = diagnostic;
+  try { opLog("warn", "conversation_operation_failure", "Operation outcome", { correlationId, operation, failureKind: codes.has(code) ? code : "unknown", outcome, attempt }); } catch { /* Diagnostics never decide the operation outcome. */ }
 }
 export const newConversationCorrelation = randomUUID;
