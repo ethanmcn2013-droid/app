@@ -12,6 +12,8 @@ A separate local browser diagnostic found that The Dispatch initially remained t
 
 The subsequent browser run confirmed cold reduced-motion content is visible, but changing preference during an active entrance did not cancel it. The next candidate expresses reduced-mode opacity and translation as constant keyframes, allowing Motion to replace the active animation with the same visible final state. The normal entrance is unchanged. The failed run is retained, and a fresh build and identical browser cancellation check remain required.
 
+The constant-keyframe candidate still failed the browser cancellation check. A preserved native diagnostic identified a separate 1ms CSS transform transition: seven feed targets remained translated at the second animation frame and settled at the third. This next candidate changes only The Dispatch reduced-motion transition duration to zero, retaining its normal-motion styles and transition delays. Fresh source-bound builds and the unchanged cancellation criterion remain pending; the failed run and diagnostic remain part of the release record.
+
 Production migrations are already current through 0040; this candidate does not reapply them. Historical hosted-workload and 800ms benchmark failures, Windows native failures, and six moderate OpenTelemetry plus one low AI advisory remain recorded. No new design certification, quality score, production deployment or live Redis receiving is claimed. Provider and live status remain with the existing Delivery release receipt.
 
 ## 2026-10-10 · Candidate · Bounded Redis rate protection

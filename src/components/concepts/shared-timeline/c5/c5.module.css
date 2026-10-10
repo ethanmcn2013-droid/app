@@ -1850,6 +1850,6 @@
   .root *,
   .root *::before,
   .root *::after {
-    transition-duration: 1ms !important;
+    transition-duration: 0ms !important;
   }
 }
