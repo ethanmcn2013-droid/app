@@ -12,21 +12,23 @@ using System.Speech.Recognition;
 using System.Speech.AudioFormat;
 namespace PingWindowsStream {
 public sealed class Audio : Stream {
+ readonly int expected; public Audio(int declaredBytes) { if(declaredBytes<2 || declaredBytes>1440000 || declaredBytes%2!=0) throw new InvalidDataException(); expected=declaredBytes; }
  readonly object gate=new object(); readonly Queue<byte[]> chunks=new Queue<byte[]>();
  byte[] current=null; int offset=0; public int Received=0, Consumed=0, Frames=0; public bool Finished=false, Failed=false;
  readonly MemoryStream admitted=new MemoryStream();
  public void Append(int ordinal, byte[] bytes) { lock(gate) {
-  if(Finished || Failed || ordinal!=Frames+1 || bytes.Length<2 || bytes.Length>9600 || bytes.Length%2!=0 || Received+bytes.Length>1440000) throw new InvalidDataException();
+  if(Finished || Failed || ordinal!=Frames+1 || bytes.Length<2 || bytes.Length>9600 || bytes.Length%2!=0 || Received+bytes.Length>expected) throw new InvalidDataException();
   Frames++; Received+=bytes.Length; admitted.Write(bytes,0,bytes.Length); chunks.Enqueue(bytes); Monitor.PulseAll(gate);
  }}
  public void Finish(int frames,int bytes,string sha) { lock(gate) {
-  if(Finished || Failed || frames!=Frames || bytes!=Received) throw new InvalidDataException();
+  if(Finished || Failed || frames!=Frames || bytes!=Received || bytes!=expected) throw new InvalidDataException();
   using(var h=SHA256.Create()) { var digest=BitConverter.ToString(h.ComputeHash(admitted.ToArray())).Replace("-","").ToLowerInvariant();
    if(digest!=sha) throw new InvalidDataException(); }
   Finished=true; Monitor.PulseAll(gate);
  }}
  public void Cancel() { lock(gate) { Failed=true; Monitor.PulseAll(gate); } }
  public override int Read(byte[] buffer,int start,int count) { lock(gate) {
+  if(count==0) return 0; // Normal Stream zero-count semantics; positive reads own the EOF barrier.
   int written=0;
   while(written<count) {
    if(Failed) throw new IOException();
@@ -36,14 +38,23 @@ public sealed class Audio : Stream {
     if(chunks.Count==0 && Finished) break;
     current=chunks.Dequeue();
    }
-   int n=Math.Min(count-written,current.Length-offset); Buffer.BlockCopy(current,offset,buffer,start+written,n);
+   int n=Math.Min(count-written,current.Length-offset);
+   // SAPI can infer EOF from Position==Length without a further Read. Never expose the final bytes before verified Finish.
+   if(Consumed+n==expected) {
+    while(!Finished && !Failed) Monitor.Wait(gate);
+    if(Failed) throw new IOException();
+   }
+   Buffer.BlockCopy(current,offset,buffer,start+written,n);
    offset+=n; written+=n; Consumed+=n;
   }
   return written; // Only explicit drained Finish returns a short read or zero EOF.
  }}
  public override bool CanRead { get{return true;} } public override bool CanSeek { get{return false;} } public override bool CanWrite { get{return false;} }
- public override long Length { get{throw new NotSupportedException();} } public override long Position { get{return Consumed;} set{throw new NotSupportedException();} }
- public override void Flush(){} public override long Seek(long a,SeekOrigin b){throw new NotSupportedException();}
+ public override long Length { get{return expected;} } public override long Position { get{return Consumed;} set{throw new NotSupportedException();} }
+ public override void Flush(){} public override long Seek(long a,SeekOrigin b){ lock(gate) {
+  if((b==SeekOrigin.Current && a==0) || (b==SeekOrigin.Begin && a==Consumed)) return Consumed;
+  throw new NotSupportedException();
+ }}
  public override void SetLength(long a){throw new NotSupportedException();} public override void Write(byte[] a,int b,int c){throw new NotSupportedException();}
 }
 public static class Peer {
@@ -54,6 +65,32 @@ public static class Peer {
  static Dictionary<string,object> Message() { return json.Deserialize<Dictionary<string,object>>(Line()); }
  static void Keys(Dictionary<string,object> v,params string[] keys) { if(v.Count!=keys.Length) throw new InvalidDataException(); foreach(var k in keys) if(!v.ContainsKey(k)) throw new InvalidDataException(); }
  static int Number(object v) { if(!(v is int) || (int)v<0) throw new InvalidDataException(); return (int)v; }
+ public static bool StreamSelfTest() {
+  try {
+   using(var a=new Audio(8)) {
+    if(a.Length!=8) return false;
+    byte[] output=new byte[8]; int read=-1;
+    var reading=new Thread(()=>{read=a.Read(output,0,8);}); reading.IsBackground=true; reading.Start();
+    a.Append(1,new byte[]{0,128,255,127});
+    if(reading.Join(50)) return false;
+    a.Append(2,new byte[]{1,0,255,255});
+    if(reading.Join(50) || a.Consumed==8 || a.Position==a.Length) return false;
+    if(a.Read(new byte[0],0,0)!=0) return false;
+    a.Finish(2,8,"5a5f779a26ff0219a631e0884c473744a35e80cb37966978102641a3ddb007a7");
+    if(!reading.Join(1000) || read!=8 || a.Consumed!=8 || a.Read(new byte[2],0,2)!=0 ||
+      a.Seek(0,SeekOrigin.Current)!=8 || a.Seek(8,SeekOrigin.Begin)!=8) return false;
+    try{a.Seek(0,SeekOrigin.Begin);return false;}catch(NotSupportedException){}
+    try{a.Append(3,new byte[]{0,0});return false;}catch(InvalidDataException){}
+   }
+   using(var a=new Audio(2)) {
+    bool cancelled=false; var waiting=new Thread(()=>{try{a.Read(new byte[2],0,2);}catch(IOException){cancelled=true;}});
+    waiting.IsBackground=true; waiting.Start(); a.Append(1,new byte[]{0,0});
+    if(waiting.Join(50) || a.Consumed!=0) return false;
+    a.Cancel(); if(!waiting.Join(1000) || !cancelled) return false;
+   }
+   return true;
+  }catch{return false;}
+ }
  public static int Run() {
   try {
    RecognizerInfo info=null; foreach(var i in SpeechRecognitionEngine.InstalledRecognizers()) if(i.Id=="MS-1033-80-DESK" && i.Culture.Name=="en-US") info=i;
@@ -63,7 +100,7 @@ public static class Peer {
    int expected=Number(begin["bytes"]); string digest=(string)begin["sha256"];
    if(expected<2 || expected>1440000 || expected%2!=0 ||
     (digest!="1cca7d6955870af3621f0b7298f3d105de1cf1293c3f68c8eb43cec380b3ab77" && digest!="5a5f779a26ff0219a631e0884c473744a35e80cb37966978102641a3ddb007a7")) throw new InvalidDataException();
-   using(var audio=new Audio()) using(var done=new ManualResetEvent(false)) using(var r=new SpeechRecognitionEngine(info)) {
+   using(var audio=new Audio(expected)) using(var done=new ManualResetEvent(false)) using(var r=new SpeechRecognitionEngine(info)) {
     var segments=new List<Dictionary<string,string>>(); object gate=new object(); bool complete=false,ended=false,cancelled=false,error=false,timedOut=false,late=false;
     r.SpeechRecognized+=(sender,args)=> { lock(gate) { if(complete) {late=true; return;} if(args.Result==null || String.IsNullOrWhiteSpace(args.Result.Text) || segments.Count>=64) {error=true; return;}
      segments.Add(new Dictionary<string,string>{{"text",args.Result.Text}}); } };
@@ -101,7 +138,9 @@ try {
  Add-Type -AssemblyName System.Speech
  Add-Type -AssemblyName System.Web.Extensions
  Add-Type -TypeDefinition $source -ReferencedAssemblies System.Speech,System.Web.Extensions -ErrorAction Stop
- if ($CompileOnly) { Write-Output '{"type":"compile_only_pass"}'; exit 0 }
+ if ($CompileOnly) {
+  if (-not [PingWindowsStream.Peer]::StreamSelfTest()) { Write-Output '{"type":"stream_self_test_failed"}'; exit 1 }
+  Write-Output '{"type":"compile_only_pass","streamSelfTest":true,"recognitionStarted":false}'; exit 0
+ }
  exit ([PingWindowsStream.Peer]::Run())
 } catch { Write-Output '{"type":"failure"}'; exit 1 }
-
