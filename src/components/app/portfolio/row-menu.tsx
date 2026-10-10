@@ -97,7 +97,11 @@ function OpenRowMenu({ state, onClose }: { state: RowMenuState; onClose: () => v
   }, [state.anchor]);
 
   useEffect(() => {
-    menuRef.current?.querySelector<HTMLElement>(`[data-index="${active}"]`)?.focus({ preventScroll: true });
+    // The positioned portal must be visible before the browser can focus it.
+    const frame = requestAnimationFrame(() => {
+      menuRef.current?.querySelector<HTMLElement>(`[data-index="${active}"]`)?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
   }, [active]);
 
   useEffect(() => {
