@@ -127,11 +127,11 @@ export function instrumentLocalAdapter(client: Client) {
     available: true, boundary: inner.boundary,
     async transaction(mode, operation) {
       counters.transactions++;
-      if (fault === "outage") throw new Error("conversation_database_unavailable:injected");
+      if (fault === "outage") throw Object.assign(new Error("conversation_database_unavailable:injected"), { code: "HRANA_CLOSED_ERROR" });
       const selected = fault;
       const result = await inner.transaction(mode, async (executor) => {
         const value = await operation(executor);
-        if (selected === "rollback" && mode === "write") throw new Error("conversation_database_unavailable:rollback");
+        if (selected === "rollback" && mode === "write") throw Object.assign(new Error("conversation_database_unavailable:rollback"), { code: "HRANA_CLOSED_ERROR" });
         return value;
       });
       if (selected === "lost-response" && mode === "write") throw new Error("injected_response_lost_after_commit");
@@ -219,7 +219,14 @@ export async function exerciseLocalServiceFaults(client: Client, checkpoint: Che
     const request = `reliability_fault_${kind}_lost`;
     const operation = () => kind === "message" ? service.sendMessage(send(request)) : tasks.promoteMessageToTask(promote(request));
     instrumented.inject("lost-response");
-    await assert.rejects(operation, /injected_response_lost_after_commit/);
+    if (kind === "message") {
+      await assert.rejects(operation, /injected_response_lost_after_commit/);
+    } else {
+      // Promotion now recovers the durable receipt after the lost response.
+      // The identical-key replays and row count below still prove one effect.
+      const recovered = await operation();
+      assert.ok(recovered.ok, "committed_promotion_not_recovered");
+    }
     instrumented.inject("none");
     const repeated = await Promise.all([operation(), operation()]);
     assert.ok(repeated[0].ok && repeated[1].ok);
