@@ -1,5 +1,11 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-10 · Candidate · Bounded Redis rate protection
+
+Redis rate checks now select a complete credential pair, use a bounded transaction, and validate both the count and expiry result. Access-code redemption fails closed before lookup when protection is unavailable and gives an unavailable response rather than a false quota message. Timeline distinguishes outages from caller quotas; AI/extraction keeps its existing best-effort policy with scrubbed degradation warnings. Existing bucket keys and durations are preserved.
+
+Offline failure, timeout, concurrency and consumer checks are included in the test gate. This candidate does not change the database plan, credentials, production configuration or deployment. Live distributed receiving and release-owner review remain required. Operator procedure: `docs/guides/redis-rate-protection.md`.
+
 The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.

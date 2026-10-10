@@ -10,7 +10,8 @@ import type { EntitlementTier } from "@/lib/data";
 import { claimCompEntitlement } from "@/server/db/comp-redemption";
 import { coupleVisibleCompNotes } from "@/lib/comp-notes";
 import { isDemoMode } from "@/lib/access-mode";
-import { allow } from "@/lib/ratelimit";
+import { checkAttemptLimit } from "@/lib/ratelimit";
+import type { RateLimitResult } from "@/lib/redis-rate-limit";
 import { generateCompCode } from "@/lib/comp-code";
 import { headers } from "next/headers";
 
@@ -101,13 +102,10 @@ export async function mintCompCodeAction(
  * it puts a ceiling on how fast the *legacy* five-character codes already in
  * circulation (31^5 ≈ 2^24.8) can be swept.
  *
- * **The failure mode is OPEN, and that is not a detail.** `allow()` returns
- * true when Upstash is unconfigured, and Upstash is NOT provisioned on the
- * Tasks project today — it is still an open item on the HQ operator ledger.
- * So on 2026-08-03 this limiter enforces nothing in production. It starts
- * enforcing the moment the operator adds UPSTASH_REDIS_REST_URL and
- * UPSTASH_REDIS_REST_TOKEN, with no code change. Until then the control that
- * holds is entropy, and only for codes minted after this change.
+ * Production fails closed on missing/mismatched configuration, outages or
+ * invalid Redis responses. UPSTASH_REDIS_REST_URL/TOKEN or the Marketplace
+ * KV_REST_API_URL/TOKEN must form a complete pair. Quota and service failures
+ * remain distinct, before any code lookup or entitlement mutation.
  */
 const REDEEM_ATTEMPTS_PER_USER = 10;
 const REDEEM_USER_WINDOW = "10 m" as const;
@@ -136,7 +134,8 @@ export type RedeemResult =
         | "already-redeemed"
         | "still-provisioning"
         /** E08.06: too many redemption attempts from this account or address. */
-        | "rate-limited";
+        | "rate-limited"
+        | "unavailable";
     };
 
 /**
@@ -198,14 +197,14 @@ export async function redeemCompCodeAction(
  * attributable to an account. The IP bucket catches the case the user bucket
  * cannot: one attacker cycling throwaway accounts.
  */
-async function redeemWithinAttemptLimits(userId: string): Promise<boolean> {
-  const byUser = await allow(
+async function redeemWithinAttemptLimits(userId: string): Promise<RateLimitResult> {
+  const byUser = await checkAttemptLimit(
     "redeem-user",
     userId,
     REDEEM_ATTEMPTS_PER_USER,
     REDEEM_USER_WINDOW,
   );
-  if (!byUser) return false;
+  if (!byUser.allowed) return byUser;
   let ip = "unknown";
   try {
     const h = await headers();
@@ -216,10 +215,10 @@ async function redeemWithinAttemptLimits(userId: string): Promise<boolean> {
   } catch {
     // No request scope (a script, a test). Fall through on the user bucket
     // alone rather than refusing a legitimate caller.
-    return true;
+    return { allowed: true };
   }
-  if (ip === "unknown") return true;
-  return allow("redeem-ip", ip, REDEEM_ATTEMPTS_PER_IP, REDEEM_IP_WINDOW);
+  if (ip === "unknown") return { allowed: true };
+  return checkAttemptLimit("redeem-ip", ip, REDEEM_ATTEMPTS_PER_IP, REDEEM_IP_WINDOW);
 }
 
 async function redeemCompCodeImpl(code: string): Promise<RedeemResult> {
@@ -228,8 +227,9 @@ async function redeemCompCodeImpl(code: string): Promise<RedeemResult> {
   // answers "does this code exist" as fast as the database can reply, which is
   // exactly the primitive a guessing attack needs.
   const userId = await getCurrentUser();
-  if (!(await redeemWithinAttemptLimits(userId))) {
-    return { ok: false, reason: "rate-limited" };
+  const attempt = await redeemWithinAttemptLimits(userId);
+  if (!attempt.allowed) {
+    return { ok: false, reason: attempt.reason === "quota" ? "rate-limited" : "unavailable" };
   }
 
   // Provisioning remains outside the entitlement transaction. A failed grant

@@ -30,6 +30,8 @@ test("waiting and account/project failures retain their distinct recovery instru
   assert.match(REDEEM_FAILURE_COPY["rate-limited"].body, /ten minutes/);
   assert.match(REDEEM_FAILURE_COPY["still-provisioning"].body, /right account.*manage the intended project.*same code/);
   assert.match(REDEEM_FAILURE_COPY["already-redeemed"].body, /account you first used.*same code/);
+  assert.match(REDEEM_FAILURE_COPY.unavailable.body, /same code again shortly/);
+  assert.doesNotMatch(REDEEM_FAILURE_COPY.unavailable.body, /too many|ten minutes/i);
 });
 
 test("legacy Wedding and Studio grants have explicit public success labels", () => {
