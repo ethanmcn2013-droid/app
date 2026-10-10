@@ -90,3 +90,9 @@ test("environment and oversized/malformed receipts fail closed",async()=>{
   const result=transcribe(pcm(),new AbortController().signal);await p.finish.promise;
   p.emit(final({segments:[{text:"x".repeat(4001)}]}));await assert.rejects(result,/invalid/);p.closed.resolve();
 });
+
+test("a forged corpus admission cannot open a child for unapproved PCM",async()=>{
+ let calls=0;const transcribe=createPingWindowsSyntheticStreamingTranscriber({developmentOnly:true,corpusAdmission:{} as never,
+ open:async()=>{calls++;return peer().port;}});
+ await assert.rejects(transcribe(new Uint8Array([1,2,3,4]),new AbortController().signal),/not_allowlisted/);assert.equal(calls,0);
+});

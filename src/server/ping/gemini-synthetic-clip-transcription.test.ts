@@ -24,6 +24,8 @@ test("exact allowlisted PCM is WAV-wrapped and sent once through the fixed verba
     assert.deepEqual(init.headers, { "content-type": "application/json", "x-goog-api-key": "synthetic-key" });
     const body = JSON.parse(init.body as string);
     assert.equal(body.generationConfig.audioTranscriptionConfig.mode, "VERBATIM");
+    assert.equal(body.generationConfig.maxOutputTokens, 1024);
+    assert.equal(Object.hasOwn(body.generationConfig, "thinkingConfig"), false);
     assert.equal(body.contents[0].role, "user");
     assert.equal(body.contents[0].parts[0].inlineData.mimeType, "audio/wav");
     const wav = Buffer.from(body.contents[0].parts[0].inlineData.data, "base64");
@@ -133,4 +135,10 @@ test("deadline during a pending response-body read holds busy until reader cance
     text: "Assign the selected task to me.", usage: null,
   });
   assert.equal(calls, 2);
+});
+
+test("a forged corpus admission cannot send unapproved PCM",async()=>{
+ let calls=0;const transcribe=createPingGeminiSyntheticClipTranscriber({...options(async()=>{calls++;return response();}),corpusAdmission:{} as never});
+ await assert.rejects(transcribe(new Uint8Array([1,2,3,4]),new AbortController().signal),/not_allowlisted/);
+ assert.equal(calls,0);
 });

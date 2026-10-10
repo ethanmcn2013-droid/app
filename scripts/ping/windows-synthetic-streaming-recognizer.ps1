@@ -65,6 +65,50 @@ public static class Peer {
  static Dictionary<string,object> Message() { return json.Deserialize<Dictionary<string,object>>(Line()); }
  static void Keys(Dictionary<string,object> v,params string[] keys) { if(v.Count!=keys.Length) throw new InvalidDataException(); foreach(var k in keys) if(!v.ContainsKey(k)) throw new InvalidDataException(); }
  static int Number(object v) { if(!(v is int) || (int)v<0) throw new InvalidDataException(); return (int)v; }
+ static void PlainPath(string path) {
+  var full=Path.GetFullPath(path); string current=full;
+  while(!String.IsNullOrEmpty(current)) {
+   if(File.Exists(current) || Directory.Exists(current)) {
+    if((File.GetAttributes(current)&FileAttributes.ReparsePoint)!=0) throw new InvalidDataException();
+   } else throw new InvalidDataException();
+   var parent=Path.GetDirectoryName(current); if(parent==current) break; current=parent;
+  }
+ }
+ static byte[] BoundedFile(string file,int cap) {
+  PlainPath(file);
+  using(var stream=File.Open(file,FileMode.Open,FileAccess.Read,FileShare.Read)) {
+   if(stream.Length<1 || stream.Length>cap) throw new InvalidDataException();
+   using(var copy=new MemoryStream()) { byte[] block=new byte[4096]; int n;
+    while((n=stream.Read(block,0,block.Length))>0) { if(copy.Length+n>cap) throw new InvalidDataException(); copy.Write(block,0,n); }
+    return copy.ToArray();
+   }
+  }
+ }
+ static bool CorpusMember(string digest,int expected) {
+  // No caller path/hash list: fixed gitignored custody bootstrap plus immutable whole-manifest commitment.
+  var bootstrap=Path.Combine(Directory.GetCurrentDirectory(),"scripts","ping","comparison",".synthetic-custody-bootstrap.json");
+  var parser=new JavaScriptSerializer {MaxJsonLength=262144,RecursionLimit=16};
+  var locator=parser.Deserialize<Dictionary<string,object>>(System.Text.Encoding.UTF8.GetString(BoundedFile(bootstrap,4096)));
+  Keys(locator,"manifestPath","sourceRepositoryPath"); if(!(locator["sourceRepositoryPath"] is string)) throw new InvalidDataException(); var file=Path.GetFullPath((string)locator["manifestPath"]);
+  if(!file.StartsWith(@"D:\Codex-scratch\project-ping\",StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException();
+  var bytes=BoundedFile(file,262144);
+  using(var hash=SHA256.Create()) {
+   if(BitConverter.ToString(hash.ComputeHash(bytes)).Replace("-","").ToLowerInvariant()!=
+    "95bc1e6206b7d482f4807c79efa94eb8ab38f71a57ff99e8c07623ce8bd634bd") throw new InvalidDataException();
+  }
+  var manifest=parser.Deserialize<Dictionary<string,object>>(System.Text.Encoding.UTF8.GetString(bytes));
+  if(Number(manifest["audioTotal"])!=42 || Number(manifest["sourceTotal"])!=43) throw new InvalidDataException();
+  var entries=manifest["entries"] as System.Collections.IList;
+  if(entries==null || entries.Count!=42) throw new InvalidDataException();
+  bool member=false;
+  foreach(var item in entries) {
+   var entry=item as Dictionary<string,object>; if(entry==null) throw new InvalidDataException();
+   var sha=entry["pcmSha256"] as string; int count=Number(entry["decodedBytes"]);
+   if(sha==null || !System.Text.RegularExpressions.Regex.IsMatch(sha,"^[a-f0-9]{64}$") || count<2 || count>1440000 || count%2!=0) throw new InvalidDataException();
+   if(sha==digest && count==expected) member=true;
+  }
+  return member;
+ }
  public static bool StreamSelfTest() {
   try {
    using(var a=new Audio(8)) {
@@ -99,7 +143,7 @@ public static class Peer {
    var begin=Message(); Keys(begin,"type","bytes","sha256"); if((string)begin["type"]!="begin") throw new InvalidDataException();
    int expected=Number(begin["bytes"]); string digest=(string)begin["sha256"];
    if(expected<2 || expected>1440000 || expected%2!=0 ||
-    (digest!="1cca7d6955870af3621f0b7298f3d105de1cf1293c3f68c8eb43cec380b3ab77" && digest!="5a5f779a26ff0219a631e0884c473744a35e80cb37966978102641a3ddb007a7")) throw new InvalidDataException();
+    (digest!="1cca7d6955870af3621f0b7298f3d105de1cf1293c3f68c8eb43cec380b3ab77" && digest!="5a5f779a26ff0219a631e0884c473744a35e80cb37966978102641a3ddb007a7" && !CorpusMember(digest,expected))) throw new InvalidDataException();
    using(var audio=new Audio(expected)) using(var done=new ManualResetEvent(false)) using(var r=new SpeechRecognitionEngine(info)) {
     var segments=new List<Dictionary<string,string>>(); object gate=new object(); bool complete=false,ended=false,cancelled=false,error=false,timedOut=false,late=false;
     r.SpeechRecognized+=(sender,args)=> { lock(gate) { if(complete) {late=true; return;} if(args.Result==null || String.IsNullOrWhiteSpace(args.Result.Text) || segments.Count>=64) {error=true; return;}

@@ -1,4 +1,5 @@
 import "server-only";
+import { allowsPingSyntheticPcm, type PingSyntheticCorpusAdmission } from "./synthetic-corpus-admission";
 import { createHash } from "node:crypto";
 import { dataRecord, exactKeys, freeze, jsonArray, transcriptText, codePoints } from "@/lib/ping/input-validation";
 import { PING_PCM_BLOCK_SAMPLES } from "@/lib/ping/pcm";
@@ -8,14 +9,14 @@ const PUBLIC = "1cca7d6955870af3621f0b7298f3d105de1cf1293c3f68c8eb43cec380b3ab77
 const TEST = "5a5f779a26ff0219a631e0884c473744a35e80cb37966978102641a3ddb007a7";
 export type PingWindowsStreamingOptions = Readonly<{ developmentOnly: true;
   /** Trusted local helper port. closed fulfills only after actual owned child exit, never logical close. */
-  open: (signal: AbortSignal) => Promise<PingStreamingSocket>; deadlineMs?: number }>;
+  open: (signal: AbortSignal) => Promise<PingStreamingSocket>; corpusAdmission?: PingSyntheticCorpusAdmission; deadlineMs?: number }>;
 /** Disconnected Windows offline chunked replay. The port must run only the fixed repository helper;
  * no microphone/network/process configuration is provided here. Returns no token-usage estimate.
  * Microsoft SetInputToAudioStream + RecognizeCompleted/InputStreamEnded are the EOF witnesses;
  * physical port exit is additionally required. Recognized text is never manually corrected. */
 export function createPingWindowsSyntheticStreamingTranscriber(options: PingWindowsStreamingOptions) {
   const admittedEnvironment = () => (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test") && process.env.VERCEL === undefined;
-  if (!admittedEnvironment() || !dataRecord(options) || !exactKeys(options, ["developmentOnly", "open"], ["deadlineMs"]) ||
+  if (!admittedEnvironment() || !dataRecord(options) || !exactKeys(options, ["developmentOnly", "open"], ["deadlineMs", "corpusAdmission"]) ||
     options.developmentOnly !== true || typeof options.open !== "function" ||
     (options.deadlineMs !== undefined && (!Number.isInteger(options.deadlineMs) || options.deadlineMs < 1 || options.deadlineMs > 10_000)))
     throw Error("ping_windows_stream_configuration");
@@ -28,7 +29,8 @@ export function createPingWindowsSyntheticStreamingTranscriber(options: PingWind
     const wav = encodePingCompletedPcmWav(pcm);
     if (!wav) throw Error("ping_windows_stream_input");
     const bytes = wav.subarray(44), digest = createHash("sha256").update(bytes).digest("hex");
-    if (digest !== PUBLIC && !(process.env.NODE_ENV === "test" && digest === TEST)) throw Error("ping_windows_stream_not_allowlisted");
+    if (digest !== PUBLIC && !(process.env.NODE_ENV === "test" && digest === TEST) &&
+      !allowsPingSyntheticPcm(options.corpusAdmission,bytes)) throw Error("ping_windows_stream_not_allowlisted");
     busy = true;
     let port: PingStreamingSocket | null = null, detach: (() => void) | null = null;
     let settledOpen = false, physicalClosed = false, stopped = false, closeAsked = false, finished = false, finalSeen = false;

@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createPingGeminiSyntheticNativeInterpreter, PING_GEMINI_NATIVE_ENDPOINT } from "./gemini-synthetic-native-audio";
-import { PING_RESPONSES_SCHEMA } from "./openai-interpreter";
+import { projectPingSyntheticContext, projectPingSyntheticModelInput, PING_SYNTHETIC_INTERPRETATION_INSTRUCTIONS } from "./synthetic-interpretation-contract";
+import { PING_RESPONSES_SCHEMA, parsePingVoiceInterpretation } from "./openai-interpreter";
 const pcm = () => new Uint8Array([0, 128, 255, 127, 1, 0, 255, 255]);
 const context = { selectedTaskCount: 1, referenceInstant: "2026-10-06T09:00:00.000Z", timeZone: "Europe/Dublin",
   systemColumnKeys: ["todo", "doing", "review", "done"] };
@@ -42,7 +43,7 @@ test("exact public admission denies arbitrary PCM/context before network and pro
   let calls = 0;
   const interpret = createPingGeminiSyntheticNativeInterpreter(options(async () => { calls++; return response(); }));
   await assert.rejects(interpret(new Uint8Array([1,2,3,4]), context, new AbortController().signal), /not_allowlisted/);
-  await assert.rejects(interpret(pcm(), { ...context, selectedTaskCount: 2 }, new AbortController().signal), /invalid_input/);
+  await assert.rejects(interpret(pcm(), { ...context, selectedTaskCount: 2 }, new AbortController().signal), /not_allowlisted/);
   assert.equal(calls, 0);
   const saved = process.env.VERCEL;
   try { process.env.VERCEL = "";
@@ -157,4 +158,34 @@ test("deadline during a pending response-body read holds busy until reader cance
   const pending = interpret(pcm(), context, new AbortController().signal);
   await started.promise; await assert.rejects(pending, /deadline/); await settle();
   await assert.rejects(interpret(pcm(), context, new AbortController().signal), /busy/);
+});
+
+test("shared whole-input contract covers creation and normalizes actual selection without granting corpus admission", async () => {
+  assert.match(PING_SYNTHETIC_INTERPRETATION_INSTRUCTIONS,/create 1/);
+  assert.match(PING_SYNTHETIC_INTERPRETATION_INSTRUCTIONS,/Literal titles only; omit title for the default/);
+  for (const selectedTaskCount of [0,10]) {
+    const c={...context,selectedTaskCount};
+    assert.equal(projectPingSyntheticContext(c)?.selectedTaskCount,selectedTaskCount);
+    const input={version:"ping.interpretation.v1",transcript:"Move all selected tasks; no, remove my assignment.",...c};
+    assert.equal(projectPingSyntheticModelInput(input)?.selectedTaskCount,selectedTaskCount);
+    assert.equal(projectPingSyntheticModelInput({...input,actorId:"private"}),null);
+    let calls=0;
+    const interpret=createPingGeminiSyntheticNativeInterpreter({...options(async()=>{calls++;return response();}),corpusAdmission:{} as never});
+    await assert.rejects(interpret(pcm(),c,new AbortController().signal),/not_allowlisted/);
+    assert.equal(calls,0);
+  }
+  assert.equal(projectPingSyntheticContext({...context,selectedTaskCount:11}),null);
+});
+
+test("whole-plan parser preserves selection/count/creation limits and rejects partial unsupported wrappers",()=>{
+ const create={version:"ping.proposal.v1",outcome:"plan",operation:{kind:"create_placeholders",count:10,effects:{selfAssignment:"add"},title:"Public literal title"}};
+ assert.deepEqual(parsePingVoiceInterpretation(create,0),create);
+ assert.equal(parsePingVoiceInterpretation(create,1),null);
+ for(const count of [0,11])assert.equal(parsePingVoiceInterpretation({...create,operation:{...create.operation,count}},0),null);
+ assert.equal(parsePingVoiceInterpretation({...create,operation:{...create.operation,effects:{selfAssignment:"remove"}}},0),null);
+ assert.deepEqual(parsePingVoiceInterpretation(plan,10),plan);
+ assert.equal(parsePingVoiceInterpretation(plan,0),null);
+ const refusal={version:"ping.proposal.v1",outcome:"refusal",reason:"unsupported"};
+ assert.deepEqual(parsePingVoiceInterpretation(refusal,0),refusal);
+ assert.equal(parsePingVoiceInterpretation({...refusal,operation:plan.operation},0),null);
 });

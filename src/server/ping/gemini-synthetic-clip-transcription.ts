@@ -1,4 +1,5 @@
 import "server-only";
+import { allowsPingSyntheticPcm, type PingSyntheticCorpusAdmission } from "./synthetic-corpus-admission";
 import { createHash } from "node:crypto";
 import { dataRecord, exactKeys, freeze, transcriptText, codePoints } from "@/lib/ping/input-validation";
 import { encodePingCompletedPcmWav, type PingClipTranscription, type PingClipUsage } from "./openai-clip-transcription";
@@ -14,6 +15,7 @@ export type PingGeminiSyntheticClipOptions = Readonly<{
   apiKey: string;
   developmentOnly: true;
   fetch: (input: string, init: RequestInit) => Promise<Response>;
+  corpusAdmission?: PingSyntheticCorpusAdmission;
   deadlineMs?: number;
 }>;
 
@@ -62,10 +64,10 @@ function transcript(value: unknown): string | null {
   return transcriptText(result, false) && codePoints(result) <= TRANSCRIPT_MAX ? result : null;
 }
 
-/** Single approved synthetic PCM clip only. This is a disconnected development candidate, not a route. */
+/** Fixed public or custody-admitted synthetic PCM only. Disconnected development candidate. */
 export function createPingGeminiSyntheticClipTranscriber(options: PingGeminiSyntheticClipOptions) {
   if ((process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test") || process.env.VERCEL !== undefined || !dataRecord(options) ||
-    !exactKeys(options, ["apiKey", "developmentOnly", "fetch"], ["deadlineMs"]) ||
+    !exactKeys(options, ["apiKey", "developmentOnly", "fetch"], ["deadlineMs", "corpusAdmission"]) ||
     options.developmentOnly !== true || typeof options.apiKey !== "string" || !/^[\x21-\x7e]{1,512}$/.test(options.apiKey) ||
     typeof options.fetch !== "function" ||
     (options.deadlineMs !== undefined && (!Number.isInteger(options.deadlineMs) || options.deadlineMs < 1 || options.deadlineMs > 10_000)))
@@ -76,6 +78,8 @@ export function createPingGeminiSyntheticClipTranscriber(options: PingGeminiSynt
   let physicalBusy = false;
 
   return async (pcm: unknown, signal: AbortSignal): Promise<PingClipTranscription> => {
+    if ((process.env.NODE_ENV!=="development" && process.env.NODE_ENV!=="test") || process.env.VERCEL!==undefined)
+      throw Error("ping_gemini_clip_configuration");
     if (!(signal instanceof AbortSignal)) throw new Error("ping_gemini_clip_invalid_input");
     if (signal.aborted) throw new Error("ping_gemini_clip_cancelled");
     if (physicalBusy) throw new Error("ping_gemini_clip_busy");
@@ -85,7 +89,8 @@ export function createPingGeminiSyntheticClipTranscriber(options: PingGeminiSynt
     // The encoder returns an owned canonical WAV. Admit only an explicit, exact PCM digest before any network work.
     const actualPcmSha256 = createHash("sha256").update(wav.subarray(44)).digest("hex");
     const admitted = actualPcmSha256 === APPROVED_PUBLIC_PCM_SHA256 ||
-      (process.env.NODE_ENV === "test" && actualPcmSha256 === TEST_PCM_SHA256);
+      (process.env.NODE_ENV === "test" && actualPcmSha256 === TEST_PCM_SHA256) ||
+      allowsPingSyntheticPcm(options.corpusAdmission,wav.subarray(44));
     if (!admitted) throw new Error("ping_gemini_clip_not_allowlisted");
     if (signal.aborted) throw new Error("ping_gemini_clip_cancelled");
     physicalBusy = true;
@@ -122,7 +127,7 @@ export function createPingGeminiSyntheticClipTranscriber(options: PingGeminiSynt
         if (expired()) return;
         const requestBody = {
           contents: [{ role: "user", parts: [{ inlineData: { mimeType: "audio/wav", data: Buffer.from(wav).toString("base64") } }] }],
-          generationConfig: { audioTranscriptionConfig: { mode: "VERBATIM" } },
+          generationConfig: { maxOutputTokens: 1024, audioTranscriptionConfig: { mode: "VERBATIM" } },
         };
         if (expired()) return;
         const response = await fetchGemini(PING_GEMINI_CLIP_ENDPOINT, {

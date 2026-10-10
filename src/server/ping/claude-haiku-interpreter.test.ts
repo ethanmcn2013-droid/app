@@ -150,3 +150,11 @@ test("cancel/deadline settle publicly but hold the physical busy latch through f
   assert.deepEqual(await bodyInterpret(input, signal()), proposal);
   assert.equal(calls, 2);
 });
+
+test("a forged corpus token cannot authorize unrelated interpretation text",async()=>{
+ let calls=0;const interpret=createPingClaudeHaikuInterpreter({developmentOnly:true,apiKey:"public-fixture-key",corpusAdmission:{} as never,
+ fetch:async()=>{calls++;throw Error("not dispatched");}});
+ await assert.rejects(interpret({version:"ping.interpretation.v1",transcript:"Move the selected task to win progress.",selectedTaskCount:1,
+ referenceInstant:"2026-10-06T09:00:00.000Z",timeZone:"Europe/Dublin",systemColumnKeys:["todo","doing","review","done"]},new AbortController().signal),/invalid_input/);
+ assert.equal(calls,0);
+});
