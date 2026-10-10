@@ -1989,7 +1989,7 @@
     "src/components/app/portfolio/portfolio-summary.tsx": "77e21e710784255e4095bd3cb733d972f43854d9f987d012ed916b49bc86288e",
     "src/components/app/portfolio/portfolio-view.tsx": "1c5bfc73b48aaf77d1b2ba4e5dfc85f967e2c68f532fcedfb8f381b09e012087",
     "src/components/app/portfolio/portfolio.module.css": "d847cf2b92ee0eed3c5e510f346e7561a7627828643541aef57db3ec314d212a",
-    "src/components/app/portfolio/row-menu.tsx": "44a7c2e436ab0a2a803644bb25567895aa55075286949825225b13d95f96d69d",
+    "src/components/app/portfolio/row-menu.tsx": "152bde27c3c5e62b1446d4c14a0e45959b46b44cc7edc55d8f304a9a67b48188",
     "src/components/app/portfolio/timeline-canvas.module.css": "ca661093ff750cd9fcd68f71dca9e9b3154ab9870e7ef52d89271d326551e747",
     "src/components/app/portfolio/timeline-canvas.tsx": "7ba47e7e7d00c0b26cb8ab5253fbad73e7ab6f2fa676599719e33c1a032609a0",
     "src/components/app/portfolio/timeline-tabs.tsx": "450f4ef00ff641236e426b85e2904ed634c60fc19cadb87ba90850ac9998310f",
