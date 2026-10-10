@@ -8,6 +8,19 @@ const DAY = 86_400_000;
 const NOW = 1_700_000_000_000;
 const CTX = { userId: "u-test", email: "test@example.com" };
 
+test("durable completion shares the cap with genuine pressure and recorded events", async () => {
+  const signals = [task({ id: "done", title: "Saved completion", workspaceId: "w", lane: "shipped", movedToShippedAt: NOW - 3600000 }),
+    task({ id: "unknown", title: "Unverified work", workspaceId: "w", blockedBy: ["private"], dependencyCoverage: "partial", dueAt: NOW + DAY }),
+    task({ id: "comment", workspaceId: "w", latestValidatedComment: { at: new Date(NOW - 1000).toISOString(), kind: "commentAdd" } })];
+  const brief = await buildBriefing(source(signals), CTX, NOW);
+  assert.ok([...brief.needsAttention, ...brief.quietRisks, ...brief.movingWell].every(row => row.trigger !== "prerequisites-unverified"));
+  assert.ok(brief.needsAttention.some(row => row.trigger === "due-soon"));
+  assert.ok(brief.movingWell.some(row => row.trigger === "recorded-activity"));
+  assert.ok(brief.movingWell.some(row => row.trigger === "just-shipped"));
+  assert.match(brief.activityCoverageNote!, /past 24 hours.*Saved completion/);
+  assert.match(brief.activityCoverageNote!, /Unverified work.*prerequisites could not be fully verified/);
+});
+
 function source(signals: TaskSignal[]): BriefingSource {
   return { async getSignalsForUser() { return signals; } };
 }
@@ -27,6 +40,86 @@ function task(overrides: Partial<TaskSignal> = {}): TaskSignal {
     ...overrides,
   };
 }
+
+test("one dependency keeps its identity when urgent and long-wait presentations use opposite anchors", async () => {
+  const prerequisite = task({ id: "safety-review", title: "Review the safety certificate", workspaceId: "exhibit", idleDays: null });
+  const dependent = task({ id: "open-exhibit", title: "Open the exhibit", workspaceId: "exhibit", dueAt: NOW + DAY,
+    idleDays: 12, blockedBy: [prerequisite.id], dependencyCoverage: "complete" });
+  const urgent = await buildBriefing(source([prerequisite, dependent]), CTX, NOW);
+  assert.equal(urgent.needsAttention.length + urgent.quietRisks.length, 2, "one date observation and one relationship");
+  const relation = urgent.needsAttention.find(item => item.trigger === "blocking-due-work")!;
+  assert.equal(relation.id, prerequisite.id);
+  assert.deepEqual(relation.evidenceTaskIds, [dependent.id, prerequisite.id].sort());
+  assert.doesNotMatch(urgent.needsAttention.find(item => item.trigger === "due-soon")!.detail, /certificate|prerequisite/);
+  const later = await buildBriefing(source([{ ...dependent, dueAt: NOW + 5 * DAY }, prerequisite]), CTX, NOW);
+  const waiting = later.quietRisks.find(item => item.trigger === "blocked-too-long")!;
+  assert.equal(waiting.id, dependent.id);
+  assert.equal(waiting.observationId, relation.observationId, "navigation anchor does not rename the same directed relationship");
+  assert.deepEqual(waiting.evidenceTaskIds, relation.evidenceTaskIds);
+  assert.equal(new Set(urgent.needsAttention.map(item => item.observationId)).size, 2);
+});
+
+test("reversed dependency directions with the same scope and full sources are one observation", async () => {
+  const lighting = task({ id: "lighting", title: "Certify lighting", workspaceId: "gallery", idleDays: 8,
+    blockedBy: ["wiring"], dependencyCoverage: "complete" });
+  const wiring = task({ id: "wiring", title: "Inspect wiring", workspaceId: "gallery", idleDays: 6,
+    blockedBy: ["lighting"], dependencyCoverage: "complete" });
+  const first = await buildBriefing(source([lighting, wiring]), CTX, NOW);
+  assert.equal(first.quietRisks.length, 1, "opposite directions do not duplicate the same represented source set");
+  assert.equal(first.quietRisks[0]!.id, lighting.id, "original strongest pressure still chooses the navigation anchor");
+  assert.deepEqual(first.quietRisks[0]!.evidenceTaskIds, [lighting.id, wiring.id]);
+  assert.match(first.quietRisks[0]!.detail, /Inspect wiring/);
+  const reversed = await buildBriefing(source([{ ...wiring, idleDays: 9 }, lighting]), CTX, NOW);
+  assert.equal(reversed.quietRisks.length, 1);
+  assert.equal(reversed.quietRisks[0]!.id, wiring.id);
+  assert.match(reversed.quietRisks[0]!.detail, /Certify lighting/);
+  assert.equal(reversed.quietRisks[0]!.observationId, first.quietRisks[0]!.observationId,
+    "kind, authorized scope and the complete represented sources define identity");
+  assert.equal(first.triggeredCount, 2, "the one observation still represents both inspected tasks");
+});
+
+test("only an inspected same-scope relationship separates from the task's primary deadline", async () => {
+  const dependent = task({ id: "prepare-gallery", dueAt: NOW - DAY, idleDays: 9, blockedBy: ["approve-lighting"] });
+  const prerequisite = task({ id: "approve-lighting", idleDays: 0 });
+  for (const inputs of [[dependent, prerequisite], [{ ...dependent, workspaceId: "gallery" }],
+    [{ ...dependent, workspaceId: "gallery" }, { ...prerequisite, workspaceId: "foreign" }]]) {
+    const briefing = await buildBriefing(source(inputs), CTX, NOW);
+    const rows = [...briefing.needsAttention, ...briefing.quietRisks];
+    assert.equal(rows.filter(item => item.id === dependent.id).length, 1,
+      "a reference without a verified same-scope second source competes as primary task pressure");
+    assert.deepEqual(rows[0]!.evidenceTaskIds, [dependent.id]);
+  }
+  const scoped = await buildBriefing(source([{ ...dependent, workspaceId: "gallery" },
+    { ...prerequisite, workspaceId: "gallery" }]), CTX, NOW);
+  const rows = [...scoped.needsAttention, ...scoped.quietRisks];
+  assert.equal(rows.length, 2, "the task deadline and verified directed relationship retain distinct meaning");
+  assert.deepEqual(rows.find(item => item.trigger === "due-soon")!.evidenceTaskIds, [dependent.id]);
+  assert.deepEqual(rows.find(item => item.trigger !== "due-soon")!.evidenceTaskIds,
+    [dependent.id, prerequisite.id].sort());
+});
+
+test("deadline and readiness keep full distinct evidence while inspected records count once", async () => {
+  const release = task({ id: "dispatch-crate", title: "Dispatch the exhibit crate", workspaceId: "exhibit", dueAt: NOW + DAY,
+    idleDays: null, dependencyCoverage: "complete", hasCompletedListedPrerequisite: true,
+    verifiedPrerequisiteIds: ["closed-inspection", "closed-inspection"],
+    prerequisiteEvidence: [{ id: "closed-inspection", workspaceId: "exhibit", lane: "done", boardColumnKey: null, complete: true }] });
+  const brief = await buildBriefing(source([release]), CTX, NOW);
+  assert.deepEqual(brief.needsAttention.map(item => [item.id, item.trigger]),
+    [[release.id, "due-soon"], [release.id, "prerequisites-complete"]]);
+  assert.deepEqual(brief.needsAttention.map(item => item.evidenceTaskIds),
+    [[release.id], ["closed-inspection", release.id].sort()]);
+  assert.notEqual(brief.needsAttention[0]!.observationId, brief.needsAttention[1]!.observationId);
+  assert.doesNotMatch(brief.needsAttention[0]!.detail, /prerequisite/);
+  assert.match(brief.needsAttention[1]!.detail, /prerequisites are complete/i);
+  assert.equal(brief.readCount, 2);
+  assert.equal(brief.triggeredCount, 2);
+  const unverifiedReferences = await buildBriefing(source([{ ...release, dependencyCoverage: "partial",
+    hasCompletedListedPrerequisite: false, verifiedPrerequisiteIds: ["missing", "foreign"],
+    prerequisiteEvidence: [{ id: "foreign", workspaceId: "other", lane: "done", boardColumnKey: null, complete: true }] }]), CTX, NOW);
+  assert.deepEqual(unverifiedReferences.readTaskIds, [release.id]);
+  assert.equal(unverifiedReferences.readCount, 1);
+  assert.equal(unverifiedReferences.triggeredCount, 1);
+});
 
 test("Priority Compression caps the whole briefing at three with stable ties", async () => {
   const signals = [
@@ -65,7 +158,65 @@ test("near-due dependent and its real blocker can each surface with distinct rea
   assert.equal(aged.needsAttention.find(item => item.id === "inspection")?.ageDays, 3);
 });
 
-test("a blocker with its own deadline retains an eligible dependency in the winning row", async () => {
+test("deadline and prerequisite observations keep separate source identities and priority positions", async () => {
+  for (const days of [0, 1]) {
+    const deadline = { kind: "date-only" as const, date: new Date(NOW + days * DAY).toISOString().slice(0, 10) };
+    const prerequisite = task({ id: "check", title: "Check the safety plan", workspaceId: "owned",
+      deadline, priority: 2, idleDays: null });
+    const dependent = task({ id: "publish", title: "Publish the visitor guide", workspaceId: "owned",
+      deadline, priority: 1, blockedBy: ["check"], dependencyCoverage: "complete", idleDays: null });
+    for (const rows of [[prerequisite, dependent], [dependent, prerequisite]]) {
+      const brief = await buildBriefing(source(rows), CTX, NOW);
+      assert.deepEqual(brief.needsAttention.map(item => [item.id, item.trigger]), [["publish", "due-soon"], ["check", "due-soon"], ["check", "blocking-due-work"]]);
+      assert.match(brief.needsAttention[0]!.detail, /today|tomorrow/i);
+      assert.doesNotMatch(brief.needsAttention[0]!.detail, /Check the safety plan/);
+      assert.match(brief.needsAttention[2]!.detail, /Publish the visitor guide/);
+      assert.deepEqual(brief.needsAttention.map(item => item.evidenceTaskIds), [["publish"], ["check"], ["check", "publish"]]);
+      assert.equal(brief.triggeredCount, 2);
+    }
+  }
+});
+
+test("dependent context excludes terminal, foreign, missing and self prerequisites without hiding its date", async () => {
+  const dependent = task({ id: "publish", workspaceId: "owned",
+    deadline: { kind: "date-only", date: new Date(NOW + DAY).toISOString().slice(0, 10) },
+    blockedBy: ["check", "missing", "publish"], dependencyCoverage: "partial", idleDays: null });
+  for (const prerequisite of [
+    task({ id: "check", title: "Private title", workspaceId: "foreign" }),
+    task({ id: "check", title: "Completed title", workspaceId: "owned", lane: "shipped" }),
+  ]) {
+    const brief = await buildBriefing(source([dependent, prerequisite]), CTX, NOW);
+    const row = brief.needsAttention.find(item => item.id === "publish")!;
+    assert.equal(row.trigger, "due-soon");
+    assert.match(row.detail, /tomorrow/i);
+    assert.doesNotMatch(row.detail, /Private title|Completed title|open prerequisite:/);
+    assert.match(brief.activityCoverageNote!, /could not be fully verified/);
+    assert.ok(!brief.quietRisks.some(item => item.trigger === "prerequisites-unverified"));
+  }
+  const confirmed = task({ id: "check", title: "Verified check", workspaceId: "owned", idleDays: null });
+  const partial = await buildBriefing(source([dependent, confirmed]), CTX, NOW);
+  assert.doesNotMatch(partial.needsAttention.find(item => item.id === "publish")!.detail, /Verified check/);
+  assert.ok(partial.needsAttention.some(item => item.trigger === "blocking-due-work"));
+  assert.match(partial.activityCoverageNote!, /could not be fully verified/);
+});
+
+test("partial activity describes metadata evidence without inventing an event or actionable work", async () => {
+  const unknown = task({ idleDays: null, activityCoverage: "partial" });
+  const noEvent = await buildBriefing(source([unknown]), CTX, NOW);
+  assert.equal(noEvent.isEmpty, true);
+  assert.equal(noEvent.triggeredCount, 0);
+  assert.match(noEvent.activityCoverageNote ?? "", /history is incomplete/);
+  assert.doesNotMatch(noEvent.activityCoverageNote ?? "", /recorded title edit/i);
+  const recorded = await buildBriefing(source([{ ...unknown, hasRecordedTitleEdit: true }]), CTX, NOW);
+  assert.equal(recorded.isEmpty, true);
+  assert.match(recorded.activityCoverageNote ?? "", /recorded title edit/);
+  assert.match(recorded.activityCoverageNote ?? "", /does not establish meaningful work progress/);
+  assert.match(recorded.activityCoverageNote ?? "", /history is incomplete/);
+  const complete = await buildBriefing(source([{ ...unknown, activityCoverage: "complete", hasRecordedTitleEdit: true }]), CTX, NOW);
+  assert.equal(complete.activityCoverageNote, undefined);
+});
+
+test("a blocker with its own deadline retains a separate eligible dependency observation", async () => {
   const blocker = task({ id: "inspection", title: "Inspect the venue", workspaceId: "owned",
     dueAt: NOW + DAY, idleDays: null });
   const dependent = task({ id: "installation", title: "Install the display", workspaceId: "owned",
@@ -75,9 +226,12 @@ test("a blocker with its own deadline retains an eligible dependency in the winn
     const row = brief.needsAttention.find((item) => item.id === "inspection");
     assert.equal(row?.trigger, "due-soon");
     assert.match(row?.detail ?? "", /due|date/i);
-    assert.match(row?.detail ?? "", /Install the display/);
-    assert.ok(row?.reasons.some((reason) => /listed prerequisite/i.test(reason)));
-    assert.equal(brief.needsAttention.length, 2);
+    assert.doesNotMatch(row?.detail ?? "", /Install the display/);
+    const dependency = brief.needsAttention.find(item => item.trigger === "blocking-due-work")!;
+    assert.match(dependency.detail, /Install the display/);
+    assert.deepEqual(dependency.evidenceTaskIds, ["inspection", "installation"]);
+    assert.notEqual(row?.observationId, dependency.observationId);
+    assert.equal(brief.needsAttention.length, 3);
     assert.equal(brief.triggeredCount, 2);
   }
   for (const key of ["blocking-due-work:inspection", "*:inspection"]) {
@@ -116,10 +270,10 @@ test("a blocker with its own deadline retains an eligible dependency in the winn
     withoutDependency.needsAttention.map(({ id, trigger }) => [id, trigger]));
   assert.equal(aged.needsAttention.length, 3);
   assert.equal(aged.needsAttention.find((row) => row.id === "inspection")?.ageDays, 3);
-  assert.match(aged.needsAttention.find((row) => row.id === "inspection")?.detail ?? "", /Install the display/);
+  assert.doesNotMatch(aged.needsAttention.find((row) => row.id === "inspection")?.detail ?? "", /Install the display/);
 });
 
-test("completed listed prerequisite enters attention, but a stronger due-soon observation wins on the same task", async () => {
+test("completed listed prerequisite and deadline are separately useful observations on the same task", async () => {
   const ready = task({ id: "ready", title: "Install the lights", workspaceId: "owned", dueAt: NOW + 3 * DAY,
     dependencyCoverage: "complete", hasCompletedListedPrerequisite: true, idleDays: null });
   const briefing = await buildBriefing(source([ready]), CTX, NOW);
@@ -127,10 +281,59 @@ test("completed listed prerequisite enters attention, but a stronger due-soon ob
   assert.match(briefing.needsAttention[0]!.detail, /listed prerequisites are complete/i);
   assert.doesNotMatch(briefing.needsAttention[0]!.detail, /just|newly|started/i);
   const urgent = await buildBriefing(source([{ ...ready, dueAt: NOW + DAY }]), CTX, NOW);
-  assert.deepEqual(urgent.needsAttention.map(item => item.trigger), ["due-soon"]);
+  assert.deepEqual(urgent.needsAttention.map(item => item.trigger), ["due-soon", "prerequisites-complete"]);
+  assert.doesNotMatch(urgent.needsAttention[0]!.detail, /listed prerequisites are complete/i);
+  assert.match(urgent.needsAttention[1]!.detail, /listed prerequisites are complete/i);
+  assert.match(urgent.needsAttention[1]!.detail, /move ahead|no longer held up/i);
   const nextWeek = await buildBriefing(source([{ ...ready, dueAt: NOW + 6 * DAY }]), CTX, NOW);
   assert.match(nextWeek.needsAttention[0]!.detail, /saved deadline/i);
   assert.notEqual(nextWeek.suggestedFocus[0]?.due, "this week", "a future date must not inherit a calendar-week claim");
+});
+
+test("independent prerequisite meaning respects suppression, uncertainty and lifecycle", async () => {
+  const ready = task({ id: "launch", title: "Publish the guide", workspaceId: "owned", dueAt: NOW + DAY,
+    dependencyCoverage: "complete", hasCompletedListedPrerequisite: true, idleDays: null });
+  for (const days of [0, 1, 2, 3, 6]) {
+    const brief = await buildBriefing(source([{ ...ready, dueAt: NOW + days * DAY + 3_600_000 }]), CTX, NOW);
+    const item = brief.needsAttention.find(item => item.trigger === "prerequisites-complete")!;
+    assert.match(item.detail, /listed prerequisites are complete/i);
+    assert.match(item.detail, /move ahead|no longer held up/i);
+    assert.equal(brief.triggeredCount, 1);
+  }
+  const suppressed = await buildBriefing(source([ready]), CTX, NOW, {
+    suppressed: new Set(["prerequisites-complete:launch"]), ages: new Map([["due-soon:launch", 3]]),
+  });
+  assert.equal(suppressed.needsAttention[0]?.trigger, "due-soon");
+  assert.equal(suppressed.needsAttention[0]?.ageDays, 3);
+  assert.doesNotMatch(suppressed.needsAttention[0]!.detail, /listed prerequisites are complete|move ahead/);
+  for (const changed of [{ blockedBy: ["still-open"] }, { hasCompletedListedPrerequisite: false },
+    { dependencyCoverage: "partial" as const }, { lane: "shipped" as const }]) {
+    const brief = await buildBriefing(source([{ ...ready, ...changed }]), CTX, NOW);
+    assert.doesNotMatch(JSON.stringify(brief), /listed prerequisites are complete|no longer held up/);
+  }
+});
+
+test("unknown prerequisite context remains truthful outside the deadline window without becoming risk", async () => {
+  const uncertain = task({ id: "launch", title: "Launch work", workspaceId: "owned", blockedBy: [], dueAt: NOW + DAY,
+    dependencyCoverage: "partial", hasCompletedListedPrerequisite: true, idleDays: null });
+  for (const days of [-1, 0, 1, 3, 7, 8]) {
+    const brief = await buildBriefing(source([{ ...uncertain, dueAt: NOW + days * DAY }]), CTX, NOW);
+    const rows = [...brief.needsAttention, ...brief.quietRisks];
+    assert.equal(rows.length, days <= 2 ? 1 : 0);
+    if (rows[0]) assert.equal(rows[0].trigger, "due-soon");
+    assert.match(brief.activityCoverageNote!, /Launch work.*prerequisites could not be fully verified/);
+    assert.match(brief.activityCoverageNote!, /not confirmed clear to move ahead/);
+    assert.ok(rows.every(row => !/listed prerequisites are complete|is blocked/.test(row.detail)));
+  }
+  for (const changed of [{ lane: "shipped" as const }, { dependencyCoverage: "complete" as const, hasCompletedListedPrerequisite: false }]) {
+    const brief = await buildBriefing(source([{ ...uncertain, ...changed }]), CTX, NOW);
+    assert.doesNotMatch(JSON.stringify(brief), /could not be fully verified/);
+  }
+  for (const key of ["prerequisites-unverified:launch", "*:launch"]) {
+    const dismissed = await buildBriefing(source([uncertain]), CTX, NOW, { suppressed: new Set([key]) });
+    assert.doesNotMatch(dismissed.activityCoverageNote ?? "", /could not be fully verified/);
+    assert.equal(dismissed.needsAttention.length, key.startsWith("*") ? 0 : 1);
+  }
 });
 
 test("equal rule and severity honor P0..P3 then unknown before adverse IDs and the cap", async () => {
@@ -156,6 +359,60 @@ test("stronger deadline severity and trigger tier still precede declared priorit
   const later = task({ id: "later-p0", priority: 0, dueAt: NOW + DAY });
   const brief = await buildBriefing(source([later, urgent]), CTX, NOW);
   assert.deepEqual(brief.needsAttention.map(item => item.id), ["late-p3", "later-p0"]);
+});
+
+test("comparable exact deadlines rank by time before priority on the same or different local days", async () => {
+  const hour = 3_600_000;
+  for (const now of [Date.parse("2026-10-11T12:00:00Z"), Date.parse("2026-10-11T19:30:00Z")]) {
+    const early = task({ id: "z-access", priority: 3, dueAt: now + 22 * hour });
+    const late = task({ id: "a-guide", priority: 0, dueAt: now + 28 * hour });
+    for (const inputs of [[late, early], [early, late]]) {
+      const briefing = await buildBriefing(source(inputs), CTX, now, { timezone: "Europe/Dublin" });
+      assert.deepEqual(briefing.needsAttention.map(item => item.id), [early.id, late.id]);
+    }
+    const swapped = await buildBriefing(source([
+      { ...early, dueAt: late.dueAt }, { ...late, dueAt: early.dueAt },
+    ]), CTX, now, { timezone: "Europe/Dublin" });
+    assert.deepEqual(swapped.needsAttention.map(item => item.id), [late.id, early.id]);
+  }
+});
+
+test("mixed deadline ordering preserves calendar positions and is permutation invariant and idempotent", async () => {
+  const now = Date.parse("2026-10-11T12:00:00Z");
+  const rows = [
+    task({ id: "z-exact-first", priority: 3, dueAt: Date.parse("2026-10-12T09:00:00Z") }),
+    task({ id: "a-calendar", priority: 2, deadline: { kind: "date-only", date: "2026-10-12" } }),
+    task({ id: "m-exact-second", priority: 1, dueAt: Date.parse("2026-10-12T15:00:00Z") }),
+  ];
+  const permutations = (items: TaskSignal[]): TaskSignal[][] => items.length === 0 ? [[]]
+    : items.flatMap((item, index) => permutations(items.filter((_, other) => other !== index))
+      .map(rest => [item, ...rest]));
+  const order = async (items: TaskSignal[]) => (await buildBriefing(source(items), CTX, now,
+    { timezone: "Europe/Dublin" })).needsAttention.map(item => item.id);
+  // Original priority ordering places the calendar-only task in the middle.
+  // Only the two exact-time slots exchange; no time is invented for the date.
+  const expected = rows.map(row => row.id);
+  for (const permutation of permutations(rows)) {
+    const ordered = await order(permutation);
+    assert.deepEqual(ordered, expected);
+    assert.deepEqual(await order(ordered.map(id => rows.find(row => row.id === id)!)), expected);
+    assert.equal(ordered[1], "a-calendar");
+  }
+  const calendarRows = rows.filter(row => row.deadline?.kind === "date-only");
+  calendarRows.push(task({ id: "calendar-low", priority: 3, deadline: { kind: "date-only", date: "2026-10-12" } }));
+  assert.deepEqual(await order(calendarRows.reverse()), ["a-calendar", "calendar-low"]);
+});
+
+test("deadline precision tie-break cannot displace overdue severity or a stronger trigger tier", async () => {
+  const now = Date.parse("2026-10-11T12:00:00Z");
+  const expiredDate = task({ id: "past-calendar", priority: 3,
+    deadline: { kind: "date-only", date: "2026-10-10" } });
+  const exact = task({ id: "near-exact", priority: 0, dueAt: now + DAY });
+  const stuck = task({ id: "quiet-priority", priority: 0, idleDays: 20 });
+  const briefing = await buildBriefing(source([stuck, exact, expiredDate]), CTX, now, { timezone: "Europe/Dublin" });
+  assert.deepEqual(briefing.needsAttention.map(item => item.id), [expiredDate.id, exact.id]);
+  assert.deepEqual(briefing.quietRisks.map(item => item.id), [stuck.id]);
+  assert.equal(briefing.needsAttention.length + briefing.quietRisks.length, 3);
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -196,12 +453,11 @@ describe("buildBriefing, bucket caps", () => {
     assert.equal(b.quietRisks.length, 3);
   });
 
-  test("Moving well is hard-capped at 3 items", async () => {
+  test("Recorded moving well is hard-capped at 3 items", async () => {
     const signals = Array.from({ length: 5 }, (_, i) =>
       task({
         id: `t${i}`,
-        lane: "shipped",
-        movedToShippedAt: NOW - i * 3_600_000,
+        latestValidatedComment: { kind: "commentAdd", at: new Date(NOW - i * 3_600_000).toISOString() },
       }),
     );
     const b = await buildBriefing(source(signals), CTX, NOW);
@@ -400,7 +656,7 @@ describe("buildBriefing, the accounting", () => {
       b.needsAttention.some((i) => i.trigger === "overload"),
       "overload should be on the page",
     );
-    assert.equal(b.triggeredCount, 0, "no real item crossed a rule here");
+    assert.equal(b.triggeredCount, 7, "the seven real members crossed the overload rule, not an eighth synthetic task");
   });
 
   test("a crowded week counts its items once, not once plus the cluster", async () => {
@@ -412,7 +668,7 @@ describe("buildBriefing, the accounting", () => {
     // None of the four is due inside two days, so only the synthetic
     // cluster fired, and it stands for items already in readCount.
     assert.equal(b.readCount, 4);
-    assert.equal(b.triggeredCount, 0);
+    assert.equal(b.triggeredCount, 4, "all four real cluster members are flagged once");
   });
 
   test("the triggered count never exceeds what was read", async () => {
@@ -451,7 +707,7 @@ describe("buildBriefing, the accounting", () => {
   // It still counts as flagged, because it did cross a rule and dropping
   // it would make read = flagged + cleared false. The all-clear copy is
   // what names it (voice.ts readCountSentence).
-  test("a lone just-shipped item is still counted as having crossed a rule", async () => {
+  test("completion recognition is selected activity without attention pressure", async () => {
     const signals = [
       task({ id: "a" }),
       task({
@@ -463,6 +719,8 @@ describe("buildBriefing, the accounting", () => {
     const b = await buildBriefing(source(signals), CTX, NOW);
     assert.equal(b.readCount, 2);
     assert.equal(b.triggeredCount, 1);
+    assert.equal(b.movingWell[0]?.trigger, "just-shipped");
+    assert.match(b.activityCoverageNote!, /past 24 hours/);
     assert.equal(b.needsAttention.length, 0);
     assert.equal(b.quietRisks.length, 0);
   });
@@ -807,4 +1065,121 @@ describe("buildBriefing, carry-over aging (ReadState.ages)", () => {
     assert.ok(ids.includes("a"), "aged item keeps its qualified slot");
     assert.equal(ids[ids.length - 1], "a", "but reads last in the block");
   });
+});
+
+test("round8 full prerequisite relation preserves a separate consequential date under cap3", async () => {
+  const checks = ["copy", "safety", "access"].map(id => task({ id, title: id, workspaceId: "delivery", idleDays: null }));
+  const delivery = task({ id: "deliver", workspaceId: "delivery", dueAt: NOW + DAY, idleDays: null, blockedBy: checks.map(row => row.id), dependencyCoverage: "complete" });
+  const separate = task({ id: "separate-date", workspaceId: "delivery", dueAt: NOW + 2 * DAY, idleDays: null });
+  const b = await buildBriefing(source([delivery, ...checks, separate]), CTX, NOW);
+  const relationships = b.needsAttention.filter(row => row.trigger === "blocking-due-work");
+  assert.equal(relationships.length, 1);
+  assert.deepEqual(relationships[0]!.evidenceTaskIds, ["access", "copy", "deliver", "safety"]);
+  for (const name of ["copy", "safety", "access"]) assert.ok(relationships[0]!.detail.includes(name));
+  for (const name of ["copy", "safety", "access"]) assert.ok(b.activityCoverageNote!.includes(name));
+  assert.ok(b.needsAttention.some(row => row.id === separate.id && row.trigger === "due-soon"));
+  assert.equal(b.needsAttention.length + b.quietRisks.length + b.movingWell.length, 3);
+});
+test("round8 mixed prerequisite states retain completed evidence and anonymous uncertainty", async () => {
+  const open = task({ id: "review-copy", title: "Review copy", workspaceId: "packet", idleDays: null });
+  const done = task({ id: "legal-proof", title: "Legal proof", workspaceId: "packet", lane: "shipped", idleDays: null });
+  const dependent = task({ id: "packet", title: "Send packet", workspaceId: "packet", dueAt: NOW + DAY, idleDays: null,
+    blockedBy: [open.id], dependencyCoverage: "partial", prerequisiteEvidence: [
+      { id: open.id, workspaceId: "packet", lane: "doing", boardColumnKey: null, complete: false },
+      { id: done.id, workspaceId: "packet", lane: "done", boardColumnKey: null, complete: true },
+    ] });
+  const b = await buildBriefing(source([dependent, open, done]), CTX, NOW);
+  const row = b.needsAttention.find(item => item.trigger === "blocking-due-work")!;
+  assert.deepEqual(row.evidenceTaskIds, ["legal-proof", "packet", "review-copy"]);
+  assert.match(row.detail, /Review copy/);
+  assert.match(row.detail, /verified complete: “Legal proof”/);
+  assert.match(row.detail, /unknown|unverified/);
+  assert.doesNotMatch(row.detail, /are complete|no longer held up/);
+  assert.match(b.activityCoverageNote!, /Legal proof.*complete/);
+  assert.match(b.activityCoverageNote!, /unverified|unknown|not fully/i);
+});
+test("mixed completed and open dependency remains one full relation separate from its deadline", async () => {
+  const open = task({ id: "inspect-access", title: "Inspect access", workspaceId: "display", idleDays: null });
+  const done = task({ id: "check-layout", title: "Check layout", workspaceId: "display", lane: "shipped", idleDays: null });
+  const dependent = task({ id: "open-display", title: "Open the display", workspaceId: "display", dueAt: NOW + DAY,
+    idleDays: 8, blockedBy: [open.id, open.id], dependencyCoverage: "complete", prerequisiteEvidence: [
+      { id: open.id, workspaceId: "display", lane: "doing", boardColumnKey: null, complete: false },
+      { id: done.id, workspaceId: "display", lane: "done", boardColumnKey: null, complete: true },
+    ] });
+  const brief = await buildBriefing(source([dependent, open, done]), CTX, NOW);
+  const allRows = [...brief.needsAttention, ...brief.quietRisks, ...brief.movingWell];
+  const relations = allRows.filter(row => ["blocking-due-work", "blocked-too-long"].includes(row.trigger));
+  assert.equal(relations.length, 1, "urgent and long-wait presentations share the complete dependency source set");
+  const relation = relations[0]!;
+  assert.equal(relation.id, open.id);
+  assert.equal(relation.trigger, "blocking-due-work");
+  assert.deepEqual(relation.evidenceTaskIds, [done.id, open.id, dependent.id].sort());
+  assert.match(relation.detail, /Open the display.*due tomorrow/);
+  assert.match(relation.detail, /still open: “Inspect access”/);
+  assert.match(relation.detail, /verified complete: “Check layout”/);
+  assert.doesNotMatch(relation.detail, /are complete|no longer held up|ready|started/);
+  const deadline = allRows.find(row => row.id === dependent.id && row.trigger === "due-soon")!;
+  assert.ok(deadline);
+  assert.deepEqual(deadline.evidenceTaskIds, [dependent.id]);
+  assert.notEqual(deadline.observationId, relation.observationId);
+  assert.doesNotMatch(deadline.detail, /Inspect access|Check layout|prerequisite/);
+  assert.equal(allRows.length, 2);
+  const dismissed = await buildBriefing(source([dependent, open, done]), CTX, NOW,
+    { suppressed: new Set([`blocking-due-work:${open.id}`, `blocked-too-long:${dependent.id}`]) });
+  assert.deepEqual(dismissed.needsAttention.map(row => [row.id, row.trigger]), [[dependent.id, "due-soon"]]);
+});
+test("dismissed full dependency cannot resurface under another open prerequisite anchor", async () => {
+  const first = task({ id: "a-access", workspaceId: "room", idleDays: null });
+  const second = task({ id: "b-access", workspaceId: "room", idleDays: null });
+  const dependent = task({ id: "open-room", workspaceId: "room", dueAt: NOW + DAY, idleDays: null,
+    blockedBy: [second.id, first.id], dependencyCoverage: "complete" });
+  const signals = [dependent, second, first];
+  const original = await buildBriefing(source(signals), CTX, NOW);
+  const relation = original.needsAttention.find(row => row.trigger === "blocking-due-work")!;
+  assert.equal(relation.id, first.id, "existing priority/id ordering chooses the representative");
+  assert.deepEqual(relation.evidenceTaskIds, [first.id, second.id, dependent.id].sort());
+  assert.equal(original.needsAttention.length, 2, "one deadline and one complete dependency");
+  const reordered = await buildBriefing(source([...signals].reverse()), CTX, NOW);
+  assert.equal(reordered.needsAttention.find(row => row.trigger === "blocking-due-work")!.id, relation.id);
+  for (const key of [`blocking-due-work:${relation.id}`, `*:${relation.id}`]) {
+    const dismissed = await buildBriefing(source(signals), CTX, NOW, { suppressed: new Set([key]) });
+    const rows = [...dismissed.needsAttention, ...dismissed.quietRisks, ...dismissed.movingWell];
+    assert.ok(rows.every(row => row.observationId !== relation.observationId), "same full relation stays dismissed across every blocker anchor");
+    assert.deepEqual(rows.map(row => [row.id, row.trigger]), [[dependent.id, "due-soon"]]);
+  }
+  const otherBlocker = task({ id: "other-check", workspaceId: "room", idleDays: null });
+  const otherDependent = task({ id: "other-deadline", workspaceId: "room", dueAt: NOW + DAY, idleDays: null,
+    blockedBy: [otherBlocker.id], dependencyCoverage: "complete" });
+  const withOther = await buildBriefing(source([...signals, otherDependent, otherBlocker]), CTX, NOW,
+    { suppressed: new Set([`blocking-due-work:${relation.id}`]) });
+  assert.ok(withOther.needsAttention.some(row => row.id === dependent.id && row.trigger === "due-soon"));
+  assert.ok(withOther.needsAttention.some(row => row.id === otherDependent.id && row.trigger === "due-soon"));
+  assert.ok(withOther.needsAttention.some(row => row.id === otherBlocker.id && row.trigger === "blocking-due-work"));
+  assert.ok(withOther.needsAttention.every(row => row.observationId !== relation.observationId));
+  assert.equal(withOther.needsAttention.length, 3);
+});
+test("round8 complete prerequisite observation names visible set and hides terminal evidence identities", async () => {
+  const done = task({ id: "safety-cert", title: "Safety certificate", workspaceId: "show", lane: "shipped", idleDays: null });
+  const dependent = task({ id: "open-show", workspaceId: "show", dueAt: NOW + 5 * DAY, idleDays: null,
+    dependencyCoverage: "complete", hasCompletedListedPrerequisite: true, prerequisiteEvidence: [
+      { id: done.id, workspaceId: "show", lane: "done", boardColumnKey: null, complete: true },
+      { id: "hidden-terminal", workspaceId: "show", lane: "done", boardColumnKey: null, complete: true },
+    ] });
+  const b = await buildBriefing(source([dependent, done]), CTX, NOW);
+  const row = b.needsAttention.find(item => item.trigger === "prerequisites-complete")!;
+  assert.match(row.detail, /Safety certificate/);
+  assert.doesNotMatch(row.detail, /hidden-terminal/);
+  assert.deepEqual(row.evidenceTaskIds, ["hidden-terminal", "open-show", "safety-cert"]);
+});
+test("round8 precise uncertainty preserves missing date and known metadata without history invention", async () => {
+  const input = task({ id: "undated-plan", title: "Map the sources", workspaceId: "archive", idleDays: null,
+    deadline: null, activityCoverage: "partial",
+    latestValidatedMetadataEdit: { at: new Date(NOW - DAY).toISOString(), field: "tags" },
+    activityHistoryStartAt: new Date(NOW - 3 * DAY).toISOString(),
+  } as Partial<TaskSignal>);
+  const b = await buildBriefing(source([input]), CTX, NOW);
+  const notes = b.activityCoverageNote ?? "";
+  assert.match(notes, /Map the sources/); assert.match(notes, /no .*date|date .*not recorded/i);
+  assert.match(notes, /tag/i); assert.match(notes, /earlier|before/i);
+  assert.doesNotMatch(notes, /no activity|no progress/i);
 });

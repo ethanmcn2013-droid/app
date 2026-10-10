@@ -86,8 +86,8 @@ export function summaryLine(b: Briefing): string {
  * an assertion. Never guessed: no count in, no sentence out.
  *
  * `triggeredCount` is not optional decoration. A page with no rows is not
- * proof that nothing crossed a rule: a lone just-shipped item crosses one
- * and lands in a bucket that renders nowhere, so the sentence used to read
+ * proof that nothing crossed a rule: a lone just-shipped item crosses one,
+ * so the sentence previously read
  * "Signal read two items in this scope. Nothing crossed Signal's attention
  * rules." over a day where something had. When something crossed, the
  * sentence says so and says the true thing about it instead, which is that
@@ -145,17 +145,13 @@ export function ageNote(trigger: TriggerKind, days: number): string {
  *  - the multi-row line claimed an order the page does not use. Rows sort
  *    by focus weight (due-soon 1000, crowded-week 800, stuck-work 700,
  *    blocked-too-long 600), not by age, so "the top one is the one that's
- *    waiting longest" was reliably describing the LAST row. The line now
- *    states the sort the page actually runs.
+ *    waiting longest" was reliably describing the LAST row. The close now
+ *    avoids order and implicit referent claims altogether.
  *  - the single-row line said "Open Tasks when you're ready", which every
  *    row already carries as a "Review in Tasks" control, and which §11
  *    refuses as an instruction. It says nothing now.
  */
-export function closingLine(needsAttention: number, isEmpty: boolean): string {
-  if (isEmpty) return "That’s the read.";
-  if (needsAttention >= 2) {
-    return "That’s the read. Dates came first, then the quiet ones.";
-  }
+export function closingLine(_needsAttention: number, _isEmpty: boolean): string {
   return "That’s the read.";
 }
 

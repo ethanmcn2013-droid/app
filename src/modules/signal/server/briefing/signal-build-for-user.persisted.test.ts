@@ -8,6 +8,7 @@ import { pathToFileURL } from "node:url";
 import { createClient, type Client } from "@libsql/client";
 import { freshFileDb } from "@/server/db/memory-test-db";
 import { ledgerFromLegacyBriefing } from "../../lib/analytics/ledger-adapters";
+import { buildOverviewModel } from "../../lib/overview/overview-model";
 import { dueInstantForDay, toCalendarDate } from "@/lib/tasks/anchor-due";
 
 // Actual source, scope authorization, orchestrator, engine, Home and ledger.
@@ -41,7 +42,7 @@ before(async () => {
     await signalStore.executeMultiple(readFileSync(new URL(name, migrations), "utf8"));
   }
   await fixture.client.executeMultiple(`
-    INSERT INTO users(id,clerk_id,email,color,initials) VALUES ('synthetic-owner','${ACTOR}','owner@example.invalid','blue','SO'),('synthetic-foreign','synthetic-foreign-clerk','owner@example.invalid','blue','SF');
+    INSERT INTO users(id,clerk_id,email,color,initials) VALUES ('synthetic-owner','${ACTOR}','owner@example.invalid','blue','SO'),('synthetic-second-owner','synthetic-second-clerk','second@example.invalid','green','SS'),('synthetic-foreign','synthetic-foreign-clerk','owner@example.invalid','blue','SF');
     INSERT INTO workspaces(id,slug,name,owner_user_id) VALUES ('${WORKSPACE}','${WORKSPACE}','Synthetic lifecycle','synthetic-owner'),('synthetic-foreign-project','synthetic-foreign-project','Foreign project','synthetic-foreign');
   `);
   const today = Math.floor(NOW / DAY);
@@ -64,10 +65,10 @@ after(() => {
     if (saved[key] === undefined) delete process.env[key]; else process.env[key] = saved[key];
   }
 });
-async function task(id: string, options: { lane?: string; column?: string; completed?: number; archived?: number; parent?: string; blocked?: string[]; updated?: number } = {}) {
+async function task(id: string, options: { lane?: string; column?: string; completed?: number; archived?: number; parent?: string; blocked?: string[]; updated?: number; assignees?: string[] } = {}) {
   await fixture.client.execute({
-    sql: "INSERT INTO tasks(id,workspace_id,seq,title,lane,board_column_key,priority,assignees,tags,blocked_by,due_at,created_at,updated_at,completed_at,archived_at,parent_task_id) VALUES (?,?,?,?,?,?,'p2','[]','[]',?,?,?,?,?,?,?)",
-    args: [id, WORKSPACE, (await fixture.client.execute("SELECT COUNT(*) AS count FROM tasks")).rows[0].count as number + 1, id, options.lane ?? "done", options.column ?? null, JSON.stringify(options.blocked ?? []), (NOW - DAY) / 1000, (NOW - 40 * DAY) / 1000, (options.updated ?? NOW - 3_600_000) / 1000, options.completed == null ? null : options.completed / 1000, options.archived == null ? null : options.archived / 1000, options.parent ?? null],
+    sql: "INSERT INTO tasks(id,workspace_id,seq,title,lane,board_column_key,priority,assignees,tags,blocked_by,due_at,created_at,updated_at,completed_at,archived_at,parent_task_id) VALUES (?,?,?,?,?,?,'p2',?,'[]',?,?,?,?,?,?,?)",
+    args: [id, WORKSPACE, (await fixture.client.execute("SELECT COUNT(*) AS count FROM tasks")).rows[0].count as number + 1, id, options.lane ?? "done", options.column ?? null, JSON.stringify(options.assignees ?? []), JSON.stringify(options.blocked ?? []), (NOW - DAY) / 1000, (NOW - 40 * DAY) / 1000, (options.updated ?? NOW - 3_600_000) / 1000, options.completed == null ? null : options.completed / 1000, options.archived == null ? null : options.archived / 1000, options.parent ?? null],
   });
 }
 async function build() {
@@ -83,6 +84,118 @@ async function home() {
 async function config(value: string) {
   await fixture.client.execute({ sql: "INSERT INTO meta(key,value,updated_at) VALUES (?,?,?)", args: [`board:${WORKSPACE}:columns`, value, NOW / 1000] });
 }
+
+test("empty inventory with partial activity coverage cannot produce a healthy all-clear", async () => {
+  const { dataSource } = await import("../../lib/data/source");
+  const before = await hashes();
+  const raw = await dataSource.read(WORKSPACE);
+  assert.deepEqual(raw.tasks, []);
+  assert.equal(raw.coverage?.tasks, "complete");
+  assert.equal(raw.coverage?.activity, "partial");
+  const result = await build();
+  assert.equal(result.briefing.coverageStatus, "partial");
+  assert.equal(ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Test read", allowedAppOrigin: "https://app.signalstudio.ie" }).emptyState?.kind, "coverage");
+  assert.deepEqual(await hashes(), before);
+});
+
+test("empty inventory still retains other partial dimensions and requires explicit task completeness", async () => {
+  const { dataSource } = await import("../../lib/data/source");
+  const original = dataSource.readMany;
+  assert.ok(original);
+  try {
+    for (const dimension of ["tasks", "dependencies", "dates", "priorities"] as const) {
+      dataSource.readMany = async function (ids) {
+        return (await original.call(this, ids)).map(work => ({ ...work, coverage: { ...work.coverage!, [dimension]: "partial" } }));
+      };
+      assert.equal((await build()).briefing.coverageStatus, "partial", dimension);
+    }
+    dataSource.readMany = async function (ids) {
+      return (await original.call(this, ids)).map(work => ({ ...work, coverage: { ...work.coverage!, tasks: undefined } }));
+    };
+    assert.equal((await build()).briefing.coverageStatus, "partial", "missing task coverage is not an explicit complete read");
+    dataSource.readMany = original;
+    await task("nonempty-history", { lane: "doing" });
+    assert.equal((await build()).briefing.coverageStatus, "partial", "nonempty inventory still needs activity history");
+  } finally { dataSource.readMany = original; }
+});
+
+test("archived-only inventory with partial activity coverage cannot produce a healthy all-clear", async () => {
+  const { dataSource } = await import("../../lib/data/source");
+  await task("archived-only-history", { lane: "doing", archived: NOW - DAY });
+  const before = await hashes();
+  const raw = await dataSource.read(WORKSPACE);
+  assert.deepEqual(raw.tasks, []);
+  assert.equal(raw.coverage?.tasks, "complete");
+  assert.equal(raw.coverage?.activity, "partial");
+  const result = await build();
+  assert.equal(result.briefing.coverageStatus, "partial");
+  assert.equal(ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Test read", allowedAppOrigin: "https://app.signalstudio.ie" }).emptyState?.kind, "coverage");
+  assert.deepEqual(await hashes(), before);
+});
+
+test("mixed authorized scope does not let an empty workspace hide another workspace's partial history", async () => {
+  const period = "synthetic-empty-applicability-period", empty = "synthetic-empty-applicability-workspace";
+  const previous = process.env.SIGNAL_PERIOD_SIGNAL_ENABLED;
+  await fixture.client.execute({ sql: "INSERT INTO planning_periods(id,owner_user_id,name) VALUES (?,'synthetic-owner','Synthetic applicability')", args: [period] });
+  await fixture.client.execute({ sql: "INSERT INTO workspaces(id,slug,name,owner_user_id,planning_period_id) VALUES (?,?,?,'synthetic-owner',?)", args: [empty, empty, "Synthetic empty", period] });
+  await fixture.client.execute({ sql: "UPDATE workspaces SET planning_period_id=? WHERE id=?", args: [period, WORKSPACE] });
+  process.env.SIGNAL_PERIOD_SIGNAL_ENABLED = "true";
+  try {
+    await task("nonempty-in-period", { lane: "doing" });
+    const result = await orchestrator.buildBriefingForUser({ clerkId: ACTOR, cadence: "daily", recordReadState: false, scope: { kind: "planningPeriod", planningPeriodId: period } });
+    assert.equal(result.kind, "ok");
+    if (result.kind !== "ok") throw new Error("authorized period unexpectedly refused");
+    assert.equal(result.briefing.coverageStatus, "partial");
+    assert.deepEqual(result.signals.map(signal => signal.id), ["nonempty-in-period"]);
+  } finally {
+    await fixture.client.execute({ sql: "UPDATE workspaces SET planning_period_id=NULL WHERE id=?", args: [WORKSPACE] });
+    await fixture.client.execute({ sql: "DELETE FROM workspaces WHERE id=?", args: [empty] });
+    await fixture.client.execute({ sql: "DELETE FROM planning_periods WHERE id=?", args: [period] });
+    if (previous === undefined) delete process.env.SIGNAL_PERIOD_SIGNAL_ENABLED; else process.env.SIGNAL_PERIOD_SIGNAL_ENABLED = previous;
+  }
+});
+
+test("actual custom stage stays open in Home and ledger without start or review inference", async () => {
+  await config(JSON.stringify({ custom: [{ key: "evidence-check", name: "Evidence check" }], doneKeys: ["done"] }));
+  await task("inspect-materials", { lane: "review", column: "evidence-check" });
+  await task("known-doing", { lane: "doing" });
+  const result = await build();
+  const custom = result.signals.find(task => task.id === "inspect-materials")!;
+  assert.deepEqual(custom.stage, { key: "evidence-check", label: "Evidence check", phase: "unknown", complete: false });
+  const view = await home();
+  const row = view.myTasks.find(task => task.id === "inspect-materials")!;
+  assert.equal(row.lane, "open"); assert.equal(row.stageLabel, "Evidence check");
+  assert.equal(view.stats.inReview, 0);
+  assert.equal(view.deadlines.flatMap(group => group.rows).find(task => task.id === row.id)?.lane, "open");
+  const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Test read", allowedAppOrigin: "https://app.signalstudio.ie" });
+  const unknown = ledger.entries.find(entry => entry.text.toLowerCase() === custom.title.toLowerCase())!;
+  assert.ok(unknown.reasons.some(reason => /Still open in “Evidence check”/.test(reason)));
+  assert.ok(unknown.reasons.every(reason => !/^Started|^Not started|^Sitting in review/.test(reason)));
+  assert.ok(ledger.entries.find(entry => entry.text === "Known-doing")?.reasons.some(reason => reason === `Saved stage: “${result.signals.find(signal => signal.id === "known-doing")!.stage!.label}”.`));
+  assert.ok(ledger.entries.find(entry => entry.text === "Known-doing")?.reasons.every(reason => !/^Started|^Not started|^Sitting in review/.test(reason)), "a saved stage does not establish prior start history");
+});
+
+test("actual inspected terminal prerequisite counts once while separate deadline/readiness rows keep private ids internal", async () => {
+  await task("archived-safety-proof", { lane: "done", archived: NOW - DAY });
+  await task("send-crate", { lane: "doing", blocked: ["archived-safety-proof", "archived-safety-proof"] });
+  await fixture.client.execute({ sql: "UPDATE tasks SET due_at=? WHERE id='send-crate'", args: [(NOW + DAY) / 1000] });
+  const result = await build();
+  assert.deepEqual(result.signals.map(task => task.id), ["send-crate"]);
+  assert.deepEqual(result.signals[0]!.prerequisiteEvidence,
+    [{ id: "archived-safety-proof", workspaceId: WORKSPACE, lane: "done", boardColumnKey: null, complete: true }]);
+  assert.deepEqual(result.briefing.readTaskIds, ["archived-safety-proof", "send-crate"]);
+  assert.equal(result.briefing.needsAttention.length, 2);
+  const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Test read", allowedAppOrigin: "https://app.signalstudio.ie" });
+  assert.equal(ledger.entries.length, 2);
+  assert.deepEqual(ledger.entries.map(entry => entry.receipt.evidenceCount), [1, 2]);
+  assert.equal(result.briefing.readCount, 2); assert.equal(result.briefing.triggeredCount, 2);
+  assert.equal(ledger.readCounts, null, "existing partial activity coverage still withholds public totals");
+  const view = await home();
+  assert.equal(view.stats.open, 1);
+  assert.deepEqual(view.signalRows.map(row => row.href), ["/app/task/send-crate", "/app/task/send-crate"]);
+  assert.equal(new Set(view.signalRows.map(row => row.observationId)).size, 2);
+  assert.doesNotMatch(JSON.stringify({ ledger, view }), /archived-safety-proof|prerequisiteEvidence|evidenceTaskIds|readTaskIds/);
+});
 async function hashes() {
   const out: Record<string, string> = {};
   for (const [name, store] of Object.entries({ tasks: fixture.client, signal: signalStore })) {
@@ -165,6 +278,155 @@ test("persisted visible blocker of near-due work has its own Home and ledger obs
   assert.deepEqual(await hashes(), before);
 });
 
+test("persisted deadline and prerequisite observations keep separate full meanings in Home and Briefing", async () => {
+  await task("safety-check", { lane: "doing" });
+  await task("publish-map", { lane: "todo", blocked: ["safety-check"] });
+  await fixture.client.execute({ sql: "UPDATE tasks SET due_at=?,priority=CASE id WHEN 'publish-map' THEN 'p1' ELSE 'p2' END", args: [NOW / 1000 + 3_600] });
+  const before = await hashes(), result = await build(), view = await home();
+  assert.deepEqual(view.signalRows.map(row => row.id), ["publish-map", "safety-check", "safety-check"]);
+  const row = view.signalRows[0]!;
+  assert.equal(row.trigger, "due-soon");
+  assert.match(row.why, /today|hour/i);
+  assert.doesNotMatch(row.why, /safety-check|prerequisite/);
+  assert.match(view.signalRows.find(row => row.trigger === "blocking-due-work")!.why, /publish-map/);
+  assert.equal(new Set(view.signalRows.map(row => row.observationId)).size, 3);
+  const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
+  assert.equal(ledger.entries[0]?.detail, row.why);
+  assert.deepEqual(await hashes(), before);
+});
+
+test("saved title edit on completed work stays dated context without consuming Home attention", async () => {
+  await task("catalogue", { lane: "done", completed: NOW - 2 * 3_600_000, assignees: ["synthetic-owner", "synthetic-second-owner"] });
+  await task("deadline-task", { lane: "doing", updated: NOW - 1_000 });
+  await fixture.client.execute("UPDATE tasks SET title='Catalogue books',due_at=NULL WHERE id='catalogue'");
+  await fixture.client.execute({ sql: "UPDATE tasks SET due_at=? WHERE id='deadline-task'", args: [(NOW + 3_600_000) / 1000] });
+  await fixture.client.execute({ sql: "INSERT INTO activities(id,workspace_id,task_id,user_id,kind,payload,created_at) VALUES ('recorded-title-edit',?,'catalogue','synthetic-owner','update',?,?)", args: [WORKSPACE, JSON.stringify({ kind: "update", field: "title" }), (NOW - 1_000) / 1000] });
+  const before = await hashes(), result = await build(), view = await home();
+  const catalogue = result.signals.find(signal => signal.id === "catalogue");
+  assert.equal(catalogue?.hasRecordedTitleEdit, true);
+  assert.deepEqual(catalogue?.assignees, [{ id: "synthetic-owner" }, { id: "synthetic-second-owner" }]);
+  assert.deepEqual(catalogue?.latestValidatedTitleEdit, {
+    at: new Date(NOW - 1_000).toISOString(), kind: "update", field: "title",
+  });
+  assert.equal(catalogue?.idleDays, null);
+  assert.equal(view.signalRows.length, 2);
+  assert.equal(view.signalRows[1]?.trigger, "just-shipped");
+  assert.match(view.signalRows[1]!.why, /2026-09-27T10:00:00.000Z/);
+  assert.doesNotMatch(view.signalRows[1]!.why, /11:59:59/);
+  assert.equal(view.signalRows[0]?.id, "deadline-task");
+  assert.equal(view.signalRows[0]?.trigger, "due-soon");
+  const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
+  assert.equal(ledger.entries.length, 2);
+  assert.equal(ledger.entries[0]?.text, "Deadline-task");
+  assert.ok(ledger.coverageNote?.includes("Title edited for “Catalogue books” on 27 September 2026 at 11:59:59 (UTC)"));
+  assert.match(ledger.coverageNote ?? "", /recorded title edit does not establish meaningful work progress/i);
+  assert.match(ledger.coverageNote ?? "", /history is incomplete/i);
+  const overview = buildOverviewModel({ ledger, timezone: "UTC", legacy: { briefing: result.briefing, signals: result.signals, authorizedScope: result.authorizedScope } });
+  assert.equal(overview.coverage?.note, ledger.coverageNote);
+  assert.doesNotMatch(JSON.stringify(ledger), /recorded-title-edit|synthetic-owner|synthetic-second-owner|latestValidatedTitleEdit|only event|no activity/i);
+  assert.deepEqual(await hashes(), before);
+});
+
+test("absent, future, pre-creation and foreign title-edit records cannot manufacture metadata evidence", async () => {
+  await task("catalogue", { lane: "doing" });
+  await fixture.client.execute("UPDATE tasks SET due_at=NULL WHERE id='catalogue'");
+  for (const [id, workspace, at] of [
+    ["foreign-edit", "synthetic-foreign-project", NOW - 1_000],
+    ["future-edit", WORKSPACE, NOW + 1_000],
+    ["before-creation", WORKSPACE, NOW - 41 * DAY],
+  ] as const) {
+    await fixture.client.execute({ sql: "INSERT INTO activities(id,workspace_id,task_id,user_id,kind,payload,created_at) VALUES (?,?,'catalogue','synthetic-owner','update',?,?)", args: [id, workspace, JSON.stringify({ kind: "update", field: "title" }), at / 1000] });
+  }
+  const before = await hashes(), result = await build();
+  assert.equal(result.signals[0]?.hasRecordedTitleEdit, false);
+  assert.equal(result.signals[0]?.latestValidatedTitleEdit, undefined);
+  const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
+  assert.doesNotMatch(ledger.coverageNote ?? "", /recorded title edit/i);
+  assert.match(ledger.coverageNote ?? "", /history is incomplete/);
+  assert.equal(ledger.entries.length, 0);
+  assert.deepEqual(await hashes(), before);
+});
+
+for (const [label, kind, payload] of [
+  ["malformed JSON", "update", "{broken"],
+  ["missing payload kind", "update", JSON.stringify({ field: "title" })],
+  ["contradictory payload kind", "update", JSON.stringify({ kind: "commentAdd", field: "title" })],
+  ["missing field", "update", JSON.stringify({ kind: "update" })],
+  ["other tracked field", "update", JSON.stringify({ kind: "update", field: "priority" })],
+  ["non-string field", "update", JSON.stringify({ kind: "update", field: ["title"] })],
+  ["array payload", "update", JSON.stringify([{ kind: "update", field: "title" }])],
+  ["noncanonical event kind", "title-edited", JSON.stringify({ kind: "title-edited", field: "title" })],
+  ["contradictory column kind", "commentAdd", JSON.stringify({ kind: "update", field: "title" })],
+] as const) {
+  test(`invalid title metadata (${label}) cannot earn recorded title evidence`, async () => {
+    await task("catalogue", { lane: "doing" });
+    await fixture.client.execute("UPDATE tasks SET due_at=NULL WHERE id='catalogue'");
+    await fixture.client.execute({ sql: "INSERT INTO activities(id,workspace_id,task_id,user_id,kind,payload,created_at) VALUES ('invalid-title-edit',?,'catalogue','synthetic-owner',?,?,?)", args: [WORKSPACE, kind, payload, (NOW - 1_000) / 1000] });
+    const before = await hashes(), result = await build();
+    assert.equal(result.signals[0]?.hasRecordedTitleEdit, false);
+    assert.equal(result.signals[0]?.latestValidatedTitleEdit, undefined);
+    assert.equal(result.signals[0]?.idleDays, null);
+    const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
+    assert.doesNotMatch(ledger.coverageNote ?? "", /recorded title edit/i);
+    assert.match(ledger.coverageNote ?? "", /history is incomplete/);
+    assert.equal(ledger.entries.length, 0);
+    assert.deepEqual(await hashes(), before);
+  });
+}
+
+test("all listed completed prerequisites preserve readiness meaning through dated Home and public Briefing, then reopen removes it", async () => {
+  await task("hidden-first", { completed: NOW - DAY, archived: NOW - DAY });
+  await task("hidden-second", { completed: NOW - DAY, archived: NOW - DAY });
+  await task("publish-guide", { lane: "todo", blocked: ["hidden-first", "hidden-second"] });
+  await fixture.client.execute({ sql: "UPDATE tasks SET due_at=? WHERE id='publish-guide'", args: [(NOW + DAY) / 1000] });
+  const before = await hashes(), result = await build(), view = await home();
+  const row = view.signalRows.find(item => item.id === "publish-guide");
+  assert.equal(row?.trigger, "due-soon");
+  assert.doesNotMatch(row?.why ?? "", /prerequisites/);
+  const readiness = view.signalRows.find(item => item.trigger === "prerequisites-complete")!;
+  assert.match(readiness.why, /listed prerequisites are complete/i);
+  assert.match(readiness.why, /move ahead|no longer held up/i);
+  const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
+  assert.equal(ledger.entries[0]?.detail, row?.why);
+  assert.equal(ledger.entries[1]?.detail, readiness.why);
+  assert.doesNotMatch(JSON.stringify(ledger), /hidden-first|hidden-second/);
+  assert.deepEqual(await hashes(), before);
+  await fixture.client.execute("UPDATE tasks SET lane='doing' WHERE id='hidden-second'");
+  const reopened = await home();
+  assert.doesNotMatch(reopened.signalRows.find(item => item.id === "publish-guide")?.why ?? "", /prerequisites are complete|move ahead|no longer held up/);
+});
+
+test("missing and foreign prerequisites preserve Home deadline pressure and task-specific opaque Briefing context", async () => {
+  await task("hidden-complete", { completed: NOW - DAY, archived: NOW - DAY });
+  await fixture.client.execute("INSERT INTO tasks(id,workspace_id,seq,title,lane,priority,assignees,tags,blocked_by) VALUES ('foreign-secret','synthetic-foreign-project',1,'Private foreign title','done','p2','[]','[]','[]')");
+  for (const unknown of ["missing-secret", "foreign-secret"]) {
+    await task("publish-guide", { lane: "todo", blocked: ["hidden-complete", unknown] });
+    await fixture.client.execute({ sql: "UPDATE tasks SET due_at=? WHERE id='publish-guide'", args: [(NOW + DAY) / 1000] });
+    const before = await hashes(), result = await build(), view = await home();
+    const row = view.signalRows.find(item => item.id === "publish-guide");
+    assert.equal(row?.trigger, "due-soon");
+    assert.doesNotMatch(row?.why ?? "", /prerequisites/);
+    assert.ok(view.signalRows.every(item => item.trigger !== "prerequisites-unverified"), "unknown state is context, not a confirmed risk");
+    assert.equal(view.allClear, null);
+    const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
+    assert.equal(ledger.entries[0]?.detail, row?.why);
+    assert.equal(ledger.entries.length, 1, "the genuine saved deadline remains selected");
+    assert.match(ledger.entries[0]!.id, /^signal-/);
+    const context = ledger.coverageNote ?? "";
+    assert.match(context, /“publish-guide”[^]*prerequisites could not be fully verified/i);
+    assert.match(context, /state is unknown[^]*not confirmed clear to move ahead/i);
+    assert.match(context, /Activity history for this task is incomplete; earlier meaningful activity is not established/);
+    const overview = buildOverviewModel({ ledger, timezone: result.authorizedScope.timezone,
+      legacy: { briefing: result.briefing, signals: result.signals, authorizedScope: result.authorizedScope } });
+    assert.equal(overview.coverage?.note, context, "the actual full-read receiving model retains the complete context");
+    assert.equal(overview.attention.length, 1); assert.equal(overview.risks.length, 0);
+    assert.equal(ledger.readCounts, null);
+    assert.doesNotMatch(JSON.stringify(ledger), /missing-secret|foreign-secret|Private foreign title|hidden-complete|prerequisites are complete/);
+    assert.deepEqual(await hashes(), before);
+    await fixture.client.execute("DELETE FROM tasks WHERE id='publish-guide'");
+  }
+});
+
 test("proven recent comment reaches actual Home and ledger without altering dependency lifecycle or stores", async () => {
   await task("upstream", { lane: "doing", updated: NOW - 10 * DAY });
   await task("commented-dependent", { lane: "doing", blocked: ["upstream"], updated: NOW - 10 * DAY });
@@ -174,9 +436,12 @@ test("proven recent comment reaches actual Home and ledger without altering depe
   const beforeHashes = await hashes(), result = await build(), view = await home();
   const signal = result.signals.find(row => row.id === "commented-dependent");
   assert.ok(signal); assert.equal(signal.idleDays, null); assert.deepEqual(signal.blockedBy, ["upstream"]);
-  assert.ok(view.signalRows.every(row => row.id !== "commented-dependent"));
+  const observation = view.signalRows.find(row => row.id === "commented-dependent");
+  assert.equal(observation?.trigger, "recorded-activity");
+  assert.match(observation?.why ?? "", /comment added/i);
+  assert.doesNotMatch(observation?.why ?? "", /meaningful progress|blocked for|waiting for/i);
   const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Sunday, 12:00", allowedAppOrigin: "https://app.signalstudio.ie" });
-  assert.doesNotMatch(JSON.stringify(ledger), /commented-dependent|transactional-comment|proven-comment/);
+  assert.doesNotMatch(JSON.stringify(ledger), /transactional-comment|proven-comment/);
   assert.deepEqual(await hashes(), beforeHashes);
 });
 
@@ -376,3 +641,98 @@ for (const fault of ["missing", "duplicate", "foreign"] as const) {
     } finally { dataSource.readMany = original; }
   });
 }
+
+test("durable completion reaches dated full-read context and reopening removes recognition despite its saved timestamp", async () => {
+  await task("finished-record", { completed: NOW - 20 * 3_600_000 });
+  const before = await hashes();
+  const result = await build();
+  const view = await home();
+  assert.equal(result.signals[0]!.stage?.complete, true);
+  assert.equal(result.signals[0]!.movedToShippedAt, NOW - 20 * 3_600_000);
+  assert.equal(view.signalRows.length, 1);
+  assert.equal(view.signalRows[0]?.trigger, "just-shipped");
+  assert.match(view.signalRows[0]!.why, /Saved completion.*2026-09-26T16:00:00.000Z/);
+  assert.equal(view.signalRows[0]?.due, null);
+  assert.ok(!view.myTasks.some(row => row.id === "finished-record"));
+  const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Test read", allowedAppOrigin: "https://app.signalstudio.ie" });
+  assert.equal(ledger.entries.length, 1);
+  assert.equal(ledger.entries[0]?.section, "activity");
+  assert.match(ledger.coverageNote ?? "", /1 task has a saved completion in the past 24 hours[^]*“finished-record”[^]*26 September 2026 at 16:00:00 \(UTC\)[^]*2026-09-26T16:00:00.000Z/);
+  assert.match(ledger.coverageNote ?? "", /included in this read/);
+  assert.equal(ledger.readCounts, null, "partial source history still withholds public totals");
+  const overview = buildOverviewModel({ ledger, timezone: result.authorizedScope.timezone,
+    legacy: { briefing: result.briefing, signals: result.signals, authorizedScope: result.authorizedScope } });
+  assert.equal(overview.coverage?.note, ledger.coverageNote);
+  assert.equal(overview.attention.length + overview.risks.length, 0);
+  assert.equal(overview.activity.length, 1);
+  assert.deepEqual(await hashes(), before);
+  await fixture.client.execute("UPDATE tasks SET lane='todo',due_at=NULL WHERE id='finished-record'");
+  const reopenedBefore = await hashes(), reopened = await build(), reopenedHome = await home();
+  assert.equal(reopened.signals[0]!.stage?.complete, false);
+  assert.equal(reopened.signals[0]!.movedToShippedAt, null);
+  assert.ok(reopenedHome.myTasks.some(row => row.id === "finished-record"));
+  assert.ok(reopenedHome.signalRows.every(row => row.trigger !== "just-shipped"));
+  const reopenedLedger = ledgerFromLegacyBriefing(reopened.briefing, { generatedAtLabel: "Test read", allowedAppOrigin: "https://app.signalstudio.ie" });
+  assert.doesNotMatch(reopenedLedger.coverageNote ?? "", /saved completion in the past 24 hours|2026-09-26T16:00:00.000Z/);
+  assert.match(reopenedLedger.coverageNote ?? "", /history is incomplete/i);
+  assert.deepEqual(await hashes(), reopenedBefore);
+});
+test("validated title stays dated context while comment occurrence remains actionable", async () => {
+  await task("saved-title", { lane: "todo" });
+  await task("saved-note", { lane: "todo" });
+  await fixture.client.execute("UPDATE tasks SET due_at=NULL");
+  for (const [id, kind, payload] of [
+    ["saved-title", "update", { kind: "update", field: "title" }],
+    ["saved-note", "commentAdd", { kind: "commentAdd", commentId: "opaque-comment" }],
+  ] as const) {
+    await fixture.client.execute({ sql: "INSERT INTO activities(id,workspace_id,task_id,user_id,kind,payload,created_at) VALUES (?,?,?,'synthetic-owner',?,?,?)",
+      args: [id+"-event", WORKSPACE, id, kind, JSON.stringify(payload), (NOW - 1_800_000) / 1000] });
+  }
+  const result = await build(), view = await home();
+  assert.ok(view.signalRows.every(row => row.id !== "saved-title"));
+  assert.ok(view.signalRows.some(row => row.id === "saved-note" && /note|comment/i.test(row.why)));
+  const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Test read", allowedAppOrigin: "https://app.signalstudio.ie" });
+  assert.ok(ledger.coverageNote?.includes("Title edited for “saved-title” on 27 September 2026 at 11:30:00 (UTC)"));
+  assert.match(ledger.coverageNote ?? "", /history is incomplete/i);
+});
+test("round8 complete project open-work summary counts unknown stages without personal overload", async () => {
+  await config(JSON.stringify({ custom: [{ key: "quality-gate", name: "Quality gate" }], doneKeys: ["done"] }));
+  await task("ordinary-one", { lane: "todo" }); await task("ordinary-two", { lane: "doing" });
+  await task("ordinary-custom", { lane: "doing", column: "quality-gate" });
+  await fixture.client.execute("UPDATE tasks SET due_at=NULL");
+  const view = await home();
+  assert.deepEqual(view.signalRows, [], "ordinary open work stays quiet");
+  const result = await build();
+  const ledger = ledgerFromLegacyBriefing(result.briefing, { generatedAtLabel: "Test read", allowedAppOrigin: "https://app.signalstudio.ie" });
+  assert.match(ledger.coverageNote ?? "", /3 tasks are currently open/);
+  assert.ok(result.signals.every(signal => signal.taskCoverage === "complete"));
+  assert.equal(result.briefing.coverageStatus, "partial", "bounded activity history remains honestly partial");
+  assert.doesNotMatch(ledger.coverageNote ?? "", /your workload|overload/i);
+  // This adapter-only variant verifies complete context composition, without
+  // claiming that the persisted source above has complete activity history.
+  const completeContext = ledgerFromLegacyBriefing({ ...result.briefing, coverageStatus: "complete",
+    activityCoverageNote: "3 tasks are currently open in this project (Tasks · Test project).",
+  }, { generatedAtLabel: "Test read", allowedAppOrigin: "https://app.signalstudio.ie" });
+  assert.equal(completeContext.coverageNote, "3 tasks are currently open in this project (Tasks · Test project).");
+  assert.doesNotMatch(completeContext.coverageNote ?? "", /could not be checked|incomplete/i);
+});
+
+
+test("persisted canonical identity qualifies personal workload in Home without changing the project threshold", async () => {
+  for (let index = 0; index < 6; index++) {
+    await task(`assigned-load-${index}`, { lane: "doing", updated: NOW - 1000, assignees: ["synthetic-owner"] });
+  }
+  await fixture.client.execute("UPDATE tasks SET due_at=NULL");
+  const before = await hashes(), result = await build(), view = await home();
+  assert.equal(result.authorizedScope.canonicalUserId, "synthetic-owner");
+  const row = view.signalRows.find(row => row.trigger === "overload");
+  assert.ok(row);
+  assert.match(row.why, /Six of these open tasks are assigned to you.*exceed the threshold of five/);
+  assert.equal(row.destination, "briefing");
+  assert.equal(row.due, null);
+  assert.deepEqual(await hashes(), before);
+  await fixture.client.execute("UPDATE tasks SET assignees='[\"synthetic-second-owner\"]' WHERE id='assigned-load-0'");
+  const changed = await home(), changedRow = changed.signalRows.find(row => row.trigger === "overload");
+  assert.match(changedRow!.why, /Five of these open tasks are assigned to you/);
+  assert.doesNotMatch(changedRow!.why, /Your assigned.*exceed/);
+});

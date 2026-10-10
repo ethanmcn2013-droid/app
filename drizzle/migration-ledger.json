@@ -512,6 +512,16 @@
       "policy": "forward",
       "receipt": "drizzle/receipts/project-drive-token-revocation-2026-09-23.json",
       "receiptSha256": "8e00d888797df1b0c208a703fb9a035a0ef4aac51d481b76b1df9b767accfbad"
+    },
+    {
+      "ordinal": 39,
+      "id": "0039_conversation_messages_workspace_index",
+      "file": "drizzle/0039_conversation_messages_workspace_index.sql",
+      "when": 1791345812126,
+      "sha256": "e9874a3f361ebcbc1a01d30fe0e36ebadb04d508392c9f9ff418d33a5b494264",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/conversation-messages-workspace-index-2026-10-07.json",
+      "receiptSha256": "6ccf7960dab5f0ca08167ea4adebf5a89c484b3d99fad39cfe3864b951fa3e1b"
     }
   ]
 }

@@ -73,6 +73,23 @@ test("progress is counted from the signals the engine read, lane by lane", async
   assert.equal(model.lanes.undated, read.filter((s) => s.lane !== "shipped" && s.dueAt == null).length);
 });
 
+test("custom open stages remain in scope without invented progress or leaked prerequisite metadata", async () => {
+  const task = (id: string, phase: NonNullable<TaskSignal["stage"]>["phase"], lane: TaskSignal["lane"]): TaskSignal => ({
+    id, title: id, lane, priority: 2, dueAt: null, idleDays: 0, commentCount: 0,
+    blockedBy: [], sourceLabel: "Tasks · The Orchard, events", workspaceId: "ws-orchard",
+    movedToShippedAt: phase === "shipped" ? NOW - DAY : null,
+    stage: { key: phase === "unknown" ? "inspection" : phase, label: "Saved stage", phase, complete: phase === "shipped" },
+  });
+  const custom = { ...task("open-inspection", "unknown", "in-flight"),
+    prerequisiteEvidence: [{ id: "internal-inspected-record", workspaceId: "ws-orchard", lane: "done", boardColumnKey: "filed", complete: true }],
+    verifiedPrerequisiteIds: ["internal-inspected-record"] };
+  const { model } = await build([custom, task("known-started", "in-flight", "in-flight"),
+    task("known-review", "review", "review"), task("known-next", "next", "next"), task("known-complete", "shipped", "shipped")]);
+  assert.deepEqual(model.lanes, { todo: 1, inProgress: 1, review: 1, done: 1, total: 5, doneThisWeek: 1, undated: 4 });
+  const serialized = JSON.stringify(model);
+  assert.doesNotMatch(serialized, /internal-inspected-record|prerequisiteEvidence|verifiedPrerequisiteIds|readTaskIds|triggeredTaskIds|evidenceTaskIds/);
+});
+
 test("signal rows keep the ledger's order and opaque ids, and carry severity from the trigger", async () => {
   const { model, ledger, read } = await build();
   assert.deepEqual(
@@ -152,9 +169,11 @@ test("the read note closes its arithmetic in front of the reader", async () => {
   const { model, ledger } = await build();
   const counts = ledger.readCounts!;
   assert.equal(counts.read, counts.flagged + counts.cleared);
+  assert.deepEqual({ read: counts.read, flagged: counts.flagged, shown: counts.shown, cleared: counts.cleared },
+    { read: 8, flagged: 4, shown: 3, cleared: 4 });
   assert.equal(
     model.readNote,
-    `Signal read ${counts.read} tasks in The Orchard, events at 09:00. ${counts.flagged} crossed a rule, and the ${counts.shown} that ask something of you are shown above. The other ${counts.cleared} were clear.`,
+    `Signal read ${counts.read} tasks in The Orchard, events at 09:00. ${counts.flagged} crossed a rule, and ${counts.shown} are shown above. The other ${counts.cleared} were clear.`,
   );
   assert.equal(readNoteFor({ ...ledger, readCounts: null }, "task", "09:00"), null, "no denominator, no sentence");
 
@@ -181,12 +200,12 @@ test("the verdict reads the engine's buckets and never calls a thin read clear",
 
   const { ledger, briefing, read } = await build();
   const coverage = buildOverviewModel({
-    ledger: { ...ledger, coverageNote: "Some work could not be checked in this read.", readCounts: null, entries: [], emptyState: { kind: "coverage", headline: "Signal has only part of the picture.", body: "…" } },
+    ledger: { ...ledger, coverageStatus: "partial", coverageNote: "Some work could not be checked in this read.", readCounts: null, entries: [], emptyState: { kind: "coverage", headline: "Signal has only part of the picture.", body: "…" } },
     timezone: "Europe/Dublin",
   });
   assert.deepEqual(coverage.verdict, { tone: "warning", sentence: "Signal has only part of the picture." });
 
-  const partial = { ...ledger, coverageNote: "Some work could not be checked in this read.", readCounts: null, emptyState: null };
+  const partial = { ...ledger, coverageStatus: "partial" as const, coverageNote: "Some work could not be checked in this read.", readCounts: null, emptyState: null };
   const riskOnly = buildOverviewModel({ ledger: { ...partial, entries: ledger.entries.filter(entry => entry.section === "risks") }, timezone: "Europe/Dublin" });
   assert.match(riskOnly.verdict.sentence, /^1 thing is at risk\. Some work could not be checked\.$/);
   assert.doesNotMatch(riskOnly.verdict.sentence, /Nothing is urgent/);
@@ -415,4 +434,71 @@ test("the rendered Overview speaks plainly and opens signals only by opaque id",
   assert.doesNotMatch(html, /Due today\.<\/p>/);
   assert.doesNotMatch(html, /\bworkspace\b/i);
   assert.doesNotMatch(html, /text-transform|uppercase|font-mono/);
+});
+
+
+test("title edits stay dated context while real attention and risks keep their order", async () => {
+  const base: TaskSignal = { id: "saved", title: "Saved catalogue", lane: "next", priority: 2, dueAt: null, idleDays: null,
+    commentCount: 0, blockedBy: [], sourceLabel: "Tasks · The Orchard, events", movedToShippedAt: null, workspaceId: "ws-orchard" };
+  const title = { ...base, activityCoverage: "partial" as const, hasRecordedTitleEdit: true,
+    latestValidatedTitleEdit: { at: new Date(NOW - 1_000).toISOString(), kind: "update" as const, field: "title" as const } };
+  const completed: TaskSignal = { ...base, id: "completed", title: "Completed records", lane: "shipped", movedToShippedAt: NOW - 3_600_000 };
+  const positive = await build([title, completed]);
+  assert.equal(positive.ledger.entries.length, 1);
+  assert.equal(positive.ledger.entries[0]?.section, "activity");
+  assert.equal(positive.ledger.entries[0]?.text, "Completed records");
+  assert.ok(positive.ledger.entries[0]!.detail);
+  assert.match(positive.ledger.entries[0]!.detail, /Saved completion.*2026-07-16T07:00:00.000Z/);
+  assert.doesNotMatch(positive.ledger.entries[0]!.detail, /Saved catalogue|08:59:59/);
+  assert.equal(positive.model.attention.length + positive.model.risks.length, 0);
+  assert.equal(positive.model.activity.length, 1);
+  assert.match(positive.ledger.coverageNote ?? "", /Title edited for “Saved catalogue” on 16 July 2026 at 08:59:59 \(Europe\/Dublin\); this does not establish meaningful work progress/);
+  assert.match(positive.ledger.coverageNote ?? "", /history is incomplete/i);
+  assert.match(positive.ledger.coverageNote!, /1 task has a saved completion in the past 24 hours.*Completed records.*16 July 2026.*08:00:00 \(Europe\/Dublin\).*2026-07-16T07:00:00.000Z/);
+  assert.equal(positive.model.verdict.tone, "neutral");
+  assert.equal(positive.model.verdict.sentence, "1 recorded observation.");
+  assert.match(positive.model.coverage?.note ?? "", /Title edited for “Saved catalogue”/);
+  assert.match(positive.model.coverage?.note ?? "", /history is incomplete/i);
+  const { OverviewView } = loadView();
+  const positiveHtml = renderToStaticMarkup(createElement(OverviewView, { model: positive.model }));
+  assert.match(positiveHtml, /<h2[^>]*>Recorded work<\/h2>/);
+  assert.match(positiveHtml, /Title edited for “Saved catalogue”/);
+  assert.match(positiveHtml, /Activity history is incomplete/);
+  assert.doesNotMatch(positiveHtml, /<h2[^>]*>(?:Needs attention|At risk)<\/h2>/);
+  const mixed = await build([title, completed, { ...base, id: "urgent", title: "Due record", dueAt: NOW + 3_600_000 },
+    { ...base, id: "stalled", title: "Stalled record", lane: "in-flight", idleDays: 10 }]);
+  assert.deepEqual(mixed.ledger.entries.map(entry => entry.section), ["attention", "risks", "activity"]);
+  assert.equal(mixed.model.activity.length, 1);
+  assert.equal(mixed.model.attention.length, 1); assert.equal(mixed.model.risks.length, 1);
+  assert.match(mixed.model.verdict.sentence, /^1 thing needs attention and 1 is at risk\.$/);
+  assert.doesNotMatch(mixed.model.readNote ?? "", /asks? something of you/i);
+  const mixedHtml = renderToStaticMarkup(createElement(OverviewView, { model: mixed.model }));
+  assert.ok(mixedHtml.indexOf(">Needs attention</h2>") < mixedHtml.indexOf(">At risk</h2>"));
+  assert.match(mixedHtml, /<h2[^>]*>Recorded work<\/h2>/);
+  assert.ok(mixedHtml.indexOf(">At risk</h2>") < mixedHtml.indexOf(">Recorded work</h2>"));
+  assert.match(mixed.ledger.coverageNote ?? "", /Title edited for “Saved catalogue”/);
+  assert.match(mixed.ledger.coverageNote ?? "", /history is incomplete/i);
+  assert.match(mixedHtml, /Completed records.*2026-07-16T07:00:00.000Z/);
+});
+
+test("round8receiving context notes never establish incomplete coverage without metadata", async () => {
+  const base: TaskSignal = { id: "ordinary", title: "Ordinary open record", lane: "next", priority: 2, dueAt: null, idleDays: null,
+    commentCount: 0, blockedBy: [], sourceLabel: "Tasks · The Orchard, events", movedToShippedAt: null, workspaceId: "ws-orchard", taskCoverage: "complete" };
+  for (const signals of [[base], [{ ...base, lane: "in-flight" as const, idleDays: 10 }]]) {
+    const { ledger, model } = await build(signals);
+    assert.equal(ledger.coverageStatus, "complete");
+    assert.match(ledger.coverageNote ?? "", /1 task is currently open/);
+    assert.equal(model.coverage?.tone, "neutral");
+    const { OverviewView } = loadView();
+    const contextHtml = renderToStaticMarkup(createElement(OverviewView, { model }));
+    assert.match(contextHtml, /1 task is currently open/);
+    assert.doesNotMatch(contextHtml, /class="notice"/, "complete context does not render as an alert notice");
+    assert.doesNotMatch(model.verdict.sentence, /could not be checked|part of the picture/i);
+    const partial = buildOverviewModel({ ledger: { ...ledger, coverageStatus: "partial", readCounts: null }, timezone: "Europe/Dublin" });
+    assert.equal(partial.coverage?.tone, "warning");
+    assert.match(partial.verdict.sentence, /could not be checked|part of the picture/i);
+    const unknown = buildOverviewModel({ ledger: { ...ledger, coverageStatus: undefined, coverageNote: null }, timezone: "Europe/Dublin" });
+    assert.doesNotMatch(unknown.verdict.sentence, /On track|Nothing is urgent/i);
+    assert.match(unknown.verdict.sentence, /coverage.*(?:unknown|not.*established)/i);
+  }
 });

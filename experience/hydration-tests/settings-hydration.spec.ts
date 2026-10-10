@@ -18,6 +18,12 @@ for (const locale of [
       await page.goto("/app/settings");
       await expect(page.getByText("Review preview, settings are read-only.")).toBeVisible();
 
+      // The demo browser contract enables Drive, which intentionally makes
+      // Storage the initial section. Created belongs to General, so select
+      // that section before asserting its date.
+      const rail = page.getByRole("navigation", { name: "Settings sections" });
+      await rail.getByRole("button", { name: "General" }).click();
+
       const createdDate = page.locator("dt").filter({ hasText: /^Created$/ })
         .locator("..").locator("dd");
       await expect(createdDate).toContainText(/\d/);
@@ -27,7 +33,6 @@ for (const locale of [
       // selecting a section and seeing it become current confirms the page
       // reached hydration, not only SSR. Nothing here writes: sections switch
       // client-side and review content stays inert.
-      const rail = page.getByRole("navigation", { name: "Settings sections" });
       const members = rail.getByRole("button", { name: "Members" });
       await expect(async () => {
         await members.click();

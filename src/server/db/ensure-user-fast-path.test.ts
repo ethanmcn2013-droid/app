@@ -8,7 +8,7 @@ import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 
 import { accountDeletionTombstoneKey, beginAccountDeletionWith } from "../account-deletion-lifecycle";
-import { ensureUserProvisionedWith } from "./ensure-user";
+import { ensureUserProvisionedWith, resolveProvisionedUserIdWith } from "./ensure-user";
 import * as schema from "./schema";
 
 async function freshDb() {
@@ -504,5 +504,102 @@ test("same-subject serialization contains the full retry sequence and releases a
     assert.equal(await first, true);
     assert.equal(await second, true);
     assert.deepEqual(fault.calls, {transactions: 3, selects: [1, 1, 1], runs: [0, 0, 0]});
+  } finally { f.cleanup(); }
+});
+
+function readOnlyResolverDb(database: ReturnType<typeof drizzle<typeof schema>>) {
+  const calls = {select: 0, transaction: 0};
+  return {calls, database: new Proxy(database, {get(target, key, receiver) {
+    if (key === "transaction") return () => { calls.transaction++; throw new Error("unexpected warm transaction"); };
+    const original = Reflect.get(target, key, receiver);
+    if (key === "select") return (...args: unknown[]) => {
+      calls.select++; return Reflect.apply(original, target, args);
+    };
+    return typeof original === "function" ? original.bind(target) : original;
+  }}) as typeof database};
+}
+
+test("identity resolution returns a complete mapped ID using one fresh read and no transaction", async () => {
+  const f = await freshDb();
+  try {
+    const actor = "user_resolve_mapped";
+    await f.client.execute({sql: "INSERT INTO users(id,clerk_id,color,initials) VALUES(?,?,'#123','RM')", args: ["mapped-resolved-id", actor]});
+    await ensureUserProvisionedWith(f.db, actor, "mapped@example.test", "Mapped", "Person");
+    const readOnly = readOnlyResolverDb(f.db);
+    assert.equal(await resolveProvisionedUserIdWith(readOnly.database, actor, "new@example.test", "New", "Profile"), "mapped-resolved-id");
+    assert.deepEqual(readOnly.calls, {select: 1, transaction: 0});
+  } finally { f.cleanup(); }
+});
+
+test("identity resolution preserves cold creation and partial profile backfill", async () => {
+  const f = await freshDb();
+  try {
+    const actor = "user_resolve_cold";
+    assert.equal(await resolveProvisionedUserIdWith(f.db, actor, "cold@example.test", "Cold", "Person"), actor);
+    await f.client.execute({sql: "UPDATE users SET name=NULL,email=NULL WHERE clerk_id=?", args: [actor]});
+    assert.equal(await resolveProvisionedUserIdWith(f.db, actor, "filled@example.test", "Filled", "Person"), actor);
+    const rows = await f.client.execute({sql: "SELECT name,email FROM users WHERE clerk_id=?", args: [actor]});
+    assert.equal(rows.rows[0]?.name, "Filled Person");
+    assert.equal(rows.rows[0]?.email, "filled@example.test");
+  } finally { f.cleanup(); }
+});
+
+test("every missing identity completeness component refuses the read-only fast path", async () => {
+  const f = await freshDb();
+  try {
+    for (const kind of ["member", "period", "workspace", "name", "email", "planning", "updated", "role", "context", "owner"] as const) {
+      const actor = `user_id_${kind}`;
+      await ensureUserProvisionedWith(f.db, actor, "complete@example.test", "Complete", "Person");
+      const workspaceId = `ws-${actor.slice(5,17)}`;
+      const statements: Record<typeof kind, string> = {
+        member: "DELETE FROM workspace_members WHERE workspace_id=?",
+        period: "DELETE FROM planning_periods WHERE id='planning-'||?",
+        workspace: "DELETE FROM workspaces WHERE id=?",
+        name: "UPDATE users SET name=NULL WHERE id=(SELECT owner_user_id FROM workspaces WHERE id=?)",
+        email: "UPDATE users SET email=NULL WHERE id=(SELECT owner_user_id FROM workspaces WHERE id=?)",
+        planning: "UPDATE workspaces SET planning_period_id=NULL WHERE id=?",
+        updated: "UPDATE workspaces SET updated_at=NULL WHERE id=?",
+        role: "UPDATE workspace_members SET role='member' WHERE workspace_id=?",
+        context: "UPDATE workspaces SET context_type='class' WHERE id=?",
+        owner: "UPDATE workspaces SET owner_user_id=NULL WHERE id=?",
+      };
+      await f.client.execute({sql: statements[kind], args: [workspaceId]});
+      const readOnly = readOnlyResolverDb(f.db);
+      await assert.rejects(resolveProvisionedUserIdWith(readOnly.database, actor, "complete@example.test", "Complete", "Person"), /unexpected warm transaction/, kind);
+      assert.deepEqual(readOnly.calls, {select: 1, transaction: 1}, kind);
+    }
+  } finally { f.cleanup(); }
+});
+
+test("identity resolution gives tombstones precedence over complete and absent users", async () => {
+  const f = await freshDb();
+  try {
+    for (const present of [true, false]) {
+      const actor = present ? "user_resolve_deleted" : "user_resolve_absent";
+      if (present) await ensureUserProvisionedWith(f.db, actor, "deleted@example.test", "Deleted", "Person");
+      await beginAccountDeletionWith(f.db, actor);
+      const readOnly = readOnlyResolverDb(f.db);
+      assert.equal(await resolveProvisionedUserIdWith(readOnly.database, actor, "deleted@example.test", "Deleted", "Person"), present ? actor : null);
+      assert.deepEqual(readOnly.calls, {select: 1, transaction: 0});
+    }
+  } finally { f.cleanup(); }
+});
+
+test("identity resolution read failures propagate without provisioning or cached success", async () => {
+  const f = await freshDb();
+  try {
+    const actor = "user_resolve_failure";
+    await ensureUserProvisionedWith(f.db, actor);
+    const error = new Error("identity read unavailable");
+    let transactions = 0;
+    const failing = new Proxy(f.db, {get(target, key, receiver) {
+      if (key === "select") return () => { throw error; };
+      if (key === "transaction") return () => { transactions++; throw new Error("unexpected transaction"); };
+      return Reflect.get(target, key, receiver);
+    }});
+    await assert.rejects(resolveProvisionedUserIdWith(failing, actor), value => value === error);
+    assert.equal(transactions, 0);
+    await beginAccountDeletionWith(f.db, actor);
+    assert.equal(await resolveProvisionedUserIdWith(f.db, actor), actor);
   } finally { f.cleanup(); }
 });

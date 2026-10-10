@@ -1,4 +1,4 @@
-import type { Lane, TaskSignal, TriggerKind } from "./types";
+import type { TaskSignal, TriggerKind } from "./types";
 import { deadlineDayDifference, deadlineIsOverdue, signalDeadline } from "./calendar-time";
 import { capitalise, numberWord, plural } from "./prose";
 
@@ -24,25 +24,33 @@ export type Triggered = {
   severity: number; // higher = more attention
   /** Visible same-workspace dependent selected deterministically; never an opaque id. */
   relatedTaskTitle?: string;
+  relatedTaskId?: string;
+  /** Full verified source set stays internal; public identity is opaque. */
+  representedTaskIds?: string[];
+  /** Safe evidence-derived observation, independent of rotating prose. */
+  detailOverride?: string;
 };
 
 /**
- * Where the work has actually got to, as a sentence. Lane names are
- * board vocabulary; "Still sitting in In flight" is not a thing anyone
- * says. This is the fact a date alone cannot give the reader: whether
- * the item has been started at all.
+ * The task's current saved stage, in language a reader can scan. This
+ * reports the saved status; it does not infer whether work has ever
+ * started from the current board position.
  */
-function lanePosition(lane: Lane): string {
-  switch (lane) {
-    case "next":
-      return "Not started yet.";
-    case "in-flight":
-      return "Started, and still open.";
-    case "review":
-      return "Sitting in review.";
-    case "shipped":
-      return "Already closed.";
+function lanePosition(task: TaskSignal): string {
+  const stageLabel = task.stage?.label?.trim();
+  if (task.stage?.phase === "unknown") {
+    return stageLabel
+      ? `Still open in “${stageLabel}”.`
+      : "Still open. Its saved stage is unknown.";
   }
+  const phase = task.stage?.phase ?? task.lane;
+  const fallbackLabel = {
+    next: "Next",
+    "in-flight": "In progress",
+    review: "Review",
+    shipped: "Done",
+  }[phase];
+  return `Saved stage: “${stageLabel || fallbackLabel}”.`;
 }
 
 /** Plain phrase for a date this many calendar days out (always ≥ 0). */
@@ -66,14 +74,15 @@ export function detectStuckWork(signals: TaskSignal[]): Triggered[] {
     .map((task) => ({
       task,
       trigger: "stuck-work" as const,
+      representedTaskIds: [task.id],
       // The row above already reads "Nothing has moved on it for eighteen
       // days", so a first bullet reading "Last update was eighteen days
       // ago" spent the reader's click restating it in different words.
-      // Rule first, then the one fact the row has no room for: whether
-      // the work has been started at all.
+      // Rule first, then the current saved stage. A board position does
+      // not establish whether work has ever started.
       reasons: [
         "Signal flags anything quiet for three days or more.",
-        lanePosition(task.lane),
+        lanePosition(task),
         ...(task.priority === 0 ? ["This is marked high priority."] : []),
       ],
       severity: Math.min(100, task.idleDays! * 4 + (task.priority === null ? 0 : (3 - task.priority) * 6)),
@@ -95,15 +104,15 @@ export function detectDueSoon(
       const overdueDays = Math.round(Math.abs(daysOut));
       // The row already states the date position, so neither line here
       // repeats it. Line one names the rule that fired; line two is the
-      // fact the date alone does not give you, which is whether anyone
-      // has touched it and where it is sitting.
+      // fact the date alone does not give you: its current saved stage.
       const evidence =
         task.idleDays != null && task.idleDays >= 1
           ? `No update on it in ${plural(task.idleDays, "day", "days")}.`
-          : lanePosition(task.lane);
+          : lanePosition(task);
       return {
         task,
         trigger: "due-soon",
+        representedTaskIds: [task.id],
         reasons: [
           isOverdue
             ? daysOut === 0 ? "Signal flags anything past its time." : "Signal flags anything past its date."
@@ -137,6 +146,7 @@ export function detectJustShipped(
     .map((task) => ({
       task,
       trigger: "just-shipped" as const,
+      representedTaskIds: [task.id],
       reasons: [
         "Signal keeps a closed item in the read for a day after it moves.",
         task.priority === 0
@@ -192,6 +202,7 @@ export function detectCrowdedWeek(
     {
       task: synthetic,
       trigger: "crowded-week",
+      representedTaskIds: upcoming.map(task => task.id).sort(),
       reasons: [
         "Signal flags three or more dates landing in the same seven days.",
         `The closest is due ${dueWhen(soonest)}.`,
@@ -207,6 +218,8 @@ export function detectCrowdedWeek(
  *  closes that gap. Persistent blockers deserve visibility, not
  *  silence. */
 export function detectBlockedTooLong(signals: TaskSignal[]): Triggered[] {
+  const visible = new Set(signals.filter(task => task.workspaceId)
+    .map(task => JSON.stringify([task.workspaceId, task.id])));
   return signals
     .filter(
       (s) =>
@@ -218,9 +231,13 @@ export function detectBlockedTooLong(signals: TaskSignal[]): Triggered[] {
     .map((task) => ({
       task,
       trigger: "blocked-too-long" as const,
+      representedTaskIds: [...new Set([task.id, ...task.blockedBy.filter(id =>
+        visible.has(JSON.stringify([task.workspaceId, id]))), ...(task.prerequisiteEvidence ?? [])
+        .filter(record => record.workspaceId === task.workspaceId && !record.complete && task.blockedBy.includes(record.id))
+        .map(record => record.id)])].sort(),
       reasons: [
         "Signal flags blocked work after five days without movement.",
-        lanePosition(task.lane),
+        lanePosition(task),
         task.blockedBy.length === 1
           ? "One upstream item has not cleared."
           : `${capitalise(numberWord(task.blockedBy.length))} upstream items have not cleared.`,
@@ -243,11 +260,16 @@ export function detectBlockingDueWork(signals: TaskSignal[], now: number = Date.
     for (const id of new Set(dependent.blockedBy)) {
       if (id === dependent.id) continue;
       const blocker = visible.get(`${dependent.workspaceId}:${id}`);
-      if (!blocker || blocker.lane === "shipped" || selected.has(`${blocker.workspaceId}:${blocker.id}`)) continue;
-      selected.set(`${blocker.workspaceId}:${blocker.id}`, {
+      // Keep the original nearest-due-dependent choice per blocker. Identity
+      // carries the chosen relationship, without expanding detector load.
+      const relationship = JSON.stringify([blocker?.workspaceId, blocker?.id]);
+      if (!blocker || blocker.lane === "shipped" || selected.has(relationship)) continue;
+      selected.set(relationship, {
         task: blocker,
         trigger: "blocking-due-work",
         relatedTaskTitle: dependent.title,
+        relatedTaskId: dependent.id,
+        representedTaskIds: [blocker.id, dependent.id].sort(),
         reasons: [
           "This open task is a listed prerequisite for another open task.",
           days < 0 || deadlineIsOverdue(signalDeadline(dependent), now, timezone)
@@ -273,22 +295,50 @@ export function detectPrerequisitesComplete(signals: TaskSignal[], now: number =
     return [{
       task,
       trigger: "prerequisites-complete" as const,
-      reasons: ["At least one listed prerequisite is complete and none remain open.", "The task has a saved deadline within seven days."],
+      representedTaskIds: [...new Set([task.id, ...(task.prerequisiteEvidence ?? [])
+        .filter(record => task.workspaceId && record.workspaceId === task.workspaceId && record.complete)
+        .map(record => record.id)])].sort(),
+      reasons: ["All listed prerequisites were verified complete; none remain open or unverified.", "The task has a saved deadline within seven days."],
       severity: 0,
     }];
   });
 }
 
-/** Overload: > 5 in-flight tasks for the user. The triggered
+/** A saved near-term date makes incomplete prerequisite evidence relevant.
+ * Unknown does not establish a blocker or readiness, and carries no identity.
+ * Undated and distant work remain quiet unless another attention rule fires. */
+export function detectPrerequisitesUnverified(signals: TaskSignal[], now: number = Date.now(), timezone = "UTC"): Triggered[] {
+  return signals.flatMap(task => {
+    if (task.lane === "shipped" || task.dependencyCoverage !== "partial") return [];
+    const days = deadlineDayDifference(signalDeadline(task), now, timezone);
+    if (days === null || days > 7) return [];
+    return [{
+      task,
+      trigger: "prerequisites-unverified" as const,
+      representedTaskIds: [task.id],
+      reasons: ["The task's prerequisite records could not be fully verified.",
+        "Unverified prerequisites do not establish that the task is blocked or ready."],
+      severity: 0,
+    }];
+  });
+}
+
+/** Overload: > 5 tasks saved in-flight or in review in this read. The triggered
  *  signal isn't a task, it's the situation itself. We return a
  *  pseudo-task representing the overload state. */
-export function detectOverload(signals: TaskSignal[]): Triggered[] {
+export function detectOverload(signals: TaskSignal[], canonicalUserId?: string): Triggered[] {
   const inFlight = signals.filter(
-    (s) => s.lane === "in-flight" || s.lane === "review",
+    (s) => (s.stage?.phase ?? s.lane) === "in-flight" || (s.stage?.phase ?? s.lane) === "review",
   );
   if (inFlight.length <= 5) return [];
 
-  const inReview = inFlight.filter((s) => s.lane === "review").length;
+  // A project total cannot establish the reader's load. Only a resolved
+  // identity and complete assignment fields support an exact personal count.
+  const assigned = canonicalUserId && inFlight.every(task => task.assignees !== undefined)
+    ? inFlight.filter(task => task.assignees!.some(user => user.id === canonicalUserId)) : null;
+  const personalDetail = assigned === null ? "" :
+    ` ${capitalise(numberWord(assigned.length))} of these open tasks are assigned to you.${assigned.length > 5 ? " Your assigned in-flight or review tasks exceed the threshold of five." : ""}`;
+  const inReview = inFlight.filter((s) => (s.stage?.phase ?? s.lane) === "review").length;
 
   const synthetic: TaskSignal = {
     id: "synthetic:overload",
@@ -307,11 +357,11 @@ export function detectOverload(signals: TaskSignal[]): Triggered[] {
     {
       task: synthetic,
       trigger: "overload",
+      representedTaskIds: inFlight.map(task => task.id).sort(),
+      detailOverride: `${capitalise(numberWord(inFlight.length))} tasks in this read have saved in-flight or review status.${personalDetail}`,
       reasons: [
-        "Signal flags anything over five open at once.",
-        inReview > 0
-          ? `${capitalise(numberWord(inReview))} of them ${inReview === 1 ? "is" : "are"} already in review.`
-          : "None of them have reached review yet.",
+        "Signal flags more than five tasks saved in-flight or in review.",
+        `${capitalise(numberWord(inFlight.length - inReview))} are saved in-flight; ${numberWord(inReview)} are saved in review.`,
       ],
       severity: 50 + (inFlight.length - 5) * 4,
     },

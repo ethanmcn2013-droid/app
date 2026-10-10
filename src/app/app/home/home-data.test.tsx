@@ -40,6 +40,30 @@ const signals = (count: number, dueAt: number | null = null): TaskSignal[] => Ar
   id: `task-${index}`, title: `Work ${index}`, lane: "in-flight", priority: 2, dueAt,
   idleDays: 0, commentCount: 0, blockedBy: [], sourceLabel: "Tasks · project-b", movedToShippedAt: null, workspaceId: "project-b",
 }));
+
+test("Home renders a saved custom stage neutrally without changing the task destination", async () => {
+  const custom = { ...signals(1, now + 86_400_000)[0]!, id: "exhibit-check",
+    stage: { key: "evidence-check", label: "Evidence check", phase: "unknown" as const, complete: false } };
+  const { data } = await fixture([custom]);
+  assert.equal(data.myTasks[0]?.lane, "open");
+  assert.equal(data.myTasks[0]?.href, "/app/task/exhibit-check");
+  const link = ({ href, children, className }: { href: string; children: ReactNode; className?: string }) => createElement("a", { href, className }, children);
+  const view = load<typeof import("@/components/app/home/home-view")>("../../../components/app/home/home-view.tsx", {
+    "next/link": { default: link }, "./home-analytics": { HomeViewedPing: () => null },
+    "./home.module.css": { default: new Proxy({}, { get: (_target, key) => String(key) }) },
+  });
+  const html = renderToStaticMarkup(createElement(view.HomeView, { data }));
+  assert.match(html, />Evidence check<\/span>/);
+  assert.doesNotMatch(html, />In progress<\/span>|>In review<\/span>/);
+  assert.match(html, /href="\/app\/task\/exhibit-check"/);
+  const unnamed = await fixture([{ ...custom, stage: { ...custom.stage, label: null } }]);
+  assert.equal(unnamed.data.myTasks[0]?.stageLabel, "Open");
+  const knownDoing = { ...signals(1)[0]!, id: "verified-started",
+    stage: { key: "doing", label: "In progress", phase: "in-flight" as const, complete: false } };
+  const mixed = await fixture([custom, knownDoing]);
+  assert.deepEqual(mixed.data.myTasks.map(row => row.id), ["verified-started", "exhibit-check"],
+    "an unknown custom stage does not acquire the known in-motion sort rank");
+});
 async function fixture(items: TaskSignal[], scope: SignalScope = { kind: "workspace", workspaceId: "project-b" }, coverageStatus?: "partial", timezoneOverride?: string) {
   const authorizedScope = scopeApi.authorizeSignalScope(catalog, scope);
   assert.ok(authorizedScope);
@@ -141,6 +165,24 @@ test("mixed calendar-day deadlines sort before Home's cap in each reader zone", 
   assert.equal(west.data.myTasks.length, 8);
   const east = await fixture([...date, instant], undefined, undefined, "Pacific/Kiritimati");
   assert.ok(east.data.myTasks.every(row => row.id !== "timed"), "local Sep 6 instant follows eight Sep 5 dates");
+});
+
+test("tasks sharing a saved date retain their own identities and priority ordering", async () => {
+  const items = ([3, 1, 2] as const).map((priority): TaskSignal => ({
+    ...signals(1)[0], id: `priority-${priority}`, title: `Work ${priority}`, priority,
+    deadline: { kind: "date-only", date: "2026-09-05" },
+  }));
+  const { data } = await fixture(items);
+  assert.deepEqual(data.myTasks.map(row => [row.id, row.title, row.priority, row.due, row.overdue]), [
+    ["priority-1", "Work 1", 1, "Tomorrow", false],
+    ["priority-2", "Work 2", 2, "Tomorrow", false],
+    ["priority-3", "Work 3", 3, "Tomorrow", false],
+  ]);
+  assert.equal(data.stats.open, 3);
+  assert.equal(data.stats.dueToday, 0);
+  assert.equal(data.stats.overdue, 0);
+  assert.equal(data.deadlines[0]?.label, "Tomorrow");
+  assert.deepEqual(data.deadlines[0]?.rows.map(row => row.id), items.map(item => item.id));
 });
 
 test("an expired same-day instant survives eight date-only-today rows before Home's cap", async () => {
@@ -319,7 +361,7 @@ test("actual Home page carries its explicit scope and never invents a new-user v
   const beforeResolved = resolved.length;
   await assert.rejects(page.default({ searchParams: Promise.resolve({ workspaceId: "project-b" }) }), /not-found/);
   assert.equal(resolved.length, beforeResolved, "a refused explicit scope never consults the ambient Tasks fallback");
-  const newUser = await page.default();
+  const newUser = await page.default({});
   assert.deepEqual(calls.at(-1), { clerkId: "synthetic" }, "a bare new-user visit remains supported");
   assert.equal(newUser.props.children[0].props.project, null, "a truly empty Home publishes no Project");
 });
@@ -342,7 +384,7 @@ test("bare Home reads a fresh Tasks creator's authorized Project without a Signa
     "@/components/app/active-project-route-sync": { ActiveProjectRouteSync: () => null },
     "@/components/app/home/home-view": { HomeView: () => null, HomeNewUser: () => null, HomeProjectUnavailable: () => null },
   });
-  const result = await page.default();
+  const result = await page.default({});
   assert.deepEqual(calls, [
     { clerkId: "clerk-creator" },
     { clerkId: "clerk-creator", scope: { kind: "workspace", workspaceId: "project-b" } },
@@ -363,7 +405,7 @@ test("bare Home with a Tasks Project never tells the creator to set up another w
     "@/components/app/active-project-route-sync": { ActiveProjectRouteSync: () => null },
     "@/components/app/home/home-view": { HomeView: () => null, HomeNewUser: () => "wrong-setup", HomeProjectUnavailable: () => "temporarily-unavailable" },
   });
-  const result = await page.default();
+  const result = await page.default({});
   assert.equal(result.props.children[1].type(), "temporarily-unavailable");
 });
 
@@ -463,4 +505,10 @@ test("engine selection retains legacy/period behavior after shared hint validati
     assert.deepEqual(result.props.searchParams, input);
   }
   assert.equal(observed.length, 0);
+});
+
+test("round8 This week uses local calendar membership rather than rolling seven days", async () => {
+  const monday = { ...signals(1)[0]!, id: "next-monday", deadline: { kind: "date-only" as const, date: "2026-09-07" } };
+  const { data } = await fixture([monday]);
+  assert.equal(data.deadlines.find(group => group.rows.some(row => row.id === monday.id))?.label, "Later");
 });

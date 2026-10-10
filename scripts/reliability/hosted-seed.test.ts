@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createClient, type Client } from "@libsql/client";
-import { seedHostedFixture, verifyHostedSeedPrerequisites, sendHostedSeedMessage, hostedSeedRequestId, requireSeedSuccess, remoteHarnessAdapter } from "./hosted-seed";
+import { seedHostedFixture, verifyHostedSeedPrerequisites, sendHostedSeedMessage, sendHostedSeedMessageBatch, hostedSeedRequestId, requireSeedSuccess, remoteHarnessAdapter } from "./hosted-seed";
 import { executeConversationBatch } from "../../src/server/conversations/database";
 import { ACTORS, allocateLocalServiceTarget, initializeLocalServiceSchema, seedLocalServiceFixture } from "./local-service-harness";
 import { localServiceManifest } from "./local-service-run";
@@ -72,4 +72,49 @@ test("remote seed batches delegate to the same interactive handle and roll back 
   await write(); assert.deepEqual(trace, ["begin:write", "proof", "batch", "commit"]);
   trace.length = 0; fail = true; await assert.rejects(write(), /synthetic_batch_failure/);
   assert.deepEqual(trace, ["begin:write", "proof", "batch", "rollback"]);
+});
+
+test("message-only seed batches overlap different rooms, retain room FIFO and return original index order", async () => {
+  const activeRooms = new Set<number>();
+  const previous = new Map<number, number>();
+  let peak = 0;
+  const results = await sendHostedSeedMessageBatch(1_000, 1_060, async index => {
+    const room = index % 2 === 0 ? 0 : Math.floor(index / 2) % 10;
+    assert.equal(activeRooms.has(room), false, "a room must never have concurrent sends");
+    assert.ok(index > (previous.get(room) ?? -1), "a room retains its original sequence");
+    previous.set(room, index);
+    activeRooms.add(room);
+    peak = Math.max(peak, activeRooms.size);
+    await new Promise<void>(resolve => setImmediate(resolve));
+    activeRooms.delete(room);
+    return `message-${index}`;
+  });
+  assert.equal(peak, 2);
+  assert.deepEqual(results, Array.from({ length: 60 }, (_, index) => `message-${index + 1_000}`));
+});
+
+test("seed batch failure stops new admissions and drains an already-started peer without retry", async () => {
+  let rejectFirst!: (error: Error) => void;
+  let finishPeer!: () => void;
+  let peerFinished = false;
+  const started: number[] = [];
+  const first = new Promise<string>((_resolve, reject) => { rejectFirst = reject; });
+  const peer = new Promise<string>(resolve => { finishPeer = () => { peerFinished = true; resolve("peer"); }; });
+  const failure = new Error("synthetic_send_failure");
+  const batch = sendHostedSeedMessageBatch(1_000, 1_020, index => {
+    started.push(index);
+    return index === 1_000 ? first : peer;
+  });
+  let settled = false;
+  const checked = assert.rejects(batch, error => error === failure).then(() => { settled = true; });
+  assert.deepEqual(started, [1_000, 1_003]);
+  rejectFirst(failure);
+  await new Promise<void>(resolve => setImmediate(resolve));
+  assert.equal(settled, false, "client lifetime must cover the outstanding peer");
+  finishPeer();
+  await checked;
+  assert.equal(peerFinished, true);
+  assert.deepEqual(started, [1_000, 1_003]);
+  await assert.rejects(sendHostedSeedMessageBatch(0, 10, async index => index), /batch_invalid/);
+  await assert.rejects(sendHostedSeedMessageBatch(1_000, 2_001, async index => index), /batch_invalid/);
 });

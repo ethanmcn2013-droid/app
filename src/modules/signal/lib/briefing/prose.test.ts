@@ -28,6 +28,7 @@ const ALL_TRIGGERS: TriggerKind[] = [
   "blocked-too-long",
   "blocking-due-work",
   "prerequisites-complete",
+  "prerequisites-unverified",
 ];
 
 describe("phraseFor, every trigger × every rotation produces non-empty prose", () => {
@@ -88,6 +89,20 @@ describe("phraseFor, the observation never carries the title", () => {
 });
 
 describe("phraseFor, context propagation", () => {
+  test("deadline phrasing retains its task-only meaning despite unrelated prerequisite context", () => {
+    for (let rotation = 0; rotation < 3; rotation++) {
+      for (const context of [{ daysOut: 0 }, { daysOut: 1 }, { daysOut: 0, pastToday: true },
+        { daysOut: 0, instantRemainingMs: 7_200_000 }]) {
+        const original = phraseFor("due-soon", task(), rotation, context);
+        const withDependency = phraseFor("due-soon", task(), rotation, {
+          ...context, openPrerequisiteTitles: ["Check the safety plan"],
+        });
+        assert.equal(withDependency, original);
+        assert.doesNotMatch(withDependency, /Check the safety plan|Waiting on/);
+        assert.doesNotMatch(withDependency, /days without|just cleared|ready to start/i);
+      }
+    }
+  });
   test("new dependency observations name only visible context and saved date, never invented transition age", () => {
     for (let rotation = 0; rotation < 3; rotation++) {
       const blocker = phraseFor("blocking-due-work", task(), rotation, { relatedTaskTitle: "Finish the plan" });
@@ -95,6 +110,7 @@ describe("phraseFor, context propagation", () => {
       assert.match(blocker, /Finish the plan/);
       assert.match(completed, /2 Nov/);
       assert.match(completed, /listed prerequisites are complete/i);
+      assert.match(completed, /move ahead|no longer held up/i);
       assert.doesNotMatch(`${blocker} ${completed}`, /just cleared|newly unblocked|ready to start|days without/i);
     }
   });

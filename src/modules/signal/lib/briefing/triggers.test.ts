@@ -15,6 +15,20 @@ import type { TaskSignal } from "./types";
 const DAY = 86_400_000;
 const NOW = 1_700_000_000_000;
 
+test("unknown custom phases do not count as started or review in overload", () => {
+  const unknown = Array.from({ length: 6 }, (_, index) => makeTask({ id: `quality-${index}`, lane: "in-flight",
+    stage: { key: "quality-gate", label: "Quality check", phase: "unknown", complete: false } }));
+  assert.deepEqual(detectOverload(unknown), []);
+  const doing = unknown.map(task => ({ ...task, stage: { key: "doing", label: "Doing", phase: "in-flight" as const, complete: false } }));
+  assert.equal(detectOverload(doing).length, 1);
+  assert.deepEqual(detectOverload(doing)[0]?.representedTaskIds, doing.map(task => task.id).sort());
+  const dueUnknown = detectDueSoon([{ ...unknown[0]!, dueAt: NOW + DAY }], NOW)[0]!;
+  assert.ok(dueUnknown.reasons.some(reason => /Still open in “Quality check”/.test(reason)));
+  assert.ok(dueUnknown.reasons.every(reason => !/\bstarted\b/i.test(reason)));
+  const unnamedUnknown = detectDueSoon([{ ...unknown[0]!, stage: { key: "custom", label: null, phase: "unknown", complete: false }, dueAt: NOW + DAY }], NOW)[0]!;
+  assert.ok(unnamedUnknown.reasons.includes("Still open. Its saved stage is unknown."));
+});
+
 describe("current dependency relevance", () => {
   test("one visible same-workspace blocker is selected for the nearest due dependent without age evidence", () => {
     const blocker = makeTask({ id: "open-blocker", title: "Inspect the venue", workspaceId: "owned", idleDays: null });
@@ -510,7 +524,7 @@ describe("reasons carry evidence, not restatement", () => {
     ]);
     assert.deepEqual(blocked.reasons, [
       "Signal flags blocked work after five days without movement.",
-      "Sitting in review.",
+      "Saved stage: “Review”.",
       "One upstream item has not cleared.",
     ]);
   });
@@ -535,33 +549,36 @@ describe("reasons carry evidence, not restatement", () => {
     }
   });
 
-  // The row already reads "Nothing has moved on it for eighteen days", so
-  // a bullet reading "Last update was eighteen days ago" spent the click
-  // restating it. The bullets now name the rule, then say the one thing
-  // the row cannot: whether the work was ever started.
-  test("stuck work adds the lane fact its row cannot carry", () => {
+  // The row already carries age. The second bullet adds the current saved
+  // stage without treating that stage as evidence of task history.
+  test("stuck work adds the saved stage without inferring task history", () => {
     assert.deepEqual(
       detectStuckWork([makeTask({ idleDays: 18, lane: "in-flight" })])[0]!
         .reasons,
       [
         "Signal flags anything quiet for three days or more.",
-        "Started, and still open.",
+        "Saved stage: “In progress”.",
       ],
     );
     assert.deepEqual(
       detectStuckWork([makeTask({ idleDays: 18, lane: "next" })])[0]!.reasons,
       [
         "Signal flags anything quiet for three days or more.",
-        "Not started yet.",
+        "Saved stage: “Next”.",
       ],
     );
     assert.deepEqual(
       detectStuckWork([makeTask({ idleDays: 18, lane: "review" })])[0]!.reasons,
       [
         "Signal flags anything quiet for three days or more.",
-        "Sitting in review.",
+        "Saved stage: “Review”.",
       ],
     );
+    const labelledStage = detectStuckWork([makeTask({ idleDays: 18, stage: {
+      key: "doing", label: "Doing", phase: "in-flight", complete: false,
+    } })])[0]!;
+    assert.equal(labelledStage.reasons[1], "Saved stage: “Doing”.");
+    assert.ok(labelledStage.reasons.every(reason => !/\bstarted\b/i.test(reason)));
   });
 
   test("no stuck-work bullet restates the age the row already carries", () => {
@@ -585,25 +602,34 @@ describe("reasons carry evidence, not restatement", () => {
     ]);
   });
 
-  test("an untouched due item reports where it is sitting instead", () => {
-    const [fired] = detectDueSoon(
-      [makeTask({ dueAt: NOW + DAY, idleDays: 0, lane: "next" })],
+  test("due triggers keep their deadline reason and report saved stage", () => {
+    const [next, inProgress] = detectDueSoon(
+      [
+        makeTask({ id: "next", dueAt: NOW + DAY, idleDays: 0, lane: "next" }),
+        makeTask({ id: "in-progress", dueAt: NOW + DAY, idleDays: 0, lane: "in-flight" }),
+      ],
       NOW,
     );
-    assert.deepEqual(fired.reasons, [
+    assert.equal(next.trigger, "due-soon");
+    assert.deepEqual(next.reasons, [
       "Signal flags anything due inside two days.",
-      "Not started yet.",
+      "Saved stage: “Next”.",
+    ]);
+    assert.equal(inProgress.trigger, "due-soon");
+    assert.deepEqual(inProgress.reasons, [
+      "Signal flags anything due inside two days.",
+      "Saved stage: “In progress”.",
     ]);
   });
 
-  test("overload names the threshold and how far the work has got", () => {
+  test("overload names the threshold and saved stage counts", () => {
     const flight = Array.from({ length: 7 }, (_, i) =>
       makeTask({ id: `t${i}`, lane: i < 2 ? "review" : "in-flight" }),
     );
     const [fired] = detectOverload(flight);
     assert.deepEqual(fired.reasons, [
-      "Signal flags anything over five open at once.",
-      "Two of them are already in review.",
+      "Signal flags more than five tasks saved in-flight or in review.",
+      "Five are saved in-flight; two are saved in review.",
     ]);
   });
 

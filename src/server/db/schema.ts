@@ -663,6 +663,7 @@ export const conversationMessages = sqliteTable("conversation_messages", {
   uniqueIndex("conversation_messages_request").on(t.conversationId, t.authorId, t.clientRequestId),
   uniqueIndex("conversation_messages_sequence").on(t.conversationId, t.createSeq),
   index("conversation_messages_root").on(t.conversationId, t.rootId, t.createSeq),
+  index("conversation_messages_workspace").on(t.workspaceId),
   check("conversation_messages_create_seq_check", sql`${t.createSeq} >= 1`),
   check("conversation_messages_revision_check", sql`${t.revision} >= 1`),
   check("conversation_messages_tombstone_check", sql`((${t.deletedAt} IS NULL AND ${t.body} IS NOT NULL) OR (${t.deletedAt} IS NOT NULL AND ${t.body} IS NULL))`),

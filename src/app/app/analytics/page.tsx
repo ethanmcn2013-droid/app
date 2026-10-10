@@ -16,7 +16,7 @@ export const metadata = { title: "Analytics · Signal Studio" };
  */
 export default async function AnalyticsPage({ searchParams }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
-} = {}) {
+}) {
   await requireAppAccessTasks();
   const params = await searchParams ?? {};
   const requested = typeof params.workspaceId === "string" ? params.workspaceId : null;

@@ -47,21 +47,22 @@ function fixture() {
   const tasks = { id: "tasks.id", workspaceId: "tasks.workspaceId", lane: "tasks.lane" };
   const workspaces = { id: "workspaces.id", ownerUserId: "workspaces.ownerUserId" };
   const meta = { key: "meta.key" };
-  const schema = { users, workspaceMembers, tasks, workspaces, meta };
+  const planningPeriods = {id:"planning.id",ownerUserId:"planning.ownerUserId"};
+  const schema = { users, workspaceMembers, tasks, workspaces, meta, planningPeriods };
   const eq = (column, value) => ({ kind: "eq", column, value });
   const and = (...parts) => ({ kind: "and", parts });
   const matches = (row, expression) => expression.kind === "and"
     ? expression.parts.every((part) => matches(row, part))
     : row[expression.column] === expression.value;
   const db = {
-    select() {
+    select(selection) {
       return {
         from(table) {
           const query = {
             innerJoin() { return query; },
             leftJoin() { return query; },
             where(expression) {
-              if (table === workspaceMembers) state.ambientReads++;
+              if (table === workspaceMembers && !Object.hasOwn(selection ?? {}, "membershipRole")) state.ambientReads++;
               const internalActor = state.mappedIds.get(state.actor) ?? state.actor;
               const rows = table === users
                 ? [ { "users.id": internalActor, "users.clerkId": state.actor, id: internalActor,
@@ -69,6 +70,8 @@ function fixture() {
                 : table === workspaceMembers
                   ? [...(state.memberships.get(internalActor) ?? [])].map((workspaceId) => ({
                     "members.userId": internalActor, "members.workspaceId": workspaceId, workspaceId,
+                    membershipRole:"member",workspaceOwnerUserId:internalActor,planningPeriodOwnerUserId:null,archivedAt:null,
+                    projectDeleting:false,actorId:internalActor,actorClerkId:state.actor,ownerId:internalActor,ownerClerkId:state.actor,
                   }))
                   : table === tasks
                     ? [{ "tasks.id": "task_alice", "tasks.workspaceId": "project_alice", id: "task_alice", workspaceId: "project_alice", lane: "todo" }]
@@ -120,9 +123,10 @@ function fixture() {
     "@/server/db": { db },
     "@/server/db/schema": schema,
     "@/server/db/seed": { LEGACY_WORKSPACE_ID: "ws_legacy" },
-    "@/server/db/ensure-user": { ensureUserProvisioned: async () => {
+    "@/server/db/ensure-user": { resolveProvisionedUserId: async (clerkId) => {
       counters.provision++;
       if (state.failProvision) throw Error("provision failed");
+      return state.mappedIds.get(clerkId) ?? clerkId;
     } },
     "@/server/diagnostics/identity-timing": { beginIdentityTiming: () => ({
       measure: (_stage, work) => work(), finish() {},
@@ -145,7 +149,7 @@ function fixture() {
     "@/server/tasks/mutation-refusal": loadSource(refusalPath, {
       "@/lib/projects/project-ref": { parseProjectId: value => typeof value === "string" && value.length > 0 ? value : null },
     }),
-    "drizzle-orm": { and, eq, inArray: (column, values) => ({kind: "inArray", column, values}) },
+    "drizzle-orm": { and, eq, sql: (strings, ...values) => ({kind:"sql",strings,values}), inArray: (column, values) => ({kind: "inArray", column, values}) },
     "drizzle-orm/sqlite-core": { alias: () => ({id: "owner_user.id", clerkId: "owner_user.clerkId"}) },
     "next/cache": { revalidatePath() {} },
     "@/server/db": { db },
@@ -171,6 +175,8 @@ function fixture() {
     },
     "@/server/actions/private-task-db-write": { privateTaskDbWrite: (operation) => operation() },
     "@/server/actions/project-authz": {
+      evaluateProjectCapability: (actorUserId,projectId,_capability,_archive,row) => row && state.memberships.get(actorUserId)?.has(projectId)
+        ? {ok:true,projectId} : {ok:false},
       authorizeStoredProject: async ({ storedProjectId, actorUserId }) =>
         state.memberships.get(actorUserId)?.has(storedProjectId)
           ? { ok: true, projectId: storedProjectId } : { ok: false },

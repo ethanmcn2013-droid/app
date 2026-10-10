@@ -3,7 +3,7 @@ import test from "node:test";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { boundedResponseText, classifyCommittedScope, committedEffectMatchesScope, dryRunHostedWorkload, finalizeHostedRepetition, HostedMessageVisibility, hostedAttemptDiagnostic, hostedFailureResponse, hostedFlushDiagnostic, hostedMeasurementAttribution, hostedMeasurementAttributionFromWindows, hostedUnverifiedAttemptEvidence, parseHostedServerTiming, reconcileHostedEffects, runHostedArrivalSchedule, runHostedWorkload, sessionCleanupAccepted, validateHostedEnvelope, validateHostedHtml, writeHostedUnverifiedFlushDiagnostic } from "./hosted-workload";
+import { boundedResponseText, classifyCommittedScope, committedEffectMatchesScope, dryRunHostedWorkload, finalizeHostedRepetition, HostedMessageVisibility, hostedAttemptDiagnostic, hostedFailureResponse, hostedFlushDiagnostic, hostedMeasurementAttribution, hostedMeasurementAttributionFromWindows, hostedUnverifiedAttemptEvidence, observeHostedPollHistory, parseHostedServerTiming, reconcileHostedEffects, runHostedArrivalSchedule, runHostedWorkload, sessionCleanupAccepted, validateHostedEnvelope, validateHostedHtml, writeHostedUnverifiedFlushDiagnostic } from "./hosted-workload";
 import { hostedTargetHash, type HostedFixture } from "./hosted-seed";
 import { buildMixedWorkloadSchedule, WORKLOAD } from "./contracts/workload-schedule.mjs";
 import { reconcileRun } from "./contracts/result-reconciliation.mjs";
@@ -150,6 +150,50 @@ test("arrival deadlines recheck an early waking timer and do not burst after a >
   assert.equal(result.windows[1].startedAtMs, duration + 65_000);
   assert.ok(offered.every((slot) => slot.actualAt >= result.windows[slot.repetition - 1].startedAtMs + slot.localAt));
   assert.equal(result.windows[0].boundary?.nextAnchorAtMs, duration + 65_000);
+});
+
+test("nominal same-session polls overlap slow HTTP and proof while every full operation remains drained", async () => {
+  const events = buildMixedWorkloadSchedule().events.filter(slot => slot.sessionId === "chat-1" && slot.journey === "chat.poll").slice(0, 3);
+  for (const firstDuration of [1_385, 2_500]) {
+    let now = 0;
+    const timers: Array<{ at: number; resolve: () => void }> = [];
+    const admitted: number[] = [];
+    let completed = 0;
+    const result = await runHostedArrivalSchedule({ events, startedAt: 0, now: () => now,
+      sleep: async ms => {
+        now = Math.min(now + ms, ...timers.map(timer => timer.at));
+        for (let index = timers.length - 1; index >= 0; index--) if (timers[index].at <= now) timers.splice(index, 1)[0].resolve();
+        await Promise.resolve();
+      },
+      perform: async slot => {
+        admitted.push(now);
+        await new Promise<void>(resolve => { timers.push({ at: now + (slot.atMs === 0 ? firstDuration : 100), resolve }); });
+        completed++;
+      }, flush: async () => { throw Error("unexpected_boundary"); }, isFatal: () => false });
+    assert.deepEqual(admitted, [0, 1_000, 2_000]);
+    assert.equal(result.droppedIterations, 0);
+    assert.equal(completed, 3);
+  }
+});
+
+test("overlapping polls still drop the seventeenth whole operation at the unchanged global cap", async () => {
+  const events = buildMixedWorkloadSchedule().events.filter(slot => slot.journey === "chat.poll").slice(0, 17);
+  let now = 0;
+  let releaseScheduled = false;
+  const releases: Array<() => void> = [];
+  let completed = 0;
+  const result = await runHostedArrivalSchedule({ events, startedAt: 0, now: () => now,
+    sleep: async ms => {
+      now += ms;
+      if (now >= WORKLOAD.warmupMs + WORKLOAD.measuredMs && !releaseScheduled) {
+        releaseScheduled = true;
+        setImmediate(() => { for (const resolve of releases) resolve(); });
+      }
+    }, perform: async () => { await new Promise<void>(resolve => { releases.push(resolve); }); completed++; },
+    flush: async () => { throw Error("unexpected_boundary"); }, isFatal: () => false });
+  assert.equal(releases.length, 16);
+  assert.equal(result.droppedIterations, 1);
+  assert.equal(completed, 16, "final drain includes every proof, not only HTTP completion");
 });
 
 test("the final window remains a full 25 minutes while a long final drain stays outside active hours", async () => {
@@ -498,6 +542,69 @@ test("actual history lookup rejection retains bounded nested timeout cause; miss
     return true;
   });
   assert.equal(tracker.authorizedMessages.size, 0);
+});
+
+test("libSQL history failure retains only fixed wrapper codes and bounded nested causes, without accepting scope", async () => {
+  const tracker = new HostedMessageVisibility();
+  const scope = { projectId: "owned-project", conversationId: "owned-room" };
+  const wrapped = { code: "SERVER_ERROR", message: "private SQL and token", cause: { cause: { code: "UND_ERR_CONNECT_TIMEOUT" } } };
+  await assert.rejects(tracker.observeHistory(["unknown"], "observer", 10, scope, async () => { throw wrapped; }), error => {
+    assert.deepEqual(hostedAttemptDiagnostic(error, "history_lookup_sql"),
+      { failureStage: "history_lookup_sql", causeCategory: "timeout", causeCode: "SERVER_ERROR" });
+    assert.doesNotMatch(JSON.stringify(hostedAttemptDiagnostic(error, "history_lookup_sql")), /private|token|SELECT/);
+    return true;
+  });
+  assert.equal(tracker.authorizedMessages.size, 0);
+  assert.deepEqual(hostedAttemptDiagnostic({ code: "HRANA_CLOSED_ERROR", cause: { code: "ECONNRESET" } }, "history_lookup_sql"),
+    { failureStage: "history_lookup_sql", causeCategory: "transport", causeCode: "HRANA_CLOSED_ERROR" });
+  assert.deepEqual(hostedAttemptDiagnostic({ code: "SERVER_ERROR" }, "history_lookup_sql"),
+    { failureStage: "history_lookup_sql", causeCategory: "verification", causeCode: "SERVER_ERROR" });
+});
+
+test("diagnostics stop at three error objects or cycles and never emit arbitrary provider codes", () => {
+  const cyclic: { code: string; cause?: unknown } = { code: "private-provider-text" };
+  cyclic.cause = cyclic;
+  const fallback = { failureStage: "history_lookup_sql", causeCategory: "verification" };
+  assert.deepEqual(hostedAttemptDiagnostic(cyclic, "history_lookup_sql"), fallback);
+  assert.deepEqual(hostedAttemptDiagnostic({ cause: { cause: { cause: { code: "ETIMEDOUT" } } } }, "history_lookup_sql"), fallback);
+});
+
+test("out-of-order poll pages all verify scope and publish only a monotonic last-verified cursor", async () => {
+  const visibility = new HostedMessageVisibility();
+  const scope = { projectId: "owned-project", conversationId: "owned-room" };
+  const cursors = new Map<string, number>();
+  const row = (id: string) => ({ id, workspace_id: scope.projectId, conversation_id: scope.conversationId, client_request_id: `request-${id}`, author_id: "writer" });
+  let releaseOlder!: (rows: ReturnType<typeof row>[]) => void;
+  const lookedUp: string[] = [];
+  const common = { visibility, actorHash: "observer", scope, cursors, sessionId: "chat-1", requestedCursor: 0 };
+  const older = observeHostedPollHistory({ ...common, ids: ["older"], receivedAt: 10, throughChangeSeq: 10,
+    lookup: async () => { lookedUp.push("older"); return new Promise(resolve => { releaseOlder = resolve; }); } });
+  const newer = await observeHostedPollHistory({ ...common, ids: ["newer"], receivedAt: 20, throughChangeSeq: 20,
+    lookup: async () => { lookedUp.push("newer"); return [row("newer")]; } });
+  assert.equal(newer.scopeAuthorized, true);
+  assert.equal(cursors.get("chat-1"), 20);
+  releaseOlder([row("older")]);
+  assert.equal((await older).scopeAuthorized, true);
+  assert.equal(cursors.get("chat-1"), 20);
+  assert.deepEqual(lookedUp, ["older", "newer"]);
+  await assert.rejects(observeHostedPollHistory({ ...common, requestedCursor: 20, throughChangeSeq: 19, ids: [], receivedAt: 30,
+    lookup: async () => { throw Error("regressing_page_must_not_be_accepted"); } }), /history_scope_unverified/);
+  assert.equal(cursors.get("chat-1"), 20);
+});
+
+test("foreign or failed stale-page proof cannot publish a cursor despite successful HTTP", async () => {
+  const visibility = new HostedMessageVisibility();
+  const cursors = new Map([["chat-1", 20]]);
+  const common = { visibility, actorHash: "observer", receivedAt: 10, scope: { projectId: "owned", conversationId: "room" },
+    cursors, sessionId: "chat-1", requestedCursor: 0, throughChangeSeq: 100 };
+  const foreign = await observeHostedPollHistory({ ...common, ids: ["foreign"], lookup: async () => [
+    { id: "foreign", workspace_id: "other-project", conversation_id: "other-room", client_request_id: "request", author_id: "writer" },
+  ] });
+  assert.equal(foreign.scopeAuthorized, false);
+  assert.equal(foreign.unauthorizedContent, true);
+  assert.equal(cursors.get("chat-1"), 20);
+  await assert.rejects(observeHostedPollHistory({ ...common, ids: ["missing"], lookup: async () => { throw { code: "SERVER_ERROR" }; } }), /history_scope_unverified/);
+  assert.equal(cursors.get("chat-1"), 20);
 });
 
 test("committed send readback requires the actual conversation as well as Project", () => {

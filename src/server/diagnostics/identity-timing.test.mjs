@@ -213,7 +213,12 @@ test("real getCurrentUser keeps result, failure and demo behavior while timing b
     }})})}},
     "@/server/db/schema": {users: {id: "id", clerkId: "clerkId"}},
     "@/server/db/seed": {LEGACY_WORKSPACE_ID: "legacy"},
-    "@/server/db/ensure-user": {ensureUserProvisioned: async () => {state.provisions++;}},
+    "@/server/db/ensure-user": {resolveProvisionedUserId: async () => {
+      state.provisions++;
+      // The new resolver owns the fresh persisted-ID read.
+      state.selects++;
+      return "private-internal-user";
+    }},
     "@/lib/access-mode": {isDemoMode: () => state.demo},
     "@/server/projects/catalog": {},
     "@/server/projects/member-workspaces": {

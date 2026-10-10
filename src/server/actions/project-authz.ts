@@ -179,6 +179,17 @@ export async function proveProjectCapability(
     )
     .limit(1);
 
+  return evaluateProjectCapability(actorUserId, projectId, capability, archivePolicy, row);
+}
+
+/** Evaluate a freshly queried proof without duplicating permission policy. Server-only. */
+export function evaluateProjectCapability(
+  actorUserId: string,
+  projectId: ProjectId,
+  capability: ProjectCapabilityKey,
+  archivePolicy: ArchivePolicy,
+  row: {membershipRole: string | null; workspaceOwnerUserId: string | null; planningPeriodOwnerUserId: string | null; archivedAt: number | null} | undefined,
+): ProjectAuthorization {
   if (!row) return { ok: false, reason: "not-a-member" };
 
   const role = resolveProjectRole({

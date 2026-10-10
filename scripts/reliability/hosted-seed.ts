@@ -35,6 +35,33 @@ export async function sendHostedSeedMessage(service: ReturnType<typeof createCon
   return result.value;
 }
 
+/** Original index order within each room; two independent rooms at most, with no retries. */
+export async function sendHostedSeedMessageBatch<T>(start: number, end: number, send: (index: number) => Promise<T>): Promise<T[]> {
+  assert.ok(Number.isSafeInteger(start) && Number.isSafeInteger(end) && start >= 1_000 && end > start && end <= 10_000 && end - start <= 1_000,
+    "hosted_seed_message_batch_invalid");
+  const queues = Array.from({ length: 10 }, () => [] as number[]);
+  for (let index = start; index < end; index++) queues[index % 2 === 0 ? 0 : Math.floor(index / 2) % queues.length].push(index);
+  const jobs = queues.filter(queue => queue.length > 0);
+  const results = new Array<T>(end - start);
+  let next = 0;
+  let failed = false;
+  let failure: unknown;
+  const worker = async () => {
+    while (!failed && next < jobs.length) {
+      const queue = jobs[next++];
+      for (const index of queue) {
+        if (failed) return;
+        try { results[index - start] = await send(index); }
+        catch (error) { if (!failed) { failed = true; failure = error; } return; }
+      }
+    }
+  };
+  // A failed worker stops admission; an already-started peer settles before the caller closes its client.
+  await Promise.all([worker(), worker()]);
+  if (failed) throw failure;
+  return results;
+}
+
 export function remoteHarnessAdapter(client: Client) {
   return createRemoteConversationDatabaseAdapter({ client: { transaction: async (mode) => {
     const tx = await client.transaction(mode);
@@ -96,7 +123,7 @@ export async function seedHostedFixture(input: { manifest: HostedManifest; obser
         rooms.push({ ...room.value, projectName, sourceMessageId: "", unusedSourceMessageIds: [] });
       }
       const taskRows = [];
-      for (let index = 0; index < counts.messages; index++) {
+      for (let index = 0; index < counts.tasks; index++) {
         const room = rooms[index % 2 === 0 ? 0 : Math.floor(index / 2) % rooms.length];
         const sent = await sendHostedSeedMessage(conversations, writer.actorId, room, fixtureNamespace, index);
         room.sourceMessageId ||= sent.messageId;
@@ -111,6 +138,20 @@ export async function seedHostedFixture(input: { manifest: HostedManifest; obser
           taskRows.push({ id: task.value.taskId, projectId: room.projectId });
         }
         if (index % 1_000 === 999) await input.progress?.({ messages: index + 1, tasks: taskRows.length });
+      }
+      for (let start = counts.tasks; start < counts.messages; start += 1_000) {
+        const end = Math.min(start + 1_000, counts.messages);
+        const sent = await sendHostedSeedMessageBatch(start, end, index => {
+          const room = rooms[index % 2 === 0 ? 0 : Math.floor(index / 2) % rooms.length];
+          return sendHostedSeedMessage(conversations, writer.actorId, room, fixtureNamespace, index);
+        });
+        // Completion order never changes the fixture's first-source or unused-source index ordering.
+        for (let index = start; index < end; index++) {
+          const room = rooms[index % 2 === 0 ? 0 : Math.floor(index / 2) % rooms.length];
+          room.sourceMessageId ||= sent[index - start].messageId;
+          if (room.unusedSourceMessageIds.length < 400) room.unusedSourceMessageIds.push(sent[index - start].messageId);
+        }
+        await input.progress?.({ messages: end, tasks: taskRows.length });
       }
       for (let index = 0; index < counts.resources; index++) {
         const task = taskRows[index % taskRows.length];

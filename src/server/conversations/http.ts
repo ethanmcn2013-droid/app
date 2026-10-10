@@ -1,3 +1,4 @@
+import { conversationFailureCode, newConversationCorrelation, reportConversationFailure } from "./failure-diagnostic";
 import { parseProjectId } from "../../lib/projects/project-ref";
 import { conversationAvailability, type ConversationControls } from "../../lib/conversations/flags";
 import { validMessageBody, validRequestId, validSequence, type ConversationFailure } from "../../lib/conversations/contracts";
@@ -177,7 +178,8 @@ export function createConversationHttp(deps: Dependencies) {
         return response(await service.editMessage({ ...common, messageId: body.messageId, expectedRevision: body.expectedRevision, body: body.body, mentionUserIds: body.mentionUserIds }));
       }
       return fail("invalid_input");
-    } catch {
+    } catch (error) {
+      reportConversationFailure({ correlationId: newConversationCorrelation(), operation: "http", code: conversationFailureCode(error), outcome: "unresolved", attempt: 1 });
       // No exception bodies, SQL text, recipients or credentials leave this boundary.
       return fail("temporarily_unavailable");
     }

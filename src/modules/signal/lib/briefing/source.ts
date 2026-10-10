@@ -8,6 +8,8 @@ import type { TaskSignal } from "./types";
 export type BriefingContext = {
   userId: string;
   email: string;
+  /** Canonical Tasks user resolved by the existing authorization read; omission is unknown. */
+  canonicalUserId?: string;
 };
 
 /**

@@ -1,6 +1,7 @@
 import {
   stableSignalLedgerId,
   type SignalLedgerDTO,
+  type SignalLedgerCoverageStatus,
   type SignalLedgerEmptyState,
   type SignalLedgerEntry,
 } from "../analytics/ledger-contract";
@@ -123,6 +124,7 @@ export type OverviewModel = {
   coverage: { note: string; tone: OverviewTone } | null;
   attention: OverviewSignal[];
   risks: OverviewSignal[];
+  activity: OverviewSignal[];
   emptyState: SignalLedgerEmptyState | null;
   lanes: OverviewLaneCounts | null;
   runway: OverviewRunway | null;
@@ -160,24 +162,26 @@ export function buildOverviewModel(input: {
   });
   const attention = ledger.entries.filter((entry) => entry.section === "attention").map(toSignal);
   const risks = ledger.entries.filter((entry) => entry.section === "risks").map(toSignal);
+  const activity = ledger.entries.filter((entry) => entry.section === "activity").map(toSignal);
+  const coverageStatus = coverageStatusFor(ledger);
 
   const lanes = legacy ? laneCounts(legacy.signals, now) : null;
-  const coverage = ledger.coverageNote
-    ? {
-        note: ledger.coverageNote,
-        tone: (ledger.freshness === "unavailable" ? "danger" : "warning") as OverviewTone,
-      }
+  const coverageNote = ledger.coverageNote ?? (coverageStatus === "complete" ? null : coverageLimitation(coverageStatus));
+  const coverage = coverageNote
+    ? { note: coverageNote, tone: (coverageStatus === "complete" ? "neutral"
+        : coverageStatus === "unavailable" ? "danger" : "warning") as OverviewTone }
     : null;
 
   return {
     dateLabel: formatDate(now, timezone, { weekday: "long", day: "numeric", month: "long" }),
     timeLabel: formatTime(now, timezone),
     scopeLabel: ledger.scopeLabel,
-    verdict: verdictFor(attention.length, risks.length, ledger, lanes),
+    verdict: verdictFor(attention.length, risks.length, activity.length, ledger, lanes, coverageStatus),
     coverage,
     attention,
     risks,
-    emptyState: ledger.emptyState,
+    activity,
+    emptyState: coverageStatus === "complete" || ledger.emptyState?.kind === "coverage" ? ledger.emptyState : null,
     lanes,
     runway: legacy ? runwayFor(legacy, now, timezone) : null,
     finished: legacy ? finishedFor(legacy.signals, now, timezone) : null,
@@ -213,9 +217,11 @@ function triggerChip(
     "blocked-too-long": { label: "Waiting on other work", tone: "warning" },
     "blocking-due-work": { label: "Holding up due work", tone: "warning" },
     "prerequisites-complete": { label: "Earlier work done", tone: "neutral" },
+    "prerequisites-unverified": { label: "Prerequisites unconfirmed", tone: "warning" },
     overload: { label: "Workload", tone: "warning" },
     "crowded-week": { label: "Busy week", tone: "warning" },
-    "just-shipped": { label: "Finished", tone: "success" },
+    "just-shipped": { label: "Finished", tone: "neutral" },
+    "recorded-activity": { label: "Recorded activity", tone: "neutral" },
   };
   if (item.trigger !== "due-soon") return byTrigger[item.trigger];
   const days = signal ? deadlineDayDifference(signalDeadline(signal), now, timezone) : null;
@@ -231,6 +237,7 @@ function triggerChip(
 
 /** The progressive engine carries a state, not a trigger. */
 function stateChip(entry: SignalLedgerEntry): OverviewChip {
+  if (entry.state === "recorded") return { label: "Recorded work", tone: "neutral" };
   return entry.state === "needs_attention"
     ? { label: "Needs you", tone: "danger" }
     : { label: "Worth watching", tone: "warning" };
@@ -249,11 +256,12 @@ export function laneCounts(signals: readonly TaskSignal[], now: number): Overvie
     undated: 0,
   };
   for (const signal of signals) {
-    if (signal.lane !== "shipped" && !signalDeadline(signal)) counts.undated += 1;
-    if (signal.lane === "next") counts.todo += 1;
-    else if (signal.lane === "in-flight") counts.inProgress += 1;
-    else if (signal.lane === "review") counts.review += 1;
-    else {
+    const phase = signal.stage?.phase ?? signal.lane;
+    if (phase !== "shipped" && !signalDeadline(signal)) counts.undated += 1;
+    if (phase === "next") counts.todo += 1;
+    else if (phase === "in-flight") counts.inProgress += 1;
+    else if (phase === "review") counts.review += 1;
+    else if (phase === "shipped") {
       counts.done += 1;
       if (signal.movedToShippedAt != null && now - signal.movedToShippedAt <= 7 * DAY_MS) {
         counts.doneThisWeek += 1;
@@ -381,41 +389,51 @@ function finishedFor(
 
 /* ── Sentences ───────────────────────────────────────────────────────── */
 
+type OverviewCoverageStatus = SignalLedgerCoverageStatus | "unknown";
+
+function coverageStatusFor(ledger: SignalLedgerDTO): OverviewCoverageStatus {
+  if (["complete", "partial", "stale", "unavailable"].includes(ledger.coverageStatus ?? "")) return ledger.coverageStatus!;
+  // A missing historical DTO field never establishes complete coverage.
+  if (ledger.freshness !== "fresh") return ledger.freshness;
+  return "unknown";
+}
+
+function coverageLimitation(status: OverviewCoverageStatus): string {
+  if (status === "partial") return "Some work could not be checked.";
+  if (status === "stale") return "This is an older read.";
+  if (status === "unavailable") return "Signal cannot reach the work right now.";
+  return "Coverage could not be established for this read.";
+}
+
 function verdictFor(
   attention: number,
   risks: number,
+  activity: number,
   ledger: SignalLedgerDTO,
   lanes: OverviewLaneCounts | null,
+  coverageStatus: OverviewCoverageStatus,
 ): OverviewVerdict {
   if (attention > 0) {
     const lead = `${attention} ${attention === 1 ? "thing needs" : "things need"} attention`;
-    return {
-      tone: "danger",
-      sentence: risks > 0 ? `${lead} and ${risks} ${risks === 1 ? "is" : "are"} at risk.` : `${lead}.`,
-    };
+    return { tone: "danger", sentence: risks > 0 ? `${lead} and ${risks} ${risks === 1 ? "is" : "are"} at risk.` : `${lead}.` };
   }
   if (risks > 0) {
-    return {
-      tone: "warning",
-      sentence: ledger.coverageNote
-        ? `${risks} ${risks === 1 ? "thing is" : "things are"} at risk. Some work could not be checked.`
-        : `Nothing is urgent. ${risks} ${risks === 1 ? "thing is" : "things are"} at risk.`,
-    };
+    return { tone: "warning", sentence: coverageStatus !== "complete"
+      ? `${risks} ${risks === 1 ? "thing is" : "things are"} at risk. ${coverageLimitation(coverageStatus)}`
+      : `Nothing is urgent. ${risks} ${risks === 1 ? "thing is" : "things are"} at risk.` };
   }
-  if (ledger.coverageNote) {
+  if (coverageStatus !== "complete") {
     const finished = lanes?.doneThisWeek ?? 0;
-    return { tone: "warning", sentence: finished > 0
-      ? `${finished} finished this week. Some work could not be checked.`
-      : ledger.emptyState?.headline ?? "Signal has only part of the picture." };
+    return { tone: coverageStatus === "unavailable" ? "danger" : "warning", sentence: finished > 0
+      ? `${finished} finished this week. ${coverageLimitation(coverageStatus)}`
+      : coverageStatus === "partial" ? (ledger.emptyState?.kind === "coverage" ? ledger.emptyState.headline : "Signal has only part of the picture.")
+      : coverageLimitation(coverageStatus) };
   }
+  if (activity > 0) return { tone: "neutral", sentence: `${activity} recorded ${activity === 1 ? "observation" : "observations"}.` };
   const finished = lanes?.doneThisWeek ?? 0;
-  return {
-    tone: "success",
-    sentence:
-      finished > 0
-        ? `On track. ${finished} finished this week.`
-        : "On track. Nothing needs attention right now.",
-  };
+  return { tone: "success", sentence: finished > 0
+    ? `On track. ${finished} finished this week.`
+    : "On track. Nothing needs attention right now." };
 }
 
 /**
@@ -452,7 +470,7 @@ export function readNoteFor(
     );
   } else {
     parts.push(
-      `${counts.flagged} crossed a rule, and the ${counts.shown} that ${counts.shown === 1 ? "asks" : "ask"} something of you ${counts.shown === 1 ? "is" : "are"} shown above.`,
+      `${counts.flagged} crossed a rule, and ${counts.shown} ${counts.shown === 1 ? "is" : "are"} shown above.`,
     );
   }
   if (counts.cleared > 0) {

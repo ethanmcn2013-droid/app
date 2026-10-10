@@ -9,6 +9,8 @@ import { assertProjectId } from "@/lib/projects/project-ref";
 import * as schema from "@/server/db/schema";
 import { canonicalVenueCodeNotes } from "@/server/venue-issuance/canonical";
 import { issuanceReceiptKey, manifestHash, venueCodeFingerprint, type IssuanceManifest } from "@/lib/venue-issuance/protocol";
+import type { ConversationDatabaseAdapter } from "./database";
+import type { ConversationFailureDiagnostic } from "./failure-diagnostic";
 import { createLocalConversationDatabaseAdapter } from "./database";
 import { createConversationService } from "./service";
 import { createConversationTaskOutcomeService, type PromoteMessageToTaskInput } from "./work-links";
@@ -163,6 +165,41 @@ test("promotion rejects stale source audience/revision, forged owner, revoked me
     await f.client.execute({ sql: "INSERT INTO workspace_members(workspace_id,user_id,role,joined_at) VALUES (?,'alice','owner',?)", args: [destinationProject, Date.now()] });
     await f.client.execute({ sql: "UPDATE workspaces SET archived_at=? WHERE id=?", args: [Date.now(), destinationProject] });
     assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: f.input }), { ok: false, code: "archived" });
+  } finally { f.client.close(); }
+});
+
+test("source denial precedence survives a simultaneously missing or archived destination", async () => {
+  const f = await fixture();
+  try {
+    const service = createConversationTaskOutcomeService(f.adapter);
+    await f.client.execute({ sql: "UPDATE workspaces SET archived_at=? WHERE id=?", args: [Date.now(), destinationProject] });
+    const missingDestination = assertProjectId("synthetic_project_missing");
+    for (const destinationProjectId of [destinationProject, missingDestination]) {
+      const input = { ...f.input, destinationProjectId };
+      assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: { ...input, expectedAudienceEpoch: 9 } }), { ok: false, code: "audience_changed" });
+      assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: { ...input, expectedRevision: 9 } }), { ok: false, code: "revision_conflict" });
+    }
+    await f.client.execute({ sql: "UPDATE workspaces SET archived_at=? WHERE id=?", args: [Date.now(), sourceProject] });
+    assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: { ...f.input, destinationProjectId: missingDestination } }), { ok: false, code: "archived" });
+    await f.client.execute({ sql: "DELETE FROM workspace_members WHERE workspace_id=? AND user_id='alice'", args: [sourceProject] });
+    assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: f.input }), { ok: false, code: "unavailable" });
+    for (const table of ["tasks", "activities", "work_links", "suite_outbox", "work_operation_receipts"]) assert.equal(await count(f.client, table), 0, table);
+  } finally { f.client.close(); }
+});
+
+test("same-project promotions retain canonical position and sequence allocation across distinct intents", async () => {
+  const f = await fixture();
+  try {
+    const service = createConversationTaskOutcomeService(f.adapter);
+    const input = { ...f.input, destinationProjectId: sourceProject };
+    const first = await service.promoteMessageToTask({ actorId: "alice", input });
+    const second = await service.promoteMessageToTask({ actorId: "alice", input: { ...input, clientRequestId: "promotion_request_0002" } });
+    assert.equal(first.ok, true);
+    assert.equal(second.ok, true);
+    assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input }), first);
+    const tasks = await f.client.execute({ sql: "SELECT seq,position,workspace_id FROM tasks ORDER BY seq", args: [] });
+    assert.deepEqual(tasks.rows.map(row => [Number(row.seq), Number(row.position), row.workspace_id]), [[1, 1, sourceProject], [2, 2, sourceProject]]);
+    for (const table of ["tasks", "activities", "work_links", "suite_outbox", "work_operation_receipts"]) assert.equal(await count(f.client, table), 2, table);
   } finally { f.client.close(); }
 });
 
@@ -368,6 +405,143 @@ test("usable links require current source, destination, message, and task relati
         assert.deepEqual(lookup.value.receipt, committed.value);
         assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: f.input }), committed);
       }
+    } finally { f.client.close(); }
+  }
+});
+
+function faultAdapter(f: Awaited<ReturnType<typeof fixture>>, fault: (mode: "read" | "write", attempt: number, execute: () => Promise<unknown>) => Promise<unknown>): ConversationDatabaseAdapter {
+  let attempts = 0;
+  return { ...f.adapter, async transaction<T>(mode: "read" | "write", operation: Parameters<ConversationDatabaseAdapter["transaction"]>[1]): Promise<T> {
+    if (mode === "write") attempts++;
+    return await fault(mode, attempts, () => f.adapter.transaction(mode, operation)) as T;
+  } };
+}
+const codedFailure = (code: string) => Object.assign(new Error("secret SQL source body credential"), { code });
+
+test("typed contention retries once with receipt-first authorization and exactly one effect", async () => {
+  const f = await fixture();
+  const diagnostics: ConversationFailureDiagnostic[] = [];
+  let writes = 0;
+  try {
+    const adapter = faultAdapter(f, async (mode, attempt, execute) => {
+      if (mode === "write") { writes++; if (attempt === 1) throw codedFailure("SQLITE_BUSY"); }
+      return execute();
+    });
+    const service = createConversationTaskOutcomeService(adapter, { diagnostic: value => diagnostics.push(value) });
+    const result = await service.promoteMessageToTask({ actorId: "alice", input: f.input });
+    assert.equal(result.ok, true); assert.equal(writes, 2);
+    for (const table of ["tasks", "activities", "work_links", "suite_outbox", "work_operation_receipts"]) assert.equal(await count(f.client, table), 1, table);
+    assert.equal(diagnostics[0].code, "SQLITE_BUSY"); assert.equal(diagnostics[0].outcome, "retry");
+    assert.match(diagnostics[0].correlationId, /^[0-9a-f-]{36}$/);
+    assert.doesNotMatch(JSON.stringify(diagnostics), /secret|credential|alice|promotion_request/);
+    assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: { ...f.input, title: "Conflict" } }), { ok: false, code: "request_conflict" });
+  } finally { f.client.close(); }
+});
+
+test("contention retry is bounded and does not turn a rolled-back write into success", async () => {
+  const f = await fixture(); let writes = 0;
+  try {
+    const adapter = faultAdapter(f, async (mode, _attempt, execute) => {
+      if (mode === "write") { writes++; throw codedFailure("SQLITE_BUSY"); }
+      return execute();
+    });
+    const service = createConversationTaskOutcomeService(adapter, { diagnostic: () => {} });
+    assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: f.input }), { ok: false, code: "temporarily_unavailable" });
+    assert.equal(writes, 2);
+    for (const table of ["tasks", "work_links", "suite_outbox", "work_operation_receipts"]) assert.equal(await count(f.client, table), 0, table);
+  } finally { f.client.close(); }
+});
+
+test("ambiguous committed response recovers only its authorized matching receipt without another write", async () => {
+  for (const code of ["HRANA_CLOSED_ERROR", "SQLITE_BUSY", "unrecognized_code"]) {
+    const f = await fixture(); let writes = 0;
+    try {
+      const adapter = faultAdapter(f, async (mode, _attempt, execute) => {
+        const result = await execute();
+        if (mode === "write") { writes++; throw code === "ETIMEDOUT" ? Object.assign(codedFailure(code), { cause: codedFailure("SQLITE_BUSY") }) : codedFailure(code); }
+        return result;
+      });
+      const service = createConversationTaskOutcomeService(adapter, { diagnostic: () => {} });
+      assert.equal((await service.promoteMessageToTask({ actorId: "alice", input: f.input })).ok, true);
+      assert.equal(writes, 1);
+      for (const table of ["tasks", "activities", "work_links", "suite_outbox", "work_operation_receipts"]) assert.equal(await count(f.client, table), 1, table);
+    } finally { f.client.close(); }
+  }
+});
+
+test("fresh contention retry rechecks revoked access and wrong-project scope", async () => {
+  const f = await fixture(); let writes = 0;
+  try {
+    const adapter = faultAdapter(f, async (mode, attempt, execute) => {
+      if (mode === "write") {
+        writes++;
+        if (attempt === 1) {
+          await f.client.execute({ sql: "DELETE FROM workspace_members WHERE workspace_id=? AND user_id='alice'", args: [destinationProject] });
+          throw codedFailure("SQLITE_BUSY");
+        }
+      }
+      return execute();
+    });
+    const service = createConversationTaskOutcomeService(adapter, { diagnostic: () => {} });
+    assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: f.input }), { ok: false, code: "unavailable" });
+    assert.equal(writes, 2);
+    assert.deepEqual(await service.promoteMessageToTask({ actorId: "bob", input: { ...f.input, sourceProjectId: destinationProject } }), { ok: false, code: "unavailable" });
+    for (const table of ["tasks", "work_links", "suite_outbox", "work_operation_receipts"]) assert.equal(await count(f.client, table), 0, table);
+  } finally { f.client.close(); }
+});
+
+test("transport or permanent failure before commit never automatically repeats a write", async () => {
+  for (const code of ["HRANA_WEBSOCKET_ERROR", "SQLITE_CONSTRAINT", "unknown", "ETIMEDOUT"]) {
+    const f = await fixture(); let writes = 0;
+    try {
+      const adapter = faultAdapter(f, async (mode, _attempt, execute) => {
+        if (mode === "write") { writes++; throw code === "ETIMEDOUT" ? Object.assign(codedFailure(code), { cause: codedFailure("SQLITE_BUSY") }) : codedFailure(code); }
+        return execute();
+      });
+      const service = createConversationTaskOutcomeService(adapter, { diagnostic: () => {} });
+      if (code === "HRANA_WEBSOCKET_ERROR") assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: f.input }), { ok: false, code: "temporarily_unavailable" });
+      else await assert.rejects(service.promoteMessageToTask({ actorId: "alice", input: f.input }));
+      assert.equal(writes, 1); assert.equal(await count(f.client, "tasks"), 0);
+    } finally { f.client.close(); }
+  }
+});
+
+
+test("typed failure after durable statements rolls back before one fresh promotion", async () => {
+  const f = await fixture(); let failed = false;
+  try {
+    const service = createConversationTaskOutcomeService(f.adapter, {
+      diagnostic: () => {},
+      afterWrite(seam) { if (seam === "receipt" && !failed) { failed = true; throw codedFailure("SQLITE_BUSY"); } },
+    });
+    assert.equal((await service.promoteMessageToTask({ actorId: "alice", input: f.input })).ok, true);
+    assert.equal(failed, true);
+    for (const table of ["tasks", "activities", "work_links", "suite_outbox", "work_operation_receipts"]) assert.equal(await count(f.client, table), 1, table);
+  } finally { f.client.close(); }
+});
+
+
+test("ambiguous receipt recovery refuses revoked access and conflicting payloads without a second write", async () => {
+  for (const scenario of ["revoked", "conflicting"] as const) {
+    const f = await fixture(); let writes = 0;
+    try {
+      if (scenario === "conflicting") {
+        const prior = createConversationTaskOutcomeService(f.adapter);
+        assert.equal((await prior.promoteMessageToTask({ actorId: "alice", input: { ...f.input, title: "Earlier payload" } })).ok, true);
+      }
+      const adapter = faultAdapter(f, async (mode, _attempt, execute) => {
+        const result = await execute();
+        if (mode === "write") {
+          writes++;
+          if (scenario === "revoked") await f.client.execute({ sql: "DELETE FROM workspace_members WHERE workspace_id=? AND user_id='alice'", args: [destinationProject] });
+          throw codedFailure("HRANA_CLOSED_ERROR");
+        }
+        return result;
+      });
+      const service = createConversationTaskOutcomeService(adapter, { diagnostic: () => {} });
+      assert.deepEqual(await service.promoteMessageToTask({ actorId: "alice", input: f.input }), { ok: false, code: scenario === "revoked" ? "unavailable" : "request_conflict" });
+      assert.equal(writes, 1);
+      for (const table of ["tasks", "activities", "work_links", "suite_outbox", "work_operation_receipts"]) assert.equal(await count(f.client, table), 1, table);
     } finally { f.client.close(); }
   }
 });

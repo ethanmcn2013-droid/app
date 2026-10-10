@@ -97,7 +97,20 @@ function OpenRowMenu({ state, onClose }: { state: RowMenuState; onClose: () => v
   }, [state.anchor]);
 
   useEffect(() => {
-    menuRef.current?.querySelector<HTMLElement>(`[data-index="${active}"]`)?.focus({ preventScroll: true });
+    const menu = menuRef.current;
+    const item = menu?.querySelector<HTMLElement>(`[data-index="${active}"]`);
+    if (!menu || !item) return;
+    const focusVisibleItem = () => {
+      if (menuRef.current === menu && item.isConnected && item.hasAttribute("data-active") &&
+          getComputedStyle(item).visibility === "visible") item.focus({ preventScroll: true });
+    };
+    // Reduced motion can transition inherited visibility after the menu is placed.
+    function onVisibilityEnd(event: TransitionEvent) {
+      if (event.target === item && event.propertyName === "visibility") focusVisibleItem();
+    }
+    item.addEventListener("transitionend", onVisibilityEnd);
+    focusVisibleItem();
+    return () => item.removeEventListener("transitionend", onVisibilityEnd);
   }, [active]);
 
   useEffect(() => {

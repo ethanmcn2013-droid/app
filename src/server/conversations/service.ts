@@ -179,9 +179,12 @@ async function authorizeConversation(
   executor: ConversationSqlExecutor,
   input: ActorConversation,
   directMessagesEnabled: boolean,
-): Promise<ConversationResult<{ row: Record<string, unknown>; scope: ProjectConversationScope | DirectMessageScope }>> {
-  const result = await executor.execute({
+  receiptRequestId?: string,
+): Promise<ConversationResult<{ row: Record<string, unknown>; scope: ProjectConversationScope | DirectMessageScope; priorReceipt?: Record<string, unknown> | null }>> {
+  const statement: ConversationSqlStatement = {
     sql: `SELECT c.*, w.archived_at AS workspace_archived_at, w.name AS workspace_name,
+        u.id AS actor_id, u.clerk_id AS actor_clerk_id,
+        workspace_owner.id AS owner_id, workspace_owner.clerk_id AS owner_clerk_id,
         wm.user_id AS current_member, p.status AS participant_status, p.consented, p.retains_history, p.reopen_confirmed,
         CASE WHEN c.dm_low_user_id=? THEN c.dm_high_user_id ELSE c.dm_low_user_id END AS other_pair_id,
         other.id AS other_id, COALESCE(NULLIF(other.name,''),NULLIF(other.handle,''),other.initials) AS other_name,
@@ -192,15 +195,23 @@ async function authorizeConversation(
       JOIN workspaces w ON w.id = c.workspace_id
       JOIN workspace_members wm ON wm.workspace_id = c.workspace_id AND wm.user_id = ?
       JOIN users u ON u.id = wm.user_id
+      LEFT JOIN users workspace_owner ON workspace_owner.id = w.owner_user_id
       LEFT JOIN conversation_participants p ON p.conversation_id=c.id AND p.user_id=?
       LEFT JOIN users other ON other.id=CASE WHEN c.dm_low_user_id=? THEN c.dm_high_user_id ELSE c.dm_low_user_id END
       WHERE c.id = ? AND c.workspace_id = ? AND (c.kind='project' OR (? = 1 AND c.kind='dm' AND ? IN(c.dm_low_user_id,c.dm_high_user_id)))`,
     args: [input.actorId, input.actorId, input.actorId, input.actorId, input.conversationId, input.projectId, directMessagesEnabled ? 1 : 0, input.actorId],
-  });
+  };
+  // Separate ordered result sets retain authorization cardinality and denial
+  // precedence. Local adapters keep their existing sequential read path.
+  const results = receiptRequestId && executor.batch
+    ? await executeConversationBatch(executor, [statement, receiptStatement({ ...input, clientRequestId: receiptRequestId })])
+    : [await executor.execute(statement)];
+  const result = results[0];
   const row = result.rows[0];
   if (!row) return failure("unavailable");
   if (row.kind === "dm" && !row.participant_status) return failure("unavailable");
-  return { ok: true, value: { row, scope: row.kind === "dm" ? dmScopeFromRow(row) : scopeFromRow(row) } };
+  return { ok: true, value: { row, scope: row.kind === "dm" ? dmScopeFromRow(row) : scopeFromRow(row),
+    ...(results.length === 2 ? { priorReceipt: results[1].rows[0] ?? null } : {}) } };
 }
 
 function writeGate(
@@ -251,14 +262,18 @@ async function findReceipt(
   executor: ConversationSqlExecutor,
   input: ActorConversation & { clientRequestId: string },
 ): Promise<Record<string, unknown> | null> {
-  const result = await executor.execute({
+  const result = await executor.execute(receiptStatement(input));
+  return result.rows[0] ?? null;
+}
+
+function receiptStatement(input: ActorConversation & { clientRequestId: string }): ConversationSqlStatement {
+  return {
     sql: `SELECT operation, payload_hash, message_id, client_request_id,
         create_seq, change_seq, revision, committed_at
       FROM conversation_receipts
       WHERE conversation_id = ? AND actor_id = ? AND client_request_id = ?`,
     args: [input.conversationId, input.actorId, input.clientRequestId],
-  });
-  return result.rows[0] ?? null;
+  };
 }
 
 function isTransientDatabaseError(error: unknown): boolean {
@@ -523,11 +538,12 @@ export function createConversationService(
     const payloadHash = hashTuple(["send", actorId, input.conversationId, body, input.rootId, mentions]);
 
     return inTransaction("write", async (executor) => {
-      const authorized = await authorize(executor, { actorId, ...input });
+      const authorized = await authorizeConversation(executor, { actorId, ...input }, directMessagesEnabled, input.clientRequestId);
       if (!authorized.ok) return authorized;
       if (authorized.value.scope.kind === "dm" && !authorized.value.scope.canRead &&
           !["pending", "declined"].includes(authorized.value.scope.pairState)) return failure("unavailable");
-      const prior = await findReceipt(executor, { actorId, ...input });
+      const prior = authorized.value.priorReceipt !== undefined
+        ? authorized.value.priorReceipt : await findReceipt(executor, { actorId, ...input });
       if (prior) {
         return prior.operation === "send" && prior.payload_hash === payloadHash
           ? { ok: true, value: sendReceipt(prior) }
@@ -535,7 +551,10 @@ export function createConversationService(
       }
       const gate = writeGate(authorized.value.scope, input.expectedAudienceEpoch);
       if (!gate.ok) return gate;
-      if (!await conversationWriteFencesClear(executor, actorId, input.projectId)) return failure("unavailable");
+      const row = authorized.value.row;
+      if (!await conversationWriteFencesClear(executor, actorId, input.projectId, {
+        actor_id: row.actor_id, actor_clerk_id: row.actor_clerk_id, owner_id: row.owner_id, owner_clerk_id: row.owner_clerk_id,
+      })) return failure("unavailable");
       if (!await validateMentionMembers(executor, input.projectId, mentions, input.conversationId)) return failure("invalid_input");
       if (input.rootId !== null) {
         const root = await executor.execute({

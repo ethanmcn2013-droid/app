@@ -323,7 +323,7 @@ export async function buildBriefingForUser(opts: {
       if (returnedIds.length !== workspaceIds.length || new Set(returnedIds).size !== returnedIds.length || returnedIds.some(id => !workspaceIds.includes(id))) {
         throw new Error("Signal source workspace coverage mismatch");
       }
-      if (workspaces.some(work => work.coverage && Object.values(work.coverage).includes("partial"))) {
+      if (workspaces.some(work => work.coverage && Object.values(work.coverage).some(status => status === "partial"))) {
         coverageStatus = "partial";
       }
       return workspaces.flatMap((work) =>
@@ -339,6 +339,7 @@ export async function buildBriefingForUser(opts: {
             return "next";
           })(),
           priority: t.priority ?? null,
+          stage: t.stage,
           deadline: t.deadline === undefined ? storedDeadline(t.dueDate, null) : t.deadline,
           dueAt: t.deadline?.kind === "instant" ? t.deadline.at : null,
           idleDays: work.coverage?.activity === "partial" ? null : (() => {
@@ -348,10 +349,20 @@ export async function buildBriefingForUser(opts: {
               calendarDayDifference(now, last, authorizedScope!.timezone),
             );
           })(),
+          activityCoverage: work.coverage?.activity,
+          hasRecordedTitleEdit: t.hasRecordedTitleEdit,
+          assignees: t.assignees?.map(({ id }) => ({ id })),
+          latestValidatedTitleEdit: t.latestValidatedTitleEdit,
+          latestValidatedComment: t.latestValidatedComment,
+          latestValidatedMetadataEdit: t.latestValidatedMetadataEdit,
+          activityHistoryStartAt: t.activityHistoryStartAt,
+          taskCoverage: work.coverage?.tasks,
           commentCount: 0,
           blockedBy: t.blockedBy,
           dependencyCoverage: t.dependencyCoverage,
           hasCompletedListedPrerequisite: t.hasCompletedListedPrerequisite,
+          verifiedPrerequisiteIds: t.verifiedPrerequisiteIds,
+          prerequisiteEvidence: t.prerequisiteEvidence,
           sourceLabel: `Tasks · ${workspaceNames.get(work.workspaceId) ?? "Workspace"}`,
           movedToShippedAt:
             t.status === "shipped" && t.completedAt && Number.isFinite(Date.parse(t.completedAt)) && Date.parse(t.completedAt) >= 0 && Date.parse(t.completedAt) <= now
@@ -366,7 +377,7 @@ export async function buildBriefingForUser(opts: {
   const capture = captureSignals(source);
   const briefing = await buildBriefing(
     capture.source,
-    { userId: clerkId, email: "" },
+    { userId: clerkId, email: "", canonicalUserId: authorizedScope.canonicalUserId },
     now,
     { suppressed, ages, timezone: authorizedScope.timezone },
   );

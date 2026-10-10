@@ -26,12 +26,14 @@ export type PlanningWorkspaceCatalogItem = {
 };
 
 export type PlanningCatalog = {
+  canonicalUserId?: string;
   periods: PlanningPeriodCatalogItem[];
   workspaces: PlanningWorkspaceCatalogItem[];
   planningSchemaAvailable: boolean;
 };
 
 export type AuthorizedSignalScope = {
+  canonicalUserId?: string;
   scope: SignalScope;
   label: string;
   timezone: string;
@@ -40,6 +42,7 @@ export type AuthorizedSignalScope = {
 };
 
 type PlanningRow = {
+  canonical_user_id: unknown;
   period_id: unknown;
   period_name: unknown;
   period_context_type: unknown;
@@ -126,6 +129,7 @@ export async function listPlanningCatalogForUser(
         SELECT id FROM users WHERE clerk_id = ${identity.clerkId} LIMIT 1
       )
       SELECT DISTINCT
+        cu.id AS canonical_user_id,
         p.id AS period_id,
         p.name AS period_name,
         p.context_type AS period_context_type,
@@ -188,6 +192,7 @@ export async function listPlanningCatalogForUser(
       });
     }
     return {
+      canonicalUserId: text(rows[0]?.canonical_user_id) ?? undefined,
       periods: Array.from(periods.values()),
       workspaces,
       planningSchemaAvailable: true,
@@ -215,6 +220,7 @@ export function authorizeSignalScope(
       ? catalog.periods.find((item) => item.id === workspace.planningPeriodId) ?? null
       : null;
     return {
+      canonicalUserId: catalog.canonicalUserId,
       scope,
       label: workspace.name,
       timezone: period?.timezone ?? fallbackTimezone,
@@ -229,6 +235,7 @@ export function authorizeSignalScope(
   );
   if (workspaces.length === 0) return null;
   return {
+    canonicalUserId: catalog.canonicalUserId,
     scope,
     label: period.name,
     timezone: period.timezone,

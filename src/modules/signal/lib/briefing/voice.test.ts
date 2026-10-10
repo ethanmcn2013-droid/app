@@ -184,13 +184,11 @@ describe("graceNote", () => {
     );
   });
 
-  // The sort is focusWeight, not age: due-soon 1000, crowded-week 800,
-  // stuck-work 700, blocked-too-long 600. The longest-waiting item is
-  // reliably LAST, so the old line described the wrong row every time.
-  test("two-plus attention items describes the sort the page actually runs", () => {
+  // The close does not invent a referent or a sort claim across sections.
+  test("two-plus attention items retain a neutral closing", () => {
     assert.equal(
       graceNote(brief({ needsAttention: [{}, {}] as never[] })),
-      "That’s the read. Dates came first, then the quiet ones.",
+      "That’s the read.",
     );
   });
 
@@ -290,4 +288,9 @@ describe("readCountSentence", () => {
     assert.equal(readCountSentence(undefined), null);
     assert.equal(readCountSentence(Number.NaN), null);
   });
+});
+
+test("round8 closing does not invent quiet observations from two date rows", () => {
+  const b = brief({ needsAttention: [{ trigger: "due-soon" }, { trigger: "due-soon" }] as never[], quietRisks: [] });
+  assert.equal(graceNote(b), "That’s the read.");
 });

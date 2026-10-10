@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { createClient, type Client } from "@libsql/client";
@@ -17,7 +18,7 @@ type Observation = { logicalOperationId: string; attemptId: string; attemptNumbe
   serverTiming?: ReturnType<typeof parseHostedServerTiming>;
   response: { statusCode: number; valid: boolean; success: boolean; errorEnvelope: boolean }; acknowledged: boolean;
   scopeAuthorized: boolean; actualProjectIds: string[]; unauthorizedContent: boolean; effectIds: string[]; bytes: number; finishedAtMs: number; errorCode?: string;
-  httpResponseObserved?: boolean; failureStage?: HostedAttemptStage; causeCategory?: HostedAttemptCauseCategory };
+  httpResponseObserved?: boolean; failureStage?: HostedAttemptStage; causeCategory?: HostedAttemptCauseCategory; causeCode?: HostedLibsqlCauseCode };
 type Expected = { id: string; journey: string; expectedOutcome: "write" | "read"; projectId: string };
 type Envelope = { ok: boolean; value?: Record<string, unknown>; code?: string };
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -121,7 +122,7 @@ export function dryRunHostedWorkload(manifest: HostedManifest, fixture: HostedFi
   const manifestActorHashes = new Set((manifest.testActors ?? []).map((actor: { actorHash: string }) => actor.actorHash));
   if (!fixture.actors.every((actor) => manifestActorHashes.has(actor.actorHash))) throw new Error("hosted_fixture_actor_unattested");
   return { schedule, executionMode: `${manifest.environment.kind}-arrival-schedule`, noNetworkRequests: true,
-    limitations: ["API task.mutate is message-to-task outcome creation; ordinary task update/complete requires separate browser proof", "HTML route latency includes server render, excludes browser paint/hydration", "chat.poll uses fixed initial-history afterChangeSeq=0, not incremental client polling; existing client poller closed-loop behavior requires separate probe"] };
+    limitations: ["API task.mutate is message-to-task outcome creation; ordinary task update/complete requires separate browser proof", "HTML route latency includes server render, excludes browser paint/hydration", "chat.poll uses verified incremental cursors with bounded nominal-request overlap; existing client poller closed-loop behavior requires separate probe"] };
 }
 
 export async function boundedResponseText(response: Response, maximumBytes = 4_000_000) {
@@ -164,7 +165,7 @@ export function validateHostedEnvelope(action: string, raw: unknown): raw is Env
 type MessageScope = { projectId: string; conversationId: string };
 type MessageScopeRow = { id: unknown; workspace_id: unknown; conversation_id: unknown; client_request_id: unknown; author_id: unknown };
 class HostedHistoryLookupUnverified extends Error {
-  constructor(readonly safeCauseCategory: HostedAttemptCauseCategory) {
+  constructor(readonly safeCauseCategory: HostedAttemptCauseCategory, readonly safeCauseCode?: HostedLibsqlCauseCode) {
     super("hosted_history_scope_unverified");
   }
 }
@@ -245,7 +246,8 @@ export class HostedMessageVisibility {
       let rows: MessageScopeRow[];
       try { rows = await lookup(unknown); }
       catch (error) {
-        throw new HostedHistoryLookupUnverified(hostedAttemptDiagnostic(error, "history_lookup_sql").causeCategory);
+        const diagnostic = hostedAttemptDiagnostic(error, "history_lookup_sql");
+        throw new HostedHistoryLookupUnverified(diagnostic.causeCategory, diagnostic.causeCode);
       }
       if (!Array.isArray(rows)) throw new Error("hosted_history_scope_unverified");
       for (const row of rows) {
@@ -292,6 +294,20 @@ export class HostedMessageVisibility {
   }
 }
 
+/** Every page is verified even when a later request has already published a newer cursor. */
+export async function observeHostedPollHistory(input: {
+  visibility: HostedMessageVisibility; ids: string[]; actorHash: string; receivedAt: number; scope: MessageScope;
+  lookup: (ids: string[]) => Promise<MessageScopeRow[]>; cursors: Map<string, number>; sessionId: string;
+  requestedCursor: number; throughChangeSeq: number;
+}) {
+  if (!Number.isSafeInteger(input.throughChangeSeq) || input.throughChangeSeq < input.requestedCursor)
+    throw new Error("hosted_history_scope_unverified");
+  const history = await input.visibility.observeHistory(input.ids, input.actorHash, input.receivedAt, input.scope, input.lookup);
+  if (history.scopeAuthorized)
+    input.cursors.set(input.sessionId, Math.max(input.cursors.get(input.sessionId) ?? 0, input.throughChangeSeq));
+  return history;
+}
+
 export function committedEffectMatchesScope(action: string, rows: ReadonlyArray<Record<string, unknown>>, scope: MessageScope) {
   return (action === "send" || action === "promote-task") && rows.length === 1 && rows[0].workspace_id === scope.projectId &&
     (action !== "send" || rows[0].conversation_id === scope.conversationId);
@@ -302,6 +318,67 @@ export function classifyCommittedScope(action: string, rows: ReadonlyArray<Recor
     scopeAuthorized: committedEffectMatchesScope(action, rows, scope),
     unauthorizedContent: rows.some((row) => row.workspace_id !== scope.projectId ||
       (action === "send" && row.conversation_id !== scope.conversationId)) };
+}
+
+export type HostedPromotionProofInput = {
+  actorId: string; clientRequestId: string; projectId: string; conversationId: string; messageId: string;
+  expectedRevision: number; expectedAudienceEpoch: number; destinationProjectId: string;
+  title: string; ownerUserId: string; dueDate: string;
+};
+export function hostedPromotionIdentity(input: HostedPromotionProofInput) {
+  const hash = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
+  const taskId = `t-${hash(["conversation_task", input.actorId, input.clientRequestId]).slice(0, 24)}`;
+  const workLinkId = `work-${hash([taskId, input.messageId, input.expectedRevision]).slice(0, 24)}`;
+  return { taskId, workLinkId, eventId: `event-${hash(["conversation_task", taskId]).slice(0, 24)}`,
+    payloadHash: hash(["conversation_task_v1", input.actorId, input.clientRequestId, input.projectId,
+      input.conversationId, input.messageId, input.expectedRevision, input.expectedAudienceEpoch,
+      input.destinationProjectId, input.title.replace(/\r\n?/g, "\n"), input.ownerUserId, input.dueDate]) };
+}
+/** One atomic read batch includes deterministic orphan effects; joins cannot hide partial or mismatched writes. */
+export async function readHostedPromotionScope(client: Pick<Client, "batch">, input: HostedPromotionProofInput, allowAbsent: boolean) {
+  const identity = hostedPromotionIdentity(input);
+  const receiptPredicate = "actor_id=? AND client_request_id=? AND operation='conversation_task'";
+  const results = await client.batch([
+    { sql: `SELECT * FROM work_operation_receipts WHERE (${receiptPredicate}) OR task_id=? OR work_link_id=? LIMIT 3`,
+      args: [input.actorId, input.clientRequestId, identity.taskId, identity.workLinkId] },
+    { sql: `SELECT id,workspace_id,title,assignees,due FROM tasks WHERE id=? OR id IN (SELECT task_id FROM work_operation_receipts WHERE ${receiptPredicate}) LIMIT 3`,
+      args: [identity.taskId, input.actorId, input.clientRequestId] },
+    { sql: `SELECT * FROM work_links WHERE id=? OR task_id=? OR id IN (SELECT work_link_id FROM work_operation_receipts WHERE ${receiptPredicate}) LIMIT 3`,
+      args: [identity.workLinkId, identity.taskId, input.actorId, input.clientRequestId] },
+    { sql: "SELECT id,event_id,version,type,actor_user_id,workspace_id,object_ref,trace_id FROM suite_outbox WHERE id=? OR trace_id=? OR json_extract(object_ref, '$.taskId')=? LIMIT 3",
+      args: [identity.eventId, input.clientRequestId, identity.taskId] },
+  ], "read");
+  if (!Array.isArray(results) || results.length !== 4 || results.some(result => !result || !Array.isArray(result.rows))) throw new Error("hosted_write_effect_unverified");
+  const [receipts, tasks, links, outbox] = results.map(result => result.rows);
+  const actualProjectIds = [...new Set([
+    ...receipts.flatMap(row => [String(row.source_project_id), String(row.destination_project_id)]),
+    ...tasks.map(row => String(row.workspace_id)),
+    ...links.flatMap(row => [String(row.source_project_id), String(row.destination_project_id)]),
+    ...outbox.map(row => String(row.workspace_id)),
+  ])];
+  const effectIds = tasks.map(row => String(row.id));
+  if (results.every(result => result.rows.length === 0)) return {
+    scopeAuthorized: allowAbsent, actualProjectIds, unauthorizedContent: false, effectIds,
+  };
+  const foreign = actualProjectIds.some(id => id !== input.projectId && id !== input.destinationProjectId);
+  if (results.some(result => result.rows.length !== 1)) return {
+    scopeAuthorized: false, actualProjectIds, unauthorizedContent: foreign, effectIds,
+  };
+  const [receipt, task, link, event] = [receipts[0], tasks[0], links[0], outbox[0]];
+  const matches = receipt.actor_id === input.actorId && receipt.client_request_id === input.clientRequestId &&
+    receipt.operation === "conversation_task" && receipt.payload_hash === identity.payloadHash &&
+    receipt.source_project_id === input.projectId && receipt.source_conversation_id === input.conversationId &&
+    receipt.destination_project_id === input.destinationProjectId && receipt.task_id === identity.taskId && receipt.work_link_id === identity.workLinkId &&
+    task.id === identity.taskId && task.workspace_id === input.destinationProjectId && task.title === input.title &&
+    task.assignees === JSON.stringify([input.ownerUserId]) && task.due === input.dueDate &&
+    link.id === identity.workLinkId && link.task_id === identity.taskId && link.source_project_id === input.projectId &&
+    link.source_conversation_id === input.conversationId && link.source_message_id === input.messageId &&
+    Number(link.source_revision) === input.expectedRevision && Number(link.source_audience_epoch) === input.expectedAudienceEpoch &&
+    link.destination_project_id === input.destinationProjectId && link.created_by === input.actorId &&
+    event.id === identity.eventId && event.event_id === identity.eventId && Number(event.version) === 1 &&
+    event.type === "task.created" && event.actor_user_id === input.actorId && event.workspace_id === input.destinationProjectId &&
+    event.trace_id === input.clientRequestId && event.object_ref === JSON.stringify({ taskId: identity.taskId, workLinkId: identity.workLinkId });
+  return { scopeAuthorized: matches, actualProjectIds, unauthorizedContent: !matches, effectIds };
 }
 
 function requestForSlot(slot: Slot, room: HostedFixture["rooms"][number], fixture: HostedFixture, origin: string) {
@@ -342,6 +419,9 @@ type HostedCauseCategory = "transport" | "timeout" | "filesystem" | "contract" |
 type HostedAttemptStage = "app_request" | "response_body" | "response_validation" |
   "history_lookup_sql" | "history_scope_validation" | "write_effect_sql";
 type HostedAttemptCauseCategory = "transport" | "timeout" | "verification" | "response" | "unclassified";
+const LIBSQL_CAUSE_CODES = ["HRANA_PROTO_ERROR", "HRANA_CLOSED_ERROR", "HRANA_WEBSOCKET_ERROR", "SERVER_ERROR",
+  "PROTOCOL_VERSION_ERROR", "INTERNAL_ERROR", "TRANSACTION_CLOSED", "SQLITE_BUSY", "DATABASE_BUSY", "UNKNOWN"] as const;
+type HostedLibsqlCauseCode = typeof LIBSQL_CAUSE_CODES[number];
 type HostedFlushDiagnostic = { phase: HostedFlushPhase; causeCategory: HostedCauseCategory };
 class HostedFlushFailure extends Error {
   constructor(readonly diagnostic: HostedFlushDiagnostic) { super("hosted_flush_failed"); }
@@ -362,18 +442,27 @@ export function hostedFlushDiagnostic(error: unknown, phase: HostedFlushPhase = 
 
 /** Fixed metadata only; never persist raw provider/SQL errors, URLs or response bodies. */
 export function hostedAttemptDiagnostic(error: unknown, stage: HostedAttemptStage):
-  { failureStage: HostedAttemptStage; causeCategory: HostedAttemptCauseCategory } {
+  { failureStage: HostedAttemptStage; causeCategory: HostedAttemptCauseCategory; causeCode?: HostedLibsqlCauseCode } {
   if (error instanceof HostedHistoryLookupUnverified)
-    return { failureStage: stage, causeCategory: error.safeCauseCategory };
-  const code = object(error) && typeof error.code === "string" ? error.code : "";
-  const name = object(error) && typeof error.name === "string" ? error.name : "";
+    return { failureStage: stage, causeCategory: error.safeCauseCategory, ...(error.safeCauseCode ? { causeCode: error.safeCauseCode } : {}) };
   let causeCategory: HostedAttemptCauseCategory = "unclassified";
-  if (["ETIMEDOUT", "ESOCKETTIMEDOUT", "UND_ERR_CONNECT_TIMEOUT", "TIMEOUT", "APPLICATION_REQUEST_TIMEOUT"].includes(code) || name === "TimeoutError") causeCategory = "timeout";
-  else if (["ECONNRESET", "ECONNREFUSED", "ENETUNREACH", "EHOSTUNREACH", "EPIPE", "UND_ERR_SOCKET", "APPLICATION_REQUEST_FAILED"].includes(code)) causeCategory = "transport";
-  else if (code === "APPLICATION_RESPONSE_BODY_FAILED") causeCategory = "response";
-  else if (["history_lookup_sql", "history_scope_validation", "write_effect_sql"].includes(stage)) causeCategory = "verification";
-  else if (["response_body", "response_validation"].includes(stage)) causeCategory = "response";
-  return { failureStage: stage, causeCategory };
+  let causeCode: HostedLibsqlCauseCode | undefined;
+  const seen = new Set<unknown>();
+  let current = error;
+  // Inspect only the wrapper plus two causes; never serialize provider strings, SQL, URLs or stacks.
+  for (let depth = 0; depth < 3 && object(current) && !seen.has(current); depth++) {
+    seen.add(current);
+    const code = typeof current.code === "string" ? current.code : "";
+    const name = typeof current.name === "string" ? current.name : "";
+    causeCode ??= LIBSQL_CAUSE_CODES.find(allowed => allowed === code);
+    if (["ETIMEDOUT", "ESOCKETTIMEDOUT", "UND_ERR_CONNECT_TIMEOUT", "TIMEOUT", "APPLICATION_REQUEST_TIMEOUT"].includes(code) || name === "TimeoutError") causeCategory = "timeout";
+    else if (causeCategory === "unclassified" && ["ECONNRESET", "ECONNREFUSED", "ENETUNREACH", "EHOSTUNREACH", "EPIPE", "UND_ERR_SOCKET", "APPLICATION_REQUEST_FAILED"].includes(code)) causeCategory = "transport";
+    else if (causeCategory === "unclassified" && code === "APPLICATION_RESPONSE_BODY_FAILED") causeCategory = "response";
+    current = current.cause;
+  }
+  if (causeCategory === "unclassified" && ["history_lookup_sql", "history_scope_validation", "write_effect_sql"].includes(stage)) causeCategory = "verification";
+  else if (causeCategory === "unclassified" && ["response_body", "response_validation"].includes(stage)) causeCategory = "response";
+  return { failureStage: stage, causeCategory, ...(causeCode ? { causeCode } : {}) };
 }
 
 export function hostedFailureResponse(observedStatus: number | undefined, observedValid: boolean,
@@ -423,7 +512,6 @@ export async function runHostedArrivalSchedule(input: {
   if (input.events.length === 0) throw new Error("hosted_schedule_empty");
   const durationMs = WORKLOAD.warmupMs + WORKLOAD.measuredMs;
   const inFlight = new Set<Promise<void>>();
-  const polling = new Set<string>();
   const windows: HostedWindowTiming[] = [];
   const elapsed = () => input.now() - input.startedAt;
   const waitUntil = async (target: number) => {
@@ -481,9 +569,8 @@ export async function runHostedArrivalSchedule(input: {
     const localAtMs = slot.atMs - (slot.repetition - 1) * durationMs;
     await waitUntil(anchor + localAtMs);
     if (input.isFatal()) break;
-    if ((slot.journey === "chat.poll" && polling.has(slot.sessionId)) || inFlight.size >= 16) { droppedIterations++; continue; }
-    if (slot.journey === "chat.poll") polling.add(slot.sessionId);
-    const work = input.perform(slot).finally(() => { if (slot.journey === "chat.poll") polling.delete(slot.sessionId); inFlight.delete(work); });
+    if (inFlight.size >= 16) { droppedIterations++; continue; }
+    const work = input.perform(slot).finally(() => { inFlight.delete(work); });
     inFlight.add(work);
   }
   if (!boundaryFailure && !windowClosed) {
@@ -584,10 +671,12 @@ export async function runHostedWorkload(input: HostedInput) {
       async function perform(slot: Slot) {
         const room = input.fixture.rooms[0];
         const request = requestForSlot(slot, room, input.fixture, origin);
+        let requestedCursor = 0;
         if (request.action === "promote-task" && request.body && "messageId" in request.body) request.body.messageId = room.unusedSourceMessageIds[mutationSourceIndex++];
         if (request.action === "history") {
           const pollUrl = new URL(request.url);
-          pollUrl.searchParams.set("afterChangeSeq", String(cursors.get(slot.sessionId) ?? 0));
+          requestedCursor = cursors.get(slot.sessionId) ?? 0;
+          pollUrl.searchParams.set("afterChangeSeq", String(requestedCursor));
           request.url = pollUrl.href;
         }
         const actor = input.fixture.actors[Number(slot.sessionId.split("-")[1]) % 2];
@@ -626,18 +715,30 @@ export async function runHostedWorkload(input: HostedInput) {
           let scopeAuthorized = false;
           let actualProjectIds: string[] = [];
           let unauthorizedContent = false;
-          if (success && request.action === "history") {
+          let verifiedEffectIds: string[] | undefined;
+          if (request.action === "promote-task" && request.body && (success || (valid && response.status === 503 && object(envelope) && envelope.code === "temporarily_unavailable"))) {
+            failureStage = "write_effect_sql";
+            const proof = await readHostedPromotionScope(client, { ...request.body, actorId: actor.actorId } as HostedPromotionProofInput, !success);
+            verificationQueries += 4;
+            ({ actualProjectIds, scopeAuthorized, unauthorizedContent } = proof);
+            verifiedEffectIds = proof.effectIds;
+            if (success && (String(value.taskId) !== hostedPromotionIdentity({ ...request.body, actorId: actor.actorId } as HostedPromotionProofInput).taskId ||
+                String(value.workLinkId) !== hostedPromotionIdentity({ ...request.body, actorId: actor.actorId } as HostedPromotionProofInput).workLinkId)) {
+              scopeAuthorized = false; unauthorizedContent = true;
+            }
+          } else if (success && request.action === "history") {
             failureStage = "history_scope_validation";
             const ids = (value.messages as Array<{ id: string }>).map((message) => message.id);
-            const history = await visibility.observeHistory(ids, actor.actorHash, bodyReceivedAt,
-              { projectId: room.projectId, conversationId: room.conversationId }, async (unknown) => {
+            const history = await observeHostedPollHistory({ visibility, ids, actorHash: actor.actorHash, receivedAt: bodyReceivedAt,
+              scope: { projectId: room.projectId, conversationId: room.conversationId }, cursors, sessionId: slot.sessionId,
+              requestedCursor, throughChangeSeq: Number(value.throughChangeSeq), lookup: async (unknown) => {
                 failureStage = "history_lookup_sql";
                 verificationQueries++;
                 const rows = await client.execute({ sql: `SELECT id,workspace_id,conversation_id,client_request_id,author_id FROM conversation_messages WHERE id IN (${unknown.map(() => "?").join(",")})`, args: unknown });
                 failureStage = "history_scope_validation";
                 return rows.rows.map((row) => ({ id: row.id, workspace_id: row.workspace_id,
                   conversation_id: row.conversation_id, client_request_id: row.client_request_id, author_id: row.author_id }));
-              });
+              } });
             ({ actualProjectIds, scopeAuthorized, unauthorizedContent } = history);
           } else if (success && request.action === "html") {
             // HTML includes the explicitly requested synthetic Project marker; source row proof is provided by writer/reader checks.
@@ -654,14 +755,11 @@ export async function runHostedWorkload(input: HostedInput) {
             if (scopeAuthorized && request.action === "send") visibility.confirmSend(request.clientRequestId, String(value.messageId), bodyReceivedAt,
               { projectId: room.projectId, conversationId: room.conversationId });
           }
-          if (success && request.action === "history") {
-            cursors.set(slot.sessionId, Number(value.throughChangeSeq));
-          }
           observation = { logicalOperationId: slot.logicalOperationId, attemptId: `${slot.logicalOperationId}:attempt:1`, attemptNumber: 1,
             serverTiming: parseHostedServerTiming(response.headers.get("server-timing")),
             journey: slot.journey, phase: slot.phase, latencyMs: httpLatencyMs, response: { statusCode: response.status, valid, success, errorEnvelope: object(envelope) && envelope.ok === false },
             acknowledged: expectedOutcome === "write" && success, scopeAuthorized, actualProjectIds, unauthorizedContent,
-            effectIds: success && request.body ? [String(request.action === "send" ? value.messageId : value.taskId)] : [], bytes: body.bytes,
+            effectIds: verifiedEffectIds ?? (success && request.body ? [String(request.action === "send" ? value.messageId : value.taskId)] : []), bytes: body.bytes,
             finishedAtMs: performance.now() - start,
             ...(object(envelope) && typeof envelope.code === "string" && ERROR_CODES.has(envelope.code) ? { errorCode: envelope.code } : {}) };
           if (!valid || unauthorizedContent || [401, 403].includes(response.status)) fatal = true;

@@ -11,7 +11,7 @@
  */
 
 import { and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
-import { effectiveColumnKey, isTaskDone, WAITING_COLUMN_KEY } from "@/lib/board-columns";
+import { effectiveColumnKey, isTaskDone, resolveBoardColumns, WAITING_COLUMN_KEY } from "@/lib/board-columns";
 import type { ColumnConfig } from "@/lib/board-config";
 import { readWorkspaceColumnConfigs } from "../../server/analytics/providers/column-config";
 import { storedDeadline } from "./deadline";
@@ -126,6 +126,17 @@ function canonicalLane(row: typeof tasksTable.$inferSelect, config: ColumnConfig
   return key === "todo" ? "next" : key === "review" ? "review" : "in-flight";
 }
 
+function taskStage(row: typeof tasksTable.$inferSelect, config: ColumnConfig | null, labels: ReadonlyMap<string, string>): NonNullable<TaskRead["stage"]> {
+  const key = effectiveColumnKey(row);
+  const complete = isTaskDone(row, config);
+  // A custom column's storage lane and display order do not establish start
+  // or review. Even a system done column can be configured as nonterminal.
+  const phase = complete ? "shipped" : key === "todo" ? "next"
+    : key === "doing" ? "in-flight" : key === "review" ? "review" : "unknown";
+  const label = labels.get(key)?.trim() || null;
+  return { key, label, phase, complete };
+}
+
 function knownPriority(value: unknown): KnownPriority | null {
   switch (value) {
     case "p0": return 0;
@@ -202,13 +213,16 @@ async function readCompletionHistory(db: TasksDb, targets: readonly (typeof task
 }
 
 type DependencyState = Pick<typeof tasksTable.$inferSelect, "id" | "workspaceId" | "lane" | "boardColumnKey">;
-type DependencyRead = { open: Map<string, string[]>; unknown: Set<string>; hasCompleted: Set<string> };
+type DependencyRead = { open: Map<string, string[]>; verified: Map<string, NonNullable<TaskRead["prerequisiteEvidence"]>>; unknown: Set<string>; hasCompleted: Set<string> };
 
-/** Positive comment creation evidence can advance the existing activity proxy.
- * Absence never proves inactivity: the general activity recorder is best effort.
+type ActivityRead = { comments: Map<string, string>; titleEdits: Map<string, string>; commentEvents: Map<string, string>; metadataEdits: Map<string, string>; earliestRecords: Map<string, string> };
+
+/** Positive comment evidence can advance the existing activity proxy. A saved
+ * title edit is metadata evidence only. Neither establishes exhaustive history.
+ * Both are read in the existing bounded per-task aggregate, without another query.
  */
-async function readCommentActivity(db: TasksDb, rows: readonly (typeof tasksTable.$inferSelect)[], now: number): Promise<Map<string, string>> {
-  const activity = new Map<string, string>();
+async function readCommentActivity(db: TasksDb, rows: readonly (typeof tasksTable.$inferSelect)[], now: number): Promise<ActivityRead> {
+  const activity: ActivityRead = { comments: new Map(), titleEdits: new Map(), commentEvents: new Map(), metadataEdits: new Map(), earliestRecords: new Map() };
   const targets = rows.filter(row => validCompletion(row.updatedAt, now) !== null && validCompletion(row.createdAt, now) !== null);
   for (let offset = 0; offset < targets.length; offset += 500) {
     const chunk = targets.slice(offset, offset + 500), grouped = new Map<string, string[]>();
@@ -218,15 +232,21 @@ async function readCommentActivity(db: TasksDb, rows: readonly (typeof tasksTabl
     const predicate = or(...Array.from(grouped, ([id, taskIds]) => and(eq(activitiesTable.workspaceId, id), inArray(activitiesTable.taskId, taskIds))));
     // Validate before MAX so an invalid newest row cannot hide earlier evidence.
     // Grouping bounds returned rows; it does not bound the matching history scan.
-    const evidence = await db.all<{ workspaceId: string; taskId: string; createdAt: number }>(sql`
-      SELECT a.workspace_id AS workspaceId, a.task_id AS taskId, MAX(a.created_at) AS createdAt
+    const evidence = await db.all<{ workspaceId: string; taskId: string; createdAt: number | null; latestTitleEditAt: number | null; latestMetadataEditAt: number | null; earliestRecordAt: number | null }>(sql`
+      SELECT a.workspace_id AS workspaceId, a.task_id AS taskId,
+        MAX(a.created_at) FILTER (WHERE CASE WHEN json_valid(a.payload) THEN
+          a.kind = 'commentAdd' AND json_extract(a.payload, '$.kind') = 'commentAdd'
+          AND json_type(a.payload, '$.commentId') = 'text' AND length(trim(json_extract(a.payload, '$.commentId'))) > 0
+          ELSE 0 END) AS createdAt,
+        MAX(a.created_at) FILTER (WHERE CASE WHEN json_valid(a.payload) THEN
+          a.kind = 'update' AND json_extract(a.payload, '$.kind') = 'update'
+          AND json_extract(a.payload, '$.field') = 'title' ELSE 0 END) AS latestTitleEditAt,
+        MAX(a.created_at) FILTER (WHERE CASE WHEN json_valid(a.payload) THEN
+          a.kind = 'update' AND json_extract(a.payload, '$.kind') = 'update'
+          AND json_extract(a.payload, '$.field') = 'tags' ELSE 0 END) AS latestMetadataEditAt,
+        MIN(a.created_at) FILTER (WHERE json_valid(a.payload)) AS earliestRecordAt
       FROM activities AS a JOIN tasks AS t ON t.id = a.task_id AND t.workspace_id = a.workspace_id
       WHERE a.id IN (SELECT id FROM activities WHERE ${predicate})
-        AND a.kind = 'commentAdd'
-        AND CASE WHEN json_valid(a.payload) THEN
-          json_type(a.payload, '$.kind') = 'text' AND json_extract(a.payload, '$.kind') = 'commentAdd'
-          AND json_type(a.payload, '$.commentId') = 'text' AND length(trim(json_extract(a.payload, '$.commentId'))) > 0
-          ELSE 0 END
         AND typeof(a.created_at) IN ('integer', 'real')
         AND a.created_at >= 0 AND a.created_at <= ${now / 1000} AND a.created_at >= t.created_at
       GROUP BY a.workspace_id, a.task_id
@@ -235,8 +255,18 @@ async function readCommentActivity(db: TasksDb, rows: readonly (typeof tasksTabl
     for (const row of chunk) {
       const event = byTask.get(row.id);
       if (!event || event.workspaceId !== row.workspaceId) continue;
+      const latestTitleEditAt = event.latestTitleEditAt === null
+        ? null
+        : validCompletion(new Date(event.latestTitleEditAt * 1000), now);
+      if (latestTitleEditAt) activity.titleEdits.set(row.id, latestTitleEditAt);
+      for (const [value, target] of [[event.latestMetadataEditAt, activity.metadataEdits], [event.earliestRecordAt, activity.earliestRecords]] as const) {
+        const at = value === null ? null : validCompletion(new Date(value * 1000), now);
+        if (at) target.set(row.id, at);
+      }
+      if (event.createdAt === null) continue;
       const at = validCompletion(new Date(event.createdAt * 1000), now);
-      if (at && Date.parse(at) > row.updatedAt.getTime()) activity.set(row.id, at);
+      if (at) activity.commentEvents.set(row.id, at);
+      if (at && Date.parse(at) > row.updatedAt.getTime()) activity.comments.set(row.id, at);
     }
   }
   return activity;
@@ -277,6 +307,7 @@ async function readOpenDependencies(
     for (const dependency of dependencies) byWorkspace.get(dependency.workspaceId!)!.set(dependency.id, dependency);
   }
   const edges = new Map<string, string[]>();
+  const verified: DependencyRead["verified"] = new Map();
   const unknown = new Set<string>();
   const hasCompleted = new Set<string>();
   for (const row of rows) {
@@ -284,6 +315,7 @@ async function readOpenDependencies(
     if (row.blockedBy !== null && !Array.isArray(row.blockedBy)) unknown.add(row.id);
     const blockedBy = Array.isArray(row.blockedBy) ? row.blockedBy : [];
     const seen = new Set<string>();
+    const resolved: NonNullable<TaskRead["prerequisiteEvidence"]> = [];
     edges.set(row.id, blockedBy.filter(id => {
       if (seen.has(id)) return false;
       seen.add(id);
@@ -291,11 +323,15 @@ async function readOpenDependencies(
       // A missing, malformed or foreign reference is neither cleared nor a
       // confirmed blocker; retain the task and mark this predicate unknown.
       if (!dependency) { unknown.add(row.id); return false; }
-      if (isTaskDone(dependency, config)) { hasCompleted.add(row.id); return false; }
+      const complete = isTaskDone(dependency, config);
+      resolved.push({ id: dependency.id, workspaceId: dependency.workspaceId!, lane: dependency.lane,
+        boardColumnKey: dependency.boardColumnKey, complete });
+      if (complete) { hasCompleted.add(row.id); return false; }
       return true;
     }));
+    verified.set(row.id, resolved.sort((a, b) => a.id.localeCompare(b.id)));
   }
-  return { open: edges, unknown, hasCompleted };
+  return { open: edges, verified, unknown, hasCompleted };
 }
 
 /**
@@ -369,12 +405,14 @@ function buildWorkRead(
   rows: Array<typeof tasksTable.$inferSelect>,
   config: ColumnConfig | null = null,
   completions: ReadonlyMap<string, string | null> = new Map(),
-  dependencies: DependencyRead = { open: new Map(), unknown: new Set(), hasCompleted: new Set() },
-  activity: ReadonlyMap<string, string> = new Map(),
+  dependencies: DependencyRead = { open: new Map(), verified: new Map(), unknown: new Set(), hasCompleted: new Set() },
+  activity: ActivityRead = { comments: new Map(), titleEdits: new Map(), commentEvents: new Map(), metadataEdits: new Map(), earliestRecords: new Map() },
 ): WorkRead {
+    const stageLabels = new Map(resolveBoardColumns(config).map(column => [column.key, column.name]));
     const taskReads: TaskRead[] = rows.map((t) => {
       const tags = Array.isArray(t.tags) ? t.tags : [];
-      const assignees = Array.isArray(t.assignees) ? t.assignees : [];
+      const assigneeIds = Array.isArray(t.assignees) ? t.assignees : undefined;
+      const assignees = assigneeIds ?? [];
       const blockedBy = dependencies.open.get(t.id) ?? [];
       const deadline = storedDeadline(t.due, t.dueAt);
       const dueDate = deadline?.kind === "date-only" ? deadline.date
@@ -385,8 +423,10 @@ function buildWorkRead(
         projectSlugs: tags,
         title: t.title,
         assignee: assignees[0] ? { id: assignees[0] } : null,
+        assignees: assigneeIds?.map(id => ({ id })),
         status: deriveStatus(t, blockedBy, config),
         canonicalLane: canonicalLane(t, config),
+        stage: taskStage(t, config, stageLabels),
         priority: knownPriority(t.priority),
         completedAt: completions.get(t.id) ?? null,
         deadline,
@@ -394,12 +434,21 @@ function buildWorkRead(
         blockedBy,
         dependencyCoverage: dependencies.unknown.has(t.id) ? "partial" : "complete",
         hasCompletedListedPrerequisite: dependencies.hasCompleted.has(t.id),
+        verifiedPrerequisiteIds: (dependencies.verified.get(t.id) ?? []).map(record => record.id),
+        prerequisiteEvidence: dependencies.verified.get(t.id) ?? [],
         // No separate status-change timestamp in Tasks's schema;
         // updatedAt is the closest proxy. Cycle 6.4 may revisit if
         // any trigger needs strict status-change semantics.
         lastStatusChangeAt: t.updatedAt.toISOString(),
-        lastActivityAt: activity.get(t.id) ?? t.updatedAt.toISOString(),
+        lastActivityAt: activity.comments.get(t.id) ?? t.updatedAt.toISOString(),
         createdAt: t.createdAt.toISOString(),
+        hasRecordedTitleEdit: activity.titleEdits.has(t.id),
+        latestValidatedComment: activity.commentEvents.has(t.id) ? { at: activity.commentEvents.get(t.id)!, kind: "commentAdd" } : undefined,
+        latestValidatedMetadataEdit: activity.metadataEdits.has(t.id) ? { at: activity.metadataEdits.get(t.id)!, field: "tags" } : undefined,
+        activityHistoryStartAt: activity.earliestRecords.get(t.id),
+        latestValidatedTitleEdit: activity.titleEdits.has(t.id)
+          ? { at: activity.titleEdits.get(t.id)!, kind: "update", field: "title" }
+          : undefined,
       };
     });
 
@@ -442,6 +491,7 @@ function buildWorkRead(
       projects,
       tasks: taskReads,
       coverage: {
+        tasks: "complete",
         activity: "partial",
         dependencies: taskReads.some(task => task.dependencyCoverage === "partial") ? "partial" : "complete",
         dates: taskReads.some(task => task.deadline?.kind === "unknown") ? "partial" : "complete",

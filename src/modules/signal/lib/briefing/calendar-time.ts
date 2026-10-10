@@ -9,8 +9,28 @@ export function signalDeadline(signal: TaskSignal): Deadline {
 
 type CalendarParts = { year: number; month: number; day: number };
 
+// Formatters retain only fixed formatting rules, never timestamps, task data,
+// authorization or calculated dates. Bound the pool across reader timezones.
+const FORMATTER_CAP = 64;
+const formatters = new Map<string, Intl.DateTimeFormat>();
+
+function calendarFormatter(locale: string, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  const key = JSON.stringify([locale, options]);
+  const existing = formatters.get(key);
+  if (existing) {
+    formatters.delete(key);
+    formatters.set(key, existing);
+    return existing;
+  }
+  // An invalid timezone must still throw, without changing the retained pool.
+  const formatter = new Intl.DateTimeFormat(locale, options);
+  if (formatters.size >= FORMATTER_CAP) formatters.delete(formatters.keys().next().value!);
+  formatters.set(key, formatter);
+  return formatter;
+}
+
 function partsAt(timestamp: number, timezone: string): CalendarParts {
-  const formatter = new Intl.DateTimeFormat("en-CA", {
+  const formatter = calendarFormatter("en-CA", {
     timeZone: timezone,
     year: "numeric",
     month: "2-digit",
@@ -84,13 +104,13 @@ export function compareDeadlines(a: Deadline, b: Deadline, timezone: string, now
 export function deadlineWeekday(deadline: Deadline, timezone: string): string | null {
   if (!deadline || deadline.kind === "unknown") return null;
   if (deadline.kind === "instant") return localWeekday(deadline.at, timezone);
-  return new Intl.DateTimeFormat("en-IE", { timeZone: "UTC", weekday: "long" })
+  return calendarFormatter("en-IE", { timeZone: "UTC", weekday: "long" })
     .format(new Date(`${deadline.date}T00:00:00.000Z`));
 }
 
 export function deadlineShortDate(deadline: Deadline, timezone: string): string | null {
   if (!deadline || deadline.kind === "unknown") return null;
-  return new Intl.DateTimeFormat("en-GB", {
+  return calendarFormatter("en-GB", {
     timeZone: deadline.kind === "date-only" ? "UTC" : timezone,
     day: "numeric", month: "short",
   }).format(new Date(deadline.kind === "date-only" ? `${deadline.date}T00:00:00.000Z` : deadline.at));
@@ -106,7 +126,7 @@ export function calendarDayDifference(
 }
 
 export function localHour(timestamp: number, timezone: string): number {
-  const value = new Intl.DateTimeFormat("en-GB", {
+  const value = calendarFormatter("en-GB", {
     timeZone: timezone,
     hour: "2-digit",
     hourCycle: "h23",
@@ -115,7 +135,7 @@ export function localHour(timestamp: number, timezone: string): number {
 }
 
 export function localWeekday(timestamp: number, timezone: string): string {
-  return new Intl.DateTimeFormat("en-IE", {
+  return calendarFormatter("en-IE", {
     timeZone: timezone,
     weekday: "long",
   }).format(new Date(timestamp));
@@ -127,7 +147,7 @@ export function localWeekday(timestamp: number, timezone: string): string {
  * the calendar conversion DST-aware.
  */
 export function briefingTimestampLabel(timestamp: number, timezone: string): string {
-  const parts = new Intl.DateTimeFormat("en-IE", {
+  const parts = calendarFormatter("en-IE", {
     timeZone: timezone,
     weekday: "long",
     hour: "2-digit",

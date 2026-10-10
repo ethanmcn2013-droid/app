@@ -32,6 +32,7 @@ const LANE_LABEL: Record<HomeTaskRow["lane"], string> = {
   "in-flight": "In progress",
   review: "In review",
   shipped: "Done",
+  open: "Open",
 };
 
 const LANE_TONE: Partial<Record<HomeTaskRow["lane"], string>> = {
@@ -135,7 +136,7 @@ function TaskRow({ row, showLane = true }: { row: HomeTaskRow; showLane?: boolea
       </span>
       {showLane ? (
         <span className={styles.laneCell}>
-          <span className={styles.pill} data-tone={LANE_TONE[row.lane]}>{LANE_LABEL[row.lane]}</span>
+          <span className={styles.pill} data-tone={LANE_TONE[row.lane]}>{row.stageLabel ?? LANE_LABEL[row.lane]}</span>
         </span>
       ) : null}
       <span className={styles.due} data-overdue={row.overdue ? "" : undefined}>

@@ -34,6 +34,7 @@ import {
 
 export type HomeSignalRow = {
   id: string;
+  observationId?: string;
   destination: "task" | "briefing";
   /** The reader's own task title, sentence-cased by the engine. */
   title: string;
@@ -75,7 +76,8 @@ export type HomeTaskRow = {
   id: string;
   title: string;
   source: string;
-  lane: TaskSignal["lane"];
+  lane: TaskSignal["lane"] | "open";
+  stageLabel?: string;
   priority: TaskSignal["priority"];
   /** Short timing label ("Today", "Tomorrow", "Fri", "3 Oct") or null. */
   due: string | null;
@@ -154,11 +156,12 @@ export async function loadHomeData(opts: {
   if (result.kind === "no-workspace") return { kind: "new-user" };
 
   const { briefing, authorizedScope, signals } = result;
+  const phaseOf = (signal: TaskSignal) => signal.stage?.phase ?? signal.lane;
   const timezone = authorizedScope.timezone;
   const now = briefing.generatedAt;
 
   const dueById = new Map(
-    briefing.suggestedFocus.map((item) => [item.id, item.due]),
+    briefing.suggestedFocus.map((item) => [item.observationId ?? item.id, item.due]),
   );
   const signalById = new Map(signals.map(signal => [signal.id, signal]));
   // An aggregate describes the authorized reading scope, not one task or the
@@ -179,11 +182,12 @@ export async function loadHomeData(opts: {
       (!ownDeadline || ownDeadline.kind === "unknown");
     return {
       id: item.id,
+      observationId: item.observationId,
       destination: aggregate ? "briefing" : "task",
       title: item.text,
       why: item.detail,
       source: aggregate ? `Tasks · ${authorizedScope.label}` : item.sourceLabel,
-      due: blockerWithoutDate ? null : dueById.get(item.id) ?? null,
+      due: blockerWithoutDate || item.trigger === "recorded-activity" || item.trigger === "just-shipped" ? null : dueById.get(item.observationId ?? item.id) ?? null,
       trigger: item.trigger,
       href: aggregate ? aggregateHref : taskHref(item.id),
     };
@@ -194,12 +198,36 @@ export async function loadHomeData(opts: {
   const signalRows = [
     ...briefing.needsAttention.map(toSignalRow),
     ...briefing.quietRisks.map(toSignalRow),
+    ...briefing.movingWell.map(toSignalRow),
   ];
 
   const surfacedIds = new Set(signalRows.map((row) => row.id));
 
-  const daysOutOf = (signal: TaskSignal) => deadlineDayDifference(signalDeadline(signal), now, timezone);
-  const overdue = (signal: TaskSignal) => deadlineIsOverdue(signalDeadline(signal), now, timezone);
+  // These deadlines, clock and timezone stay fixed throughout this projection.
+  // Reuse date facts across its lists without retaining them across requests.
+  const deadlineKey = (deadline: ReturnType<typeof signalDeadline>): string =>
+    deadline === null ? "null" : deadline.kind === "unknown" ? "unknown" :
+      deadline.kind === "date-only" ? `date-only:${deadline.date}` : `instant:${deadline.at}`;
+  const daysOutByDeadline = new Map<string, number | null>();
+  const overdueByDeadline = new Map<string, boolean>();
+  const daysOutOf = (signal: TaskSignal) => {
+    const deadline = signalDeadline(signal);
+    const key = deadlineKey(deadline);
+    const cached = daysOutByDeadline.get(key);
+    if (cached !== undefined) return cached;
+    const days = deadlineDayDifference(deadline, now, timezone);
+    daysOutByDeadline.set(key, days);
+    return days;
+  };
+  const overdue = (signal: TaskSignal) => {
+    const deadline = signalDeadline(signal);
+    const key = deadlineKey(deadline);
+    const cached = overdueByDeadline.get(key);
+    if (cached !== undefined) return cached;
+    const expired = deadlineIsOverdue(deadline, now, timezone);
+    overdueByDeadline.set(key, expired);
+    return expired;
+  };
   const sortDue = (a: TaskSignal, b: TaskSignal) => compareDeadlines(signalDeadline(a), signalDeadline(b), timezone, now);
   const comingUp: HomeComingRow[] = signals
     .filter(
@@ -225,7 +253,7 @@ export async function loadHomeData(opts: {
 
   const needsReview: HomeReviewRow[] = signals
     .filter(
-      (signal) => signal.lane === "review" && !surfacedIds.has(signal.id),
+      (signal) => phaseOf(signal) === "review" && !surfacedIds.has(signal.id),
     )
     .sort((a, b) => (b.idleDays ?? -1) - (a.idleDays ?? -1))
     .slice(0, REVIEW_CAP)
@@ -275,22 +303,26 @@ export async function loadHomeData(opts: {
     if (days > 1 && days < 7) return deadlineWeekday(signalDeadline(signal), timezone)?.slice(0, 3) ?? null;
     return deadlineShortDate(signalDeadline(signal), timezone);
   };
-  const toTaskRow = (signal: TaskSignal): HomeTaskRow => ({
-    id: signal.id,
-    title: signal.title,
-    source: signal.sourceLabel,
-    lane: signal.lane,
-    priority: signal.priority,
-    due: shortDue(signal),
-    overdue: overdue(signal),
-    href: taskHref(signal.id),
-  });
+  const toTaskRow = (signal: TaskSignal): HomeTaskRow => {
+    const phase = phaseOf(signal);
+    return {
+      id: signal.id,
+      title: signal.title,
+      source: signal.sourceLabel,
+      lane: phase === "unknown" ? "open" : phase,
+      ...(signal.stage?.phase === "unknown" ? { stageLabel: signal.stage.label ?? "Open" } : {}),
+      priority: signal.priority,
+      due: shortDue(signal),
+      overdue: overdue(signal),
+      href: taskHref(signal.id),
+    };
+  };
 
   const stats: HomeStats = {
     open: openSignals.length,
     dueToday: openSignals.filter((signal) => daysOutOf(signal) === 0).length,
     overdue: openSignals.filter(overdue).length,
-    inReview: openSignals.filter((signal) => signal.lane === "review").length,
+    inReview: openSignals.filter((signal) => phaseOf(signal) === "review").length,
     doneThisWeek: signals.filter(
       (signal) => signal.lane === "shipped" && signal.movedToShippedAt != null && now - signal.movedToShippedAt <= 7 * DAY_MS,
     ).length,
@@ -301,7 +333,7 @@ export async function loadHomeData(opts: {
   const laneRank: Record<string, number> = { "in-flight": 0, review: 1, next: 2 };
   const myTasks = [...openSignals]
     .sort((a, b) => {
-      const lane = (laneRank[a.lane] ?? 3) - (laneRank[b.lane] ?? 3);
+      const lane = (laneRank[phaseOf(a)] ?? 3) - (laneRank[phaseOf(b)] ?? 3);
       if (lane !== 0) return lane;
       const due = sortDue(a, b);
       if (due !== 0) return due;
@@ -317,8 +349,10 @@ export async function loadHomeData(opts: {
     .sort((a, b) => sortDue(a.signal, b.signal))
     .slice(0, DEADLINE_CAP);
   const groupOrder = ["Overdue", "Today", "Tomorrow", "This week", "Later"] as const;
+  const weekday = new Intl.DateTimeFormat("en-US", { timeZone: timezone, weekday: "long" }).format(now);
+  const daysUntilSunday = 6 - ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].indexOf(weekday);
   const groupFor = (signal: TaskSignal, days: number) =>
-    overdue(signal) ? "Overdue" : days === 0 ? "Today" : days === 1 ? "Tomorrow" : days < 7 ? "This week" : "Later";
+    overdue(signal) ? "Overdue" : days === 0 ? "Today" : days === 1 ? "Tomorrow" : days <= daysUntilSunday ? "This week" : "Later";
   const deadlines: HomeDeadlineGroup[] = groupOrder
     .map((label) => ({
       label,

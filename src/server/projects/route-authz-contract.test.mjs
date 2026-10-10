@@ -125,7 +125,7 @@ test("route actor is the mapped persisted user, not the Clerk subject, and provi
       "@/server/db": { db: { select: () => ({ from: () => ({ where: async () => [{ id: "mapped_internal" }] }) }) } },
       "@/server/db/schema": { users: { id: "users.id", clerkId: "users.clerkId" }, workspaceMembers: {} },
       "@/server/db/seed": { LEGACY_WORKSPACE_ID: "legacy" },
-      "@/server/db/ensure-user": { ensureUserProvisioned: async () => { provisionCalls++; } },
+      "@/server/db/ensure-user": { resolveProvisionedUserId: async () => { provisionCalls++; return "mapped_internal"; } },
       "@/lib/access-mode": { isDemoMode: () => false },
       "@/server/projects/catalog": { firstMembershipByCatalogOrder: async () => null },
       "@/server/demo/tasks-demo": { DEMO_USER_ID: "demo_user", DEMO_WORKSPACE_ID: "demo_ws" },
