@@ -11,7 +11,7 @@ const task = (patch: Partial<TaskSignal> = {}): TaskSignal => ({
 });
 const read = (signals: TaskSignal[]) => contextObservations(signals, NOW, "Europe/Dublin");
 
-test("prospective completion digest preserves distinct durable times without suggestion rows", () => {
+test("completion digest and capped candidate preserve distinct durable times", () => {
   const completed = task({ id: "closed", title: "Closed work", lane: "shipped", movedToShippedAt: NOW - 3600000 });
   const result = read([completed, completed, task({ id: "future", lane: "shipped", movedToShippedAt: NOW + 1 }),
     task({ id: "open", movedToShippedAt: NOW - 1000 }), task({ id: "old", lane: "shipped", movedToShippedAt: NOW - 86400001 })]);
@@ -19,7 +19,9 @@ test("prospective completion digest preserves distinct durable times without sug
   assert.equal(digest.length, 1);
   assert.match(digest[0]!, /1 task.*Closed work.*2026-10-07T11:00:00.000Z/);
   assert.doesNotMatch(digest[0]!, /future|old|progress|all complete|today/);
-  assert.equal(result.candidates.length, 0);
+  assert.equal(result.candidates.length, 1);
+  assert.equal(result.candidates[0]?.trigger, "just-shipped");
+  assert.deepEqual(result.candidates[0]?.representedTaskIds, ["closed"]);
 });
 
 test("prospective completion digest respects reason and wildcard dismissal", () => {

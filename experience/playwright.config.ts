@@ -56,7 +56,7 @@ export default defineConfig({
     name: project.name,
     use: { viewport: project.viewport },
   })),
-  webServer: {
+  webServer: [{
     command:
       `corepack pnpm exec next build && ` +
       `corepack pnpm exec next start -H 127.0.0.1 -p ${port}`,
@@ -77,5 +77,12 @@ export default defineConfig({
       SIGNAL_HOME_ANALYTICS_ENABLED: "false",
       NEXT_TELEMETRY_DISABLED: "1",
     },
-  },
+  }, {
+    command: "node experience/materiality-source-fixtures/serve.mjs",
+    cwd: process.cwd(),
+    url: "http://127.0.0.1:4409/health",
+    timeout: 240_000,
+    reuseExistingServer: false,
+    env: { TASKS_MATERIALITY_FIXTURE: "1", TASKS_MATERIALITY_PORT: "4409", TASKS_MATERIALITY_APP_ORIGIN: `http://127.0.0.1:${port}`, VERCEL_ENV: "preview", SIGNAL_ACCESS_MODE: "demo" },
+  }],
 });

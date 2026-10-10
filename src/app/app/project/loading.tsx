@@ -18,6 +18,7 @@ export default function ProjectOverviewLoading() {
   return (
     <div
       className="min-h-0 flex-1 overflow-auto bg-[var(--v3-canvas)] motion-safe:animate-pulse"
+      role="status"
       aria-busy="true"
       aria-label="Loading projects"
     >

@@ -1,15 +1,19 @@
+import { detailReadFetchAdapter } from './detail-read-adapter.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
+import { revisionPortModule } from './revision-port.mjs';
 const [root, scratch, label, portText] = process.argv.slice(2);
 if (!root || !scratch.includes('drive-ui-acceptance-2026-09-05') || !/^[a-z0-9-]+$/.test(label)) throw Error('Explicit isolated paths required');
-const principal = 'C:/Users/ethan/signal-studio-workspace/worktrees/app/feat-january-final-journeys';
+const principal = root;
 const esbuild = createRequire(fs.realpathSync(path.join(principal, 'node_modules/tsx/package.json')))('esbuild');
 const port = Number(portText), staticRoot = path.join(scratch, 'assets');
+const revisionSource = fs.readFileSync(path.join(root,'src/lib/tasks/tasks-context.tsx'),'utf8').replace(/\r\n?/g,'\n');
 const sources = {
+  '@/lib/tasks/tasks-context': revisionPortModule(revisionSource),
   '@/lib/access-mode': 'export function isDemoMode(){return false}',
   '@/server/actions/project-drive-status': 'export const getProjectDriveStatusAction=(...args)=>window.__drive.readStatus(...args)',
   '@/server/actions/project-drive-handover-ui': 'export const getProjectDriveHandoverAction=(...args)=>window.__drive.readHandover(...args);export const changeProjectDriveOwnerAction=(...args)=>window.__drive.changeOwner(...args)',
@@ -31,10 +35,13 @@ const boundaryPlugin = { name: 'explicit-drive-fixture-boundaries', setup(build)
   build.onLoad({ filter: /[\\/]project-drive-ui\.ts$/ }, args => ({ contents: fs.readFileSync(args.path, 'utf8').replace('process.env.NEXT_PUBLIC_PROJECT_DRIVE_UI', 'window.__driveFlag'), loader: 'ts' }));
   build.onResolve({ filter: /^@\/server\// }, args => { if (!Object.hasOwn(sources,args.path)) throw Error('Unexpected server import '+args.path); });
 } };
+// The real ResourcesSection now reads JSON over HTTP. Keep the existing local
+// list port (including deferred loading, failures and refreshed rows) as its fixture.
+
 const client = path.join(path.dirname(fileURLToPath(import.meta.url)), 'client.jsx');
-const result = await esbuild.build({ entryPoints: [client], absWorkingDir: root, bundle: true, write: false, format: 'iife', platform: 'browser', jsx: 'automatic', alias: { '@': path.join(root,'src') }, nodePaths: [path.join(principal,'node_modules')], define: { 'process.env.NODE_ENV': '"production"', 'process.env': '{}' }, plugins: [boundaryPlugin] });
+const result = await esbuild.build({ banner: { js: detailReadFetchAdapter }, entryPoints: [client], absWorkingDir: root, bundle: true, write: false, format: 'iife', platform: 'browser', jsx: 'automatic', alias: { '@': path.join(root,'src') }, nodePaths: [path.join(principal,'node_modules')], define: { 'process.env.NODE_ENV': '"production"', 'process.env': '{}' }, plugins: [boundaryPlugin] });
 fs.writeFileSync(path.join(scratch,label+'.bundle.js'),result.outputFiles[0].contents);
-fs.writeFileSync(path.join(scratch,label+'.adapters.json'),JSON.stringify({root,source:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),port,sources,other:['Actual SectionHeader extracted verbatim to avoid importing unrelated Settings tree.','Actual flag function uses window fixture value in place of build environment.','Actual CurrentUserProvider with synthetic david; actual ToastRoot and upload controller/hooks.','Byte transfer and all action results are local injected ports; no provider/service/DB lifecycle claimed.','Normal frozen CSS/fonts copied from completed principal build.']},null,2));
+fs.writeFileSync(path.join(scratch,label+'.adapters.json'),JSON.stringify({root,source:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),port,sources,detailReadFetchAdapter,other:['Actual SectionHeader extracted verbatim to avoid importing unrelated Settings tree.','Actual flag function uses window fixture value in place of build environment.','Actual CurrentUserProvider with synthetic david; actual ToastRoot and upload controller/hooks.','Byte transfer and all action results are local injected ports; no provider/service/DB lifecycle claimed.','Actual revision hook extracted verbatim into controlled context input revision0; no TasksProvider freshness or ordering claim.', 'Normal frozen CSS/fonts copied from completed owning build.']},null,2));
 const css=fs.readdirSync(path.join(staticRoot,'chunks')).filter(file=>file.endsWith('.css'));
 const fontClasses=css.flatMap(file=>[...fs.readFileSync(path.join(staticRoot,'chunks',file),'utf8').matchAll(/\.([a-zA-Z0-9_-]+)\s*\{\s*--font-geist-(?:sans|mono):[^}]+}/g)].map(m=>m[1]));
 const server=http.createServer((req,res)=>{

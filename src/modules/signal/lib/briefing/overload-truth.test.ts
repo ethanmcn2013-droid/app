@@ -102,3 +102,23 @@ test("Home carries the aggregate's null date from the producer without another r
   assert.equal(row?.destination, "briefing");
   assert.equal(calls, 1);
 });
+
+
+test("personal workload requires canonical assignment evidence and retains the original threshold", async () => {
+  const mine = tasks().map(task => ({ ...task, workspaceId: "owned", assignees: [{ id: "internal-reader" }] }));
+  const [row] = detectOverload(mine, "internal-reader");
+  assert.match(row!.detailOverride!, /Six of these open tasks are assigned to you.*exceed the threshold of five/);
+  const brief = await buildBriefing({ getSignalsForUser: async () => mine },
+    { userId: "clerk-reader", email: "", canonicalUserId: "internal-reader" }, NOW);
+  assert.match(brief.needsAttention.find(item => item.trigger === "overload")!.detail, /Six.*assigned to you/);
+  for (const identity of [undefined, "other-reader"]) {
+    const detail = detectOverload(mine, identity)[0]!.detailOverride!;
+    assert.doesNotMatch(detail, /Your assigned.*exceed/);
+  }
+  const incomplete = mine.map((task, index) => index ? task : { ...task, assignees: undefined });
+  assert.doesNotMatch(detectOverload(incomplete, "internal-reader")[0]!.detailOverride!, /assigned to you/);
+  const fiveMine = mine.map((task, index) => index ? task : { ...task, assignees: [{ id: "teammate" }] });
+  assert.match(detectOverload(fiveMine, "internal-reader")[0]!.detailOverride!, /Five.*assigned to you/);
+  assert.doesNotMatch(detectOverload(fiveMine, "internal-reader")[0]!.detailOverride!, /Your assigned.*exceed/);
+  assert.deepEqual(detectOverload(mine.slice(0, 5), "internal-reader"), []);
+});

@@ -272,6 +272,8 @@
     "src/modules/signal/lib/briefing/prose.test.ts",
     "src/modules/signal/lib/briefing/tasks-db-source.test.ts",
     "src/modules/signal/lib/briefing/build.test.ts",
+    "src/modules/signal/lib/briefing/context-observations.test.ts",
+    "src/modules/signal/lib/briefing/overload-truth.test.ts",
     "src/modules/signal/lib/briefing/wedding-briefing-selectivity.test.ts",
     "src/modules/signal/lib/overview/overview-model.test.ts",
     "src/modules/signal/signal-public-url-contract.test.ts",
@@ -430,5 +432,9 @@
     "./src/test/register-server-only.mjs",
     "--test",
     "src/server/sponsor-report/proxy.test.ts"
+  ],
+  [
+    "pnpm",
+    "test:reliability"
   ]
 ]

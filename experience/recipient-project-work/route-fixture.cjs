@@ -64,8 +64,8 @@ async function routeFixture() {
   f.boundary['next/headers'].headers=async()=>new Headers();
   const calls=[];
   async function serialize(node) {
-    if (node === null || node === undefined || typeof node === 'boolean') return null;
-    if (typeof node==='string' || typeof node==='number') return node;
+    if (node === null || node === undefined) return null;
+    if (typeof node==='string' || typeof node==='number' || typeof node==='boolean') return node;
     if (node instanceof Date) return {$date:node.toISOString()};
     if (Array.isArray(node)) {const result=[];for(const child of node)result.push(await serialize(child));return result;}
     if (f.React.isValidElement(node)) {
@@ -95,6 +95,6 @@ async function routeFixture() {
       return {tree,href:url.pathname+url.search,v3:f.state.v3,actor:f.state.actor,cookieWrites:[...f.state.cookieWrites],calls:[...calls]};
     } catch(error) { if(error.href)return {redirect:error.href};throw error; }
   }
-  return {...f,render,clientModules,calls};
+  return {...f,render,serialize,clientModules,calls};
 }
 module.exports={routeFixture};

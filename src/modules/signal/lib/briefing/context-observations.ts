@@ -40,6 +40,12 @@ export function contextObservations(signals: TaskSignal[], now: number, timezone
     notes.add(`${members.length} ${members.length === 1 ? "task has" : "tasks have"} a saved completion in the past 24 hours (${source}). Recorded completions shown: ${members.map(({ task, at }) => `“${task.title}” on ${occurrence(at)} [${new Date(at).toISOString()}]`).join("; ")}. This covers the saved completion records included in this read.`);
   };
   for (const task of unique) {
+    const completedAt = completion(task);
+    if (completedAt !== null) {
+      candidates.push({ task, trigger: "just-shipped", severity: 0, representedTaskIds: [task.id],
+        detailOverride: `Saved completion on ${occurrence(completedAt)} [${new Date(completedAt).toISOString()}], within the past 24 hours.`,
+        reasons: ["The current saved stage is complete and its durable completion time is within the past 24 hours."] });
+    }
     if (task.workspaceId) {
       let group = groups.get(task.workspaceId);
       if (!group) { group = []; groups.set(task.workspaceId, group); }
