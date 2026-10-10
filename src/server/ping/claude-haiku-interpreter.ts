@@ -21,6 +21,7 @@ export type PingClaudeHaikuInterpreterOptions = Readonly<{
   deadlineMs?: number;
   corpusAdmission?: PingSyntheticCorpusAdmission;
   onUsage?: (observation: PingResponsesUsageObservation) => unknown;
+  onDiagnostic?: (observation: Readonly<{ stage: "fetch" | "http" | "body" | "json" | "proposal" | "complete"; httpStatus: number | null }>) => unknown;
 }>;
 
 function claudeCompatibleSchema(value: unknown): unknown {
@@ -66,14 +67,15 @@ function resultProposal(value: unknown, selectedTaskCount: number): PingProposal
 /** Disconnected fixed-public-input candidate. The caller owns capture, authentication, Finish, and route admission. */
 export function createPingClaudeHaikuInterpreter(options: PingClaudeHaikuInterpreterOptions) {
   if ((process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test") || process.env.VERCEL !== undefined ||
-    !dataRecord(options) || !exactKeys(options, ["apiKey", "developmentOnly", "fetch"], ["deadlineMs", "onUsage", "corpusAdmission"]) ||
+    !dataRecord(options) || !exactKeys(options, ["apiKey", "developmentOnly", "fetch"], ["deadlineMs", "onUsage", "onDiagnostic", "corpusAdmission"]) ||
     options.developmentOnly !== true || typeof options.apiKey !== "string" || !/^[\x21-\x7e]{1,512}$/.test(options.apiKey) ||
     typeof options.fetch !== "function" ||
     (options.deadlineMs !== undefined && (!Number.isInteger(options.deadlineMs) || options.deadlineMs < 1 || options.deadlineMs > 10_000)) ||
-    (options.onUsage !== undefined && typeof options.onUsage !== "function"))
+    (options.onUsage !== undefined && typeof options.onUsage !== "function") ||
+    (options.onDiagnostic !== undefined && typeof options.onDiagnostic !== "function"))
     throw new Error("ping_claude_interpretation_configuration");
 
-  const { apiKey, fetch: fetchMessages, onUsage } = options;
+  const { apiKey, fetch: fetchMessages, onUsage, onDiagnostic } = options;
   const deadlineMs = options.deadlineMs ?? 10_000;
   let physicalBusy = false;
   return async (input: unknown, signal: AbortSignal): Promise<PingProposal> => {
@@ -94,6 +96,8 @@ export function createPingClaudeHaikuInterpreter(options: PingClaudeHaikuInterpr
     let cancellation: Promise<void> | null = null;
     let stopped: "cancelled" | "deadline" | null = null;
     let entered = false, published = false;
+    let diagnosticStage: "fetch" | "http" | "body" | "json" | "proposal" | "complete" = "fetch";
+    let httpStatus: number | null = null;
     let observed: PingResponsesUsageObservation = freeze({ version: "ping.responses-usage.v1", provenance: "interpretation", state: "unavailable", usage: null });
     let rejectPublic!: (reason: Error) => void;
     let resolvePublic!: (value: PingProposal) => void;
@@ -104,6 +108,9 @@ export function createPingClaudeHaikuInterpreter(options: PingClaudeHaikuInterpr
       if (outcome instanceof Error) rejectPublic(outcome); else resolvePublic(outcome);
       if (entered && onUsage) {
         try { void Promise.resolve(onUsage(observed)).catch(() => undefined); } catch { /* Diagnostics cannot authorize or retry work. */ }
+      }
+      if (entered && onDiagnostic) {
+        try { void Promise.resolve(onDiagnostic(freeze({ stage: diagnosticStage, httpStatus }))).catch(() => undefined); } catch { /* Diagnostic only. */ }
       }
     };
     const cancelReader = () => {
@@ -135,6 +142,8 @@ export function createPingClaudeHaikuInterpreter(options: PingClaudeHaikuInterpr
         if (expired()) return;
         entered = true;
         const response = await fetchMessages(PING_CLAUDE_MESSAGES_ENDPOINT, request);
+        diagnosticStage = "http";
+        httpStatus = Number.isInteger(response.status) && response.status >= 100 && response.status <= 599 ? response.status : null;
         if (response.body) reader = response.body.getReader();
         if (expired()) { cancelReader(); return; }
         if (response.status !== 200 || response.redirected || !/^application\/json(?:\s*;|$)/i.test(response.headers.get("content-type") ?? "") || !reader)
@@ -142,6 +151,7 @@ export function createPingClaudeHaikuInterpreter(options: PingClaudeHaikuInterpr
         const length = response.headers.get("content-length");
         if (length !== null && (!/^\d+$/.test(length) || Number(length) > BODY_BYTES)) throw new Error("invalid_response");
         const chunks: Uint8Array[] = [];
+        diagnosticStage = "body";
         let bytes = 0;
         while (!stopped) {
           const next = await reader.read();
@@ -155,15 +165,17 @@ export function createPingClaudeHaikuInterpreter(options: PingClaudeHaikuInterpr
         const body = new Uint8Array(bytes);
         let offset = 0;
         for (const chunk of chunks) { body.set(chunk, offset); offset += chunk.byteLength; }
+        diagnosticStage = "json";
         const parsed: unknown = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(body));
         if (expired()) return;
         if (dataRecord(parsed)) {
           const actual = usage(parsed.usage);
           observed = freeze({ version: "ping.responses-usage.v1", provenance: "interpretation", state: actual.state, usage: actual.usage });
         }
+        diagnosticStage = "proposal";
         const proposal = resultProposal(parsed, captured.selectedTaskCount);
         if (!proposal || (JSON.stringify(parsed).includes(apiKey))) throw new Error("invalid_response");
-        if (!expired()) publish(proposal);
+        if (!expired()) { diagnosticStage = "complete"; publish(proposal); }
       } catch {
         if (!expired()) publish(new Error("ping_claude_interpretation_invalid_response"));
         cancelReader();

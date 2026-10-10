@@ -119,7 +119,7 @@ export function createPingGeminiSyntheticNativeInterpreter(options: PingGeminiSy
         const requestBody = {
           systemInstruction: { parts: [{ text: PING_SYNTHETIC_INTERPRETATION_INSTRUCTIONS }] },
           contents: [{ role: "user", parts: [{ text: JSON.stringify(actualContext) }, { inlineData: { mimeType: "audio/wav", data: Buffer.from(wav).toString("base64") } }] }],
-          generationConfig: { maxOutputTokens: 1024, responseFormat: { text: { mimeType: "application/json", schema: PING_RESPONSES_SCHEMA } } },
+          generationConfig: { maxOutputTokens: 1024, responseFormat: { text: { mimeType: "APPLICATION_JSON", schema: PING_RESPONSES_SCHEMA } } },
         };
         if (expired()) return;
         const response = await fetchGemini(PING_GEMINI_NATIVE_ENDPOINT, {

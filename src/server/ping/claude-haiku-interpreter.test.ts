@@ -19,6 +19,27 @@ const signal = () => new AbortController().signal;
 const deferred = <T,>() => { let resolve!: (value: T) => void; const promise = new Promise<T>(done => { resolve = done; }); return { promise, resolve }; };
 const settle = () => new Promise(resolve => setImmediate(resolve));
 
+test("diagnostic observer emits one closed stage/status without secrets and cannot change success or failure", async () => {
+  const cases = [
+    { value: new Response(JSON.stringify({error:{type:"authentication_error",message:"synthetic-key PRIVATE_BODY"}}), {status:401,headers:{"content-type":"application/json"}}), stage:"http", status:401, succeeds:false },
+    { value: new Response("synthetic-key PRIVATE_BODY", {headers:{"content-type":"application/json"}}), stage:"json", status:200, succeeds:false },
+    { value: response({...envelope(),stop_reason:"max_tokens"}), stage:"proposal", status:200, succeeds:false },
+    { value: response(), stage:"complete", status:200, succeeds:true },
+  ];
+  for (const item of cases) {
+    const observed: unknown[]=[];
+    const interpret=createPingClaudeHaikuInterpreter({...options(async()=>item.value),onDiagnostic:value=>{observed.push(value);throw Error("ignored observer");}});
+    if(item.succeeds) assert.deepEqual(await interpret(input,signal()),proposal);
+    else await assert.rejects(interpret(input,signal()),{message:"ping_claude_interpretation_invalid_response"});
+    assert.deepEqual(observed,[{stage:item.stage,httpStatus:item.status}]);
+    assert.equal(JSON.stringify(observed).includes("synthetic-key"),false);
+    assert.equal(JSON.stringify(observed).includes("PRIVATE_BODY"),false);
+    assert.ok(Object.isFrozen(observed[0]));
+  }
+  const interpret=createPingClaudeHaikuInterpreter({...options(async()=>response()),onDiagnostic:async()=>{throw Error("ignored asynchronous observer");}});
+  assert.deepEqual(await interpret(input,signal()),proposal); await settle();
+});
+
 test("fixed public request projects only the synthetic fixture and parses the shared validated proposal", async () => {
   let calls = 0;
   const observations: PingResponsesUsageObservation[] = [];

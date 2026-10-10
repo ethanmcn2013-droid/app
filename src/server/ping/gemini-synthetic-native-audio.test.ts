@@ -24,7 +24,7 @@ test("one native completed WAV request uses public context and fixed structured 
     assert.equal(init.credentials, "omit"); assert.equal(init.cache, "no-store");
     const body = JSON.parse(init.body as string);
     assert.deepEqual(body.generationConfig, { maxOutputTokens: 1024,
-      responseFormat: { text: { mimeType: "application/json", schema: PING_RESPONSES_SCHEMA } } });
+      responseFormat: { text: { mimeType: "APPLICATION_JSON", schema: PING_RESPONSES_SCHEMA } } });
     assert.deepEqual(JSON.parse(body.contents[0].parts[0].text), context);
     assert.match(body.systemInstruction.parts[0].text, /corrections and every clause/);
     const wav = Buffer.from(body.contents[0].parts[1].inlineData.data, "base64");
