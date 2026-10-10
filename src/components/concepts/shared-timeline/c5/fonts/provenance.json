@@ -1,0 +1,135 @@
+{
+  "schema": "signal-newsreader-pinned-assets/1",
+  "upstreamRepository": "https://github.com/google/fonts",
+  "upstreamRevision": "8b0a1d0f5983c89bc2b93f1b5fb55f9e252744b5",
+  "upstreamDirectory": "ofl/newsreader",
+  "fontSourceRevision": "1ece6a8bfe5db1a2b90c76cc1fe5d3b2eed5dcf3",
+  "license": "SIL Open Font License 1.1; unchanged copyright and license in OFL.txt",
+  "files": [
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/8b0a1d0f5983c89bc2b93f1b5fb55f9e252744b5/ofl/newsreader/Newsreader%5Bopsz%2Cwght%5D.ttf",
+      "blob": "ad4a9a8c44ec328c80b61c773f1ba02f6b5ed292",
+      "verifiedGitBlob": "ad4a9a8c44ec328c80b61c773f1ba02f6b5ed292",
+      "remote": "Newsreader%5Bopsz%2Cwght%5D.ttf",
+      "sha256": "8a08d13f8a6c0d51be379a60af84f945f65369a67e509ee3c3bdcc421254d7c1",
+      "size": 451664,
+      "name": "Newsreader-normal.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/8b0a1d0f5983c89bc2b93f1b5fb55f9e252744b5/ofl/newsreader/Newsreader-Italic%5Bopsz%2Cwght%5D.ttf",
+      "blob": "d25879656a601d44c49836f9e773d100190c62e1",
+      "verifiedGitBlob": "d25879656a601d44c49836f9e773d100190c62e1",
+      "remote": "Newsreader-Italic%5Bopsz%2Cwght%5D.ttf",
+      "sha256": "796668611f80b64d5adf182fde3b6f29ed83b4e7cbec7b96937e84ac01364792",
+      "size": 495684,
+      "name": "Newsreader-italic.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/8b0a1d0f5983c89bc2b93f1b5fb55f9e252744b5/ofl/newsreader/OFL.txt",
+      "blob": "d2d4f407109e9c74b8ab502fc79b912408ab8e41",
+      "verifiedGitBlob": "d2d4f407109e9c74b8ab502fc79b912408ab8e41",
+      "remote": "OFL.txt",
+      "sha256": "fdfad38143ec470553cae82a1e45320bdd1b9ec70415d37bd0171051d8a4ded8",
+      "size": 4394,
+      "name": "OFL.txt"
+    }
+  ],
+  "fontMetadata": [
+    {
+      "name": "Newsreader-normal.ttf",
+      "family": "Newsreader 16pt",
+      "postscript": "Newsreader16pt-Regular",
+      "axes": {
+        "wght": {
+          "name": "Weight",
+          "min": 200,
+          "default": 400,
+          "max": 800
+        },
+        "opsz": {
+          "name": "Optical Size",
+          "min": 6,
+          "default": 18,
+          "max": 72
+        }
+      },
+      "glyphCount": 658,
+      "characterCount": 565,
+      "localDefaultFallback": {
+        "ascentOverride": "73.61%",
+        "descentOverride": "26.54%",
+        "lineGapOverride": "0.00%",
+        "fallbackFont": "Times New Roman",
+        "sizeAdjust": "99.84%"
+      },
+      "localOpsz16Fallback": {
+        "ascentOverride": "70.13%",
+        "descentOverride": "25.28%",
+        "lineGapOverride": "0.00%",
+        "fallbackFont": "Times New Roman",
+        "sizeAdjust": "104.81%"
+      }
+    },
+    {
+      "name": "Newsreader-italic.ttf",
+      "family": "Newsreader 16pt",
+      "postscript": "Newsreader16pt-Italic",
+      "axes": {
+        "wght": {
+          "name": "Weight",
+          "min": 200,
+          "default": 400,
+          "max": 800
+        },
+        "opsz": {
+          "name": "Optical Size",
+          "min": 6,
+          "default": 18,
+          "max": 72
+        }
+      },
+      "glyphCount": 658,
+      "characterCount": 565,
+      "localDefaultFallback": {
+        "ascentOverride": "80.21%",
+        "descentOverride": "28.92%",
+        "lineGapOverride": "0.00%",
+        "fallbackFont": "Times New Roman",
+        "sizeAdjust": "91.64%"
+      },
+      "localOpsz16Fallback": {
+        "ascentOverride": "75.45%",
+        "descentOverride": "27.20%",
+        "lineGapOverride": "0.00%",
+        "fallbackFont": "Times New Roman",
+        "sizeAdjust": "97.41%"
+      }
+    }
+  ],
+  "delivery": {
+    "loader": "next/font/local",
+    "styles": [
+      "normal",
+      "italic"
+    ],
+    "weights": [
+      400,
+      500,
+      600
+    ],
+    "variable": "--dp-serif-font",
+    "display": "swap",
+    "opticalSize": 16,
+    "rawFontBytes": 947348,
+    "conversion": "None; bundled Python3.12.14 lacks fontTools and Brotli. No package installed.",
+    "googleFallback": {
+      "fallbackFont": "Times New Roman",
+      "ascentOverride": "69.68%",
+      "descentOverride": "25.12%",
+      "lineGapOverride": "0.00%",
+      "sizeAdjust": "105.48%"
+    },
+    "localFallback": "Times New Roman; Next local metrics differ from precomputed Google metadata; fresh visual/CLS checks required.",
+    "validation": "No builds, tests or browser qualification performed in asset preparation."
+  }
+}

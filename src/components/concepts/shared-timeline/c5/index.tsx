@@ -7,7 +7,7 @@ import { useReviewReducedMotion as useReducedMotion } from "../../use-review-red
    hear about the next one without an account. Front-end only, invented
    sample data, nothing is sent anywhere. */
 
-import { Newsreader } from "next/font/google";
+import localFont from "next/font/local";
 import { motion } from "motion/react";
 import { Fragment, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import {
@@ -29,12 +29,18 @@ import { PhoneFollow, SubscribeCard, type Channel, type Sub } from "./subscribe"
 import { EventCard, StudioMark } from "./extras";
 import s from "./c5.module.css";
 
-const serif = Newsreader({
-  subsets: ["latin", "latin-ext"],
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
+const serif = localFont({
+  src: [
+    { path: "./fonts/Newsreader-normal.ttf", weight: "400", style: "normal" },
+    { path: "./fonts/Newsreader-normal.ttf", weight: "500", style: "normal" },
+    { path: "./fonts/Newsreader-normal.ttf", weight: "600", style: "normal" },
+    { path: "./fonts/Newsreader-italic.ttf", weight: "400", style: "italic" },
+    { path: "./fonts/Newsreader-italic.ttf", weight: "500", style: "italic" },
+    { path: "./fonts/Newsreader-italic.ttf", weight: "600", style: "italic" },
+  ],
   variable: "--dp-serif-font",
   display: "swap",
+  adjustFontFallback: "Times New Roman",
 });
 
 /* ── Last visit: read once per page load, remembered per story ─────── */
@@ -102,7 +108,7 @@ export default function SharedTimelineDispatch() {
   const onChange = useCallback(() => setSub((p) => ({ ...p, status: "idle" })), []);
 
   return (
-    <div className={`${s.root} ${serif.variable}`}>
+    <div className={`${s.root} ${serif.variable}`} style={{ fontVariationSettings: '"opsz" 16' }}>
       <ConceptBar
         worldId={worldId}
         moment={moment}
