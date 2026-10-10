@@ -20,13 +20,17 @@ Redemption denies before looking up a code or modifying access if protection can
 1. Run `pnpm test:redis`, the invitation-code and redemption-copy tests, typecheck, changed-file lint and affected security/logging contracts. These use isolated mocks; they generate no live Redis traffic.
 2. Integrate through the active release owner. Run the full normal CI and build gates on the composed candidate. A branch test does not verify another deployment.
 3. On an authorised isolated Redis resource, exercise genuine feature flows from two app instances. Verify shared quota, expiry reset and outage messages, and inspect provider command metrics. Do not use real customer codes or recipient data.
-4. Confirm the exact production binding and resource plan before deployment. Record the deployment ID and observed feature outcomes. Never substitute an artificial keep-alive for these checks.
+4. Confirm the exact production binding and resource plan before deployment. Record the deployment ID and observed feature outcomes. The weekly service probe below does not replace application receiving checks.
 
 ## Inactivity and cost decision
 
 Upstash's [FAQ](https://upstash.com/docs/redis/help/faq) says inactive free databases may be backed up and removed after at least 30 days. Recovery involves a new database and restore; unchanged endpoints or automatic wake-up are not promised. A code rollback cannot undo archival.
 
-Prefer retaining a required database on pay-as-you-go after billing approval, rather than a keep-alive cron or unnecessary replacement. The [published pricing](https://upstash.com/pricing/redis) and inspected Marketplace offer list $0.20 per 100,000 commands; a fixed 250 MB offer is $10/month plus charges for read regions. Confirm the actual offer, storage/replication charges and tax when approving. Paid usage does not inherit the free command allowance. Plan selection and payment authorisation are account actions, separate from merging this patch.
+Keep the existing free resource before launch, as Ethan requested. The inactivity notice explicitly permits keeping it active through app traffic. A weekly service probe verifies a unique temporary counter, checks its TTL and confirms expiry; it does not touch customer keys or prove application feature enforcement. Successful runs issue eight logical Redis commands. Transaction overhead and billing accounting are provider-dependent.
+
+`scripts/ops/redis-health.mjs` implements this check. `.github/workflows/redis-health.yml` schedules Monday 09:00 UTC, but is disabled until repository variable `REDIS_HEALTHCHECK_ENABLED` is `true`. It needs approved secrets `REDIS_HEALTH_REST_URL` and `REDIS_HEALTH_REST_TOKEN` for this exact existing resource. Never put credentials in source, logs or reports. Review credential custody and release ownership before enabling; manually dispatch and retain successful receiving evidence. Failed checks must be investigated, including checking for a leftover health key if EXPIRE failed. Scheduling is not guaranteed: check GitHub failure notifications and future Upstash notices. A disabled or failing workflow provides no protection against archival.
+
+Reconsider pay-as-you-go at launch, with specific billing approval; no automatic paid upgrade is configured. The [published pricing](https://upstash.com/pricing/redis) and inspected Marketplace offer list $0.20 per 100,000 commands. Confirm storage/replication charges and tax when approving.
 
 ## Rollback
 

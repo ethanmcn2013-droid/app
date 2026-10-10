@@ -119,7 +119,7 @@
     "test:project-recovery:browser": "node --import tsx --import ./src/test/register-server-only.mjs experience/project-recovery/browser.mjs",
     "test:conversations": "node scripts/conversations/check.mjs",
     "test:sample-data": "node --import tsx --import ./src/test/register-server-only.mjs --test --test-concurrency=1 src/server/sample-data/seeder.test.ts",
-    "test:redis": "node --import tsx --import ./src/test/register-server-only.mjs --test src/lib/redis-rate-limit.test.ts"
+    "test:redis": "node --import tsx --import ./src/test/register-server-only.mjs --test src/lib/redis-rate-limit.test.ts && node --test scripts/ops/redis-health.test.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.75",

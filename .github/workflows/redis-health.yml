@@ -1,0 +1,28 @@
+name: Weekly Redis service check
+on:
+  schedule:
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: redis-weekly-health
+  cancel-in-progress: false
+jobs:
+  verify:
+    # Explicit activation avoids accidental production traffic on merge.
+    if: vars.REDIS_HEALTHCHECK_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/ops
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify the service counter and expiry
+        run: node scripts/ops/redis-health.mjs
+        env:
+          KV_REST_API_URL: ${{ secrets.REDIS_HEALTH_REST_URL }}
+          KV_REST_API_TOKEN: ${{ secrets.REDIS_HEALTH_REST_TOKEN }}
