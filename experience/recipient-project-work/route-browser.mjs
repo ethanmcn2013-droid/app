@@ -109,18 +109,41 @@ try {
     // meta select; it runs for real against the same disposable database.
     const allowedActions=new Set(['openTasksProjectAction','getSubtasksAction','loadTaskConversationAction','listTaskResourcesAction','getPersonalityPrefs','loadProjectCatalogAction','loadSidebarProjectsAction']);
     const requestErrors=[];
+    const taskReadRequests=[];
+    receipt.taskReadRequests=taskReadRequests;
     const json=(res,value,status=200)=>{res.statusCode=status;res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');res.end(JSON.stringify(value));};
     function reviveArgs(value){if(!value||typeof value!=='object')return value;if(value.$form){const form=new FormData();for(const [key,entry] of value.$form)form.append(key,entry);return form;}return Array.isArray(value)?value.map(reviveArgs):Object.fromEntries(Object.entries(value).map(([key,entry])=>[key,reviveArgs(entry)]));}
     server=createServer(async(req,res)=>{
       try {
         const url=new URL(req.url,'http://fixture.invalid');
+        // Mirror only the actual browser snapshot marker for production RSC
+        // seed matching. It grants no identity or Project authority.
+        const epoch=req.headers.cookie?.split(';').map(value=>value.trim()).find(value=>value.startsWith('signal_task_snapshot_epoch='))?.slice('signal_task_snapshot_epoch='.length);
+        if(typeof epoch==='string'&&/^[a-f0-9]{32}$/.test(epoch))f.state.cookies.set('signal_task_snapshot_epoch',epoch);
+        else f.state.cookies.delete('signal_task_snapshot_epoch');
         if(url.pathname==='/fixture/route'){json(res,await f.render(url.searchParams.get('href')));return;}
         if(url.pathname==='/fixture/action'&&req.method==='POST'){
           let body='';for await(const chunk of req){body+=chunk;if(body.length>65536)throw Error('Fixture body limit');}
           const {file,name,args}=JSON.parse(body);
-          if(!allowedActions.has(name)||!actionModules.get(file)?.has(name))throw Error('Action outside bounded fixture: '+name);
-          try {json(res,{result:await f.load(file)[name](...reviveArgs(args))});}catch(error){if(error.href)json(res,{redirect:error.href});else throw error;}
+          const scopedTaskRead=name==='getTasksAction'&&file==='src/server/actions/tasks.ts'&&
+            Array.isArray(args)&&args.length===1&&args[0]==='project-b'&&
+            ['user_recipient','user_creator'].includes(f.state.actor);
+          if((!allowedActions.has(name)&&!scopedTaskRead)||!actionModules.get(file)?.has(name))throw Error('Action outside bounded fixture: '+name);
+          if(scopedTaskRead)taskReadRequests.push({actor:f.state.actor,projectId:args[0],snapshotEpoch:f.state.cookies.get('signal_task_snapshot_epoch')??null});
+          try {json(res,{result:await f.serialize(await f.load(file)[name](...reviveArgs(args)))});}catch(error){if(error.href)json(res,{redirect:error.href});else throw error;}
           return;
+        }
+        if(url.pathname==='/api/tasks/detail-read'&&req.method==='POST'){
+          const chunks=[];let bytes=0;
+          for await(const chunk of req){bytes+=chunk.length;if(bytes>65536)throw Error('Fixture body limit');chunks.push(chunk);}
+          // Actual current POST route and its identity/stored-task authorization.
+          // Only Node HTTP -> Web Request is adapted; response/private headers remain actual.
+          const headers=new Headers();
+          for(const [name,value] of Object.entries(req.headers))if(value!==undefined)headers.set(name,Array.isArray(value)?value.join(', '):value);
+          const response=await f.load('src/app/api/tasks/detail-read/route.ts').POST(new Request(
+            new URL(req.url,`http://127.0.0.1:${server.address().port}`),{method:'POST',headers,body:Buffer.concat(chunks)}));
+          res.statusCode=response.status;response.headers.forEach((value,name)=>res.setHeader(name,value));
+          res.end(Buffer.from(await response.arrayBuffer()));return;
         }
         if(url.pathname==='/api/events'){res.statusCode=204;res.end();return;}
         if(url.pathname.startsWith('/api/'))throw Error('API outside bounded fixture: '+url.pathname);
@@ -143,6 +166,17 @@ try {
         const context=await browser.newContext({viewport:{width,height},reducedMotion:'reduce'}),page=await context.newPage(),errors=[];
         page.on('pageerror',error=>{errors.push(error.message);console.error('BROWSER',error.message)});
         page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
+        await page.addInitScript(()=>{
+          const nativeFetch=window.fetch.bind(window);
+          window.fetch=(input,init)=>{
+            const url=new URL(typeof input==='string'?input:input.url,location.href);
+            if(url.origin===location.origin&&url.pathname==='/api/tasks/detail-read'){
+              const body=JSON.parse(init?.body??'null');
+              window.routeFixture?.requests.push({transport:'task-detail-read-http',section:body?.section,taskId:body?.taskId});
+            }
+            return nativeFetch(input,init);
+          };
+        });
         await page.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
         async function evidence(surface,state){
           const name=`${surface}-${state}-${width}`;
@@ -162,18 +196,21 @@ try {
           assert.equal(providers.RoomBriefProvider.value.purpose,'Confirm B arrivals and share the final plan.');
           assert.equal(providers.ProductWorkspaceShell.activeWorkspaceId,'project-b');
           assert.equal(providers.TasksProvider.initialTasks.length,4);
+          if(providers.TasksProvider.initialTasksEpoch!==null)assert.equal(providers.TasksProvider.initialTasksEpoch,await page.evaluate(()=>document.cookie.split('; ').find(value=>value.startsWith('signal_task_snapshot_epoch='))?.split('=')[1]??null));
           assert.ok(providers.TasksProvider.initialTasks.every(t=>t.id.endsWith('-b')));
           assert.equal(await page.getByText('ONLY A PURPOSE',{exact:true}).count(),0);
           assert.equal(await page.getByText('ONLY A ARCHIVED TASK',{exact:true}).count(),0);
           assert.equal(await page.getByText('PRIVATE C TASK',{exact:true}).count(),0);
           if(surface.id==='tasks.page.app-tasks')await page.getByText('B arrival board',{exact:true}).first().waitFor({timeout:5000});
-          else if(f.state.v3){
+          // Settle the current links/sidebar read before switching fixture flags or actor.
+          if(f.state.v3){
             // The sidebar marks the open Project with data-current-project. Since
             // the 6 October sidebar the Projects group is a named group that
             // starts open, and each row is a link. On a phone the sidebar is a
             // closed drawer, so the mark is read from the drawer's content.
             const current=page.locator('aside a[data-current-project]').filter({hasText:'Arrival project B'});
             await current.waitFor({state:page.viewportSize().width>=768?'visible':'attached',timeout:5000});
+            assert.equal(await current.count(),1);
           }
           assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
         }
@@ -252,7 +289,7 @@ try {
         await page.getByRole('textbox',{name:'Task title',exact:true}).waitFor();
         assert.equal(await page.getByRole('textbox',{name:'Task title',exact:true}).inputValue(),'Confirm the guest access list');
         assert.equal(new URL(page.url()).searchParams.get('workspaceId'),'project-b');
-        await page.waitForFunction(()=>['loadTaskConversationAction','getSubtasksAction','listTaskResourcesAction'].every(name=>window.routeFixture.requests.some(r=>r.name===name)));
+        await page.waitForFunction(()=>['conversation','subtasks','resources'].every(section=>window.routeFixture.requests.some(r=>r.transport==='task-detail-read-http'&&r.section===section&&r.taskId==='undated-b')));
         await page.locator('[data-existing-task-history][data-read-only]').waitFor();
         const viewNav=page.getByRole('navigation',{name:'Task views'});
         for(const [label,pathname] of [['Board','/app/tasks'],['List','/app/tasks/list'],['Calendar','/app/tasks/calendar']]){
