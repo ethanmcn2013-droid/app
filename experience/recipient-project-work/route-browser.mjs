@@ -103,21 +103,33 @@ try {
   const html=`<!doctype html><html lang="en" data-theme="light"><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><link rel="stylesheet" href="/bundle.css"><style>${fontCss}\n:root{--font-geist-sans:Geist,Arial,sans-serif;--font-geist-mono:'Geist Mono',monospace}body{margin:0}#root{min-height:100vh}</style></head><body><div id="root"></div><script src="/bundle.js"></script></body></html>`;
   if(prepare){receipt.prepared={surfaces,projects:declaredProjects,widths:declaredProjects.map(project=>project.viewport.width),clientModules:[...f.clientModules]};console.log('Prepared actual route trees, browser bundle and CSS. No browser capture.');}
   else {
-    // Only actions exercised by this matrix: selection POST and preference/catalog reads.
+    // Only actions exercised by this matrix: selection POST, preference/catalog
+    // reads and the current TasksProvider scoped freshness/bootstrap read.
     // Imported write/provider actions remain visible UI but fail if invoked.
     const allowedActions=new Set(['openTasksProjectAction','getPersonalityPrefs','loadProjectCatalogAction']);
     const requestErrors=[];
+    const taskReadRequests=[];
+    receipt.taskReadRequests=taskReadRequests;
     const json=(res,value,status=200)=>{res.statusCode=status;res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');res.end(JSON.stringify(value));};
     function reviveArgs(value){if(!value||typeof value!=='object')return value;if(value.$form){const form=new FormData();for(const [key,entry] of value.$form)form.append(key,entry);return form;}return Array.isArray(value)?value.map(reviveArgs):Object.fromEntries(Object.entries(value).map(([key,entry])=>[key,reviveArgs(entry)]));}
     server=createServer(async(req,res)=>{
       try {
         const url=new URL(req.url,'http://fixture.invalid');
+        // Mirror only the actual browser snapshot marker for production RSC
+        // seed matching. It grants no identity or Project authority.
+        const epoch=req.headers.cookie?.split(';').map(value=>value.trim()).find(value=>value.startsWith('signal_task_snapshot_epoch='))?.slice('signal_task_snapshot_epoch='.length);
+        if(typeof epoch==='string'&&/^[a-f0-9]{32}$/.test(epoch))f.state.cookies.set('signal_task_snapshot_epoch',epoch);
+        else f.state.cookies.delete('signal_task_snapshot_epoch');
         if(url.pathname==='/fixture/route'){json(res,await f.render(url.searchParams.get('href')));return;}
         if(url.pathname==='/fixture/action'&&req.method==='POST'){
           let body='';for await(const chunk of req){body+=chunk;if(body.length>65536)throw Error('Fixture body limit');}
           const {file,name,args}=JSON.parse(body);
-          if(!allowedActions.has(name)||!actionModules.get(file)?.has(name))throw Error('Action outside bounded fixture: '+name);
-          try {json(res,{result:await f.load(file)[name](...reviveArgs(args))});}catch(error){if(error.href)json(res,{redirect:error.href});else throw error;}
+          const scopedTaskRead=name==='getTasksAction'&&file==='src/server/actions/tasks.ts'&&
+            Array.isArray(args)&&args.length===1&&args[0]==='project-b'&&
+            ['user_recipient','user_creator'].includes(f.state.actor);
+          if((!allowedActions.has(name)&&!scopedTaskRead)||!actionModules.get(file)?.has(name))throw Error('Action outside bounded fixture: '+name);
+          if(scopedTaskRead)taskReadRequests.push({actor:f.state.actor,projectId:args[0],snapshotEpoch:f.state.cookies.get('signal_task_snapshot_epoch')??null});
+          try {json(res,{result:await f.serialize(await f.load(file)[name](...reviveArgs(args)))});}catch(error){if(error.href)json(res,{redirect:error.href});else throw error;}
           return;
         }
         if(url.pathname==='/api/tasks/detail-read'){
@@ -181,16 +193,23 @@ try {
           assert.equal(providers.RoomBriefProvider.value.purpose,'Confirm B arrivals and share the final plan.');
           assert.equal(providers.ProductWorkspaceShell.activeWorkspaceId,'project-b');
           assert.equal(providers.TasksProvider.initialTasks.length,4);
+          if(providers.TasksProvider.initialTasksEpoch!==null)assert.equal(providers.TasksProvider.initialTasksEpoch,await page.evaluate(()=>document.cookie.split('; ').find(value=>value.startsWith('signal_task_snapshot_epoch='))?.split('=')[1]??null));
           assert.ok(providers.TasksProvider.initialTasks.every(t=>t.id.endsWith('-b')));
           assert.equal(await page.getByText('ONLY A PURPOSE',{exact:true}).count(),0);
           assert.equal(await page.getByText('ONLY A ARCHIVED TASK',{exact:true}).count(),0);
           assert.equal(await page.getByText('PRIVATE C TASK',{exact:true}).count(),0);
           if(surface.id==='tasks.page.app-tasks')await page.getByText('B arrival board',{exact:true}).first().waitFor({timeout:5000});
-          else if(f.state.v3){
+          // Settle the actual sidebar read before switching the fixture's flag/actor
+          // for its next scenario; a real environment does not change flags mid-read.
+          if(f.state.v3){
             // Current shell marks the open Project, replacing the former Tasks tree.
+            const navigationTrigger=page.getByRole('button',{name:'Open navigation',exact:true});
+            const mobileDrawer=await navigationTrigger.isVisible();
+            if(mobileDrawer)await navigationTrigger.click();
             const currentProject=page.getByRole('navigation',{name:'Projects',exact:true}).locator('button[data-current-project]');
             await currentProject.getByText('Arrival project B',{exact:true}).waitFor({timeout:5000});
             assert.equal(await currentProject.count(),1);
+            if(mobileDrawer)await page.keyboard.press("Escape");
           }
           assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
         }
