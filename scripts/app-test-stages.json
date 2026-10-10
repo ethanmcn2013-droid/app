@@ -436,5 +436,9 @@
   [
     "pnpm",
     "test:reliability"
+  ],
+  [
+    "pnpm",
+    "test:redis"
   ]
 ]
