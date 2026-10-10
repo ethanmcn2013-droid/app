@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createPingClaudeHaikuInterpreter, PING_CLAUDE_HAIKU_MODEL, PING_CLAUDE_HAIKU_SCHEMA,
   PING_CLAUDE_MESSAGES_ENDPOINT } from "./claude-haiku-interpreter";
-import type { PingResponsesUsageObservation } from "./openai-interpreter";
+import { PING_RESPONSES_SCHEMA, type PingResponsesUsageObservation } from "./openai-interpreter";
 
 const input = { version: "ping.interpretation.v1", transcript: "Assign this task to me and move it to in progress.",
   selectedTaskCount: 1, referenceInstant: "2026-10-06T09:00:00.000Z", timeZone: "Europe/Dublin",
@@ -18,6 +18,24 @@ const options = (fetch: (input: string, init: RequestInit) => Promise<Response>,
 const signal = () => new AbortController().signal;
 const deferred = <T,>() => { let resolve!: (value: T) => void; const promise = new Promise<T>(done => { resolve = done; }); return { promise, resolve }; };
 const settle = () => new Promise(resolve => setImmediate(resolve));
+
+test("factored local references expand to the exact previous Claude schema without changing its JSON language", () => {
+  const schema=PING_CLAUDE_HAIKU_SCHEMA as Record<string,unknown>;
+  const definitions=schema.$defs as Record<string,unknown>;
+  const expand=(value:unknown):unknown=>{
+    if(Array.isArray(value))return value.map(expand);
+    if(!value||typeof value!=="object")return value;
+    const record=value as Record<string,unknown>;
+    if(record.$ref){assert.deepEqual(Object.keys(record),["$ref"]);assert.equal(typeof record.$ref,"string");
+      const name=(record.$ref as string).replace("#/$defs/","");assert.ok(Object.hasOwn(definitions,name));return expand(definitions[name]);}
+    return Object.fromEntries(Object.entries(record).filter(([key])=>key!=="$defs").map(([key,child])=>[key,expand(child)]));
+  };
+  const previous=(value:unknown):unknown=>Array.isArray(value)?value.map(previous):value&&typeof value==="object"
+    ?Object.fromEntries(Object.entries(value).filter(([key])=>!["minimum","maximum","minLength","maxLength"].includes(key)).map(([key,child])=>[key,previous(child)])):value;
+  assert.deepEqual(expand(schema),previous(PING_RESPONSES_SCHEMA));
+  assert.deepEqual(Object.keys(definitions),["date","editEffects","createEffects"]);
+  assert.ok(Buffer.byteLength(JSON.stringify(schema))<Buffer.byteLength(JSON.stringify(previous(PING_RESPONSES_SCHEMA))));
+});
 
 test("diagnostic observer emits one closed stage/status without secrets and cannot change success or failure", async () => {
   const cases = [

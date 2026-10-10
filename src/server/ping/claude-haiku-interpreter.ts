@@ -33,7 +33,27 @@ function claudeCompatibleSchema(value: unknown): unknown {
     .map(([key, child]) => [key, claudeCompatibleSchema(child)]));
 }
 
-export const PING_CLAUDE_HAIKU_SCHEMA = freeze(claudeCompatibleSchema(PING_RESPONSES_SCHEMA));
+function factoredClaudeSchema(): unknown {
+  const original = claudeCompatibleSchema(PING_RESPONSES_SCHEMA) as {
+    properties: { proposal: { anyOf: readonly { properties: { operation?: { properties: { effects: unknown } } } }[] } };
+  };
+  const date = { anyOf: [{ type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}$" }, { type: "null" }] };
+  const edit = original.properties.proposal.anyOf[0].properties.operation!.properties.effects;
+  const create = original.properties.proposal.anyOf[1].properties.operation!.properties.effects;
+  const dateKey = JSON.stringify(date), editKey = JSON.stringify(edit), createKey = JSON.stringify(create);
+  const replace = (value: unknown, effects: boolean): unknown => {
+    if (Array.isArray(value)) return value.map(child => replace(child, effects));
+    if (!dataRecord(value)) return value;
+    const key = JSON.stringify(value);
+    if (key === dateKey) return { $ref: "#/$defs/date" };
+    if (effects && key === editKey) return { $ref: "#/$defs/editEffects" };
+    if (effects && key === createKey) return { $ref: "#/$defs/createEffects" };
+    return Object.fromEntries(Object.entries(value).map(([name, child]) => [name, replace(child, effects)]));
+  };
+  return { ...(replace(original, true) as Record<string, unknown>),
+    $defs: { date, editEffects: replace(edit, false), createEffects: replace(create, false) } };
+}
+export const PING_CLAUDE_HAIKU_SCHEMA = freeze(factoredClaudeSchema());
 
 
 type ParsedUsage = Readonly<{ state: PingResponsesUsageObservation["state"]; usage: PingResponsesUsageObservation["usage"] }>;
