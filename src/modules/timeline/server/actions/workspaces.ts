@@ -38,7 +38,7 @@ import { isCurrentSyncTarget } from "@/modules/timeline/server/sync/sync-target"
 
 /** Translate a denied RateLimitResult into the correct user-facing error string. */
 function rateLimitError(result: RateLimitResult & { allowed: false }): string {
-  if (result.reason === "config-miss") {
+  if (result.reason !== "quota") {
     return "This isn’t available right now. Try again shortly.";
   }
   return "Too many requests. Try again later.";

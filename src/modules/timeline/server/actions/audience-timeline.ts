@@ -106,7 +106,7 @@ async function allowWrite(action: string): Promise<void> {
   const result = await checkRateLimit(action, await getClientIp(), 12, 60);
   if (!result.allowed) {
     throw new TypeError(
-      result.reason === "config-miss"
+      result.reason !== "quota"
         ? "Sharing is temporarily unavailable. Try again shortly."
         : "Too many changes at once. Wait a minute and try again.",
     );

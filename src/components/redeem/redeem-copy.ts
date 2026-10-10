@@ -24,6 +24,10 @@ export const REDEEM_FAILURE_COPY: Record<
     headline: "We couldn't apply this code to a project.",
     body: "Check that you're signed into the right account and can manage the intended project, then try the same code again. If it still won't open, email Signal Studio for help.",
   },
+  unavailable: {
+    headline: "We couldn't check this code right now.",
+    body: "Try the same code again shortly. Your access has not been changed.",
+  },
   "rate-limited": {
     headline: "Too many tries in a short window.",
     body: "Wait ten minutes, then try the same code with the same account. If it still won't open, email Signal Studio for help.",

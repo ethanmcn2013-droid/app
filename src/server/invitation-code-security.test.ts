@@ -158,17 +158,15 @@ describe("source contract: the redeem path", () => {
       limiter < lookup,
       "looking the code up before spending the budget leaves an unmetered does-this-code-exist oracle",
     );
-    assert.match(impl, /reason: "rate-limited"/);
+    assert.match(impl, /attempt.reason === "quota" \? "rate-limited" : "unavailable"/);
     const claim = readFileSync(new URL("./db/comp-redemption.ts", import.meta.url), "utf8");
     assert.match(claim, /\.from\(compCodes\)/);
     assert.doesNotMatch(impl, /\.from\(compCodes\)/);
   });
 
   it("states the limiter's failure mode in the source, not only in a document", () => {
-    // The limiter fails OPEN and Upstash is unprovisioned, so this control
-    // enforces nothing today. A reader of this file must not be able to miss
-    // that.
-    assert.match(comp, /failure mode is OPEN/i);
+    // The production failure policy is explicit in the owning action.
+    assert.match(comp, /Production fails closed/i);
     assert.match(comp, /UPSTASH_REDIS_REST_URL/);
   });
 });
