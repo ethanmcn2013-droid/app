@@ -8,6 +8,8 @@ The pre-Redis f09 source passed its local 196-case browser matrix, Settings and 
 
 The 87dc demo build failed on an unescaped generated Google font query. This candidate now carries pinned, licensed Newsreader normal and italic files locally for The Dispatch development concept, retaining its six weight/style faces and explicitly setting optical size 16. The 947,348-byte font payload and different loading fallback metrics require fresh desktop/mobile verification. No compiler, dependency, production flag or quality gate changes are part of this repair.
 
+A separate local browser diagnostic found that The Dispatch initially remained transparent with reduced motion enabled, while normal motion displayed the story. The candidate now retains an explicit visible target in reduced mode without changing the normal entrance or shared preference hook. Fresh cold-load and runtime preference-switch verification remains required; the earlier ten font checks do not establish visual acceptance.
+
 Production migrations are already current through 0040; this candidate does not reapply them. Historical hosted-workload and 800ms benchmark failures, Windows native failures, and six moderate OpenTelemetry plus one low AI advisory remain recorded. No new design certification, quality score, production deployment or live Redis receiving is claimed. Provider and live status remain with the existing Delivery release receipt.
 
 ## 2026-10-10 · Candidate · Bounded Redis rate protection
