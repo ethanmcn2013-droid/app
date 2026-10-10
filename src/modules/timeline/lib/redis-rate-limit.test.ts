@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test, beforeEach, afterEach } from "node:test";
-import { checkFixedWindow, redisConfig, isRedisConfigured, REDIS_TIMEOUT_MS } from "./redis-rate-limit";
-import { allow, checkAttemptLimit } from "./ratelimit";
-import { checkRateLimit } from "../modules/timeline/lib/rate-limit";
+import { checkFixedWindow, redisConfig, isRedisConfigured, REDIS_TIMEOUT_MS } from "../../../lib/redis-rate-limit";
+import { allow, checkAttemptLimit } from "../../../lib/ratelimit";
+import { checkRateLimit } from "./rate-limit";
 
 const names = ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN", "KV_REST_API_URL", "KV_REST_API_TOKEN", "NODE_ENV"];
 const original = Object.fromEntries(names.map(name => [name, process.env[name]]));
