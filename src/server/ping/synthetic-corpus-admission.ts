@@ -18,10 +18,15 @@ const MAX_PINNED_JSON_BYTES = 8_000_000;
 const MAX_PCM_BYTES = Math.min(PING_PCM_MAX_SAMPLES * 2, 1_440_000);
 const SAMPLE_RATE = 24_000;
 const BOOTSTRAP_RELATIVE = "scripts/ping/comparison/.synthetic-custody-bootstrap.json";
-const SOURCE_FILES = ["docs/execution/project-ping/corpus-v2/development-cases.json",
-  "docs/execution/project-ping/corpus-v2/reserved-cases.json"] as const;
-const SUPPORT_FILES = ["docs/execution/project-ping/corpus-v2/generic-rules.json",
-  "docs/execution/project-ping/corpus-v2/README.md", "docs/execution/project-ping/corpus-v2/validate.mjs"] as const;
+const SOURCE_FILES = ["development-cases.json", "reserved-cases.json"] as const;
+const SUPPORT_FILES = ["generic-rules.json", "validate.mjs", "README.md"] as const;
+const PINNED_GIT_PATHS: Readonly<Record<string, string>> = Object.freeze({
+  "development-cases.json": "docs/execution/project-ping/corpus-v2/development-cases.json",
+  "reserved-cases.json": "docs/execution/project-ping/corpus-v2/reserved-cases.json",
+  "generic-rules.json": "docs/execution/project-ping/corpus-v2/generic-rules.json",
+  "validate.mjs": "docs/execution/project-ping/corpus-v2/validate.mjs",
+  "README.md": "docs/execution/project-ping/corpus-v2/README.md",
+});
 const execFile = promisify(execFileCallback);
 
 const admissionBrand: unique symbol = Symbol("ping-synthetic-corpus-admission");
@@ -97,7 +102,7 @@ function repositoryJson(bytes: Buffer): unknown {
 
 async function gitBlob(repository: string, revision: string, filename: string): Promise<Buffer> {
   const env = { PATH: process.env.PATH, NODE_ENV: process.env.NODE_ENV, SystemRoot: process.env.SystemRoot, WINDIR: process.env.WINDIR,
-    TEMP: process.env.TEMP, TMP: process.env.TMP, GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: os.devNull,
+    TEMP: process.env.TEMP, TMP: process.env.TMP, GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: process.platform === "win32" ? "NUL" : os.devNull,
     GIT_TERMINAL_PROMPT: "0", GIT_OPTIONAL_LOCKS: "0" };
   try {
     const { stdout } = await execFile("git", ["-c", "core.hooksPath=NUL", "-C", repository, "show", `${revision}:${filename}`],
@@ -110,7 +115,7 @@ async function gitBlob(repository: string, revision: string, filename: string): 
 async function verifyRepository(repository: string, revision: unknown): Promise<string> {
   if (typeof revision !== "string" || !/^[0-9a-f]{40,64}$/.test(revision)) return fail();
   const env = { PATH: process.env.PATH, NODE_ENV: process.env.NODE_ENV, SystemRoot: process.env.SystemRoot, WINDIR: process.env.WINDIR,
-    TEMP: process.env.TEMP, TMP: process.env.TMP, GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: os.devNull,
+    TEMP: process.env.TEMP, TMP: process.env.TMP, GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: process.platform === "win32" ? "NUL" : os.devNull,
     GIT_TERMINAL_PROMPT: "0", GIT_OPTIONAL_LOCKS: "0" };
   try {
     const { stdout } = await execFile("git", ["-c", "core.hooksPath=NUL", "-C", repository, "rev-parse", "--show-toplevel"],
@@ -241,7 +246,9 @@ export async function readPingSyntheticCorpus(): Promise<readonly PingSyntheticC
       if (!dataRecord(pin) || !exactKeys(pin, ["name", "sha256"]) || typeof pin.name !== "string" || !validHash(pin.sha256) || sourcePins.has(pin.name)) return fail();
       if (!expectedSourceFiles.includes(pin.name as typeof expectedSourceFiles[number])) return fail();
       sourcePins.set(pin.name, pin.sha256);
-      const blob = await gitBlob(repositoryPath, revision, pin.name);
+      const pinnedGitPath = PINNED_GIT_PATHS[pin.name];
+      if (!pinnedGitPath) return fail();
+      const blob = await gitBlob(repositoryPath, revision, pinnedGitPath);
       if (sha256(blob) !== pin.sha256) return fail();
       if (!(SOURCE_FILES as readonly string[]).includes(pin.name)) continue;
       const parsed = repositoryJson(blob);
