@@ -3586,7 +3586,7 @@
     "src/server/ping/openai-streaming-transcription.test.ts": "e2886c3271763886effce1f621c13d2b5cdd081fa9fe1f8876286101b8974bd4",
     "src/server/ping/openai-streaming-transcription.ts": "7d7235ca78fb275e24b61664809d4429ccd3d61759b7a7ff376261f7ed72aebb",
     "src/server/ping/operating-controls.test.ts": "ab933fded77e9701653764e25bad12a6d9610f91c0dc7484914cd55718a6e9e1",
-    "src/server/ping/proof-fixture.ts": "2f72016dde7e8e29061491668b0733f17bc3dd1ed6791c9e49562c5f704fe9da",
+    "src/server/ping/proof-fixture.ts": "349af92eb75b9cda2c004f44b0fef10a81c397221d02565f84b161d5c115137c",
     "src/server/ping/runtime.test.ts": "d7c1bcc0986cba31805dbb90fb703a0e6be34dedef60f1bd50e3c937d7a0883e",
     "src/server/ping/runtime.ts": "b5ba15be5b9e026c600b2a66902d41c8d3c2c9a76c6c659a8247e8762d74830c",
     "src/server/ping/streaming-paired-transcriber.ts": "7da6e31c0f7bc23b1b77beb5d9b03f879907356a99bb0414e72e9e0778592c3b",
