@@ -28,6 +28,24 @@ export function contextObservations(signals: TaskSignal[], now: number, timezone
   const groups = new Map<string, TaskSignal[]>();
   const unique = [...new Map(signals.map(task => [task.id, task])).values()].sort((a, b) => a.id.localeCompare(b.id));
   const visible = new Map(unique.map(task => [task.id, task]));
+  // Completed listed records contribute counts, not identities, to generic context.
+  // Independently evidenced occurrences retain their own observation meaning.
+  const completedPrerequisites = new Set<string>();
+  for (const dependent of unique) {
+    if (!dependent.workspaceId) continue;
+    const records = new Map((dependent.prerequisiteEvidence ?? [])
+      .filter(record => record.workspaceId === dependent.workspaceId && record.id !== dependent.id)
+      .map(record => [record.id, record.complete]));
+    for (const id of dependent.blockedBy) {
+      const known = visible.get(id);
+      if (!records.has(id) && id !== dependent.id && known?.workspaceId === dependent.workspaceId) {
+        records.set(id, known.stage ? known.stage.complete : known.lane === "shipped");
+      }
+    }
+    for (const [id, complete] of records) {
+      if (complete) completedPrerequisites.add(JSON.stringify([dependent.workspaceId, id]));
+    }
+  }
   const dismissed = (task: TaskSignal, trigger: string) => options.suppressed?.has(`${trigger}:${task.id}`) || options.suppressed?.has(`*:${task.id}`);
   const completion = (task: TaskSignal): number | null => {
     const at = task.movedToShippedAt;
@@ -51,10 +69,12 @@ export function contextObservations(signals: TaskSignal[], now: number, timezone
       if (!group) { group = []; groups.set(task.workspaceId, group); }
       group.push(task);
     } else digest([task], task.sourceLabel);
+    const contextSubject = completedPrerequisites.has(JSON.stringify([task.workspaceId, task.id]))
+      ? "a completed listed prerequisite" : `“${task.title}”`;
     const titleEdit = task.latestValidatedTitleEdit?.kind === "update" && task.latestValidatedTitleEdit.field === "title"
       ? validTime(task.latestValidatedTitleEdit.at) : null;
     if (titleEdit !== null && !dismissed(task, "recorded-activity")) {
-      notes.add(`Title edited for “${task.title}” on ${occurrence(titleEdit)}; this does not establish meaningful work progress.`);
+      notes.add(`Title edited for ${contextSubject} on ${occurrence(titleEdit)}; this does not establish meaningful work progress.`);
     }
     const commentAt = task.latestValidatedComment?.kind === "commentAdd"
       ? validTime(task.latestValidatedComment.at) : null;
@@ -64,24 +84,24 @@ export function contextObservations(signals: TaskSignal[], now: number, timezone
         reasons: ["A saved activity record establishes this occurrence; it does not establish progress."] });
     }
     const isOpen = task.stage ? !task.stage.complete : task.lane !== "shipped";
-    if (task.deadline === null && isOpen) notes.add(`“${task.title}” has no saved date.`);
+    if (task.deadline === null && isOpen) notes.add(`${contextSubject} has no saved date.`);
     else if (task.deadline?.kind === "unknown" ||
       (task.deadline?.kind === "date-only" && !canonicalDate(task.deadline.date)) ||
       (task.deadline?.kind === "instant" && (!Number.isFinite(task.deadline.at) || task.deadline.at < 0))) {
-      notes.add(`The saved deadline for “${task.title}” could not be established.`);
+      notes.add(`The saved deadline for ${contextSubject} could not be established.`);
     }
     const tags = task.latestValidatedMetadataEdit;
     const tagsAt = tags?.field === "tags" ? validTime(tags.at) : null;
-    if (tagsAt !== null) notes.add(`Tags edited on “${task.title}” on ${occurrence(tagsAt)}; this does not establish progress.`);
+    if (tagsAt !== null) notes.add(`Tags edited on ${contextSubject} on ${occurrence(tagsAt)}; this does not establish progress.`);
     if (task.activityCoverage === "partial" && task.hasRecordedTitleEdit === true) {
-      notes.add(`A recorded title edit does not establish meaningful work progress for “${task.title}”.`);
+      notes.add(`A recorded title edit does not establish meaningful work progress for ${contextSubject}.`);
     }
     if (task.activityCoverage === "partial" || task.activityHistoryStartAt !== undefined) {
       const start = validTime(task.activityHistoryStartAt);
       const prefix = task.activityCoverage === "partial" ? "Activity history is incomplete. " : "";
       notes.add(start === null
-        ? `${prefix}Activity history for “${task.title}” is partial; earlier activity is not established.`
-        : `${prefix}The earliest available inspected activity record for “${task.title}” is dated ${date(start)}; earlier activity is not established.`);
+        ? `${prefix}Activity history for ${contextSubject} is partial; earlier activity is not established.`
+        : `${prefix}The earliest available inspected activity record for ${contextSubject} is dated ${date(start)}; earlier activity is not established.`);
     }
     // Whole-list context is distinct from the chosen current open edge. Unknown
     // references remain unnamed; only the authorized inspected task is identified.
@@ -106,7 +126,7 @@ export function contextObservations(signals: TaskSignal[], now: number, timezone
       const complete = [...records].filter(([, complete]) => complete);
       const named = [...records].flatMap(([id, done]) => {
         const known = visible.get(id);
-        return known && known.workspaceId === task.workspaceId ? [`“${known.title}” (${done ? "complete" : "open"})`] : [];
+        return !done && known && known.workspaceId === task.workspaceId ? [`“${known.title}” (open)`] : [];
       });
       notes.add(`Inspected listed prerequisite state for “${task.title}”: ${open.length} open, ${complete.length} complete${partial ? `, ${unknown ? `${unknown} unverified` : "further state unverified"}` : ""}.${named.length ? ` Inspected task names: ${named.join("; ")}.` : ""}${partial ? ` Its prerequisites could not be fully verified. The unverified prerequisites' state is unknown. It is not confirmed clear to move ahead on that work.${task.activityCoverage === "partial" ? " Activity history for this task is incomplete; earlier meaningful activity is not established." : ""}` : ""}`);
     }
