@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-home-loading",
+  "source": "tasks/src/app/app/home/loading.tsx",
+  "materialityHash": "9dcb7b09c5c2c254",
+  "reviewedAt": "2026-10-11",
+  "reviewer": "Independent resource-refresh reviewer, actual64-image inspection2026-10-11",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-898ab7fd923aac943b0ae980-b8aca21d09d5faf7.json",
+    "attestationSha256": "e5573123ab4895741032c9a6559f7b3a8f3d7c518f672a261932d75d21543d48",
+    "runId": "tasks-playwright-898ab7fd923aac943b0ae980",
+    "canonicalEvidenceSha256": "898ab7fd923aac943b0ae980a55ee8ae6a92d3e368fcf616539c07e75d3436da",
+    "rawArtifactSha256": "b8aca21d09d5faf7e81b2bb36cf1cc84ad89fcb0f72383ae2affa73f01fd85a1",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.state.app-home-loading",
+    "caseName": "actual component with deterministic local inputs",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Maintained typed integration source9a8a979; target source unchanged vs95717b7. Fresh actual196-case capture with reviewed CSS asset helper, no production/auth claim. Metadata refresh: helper source commitment and manifest binding regenerated from the same actual196 report; initial attestation and receipts retained as superseded.",
+  "decision": "ACCEPT narrow rendered-source materiality binding. Actual home skeleton rows/cards render with responsive column arrangement. All four screenshot bindings exact; required states, tier, scores and baselines unchanged."
+}
