@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "tasks-reviewed-migration-candidate/1",
+  "id": "ping-receipts-0041-oct11",
+  "repository": "ethanmcn2013-droid/app",
+  "pullRequestNumber": 265,
+  "candidateSourceRevision": "f86635d779fa24f0fb910346bbc68f44bb3d0fca",
+  "candidateBaseRevision": "95717b7cb58393d1f99137741006860690beba02",
+  "baseLedgerSha256": "f31c2ea07cb500ed53a067d8da03fcb2c9edda6150e31f8010ecd877643ad59b",
+  "candidateLedgerSha256": "82591fea2e1851e4066ba6d3f053602d0bf43801d5d88f2aee35a5cecdad423e",
+  "expectedLastMigrationId": "0040_sponsored_measurement_choice",
+  "targetUrlSha256": "248b09a9d4560a8b66dd2d910e5d95c97b473eda4b656577d030592105a72eb0",
+  "databaseIdentitySha256": "248b09a9d4560a8b66dd2d910e5d95c97b473eda4b656577d030592105a72eb0",
+  "notBefore": "2026-10-11T21:09:00Z",
+  "expiresAt": "2026-10-12T05:09:00Z",
+  "authorization": {
+    "source": "https://github.com/ethanmcn2013-droid/signal-studio-workspace/issues/111#issuecomment-6113781858",
+    "authorizedBy": "Root delegated operator under Ethan explicit full execution authority"
+  },
+  "review": {
+    "verdict": "approved",
+    "sourceRevision": "f86635d779fa24f0fb910346bbc68f44bb3d0fca",
+    "reviewedBy": "Independent Ping final reviewer; root receiving",
+    "reference": "https://github.com/ethanmcn2013-droid/signal-studio-workspace/issues/111#issuecomment-6113781858; independent source review SHA256 eac4b7629a37aabf8884763782332d6e33a076704e31303022d6217dbd49638e",
+    "reviewedAt": "2026-10-11T21:10:01.7631218Z"
+  },
+  "migrations": [
+    {
+      "id": "0041_ping_command_receipts",
+      "sha256": "5e4f477ba599dee48f8a4f2c73b3d5b2b069425e7128e8a889bfc19a317c3953",
+      "receiptSha256": "b3fd72a231134c46a1f985e2e4734b2bd3f0742d5aaf52ad20e037a2c40e131a"
+    }
+  ],
+  "files": [
+    {
+      "path": "drizzle/migration-ledger.json",
+      "sha256": "82591fea2e1851e4066ba6d3f053602d0bf43801d5d88f2aee35a5cecdad423e"
+    },
+    {
+      "path": "drizzle/meta/_journal.json",
+      "sha256": "6b4c09ec7e242766a981a8ab80dbdca318a615c84c8a0391829a3121d8a0ccf2"
+    },
+    {
+      "path": "drizzle/0041_ping_command_receipts.sql",
+      "sha256": "5e4f477ba599dee48f8a4f2c73b3d5b2b069425e7128e8a889bfc19a317c3953"
+    },
+    {
+      "path": "drizzle/receipts/ping-command-receipts-2026-10-11.json",
+      "sha256": "b3fd72a231134c46a1f985e2e4734b2bd3f0742d5aaf52ad20e037a2c40e131a"
+    }
+  ],
+  "qualification": "Bounded root-approved 0041 schema-only candidate. Root-only existing main-only encrypted-backup workflow; exact identity/source/ledger, fresh status, production export, restored-copy dry run, checksum-pinned encryption and acknowledged ciphertext upload must pass before apply. Any failure or expiry stops; no bypass, retry, alternative target, feature activation or broader programme acceptance."
+}
