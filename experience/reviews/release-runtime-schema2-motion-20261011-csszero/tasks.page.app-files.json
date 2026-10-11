@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-files",
+  "source": "tasks/src/app/app/files/page.tsx",
+  "materialityHash": "85929e83ebaece9a",
+  "reviewedAt": "2026-10-11",
+  "reviewer": "Root release coordinator: technical visual receiving, with independent source and evidence review",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-3d4c2ac23d559200f25e6948-bf4d2d518ae31ea2.json",
+    "attestationSha256": "c28a4666001f371c074f5ae0293fe79236fb20aacfa4db324f51f7f38002124a",
+    "runId": "tasks-playwright-3d4c2ac23d559200f25e6948",
+    "canonicalEvidenceSha256": "3d4c2ac23d559200f25e694864fa10534f8d56fd1e9a09bc66e4d0a56ec1522f",
+    "rawArtifactSha256": "bf4d2d518ae31ea29ff9ae46de1d23b4e15d170fa77fd89a4dd643ef94dddb46",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-files",
+    "caseName": "own surface in demo",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Fresh C5 CSS-zero reduced motion/Newsreader/Redis-composed source qualification for tasks.page.app-files: actual route with declared deterministic inputs and scope. Preserve classifications; synthetic loading/error seams do not establish hosted recovery or authenticated provider behavior.",
+  "decision": "Technical receiving only after fresh exact196, independent custody and root representative-image decision. No design pick, quality score, Redis activation or production claim."
+}
