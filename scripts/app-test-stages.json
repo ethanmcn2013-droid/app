@@ -237,6 +237,8 @@
     "node",
     "--import",
     "tsx",
+    "--import",
+    "./src/test/register-server-only.mjs",
     "--test",
     "src/modules/timeline/server/timeline-auth-policy.test.ts",
     "src/modules/timeline/lib/roadmap/anchor.test.ts",
