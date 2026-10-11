@@ -39,11 +39,40 @@ test("ambiguous Clerk mapping is rejected and changed session identity is not in
   identity = { userId: "clerk_synthetic", sessionId: "" }; assert.equal(await runtime.authenticate(), null);
 });
 
-test("real isolated interactive transactions execute once and recover after a fresh runtime with current authority", async () => {
-  const f = await createPingProofFixture(); const env = environment(); let clients = 0;
+test("matched remote adapter refuses a prepared command when paused before invocation", async () => {
+  const f = await createPingProofFixture(); const env = environment(); let writes = 0;
+  const runtime = createMaintainedPingRuntime({ env: () => env, demo: () => false,
+    authenticate: async () => ({ userId: "clerk_alice", sessionId: "synthetic-session" }),
+    client: () => ({ transaction: async mode => {
+      if (mode === "write") writes++;
+      return await f.client.transaction(mode) as unknown as Awaited<ReturnType<ConversationTransactionalClient["transaction"]>>;
+    } }) });
+  try {
+    const post = createPingTypedHttp({ authenticate: runtime.authenticate, session: runtime.session, typedOnly: () => true });
+    const prepare = await (await post(request({ version: "ping.typed.v1", action: "prepare", generationId: "paused",
+      requestId: "00000000-0000-4000-8000-000000000002", projectId: PROOF_PROJECT,
+      selectedTaskIds: [], snapshots: {}, text: "create 1 tasks" }))).json();
+    assert.equal(prepare.ok, true, JSON.stringify(prepare));
+    const beforeWrites = writes;
+    const beforeTasks = Number((await f.client.execute("SELECT COUNT(*) AS n FROM tasks")).rows[0].n);
+    env.PING_NEW_WORK_PAUSED = "1";
+    const refused = await (await post(request({ version: "ping.typed.v1", action: "execute", generationId: "paused", token: prepare.token }))).json();
+    assert.equal(refused.ok, false);
+    assert.equal(writes, beforeWrites, "pause blocks the executor before a write transaction");
+    assert.equal(Number((await f.client.execute("SELECT COUNT(*) AS n FROM tasks")).rows[0].n), beforeTasks);
+    assert.equal(Number((await f.client.execute("SELECT COUNT(*) AS n FROM ping_command_receipts")).rows[0].n), 0);
+    assert.equal(Number((await f.client.execute("SELECT COUNT(*) AS n FROM activities")).rows[0].n), 0);
+  } finally { f.client.close(); }
+});
+
+test("committed remote-adapter command never redispatches when paused and recovers after a fresh runtime", async () => {
+  const f = await createPingProofFixture(); const env = environment(); let clients = 0, writes = 0;
   const identity = { userId: "clerk_alice", sessionId: "synthetic-session" };
   const make = () => createMaintainedPingRuntime({ env: () => env, demo: () => false, authenticate: async () => identity,
-    client: () => { clients++; return f.client as unknown as ConversationTransactionalClient; } });
+    client: () => { clients++; return { transaction: async mode => {
+      if (mode === "write") writes++;
+      return await f.client.transaction(mode) as unknown as Awaited<ReturnType<ConversationTransactionalClient["transaction"]>>;
+    } }; } });
   try {
     const first = make(), actor = await first.authenticate(); assert.equal(actor?.actorId, "alice");
     const post = createPingTypedHttp({ authenticate: first.authenticate, session: first.session, typedOnly: () => true });
@@ -53,11 +82,15 @@ test("real isolated interactive transactions execute once and recover after a fr
     assert.equal(prepare.ok, true, JSON.stringify(prepare));
     const execute = { version: "ping.typed.v1", action: "execute", generationId: "one", token: prepare.token };
     const committed = await (await post(request(execute))).json(); assert.equal(committed.knowledge, "committed");
+    const committedWrites = writes;
+    env.PING_NEW_WORK_PAUSED = "1";
     const replay = await (await post(request(execute))).json(); assert.deepEqual(replay.receipt, committed.receipt);
+    assert.equal(writes, committedWrites, "paused replay reads the original receipt without redispatch");
     assert.equal(Number((await f.client.execute("SELECT COUNT(*) AS n FROM ping_command_receipts")).rows[0].n), 1);
     const restarted = make(); assert.ok(await restarted.authenticate());
     const recovered = await restarted.receipt("alice", prepare.commandId, PROOF_PROJECT);
     assert.deepEqual(recovered, committed.receipt);
+    assert.equal(writes, committedWrites, "fresh paused runtime recovers without another write");
     assert.equal(await restarted.receipt("alice", prepare.commandId, "synthetic-foreign-project"), null);
     assert.equal(await restarted.receipt("bob", prepare.commandId, PROOF_PROJECT), null);
     await f.client.execute("DELETE FROM workspace_members WHERE user_id='alice'");
