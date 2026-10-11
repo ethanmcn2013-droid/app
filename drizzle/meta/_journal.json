@@ -288,6 +288,13 @@
       "when": 1791345812127,
       "tag": "0040_sponsored_measurement_choice",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1791345813127,
+      "tag": "0041_ping_command_receipts",
+      "breakpoints": true
     }
   ]
 }

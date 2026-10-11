@@ -97,6 +97,7 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
   service?: ReturnType<typeof createPingCommandService>;
   voice?: PingVoiceProviders; monotonic?: () => number;
   isNewWorkAllowed?: () => boolean;
+  allowRemoteTyped?: boolean;
 } = {}) {
   const now = options.now ?? Date.now, uuid = options.uuid ?? randomUUID;
   const monotonic = options.monotonic ?? (() => Math.floor(performance.now()));
@@ -374,7 +375,8 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
   }
   return { handleVoice, acceptVoiceAudio, async handle(actor: PingTypedActor, value: unknown): Promise<PingTypedResponse> {
     if (!validPingId(actor.actorId) || !validPingId(actor.sessionId) || !adapter.available ||
-      adapter.boundary !== "local-serialized-connection") return fail("unavailable");
+      (adapter.boundary !== "local-serialized-connection" &&
+        !(options.allowRemoteTyped === true && adapter.boundary === "remote-interactive-transaction"))) return fail("unavailable");
     if (!dataRecord(value) || value.version !== PING_TYPED_VERSION || !validPingId(value.generationId)) return fail("invalid_input");
     const admission = newWorkAllowed("control");
     if (value.action === "prepare") {

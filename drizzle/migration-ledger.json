@@ -539,6 +539,16 @@
         "integrity",
         "foreign-keys"
       ]
+    },
+    {
+      "ordinal": 41,
+      "id": "0041_ping_command_receipts",
+      "file": "drizzle/0041_ping_command_receipts.sql",
+      "when": 1791345813127,
+      "sha256": "5e4f477ba599dee48f8a4f2c73b3d5b2b069425e7128e8a889bfc19a317c3953",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/ping-command-receipts-2026-10-11.json",
+      "receiptSha256": "b3fd72a231134c46a1f985e2e4734b2bd3f0742d5aaf52ad20e037a2c40e131a"
     }
   ]
 }

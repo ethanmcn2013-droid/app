@@ -27,12 +27,7 @@ export async function createPingProofFixture() {
       await client.executeMultiple(await readFile(join(resolve("drizzle"), name), "utf8"));
     }
     assert.equal(Number((await client.execute("PRAGMA foreign_keys")).rows[0].foreign_keys), 1);
-    // Receipt schema deliberately lives in the disposable fixture, not drizzle/ or production schema.
-    await client.execute(`CREATE TABLE ping_command_receipts (
-      actor_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      command_id TEXT NOT NULL, project_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
-      plan_hash TEXT NOT NULL, receipt_json TEXT NOT NULL CHECK(json_valid(receipt_json)),
-      committed_at INTEGER NOT NULL, PRIMARY KEY(actor_id,command_id))`);
+    // Canonical 0041 now supplies the same receipt schema in this disposable chain.
     await client.execute({sql:"INSERT INTO meta(key,value) VALUES(?,?)",args:[PROOF_FIXTURE_MARKER_KEY,PROOF_FIXTURE_MARKER_VALUE]});
     for (const id of ["owner", "alice", "bob", "outsider"]) {
       await client.execute({ sql: "INSERT INTO users(id,clerk_id,name,color,initials) VALUES(?,?,?,'#111','SS')", args: [id, `clerk_${id}`, id] });

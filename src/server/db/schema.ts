@@ -1843,3 +1843,14 @@ export const eventPurchaseDesignations = sqliteTable("event_purchase_designation
   check("event_reference_shape", sql.raw("provider_reference IS NULL OR (provider_reference GLOB 'stripe:cs_*' AND length(provider_reference) <= 255)")),
   check("event_settlement_shape", sql.raw("(purchaser_user_id IS NULL AND id GLOB 'ered_*' AND designation = 'designated' AND provider_reference IS NULL AND checkout_authorized_at IS NULL AND settlement_authorized_at IS NULL AND reason IS NULL AND settled_at IS NOT NULL AND settled_at > 0 AND original_expires_at IS NOT NULL AND original_expires_at > settled_at) OR (purchaser_user_id IS NOT NULL AND checkout_authorized_at IS NOT NULL AND ( (designation = 'pending' AND settled_at IS NULL AND original_expires_at IS NULL AND reason IS NULL AND settlement_authorized_at IS NULL AND revoked = 0) OR (designation <> 'pending' AND provider_reference IS NOT NULL AND settled_at IS NOT NULL AND settled_at > 0 AND original_expires_at IS NOT NULL AND original_expires_at > settled_at AND ((designation = 'designated' AND reason IS NULL AND settlement_authorized_at IS NOT NULL AND settlement_authorized_at >= checkout_authorized_at) OR (designation = 'paid_undesignated' AND reason IS NOT NULL AND settlement_authorized_at IS NULL)))))")),
 ]);
+
+/** Compact Ping commit facts, erased with their actor or Project. */
+export const pingCommandReceipts = sqliteTable("ping_command_receipts", {
+  actorId: text("actor_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  commandId: text("command_id").notNull(),
+  projectId: text("project_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  planHash: text("plan_hash").notNull(),
+  receiptJson: text("receipt_json").notNull(),
+  committedAt: integer("committed_at").notNull(),
+}, table => [primaryKey({ columns: [table.actorId, table.commandId] }),
+  check("ping_receipt_json", sql`json_valid(${table.receiptJson})`)]);
