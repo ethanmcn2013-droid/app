@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "ping-command-receipts-2026-10-11",
+  "authorizedBy": "Root delegated BUILDONLY PP026 and route-independent PP048 sequencing amendment; local/CI only, no remote application.",
+  "reviewedBy": "Candidate author; independent exact review required before integration.",
+  "authorizationSource": "2026-10-11 Project Ping maintained typed-only construction grant",
+  "migrations": [
+    {
+      "id": "0041_ping_command_receipts",
+      "sha256": "5e4f477ba599dee48f8a4f2c73b3d5b2b069425e7128e8a889bfc19a317c3953",
+      "reviewedAt": "2026-10-11T05:26:00.425Z",
+      "risk": "Adds compact actor/command result facts with actor and Project cascade erasure. No command body, transcript or title storage. Maintained runtime remains disabled by default; production migration requires separate backup and execution receipt.",
+      "rollbackPlan": "Disable maintained Ping; retain commit evidence after use. Do not drop historical receipts without separately reviewed disposition.",
+      "postconditions": [
+        "Receipt table and composite actor-command primary key exist",
+        "Actor and Project foreign keys cascade",
+        "JSON validity, integrity and foreign-key checks pass"
+      ],
+      "proofs": [
+        {
+          "id": "receipt-columns",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('ping_command_receipts') WHERE name IN ('actor_id','command_id','project_id','plan_hash','receipt_json','committed_at') AND \"notnull\"=1",
+          "expected": 6
+        },
+        {
+          "id": "receipt-primary-key",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('ping_command_receipts') WHERE (name='actor_id' AND pk=1) OR (name='command_id' AND pk=2)",
+          "expected": 2
+        },
+        {
+          "id": "receipt-cascade",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_list('ping_command_receipts') WHERE (\"table\"='users' OR \"table\"='workspaces') AND on_delete='CASCADE'",
+          "expected": 2
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}
