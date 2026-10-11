@@ -41,7 +41,7 @@ test("ambiguous Clerk mapping is rejected and changed session identity is not in
 
 test("real isolated interactive transactions execute once and recover after a fresh runtime with current authority", async () => {
   const f = await createPingProofFixture(); const env = environment(); let clients = 0;
-  let identity = { userId: "clerk_alice", sessionId: "synthetic-session" };
+  const identity = { userId: "clerk_alice", sessionId: "synthetic-session" };
   const make = () => createMaintainedPingRuntime({ env: () => env, demo: () => false, authenticate: async () => identity,
     client: () => { clients++; return f.client as unknown as ConversationTransactionalClient; } });
   try {
