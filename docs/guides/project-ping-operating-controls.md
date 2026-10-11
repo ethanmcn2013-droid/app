@@ -30,6 +30,28 @@ The current isolated genuine receiving evidence is limited to one human Clerk si
 
 ## Pause and recover
 
+### Maintained typed durable admission
+
+The maintained typed executor also reads existing canonical Tasks `meta` controls: `ping:admission:global`
+and `ping:admission:actor:<internal actor id>`. Missing or exactly `0` means unpaused; exactly `1`, any
+other stored value, or a failed control read denies new work. These keys have no public setter.
+Prepare checks the stops and the fresh authorized writer checks them again before its first task mutation.
+The writer check defines the stop boundary; it cannot cancel a transaction already admitted.
+Existing authorized receipt/replay and canonical recovery remain available while stopped.
+
+Each actor may commit at most 100 commands and affect at most 500 tasks in a UTC day. Usage comes
+from canonical durable receipts in that same writer transaction, using the receipt's own commit time.
+No-change commands consume one command and their affected task count; replay consumes nothing extra,
+and rollback consumes nothing. Malformed usage or failed quota reads deny new writes. Restart does not
+reset these counts. This is a committed-action cap, not an attempted-request, audio or provider-spend cap.
+Receipt retention changes can change the available usage history; never erase receipts to reset a limit.
+Logs contain only fixed stage/outcome/version and bounded affected/changed counts plus a replay flag,
+not actor, Project, command, task, token or content. Logging failure does not alter a result.
+
+No stop keys are written by this implementation or guide. Configuration changes still need an exact
+approved operational target/action. This shared-store admission control is not a deployed fleet routing,
+credential disable, provider billing stop or general rollback guarantee. Feature activation remains separate.
+
 1. Set the new-work control to pause and record the exact source revision and setting state in the private execution record. Do not record a secret, token, task content or customer identifier.
 2. Confirm on the disposable fixture that a new typed request or voice Begin is refused before it creates an original, opens a provider transport or requests microphone permission.
 3. Check any existing original only with its authenticated recovery action. A confirmed `not_invoked` result means that original will not later be resumed. An already-invoked original remains pending until the real call settles; after settlement, read its same receipt and current canonical Tasks view.

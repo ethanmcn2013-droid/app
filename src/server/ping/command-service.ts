@@ -112,6 +112,9 @@ export function createPingCommandService(adapter: ConversationDatabaseAdapter, o
   now?: () => number;
   captureConfig?: CaptureConfig;
   afterWrite?: (seam: PingProofSeam, taskIndex: number) => void | Promise<void>;
+  admitNewCommand?: (tx: ConversationSqlExecutor, args: Readonly<{
+    actorId: string; affectedCount: number; committedAtSeconds: number;
+  }>) => Promise<boolean>;
 }> = {}) {
   const now = options.now ?? Date.now;
 
@@ -165,6 +168,8 @@ export function createPingCommandService(adapter: ConversationDatabaseAdapter, o
               !satisfies(row, command.operation.expected[taskId])) return fail("conflict");
             rows.push(row);
           }
+          if (options.admitNewCommand && !await options.admitNewCommand(tx,
+            { actorId, affectedCount: rows.length, committedAtSeconds })) return fail("unavailable");
           for (let index = 0; index < rows.length; index++) {
             const row = rows[index];
             const patch: Record<string, ConversationSqlValue> = {};
@@ -207,6 +212,8 @@ export function createPingCommandService(adapter: ConversationDatabaseAdapter, o
         } else {
           const { count, title } = command.operation;
           const lane = effect.statusColumnKey ?? "todo";
+          if (options.admitNewCommand && !await options.admitNewCommand(tx,
+            { actorId, affectedCount: count, committedAtSeconds })) return fail("unavailable");
           for (let index = 0; index < count; index++) {
             const id = `ping-t-${hash([actorId, command.commandId, index]).slice(0, 24)}`;
             const dueDate = effect.dueDate ?? null;

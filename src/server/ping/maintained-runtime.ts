@@ -8,6 +8,8 @@ import { createRemoteConversationDatabaseAdapter, type ConversationTransactional
 import { createPingTypedSession } from "./typed-session";
 import { createPingCommandService } from "./command-service";
 import { pingNewWorkAllowed } from "./runtime";
+import { dataRecord } from "@/lib/ping/input-validation";
+import { admitPingCommittedAction, pingDurableAdmissionAllowed, logPingCommittedUsage } from "./operational-admission";
 
 type Env = Readonly<Record<string, string | undefined>>;
 /** Separate admission from the disposable fixture; no ambient target or local fallback. */
@@ -28,6 +30,7 @@ export function createMaintainedPingRuntime(deps: {
   env: () => Env; demo: () => boolean;
   authenticate: () => Promise<{ userId: string | null; sessionId: string | null }>;
   client: (target: { url: string; authToken: string }) => ConversationTransactionalClient;
+  now?: () => number;
 }) {
   let cached: { key: string; session: ReturnType<typeof createPingTypedSession>;
     service: ReturnType<typeof createPingCommandService>; resolveActor: (id: string) => Promise<string | null> } | null = null;
@@ -39,8 +42,20 @@ export function createMaintainedPingRuntime(deps: {
       const adapter = createRemoteConversationDatabaseAdapter({ client: deps.client(target) });
       if (!adapter.available) return null;
       const key = target.cacheKey;
-      cached = { key, session: createPingTypedSession(adapter, { allowRemoteTyped: true, isNewWorkAllowed: () =>
-        current()?.cacheKey === key && pingNewWorkAllowed(deps.env()) }), service: createPingCommandService(adapter),
+      const service = createPingCommandService(adapter, { now: deps.now, admitNewCommand: admitPingCommittedAction });
+      const session = createPingTypedSession(adapter, { now: deps.now, allowRemoteTyped: true, isNewWorkAllowed: () =>
+        current()?.cacheKey === key && pingNewWorkAllowed(deps.env()), service: { ...service, execute: async original => {
+          const result = await service.execute(original); logPingCommittedUsage(result); return result;
+        } } });
+      cached = { key, session: { ...session, handle: async (actor, value) => {
+        if (dataRecord(value) && value.version === "ping.typed.v1" && value.action === "prepare") {
+          try {
+            if (!await adapter.transaction("read", tx => pingDurableAdmissionAllowed(tx, actor.actorId)))
+              return { ok: false, code: "unavailable" };
+          } catch { return { ok: false, code: "unavailable" }; }
+        }
+        return session.handle(actor, value);
+      } }, service,
       resolveActor: id => adapter.transaction("read", async tx => {
         const rows = (await tx.execute({ sql: "SELECT id FROM users WHERE clerk_id=? LIMIT 2", args: [id] })).rows;
         return rows.length === 1 && typeof rows[0].id === "string" ? rows[0].id : null;

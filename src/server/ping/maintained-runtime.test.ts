@@ -2,10 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createHash } from "node:crypto";
 import { createMaintainedPingRuntime, maintainedPingTarget } from "./maintained-runtime";
-import { createPingProofFixture, PROOF_PROJECT } from "./proof-fixture";
+import { createPingProofFixture, PROOF_PROJECT, PROOF_NOW } from "./proof-fixture";
 import { createPingTypedHttp } from "./http";
 import { createPingReceiptHttp } from "./receipt-http";
 import type { ConversationTransactionalClient } from "@/server/conversations/database";
+import { PING_GLOBAL_STOP_KEY, pingActorStopKey } from "./operational-admission";
 
 const url = "libsql://synthetic.invalid", origin = "https://synthetic.invalid";
 function environment(): Record<string, string | undefined> { return { PING_MAINTAINED_TYPED_ENABLED: "1",
@@ -63,6 +64,69 @@ test("matched remote adapter refuses a prepared command when paused before invoc
     assert.equal(Number((await f.client.execute("SELECT COUNT(*) AS n FROM ping_command_receipts")).rows[0].n), 0);
     assert.equal(Number((await f.client.execute("SELECT COUNT(*) AS n FROM activities")).rows[0].n), 0);
   } finally { f.client.close(); }
+});
+
+test("durable account/global stop refuses Prepare and captured execution but retains authenticated original receipt", async () => {
+  const f = await createPingProofFixture(); const env = environment();
+  const runtime = createMaintainedPingRuntime({ env: () => env, demo: () => false,
+    authenticate: async () => ({ userId: "clerk_alice", sessionId: "synthetic-session" }),
+    client: () => ({ transaction: async mode => await f.client.transaction(mode) as unknown as
+      Awaited<ReturnType<ConversationTransactionalClient["transaction"]>> }) });
+  try {
+    const post = createPingTypedHttp({ authenticate: runtime.authenticate, session: runtime.session, typedOnly: () => true });
+    const prepare = (i: number) => ({ version: "ping.typed.v1", action: "prepare", generationId: "durable",
+      requestId: `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`, projectId: PROOF_PROJECT,
+      selectedTaskIds: [], snapshots: {}, text: "create 1 tasks" });
+    const first = await (await post(request(prepare(20)))).json(); assert.equal(first.ok, true);
+    const original = await (await post(request({ version: "ping.typed.v1", action: "execute",
+      generationId: "durable", token: first.token }))).json(); assert.equal(original.knowledge, "committed");
+    const captured = await (await post(request(prepare(21)))).json(); assert.equal(captured.ok, true);
+    await f.client.execute({ sql: "INSERT INTO meta(key,value) VALUES(?,'1')", args: [pingActorStopKey("alice")] });
+    assert.deepEqual(await (await post(request(prepare(22)))).json(), { ok: false, code: "unavailable" });
+    const denied = await (await post(request({ version: "ping.typed.v1", action: "execute",
+      generationId: "durable", token: captured.token }))).json();
+    assert.equal(denied.knowledge, "unresolved");
+    assert.deepEqual(await runtime.receipt("alice", first.commandId, PROOF_PROJECT), original.receipt);
+    assert.equal(Number((await f.client.execute("SELECT COUNT(*) AS n FROM tasks")).rows[0].n), 1);
+    assert.equal(Number((await f.client.execute("SELECT COUNT(*) AS n FROM ping_command_receipts")).rows[0].n), 1);
+    await f.client.execute({ sql: "UPDATE meta SET value='0' WHERE key=?", args: [pingActorStopKey("alice")] });
+    await f.client.execute({ sql: "INSERT INTO meta(key,value) VALUES(?,'1')", args: [PING_GLOBAL_STOP_KEY] });
+    assert.deepEqual(await (await post(request(prepare(23)))).json(), { ok: false, code: "unavailable" });
+    assert.deepEqual(await runtime.receipt("alice", first.commandId, PROOF_PROJECT), original.receipt);
+  } finally { f.client.close(); }
+});
+
+test("maintained canonical adapter enforces both daily quotas across a fresh runtime without redispatch", async () => {
+  for (const quota of [{ commands: 99, affected: 1, count: 1 }, { commands: 49, affected: 10, count: 10 }]) {
+    const f = await createPingProofFixture(); const env = environment();
+    const make = () => createMaintainedPingRuntime({ env: () => env, demo: () => false, now: () => PROOF_NOW,
+      authenticate: async () => ({ userId: "clerk_alice", sessionId: "synthetic-session" }),
+      client: () => ({ transaction: async mode => await f.client.transaction(mode) as unknown as
+        Awaited<ReturnType<ConversationTransactionalClient["transaction"]>> }) });
+    try {
+      const now = Math.floor(PROOF_NOW / 1000);
+      for (let i = 0; i < quota.commands; i++) await f.client.execute({
+        sql: "INSERT INTO ping_command_receipts VALUES(?,?,?,?,?,?)", args: ["alice", `prior-${i}`, PROOF_PROJECT,
+          "synthetic-prior-plan", JSON.stringify({ affectedCount: quota.affected }), now],
+      });
+      const first = make();
+      const post = createPingTypedHttp({ authenticate: first.authenticate, session: first.session, typedOnly: () => true });
+      const prepare = (i: number, count: number) => ({ version: "ping.typed.v1", action: "prepare", generationId: "quota",
+        requestId: `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`, projectId: PROOF_PROJECT,
+        selectedTaskIds: [], snapshots: {}, text: `create ${count} tasks` });
+      const handle = await (await post(request(prepare(40, quota.count)))).json(); assert.equal(handle.ok, true);
+      const committed = await (await post(request({ version: "ping.typed.v1", action: "execute",
+        generationId: "quota", token: handle.token }))).json(); assert.equal(committed.knowledge, "committed");
+      const fresh = make();
+      assert.deepEqual(await fresh.receipt("alice", handle.commandId, PROOF_PROJECT), committed.receipt);
+      const next = createPingTypedHttp({ authenticate: fresh.authenticate, session: fresh.session, typedOnly: () => true });
+      const captured = await (await next(request(prepare(41, 1)))).json(); assert.equal(captured.ok, true);
+      const denied = await (await next(request({ version: "ping.typed.v1", action: "execute",
+        generationId: "quota", token: captured.token }))).json(); assert.equal(denied.knowledge, "unresolved");
+      assert.equal(Number((await f.client.execute("SELECT COUNT(*) AS n FROM tasks")).rows[0].n), quota.count);
+      assert.equal(Number((await f.client.execute("SELECT COUNT(*) AS n FROM ping_command_receipts")).rows[0].n), quota.commands + 1);
+    } finally { f.client.close(); }
+  }
 });
 
 test("committed remote-adapter command never redispatches when paused and recovers after a fresh runtime", async () => {

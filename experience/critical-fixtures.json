@@ -3573,8 +3573,8 @@
     "src/server/ping/bridge-independent.persistence.test.ts": "48022606f70dd491a63bf317c34a407a6448034edaeab887a95a74169a8c7505",
     "src/server/ping/bridge.persistence.test.ts": "7682370b4e29369a21173f1caef349c73e70364f56459c12463e4d691bda1301",
     "src/server/ping/command-independent.persistence.test.ts": "e5e06dd78de0af103e3d69a53de2015195150fd39998e32e1cfcfd9ef8610412",
-    "src/server/ping/command-service.persistence.test.ts": "914091850dd8b0ce106c467906615a82b614619eaedb99eeb1d218bcc8f7c464",
-    "src/server/ping/command-service.ts": "f11203e348515ae4e6d47c3cefa7588d75645c154ba59d5addaa4941ed3bbc92",
+    "src/server/ping/command-service.persistence.test.ts": "c3b383930dcfbcbf999456f8ac50688e7049bc5e43fd154e366c0b4fc0e998a2",
+    "src/server/ping/command-service.ts": "9658caacd1023473da6846adf6055d58926b63f0969cc585dedae8031cc2fa86",
     "src/server/ping/http.test.ts": "7a67608ebf05014463273de051262ab214c22dd1ec6e64e9a1cb76a6cb6a576a",
     "src/server/ping/http.ts": "9a0269276414764650b7abbbc668ec4574be5ce2de61645f519298b9f8b090be",
     "src/server/ping/openai-clip-transcription.test.ts": "65fd721352df1feaaab7020bc067088c3a5296656750827347267bac27371739",
@@ -3708,6 +3708,10 @@
     "src/test/register-gate-runtime.mjs": "df5215453fcb9228a13fd0c6b082787f297fe7e15144e82e480ab3ed049dd0a0",
     "src/test/register-invite-arrival.mjs": "57b400208b3db680cb860264a4eb04e94e4d7b045e98796451bcaa871c956f2f",
     "src/test/register-server-only.mjs": "41e99faf9a56545fcb42495f71ddddcbe1ecbf116e52dc1c749813f7e64f6518",
-    "src/test/server-only-stub.cjs": "8222b8169ee86f25cdccd84d340340060ae3f0cff55e2ea9d344d7c332733b71"
+    "src/test/server-only-stub.cjs": "8222b8169ee86f25cdccd84d340340060ae3f0cff55e2ea9d344d7c332733b71",
+    "src/server/ping/maintained-runtime.ts": "9648c602578f73bfbe2f36a0487e3bfddfb8b924a70ad5cc2f243a9ea557431b",
+    "src/server/ping/maintained-runtime.test.ts": "ba8812bdf0e550f43cfcce53a2eae432d3c8e9371d7df12baf8e0ca46f9b57b2",
+    "src/server/ping/operational-admission.ts": "6d7c97659a5644f25521adf4e56080e769e60962a7181239fd03644dcd2c06bb",
+    "src/server/ping/operational-admission.test.ts": "75340223783a5bbe218e95496a3acd7ddf13398e8e17cde273389dffe4fce541"
   }
 }
