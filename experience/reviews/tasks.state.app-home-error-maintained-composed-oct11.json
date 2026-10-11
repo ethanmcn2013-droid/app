@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-home-error",
+  "source": "tasks/src/app/app/home/error.tsx",
+  "materialityHash": "94e95fe898bce26d",
+  "reviewedAt": "2026-10-11",
+  "reviewer": "Independent resource-refresh reviewer; fresh composed64-image inspection2026-10-11",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-b9ca44586bb8fce650613cf6-e576489c79623dd0.json",
+    "attestationSha256": "d07edf937ccc97f40bfcdea31b2040b387cc16450c151bb01c527363981d5c64",
+    "runId": "tasks-playwright-b9ca44586bb8fce650613cf6",
+    "canonicalEvidenceSha256": "b9ca44586bb8fce650613cf63641499ca45036c3be8480894d46e564a87f0950",
+    "rawArtifactSha256": "e576489c79623dd0bc16702ca41945d8faccff54ff6e341561b0fa8bab7ff1ac",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.state.app-home-error",
+    "caseName": "actual component with deterministic local inputs",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Composed privacy merge512176ed3872b1642386f555f6a148b2a0c0fc4c; committed CSS helper; target source unchanged versus95717. New actual196-case capture, not historicalimage reuse; no production/auth claim.",
+  "decision": "ACCEPT narrow rendered-source materiality binding. Home error message, synthetic reference and retry/Open Tasks controls legible at all four viewports; local callback only. All four screenshot bindings exact; required states, tier, scores and baselines unchanged."
+}
