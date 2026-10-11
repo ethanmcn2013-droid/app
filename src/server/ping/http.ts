@@ -7,22 +7,28 @@ import type { PingTypedActor, createPingTypedSession } from "./typed-session";
 const MAX_BYTES = 48_000;
 const headers = { "Cache-Control": "private, no-store, max-age=0", "CDN-Cache-Control": "no-store",
   "Vercel-CDN-Cache-Control": "no-store", "Referrer-Policy": "no-referrer", "X-Content-Type-Options": "nosniff" };
-async function boundedJson(request: Request): Promise<unknown> {
+export async function boundedPingJson(request: Request, maxBytes = MAX_BYTES): Promise<unknown> {
   if (request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json" || !request.body) return null;
   const declared = request.headers.get("content-length");
-  if (declared !== null && (!/^\d+$/.test(declared) || Number(declared) > MAX_BYTES)) return null;
+  if (request.headers.has("content-encoding") || (declared !== null && (!/^\d+$/.test(declared) || Number(declared) > maxBytes))) return null;
   const reader = request.body.getReader(); const chunks: Uint8Array[] = []; let size = 0;
+  let expired = false;
+  const cancel = () => { expired = true; void reader.cancel().catch(() => {}); };
+  request.signal.addEventListener("abort", cancel, { once: true });
+  const deadline = setTimeout(cancel, 10_000);
+  if (request.signal.aborted) cancel();
   try {
     while (true) {
       const part = await reader.read(); if (part.done) break;
       size += part.value.byteLength;
-      if (size > MAX_BYTES) { await reader.cancel(); return null; }
+      if (size > maxBytes) { await reader.cancel(); return null; }
       chunks.push(part.value);
     }
+    if (expired) return null;
     const bytes = new Uint8Array(size); let offset = 0;
     for (const part of chunks) { bytes.set(part, offset); offset += part.byteLength; }
     return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
-  } catch { return null; } finally { reader.releaseLock(); }
+  } catch { return null; } finally { clearTimeout(deadline); request.signal.removeEventListener("abort", cancel); reader.releaseLock(); }
 }
 function response(result: PingTypedResponse | PingVoiceResponse): Response {
   const status = result.ok ? 200 : result.code === "unauthenticated" ? 401 : result.code === "unavailable" ? 404 :
@@ -33,6 +39,7 @@ function response(result: PingTypedResponse | PingVoiceResponse): Response {
 export function createPingTypedHttp(deps: {
   authenticate: () => Promise<PingTypedActor | null>;
   session: () => Promise<ReturnType<typeof createPingTypedSession> | null>;
+  typedOnly?: () => boolean;
 }) {
   return async (request: Request): Promise<Response> => {
     try {
@@ -41,8 +48,10 @@ export function createPingTypedHttp(deps: {
         return response({ ok: false, code: "unavailable" });
       const actor = await deps.authenticate();
       if (!actor) return response({ ok: false, code: "unauthenticated" });
-      const value = await boundedJson(request);
+      const value = await boundedPingJson(request);
       if (value === null) return response({ ok: false, code: "invalid_input" });
+      if (deps.typedOnly?.() && (!dataRecord(value) || value.version !== "ping.typed.v1"))
+        return response({ ok: false, code: "invalid_input" });
       const session = await deps.session();
       return response(session ? dataRecord(value) && value.version === PING_VOICE_VERSION ?
         await session.handleVoice(actor, value, deps.authenticate) : await session.handle(actor, value) : { ok: false, code: "unavailable" });

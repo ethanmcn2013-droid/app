@@ -3,6 +3,7 @@ import test from "node:test";
 import { PING_TYPED_ENDPOINT, PING_TYPED_VERSION, type PingTypedRequest } from "./typed-contract";
 import {
   clearPingIntentMarker,
+  checkPingTypedOriginalResult,
   decodePingTypedResponse,
   pingIntentStorageKey,
   readPingIntentMarker,
@@ -13,6 +14,41 @@ import {
   restorePingTypedTasks,
   type PingTypedIntentMarker,
 } from "./typed-client";
+
+test("restart fallback reads only exact original receipt and never resends execute", async () => {
+  const marker: PingTypedIntentMarker = { version: "ping.typed.intent.v1", generationId: "original",
+    commandId: "00000000-0000-4000-8000-000000000001", projectId: "project-1", token: "lost-token", phase: "invoking" };
+  const receipt = { version: "ping.receipt.v1", commandId: marker.commandId, projectId: marker.projectId,
+    committedAtSeconds: 1, outcome: "completed", affectedCount: 1, changedCount: 1,
+    effects: [{ taskId: "task-1", changedFields: ["created"], seq: 1 }] };
+  const calls: { path: unknown; body: Record<string, unknown> }[] = [];
+  const fetcher = async (path: unknown, init?: RequestInit) => {
+    calls.push({ path, body: JSON.parse(String(init?.body)) });
+    return path === "/api/ping" ? Response.json({ ok: false, code: "unavailable" }, { status: 404 }) :
+      Response.json({ ok: true, knowledge: "committed", receipt });
+  };
+  const recovered = await checkPingTypedOriginalResult(marker, fetcher as typeof fetch);
+  assert.equal(recovered.kind, "response");
+  assert.deepEqual(calls.map(call => call.path), ["/api/ping", "/api/ping/receipt"]);
+  assert.equal(calls[0].body.action, "receipt"); assert.equal(Object.hasOwn(calls[1].body, "token"), false);
+  assert.equal(Object.hasOwn(calls[1].body, "actorId"), false);
+  const wrong = async (path: unknown) => path === "/api/ping" ? Response.json({ ok: false, code: "unavailable" }) :
+    Response.json({ ok: true, knowledge: "committed", receipt: { ...receipt, projectId: "foreign" } });
+  assert.equal((await checkPingTypedOriginalResult(marker, wrong as typeof fetch)).kind, "unknown");
+  for (const code of ["unauthenticated", "request_conflict", "invalid_input"]) {
+    let count = 0; await checkPingTypedOriginalResult(marker, (async () => { count++; return Response.json({ ok: false, code }); }) as typeof fetch);
+    assert.equal(count, 1);
+  }
+  calls.length = 0; await checkPingTypedOriginalResult({ ...marker, phase: "prepared" }, fetcher as typeof fetch);
+  assert.equal(calls.length, 1);
+  let wrongSuccessCalls = 0;
+  const wrongSuccess = await checkPingTypedOriginalResult(marker, (async () => { wrongSuccessCalls++;
+    return Response.json({ ok: true, action: "receipt", generationId: marker.generationId, commandId: "different",
+      projectId: marker.projectId, knowledge: "committed", receipt: { ...receipt, commandId: "different" } });
+  }) as typeof fetch);
+  assert.equal(wrongSuccess.kind, "response"); assert.equal(wrongSuccessCalls, 1);
+  assert.ok(wrongSuccess.kind === "response" && wrongSuccess.response.ok && wrongSuccess.response.commandId !== marker.commandId);
+});
 
 const request: PingTypedRequest = {
   version: PING_TYPED_VERSION,

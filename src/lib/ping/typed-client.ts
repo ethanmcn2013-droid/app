@@ -4,6 +4,7 @@ import {
   type PingTypedRequest,
   type PingTypedResponse,
   type PingTypedTask,
+  type PingTypedReceipt,
 } from "./typed-contract";
 import type { Task } from "@/lib/data";
 
@@ -177,6 +178,26 @@ export async function sendPingTyped(
   } catch {
     return { kind: "unknown" };
   }
+}
+
+/** Only original-result reads may fall back to durable recovery after process loss. */
+export async function checkPingTypedOriginalResult(
+  marker: PingTypedIntentMarker, fetcher: typeof fetch = fetch,
+): Promise<PingTypedSendResult> {
+  const sent = await sendPingTyped({ version: PING_TYPED_VERSION, action: "receipt",
+    generationId: marker.generationId, token: marker.token }, fetcher);
+  if (marker.phase !== "invoking" || (sent.kind === "response" &&
+      (sent.response.ok || !["unavailable", "stale_capture"].includes(sent.response.code)))) return sent;
+  try {
+    const response = await fetcher("/api/ping/receipt", { method: "POST", credentials: "same-origin", cache: "no-store",
+      headers: { "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify({ version: "ping.receipt.lookup.v1", commandId: marker.commandId, projectId: marker.projectId }) });
+    const value: unknown = await response.json();
+    if (!response.ok || !record(value) || !exactKeys(value, ["ok", "knowledge", "receipt"]) || value.ok !== true ||
+        value.knowledge !== "committed" || !validReceipt(value.receipt, marker.commandId, marker.projectId)) return { kind: "unknown" };
+    return { kind: "response", response: { ok: true, action: "receipt", generationId: marker.generationId,
+      commandId: marker.commandId, projectId: marker.projectId, knowledge: "committed", receipt: value.receipt as PingTypedReceipt } };
+  } catch { return { kind: "unknown" }; }
 }
 
 export function pingIntentStorageKey(actorId: string, projectId: string): string {

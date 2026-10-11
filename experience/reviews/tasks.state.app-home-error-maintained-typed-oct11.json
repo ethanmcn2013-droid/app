@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-home-error",
+  "source": "tasks/src/app/app/home/error.tsx",
+  "materialityHash": "94e95fe898bce26d",
+  "reviewedAt": "2026-10-11",
+  "reviewer": "Independent resource-refresh reviewer, actual64-image inspection2026-10-11",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-b9d6b0a38f88fc937079a2fa-b8aca21d09d5faf7.json",
+    "attestationSha256": "dea613219c3f4caf4159afab781484d4d0c2bf59e85f6b0d3e855757204916fb",
+    "runId": "tasks-playwright-b9d6b0a38f88fc937079a2fa",
+    "canonicalEvidenceSha256": "b9d6b0a38f88fc937079a2faf2e80d56f707311b38d5fa2a9b86f6e0fa929ba6",
+    "rawArtifactSha256": "b8aca21d09d5faf7e81b2bb36cf1cc84ad89fcb0f72383ae2affa73f01fd85a1",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.state.app-home-error",
+    "caseName": "actual component with deterministic local inputs",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Maintained typed integration source9a8a979; target source unchanged vs95717b7. Fresh actual196-case capture with reviewed CSS asset helper, no production/auth claim.",
+  "decision": "ACCEPT narrow rendered-source materiality binding. Home error message, synthetic reference and retry/Open Tasks controls legible at all four viewports; local callback only. All four screenshot bindings exact; required states, tier, scores and baselines unchanged."
+}

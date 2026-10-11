@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-analytics-loading",
+  "source": "tasks/src/app/app/analytics/loading.tsx",
+  "materialityHash": "9a83f9e97a750b1b",
+  "reviewedAt": "2026-10-11",
+  "reviewer": "Independent actual canonical matrix receiving reviewer",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-392f6ca712439bcb5ca035a4-d8562d6b5af1daf7.json",
+    "attestationSha256": "55593de5b4f45e0e29574dfcd42655f91813d2504cbc5f567c1ab35fed23932b",
+    "runId": "tasks-playwright-392f6ca712439bcb5ca035a4",
+    "canonicalEvidenceSha256": "392f6ca712439bcb5ca035a4cc60903fbf732336f1420f239fafb9d22f76df46",
+    "rawArtifactSha256": "d8562d6b5af1daf732391f36e49e23432ccdb2075af4f95be2bc20a7c76bc84f",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.state.app-analytics-loading",
+    "caseName": "actual component with deterministic local inputs",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Fresh combined maintained source after canonical 0041 fixture compatibility and reviewed source/test integration; genuine new synthetic typed/voice Tasks captures and canonical 196 matrix.",
+  "decision": "ACCEPT bounded actual 196 synthetic source materiality receiving. Root decision https://github.com/ethanmcn2013-droid/signal-studio-workspace/issues/111#issuecomment-6113850543. Preserve mobile039 loading 664px width, no positive command-palette match, detail activity unavailable, and footer/banner overlap. No authentication, provider, real-device, product-trial or production qualification claim."
+}
