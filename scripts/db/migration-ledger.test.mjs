@@ -25,6 +25,7 @@ import {
 const additionalForwardIds = () => loadAndValidateLedger().forward
   .filter(entry => entry.ordinal > 38).map(entry => entry.id);
 const withAdditionalForwards = expected => [...expected,...additionalForwardIds()];
+const afterReleasePair = () => loadAndValidateLedger().forward.filter(entry => entry.ordinal > 40).map(entry => entry.id);
 const hasReleasePair = () => {
   const entries = loadAndValidateLedger().entries;
   return entries.some(entry => entry.id === '0039_conversation_messages_workspace_index') &&
@@ -40,7 +41,7 @@ test('reviewed 0039/0040 preserves existing rows and permits later sponsor links
     await client.execute("INSERT INTO user_preferences(user_id,daily_signal_cadence,weekly_summary) VALUES('release_actor','off','off')");
     const triggers = (await client.execute("SELECT name,sql FROM sqlite_schema WHERE type='trigger' ORDER BY name")).rows;
     const result = await runMigrations({client,releaseSha:'synthetic-release-pair'});
-    assert.deepEqual(result.applied,['0039_conversation_messages_workspace_index','0040_sponsored_measurement_choice']);
+    assert.deepEqual(result.applied,['0039_conversation_messages_workspace_index','0040_sponsored_measurement_choice',...afterReleasePair()]);
     assert.deepEqual((await client.execute("SELECT name,sql FROM sqlite_schema WHERE type='trigger' ORDER BY name")).rows,triggers);
     assert.equal(Number((await client.execute("SELECT sponsor_measurement_enabled FROM user_preferences WHERE user_id='release_actor'")).rows[0].sponsor_measurement_enabled),1);
     assert.equal((await client.execute("SELECT daily_signal_cadence FROM user_preferences WHERE user_id='release_actor'")).rows[0].daily_signal_cadence,'off');
@@ -69,7 +70,7 @@ test('0040 initial-empty proof is atomic even though 0039 can already be committ
     assert.equal(Number((await client.execute("SELECT COUNT(*) AS n FROM sqlite_schema WHERE name='sponsored_use_project_links'")).rows[0].n),0);
     assert.equal(Number((await client.execute("SELECT COUNT(*) AS n FROM pragma_table_info('user_preferences') WHERE name='sponsor_measurement_enabled'")).rows[0].n),0);
     const recovery = await runMigrations({client,releaseSha:'synthetic-forward-completion'});
-    assert.deepEqual(recovery.applied,['0040_sponsored_measurement_choice']);
+    assert.deepEqual(recovery.applied,['0040_sponsored_measurement_choice',...afterReleasePair()]);
     assert.equal((await migrationStatus({client})).state,'current');
   }));
 

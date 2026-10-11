@@ -30,6 +30,15 @@ test("default off/demo/invalid target and missing session never construct a clie
   assert.equal(await runtime.authenticate(), null); assert.equal(clients, 0); assert.equal(authCalls, 1);
 });
 
+test("ambiguous Clerk mapping is rejected and changed session identity is not inferred", async () => {
+  const env = environment(); let identity = { userId: "clerk_synthetic", sessionId: "synthetic-session" };
+  const runtime = createMaintainedPingRuntime({ env: () => env, demo: () => false, authenticate: async () => identity,
+    client: () => ({ transaction: async () => ({ execute: async () => ({ rows: [{ id: "alice" }, { id: "bob" }] }),
+      commit: async () => {}, rollback: async () => {} }) }) });
+  assert.equal(await runtime.authenticate(), null);
+  identity = { userId: "clerk_synthetic", sessionId: "" }; assert.equal(await runtime.authenticate(), null);
+});
+
 test("real isolated interactive transactions execute once and recover after a fresh runtime with current authority", async () => {
   const f = await createPingProofFixture(); const env = environment(); let clients = 0;
   let identity = { userId: "clerk_alice", sessionId: "synthetic-session" };
@@ -56,6 +65,8 @@ test("real isolated interactive transactions execute once and recover after a fr
     const count = clients; env.TASKS_AUTH_TOKEN = "different-synthetic-token";
     assert.equal(await first.authenticate(), null); assert.equal(await first.session(), null); assert.equal(clients, count);
     assert.equal(await first.receipt("alice", prepare.commandId, PROOF_PROJECT), null);
+    env.TASKS_AUTH_TOKEN = "synthetic-token"; env.CLERK_SECRET_KEY = "changed-synthetic-clerk";
+    assert.equal(await first.session(), null); assert.equal(clients, count);
   } finally { f.client.close(); }
 });
 
@@ -81,4 +92,3 @@ test("stalled receipt body is cancelled at the existing ten-second boundary befo
     duplex: "half" } as RequestInit);
   assert.equal((await recover(req)).status, 400); assert.equal(cancelled, true); assert.equal(lookups, 0);
 });
-

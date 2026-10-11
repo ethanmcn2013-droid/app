@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@libsql/client";
+import { createHash } from "node:crypto";
 import { auth } from "@clerk/nextjs/server";
 import { isDemoMode } from "@/lib/access-mode";
 import { resolveConversationRuntimeTarget } from "@/server/conversations/runtime-target";
@@ -18,7 +19,8 @@ export function maintainedPingTarget(env: Env, demo: boolean) {
     SIGNAL_CONVERSATION_DATABASE_MODE: "remote", SIGNAL_CONVERSATION_REMOTE_ENABLED: "true",
     SIGNAL_CONVERSATION_REMOTE_TARGET: env.PING_MAINTAINED_TYPED_TARGET,
     SIGNAL_CONVERSATION_REMOTE_URL_SHA256: env.PING_MAINTAINED_TYPED_URL_SHA256 }, false);
-  return target.mode === "remote" ? target : null;
+  return target.mode === "remote" ? { ...target, cacheKey: `${target.cacheKey}:auth:${createHash("sha256")
+    .update(JSON.stringify([env.CLERK_SECRET_KEY, env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY])).digest("hex")}` } : null;
 }
 
 /** Injected boundaries are local test seams, never authentication evidence. */

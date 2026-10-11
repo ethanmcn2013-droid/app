@@ -13,6 +13,7 @@ import {
 } from "@/lib/ping/typed-contract";
 import {
   clearPingIntentMarker,
+  checkPingTypedOriginalResult,
   type PingTypedIntentMarker,
   pingTypedResponseMatches,
   readPingIntentMarker,
@@ -426,7 +427,7 @@ function PingTypedPanelFlow({
       version: PING_TYPED_VERSION, action: "receipt", generationId: original.generationId, token: original.token,
     };
     try {
-      const sent = await sendPingTyped(request);
+      const sent = await checkPingTypedOriginalResult(original);
       if (!mounted.current || currentScope.current.scopeKey !== scopeKey) return;
       if (sent.kind === "unknown" || !pingTypedResponseMatches(sent.response, request, original.projectId) ||
         !sent.response.ok || sent.response.commandId !== original.commandId || sent.response.action !== "receipt") {

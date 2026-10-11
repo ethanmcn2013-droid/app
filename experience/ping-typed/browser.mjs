@@ -18,6 +18,8 @@ import typedSession from '../../src/server/ping/typed-session.ts';
 const {createPingTypedSession}=typedSession;
 import typedHttp from '../../src/server/ping/http.ts';
 const {createPingTypedHttp}=typedHttp;
+import receiptHttp from '../../src/server/ping/receipt-http.ts';
+const {createPingReceiptHttp}=receiptHttp;
 
 const root = path.resolve(import.meta.dirname, '../..');
 const require = createRequire(import.meta.url);
@@ -93,12 +95,17 @@ try {
   let executeCalls = 0, receiptReadCalls = 0;
   const executedOriginals=[], readOriginals=[];
   const base = createPingCommandService(fixture.adapter, { now: Date.now });
-  const session = createPingTypedSession(fixture.adapter, { now: Date.now, service: { ...base,
+  let session = createPingTypedSession(fixture.adapter, { now: Date.now, service: { ...base,
     execute: original => { executeCalls++;executedOriginals.push(original.command.commandId);return base.execute(original); },
     getReceiptForCommand: original => { receiptReadCalls++;readOriginals.push(original.command.commandId);return base.getReceiptForCommand(original); }
   } });
   const state = { actor: { actorId: 'alice', sessionId: 'synthetic-browser-session' }, failRefresh: false, dropExecute: false, holdAction: null, release: null, requests: [] };
   const handler = createPingTypedHttp({ authenticate: async () => state.actor, session: async () => session });
+  const recoveryHandler = createPingReceiptHttp({ authenticate: async () => state.actor,
+    receipt: async (actorId,commandId,projectId) => {
+      const found=await base.getReceipt({actorId,commandId});
+      return found.ok&&found.state==='committed'&&found.receipt.projectId===projectId?found.receipt:null;
+    } });
   const moveAction=loadFixtureMove(drizzle(fixture.client,{schema}),state.actor,receipt.sourceInputs);
   const controlCalls=[];
   stubs.set('@/server/actions/tasks', [`export async function getTasksAction(project){const response=await fetch('/fixture/initial');const data=await response.json();if(data.projectId!==project)throw Error('Fixture Project changed');return data.tasks.map(task=>{for(const key of ['dueAt','updatedAt','archivedAt','completedAt'])if(typeof task[key]==='string')task[key]=new Date(task[key]);return task;});}`,...['addTaskAction','duplicateTaskAction','removeTaskAction','reorderTaskAction','setTaskArchivedAction','setTaskMilestoneAction','toggleCompleteAction','updateTaskAction'].map(name=>`export const ${name}=()=>{throw Error('Unrelated server action ${name} not exercised')};`),
@@ -115,10 +122,11 @@ try {
   server = createServer(async (req,res) => {
     try {
       const url = new URL(req.url, origin);
-      if (url.pathname === '/api/ping') {
+      if (url.pathname === '/api/ping' || url.pathname === '/api/ping/receipt') {
         let body = ''; for await (const chunk of req) body += chunk;
-        const action = JSON.parse(body).action; state.requests.push(action);
-        const response = state.failRefresh && action === 'refresh' ? Response.json({ok:false,code:'temporarily_unavailable'},{status:503}) : await handler(new Request(url, {method:req.method,headers:req.headers,body}));
+        const action = JSON.parse(body).action ?? 'durable_receipt'; state.requests.push(action);
+        const response = state.failRefresh && action === 'refresh' ? Response.json({ok:false,code:'temporarily_unavailable'},{status:503}) :
+          await (url.pathname === '/api/ping/receipt' ? recoveryHandler : handler)(new Request(url, {method:req.method,headers:req.headers,body}));
         if (state.holdAction === action) await new Promise(resolve => { state.release = resolve; });
 
         res.writeHead(response.status,Object.fromEntries(response.headers)); res.end(await response.text());
@@ -144,6 +152,8 @@ try {
   const page=await context.newPage();
   page.on('pageerror',error=>errors.push(error.message));
   const consoleErrors=[];page.on('console',message=>{if(message.type()==='error')consoleErrors.push(message.text());});
+  const notFoundResponses=[];page.on('response',response=>{if(response.status()===404)
+    notFoundResponses.push({path:new URL(response.url()).pathname,action:response.request().postDataJSON()?.action});});
   const failedRequests=[];page.on('requestfailed',request=>failedRequests.push({path:new URL(request.url()).pathname,error:request.failure()?.errorText}));
   await page.route('**/*',async route=>{
     const request=route.request(),url=new URL(request.url());
@@ -375,6 +385,22 @@ try {
     const ping=receipt.typedFloorObservations.find(item=>item.targetCount===selected.length);ping.currentControlComparator={outcome:'observed_local',observationIndex:receipt.currentControlObservations.length-1};
     receipt.cases.push({name:`actual Move menu ${selected.length}-target action fanout persists and confirms canonical mounted rows`,passed:true});
   }
+  await page.reload();await page.getByTestId('ping-input').waitFor();
+  await page.getByRole('checkbox',{name:'Select Synthetic target',exact:true}).check();
+  await prepare('status done');state.dropExecute=true;
+  const beforeRestart=executeCalls;
+  await page.getByTestId('ping-apply').click();
+  await page.getByTestId('ping-status').filter({hasText:'not sent a second time'}).waitFor();
+  assert.equal(executeCalls,beforeRestart+1);
+  session=createPingTypedSession(fixture.adapter); // Actual loss of every in-process token/lane.
+  await page.reload();await page.getByTestId('ping-check-original').waitFor();
+  await page.getByTestId('ping-check-original').click();
+  await page.getByTestId('ping-receipt').waitFor();
+  await page.getByTestId('ping-error').filter({hasText:'could not be refreshed'}).waitFor();
+  assert.equal(executeCalls,beforeRestart+1);
+  assert.ok(state.requests.includes('durable_receipt'));
+  assert.ok(!(await page.getByTestId('ping-status').textContent()).includes('current Tasks view now reflects it'));
+  receipt.cases.push({name:'actual server-session loss recovers durable receipt read-only while failed old-token refresh preserves saved evidence',passed:true});
   assert.deepEqual(errors,[]);
   const accessibility = await new AxeBuilder({page}).include('[data-testid=project-ping-typed-panel]').analyze();
   assert.deepEqual(accessibility.violations.map(({id,impact,nodes})=>({id,impact,count:nodes.length})),[]);
@@ -383,9 +409,11 @@ try {
   await page.setViewportSize({width:390,height:844});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
   await page.screenshot({path:path.join(out,'typed-phone.png'),fullPage:true});
-  assert.ok(consoleErrors.every(message=>/ERR_EMPTY_RESPONSE|ERR_CONNECTION_CLOSED|ERR_FAILED|status of 503/.test(message)), 'Unexpected browser console error');
+  assert.deepEqual(notFoundResponses,[{path:'/api/ping',action:'receipt'},{path:'/api/ping',action:'refresh'}]);
+  receipt.expectedTransportDiagnostics={consoleErrors,failedRequests,notFoundResponses};
+  assert.equal(consoleErrors.filter(message=>/status of 404/.test(message)).length,2);
+  assert.ok(consoleErrors.every(message=>/ERR_EMPTY_RESPONSE|ERR_CONNECTION_CLOSED|ERR_FAILED|status of 503|status of 404/.test(message)), 'Unexpected browser console error');
   assert.ok(failedRequests.every(request=>request.path==='/api/ping' && /ERR_EMPTY_RESPONSE|ERR_CONNECTION_CLOSED|ERR_FAILED/.test(request.error)), 'Unexpected failed browser request');
-  receipt.expectedTransportDiagnostics={consoleErrors,failedRequests};
   receipt.executeCalls=executeCalls;receipt.receiptCount=await countReceipts();receipt.httpActions=state.requests;
   receipt.status='passed';
 
