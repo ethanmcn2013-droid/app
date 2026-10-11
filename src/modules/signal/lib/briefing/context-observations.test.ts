@@ -172,3 +172,38 @@ test("deadline and history notes distinguish absent, unknown and earliest inspec
   assert.deepEqual(result.candidates, []);
   assert.ok(result.coverageNotes.every(note => !/retention|inactive|no activity|owned/.test(note)));
 });
+
+test("dependency notes hide completed prerequisite names without hiding completion observations", () => {
+  const open = task({ id: "inspection", title: "Inspect fittings" });
+  const done = task({ id: "approval", title: "Approve fittings", lane: "shipped", movedToShippedAt: NOW - 1000 });
+  const dependent = task({ id: "assembly", title: "Assemble fittings", blockedBy: [open.id, done.id],
+    prerequisiteEvidence: [{ id: open.id, workspaceId: "owned", complete: false, lane: "next", boardColumnKey: null },
+      { id: done.id, workspaceId: "owned", complete: true, lane: "shipped", boardColumnKey: null }] });
+  const result = read([dependent, open, done]);
+  const relation = result.coverageNotes.find(note => note.startsWith("Inspected listed prerequisite state for “Assemble fittings”"))!;
+  assert.match(relation, /1 open, 1 complete/);
+  assert.match(relation, /“Inspect fittings” \(open\)/);
+  assert.doesNotMatch(relation, /Approve fittings|approval/);
+  assert.ok(result.candidates.some(row => row.task.id === done.id && row.trigger === "just-shipped"));
+  assert.ok(result.coverageNotes.some(note => note.includes("Recorded completions shown:") && note.includes("Approve fittings")));
+});
+
+test("generic history caveats keep completed listed prerequisites anonymous", () => {
+  const done = task({ id: "permit", title: "Approve delivery permit", lane: "shipped", activityCoverage: "partial",
+    activityHistoryStartAt: new Date(NOW - 86400000).toISOString(), hasRecordedTitleEdit: true, deadline: { kind: "unknown" },
+    latestValidatedTitleEdit: { kind: "update", field: "title", at: new Date(NOW - 1000).toISOString() },
+    latestValidatedMetadataEdit: { field: "tags", at: new Date(NOW - 1000).toISOString() } });
+  const dependent = task({ id: "delivery", title: "Arrange delivery", blockedBy: [done.id],
+    prerequisiteEvidence: [{ id: done.id, workspaceId: "owned", complete: true, lane: "shipped", boardColumnKey: null }] });
+  const unrelated = task({ id: "other-complete", title: "Complete independent survey", lane: "shipped", activityCoverage: "partial" });
+  const notes = read([dependent, done, unrelated]).coverageNotes.join(" ");
+  assert.doesNotMatch(notes, /Approve delivery permit|permit/);
+  assert.match(notes, /1 complete/);
+  assert.match(notes, /Title edited for a completed listed prerequisite on/);
+  assert.match(notes, /Tags edited on a completed listed prerequisite on/);
+  assert.match(notes, /Activity history is incomplete.*a completed listed prerequisite/);
+  assert.match(notes, /earliest available inspected activity record for a completed listed prerequisite/);
+  assert.match(notes, /saved deadline for a completed listed prerequisite could not be established/);
+  assert.match(notes, /meaningful work progress for a completed listed prerequisite/);
+  assert.match(notes, /Activity history for “Complete independent survey” is partial/);
+});

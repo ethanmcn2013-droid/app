@@ -1092,10 +1092,11 @@ test("round8 mixed prerequisite states retain completed evidence and anonymous u
   const row = b.needsAttention.find(item => item.trigger === "blocking-due-work")!;
   assert.deepEqual(row.evidenceTaskIds, ["legal-proof", "packet", "review-copy"]);
   assert.match(row.detail, /Review copy/);
-  assert.match(row.detail, /verified complete: “Legal proof”/);
+  assert.match(row.detail, /verified complete: 1 prerequisite/);
   assert.match(row.detail, /unknown|unverified/);
   assert.doesNotMatch(row.detail, /are complete|no longer held up/);
-  assert.match(b.activityCoverageNote!, /Legal proof.*complete/);
+  assert.match(b.activityCoverageNote!, /1 complete/);
+  assert.doesNotMatch(JSON.stringify({ detail: row.detail, reasons: row.reasons, coverage: b.activityCoverageNote }), /Legal proof|legal-proof/);
   assert.match(b.activityCoverageNote!, /unverified|unknown|not fully/i);
 });
 test("mixed completed and open dependency remains one full relation separate from its deadline", async () => {
@@ -1116,8 +1117,9 @@ test("mixed completed and open dependency remains one full relation separate fro
   assert.deepEqual(relation.evidenceTaskIds, [done.id, open.id, dependent.id].sort());
   assert.match(relation.detail, /Open the display.*due tomorrow/);
   assert.match(relation.detail, /still open: “Inspect access”/);
-  assert.match(relation.detail, /verified complete: “Check layout”/);
+  assert.match(relation.detail, /verified complete: 1 prerequisite/);
   assert.doesNotMatch(relation.detail, /are complete|no longer held up|ready|started/);
+  assert.doesNotMatch(JSON.stringify({ detail: relation.detail, reasons: relation.reasons }), /Check layout|check-layout/);
   const deadline = allRows.find(row => row.id === dependent.id && row.trigger === "due-soon")!;
   assert.ok(deadline);
   assert.deepEqual(deadline.evidenceTaskIds, [dependent.id]);
@@ -1158,7 +1160,7 @@ test("dismissed full dependency cannot resurface under another open prerequisite
   assert.ok(withOther.needsAttention.every(row => row.observationId !== relation.observationId));
   assert.equal(withOther.needsAttention.length, 3);
 });
-test("round8 complete prerequisite observation names visible set and hides terminal evidence identities", async () => {
+test("round8 complete prerequisite observation preserves counts and hides all terminal evidence identities", async () => {
   const done = task({ id: "safety-cert", title: "Safety certificate", workspaceId: "show", lane: "shipped", idleDays: null });
   const dependent = task({ id: "open-show", workspaceId: "show", dueAt: NOW + 5 * DAY, idleDays: null,
     dependencyCoverage: "complete", hasCompletedListedPrerequisite: true, prerequisiteEvidence: [
@@ -1167,8 +1169,9 @@ test("round8 complete prerequisite observation names visible set and hides termi
     ] });
   const b = await buildBriefing(source([dependent, done]), CTX, NOW);
   const row = b.needsAttention.find(item => item.trigger === "prerequisites-complete")!;
-  assert.match(row.detail, /Safety certificate/);
-  assert.doesNotMatch(row.detail, /hidden-terminal/);
+  assert.match(row.detail, /2 prerequisites/);
+  assert.match(row.detail, /no longer held up/);
+  assert.doesNotMatch(JSON.stringify({ detail: row.detail, reasons: row.reasons, coverage: b.activityCoverageNote }), /Safety certificate|safety-cert|hidden-terminal/);
   assert.deepEqual(row.evidenceTaskIds, ["hidden-terminal", "open-show", "safety-cert"]);
 });
 test("round8 precise uncertainty preserves missing date and known metadata without history invention", async () => {
