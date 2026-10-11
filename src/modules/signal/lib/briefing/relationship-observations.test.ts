@@ -19,7 +19,8 @@ test("open-edge explanation includes completed siblings and anonymous uncertaint
   const result = enrich({ ...candidate(open, "blocking-due-work"), relatedTaskId: dependent.id }, [dependent, open, done]);
   assert.deepEqual(result.representedTaskIds, [dependent.id, open.id, done.id].sort());
   assert.match(result.detailOverride!, /Title dependent.*Title open/);
-  assert.match(result.detailOverride!, /verified complete: “Title done”/);
+  assert.match(result.detailOverride!, /verified complete: 1 prerequisite/);
+  assert.doesNotMatch(JSON.stringify({ detail: result.detailOverride, reasons: result.reasons }), /Title done|Title b/);
   assert.match(result.detailOverride!, /state is unknown/);
   assert.doesNotMatch(result.detailOverride!, /unavailable|are complete|all prerequisites/);
 });
@@ -35,7 +36,7 @@ test("near-due mixed relation carries complete authorized membership without a r
   assert.equal(result.relatedTaskId, dependent.id);
   assert.equal(result.severity, row.severity);
   assert.deepEqual(result.representedTaskIds, ["dependent", "done", "open"]);
-  assert.equal(result.detailOverride, "“Title dependent” is due tomorrow. Listed prerequisites still open: “Title open”. Listed prerequisites verified complete: “Title done”.");
+  assert.equal(result.detailOverride, "“Title dependent” is due tomorrow. Listed prerequisites still open: “Title open”. Listed prerequisites verified complete: 1 prerequisite.");
   assert.doesNotMatch(result.detailOverride!, /no longer held up|are complete|ready|started/);
 });
 
@@ -48,7 +49,7 @@ test("near-due relation deduplicates inspected evidence and keeps foreign, missi
     [dependent, open, task("foreign-secret", { title: "Private foreign title", workspaceId: "other" })]);
   assert.deepEqual(result.representedTaskIds, ["dependent", "hidden-complete", "open"]);
   assert.match(result.detailOverride!, /still open: “Title open”/);
-  assert.match(result.detailOverride!, /verified complete: 1 prerequisite outside this visible task list/);
+  assert.match(result.detailOverride!, /verified complete: 1 prerequisite/);
   assert.match(result.detailOverride!, /not confirmed clear.*state is unknown/);
   assert.doesNotMatch(result.detailOverride!, /hidden-complete|foreign-secret|missing-secret|Private foreign title|are complete/);
 });
@@ -73,7 +74,7 @@ test("long near-due relation retains full states and source set through ledger r
   assert.match(received.detail!, /not confirmed clear to move ahead/);
   assert.ok(received.detail!.length <= 520);
   assert.ok(received.reasons.length <= 6 && received.reasons.every(reason => reason.length <= 280));
-  assert.match(received.reasons.join(" "), /Complete prerequisite: “Completed check”/);
+  assert.doesNotMatch(JSON.stringify(received), /Completed check|Complete prerequisite:/);
   assert.equal(received.receipt.evidenceCount, ids.length);
   assert.doesNotMatch(JSON.stringify(received), /foreign-secret|missing-secret|hidden-complete|no longer held up|are complete/);
 });
@@ -115,13 +116,13 @@ test("mixed completed and open records are explicitly distinguished", () => {
   const result = enrich(candidate(dependent), [dependent, task("a"), task("b", { lane: "shipped" })]);
   assert.deepEqual(result.representedTaskIds, ["a", "b", "d"]);
   assert.match(result.detailOverride!, /still open: “Title a”/);
-  assert.match(result.detailOverride!, /verified complete: “Title b”/);
+  assert.match(result.detailOverride!, /verified complete: 1 prerequisite/);
 });
 
 test("completed hidden evidence remains anonymous and retains released semantics", () => {
   const dependent = task("d", { dependencyCoverage: "complete", prerequisiteEvidence: [evidence("private-a", true), evidence("private-b", true)] });
   const result = enrich(candidate(dependent, "prerequisites-complete"), [dependent]);
-  assert.equal(result.detailOverride, "Listed prerequisites are complete: 2 prerequisites outside this visible task list. It is no longer held up by that listed work.");
+  assert.equal(result.detailOverride, "Listed prerequisites are complete: 2 prerequisites. It is no longer held up by that listed work.");
   assert.doesNotMatch(result.detailOverride!, /private-|started|runnable/);
   assert.deepEqual(result.representedTaskIds, ["d", "private-a", "private-b"]);
 });
@@ -154,4 +155,14 @@ test("blocking observation preserves its chosen anchor and singleton prose compa
   assert.equal(enrich(candidate(single), [single, blocker]).detailOverride, undefined);
   const unrelated = candidate(blocker, "due-soon");
   assert.equal(enrich(unrelated, [blocker]), unrelated);
+});
+
+test("visible completed prerequisites retain release counts but no public names", () => {
+  const done = task("approved", { title: "Approve safety checklist", lane: "shipped" });
+  const other = task("checked", { title: "Check equipment", lane: "shipped" });
+  const dependent = task("delivery", { prerequisiteEvidence: [evidence(done.id, true), evidence(other.id, true)], dependencyCoverage: "complete" });
+  const result = enrich(candidate(dependent, "prerequisites-complete"), [dependent, done, other]);
+  assert.equal(result.detailOverride, "Listed prerequisites are complete: 2 prerequisites. It is no longer held up by that listed work.");
+  assert.doesNotMatch(JSON.stringify({ detail: result.detailOverride, reasons: result.reasons }), /Approve safety checklist|Check equipment|approved|checked/);
+  assert.deepEqual(result.representedTaskIds, ["approved", "checked", "delivery"]);
 });

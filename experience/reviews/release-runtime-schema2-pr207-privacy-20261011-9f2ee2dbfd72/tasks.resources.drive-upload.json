@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.resources.drive-upload",
+  "source": "tasks/src/components/app/detail-panel/resources-section.tsx",
+  "materialityHash": "19f85eac6f784ffa",
+  "reviewedAt": "2026-10-11",
+  "reviewer": "Root release coordinator: technical visual receiving, with independent source and current raw/private custody review",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-f09f492a0af3c19f63853e43-1b06f5b5501b292c.json",
+    "attestationSha256": "905e26664c6e53423c6e8b330a6a166b9bcb2b4b19a44306fb4d2190822fa73c",
+    "runId": "tasks-playwright-f09f492a0af3c19f63853e43",
+    "canonicalEvidenceSha256": "f09f492a0af3c19f63853e43954abd2bcb4975a140c43b0aa3e7443a021ceb1c",
+    "rawArtifactSha256": "1b06f5b5501b292c84984370fcbdb53affc1fe205c55c83e2bf820dad7b48774",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.resources.drive-upload",
+    "caseName": "own surface in demo",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Fresh exact-source PR207 privacy qualification for tasks.resources.drive-upload: completed dependency names omitted from contextual and relationship reasons/detail; prerequisite names and positive durable completion observations preserved. Current own fixture uses declared deterministic inputs/scope; privacy semantics additionally qualified by source tests.",
+  "decision": "Technical receiving after fresh196, all64own/scope and12mapped private custody, independent review and root19 technical image decision. Preserve existing classification/score/states/baseline; no design or hosted/provider acceptance."
+}
