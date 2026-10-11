@@ -1,11 +1,9 @@
 #!/usr/bin/env node
 
 import {
-  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
-  readdirSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -98,20 +96,37 @@ function buildAttestation(repoRoot, artifactFile = path.join(repoRoot, ARTIFACT_
 }
 
 function verifyReceipts(repoRoot, attestation) {
-  const reviewsDirectory = path.join(repoRoot, "experience", "reviews");
-  if (!existsSync(reviewsDirectory)) return;
-  const receipts = new Set(readdirSync(reviewsDirectory).filter((name) => name.endsWith(".json"))
-    .map(name => `experience/reviews/${name}`));
   const registryFile = path.join(repoRoot, "experience", "registry.json");
-  if (existsSync(registryFile)) {
-    const registry = JSON.parse(readFileSync(registryFile, "utf8"));
-    for (const entry of registry.experiences ?? []) {
-      if (entry.materialityReview?.evidence) receipts.add(entry.materialityReview.evidence);
-    }
+  const registry = JSON.parse(readFileSync(registryFile, "utf8"));
+  if (!registry || !Array.isArray(registry.experiences)) {
+    throw new Error("materiality receipt verification requires a registry experiences array");
   }
-  for (const evidencePath of receipts) {
+  // The registry selects current reviews; unreferenced receipts preserve prior contracts.
+  for (const entry of registry.experiences) {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+      throw new Error("materiality receipt verification requires registry experience objects");
+    }
+    if (entry.materialityReview === undefined) continue;
+    const review = entry.materialityReview;
+    if (!review || typeof review !== "object" || Array.isArray(review) ||
+        typeof review.evidence !== "string" || review.evidence.length === 0 ||
+        typeof entry.id !== "string" || typeof entry.source !== "string" ||
+        typeof entry.materialityHash !== "string" || typeof review.reviewedAt !== "string" ||
+        review.materialityHash !== entry.materialityHash || review.reviewedAt !== entry.lastReviewedAt) {
+      throw new Error("materiality receipt verification requires a complete registry review binding");
+    }
+    const evidencePath = review.evidence;
     const name = evidencePath;
-    const { receipt } = validateMaterialityReceipt({ repoRoot, evidencePath });
+    const { receipt } = validateMaterialityReceipt({
+      repoRoot,
+      evidencePath,
+      expected: {
+        experienceId: entry.id,
+        source: entry.source,
+        materialityHash: entry.materialityHash,
+        reviewedAt: review.reviewedAt,
+      },
+    });
     if (receipt.schemaVersion !== RECEIPT_SCHEMA) {
       throw new Error(`${name}: unsupported materiality receipt schema`);
     }
@@ -264,7 +279,67 @@ function runSelfTest() {
       decision: "Accepted for self-test.",
     };
     writeFileSync(receiptPath, canonicalJson(receipt));
+    const registryPath = path.join(root, "experience", "registry.json");
+    const registry = {
+      experiences: [{
+        id: receipt.experienceId,
+        source: receipt.source,
+        materialityHash: receipt.materialityHash,
+        lastReviewedAt: receipt.reviewedAt,
+        materialityReview: {
+          materialityHash: receipt.materialityHash,
+          reviewedAt: receipt.reviewedAt,
+          evidence: "experience/reviews/self-test.json",
+        },
+      }],
+    };
+    const saveRegistry = () => writeFileSync(registryPath, canonicalJson(registry));
+    const expectRejected = (label, candidate = first) => {
+      let caught = false;
+      try { verifyReceipts(root, candidate); } catch { caught = true; }
+      if (!caught) throw new Error(`self-test failed: ${label} was accepted`);
+    };
+    saveRegistry();
+    const historicalRecordPath = "experience/evidence-runs/historical-self-test.json";
+    const historicalRecord = { ...first, fixtureManifestSha256: "f".repeat(64) };
+    const historicalText = canonicalJson(historicalRecord);
+    writeFileSync(path.join(root, ...historicalRecordPath.split("/")), historicalText);
+    const historicalReceiptPath = path.join(root, "experience", "reviews", "historical-self-test.json");
+    writeFileSync(historicalReceiptPath, canonicalJson({
+      ...receipt,
+      playwrightEvidence: {
+        ...receipt.playwrightEvidence,
+        attestationPath: historicalRecordPath,
+        attestationSha256: sha256(historicalText),
+      },
+    }));
+    const historicalBytes = readFileSync(historicalReceiptPath);
+    // A current active review can coexist with preserved prior-contract evidence.
     verifyReceipts(root, first);
+    if (!historicalBytes.equals(readFileSync(historicalReceiptPath))) {
+      throw new Error("self-test failed: historical receipt bytes changed");
+    }
+    registry.experiences[0].materialityReview.evidence = "experience/reviews/historical-self-test.json";
+    saveRegistry();
+    expectRejected("referenced historical contract");
+    registry.experiences[0].materialityReview.evidence = "experience/reviews/missing-self-test.json";
+    saveRegistry();
+    expectRejected("missing active receipt");
+    registry.experiences[0].materialityReview.evidence = "experience/reviews/self-test.json";
+    registry.experiences[0].id = "tasks.page.foreign";
+    saveRegistry();
+    expectRejected("active receipt with foreign registry identity");
+    registry.experiences[0].id = receipt.experienceId;
+    saveRegistry();
+    expectRejected("different current canonical run", { ...first, canonicalEvidenceSha256: "f".repeat(64) });
+    for (const malformed of [null, {}, { experiences: {} }, { experiences: [null] },
+      { experiences: [{ ...registry.experiences[0], materialityReview: {} }] }]) {
+      writeFileSync(registryPath, canonicalJson(malformed));
+      expectRejected("malformed active registry");
+    }
+    rmSync(registryPath);
+    expectRejected("missing registry");
+    saveRegistry();
     receipt.playwrightEvidence.rawArtifactSha256 = "0".repeat(64);
     writeFileSync(receiptPath, canonicalJson(receipt));
     let rejected = false;
