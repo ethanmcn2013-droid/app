@@ -1,14 +1,21 @@
 import {
   stableSignalLedgerId,
   type SignalLedgerDTO,
+  type SignalLedgerCoverageStatus,
   type SignalLedgerEmptyState,
   type SignalLedgerEntry,
 } from "../analytics/ledger-contract";
 import { groupLegacyBriefItems } from "../analytics/ledger-adapters";
 import {
   calendarDayDifference,
-  dateOnlyToTimestamp,
+  deadlineDayDifference,
+  deadlineIsOverdue,
+  deadlineShortDate,
+  compareDeadlines,
+  deadlineWeekday,
+  signalDeadline,
 } from "../briefing/calendar-time";
+import { canonicalDate } from "../data/deadline";
 import type { Briefing, BriefItem, TaskSignal, TriggerKind } from "../briefing/types";
 import type { AuthorizedSignalScope } from "../planning-periods/scope";
 
@@ -63,7 +70,7 @@ export type OverviewDateRow = {
   href: string;
   /** "Today", "Tomorrow", "14 Jul". */
   day: string;
-  /** "2 days late", "In 16 days", or null when `day` already says it. */
+  /** "2 days late", "Past its time today", "In 16 days", or null. */
   relative: string | null;
   tone: OverviewTone;
 };
@@ -75,6 +82,7 @@ export type OverviewRunwayMark = {
 };
 
 export type OverviewRunway = {
+  dateCoverageComplete: boolean;
   keyDate: {
     label: string;
     /** Named only when the scope spans several projects. */
@@ -116,10 +124,12 @@ export type OverviewModel = {
   coverage: { note: string; tone: OverviewTone } | null;
   attention: OverviewSignal[];
   risks: OverviewSignal[];
+  activity: OverviewSignal[];
   emptyState: SignalLedgerEmptyState | null;
   lanes: OverviewLaneCounts | null;
   runway: OverviewRunway | null;
   finished: OverviewFinishedRow[] | null;
+  finishedCoverageComplete: boolean;
   readNote: string | null;
 };
 
@@ -152,27 +162,30 @@ export function buildOverviewModel(input: {
   });
   const attention = ledger.entries.filter((entry) => entry.section === "attention").map(toSignal);
   const risks = ledger.entries.filter((entry) => entry.section === "risks").map(toSignal);
+  const activity = ledger.entries.filter((entry) => entry.section === "activity").map(toSignal);
+  const coverageStatus = coverageStatusFor(ledger);
 
   const lanes = legacy ? laneCounts(legacy.signals, now) : null;
-  const coverage = ledger.coverageNote
-    ? {
-        note: ledger.coverageNote,
-        tone: (ledger.freshness === "unavailable" ? "danger" : "warning") as OverviewTone,
-      }
+  const coverageNote = ledger.coverageNote ?? (coverageStatus === "complete" ? null : coverageLimitation(coverageStatus));
+  const coverage = coverageNote
+    ? { note: coverageNote, tone: (coverageStatus === "complete" ? "neutral"
+        : coverageStatus === "unavailable" ? "danger" : "warning") as OverviewTone }
     : null;
 
   return {
     dateLabel: formatDate(now, timezone, { weekday: "long", day: "numeric", month: "long" }),
     timeLabel: formatTime(now, timezone),
     scopeLabel: ledger.scopeLabel,
-    verdict: verdictFor(attention.length, risks.length, ledger, lanes),
+    verdict: verdictFor(attention.length, risks.length, activity.length, ledger, lanes, coverageStatus),
     coverage,
     attention,
     risks,
-    emptyState: ledger.emptyState,
+    activity,
+    emptyState: coverageStatus === "complete" || ledger.emptyState?.kind === "coverage" ? ledger.emptyState : null,
     lanes,
     runway: legacy ? runwayFor(legacy, now, timezone) : null,
     finished: legacy ? finishedFor(legacy.signals, now, timezone) : null,
+    finishedCoverageComplete: legacy?.signals.every((signal) => signal.lane !== "shipped" || signal.movedToShippedAt != null) ?? false,
     readNote: readNoteFor(ledger, legacy ? "task" : "item", formatTime(now, timezone)),
   };
 }
@@ -202,24 +215,29 @@ function triggerChip(
   const byTrigger: Record<Exclude<TriggerKind, "due-soon">, OverviewChip> = {
     "stuck-work": { label: "Stalled", tone: "warning" },
     "blocked-too-long": { label: "Waiting on other work", tone: "warning" },
+    "blocking-due-work": { label: "Holding up due work", tone: "warning" },
+    "prerequisites-complete": { label: "Earlier work done", tone: "neutral" },
+    "prerequisites-unverified": { label: "Prerequisites unconfirmed", tone: "warning" },
     overload: { label: "Workload", tone: "warning" },
     "crowded-week": { label: "Busy week", tone: "warning" },
-    "just-shipped": { label: "Finished", tone: "success" },
+    "just-shipped": { label: "Finished", tone: "neutral" },
+    "recorded-activity": { label: "Recorded activity", tone: "neutral" },
   };
   if (item.trigger !== "due-soon") return byTrigger[item.trigger];
-  if (signal?.dueAt == null) return { label: "Due soon", tone: "warning" };
-  const days = calendarDayDifference(signal.dueAt, now, timezone);
-  if (days < 0) return { label: "Overdue", tone: "danger" };
+  const days = signal ? deadlineDayDifference(signalDeadline(signal), now, timezone) : null;
+  if (days === null) return { label: "Due soon", tone: "warning" };
+  if (deadlineIsOverdue(signalDeadline(signal!), now, timezone)) return { label: "Overdue", tone: "danger" };
   if (days === 0) return { label: "Due today", tone: "warning" };
   if (days === 1) return { label: "Due tomorrow", tone: "warning" };
   return {
-    label: `Due ${formatDate(signal.dueAt, timezone, { weekday: "long" })}`,
+    label: `Due ${deadlineWeekday(signalDeadline(signal!), timezone)}`,
     tone: "neutral",
   };
 }
 
 /** The progressive engine carries a state, not a trigger. */
 function stateChip(entry: SignalLedgerEntry): OverviewChip {
+  if (entry.state === "recorded") return { label: "Recorded work", tone: "neutral" };
   return entry.state === "needs_attention"
     ? { label: "Needs you", tone: "danger" }
     : { label: "Worth watching", tone: "warning" };
@@ -238,11 +256,12 @@ export function laneCounts(signals: readonly TaskSignal[], now: number): Overvie
     undated: 0,
   };
   for (const signal of signals) {
-    if (signal.lane !== "shipped" && signal.dueAt == null) counts.undated += 1;
-    if (signal.lane === "next") counts.todo += 1;
-    else if (signal.lane === "in-flight") counts.inProgress += 1;
-    else if (signal.lane === "review") counts.review += 1;
-    else {
+    const phase = signal.stage?.phase ?? signal.lane;
+    if (phase !== "shipped" && !signalDeadline(signal)) counts.undated += 1;
+    if (phase === "next") counts.todo += 1;
+    else if (phase === "in-flight") counts.inProgress += 1;
+    else if (phase === "review") counts.review += 1;
+    else if (phase === "shipped") {
       counts.done += 1;
       if (signal.movedToShippedAt != null && now - signal.movedToShippedAt <= 7 * DAY_MS) {
         counts.doneThisWeek += 1;
@@ -261,15 +280,16 @@ function runwayFor(legacy: OverviewLegacyInput, now: number, timezone: string): 
   const keyDate =
     authorizedScope.workspaces
       .map((workspace) => {
-        const at = workspace.primaryDate ? dateOnlyToTimestamp(workspace.primaryDate) : null;
-        if (at == null) return null;
-        const daysAway = calendarDayDifference(at, now, timezone);
+        const date = canonicalDate(workspace.primaryDate);
+        if (!date) return null;
+        const deadline = { kind: "date-only" as const, date };
+        const daysAway = deadlineDayDifference(deadline, now, timezone)!;
         if (daysAway < 0) return null;
         return {
           label: workspace.primaryDateLabel?.trim() || "Key date",
           project: multiple ? workspace.name : null,
-          dateLabel: formatDate(at, timezone, { weekday: "long", day: "numeric", month: "long" }),
-          shortLabel: formatDate(at, timezone, { day: "numeric", month: "short" }),
+          dateLabel: new Intl.DateTimeFormat("en-IE", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" }).format(new Date(`${date}T00:00:00.000Z`)),
+          shortLabel: deadlineShortDate(deadline, timezone)!,
           daysAway,
         };
       })
@@ -279,16 +299,16 @@ function runwayFor(legacy: OverviewLegacyInput, now: number, timezone: string): 
   const windowDays = keyDate ? Math.max(keyDate.daysAway, 1) : WINDOW_DAYS;
   const dated = legacy.signals
     .filter(
-      (signal): signal is TaskSignal & { dueAt: number } =>
-        signal.lane !== "shipped" && signal.dueAt != null,
+      (signal) =>
+        signal.lane !== "shipped" && deadlineDayDifference(signalDeadline(signal), now, timezone) !== null,
     )
-    .map((signal) => ({ signal, days: calendarDayDifference(signal.dueAt, now, timezone) }))
+    .map((signal) => ({ signal, days: deadlineDayDifference(signalDeadline(signal), now, timezone)! }))
     .filter(({ days }) => days <= windowDays)
-    .sort((a, b) => a.signal.dueAt - b.signal.dueAt || a.signal.title.localeCompare(b.signal.title));
+    .sort((a, b) => compareDeadlines(signalDeadline(a.signal), signalDeadline(b.signal), timezone, now) || a.signal.title.localeCompare(b.signal.title));
 
-  const overdue = dated.filter(({ days }) => days < 0).length;
+  const overdue = dated.filter(({ signal }) => deadlineIsOverdue(signalDeadline(signal), now, timezone)).length;
   const marks: OverviewRunwayMark[] = dated
-    .filter(({ days }) => days >= 0)
+    .filter(({ signal }) => !deadlineIsOverdue(signalDeadline(signal), now, timezone))
     .map(({ days }) => ({ at: Math.min(1, days / windowDays), tone: days <= 1 ? "warning" : "review" }));
 
   const rows = dated.slice(0, DATE_ROW_CAP).map(({ signal, days }): OverviewDateRow => ({
@@ -300,19 +320,22 @@ function runwayFor(legacy: OverviewLegacyInput, now: number, timezone: string): 
         ? "Today"
         : days === 1
           ? "Tomorrow"
-          : formatDate(signal.dueAt, timezone, { day: "numeric", month: "short" }),
+          : deadlineShortDate(signalDeadline(signal), timezone) ?? "Date unavailable",
     relative:
-      days < 0
+      deadlineIsOverdue(signalDeadline(signal), now, timezone) && days === 0
+        ? "Past its time today"
+        : days < 0
         ? `${-days} ${-days === 1 ? "day" : "days"} late`
         : days > 1
           ? `In ${days} days`
           : null,
-    tone: days < 0 ? "danger" : days <= 1 ? "warning" : "neutral",
+    tone: deadlineIsOverdue(signalDeadline(signal), now, timezone) ? "danger" : days <= 1 ? "warning" : "neutral",
   }));
 
   const end = now + windowDays * DAY_MS;
   return {
     keyDate,
+    dateCoverageComplete: legacy.signals.every((signal) => signalDeadline(signal)?.kind !== "unknown"),
     windowDays,
     endLabel: keyDate ? keyDate.shortLabel : formatDate(end, timezone, { day: "numeric", month: "short" }),
     overdue,
@@ -366,36 +389,51 @@ function finishedFor(
 
 /* ── Sentences ───────────────────────────────────────────────────────── */
 
+type OverviewCoverageStatus = SignalLedgerCoverageStatus | "unknown";
+
+function coverageStatusFor(ledger: SignalLedgerDTO): OverviewCoverageStatus {
+  if (["complete", "partial", "stale", "unavailable"].includes(ledger.coverageStatus ?? "")) return ledger.coverageStatus!;
+  // A missing historical DTO field never establishes complete coverage.
+  if (ledger.freshness !== "fresh") return ledger.freshness;
+  return "unknown";
+}
+
+function coverageLimitation(status: OverviewCoverageStatus): string {
+  if (status === "partial") return "Some work could not be checked.";
+  if (status === "stale") return "This is an older read.";
+  if (status === "unavailable") return "Signal cannot reach the work right now.";
+  return "Coverage could not be established for this read.";
+}
+
 function verdictFor(
   attention: number,
   risks: number,
+  activity: number,
   ledger: SignalLedgerDTO,
   lanes: OverviewLaneCounts | null,
+  coverageStatus: OverviewCoverageStatus,
 ): OverviewVerdict {
   if (attention > 0) {
     const lead = `${attention} ${attention === 1 ? "thing needs" : "things need"} attention`;
-    return {
-      tone: "danger",
-      sentence: risks > 0 ? `${lead} and ${risks} ${risks === 1 ? "is" : "are"} at risk.` : `${lead}.`,
-    };
+    return { tone: "danger", sentence: risks > 0 ? `${lead} and ${risks} ${risks === 1 ? "is" : "are"} at risk.` : `${lead}.` };
   }
   if (risks > 0) {
-    return {
-      tone: "warning",
-      sentence: `Nothing is urgent. ${risks} ${risks === 1 ? "thing is" : "things are"} at risk.`,
-    };
+    return { tone: "warning", sentence: coverageStatus !== "complete"
+      ? `${risks} ${risks === 1 ? "thing is" : "things are"} at risk. ${coverageLimitation(coverageStatus)}`
+      : `Nothing is urgent. ${risks} ${risks === 1 ? "thing is" : "things are"} at risk.` };
   }
-  if (ledger.emptyState?.kind === "coverage") {
-    return { tone: "warning", sentence: ledger.emptyState.headline };
+  if (coverageStatus !== "complete") {
+    const finished = lanes?.doneThisWeek ?? 0;
+    return { tone: coverageStatus === "unavailable" ? "danger" : "warning", sentence: finished > 0
+      ? `${finished} finished this week. ${coverageLimitation(coverageStatus)}`
+      : coverageStatus === "partial" ? (ledger.emptyState?.kind === "coverage" ? ledger.emptyState.headline : "Signal has only part of the picture.")
+      : coverageLimitation(coverageStatus) };
   }
+  if (activity > 0) return { tone: "neutral", sentence: `${activity} recorded ${activity === 1 ? "observation" : "observations"}.` };
   const finished = lanes?.doneThisWeek ?? 0;
-  return {
-    tone: "success",
-    sentence:
-      finished > 0
-        ? `On track. ${finished} finished this week.`
-        : "On track. Nothing needs attention right now.",
-  };
+  return { tone: "success", sentence: finished > 0
+    ? `On track. ${finished} finished this week.`
+    : "On track. Nothing needs attention right now." };
 }
 
 /**
@@ -432,7 +470,7 @@ export function readNoteFor(
     );
   } else {
     parts.push(
-      `${counts.flagged} crossed a rule, and the ${counts.shown} that ${counts.shown === 1 ? "asks" : "ask"} something of you ${counts.shown === 1 ? "is" : "are"} shown above.`,
+      `${counts.flagged} crossed a rule, and ${counts.shown} ${counts.shown === 1 ? "is" : "are"} shown above.`,
     );
   }
   if (counts.cleared > 0) {

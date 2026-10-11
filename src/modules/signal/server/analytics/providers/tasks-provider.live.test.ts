@@ -31,6 +31,9 @@ import {
   PROGRAM_AXIS_NOT_CARRIED,
   type AnalyticsQuery,
 } from "../../../lib/analytics/contracts";
+import { calculateMetrics } from "../../../lib/analytics/metrics";
+import { buildBriefing } from "../../../lib/analytics/rules";
+import { getAnalyticsFixture } from "../../../lib/analytics/fixtures";
 
 const SCRATCH_DIR = mkdtempSync(join(tmpdir(), "wp4-tasks-provider-"));
 const TASKS_URL = pathToFileURL(join(SCRATCH_DIR, "tasks.db")).href;
@@ -87,7 +90,9 @@ async function createSchema(): Promise<void> {
       is_milestone INTEGER NOT NULL DEFAULT 0,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL,
-      completed_at INTEGER
+      completed_at INTEGER,
+      archived_at INTEGER,
+      parent_task_id TEXT
     );
     CREATE TABLE activities (
       id TEXT PRIMARY KEY NOT NULL,
@@ -125,14 +130,17 @@ interface TaskSeed {
   createdAt?: number;
   updatedAt?: number;
   completedAt?: number | null;
+  archivedAt?: number | null;
+  parentTaskId?: string | null;
+  dueAt?: number | null;
 }
 
 async function seedTask(seed: TaskSeed): Promise<void> {
   await client.execute({
     sql: `INSERT INTO tasks
             (id, workspace_id, title, lane, board_column_key, priority, assignees,
-             tags, blocked_by, is_milestone, created_at, updated_at, completed_at)
-          VALUES (?, ?, ?, ?, ?, 'normal', ?, ?, ?, 0, ?, ?, ?)`,
+             tags, blocked_by, is_milestone, created_at, updated_at, completed_at, archived_at, parent_task_id, due_at)
+          VALUES (?, ?, ?, ?, ?, 'normal', ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)`,
     args: [
       seed.id,
       seed.workspaceId ?? WORKSPACE,
@@ -145,6 +153,9 @@ async function seedTask(seed: TaskSeed): Promise<void> {
       seed.createdAt ?? 1_752_000_000,
       seed.updatedAt ?? 1_752_000_000,
       seed.completedAt ?? null,
+      seed.archivedAt ?? null,
+      seed.parentTaskId ?? null,
+      seed.dueAt ?? null,
     ],
   });
 }
@@ -152,6 +163,64 @@ async function seedTask(seed: TaskSeed): Promise<void> {
 before(async () => {
   client = createClient({ url: TASKS_URL });
   await createSchema();
+});
+
+async function persistedMetrics() {
+  const { TasksAnalyticsProvider } = await load();
+  const readQuery = query(), result = await new TasksAnalyticsProvider().read(readQuery);
+  const fixture = getAnalyticsFixture("empty");
+  const snapshot = { ...fixture.snapshot, scope: readQuery.scope, capturedAt: "2026-07-31T12:00:00Z", tasks: result.tasks, events: result.events, coverage: { ...fixture.snapshot.coverage, providers: { ...fixture.snapshot.coverage.providers, tasks: result.coverage } } };
+  return { result, metrics: calculateMetrics(snapshot, readQuery), briefing: buildBriefing(snapshot, readQuery) };
+}
+test("persisted archive state is carried explicitly by the actual provider", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  await seedTask({ id: "archive-marked", lane: "doing", archivedAt: 1_752_100_000 });
+  await seedTask({ id: "archive-active", lane: "doing" });
+  const { result } = await persistedMetrics();
+  assert.equal(Reflect.get(result.tasks.find(task => task.id === "archive-marked")!, "archived"), true);
+  assert.equal(Reflect.get(result.tasks.find(task => task.id === "archive-active")!, "archived"), false);
+});
+test("persisted archived open work contributes no current metrics or observations", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  await seedTask({ id: "archive-current-concern", lane: "doing", boardColumnKey: "waiting", archivedAt: 1_752_100_000, dueAt: 1_752_000_000 });
+  const { metrics, briefing } = await persistedMetrics();
+  assert.equal(metrics.open_work.value?.count, 0);
+  for (const key of ["open_overdue_work", "open_work_age", "stalled_work", "blocked_work", "unowned_work", "workload_distribution"] as const) assert.ok(metrics[key].sources.every(source => source.id !== "archive-current-concern"));
+  assert.ok(briefing.observations.every(observation => observation.sources.every(source => source.id !== "archive-current-concern")));
+});
+test("persisted archived completion remains part of period history", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  await seedTask({ id: "archive-history", lane: "done", archivedAt: 1_752_100_000, completedAt: Date.parse("2026-07-15T12:00:00Z") / 1000 });
+  const { result, metrics } = await persistedMetrics();
+  assert.equal(result.tasks.length, 1); assert.equal(metrics.work_completed.value?.count, 1);
+});
+test("restoring a persisted archived open task re-enables current metrics", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  await seedTask({ id: "archive-restore", lane: "doing", archivedAt: 1_752_100_000 });
+  assert.equal((await persistedMetrics()).metrics.open_work.value?.count, 0);
+  await client.execute("UPDATE tasks SET archived_at=NULL WHERE id='archive-restore'");
+  assert.equal((await persistedMetrics()).metrics.open_work.value?.count, 1);
+});
+test("persisted children are excluded before the provider's 2001-record bound", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  await client.batch(Array.from({ length: 2_001 }, (_, index) => ({ sql: "INSERT INTO tasks(id,workspace_id,title,lane,priority,is_milestone,created_at,updated_at,parent_task_id) VALUES (?,?,'Synthetic child','doing','normal',0,1752000000,1752000000,'zz-top-level-parent')", args: [`aa-child-${index.toString().padStart(4, "0")}`, WORKSPACE] })), "write");
+  await seedTask({ id: "zz-top-level-parent", lane: "doing" });
+  const { result } = await persistedMetrics();
+  assert.equal(result.tasks.length, 1);
+  assert.deepEqual(result.tasks.map(task => task.id), ["zz-top-level-parent"]);
+  assert.ok(!result.coverage.issues.includes("tasks_record_limit_reached"));
+});
+test("archived completed dependencies remain resolved while excluded children stay unknown", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  const completedAt = Date.parse("2026-07-15T12:00:00Z") / 1000;
+  await seedTask({ id: "dependency-archived", lane: "done", archivedAt: 1_752_100_000, completedAt });
+  await seedTask({ id: "dependency-child", lane: "done", parentTaskId: "dependency-main", completedAt });
+  await seedTask({ id: "dependency-main", lane: "doing", blockedBy: ["dependency-archived", "dependency-child"] });
+  const { result, metrics } = await persistedMetrics();
+  const main = result.tasks.find(task => task.id === "dependency-main"); assert.ok(main);
+  assert.deepEqual(main.blocking.unresolvedDependencyIds, ["dependency-child"]);
+  assert.ok(!result.tasks.some(task => task.id === "dependency-child"));
+  assert.equal(metrics.work_completed.value?.count, 1);
 });
 
 after(() => {
@@ -297,10 +366,147 @@ test("the provider declares only capabilities it can actually serve", async () =
   const result = await new TasksAnalyticsProvider().read(query());
 
   assert.ok(result.coverage.capabilities.includes("task_read"));
+  assert.ok(result.coverage.capabilities.includes("task_completion_timestamps"));
+  assert.ok(result.coverage.capabilities.includes("task_status_history"));
+  assert.ok(!result.coverage.capabilities.includes("task_meaningful_activity"));
+  assert.equal(result.coverage.status, "partial");
+  assert.ok(result.coverage.issues.includes("tasks_meaningful_activity_history_unverified"));
   assert.ok(
     !result.coverage.capabilities.includes("decision_read"),
     "the Tasks provider cannot read decisions and must not claim to",
   );
+});
+
+test("missing history cannot become creation-time inactivity while overdue and completion facts survive", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  await seedTask({id: "old-unknown-activity", lane: "doing", createdAt: Date.parse("2026-07-02T00:00:00Z") / 1000,
+    dueAt: Date.parse("2026-07-10T00:00:00Z") / 1000});
+  await seedTask({id: "known-completion", lane: "done", completedAt: Date.parse("2026-07-15T00:00:00Z") / 1000});
+  const {result, metrics, briefing} = await persistedMetrics();
+  assert.equal(result.tasks.find(task => task.id === "old-unknown-activity")?.lastMeaningfulActivityAt, null);
+  assert.equal(metrics.stalled_work.status, "unsupported");
+  assert.equal(metrics.stalled_work.value, null);
+  assert.equal(metrics.open_overdue_work.value?.count, 1);
+  assert.deepEqual(metrics.open_overdue_work.sources.map(source => [source.id, source.date]),
+    [["old-unknown-activity", "2026-07-10T00:00:00.000Z"]]);
+  assert.equal(metrics.work_completed.value?.count, 1);
+  assert.ok(!briefing.observations.some(observation => observation.metric.key === "stalled_work"));
+  const fixture = getAnalyticsFixture("empty");
+  const readQuery = query();
+  const contradicted = {...fixture.snapshot, scope: readQuery.scope, capturedAt: "2026-07-31T12:00:00Z",
+    tasks: result.tasks, events: result.events,
+    coverage: {...fixture.snapshot.coverage, providers: {...fixture.snapshot.coverage.providers,
+      tasks: {...result.coverage, capabilities: [...result.coverage.capabilities, "task_meaningful_activity" as const]}}}};
+  assert.equal(calculateMetrics(contradicted, readQuery).stalled_work.value, null,
+    "a contradictory capability claim cannot turn a null task timestamp into a zero count");
+});
+
+test("provider keeps picker dates separate from real instants and marks conflicting labels incomplete", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  for (const id of ["picker-date", "timed-date", "conflicting-date"]) {
+    await seedTask({ id, lane: "doing", dueAt: Date.parse("2026-10-25T09:00:00.000Z") / 1000 });
+  }
+  await client.execute({ sql: "UPDATE tasks SET due='2026-10-25' WHERE id='picker-date'" });
+  await client.execute({ sql: "UPDATE tasks SET due='2026-10-26' WHERE id='conflicting-date'" });
+  const { result } = await persistedMetrics();
+  const byId = new Map(result.tasks.map(row => [row.id, row]));
+  assert.deepEqual(byId.get("picker-date")?.due, { kind: "date", value: "2026-10-25" });
+  assert.deepEqual(byId.get("timed-date")?.due, { kind: "instant", value: "2026-10-25T09:00:00.000Z" });
+  assert.equal(byId.get("conflicting-date")?.due, null);
+  assert.ok(result.coverage.issues.includes("tasks_due_kind_ambiguous"));
+});
+
+test("validated positive activity is retained without certifying bounded or foreign history", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  await seedTask({id: "positive-task", lane: "doing"});
+  const recent = Date.parse("2026-07-28T10:00:00Z") / 1000;
+  await client.execute({sql: "INSERT INTO activities(id,workspace_id,task_id,user_id,kind,payload,created_at) VALUES (?,?,?,?,?,?,?)",
+    args: ["owned-positive", WORKSPACE, "positive-task", "user_a", "commentAdd", "{}", recent]});
+  await client.execute({sql: "INSERT INTO activities(id,workspace_id,task_id,user_id,kind,payload,created_at) VALUES (?,?,?,?,?,?,?)",
+    args: ["foreign-positive", OTHER_WORKSPACE, "positive-task", "user_a", "commentAdd", "{}", recent + 100]});
+  const {result, metrics} = await persistedMetrics();
+  assert.equal(result.tasks[0]?.lastMeaningfulActivityAt, "2026-07-28T10:00:00.000Z");
+  assert.deepEqual(result.events.map(event => event.id), ["owned-positive"]);
+  assert.equal(result.coverage.status, "partial");
+  assert.ok(!result.coverage.capabilities.includes("task_meaningful_activity"));
+  assert.equal(metrics.stalled_work.value, null);
+});
+
+test("future activity within a queried period does not become positive evidence", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  await seedTask({id: "future-activity-task", lane: "doing"});
+  await client.execute({sql: "INSERT INTO activities(id,workspace_id,task_id,user_id,kind,payload,created_at) VALUES (?,?,?,?,?,?,?)",
+    args: ["future-positive", WORKSPACE, "future-activity-task", "user_a", "commentAdd", "{}",
+      Date.parse("2099-07-20T10:00:00Z") / 1000]});
+  const {TasksAnalyticsProvider} = await load();
+  const result = await new TasksAnalyticsProvider().read(query({period: {...query().period,
+    start: "2099-07-01T00:00:00Z", end: "2099-08-01T00:00:00Z"}}));
+  assert.equal(result.tasks[0]?.lastMeaningfulActivityAt, null);
+  assert.deepEqual(result.events, []);
+  assert.ok(result.coverage.issues.includes("tasks_activity_timestamp_invalid_or_future"));
+});
+
+test("a truncated history retains observed positives but cannot certify inactivity", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  await seedTask({id: "truncated-activity-task", lane: "doing"});
+  const start = Date.parse("2026-07-20T00:00:00Z") / 1000;
+  await client.batch(Array.from({length: 5_001}, (_, index) => ({
+    sql: "INSERT INTO activities(id,workspace_id,task_id,user_id,kind,payload,created_at) VALUES (?,?,?,?,?,?,?)",
+    args: [`bounded-${index}`, WORKSPACE, "truncated-activity-task", "user_a", "commentAdd", "{}", start + index],
+  })), "write");
+  const {result, metrics} = await persistedMetrics();
+  assert.equal(result.events.length, 5_000);
+  assert.ok(result.tasks[0]?.lastMeaningfulActivityAt);
+  assert.ok(result.coverage.issues.includes("tasks_activity_limit_reached"));
+  assert.ok(!result.coverage.capabilities.includes("task_meaningful_activity"));
+  assert.equal(metrics.stalled_work.status, "unsupported");
+  assert.equal(metrics.stalled_work.value, null);
+});
+
+test("an activity query failure is not an empty successful history", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  await seedTask({id: "activity-query-failure", lane: "doing"});
+  await client.execute("ALTER TABLE activities RENAME TO activities_unreadable");
+  try {
+    const {TasksAnalyticsProvider} = await load();
+    await assert.rejects(new TasksAnalyticsProvider().read(query()));
+  } finally {
+    await client.execute("ALTER TABLE activities_unreadable RENAME TO activities");
+  }
+});
+
+test("malformed persisted activity does not become evidence of recent progress", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  await seedTask({id: "malformed-activity-task", lane: "doing"});
+  await client.execute({sql: "INSERT INTO activities(id,workspace_id,task_id,user_id,kind,payload,created_at) VALUES (?,?,?,?,?,?,?)",
+    args: ["malformed-activity", WORKSPACE, "malformed-activity-task", "user_a", "update", "not-json",
+      Date.parse("2026-07-28T10:00:00Z") / 1000]});
+  const {TasksAnalyticsProvider} = await load();
+  await assert.rejects(new TasksAnalyticsProvider().read(query()));
+});
+
+test("metric defense uses proved activity, never creation recency, when a provider claims full history", async () => {
+  await client.executeMultiple("DELETE FROM tasks; DELETE FROM activities; DELETE FROM meta;");
+  await seedTask({id: "metric-defence", lane: "doing", createdAt: Date.parse("2026-07-30T00:00:00Z") / 1000});
+  const {result} = await persistedMetrics();
+  const readQuery = query();
+  const fixture = getAnalyticsFixture("empty");
+  const task = result.tasks[0]!;
+  const snapshot = {...fixture.snapshot, scope: readQuery.scope, capturedAt: "2026-07-31T12:00:00Z",
+    tasks: [{...task, lastMeaningfulActivityAt: "2026-07-01T00:00:00Z"}], events: result.events,
+    coverage: {...fixture.snapshot.coverage, providers: {...fixture.snapshot.coverage.providers,
+      tasks: {...result.coverage, capabilities: [...result.coverage.capabilities, "task_meaningful_activity" as const]}}}};
+  assert.equal(calculateMetrics(snapshot, readQuery).stalled_work.value?.count, 1,
+    "recent creation must not suppress a stall backed by old complete activity history");
+  const recent = {id: "proved-recent", workspaceId: WORKSPACE, labelIds: [], entityType: "task" as const,
+    entityId: task.id, kind: "commented" as const, at: "2026-07-30T10:00:00Z", meaningful: true};
+  assert.equal(calculateMetrics({...snapshot, events: [recent]}, readQuery).stalled_work.value?.count, 0,
+    "a newer validated event can establish positive recency when the capability is genuinely present");
+  for (const lastMeaningfulActivityAt of [null, "2099-01-01T00:00:00Z", "invalid"]) {
+    const unknown = calculateMetrics({...snapshot, tasks: [{...task, lastMeaningfulActivityAt}]}, readQuery).stalled_work;
+    assert.equal(unknown.status, "unsupported");
+    assert.equal(unknown.value, null);
+  }
 });
 
 /**

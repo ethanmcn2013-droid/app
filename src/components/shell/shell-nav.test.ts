@@ -154,7 +154,7 @@ test("Chat lists real conversations, or says Coming soon; it never invents one",
   assert.match(sidebarSource, /const directory = useChatDirectory\(messagesEnabled \? chatDirectory : null\);/);
   assert.match(sidebarSource, /chatEntries\.map\(\(entry\) => chatLink\(entry\)\)/);
   // New message only where the product can start one.
-  assert.match(sidebarSource, /directory\?\.newMessageHref \? \(\s*<Link href=\{directory\.newMessageHref\} aria-label="New message"/);
+  assert.match(sidebarSource, /directory\?\.newMessageHref \? \(\s*<SidebarIntentLink href=\{directory\.newMessageHref\} aria-label="New message"/);
   // Without Chat: one row, not a link.
   const without = sidebarSource.slice(sidebarSource.indexOf(": collapsed || chatPending"), sidebarSource.indexOf("styles.footer"));
   assert.ok(without.includes("Coming soon"));

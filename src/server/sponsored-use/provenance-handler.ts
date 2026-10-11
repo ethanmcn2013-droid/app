@@ -18,7 +18,7 @@ export function provenanceHandler(database:typeof db,readClaim:CanonicalClaimRea
           return {proof:await readUsageEventProof(tx,readClaim,p.eventId,config.salt,config.now ?? Date.now())};
         if(Object.keys(p).length===2 && typeof p.issuanceId==="string" && /^vi-[a-f0-9]{32}$/.test(p.issuanceId) &&
           p.cursor==="0")
-          return readUsageEligiblePage(tx,readClaim,p.issuanceId,Number(p.cursor),config.salt);
+          return readUsageEligiblePage(tx,readClaim,p.issuanceId,Number(p.cursor),config.salt,config.now ?? Date.now());
         return null;
       },{behavior:"deferred"});
       return result ? usageResponse(200,result) : usageResponse(400,{ok:false});

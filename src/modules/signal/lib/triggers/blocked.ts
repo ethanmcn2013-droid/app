@@ -16,6 +16,7 @@ export const blocked: Trigger = {
   id: "blocked",
   defaultBlock: "needs-attention",
   detect(work) {
+    if (work.coverage?.activity === "partial") return [];
     const insights: Insight[] = [];
     for (const task of work.tasks) {
       if (task.status !== "blocked") continue;

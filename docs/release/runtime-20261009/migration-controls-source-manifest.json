@@ -1,0 +1,90 @@
+{
+  "id": "migration-controls",
+  "base": "ad0529bcb24db1fab06934deceb0617b2b320fe3",
+  "commit": "b2adaf8482bea4e0cbe720c696af8117775290d4",
+  "tree": "0e6228be48c1ebfe4a78cb00861b8e57d43acf7b",
+  "paths": [
+    {
+      "status": "M",
+      "path": ".github/workflows/db-migrate-encrypted.yml",
+      "baseBlob": "5272d69f4129973cdcea9cd6848ad27b426c7ac6",
+      "sourceBlob": "0240d05bba19d48bef34a797d7c4073815ac60c1",
+      "mainBlob": "5272d69f4129973cdcea9cd6848ad27b426c7ac6",
+      "aggregateBlob": "0240d05bba19d48bef34a797d7c4073815ac60c1",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": ".github/workflows/design-quality.yml",
+      "baseBlob": "b7b9cd66f32e2cceac3aa1289d5cd0975386127b",
+      "sourceBlob": "a358e6221c96189b031d40b700409769df8f015e",
+      "mainBlob": "b7b9cd66f32e2cceac3aa1289d5cd0975386127b",
+      "aggregateBlob": "a358e6221c96189b031d40b700409769df8f015e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "DEPLOY.md",
+      "baseBlob": "f05dbd85724b9a1c46d103f1387ae8ec3fbdb8a8",
+      "sourceBlob": "20169115158478447fe0fd00f6cfddab37a5ba66",
+      "mainBlob": "f05dbd85724b9a1c46d103f1387ae8ec3fbdb8a8",
+      "aggregateBlob": "20169115158478447fe0fd00f6cfddab37a5ba66",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "drizzle/MIGRATIONS.md",
+      "baseBlob": "6eb3abf36e93bed0e60cd92ceb33f4a68fc770ca",
+      "sourceBlob": "91ea6429bcc0bb2e8486b548ec2abe431bce814b",
+      "mainBlob": "6eb3abf36e93bed0e60cd92ceb33f4a68fc770ca",
+      "aggregateBlob": "91ea6429bcc0bb2e8486b548ec2abe431bce814b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "scripts/db/migration-ledger.test.mjs",
+      "baseBlob": "d34db8eb2fa5f584a8f57a58f21de1e7af32efc7",
+      "sourceBlob": "0eec82bd8ede2da9d7d002f15ec2b0747a2baa41",
+      "mainBlob": "d34db8eb2fa5f584a8f57a58f21de1e7af32efc7",
+      "aggregateBlob": "0eec82bd8ede2da9d7d002f15ec2b0747a2baa41",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "scripts/db/prepare-reviewed-candidate.mjs",
+      "baseBlob": null,
+      "sourceBlob": "aba357b7f3dc3dcb3dbb67e640287a33c007767c",
+      "mainBlob": null,
+      "aggregateBlob": "aba357b7f3dc3dcb3dbb67e640287a33c007767c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "scripts/db/prepare-reviewed-candidate.test.mjs",
+      "baseBlob": null,
+      "sourceBlob": "1ea6f4a9f55fe233d417d45adbdef95e4a1d73cd",
+      "mainBlob": null,
+      "aggregateBlob": "1ea6f4a9f55fe233d417d45adbdef95e4a1d73cd",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "scripts/db/production-backup-custody.mjs",
+      "baseBlob": "fcf2b445c11ef8be9c392ba3aa63ca68bddb5171",
+      "sourceBlob": "44ac5767eb6b1110533d4257bdb90e3265d26451",
+      "mainBlob": "fcf2b445c11ef8be9c392ba3aa63ca68bddb5171",
+      "aggregateBlob": "44ac5767eb6b1110533d4257bdb90e3265d26451",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "scripts/db/production-backup-custody.test.mjs",
+      "baseBlob": "d880d269e417e7c15a5e04d31bb74661b6f40357",
+      "sourceBlob": "d94c306b797f2c1d8f3c000ea08b04e575969611",
+      "mainBlob": "d880d269e417e7c15a5e04d31bb74661b6f40357",
+      "aggregateBlob": "d94c306b797f2c1d8f3c000ea08b04e575969611",
+      "receiving": "byte-exact"
+    }
+  ],
+  "mainOverlaps": []
+}

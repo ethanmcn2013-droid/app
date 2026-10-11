@@ -214,13 +214,44 @@ for (const plan of ["paid", "founding", "pilot"]) test(`real S2/S5 composition: 
       await app.load("src/server/account-deletion-lifecycle.ts").beginAccountDeletionWith(app.db, "clerk-owner");
       await eraseAccountData(app.db, "clerk-owner", { deleteStoredBytes: async () => { throw new Error("Unexpected provider object"); } });
       assert.equal(await canonical.readCanonicalVenueClaim(app.db, { entitlementId: claimed.entitlement.id }), null);
+      const erasures = await app.db.select().from(app.usageSchema.sponsoredUseIntents);
+      assert.equal(erasures.length, 2, "account erasure retains both actor and gift custody");
+      assert.ok(erasures.every(intent => intent.kind === "erase" && intent.deliveredAt === null));
+      assert.deepEqual(erasures.map(intent => JSON.parse(intent.payload))
+        .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))), [
+        { subjectIdHash: event.subjectIdHash },
+        { workspaceIdHash: event.workspaceIdHash, sponsorId: manifest.sponsorId },
+      ], "signed controls erase the actor and sponsor-scoped gift separately");
       for (const response of [new Response("<html>unrelated success</html>", {status:200}),
         new Response(null, {status:202}), Response.json({ok:false}), Response.json({ok:true,extra:"unexpected"})]) {
         const incomplete = await deliver(async () => response);
         assert.equal(incomplete.delivered, 0, "only the exact success acknowledgement may retire erasure custody");
-        assert.equal(incomplete.failed, 1);
+        assert.equal(incomplete.failed, 2);
+        assert.ok((await app.db.select().from(app.usageSchema.sponsoredUseIntents))
+          .every(intent => intent.deliveredAt === null), "both erasure controls remain retryable");
       }
-      assert.equal((await deliver()).delivered, 1);
+      const observed = [];
+      const completed = await deliver(async request => {
+        const payload = await request.clone().json();
+        const response = await sendUsage(request);
+        observed.push({ payload, status: response.status });
+        return response;
+      });
+      assert.deepEqual(completed, { delivered: 1, failed: 1 });
+      assert.deepEqual(observed.sort((a, b) => JSON.stringify(a.payload).localeCompare(JSON.stringify(b.payload))), [
+        { payload: { subjectIdHash: event.subjectIdHash }, status: 200 },
+        { payload: { workspaceIdHash: event.workspaceIdHash, sponsorId: manifest.sponsorId }, status: 400 },
+      ], "pinned legacy receiver accepts subject erasure and rejects the new workspace control");
+      const retained = await app.db.select().from(app.usageSchema.sponsoredUseIntents);
+      assert.equal(retained.find(intent => JSON.parse(intent.payload).subjectIdHash)?.deliveredAt, now);
+      const pendingWorkspace = retained.find(intent => JSON.parse(intent.payload).workspaceIdHash);
+      assert.deepEqual(JSON.parse(pendingWorkspace.payload),
+        { workspaceIdHash: event.workspaceIdHash, sponsorId: manifest.sponsorId });
+      assert.equal(pendingWorkspace.deliveredAt, null, "workspace erasure remains durable for a compatible receiver");
+      assert.deepEqual(await deliver(), { delivered: 0, failed: 1 },
+        "legacy receiver cannot accidentally acknowledge the retained workspace control on retry");
+      assert.equal((await app.db.select().from(app.usageSchema.sponsoredUseIntents)
+        .where(eq(app.usageSchema.sponsoredUseIntents.id, pendingWorkspace.id)))[0].deliveredAt, null);
       assert.equal((await studio.database.select().from(studio.schema.sponsorUsageEvents)).length, 0);
       assert.equal((await studio.database.select().from(studio.schema.sponsorWorkspaceLifecycle)).length, 0);
       assert.equal((await studio.database.select().from(studio.schema.sponsorUsageDaily)).length, 1);

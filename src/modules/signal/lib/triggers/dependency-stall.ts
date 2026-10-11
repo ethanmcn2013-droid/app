@@ -19,6 +19,7 @@ export const dependencyStall: Trigger = {
   id: "dependency-stall",
   defaultBlock: "needs-attention",
   detect(work) {
+    if (work.coverage?.activity === "partial") return [];
     const byId = new Map(work.tasks.map((t) => [t.id, t]));
     const insights: Insight[] = [];
     const seen = new Set<string>();

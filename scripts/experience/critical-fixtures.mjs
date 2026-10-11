@@ -427,6 +427,37 @@ for (const entry of critical) {
   if (!fixtureById.has(entry.id)) errors.push(`${entry.id}: missing critical fixture mapping`);
 }
 
+
+// Root-approved own-target receiving cases. They never enter the critical
+// registry writer or imply full state coverage, a design pick or a baseline.
+const approvedMaterialityCases = new Map([["tasks.page.app-settings","tasks/src/app/app/settings/page.tsx","supporting","route","/app/settings","main"],["tasks.page.app-project","tasks/src/app/app/project/page.tsx","core","route","/app/project","main"],["tasks.state.app-project-loading","tasks/src/app/app/project/loading.tsx","supporting","component","/materiality/tasks.state.app-project-loading","[aria-label=\"Loading projects\"]"],["tasks.state.app-home-loading","tasks/src/app/app/home/loading.tsx","supporting","component","/materiality/tasks.state.app-home-loading","[aria-label=\"Opening Home\"]"],["tasks.state.app-home-error","tasks/src/app/app/home/error.tsx","supporting","component","/materiality/tasks.state.app-home-error","[role=\"alert\"]"],["tasks.state.app-tasks-loading","tasks/src/app/app/tasks/loading.tsx","core","component","/materiality/tasks.state.app-tasks-loading","[aria-label=\"Loading tasks\"]"],["tasks.resources.drive-upload","tasks/src/components/app/detail-panel/resources-section.tsx","core","resources","/app/tasks","[data-sheet-files]"],["tasks.page.app-messages","tasks/src/app/app/messages/page.tsx","core","route","/app/messages","main"],["tasks.page.app-analytics","tasks/src/app/app/analytics/page.tsx","core","route","/app/analytics","h1"],["tasks.state.app-analytics-loading","tasks/src/app/app/analytics/loading.tsx","supporting","component","/materiality/tasks.state.app-analytics-loading","[aria-label=\"Opening Analytics\"]"],["tasks.state.app-analytics-error","tasks/src/app/app/analytics/error.tsx","supporting","component","/materiality/tasks.state.app-analytics-error","[role=\"alert\"]"],["tasks.state.app-tools-loading","tasks/src/app/app/tools/loading.tsx","core","component","/materiality/tasks.state.app-tools-loading","[role=\"status\"]"],["tasks.page.app-concepts","tasks/src/app/app/concepts/page.tsx","core","route","/app/concepts","h1"],["tasks.page.app-files","tasks/src/app/app/files/page.tsx","core","route","/app/files","h1"],["tasks.state.app-files-loading","tasks/src/app/app/files/loading.tsx","supporting","component","/materiality/tasks.state.app-files-loading","[role=\"status\"]"],["tasks.state.app-files-error","tasks/src/app/app/files/error.tsx","supporting","component","/materiality/tasks.state.app-files-error","[role=\"alert\"]"]].map(([id,...contract])=>[id,contract]));
+function validateSupplementalMateriality(items, registered, targetErrors) {
+  if (!Array.isArray(items) || items.length !== approvedMaterialityCases.size) targetErrors.push("all16 approved own-target materiality cases are required");
+  const seen = new Set();
+  for (const item of Array.isArray(items) ? items : []) {
+    const contract = approvedMaterialityCases.get(item?.id);
+    if (!contract || seen.has(item.id)) { targetErrors.push("foreign or duplicate own-target materiality ID"); continue; }
+    seen.add(item.id);
+    const [source,tier,kind,pathname,selector] = contract;
+    const entry = registered.experiences.find(candidate => candidate.id === item.id);
+    if (!hasExactKeys(item,["id","source","reviewTier","evidence","kind","caseName","path","selector","states"]) ||
+        !entry || entry.source !== source || entry.reviewTier !== tier || item.source !== source || item.reviewTier !== tier ||
+        item.kind !== kind || item.path !== pathname || item.selector !== selector || item.evidence !== "rendered" ||
+        !isNonEmptyString(item.caseName)) targetErrors.push(item.id + ": exact own source/tier/surface contract required");
+    if (!Array.isArray(item.states) || item.states.length !== 1 || !entry?.requiredStates.includes(item.states[0])) targetErrors.push(item.id + ": undeclared own-target state");
+  }
+  for (const id of approvedMaterialityCases.keys()) if (!seen.has(id)) targetErrors.push(id + ": missing own-target case");
+}
+validateSupplementalMateriality(fixtures.supplementalMaterialityRendered, registry, errors);
+if (!fixtures.renderedSourceInputs || Object.keys(fixtures.renderedSourceInputs).length < 16) errors.push("rendered source/CSS/assets inventory required");
+for (const [source,expected] of Object.entries(fixtures.renderedSourceInputs ?? {})) {
+  const absolute=path.resolve(root,source);
+  if ((!source.startsWith("src/") && !source.startsWith("public/") && !source.startsWith("experience/materiality-source-fixtures/") && source !== "experience/runtime-policy.ts") ||
+      !absolute.startsWith(root + path.sep) || !existsSync(absolute) || createHash("sha256").update(new Set([".js",".jsx",".mjs",".ts",".tsx",".mts",".cjs",".css",".json",".svg",".html",".md",".txt",".csv",".xml"]).has(path.extname(source)) ? readFileSync(absolute,"utf8").replace(/\r\n?/g,"\n") : readFileSync(absolute)).digest("hex") !== expected)
+    errors.push(source + ": current rendered source input does not match capture contract");
+}
+
+
 const nextRegistry = structuredClone(registry);
 applyMappedFixtureEvidence(nextRegistry, fixtureById, fixtures.generatedAt, errors);
 
@@ -489,6 +520,10 @@ if (selfTest) {
     throw new Error("self-test failed: Playwright project drift was not rejected");
   }
 
+  for (const mutate of [items => items.slice(1), items => [...items.slice(1), items[1]], items => items.map((item,index)=>index===0?{...item,source:"tasks/src/foreign.tsx"}:item), items => items.map((item,index)=>index===0?{...item,reviewTier:"critical"}:item)]) {
+    const failures=[]; validateSupplementalMateriality(mutate(fixtures.supplementalMaterialityRendered),registry,failures);
+    if (!failures.length) throw Error("self-test accepted missing/duplicate/foreign/retiered own-target contract");
+  }
   console.log(
     "experience:critical-fixtures:self-test: pass - mapped-only writes, source literals, rendered states, and browser-project parity are enforced",
   );

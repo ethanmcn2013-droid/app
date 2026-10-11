@@ -31,3 +31,18 @@ test("task core surfaces an activity failure so its owning transaction can roll 
     async insertActivity() { throw new Error("activity_failed"); },
   }, task), /activity_failed/);
 });
+
+test("atomic task/activity opt-in returns allocation and propagates failures without entering the default path", async () => {
+  const task = prepareCanonicalTaskCreate({ id: "task_batch", workspaceId: "project_1", title: "Atomic work" });
+  const defaults = {
+    async nextPosition(): Promise<number> { throw Error("default_position_must_not_run"); },
+    async insertTask(): Promise<{ seq: number }> { throw Error("default_task_must_not_run"); },
+    async insertActivity(): Promise<void> { throw Error("default_activity_must_not_run"); },
+  };
+  assert.deepEqual(await createTaskInTransaction({ ...defaults,
+    async insertTaskAndActivity(value) { assert.equal(value, task); return { seq: 12, position: 7.5 }; },
+  }, task), { taskId: "task_batch", seq: 12, position: 7.5 });
+  await assert.rejects(createTaskInTransaction({ ...defaults,
+    async insertTaskAndActivity() { throw Error("atomic_activity_failed"); },
+  }, task), /atomic_activity_failed/);
+});

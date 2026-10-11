@@ -40,6 +40,19 @@ async function recipientFixture(options = {}) {
     'src/components/app/tasks-runtime-shell': { TasksRuntimeShell: passthrough },
   };
   let db, schema;
+  const fixtureAuth = {
+    ACTIVE_WORKSPACE_COOKIE_NAME: 'tasks_active_ws',
+    getCurrentUser: async () => { state.authCalls++; return state.actor; },
+    getCurrentUserOrNull: async () => state.actor,
+    // Only request identity is synthetic. Use the actual actor-bound ambient
+    // resolver and live SQLite membership/catalog order, never a cookie proof.
+    activeWorkspaceOrNullForUser: async me => load('src/server/auth', true).activeWorkspaceOrNullForUser(me),
+    getActiveWorkspaceOrNull: async () => fixtureAuth.activeWorkspaceOrNullForUser(await fixtureAuth.getCurrentUser()),
+    getCurrentUserAndActiveWorkspaceOrNull: async () => {
+      const me = await fixtureAuth.getCurrentUser();
+      return [me, await fixtureAuth.activeWorkspaceOrNullForUser(me)];
+    },
+  };
   const boundary = {
     'server-only': {}, 'client-only': {},
     'next/cache': { revalidatePath: () => {} },
@@ -47,12 +60,12 @@ async function recipientFixture(options = {}) {
     'next/navigation': { redirect: (href, type) => { throw Object.assign(new Error('fixture redirect'), { href, redirectType: type }); }, RedirectType: { push: 'push' } },
     'next/link': { __esModule: true, default: props => React.createElement('a', props, props.children) },
   };
-  function load(name) {
+  function load(name, actualAuth = options.actualAuth) {
     name = name.replace(/\.(tsx?|js)$/, '');
     if (overrides.has(name)) return overrides.get(name);
     if (!options.clientReferences && ui[name]) return ui[name];
     if (name === 'src/server/db/index' || name === 'src/server/db') return { db };
-    if (!options.actualAuth && name === 'src/server/auth') return { ACTIVE_WORKSPACE_COOKIE_NAME: 'tasks_active_ws', getCurrentUser: async () => { state.authCalls++; return state.actor; }, getCurrentUserOrNull: async () => state.actor, getActiveWorkspaceOrNull: async () => state.cookies.get('tasks_active_ws') ?? null };
+    if (!actualAuth && name === 'src/server/auth') return fixtureAuth;
     if (name === 'src/lib/access-mode') return { isDemoMode: () => state.demo, isProductionMode: () => !state.demo, getAccessMode: () => state.demo ? 'review' : 'production' };
     if (name === 'src/lib/projects/flags') return { isActiveProjectV3Enabled: () => state.v3 };
     if (name === 'src/server/events') return { emitTasksChanged: () => {} };

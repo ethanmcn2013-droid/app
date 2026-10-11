@@ -4,6 +4,7 @@ const {usageFixture,SALT}=require("../../src/server/sponsored-use/fixture.cjs");
 const {eq}=require("drizzle-orm");
 const studioRoot=process.argv[process.argv.indexOf("--studio-root")+1];
 if(!process.argv.includes("--studio-root") || !studioRoot)throw Error("Supply the matching local Studio checkout with --studio-root");
+const workspaceReceiver = process.argv.includes("--workspace-receiver");
 const {studioUsageFixture}=require(path.resolve(studioRoot,"src/lib/account/instrumentation/usage-fixture.cjs"));
 const checks=[];
 async function check(name,fn){await fn();checks.push(name);console.log("PASS "+name);}
@@ -106,16 +107,33 @@ async function check(name,fn){await fn();checks.push(name);console.log("PASS "+n
   await check("actual account-deletion fence queues erasure and signed route removes personal usage while preserving daily counts",async()=>{
    delete process.env.SPONSOR_USAGE_EVENTS; // disabling collection cannot disable erasure
    await app.load("src/server/account-deletion-lifecycle.ts").beginAccountDeletionWith(app.db,"clerk-owner");
-   assert.equal((await deliver()).delivered,1);
+   const queued=await app.db.select().from(app.usageSchema.sponsoredUseIntents);
+   const controls=queued.map(intent=>JSON.parse(intent.payload));
+   const hashIdentity=app.load("src/lib/account/instrumentation/emitter.ts").hashIdentity;
+   assert.equal(queued.length,4,"one actor plus all three claimed gifts require erasure custody");
+   assert.deepEqual(controls.filter(payload=>payload.subjectIdHash),
+    [{subjectIdHash:hashIdentity("clerk-owner",SALT)}]);
+   assert.deepEqual(new Set(controls.filter(payload=>payload.workspaceIdHash)
+    .map(payload=>JSON.stringify(payload))),new Set(["a","quiet-b","quiet-c"]
+    .map(project=>JSON.stringify({workspaceIdHash:hashIdentity(project,SALT),sponsorId:"synthetic-sponsor"}))));
+   assert.deepEqual(await deliver(),workspaceReceiver?{delivered:4,failed:0}:{delivered:1,failed:3},
+    workspaceReceiver?"companion Studio commits every subject and Project erasure":
+    "pinned legacy Studio acknowledges actor erasure but cannot acknowledge gift-wide controls");
+   const retained=await app.db.select().from(app.usageSchema.sponsoredUseIntents);
+   assert.equal(retained.filter(intent=>intent.deliveredAt===null).length,workspaceReceiver?0:3);
    assert.equal((await studio.database.select().from(studio.schema.sponsorUsageEvents)).length,0);
    assert.equal((await studio.database.select().from(studio.schema.sponsorWorkspaceLifecycle)).length,0);
-   assert.equal((await studio.database.select().from(studio.schema.sponsorUsageDaily)).length,1);
+   assert.equal((await studio.database.select().from(studio.schema.sponsorUsageDaily)).length,workspaceReceiver?0:1);
   });
-  await check("actual retention removes old aggregate rows and acknowledged App receipts",async()=>{
+  await check("actual retention removes old aggregates and acknowledged receipts but keeps unacked gift erasures",async()=>{
    now+=800*86400000;
-   assert.equal((await runJob()).status,200);await deliver();
+   assert.equal((await runJob()).status,200);
+   assert.deepEqual(await deliver(),{delivered:0,failed:workspaceReceiver?0:3});
    assert.equal((await studio.database.select().from(studio.schema.sponsorUsageDaily)).length,0);
-   assert.equal((await app.db.select().from(app.usageSchema.sponsoredUseIntents)).length,0);
+   const retained=await app.db.select().from(app.usageSchema.sponsoredUseIntents);
+   assert.equal(retained.length,workspaceReceiver?0:3,"only acknowledged receipts may expire");
+   assert.ok(retained.every(intent=>intent.kind==="erase" && intent.deliveredAt===null &&
+    Object.keys(JSON.parse(intent.payload)).join() === "workspaceIdHash,sponsorId"));
   });
   console.log(JSON.stringify({passed:checks.length,checks,network:"local Request only",coverage:"Tasks creation only",providers:false}));
  } finally {

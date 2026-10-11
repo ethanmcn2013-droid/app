@@ -1,0 +1,63 @@
+{
+  "id": "migration-data",
+  "base": "ad0529bcb24db1fab06934deceb0617b2b320fe3",
+  "commit": "d8aa82b130d5e3d739208032b48b87cd01f8bc7d",
+  "tree": "889ba8f67647c41e3b6f79d7ebea1ba0cc4c9a28",
+  "paths": [
+    {
+      "status": "A",
+      "path": "drizzle/0039_conversation_messages_workspace_index.sql",
+      "baseBlob": null,
+      "sourceBlob": "61d148e1c3a675425a085b2a652cee17a7630d91",
+      "mainBlob": null,
+      "aggregateBlob": "61d148e1c3a675425a085b2a652cee17a7630d91",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "drizzle/0040_sponsored_measurement_choice.sql",
+      "baseBlob": null,
+      "sourceBlob": "edab95ba2b8966aaf39eb9542e6e8423c344dd6f",
+      "mainBlob": null,
+      "aggregateBlob": "edab95ba2b8966aaf39eb9542e6e8423c344dd6f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "drizzle/meta/_journal.json",
+      "baseBlob": "8d86eeadd1f91adcf1a399ee8b2d5718fbc64275",
+      "sourceBlob": "a8922a33a05536236c122fa077b668b1f43724a4",
+      "mainBlob": "8d86eeadd1f91adcf1a399ee8b2d5718fbc64275",
+      "aggregateBlob": "a8922a33a05536236c122fa077b668b1f43724a4",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "drizzle/migration-ledger.json",
+      "baseBlob": "fb23c1c615c983005058165ccc08d424b24d0008",
+      "sourceBlob": "a7270e3b314563aeb1d3ec9685ae7ee5b3907407",
+      "mainBlob": "fb23c1c615c983005058165ccc08d424b24d0008",
+      "aggregateBlob": "a7270e3b314563aeb1d3ec9685ae7ee5b3907407",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "drizzle/receipts/conversation-messages-workspace-index-2026-10-07.json",
+      "baseBlob": null,
+      "sourceBlob": "f9e73b743914f36cde745d06afb0472abc2bb140",
+      "mainBlob": null,
+      "aggregateBlob": "f9e73b743914f36cde745d06afb0472abc2bb140",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "drizzle/receipts/sponsored-measurement-choice-release-2026-10-09.json",
+      "baseBlob": null,
+      "sourceBlob": "a7328e1d061d55c4d6108d63ab3663337671d454",
+      "mainBlob": null,
+      "aggregateBlob": "a7328e1d061d55c4d6108d63ab3663337671d454",
+      "receiving": "byte-exact"
+    }
+  ],
+  "mainOverlaps": []
+}

@@ -3,7 +3,8 @@ import { drizzle } from "drizzle-orm/libsql";
 import { createClient } from "@libsql/client";
 import * as schema from "./schema";
 import { seedIfEmpty } from "./seed";
-import { isDemoMode } from "@/lib/access-mode";
+import { isDemoMode, isProductionMode } from "@/lib/access-mode";
+import { shouldSeedImplicitDevelopmentDatabase } from "./development-seed-policy";
 
 /**
  * libSQL client for Tasks. In production (VERCEL=1) this connects to
@@ -48,17 +49,16 @@ const client = createClient({ url, authToken });
 
 export const db = drizzle(client, { schema });
 
-// Seed once per process (globalThis guard so it doesn't re-run on
-// hot-reload in dev). In production the Turso DB is pre-seeded via
-// the migration runbook and this becomes a cheap count=0 check that
-// exits immediately.
+// Seed the zero-config local fixture once per process. Explicit targets
+// and authenticated production access are managed by their own runbooks.
+// The global guard prevents repeats during development hot reload.
 const globalForDb = globalThis as unknown as { _seeded?: boolean };
 
-if (
-  process.env.NODE_ENV === "development" &&
-  !demoMode &&
-  !globalForDb._seeded
-) {
+if (shouldSeedImplicitDevelopmentDatabase(process.env, {
+  demoMode,
+  productionMode: isProductionMode(),
+  alreadySeeded: globalForDb._seeded === true,
+})) {
   globalForDb._seeded = true;
   // Fire-and-forget: seed errors are logged but don't crash the
   // module load. The DB is usable even if seed fails (e.g. already

@@ -1,0 +1,19 @@
+{
+  "label": "prod-audit-initial",
+  "head": "1bd6c967fdad68c6c4982a2e946b0ddd7df14117",
+  "tree": "86bf6e6cb05ddcada31ca8e161e55b941a40d054",
+  "node": "v22.23.2",
+  "args": [
+    "D:/Codex-scratch/corepack/v1/pnpm/11.9.0/bin/pnpm.cjs",
+    "audit",
+    "--prod",
+    "--json"
+  ],
+  "startedAt": "2026-10-09T20:21:02.199Z",
+  "endedAt": "2026-10-09T20:21:07.496Z",
+  "exitCode": 1,
+  "signal": null,
+  "error": null,
+  "passed": false,
+  "log": "D:\\Codex-scratch\\release-all-20261009\\runtime-aggregation\\receipts\\prod-audit-initial.log"
+}

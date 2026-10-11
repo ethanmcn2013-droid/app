@@ -1,0 +1,4986 @@
+{
+  "id": "concepts",
+  "base": "3e9e53d606731ca5c8395703cf0e53ecaccd09a5",
+  "commit": "b1ffca5a78603176b0e6ddbea56a6ae3ca035e3e",
+  "tree": "f648e0eb8c4ef048bc0d77c5cb8239ad236837b7",
+  "paths": [
+    {
+      "status": "M",
+      "path": ".github/workflows/ci.yml",
+      "baseBlob": "7f84e01736e69c9747fe331f5be5cbba331731c3",
+      "sourceBlob": "88ceb2fa4790758f36ba0d255b06b4e59a03fffd",
+      "mainBlob": "7f84e01736e69c9747fe331f5be5cbba331731c3",
+      "aggregateBlob": "88ceb2fa4790758f36ba0d255b06b4e59a03fffd",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": ".github/workflows/verify.yml",
+      "baseBlob": "69d0682d16f89b6d437828c12e842f984661060d",
+      "sourceBlob": "97c419995dc410210fef1bc8c67889ee9cf08536",
+      "mainBlob": "69d0682d16f89b6d437828c12e842f984661060d",
+      "aggregateBlob": "57844b864e278e4ccfaf1074f39727a3fc8b0622",
+      "receiving": "adapted"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/HANDOFF-analytics.md",
+      "baseBlob": null,
+      "sourceBlob": "90b10f0f1c52bc5a37ded040531cb5ac47315eb4",
+      "mainBlob": null,
+      "aggregateBlob": "90b10f0f1c52bc5a37ded040531cb5ac47315eb4",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/HANDOFF-apps-1-2.md",
+      "baseBlob": null,
+      "sourceBlob": "46d26b08b43393803bebc269464a98c43a2c51d7",
+      "mainBlob": null,
+      "aggregateBlob": "46d26b08b43393803bebc269464a98c43a2c51d7",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/HANDOFF-apps-and-timeline-1.md",
+      "baseBlob": null,
+      "sourceBlob": "6ce2ff962c50f9385a451ee6f0aa0648937c0c84",
+      "mainBlob": null,
+      "aggregateBlob": "6ce2ff962c50f9385a451ee6f0aa0648937c0c84",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/HANDOFF.md",
+      "baseBlob": null,
+      "sourceBlob": "3f719908c5cc0b5f43a6f3043af5b4dd4b4b169e",
+      "mainBlob": null,
+      "aggregateBlob": "3f719908c5cc0b5f43a6f3043af5b4dd4b4b169e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/TASKS-CLOUD-PROMPT.md",
+      "baseBlob": null,
+      "sourceBlob": "bb6cd2f89d102a0242f5fb63f8079f61c3c1733f",
+      "mainBlob": null,
+      "aggregateBlob": "bb6cd2f89d102a0242f5fb63f8079f61c3c1733f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/analytics-concept-sprint.workflow.js",
+      "baseBlob": null,
+      "sourceBlob": "1b81b9d113b59f07735810cda6ee60768fddee19",
+      "mainBlob": null,
+      "aggregateBlob": "1b81b9d113b59f07735810cda6ee60768fddee19",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/analytics-gallery.html",
+      "baseBlob": null,
+      "sourceBlob": "694262e544de9a1f52104010f0f9c0f9e1c47f56",
+      "mainBlob": null,
+      "aggregateBlob": "694262e544de9a1f52104010f0f9c0f9e1c47f56",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/apps-share-concept-sprint.workflow.js",
+      "baseBlob": null,
+      "sourceBlob": "51700d56269119b773c3dca18980e754e1abe113",
+      "mainBlob": null,
+      "aggregateBlob": "51700d56269119b773c3dca18980e754e1abe113",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/README.md",
+      "baseBlob": null,
+      "sourceBlob": "5a10ecd8d303b89ee32b49a997a391012342148e",
+      "mainBlob": null,
+      "aggregateBlob": "5a10ecd8d303b89ee32b49a997a391012342148e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/analytics-1-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "12f07606841fab57e4af4fafecae56629908be70",
+      "mainBlob": null,
+      "aggregateBlob": "12f07606841fab57e4af4fafecae56629908be70",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/analytics-1-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "dd185e4e71ac029ad8bc72b673afd36c454e526b",
+      "mainBlob": null,
+      "aggregateBlob": "dd185e4e71ac029ad8bc72b673afd36c454e526b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/analytics-2-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "c74c67274aeb8c55963f49f4a97f0651030526d8",
+      "mainBlob": null,
+      "aggregateBlob": "c74c67274aeb8c55963f49f4a97f0651030526d8",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/analytics-2-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "1ccd2bfc92b3f1004a2451585a47e370cc8f3766",
+      "mainBlob": null,
+      "aggregateBlob": "1ccd2bfc92b3f1004a2451585a47e370cc8f3766",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/analytics-3-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "bb4a1780db90ee205cc3f6378f16d8982eae9b89",
+      "mainBlob": null,
+      "aggregateBlob": "bb4a1780db90ee205cc3f6378f16d8982eae9b89",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/analytics-3-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "41d0b8a8f0b90b41c4fd84c609f8ce00f0c3ba37",
+      "mainBlob": null,
+      "aggregateBlob": "41d0b8a8f0b90b41c4fd84c609f8ce00f0c3ba37",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/analytics-4-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "5a53f977978e2feb958b4f08220c77031f2b8075",
+      "mainBlob": null,
+      "aggregateBlob": "5a53f977978e2feb958b4f08220c77031f2b8075",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/analytics-4-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "6c484d1aedc8b96b0d714445bb797a1c7129c55b",
+      "mainBlob": null,
+      "aggregateBlob": "6c484d1aedc8b96b0d714445bb797a1c7129c55b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/analytics-5-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "4ca15adadc8889ebaa609d2cff27c5861e0b9a65",
+      "mainBlob": null,
+      "aggregateBlob": "4ca15adadc8889ebaa609d2cff27c5861e0b9a65",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/analytics-5-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "f67bf01cd36af02c0838d1a2cb3897c72950a76d",
+      "mainBlob": null,
+      "aggregateBlob": "f67bf01cd36af02c0838d1a2cb3897c72950a76d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/analytics-6-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "1eb6d014fdc415cf349f72a843ebae0d42d22360",
+      "mainBlob": null,
+      "aggregateBlob": "1eb6d014fdc415cf349f72a843ebae0d42d22360",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/analytics-6-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "0aa6a1c1e04526a6078c29a6f32bea01e6d4767a",
+      "mainBlob": null,
+      "aggregateBlob": "0aa6a1c1e04526a6078c29a6f32bea01e6d4767a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/apps-1-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "811cf01d8d33b290d2aae90fba50e9f7ce1a3052",
+      "mainBlob": null,
+      "aggregateBlob": "811cf01d8d33b290d2aae90fba50e9f7ce1a3052",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/apps-1-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "2f33a2ee4468a9eefee9af9d807414b5e396e1ee",
+      "mainBlob": null,
+      "aggregateBlob": "2f33a2ee4468a9eefee9af9d807414b5e396e1ee",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/apps-2-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "f9a5305faf51824d3d488e8890e8cb69ea23b53c",
+      "mainBlob": null,
+      "aggregateBlob": "f9a5305faf51824d3d488e8890e8cb69ea23b53c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/apps-2-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "34fd0171a271d9b076cf50b080d117d248f87797",
+      "mainBlob": null,
+      "aggregateBlob": "34fd0171a271d9b076cf50b080d117d248f87797",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/apps-3-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "fb5a894599c15327f13fa786b5501936de471f88",
+      "mainBlob": null,
+      "aggregateBlob": "fb5a894599c15327f13fa786b5501936de471f88",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/apps-3-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "a74ca930895aed7e15ac78932bc9bb8e39c771cb",
+      "mainBlob": null,
+      "aggregateBlob": "a74ca930895aed7e15ac78932bc9bb8e39c771cb",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/apps-4-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "194039b8610cede2082c9ab45cfb342b8b6a5a17",
+      "mainBlob": null,
+      "aggregateBlob": "194039b8610cede2082c9ab45cfb342b8b6a5a17",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/apps-4-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "d5209469b81b60df831b46bfe60c8ce11cbeb707",
+      "mainBlob": null,
+      "aggregateBlob": "d5209469b81b60df831b46bfe60c8ce11cbeb707",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/apps-5-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "388a4973a768ccd8ff489a68d32ec3dc0928c030",
+      "mainBlob": null,
+      "aggregateBlob": "388a4973a768ccd8ff489a68d32ec3dc0928c030",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/apps-5-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "0e885fe10b130df296bf16387833ae35ef17631d",
+      "mainBlob": null,
+      "aggregateBlob": "0e885fe10b130df296bf16387833ae35ef17631d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/apps-6-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "0504721a33af62f5109e0ab072b5043177a19eb0",
+      "mainBlob": null,
+      "aggregateBlob": "0504721a33af62f5109e0ab072b5043177a19eb0",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/apps-6-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "e6accd267fbae5b0ae1fbacd0337850b2fd16837",
+      "mainBlob": null,
+      "aggregateBlob": "e6accd267fbae5b0ae1fbacd0337850b2fd16837",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/board-1-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "fc25a0ab0a3998ab7855ad67ed3127a692e2d79f",
+      "mainBlob": null,
+      "aggregateBlob": "fc25a0ab0a3998ab7855ad67ed3127a692e2d79f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/board-1-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "2a1b9431ade4aa7bd69f9e4c034ce5f480de1128",
+      "mainBlob": null,
+      "aggregateBlob": "2a1b9431ade4aa7bd69f9e4c034ce5f480de1128",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/board-2-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "ad412bc67e1f8f14c9acdf4eadeff327984fad4e",
+      "mainBlob": null,
+      "aggregateBlob": "ad412bc67e1f8f14c9acdf4eadeff327984fad4e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/board-2-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "2247c60f9a95a17b1e0c62a87e70ebf510d38edb",
+      "mainBlob": null,
+      "aggregateBlob": "2247c60f9a95a17b1e0c62a87e70ebf510d38edb",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/board-3-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "44634983c424c0939f1112f010dd8abe1b2dcc5d",
+      "mainBlob": null,
+      "aggregateBlob": "44634983c424c0939f1112f010dd8abe1b2dcc5d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/board-3-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "9789d2bda2d211c693145370f092295dbc44ec30",
+      "mainBlob": null,
+      "aggregateBlob": "9789d2bda2d211c693145370f092295dbc44ec30",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/board-4-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "f5937a4d35aebcd397eb2b79cc1fa54cbae9900f",
+      "mainBlob": null,
+      "aggregateBlob": "f5937a4d35aebcd397eb2b79cc1fa54cbae9900f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/board-4-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "ecee8986f842342aa10d8d19d1d02b4eb324fa43",
+      "mainBlob": null,
+      "aggregateBlob": "ecee8986f842342aa10d8d19d1d02b4eb324fa43",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/board-5-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "c00fb3ad7a0d912dc5a000fbc71e3e8eaf497b92",
+      "mainBlob": null,
+      "aggregateBlob": "c00fb3ad7a0d912dc5a000fbc71e3e8eaf497b92",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/board-5-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "72ce1449788c701e85fb89cc8447a6fc4b0eff72",
+      "mainBlob": null,
+      "aggregateBlob": "72ce1449788c701e85fb89cc8447a6fc4b0eff72",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/calendar-1-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "033c24acc8db9fd28aba36b95a487d2534181e24",
+      "mainBlob": null,
+      "aggregateBlob": "033c24acc8db9fd28aba36b95a487d2534181e24",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/calendar-1-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "48803b7382499e8c9cee84e7e0120794692343a0",
+      "mainBlob": null,
+      "aggregateBlob": "48803b7382499e8c9cee84e7e0120794692343a0",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/calendar-2-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "5beda56c543c569500bcfd08e13fc73474e87aeb",
+      "mainBlob": null,
+      "aggregateBlob": "5beda56c543c569500bcfd08e13fc73474e87aeb",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/calendar-2-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "11e4ab6aad2e4ff1d01bcbc1677ca5391dc48ba2",
+      "mainBlob": null,
+      "aggregateBlob": "11e4ab6aad2e4ff1d01bcbc1677ca5391dc48ba2",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/calendar-3-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "9399cf4251c6315f9a54a03f9dcf4d55c724f6b4",
+      "mainBlob": null,
+      "aggregateBlob": "9399cf4251c6315f9a54a03f9dcf4d55c724f6b4",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/calendar-3-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "2a3261ffccb57d50916155cc6eaf2a8d14f4e2b1",
+      "mainBlob": null,
+      "aggregateBlob": "2a3261ffccb57d50916155cc6eaf2a8d14f4e2b1",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/calendar-4-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "c719fd7aebff8008b73128a2a4988f4bcc1f01b2",
+      "mainBlob": null,
+      "aggregateBlob": "c719fd7aebff8008b73128a2a4988f4bcc1f01b2",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/calendar-4-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "4fdbeecf722c09f9a163897a6eccfa823fed9cdc",
+      "mainBlob": null,
+      "aggregateBlob": "4fdbeecf722c09f9a163897a6eccfa823fed9cdc",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/calendar-5-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "57e1e20666e621a2e663a98a0b9ac323810e8b96",
+      "mainBlob": null,
+      "aggregateBlob": "57e1e20666e621a2e663a98a0b9ac323810e8b96",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/calendar-5-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "d962d7283bd492b184d92721c940b507a9232882",
+      "mainBlob": null,
+      "aggregateBlob": "d962d7283bd492b184d92721c940b507a9232882",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/files-1-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "mainBlob": null,
+      "aggregateBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/files-2-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "mainBlob": null,
+      "aggregateBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/files-3-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "mainBlob": null,
+      "aggregateBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/files-4-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "mainBlob": null,
+      "aggregateBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/files-5-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "mainBlob": null,
+      "aggregateBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/gallery-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "762e7c8cc014d768f90098494542ab87818326b5",
+      "mainBlob": null,
+      "aggregateBlob": "762e7c8cc014d768f90098494542ab87818326b5",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/gallery-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "d059ed99a1398b1a70160198e8a20c785694c1c9",
+      "mainBlob": null,
+      "aggregateBlob": "d059ed99a1398b1a70160198e8a20c785694c1c9",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/gallery-tablet.jpg",
+      "baseBlob": null,
+      "sourceBlob": "a72e034e72db62611d9b354c7ab72af4c7c15599",
+      "mainBlob": null,
+      "aggregateBlob": "a72e034e72db62611d9b354c7ab72af4c7c15599",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/gallery-wide.jpg",
+      "baseBlob": null,
+      "sourceBlob": "cf41d26580a6524c7810e87baff88b57072bb6a8",
+      "mainBlob": null,
+      "aggregateBlob": "cf41d26580a6524c7810e87baff88b57072bb6a8",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/list-1-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "02156cb35513a422a6db4bc51c507a31042fbb52",
+      "mainBlob": null,
+      "aggregateBlob": "02156cb35513a422a6db4bc51c507a31042fbb52",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/list-1-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "3fff3f8dd658a1ba12f230ed6e99849e38ba4175",
+      "mainBlob": null,
+      "aggregateBlob": "3fff3f8dd658a1ba12f230ed6e99849e38ba4175",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/list-2-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "33a199c87db498d9400916902cc8dada91f1adf9",
+      "mainBlob": null,
+      "aggregateBlob": "33a199c87db498d9400916902cc8dada91f1adf9",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/list-2-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "20d46be9078b2d0886c2629b90d1048038f9bb72",
+      "mainBlob": null,
+      "aggregateBlob": "20d46be9078b2d0886c2629b90d1048038f9bb72",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/list-3-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "f8619354aa6dd2f7bd6ece9a26dea435b9158d7d",
+      "mainBlob": null,
+      "aggregateBlob": "f8619354aa6dd2f7bd6ece9a26dea435b9158d7d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/list-3-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "3403624ea4a4d1a0d29a44a58c491b733d1da99a",
+      "mainBlob": null,
+      "aggregateBlob": "3403624ea4a4d1a0d29a44a58c491b733d1da99a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/list-4-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "b6faf2fd7a35a8155d57e759735caf6842c11460",
+      "mainBlob": null,
+      "aggregateBlob": "b6faf2fd7a35a8155d57e759735caf6842c11460",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/list-4-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "b5f245f54ec101071612edcc1f22f650286c7aaf",
+      "mainBlob": null,
+      "aggregateBlob": "b5f245f54ec101071612edcc1f22f650286c7aaf",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/list-5-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "daf6d3d9d869fd06e6be3237fb8d8a7b90c2ae0a",
+      "mainBlob": null,
+      "aggregateBlob": "daf6d3d9d869fd06e6be3237fb8d8a7b90c2ae0a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/list-5-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "d46aeffa76810c8b003167c395d633bf89dc58e3",
+      "mainBlob": null,
+      "aggregateBlob": "d46aeffa76810c8b003167c395d633bf89dc58e3",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/overview-1-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "mainBlob": null,
+      "aggregateBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/overview-2-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "mainBlob": null,
+      "aggregateBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/overview-3-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "mainBlob": null,
+      "aggregateBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/overview-4-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "mainBlob": null,
+      "aggregateBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/overview-5-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "mainBlob": null,
+      "aggregateBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/projects-1-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "mainBlob": null,
+      "aggregateBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/projects-2-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "mainBlob": null,
+      "aggregateBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/projects-3-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "mainBlob": null,
+      "aggregateBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/projects-4-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "mainBlob": null,
+      "aggregateBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/projects-5-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "mainBlob": null,
+      "aggregateBlob": "2a38d395b8438a58de722af8de3553e840b9b8ba",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/shared-timeline-1-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "94e478cc9bb21326e8bc30421c81be94797c244a",
+      "mainBlob": null,
+      "aggregateBlob": "94e478cc9bb21326e8bc30421c81be94797c244a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/shared-timeline-1-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "c7aa58555b1e5eb1ecef56b17a1aef2f9c5d7d13",
+      "mainBlob": null,
+      "aggregateBlob": "c7aa58555b1e5eb1ecef56b17a1aef2f9c5d7d13",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/shared-timeline-2-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "1acac9f2be6d8872cb5d930c334ee069c505f90e",
+      "mainBlob": null,
+      "aggregateBlob": "1acac9f2be6d8872cb5d930c334ee069c505f90e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/shared-timeline-2-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "680712857d44480d27187893f6a3f73a59bfc1e9",
+      "mainBlob": null,
+      "aggregateBlob": "680712857d44480d27187893f6a3f73a59bfc1e9",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/shared-timeline-3-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "83b30770fe59c48841b054fa99ddbc649181e8f0",
+      "mainBlob": null,
+      "aggregateBlob": "83b30770fe59c48841b054fa99ddbc649181e8f0",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/shared-timeline-3-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "012e3a93b4460b5834332ff5c364edfa466d25b5",
+      "mainBlob": null,
+      "aggregateBlob": "012e3a93b4460b5834332ff5c364edfa466d25b5",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/shared-timeline-4-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "1438c544b37e0533ff44934a1994cb7dff929be9",
+      "mainBlob": null,
+      "aggregateBlob": "1438c544b37e0533ff44934a1994cb7dff929be9",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/shared-timeline-4-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "52268217db76f5b5fbb5544b49df78a875040036",
+      "mainBlob": null,
+      "aggregateBlob": "52268217db76f5b5fbb5544b49df78a875040036",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/shared-timeline-5-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "072a8dffd4065f5984a0f86d8a76c8efe994d32a",
+      "mainBlob": null,
+      "aggregateBlob": "072a8dffd4065f5984a0f86d8a76c8efe994d32a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/shared-timeline-5-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "a3c65466eb64c6c87de1623dc7e69fa5363a4fd6",
+      "mainBlob": null,
+      "aggregateBlob": "a3c65466eb64c6c87de1623dc7e69fa5363a4fd6",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/shared-timeline-6-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "5e29d4c2614af33f56e10ef4d1e861f122de095f",
+      "mainBlob": null,
+      "aggregateBlob": "5e29d4c2614af33f56e10ef4d1e861f122de095f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/before/shared-timeline-6-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "a967f338c995bd68113924d556857e6e88ffe47f",
+      "mainBlob": null,
+      "aggregateBlob": "a967f338c995bd68113924d556857e6e88ffe47f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/boundary-tests.txt",
+      "baseBlob": null,
+      "sourceBlob": "a47d07580bd84ed147390dad649bc7aff61385d2",
+      "mainBlob": null,
+      "aggregateBlob": "a47d07580bd84ed147390dad649bc7aff61385d2",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/browser-receipt-before-repair.json",
+      "baseBlob": null,
+      "sourceBlob": "8c5cc7f451798ac322ea632eddb5fa253258734a",
+      "mainBlob": null,
+      "aggregateBlob": "8c5cc7f451798ac322ea632eddb5fa253258734a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/browser-receipt-repaired.json",
+      "baseBlob": null,
+      "sourceBlob": "76826bf4769fafd324c1cab89556c8f106fe8ea3",
+      "mainBlob": null,
+      "aggregateBlob": "76826bf4769fafd324c1cab89556c8f106fe8ea3",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/final-SSR-test.txt",
+      "baseBlob": null,
+      "sourceBlob": "ab68956a9954a5927c3c726c4cb8376b353728ae",
+      "mainBlob": null,
+      "aggregateBlob": "ab68956a9954a5927c3c726c4cb8376b353728ae",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/first-browser-failure.txt",
+      "baseBlob": null,
+      "sourceBlob": "a9e801de097f9fcdee146bec914b7ef6c9619b81",
+      "mainBlob": null,
+      "aggregateBlob": "a9e801de097f9fcdee146bec914b7ef6c9619b81",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/first-interaction-failure.txt",
+      "baseBlob": null,
+      "sourceBlob": "1eaccc8eb6d99d245206ebc39d324c0c8ae46b64",
+      "mainBlob": null,
+      "aggregateBlob": "1eaccc8eb6d99d245206ebc39d324c0c8ae46b64",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/first-receiving-lint-failure.txt",
+      "baseBlob": null,
+      "sourceBlob": "e8a5c2563eb1b965050cd7b5de4407484b5dd59e",
+      "mainBlob": null,
+      "aggregateBlob": "e8a5c2563eb1b965050cd7b5de4407484b5dd59e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/interaction-receipt.json",
+      "baseBlob": null,
+      "sourceBlob": "6fe4aab80a7ea523f1b62fb629bf06626c022458",
+      "mainBlob": null,
+      "aggregateBlob": "6fe4aab80a7ea523f1b62fb629bf06626c022458",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/registry-pending.txt",
+      "baseBlob": null,
+      "sourceBlob": "ca0f5e27f59c6723aeefa738d92d9a7dda2e0cad",
+      "mainBlob": null,
+      "aggregateBlob": "ca0f5e27f59c6723aeefa738d92d9a7dda2e0cad",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-analytics-5-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "f9eecf159d0ceda830509c1616e6bb0a71c54d07",
+      "mainBlob": null,
+      "aggregateBlob": "f9eecf159d0ceda830509c1616e6bb0a71c54d07",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-analytics-5-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "a2719e2e24715b0cb70cd43086da197d5268f4ea",
+      "mainBlob": null,
+      "aggregateBlob": "a2719e2e24715b0cb70cd43086da197d5268f4ea",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-analytics-5-tablet.jpg",
+      "baseBlob": null,
+      "sourceBlob": "623b383e4dd3693206a5bb7eba4fe708b9403895",
+      "mainBlob": null,
+      "aggregateBlob": "623b383e4dd3693206a5bb7eba4fe708b9403895",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-analytics-5-wide.jpg",
+      "baseBlob": null,
+      "sourceBlob": "31e874e1fcdaeec156e5d6ec4362513a316cdc45",
+      "mainBlob": null,
+      "aggregateBlob": "31e874e1fcdaeec156e5d6ec4362513a316cdc45",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-apps-2-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "d2da73132a755666737c73a45cf8a4a9f6e1108e",
+      "mainBlob": null,
+      "aggregateBlob": "d2da73132a755666737c73a45cf8a4a9f6e1108e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-apps-2-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "2069f397afb63bf7ad75a81cd0d8bf63a97153a6",
+      "mainBlob": null,
+      "aggregateBlob": "2069f397afb63bf7ad75a81cd0d8bf63a97153a6",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-apps-2-tablet.jpg",
+      "baseBlob": null,
+      "sourceBlob": "041f2c6c1f7d1f69e97cc2514f020dcc5f8864b6",
+      "mainBlob": null,
+      "aggregateBlob": "041f2c6c1f7d1f69e97cc2514f020dcc5f8864b6",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-apps-2-wide.jpg",
+      "baseBlob": null,
+      "sourceBlob": "8736a126e66ce4d94fb76852b7e70060bdd695c4",
+      "mainBlob": null,
+      "aggregateBlob": "8736a126e66ce4d94fb76852b7e70060bdd695c4",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-apps-3-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "be87aa0ed917620b86a33fa967a9fba1cb967d4f",
+      "mainBlob": null,
+      "aggregateBlob": "be87aa0ed917620b86a33fa967a9fba1cb967d4f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-apps-3-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "195aca8081b7023f18c470d4668d9df90966bd66",
+      "mainBlob": null,
+      "aggregateBlob": "195aca8081b7023f18c470d4668d9df90966bd66",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-apps-3-tablet.jpg",
+      "baseBlob": null,
+      "sourceBlob": "c2881f0e91a970d3adf06233dc4cbdc308d22f9b",
+      "mainBlob": null,
+      "aggregateBlob": "c2881f0e91a970d3adf06233dc4cbdc308d22f9b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-apps-3-wide.jpg",
+      "baseBlob": null,
+      "sourceBlob": "8ef7728b4ac94af9d2650d14d24dd7eca09540e5",
+      "mainBlob": null,
+      "aggregateBlob": "8ef7728b4ac94af9d2650d14d24dd7eca09540e5",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-calendar-4-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "9e0f398e88b71f1ce7f54cafd31ae499962914c0",
+      "mainBlob": null,
+      "aggregateBlob": "9e0f398e88b71f1ce7f54cafd31ae499962914c0",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-calendar-4-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "a66c3c77e61c1466657c7dcaa638a3f20f9b0719",
+      "mainBlob": null,
+      "aggregateBlob": "a66c3c77e61c1466657c7dcaa638a3f20f9b0719",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-calendar-4-tablet.jpg",
+      "baseBlob": null,
+      "sourceBlob": "77073ce5cf2346502f8cf9327213f0166491b283",
+      "mainBlob": null,
+      "aggregateBlob": "77073ce5cf2346502f8cf9327213f0166491b283",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-calendar-4-wide.jpg",
+      "baseBlob": null,
+      "sourceBlob": "afc3e01a96d67c17b9033496d696f0ca435e8a2c",
+      "mainBlob": null,
+      "aggregateBlob": "afc3e01a96d67c17b9033496d696f0ca435e8a2c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-gallery-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "762e7c8cc014d768f90098494542ab87818326b5",
+      "mainBlob": null,
+      "aggregateBlob": "762e7c8cc014d768f90098494542ab87818326b5",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-gallery-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "d059ed99a1398b1a70160198e8a20c785694c1c9",
+      "mainBlob": null,
+      "aggregateBlob": "d059ed99a1398b1a70160198e8a20c785694c1c9",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-gallery-tablet.jpg",
+      "baseBlob": null,
+      "sourceBlob": "a72e034e72db62611d9b354c7ab72af4c7c15599",
+      "mainBlob": null,
+      "aggregateBlob": "a72e034e72db62611d9b354c7ab72af4c7c15599",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-gallery-wide.jpg",
+      "baseBlob": null,
+      "sourceBlob": "cf41d26580a6524c7810e87baff88b57072bb6a8",
+      "mainBlob": null,
+      "aggregateBlob": "cf41d26580a6524c7810e87baff88b57072bb6a8",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-list-4-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "954eccc4d70dd71956b0dad7cf005c4124a12d47",
+      "mainBlob": null,
+      "aggregateBlob": "954eccc4d70dd71956b0dad7cf005c4124a12d47",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-list-4-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "cdc1aabc2e93e8cfed0526380030eb4bb901d586",
+      "mainBlob": null,
+      "aggregateBlob": "cdc1aabc2e93e8cfed0526380030eb4bb901d586",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-list-4-tablet.jpg",
+      "baseBlob": null,
+      "sourceBlob": "524155f6c1e6f6febb5bab48a722207e0ab48430",
+      "mainBlob": null,
+      "aggregateBlob": "524155f6c1e6f6febb5bab48a722207e0ab48430",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-list-4-wide.jpg",
+      "baseBlob": null,
+      "sourceBlob": "0dd5a469db07246c4879db9a2512298364efad36",
+      "mainBlob": null,
+      "aggregateBlob": "0dd5a469db07246c4879db9a2512298364efad36",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-shared-timeline-1-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "0e5bd10e852afa3d189d0aa653bc59d5859cacaf",
+      "mainBlob": null,
+      "aggregateBlob": "0e5bd10e852afa3d189d0aa653bc59d5859cacaf",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-shared-timeline-1-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "c718446c4b2a168744b0ee318e462105af5f15c5",
+      "mainBlob": null,
+      "aggregateBlob": "c718446c4b2a168744b0ee318e462105af5f15c5",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-shared-timeline-1-tablet.jpg",
+      "baseBlob": null,
+      "sourceBlob": "f478965810fd01c34f45c7e9ad5ee389b8ddad97",
+      "mainBlob": null,
+      "aggregateBlob": "f478965810fd01c34f45c7e9ad5ee389b8ddad97",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-shared-timeline-1-wide.jpg",
+      "baseBlob": null,
+      "sourceBlob": "a9fa1437dfa4499e5c10f52d2d5112e4897a38e5",
+      "mainBlob": null,
+      "aggregateBlob": "a9fa1437dfa4499e5c10f52d2d5112e4897a38e5",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-shared-timeline-3-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "3fac6e242e37170cf7879cc792be4ac0d28ebd63",
+      "mainBlob": null,
+      "aggregateBlob": "3fac6e242e37170cf7879cc792be4ac0d28ebd63",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-shared-timeline-3-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "0a2b4f4e82e519d0fa25307b5d33fd77402eed80",
+      "mainBlob": null,
+      "aggregateBlob": "0a2b4f4e82e519d0fa25307b5d33fd77402eed80",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-shared-timeline-3-tablet.jpg",
+      "baseBlob": null,
+      "sourceBlob": "24babda5fc7d2240f5641b0b0c02a2b19ad6a06e",
+      "mainBlob": null,
+      "aggregateBlob": "24babda5fc7d2240f5641b0b0c02a2b19ad6a06e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-shared-timeline-3-wide.jpg",
+      "baseBlob": null,
+      "sourceBlob": "e54bbf68a4db39642e74ae9568186081571b4e99",
+      "mainBlob": null,
+      "aggregateBlob": "e54bbf68a4db39642e74ae9568186081571b4e99",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-shared-timeline-4-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "1438c544b37e0533ff44934a1994cb7dff929be9",
+      "mainBlob": null,
+      "aggregateBlob": "1438c544b37e0533ff44934a1994cb7dff929be9",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-shared-timeline-4-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "5fd0f6099c34f1d79e648866d699554044ffaa21",
+      "mainBlob": null,
+      "aggregateBlob": "5fd0f6099c34f1d79e648866d699554044ffaa21",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-shared-timeline-4-tablet.jpg",
+      "baseBlob": null,
+      "sourceBlob": "603b4ea1e88c03112fac7d9c566ffeffc952029f",
+      "mainBlob": null,
+      "aggregateBlob": "603b4ea1e88c03112fac7d9c566ffeffc952029f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-shared-timeline-4-wide.jpg",
+      "baseBlob": null,
+      "sourceBlob": "c9ca6503f705f3f3eaf5005378bca236e5bd8492",
+      "mainBlob": null,
+      "aggregateBlob": "c9ca6503f705f3f3eaf5005378bca236e5bd8492",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-shared-timeline-5-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "4e8fc63635a2590c163de4f3cc1ef5e53060e957",
+      "mainBlob": null,
+      "aggregateBlob": "4e8fc63635a2590c163de4f3cc1ef5e53060e957",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-shared-timeline-5-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "209dafdb1a0d2aa8588dc53673b0b5e1c72f5438",
+      "mainBlob": null,
+      "aggregateBlob": "209dafdb1a0d2aa8588dc53673b0b5e1c72f5438",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-shared-timeline-5-tablet.jpg",
+      "baseBlob": null,
+      "sourceBlob": "b0995e1cc0ebbea45694e02c6ef394ffd28cad85",
+      "mainBlob": null,
+      "aggregateBlob": "b0995e1cc0ebbea45694e02c6ef394ffd28cad85",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-shared-timeline-5-wide.jpg",
+      "baseBlob": null,
+      "sourceBlob": "4ed97996ee09fd5142422a3ba22ccdbd7b6f20e4",
+      "mainBlob": null,
+      "aggregateBlob": "4ed97996ee09fd5142422a3ba22ccdbd7b6f20e4",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-shared-timeline-6-desktop.jpg",
+      "baseBlob": null,
+      "sourceBlob": "c447ab315943b011e0b707e8fc94da50db183bbc",
+      "mainBlob": null,
+      "aggregateBlob": "c447ab315943b011e0b707e8fc94da50db183bbc",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-shared-timeline-6-mobile.jpg",
+      "baseBlob": null,
+      "sourceBlob": "05e00311b845a7026c380cf7e7cc9fb9d8272be9",
+      "mainBlob": null,
+      "aggregateBlob": "05e00311b845a7026c380cf7e7cc9fb9d8272be9",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-shared-timeline-6-tablet.jpg",
+      "baseBlob": null,
+      "sourceBlob": "fdbcf28d684ad72b278da386f777ce6d43b9a8b6",
+      "mainBlob": null,
+      "aggregateBlob": "fdbcf28d684ad72b278da386f777ce6d43b9a8b6",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/repair-shared-timeline-6-wide.jpg",
+      "baseBlob": null,
+      "sourceBlob": "daf3369df70b2e82964563508c18746c6a1fbfa0",
+      "mainBlob": null,
+      "aggregateBlob": "daf3369df70b2e82964563508c18746c6a1fbfa0",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/source-lineage-before-repair.json",
+      "baseBlob": null,
+      "sourceBlob": "c0b2a8752c76bde5318092fae3021955a8a1998e",
+      "mainBlob": null,
+      "aggregateBlob": "c0b2a8752c76bde5318092fae3021955a8a1998e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/source-lineage.json",
+      "baseBlob": null,
+      "sourceBlob": "505810e818af1543c17d2ce692ce1f045e918390",
+      "mainBlob": null,
+      "aggregateBlob": "505810e818af1543c17d2ce692ce1f045e918390",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/receiving-20261009/verification.json",
+      "baseBlob": null,
+      "sourceBlob": "a3692c34a7a012d77454526a8e887bd3680bc633",
+      "mainBlob": null,
+      "aggregateBlob": "a3692c34a7a012d77454526a8e887bd3680bc633",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/analytics/analytics-1-dark.jpg",
+      "baseBlob": null,
+      "sourceBlob": "63899117439a4bcbe41497fe601b4d8b373489eb",
+      "mainBlob": null,
+      "aggregateBlob": "63899117439a4bcbe41497fe601b4d8b373489eb",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/analytics/analytics-1-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "7235376ef5dd3215d5ab8b8109006469193ac636",
+      "mainBlob": null,
+      "aggregateBlob": "7235376ef5dd3215d5ab8b8109006469193ac636",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/analytics/analytics-1-phone.jpg",
+      "baseBlob": null,
+      "sourceBlob": "50f0ff09b51c286f0d23a684e3bdef7c15367531",
+      "mainBlob": null,
+      "aggregateBlob": "50f0ff09b51c286f0d23a684e3bdef7c15367531",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/analytics/analytics-2-dark.jpg",
+      "baseBlob": null,
+      "sourceBlob": "905cb2bfebe1cf8c2915f69765842d0ad55c84a7",
+      "mainBlob": null,
+      "aggregateBlob": "905cb2bfebe1cf8c2915f69765842d0ad55c84a7",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/analytics/analytics-2-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "cae968fa387d1b7941acbbead11e69ff4aad65d1",
+      "mainBlob": null,
+      "aggregateBlob": "cae968fa387d1b7941acbbead11e69ff4aad65d1",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/analytics/analytics-2-phone.jpg",
+      "baseBlob": null,
+      "sourceBlob": "6ce688932789868fc00db5072437bb0c6e93b4c2",
+      "mainBlob": null,
+      "aggregateBlob": "6ce688932789868fc00db5072437bb0c6e93b4c2",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/analytics/analytics-3-dark.jpg",
+      "baseBlob": null,
+      "sourceBlob": "8189b268471dfa94fbf70821ec8325ee1ab650f9",
+      "mainBlob": null,
+      "aggregateBlob": "8189b268471dfa94fbf70821ec8325ee1ab650f9",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/analytics/analytics-3-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "f553a132319bc6a28b1189295069072ff50ed544",
+      "mainBlob": null,
+      "aggregateBlob": "f553a132319bc6a28b1189295069072ff50ed544",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/analytics/analytics-3-phone.jpg",
+      "baseBlob": null,
+      "sourceBlob": "f492fd7e16eec33ad6c70c90f2bc37f1fd051c0d",
+      "mainBlob": null,
+      "aggregateBlob": "f492fd7e16eec33ad6c70c90f2bc37f1fd051c0d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/analytics/analytics-4-dark.jpg",
+      "baseBlob": null,
+      "sourceBlob": "66941d86b33b74a9489cbe78ad047985c620f82a",
+      "mainBlob": null,
+      "aggregateBlob": "66941d86b33b74a9489cbe78ad047985c620f82a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/analytics/analytics-4-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "4d9ff6dd6ebe75cb54f60146c706a692f5cdcf9d",
+      "mainBlob": null,
+      "aggregateBlob": "4d9ff6dd6ebe75cb54f60146c706a692f5cdcf9d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/analytics/analytics-4-phone.jpg",
+      "baseBlob": null,
+      "sourceBlob": "de6be8c782f29e6ab8a5bea8f80cfae851b2dc57",
+      "mainBlob": null,
+      "aggregateBlob": "de6be8c782f29e6ab8a5bea8f80cfae851b2dc57",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/analytics/analytics-5-dark.jpg",
+      "baseBlob": null,
+      "sourceBlob": "b6009be30faa4a0da930a2ddfaa96a776dccec76",
+      "mainBlob": null,
+      "aggregateBlob": "b6009be30faa4a0da930a2ddfaa96a776dccec76",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/analytics/analytics-5-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "204d748619cad272eaaa60e3e9db412ae359810b",
+      "mainBlob": null,
+      "aggregateBlob": "204d748619cad272eaaa60e3e9db412ae359810b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/analytics/analytics-5-phone.jpg",
+      "baseBlob": null,
+      "sourceBlob": "bf7254ccb300b9aa9f11e591c25f59ca157fcd85",
+      "mainBlob": null,
+      "aggregateBlob": "bf7254ccb300b9aa9f11e591c25f59ca157fcd85",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/analytics/analytics-6-dark.jpg",
+      "baseBlob": null,
+      "sourceBlob": "5e374e0c70822679006dd17578e43c44fd07203b",
+      "mainBlob": null,
+      "aggregateBlob": "5e374e0c70822679006dd17578e43c44fd07203b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/analytics/analytics-6-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "4260dbad2b24dea876bc41c204fc50f4741b8307",
+      "mainBlob": null,
+      "aggregateBlob": "4260dbad2b24dea876bc41c204fc50f4741b8307",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/analytics/analytics-6-phone.jpg",
+      "baseBlob": null,
+      "sourceBlob": "71ddbe65e3b528ed782181fcfe79ff375a12e8f4",
+      "mainBlob": null,
+      "aggregateBlob": "71ddbe65e3b528ed782181fcfe79ff375a12e8f4",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/apps/apps-1-dark.jpg",
+      "baseBlob": null,
+      "sourceBlob": "df7e30e93e5b6443264561fbc5afb2ff1f24fbbc",
+      "mainBlob": null,
+      "aggregateBlob": "df7e30e93e5b6443264561fbc5afb2ff1f24fbbc",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/apps/apps-1-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "e63724422af9ac7506fe4a8af8c028874bee874a",
+      "mainBlob": null,
+      "aggregateBlob": "e63724422af9ac7506fe4a8af8c028874bee874a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/apps/apps-1-phone.jpg",
+      "baseBlob": null,
+      "sourceBlob": "d30048d8bce8ef290b241a36251a1a516b8b064e",
+      "mainBlob": null,
+      "aggregateBlob": "d30048d8bce8ef290b241a36251a1a516b8b064e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/apps/apps-2-dark.jpg",
+      "baseBlob": null,
+      "sourceBlob": "8a3b55599db437b82346515e5c32420f8bb9dfe1",
+      "mainBlob": null,
+      "aggregateBlob": "8a3b55599db437b82346515e5c32420f8bb9dfe1",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/apps/apps-2-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "43063565a4063d8ca1a84d7331e54cb3cc9b9943",
+      "mainBlob": null,
+      "aggregateBlob": "43063565a4063d8ca1a84d7331e54cb3cc9b9943",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/apps/apps-2-phone.jpg",
+      "baseBlob": null,
+      "sourceBlob": "e209ec0c6734a822d2cae6c2700e5dffdc4d9f8d",
+      "mainBlob": null,
+      "aggregateBlob": "e209ec0c6734a822d2cae6c2700e5dffdc4d9f8d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/apps/apps-3-dark.jpg",
+      "baseBlob": null,
+      "sourceBlob": "e0713073e2048e571e589d8b329e6690fa93b382",
+      "mainBlob": null,
+      "aggregateBlob": "e0713073e2048e571e589d8b329e6690fa93b382",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/apps/apps-3-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "167e7265801cf00a2cd75484293432e0a1ca900b",
+      "mainBlob": null,
+      "aggregateBlob": "167e7265801cf00a2cd75484293432e0a1ca900b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/apps/apps-3-phone.jpg",
+      "baseBlob": null,
+      "sourceBlob": "7015db1791562189e60934825fad86144515bf43",
+      "mainBlob": null,
+      "aggregateBlob": "7015db1791562189e60934825fad86144515bf43",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/apps/apps-4-dark.jpg",
+      "baseBlob": null,
+      "sourceBlob": "433c5e1cb3376af663fff6c60a184e32973a6338",
+      "mainBlob": null,
+      "aggregateBlob": "433c5e1cb3376af663fff6c60a184e32973a6338",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/apps/apps-4-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "e8874d6e2799f873a56d485cfba551ebe36d5dba",
+      "mainBlob": null,
+      "aggregateBlob": "e8874d6e2799f873a56d485cfba551ebe36d5dba",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/apps/apps-4-phone.jpg",
+      "baseBlob": null,
+      "sourceBlob": "9946a503cc91fd567abbb893e5e997766f82375a",
+      "mainBlob": null,
+      "aggregateBlob": "9946a503cc91fd567abbb893e5e997766f82375a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/apps/apps-5-dark.jpg",
+      "baseBlob": null,
+      "sourceBlob": "4dd0643eab206ef6db64b8fbd96c824f5869d062",
+      "mainBlob": null,
+      "aggregateBlob": "4dd0643eab206ef6db64b8fbd96c824f5869d062",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/apps/apps-5-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "a915e511a7430541a60ef93eb14c246ef35d0b5b",
+      "mainBlob": null,
+      "aggregateBlob": "a915e511a7430541a60ef93eb14c246ef35d0b5b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/apps/apps-5-phone.jpg",
+      "baseBlob": null,
+      "sourceBlob": "b1463cf277493ba0c2775795e66c97b526632127",
+      "mainBlob": null,
+      "aggregateBlob": "b1463cf277493ba0c2775795e66c97b526632127",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/apps/apps-6-dark.jpg",
+      "baseBlob": null,
+      "sourceBlob": "82a5ff54463420ee25e96d12e3da583dc6fecaa9",
+      "mainBlob": null,
+      "aggregateBlob": "82a5ff54463420ee25e96d12e3da583dc6fecaa9",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/apps/apps-6-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "f1d870932372024956134eccd2c7601c8e63b42c",
+      "mainBlob": null,
+      "aggregateBlob": "f1d870932372024956134eccd2c7601c8e63b42c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/apps/apps-6-phone.jpg",
+      "baseBlob": null,
+      "sourceBlob": "d7ef4aca9ac580cd632892a116e6df0f0015a12a",
+      "mainBlob": null,
+      "aggregateBlob": "d7ef4aca9ac580cd632892a116e6df0f0015a12a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/board-1-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "70008bff808c6f9e3a10e8c9881f532b5b1e0846",
+      "mainBlob": null,
+      "aggregateBlob": "70008bff808c6f9e3a10e8c9881f532b5b1e0846",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/board-2-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "ca5242f61a08b0060529920aeb696d8134473642",
+      "mainBlob": null,
+      "aggregateBlob": "ca5242f61a08b0060529920aeb696d8134473642",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/board-3-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "6874f64db2ca555e97af2134c157818a69c1ebb2",
+      "mainBlob": null,
+      "aggregateBlob": "6874f64db2ca555e97af2134c157818a69c1ebb2",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/board-4-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "94762f8292a7b88e979471c7bde98a13be7ae976",
+      "mainBlob": null,
+      "aggregateBlob": "94762f8292a7b88e979471c7bde98a13be7ae976",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/board-5-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "d0a07a0df1e0c403bc41ced928458484d0ab0cfd",
+      "mainBlob": null,
+      "aggregateBlob": "d0a07a0df1e0c403bc41ced928458484d0ab0cfd",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/calendar-1-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "857c9d1b8f17e1d6a744561b785944d1eb5a5e79",
+      "mainBlob": null,
+      "aggregateBlob": "857c9d1b8f17e1d6a744561b785944d1eb5a5e79",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/calendar-2-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "ee10b78c5e5352c104c596d4f73b1d23fdd03300",
+      "mainBlob": null,
+      "aggregateBlob": "ee10b78c5e5352c104c596d4f73b1d23fdd03300",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/calendar-3-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "c610320ebcc3c509c4739672f28e0e22c4625c19",
+      "mainBlob": null,
+      "aggregateBlob": "c610320ebcc3c509c4739672f28e0e22c4625c19",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/calendar-4-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "5b6625ce07b00fa2a9d418e89221fa1639b4422f",
+      "mainBlob": null,
+      "aggregateBlob": "5b6625ce07b00fa2a9d418e89221fa1639b4422f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/calendar-5-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "ae59880309a25293a54fc85fbc35d095aeb4b120",
+      "mainBlob": null,
+      "aggregateBlob": "ae59880309a25293a54fc85fbc35d095aeb4b120",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/list-1-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "183bdd735df6dd17364dfd0ced7ddc4fc348ba7a",
+      "mainBlob": null,
+      "aggregateBlob": "183bdd735df6dd17364dfd0ced7ddc4fc348ba7a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/list-2-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "8a8fbfb00fe961c22b622eeb97d488104a26e832",
+      "mainBlob": null,
+      "aggregateBlob": "8a8fbfb00fe961c22b622eeb97d488104a26e832",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/list-3-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "04b64e3e58171d98af17030cdaea78d2d14eb9ab",
+      "mainBlob": null,
+      "aggregateBlob": "04b64e3e58171d98af17030cdaea78d2d14eb9ab",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/list-4-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "4b411545a868ff67d95865705a5eddb84884b17c",
+      "mainBlob": null,
+      "aggregateBlob": "4b411545a868ff67d95865705a5eddb84884b17c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/list-5-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "4e1bad43908df8f18526b847570de699df2d763b",
+      "mainBlob": null,
+      "aggregateBlob": "4e1bad43908df8f18526b847570de699df2d763b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/shared-timeline/shared-timeline-1-dark.jpg",
+      "baseBlob": null,
+      "sourceBlob": "2c154fedea2ec5804f55a0968dbb849ed4371979",
+      "mainBlob": null,
+      "aggregateBlob": "2c154fedea2ec5804f55a0968dbb849ed4371979",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/shared-timeline/shared-timeline-1-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "c958f560cced6d9dbc4e7bbacb68ba154ff403a7",
+      "mainBlob": null,
+      "aggregateBlob": "c958f560cced6d9dbc4e7bbacb68ba154ff403a7",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/shared-timeline/shared-timeline-1-phone.jpg",
+      "baseBlob": null,
+      "sourceBlob": "1b4e11522c9f8fad5f63b568a567732c6aa0d6b3",
+      "mainBlob": null,
+      "aggregateBlob": "1b4e11522c9f8fad5f63b568a567732c6aa0d6b3",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/shared-timeline/shared-timeline-2-dark.jpg",
+      "baseBlob": null,
+      "sourceBlob": "557aedcd7e4755561d571a855a720d16621a5e44",
+      "mainBlob": null,
+      "aggregateBlob": "557aedcd7e4755561d571a855a720d16621a5e44",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/shared-timeline/shared-timeline-2-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "5b6b3bab8e0c70e10d4944315e83ac904564a6d2",
+      "mainBlob": null,
+      "aggregateBlob": "5b6b3bab8e0c70e10d4944315e83ac904564a6d2",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/shared-timeline/shared-timeline-2-phone.jpg",
+      "baseBlob": null,
+      "sourceBlob": "c81b90ec93ca9b7c6b6e3a27c24fe3539c7e4a18",
+      "mainBlob": null,
+      "aggregateBlob": "c81b90ec93ca9b7c6b6e3a27c24fe3539c7e4a18",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/shared-timeline/shared-timeline-3-dark.jpg",
+      "baseBlob": null,
+      "sourceBlob": "5a0d94390f8ca62aeb75d964a7eb66b0c81143e6",
+      "mainBlob": null,
+      "aggregateBlob": "5a0d94390f8ca62aeb75d964a7eb66b0c81143e6",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/shared-timeline/shared-timeline-3-light-open.jpg",
+      "baseBlob": null,
+      "sourceBlob": "837c3e099fd429a066e65ad10cb38e8f89d1f062",
+      "mainBlob": null,
+      "aggregateBlob": "837c3e099fd429a066e65ad10cb38e8f89d1f062",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/shared-timeline/shared-timeline-3-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "316fb4d1295eb13fb577f232969ba01a0d3e2873",
+      "mainBlob": null,
+      "aggregateBlob": "316fb4d1295eb13fb577f232969ba01a0d3e2873",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/shared-timeline/shared-timeline-3-phone-open.jpg",
+      "baseBlob": null,
+      "sourceBlob": "8fb7df2233e181791a547a8d6745089da0c9c6e3",
+      "mainBlob": null,
+      "aggregateBlob": "8fb7df2233e181791a547a8d6745089da0c9c6e3",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/shared-timeline/shared-timeline-3-phone.jpg",
+      "baseBlob": null,
+      "sourceBlob": "6c6fb9050b486d0ed76d1714bd15658223a8c961",
+      "mainBlob": null,
+      "aggregateBlob": "6c6fb9050b486d0ed76d1714bd15658223a8c961",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/shared-timeline/shared-timeline-4-dark.jpg",
+      "baseBlob": null,
+      "sourceBlob": "d571d3757f1e35d1a10c64220625009cd11b1f24",
+      "mainBlob": null,
+      "aggregateBlob": "d571d3757f1e35d1a10c64220625009cd11b1f24",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/shared-timeline/shared-timeline-4-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "14abde1dc44929bce409c8fd81396e64c848abcc",
+      "mainBlob": null,
+      "aggregateBlob": "14abde1dc44929bce409c8fd81396e64c848abcc",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/shared-timeline/shared-timeline-4-phone.jpg",
+      "baseBlob": null,
+      "sourceBlob": "a0a409de8b6a5464928053c9d79c98e66fbd822b",
+      "mainBlob": null,
+      "aggregateBlob": "a0a409de8b6a5464928053c9d79c98e66fbd822b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/shared-timeline/shared-timeline-5-dark.jpg",
+      "baseBlob": null,
+      "sourceBlob": "aa9313784f8d52247de6c2181300d62b632aafd1",
+      "mainBlob": null,
+      "aggregateBlob": "aa9313784f8d52247de6c2181300d62b632aafd1",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/shared-timeline/shared-timeline-5-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "d3eaa2c4603cec07e204c6de209a5a904ca8fe79",
+      "mainBlob": null,
+      "aggregateBlob": "d3eaa2c4603cec07e204c6de209a5a904ca8fe79",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/shared-timeline/shared-timeline-5-phone.jpg",
+      "baseBlob": null,
+      "sourceBlob": "af57be513937f5b0124e4ac4ca3a230db790b59f",
+      "mainBlob": null,
+      "aggregateBlob": "af57be513937f5b0124e4ac4ca3a230db790b59f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/shared-timeline/shared-timeline-6-dark.jpg",
+      "baseBlob": null,
+      "sourceBlob": "51194c465f63e8d427e713deac8e24ef8c7469c9",
+      "mainBlob": null,
+      "aggregateBlob": "51194c465f63e8d427e713deac8e24ef8c7469c9",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/shared-timeline/shared-timeline-6-light.jpg",
+      "baseBlob": null,
+      "sourceBlob": "1f257d4b4ae5aad9b351f5e5c5e4c3a8680a052b",
+      "mainBlob": null,
+      "aggregateBlob": "1f257d4b4ae5aad9b351f5e5c5e4c3a8680a052b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/shots/shared-timeline/shared-timeline-6-phone.jpg",
+      "baseBlob": null,
+      "sourceBlob": "d298f6048850685390124b2e2c2406c5efcc4d78",
+      "mainBlob": null,
+      "aggregateBlob": "d298f6048850685390124b2e2c2406c5efcc4d78",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/tasks-concept-sprint.workflow.js",
+      "baseBlob": null,
+      "sourceBlob": "ef7063f5ec39b76381bd8fb0cca0f7cab9144045",
+      "mainBlob": null,
+      "aggregateBlob": "ef7063f5ec39b76381bd8fb0cca0f7cab9144045",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/concept-sprint/tasks-gallery.html",
+      "baseBlob": null,
+      "sourceBlob": "e82b30521f0efa4fd6d16c4738e6468bee747602",
+      "mainBlob": null,
+      "aggregateBlob": "e82b30521f0efa4fd6d16c4738e6468bee747602",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/landing-concepts/concept-a-the-way-to-the-day.html",
+      "baseBlob": null,
+      "sourceBlob": "8c2efd9f778f0a025ca4a66ba27c1ed7f2522e07",
+      "mainBlob": null,
+      "aggregateBlob": "8c2efd9f778f0a025ca4a66ba27c1ed7f2522e07",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/landing-concepts/concept-b-plain-english.html",
+      "baseBlob": null,
+      "sourceBlob": "48d131086353d8cb9f2c5b58b8b7023848b231d2",
+      "mainBlob": null,
+      "aggregateBlob": "48d131086353d8cb9f2c5b58b8b7023848b231d2",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "docs/design/landing-concepts/concept-c-your-work-in-it.html",
+      "baseBlob": null,
+      "sourceBlob": "cd31cc71bc687445fcd17dcc71a30c12522aeff7",
+      "mainBlob": null,
+      "aggregateBlob": "cd31cc71bc687445fcd17dcc71a30c12522aeff7",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "next.config.ts",
+      "baseBlob": "30f8caa4a76f5f787e23dd21f0888d4581e1617a",
+      "sourceBlob": "8bd7234be967d9ed6d5cf76ef9100ddd613f4269",
+      "mainBlob": "30f8caa4a76f5f787e23dd21f0888d4581e1617a",
+      "aggregateBlob": "6aa6524a2b0744f35e27880bd3275410894564c7",
+      "receiving": "adapted"
+    },
+    {
+      "status": "M",
+      "path": "package.json",
+      "baseBlob": "9eb458b18f5a4cc7b066050938532feaacc4db97",
+      "sourceBlob": "5a80182074f00e03668819af4a542bed81f08da3",
+      "mainBlob": "9eb458b18f5a4cc7b066050938532feaacc4db97",
+      "aggregateBlob": "6fe57f5f0998c182199331692f7b305079347da4",
+      "receiving": "adapted"
+    },
+    {
+      "status": "A",
+      "path": "scripts/design/concept-shot.mjs",
+      "baseBlob": null,
+      "sourceBlob": "7854bf424aa7778801f97e67ecd21cbb69db7f9e",
+      "mainBlob": null,
+      "aggregateBlob": "7854bf424aa7778801f97e67ecd21cbb69db7f9e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "scripts/design/concepts-boundary.test.mjs",
+      "baseBlob": null,
+      "sourceBlob": "8af9f76495d80eb1e53337ece760757851b0180b",
+      "mainBlob": null,
+      "aggregateBlob": "8af9f76495d80eb1e53337ece760757851b0180b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "scripts/design/receive-concepts-interactions.mjs",
+      "baseBlob": null,
+      "sourceBlob": "cc8d09110ef7b5a047dd0763489076d56ecbb6e6",
+      "mainBlob": null,
+      "aggregateBlob": "cc8d09110ef7b5a047dd0763489076d56ecbb6e6",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "scripts/design/receive-concepts.mjs",
+      "baseBlob": null,
+      "sourceBlob": "30665e67291919126a3b7cc893a670fa54d307af",
+      "mainBlob": null,
+      "aggregateBlob": "30665e67291919126a3b7cc893a670fa54d307af",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/app/app/concepts/page.tsx",
+      "baseBlob": "7dc9aed6a065468bb6c093161a296e8ca7366a17",
+      "sourceBlob": "7ba746875a5e7002f3bd627afea1466c34e7456b",
+      "mainBlob": "7dc9aed6a065468bb6c093161a296e8ca7366a17",
+      "aggregateBlob": "7ba746875a5e7002f3bd627afea1466c34e7456b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c1/charts.tsx",
+      "baseBlob": null,
+      "sourceBlob": "4b5f55f207976aa301b1b697b54a53bdb70eea88",
+      "mainBlob": null,
+      "aggregateBlob": "4b5f55f207976aa301b1b697b54a53bdb70eea88",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c1/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "ffd62e38aed0acde0fa1061646cd97f5be3114e3",
+      "mainBlob": null,
+      "aggregateBlob": "ffd62e38aed0acde0fa1061646cd97f5be3114e3",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c1/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "26006346fd794558d9fe690c37be1a26c87c1a0e",
+      "mainBlob": null,
+      "aggregateBlob": "26006346fd794558d9fe690c37be1a26c87c1a0e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c1/letter.module.css",
+      "baseBlob": null,
+      "sourceBlob": "a7c1cc77700936b3e88ec3ff222a7f517b245acc",
+      "mainBlob": null,
+      "aggregateBlob": "a7c1cc77700936b3e88ec3ff222a7f517b245acc",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c1/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "ca83380ecf509ea4db04c0307fbe41a5b96be9ee",
+      "mainBlob": null,
+      "aggregateBlob": "ca83380ecf509ea4db04c0307fbe41a5b96be9ee",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c2/c2.module.css",
+      "baseBlob": null,
+      "sourceBlob": "5357a24a1b754b7544123663ef8d6860a50dd995",
+      "mainBlob": null,
+      "aggregateBlob": "5357a24a1b754b7544123663ef8d6860a50dd995",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c2/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "c33d6a2889328cf5ca774e840e463dd7806a2551",
+      "mainBlob": null,
+      "aggregateBlob": "c33d6a2889328cf5ca774e840e463dd7806a2551",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c2/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "8eded79a1a5060b3cc9422f41e6a54f3da20631a",
+      "mainBlob": null,
+      "aggregateBlob": "8eded79a1a5060b3cc9422f41e6a54f3da20631a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c2/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "39980033242224f66400f7da605406b403f1f700",
+      "mainBlob": null,
+      "aggregateBlob": "39980033242224f66400f7da605406b403f1f700",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c2/model.ts",
+      "baseBlob": null,
+      "sourceBlob": "fb444afde5cfd185f3030870c09a023ee4db8c7b",
+      "mainBlob": null,
+      "aggregateBlob": "fb444afde5cfd185f3030870c09a023ee4db8c7b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c2/parts.tsx",
+      "baseBlob": null,
+      "sourceBlob": "bb6bc7a0572497372a0305fae3feb151f5a3567e",
+      "mainBlob": null,
+      "aggregateBlob": "bb6bc7a0572497372a0305fae3feb151f5a3567e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c2/runway.tsx",
+      "baseBlob": null,
+      "sourceBlob": "8eeb3cccbcd0193f9eb0939acafc44791b2688ca",
+      "mainBlob": null,
+      "aggregateBlob": "8eeb3cccbcd0193f9eb0939acafc44791b2688ca",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c3/bits.tsx",
+      "baseBlob": null,
+      "sourceBlob": "535de83b57cef495a473511404a4906be346c9a4",
+      "mainBlob": null,
+      "aggregateBlob": "535de83b57cef495a473511404a4906be346c9a4",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c3/c3.module.css",
+      "baseBlob": null,
+      "sourceBlob": "0ba6379c6062991dbf284522ee8520e545bbe82d",
+      "mainBlob": null,
+      "aggregateBlob": "0ba6379c6062991dbf284522ee8520e545bbe82d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c3/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "952951cea1ab9666d82e06d8b75ad54afa78798a",
+      "mainBlob": null,
+      "aggregateBlob": "952951cea1ab9666d82e06d8b75ad54afa78798a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c3/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "833950de6951887e3cd1ed6ffb28e58605ebfd8d",
+      "mainBlob": null,
+      "aggregateBlob": "833950de6951887e3cd1ed6ffb28e58605ebfd8d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c3/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "07041a42e5497821e1b72755d2a33ef33719a18d",
+      "mainBlob": null,
+      "aggregateBlob": "07041a42e5497821e1b72755d2a33ef33719a18d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c3/model.ts",
+      "baseBlob": null,
+      "sourceBlob": "d15874354401115f70d24f9feef8a6fe840a398f",
+      "mainBlob": null,
+      "aggregateBlob": "d15874354401115f70d24f9feef8a6fe840a398f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c3/panel.tsx",
+      "baseBlob": null,
+      "sourceBlob": "9dc30a086b837948d7101098b89de6239c54eb5b",
+      "mainBlob": null,
+      "aggregateBlob": "9dc30a086b837948d7101098b89de6239c54eb5b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c3/phone.tsx",
+      "baseBlob": null,
+      "sourceBlob": "df1713237981ebb4c63f56d9b93ea1e1f95361bc",
+      "mainBlob": null,
+      "aggregateBlob": "df1713237981ebb4c63f56d9b93ea1e1f95361bc",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c3/shelves.tsx",
+      "baseBlob": null,
+      "sourceBlob": "17b567ae0e1120d4a36b0ddf1680405cd07241b0",
+      "mainBlob": null,
+      "aggregateBlob": "17b567ae0e1120d4a36b0ddf1680405cd07241b0",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c4/c4.module.css",
+      "baseBlob": null,
+      "sourceBlob": "b15e6a89caf92a9ad5c95e78dec354ebc2584fc8",
+      "mainBlob": null,
+      "aggregateBlob": "b15e6a89caf92a9ad5c95e78dec354ebc2584fc8",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c4/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "c0d107058d37c1cc6591b9d13d143d0b7a99ced6",
+      "mainBlob": null,
+      "aggregateBlob": "c0d107058d37c1cc6591b9d13d143d0b7a99ced6",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c4/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "d0a1042c98a3ad72184c7424c16fd3de0a71df54",
+      "mainBlob": null,
+      "aggregateBlob": "d0a1042c98a3ad72184c7424c16fd3de0a71df54",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c4/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "39934aece0d5bc34fef0f8bb5377b94222cb637a",
+      "mainBlob": null,
+      "aggregateBlob": "39934aece0d5bc34fef0f8bb5377b94222cb637a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c4/model.ts",
+      "baseBlob": null,
+      "sourceBlob": "e03f093e22a7661c4c7dfe4f7660e319fa9e6d32",
+      "mainBlob": null,
+      "aggregateBlob": "e03f093e22a7661c4c7dfe4f7660e319fa9e6d32",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c4/panel.tsx",
+      "baseBlob": null,
+      "sourceBlob": "2abbc80339979e1edb202cc4c9c20d99692ca436",
+      "mainBlob": null,
+      "aggregateBlob": "2abbc80339979e1edb202cc4c9c20d99692ca436",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c4/scrubber.tsx",
+      "baseBlob": null,
+      "sourceBlob": "a6e51bcb52f66c64c609dfb975491550aaeee154",
+      "mainBlob": null,
+      "aggregateBlob": "a6e51bcb52f66c64c609dfb975491550aaeee154",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c4/stage.tsx",
+      "baseBlob": null,
+      "sourceBlob": "4c861334fd180db7237e0139a44a2dea15e249d6",
+      "mainBlob": null,
+      "aggregateBlob": "4c861334fd180db7237e0139a44a2dea15e249d6",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c5/answers.ts",
+      "baseBlob": null,
+      "sourceBlob": "5e9bf685b3dc9b0620e253d4d49e67ba3de1870f",
+      "mainBlob": null,
+      "aggregateBlob": "5e9bf685b3dc9b0620e253d4d49e67ba3de1870f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c5/c5.module.css",
+      "baseBlob": null,
+      "sourceBlob": "8ee9e67e72e63c84245b345dd7b64ebce953a563",
+      "mainBlob": null,
+      "aggregateBlob": "8ee9e67e72e63c84245b345dd7b64ebce953a563",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c5/charts.tsx",
+      "baseBlob": null,
+      "sourceBlob": "a064692182c13d0eaaf0a8c351d4651fc18bf00f",
+      "mainBlob": null,
+      "aggregateBlob": "a064692182c13d0eaaf0a8c351d4651fc18bf00f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c5/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "50755cdfd0efa8efa1fc7f81bdcf0f7ecab44743",
+      "mainBlob": null,
+      "aggregateBlob": "50755cdfd0efa8efa1fc7f81bdcf0f7ecab44743",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c5/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "566a926b3bdde66e2a65d2709104f9c29b4a383d",
+      "mainBlob": null,
+      "aggregateBlob": "566a926b3bdde66e2a65d2709104f9c29b4a383d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c5/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "d8e71c3bee3f61fe5aea4a81476a7999c82243f6",
+      "mainBlob": null,
+      "aggregateBlob": "d8e71c3bee3f61fe5aea4a81476a7999c82243f6",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c5/parts.tsx",
+      "baseBlob": null,
+      "sourceBlob": "44cd0953845f1716aec1a97f16340db9c1f87f33",
+      "mainBlob": null,
+      "aggregateBlob": "44cd0953845f1716aec1a97f16340db9c1f87f33",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c5/questions.ts",
+      "baseBlob": null,
+      "sourceBlob": "7a922957702e9972fe57f58edf4a68e657b9de5a",
+      "mainBlob": null,
+      "aggregateBlob": "7a922957702e9972fe57f58edf4a68e657b9de5a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c6/c6.module.css",
+      "baseBlob": null,
+      "sourceBlob": "ab7b113e7b803daa0370614e4c3a788ed29f665f",
+      "mainBlob": null,
+      "aggregateBlob": "ab7b113e7b803daa0370614e4c3a788ed29f665f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c6/charts.tsx",
+      "baseBlob": null,
+      "sourceBlob": "069923114c4a8f303a153064fd9aa20b10a271b3",
+      "mainBlob": null,
+      "aggregateBlob": "069923114c4a8f303a153064fd9aa20b10a271b3",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c6/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "163a002d11cdc918b348f64d7a9d885af02d97db",
+      "mainBlob": null,
+      "aggregateBlob": "163a002d11cdc918b348f64d7a9d885af02d97db",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c6/icons.tsx",
+      "baseBlob": null,
+      "sourceBlob": "2bbb4b99979bb949a4453e3f24ed82a03aa7f82c",
+      "mainBlob": null,
+      "aggregateBlob": "2bbb4b99979bb949a4453e3f24ed82a03aa7f82c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c6/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "5f5caf04ad24a710bd4776a0966cb47f595377c8",
+      "mainBlob": null,
+      "aggregateBlob": "5f5caf04ad24a710bd4776a0966cb47f595377c8",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c6/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "760871bc7372c74a0ed9223d8087d3eefd5b4ca5",
+      "mainBlob": null,
+      "aggregateBlob": "760871bc7372c74a0ed9223d8087d3eefd5b4ca5",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c6/model.ts",
+      "baseBlob": null,
+      "sourceBlob": "7a39a94abe441fac58c969af2e6e3e70a8aeb645",
+      "mainBlob": null,
+      "aggregateBlob": "7a39a94abe441fac58c969af2e6e3e70a8aeb645",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c6/table.tsx",
+      "baseBlob": null,
+      "sourceBlob": "41c8240c80e8d9585ba36d5383fb707aa76ad1e4",
+      "mainBlob": null,
+      "aggregateBlob": "41c8240c80e8d9585ba36d5383fb707aa76ad1e4",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/analytics/c6/wall.tsx",
+      "baseBlob": null,
+      "sourceBlob": "7b87a4f756f3493992c592ec1b323e7529496f02",
+      "mainBlob": null,
+      "aggregateBlob": "7b87a4f756f3493992c592ec1b323e7529496f02",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c1/bodies.tsx",
+      "baseBlob": null,
+      "sourceBlob": "a0e7e869ea0ae46d3549379d8b3be4b0ade7c2d0",
+      "mainBlob": null,
+      "aggregateBlob": "a0e7e869ea0ae46d3549379d8b3be4b0ade7c2d0",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c1/c1.module.css",
+      "baseBlob": null,
+      "sourceBlob": "e6b7a3268932fef635a06154c9ef166eb8908dce",
+      "mainBlob": null,
+      "aggregateBlob": "e6b7a3268932fef635a06154c9ef166eb8908dce",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c1/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "e738e9af1eabeec600528bf0e8a6817feb26b909",
+      "mainBlob": null,
+      "aggregateBlob": "e738e9af1eabeec600528bf0e8a6817feb26b909",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c1/glyphs.tsx",
+      "baseBlob": null,
+      "sourceBlob": "85b1dbd97e2d8e332c1c6a331b2933badf476a06",
+      "mainBlob": null,
+      "aggregateBlob": "85b1dbd97e2d8e332c1c6a331b2933badf476a06",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c1/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "92c45983687d30027feca6377cb3e521d15df440",
+      "mainBlob": null,
+      "aggregateBlob": "92c45983687d30027feca6377cb3e521d15df440",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c1/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "33fc7c5519356a33f9f5cd35846a14ea66b1f6d0",
+      "mainBlob": null,
+      "aggregateBlob": "33fc7c5519356a33f9f5cd35846a14ea66b1f6d0",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c1/parts.tsx",
+      "baseBlob": null,
+      "sourceBlob": "6a3bdcce12a433748d26f259eb84c249008bd424",
+      "mainBlob": null,
+      "aggregateBlob": "6a3bdcce12a433748d26f259eb84c249008bd424",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c2/board.tsx",
+      "baseBlob": null,
+      "sourceBlob": "da5665ecaa3ca9ce0cb53a7013e41223ee63abb4",
+      "mainBlob": null,
+      "aggregateBlob": "da5665ecaa3ca9ce0cb53a7013e41223ee63abb4",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c2/c2.module.css",
+      "baseBlob": null,
+      "sourceBlob": "3745bfa9500c62b464a2730b2e4c22e260add393",
+      "mainBlob": null,
+      "aggregateBlob": "3745bfa9500c62b464a2730b2e4c22e260add393",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c2/card.tsx",
+      "baseBlob": null,
+      "sourceBlob": "5ab91871b0be475769e0a5a3dd405c12fbb5a208",
+      "mainBlob": null,
+      "aggregateBlob": "5ab91871b0be475769e0a5a3dd405c12fbb5a208",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c2/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "18ebd1064a9a84c853b8b1774c5f83d190e90a28",
+      "mainBlob": null,
+      "aggregateBlob": "18ebd1064a9a84c853b8b1774c5f83d190e90a28",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c2/glyphs.tsx",
+      "baseBlob": null,
+      "sourceBlob": "cf7287a0a4e60b3cb7fb267a9279a899bdf8807e",
+      "mainBlob": null,
+      "aggregateBlob": "cf7287a0a4e60b3cb7fb267a9279a899bdf8807e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c2/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "e6aa698fc7049e2a776dd98534f75380de699fd7",
+      "mainBlob": null,
+      "aggregateBlob": "e6aa698fc7049e2a776dd98534f75380de699fd7",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c2/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "23bf31a6a7a4eab99f214c2196f79741c040b266",
+      "mainBlob": null,
+      "aggregateBlob": "23bf31a6a7a4eab99f214c2196f79741c040b266",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c2/model.ts",
+      "baseBlob": null,
+      "sourceBlob": "96c9a9e4f5e040753b8d32a4f2e02768993c2ff1",
+      "mainBlob": null,
+      "aggregateBlob": "96c9a9e4f5e040753b8d32a4f2e02768993c2ff1",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c2/sheet.tsx",
+      "baseBlob": null,
+      "sourceBlob": "85557ba33f17ba2206ce76b8ad13bef2c400262d",
+      "mainBlob": null,
+      "aggregateBlob": "85557ba33f17ba2206ce76b8ad13bef2c400262d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c3/anatomy.tsx",
+      "baseBlob": null,
+      "sourceBlob": "54b202ec7ff1bc291df49b56d6cb7a951c839594",
+      "mainBlob": null,
+      "aggregateBlob": "54b202ec7ff1bc291df49b56d6cb7a951c839594",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c3/art.tsx",
+      "baseBlob": null,
+      "sourceBlob": "89256f9cbdd2248b0a39f76e20c93e3fed4cb857",
+      "mainBlob": null,
+      "aggregateBlob": "89256f9cbdd2248b0a39f76e20c93e3fed4cb857",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c3/c3.module.css",
+      "baseBlob": null,
+      "sourceBlob": "d5699a9c4e57a4b7a67c9a7003985be073ff00ca",
+      "mainBlob": null,
+      "aggregateBlob": "d5699a9c4e57a4b7a67c9a7003985be073ff00ca",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c3/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "e6465b90efa74bbfe421a4252eadb5882a4305b6",
+      "mainBlob": null,
+      "aggregateBlob": "e6465b90efa74bbfe421a4252eadb5882a4305b6",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c3/glyphs.tsx",
+      "baseBlob": null,
+      "sourceBlob": "67733bdeee9c64354570410aa554d8dccf44859e",
+      "mainBlob": null,
+      "aggregateBlob": "67733bdeee9c64354570410aa554d8dccf44859e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c3/guide.tsx",
+      "baseBlob": null,
+      "sourceBlob": "2bb968a7e905f28a01dd6efa8b02962d192f6b06",
+      "mainBlob": null,
+      "aggregateBlob": "2bb968a7e905f28a01dd6efa8b02962d192f6b06",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c3/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "2ec85e1943431cdbf7f872a7398403f14fa53095",
+      "mainBlob": null,
+      "aggregateBlob": "2ec85e1943431cdbf7f872a7398403f14fa53095",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c3/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "dee3123bb8cf4ce052796734aafbea5a068a05cc",
+      "mainBlob": null,
+      "aggregateBlob": "dee3123bb8cf4ce052796734aafbea5a068a05cc",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c3/parts.tsx",
+      "baseBlob": null,
+      "sourceBlob": "df80765322d5a779cbd035cdb72faa62afc77dd2",
+      "mainBlob": null,
+      "aggregateBlob": "df80765322d5a779cbd035cdb72faa62afc77dd2",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c3/reader.tsx",
+      "baseBlob": null,
+      "sourceBlob": "17fab3162fd3ec223482571d78140f714427619f",
+      "mainBlob": null,
+      "aggregateBlob": "17fab3162fd3ec223482571d78140f714427619f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c4/c4.module.css",
+      "baseBlob": null,
+      "sourceBlob": "2b20913a1adc486cfb663cd868a1a2b955db929f",
+      "mainBlob": null,
+      "aggregateBlob": "2b20913a1adc486cfb663cd868a1a2b955db929f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c4/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "100f7545222e51ed26d25c722f934382ef4d7921",
+      "mainBlob": null,
+      "aggregateBlob": "100f7545222e51ed26d25c722f934382ef4d7921",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c4/glyphs.tsx",
+      "baseBlob": null,
+      "sourceBlob": "84788d0766e4a4ba3023c989c691b2aad64ce9d7",
+      "mainBlob": null,
+      "aggregateBlob": "84788d0766e4a4ba3023c989c691b2aad64ce9d7",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c4/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "44e6c33f2e5683faf0b8930d79f735da4cbdcedd",
+      "mainBlob": null,
+      "aggregateBlob": "44e6c33f2e5683faf0b8930d79f735da4cbdcedd",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c4/match.ts",
+      "baseBlob": null,
+      "sourceBlob": "baaf96a55de317bbd94db79d31f3906c7ce5c83b",
+      "mainBlob": null,
+      "aggregateBlob": "baaf96a55de317bbd94db79d31f3906c7ce5c83b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c4/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "8ef09898c149477cf4bd12afc5394f499a9f5b0b",
+      "mainBlob": null,
+      "aggregateBlob": "8ef09898c149477cf4bd12afc5394f499a9f5b0b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c4/micro.tsx",
+      "baseBlob": null,
+      "sourceBlob": "2b1708f9287a2282e263bea81be8dd9ce7df1e5e",
+      "mainBlob": null,
+      "aggregateBlob": "2b1708f9287a2282e263bea81be8dd9ce7df1e5e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c4/parts.tsx",
+      "baseBlob": null,
+      "sourceBlob": "b9e7ce16460a00646553e945529c13f397a3b01a",
+      "mainBlob": null,
+      "aggregateBlob": "b9e7ce16460a00646553e945529c13f397a3b01a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c4/previews.tsx",
+      "baseBlob": null,
+      "sourceBlob": "855e7e61e90f5e9007ff7e3cb69acb864f236ac7",
+      "mainBlob": null,
+      "aggregateBlob": "855e7e61e90f5e9007ff7e3cb69acb864f236ac7",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c5/c5.module.css",
+      "baseBlob": null,
+      "sourceBlob": "de326046252e934f5ecde8622a537bd514c820a1",
+      "mainBlob": null,
+      "aggregateBlob": "de326046252e934f5ecde8622a537bd514c820a1",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c5/chrome.tsx",
+      "baseBlob": null,
+      "sourceBlob": "e7a0cebc1fdc1e0b7b2406486b746f69c6b14035",
+      "mainBlob": null,
+      "aggregateBlob": "e7a0cebc1fdc1e0b7b2406486b746f69c6b14035",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c5/ctx.ts",
+      "baseBlob": null,
+      "sourceBlob": "bab3240f32c5472e6e1064a5b4b4eb482bf75a3c",
+      "mainBlob": null,
+      "aggregateBlob": "bab3240f32c5472e6e1064a5b4b4eb482bf75a3c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c5/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "5cbe7026d557b9716ec302b3586e29ef64a0225b",
+      "mainBlob": null,
+      "aggregateBlob": "5cbe7026d557b9716ec302b3586e29ef64a0225b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c5/glyphs.tsx",
+      "baseBlob": null,
+      "sourceBlob": "d6af7ffcbf11dc2c5f4d59af51106f8316c6377d",
+      "mainBlob": null,
+      "aggregateBlob": "d6af7ffcbf11dc2c5f4d59af51106f8316c6377d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c5/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "f9886fb23fc53f69d08b19dbd21719ee3bb59305",
+      "mainBlob": null,
+      "aggregateBlob": "f9886fb23fc53f69d08b19dbd21719ee3bb59305",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c5/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "63efc7a61855e5ace82d512d8c8973239a957fbd",
+      "mainBlob": null,
+      "aggregateBlob": "63efc7a61855e5ace82d512d8c8973239a957fbd",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c5/tools-day.tsx",
+      "baseBlob": null,
+      "sourceBlob": "24c4a4392a4a578de7b19f96767f231d8cf29de5",
+      "mainBlob": null,
+      "aggregateBlob": "24c4a4392a4a578de7b19f96767f231d8cf29de5",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c5/tools-other.tsx",
+      "baseBlob": null,
+      "sourceBlob": "6b401ba1f64a6a27af57161f7d407d04a5500031",
+      "mainBlob": null,
+      "aggregateBlob": "6b401ba1f64a6a27af57161f7d407d04a5500031",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c5/tools-people.tsx",
+      "baseBlob": null,
+      "sourceBlob": "e5d4b40d198f758c1cfe8607f143b70076ee9da9",
+      "mainBlob": null,
+      "aggregateBlob": "e5d4b40d198f758c1cfe8607f143b70076ee9da9",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c5/tools.module.css",
+      "baseBlob": null,
+      "sourceBlob": "4e6c7cef4caa3d5a2fc641880fe7bab87c12c315",
+      "mainBlob": null,
+      "aggregateBlob": "4e6c7cef4caa3d5a2fc641880fe7bab87c12c315",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c6/c6.module.css",
+      "baseBlob": null,
+      "sourceBlob": "2897ed0401fb252078ee02681539db8dbae171ee",
+      "mainBlob": null,
+      "aggregateBlob": "2897ed0401fb252078ee02681539db8dbae171ee",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c6/cards.tsx",
+      "baseBlob": null,
+      "sourceBlob": "205a2de4771b5a0c68ae275ab5730139803f9348",
+      "mainBlob": null,
+      "aggregateBlob": "205a2de4771b5a0c68ae275ab5730139803f9348",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c6/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "ced5375c16940ae447bc52ea9504c15e61567d65",
+      "mainBlob": null,
+      "aggregateBlob": "ced5375c16940ae447bc52ea9504c15e61567d65",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c6/flow-map.tsx",
+      "baseBlob": null,
+      "sourceBlob": "591c192863226a621dce008afca1e1df9fdda488",
+      "mainBlob": null,
+      "aggregateBlob": "591c192863226a621dce008afca1e1df9fdda488",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c6/glyphs.tsx",
+      "baseBlob": null,
+      "sourceBlob": "e5e315f712dedf2ffe273cf44a980b11b9d651f9",
+      "mainBlob": null,
+      "aggregateBlob": "e5e315f712dedf2ffe273cf44a980b11b9d651f9",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c6/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "11fd777985322624b401a08e7f61acae53b0a584",
+      "mainBlob": null,
+      "aggregateBlob": "11fd777985322624b401a08e7f61acae53b0a584",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c6/layout.ts",
+      "baseBlob": null,
+      "sourceBlob": "db2a3cc5a46fa0d8fed29786d103a6bc4c33bf76",
+      "mainBlob": null,
+      "aggregateBlob": "db2a3cc5a46fa0d8fed29786d103a6bc4c33bf76",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c6/ledger.tsx",
+      "baseBlob": null,
+      "sourceBlob": "6a9a2b975ea9b3c8266af91f9d4151558b898006",
+      "mainBlob": null,
+      "aggregateBlob": "6a9a2b975ea9b3c8266af91f9d4151558b898006",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c6/measure.ts",
+      "baseBlob": null,
+      "sourceBlob": "3dcd442c55e5a8696bfcf817ac11db38028d67ad",
+      "mainBlob": null,
+      "aggregateBlob": "3dcd442c55e5a8696bfcf817ac11db38028d67ad",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c6/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "ce441f38e748debfae20f4113650075b040ba9e5",
+      "mainBlob": null,
+      "aggregateBlob": "ce441f38e748debfae20f4113650075b040ba9e5",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c6/model.ts",
+      "baseBlob": null,
+      "sourceBlob": "48f485a27115acf0fea65eb7539aa69b4791115d",
+      "mainBlob": null,
+      "aggregateBlob": "48f485a27115acf0fea65eb7539aa69b4791115d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c6/parts.tsx",
+      "baseBlob": null,
+      "sourceBlob": "5cd3091a1a0cb282d67bb25e10a0625ab932fb0f",
+      "mainBlob": null,
+      "aggregateBlob": "5cd3091a1a0cb282d67bb25e10a0625ab932fb0f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c6/sheet.tsx",
+      "baseBlob": null,
+      "sourceBlob": "1a37ba00c5347f0b07b6413b2a2901a04621f207",
+      "mainBlob": null,
+      "aggregateBlob": "1a37ba00c5347f0b07b6413b2a2901a04621f207",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/apps/c6/strip-map.tsx",
+      "baseBlob": null,
+      "sourceBlob": "5e620099d1d1a92e7939bb489f67e2d1a0392f29",
+      "mainBlob": null,
+      "aggregateBlob": "5e620099d1d1a92e7939bb489f67e2d1a0392f29",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c1/board.module.css",
+      "baseBlob": null,
+      "sourceBlob": "84d7d05a8bc80ba00628b1393de4f3643f4f15c1",
+      "mainBlob": null,
+      "aggregateBlob": "84d7d05a8bc80ba00628b1393de4f3643f4f15c1",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c1/card.tsx",
+      "baseBlob": null,
+      "sourceBlob": "4c47ba7e6bbea1a6e4d692b23bb23573e2201410",
+      "mainBlob": null,
+      "aggregateBlob": "4c47ba7e6bbea1a6e4d692b23bb23573e2201410",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c1/composer.tsx",
+      "baseBlob": null,
+      "sourceBlob": "03004b798ec44bd03249c3ccc27c9d7c6b3997da",
+      "mainBlob": null,
+      "aggregateBlob": "03004b798ec44bd03249c3ccc27c9d7c6b3997da",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c1/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "389dbc793795a1fd6ea994e78d2ad88ef91610ac",
+      "mainBlob": null,
+      "aggregateBlob": "389dbc793795a1fd6ea994e78d2ad88ef91610ac",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c1/icons.tsx",
+      "baseBlob": null,
+      "sourceBlob": "1435053ca24d09a257fcca3ea89e1bcd46fa134f",
+      "mainBlob": null,
+      "aggregateBlob": "1435053ca24d09a257fcca3ea89e1bcd46fa134f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c1/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "0153ef43c9b78906b5d06b38b2904f8b50593129",
+      "mainBlob": null,
+      "aggregateBlob": "0153ef43c9b78906b5d06b38b2904f8b50593129",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c1/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "e653ca4ed1861e10b83b70ad3b7109a25123a2db",
+      "mainBlob": null,
+      "aggregateBlob": "e653ca4ed1861e10b83b70ad3b7109a25123a2db",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c1/model.ts",
+      "baseBlob": null,
+      "sourceBlob": "2026e6dce97968c8be2fbe93f65579b22e7627b7",
+      "mainBlob": null,
+      "aggregateBlob": "2026e6dce97968c8be2fbe93f65579b22e7627b7",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c1/overlays.tsx",
+      "baseBlob": null,
+      "sourceBlob": "e11e3c171f8f21bd55f60facd64be3f78613d35c",
+      "mainBlob": null,
+      "aggregateBlob": "e11e3c171f8f21bd55f60facd64be3f78613d35c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c2/c2.module.css",
+      "baseBlob": null,
+      "sourceBlob": "4029c05ba1a02e79b413c2c2d2f18a5ad72175c5",
+      "mainBlob": null,
+      "aggregateBlob": "4029c05ba1a02e79b413c2c2d2f18a5ad72175c5",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c2/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "8c7147fc69ba3b7ba7c65caab4ebc66c97a2ea29",
+      "mainBlob": null,
+      "aggregateBlob": "8c7147fc69ba3b7ba7c65caab4ebc66c97a2ea29",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c2/icons.tsx",
+      "baseBlob": null,
+      "sourceBlob": "2103abb457e2123a2d62cd955a7e34cf36ae11ca",
+      "mainBlob": null,
+      "aggregateBlob": "2103abb457e2123a2d62cd955a7e34cf36ae11ca",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c2/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "28bb102c0b49e8c417c23e591b9eb088ec67a08e",
+      "mainBlob": null,
+      "aggregateBlob": "28bb102c0b49e8c417c23e591b9eb088ec67a08e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c2/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "9795514f1721ee3ff6369497615716472675a87b",
+      "mainBlob": null,
+      "aggregateBlob": "9795514f1721ee3ff6369497615716472675a87b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c2/model.ts",
+      "baseBlob": null,
+      "sourceBlob": "096341716c132ac847e86f0aee14d05c3f48b6e8",
+      "mainBlob": null,
+      "aggregateBlob": "096341716c132ac847e86f0aee14d05c3f48b6e8",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c2/parts.tsx",
+      "baseBlob": null,
+      "sourceBlob": "cb0012d73078e72a233e560fd138a43d22f6fbef",
+      "mainBlob": null,
+      "aggregateBlob": "cb0012d73078e72a233e560fd138a43d22f6fbef",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c2/phone.tsx",
+      "baseBlob": null,
+      "sourceBlob": "cb34ad678255ba874aa32c96065d790a86228fc4",
+      "mainBlob": null,
+      "aggregateBlob": "cb34ad678255ba874aa32c96065d790a86228fc4",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c3/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "ea70e1152bd1537bc2f02596343f437c6dc46ff1",
+      "mainBlob": null,
+      "aggregateBlob": "ea70e1152bd1537bc2f02596343f437c6dc46ff1",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c3/desk.module.css",
+      "baseBlob": null,
+      "sourceBlob": "8a65fd85eb2d5482462f5a62f087d1cb7da8b79f",
+      "mainBlob": null,
+      "aggregateBlob": "8a65fd85eb2d5482462f5a62f087d1cb7da8b79f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c3/drawer.tsx",
+      "baseBlob": null,
+      "sourceBlob": "2705a001b78b2db43496e8d12a0d43ffee5f7347",
+      "mainBlob": null,
+      "aggregateBlob": "2705a001b78b2db43496e8d12a0d43ffee5f7347",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c3/icons.tsx",
+      "baseBlob": null,
+      "sourceBlob": "3a1b3516b2e8982683338b9218048b4157220a9e",
+      "mainBlob": null,
+      "aggregateBlob": "3a1b3516b2e8982683338b9218048b4157220a9e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c3/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "7ac7a402260370b4468446eea8a7950765ae5000",
+      "mainBlob": null,
+      "aggregateBlob": "7ac7a402260370b4468446eea8a7950765ae5000",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c3/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "e395a779cef4889b89dd6ed3c741205c0c387df2",
+      "mainBlob": null,
+      "aggregateBlob": "e395a779cef4889b89dd6ed3c741205c0c387df2",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c3/model.ts",
+      "baseBlob": null,
+      "sourceBlob": "d3b34f6803b8f87d6f4de2fe865062f2b3247b03",
+      "mainBlob": null,
+      "aggregateBlob": "d3b34f6803b8f87d6f4de2fe865062f2b3247b03",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c3/parts.tsx",
+      "baseBlob": null,
+      "sourceBlob": "4609104ae0ad46fa9b3aae3ec67b810a974d841d",
+      "mainBlob": null,
+      "aggregateBlob": "4609104ae0ad46fa9b3aae3ec67b810a974d841d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c3/pile.tsx",
+      "baseBlob": null,
+      "sourceBlob": "ddd253e512a65a89ea3a5bef3458e8dcc1d57f12",
+      "mainBlob": null,
+      "aggregateBlob": "ddd253e512a65a89ea3a5bef3458e8dcc1d57f12",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c3/wrap.tsx",
+      "baseBlob": null,
+      "sourceBlob": "062c3f450f2156086b0a7d998cd5b9a1f6ce15c3",
+      "mainBlob": null,
+      "aggregateBlob": "062c3f450f2156086b0a7d998cd5b9a1f6ce15c3",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c4/card.tsx",
+      "baseBlob": null,
+      "sourceBlob": "0f040c6ac4db8e12c1e4e8c95031e1bef44d840b",
+      "mainBlob": null,
+      "aggregateBlob": "0f040c6ac4db8e12c1e4e8c95031e1bef44d840b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c4/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "802d9c370fabce6e985964c6564bf6a5ffc318cd",
+      "mainBlob": null,
+      "aggregateBlob": "802d9c370fabce6e985964c6564bf6a5ffc318cd",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c4/flow.module.css",
+      "baseBlob": null,
+      "sourceBlob": "537480b5dcf43d66b8a4488ad0a8c59bc483bfd1",
+      "mainBlob": null,
+      "aggregateBlob": "537480b5dcf43d66b8a4488ad0a8c59bc483bfd1",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c4/flow.tsx",
+      "baseBlob": null,
+      "sourceBlob": "836cb4bcf69930a4ec682b15b3cd7bae3096bc02",
+      "mainBlob": null,
+      "aggregateBlob": "836cb4bcf69930a4ec682b15b3cd7bae3096bc02",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c4/icons.tsx",
+      "baseBlob": null,
+      "sourceBlob": "5a3e9c27cace0f0ef12be0fa378770aabd038108",
+      "mainBlob": null,
+      "aggregateBlob": "5a3e9c27cace0f0ef12be0fa378770aabd038108",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c4/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "2901b4f6b7a1449ec8f514073317d083a9f55ffa",
+      "mainBlob": null,
+      "aggregateBlob": "2901b4f6b7a1449ec8f514073317d083a9f55ffa",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c4/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "817a42bc5662f79ba87adb2dba090f83305c4130",
+      "mainBlob": null,
+      "aggregateBlob": "817a42bc5662f79ba87adb2dba090f83305c4130",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c4/model.ts",
+      "baseBlob": null,
+      "sourceBlob": "31309f5ccd8ab5d0830d3383d9f51a26202b1ccb",
+      "mainBlob": null,
+      "aggregateBlob": "31309f5ccd8ab5d0830d3383d9f51a26202b1ccb",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c4/parts.tsx",
+      "baseBlob": null,
+      "sourceBlob": "e74dbac1dacd4b4157e75a02ba78bbbf54b45299",
+      "mainBlob": null,
+      "aggregateBlob": "e74dbac1dacd4b4157e75a02ba78bbbf54b45299",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c4/sheets.tsx",
+      "baseBlob": null,
+      "sourceBlob": "511f19bc37c00020e65bb6149d7698bac418057b",
+      "mainBlob": null,
+      "aggregateBlob": "511f19bc37c00020e65bb6149d7698bac418057b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c5/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "8d1a18e2fe2c5436a7a9c9f789a04427fb74ffe1",
+      "mainBlob": null,
+      "aggregateBlob": "8d1a18e2fe2c5436a7a9c9f789a04427fb74ffe1",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c5/geometry.ts",
+      "baseBlob": null,
+      "sourceBlob": "b8b01c22aad996a867a8cc0fc9546fc2cbdb185b",
+      "mainBlob": null,
+      "aggregateBlob": "b8b01c22aad996a867a8cc0fc9546fc2cbdb185b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c5/icons.tsx",
+      "baseBlob": null,
+      "sourceBlob": "d623a7201d29897b727fd6acd9eab41defeeaf66",
+      "mainBlob": null,
+      "aggregateBlob": "d623a7201d29897b727fd6acd9eab41defeeaf66",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c5/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "074bc0c802fd9511d6287c163a06d891a37be9b4",
+      "mainBlob": null,
+      "aggregateBlob": "074bc0c802fd9511d6287c163a06d891a37be9b4",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c5/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "87d9e1dbdd8ca3359f373d182a9395bc210af456",
+      "mainBlob": null,
+      "aggregateBlob": "87d9e1dbdd8ca3359f373d182a9395bc210af456",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c5/note.tsx",
+      "baseBlob": null,
+      "sourceBlob": "0effaf9bdbe2e22372bbd9c625c4cc9a301e34f7",
+      "mainBlob": null,
+      "aggregateBlob": "0effaf9bdbe2e22372bbd9c625c4cc9a301e34f7",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c5/ops.ts",
+      "baseBlob": null,
+      "sourceBlob": "3c73bb21e84c157d79690d1786caad41d7a926d0",
+      "mainBlob": null,
+      "aggregateBlob": "3c73bb21e84c157d79690d1786caad41d7a926d0",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c5/panel.tsx",
+      "baseBlob": null,
+      "sourceBlob": "2cf335232bbc063537824584f528fabfeee425b1",
+      "mainBlob": null,
+      "aggregateBlob": "2cf335232bbc063537824584f528fabfeee425b1",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c5/phone.tsx",
+      "baseBlob": null,
+      "sourceBlob": "3bfa499229d10ef9171c1fd823ae441676599899",
+      "mainBlob": null,
+      "aggregateBlob": "3bfa499229d10ef9171c1fd823ae441676599899",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c5/toolbar.tsx",
+      "baseBlob": null,
+      "sourceBlob": "2ceda04d612a2502e11c13969ec649917f545631",
+      "mainBlob": null,
+      "aggregateBlob": "2ceda04d612a2502e11c13969ec649917f545631",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c5/wall.module.css",
+      "baseBlob": null,
+      "sourceBlob": "96ddca3d45ad344c89ce89621311583045b959a9",
+      "mainBlob": null,
+      "aggregateBlob": "96ddca3d45ad344c89ce89621311583045b959a9",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/board/c5/wall.tsx",
+      "baseBlob": null,
+      "sourceBlob": "4900cc187ba96f068e8277fc15c420829df4dd43",
+      "mainBlob": null,
+      "aggregateBlob": "4900cc187ba96f068e8277fc15c420829df4dd43",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c1/bits.tsx",
+      "baseBlob": null,
+      "sourceBlob": "19c5d698ee0c5f1542dc58d62309d8d5ac9f2bc8",
+      "mainBlob": null,
+      "aggregateBlob": "19c5d698ee0c5f1542dc58d62309d8d5ac9f2bc8",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c1/cal.module.css",
+      "baseBlob": null,
+      "sourceBlob": "9dffdedb7244f4d20cc7a1b0cc8fb10634f77d27",
+      "mainBlob": null,
+      "aggregateBlob": "9dffdedb7244f4d20cc7a1b0cc8fb10634f77d27",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c1/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "9472b07ceaa89a5bacf4b7089b77cddf80524afc",
+      "mainBlob": null,
+      "aggregateBlob": "9472b07ceaa89a5bacf4b7089b77cddf80524afc",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c1/grid.tsx",
+      "baseBlob": null,
+      "sourceBlob": "11f2bca4213eb39e8c0116b73c9a1cdb839f691b",
+      "mainBlob": null,
+      "aggregateBlob": "11f2bca4213eb39e8c0116b73c9a1cdb839f691b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c1/icons.tsx",
+      "baseBlob": null,
+      "sourceBlob": "327b3c488cec89516ef31dc96d0a82f11bc6526f",
+      "mainBlob": null,
+      "aggregateBlob": "327b3c488cec89516ef31dc96d0a82f11bc6526f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c1/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "83ee5ae67220d415b05c1575e9b135563fd14d8e",
+      "mainBlob": null,
+      "aggregateBlob": "83ee5ae67220d415b05c1575e9b135563fd14d8e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c1/layout.ts",
+      "baseBlob": null,
+      "sourceBlob": "3f377e2014e27e0a9a072f35d2478bdb83175b90",
+      "mainBlob": null,
+      "aggregateBlob": "3f377e2014e27e0a9a072f35d2478bdb83175b90",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c1/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "736c23058723497157ef10531ee9c035ea750c0d",
+      "mainBlob": null,
+      "aggregateBlob": "736c23058723497157ef10531ee9c035ea750c0d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c1/parse.ts",
+      "baseBlob": null,
+      "sourceBlob": "e0daf218df2710b008543a14513e09379cabb457",
+      "mainBlob": null,
+      "aggregateBlob": "e0daf218df2710b008543a14513e09379cabb457",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c1/peek.tsx",
+      "baseBlob": null,
+      "sourceBlob": "df493f463c4b0a4767f0f519cb2b51d02d49f557",
+      "mainBlob": null,
+      "aggregateBlob": "df493f463c4b0a4767f0f519cb2b51d02d49f557",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c1/phone.tsx",
+      "baseBlob": null,
+      "sourceBlob": "97c0c8ff42f58745ee290470f70123f93afc153b",
+      "mainBlob": null,
+      "aggregateBlob": "97c0c8ff42f58745ee290470f70123f93afc153b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c1/quickadd.tsx",
+      "baseBlob": null,
+      "sourceBlob": "ac0efdcffac39a05e95d786ee8ba5514f8e81cc4",
+      "mainBlob": null,
+      "aggregateBlob": "ac0efdcffac39a05e95d786ee8ba5514f8e81cc4",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c1/rail.tsx",
+      "baseBlob": null,
+      "sourceBlob": "494e753f50531d77adad244ef0b57cf0997f31c3",
+      "mainBlob": null,
+      "aggregateBlob": "494e753f50531d77adad244ef0b57cf0997f31c3",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c1/year.tsx",
+      "baseBlob": null,
+      "sourceBlob": "973a6d8bfadf006ac806ae2317cb738ac924fab1",
+      "mainBlob": null,
+      "aggregateBlob": "973a6d8bfadf006ac806ae2317cb738ac924fab1",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c2/Grid.tsx",
+      "baseBlob": null,
+      "sourceBlob": "30e8cf6e1672cf3c9bdc58d41edac736b328d307",
+      "mainBlob": null,
+      "aggregateBlob": "30e8cf6e1672cf3c9bdc58d41edac736b328d307",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c2/Phone.tsx",
+      "baseBlob": null,
+      "sourceBlob": "50df9c522677481375326f164a8ebbe0fd599193",
+      "mainBlob": null,
+      "aggregateBlob": "50df9c522677481375326f164a8ebbe0fd599193",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c2/Ritual.tsx",
+      "baseBlob": null,
+      "sourceBlob": "f9697810770cfd130f5c14f4d7470534f2aebf7c",
+      "mainBlob": null,
+      "aggregateBlob": "f9697810770cfd130f5c14f4d7470534f2aebf7c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c2/Side.tsx",
+      "baseBlob": null,
+      "sourceBlob": "5fbdc9c40cf620036689bfe31979ced06a5edced",
+      "mainBlob": null,
+      "aggregateBlob": "5fbdc9c40cf620036689bfe31979ced06a5edced",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c2/Tray.tsx",
+      "baseBlob": null,
+      "sourceBlob": "4860e09f55b0a208510a6f478d571e4a108df2be",
+      "mainBlob": null,
+      "aggregateBlob": "4860e09f55b0a208510a6f478d571e4a108df2be",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c2/c2.module.css",
+      "baseBlob": null,
+      "sourceBlob": "a912a9af5cf1a8b20155a8824a4ab1f5b8e90512",
+      "mainBlob": null,
+      "aggregateBlob": "a912a9af5cf1a8b20155a8824a4ab1f5b8e90512",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c2/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "51ebc370248fe7e24a6f0c3163e687f3b76938b3",
+      "mainBlob": null,
+      "aggregateBlob": "51ebc370248fe7e24a6f0c3163e687f3b76938b3",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c2/icons.tsx",
+      "baseBlob": null,
+      "sourceBlob": "a6b24266bc5b0ea260c548fccae7817d76d2841c",
+      "mainBlob": null,
+      "aggregateBlob": "a6b24266bc5b0ea260c548fccae7817d76d2841c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c2/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "350bc4d5acb9f5525bf94c0410c0469f4c234488",
+      "mainBlob": null,
+      "aggregateBlob": "350bc4d5acb9f5525bf94c0410c0469f4c234488",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c2/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "7ea66267ec7e1b1fbfa114233e3fa236830f8941",
+      "mainBlob": null,
+      "aggregateBlob": "7ea66267ec7e1b1fbfa114233e3fa236830f8941",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c2/state.ts",
+      "baseBlob": null,
+      "sourceBlob": "750f854a73a0aee18c4c7126c180256722aa3cbd",
+      "mainBlob": null,
+      "aggregateBlob": "750f854a73a0aee18c4c7126c180256722aa3cbd",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c3/Bits.tsx",
+      "baseBlob": null,
+      "sourceBlob": "f0c5c0deb6d3b99bb5070acc75944f043d3ad899",
+      "mainBlob": null,
+      "aggregateBlob": "f0c5c0deb6d3b99bb5070acc75944f043d3ad899",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c3/Header.tsx",
+      "baseBlob": null,
+      "sourceBlob": "29cd962a91eaee0e04d1fb7ea5430c5168a4bf6f",
+      "mainBlob": null,
+      "aggregateBlob": "29cd962a91eaee0e04d1fb7ea5430c5168a4bf6f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c3/Matrix.tsx",
+      "baseBlob": null,
+      "sourceBlob": "765a070e53635abc935a6920a243e54e2c06fd37",
+      "mainBlob": null,
+      "aggregateBlob": "765a070e53635abc935a6920a243e54e2c06fd37",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c3/Panel.tsx",
+      "baseBlob": null,
+      "sourceBlob": "7c5b6742bbd0c99cfeae33d013bc3abaecc78a32",
+      "mainBlob": null,
+      "aggregateBlob": "7c5b6742bbd0c99cfeae33d013bc3abaecc78a32",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c3/Phone.tsx",
+      "baseBlob": null,
+      "sourceBlob": "b7009c809cbe0e9476e14bf1438e5a3962e8da22",
+      "mainBlob": null,
+      "aggregateBlob": "b7009c809cbe0e9476e14bf1438e5a3962e8da22",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c3/c3.module.css",
+      "baseBlob": null,
+      "sourceBlob": "b2fc2183096f2571d8c2ad29c30847ea8f82b733",
+      "mainBlob": null,
+      "aggregateBlob": "b2fc2183096f2571d8c2ad29c30847ea8f82b733",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c3/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "1ec5d26b6f63274ed06b70ee304dd733ab686817",
+      "mainBlob": null,
+      "aggregateBlob": "1ec5d26b6f63274ed06b70ee304dd733ab686817",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c3/icons.tsx",
+      "baseBlob": null,
+      "sourceBlob": "dd0ebe4dde75037e7fcd8eac2861a8bdfefbc84d",
+      "mainBlob": null,
+      "aggregateBlob": "dd0ebe4dde75037e7fcd8eac2861a8bdfefbc84d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c3/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "ed919650ad29604a8f48c4582ab6be48c7c3330f",
+      "mainBlob": null,
+      "aggregateBlob": "ed919650ad29604a8f48c4582ab6be48c7c3330f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c3/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "268ece8f6831eb7c01b724bc54977712b6ecd490",
+      "mainBlob": null,
+      "aggregateBlob": "268ece8f6831eb7c01b724bc54977712b6ecd490",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c3/model.ts",
+      "baseBlob": null,
+      "sourceBlob": "187f7cc7b82af5a3f031394cb92b5b3987b53b00",
+      "mainBlob": null,
+      "aggregateBlob": "187f7cc7b82af5a3f031394cb92b5b3987b53b00",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c4/countdown.module.css",
+      "baseBlob": null,
+      "sourceBlob": "dade7a4e7105f63f3543556891a71e3fe26b6404",
+      "mainBlob": null,
+      "aggregateBlob": "dade7a4e7105f63f3543556891a71e3fe26b6404",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c4/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "89d19c6e44e77b5f5875eca0e2f375c63ac7837a",
+      "mainBlob": null,
+      "aggregateBlob": "89d19c6e44e77b5f5875eca0e2f375c63ac7837a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c4/hero.tsx",
+      "baseBlob": null,
+      "sourceBlob": "66babd7d5d2a2fc1848896b56d6df86641c0238e",
+      "mainBlob": null,
+      "aggregateBlob": "66babd7d5d2a2fc1848896b56d6df86641c0238e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c4/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "1a09a462165d4b8e50265da3e6a8b8235d123f83",
+      "mainBlob": null,
+      "aggregateBlob": "1a09a462165d4b8e50265da3e6a8b8235d123f83",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c4/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "e0a8f982296d89eb2f22a434ff5eeb89bab23b0f",
+      "mainBlob": null,
+      "aggregateBlob": "e0a8f982296d89eb2f22a434ff5eeb89bab23b0f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c4/model.ts",
+      "baseBlob": null,
+      "sourceBlob": "640ea3b3987cc632ece6950c59073eec03ee1142",
+      "mainBlob": null,
+      "aggregateBlob": "640ea3b3987cc632ece6950c59073eec03ee1142",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c4/parts.tsx",
+      "baseBlob": null,
+      "sourceBlob": "8d390fbbd625b33d3ee07025077a8ae250c1df4d",
+      "mainBlob": null,
+      "aggregateBlob": "8d390fbbd625b33d3ee07025077a8ae250c1df4d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c4/runway.tsx",
+      "baseBlob": null,
+      "sourceBlob": "a3a93bec8fac9807e2dc0653e7e1853fa7c6afe6",
+      "mainBlob": null,
+      "aggregateBlob": "a3a93bec8fac9807e2dc0653e7e1853fa7c6afe6",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c4/sheet.tsx",
+      "baseBlob": null,
+      "sourceBlob": "afd3ff83d263ee1537bd05f494ff26dc8f8b5f2c",
+      "mainBlob": null,
+      "aggregateBlob": "afd3ff83d263ee1537bd05f494ff26dc8f8b5f2c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c5/ctx.ts",
+      "baseBlob": null,
+      "sourceBlob": "d6736ed3475a88cc30894d012c6053c6af6eb497",
+      "mainBlob": null,
+      "aggregateBlob": "d6736ed3475a88cc30894d012c6053c6af6eb497",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c5/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "c11b5f6c064c1e46377b8e10430f0f21fd1056e5",
+      "mainBlob": null,
+      "aggregateBlob": "c11b5f6c064c1e46377b8e10430f0f21fd1056e5",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c5/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "2ba66161daed2059906efd48ac0075c60f6e765b",
+      "mainBlob": null,
+      "aggregateBlob": "2ba66161daed2059906efd48ac0075c60f6e765b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c5/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "3095f4de7fd61b1cc043ca7475d5886ce87bf1d6",
+      "mainBlob": null,
+      "aggregateBlob": "3095f4de7fd61b1cc043ca7475d5886ce87bf1d6",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c5/model.ts",
+      "baseBlob": null,
+      "sourceBlob": "93498dd3bca196fd0cf160018a0dc2ccf690af26",
+      "mainBlob": null,
+      "aggregateBlob": "93498dd3bca196fd0cf160018a0dc2ccf690af26",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c5/parts.tsx",
+      "baseBlob": null,
+      "sourceBlob": "7997b21b9c714355bdeb533d60b0db9cd9e4206d",
+      "mainBlob": null,
+      "aggregateBlob": "7997b21b9c714355bdeb533d60b0db9cd9e4206d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c5/rail.tsx",
+      "baseBlob": null,
+      "sourceBlob": "ce277b04afeb2de853546567bba710cd3da434e7",
+      "mainBlob": null,
+      "aggregateBlob": "ce277b04afeb2de853546567bba710cd3da434e7",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c5/river.module.css",
+      "baseBlob": null,
+      "sourceBlob": "5ee1b3ff7ae155c28d36d9a186212c69ff8b946c",
+      "mainBlob": null,
+      "aggregateBlob": "5ee1b3ff7ae155c28d36d9a186212c69ff8b946c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c5/scrubber.tsx",
+      "baseBlob": null,
+      "sourceBlob": "b4b0ab535d5104614719ba6da8e16665d6b87c95",
+      "mainBlob": null,
+      "aggregateBlob": "b4b0ab535d5104614719ba6da8e16665d6b87c95",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/calendar/c5/stream.tsx",
+      "baseBlob": null,
+      "sourceBlob": "21fa8434d6367622d09464ae12f9e5d18ba2dcba",
+      "mainBlob": null,
+      "aggregateBlob": "21fa8434d6367622d09464ae12f9e5d18ba2dcba",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c1/Dock.tsx",
+      "baseBlob": null,
+      "sourceBlob": "d9ab292aaa2af80b5d63d16aa7a63ac0ca75744b",
+      "mainBlob": null,
+      "aggregateBlob": "d9ab292aaa2af80b5d63d16aa7a63ac0ca75744b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c1/Peek.tsx",
+      "baseBlob": null,
+      "sourceBlob": "78583bb24dabe5cb69da5ca197749f530284ca0f",
+      "mainBlob": null,
+      "aggregateBlob": "78583bb24dabe5cb69da5ca197749f530284ca0f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c1/Row.tsx",
+      "baseBlob": null,
+      "sourceBlob": "f7452e998dae483c9098376a49bdccc239c85f20",
+      "mainBlob": null,
+      "aggregateBlob": "f7452e998dae483c9098376a49bdccc239c85f20",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c1/Sheets.tsx",
+      "baseBlob": null,
+      "sourceBlob": "dda0c13fd13e7d24fbea56372a94bfaeeb570d2e",
+      "mainBlob": null,
+      "aggregateBlob": "dda0c13fd13e7d24fbea56372a94bfaeeb570d2e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c1/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "195c44d78eb7ce4004e26d4a9d064699727b266d",
+      "mainBlob": null,
+      "aggregateBlob": "195c44d78eb7ce4004e26d4a9d064699727b266d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c1/glyphs.tsx",
+      "baseBlob": null,
+      "sourceBlob": "e7a385ff5a6a70c2a26b3e1bb9068dce120aff69",
+      "mainBlob": null,
+      "aggregateBlob": "e7a385ff5a6a70c2a26b3e1bb9068dce120aff69",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c1/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "72137fb6c1d345ffeeac04062f7a12ac65a8d02f",
+      "mainBlob": null,
+      "aggregateBlob": "72137fb6c1d345ffeeac04062f7a12ac65a8d02f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c1/list.module.css",
+      "baseBlob": null,
+      "sourceBlob": "49fd35cd9343e908f005a44dc3f55762ccdb5e1e",
+      "mainBlob": null,
+      "aggregateBlob": "49fd35cd9343e908f005a44dc3f55762ccdb5e1e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c1/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "717b16a3658fc58a994fc619ad466da00edbbc8c",
+      "mainBlob": null,
+      "aggregateBlob": "717b16a3658fc58a994fc619ad466da00edbbc8c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c1/parse.ts",
+      "baseBlob": null,
+      "sourceBlob": "508c79bdc48ee38498eb36a44ec4604496c14ed0",
+      "mainBlob": null,
+      "aggregateBlob": "508c79bdc48ee38498eb36a44ec4604496c14ed0",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c2/Chrome.tsx",
+      "baseBlob": null,
+      "sourceBlob": "3aeb4c20a50867947fc1b067984786cc2caabe4e",
+      "mainBlob": null,
+      "aggregateBlob": "3aeb4c20a50867947fc1b067984786cc2caabe4e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c2/Outline.tsx",
+      "baseBlob": null,
+      "sourceBlob": "3c27ca4d5f1f89713b80949b1f3574f58d1d3c78",
+      "mainBlob": null,
+      "aggregateBlob": "3c27ca4d5f1f89713b80949b1f3574f58d1d3c78",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c2/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "fcce278863c482e09dbce6632a8e2f0317353898",
+      "mainBlob": null,
+      "aggregateBlob": "fcce278863c482e09dbce6632a8e2f0317353898",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c2/glyphs.tsx",
+      "baseBlob": null,
+      "sourceBlob": "d0eef781255f6d4d6d0610695462b2b6bb54fe55",
+      "mainBlob": null,
+      "aggregateBlob": "d0eef781255f6d4d6d0610695462b2b6bb54fe55",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c2/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "644c12b68407c9c3d997112a54574b679cc85600",
+      "mainBlob": null,
+      "aggregateBlob": "644c12b68407c9c3d997112a54574b679cc85600",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c2/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "3b644087fc220602952ee83a95fe141e1908b3b2",
+      "mainBlob": null,
+      "aggregateBlob": "3b644087fc220602952ee83a95fe141e1908b3b2",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c2/outline.module.css",
+      "baseBlob": null,
+      "sourceBlob": "9aba354807b2d20b1368aa14d271d6c00a625117",
+      "mainBlob": null,
+      "aggregateBlob": "9aba354807b2d20b1368aa14d271d6c00a625117",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c2/tree.ts",
+      "baseBlob": null,
+      "sourceBlob": "837496e444fb1deb54f43202e402a5ef62002458",
+      "mainBlob": null,
+      "aggregateBlob": "837496e444fb1deb54f43202e402a5ef62002458",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c3/Editors.tsx",
+      "baseBlob": null,
+      "sourceBlob": "c59c2fb3ff1a359c295988fd3169de2bb2edbae0",
+      "mainBlob": null,
+      "aggregateBlob": "c59c2fb3ff1a359c295988fd3169de2bb2edbae0",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c3/Grid.tsx",
+      "baseBlob": null,
+      "sourceBlob": "1c6c9b8faf106b42ecb886a89dfd5c22884d89c9",
+      "mainBlob": null,
+      "aggregateBlob": "1c6c9b8faf106b42ecb886a89dfd5c22884d89c9",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c3/Overlays.tsx",
+      "baseBlob": null,
+      "sourceBlob": "2a6e3098c80385f68715b1b2bc9c7f664c5a928f",
+      "mainBlob": null,
+      "aggregateBlob": "2a6e3098c80385f68715b1b2bc9c7f664c5a928f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c3/Phone.tsx",
+      "baseBlob": null,
+      "sourceBlob": "8cb9ec8e965330e39d19f365257c0e01708a1f19",
+      "mainBlob": null,
+      "aggregateBlob": "8cb9ec8e965330e39d19f365257c0e01708a1f19",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c3/Record.tsx",
+      "baseBlob": null,
+      "sourceBlob": "513d9453f20000d5e2fe5f6689435bb47e1e64ce",
+      "mainBlob": null,
+      "aggregateBlob": "513d9453f20000d5e2fe5f6689435bb47e1e64ce",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c3/Toolbar.tsx",
+      "baseBlob": null,
+      "sourceBlob": "42e89805893dd5020033393183f0c2a6f087ec04",
+      "mainBlob": null,
+      "aggregateBlob": "42e89805893dd5020033393183f0c2a6f087ec04",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c3/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "16cb01dabdbf0bacdc8ec83886c592dd88a57e8c",
+      "mainBlob": null,
+      "aggregateBlob": "16cb01dabdbf0bacdc8ec83886c592dd88a57e8c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c3/icons.tsx",
+      "baseBlob": null,
+      "sourceBlob": "cdbc58651a1b69935990625172b6b434b3604896",
+      "mainBlob": null,
+      "aggregateBlob": "cdbc58651a1b69935990625172b6b434b3604896",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c3/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "142e5ab1645984420b751dad23c5b276571c9d47",
+      "mainBlob": null,
+      "aggregateBlob": "142e5ab1645984420b751dad23c5b276571c9d47",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c3/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "14b398e0308a0ea591906e38347fff034d3c3b78",
+      "mainBlob": null,
+      "aggregateBlob": "14b398e0308a0ea591906e38347fff034d3c3b78",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c3/model.ts",
+      "baseBlob": null,
+      "sourceBlob": "c92e444dec22c699abd092c29bf0c80156d28185",
+      "mainBlob": null,
+      "aggregateBlob": "c92e444dec22c699abd092c29bf0c80156d28185",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c3/sheet.module.css",
+      "baseBlob": null,
+      "sourceBlob": "98f910dc6c505689a37413c61cd90617b4847404",
+      "mainBlob": null,
+      "aggregateBlob": "98f910dc6c505689a37413c61cd90617b4847404",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c4/Meter.tsx",
+      "baseBlob": null,
+      "sourceBlob": "1432344d3a54c0c02cff6d3b662f4cf304de839a",
+      "mainBlob": null,
+      "aggregateBlob": "1432344d3a54c0c02cff6d3b662f4cf304de839a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c4/Plan.tsx",
+      "baseBlob": null,
+      "sourceBlob": "b65b2dffc9516ffcb8eb0da109adca1c7fbdb0b2",
+      "mainBlob": null,
+      "aggregateBlob": "b65b2dffc9516ffcb8eb0da109adca1c7fbdb0b2",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c4/Rows.tsx",
+      "baseBlob": null,
+      "sourceBlob": "bd431051ae6b6954ab383280f21e937c6657e183",
+      "mainBlob": null,
+      "aggregateBlob": "bd431051ae6b6954ab383280f21e937c6657e183",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c4/c4.module.css",
+      "baseBlob": null,
+      "sourceBlob": "be27acef3edcf8c6886b46fa9492957a581335a1",
+      "mainBlob": null,
+      "aggregateBlob": "be27acef3edcf8c6886b46fa9492957a581335a1",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c4/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "5ea7e348f37b6579c9a572d545014e93910f6c73",
+      "mainBlob": null,
+      "aggregateBlob": "5ea7e348f37b6579c9a572d545014e93910f6c73",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c4/icons.tsx",
+      "baseBlob": null,
+      "sourceBlob": "195116f4f8fda27ddc8a1f0dd29b59d76706a240",
+      "mainBlob": null,
+      "aggregateBlob": "195116f4f8fda27ddc8a1f0dd29b59d76706a240",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c4/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "d177329377108078bb9cd47622bc1db1f923c398",
+      "mainBlob": null,
+      "aggregateBlob": "d177329377108078bb9cd47622bc1db1f923c398",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c4/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "eba1cd569bfac721ae0ef2ad9c5cb392a138c742",
+      "mainBlob": null,
+      "aggregateBlob": "eba1cd569bfac721ae0ef2ad9c5cb392a138c742",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c5/Composer.tsx",
+      "baseBlob": null,
+      "sourceBlob": "6a0a7b367a3ba64b03130978d022d8229362ec3b",
+      "mainBlob": null,
+      "aggregateBlob": "6a0a7b367a3ba64b03130978d022d8229362ec3b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c5/Pickers.tsx",
+      "baseBlob": null,
+      "sourceBlob": "cb010f243244ea99e456bee1b355ae27af8c1c99",
+      "mainBlob": null,
+      "aggregateBlob": "cb010f243244ea99e456bee1b355ae27af8c1c99",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c5/Sentence.tsx",
+      "baseBlob": null,
+      "sourceBlob": "037fe90701b1c56471e26af6c292379ef266d499",
+      "mainBlob": null,
+      "aggregateBlob": "037fe90701b1c56471e26af6c292379ef266d499",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c5/UpdatePreview.tsx",
+      "baseBlob": null,
+      "sourceBlob": "736bf7ddf75236e520db9479f51e2dd3af2ff7d0",
+      "mainBlob": null,
+      "aggregateBlob": "736bf7ddf75236e520db9479f51e2dd3af2ff7d0",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c5/c5.module.css",
+      "baseBlob": null,
+      "sourceBlob": "5a7217db4578fd6cbb48ff33d5b132dc01ce69c2",
+      "mainBlob": null,
+      "aggregateBlob": "5a7217db4578fd6cbb48ff33d5b132dc01ce69c2",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c5/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "d99a1b0368bdb5b4438f8adb95222b792c055527",
+      "mainBlob": null,
+      "aggregateBlob": "d99a1b0368bdb5b4438f8adb95222b792c055527",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c5/hooks.ts",
+      "baseBlob": null,
+      "sourceBlob": "aaf734f02bcf6531bd6fc1667d6faf1523659db5",
+      "mainBlob": null,
+      "aggregateBlob": "aaf734f02bcf6531bd6fc1667d6faf1523659db5",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c5/icons.tsx",
+      "baseBlob": null,
+      "sourceBlob": "4164e5a8689c3cc3244ca7860d409a5244109831",
+      "mainBlob": null,
+      "aggregateBlob": "4164e5a8689c3cc3244ca7860d409a5244109831",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c5/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "57b8c175690b12d1c695e268702890b561d5f9fc",
+      "mainBlob": null,
+      "aggregateBlob": "57b8c175690b12d1c695e268702890b561d5f9fc",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c5/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "da944bc5cd0eec42663a8dd25d92a65c63a6c6c7",
+      "mainBlob": null,
+      "aggregateBlob": "da944bc5cd0eec42663a8dd25d92a65c63a6c6c7",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/list/c5/parse.ts",
+      "baseBlob": null,
+      "sourceBlob": "e40bec3cf783c20438500fe7c6994f80f490d8d9",
+      "mainBlob": null,
+      "aggregateBlob": "e40bec3cf783c20438500fe7c6994f80f490d8d9",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/registry.production.ts",
+      "baseBlob": null,
+      "sourceBlob": "bf26260ff8e80f1d6747ff1e186e1695cf2db398",
+      "mainBlob": null,
+      "aggregateBlob": "bf26260ff8e80f1d6747ff1e186e1695cf2db398",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/components/concepts/registry.ts",
+      "baseBlob": "4b08899376567ef0ec9d32d2abe3cd2e0555b7ec",
+      "sourceBlob": "dc85b7cf50aba3147fa5379e1847dcc6a9128cee",
+      "mainBlob": "4b08899376567ef0ec9d32d2abe3cd2e0555b7ec",
+      "aggregateBlob": "dc85b7cf50aba3147fa5379e1847dcc6a9128cee",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c1/art.tsx",
+      "baseBlob": null,
+      "sourceBlob": "338e265bcfd411f6e409a3e12dbf4e3cc3582f52",
+      "mainBlob": null,
+      "aggregateBlob": "338e265bcfd411f6e409a3e12dbf4e3cc3582f52",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c1/c1.module.css",
+      "baseBlob": null,
+      "sourceBlob": "6ea1bd07fd9a417ed73643dac697d47b132b64fa",
+      "mainBlob": null,
+      "aggregateBlob": "6ea1bd07fd9a417ed73643dac697d47b132b64fa",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c1/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "70cb6532fd3dd03ce36545758938fc4f442dd34c",
+      "mainBlob": null,
+      "aggregateBlob": "70cb6532fd3dd03ce36545758938fc4f442dd34c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c1/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "4b1f4ca6b1a075935827d7228f5c83ed200f21a1",
+      "mainBlob": null,
+      "aggregateBlob": "4b1f4ca6b1a075935827d7228f5c83ed200f21a1",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c1/instrument.tsx",
+      "baseBlob": null,
+      "sourceBlob": "54fab69bee0a9d2eddb362c4983b7b85417e46ca",
+      "mainBlob": null,
+      "aggregateBlob": "54fab69bee0a9d2eddb362c4983b7b85417e46ca",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c1/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "f37385284b15a10b08b68b4a0a3533564ef909b1",
+      "mainBlob": null,
+      "aggregateBlob": "f37385284b15a10b08b68b4a0a3533564ef909b1",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c2/c2.module.css",
+      "baseBlob": null,
+      "sourceBlob": "a9ffcfbc4a7c190694406a472efb5d5fcb4caa03",
+      "mainBlob": null,
+      "aggregateBlob": "a9ffcfbc4a7c190694406a472efb5d5fcb4caa03",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c2/clock.ts",
+      "baseBlob": null,
+      "sourceBlob": "8751ec2e3e916e734d07ce133a694f4522ad6a8f",
+      "mainBlob": null,
+      "aggregateBlob": "8751ec2e3e916e734d07ce133a694f4522ad6a8f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c2/countdown.tsx",
+      "baseBlob": null,
+      "sourceBlob": "508b67988b06c660a1c7ed1be6504abfd91fe2ff",
+      "mainBlob": null,
+      "aggregateBlob": "508b67988b06c660a1c7ed1be6504abfd91fe2ff",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c2/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "321cb65a04186364cb333674c6974eefccd58d6a",
+      "mainBlob": null,
+      "aggregateBlob": "321cb65a04186364cb333674c6974eefccd58d6a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c2/details.tsx",
+      "baseBlob": null,
+      "sourceBlob": "379dd3b4687133313a28b49ca4e15e8c7163c97f",
+      "mainBlob": null,
+      "aggregateBlob": "379dd3b4687133313a28b49ca4e15e8c7163c97f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c2/dial.tsx",
+      "baseBlob": null,
+      "sourceBlob": "7a132c3ce50e47fd8be05b891f9a4a1e34fb86b3",
+      "mainBlob": null,
+      "aggregateBlob": "7a132c3ce50e47fd8be05b891f9a4a1e34fb86b3",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c2/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "fa33a112911f28e94113e0795775c6af2c8b3d3c",
+      "mainBlob": null,
+      "aggregateBlob": "fa33a112911f28e94113e0795775c6af2c8b3d3c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c2/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "22502da0e2c1ede96ffcb7ca74df099442d8b1c6",
+      "mainBlob": null,
+      "aggregateBlob": "22502da0e2c1ede96ffcb7ca74df099442d8b1c6",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c2/model.ts",
+      "baseBlob": null,
+      "sourceBlob": "021d39cb6afaddffa4138d95920a32f348b02e44",
+      "mainBlob": null,
+      "aggregateBlob": "021d39cb6afaddffa4138d95920a32f348b02e44",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c2/panels.tsx",
+      "baseBlob": null,
+      "sourceBlob": "69f6eb8f8df73630516007b9e0bd453a2a49fd42",
+      "mainBlob": null,
+      "aggregateBlob": "69f6eb8f8df73630516007b9e0bd453a2a49fd42",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c2/strip.tsx",
+      "baseBlob": null,
+      "sourceBlob": "7cb4c401694eb1c7a292195f99fe6cfbd26bbda5",
+      "mainBlob": null,
+      "aggregateBlob": "7cb4c401694eb1c7a292195f99fe6cfbd26bbda5",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c2/time.ts",
+      "baseBlob": null,
+      "sourceBlob": "7bba0dfec4b6d245ae629ff5c300b89598909c62",
+      "mainBlob": null,
+      "aggregateBlob": "7bba0dfec4b6d245ae629ff5c300b89598909c62",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c3/art.tsx",
+      "baseBlob": null,
+      "sourceBlob": "6beedfc36c0366ef3fecb8431506c8013c40df8a",
+      "mainBlob": null,
+      "aggregateBlob": "6beedfc36c0366ef3fecb8431506c8013c40df8a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c3/c3.module.css",
+      "baseBlob": null,
+      "sourceBlob": "9253ff5f57a49a9b4f99224a67a1595bcb302e6d",
+      "mainBlob": null,
+      "aggregateBlob": "9253ff5f57a49a9b4f99224a67a1595bcb302e6d",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c3/cards.tsx",
+      "baseBlob": null,
+      "sourceBlob": "8cbb6ef39f4d2a2e3bd303bbfaeb090c29dcceed",
+      "mainBlob": null,
+      "aggregateBlob": "8cbb6ef39f4d2a2e3bd303bbfaeb090c29dcceed",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c3/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "f4bdbf8e3062aa5e746cfdbfd9d02caac344276e",
+      "mainBlob": null,
+      "aggregateBlob": "f4bdbf8e3062aa5e746cfdbfd9d02caac344276e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c3/envelope.tsx",
+      "baseBlob": null,
+      "sourceBlob": "cab40260e802ee350bac4c3358c896d399313f11",
+      "mainBlob": null,
+      "aggregateBlob": "cab40260e802ee350bac4c3358c896d399313f11",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c3/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "dcfc5ef437dc0c7cdab2d3866279894f864f3f64",
+      "mainBlob": null,
+      "aggregateBlob": "dcfc5ef437dc0c7cdab2d3866279894f864f3f64",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c3/mark.tsx",
+      "baseBlob": null,
+      "sourceBlob": "22957a7b1ac4caf34acfa48f1bcf4c8d2f594272",
+      "mainBlob": null,
+      "aggregateBlob": "22957a7b1ac4caf34acfa48f1bcf4c8d2f594272",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c3/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "ee84d309d6a8bcf4923da636991dbe29bc1061fa",
+      "mainBlob": null,
+      "aggregateBlob": "ee84d309d6a8bcf4923da636991dbe29bc1061fa",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c3/suite.tsx",
+      "baseBlob": null,
+      "sourceBlob": "a900104112123938c22b7b8e9c37adc780fb5e68",
+      "mainBlob": null,
+      "aggregateBlob": "a900104112123938c22b7b8e9c37adc780fb5e68",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c4/c4.module.css",
+      "baseBlob": null,
+      "sourceBlob": "57c31230aa5097ba488616e468a692f643689464",
+      "mainBlob": null,
+      "aggregateBlob": "57c31230aa5097ba488616e468a692f643689464",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c4/compose.ts",
+      "baseBlob": null,
+      "sourceBlob": "1da4a0a3fb10552b6c2f7f96a97245e906ecdd09",
+      "mainBlob": null,
+      "aggregateBlob": "1da4a0a3fb10552b6c2f7f96a97245e906ecdd09",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c4/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "673e410a47f35efa761d5aaf537717145a95231f",
+      "mainBlob": null,
+      "aggregateBlob": "673e410a47f35efa761d5aaf537717145a95231f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c4/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "6e8abf2cabff38f210c06e711ed0e53e5f5e9558",
+      "mainBlob": null,
+      "aggregateBlob": "6e8abf2cabff38f210c06e711ed0e53e5f5e9558",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c4/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "32fea8f9f19dfa1d4d31b0079999228e41cff032",
+      "mainBlob": null,
+      "aggregateBlob": "32fea8f9f19dfa1d4d31b0079999228e41cff032",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c4/paint.ts",
+      "baseBlob": null,
+      "sourceBlob": "2796ded9f50d8a797b95cf22c028b042a6d14cde",
+      "mainBlob": null,
+      "aggregateBlob": "2796ded9f50d8a797b95cf22c028b042a6d14cde",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c4/poster.tsx",
+      "baseBlob": null,
+      "sourceBlob": "bb2a92f2601962474dec95534e359dfd8d657674",
+      "mainBlob": null,
+      "aggregateBlob": "bb2a92f2601962474dec95534e359dfd8d657674",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c5/art.tsx",
+      "baseBlob": null,
+      "sourceBlob": "238f418bb4cd9d0794cad738fabcfaca9d3b78d6",
+      "mainBlob": null,
+      "aggregateBlob": "238f418bb4cd9d0794cad738fabcfaca9d3b78d6",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c5/c5.module.css",
+      "baseBlob": null,
+      "sourceBlob": "6d2de36a6cec55243a62d4094dadc03f2900ac26",
+      "mainBlob": null,
+      "aggregateBlob": "6d2de36a6cec55243a62d4094dadc03f2900ac26",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c5/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "9cfc6d404f381d3b659378e614302a3c0e548d51",
+      "mainBlob": null,
+      "aggregateBlob": "9cfc6d404f381d3b659378e614302a3c0e548d51",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c5/dispatch.tsx",
+      "baseBlob": null,
+      "sourceBlob": "0765e83b1d4a199ad9777809f637f628052f5501",
+      "mainBlob": null,
+      "aggregateBlob": "0765e83b1d4a199ad9777809f637f628052f5501",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c5/extras.tsx",
+      "baseBlob": null,
+      "sourceBlob": "d0082e16c04da70f376dee67c35a5467a94d2be6",
+      "mainBlob": null,
+      "aggregateBlob": "d0082e16c04da70f376dee67c35a5467a94d2be6",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c5/figures.tsx",
+      "baseBlob": null,
+      "sourceBlob": "75938b10c8badae98a74c737f68171874d742e28",
+      "mainBlob": null,
+      "aggregateBlob": "75938b10c8badae98a74c737f68171874d742e28",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c5/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "89fe83017fc216a5eb98e72047f05c3b68093a27",
+      "mainBlob": null,
+      "aggregateBlob": "89fe83017fc216a5eb98e72047f05c3b68093a27",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c5/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "5cdb9a65ce00c8e30f8371aa78b539d8cbee18bc",
+      "mainBlob": null,
+      "aggregateBlob": "5cdb9a65ce00c8e30f8371aa78b539d8cbee18bc",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c5/standing.tsx",
+      "baseBlob": null,
+      "sourceBlob": "0808dd68d6a707a88a14168f7b225bef76bed767",
+      "mainBlob": null,
+      "aggregateBlob": "0808dd68d6a707a88a14168f7b225bef76bed767",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c5/subscribe.tsx",
+      "baseBlob": null,
+      "sourceBlob": "615eed361ff7fc1c4c10e052d92c8b25884c4531",
+      "mainBlob": null,
+      "aggregateBlob": "615eed361ff7fc1c4c10e052d92c8b25884c4531",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c6/board.tsx",
+      "baseBlob": null,
+      "sourceBlob": "c707a3fe5ef2beb2dc3dacbcf11cee277fd097f2",
+      "mainBlob": null,
+      "aggregateBlob": "c707a3fe5ef2beb2dc3dacbcf11cee277fd097f2",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c6/c6.module.css",
+      "baseBlob": null,
+      "sourceBlob": "c7a86ecb85281ee7fbd959df90654b1a5e60a66e",
+      "mainBlob": null,
+      "aggregateBlob": "c7a86ecb85281ee7fbd959df90654b1a5e60a66e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c6/card.tsx",
+      "baseBlob": null,
+      "sourceBlob": "7fa54e114422fb3d89d585f5e6722fb0e4a6bb26",
+      "mainBlob": null,
+      "aggregateBlob": "7fa54e114422fb3d89d585f5e6722fb0e4a6bb26",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c6/data.ts",
+      "baseBlob": null,
+      "sourceBlob": "74f93562155b46cc92b2510164c6e25dabca74fe",
+      "mainBlob": null,
+      "aggregateBlob": "74f93562155b46cc92b2510164c6e25dabca74fe",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c6/flap.tsx",
+      "baseBlob": null,
+      "sourceBlob": "bf495eb77adc3c8f5b7fa3e877583b51136e18f8",
+      "mainBlob": null,
+      "aggregateBlob": "bf495eb77adc3c8f5b7fa3e877583b51136e18f8",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c6/glyphs.tsx",
+      "baseBlob": null,
+      "sourceBlob": "aa7465d092eeac7a315245604066dfebb510bd2f",
+      "mainBlob": null,
+      "aggregateBlob": "aa7465d092eeac7a315245604066dfebb510bd2f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c6/index.tsx",
+      "baseBlob": null,
+      "sourceBlob": "c7c18c1a5f911382ed71bb490f17f2dddff4e587",
+      "mainBlob": null,
+      "aggregateBlob": "c7c18c1a5f911382ed71bb490f17f2dddff4e587",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c6/layout.ts",
+      "baseBlob": null,
+      "sourceBlob": "e82e48445a3b0227dacc8319f27ba0457f2e59cd",
+      "mainBlob": null,
+      "aggregateBlob": "e82e48445a3b0227dacc8319f27ba0457f2e59cd",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c6/map-h.tsx",
+      "baseBlob": null,
+      "sourceBlob": "dc1139b6689edcc253899aa5d11780aa8df50a5f",
+      "mainBlob": null,
+      "aggregateBlob": "dc1139b6689edcc253899aa5d11780aa8df50a5f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c6/map-v.tsx",
+      "baseBlob": null,
+      "sourceBlob": "6e57c9a1970683e97081f80878a076775ff4391c",
+      "mainBlob": null,
+      "aggregateBlob": "6e57c9a1970683e97081f80878a076775ff4391c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/shared-timeline/c6/meta.ts",
+      "baseBlob": null,
+      "sourceBlob": "0164b69ad65c3696e47aff32254ad0f0e70ab2aa",
+      "mainBlob": null,
+      "aggregateBlob": "0164b69ad65c3696e47aff32254ad0f0e70ab2aa",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/components/concepts/types.ts",
+      "baseBlob": "efc8fd8a43ad1d6c34604cd1ca4b2f13b42f0600",
+      "sourceBlob": "91a9d2c5f9c7864585eaa6aa9ba36ff16e3ea00c",
+      "mainBlob": "efc8fd8a43ad1d6c34604cd1ca4b2f13b42f0600",
+      "aggregateBlob": "91a9d2c5f9c7864585eaa6aa9ba36ff16e3ea00c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/components/concepts/use-review-reduced-motion.ts",
+      "baseBlob": null,
+      "sourceBlob": "b93d07b6c85ca08f7f15044e1c43ec808ec140a2",
+      "mainBlob": null,
+      "aggregateBlob": "b93d07b6c85ca08f7f15044e1c43ec808ec140a2",
+      "receiving": "byte-exact"
+    }
+  ],
+  "mainOverlaps": []
+}

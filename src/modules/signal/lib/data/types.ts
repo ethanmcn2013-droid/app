@@ -12,12 +12,38 @@
  * Plan 6 · Cycle 6.1 (Architecture + data layer).
  */
 
+import type { Deadline } from "./deadline";
+
 /** Task status, mirrors Tasks's schema. */
-export type Status = "next" | "in-flight" | "blocked" | "shipped" | "refused";
+export type Status = "next" | "in-flight" | "review" | "blocked" | "shipped" | "refused";
+export type KnownPriority = 0 | 1 | 2 | 3;
+export type EvidenceCoverage = "complete" | "partial";
+/** Saved board position and completion are independent of inferred progress. */
+export type TaskStage = {
+  key: string;
+  label: string | null;
+  phase: "next" | "in-flight" | "review" | "shipped" | "unknown";
+  complete: boolean;
+};
+/** A dependency record actually fetched and inspected in the same authorized workspace. */
+export type PrerequisiteEvidence = {
+  id: string;
+  workspaceId: string;
+  lane: string;
+  boardColumnKey: string | null;
+  complete: boolean;
+};
 
 /** A user (assignee) in the workspace. Opaque id only, no PII. */
 export interface UserRef {
   id: string;
+}
+
+/** Positive physical title-update evidence; absence does not imply exhaustive history. */
+export interface ValidatedTitleEdit {
+  at: string;
+  kind: "update";
+  field: "title";
 }
 
 /**
@@ -35,7 +61,7 @@ export interface ProjectRead {
   members: UserRef[];
   /** Always null in v1, Tasks doesn't model project-level deadlines. */
   deadline: string | null;
-  /** Max task.updatedAt across tasks bearing this tag, ISO. */
+  /** Max task activity proxy across tasks bearing this tag, ISO. */
   lastActivityAt: string;
   /** Min task.createdAt across tasks bearing this tag, ISO. */
   createdAt: string;
@@ -55,18 +81,44 @@ export interface TaskRead {
   id: string;
   projectSlugs: string[];
   title: string;
+  /** First assignee retained for older consumers. */
   assignee: UserRef | null;
+  /** Complete canonical assignee list when supplied by the Tasks reader. Omission is unknown, not unassigned. */
+  assignees?: UserRef[];
   status: Status;
-  /** ISO date if set. */
+  /** Canonical board position before any dependency-derived blocked state. */
+  canonicalLane?: "next" | "in-flight" | "review" | "shipped";
+  stage?: TaskStage;
+  /** Unknown/corrupt canonical priority stays null, not fabricated P2. */
+  priority?: KnownPriority | null;
+  /** Valid completion evidence for currently terminal work; unknown is null. */
+  completedAt?: string | null;
+  /** Explicit internal deadline; absent on older injected test sources. */
+  deadline?: Deadline;
+  /** Legacy date reader; exact date or ISO instant only when proved. */
   dueDate: string | null;
-  /** Other task ids that block this one. */
+  /** Known-open task ids only; unresolved references stay opaque. */
   blockedBy: string[];
-  /** Most recent status change, ISO. */
+  dependencyCoverage?: EvidenceCoverage;
+  /** At least one listed same-workspace prerequisite is currently terminal. Internal proof only. */
+  hasCompletedListedPrerequisite?: boolean;
+  /** Verified same-workspace references only; never unresolved/foreign ids. */
+  verifiedPrerequisiteIds?: string[];
+  prerequisiteEvidence?: PrerequisiteEvidence[];
+  /** Legacy update-time proxy, ISO; does not prove a status transition. */
   lastStatusChangeAt: string;
-  /** Most recent activity timestamp, ISO. */
+  /** Update-time proxy advanced by valid recorded comments, ISO; history is not complete. */
   lastActivityAt: string;
   /** ISO timestamp when the task was created. */
   createdAt: string;
+  /** A validated saved title-edit record; absence does not imply exhaustive history. */
+  hasRecordedTitleEdit?: boolean;
+  /** Most recent validated title update found by this read; absence does not imply exhaustive history. */
+  latestValidatedTitleEdit?: ValidatedTitleEdit;
+  latestValidatedComment?: { at: string; kind: "commentAdd" };
+  latestValidatedMetadataEdit?: { at: string; field: "tags" };
+  /** Earliest valid inspected record, not a retention-policy proof. */
+  activityHistoryStartAt?: string;
 }
 
 /** An activity event. Timestamps + types only, no comment text. */
@@ -88,6 +140,14 @@ export interface WorkRead {
   snapshotAt: string;
   projects: ProjectRead[];
   tasks: TaskRead[];
+  /** Missing event history is never evidence that nothing happened. */
+  coverage?: Readonly<{
+    tasks?: EvidenceCoverage;
+    activity: EvidenceCoverage;
+    dependencies: EvidenceCoverage;
+    dates: EvidenceCoverage;
+    priorities: EvidenceCoverage;
+  }>;
   /** Recent activity events (last ~30 days, scoped per trigger needs). */
   events: ActivityEvent[];
 }

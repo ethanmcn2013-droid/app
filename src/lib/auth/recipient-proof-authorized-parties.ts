@@ -41,10 +41,16 @@ export function sprintPreviewAuthorizedPartiesForTargets(
     "Sprint preview auth marker is invalid.");
   invariant(env.SIGNAL_RECIPIENT_IDENTITY_PROOF === undefined,
     "Sprint preview auth cannot overlap the local recipient proof.");
-  invariant(env.VERCEL === "1" && env.VERCEL_ENV === "preview" && env.NODE_ENV === "production" &&
+  invariant(env.VERCEL === "1" && env.VERCEL_ENV === "preview" && env.VERCEL_TARGET_ENV === "preview" && env.NODE_ENV === "production" &&
     env.NEXT_PUBLIC_SIGNAL_DEPLOYMENT_ENV === "preview" &&
     env.NEXT_PUBLIC_SIGNAL_ACCESS_MODE === "production" && env.SIGNAL_ACCESS_MODE === "production",
   "Sprint preview auth requires the isolated Vercel preview with the production auth gate.");
+  // Vercel's system URL identifies this deployment; caller URLs and aliases
+  // cannot nominate another origin, even when the isolated marker is present.
+  invariant(/^dpl_[A-Za-z0-9]+$/.test(env.VERCEL_DEPLOYMENT_ID ?? "") &&
+    /^prj_[A-Za-z0-9]+$/.test(env.VERCEL_PROJECT_ID ?? "") &&
+    /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.vercel\.app$/.test(env.VERCEL_URL ?? ""),
+  "Sprint preview auth requires an exact Vercel deployment identity and system hostname.");
   invariant(env.NEXT_PUBLIC_SITE_URL === SPRINT_PREVIEW_ORIGIN &&
     env.NEXT_PUBLIC_APP_URL === SPRINT_PREVIEW_ORIGIN,
   "Sprint preview site and app URLs must match the nominated origin.");
@@ -65,13 +71,14 @@ export function sprintPreviewAuthorizedPartiesForTargets(
       createHash("sha256").update(url).digest("hex") === approvedHashes[store],
     `Sprint preview auth requires the verified isolated ${store} store.`);
   }
-  return [...productionParties(), SPRINT_PREVIEW_ORIGIN];
+  return [...new Set([...productionParties(), SPRINT_PREVIEW_ORIGIN, `https://${env.VERCEL_URL}`])];
 }
 
 /**
  * Keep production Clerk's exact authorized-party set. The controlled local
  * recipient proof and isolated deployed sprint proof have independent,
- * fail-closed branches for their single nominated origins.
+ * fail-closed branches for their nominated origins. The isolated Preview also
+ * admits only its exact Vercel system deployment origin, never a wildcard.
  */
 export function clerkAuthorizedParties(env: Environment): string[] {
   if (env.SIGNAL_SPRINT_PREVIEW_AUTH !== undefined) {

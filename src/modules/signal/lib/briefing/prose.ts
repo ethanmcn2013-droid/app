@@ -29,6 +29,8 @@ type Phrasing = (
    *  titles → "X and Y" (both named, conversational). Three+ →
    *  "X and N more" (named lead + count). */
   byTitles?: string[],
+  relatedTaskTitle?: string,
+  savedDateLabel?: string,
 ) => string;
 
 const STUCK: Phrasing[] = [
@@ -67,14 +69,12 @@ const JUST_SHIPPED: Phrasing[] = [
   () => "Moved to shipped since this time yesterday.",
 ];
 
-// The headline already carries the count, so the detail interprets
-// rather than repeats. The old rotations said "in flight" twice in one
-// line, borrowed clinical register ("cognitive load is high"), and
-// lower-cased a synthetic title for no gain.
+// Saved stages establish the current workload, not observed start,
+// progress, narrowing, or what will happen next.
 const OVERLOAD: Phrasing[] = [
-  () => "That is a lot to hold open at the same time.",
-  () => "Everything is started and nothing is narrowed.",
-  () => "Enough at once that some of it will sit.",
+  () => "These tasks are saved in-flight or in review.",
+  () => "The saved stages are in-flight or review.",
+  () => "This read shows tasks saved in-flight or in review.",
 ];
 
 const CROWDED_WEEK: Phrasing[] = [
@@ -170,6 +170,27 @@ const BLOCKED_TOO_LONG: Phrasing[] = [
   },
 ];
 
+function namedDependent(title: string | undefined): string {
+  const name = title?.trim().replace(/\s+/g, " ");
+  return name ? `“${name}”` : "another open task";
+}
+
+const BLOCKING_DUE_WORK: Phrasing[] = [
+  (_task, _days, _titles, title) => `This is holding up ${namedDependent(title)}.`,
+  (_task, _days, _titles, title) => `The task ${namedDependent(title)} is waiting on this.`,
+  (_task, _days, _titles, title) => `This remains a listed prerequisite for ${namedDependent(title)}.`,
+];
+
+const PREREQUISITES_COMPLETE: Phrasing[] = [
+  (_task, _days, _titles, _title, date) => `Its listed prerequisites are complete, so it can move ahead without waiting on that work. Saved deadline: ${date ?? "within seven days"}.`,
+  (_task, _days, _titles, _title, date) => `The listed prerequisites are complete, clearing that work for it to move ahead. Its saved deadline is ${date ?? "within seven days"}.`,
+  (_task, _days, _titles, _title, date) => `Its listed prerequisites are complete. It is no longer held up by that work. The saved deadline is ${date ?? "within seven days"}.`,
+];
+
+const PREREQUISITES_UNVERIFIED: Phrasing[] = [
+  () => "Its prerequisites could not be fully verified. It is not confirmed clear to move ahead on that work.",
+];
+
 const LIBRARY: Record<TriggerKind, Phrasing[]> = {
   "stuck-work": STUCK,
   "due-soon": DUE_SOON,
@@ -177,6 +198,10 @@ const LIBRARY: Record<TriggerKind, Phrasing[]> = {
   overload: OVERLOAD,
   "crowded-week": CROWDED_WEEK,
   "blocked-too-long": BLOCKED_TOO_LONG,
+  "blocking-due-work": BLOCKING_DUE_WORK,
+  "prerequisites-complete": PREREQUISITES_COMPLETE,
+  "prerequisites-unverified": PREREQUISITES_UNVERIFIED,
+  "recorded-activity": [() => "A saved activity event was recorded."],
 };
 
 /**
@@ -190,23 +215,56 @@ export function phraseFor(
   context?: {
     idleDays?: number;
     daysOut?: number;
+    pastToday?: boolean;
+    /** Positive duration to an exact instant; date-only deadlines omit it. */
+    instantRemainingMs?: number;
     /** Resolved titles of upstream blocker tasks (in order). */
     blockedByTitles?: string[];
+    /** Legacy input only; dependencies now have their own source-bound row. */
+    openPrerequisiteTitles?: string[];
+    relatedTaskTitle?: string;
+    savedDateLabel?: string;
   },
 ): string {
   const options = LIBRARY[trigger];
   const phrasing = options[rotationIndex % options.length];
+  if (trigger === "blocking-due-work" || trigger === "prerequisites-complete")
+    return phrasing(task, undefined, undefined, context?.relatedTaskTitle, context?.savedDateLabel);
   if (trigger === "stuck-work")
-    return phrasing(task, context?.idleDays ?? task.idleDays);
-  if (trigger === "due-soon") return phrasing(task, context?.daysOut ?? 0);
+    return phrasing(task, context?.idleDays ?? task.idleDays ?? 0);
+  if (trigger === "due-soon") {
+    if (context?.pastToday) return "Past its time today.";
+    const remaining = context?.instantRemainingMs;
+    if (remaining !== undefined && remaining > 0 && remaining <= 86_400_000) {
+      const duration = remainingDuration(remaining);
+      const variant = rotationIndex % options.length;
+      return variant === 0 ? `Due in ${duration}.`
+        : variant === 1 ? `The deadline is in ${duration}.`
+          : `It comes due in ${duration}.`;
+    }
+    return phrasing(task, context?.daysOut ?? 0);
+  }
   if (trigger === "blocked-too-long") {
     return phrasing(
       task,
-      context?.idleDays ?? task.idleDays,
+      context?.idleDays ?? task.idleDays ?? 0,
       context?.blockedByTitles ?? [],
     );
   }
   return phrasing(task);
+}
+
+/** An upper bound for fractional minutes never overstates available time. */
+function remainingDuration(milliseconds: number): string {
+  if (milliseconds < 60_000) return "under a minute";
+  const roundedMinutes = Math.ceil(milliseconds / 60_000);
+  const exactMinute = milliseconds % 60_000 === 0;
+  const hours = Math.floor(roundedMinutes / 60);
+  const minutes = roundedMinutes % 60;
+  const units = hours === 0 ? plural(roundedMinutes, "minute", "minutes")
+    : minutes === 0 ? plural(hours, "hour", "hours")
+      : `${plural(hours, "hour", "hours")} and ${plural(minutes, "minute", "minutes")}`;
+  return exactMinute ? units : `under ${units}`;
 }
 
 // ─────────────────────────────────────────────────────────────

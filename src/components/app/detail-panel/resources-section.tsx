@@ -11,6 +11,7 @@ import {
   type DragEvent,
 } from "react";
 import type { Task } from "@/lib/data";
+import { useAuthoritativeTaskRevision } from "@/lib/tasks/tasks-context";
 import { useCurrentUser } from "@/lib/auth-context";
 import { Avatar } from "@/components/showcase/avatar";
 import { EASE_OUT_TOKEN } from "@/components/primitives/anchored-layer";
@@ -31,10 +32,10 @@ import {
 } from "@/lib/upload-limit";
 import {
   addLinkResourceAction,
-  listTaskResourcesAction,
   removeResourceAction,
   type ResourceRow,
 } from "@/server/actions/resources";
+import { readTaskResources } from "@/lib/tasks/detail-read-transport";
 import { Popover } from "./popover";
 import sx from "./sheet-sections.module.css";
 import { isDemoMode } from "@/lib/access-mode";
@@ -178,10 +179,11 @@ function finalizeMessage(reason: string): string {
  */
 /** `seeAll`: the task panel's link to the full page, after Attach file. */
 export function ResourcesSection({ task, seeAll = null }: { task: Task; seeAll?: React.ReactNode }) {
-  return <TaskResources key={task.id} task={task} seeAll={seeAll} />;
+  const authoritativeRevision = useAuthoritativeTaskRevision(task.id);
+  return <TaskResources key={task.id} task={task} seeAll={seeAll} authoritativeRevision={authoritativeRevision} />;
 }
 
-function TaskResources({ task, seeAll }: { task: Task; seeAll: React.ReactNode }) {
+function TaskResources({ task, seeAll, authoritativeRevision }: { task: Task; seeAll: React.ReactNode; authoritativeRevision: number }) {
   const reduceMotion = useReducedMotion();
   const me = useCurrentUser();
   const { toast } = useToast();
@@ -207,7 +209,7 @@ function TaskResources({ task, seeAll }: { task: Task; seeAll: React.ReactNode }
     // A completion returned by the probe alone never fabricates a visible row.
     const sequence = ++resourceRead.current;
     try {
-      const rows = await listTaskResourcesAction(task.id);
+      const rows = await readTaskResources(task.id);
       if (resourceRead.current === sequence) { setItems(rows.map(toDisplayRow)); setLoadFailed(false); }
     } catch {
       if (resourceRead.current === sequence) setLoadFailed(true);
@@ -215,12 +217,10 @@ function TaskResources({ task, seeAll }: { task: Task; seeAll: React.ReactNode }
     }
   });
 
-  const refreshKey = task.updatedAt?.getTime();
-
   useEffect(() => {
     let ignore = false;
     const sequence = ++resourceRead.current;
-    listTaskResourcesAction(task.id)
+    readTaskResources(task.id)
       .then((rows) => {
         if (!ignore && resourceRead.current === sequence) { setItems(rows.map(toDisplayRow)); setLoadFailed(false); }
       })
@@ -233,7 +233,7 @@ function TaskResources({ task, seeAll }: { task: Task; seeAll: React.ReactNode }
       ignore = true;
       resourceRead.current += 1;
     };
-  }, [task.id, refreshKey, reload]);
+  }, [task.id, authoritativeRevision, reload]);
 
   // ── Upload handler (unchanged path) ──────────────────────────────────
 
@@ -282,7 +282,7 @@ function TaskResources({ task, seeAll }: { task: Task; seeAll: React.ReactNode }
             const result = await sendFile(task.id, file);
             window.clearTimeout(placeholderTimer);
             // Refresh from server to get the canonical resource row.
-            const rows = await listTaskResourcesAction(task.id);
+            const rows = await readTaskResources(task.id);
             setItems(rows.map(toDisplayRow));
             // Surface calm storage-usage warning if a threshold was crossed.
             if (result && result.warnThresholds.length > 0) {

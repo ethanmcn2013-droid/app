@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, exists, inArray } from "drizzle-orm";
 import { db } from "@/server/db";
 import { projectDriveOperations } from "@/server/db/schema";
 
@@ -39,6 +39,22 @@ function canonicalProjectId(value: string): string {
   return value;
 }
 
+function projectDeletionPredicate(workspaceIdInput: string) {
+  const workspaceId = canonicalProjectId(workspaceIdInput);
+  return and(
+    eq(projectDriveOperations.workspaceId, workspaceId),
+    eq(projectDriveOperations.operationKind, "project_delete"),
+    inArray(projectDriveOperations.status, NONTERMINAL_DELETE_STATUSES),
+  );
+}
+
+/** Embed the same durable deletion fence in a transaction-bound read. */
+export function projectDeletionInProgress(workspaceId: string) {
+  return exists(db.select({ id: projectDriveOperations.id })
+    .from(projectDriveOperations)
+    .where(projectDeletionPredicate(workspaceId)));
+}
+
 /**
  * Refuse a Project mutation once its durable deletion intent is nonterminal.
  *
@@ -53,17 +69,10 @@ export async function assertProjectNotDeleting(
   executor: ProjectDeletionFenceExecutor,
   workspaceIdInput: string,
 ): Promise<void> {
-  const workspaceId = canonicalProjectId(workspaceIdInput);
   const [deletion] = await executor
     .select({ id: projectDriveOperations.id })
     .from(projectDriveOperations)
-    .where(
-      and(
-        eq(projectDriveOperations.workspaceId, workspaceId),
-        eq(projectDriveOperations.operationKind, "project_delete"),
-        inArray(projectDriveOperations.status, NONTERMINAL_DELETE_STATUSES),
-      ),
-    )
+    .where(projectDeletionPredicate(workspaceIdInput))
     .limit(1);
   if (deletion) throw new ProjectDeletionInProgressError();
 }

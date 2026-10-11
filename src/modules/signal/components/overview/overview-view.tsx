@@ -53,7 +53,8 @@ export async function OverviewView({
    */
   projectIds?: readonly string[];
 }) {
-  const noSignals = model.attention.length === 0 && model.risks.length === 0;
+  const noSignals = model.attention.length === 0 && model.risks.length === 0 && model.activity.length === 0;
+  const readNote = [model.readNote, model.coverage?.tone === "neutral" ? model.coverage.note : null].filter(Boolean).join(" ");
   const week = projectIds.length > 0 ? await loadOverviewRiver(projectIds) : null;
   const tabs = (
     <div className={styles.tabsRow}>
@@ -67,7 +68,7 @@ export async function OverviewView({
         <div className={`${styles.inner} ${styles.rise}`}>
           {tabs}
           <div id={HOME_TABPANEL_ID} role="tabpanel" aria-labelledby={homeTabId("overview")}>
-            {model.coverage ? (
+            {model.coverage && model.coverage.tone !== "neutral" ? (
               <div role="status" aria-live="polite" className={styles.notice} data-tone={model.coverage.tone}>
                 <ShellIcon.alert size={16} className={styles.noticeIcon} />
                 <p>{model.coverage.note}</p>
@@ -86,7 +87,7 @@ export async function OverviewView({
                   <span>Read at {model.timeLabel}.</span>
                 </p>
               </div>
-              <div className={styles.grid} data-single={model.attention.length > 0 && model.risks.length > 0 ? undefined : ""}>
+              <div className={styles.grid} data-single={[model.attention, model.risks, model.activity].filter(rows => rows.length > 0).length > 1 ? undefined : ""}>
                 {model.attention.length > 0 ? (
                   <div className={styles.column}>
                     <SignalCard id="overview-attention" title="Needs attention" signals={model.attention} />
@@ -97,13 +98,18 @@ export async function OverviewView({
                     <SignalCard id="overview-risks" title="At risk" signals={model.risks} />
                   </div>
                 ) : null}
+                {model.activity.length > 0 ? (
+                  <div className={styles.column}>
+                    <SignalCard id="overview-activity" title="Recorded work" signals={model.activity} />
+                  </div>
+                ) : null}
                 {noSignals && model.emptyState ? (
                   <div className={styles.column}>
                     <ClearCard emptyState={model.emptyState} />
                   </div>
                 ) : null}
               </div>
-              {model.readNote ? <ReadNote note={model.readNote} /> : null}
+              {readNote ? <ReadNote note={readNote} /> : null}
             </section>
           </div>
         </div>
@@ -140,7 +146,7 @@ export async function OverviewView({
           </div>
         </header>
 
-        {model.coverage ? (
+        {model.coverage && model.coverage.tone !== "neutral" ? (
           <div
             role="status"
             aria-live="polite"
@@ -170,18 +176,19 @@ export async function OverviewView({
                 signals={model.risks}
               />
             ) : null}
+            {model.activity.length > 0 ? <SignalCard id="overview-activity" title="Recorded work" signals={model.activity} /> : null}
             {noSignals && model.emptyState ? <ClearCard emptyState={model.emptyState} /> : null}
           </div>
 
           {hasSide ? (
             <div className={styles.column}>
               {model.runway ? <DatesAhead runway={model.runway} /> : null}
-              {model.finished ? <Finished rows={model.finished} /> : null}
+              {model.finished ? <Finished rows={model.finished} coverageComplete={model.finishedCoverageComplete} /> : null}
             </div>
           ) : null}
         </div>
 
-        {model.readNote ? <ReadNote note={model.readNote} /> : null}
+        {readNote ? <ReadNote note={readNote} /> : null}
         </div>
       </div>
     </div>
@@ -482,7 +489,9 @@ function DatesAhead({ runway }: { runway: OverviewRunway }) {
           </ul>
         ) : (
           <p className={styles.quiet}>
-            {key ? `Nothing is dated between now and ${key.label.toLowerCase()}.` : "Nothing is dated in this window."}
+            {runway.dateCoverageComplete
+              ? key ? `Nothing is dated between now and ${key.label.toLowerCase()}.` : "Nothing is dated in this window."
+              : "Some dates could not be checked."}
           </p>
         )}
         {runway.more > 0 ? (
@@ -497,7 +506,7 @@ function DatesAhead({ runway }: { runway: OverviewRunway }) {
 
 /* ── Finished this week ──────────────────────────────────────────────── */
 
-function Finished({ rows }: { rows: OverviewFinishedRow[] }) {
+function Finished({ rows, coverageComplete }: { rows: OverviewFinishedRow[]; coverageComplete: boolean }) {
   return (
     <section className={styles.card} aria-labelledby="overview-finished">
       <div className={styles.cardHead}>
@@ -509,7 +518,7 @@ function Finished({ rows }: { rows: OverviewFinishedRow[] }) {
         </div>
       </div>
       {rows.length === 0 ? (
-        <p className={styles.empty}>Nothing finished in the last seven days.</p>
+        <p className={styles.empty}>{coverageComplete ? "Nothing finished in the last seven days." : "Some completion dates could not be checked."}</p>
       ) : (
         <ul className={styles.list}>
           {rows.map((row) => (

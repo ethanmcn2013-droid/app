@@ -1,0 +1,36 @@
+{
+  "id": "security",
+  "base": "7d318c206bf0dcb103a564c8de1b2c2ee5f51364",
+  "commit": "d33cfeec1a31df787558c268b22f60b9a87d7be7",
+  "tree": "52a66603661285e48de8d5f6b76ca7b66a1cf4cf",
+  "paths": [
+    {
+      "status": "M",
+      "path": "package.json",
+      "baseBlob": "9eb458b18f5a4cc7b066050938532feaacc4db97",
+      "sourceBlob": "1ccf8095a442dc78a8fd6f84b30f9ab2901b9970",
+      "mainBlob": "9eb458b18f5a4cc7b066050938532feaacc4db97",
+      "aggregateBlob": "6fe57f5f0998c182199331692f7b305079347da4",
+      "receiving": "adapted"
+    },
+    {
+      "status": "M",
+      "path": "pnpm-lock.yaml",
+      "baseBlob": "5f17bd9175100924de26d1b485e5a3e872963809",
+      "sourceBlob": "ee84a18f4a274ac2a5f6a082320ca607bca2f2e0",
+      "mainBlob": "5f17bd9175100924de26d1b485e5a3e872963809",
+      "aggregateBlob": "ee84a18f4a274ac2a5f6a082320ca607bca2f2e0",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "pnpm-workspace.yaml",
+      "baseBlob": "6e357ff0db0ea98b5502d1682f8572ba37510622",
+      "sourceBlob": "62de70302226f0c0c365535914fb9c8e6161fa61",
+      "mainBlob": "6e357ff0db0ea98b5502d1682f8572ba37510622",
+      "aggregateBlob": "62de70302226f0c0c365535914fb9c8e6161fa61",
+      "receiving": "byte-exact"
+    }
+  ],
+  "mainOverlaps": []
+}

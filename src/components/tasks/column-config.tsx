@@ -12,7 +12,7 @@
  */
 
 import { createContext, useCallback, useContext, useMemo, useState, useTransition, type ReactNode } from "react";
-import { useColumnConfig } from "@/lib/domain-context";
+import { useActiveWorkspace, useColumnConfig } from "@/lib/domain-context";
 import { defaultColumnConfig, resolveBoardColumns, resolveDoneKeys, type BoardColumn } from "@/lib/board-columns";
 import { MAX_COLUMN_LIMIT, MAX_DESCRIPTION_LEN, MAX_NAME_LEN, type ColumnConfig } from "@/lib/board-config";
 import type { ColumnColorKey } from "@/lib/board-colors";
@@ -27,6 +27,11 @@ import {
   setColumnLimitAction,
 } from "@/server/actions/board";
 import { BoardColumnsOverrideProvider } from "@/components/hybrid/columns-context";
+import {
+  initialBoardConfigState,
+  setBoardOptimisticForEpoch,
+  syncBoardConfigState,
+} from "./column-config-state";
 
 type ColumnActions = {
   columns: BoardColumn[];
@@ -48,28 +53,33 @@ export function TasksColumnsProvider({ children }: { children: ReactNode }) {
   // optimistic copy and the revalidated server value replaces it
   // (render-time adjust, no effect).
   const serverConfig = useColumnConfig();
-  const [optimistic, setOptimistic] = useState<ColumnConfig | null>(serverConfig);
-  const [previousServer, setPreviousServer] = useState(serverConfig);
-  if (previousServer !== serverConfig) {
-    setPreviousServer(serverConfig);
-    setOptimistic(serverConfig);
+  // This id came from the server-verified Project that rendered this Board.
+  // Capture it with each action, independent of a later cookie/tab switch.
+  const projectId = useActiveWorkspace()?.id ?? null;
+  const [configState, setConfigState] = useState(() => initialBoardConfigState(projectId, serverConfig));
+  if (configState.projectId !== projectId || configState.serverConfig !== serverConfig) {
+    setConfigState(syncBoardConfigState(configState, projectId, serverConfig));
   }
+  const optimistic = configState.optimistic;
   const [pending, startTransition] = useTransition();
   const columns = useMemo(() => resolveBoardColumns(optimistic), [optimistic]);
 
   const commit = useCallback(
-    (next: ColumnConfig, persist: () => Promise<unknown>) => {
+    (next: ColumnConfig, persist: (renderedProjectId: string) => Promise<unknown>): boolean => {
+      if (!projectId) return false;
       const previous = optimistic;
-      setOptimistic(next);
+      const epoch = configState.epoch;
+      setConfigState((current) => setBoardOptimisticForEpoch(current, projectId, epoch, next));
       startTransition(async () => {
         try {
-          await persist();
+          await persist(projectId);
         } catch {
-          setOptimistic(previous);
+          setConfigState((current) => setBoardOptimisticForEpoch(current, projectId, epoch, previous));
         }
       });
+      return true;
     },
-    [optimistic],
+    [configState.epoch, optimistic, projectId],
   );
 
   const base = useCallback(() => optimistic ?? defaultColumnConfig(), [optimistic]);
@@ -85,15 +95,15 @@ export function TasksColumnsProvider({ children }: { children: ReactNode }) {
         column.isSystem
           ? { ...next, system: { ...next.system, [column.key]: name } }
           : { ...next, custom: next.custom.map((c) => (c.key === column.key ? { ...c, name } : c)) },
-        () => renameColumnAction(column.key, name),
+        (id) => renameColumnAction(id, column.key, name),
       );
     },
     describe: (column, raw) => {
       const description = raw.trim().slice(0, MAX_DESCRIPTION_LEN);
       if (description === (column.description ?? "")) return;
       const next = base();
-      commit({ ...next, descriptions: { ...next.descriptions, [column.key]: description } }, () =>
-        setColumnDescriptionAction(column.key, description),
+      commit({ ...next, descriptions: { ...next.descriptions, [column.key]: description } }, (id) =>
+        setColumnDescriptionAction(id, column.key, description),
       );
     },
     setLimit: (column, limit) => {
@@ -105,11 +115,11 @@ export function TasksColumnsProvider({ children }: { children: ReactNode }) {
       const limits = { ...next.limits };
       if (normalised === null) delete limits[column.key];
       else limits[column.key] = normalised;
-      commit({ ...next, limits }, () => setColumnLimitAction(column.key, normalised));
+      commit({ ...next, limits }, (id) => setColumnLimitAction(id, column.key, normalised));
     },
     setColor: (column, color) => {
       const next = base();
-      commit({ ...next, colors: { ...next.colors, [column.key]: color } }, () => setColumnColorAction(column.key, color));
+      commit({ ...next, colors: { ...next.colors, [column.key]: color } }, (id) => setColumnColorAction(id, column.key, color));
     },
     toggleDone: (column) => {
       const next = base();
@@ -120,8 +130,7 @@ export function TasksColumnsProvider({ children }: { children: ReactNode }) {
       // The board always keeps at least one done column; the server refuses
       // an empty set, so never paint a state it will reject.
       if (keys.size === 0) return false;
-      commit({ ...next, doneKeys: [...keys] }, () => setColumnDoneAction(column.key, marking));
-      return true;
+      return commit({ ...next, doneKeys: [...keys] }, (id) => setColumnDoneAction(id, column.key, marking));
     },
     move: (column, direction) => {
       const from = columns.findIndex((c) => c.key === column.key);
@@ -131,14 +140,14 @@ export function TasksColumnsProvider({ children }: { children: ReactNode }) {
       const [moved] = order.splice(from, 1);
       order.splice(to, 0, moved);
       const next = base();
-      commit({ ...next, order }, () => reorderColumnsAction(order));
+      commit({ ...next, order }, (id) => reorderColumnsAction(id, order));
     },
     remove: (column, destination) => {
       if (column.isSystem) return;
       const next = base();
       commit(
         { ...next, custom: next.custom.filter((c) => c.key !== column.key), order: next.order.filter((k) => k !== column.key) },
-        () => deleteColumnAction(column.key, destination),
+        (id) => deleteColumnAction(id, column.key, destination),
       );
     },
     add: (raw, options = {}) => {
@@ -160,7 +169,7 @@ export function TasksColumnsProvider({ children }: { children: ReactNode }) {
           colors: color ? { ...next.colors, [tempKey]: color } : next.colors,
           descriptions: description ? { ...next.descriptions, [tempKey]: description } : next.descriptions,
         },
-        () => addColumnAction(name, { description: description || undefined, color, position: append ? undefined : options.position }),
+        (id) => addColumnAction(id, name, { description: description || undefined, color, position: append ? undefined : options.position }),
       );
     },
   }), [base, columns, commit, pending]);

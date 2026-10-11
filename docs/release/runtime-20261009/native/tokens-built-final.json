@@ -1,0 +1,17 @@
+{
+  "label": "tokens-built-final",
+  "head": "04bed4b84b1559d127575751880473256851c430",
+  "tree": "7093b9f3046a89e98e27033adb2a0f2a7c802c2d",
+  "node": "v22.23.2",
+  "args": [
+    "scripts/check-v3-tokens.mjs",
+    "--built"
+  ],
+  "startedAt": "2026-10-09T20:49:44.887Z",
+  "endedAt": "2026-10-09T20:49:48.187Z",
+  "exitCode": 0,
+  "signal": null,
+  "error": null,
+  "passed": true,
+  "log": "D:\\Codex-scratch\\release-all-20261009\\runtime-aggregation\\receipts\\tokens-built-final.log"
+}

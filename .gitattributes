@@ -29,6 +29,7 @@ experience/reviews/january-sponsored-wedding-date-2026-09-05/*.zip filter=lfs di
 *.jpg binary
 *.pdf binary
 *.png binary
+*.ttf binary
 *.webp binary
 *.woff binary
 *.woff2 binary

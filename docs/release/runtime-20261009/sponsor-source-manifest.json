@@ -1,0 +1,226 @@
+{
+  "id": "sponsor",
+  "base": "928d146926aef82f22a98ac293f3aaa34de7840c",
+  "commit": "c8d2eaad10f9a4434b509f61bbb602cad98c89f0",
+  "tree": "be28ac45b6a6c1caf73683adb2df44b44de92906",
+  "paths": [
+    {
+      "status": "M",
+      "path": "docs/SPONSORED_USE_DELIVERY.md",
+      "baseBlob": "877056f30432d3bc4708ba247eebce6e93bff17b",
+      "sourceBlob": "b1b07b0459b8350d35901bf492d2c14b050ad663",
+      "mainBlob": "877056f30432d3bc4708ba247eebce6e93bff17b",
+      "aggregateBlob": "b1b07b0459b8350d35901bf492d2c14b050ad663",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "scripts/app-test-stages.json",
+      "baseBlob": "2c8d192d5e1043a732c3c26eb1f1584e3e096f55",
+      "sourceBlob": "56fcef83f06c309d3cf2fa71074202495ac5cc16",
+      "mainBlob": null,
+      "aggregateBlob": "6cc1e5b43596b7e86eb91c5e4c9aa3bb401400c1",
+      "receiving": "adapted"
+    },
+    {
+      "status": "M",
+      "path": "scripts/sponsored-use/acceptance-clocks.mjs",
+      "baseBlob": "80d1b2633eb3597fa82347def379090091dd6a0a",
+      "sourceBlob": "df2f0bee30be5339ee7cc1aab8adb9b90eaae1b4",
+      "mainBlob": "80d1b2633eb3597fa82347def379090091dd6a0a",
+      "aggregateBlob": "df2f0bee30be5339ee7cc1aab8adb9b90eaae1b4",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "scripts/sponsored-use/acceptance.cjs",
+      "baseBlob": "9023bf8cdbf70ee18b6e9114dddde16bea8d8dd3",
+      "sourceBlob": "d2bfc4341b384dcf2584ab9449513eea3fbe240c",
+      "mainBlob": "9023bf8cdbf70ee18b6e9114dddde16bea8d8dd3",
+      "aggregateBlob": "d2bfc4341b384dcf2584ab9449513eea3fbe240c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/app/api/settings/sponsor-measurement/route.ts",
+      "baseBlob": null,
+      "sourceBlob": "33d5c37aaf75e38239ff05c1850a54cab4300c93",
+      "mainBlob": null,
+      "aggregateBlob": "33d5c37aaf75e38239ff05c1850a54cab4300c93",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/app/api/sponsor-programmes/[programmeId]/invitations/route.ts",
+      "baseBlob": null,
+      "sourceBlob": "00df2e900725b36ac2d5cc0fe3925f3a0bc6e81b",
+      "mainBlob": null,
+      "aggregateBlob": "00df2e900725b36ac2d5cc0fe3925f3a0bc6e81b",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/app/api/sponsor-programmes/[programmeId]/reports/[month]/route.ts",
+      "baseBlob": null,
+      "sourceBlob": "6ec5e34b47079ca0641cf292705199ce7b540a0c",
+      "mainBlob": null,
+      "aggregateBlob": "6ec5e34b47079ca0641cf292705199ce7b540a0c",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/lib/sponsored-use/proof.ts",
+      "baseBlob": "fe01b5366477a689849c573b8d7903623827cbac",
+      "sourceBlob": "34750b74b885e164c955f231c589fbdefde829ba",
+      "mainBlob": "fe01b5366477a689849c573b8d7903623827cbac",
+      "aggregateBlob": "34750b74b885e164c955f231c589fbdefde829ba",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/actions/preferences.ts",
+      "baseBlob": "46a83568cc6f12d96f64cf40c12224ffe666fd69",
+      "sourceBlob": "b8d9f31f277f05915844c354d148a4e48ecbba0f",
+      "mainBlob": "46a83568cc6f12d96f64cf40c12224ffe666fd69",
+      "aggregateBlob": "b8d9f31f277f05915844c354d148a4e48ecbba0f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/db/schema.ts",
+      "baseBlob": "1cb2b1906f07d20db1c0ea4f52ce80e7167a82d6",
+      "sourceBlob": "9c9bdf53e258779212adea45eaf557b26f6519aa",
+      "mainBlob": "1cb2b1906f07d20db1c0ea4f52ce80e7167a82d6",
+      "aggregateBlob": "9c9bdf53e258779212adea45eaf557b26f6519aa",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/sponsor-report/proxy.test.ts",
+      "baseBlob": null,
+      "sourceBlob": "85f866619dc9d5de0f6759c8a9ef6fedfc5118be",
+      "mainBlob": null,
+      "aggregateBlob": "85f866619dc9d5de0f6759c8a9ef6fedfc5118be",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "A",
+      "path": "src/server/sponsor-report/proxy.ts",
+      "baseBlob": null,
+      "sourceBlob": "422f27b76340f624ee9e3e20bb4c0b29314b367e",
+      "mainBlob": null,
+      "aggregateBlob": "422f27b76340f624ee9e3e20bb4c0b29314b367e",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/sponsored-use/action.test.cjs",
+      "baseBlob": "0c91f83b64871cd620f3458c69ecdfec0a09b495",
+      "sourceBlob": "a95e4c765a74d25a4c4d202d3e0e9937f7a5a94f",
+      "mainBlob": "936979daa39aaf2d09a30bc4a136c0226a4ad690",
+      "aggregateBlob": "a95e4c765a74d25a4c4d202d3e0e9937f7a5a94f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/sponsored-use/capture.ts",
+      "baseBlob": "6cb449376a6a0a81b19b2746d983b0005dcd0cfe",
+      "sourceBlob": "e08d122fa0d7eda1d69a894a552d00cc3d50741a",
+      "mainBlob": "6cb449376a6a0a81b19b2746d983b0005dcd0cfe",
+      "aggregateBlob": "e08d122fa0d7eda1d69a894a552d00cc3d50741a",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/sponsored-use/erasure.ts",
+      "baseBlob": "3a96705f9c127cc9abdcadaa09183886bd2d8ea6",
+      "sourceBlob": "848f70f0a77cc632dc954291231ed974eedcbedb",
+      "mainBlob": "3a96705f9c127cc9abdcadaa09183886bd2d8ea6",
+      "aggregateBlob": "848f70f0a77cc632dc954291231ed974eedcbedb",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/sponsored-use/fixture.cjs",
+      "baseBlob": "c5152dd83b0ec39645530d78f9d18b0db8adcd4d",
+      "sourceBlob": "4e9c1d12eba08c324e13f206f43841501ccf9375",
+      "mainBlob": "08609cc0ebd1f14cd4887b7e9af8d79c95fa428d",
+      "aggregateBlob": "4e9c1d12eba08c324e13f206f43841501ccf9375",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/sponsored-use/provenance-handler.ts",
+      "baseBlob": "e294c5f2135130edab191f70576fa13d3555c9eb",
+      "sourceBlob": "e8e58d6f7edb07d8a7643753cd5773e67d36bc8f",
+      "mainBlob": "e294c5f2135130edab191f70576fa13d3555c9eb",
+      "aggregateBlob": "e8e58d6f7edb07d8a7643753cd5773e67d36bc8f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/sponsored-use/provenance.test.cjs",
+      "baseBlob": "3d100bddbda8b0a95b0e427a17a7cb964010a172",
+      "sourceBlob": "fc6756ddbe3640bbebe2728e6721c7220e8f8cec",
+      "mainBlob": "3d100bddbda8b0a95b0e427a17a7cb964010a172",
+      "aggregateBlob": "fc6756ddbe3640bbebe2728e6721c7220e8f8cec",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/sponsored-use/provenance.ts",
+      "baseBlob": "e594558fa3461e1f0ac2b162bd62b9f78037e371",
+      "sourceBlob": "91785ee99ac314561083fae910222a9d814f5297",
+      "mainBlob": "e594558fa3461e1f0ac2b162bd62b9f78037e371",
+      "aggregateBlob": "91785ee99ac314561083fae910222a9d814f5297",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/sponsored-use/schema.ts",
+      "baseBlob": "f6a3a921b2cc515ac4d5f97c428f4744161140a4",
+      "sourceBlob": "dd89643f8afcb8c82a1289d007931c50f9527386",
+      "mainBlob": "f6a3a921b2cc515ac4d5f97c428f4744161140a4",
+      "aggregateBlob": "dd89643f8afcb8c82a1289d007931c50f9527386",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/venue-issuance/composition.test.cjs",
+      "baseBlob": "beda913bb0778c9937fd6f365ec9771973de3fca",
+      "sourceBlob": "a4a9b1ef394203893c51928ea26fe10e29b29ac4",
+      "mainBlob": "beda913bb0778c9937fd6f365ec9771973de3fca",
+      "aggregateBlob": "a4a9b1ef394203893c51928ea26fe10e29b29ac4",
+      "receiving": "byte-exact"
+    }
+  ],
+  "mainOverlaps": [
+    {
+      "status": "M",
+      "path": "scripts/app-test-stages.json",
+      "baseBlob": "2c8d192d5e1043a732c3c26eb1f1584e3e096f55",
+      "sourceBlob": "56fcef83f06c309d3cf2fa71074202495ac5cc16",
+      "mainBlob": null,
+      "aggregateBlob": "6cc1e5b43596b7e86eb91c5e4c9aa3bb401400c1",
+      "receiving": "adapted"
+    },
+    {
+      "status": "M",
+      "path": "src/server/sponsored-use/action.test.cjs",
+      "baseBlob": "0c91f83b64871cd620f3458c69ecdfec0a09b495",
+      "sourceBlob": "a95e4c765a74d25a4c4d202d3e0e9937f7a5a94f",
+      "mainBlob": "936979daa39aaf2d09a30bc4a136c0226a4ad690",
+      "aggregateBlob": "a95e4c765a74d25a4c4d202d3e0e9937f7a5a94f",
+      "receiving": "byte-exact"
+    },
+    {
+      "status": "M",
+      "path": "src/server/sponsored-use/fixture.cjs",
+      "baseBlob": "c5152dd83b0ec39645530d78f9d18b0db8adcd4d",
+      "sourceBlob": "4e9c1d12eba08c324e13f206f43841501ccf9375",
+      "mainBlob": "08609cc0ebd1f14cd4887b7e9af8d79c95fa428d",
+      "aggregateBlob": "4e9c1d12eba08c324e13f206f43841501ccf9375",
+      "receiving": "byte-exact"
+    }
+  ]
+}

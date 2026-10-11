@@ -5,11 +5,11 @@ import { resolveConversationControls } from "../../lib/conversations/flags";
 
 const base = "https://app.example.test/api/conversations";
 const input = { action: "send", projectId: "project-a", conversationId: "room-a", clientRequestId: "request_http_00000001", expectedAudienceEpoch: 1, body: "Reviewed message", rootId: null, mentionUserIds: [] };
-function fixture(options: { actor?: string | null; sends?: boolean; enabled?: boolean; dm?: boolean; throwService?: boolean } = {}) {
+function fixture(options: { actor?: string | null; sends?: boolean; enabled?: boolean; dm?: boolean; throwService?: boolean; failureCode?: string } = {}) {
   const calls: { method: string; value: unknown }[] = [];
   const service = Object.fromEntries(["ensureProjectConversation", "getProjectConversation", "listProjectAudience", "getDirectMessage", "listDirectMessages", "listDirectMessageAudience", "requestDirectMessage", "transitionDirectMessage", "sendMessage", "getReceipt", "getHistory", "getMessagePage", "editMessage", "tombstoneMessage"].map((method) => [method, async (value: unknown) => {
     calls.push({ method, value });
-    if (options.throwService) throw new Error("SQL secret message body and bearer token");
+    if (options.throwService) throw Object.assign(new Error("SQL secret message body and bearer token"), { code: options.failureCode });
     return { ok: true, value: { marker: method } };
   }])) as unknown as Awaited<ReturnType<Parameters<typeof createConversationHttp>[0]["service"]>>;
   const taskOutcomes = Object.fromEntries(["promoteMessageToTask", "getTaskReceipt", "getTaskOutcome", "getTaskDestination"].map((method) => [method, async (value: unknown) => {
@@ -158,4 +158,28 @@ test("operational failure returns a neutral retryable response without content o
   assert.equal(result.status, 503);
   assert.deepEqual(await result.json(), { ok: false, code: "temporarily_unavailable" });
   assert.equal(result.headers.get("vercel-cdn-cache-control"), "no-store");
+});
+
+
+test("HTTP exception diagnostics contain only an opaque correlation and allowlisted code", async () => {
+  const original = console.warn;
+  const observed: unknown[] = [];
+  console.warn = (...values: unknown[]) => { observed.push(values); };
+  try {
+    for (const failureCode of [undefined, "SQLITE_BUSY", "private_unrecognized_code"]) {
+      observed.length = 0;
+      const f = fixture({ throwService: true, failureCode });
+      const result = await f.handle(post(input));
+      assert.deepEqual(await result.json(), { ok: false, code: "temporarily_unavailable" });
+      assert.equal(result.status, 503);
+      assert.equal(observed.length, 1);
+      const values = observed[0] as unknown[];
+      assert.equal(values.length, 1);
+      assert.equal(typeof values[0], "string");
+      const match = /^\[conversation_operation_failure\] Operation outcome correlationId=[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} operation=http failureKind=(unknown|SQLITE_BUSY) outcome=unresolved attempt=1$/.exec(values[0] as string);
+      assert.ok(match);
+      assert.equal(match[1], failureCode === "SQLITE_BUSY" ? failureCode : "unknown");
+      assert.doesNotMatch(JSON.stringify(observed), /SQL secret|secret|bearer|Reviewed|canonical-alice|request_http|private_unrecognized_code/);
+    }
+  } finally { console.warn = original; }
 });

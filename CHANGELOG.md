@@ -1,5 +1,39 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-10 · T·157 · Candidate · Runtime receiving and Redis rate protection
+
+The App candidate brings together Tasks refresh and recovery safeguards, Home and briefing safeguards, conversation ownership checks, review-only concept previews, and disabled Ping and sponsor reporting source. Redis checks distinguish an unavailable service from a caller's quota, with redemption and configured Timeline checks failing closed and AI/extraction retaining its best-effort policy. The existing test runner retains every prior gate and adds the isolated Redis and health-script checks.
+
+The pre-Redis f09 source passed its local 196-case browser matrix, Settings and Timeline checks, and a production-classified build within the unchanged bundle budget. Those receipts qualify that exact earlier source; the composed Redis candidate still needs fresh native gates, builds, browser evidence, normal CI and release-owner receiving. The weekly Redis service job remains disabled, with no credential, production flag or billing activation in this source preparation.
+
+The 87dc demo build failed on an unescaped generated Google font query. This candidate now carries pinned, licensed Newsreader normal and italic files locally for The Dispatch development concept, retaining its six weight/style faces and explicitly setting optical size 16. The 947,348-byte font payload and different loading fallback metrics require fresh desktop/mobile verification. No compiler, dependency, production flag or quality gate changes are part of this repair.
+
+A separate local browser diagnostic found that The Dispatch initially remained transparent with reduced motion enabled, while normal motion displayed the story. The candidate now retains an explicit visible target in reduced mode without changing the normal entrance or shared preference hook. Fresh cold-load and runtime preference-switch verification remains required; the earlier ten font checks do not establish visual acceptance.
+
+The subsequent browser run confirmed cold reduced-motion content is visible, but changing preference during an active entrance did not cancel it. The next candidate expresses reduced-mode opacity and translation as constant keyframes, allowing Motion to replace the active animation with the same visible final state. The normal entrance is unchanged. The failed run is retained, and a fresh build and identical browser cancellation check remain required.
+
+The constant-keyframe candidate still failed the browser cancellation check. A preserved native diagnostic identified a separate 1ms CSS transform transition: seven feed targets remained translated at the second animation frame and settled at the third. This next candidate changes only The Dispatch reduced-motion transition duration to zero, retaining its normal-motion styles and transition delays. Fresh source-bound builds and the unchanged cancellation criterion remain pending; the failed run and diagnostic remain part of the release record.
+
+Production migrations are already current through 0040; this candidate does not reapply them. Historical hosted-workload and 800ms benchmark failures, Windows native failures, and six moderate OpenTelemetry plus one low AI advisory remain recorded. No new design certification, quality score, production deployment or live Redis receiving is claimed. Provider and live status remain with the existing Delivery release receipt.
+
+## 2026-10-10 · Candidate · Bounded Redis rate protection
+
+Redis rate checks now select a complete credential pair, use a bounded transaction, and validate both the count and expiry result. Access-code redemption fails closed before lookup when protection is unavailable and gives an unavailable response rather than a false quota message. Timeline distinguishes outages from caller quotas; AI/extraction keeps its existing best-effort policy with scrubbed degradation warnings. Existing bucket keys and durations are preserved.
+
+Offline failure, timeout, concurrency and consumer checks are included in the test gate. This candidate does not change the database plan, credentials, production configuration or deployment. Live distributed receiving and release-owner review remain required. Operator procedure: `docs/guides/redis-rate-protection.md`.
+
+## 2026-10-09 — Runtime source receiving (live release pending)
+
+Receives backend refresh and intelligence safeguards, disabled Ping construction,
+concept previews, disabled sponsor reporting source, reviewed migration controls,
+bounded dependency security patches, and guarded reliability operator/test tools.
+Hosted workload acceptance remains failed/pending; the historical 800ms benchmark
+and Windows native test failures are retained. The dependency audit has no high or
+critical findings and retains six moderate OpenTelemetry and one low AI advisory.
+Synthetic/browser receipts establish their stated local scope only. Production
+Ping/sponsor flags, migrations, provider checks and deployment remain separate gates.
+
+
 The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.

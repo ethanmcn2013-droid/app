@@ -9,7 +9,7 @@ function source(...parts: string[]) {
 
 describe("Wave 3 interface contracts", () => {
   it("derives every demo task count and scheduling obligation from fixtures and selectors", () => {
-    const tree = source("src", "server", "actions", "projects-tree.ts");
+    const tree = source("src", "server", "projects", "projects-tree-read.ts");
     // Schedule is retired; the calendar's tray and the header's "need a
     // date" fact read the one selector, so they can never disagree.
     const calendar = source("src", "components", "tasks", "calendar-view.tsx");

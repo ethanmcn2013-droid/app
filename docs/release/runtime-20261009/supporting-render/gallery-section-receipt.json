@@ -1,0 +1,93 @@
+{
+  "head": "04bed4b84b1559d127575751880473256851c430",
+  "tree": "7093b9f3046a89e98e27033adb2a0f2a7c802c2d",
+  "buildId": "m67AqmQ8rHEHSxOWeiTwn",
+  "environment": "local demo / Preview; synthetic sample data; no provider or authenticated receiving acceptance",
+  "reason": "The application uses an internal scroll surface. Supplementary viewport captures show admitted sections below the historical placeholder sections.",
+  "captures": [
+    {
+      "project": "mobile",
+      "section": "Tasks board",
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/concepts-mobile-tasks-board.png",
+      "screenshotSha256": "0666f129556c2f01260ab4be45aaee18bb8a5653213fe8751ba7ade3844c0b46",
+      "errors": []
+    },
+    {
+      "project": "mobile",
+      "section": "Analytics",
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/concepts-mobile-analytics.png",
+      "screenshotSha256": "ee97a661933c13c23f8a6431013f0809a3745c0def5acdaafa7866e7652d1059",
+      "errors": []
+    },
+    {
+      "project": "mobile",
+      "section": "Shared timeline",
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/concepts-mobile-shared-timeline.png",
+      "screenshotSha256": "2e12ee8d15e49183e16ccd91e7626f33acd7c240dd67654547cf560d4d9b3e35",
+      "errors": []
+    },
+    {
+      "project": "tablet",
+      "section": "Tasks board",
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/concepts-tablet-tasks-board.png",
+      "screenshotSha256": "c1e36b079e2fa16a111e386f53ac0c6ce3d3ebf22d1d7ad6edfb77bcf1c30d8b",
+      "errors": []
+    },
+    {
+      "project": "tablet",
+      "section": "Analytics",
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/concepts-tablet-analytics.png",
+      "screenshotSha256": "075370c8fa23b4c4362a016926ebc67da982c640efa51ce27a18377427d1c2de",
+      "errors": []
+    },
+    {
+      "project": "tablet",
+      "section": "Shared timeline",
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/concepts-tablet-shared-timeline.png",
+      "screenshotSha256": "c2f1b0e58b74591a1a4be96959e971d8ae0b34ab661f3db6515642b45ddf5e3f",
+      "errors": []
+    },
+    {
+      "project": "desktop",
+      "section": "Tasks board",
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/concepts-desktop-tasks-board.png",
+      "screenshotSha256": "720afcd8429fd9651e91d892c2b0336c49fedd3e4647ad937171a5f6ea660049",
+      "errors": []
+    },
+    {
+      "project": "desktop",
+      "section": "Analytics",
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/concepts-desktop-analytics.png",
+      "screenshotSha256": "d8620bc23497be698983ad59028cdbe3afa7bb58ecea923a90889efba85f2e0b",
+      "errors": []
+    },
+    {
+      "project": "desktop",
+      "section": "Shared timeline",
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/concepts-desktop-shared-timeline.png",
+      "screenshotSha256": "1812f8d0a357ea7e778ddb5d6d4d121405c266a60bfb31d2fa370023d31e9e6d",
+      "errors": []
+    },
+    {
+      "project": "wide",
+      "section": "Tasks board",
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/concepts-wide-tasks-board.png",
+      "screenshotSha256": "2f53dc3c80e3a229e0ea241165d76f0d5581a78c775e8e940c527ac8f4d30aca",
+      "errors": []
+    },
+    {
+      "project": "wide",
+      "section": "Analytics",
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/concepts-wide-analytics.png",
+      "screenshotSha256": "f70f6580acb925a702fd4f056d7660c71e556b1e1b702a6f75818b3ee785f4be",
+      "errors": []
+    },
+    {
+      "project": "wide",
+      "section": "Shared timeline",
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/concepts-wide-shared-timeline.png",
+      "screenshotSha256": "f2597da18ec009509d72bc19f33963858f73a152ce67626e496c92e080d7a6d8",
+      "errors": []
+    }
+  ]
+}

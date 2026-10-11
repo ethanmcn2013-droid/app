@@ -1,0 +1,2 @@
+experience:validate: 1 failure(s)
+  x tasks.page.app-concepts: changed materiality hash requires an explicit reviewed hash refresh; coverage and baseline metadata never waive later source drift

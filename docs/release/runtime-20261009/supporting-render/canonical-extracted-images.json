@@ -1,0 +1,90 @@
+{
+  "source": "canonical-critical-evidence-04bed.json",
+  "rawArtifactSha256": "27d7e46f5186032bca22eea7273c4a3722dcf853d7aec32a4cc61a201c941ecf",
+  "extracted": [
+    {
+      "title": "tasks.page.app-tasks / canonical populated Tasks workspace",
+      "project": "mobile",
+      "attachmentName": "tasks.page.app-tasks-canonical populated Tasks workspace-mobile",
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/canonical-tasks-mobile.png",
+      "screenshotSha256": "8719de326fcd17596fe718aeb77a623a23a5e460a47092f371db24bb5262d456"
+    },
+    {
+      "title": "tasks.page.app-home / home front door",
+      "project": "mobile",
+      "attachmentName": "tasks.page.app-home-home front door-mobile",
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/canonical-home-mobile.png",
+      "screenshotSha256": "6874a49a0bb3671d0939cbb089e19dea5089ea26da0c4242f5ae325d3b9a375a"
+    },
+    {
+      "title": "tasks.surface.task-detail-panel / populated task",
+      "project": "mobile",
+      "attachmentName": "tasks.surface.task-detail-panel-populated task-mobile",
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/canonical-task-detail-mobile.png",
+      "screenshotSha256": "d563d78f746684e7d5735c6e7d0616410c64f871b519fad9465dd5590a603a54"
+    },
+    {
+      "title": "tasks.page.app-tasks / canonical populated Tasks workspace",
+      "project": "tablet",
+      "attachmentName": "tasks.page.app-tasks-canonical populated Tasks workspace-tablet",
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/canonical-tasks-tablet.png",
+      "screenshotSha256": "36a6c14c6d6865b43c62643231ff5854a15d60ed353f0d4f6edf6a0a77c3c2ac"
+    },
+    {
+      "title": "tasks.page.app-home / home front door",
+      "project": "tablet",
+      "attachmentName": "tasks.page.app-home-home front door-tablet",
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/canonical-home-tablet.png",
+      "screenshotSha256": "7c63f1c76edbb59b07c67b3be980ba34a247a83d216659b88f8a6ce4903bbe0d"
+    },
+    {
+      "title": "tasks.surface.task-detail-panel / populated task",
+      "project": "tablet",
+      "attachmentName": "tasks.surface.task-detail-panel-populated task-tablet",
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/canonical-task-detail-tablet.png",
+      "screenshotSha256": "e06887e0e56530401b5f48874875cedac6264206d24576a6b3135c420251e42d"
+    },
+    {
+      "title": "tasks.page.app-tasks / canonical populated Tasks workspace",
+      "project": "desktop",
+      "attachmentName": "tasks.page.app-tasks-canonical populated Tasks workspace-desktop",
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/canonical-tasks-desktop.png",
+      "screenshotSha256": "3a640c532378c87a9950a7af145c746a89e5eeb13583076e0244c509e43280bb"
+    },
+    {
+      "title": "tasks.page.app-home / home front door",
+      "project": "desktop",
+      "attachmentName": "tasks.page.app-home-home front door-desktop",
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/canonical-home-desktop.png",
+      "screenshotSha256": "ea1eca3f1a2849def1df33ecf449cb72174804f4a2d29c5c23529865fe7cd18e"
+    },
+    {
+      "title": "tasks.surface.task-detail-panel / populated task",
+      "project": "desktop",
+      "attachmentName": "tasks.surface.task-detail-panel-populated task-desktop",
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/canonical-task-detail-desktop.png",
+      "screenshotSha256": "e64471d2bcfdc55deb3c1c8f92112d1b73e7098f9ca39b1177159b9ac4144dff"
+    },
+    {
+      "title": "tasks.page.app-tasks / canonical populated Tasks workspace",
+      "project": "wide",
+      "attachmentName": "tasks.page.app-tasks-canonical populated Tasks workspace-wide",
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/canonical-tasks-wide.png",
+      "screenshotSha256": "155b71ff25374b2c00f0c1b7ede74e82167b9eed3e28bb7cf6f2e13416ce6a85"
+    },
+    {
+      "title": "tasks.page.app-home / home front door",
+      "project": "wide",
+      "attachmentName": "tasks.page.app-home-home front door-wide",
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/canonical-home-wide.png",
+      "screenshotSha256": "bcba8e04aeaabd9f670a55369fb8e86cc85f0502c0f0b8ebe8cb17574c0813e2"
+    },
+    {
+      "title": "tasks.surface.task-detail-panel / populated task",
+      "project": "wide",
+      "attachmentName": "tasks.surface.task-detail-panel-populated task-wide",
+      "screenshot": "D:/Codex-scratch/release-all-20261009/runtime-aggregation/receipts/materiality-supporting/canonical-task-detail-wide.png",
+      "screenshotSha256": "bb382b21c72b56b05d7320149d8c5ce04909aa2991174a835899e6040e919f4f"
+    }
+  ]
+}

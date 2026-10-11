@@ -2,10 +2,16 @@ import "server-only";
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
+import { cache } from "react";
 import { isEmailAllowed } from "@/lib/access-allowlist";
 import { isProductionMode } from "@/lib/access-mode";
 import { db } from "@/server/db";
 import { users, workspaceMembers } from "@/server/db/schema";
+import { beginAppGateTiming, type AppGateSite } from "@/server/diagnostics/identity-timing";
+
+// Only the profile lookup is shared during one Server Component render. Each
+// gate still makes its own admission decision, including a live member read.
+const currentUserForRender = cache(async () => currentUser());
 
 /**
  * D-018 (grant-on-accept): Tasks-local access gate for /app surfaces.
@@ -26,36 +32,41 @@ import { users, workspaceMembers } from "@/server/db/schema";
  * Production-mode only: demo/dev posture unchanged, matching the shared file's
  * behaviour exactly.
  */
-export async function requireAppAccessTasks(): Promise<void> {
-  // D-018: only enforce in production mode, exactly as the shared file does.
-  if (!isProductionMode()) return;
+export async function requireAppAccessTasks(site: AppGateSite = "other"): Promise<void> {
+  const timing = beginAppGateTiming(site);
+  try {
+    // D-018: only enforce in production mode, exactly as the shared file does.
+    if (!isProductionMode()) return;
 
-  const user = await currentUser();
-  const email = user
-    ? (user.emailAddresses.find((e) => e.id === user.primaryEmailAddressId)
-        ?.emailAddress ??
-      user.emailAddresses[0]?.emailAddress ??
-      null)
-    : null;
+    const user = await timing.measure("profile", () => currentUserForRender());
+    const email = user
+      ? (user.emailAddresses.find((e) => e.id === user.primaryEmailAddressId)
+          ?.emailAddress ??
+        user.emailAddresses[0]?.emailAddress ??
+        null)
+      : null;
 
-  // Fast path: allowlisted email (founder always passes via ALWAYS_ALLOW).
-  if (isEmailAllowed(email)) return;
+    // Fast path: allowlisted email (founder always passes via ALWAYS_ALLOW).
+    if (isEmailAllowed(email)) return;
 
-  // D-018 fallback: a user who accepted a workspace invite has a membership
-  // row — that is sufficient evidence the operator granted them access.
-  // Non-allowlisted users without a membership still go to /waitlist.
-  if (user) {
-    const clerkId = user.id;
-    // Memberships use the persisted internal id. Legacy accounts and the
-    // recipient fixture can have an id distinct from their Clerk subject.
-    const memberRows = await db
-      .select({ workspaceId: workspaceMembers.workspaceId })
-      .from(workspaceMembers)
-      .innerJoin(users, eq(users.id, workspaceMembers.userId))
-      .where(eq(users.clerkId, clerkId))
-      .limit(1);
-    if (memberRows.length > 0) return;
+    // D-018 fallback: a user who accepted a workspace invite has a membership
+    // row — that is sufficient evidence the operator granted them access.
+    // Non-allowlisted users without a membership still go to /waitlist.
+    if (user) {
+      const clerkId = user.id;
+      // Memberships use the persisted internal id. Legacy accounts and the
+      // recipient fixture can have an id distinct from their Clerk subject.
+      const memberRows = await timing.measure("membership", () => db
+        .select({ workspaceId: workspaceMembers.workspaceId })
+        .from(workspaceMembers)
+        .innerJoin(users, eq(users.id, workspaceMembers.userId))
+        .where(eq(users.clerkId, clerkId))
+        .limit(1));
+      if (memberRows.length > 0) return;
+    }
+
+    redirect("/waitlist");
+  } finally {
+    timing.finish();
   }
-
-  redirect("/waitlist");
 }

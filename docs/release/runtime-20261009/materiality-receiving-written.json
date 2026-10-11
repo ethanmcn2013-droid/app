@@ -1,0 +1,79 @@
+{
+  "sourceHead": "7cfe85b7ae96a5d683d1fdfebaa230565f5a3b33",
+  "capturedHead": "04bed4b84b1559d127575751880473256851c430",
+  "receivedAt": "2026-10-09T21:16:02.506Z",
+  "explicitRootApproval": [
+    "tasks.page.app-tasks",
+    "tasks.page.app-home",
+    "tasks.resources.drive-upload",
+    "tasks.page.app-analytics",
+    "tasks.page.app-concepts",
+    "tasks.page.app-files"
+  ],
+  "changes": [
+    {
+      "id": "tasks.page.app-tasks",
+      "changedFields": [
+        "materialityHash"
+      ],
+      "beforeHash": "28dc147c4d055a02",
+      "afterHash": "76d706824e1b1cb3"
+    },
+    {
+      "id": "tasks.page.app-home",
+      "changedFields": [
+        "materialityHash"
+      ],
+      "beforeHash": "ef053744589ec7e0",
+      "afterHash": "cc412a345ba4d663"
+    },
+    {
+      "id": "tasks.resources.drive-upload",
+      "changedFields": [
+        "lastReviewedAt",
+        "materialityHash",
+        "materialityReview"
+      ],
+      "beforeHash": "a9720b2f91abaa09",
+      "afterHash": "19f85eac6f784ffa"
+    },
+    {
+      "id": "tasks.page.app-analytics",
+      "changedFields": [
+        "lastReviewedAt",
+        "materialityHash",
+        "materialityReview"
+      ],
+      "beforeHash": "b3dc20fe2d960e0f",
+      "afterHash": "d89f2a4abd38ee57"
+    },
+    {
+      "id": "tasks.page.app-concepts",
+      "changedFields": [
+        "lastReviewedAt",
+        "materialityHash",
+        "materialityReview"
+      ],
+      "beforeHash": "1aa864ed1b84f74a",
+      "afterHash": "63e7924b683e8c06"
+    },
+    {
+      "id": "tasks.page.app-files",
+      "changedFields": [
+        "lastReviewedAt",
+        "materialityHash",
+        "materialityReview"
+      ],
+      "beforeHash": "7a85240486792b54",
+      "afterHash": "85929e83ebaece9a"
+    }
+  ],
+  "logs": [
+    "experience:critical-fixtures: clean - 37/37 critical experiences mapped, 28 rendered, 9 source-contract, 33 deterministic cases x 4 breakpoints\n",
+    "experience:review-materiality: reviewed tasks.resources.drive-upload at 19f85eac6f784ffa using experience/reviews/release-runtime-20261009/tasks.resources.drive-upload.json\n",
+    "experience:review-materiality: reviewed tasks.page.app-analytics at d89f2a4abd38ee57 using experience/reviews/release-runtime-20261009/tasks.page.app-analytics.json\n",
+    "experience:review-materiality: reviewed tasks.page.app-concepts at 63e7924b683e8c06 using experience/reviews/release-runtime-20261009/tasks.page.app-concepts.json\n",
+    "experience:review-materiality: reviewed tasks.page.app-files at 85929e83ebaece9a using experience/reviews/release-runtime-20261009/tasks.page.app-files.json\n"
+  ],
+  "preservedFields": "All design baseline, quality score, audit and coverage fields byte-identical per entry"
+}

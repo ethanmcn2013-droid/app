@@ -10,6 +10,27 @@ import {
 
 const APP_ORIGIN = "https://app.signalstudio.ie";
 
+it("distinct observations retain real receipts while accounting deduplicates shared inspected tasks", () => {
+  const make = (index: number, ids: string[]) => {
+    const base = candidate(index);
+    return { ...base, taskEvidenceIds: ids, receipt: { ...base.receipt, evidenceCount: ids.length,
+      sourceCounts: { notes: 0, tasks: ids.length, milestones: 0 } } };
+  };
+  const ledger = buildSignalLedger(input({ readCount: 3, triggeredCount: 2,
+    taskUniverse: { readIds: ["inspected-a", "inspected-b", "quiet-c"], triggeredIds: ["inspected-a", "inspected-b"] },
+    candidates: [make(0, ["inspected-a"]), make(1, ["inspected-a", "inspected-b"])] }));
+  assert.equal(ledger.entries.length, 2);
+  assert.deepEqual(ledger.entries.map(entry => entry.receipt.evidenceCount), [1, 2]);
+  assert.deepEqual(ledger.readCounts, { read: 3, flagged: 2, shown: 2, cleared: 1 });
+  assert.doesNotMatch(JSON.stringify(ledger), /inspected-a|inspected-b|quiet-c|taskUniverse|taskEvidenceIds/);
+  for (const taskUniverse of [
+    { readIds: ["inspected-a"], triggeredIds: ["foreign"] },
+    { readIds: ["inspected-a", "inspected-b"], triggeredIds: ["inspected-a"] },
+  ]) assert.throws(() => buildSignalLedger(input({ taskUniverse, candidates: [make(0, ["inspected-a", "inspected-b"])] })), /Uninspected/);
+  assert.throws(() => buildSignalLedger(input({ taskUniverse: { readIds: ["inspected-a"], triggeredIds: ["inspected-a"] },
+    candidates: [candidate(0)] })), /Missing authoritative/);
+});
+
 describe("the accounting never calls held-back work clear", () => {
   it("subtracts everything that crossed a rule, not just what is shown", () => {
     // Six crossed a rule out of forty read; the display cap shows three.
@@ -158,6 +179,7 @@ describe("Signal ledger presentation contract", () => {
     assert.deepEqual(Object.keys(ledger).sort(), [
       "closingLine",
       "coverageNote",
+      "coverageStatus",
       "emptyState",
       "entries",
       "freshness",
@@ -216,6 +238,7 @@ describe("Signal ledger presentation contract", () => {
         }),
       );
 
+      assert.equal(ledger.coverageStatus, state);
       assert.equal(ledger.emptyState?.kind, "coverage");
       assert.ok(ledger.coverageNote);
       assert.doesNotMatch(
@@ -258,6 +281,7 @@ describe("Signal ledger presentation contract", () => {
 
   it("preserves the healthy empty state only with complete coverage", () => {
     const ledger = buildSignalLedger(input({ candidates: [] }));
+    assert.equal(ledger.coverageStatus, "complete");
 
     assert.equal(ledger.emptyState?.kind, "healthy");
     assert.equal(

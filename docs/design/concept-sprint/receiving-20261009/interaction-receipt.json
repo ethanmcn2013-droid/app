@@ -1,0 +1,16 @@
+{
+  "scope": "Local review-only interaction proof. No production/provider/visual acceptance.",
+  "sourceHashes": {
+    "src/components/concepts/use-review-reduced-motion.ts": "7415e194f55572ca4c972b19cc826045bdde0942a0594d4bdcf03d9c2612847b",
+    "src/components/concepts/calendar/c4/runway.tsx": "9d15c09356ae34bfc156165a39cab2924098a55f39c618e4aeabee9fb3b60cf8",
+    "src/components/concepts/board/c1/index.tsx": "e45b67466209f8105765e802720609889bc5ec102ca27bf74048a6c168cf7517",
+    "src/components/concepts/apps/c6/index.tsx": "e0e189a4ff644d5a017bc949bfc065eff8d23c6c3ff1a91bf8b9ea7d59b17241"
+  },
+  "results": [
+    "Calendar4 responds to native reduced-motion changes after hydration",
+    "Board1 mobile New task sheet opens and Escape closes it",
+    "Apps6 local Connect something sheet opens and closes without provider mutation"
+  ],
+  "issues": [],
+  "sourceHashNormalization": "UTF-8 text normalized to LF, matching committed Git source"
+}

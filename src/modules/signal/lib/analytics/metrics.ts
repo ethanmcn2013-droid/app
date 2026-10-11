@@ -198,7 +198,7 @@ function result<K extends MetricKey>(
 }
 
 function isOpen(task: TaskRecord): boolean {
-  return !task.terminal;
+  return !task.terminal && !task.archived;
 }
 
 function completionMoments(
@@ -396,10 +396,36 @@ function stalledWork(
   }
 
   const now = parseInstant(snapshot.capturedAt);
+  const openTasks = snapshot.tasks.filter(isOpen);
+  const knownActivity = new Map<string, number>();
+  for (const task of openTasks) {
+    let at: number;
+    try {
+      if (!task.lastMeaningfulActivityAt) throw new TypeError("activity_unknown");
+      at = parseInstant(task.lastMeaningfulActivityAt);
+    } catch {
+      return result("stalled_work", snapshot, {
+        status: "unsupported",
+        value: null,
+        unit: "items",
+        summary: "Waiting-time signals need meaningful activity history, which is not available yet.",
+      });
+    }
+    if (at > now) {
+      return result("stalled_work", snapshot, {
+        status: "unsupported",
+        value: null,
+        unit: "items",
+        summary: "Waiting-time signals need meaningful activity history, which is not available yet.",
+      });
+    }
+    knownActivity.set(task.id, at);
+  }
   const latestEventByTask = new Map<string, number>();
   for (const event of snapshot.events) {
     if (event.entityType !== "task" || !event.meaningful) continue;
-    const at = parseInstant(event.at);
+    let at: number;
+    try { at = parseInstant(event.at); } catch { continue; }
     if (at > now) continue;
     latestEventByTask.set(
       event.entityId,
@@ -407,13 +433,9 @@ function stalledWork(
     );
   }
   const threshold = options.stalledAfterDays * DAY_MS;
-  const tasks = snapshot.tasks.filter((task) => {
-    if (!isOpen(task)) return false;
+  const tasks = openTasks.filter((task) => {
     const lastMeaningful = Math.max(
-      parseInstant(task.createdAt),
-      task.lastMeaningfulActivityAt
-        ? parseInstant(task.lastMeaningfulActivityAt)
-        : 0,
+      knownActivity.get(task.id)!,
       latestEventByTask.get(task.id) ?? 0,
     );
     return now - lastMeaningful >= threshold;

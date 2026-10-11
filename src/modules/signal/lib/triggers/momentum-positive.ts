@@ -28,6 +28,7 @@ export const momentumPositive: Trigger = {
   id: "momentum-positive",
   defaultBlock: "moving-well",
   detect(work) {
+    if (work.coverage?.activity === "partial") return [];
     const insights: Insight[] = [];
 
     for (const project of work.projects) {

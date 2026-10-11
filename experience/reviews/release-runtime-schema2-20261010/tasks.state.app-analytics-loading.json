@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-analytics-loading",
+  "source": "tasks/src/app/app/analytics/loading.tsx",
+  "materialityHash": "9a83f9e97a750b1b",
+  "reviewedAt": "2026-10-10",
+  "reviewer": "Root release coordinator: technical visual receiving, with independent source and evidence review",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-f941a2096736db9942720dee-d238c6428fdc1f5e.json",
+    "attestationSha256": "04d423c5f0c0a8385ddeeb1746321e2d908ac4db89b926fcc175ffb34eeacd43",
+    "runId": "tasks-playwright-f941a2096736db9942720dee",
+    "canonicalEvidenceSha256": "f941a2096736db9942720deedd2402d534527126679864987ea3e6a77aef6efd",
+    "rawArtifactSha256": "d238c6428fdc1f5ebd8fb049d85516f4a44446105a2f1fe323b486c588318fc5",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.state.app-analytics-loading",
+    "caseName": "actual component with deterministic local inputs",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Fresh own-target source qualification for tasks.state.app-analytics-loading: actual component with declared deterministic inputs and scope. Preserve source geometry and existing classifications; loading/error seams do not establish live Next recovery or authenticated provider behavior.",
+  "decision": "Technical current-source receiving after exact fresh 196-case machine pass, own-target four-viewport evidence and root representative-image review. No new design pick, quality score or production claim."
+}

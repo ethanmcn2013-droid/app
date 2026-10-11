@@ -2,16 +2,74 @@ import { strict as assert } from "node:assert";
 import { describe, test } from "node:test";
 import {
   detectBlockedTooLong,
+  detectBlockingDueWork,
   detectCrowdedWeek,
   detectDueSoon,
   detectJustShipped,
   detectOverload,
+  detectPrerequisitesComplete,
   detectStuckWork,
 } from "./triggers";
 import type { TaskSignal } from "./types";
 
 const DAY = 86_400_000;
 const NOW = 1_700_000_000_000;
+
+test("unknown custom phases do not count as started or review in overload", () => {
+  const unknown = Array.from({ length: 6 }, (_, index) => makeTask({ id: `quality-${index}`, lane: "in-flight",
+    stage: { key: "quality-gate", label: "Quality check", phase: "unknown", complete: false } }));
+  assert.deepEqual(detectOverload(unknown), []);
+  const doing = unknown.map(task => ({ ...task, stage: { key: "doing", label: "Doing", phase: "in-flight" as const, complete: false } }));
+  assert.equal(detectOverload(doing).length, 1);
+  assert.deepEqual(detectOverload(doing)[0]?.representedTaskIds, doing.map(task => task.id).sort());
+  const dueUnknown = detectDueSoon([{ ...unknown[0]!, dueAt: NOW + DAY }], NOW)[0]!;
+  assert.ok(dueUnknown.reasons.some(reason => /Still open in “Quality check”/.test(reason)));
+  assert.ok(dueUnknown.reasons.every(reason => !/\bstarted\b/i.test(reason)));
+  const unnamedUnknown = detectDueSoon([{ ...unknown[0]!, stage: { key: "custom", label: null, phase: "unknown", complete: false }, dueAt: NOW + DAY }], NOW)[0]!;
+  assert.ok(unnamedUnknown.reasons.includes("Still open. Its saved stage is unknown."));
+});
+
+describe("current dependency relevance", () => {
+  test("one visible same-workspace blocker is selected for the nearest due dependent without age evidence", () => {
+    const blocker = makeTask({ id: "open-blocker", title: "Inspect the venue", workspaceId: "owned", idleDays: null });
+    const later = makeTask({ id: "later", title: "Later work", workspaceId: "owned", dueAt: NOW + 2 * DAY, blockedBy: ["open-blocker"] });
+    const earlier = makeTask({ id: "earlier", title: "Near work", workspaceId: "owned", dueAt: NOW + DAY, blockedBy: ["open-blocker", "unknown"], dependencyCoverage: "partial" });
+    const result = detectBlockingDueWork([later, blocker, earlier], NOW);
+    assert.deepEqual(result.map(row => [row.task.id, row.trigger, row.relatedTaskTitle]), [["open-blocker", "blocking-due-work", "Near work"]]);
+    assert.deepEqual(detectBlockingDueWork([earlier, blocker, later], NOW), result);
+  });
+
+  test("rejects self, foreign, hidden, completed blocker, terminal dependent and distant due work", () => {
+    const blocker = makeTask({ id: "blocker", workspaceId: "owned" });
+    const due = makeTask({ id: "due", workspaceId: "owned", dueAt: NOW + DAY, blockedBy: ["blocker"] });
+    assert.deepEqual(detectBlockingDueWork([blocker, { ...due, blockedBy: ["due"] }], NOW), []);
+    assert.deepEqual(detectBlockingDueWork([{ ...blocker, workspaceId: "foreign" }, due], NOW), []);
+    assert.deepEqual(detectBlockingDueWork([due], NOW), []);
+    assert.deepEqual(detectBlockingDueWork([{ ...blocker, lane: "shipped" }, due], NOW), []);
+    assert.deepEqual(detectBlockingDueWork([blocker, { ...due, lane: "shipped" }], NOW), []);
+    assert.deepEqual(detectBlockingDueWork([blocker, { ...due, dueAt: NOW + 3 * DAY }], NOW), []);
+  });
+
+  test("completed listed prerequisite needs complete coverage and a future saved deadline", () => {
+    const ready = makeTask({ id: "ready", workspaceId: "owned", dueAt: NOW + 3 * DAY,
+      blockedBy: [], dependencyCoverage: "complete", hasCompletedListedPrerequisite: true, idleDays: null });
+    assert.deepEqual(detectPrerequisitesComplete([ready], NOW).map(row => row.trigger), ["prerequisites-complete"]);
+    for (const changed of [
+      { hasCompletedListedPrerequisite: false }, { dependencyCoverage: "partial" as const },
+      { blockedBy: ["still-open"] }, { dueAt: null }, { dueAt: NOW }, { dueAt: NOW - DAY },
+      { dueAt: NOW + 8 * DAY }, { lane: "shipped" as const },
+    ]) assert.deepEqual(detectPrerequisitesComplete([{ ...ready, ...changed }], NOW), []);
+  });
+
+  test("date-only horizon follows reader calendar across DST and extreme offsets", () => {
+    const clock = Date.parse("2026-03-29T12:00:00Z");
+    const ready = makeTask({ id: "ready-date", dependencyCoverage: "complete", hasCompletedListedPrerequisite: true,
+      deadline: { kind: "date-only", date: "2026-04-06" } });
+    assert.equal(detectPrerequisitesComplete([ready], clock, "Pacific/Kiritimati").length, 1);
+    assert.equal(detectPrerequisitesComplete([ready], clock, "Etc/GMT+12").length, 0);
+    assert.equal(detectPrerequisitesComplete([ready], clock, "Europe/Dublin").length, 0);
+  });
+});
 
 function makeTask(overrides: Partial<TaskSignal> = {}): TaskSignal {
   return {
@@ -115,6 +173,14 @@ describe("detectDueSoon", () => {
       NOW,
     );
     assert.equal(out.length, 1);
+  });
+
+  test("a timed deadline earlier today is overdue without a whole-day claim", () => {
+    const past = detectDueSoon([makeTask({ id: "past-hour", dueAt: NOW - 3_600_000 })], NOW, "UTC")[0];
+    const future = detectDueSoon([makeTask({ id: "future-hour", dueAt: NOW + 3_600_000 })], NOW, "UTC")[0];
+    assert.ok(past.severity > future.severity);
+    assert.equal(past.reasons[0], "Signal flags anything past its time.");
+    assert.equal(future.reasons[0], "Signal flags anything due inside two days.");
   });
 
   test("ignores tasks without a dueAt", () => {
@@ -458,7 +524,7 @@ describe("reasons carry evidence, not restatement", () => {
     ]);
     assert.deepEqual(blocked.reasons, [
       "Signal flags blocked work after five days without movement.",
-      "Sitting in review.",
+      "Saved stage: “Review”.",
       "One upstream item has not cleared.",
     ]);
   });
@@ -483,33 +549,36 @@ describe("reasons carry evidence, not restatement", () => {
     }
   });
 
-  // The row already reads "Nothing has moved on it for eighteen days", so
-  // a bullet reading "Last update was eighteen days ago" spent the click
-  // restating it. The bullets now name the rule, then say the one thing
-  // the row cannot: whether the work was ever started.
-  test("stuck work adds the lane fact its row cannot carry", () => {
+  // The row already carries age. The second bullet adds the current saved
+  // stage without treating that stage as evidence of task history.
+  test("stuck work adds the saved stage without inferring task history", () => {
     assert.deepEqual(
       detectStuckWork([makeTask({ idleDays: 18, lane: "in-flight" })])[0]!
         .reasons,
       [
         "Signal flags anything quiet for three days or more.",
-        "Started, and still open.",
+        "Saved stage: “In progress”.",
       ],
     );
     assert.deepEqual(
       detectStuckWork([makeTask({ idleDays: 18, lane: "next" })])[0]!.reasons,
       [
         "Signal flags anything quiet for three days or more.",
-        "Not started yet.",
+        "Saved stage: “Next”.",
       ],
     );
     assert.deepEqual(
       detectStuckWork([makeTask({ idleDays: 18, lane: "review" })])[0]!.reasons,
       [
         "Signal flags anything quiet for three days or more.",
-        "Sitting in review.",
+        "Saved stage: “Review”.",
       ],
     );
+    const labelledStage = detectStuckWork([makeTask({ idleDays: 18, stage: {
+      key: "doing", label: "Doing", phase: "in-flight", complete: false,
+    } })])[0]!;
+    assert.equal(labelledStage.reasons[1], "Saved stage: “Doing”.");
+    assert.ok(labelledStage.reasons.every(reason => !/\bstarted\b/i.test(reason)));
   });
 
   test("no stuck-work bullet restates the age the row already carries", () => {
@@ -533,25 +602,34 @@ describe("reasons carry evidence, not restatement", () => {
     ]);
   });
 
-  test("an untouched due item reports where it is sitting instead", () => {
-    const [fired] = detectDueSoon(
-      [makeTask({ dueAt: NOW + DAY, idleDays: 0, lane: "next" })],
+  test("due triggers keep their deadline reason and report saved stage", () => {
+    const [next, inProgress] = detectDueSoon(
+      [
+        makeTask({ id: "next", dueAt: NOW + DAY, idleDays: 0, lane: "next" }),
+        makeTask({ id: "in-progress", dueAt: NOW + DAY, idleDays: 0, lane: "in-flight" }),
+      ],
       NOW,
     );
-    assert.deepEqual(fired.reasons, [
+    assert.equal(next.trigger, "due-soon");
+    assert.deepEqual(next.reasons, [
       "Signal flags anything due inside two days.",
-      "Not started yet.",
+      "Saved stage: “Next”.",
+    ]);
+    assert.equal(inProgress.trigger, "due-soon");
+    assert.deepEqual(inProgress.reasons, [
+      "Signal flags anything due inside two days.",
+      "Saved stage: “In progress”.",
     ]);
   });
 
-  test("overload names the threshold and how far the work has got", () => {
+  test("overload names the threshold and saved stage counts", () => {
     const flight = Array.from({ length: 7 }, (_, i) =>
       makeTask({ id: `t${i}`, lane: i < 2 ? "review" : "in-flight" }),
     );
     const [fired] = detectOverload(flight);
     assert.deepEqual(fired.reasons, [
-      "Signal flags anything over five open at once.",
-      "Two of them are already in review.",
+      "Signal flags more than five tasks saved in-flight or in review.",
+      "Five are saved in-flight; two are saved in review.",
     ]);
   });
 
@@ -566,14 +644,14 @@ describe("reasons carry evidence, not restatement", () => {
     ]);
   });
 
-  test("high priority is stated as its own fact, never welded to another", () => {
+  test("high priority states saved status without attributing a reader action", () => {
     const [fired] = detectStuckWork([makeTask({ idleDays: 5, priority: 0 })]);
-    assert.equal(fired.reasons.at(-1), "You marked this high priority.");
+    assert.equal(fired.reasons.at(-1), "This is marked high priority.");
   });
 
   // At the old P0-or-P1 threshold the line appeared on very nearly every
   // row, so it discriminated nothing and read as decoration.
-  test("the priority line only appears on work the reader marked P0", () => {
+  test("the priority line only appears on work with saved P0", () => {
     for (const priority of [1, 2, 3] as const) {
       for (const fired of [
         detectStuckWork([makeTask({ idleDays: 5, priority })])[0]!,
@@ -589,7 +667,7 @@ describe("reasons carry evidence, not restatement", () => {
       detectDueSoon(
         [makeTask({ dueAt: NOW - DAY, priority: 0 })],
         NOW,
-      )[0]!.reasons.includes("You marked this high priority."),
+      )[0]!.reasons.includes("This is marked high priority."),
     );
     assert.equal(
       detectJustShipped(

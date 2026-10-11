@@ -2,14 +2,14 @@ import "server-only";
 import Link from "next/link";
 import { isActiveProjectV3Enabled } from "@/lib/projects/flags";
 import { HOME_APP_PATH } from "@/lib/product-urls";
-import { resolveProjectForRoute } from "@/server/projects/route-authz";
+import { resolveProjectForRoute, resolveProjectForRouteWithActor } from "@/server/projects/route-authz";
 import { ActiveProjectRouteSync } from "./active-project-route-sync";
 import { OpenTasksProject } from "./open-tasks-project";
 import type { TasksArrivalSurface } from "@/lib/tasks/arrival-path";
 
 /** Prove the explicit route before rendering any target project content. */
 export async function resolveTasksArrival(requested?: string | string[]) {
-  const project = await resolveProjectForRoute(requested);
+  const { actorUserId, decision: project } = await resolveProjectForRouteWithActor(requested);
   if (project.kind !== "ready" && project.kind !== "archived") {
     return { kind: "unavailable" as const };
   }
@@ -21,7 +21,7 @@ export async function resolveTasksArrival(requested?: string | string[]) {
       return { kind: "selection-required" as const, project };
     }
   }
-  return { kind: "ready" as const, project };
+  return { kind: "ready" as const, project, actorUserId };
 }
 
 export function TasksArrivalRefusal({ arrival, requested, surface, taskId }: {

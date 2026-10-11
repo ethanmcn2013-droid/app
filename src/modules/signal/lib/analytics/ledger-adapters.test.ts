@@ -56,6 +56,15 @@ function legacyBriefing(
 }
 
 describe("legacy Signal ledger adapter", () => {
+  it("keeps a known risk count without calling a partial read a quiet day", () => {
+    const options = { generatedAtLabel: "Sunday, 09:00", scopeLabel: "Personal", scopeKind: "workspace" as const, allowedAppOrigin: APP_ORIGIN };
+    const partial = ledgerFromLegacyBriefing(legacyBriefing([legacyItem("known-risk")], { coverageStatus: "partial" }), options);
+    const complete = ledgerFromLegacyBriefing(legacyBriefing([legacyItem("known-risk")], { coverageStatus: "complete" }), options);
+    assert.equal(partial.heading, "1 risk worth watching.");
+    assert.equal(complete.heading, "A quiet day. One risk worth watching.");
+    assert.equal(partial.entries.length, 1);
+    assert.equal(partial.readCounts, null);
+  });
   it("groups exact same-title signals in the same authorized scope", () => {
     const briefing = legacyBriefing([
       legacyItem("task-private-one"),
@@ -436,7 +445,7 @@ describe("progressive Signal ledger adapter", () => {
     assert.doesNotMatch(ledger.heading, /\d/);
     assert.equal(
       ledger.closingLine,
-      "That’s the read. Dates came first, then the quiet ones.",
+      "That’s the read.",
     );
   });
 
@@ -651,3 +660,11 @@ function progressiveBriefing(): BriefingResponse {
     },
   };
 }
+
+it("round8 selected completion reaches ledger with its actual evidence receipt", () => {
+  const item = { ...legacyItem("completed-task"), trigger: "just-shipped" as const, text: "Finished the records",
+    detail: "Completed within the last twenty-four hours.", evidenceTaskIds: ["completed-task"] };
+  const b = legacyBriefing([], { movingWell: [item], isEmpty: false, readTaskIds: ["completed-task"], triggeredTaskIds: ["completed-task"], readCount: 1, triggeredCount: 1 });
+  const ledger = ledgerFromLegacyBriefing(b, { generatedAtLabel: "Test read", allowedAppOrigin: APP_ORIGIN });
+  assert.equal(ledger.entries.length, 1); assert.equal(ledger.entries[0]!.receipt.evidenceCount, 1);
+});

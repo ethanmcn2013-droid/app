@@ -21,7 +21,7 @@ import { useLabStore } from "@/components/hybrid/store";
 import { useRoomTools } from "@/components/app/room/room-tools-context";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
-import { useWorkspaceMembers } from "@/lib/domain-context";
+import { useActiveWorkspace, useDomain, useWorkspaceMembers } from "@/lib/domain-context";
 import { useAddTask, type NewTaskDefaults } from "@/components/app/add-task/add-task-context";
 import { priorityToLab } from "@/components/hybrid/adapter";
 import type { TasksViewId } from "@/lib/product-urls";
@@ -38,6 +38,7 @@ import { PropertyPicker } from "./property-picker";
 import { DeleteConfirm } from "./delete-confirm";
 import { ShortcutsSheet } from "./shortcuts-sheet";
 import { TasksColumnsProvider } from "./column-config";
+import { PingTypedPanel } from "./ping-typed-panel";
 import { BoardSkeleton, CalendarSkeleton, ListSkeleton } from "./skeletons";
 import styles from "./workspace.module.css";
 
@@ -101,6 +102,8 @@ export function useNewTaskDefaults() {
 function Workspace() {
   const surface = useSurface();
   const store = useLabStore();
+  const activeWorkspace = useActiveWorkspace();
+  const domain = useDomain();
   const tools = useRoomTools();
   const router = useRouter();
   const { taskId, openTask } = useTaskPanel();
@@ -303,6 +306,12 @@ function Workspace() {
             <TasksToolbar searchRef={searchRef} />
             <FilterChips shown={surface.visible.length} total={surface.all.length} />
             <FirstRunHint />
+            <PingTypedPanel
+              projectId={activeWorkspace?.id ?? null}
+              projectName={domain.workspaceName}
+              selectedTaskIds={store.selectedIds}
+              readOnly={surface.readOnly}
+            />
           </div>
         </div>
         <div className={styles.canvas} data-canvas={surface.view}>

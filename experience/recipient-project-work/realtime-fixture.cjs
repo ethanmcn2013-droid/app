@@ -8,24 +8,33 @@ async function until(predicate){for(let i=0;i<100;i++){if(predicate())return;awa
 // A controlled React hook host, not a replacement implementation of the hook
 // or reducer. Dependency changes run old cleanups before new effect setup.
 function hookHost(React) {
-  const slots=[],pending=[],transitions=[];let cursor=0,fn,props,output;
+  const slots=[],pending=[],layouts=[],transitions=[];let cursor=0,fn,props,output;
   const same=(a,b)=>a&&b&&a.length===b.length&&a.every((value,i)=>Object.is(value,b[i]));
   const memo=(make,deps)=>{const index=cursor++,old=slots[index];if(!old||!same(old.deps,deps))slots[index]={deps,value:make()};return slots[index].value;};
+  const schedule=(queue,effect,deps)=>{const index=cursor++,old=slots[index];if(!old||!same(old.deps,deps)){queue.push({index,effect,old});slots[index]={deps};}};
+  const flush=queue=>{const effects=queue.splice(0);for(const item of effects)item.old?.cleanup?.();for(const item of effects)slots[item.index].cleanup=item.effect();};
   const react={...React,
     useRef(value){const index=cursor++;return slots[index]??(slots[index]={current:value});},
     useMemo:memo,useCallback:(callback,deps)=>memo(()=>callback,deps),
-    useEffect(effect,deps){const index=cursor++,old=slots[index];if(!old||!same(old.deps,deps)){pending.push({index,effect,old});slots[index]={deps};}},
+    useEffect:(effect,deps)=>schedule(pending,effect,deps),
+    useLayoutEffect:(effect,deps)=>schedule(layouts,effect,deps),
+    useState(initial){const index=cursor++;if(!slots[index]){
+      const slot={value:typeof initial==='function'?initial():initial};
+      slot.setValue=next=>{const value=typeof next==='function'?next(slot.value):next;if(!Object.is(value,slot.value))slot.value=value;};
+      slots[index]=slot;
+    }return [slots[index].value,slots[index].setValue];},
+    useSyncExternalStore(_subscribe,getSnapshot){cursor++;return getSnapshot();},
     useReducer(reduce,initial){const index=cursor++;if(!slots[index])slots[index]={value:initial,dispatch:action=>{slots[index].value=reduce(slots[index].value,action);}};return [slots[index].value,slots[index].dispatch];},
     startTransition(callback){const promise=Promise.resolve(callback());transitions.push(promise);},
   };
   return {react,transitions,
-    render(nextFn=fn,nextProps=props){fn=nextFn;props=nextProps;cursor=0;output=fn(props);const effects=pending.splice(0);for(const item of effects)item.old?.cleanup?.();for(const item of effects)slots[item.index].cleanup=item.effect();return output;},
+    render(nextFn=fn,nextProps=props){fn=nextFn;props=nextProps;cursor=0;output=fn(props);flush(layouts);flush(pending);return output;},
     unmount(){for(const slot of slots)slot?.cleanup?.();},
   };
 }
 
 async function realtimeFixture() {
-  const f=await recipientFixture(),streams=[],timers=new Map(),reads=[],changes=[],warnings=[];
+  const f=await recipientFixture(),streams=[],timers=new Map(),reads=[],changes=[],dirty=[],warnings=[],refreshes=[];
   await f.client.executeMultiple("INSERT INTO tasks(id,workspace_id,title,lane,priority) VALUES ('a-live','project-a','Only A','todo','p2'),('b-live','project-b','Only B','todo','p2')");
   const host=hookHost(f.React);let timerId=0;
   const clock={setTimeout(fn){const id=++timerId;timers.set(id,fn);return id;},clearTimeout(id){timers.delete(id);},tick(){const callbacks=[...timers.values()];timers.clear();for(const callback of callbacks)callback();}};
@@ -63,21 +72,24 @@ async function realtimeFixture() {
   }};
   const hook=compile('src/lib/tasks/use-realtime-sync.ts',{'@/server/actions/tasks':facade}).useRealtimeSync;
   const board=f.load('src/server/actions/board');
+  const finish=()=>{const done=()=>{};done.cancel=()=>{};return done;};
   const provider=compile('src/lib/tasks/tasks-context.tsx',{
     '@/server/actions/tasks':facade,'./use-realtime-sync':{useRealtimeSync:hook},
     '@/server/actions/board':{...board,moveTaskToColumnAction:async(...args)=>{const result=await board.moveTaskToColumnAction(...args);if(f.afterMove)await f.afterMove();return result;}},
-    '@/lib/tasks/delight-events':{beginTaskSync:()=>()=>{}},
+    '@/lib/tasks/delight-events':{beginTaskSync:finish},
+    'next/navigation':{useRouter:()=>({refresh:()=>refreshes.push('refresh')})},
     '@/components/app/done-dopamine/first-completion-moment':{maybeFireFirstCompletion(){}},
   }).TasksProvider;
   const {tasksReducer,initialTasksState}=f.load('src/lib/tasks/tasks-reducer');
   let state=initialTasksState(await actions.getTasksAction('project-b'));
+  const onDirty=()=>dirty.push('dirty');
   const onChange=fresh=>{changes.push(fresh);state=tasksReducer(state,{type:'hydrate',tasks:fresh});};
-  return {...f,host,clock,streams,timers,reads,changes,warnings,actions,facade,hook,provider,compile,board,onChange,
+  return {...f,host,clock,streams,timers,reads,changes,dirty,refreshes,warnings,actions,facade,hook,provider,compile,board,onDirty,onChange,
     set afterRead(callback){f.afterRead=callback;},
     set afterMove(callback){f.afterMove=callback;},
     get reducerState(){return state;},
     resetState(tasks){state=initialTasksState(tasks);},
-    close(){host.unmount();f.close();},
+    close(){host.unmount();return f.close();},
   };
 }
 module.exports={realtimeFixture,deferred,until};

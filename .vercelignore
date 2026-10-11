@@ -1,9 +1,20 @@
-# Mirrors .gitignore for sensitive bits but keeps tasks.db in the
-# upload — the seeded DB is the source of truth on Vercel until we
-# wire a persistent libsql/Turso URL.
+# Private environment inputs and local operator/SQLite fixtures are excluded.
+# Release uploads still require the root-owned clean, reviewed source export.
 node_modules
 .next
-.env*.local
+.env*
 .DS_Store
 *.log
 .vercel
+
+# Local operator/SQLite fixtures never enter a source upload.
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+/work/

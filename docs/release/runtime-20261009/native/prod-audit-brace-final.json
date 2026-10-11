@@ -1,0 +1,19 @@
+{
+  "label": "prod-audit-brace-final",
+  "head": "09ac5d4c8eac04f4c80cb3f10cf0c403f709c374",
+  "tree": "8d7c29283f5c991fbe7cdaa425b550c22d6b32d3",
+  "node": "v22.23.2",
+  "args": [
+    "D:/Codex-scratch/corepack/v1/pnpm/11.9.0/bin/pnpm.cjs",
+    "audit",
+    "--prod",
+    "--json"
+  ],
+  "startedAt": "2026-10-09T20:27:42.753Z",
+  "endedAt": "2026-10-09T20:27:46.535Z",
+  "exitCode": 1,
+  "signal": null,
+  "error": null,
+  "passed": false,
+  "log": "D:\\Codex-scratch\\release-all-20261009\\runtime-aggregation\\receipts\\prod-audit-brace-final.log"
+}

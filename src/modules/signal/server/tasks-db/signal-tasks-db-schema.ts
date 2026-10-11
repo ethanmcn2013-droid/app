@@ -50,6 +50,8 @@ export const tasks = sqliteTable("tasks", {
   /** T·122: when the task last became done; the durable stamp Signal
    *  prefers before reconstructing completion from the activity log. */
   completedAt: integer("completed_at", { mode: "timestamp" }),
+  archivedAt: integer("archived_at", { mode: "timestamp" }),
+  parentTaskId: text("parent_task_id"),
 });
 
 export const workspaces = sqliteTable("workspaces", {
