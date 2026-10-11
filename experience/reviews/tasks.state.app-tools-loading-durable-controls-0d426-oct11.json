@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-tools-loading",
+  "source": "tasks/src/app/app/tools/loading.tsx",
+  "materialityHash": "45e0fc19aaf3ca48",
+  "reviewedAt": "2026-10-11",
+  "reviewer": "ping_final_review",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-d233be0b967d0aafb29be990-d0dea667c814b832.json",
+    "attestationSha256": "ef1a5911b3940898aa9be779571f0015ec244dcc311b21a6f00db11a4aac21b0",
+    "runId": "tasks-playwright-d233be0b967d0aafb29be990",
+    "canonicalEvidenceSha256": "d233be0b967d0aafb29be9906ac9e2a0f4c13b6225d7304f3fe0b958b9356e13",
+    "rawArtifactSha256": "d0dea667c814b83248b877810d051ec70c90d91e2697cd4ccaebf03928054bde",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.state.app-tools-loading",
+    "caseName": "actual component with deterministic local inputs",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Fresh source 0d426 capture and independent current-source materiality review; do not reuse prior 4c4d capture qualification.",
+  "decision": "Root delegated acceptance: independent d4eb9fbf reviewed all 196 actual current-source captures. Accept bounded synthetic rendering with recorded mobile-width, footer-overlay, empty-search and unavailable-activity limitations. No genuine authentication, production activation or voice qualification inferred."
+}

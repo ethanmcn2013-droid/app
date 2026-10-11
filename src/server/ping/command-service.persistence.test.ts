@@ -265,6 +265,26 @@ test("lost response recovery, same-key conflict and same-adapter concurrent retr
   } finally { f.client.close(); }
 });
 
+test("fresh authorization and semantic rejection precede maintained admission, while authorized replay bypasses it", async () => {
+  const f = await createPingProofFixture(); let admissions = 0;
+  try {
+    const command = proofCommand(1600), plain = createPingCommandService(f.adapter, options);
+    const committed = await plain.execute({ command, context: proofContext(command) }); assert.ok(committed.ok);
+    const guarded = createPingCommandService(f.adapter, { ...options, admitNewCommand: async () => { admissions++; return false; } });
+    const replay = await guarded.execute({ command, context: proofContext(command) }); assert.ok(replay.ok && replay.replayed);
+    const changed = proofCommand(1600, {}, 2);
+    assert.deepEqual(await guarded.execute({ command: changed, context: proofContext(changed) }),
+      { ok: false, reason: "request_conflict" });
+    assert.equal(admissions, 0);
+    const next = proofCommand(1601);
+    await f.client.execute("DELETE FROM workspace_members WHERE user_id='alice'");
+    assert.deepEqual(await guarded.execute({ command: next, context: proofContext(next) }), { ok: false, reason: "unavailable" });
+    assert.equal(admissions, 0, "fresh auth denial is not bypassed by an admission callback");
+    assert.equal(await proofCount(f.client, "tasks"), 1);
+    assert.equal(await proofCount(f.client, "ping_command_receipts"), 1);
+  } finally { f.client.close(); }
+});
+
 test("independent file contention fails closed; fresh-process recovery retains identity and current auth", () => {
   const worker=resolve("scripts/ping/proof-contention-worker.ts");
   const run=(args:string[])=>spawnSync(process.execPath,["--import","tsx","--import","./src/test/register-server-only.mjs",worker,...args],{encoding:"utf8",timeout:30000});
