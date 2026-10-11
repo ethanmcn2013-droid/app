@@ -165,8 +165,9 @@ try {
   await page.getByRole('checkbox',{name:'Select Synthetic target',exact:true}).waitFor();
   const countReceipts=async()=>Number((await fixture.client.execute('SELECT COUNT(*) AS n FROM ping_command_receipts')).rows[0].n);
   const targetRow=async()=>(await fixture.client.execute("SELECT assignees,lane,due,start_day,duration_days FROM tasks WHERE id='target'")).rows[0];
-  const waitForNativeUpload=async()=>{const deadline=Date.now()+10000;while(!state.uploaded.length){assert.ok(Date.now()<deadline,'Actual native PCM did not reach binary HTTP');await new Promise(resolve=>setTimeout(resolve,10));}};
-  const startVoice=async()=>{await page.getByTestId('ping-voice-start').click();await page.getByTestId('ping-voice-phase').filter({hasText:'listening'}).waitFor();await waitForNativeUpload();assert.ok(state.uploaded.length>0,'Actual native PCM reaches binary HTTP before Finish');};
+  // Earlier captures remain in this ledger; only a new upload witnesses this Start.
+  const waitForNativeUpload=async(afterCount=0)=>{const deadline=Date.now()+10000;while(state.uploaded.length<=afterCount||!await page.evaluate(()=>document.querySelector('[data-testid=ping-voice-finish]')?.disabled===false)){assert.ok(Date.now()<deadline,'Current capture native PCM and enabled Finish did not become ready');await new Promise(resolve=>setTimeout(resolve,10));}};
+  const startVoice=async()=>{const beforeUploads=state.uploaded.length;await page.getByTestId('ping-voice-start').click();await page.getByTestId('ping-voice-phase').filter({hasText:'listening'}).waitFor();await waitForNativeUpload(beforeUploads);assert.ok(state.uploaded.length>beforeUploads,'Current capture native PCM reaches binary HTTP before Finish');};
   const finishVoice=async()=>{await page.getByTestId('ping-voice-finish').evaluate(button=>{button.click();button.click();});};
   const waitSaved=async()=>{await page.getByTestId('ping-voice-receipt').waitFor();await page.waitForFunction(()=>window.pingObserved.find(task=>task.id==='target')?.lane==='doing');};
   const focusObservation=async(label)=>{
@@ -391,9 +392,10 @@ try {
   receipt.cases.push({name:'synthetic Start storage refusal prevents microphone/upload/model/execution and cancels the captured original',passed:true});
   await page.evaluate(()=>{window.pingStorageFailure='finish';});
   const retryBegin=page.waitForResponse(response=>response.url()===origin+'/api/ping'&&response.request().postDataJSON().action==='begin');
+  const retryUploadBaseline=state.uploaded.length;
   await tabTo(page.getByTestId('ping-voice-start'),'storage-retry Start');await page.keyboard.press('Enter');
   const retryCaptured=await (await retryBegin).json();assert.notEqual(retryCaptured.commandId,storageCaptured.commandId,'Fresh identity follows actual old-original not_invoked acknowledgement');
-  await page.getByTestId('ping-voice-phase').filter({hasText:'listening'}).waitFor();await waitForNativeUpload();
+  await page.getByTestId('ping-voice-phase').filter({hasText:'listening'}).waitFor();await waitForNativeUpload(retryUploadBaseline);
   const finishRequests=state.requests.filter(action=>action==='finish').length;
   await tabTo(page.getByTestId('ping-voice-finish'),'storage-failed Finish');await page.keyboard.press('Space');
   await page.getByTestId('ping-voice-status').filter({hasText:'Finish was not sent'}).waitFor();
