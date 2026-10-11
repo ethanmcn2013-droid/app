@@ -1,5 +1,11 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-11 · T·158 · tightens · Keep completed prerequisite names out of dependency explanations
+
+**Briefing dependency explanations retain completion counts while keeping completed prerequisite names out of their supporting prose.** Open prerequisites remain named. Independently recorded completions and comments retain their own meaning, and authorized internal evidence membership is preserved. This changes contextual wording rather than access permissions.
+
+The focused five-file candidate receives the two new commits from reopened PR 207 onto the combined release source. Its focused tests passed; fresh rendered evidence, final receiving and production acceptance remain pending. The earlier staged artifact does not contain this repair.
+
 ## 2026-10-10 · T·157 · Candidate · Runtime receiving and Redis rate protection
 
 The App candidate brings together Tasks refresh and recovery safeguards, Home and briefing safeguards, conversation ownership checks, review-only concept previews, and disabled Ping and sponsor reporting source. Redis checks distinguish an unavailable service from a caller's quota, with redemption and configured Timeline checks failing closed and AI/extraction retaining its best-effort policy. The existing test runner retains every prior gate and adds the isolated Redis and health-script checks.

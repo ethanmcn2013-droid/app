@@ -54,7 +54,7 @@ export function enrichRelationshipCandidates(candidates: Triggered[], signals: T
     };
     const sentences: string[] = [];
     if (open.length) sentences.push(`Listed prerequisites still open: ${describe(open)}.`);
-    if (complete.length) sentences.push(`Listed prerequisites ${!open.length && !partial ? "are complete" : "verified complete"}: ${describe(complete)}.`);
+    if (complete.length) sentences.push(`Listed prerequisites ${!open.length && !partial ? "are complete" : "verified complete"}: ${complete.length} prerequisite${complete.length === 1 ? "" : "s"}.`);
     if (complete.length && !open.length && !partial) sentences.push("It is no longer held up by that listed work.");
     if (partial) sentences.push("Its prerequisites could not be fully verified. It is not confirmed clear to move ahead on that work. The unverified prerequisites' state is unknown.");
     facts.detail = sentences.join(" ");
@@ -64,8 +64,9 @@ export function enrichRelationshipCandidates(candidates: Triggered[], signals: T
         "Its prerequisites could not be fully verified. It is not confirmed clear to move ahead on that work."] : []),
       ...(!open.length && complete.length && !partial ? ["Its listed prerequisites are complete. It is no longer held up by that listed work."] : [])].join(" ");
     facts.namedEvidence = ordered.flatMap(record => {
+      if (record.complete) return [];
       const title = visible.get(record.id)?.title;
-      return title === undefined ? [] : [`${record.complete ? "Complete" : "Open"} prerequisite: “${title}”.`];
+      return title === undefined ? [] : [`Open prerequisite: “${title}”.`];
     });
     facts.totalFacts = ordered.length + unknownCount;
     return facts;
