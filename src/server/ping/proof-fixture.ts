@@ -23,16 +23,32 @@ export async function createPingProofFixture() {
   const client = createClient({ url: `file:${databasePath.replaceAll("\\", "/")}` });
   try {
     await client.execute("PRAGMA foreign_keys = ON");
-    for (const name of (await readdir(resolve("drizzle"))).filter(name => /^\d{4}_.+\.sql$/.test(name) && name >= "0014_").sort()) {
+    const migrationFiles = (await readdir(resolve("drizzle"))).filter(name => /^\d{4}_.+\.sql$/.test(name) && name >= "0014_").sort();
+    const hasPingReceiptMigration = migrationFiles.includes("0041_ping_command_receipts.sql");
+    for (const name of migrationFiles) {
       await client.executeMultiple(await readFile(join(resolve("drizzle"), name), "utf8"));
     }
     assert.equal(Number((await client.execute("PRAGMA foreign_keys")).rows[0].foreign_keys), 1);
-    // Receipt schema deliberately lives in the disposable fixture, not drizzle/ or production schema.
-    await client.execute(`CREATE TABLE ping_command_receipts (
-      actor_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      command_id TEXT NOT NULL, project_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
-      plan_hash TEXT NOT NULL, receipt_json TEXT NOT NULL CHECK(json_valid(receipt_json)),
-      committed_at INTEGER NOT NULL, PRIMARY KEY(actor_id,command_id))`);
+    // Keep older-main fixtures usable while letting the canonical migration own this schema when present.
+    if (!hasPingReceiptMigration) {
+      await client.execute(`CREATE TABLE ping_command_receipts (
+        actor_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        command_id TEXT NOT NULL, project_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        plan_hash TEXT NOT NULL, receipt_json TEXT NOT NULL CHECK(json_valid(receipt_json)),
+        committed_at INTEGER NOT NULL, PRIMARY KEY(actor_id,command_id))`);
+    }
+    const receiptColumns = await client.execute("PRAGMA table_info('ping_command_receipts')");
+    assert.deepEqual(receiptColumns.rows.map(row => [String(row.name), String(row.type).toUpperCase(), Number(row.notnull), Number(row.pk)]), [
+      ["actor_id", "TEXT", 1, 1], ["command_id", "TEXT", 1, 2], ["project_id", "TEXT", 1, 0],
+      ["plan_hash", "TEXT", 1, 0], ["receipt_json", "TEXT", 1, 0], ["committed_at", "INTEGER", 1, 0],
+    ]);
+    const receiptForeignKeys = await client.execute("PRAGMA foreign_key_list('ping_command_receipts')");
+    assert.deepEqual(receiptForeignKeys.rows.map(row => [String(row.table), String(row.from), String(row.to), String(row.on_delete).toUpperCase()]).sort(), [
+      ["users", "actor_id", "id", "CASCADE"], ["workspaces", "project_id", "id", "CASCADE"],
+    ]);
+    const receiptTable = await client.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='ping_command_receipts'");
+    assert.equal(receiptTable.rows.length, 1);
+    assert.match(String(receiptTable.rows[0].sql).toLowerCase().replaceAll(/[\s`\"]+/g, ""), /check\(json_valid\(receipt_json\)\)/);
     await client.execute({sql:"INSERT INTO meta(key,value) VALUES(?,?)",args:[PROOF_FIXTURE_MARKER_KEY,PROOF_FIXTURE_MARKER_VALUE]});
     for (const id of ["owner", "alice", "bob", "outsider"]) {
       await client.execute({ sql: "INSERT INTO users(id,clerk_id,name,color,initials) VALUES(?,?,?,'#111','SS')", args: [id, `clerk_${id}`, id] });
