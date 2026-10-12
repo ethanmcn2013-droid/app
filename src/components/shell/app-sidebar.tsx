@@ -29,6 +29,7 @@ import { ShellIcon } from "./shell-icons";
 import { useFaviconBadge } from "./favicon-badge";
 import { SIGNAL_INDIGO, suiteMarkMetrics } from "@/lib/brand/suite-mark";
 import { CHAT_ENABLED_ATTRIBUTE, openPalette, ThemeCycleButton, useShell, useShortcutLabel } from "./app-shell";
+import { ProjectMarker, SidebarIcon, type SidebarIconName } from "./sidebar-icon";
 import {
   activeDestinationId,
   BUILD_DESTINATIONS,
@@ -48,6 +49,20 @@ import styles from "./shell.module.css";
    colour never reads as a warning or as late work next to a red count;
    people can still pick them by hand. */
 const PROJECT_HUES = [1, 2, 3, 4, 9].map((n) => `var(--v3-project-${n})`);
+/** Sidebar rows drawn with the approved "solid when selected" set. */
+const SIDEBAR_ICON: Partial<Record<ShellDestination["icon"], SidebarIconName>> = {
+  home: "home",
+  projects: "projects",
+  tasks: "tasks",
+  timeline: "timeline",
+  files: "files",
+  analytics: "analytics",
+  automations: "automations",
+  whiteboard: "whiteboard",
+  messages: "chat",
+  settings: "settings",
+};
+
 export function projectColor(id: string): string {
   let hash = 0;
   for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) >>> 0;
@@ -197,6 +212,7 @@ export function AppSidebar({
 
   const link = (destination: ShellDestination, extra?: React.ReactNode, current = activeId === destination.id) => {
     const Icon = ShellIcon[destination.icon];
+    const sidebarIcon = SIDEBAR_ICON[destination.icon];
     const href = destination.id === "tasks" || destination.id === "notes" || destination.id === "timeline" || destination.id === "projects"
       ? withSuiteContext(destination.href, suiteContext)
       : destination.href;
@@ -209,7 +225,7 @@ export function AppSidebar({
         title={collapsed ? destination.label : undefined}
         onClick={() => setMobileOpen(false)}
       >
-        <Icon />
+        {sidebarIcon ? <SidebarIcon name={sidebarIcon} selected={current} /> : <Icon />}
         <span className={styles.itemLabel}>{destination.label}</span>
         {destination.soon ? (
           <span className={styles.soonTag}>
@@ -258,11 +274,7 @@ export function AppSidebar({
   const projectRow = (row: ChooserRow) => {
     const current = row.id === currentProjectId;
     const mark = marks[row.id];
-    const tile = (
-      <span className={styles.projectSquare} style={{ backgroundColor: projectColor(row.id) }} aria-hidden="true">
-        {row.monogram.slice(0, 1)}
-      </span>
-    );
+    const tile = <ProjectMarker color={projectColor(row.id)} />;
     const dot = mark ? <span className={styles.statusDot} data-tone={mark} title={SIDEBAR_MARK_LABEL[mark]} aria-hidden="true" /> : null;
     const name = `${row.accessibleName}${mark ? `, ${SIDEBAR_MARK_LABEL[mark].toLowerCase()}` : ""}${current ? ", open now" : ""}`;
     if (!row.selectable) {
@@ -315,7 +327,7 @@ export function AppSidebar({
             </span>
             {entry.online ? <span className={styles.presence} /> : null}
           </span>
-        ) : entry.kind === "task" ? <ShellIcon.thread /> : <ShellIcon.hash />}
+        ) : entry.kind === "task" ? <ShellIcon.thread /> : <SidebarIcon name="channel" selected={current} />}
         <span className={styles.itemLabel}>
           {entry.title}
           {entry.online ? <span className="sr-only">, online</span> : null}
@@ -350,12 +362,12 @@ export function AppSidebar({
           aria-pressed={collapsed}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          <ShellIcon.sidebar />
+          <SidebarIcon name="collapse" />
         </button>
       </div>
 
       <button type="button" className={styles.searchTrigger} onClick={() => openPalette()} aria-label="Search or jump to" title={collapsed ? "Search or jump to" : undefined}>
-        <ShellIcon.search />
+        <SidebarIcon name="search" />
         <span>Search or jump to…</span>
         <kbd className={styles.kbd}>{shortcut}</kbd>
       </button>
@@ -433,7 +445,7 @@ export function AppSidebar({
                 groupById("chat"),
                 // Not a link and not in the tab order: there is nowhere to go yet.
                 <div className={`${styles.item} ${styles.comingRow}`}>
-                  <ShellIcon.messages />
+                  <SidebarIcon name="chat" />
                   <span className={styles.itemLabel}>Conversations</span>
                   <span className={styles.soonTag}>Coming soon</span>
                 </div>,
@@ -449,9 +461,9 @@ export function AppSidebar({
             aria-label="Help and feedback"
             title="Help and feedback"
           >
-            <ShellIcon.help />
+            <SidebarIcon name="help" />
           </a>
-          <ThemeCycleButton className={styles.iconButton} />
+          <ThemeCycleButton className={styles.iconButton} sidebar />
         </div>
       </div>
     </aside>

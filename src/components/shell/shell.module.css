@@ -1036,3 +1036,29 @@
   .accountButton { width: 44px; height: 44px; }
   .accountMenu a, .accountMenu button { height: 44px; }
 }
+
+/* ── Approved sidebar icons, "solid when selected" (12 Oct 2026) ─────
+   Outline at rest, solid on the page you are on. No indigo in navigation:
+   the solid fill and the row highlight carry the selection. */
+.item svg[data-selected] { color: var(--v3-text); }
+
+/* A project: a square tinted with its own colour and a dot of it. */
+.projectMarker {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--project) 16%, transparent);
+}
+.projectMarkerDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--project);
+}
+
+/* The open project is shown by the normal row highlight, not a marker. */
+.item[data-current-project] { background: color-mix(in srgb, var(--v3-text) 9%, transparent); }
+.shell[data-collapsed] .item[data-current-project] { box-shadow: none; }
