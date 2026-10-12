@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-settings",
+  "source": "tasks/src/app/app/settings/page.tsx",
+  "materialityHash": "3fcba4d3b2bb4dcf",
+  "reviewedAt": "2026-10-12",
+  "reviewer": "ping_final_review",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-ce86af3f7441e5419432c81e-1e492db5d14108dc.json",
+    "attestationSha256": "d929d9ddcb7117985bcbcba3166124ed7c7b75bc9a0d1ebe82f434a765e9321c",
+    "runId": "tasks-playwright-ce86af3f7441e5419432c81e",
+    "canonicalEvidenceSha256": "ce86af3f7441e5419432c81ee87f6bb17cc669d71a020b05e70e88cdc4edc79d",
+    "rawArtifactSha256": "1e492db5d14108dc8f7da888b8bf69b7507b9206c991e44c0b905c1874463daa",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-settings",
+    "caseName": "own surface in demo",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Relinked for Wedding tools: the guest list (PR #274), merged with main after the light-wide change; the capture re-ran 196 of 196 against the merged source. The earlier receipt stays at experience/reviews/2026-10-12-light-wide-2/receipts/tasks.page.app-settings-materiality.json; its reviewed change read: Relinked after main (sidebar icons) was merged into the white light mode and full-width change; the capture re-ran 196 of 196 against the merged source. The earlier receipt stays at experience/reviews/2026-10-12-light-wide/receipts/tasks.page.app-settings-materiality.json; its reviewed change read: Re-linked on 12 October 2026 to the full green critical run of the light-mode and full-width change (196 of 196, experience/evidence-runs/tasks-playwright-eb0571aed82f2624166e3ddf-bdd79c0e83857be9.json). That change refreshed the rendered source inputs in the fixture manifest for the files it touches, and a receipt is bound to the manifest. This source and its reviewed hash are unchanged. The earlier receipt stays at experience/reviews/tasks.page.app-settings-durable-controls-0d426-oct11.json; its reviewed change read: Fresh source 0d426 capture and independent current-source materiality review; do not reuse prior 4c4d capture qualification.",
+  "decision": "Root delegated acceptance: independent d4eb9fbf reviewed all 196 actual current-source captures. Accept bounded synthetic rendering with recorded mobile-width, footer-overlay, empty-search and unavailable-activity limitations. No genuine authentication, production activation or voice qualification inferred."
+}

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ShellIcon } from "@/components/shell/shell-icons";
 import styles from "./wedding.module.css";
 
 /** The page frame every guest-list state shares, so nothing jumps on arrival. */
