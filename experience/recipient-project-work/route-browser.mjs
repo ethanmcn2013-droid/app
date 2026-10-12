@@ -241,12 +241,14 @@ try {
         if(width===390){
           f.state.v3=true;f.cookies();
           // v3: the shell owns navigation, and /app/project is the Projects
-          // index above the open Project's overview. Creating a Project starts
-          // from the page's own "New project" button, not a Tasks drawer.
+          // index; the open Project is a row in it (its overview no longer
+          // sits below the list, 12 Oct 2026). Creating a Project starts from
+          // the page's own "New project" button, not a Tasks drawer.
           await page.goto(origin+'/app/project?workspaceId=project-b');
           assert.equal(new URL(page.url()).pathname,'/app/project');
           await page.getByRole('heading',{name:'Projects',level:1,exact:true}).waitFor();
-          await page.getByRole('heading',{name:'B arrival board',exact:true}).waitFor();
+          await page.getByText('Arrival project B',{exact:true}).first().waitFor();
+          assert.equal(await page.getByRole('heading',{name:'B arrival board',exact:true}).count(),0);
           const trigger=page.getByRole('button',{name:'New project',exact:true});
           await trigger.waitFor();
           assert.equal(await trigger.isVisible(),true);
@@ -265,10 +267,9 @@ try {
           const longName='Monthly business rhythm for a very long local project name';
           await f.client.execute({sql:"UPDATE meta SET value=? WHERE key='board:project-b:name'",args:[longName]});
           await page.reload();
-          const longHeading=page.getByRole('heading',{name:longName,exact:true});
-          await longHeading.waitFor();
-          assert.equal(await longHeading.evaluate(element=>element.scrollWidth<=element.clientWidth+1),true);
-          assert.equal(await longHeading.evaluate(element=>element.scrollHeight>Number.parseFloat(getComputedStyle(element).fontSize)*1.5),true);
+          // The overview heading this once measured is gone (12 Oct 2026); the
+          // page itself must still hold a long name without sideways scroll.
+          await page.getByRole('heading',{name:'Projects',level:1,exact:true}).waitFor();
           assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
           assert.equal(await page.getByRole('button',{name:'New project',exact:true}).isVisible(),true);
           await evidence('tasks.page.app-project','mobile-long-project-name');
