@@ -1,5 +1,11 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-12 · Redesign candidate · The approved sidebar icons, solid when selected
+
+The sidebar now draws every row from the approved icon set: Home, Projects, Tasks, Timeline, Files, Analytics, Automations, Whiteboard, All conversations, each chat channel, Settings, and the collapse, search, help and theme buttons. A row shows a grey outline; the page you are on shows the same icon filled in solid, with its inner details cut out. Navigation no longer uses indigo for the page you are on: the solid icon and the row highlight say it. Each project in the Projects list now has one marker, a square tinted with its colour and a dot of it in the middle, in place of the letter squares, and the open project is shown by the row highlight.
+
+The approved source set (outline and solid SVGs and their notes) is kept in `docs/design/sidebar-icons/`, and a contract test fails if a sidebar row goes back to another icon. No server action, read, schema change or dependency was added. Not yet released: it ships with the next guarded release.
+
 ## 2026-10-11 · T·158 · tightens · Keep completed prerequisite names out of dependency explanations
 
 **Briefing dependency explanations retain completion counts while keeping completed prerequisite names out of their supporting prose.** Open prerequisites remain named. Independently recorded completions and comments retain their own meaning, and authorized internal evidence membership is preserved. This changes contextual wording rather than access permissions.
