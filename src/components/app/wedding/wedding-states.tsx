@@ -53,25 +53,6 @@ export function WeddingUnavailable({ kind, projectName }: { kind: "no-project" |
   );
 }
 
-export function WeddingError({ digest, onRetry }: { digest?: string; onRetry: () => void }) {
-  return (
-    <Frame summary="Everyone you are inviting, who has replied, and what they will eat.">
-      <section className={styles.empty} role="alert">
-        <h2 className={styles.emptyTitle}>The guest list didn&rsquo;t load</h2>
-        <p className={styles.emptyBody}>Nothing was changed and every guest is still on the list. Try again in a moment.</p>
-        {digest ? <p className={styles.emptyHint}>Reference {digest}</p> : null}
-        <div className={styles.emptyActions}>
-          <button type="button" className={styles.btnPrimary} onClick={onRetry}>Try again</button>
-          <Link href="/app/tasks" className={styles.btn}>
-            <ShellIcon.tasks size={14} />
-            Open Tasks
-          </Link>
-        </div>
-      </section>
-    </Frame>
-  );
-}
-
 export function GuestListSkeleton() {
   return (
     <div className={`${styles.page} thin-scroll`} aria-busy="true" aria-label="Loading the guest list">

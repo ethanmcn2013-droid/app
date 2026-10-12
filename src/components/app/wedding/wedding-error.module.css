@@ -1,0 +1,16 @@
+/* The guest list's error boundary, on its own small stylesheet so the
+   client bundle does not carry the whole guest list's class map twice. */
+.page { flex: 1; min-height: 0; overflow: auto; background: var(--v3-canvas); color: var(--v3-text); }
+.inner { max-width: var(--v3-page-w); margin: 0 auto; padding: 28px 32px 64px; }
+@media (max-width: 640px) { .inner { padding: 20px 16px 48px; } }
+.eyebrow { margin-bottom: 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; color: var(--v3-text-3); }
+.title { font-size: 24px; line-height: 1.15; font-weight: 640; letter-spacing: -0.02em; }
+.empty { display: flex; flex-direction: column; align-items: center; margin-top: 24px; padding: 56px 24px; text-align: center; border: 1px solid var(--v3-border); border-radius: var(--v3-radius-xl); background: var(--v3-surface); }
+.emptyTitle { font-size: 18px; font-weight: 640; }
+.emptyBody { max-width: 520px; margin-top: 8px; font-size: 14px; line-height: 1.6; color: var(--v3-text-2); }
+.hint { margin-top: 12px; font-size: 12.5px; color: var(--v3-text-3); }
+.actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 20px; }
+.btn, .btnPrimary { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 14px; border: 1px solid transparent; border-radius: 10px; font-size: 13.5px; font-weight: 550; cursor: pointer; }
+.btn { border-color: var(--v3-border-strong); background: var(--v3-surface); color: var(--v3-text); }
+.btnPrimary { background: var(--v3-accent); color: var(--v3-on-accent); }
+.btn:focus-visible, .btnPrimary:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: 2px; }
