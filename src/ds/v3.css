@@ -16,19 +16,19 @@
 
 html:root {
   /* ── v3 semantic: light ─────────────────────────────────────────── */
-  --v3-shell: #f4f3f1;
+  --v3-shell: #ffffff;
   /* App chrome (sidebar and the frame around the page): ink in both themes. */
   --v3-chrome: #141414;
   --v3-canvas: #ffffff;
   --v3-surface: #ffffff;
-  --v3-sunken: #f8f7f5;
-  --v3-hover: rgba(24, 20, 14, 0.045);
+  --v3-sunken: #f7f7f7;
+  --v3-hover: rgba(20, 20, 20, 0.045);
   --v3-selected: #ffffff;
-  --v3-border: #e8e6e3;
-  --v3-border-strong: #d9d6d1;
+  --v3-border: #e7e7e7;
+  --v3-border-strong: #d6d6d6;
   --v3-text: #141414;
-  --v3-text-2: #4a4946; /* a visible step above text-3 */
-  --v3-text-3: #6b6964; /* 4.9:1 on the shell grey; AA for small text */
+  --v3-text-2: #474747; /* a visible step above text-3 */
+  --v3-text-3: #686868; /* 5.6:1 on white; AA for small text */
   --v3-accent: #4f46e5;
   --v3-accent-hover: #4338ca;
   --v3-accent-soft: rgba(79, 70, 229, 0.1);
@@ -53,9 +53,9 @@ html:root {
   --v3-review-soft: color-mix(in srgb, var(--v3-review) 14%, transparent);
   --v3-accent-text: var(--v3-accent);
   /* Neutral chip fill that reads as raised, not sunken, on surfaces. */
-  --v3-fill: #f1f0ee;
+  --v3-fill: #f1f1f1;
   /* 3:1 non-text contrast for unchecked rings, checkboxes and strokes. */
-  --v3-control-border: #898783;
+  --v3-control-border: #878787;
   --v3-warning-stroke: #b87d14;
   --v3-row-selected: color-mix(in srgb, var(--v3-accent) 6%, var(--v3-surface));
   --v3-scrim: rgba(10, 10, 12, 0.36);
@@ -69,7 +69,7 @@ html:root {
   --v3-kind-slides: #e2711d;
   --v3-kind-design: #7c5cf5;
   --v3-kind-link: #0c8c98;
-  --v3-kind-neutral: #5f5e5b;
+  --v3-kind-neutral: #5e5e5e;
   /* Project identity tiles: white initials pass AA on every hue. */
   --v3-project-1: #4f46e5;
   --v3-project-2: #2563eb;
@@ -85,31 +85,31 @@ html:root {
   --v3-tap: 44px;
   --x-accent-focus: var(--v3-accent);
 
-  --v3-shadow-1: 0 1px 2px rgba(20, 18, 14, 0.06);
-  --v3-shadow-pop: 0 8px 28px rgba(20, 18, 14, 0.12), 0 0 0 1px var(--v3-border);
+  --v3-shadow-1: 0 1px 2px rgba(20, 20, 20, 0.06);
+  --v3-shadow-pop: 0 8px 28px rgba(20, 20, 20, 0.12), 0 0 0 1px var(--v3-border);
   --v3-radius-sm: 6px;
   --v3-radius: 8px;
   --v3-radius-lg: 12px;
   --v3-radius-xl: 16px;
   --v3-sidebar-w: 248px;
-  /* The page column every /app page centres its content in. One number, so
-     Home, Tasks, Files and the Projects console share an edge at any width
-     (was 1180px on most pages and 1320px on Projects). */
-  --v3-page-w: 1320px;
+  /* The page column every /app page lays its content in. Full width since
+     12 Oct 2026 (founder: no dead space beside a centred column); each page
+     keeps its own side gutter, so every view shares one edge at any width. */
+  --v3-page-w: 100%;
   --v3-topbar-h: 48px;
   --v3-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   /* ── legacy base tokens → v3 (every existing surface) ───────────── */
   --paper: var(--v3-canvas);
-  --paper-soft: #faf9f7;
+  --paper-soft: #ffffff;
   --paper-deep: var(--v3-shell);
   --ink: var(--v3-text);
-  --ink-soft: #3d3c39;
+  --ink-soft: #3c3c3c;
   --ink-quiet: var(--v3-text-2);
   --ink-faint: var(--v3-text-3);
   --ink-ghost: var(--v3-border-strong);
-  --hairline: rgba(24, 20, 14, 0.1);
-  --hairline-soft: rgba(24, 20, 14, 0.06);
+  --hairline: rgba(20, 20, 20, 0.1);
+  --hairline-soft: rgba(20, 20, 20, 0.06);
   --accent: var(--v3-accent);
   --accent-hover: var(--v3-accent-hover);
   --accent-tint: #eef0ff;
@@ -191,41 +191,36 @@ html:root[data-theme="dark"] {
   --accent-glow: rgba(139, 135, 248, 0.3);
 }
 
-/* ── v3 semantic: light, inside the signed-in app ─────────────────────
+/* Light inside the app (founder, 12 Oct 2026): only white, ink and indigo.
    data-theme is written only on /app documents (src/app/app/theme-runtime.tsx),
-   so this block never reaches marketing, the auth stage or a shared link:
-   those keep the html:root values above, byte for byte.
+   so this block never reaches marketing, the auth stage or a shared link.
 
-   Light used to paint the page and every card the same white, held apart by
-   a 1.25:1 hairline, so a dashboard read as loose text on a blank sheet
-   (founder review, 5 Oct 2026). It now has the same three steps the dark
-   theme has: a tinted page, white raised surfaces a step above it, and a
-   border that reads as an edge on both.
+   The page and every card are white; there is no paper or warm grey. Cards
+   are held apart by a neutral border, and every grey is a tint of the ink
+   (#141414), never a warm one. This replaces the tinted page of 5 Oct.
 
-     page  #f6f5f2   card  #ffffff (1.09:1 on the page; dark is 1.08:1)
-     border #dcd9d3  (1.30:1 on the page, 1.42:1 on a card; dark is 1.22:1) */
+     page #ffffff   card #ffffff   border #e3e3e3   sunken #f5f5f5 */
 html:root[data-theme="light"] {
-  --v3-shell: #eceae6;
-  --v3-canvas: #f6f5f2;
+  --v3-shell: #ffffff;
+  --v3-canvas: #ffffff;
   --v3-surface: #ffffff;
-  --v3-sunken: #eeece8;
-  --v3-hover: rgba(24, 20, 14, 0.055);
+  --v3-sunken: #f5f5f5;
+  --v3-hover: rgba(20, 20, 20, 0.05);
   --v3-selected: #ffffff;
-  --v3-border: #dcd9d3;
-  --v3-border-strong: #c6c2ba;
-  --v3-text-3: #63615c; /* 5.6:1 on the page, 5.2:1 on the sunken step */
-  --v3-fill: #eceae6;
-  --v3-shadow-1: 0 1px 2px rgba(20, 18, 14, 0.07), 0 1px 1px rgba(20, 18, 14, 0.04);
-  --v3-shadow-pop: 0 10px 32px rgba(20, 18, 14, 0.16), 0 0 0 1px var(--v3-border-strong);
+  --v3-border: #e3e3e3;
+  --v3-border-strong: #cccccc;
+  --v3-text-3: #636363; /* 5.9:1 on white, 5.5:1 on the sunken step */
+  --v3-fill: #f0f0f0;
+  --v3-shadow-1: 0 1px 2px rgba(20, 20, 20, 0.07), 0 1px 1px rgba(20, 20, 20, 0.04);
+  --v3-shadow-pop: 0 10px 32px rgba(20, 20, 20, 0.16), 0 0 0 1px var(--v3-border-strong);
 
-  /* The older surfaces follow: their page is the tinted page, their raised
-     step is white, as in the dark theme (page = canvas, raised = surface). */
+  /* The older surfaces follow: page, raised step and deep step are white. */
   --paper: var(--v3-canvas);
   --paper-soft: var(--v3-surface);
   --paper-deep: var(--v3-shell);
   --ink-ghost: var(--v3-border-strong);
-  --hairline: rgba(24, 20, 14, 0.14);
-  --hairline-soft: rgba(24, 20, 14, 0.08);
+  --hairline: rgba(20, 20, 20, 0.14);
+  --hairline-soft: rgba(20, 20, 20, 0.08);
 }
 
 /* ── Tasks Floor inside the v3 shell ──────────────────────────────

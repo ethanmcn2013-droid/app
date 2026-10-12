@@ -308,9 +308,13 @@ try {
     // The row's own Open button still switches straight away.
     await page.getByRole("link", { name: "Open Mara & Finn’s wedding" }).click();
     assert.deepEqual(await page.evaluate(() => window.consoleProbe.selected.at(-1)), { id: "p-mara", surface: "project" });
-    // The open project is not switched to; its row points at the overview below.
-    await page.getByRole("link", { name: "Keane Legal retreat: see its overview below" }).click();
+    // The open project is not switched to; its button shows its summary, as
+    // any other row does (the overview below the list is gone, 12 Oct 2026).
+    await page.getByRole("link", { name: "Keane Legal retreat, open now: show a summary" }).click();
+    await page.getByRole("dialog", { name: "Keane Legal retreat" }).waitFor();
     assert.equal(await page.evaluate(() => window.consoleProbe.selected.length), 3);
+    await page.keyboard.press("Escape");
+    await page.getByRole("dialog", { name: "Keane Legal retreat" }).waitFor({ state: "detached" });
     // A project whose name is shared cannot be opened from here.
     assert.equal(await page.locator("[data-row='p-shared'] a").count(), 0);
     assert.equal(await page.locator("[data-row='p-shared'] button").count(), 0);

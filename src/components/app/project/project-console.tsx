@@ -509,12 +509,12 @@ function Row({
     event.preventDefault();
     onGo(row.id, "project");
   };
-  // The name shows the peek; the open Project's own row still scrolls to its
-  // overview below, and a new-tab click still follows the link.
+  // The name shows the peek, for the open Project too; a new-tab click still
+  // follows the link.
   const peekOrOpen = (event: ReactMouseEvent) => {
     if (!plainClick(event)) return;
     event.preventDefault();
-    if (onPeek && !isOpen) onPeek(row.id);
+    if (onPeek) onPeek(row.id);
     else onGo(row.id, "project");
   };
 
@@ -530,7 +530,7 @@ function Row({
             : { id: "nudge", label: `Nudge ${row.nudge.who}`, hint: `A reminder about: ${row.nudge.title}`, run: () => onNudge(row) },
       );
     }
-    items.push({ id: "open", label: isOpen ? "See its overview" : "Open the project", hint: isOpen ? "Further down this page" : undefined, run: () => onGo(row.id, "project") });
+    items.push({ id: "open", label: isOpen ? "Show a summary" : "Open the project", hint: isOpen ? "Open now" : undefined, run: () => onGo(row.id, "project") });
     items.push({ id: "tasks", label: "Open its tasks", hint: row.open === 0 ? "Nothing open" : `${row.open} open`, run: () => onGo(row.id, "tasks") });
     items.push({ id: "timeline", label: "See the timeline", hint: "Big dates and tasks in time", run: () => onGo(row.id, "timeline") });
   }
@@ -567,8 +567,8 @@ function Row({
           onFocus={onFocusRow}
           onClick={peekOrOpen}
           aria-current={isOpen ? "true" : undefined}
-          aria-haspopup={onPeek && !isOpen ? "dialog" : undefined}
-          aria-label={`${row.name}. ${row.markLabel}. ${isOpen ? "Its overview is below" : onPeek ? "Show a summary" : "Open the project"}`}
+          aria-haspopup={onPeek ? "dialog" : undefined}
+          aria-label={`${row.name}. ${row.markLabel}. ${onPeek ? "Show a summary" : "Open the project"}${isOpen ? ". Open now" : ""}`}
         >
           {nameBlock}
         </a>
@@ -602,9 +602,9 @@ function Row({
                 Opening…
               </span>
             ) : (
-              <a href={hrefFor(row.id, "project")} className={c.openBtn} tabIndex={tabIndex} onClick={open} aria-label={isOpen ? `${row.name}: see its overview below` : `Open ${row.name}`}>
+              <a href={hrefFor(row.id, "project")} className={c.openBtn} tabIndex={tabIndex} onClick={open} aria-label={isOpen ? `${row.name}, open now: show a summary` : `Open ${row.name}`}>
                 {isOpen ? "Viewing" : "Open"}
-                {isOpen ? <ArrowDown /> : <Arrow />}
+                {isOpen ? null : <Arrow />}
               </a>
             )}
             <RowMenu items={items} label={`More for ${row.name}`} tabIndex={tabIndex} />
@@ -810,14 +810,6 @@ function Arrow() {
   return (
     <svg width={14} height={14} viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
       <path d="M3.5 8h9M9 4.5 12.5 8 9 11.5" />
-    </svg>
-  );
-}
-
-function ArrowDown() {
-  return (
-    <svg width={14} height={14} viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8 3.5v9M4.5 9 8 12.5 11.5 9" />
     </svg>
   );
 }

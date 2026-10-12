@@ -1,5 +1,15 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-12 · Redesign candidate · Light mode in white, ink and indigo; every page uses its width; Projects without the overview below
+
+Light mode no longer has a grey paper background. The page, the frame around it and every card are white; every grey left (borders, hover, the sunken step) is a plain tint of the ink, and indigo stays the one colour. Dark mode is unchanged.
+
+Every page now uses the width beside the sidebar instead of sitting in a centred column with empty space either side: Home, Projects, Tasks, Timeline, Files, Analytics, Settings, Inbox and the rest keep their side gutter and stretch to the edge.
+
+The Projects page no longer shows the open project's overview below the list, since the list already carries it. The open project's row now opens the same summary as any other row.
+
+No server action, read, schema change or dependency was added. Not yet released: it ships with the next guarded release.
+
 ## 2026-10-11 · T·158 · tightens · Keep completed prerequisite names out of dependency explanations
 
 **Briefing dependency explanations retain completion counts while keeping completed prerequisite names out of their supporting prose.** Open prerequisites remain named. Independently recorded completions and comments retain their own meaning, and authorized internal evidence membership is preserved. This changes contextual wording rather than access permissions.
