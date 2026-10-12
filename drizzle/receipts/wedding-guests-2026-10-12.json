@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "wedding-guests-2026-10-12",
+  "authorizedBy": "Founder (Ethan McNamara), 12 Oct 2026, in the cloud session: approved building Wedding tools (guests, seating, budget) after the storyboard review. Local and CI application only; production requires a separate backup and a tasks-migration-execution/1 receipt run from the PC.",
+  "reviewedBy": "Claude Code (cloud session), candidate author; independent exact review required before production.",
+  "authorizationSource": "2026-10-12 founder instruction: proceed with Wedding tools at release standard",
+  "migrations": [
+    {
+      "id": "0042_wedding_guests",
+      "sha256": "999b8a76a7ac88de92ef942c7b69cbfe9a852e534d134d16a15d3df4f1d15501",
+      "reviewedAt": "2026-10-12T14:30:12.554Z",
+      "risk": "Additive: two new tables and three indexes. No existing table is altered and no row is read or written. Both tables cascade with their Project (workspaces), so project deletion and account erasure remove guest data with it. Guest dietary needs are health-adjacent; the columns are free text owned by the Project and never leave it except through member-only exports.",
+      "rollbackPlan": "DROP TABLE wedding_guests; DROP TABLE wedding_households. Safe while empty; once used, export the Project's guest list first, because dropping discards it.",
+      "postconditions": [
+        "wedding_households and wedding_guests exist with their CHECK constraints",
+        "Both reference workspaces with ON DELETE CASCADE; guests reference households with ON DELETE CASCADE",
+        "Workspace and household indexes exist",
+        "Integrity and foreign-key checks pass"
+      ],
+      "proofs": [
+        {
+          "id": "household-columns",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('wedding_households') WHERE name IN ('id','workspace_id','name','invited_to','invitation','created_by','created_at','updated_at') AND \"notnull\"=1",
+          "expected": 8
+        },
+        {
+          "id": "guest-columns",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('wedding_guests') WHERE name IN ('workspace_id','household_id','rsvp','meal','is_child','sort_order','created_at','updated_at') AND \"notnull\"=1",
+          "expected": 8
+        },
+        {
+          "id": "household-cascade",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_list('wedding_households') WHERE \"table\"='workspaces' AND on_delete='CASCADE'",
+          "expected": 1
+        },
+        {
+          "id": "guest-cascade",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_list('wedding_guests') WHERE (\"table\"='workspaces' OR \"table\"='wedding_households') AND on_delete='CASCADE'",
+          "expected": 2
+        },
+        {
+          "id": "indexes",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type='index' AND name IN ('idx_wedding_households_workspace','idx_wedding_guests_workspace','idx_wedding_guests_household')",
+          "expected": 3
+        },
+        {
+          "id": "rsvp-check",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type='table' AND name='wedding_guests' AND sql LIKE '%wedding_guest_rsvp%'",
+          "expected": 1
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}
