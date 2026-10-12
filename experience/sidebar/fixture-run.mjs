@@ -94,8 +94,8 @@ try {
   for (const viewport of Object.keys(VIEWPORTS)) {
     const drawer = VIEWPORTS[viewport].width < 900;
     for (const theme of ["dark", "light"]) {
-      for (const state of ["many", "none", "no-chat", "failed", "loading", "one"]) {
-        const { page, context, errors } = await run.open({ viewport, theme, state });
+      for (const state of ["many", "none", "no-chat", "failed", "loading", "one", "wedding"]) {
+        const { page, context, errors } = await run.open({ viewport, theme, state, query: state === "wedding" ? "&path=/app/wedding/guests" : "" });
         const label = `${state}-${viewport}-${theme}`;
         const aside = page.locator("aside");
         if (drawer) {
@@ -153,7 +153,21 @@ try {
           await projectsNav(aside).locator('[role="status"]', { hasText: "Loading projects…" }).waitFor();
           run.checks += 1;
         }
+        if (state === "wedding") {
+          const tools = projectsNav(aside).locator('[role="group"][aria-label="Wedding tools for The Orchard, events"]');
+          await tools.waitFor();
+          const guests = tools.getByRole("link", { name: "Guest list", exact: true });
+          assert.equal(await guests.getAttribute("href"), "/app/wedding/guests?workspaceId=p-orchard", `${label}: guest list keeps the Project`);
+          assert.equal(await guests.getAttribute("aria-current"), "page", `${label}: the page you are on`);
+          assert.equal(await tools.locator("a").count(), 1, `${label}: Seating and Budget go nowhere yet`);
+          const soon = (await tools.locator('[aria-disabled="true"]').allTextContents()).map((t) => t.replace(/\s+/g, " ").trim());
+          assert.deepEqual(soon, ["SeatingComing Soon", "BudgetComing Soon"], `${label}: two coming soon`);
+          assert.equal(await projectsNav(aside).locator('[role="group"]').count(), 1, `${label}: only the open wedding nests`);
+          run.checks += 5;
+        }
         if (state === "one") {
+          assert.equal(await projectsNav(aside).locator('[role="group"]').count(), 0, `${label}: not a wedding, no Wedding tools`);
+          run.checks += 1;
           await projectRows(aside).first().waitFor();
           assert.equal(await projectRows(aside).count(), 1);
           assert.equal(await projectsNav(aside).locator("[data-tone]").count(), 0, `${label}: no status, no dot`);
@@ -206,7 +220,7 @@ try {
     await context.close();
   }
 
-  console.log(`PASS sidebar fixture: ${run.checks} checks across ${Object.keys(VIEWPORTS).length} sizes, dark and light, six readers and the rail${capture ? `; ${run.shots.length} captures in ${path.relative(root, outDir)}` : ""}`);
+  console.log(`PASS sidebar fixture: ${run.checks} checks across ${Object.keys(VIEWPORTS).length} sizes, dark and light, seven readers and the rail${capture ? `; ${run.shots.length} captures in ${path.relative(root, outDir)}` : ""}`);
 } finally {
   await run.close();
 }

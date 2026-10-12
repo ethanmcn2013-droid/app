@@ -328,6 +328,12 @@ function csvCell(value: string): string {
  * Attending guests only: name, meal and dietary needs, sorted by surname.
  * Contact details and private notes never enter this file.
  */
+function sortKey(guest: Guest, all: readonly Guest[]): string {
+  const host = !guest.firstName && guest.plusOneOf ? all.find((g) => g.id === guest.plusOneOf) : undefined;
+  const person = host ?? guest;
+  return `${person.lastName ?? ""} ${person.firstName ?? ""}${host ? " ~" : ""}`.toLocaleLowerCase("en-IE");
+}
+
 export function catererCsv(households: readonly Household[], columns: CatererColumns): string {
   const header = ["Guest", ...(columns.household ? ["Household"] : []), ...(columns.meal ? ["Meal"] : []), ...(columns.dietary ? ["Dietary needs"] : [])];
   const rows: { sort: string; cells: string[] }[] = [];
@@ -336,7 +342,8 @@ export function catererCsv(households: readonly Household[], columns: CatererCol
       if (guest.rsvp !== "attending") continue;
       const name = guestName(guest, household.guests);
       rows.push({
-        sort: `${guest.lastName ?? ""} ${guest.firstName ?? ""}`.toLocaleLowerCase("en-IE"),
+        // An unnamed plus-one sorts straight after the person who brings them.
+        sort: sortKey(guest, household.guests),
         cells: [
           name + (guest.isChild ? " (child)" : ""),
           ...(columns.household ? [household.name] : []),

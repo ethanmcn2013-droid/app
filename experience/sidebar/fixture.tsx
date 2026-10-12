@@ -28,7 +28,7 @@ import "../project-console/fixture.css";
 import "./fixture.css";
 
 type SidebarAnswer =
-  | { ok: true; rows: readonly ChooserRow[]; marks: Readonly<Record<string, SidebarProjectMark>> }
+  | { ok: true; rows: readonly ChooserRow[]; marks: Readonly<Record<string, SidebarProjectMark>>; weddingIds: readonly string[] }
   | { ok: false; reason: "unavailable" };
 
 declare global {
@@ -84,10 +84,12 @@ const MANY = [
 ];
 
 const answers: Record<string, SidebarAnswer | null> = {
-  one: { ok: true, rows: [ORCHARD], marks: {} },
-  many: { ok: true, rows: MANY, marks: { "p-kitchen": "late", "p-launch": "risk" } },
-  none: { ok: true, rows: [], marks: {} },
-  "no-chat": { ok: true, rows: [ORCHARD, MANY[1]!, MANY[2]!], marks: { "p-kitchen": "late" } },
+  one: { ok: true, rows: [ORCHARD], marks: {}, weddingIds: [] },
+  many: { ok: true, rows: MANY, marks: { "p-kitchen": "late", "p-launch": "risk" }, weddingIds: [] },
+  none: { ok: true, rows: [], marks: {}, weddingIds: [] },
+  "no-chat": { ok: true, rows: [ORCHARD, MANY[1]!, MANY[2]!], marks: { "p-kitchen": "late" }, weddingIds: [] },
+  // The Orchard is a wedding: Wedding tools nest under its row.
+  wedding: { ok: true, rows: [ORCHARD, MANY[1]!], marks: {}, weddingIds: ["p-orchard"] },
   failed: { ok: false, reason: "unavailable" },
   loading: null,
 };

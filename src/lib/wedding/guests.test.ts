@@ -138,6 +138,13 @@ test("the caterer's file lists attending guests only, by surname, without contac
   assert.doesNotMatch(csv, /private|PRIVATE|087|Road/);
 });
 
+test("an unnamed plus-one is listed straight after their host", () => {
+  const host = guest("1", { firstName: "Conor", lastName: "Gallagher", rsvp: "attending" });
+  const plus = guest("2", { firstName: null, plusOneOf: "1", rsvp: "attending" });
+  const csv = catererCsv([household("a", [plus, host]), household("b", [guest("3", { firstName: "Ann", lastName: "Hayes", rsvp: "attending" })])], { meal: false, dietary: false, household: false });
+  assert.equal(csv, "Guest\nConor Gallagher\nGuest of Conor Gallagher\nAnn Hayes\n");
+});
+
 test("the caterer's file cannot run a formula in a spreadsheet", () => {
   const list = [household("a", [guest("1", { firstName: "=HYPERLINK(\"x\")", rsvp: "attending", dietary: "+1 nuts, \"severe\"" })])];
   const csv = catererCsv(list, { meal: false, dietary: true, household: true });
