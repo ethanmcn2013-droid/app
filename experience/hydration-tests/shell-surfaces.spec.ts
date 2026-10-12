@@ -119,7 +119,15 @@ for (const theme of ["dark", "light"] as const) {
       expect(stat.borderWidth, "the card has a border").toBeGreaterThan(0);
       expect(opaque(stat.border), "the card border has a colour").toBe(true);
       expect(same(stat.border, stat.background), "the border is not the card's own colour").toBe(false);
-      expect(same(stat.background, sheet.background), "the card is a step away from the page").toBe(false);
+      if (theme === "light") {
+        // Light mode is white, ink and indigo only (founder instruction,
+        // 12 Oct 2026): the card is white on the white page and its border
+        // is what sets it apart, so the border must read against the page.
+        expect(same(stat.background, sheet.background), "the light card is white on the white page").toBe(true);
+        expect(same(stat.border, sheet.background), "the border reads against the page").toBe(false);
+      } else {
+        expect(same(stat.background, sheet.background), "the card is a step away from the page").toBe(false);
+      }
 
       // The top bar's search trigger keeps its label on one line.
       const search = page.locator('header button[aria-label="Search or jump to"]');
