@@ -16,6 +16,10 @@
  *
  * A status that cannot be read is no dot, never a guessed one. Demo and
  * Review touch no database and set no status, so they show no dots.
+ *
+ * It also says which Projects are weddings (by their context, domain or
+ * template, read from the same catalog ids), so the sidebar can nest the
+ * Wedding tools under them. A read that fails nests nothing.
  */
 
 import { inArray } from "drizzle-orm";
@@ -29,20 +33,29 @@ import { validTimeZone } from "@/server/projects/project-console-facts";
 import type { ChooserRow } from "@/lib/projects/project-chooser";
 import { dayOrdinalIn, ordinalToIsoDate } from "@/lib/projects/project-console";
 import { projectStatusMetaKey, projectTargetDateMetaKey } from "@/lib/projects/project-hub";
+import { readWeddingIdsWith } from "@/server/wedding/guests";
 import { sidebarProjectMarks, type SidebarProjectMark } from "@/lib/projects/sidebar-projects";
 
 /** Statuses are read for at most this many Projects, as the console does. */
 const MARKS_LIMIT = 200;
 
 export type LoadSidebarProjectsResult =
-  | Readonly<{ ok: true; rows: readonly ChooserRow[]; marks: Readonly<Record<string, SidebarProjectMark>> }>
+  | Readonly<{
+      ok: true;
+      rows: readonly ChooserRow[];
+      marks: Readonly<Record<string, SidebarProjectMark>>;
+      /** Projects made for a wedding: their row carries the Wedding tools. */
+      weddingIds: readonly string[];
+    }>
   | Readonly<{ ok: false; reason: "disabled" | "unavailable" }>;
 
 export async function loadSidebarProjectsAction(): Promise<LoadSidebarProjectsResult> {
   const result = await loadProjectCatalogAction();
   if (!result.ok) return result;
   const rows = result.catalog.rows.filter((row) => !row.archived);
-  if (isDemoMode() || rows.length === 0) return { ok: true, rows, marks: {} };
+  // The sample suite is a wedding venue's: every sample Project is a wedding.
+  if (isDemoMode()) return { ok: true, rows, marks: {}, weddingIds: rows.map((row) => row.id as string) };
+  if (rows.length === 0) return { ok: true, rows, marks: {}, weddingIds: [] };
 
   let marks: Record<string, SidebarProjectMark> = {};
   try {
@@ -62,5 +75,11 @@ export async function loadSidebarProjectsAction(): Promise<LoadSidebarProjectsRe
   } catch {
     marks = {};
   }
-  return { ok: true, rows, marks };
+  let weddingIds: string[] = [];
+  try {
+    weddingIds = await readWeddingIdsWith(db, rows.map((row) => row.id as string).slice(0, MARKS_LIMIT));
+  } catch {
+    weddingIds = [];
+  }
+  return { ok: true, rows, marks, weddingIds };
 }

@@ -14,6 +14,8 @@ import {
   pendingInvites,
   projectDriveOperations,
   resources,
+  weddingGuests,
+  weddingHouseholds,
   shareLinkVisits,
   shareLinks,
   suiteOutbox,
@@ -100,6 +102,9 @@ export async function deleteProjectRowsInTransaction(
   await transaction
     .delete(resources)
     .where(byTaskOrWorkspace(resources.taskId, resources.workspaceId));
+  // The guest list: people before their invitations, no cascade relied on.
+  await transaction.delete(weddingGuests).where(eq(weddingGuests.workspaceId, workspaceId));
+  await transaction.delete(weddingHouseholds).where(eq(weddingHouseholds.workspaceId, workspaceId));
   await transaction.delete(tasks).where(eq(tasks.workspaceId, workspaceId));
   await eraseEntitlementsInTransaction(transaction, eq(entitlements.workspaceId, workspaceId));
   await transaction
