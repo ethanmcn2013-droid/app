@@ -136,6 +136,16 @@ function InvitedToChoice({ value, onChange }: { value: InvitedTo; onChange: (v: 
 type Draft = { key: number; firstName: string; lastName: string; isChild: boolean };
 
 export function AddGuestsDialog({ open, groups, onClose, onSubmit }: { open: boolean; groups: readonly string[]; onClose: () => void; onSubmit: (input: NewHouseholdInput) => Promise<boolean> }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <Sheet open={open} title="Add guests" lead="One invitation at a time. Add everyone it goes to, even the children." onClose={onClose} busy={busy}>
+      <AddGuestsForm groups={groups} onClose={onClose} onSubmit={onSubmit} busy={busy} setBusy={setBusy} />
+    </Sheet>
+  );
+}
+
+/** Mounted only while the sheet is open, so every opening starts empty. */
+function AddGuestsForm({ groups, onClose, onSubmit, busy, setBusy }: { groups: readonly string[]; onClose: () => void; onSubmit: (input: NewHouseholdInput) => Promise<boolean>; busy: boolean; setBusy: (busy: boolean) => void }) {
   const base = useId();
   const [people, setPeople] = useState<Draft[]>([{ key: 0, firstName: "", lastName: "", isChild: false }]);
   const [plusOne, setPlusOne] = useState(false);
@@ -143,20 +153,7 @@ export function AddGuestsDialog({ open, groups, onClose, onSubmit }: { open: boo
   const [group, setGroup] = useState("");
   const [email, setEmail] = useState("");
   const [invitedTo, setInvitedTo] = useState<InvitedTo>("day");
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const first = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    setPeople([{ key: 0, firstName: "", lastName: "", isChild: false }]);
-    setPlusOne(false);
-    setName("");
-    setEmail("");
-    setInvitedTo("day");
-    setError(null);
-    requestAnimationFrame(() => first.current?.focus());
-  }, [open]);
 
   const named = people.filter((p) => p.firstName.trim());
   const suggested = named.length ? defaultHouseholdName(named.map((p) => ({ firstName: p.firstName, lastName: p.lastName }))) : "";
@@ -183,7 +180,6 @@ export function AddGuestsDialog({ open, groups, onClose, onSubmit }: { open: boo
   }
 
   return (
-    <Sheet open={open} title="Add guests" lead="One invitation at a time. Add everyone it goes to, even the children." onClose={onClose} busy={busy}>
       <form className={styles.form} onSubmit={submit}>
         <fieldset className={styles.people} disabled={busy}>
           <legend>Who is invited</legend>
@@ -192,7 +188,7 @@ export function AddGuestsDialog({ open, groups, onClose, onSubmit }: { open: boo
               <label>
                 <span className="sr-only">First name, person {i + 1}</span>
                 <input
-                  ref={i === 0 ? first : undefined}
+                  autoFocus={i === 0}
                   value={p.firstName}
                   maxLength={NAME_MAX}
                   placeholder="First name"
@@ -259,26 +255,13 @@ export function AddGuestsDialog({ open, groups, onClose, onSubmit }: { open: boo
           </button>
         </footer>
       </form>
-    </Sheet>
   );
 }
 
 // ── Import ───────────────────────────────────────────────────────────────
 
 export function ImportDialog({ open, onClose, onSubmit }: { open: boolean; onClose: () => void; onSubmit: (text: string, preview: NewHouseholdInput[]) => Promise<boolean> }) {
-  const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const fileId = useId();
-  useEffect(() => {
-    if (open) {
-      setText("");
-      setError(null);
-    }
-  }, [open]);
-  const parsed = useMemo(() => parseGuestImport(text), [text]);
-  const groups = useMemo(() => groupImport(parsed.rows), [parsed]);
-
   return (
     <Sheet
       open={open}
@@ -287,6 +270,20 @@ export function ImportDialog({ open, onClose, onSubmit }: { open: boolean; onClo
       onClose={onClose}
       busy={busy}
     >
+      <ImportForm onClose={onClose} onSubmit={onSubmit} busy={busy} setBusy={setBusy} />
+    </Sheet>
+  );
+}
+
+/** Mounted only while the sheet is open, so every opening starts empty. */
+function ImportForm({ onClose, onSubmit, busy, setBusy }: { onClose: () => void; onSubmit: (text: string, preview: NewHouseholdInput[]) => Promise<boolean>; busy: boolean; setBusy: (busy: boolean) => void }) {
+  const [text, setText] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const fileId = useId();
+  const parsed = useMemo(() => parseGuestImport(text), [text]);
+  const groups = useMemo(() => groupImport(parsed.rows), [parsed]);
+
+  return (
       <form
         className={styles.form}
         onSubmit={async (e) => {
@@ -365,7 +362,6 @@ export function ImportDialog({ open, onClose, onSubmit }: { open: boolean; onClo
           </button>
         </footer>
       </form>
-    </Sheet>
   );
 }
 
@@ -423,18 +419,7 @@ export function CatererDialog({ open, households, projectName, onClose }: { open
 
 // ── One household, in full ───────────────────────────────────────────────
 
-export function HouseholdDialog({
-  household,
-  groups,
-  onClose,
-  onSave,
-  onRename,
-  onChild,
-  onAddPerson,
-  onRemovePerson,
-  onRemoveHousehold,
-}: {
-  household: Household | null;
+type HouseholdHandlers = Readonly<{
   groups: readonly string[];
   onClose: () => void;
   onSave: (patch: HouseholdPatch) => Promise<boolean>;
@@ -443,34 +428,45 @@ export function HouseholdDialog({
   onAddPerson: (input: { firstName?: string | null; lastName?: string | null; isChild?: boolean; plusOneOf?: string | null }) => Promise<boolean>;
   onRemovePerson: (guest: Guest) => Promise<boolean>;
   onRemoveHousehold: () => Promise<boolean>;
-}) {
-  const base = useId();
-  const [form, setForm] = useState({ name: "", groupLabel: "", email: "", phone: "", address: "", notes: "", invitedTo: "day" as InvitedTo, invitation: "not_sent" as "sent" | "not_sent" });
+}>;
+
+export function HouseholdDialog({ household, ...handlers }: HouseholdHandlers & { household: Household | null }) {
   const [busy, setBusy] = useState(false);
+  return (
+    <Sheet open={household !== null} title={household?.name ?? "Household"} lead="Everyone on this invitation, and how to reach them." onClose={handlers.onClose} busy={busy}>
+      {/* Keyed by household: another household opens with its own details, and a save never resets the form under the reader. */}
+      {household ? <HouseholdForm key={household.id} household={household} busy={busy} setBusy={setBusy} {...handlers} /> : null}
+    </Sheet>
+  );
+}
+
+function HouseholdForm({
+  household,
+  busy,
+  setBusy,
+  groups,
+  onSave,
+  onRename,
+  onChild,
+  onAddPerson,
+  onRemovePerson,
+  onRemoveHousehold,
+}: HouseholdHandlers & { household: Household; busy: boolean; setBusy: (busy: boolean) => void }) {
+  const base = useId();
+  const [form, setForm] = useState({
+    name: household.name,
+    groupLabel: household.groupLabel ?? "",
+    email: household.email ?? "",
+    phone: household.phone ?? "",
+    address: household.address ?? "",
+    notes: household.notes ?? "",
+    invitedTo: household.invitedTo,
+    invitation: household.invitation,
+  });
   const [confirming, setConfirming] = useState(false);
   const [newPerson, setNewPerson] = useState("");
-  const openId = household?.id ?? null;
-
-  useEffect(() => {
-    if (!household) return;
-    setForm({
-      name: household.name,
-      groupLabel: household.groupLabel ?? "",
-      email: household.email ?? "",
-      phone: household.phone ?? "",
-      address: household.address ?? "",
-      notes: household.notes ?? "",
-      invitedTo: household.invitedTo,
-      invitation: household.invitation,
-    });
-    setConfirming(false);
-    setNewPerson("");
-    // Only when another household opens: a save must not reset the form under the reader.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openId]);
 
   const dirty =
-    household !== null &&
     (form.name !== household.name ||
       form.groupLabel !== (household.groupLabel ?? "") ||
       form.email !== (household.email ?? "") ||
@@ -492,12 +488,11 @@ export function HouseholdDialog({
   });
 
   return (
-    <Sheet open={household !== null} title={household?.name ?? "Household"} lead="Everyone on this invitation, and how to reach them." onClose={onClose} busy={busy}>
-      {household ? (
         <div className={styles.form}>
           <section className={styles.detailPeople} aria-label="People on this invitation">
             {household.guests.map((guest) => (
-              <PersonEditor key={guest.id} guest={guest} all={household.guests} busy={busy} onRename={onRename} onChild={onChild} onRemove={() => run(() => onRemovePerson(guest))} onPlusOne={() => run(() => onAddPerson({ plusOneOf: guest.id }))} />
+              // Keyed by the saved name too, so a fresh read refills the fields.
+              <PersonEditor key={`${guest.id}:${guest.firstName ?? ""}:${guest.lastName ?? ""}`} guest={guest} all={household.guests} busy={busy} onRename={onRename} onChild={onChild} onRemove={() => run(() => onRemovePerson(guest))} onPlusOne={() => run(() => onAddPerson({ plusOneOf: guest.id }))} />
             ))}
             <form
               className={styles.addPerson}
@@ -577,8 +572,6 @@ export function HouseholdDialog({
             </footer>
           </form>
         </div>
-      ) : null}
-    </Sheet>
   );
 }
 
@@ -601,10 +594,6 @@ function PersonEditor({
 }) {
   const [first, setFirst] = useState(guest.firstName ?? "");
   const [last, setLast] = useState(guest.lastName ?? "");
-  useEffect(() => {
-    setFirst(guest.firstName ?? "");
-    setLast(guest.lastName ?? "");
-  }, [guest.firstName, guest.lastName]);
   const label = guestName(guest, all);
   const hasPlusOne = all.some((g) => g.plusOneOf === guest.id);
   const commit = () => {

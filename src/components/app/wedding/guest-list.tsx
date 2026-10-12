@@ -64,7 +64,11 @@ export function GuestList({ projectId, projectName, households: initial, wedding
   const [, startRefresh] = useTransition();
 
   // A fresh server read replaces the local copy (after a save, or a teammate's).
-  useEffect(() => setHouseholds(initial), [initial]);
+  const [read, setRead] = useState(initial);
+  if (read !== initial) {
+    setRead(initial);
+    setHouseholds(initial);
+  }
 
   const totals = useMemo(() => guestTotals(households), [households]);
   const shown = useMemo(() => filterHouseholds(households, filter), [households, filter]);

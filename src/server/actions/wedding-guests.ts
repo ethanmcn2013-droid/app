@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
 import { getCurrentUser } from "@/server/auth";
 import { isDemoMode } from "@/lib/access-mode";
+import { opLog } from "@/server/operational-log";
 import { authorizeStoredProject } from "@/server/actions/project-authz";
 import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
 import {
@@ -68,7 +69,8 @@ async function withGuestListWrite<T>(projectId: string, write: (workspaceId: str
     if (error instanceof GuestListError) {
       return { ok: false, reason: error.code === "not-found" ? "not-found" : error.code, message: error.message };
     }
-    console.error("wedding-guests: write failed", error);
+    // The error's name only: a message can carry the names people typed.
+    opLog("error", "wedding_list", "Write failed", { failureKind: error instanceof Error ? error.name : "unknown" });
     return { ok: false, reason: "unavailable", message: "That didn’t save. Nothing was changed. Try again." };
   }
 }

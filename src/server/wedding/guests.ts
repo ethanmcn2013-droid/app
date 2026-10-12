@@ -23,7 +23,6 @@ import {
   type Guest,
   type GuestListRead,
   type Household,
-  type InvitedTo,
   type Meal,
   type NewHouseholdInput,
   type Rsvp,
