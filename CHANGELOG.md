@@ -1,5 +1,11 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-12 · Candidate · Wedding tools: the guest list
+
+A wedding project now has a guest list, opened from Wedding tools in the sidebar under the open wedding. Guests are added by household, the way invitations go out, with children marked and a plus-one whose name can come later. A guest's reply, meal and dietary needs change right in the list, and a household's reply can be set for everyone on it at once. One bar shows attending, awaiting a reply and not attending, which always add up to everyone listed, alongside the meals still to choose and the dietary needs to share. A list can be pasted or imported from a CSV and is grouped into households; the caterer's list downloads as a spreadsheet of attending guests only, with no contact details or notes. Seating and Budget show in the sidebar as coming soon.
+
+Migration `0042_wedding_guests` adds the two tables and **must be applied to production before this code is released**: project deletion, account erasure and account export now include the guest list. Not yet released: it ships with the next guarded release.
+
 ## 2026-10-12 · Redesign candidate · Light mode in white, ink and indigo; every page uses its width; Projects without the overview below
 
 Light mode no longer has a grey paper background. The page, the frame around it and every card are white; every grey left (borders, hover, the sunken step) is a plain tint of the ink, and indigo stays the one colour. Dark mode is unchanged.
