@@ -13,4 +13,4 @@ export const PAPER_DARK = "#0f0f10";
  * light; src/app/app/theme-runtime.tsx writes the matching one.
  */
 export const APP_BAR_DARK = "#1c1c1c";
-export const APP_BAR_LIGHT = "#f6f5f2";
+export const APP_BAR_LIGHT = "#ffffff";

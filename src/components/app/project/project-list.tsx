@@ -84,7 +84,7 @@ export function ProjectList({
             const go = (event: ReactMouseEvent) => {
               if (!plainClick(event)) return;
               event.preventDefault();
-              if (onPeek && !isOpen) onPeek(row.id, ids);
+              if (onPeek) onPeek(row.id, ids);
               else onGo(row.id, "project");
             };
             const name = (
@@ -103,8 +103,8 @@ export function ProjectList({
                       href={hrefFor(row.id, "project")}
                       className={l.name}
                       onClick={go}
-                      aria-haspopup={onPeek && !isOpen ? "dialog" : undefined}
-                      aria-label={`${row.name}. ${row.markLabel}. ${isOpen ? "Its overview is below" : onPeek ? "Show a summary" : "Open the project"}`}
+                      aria-haspopup={onPeek ? "dialog" : undefined}
+                      aria-label={`${row.name}. ${row.markLabel}. ${onPeek ? "Show a summary" : "Open the project"}${isOpen ? ". Open now" : ""}`}
                     >
                       {name}
                     </a>

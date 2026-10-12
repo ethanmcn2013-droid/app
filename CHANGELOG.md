@@ -1,5 +1,15 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-12 · Redesign candidate · Light mode in white, ink and indigo; every page uses its width; Projects without the overview below
+
+Light mode no longer has a grey paper background. The page, the frame around it and every card are white; every grey left (borders, hover, the sunken step) is a plain tint of the ink, and indigo stays the one colour. Dark mode is unchanged.
+
+Every page now uses the width beside the sidebar instead of sitting in a centred column with empty space either side: Home, Projects, Tasks, Timeline, Files, Analytics, Settings, Inbox and the rest keep their side gutter and stretch to the edge.
+
+The Projects page no longer shows the open project's overview below the list, since the list already carries it. The open project's row now opens the same summary as any other row.
+
+No server action, read, schema change or dependency was added. Not yet released: it ships with the next guarded release.
+
 ## 2026-10-12 · Redesign candidate · The approved sidebar icons, solid when selected
 
 The sidebar now draws every row from the approved icon set: Home, Projects, Tasks, Timeline, Files, Analytics, Automations, Whiteboard, All conversations, each chat channel, Settings, and the collapse, search, help and theme buttons. A row shows a grey outline; the page you are on shows the same icon filled in solid, with its inner details cut out. Navigation no longer uses indigo for the page you are on: the solid icon and the row highlight say it. Each project in the Projects list now has one marker, a square tinted with its colour and a dot of it in the middle, in place of the letter squares, and the open project is shown by the row highlight.
